@@ -84,6 +84,21 @@ manual dispatch, and in release artifact checks. Run `pnpm security:audit` when
 network access is available. The 21-day dependency release age remains in force, except for owner-approved
 exact-version security-fix exemptions listed in `docs/dependency-security.md`.
 
+## Commits and pull requests
+
+These apply to everyone, maintainers included.
+
+- **Pull request title:** an imperative sentence of about 72 characters or fewer
+  that describes the effect for users, for example "Add an RFC 8707 resource to
+  OAuth2 client credentials". Release notes are generated from these titles. No
+  `feat:` or `fix:` prefixes; the Change Type records the kind of change.
+- **Pull request description:** what changes and why, written so that anyone
+  can read it. Fill in the template and select exactly one Change Type.
+- **Commits:** one logical change per commit, an imperative subject line, a body
+  that explains why, and a DCO sign-off (`git commit -s`).
+- **Changelog:** add an entry under "Unreleased" in `CHANGELOG.md` for any change
+  users will notice.
+
 ## AI-assisted contributions
 
 You may use AI tools to prepare a contribution.
