@@ -1060,7 +1060,10 @@ describe('release and dependency policy guardrails', () => {
     match(workflow, /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
     match(workflow, /github\.event_name == 'schedule'/);
     match(workflow, /github\.event_name == 'workflow_dispatch'/);
-    match(workflow, /github\.event_name == 'pull_request' && steps\.dependency-changes\.outputs\.changed == 'true'/);
+    match(
+      workflow,
+      /github\.event_name == 'pull_request' && steps\.dependency-changes\.outputs\.changed == 'true'/
+    );
     match(workflow, /run: pnpm security:audit/);
   });
 
