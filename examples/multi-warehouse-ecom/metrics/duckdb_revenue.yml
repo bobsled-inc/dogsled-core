@@ -1,0 +1,6 @@
+spec_version: '0.2'
+type: metric
+name: duckdb_revenue
+description: Fictional sales in units.
+model: duckdb_order_summary
+expression: SUM(amount)

@@ -1,0 +1,51 @@
+type: resource
+name: person_enrich
+description: Match a single person and return enriched profile data from People Data Labs.
+api:
+  endpoint: /v5/person/enrich
+  method: GET
+  query_params:
+    profile: ${{ input.profile }}
+output:
+  id:
+    type: string
+    path: $.id
+    description: PDL person identifier.
+  full_name:
+    type: string
+    path: $.full_name
+    description: Full name of the matched person.
+  linkedin_url:
+    type: string
+    path: $.linkedin_url
+    description: LinkedIn profile URL.
+  job_title:
+    type: string
+    path: $.job_title
+    description: Current job title.
+  job_company_name:
+    type: string
+    path: $.job_company_name
+    description: Current company name.
+input:
+  profile:
+    type: string
+    required: true
+    description: LinkedIn profile URL or handle for the person to enrich.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+billing:
+  mode: billable
+  ownership: third_party
+  unit: match
+  estimation:
+    model: per_match
+    amount: 1
+    currency: provider_credit
+    notes: People Data Labs charges per successful match and returns 404 when no person matches.
+  authorization:
+    requires_plan: true

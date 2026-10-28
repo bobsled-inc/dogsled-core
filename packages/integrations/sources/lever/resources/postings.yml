@@ -1,0 +1,45 @@
+type: resource
+name: postings
+description: List Lever postings
+api:
+  endpoint: /postings
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    limit: ${{ input.limit }}
+input:
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+  limit:
+    type: integer
+    description: Page size
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Posting identifier
+  text:
+    type: string
+    path: $.text
+    description: Posting title
+  state:
+    type: string
+    path: $.state
+    description: Posting state
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Posting creation timestamp
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit

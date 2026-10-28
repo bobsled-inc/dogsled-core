@@ -1,0 +1,10 @@
+display_name: Outreach
+category: crm
+tags:
+  - sales-engagement
+  - prospecting
+  - sequences
+docs_url: https://developers.outreach.io/api/reference/overview/
+auth_setup:
+  - env: OUTREACH_ACCESS_TOKEN
+    description: Outreach API bearer token

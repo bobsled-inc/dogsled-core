@@ -1,0 +1,22 @@
+node_modules
+dist
+pnpm-lock.yaml
+coverage
+.turbo
+*.tgz
+.dogsled/tutor-lab/
+todos/
+**/.runtime/
+**/.runtime/**
+packages/model-spec/tests/integration/customer-resolution/review/
+packages/model-spec/tests/integration/customer-resolution/review/**
+# Auto-managed by `auto` release tooling; mid-truncated release notes
+# contain unbalanced code fences that prettier rewrites incorrectly.
+CHANGELOG.md
+# Generated catalog manifest — see scripts/generate-catalog-manifest.ts
+packages/integrations/src/catalog/generated-data.ts
+# Generated skills manifest — see packages/skills/scripts/build-manifest.ts
+packages/skills/src/generated-data.ts
+
+# Generated license text must remain byte-stable; use the notices generator.
+packages/dogsled/THIRD_PARTY_NOTICES.md

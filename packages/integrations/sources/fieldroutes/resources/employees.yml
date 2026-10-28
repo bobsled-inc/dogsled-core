@@ -1,0 +1,82 @@
+type: resource
+name: employees
+description: Employee directory and organizational attributes for technician attribution.
+api:
+  endpoint: /employee/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    active: '${{ input.active }}'
+    employeeIDs: '${{ input.employee_ids }}'
+    teamID: '${{ input.team_id }}'
+    dateUpdated: '${{ input.date_updated }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  active:
+    type: integer
+    description: Active employee filter.
+  employee_ids:
+    type: string
+    description: Optional employee ID filter.
+  team_id:
+    type: integer
+    description: Team ID filter.
+  date_updated:
+    type: string
+    description: Lower/upper bound with query object support.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  employee_id:
+    type: integer
+    path: $.employeeID
+    description: Employee unique ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Employee home office.
+  first_name:
+    type: string
+    path: $.fname
+    description: First name.
+  last_name:
+    type: string
+    path: $.lname
+    description: Last name.
+  initials:
+    type: string
+    path: $.initials
+    description: Employee initials.
+  email:
+    type: string
+    path: $.email
+    description: Work email.
+  phone:
+    type: string
+    path: $.phone
+    description: Phone number.
+  type:
+    type: string
+    path: $.type
+    description: Employee type/category.
+  active:
+    type: integer
+    path: $.active
+    description: Active flag.
+  primary_team:
+    type: integer
+    path: $.primaryTeam
+    description: Primary team ID.
+extract:
+  record_path: '$..[?(@.employeeID)]'
+  table:
+    primary_key:
+      - employee_id
+    trust_tier: silver

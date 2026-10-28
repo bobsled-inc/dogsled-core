@@ -1,0 +1,10 @@
+display_name: ClickUp
+category: task-management
+logo_url: https://clickup.com/favicon.ico
+tags: [project-management, tasks, collaboration]
+docs_url: https://developer.clickup.com/docs
+openapi_url: https://developer.clickup.com/openapi/clickup-api-v2-reference.json
+auth_setup:
+  - env: CLICKUP_API_KEY
+    description: Personal ClickUp API token used for Authorization requests
+    docs_url: https://developer.clickup.com/docs/authentication

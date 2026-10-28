@@ -1,0 +1,13 @@
+name: freshdesk
+display_name: Freshdesk
+description: Support analytics models for Freshdesk tickets, contacts, agents, companies, and conversation activity.
+tags:
+  - freshdesk
+  - support
+  - customer-service
+include_resources:
+  - agents
+  - companies
+  - contacts
+  - conversations
+  - tickets

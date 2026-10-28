@@ -1,0 +1,133 @@
+type: resource
+name: teams
+description: Teams within a GitHub organization used for grouping members and managing repository access permissions
+api:
+  endpoint: /orgs/${{ input.org }}/teams
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  org:
+    type: string
+    description: GitHub organization login name
+    default: bobsled-inc
+  per_page:
+    type: integer
+    description: Number of teams to return per page (max 100)
+    default: 100
+output:
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the team
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Display name of the team (e.g. "Engineering", "Platform Team")
+  slug:
+    type: string
+    semantic_role: identifier
+    path: $.slug
+    description: URL-friendly slug of the team name used in API paths and @mentions (e.g. "engineering", "platform-team")
+  description:
+    type: string
+    semantic_role: categorical
+    path: $.description
+    description: Free-text description of the team's purpose and responsibilities
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the team page on github.com
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this team resource
+  members_url:
+    type: string
+    semantic_role: url
+    path: $.members_url
+    description: REST API URL template for listing members of this team
+  repositories_url:
+    type: string
+    semantic_role: url
+    path: $.repositories_url
+    description: REST API URL for listing repositories this team has access to
+  privacy:
+    type: string
+    semantic_role: categorical
+    path: $.privacy
+    description: "Team visibility setting \u2014 \"secret\" if only visible to organization owners and team members, or \"closed\" if visible to all organization members"
+  notification_setting:
+    type: string
+    semantic_role: categorical
+    path: $.notification_setting
+    description: "Team notification preference \u2014 \"notifications_enabled\" if members receive notifications for all team discussions, or \"notifications_disabled\""
+  permission:
+    type: string
+    semantic_role: categorical
+    path: $.permission
+    description: "Default permission level the team grants on repositories \u2014 \"pull\" (read), \"triage\", \"push\" (write), \"maintain\", or \"admin\""
+  parent_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.parent.id
+    description: Numeric ID of the parent team if this is a nested/child team, null for top-level teams
+  parent_slug:
+    type: string
+    semantic_role: identifier
+    path: $.parent.slug
+    description: Slug of the parent team if this is a nested/child team, null for top-level teams
+  members_count:
+    type: integer
+    semantic_role: count
+    path: $.members_count
+    description: Total number of members in the team (only available in detail view)
+  repos_count:
+    type: integer
+    semantic_role: count
+    path: $.repos_count
+    description: Total number of repositories the team has access to (only available in detail view)
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the team was created
+  updated_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.updated_at
+    description: Timestamp when the team was last modified
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Fetch a single team by organization and team slug
+  api:
+    endpoint: /orgs/${{ input.org }}/teams/${{ input.team_slug }}
+    method: GET
+  input:
+    org:
+      type: string
+      required: true
+      description: GitHub organization login name
+    team_slug:
+      type: string
+      required: true
+      description: The team slug (URL-friendly name)
+  extract:
+    record_path: $
+via: rest

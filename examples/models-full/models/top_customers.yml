@@ -1,0 +1,16 @@
+spec_version: '0.2'
+type: model
+name: top_customers
+description: Fictional shop top_customers.
+grain:
+  - customer_id
+source:
+  ref: customer_lifetime
+columns:
+  - name: customer_id
+    expr: customer_id
+  - name: total_spent
+    expr: total_spent
+materialization:
+  type: view
+where: total_spent > 0

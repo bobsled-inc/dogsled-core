@@ -1,0 +1,83 @@
+type: resource
+name: spots
+description: Route spot capacity and assignment data for scheduling analysis.
+api:
+  endpoint: /spot/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    routeID: '${{ input.route_id }}'
+    assignedTech: '${{ input.assigned_tech }}'
+    reserved: '${{ input.reserved }}'
+    date: '${{ input.date }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  route_id:
+    type: integer
+    description: Optional route filter.
+  assigned_tech:
+    type: integer
+    description: Optional assigned tech filter.
+  reserved:
+    type: integer
+    description: Reserved flag filter.
+  date:
+    type: string
+    description: Spot date filter.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  spot_id:
+    type: integer
+    path: $.spotID
+    description: Spot unique ID.
+  route_id:
+    type: integer
+    path: $.routeID
+    description: Parent route ID.
+  date:
+    type: timestamp
+    path: $.date
+    description: Spot date.
+  start:
+    type: timestamp
+    path: $.start
+    description: Spot window start.
+  end:
+    type: timestamp
+    path: $.end
+    description: Spot window end.
+  spot_capacity:
+    type: integer
+    path: $.spotCapacity
+    description: Max number of jobs.
+  description:
+    type: string
+    path: $.description
+    description: Spot text notes.
+  assigned_tech:
+    type: integer
+    path: $.assignedTech
+    description: Currently assigned tech.
+  reserved:
+    type: integer
+    path: $.reserved
+    description: Reserved flag.
+  reservation_end:
+    type: timestamp
+    path: $.reservationEnd
+    description: Reservation end time.
+
+extract:
+  record_path: '$..[?(@.spotID)]'
+  table:
+    primary_key:
+      - spot_id
+    trust_tier: silver

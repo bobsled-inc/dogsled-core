@@ -1,0 +1,31 @@
+spec_version: '0.2'
+name: stg_fieldroutes_employees
+type: model
+description: Staging employees from FieldRoutes `/employee/search`.
+grain: EMPLOYEE_ID
+source:
+  ref: fieldroutes.employees
+columns:
+  - name: EMPLOYEE_ID
+    expr: employee_id
+    primary_key: true
+  - name: OFFICE_ID
+    expr: office_id
+  - name: FIRST_NAME
+    expr: first_name
+  - name: LAST_NAME
+    expr: last_name
+  - name: INITIALS
+    expr: initials
+  - name: EMAIL
+    expr: email
+  - name: PHONE
+    expr: phone
+  - name: TYPE
+    expr: type
+  - name: ACTIVE
+    expr: active
+  - name: PRIMARY_TEAM
+    expr: primary_team
+materialization:
+  type: view

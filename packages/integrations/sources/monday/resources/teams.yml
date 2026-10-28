@@ -1,0 +1,26 @@
+type: resource
+name: teams
+description: Teams in Monday.com.
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: query { teams { id name picture_url } }
+    variables: {}
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  picture_url:
+    type: string
+    path: $.picture_url
+extract:
+  record_path: $.data.teams
+  table:
+    primary_key:
+      - id
+via: graphql

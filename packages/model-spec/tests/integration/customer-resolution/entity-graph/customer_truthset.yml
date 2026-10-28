@@ -1,0 +1,12 @@
+spec_version: '0.2'
+name: customer_truthset
+type: truthset
+description: Regression labels for the synthetic customer matching thresholds.
+resolution_ref: customer_resolution
+
+labels:
+  format: csv
+  path: data/customer_truthset.csv
+
+targets:
+  min_auto_merge_precision: 0.95

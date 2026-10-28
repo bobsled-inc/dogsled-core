@@ -1,0 +1,27 @@
+type: resource
+name: query_results
+description: Results from a read-only SQL query against BigQuery
+tool:
+  tool_name: query
+  arguments:
+    sql: ${{ input.query }}
+input:
+  query:
+    type: string
+    description: SQL SELECT query to execute (read-only)
+query:
+  search:
+    dialect: sql
+    bind:
+      input: query
+output:
+  row:
+    type: object
+    path: $
+    description: A single result row with column names as keys
+extract:
+  record_path: $.rows
+  table:
+    primary_key:
+      - row
+via: mcp

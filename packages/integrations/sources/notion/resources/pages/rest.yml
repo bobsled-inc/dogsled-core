@@ -1,0 +1,80 @@
+type: resource
+name: pages_rest
+via: rest
+entity: pages
+description: Search for pages across the Notion workspace
+api:
+  endpoint: /v1/search
+  method: POST
+  request_body:
+    query: ${{ input.query }}
+    filter:
+      property: object
+      value: page
+    page_size: 100
+    sort:
+      timestamp: last_edited_time
+      direction: descending
+input:
+  query:
+    type: string
+    description: Optional text to filter pages by title
+query:
+  search:
+    dialect: provider_search
+    bind:
+      input: query
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique page UUID
+  object:
+    type: string
+    path: $.object
+    description: "Object type \u2014 \"page\" or \"database\""
+  url:
+    type: string
+    path: $.url
+    description: Notion URL for the page
+  public_url:
+    type: string
+    path: $.public_url
+    description: Public URL if the page is published
+  parent_type:
+    type: string
+    path: $.parent.type
+    description: "Parent type \u2014 \"database_id\", \"page_id\", or \"workspace\""
+  created_by_id:
+    type: string
+    path: $.created_by.id
+    description: UUID of the user who created the page
+  last_edited_by_id:
+    type: string
+    path: $.last_edited_by.id
+    description: UUID of the user who last edited the page
+  archived:
+    type: boolean
+    path: $.archived
+    description: True if the page has been archived
+  in_trash:
+    type: boolean
+    path: $.in_trash
+    description: True if the page is in the trash
+  created_time:
+    type: timestamp
+    path: $.created_time
+    description: ISO 8601 timestamp when the page was created
+  last_edited_time:
+    type: timestamp
+    path: $.last_edited_time
+    description: ISO 8601 timestamp when the page was last edited
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: start_cursor
+  table:
+    primary_key:
+      - id

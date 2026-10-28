@@ -1,0 +1,11 @@
+display_name: Klaviyo
+category: marketing
+tags:
+  - email-marketing
+  - automation
+  - customer-data
+docs_url: https://developers.klaviyo.com/en/reference/api_overview
+auth_setup:
+  - env: KLAVIYO_API_KEY
+    description: Klaviyo private API key sent in the Authorization header.
+    docs_url: https://developers.klaviyo.com/en/reference/api_overview

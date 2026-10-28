@@ -1,0 +1,40 @@
+type: resource
+name: users_me
+via: rest
+description: Retrieve the bot user associated with the authenticated Notion integration. This endpoint provides a capability-neutral token sanity check without requiring access to workspace content.
+health_check:
+  preferred: true
+api:
+  endpoint: /v1/users/me
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique UUID of the authenticated integration's bot user.
+  object:
+    type: string
+    path: $.object
+    description: Always "user" for this resource. Identifies the object type in the Notion API.
+  type:
+    type: string
+    path: $.type
+    description: User type for the authenticated integration, normally "bot".
+  name:
+    type: string
+    path: $.name
+    description: Display name of the authenticated integration as shown in Notion.
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL to the authenticated integration's avatar image. May be null if no avatar has been set.
+  bot_owner_type:
+    type: string
+    path: $.bot.owner.type
+    description: Type of owner for the authenticated bot, either "workspace" or "user".
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id

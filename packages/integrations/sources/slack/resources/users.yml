@@ -1,0 +1,122 @@
+type: resource
+name: users
+description: Slack workspace members including profile details, roles, and activity status for
+  resolving message author IDs to names
+api:
+  endpoint: /users.list
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    include_locale: ${{ input.include_locale }}
+input:
+  limit:
+    type: integer
+    description: Number of users to return per page (max 999)
+    default: 200
+  include_locale:
+    type: string
+    description: Set to true to include locale information for each user
+    default: 'true'
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique user identifier (e.g. U01ABC23DEF), referenced in message author fields
+  team_id:
+    type: string
+    path: $.team_id
+    description: Workspace team ID this user belongs to
+  name:
+    type: string
+    path: $.name
+    description: Username (handle) without the @ prefix
+  real_name:
+    type: string
+    path: $.real_name
+    description: Full real name as configured in the user's Slack profile
+  display_name:
+    type: string
+    path: $.profile.display_name
+    description: Display name chosen by the user, shown in messages and mentions
+  email:
+    type: string
+    path: $.profile.email
+    description: Email address from the user's profile, requires users:read.email scope
+  title:
+    type: string
+    path: $.profile.title
+    description: Job title from the user's profile
+  phone:
+    type: string
+    path: $.profile.phone
+    description: Phone number from the user's profile
+  status_text:
+    type: string
+    path: $.profile.status_text
+    description: Custom status text set by the user (e.g. "In a meeting", "On vacation")
+  status_emoji:
+    type: string
+    path: $.profile.status_emoji
+    description: Emoji code for the user's current status
+  is_admin:
+    type: boolean
+    path: $.is_admin
+    description: True if the user has workspace admin privileges
+  is_owner:
+    type: boolean
+    path: $.is_owner
+    description: True if the user is a workspace owner
+  is_bot:
+    type: boolean
+    path: $.is_bot
+    description: True if this is a bot user rather than a human
+  is_restricted:
+    type: boolean
+    path: $.is_restricted
+    description: True if the user is a multi-channel guest with limited access
+  is_ultra_restricted:
+    type: boolean
+    path: $.is_ultra_restricted
+    description: True if the user is a single-channel guest
+  deleted:
+    type: boolean
+    path: $.deleted
+    description: True if the user has been deactivated from the workspace
+  tz:
+    type: string
+    path: $.tz
+    description: IANA timezone identifier for the user (e.g. America/New_York)
+  tz_offset:
+    type: integer
+    path: $.tz_offset
+    description: Timezone offset from UTC in seconds
+  locale:
+    type: string
+    path: $.locale
+    description: User's locale setting (e.g. en-US), requires include_locale parameter
+  updated:
+    type: integer
+    path: $.updated
+    description: Unix timestamp when the user profile was last updated
+extract:
+  record_path: $.members
+  pagination:
+    type: cursor
+    cursor_path: $.response_metadata.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Fetch a single user by their user ID
+  api:
+    endpoint: /users.info
+    method: GET
+  input:
+    user:
+      type: string
+      required: true
+      description: User ID to look up (e.g. U01ABC23DEF)
+  extract:
+    record_path: $.user

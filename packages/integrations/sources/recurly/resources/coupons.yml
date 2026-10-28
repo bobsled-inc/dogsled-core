@@ -1,0 +1,30 @@
+type: resource
+name: coupons
+description: List Recurly coupons
+api:
+  endpoint: /coupons
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Coupon identifier
+  code:
+    type: string
+    path: $.code
+    description: Coupon code
+  name:
+    type: string
+    path: $.name
+    description: Coupon name
+  state:
+    type: string
+    path: $.state
+    description: Coupon state
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

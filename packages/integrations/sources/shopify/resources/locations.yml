@@ -1,0 +1,50 @@
+type: resource
+name: locations
+description: Locations configured in Shopify.
+api:
+  endpoint: /locations.json
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+input:
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Shopify object identifier.
+  name:
+    type: string
+    path: $.name
+    description: Location name.
+  country_code:
+    type: string
+    path: $.country_code
+    description: Location country code.
+  province_code:
+    type: string
+    path: $.province_code
+    description: Location province code.
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the location is active.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Last update timestamp.
+extract:
+  record_path: $.locations
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

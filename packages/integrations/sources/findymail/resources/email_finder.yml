@@ -1,0 +1,44 @@
+type: resource
+name: email_finder
+description: Find a verified professional email using a target's name and company domain.
+api:
+  endpoint: /api/search/name
+  method: POST
+  request_body:
+    name: ${{ input.name }}
+    domain: ${{ input.domain }}
+output:
+  email:
+    type: string
+    path: $.email
+    description: Verified professional email address.
+  result:
+    type: object
+    path: $
+    description: Full Findymail response payload.
+input:
+  name:
+    type: string
+    required: true
+    description: Full name of the target person.
+  domain:
+    type: string
+    required: true
+    description: Company domain associated with the target person.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - email
+    trust_tier: silver
+billing:
+  mode: billable
+  ownership: third_party
+  unit: match
+  estimation:
+    model: per_match
+    amount: 1
+    currency: provider_credit
+    notes: Findymail charges only when a fully verified email is found.
+  authorization:
+    requires_plan: true

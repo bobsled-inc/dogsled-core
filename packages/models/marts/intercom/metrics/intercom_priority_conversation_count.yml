@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: intercom_priority_conversation_count
+description: Number of Intercom conversations marked as priority.
+model: intercom__conversations
+expression: SUM(CASE WHEN {intercom__conversations}.priority THEN 1 ELSE 0 END)
+synonyms: [priority conversations, urgent conversations, priority support threads]
+tags: [intercom, support, conversations]

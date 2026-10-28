@@ -1,0 +1,30 @@
+type: resource
+name: batch_values_by_filter
+description: Value ranges returned by data-filter batch requests.
+api:
+  endpoint: /spreadsheets/${{ input.spreadsheet_id }}/values:batchGetByDataFilter
+  method: POST
+  request_body:
+    dataFilters:
+      - a1Range: Sheet1!A:Z
+    majorDimension: ROWS
+input:
+  spreadsheet_id:
+    type: string
+    required: true
+    default: spreadsheet_id
+output:
+  range:
+    type: string
+    path: $.valueRange.range
+  major_dimension:
+    type: string
+    path: $.valueRange.majorDimension
+  values:
+    type: array
+    path: $.valueRange.values
+extract:
+  record_path: $.valueRanges
+  table:
+    primary_key:
+      - range

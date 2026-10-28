@@ -1,0 +1,44 @@
+type: resource
+name: search_companies
+description: Search Apollo companies
+api:
+  endpoint: /api/v1/mixed_companies/search
+  method: POST
+  request_body:
+    page: 1
+    per_page: 100
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Company identifier
+  name:
+    type: string
+    path: $.name
+    description: Company name
+  domain:
+    type: string
+    path: $.domain
+    description: Company domain
+  estimated_num_employees:
+    type: integer
+    path: $.estimated_num_employees
+    description: Estimated employee count
+extract:
+  record_path: $.accounts
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+billing:
+  mode: billable
+  ownership: third_party
+  unit: credit
+  estimation:
+    model: per_request
+    amount: 1
+    currency: provider_credit
+    notes: Apollo documents Organization Search as a credit-consuming API endpoint.
+  authorization:
+    requires_plan: true

@@ -1,0 +1,7 @@
+pipelines: {}
+platform:
+  models:
+    review:
+      provider: openai
+      model: gpt-4.1-mini
+      api_key: $OPENAI_API_KEY

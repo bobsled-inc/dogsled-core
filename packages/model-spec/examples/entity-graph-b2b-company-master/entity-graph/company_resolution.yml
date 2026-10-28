@@ -1,0 +1,131 @@
+spec_version: '0.2'
+name: company_resolution
+type: resolution
+description: Resolve wholesale companies across Salesforce, Shopify B2B, and Enrichment vendor.
+
+inputs:
+  - ref: revops.salesforce_accounts
+    role: internal
+    trust_tier: gold
+    id_fields: [salesforce_account_id]
+  - ref: commerce.shopify_b2b_companies
+    role: internal
+    trust_tier: silver
+    id_fields: [shopify_company_id]
+  - ref: marketing.enrichment_vendor_companies
+    role: provider
+    trust_tier: bronze
+    id_fields: [enrichment_vendor_company_id]
+
+standardize:
+  - field: company_name
+    transforms: [lowercase, strip_legal_suffixes, collapse_whitespace, remove_punctuation]
+  - field: domain
+    transforms: [lowercase, strip_www, strip_protocol]
+  - field: parent_domain
+    transforms: [lowercase, strip_www, strip_protocol]
+  - field: phone
+    transforms: [digits_only, strip_country_code]
+  - field: billing_country
+    transforms: [lowercase, trim]
+
+blocking:
+  rules:
+    - name: exact_domain
+      key: standardized_domain
+    - name: name_prefix_country
+      key: "LEFT(standardized_company_name, 6) || '|' || standardized_billing_country"
+  candidate_limit: 250000
+
+deterministic_rules:
+  - name: duns_match
+    conditions:
+      - field: duns_number
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: standardized_company_name
+      algorithm: jaro_winkler
+      weight: 0.45
+    - field: standardized_domain
+      algorithm: exact
+      weight: 0.25
+    - field: standardized_phone
+      algorithm: exact
+      weight: 0.15
+    - field: standardized_billing_country
+      algorithm: exact
+      weight: 0.15
+
+thresholds:
+  auto_merge: 0.93
+  review: 0.6
+  auto_reject: 0.55
+
+semantic_triage:
+  provider: openai_text_embedding_3_small
+  fields: [company_name, domain]
+  promote_to_merge_threshold: 0.94
+  promote_to_reject_threshold: 0.55
+
+agent_policy:
+  enabled: true
+  max_embedding_cost_usd: 0.25
+  # judge: model # optional review tier. Omit for the default (model judge/panel).
+  #              #   'model' pins the in-Dogsled model judge (ignores any reviewer).
+  #              #   'agent' requires an external reviewer (see `reviewer:` below);
+  #              #   with none configured the review skips (no_judge_configured)
+  #              #   rather than falling back to the model judge.
+
+profile:
+  display_name:
+    field: company_name
+    source_precedence:
+      - revops.salesforce_accounts
+      - commerce.shopify_b2b_companies
+      - marketing.enrichment_vendor_companies
+  attributes:
+    - field: domain
+    - field: parent_domain
+    - field: billing_country
+      alias: hq_country
+  quality:
+    freshness_windows:
+      - days: 1
+        score: 1.0
+      - days: 7
+        score: 0.8
+      - days: 30
+        score: 0.5
+    source_diversity_cap: 3
+    trust_weights:
+      identity: 0.4
+      freshness: 0.25
+      diversity: 0.2
+      coverage: 0.15
+  views:
+    enabled: true
+    name_pattern: '{source_table}_clean'
+    include_entity_graph_metadata: true
+  activations:
+    - name: salesforce_sync
+      version: v1
+      trust_gate: 0.85
+      fields:
+        - field: display_name
+          target: account_name
+        - field: domain
+          target: website
+        - field: hq_country
+          target: billing_country
+      identity_map:
+        source_system: revops.salesforce_accounts
+        id_alias: salesforce_account_id
+
+outputs:
+  target_schema: ENTITY_GRAPH

@@ -1,0 +1,16 @@
+type: resource
+name: accessible_customers
+description: Customers accessible to the authenticated Google Ads user.
+api:
+  endpoint: /customers:listAccessibleCustomers
+  method: GET
+input: {}
+output:
+  resource_name:
+    type: string
+    path: $
+extract:
+  record_path: $.resourceNames
+  table:
+    primary_key:
+      - resource_name

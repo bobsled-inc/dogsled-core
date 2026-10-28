@@ -1,0 +1,49 @@
+type: resource
+name: list_business_services
+description: List PagerDuty business services configured in the account
+api:
+  endpoint: /business_services
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Number of business services to return per page
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+output:
+  id:
+    type: string
+    path: $.id
+    description: PagerDuty business service identifier
+  summary:
+    type: string
+    path: $.summary
+    description: Business service summary
+  description:
+    type: string
+    path: $.description
+    description: Business service description
+  self:
+    type: string
+    path: $.self
+    description: API URL for the business service
+  html_url:
+    type: string
+    path: $.html_url
+    description: Browser URL for the business service
+extract:
+  record_path: $.business_services
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

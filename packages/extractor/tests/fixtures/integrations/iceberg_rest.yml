@@ -1,0 +1,16 @@
+spec_version: '1'
+auth_env_vars: [ICEBERG_CLIENT_ID, ICEBERG_CLIENT_SECRET]
+type: integration
+name: acme_iceberg_catalog
+source_type: iceberg
+connection:
+  mode: rest_catalog
+  catalog_url: https://catalog.example.com
+  warehouse: my_warehouse
+  default_namespace: analytics
+auth:
+  type: oauth2
+  client_id_env: ICEBERG_CLIENT_ID
+  client_secret_env: ICEBERG_CLIENT_SECRET
+  token_url: https://auth.example.com/token
+  scope: catalog

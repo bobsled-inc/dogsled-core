@@ -1,0 +1,33 @@
+type: resource
+name: accounts
+description: Account entities from QuickBooks Online.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    query: select * from Account maxresults 1000
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.DisplayName
+  active:
+    type: boolean
+    path: $.Active
+  sync_token:
+    type: string
+    path: $.SyncToken
+  created_at:
+    type: timestamp
+    path: $.MetaData.CreateTime
+  updated_at:
+    type: timestamp
+    path: $.MetaData.LastUpdatedTime
+extract:
+  record_path: $.QueryResponse.Account
+  table:
+    primary_key:
+      - id

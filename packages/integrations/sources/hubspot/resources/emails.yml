@@ -1,0 +1,69 @@
+type: resource
+name: emails
+description: HubSpot CRM email engagement records
+api:
+  endpoint: /crm/v3/objects/emails
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of email records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of email properties to return
+    default: hs_timestamp,hs_email_subject,hs_email_text,hs_email_status,hs_email_direction,hubspot_owner_id,hs_createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the email record
+  timestamp:
+    type: timestamp
+    path: $.properties.hs_timestamp
+    description: When the email was sent or received
+  subject:
+    type: string
+    path: $.properties.hs_email_subject
+    description: Subject line of the email
+  text:
+    type: string
+    path: $.properties.hs_email_text
+    description: Plain text body of the email
+  status:
+    type: string
+    path: $.properties.hs_email_status
+    description: Status of the email (e.g. SENT, BOUNCED)
+  direction:
+    type: string
+    path: $.properties.hs_email_direction
+    description: Direction of the email (EMAIL or INCOMING_EMAIL)
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID assigned to this email
+  created_at:
+    type: timestamp
+    path: $.properties.hs_createdate
+    description: When the email record was created
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: When the email record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

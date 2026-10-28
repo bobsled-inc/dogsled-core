@@ -1,0 +1,22 @@
+type: resource
+name: get_my_user_account
+description: Get current user
+api:
+  endpoint: /users/me
+  method: GET
+input: {}
+output:
+  resource_uri:
+    type: string
+    path: $.resource.uri
+    description: Canonical reference for the current Calendly user
+  resource:
+    type: object
+    path: $.resource
+    description: Information about the user.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - resource_uri
+    trust_tier: silver

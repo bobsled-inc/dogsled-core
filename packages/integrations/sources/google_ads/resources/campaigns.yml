@@ -1,0 +1,33 @@
+type: resource
+name: campaigns
+description: Campaign entities returned by a Google Ads search query.
+api:
+  endpoint: /customers/${{ input.customer_id }}/googleAds:search
+  method: POST
+  request_body:
+    query: SELECT campaign.id, campaign.name, campaign.status FROM campaign ORDER BY campaign.id
+    pageSize: 1000
+input:
+  customer_id:
+    type: string
+    required: true
+    default: '1234567890'
+output:
+  campaign_id:
+    type: string
+    path: $.campaign.id
+  name:
+    type: string
+    path: $.campaign.name
+  status:
+    type: string
+    path: $.campaign.status
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - campaign_id
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: pageToken

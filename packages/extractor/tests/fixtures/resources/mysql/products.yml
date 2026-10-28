@@ -1,0 +1,19 @@
+spec_version: '1'
+type: resource
+name: products
+integration: test_mysql
+source:
+  table: products
+  database: inventory
+replication:
+  method: full_refresh
+output:
+  id: { type: integer }
+  sku: { type: string }
+  name: { type: string }
+  price: { type: number }
+extract:
+  table:
+    primary_key: [id]
+    load_strategy: full_refresh
+    trust_tier: bronze

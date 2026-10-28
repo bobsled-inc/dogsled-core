@@ -1,0 +1,68 @@
+type: resource
+name: contact_lists
+description: HubSpot CRM lists (contacts, companies, deals) via the v3 Lists API
+api:
+  endpoint: /crm/v3/lists
+  method: GET
+  query_params:
+    count: ${{ input.count }}
+input:
+  count:
+    type: integer
+    description: Number of lists to return per page (max 500)
+    default: 250
+output:
+  list_id:
+    type: string
+    path: $.listId
+    description: Unique identifier for the list
+  name:
+    type: string
+    path: $.name
+    description: Name of the list
+  object_type_id:
+    type: string
+    path: $.objectTypeId
+    description: Object type the list contains (e.g. 0-1 for contacts)
+  processing_type:
+    type: string
+    path: $.processingType
+    description: How the list is processed (MANUAL or SNAPSHOT)
+  processing_status:
+    type: string
+    path: $.processingStatus
+    description: Current processing status (COMPLETE, PROCESSING, etc.)
+  list_version:
+    type: integer
+    path: $.listVersion
+    description: Version number of the list definition
+  created_by_id:
+    type: string
+    path: $.createdById
+    description: ID of the user who created the list
+  updated_by_id:
+    type: string
+    path: $.updatedById
+    description: ID of the user who last updated the list
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: When the list was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: When the list was last updated
+  filters_updated_at:
+    type: timestamp
+    path: $.filtersUpdatedAt
+    description: When the list filters were last modified
+extract:
+  record_path: $.lists
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - list_id
+    trust_tier: silver

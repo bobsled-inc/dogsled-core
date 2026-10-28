@@ -1,0 +1,17 @@
+spec_version: '0.2'
+type: seed
+name: categories
+description: Fictional categories.
+payload:
+  format: csv
+  path: data/categories.csv
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: name
+      type: STRING
+materialization:
+  type: table
+  target_schema: main
+  on_conflict: replace

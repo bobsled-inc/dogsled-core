@@ -1,0 +1,66 @@
+spec_version: '0.2'
+name: slack_users
+type: source
+source_type: warehouse_table
+connection: warehouse
+table: raw.slack_users
+description: Raw Slack user data extracted from the Slack Web API
+schema:
+  columns:
+    - name: id
+      type: VARCHAR
+      description: Unique user identifier (e.g. U01ABC23DEF)
+    - name: team_id
+      type: VARCHAR
+      description: Workspace identifier
+    - name: name
+      type: VARCHAR
+      description: Username handle
+    - name: real_name
+      type: VARCHAR
+      description: Full display name
+    - name: display_name
+      type: VARCHAR
+      description: Display name set by the user
+    - name: first_name
+      type: VARCHAR
+      description: First name from profile
+    - name: last_name
+      type: VARCHAR
+      description: Last name from profile
+    - name: email
+      type: VARCHAR
+      description: Email address
+    - name: title
+      type: VARCHAR
+      description: Job title from profile
+    - name: avatar_url
+      type: VARCHAR
+      description: URL of the user avatar image
+    - name: deleted
+      type: BOOLEAN
+      description: True if the user has been deactivated
+    - name: is_admin
+      type: BOOLEAN
+      description: True if the user is a workspace admin
+    - name: is_owner
+      type: BOOLEAN
+      description: True if the user is a workspace owner
+    - name: is_bot
+      type: BOOLEAN
+      description: True if this is a bot user
+    - name: is_restricted
+      type: BOOLEAN
+      description: True if this is a guest user
+    - name: is_app_user
+      type: BOOLEAN
+      description: True if this is an app-created user
+    - name: tz
+      type: VARCHAR
+      description: Timezone identifier
+    - name: tz_offset
+      type: NUMBER
+      description: Timezone offset from UTC in seconds
+    - name: updated
+      type: NUMBER
+      description: Unix timestamp of the most recent profile update

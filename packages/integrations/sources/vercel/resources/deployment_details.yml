@@ -1,0 +1,108 @@
+type: resource
+name: deployment_details
+description: Detailed configuration and lifecycle metadata for one Vercel deployment.
+api:
+  endpoint: /v13/deployments/${{ input.id_or_url }}
+  method: GET
+  query_params:
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+input:
+  id_or_url:
+    type: string
+    required: true
+    description: Vercel deployment ID or deployment URL.
+  team_id:
+    type: string
+    description: Vercel team identifier.
+  team_slug:
+    type: string
+    description: Vercel team slug.
+output:
+  id:
+    type: string
+    path: $.id
+    semantic_role: entity_id
+    description: Detailed deployment identifier.
+  uid:
+    type: string
+    path: $.uid
+    semantic_role: entity_id
+    description: Deployment UID when returned by the endpoint.
+  name:
+    type: string
+    path: $.name
+    semantic_role: categorical
+    description: Deployment name.
+  project_id:
+    type: string
+    path: $.projectId
+    semantic_role: entity_id
+    description: Vercel project identifier.
+  team_id:
+    type: string
+    path: $.__input__.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for this request.
+  team_slug:
+    type: string
+    path: $.__input__.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for this request.
+  target:
+    type: string
+    path: $.target
+    semantic_role: categorical
+    description: Deployment target environment.
+  ready_state:
+    type: string
+    path: $.readyState
+    semantic_role: categorical
+    description: Deployment readiness state.
+  created_at:
+    type: integer
+    path: $.createdAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Deployment creation time as Unix milliseconds.
+  building_at:
+    type: integer
+    path: $.buildingAt
+    unit: unix_milliseconds
+    description: Time the deployment began building.
+  ready:
+    type: integer
+    path: $.ready
+    unit: unix_milliseconds
+    description: Time the deployment became ready.
+  meta:
+    type: object
+    path: $.meta
+    description: Source-control metadata preserved as returned by Vercel.
+  project_settings:
+    type: object
+    path: $.projectSettings
+    description: Project settings associated with the deployment.
+  resource_config:
+    type: object
+    path: $.resourceConfig
+    description: Deployment resource configuration, including build-machine settings when available.
+extract:
+  record_path: $
+  paginated: false
+  for_each:
+    resource: deployments
+    bindings:
+      - field: uid
+        input: id_or_url
+      - field: team_id
+        input: team_id
+      - field: team_slug
+        input: team_slug
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - id
+    load_strategy: merge
+    trust_tier: silver

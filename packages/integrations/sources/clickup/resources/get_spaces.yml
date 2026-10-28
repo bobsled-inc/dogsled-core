@@ -1,0 +1,95 @@
+type: resource
+name: get_spaces
+description: Get Spaces
+api:
+  endpoint: /v2/team/${{ input.team_id }}/space
+  method: GET
+  query_params:
+    archived: ${{ input.archived }}
+input:
+  team_id:
+    type: number
+    required: true
+    description: Workspace ID
+  archived:
+    type: boolean
+query:
+  filters:
+    archived:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: archived
+      compile:
+        eq:
+          mode: http_query
+          param: archived
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  private:
+    type: boolean
+    path: $.private
+  color:
+    type: string
+    path: $.color
+  avatar:
+    type: string
+    path: $.avatar
+  admin_can_manage:
+    type: boolean
+    path: $.admin_can_manage
+  archived:
+    type: boolean
+    path: $.archived
+  members:
+    type: array
+    path: $.members
+  statuses:
+    type: array
+    path: $.statuses
+  multiple_assignees:
+    type: boolean
+    path: $.multiple_assignees
+  features_due_dates:
+    type: object
+    path: $.features.due_dates
+  features_time_tracking:
+    type: object
+    path: $.features.time_tracking
+  features_tags:
+    type: object
+    path: $.features.tags
+  features_time_estimates:
+    type: object
+    path: $.features.time_estimates
+  features_checklists:
+    type: object
+    path: $.features.checklists
+  features_custom_fields:
+    type: object
+    path: $.features.custom_fields
+  features_remap_dependencies:
+    type: object
+    path: $.features.remap_dependencies
+  features_dependency_warning:
+    type: object
+    path: $.features.dependency_warning
+  features_portfolios:
+    type: object
+    path: $.features.portfolios
+extract:
+  record_path: $.spaces
+  for_each:
+    resource: get_authorized_teams
+    field: id
+    input: team_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

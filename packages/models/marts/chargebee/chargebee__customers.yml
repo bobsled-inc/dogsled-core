@@ -1,0 +1,42 @@
+spec_version: '0.2'
+name: chargebee__customers
+type: model
+description: Chargebee customers with curated fields extracted from the API payload.
+grain: customer_id
+source:
+  ref: stg_chargebee__list_customers
+columns:
+  - name: customer_id
+    expr: stg_chargebee__list_customers.customer_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Chargebee customer identifier.
+  - name: customer_email
+    expr: json_value(stg_chargebee__list_customers.customer, 'email')
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer email address.
+  - name: company
+    expr: json_value(stg_chargebee__list_customers.customer, 'company')
+    semantic_role: categorical
+    description: Company name stored for the customer.
+  - name: auto_collection
+    expr: json_value(stg_chargebee__list_customers.customer, 'auto_collection')
+    semantic_role: categorical
+    description: Auto-collection setting for the customer.
+  - name: net_term_days
+    expr: CAST(NULLIF(json_value(stg_chargebee__list_customers.customer, 'net_term_days'), '') AS BIGINT)
+    semantic_role: measure
+    description: Customer net payment terms in days.
+  - name: created_at
+    expr: TO_TIMESTAMP(CAST(NULLIF(json_value(stg_chargebee__list_customers.customer, 'created_at'), '') AS BIGINT))
+    semantic_role: event_timestamp
+    description: Timestamp when the customer was created.
+tags:
+  - chargebee
+  - customers
+  - billing
+trust_tier: gold
+materialization:
+  type: table

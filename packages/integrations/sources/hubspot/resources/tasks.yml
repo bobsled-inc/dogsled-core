@@ -1,0 +1,73 @@
+type: resource
+name: tasks
+description: HubSpot CRM task records
+api:
+  endpoint: /crm/v3/objects/tasks
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of task records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of task properties to return
+    default: hs_timestamp,hs_task_subject,hs_task_body,hs_task_status,hs_task_priority,hs_task_type,hubspot_owner_id,hs_createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the task record
+  timestamp:
+    type: timestamp
+    path: $.properties.hs_timestamp
+    description: When the task was created or logged
+  subject:
+    type: string
+    path: $.properties.hs_task_subject
+    description: Subject line of the task
+  body:
+    type: string
+    path: $.properties.hs_task_body
+    description: Description or details of the task
+  status:
+    type: string
+    path: $.properties.hs_task_status
+    description: Status of the task (e.g. NOT_STARTED, IN_PROGRESS, COMPLETED)
+  priority:
+    type: string
+    path: $.properties.hs_task_priority
+    description: Priority level of the task (e.g. LOW, MEDIUM, HIGH)
+  task_type:
+    type: string
+    path: $.properties.hs_task_type
+    description: Type of the task (e.g. TODO, CALL, EMAIL)
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID assigned to this task
+  created_at:
+    type: timestamp
+    path: $.properties.hs_createdate
+    description: When the task record was created
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: When the task record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

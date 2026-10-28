@@ -1,0 +1,77 @@
+type: resource
+name: setup_intents
+description: Stripe setup intents for future payments
+api:
+  endpoint: /v1/setup_intents
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of setup intents per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Setup intent ID (seti_xxx)
+  customer:
+    type: string
+    path: $.customer
+    description: Customer ID associated with the setup intent
+  payment_method:
+    type: string
+    path: $.payment_method
+    description: Payment method ID attached to the setup intent
+  status:
+    type: string
+    path: $.status
+    description: Setup intent status (requires_payment_method/requires_confirmation/succeeded/canceled)
+  usage:
+    type: string
+    path: $.usage
+    description: How the payment method may be used in the future
+  description:
+    type: string
+    path: $.description
+    description: Setup intent description
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when setup intent was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

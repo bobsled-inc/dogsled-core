@@ -1,0 +1,35 @@
+# Entity Graph Command Map
+
+Use this file when the task is "which command should I run?"
+
+All execution commands accept `--runner ./runner.js` to talk to the warehouse and `--json` for structured output. Both are omitted from rows below for readability — add them when an agent or script needs to consume the result.
+
+| Intent                                        | Primary commands                                                  | Notes                                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Create a starter resolution spec              | `resolve init <entity>`                                           | Writes to the current spec directory (`entity-graph/<entity>_resolution.yml` by default).                         |
+| Validate resolution YAML                      | `resolve validate [entity...]`                                    | Best first pass after edits.                                                                                      |
+| Inspect compiled resolution SQL               | `resolve compile [entity...] -o ./sql`                            | Use before warehouse writes.                                                                                      |
+| Execute stages 1-4                            | `resolve run [entity...]`                                         | Creates `__standardized`, `__candidate_pairs`, `__pair_scores`, and `__review_queue`.                             |
+| Inspect runtime row counts                    | `resolve status [entity...]`                                      | Requires `query(sql)`.                                                                                            |
+| Inspect threshold routing volumes             | `resolve estimate [entity...]`                                    | Requires `query(sql)`.                                                                                            |
+| Explain one pair with current shipped surface | `resolve inspect pair ...`, then `review show ...` if needed      | There is no shipped `entity-graph explain pair` command yet.                                                      |
+| Export review work for humans or agents       | `review export ... --template`                                    | Add `--output` for files.                                                                                         |
+| Inspect pending or historical queue rows      | `review list`, `review show`                                      | Use `--all` when you want already-decided rows too.                                                               |
+| Record one decision                           | `review decide --entity <name> --pair-id <id> --decision <value>` | `<value>` is one of `merge`, `not_match`, `defer`, or `escalate`.                                                 |
+| Import a reviewed file or bundle              | `review apply --input <path> --entity <name>`                     | Accepts CSV, JSON, YAML, and `entity_graph_decision_bundle.v1`. Pass `-` as the path to read from stdin.          |
+| Re-apply a previously imported batch          | `review apply --batch-id <batch> --entity <name>`                 | Re-applies a batch already loaded into `__review_decisions` without re-uploading the file.                        |
+| Turn applied decisions into clusters          | `resolve cluster [entity...]`                                     | Run after review decisions are in `__review_decisions`.                                                           |
+| Build profile and quality tables              | `resolve profile [entity...]`                                     | Use after clustering.                                                                                             |
+| Build golden records                          | `survivorship run [name...]`                                      | Usually follows `resolve cluster` and `resolve profile`.                                                          |
+| Inspect a cluster's golden output             | `survivorship inspect <name> --cluster-id <id>`                   | Requires `query(sql)`.                                                                                            |
+| Validate or load seeds                        | `seed validate`, `seed load`, `seed diff`                         | Use when the workflow depends on local reference data.                                                            |
+| Measure threshold quality                     | `truthset score [name...]`                                        | Requires labels in `entity-graph/data/*.csv`.                                                                     |
+| Get threshold recommendations from labels     | `truthset tune [name...]`                                         | There is no shipped unlabeled `entity-graph suggest thresholds` command yet.                                      |
+| Ask an agent what to do next                  | `agent triage [entity...]`                                        | Good entry point for unattended routines.                                                                         |
+| Generate a proposed review bundle             | `agent review-batch --entity <name> --mode propose`               | Default choice for automation.                                                                                    |
+| Apply an agent review bundle directly         | `agent review-batch --entity <name> --mode apply`                 | Only when the task explicitly allows writes.                                                                      |
+| Refresh downstream golden-record outputs      | `agent survivorship-refresh [entity...]`                          | Needs `run(sql)` and `query(sql)`.                                                                                |
+| Regress truthset quality in one step          | `agent truthset-regress [entity...]`                              | Wrapper around current truthset flow.                                                                             |
+| Compile column-level lineage to warehouse     | `lineage compile [--spec-dir <path>] [--dry-run]`                 | Writes schema-level provenance to `entity_graph.lineage`. Idempotent per entity type. Needs `run(sql)`.           |
+| Query attribute provenance rows               | `lineage --entity <name> --attribute <attr> [--entity-id <id>]`   | Returns upstream source columns. `is_complete=false` means source path is opaque (raw SQL or unresolvable alias). |
+| Explain entity with attribute provenance      | `explain --subject entity --entity-id <id>`                       | Includes `lineage_provenance` blocks when lineage rows exist. Needs `query(sql)`.                                 |

@@ -1,0 +1,50 @@
+type: resource
+name: get_current_user
+description: Get current user
+api:
+  endpoint: /wiki/rest/api/user/current
+  method: GET
+  query_params:
+    expand: ${{ input.expand }}
+input:
+  expand:
+    type: array
+    description: >-
+      A multi-value parameter indicating which properties of the user to
+
+      expand.
+
+        - `operations` returns the operations that the user is allowed to do.
+        - `personalSpace` returns the user's personal space, if it exists.
+        - `isExternalCollaborator`(@deprecated) see `isGuest` in response to find out whether the user is a guest.
+output:
+  account_id:
+    type: string
+    path: $.accountId
+    description: Confluence account identifier.
+  account_type:
+    type: string
+    path: $.accountType
+    description: Account type such as atlassian or app.
+  display_name:
+    type: string
+    path: $.displayName
+    description: Display name for the authenticated user.
+  public_name:
+    type: string
+    path: $.publicName
+    description: Public name for the authenticated user.
+  email:
+    type: string
+    path: $.email
+    description: Email address for the authenticated user when exposed by the API.
+  is_guest:
+    type: boolean
+    path: $.isGuest
+    description: Whether the authenticated user is a guest user.
+extract:
+  record_path: $
+  table:
+    trust_tier: silver
+    primary_key:
+      - account_id

@@ -1,0 +1,55 @@
+type: resource
+name: recordings
+description: Cloud recordings for a Zoom user.
+api:
+  endpoint: /users/${{ input.user_id }}/recordings
+  method: GET
+  query_params:
+    page_size: ${{ input.page_size }}
+    from: ${{ input.from }}
+    to: ${{ input.to }}
+input:
+  user_id:
+    type: string
+    default: me
+  page_size:
+    type: integer
+    default: 30
+  from:
+    type: string
+    required: true
+  to:
+    type: string
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+  topic:
+    type: string
+    path: $.topic
+  start_time:
+    type: timestamp
+    path: $.start_time
+  duration:
+    type: integer
+    path: $.duration
+  total_size:
+    type: integer
+    path: $.total_size
+  recording_count:
+    type: integer
+    path: $.recording_count
+extract:
+  record_path: $.meetings
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.next_page_token
+    cursor_param: next_page_token
+  for_each:
+    resource: users
+    field: id
+    input: user_id

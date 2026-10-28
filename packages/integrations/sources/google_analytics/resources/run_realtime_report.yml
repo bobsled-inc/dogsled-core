@@ -1,0 +1,29 @@
+type: resource
+name: run_realtime_report
+description: Realtime GA4 report rows for a property.
+api:
+  endpoint: /properties/${{ input.property_id }}:runRealtimeReport
+  method: POST
+  request_body:
+    dimensions:
+      - name: country
+    metrics:
+      - name: activeUsers
+    limit: '1000'
+input:
+  property_id:
+    type: string
+    required: true
+    default: '123456789'
+output:
+  dimension_key:
+    type: string
+    path: $.dimensionValues.0.value
+  metric_value:
+    type: string
+    path: $.metricValues.0.value
+extract:
+  record_path: $.rows
+  table:
+    primary_key:
+      - dimension_key

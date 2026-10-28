@@ -1,0 +1,54 @@
+spec_version: '0.2'
+name: stripe__daily_overview
+type: model
+description: Daily Stripe charge activity by currency and charge status.
+grain:
+  - charge_day
+  - currency
+  - status
+source:
+  ref: stg_stripe__charges
+columns:
+  - name: charge_day
+    expr: date_trunc('day', stg_stripe__charges.created_at)
+    semantic_role: time_dimension
+    description: Calendar day when the charge was created.
+  - name: currency
+    expr: stg_stripe__charges.currency
+    semantic_role: categorical
+    description: Currency used by the charges in the group.
+  - name: status
+    expr: stg_stripe__charges.status
+    semantic_role: categorical
+    description: Charge processing status.
+  - name: charge_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of charges created for the day and status.
+  - name: paid_charge_count
+    expr: SUM(CASE WHEN stg_stripe__charges.paid THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Count of successfully paid charges.
+  - name: total_charge_amount
+    expr: SUM(stg_stripe__charges.amount)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total charged volume for the day and status.
+  - name: total_refunded_amount
+    expr: SUM(stg_stripe__charges.amount_refunded)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total refunded amount associated with charges in the group.
+group_by:
+  - charge_day
+  - currency
+  - status
+tags:
+  - stripe
+  - billing
+  - daily
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,27 @@
+spec_version: '0.2'
+name: int_recent_orders_incremental
+type: model
+description: Incremental order model that demonstrates merge semantics and unique keys.
+grain: order_id
+source:
+  ref: stg_orders
+columns:
+  - name: order_id
+    expr: stg_orders.order_id
+    primary_key: true
+  - name: customer_id
+    expr: stg_orders.customer_id
+  - name: created_at
+    expr: stg_orders.created_at
+  - name: status
+    expr: stg_orders.status
+  - name: total_amount
+    expr: stg_orders.total_amount
+  - name: item_count
+    expr: stg_orders.item_count
+materialization:
+  type: incremental
+  strategy: merge
+  unique_key: order_id
+  incremental_filter: created_at >= CAST('2025-12-01' AS TIMESTAMP)
+  on_schema_change: fail

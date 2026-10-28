@@ -1,0 +1,20 @@
+{
+  "kind": "integration-kinds",
+  "description": "Bounded enum of integration kinds the host agent may emit in extract pipeline configuration. Append-only — removing a value is a breaking change.",
+  "values": [
+    "postgres",
+    "mysql",
+    "snowflake",
+    "bigquery",
+    "databricks",
+    "linear",
+    "hubspot",
+    "stripe",
+    "salesforce",
+    "shopify",
+    "s3",
+    "gcs",
+    "custom_api",
+    "custom_mcp"
+  ]
+}

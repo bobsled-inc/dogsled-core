@@ -1,0 +1,99 @@
+type: resource
+name: documents_graphql
+via: graphql
+entity: documents
+description: Documents from Linear representing rich-text project documentation, specs, and notes attached to projects with full markdown content
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  documents(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id title content icon color slugId\n      project { id name }\n      creator { id name email }\n      createdAt updatedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique document UUID assigned by Linear
+  title:
+    type: string
+    path: $.title
+    description: Document title displayed in the project sidebar and document listings
+  content:
+    type: string
+    path: $.content
+    description: Full document body in markdown format, supporting headings, lists, code blocks, images, and other rich formatting
+  icon:
+    type: string
+    path: $.icon
+    description: Emoji or icon identifier displayed alongside the document title for visual categorization
+  color:
+    type: string
+    path: $.color
+    description: Hex color code used as the document's accent color in the Linear UI
+  slug_id:
+    type: string
+    path: $.slugId
+    description: URL-safe slug identifier used in the document's web URL path for human-readable links
+  project_id:
+    type: string
+    path: $.project.id
+    description: UUID of the project this document is associated with, null for standalone workspace documents
+  project_name:
+    type: string
+    path: $.project.name
+    description: Display name of the associated project
+  creator_id:
+    type: string
+    path: $.creator.id
+    description: UUID of the user who originally created the document
+  creator_name:
+    type: string
+    path: $.creator.name
+    description: Display name of the document creator
+  creator_email:
+    type: string
+    path: $.creator.email
+    description: Email address of the document creator
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the document was first created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the document was last modified, including content edits
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.documents.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.documents.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

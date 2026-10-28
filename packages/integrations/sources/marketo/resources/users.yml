@@ -1,0 +1,41 @@
+type: resource
+name: users
+description: API users configured in Marketo.
+api:
+  endpoint: /rest/v1/users.json
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    maxReturn: ${{ input.max_return }}
+input:
+  offset:
+    type: integer
+    default: 0
+  max_return:
+    type: integer
+    default: 200
+output:
+  id:
+    type: string
+    path: $.id
+  email:
+    type: string
+    path: $.email
+  first_name:
+    type: string
+    path: $.firstName
+  last_name:
+    type: string
+    path: $.lastName
+  role:
+    type: string
+    path: $.role
+  created_at:
+    type: timestamp
+    path: $.createdAt
+extract:
+  record_path: $.result
+  paginated: false
+  table:
+    primary_key:
+      - id

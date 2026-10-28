@@ -1,0 +1,20 @@
+name: vercel
+display_name: Vercel
+description: Delivery, billing, observability, and sandbox starter models for Vercel.
+tags:
+  - vercel
+  - cloud-infra
+  - finance
+  - observability
+include_resources:
+  - projects
+  - deployments
+  - deployment_details
+  - billing_charges
+  - contract_commitments
+  - metric_catalog
+  - metric_schema
+  - metric_query
+  - sandboxes
+  - sandbox_sessions
+  - sandbox_session_details

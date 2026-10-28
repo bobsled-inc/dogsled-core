@@ -1,0 +1,4 @@
+node_modules/
+data/
+.dogsled/model-spec/
+.env

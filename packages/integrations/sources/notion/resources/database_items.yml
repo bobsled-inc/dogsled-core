@@ -1,0 +1,80 @@
+type: resource
+name: database_items
+description: "Query items (rows) from a specific Notion database. Each item is a Notion page with properties defined by the database schema. This is the primary way to read structured data from Notion databases \u2014 equivalent to querying rows from a table."
+api:
+  endpoint: /v1/databases/${{ input.database_id }}/query
+  method: POST
+  request_body:
+    page_size: 100
+input:
+  database_id:
+    type: string
+    description: The UUID of the database to query. This is the database's unique identifier, found in the database URL or returned by the databases resource.
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique page UUID for this database item. Since each database row is a Notion page, this ID can be used with page endpoints to retrieve full content, properties, or child blocks.
+  object:
+    type: string
+    path: $.object
+    description: Always "page" for database items. Each row in a Notion database is represented as a page object.
+  url:
+    type: string
+    path: $.url
+    description: Notion URL for this database item. Opens the page view of the row in the Notion app or browser.
+  public_url:
+    type: string
+    path: $.public_url
+    description: Public URL if this page has been published to the web. Null if the page is not publicly shared.
+  parent_type:
+    type: string
+    path: $.parent.type
+    description: Always "database_id" for database items, indicating this page belongs to a database.
+  parent_database_id:
+    type: string
+    path: $.parent.database_id
+    description: UUID of the parent database that contains this item. Matches the database_id input parameter.
+  icon_type:
+    type: string
+    path: $.icon.type
+    description: "Type of icon set on this database item \u2014 \"emoji\", \"external\" (URL), or \"file\" (Notion-hosted). Null if no icon is set."
+  cover_type:
+    type: string
+    path: $.cover.type
+    description: "Type of cover image on this database item \u2014 \"external\" (URL) or \"file\" (Notion-hosted). Null if no cover is set."
+  created_by_id:
+    type: string
+    path: $.created_by.id
+    description: UUID of the user who created this database item (row).
+  last_edited_by_id:
+    type: string
+    path: $.last_edited_by.id
+    description: UUID of the user who last modified this database item, including changes to any of its property values.
+  archived:
+    type: boolean
+    path: $.archived
+    description: True if this database item has been archived. Archived items are hidden from default database views but remain accessible via the API.
+  in_trash:
+    type: boolean
+    path: $.in_trash
+    description: True if this database item has been moved to the trash. Trashed items are scheduled for permanent deletion after 30 days.
+  created_time:
+    type: timestamp
+    path: $.created_time
+    description: ISO 8601 timestamp when this database item was first created.
+  last_edited_time:
+    type: timestamp
+    path: $.last_edited_time
+    description: ISO 8601 timestamp when this database item was last modified. Updates when any property value, content, or metadata changes.
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: start_cursor
+  table:
+    primary_key:
+      - id
+via: rest

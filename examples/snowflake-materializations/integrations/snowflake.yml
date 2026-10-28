@@ -1,0 +1,23 @@
+spec_version: '1'
+auth_env_vars:
+  [
+    SNOWFLAKE_ACCOUNT,
+    SNOWFLAKE_DATABASE,
+    SNOWFLAKE_PAT,
+    SNOWFLAKE_ROLE,
+    SNOWFLAKE_USER,
+    SNOWFLAKE_WAREHOUSE,
+  ]
+type: integration
+name: snowflake
+source_type: snowflake
+connection:
+  account_identifier: ${{ env.SNOWFLAKE_ACCOUNT }}
+  warehouse: ${{ env.SNOWFLAKE_WAREHOUSE }}
+  user: ${{ env.SNOWFLAKE_USER }}
+  database: ${{ env.SNOWFLAKE_DATABASE }}
+  schema: ANALYTICS
+  role: ${{ env.SNOWFLAKE_ROLE }}
+auth:
+  type: pat
+  token: ${{ env.SNOWFLAKE_PAT }}

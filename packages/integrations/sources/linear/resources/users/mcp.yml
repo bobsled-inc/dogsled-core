@@ -1,0 +1,55 @@
+type: resource
+name: users_mcp
+via: mcp
+entity: users
+description: Users in the Linear workspace
+tool:
+  tool_name: list_users
+input:
+  team:
+    type: string
+    description: Optional team name or ID to filter users
+  limit:
+    type: integer
+    description: Maximum number of users per MCP page
+    default: 250
+  query:
+    type: string
+    description: Optional name or email search string
+  orderBy:
+    type: string
+    description: Sort field for Linear MCP pagination
+    default: updatedAt
+    enum:
+      - createdAt
+      - updatedAt
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique user UUID
+  name:
+    type: string
+    path: $.name
+    description: User display name
+  email:
+    type: string
+    path: $.email
+    description: User email address
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the user account is active
+  admin:
+    type: boolean
+    path: $.admin
+    description: Whether the user is a workspace admin
+extract:
+  record_path: $.users
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.pageInfo.endCursor
+    cursor_argument: cursor
+  table:
+    primary_key:
+      - id

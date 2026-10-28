@@ -1,0 +1,57 @@
+openapi: 3.0.0
+info:
+  title: Freshdesk Verify Subset
+  version: '1.0'
+servers:
+  - url: https://placeholder.freshdesk.com/api/v2
+paths:
+  /agents:
+    get:
+      responses:
+        '200':
+          description: OK
+  /companies:
+    get:
+      responses:
+        '200':
+          description: OK
+  /contact_fields:
+    get:
+      responses:
+        '200':
+          description: OK
+  /contacts:
+    get:
+      responses:
+        '200':
+          description: OK
+  /groups:
+    get:
+      responses:
+        '200':
+          description: OK
+  /products:
+    get:
+      responses:
+        '200':
+          description: OK
+  /ticket-forms:
+    get:
+      responses:
+        '200':
+          description: OK
+  /ticket_fields:
+    get:
+      responses:
+        '200':
+          description: OK
+  /tickets:
+    get:
+      responses:
+        '200':
+          description: OK
+  /tickets/{ticket_id}/conversations:
+    get:
+      responses:
+        '200':
+          description: OK

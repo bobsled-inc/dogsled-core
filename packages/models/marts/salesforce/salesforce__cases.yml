@@ -1,0 +1,97 @@
+spec_version: '0.2'
+name: salesforce__cases
+type: model
+description: Salesforce support cases enriched with account, contact, and owner context.
+grain: case_id
+source:
+  ref: stg_salesforce__cases
+joins:
+  - ref: stg_salesforce__accounts
+    type: left
+    on: stg_salesforce__cases.account_id = stg_salesforce__accounts.account_id
+  - ref: stg_salesforce__contacts
+    type: left
+    on: stg_salesforce__cases.contact_id = stg_salesforce__contacts.contact_id
+  - ref: stg_salesforce__users
+    type: left
+    on: stg_salesforce__cases.owner_id = stg_salesforce__users.user_id
+columns:
+  - name: case_id
+    expr: stg_salesforce__cases.case_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Salesforce case identifier.
+  - name: case_number
+    expr: stg_salesforce__cases.case_number
+    semantic_role: categorical
+    description: Human-readable case number.
+  - name: subject
+    expr: stg_salesforce__cases.subject
+    semantic_role: categorical
+    description: Support case subject line.
+  - name: status
+    expr: stg_salesforce__cases.status
+    semantic_role: categorical
+    description: Current case status.
+  - name: priority
+    expr: stg_salesforce__cases.priority
+    semantic_role: categorical
+    description: Priority assigned to the case.
+  - name: origin
+    expr: stg_salesforce__cases.origin
+    semantic_role: categorical
+    description: Intake channel for the case.
+  - name: account_id
+    expr: stg_salesforce__cases.account_id
+    semantic_role: entity_id
+    references: stg_salesforce__accounts.account_id
+    description: Account related to the case.
+  - name: account_name
+    expr: stg_salesforce__accounts.name
+    semantic_role: categorical
+    description: Name of the related account.
+  - name: contact_id
+    expr: stg_salesforce__cases.contact_id
+    semantic_role: entity_id
+    references: stg_salesforce__contacts.contact_id
+    description: Contact tied to the case.
+  - name: contact_email
+    expr: stg_salesforce__contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact email for the case.
+  - name: owner_id
+    expr: stg_salesforce__cases.owner_id
+    semantic_role: entity_id
+    references: stg_salesforce__users.user_id
+    description: Salesforce user that owns the case.
+  - name: owner_name
+    expr: stg_salesforce__users.name
+    semantic_role: categorical
+    description: Name of the owning Salesforce user.
+  - name: owner_email
+    expr: stg_salesforce__users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the owning Salesforce user.
+  - name: is_closed
+    expr: stg_salesforce__cases.is_closed
+    semantic_role: categorical
+    description: Whether the case is closed.
+  - name: created_at
+    expr: stg_salesforce__cases.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the case was created.
+  - name: updated_at
+    expr: stg_salesforce__cases.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the case was last updated.
+tags:
+  - salesforce
+  - support
+  - cases
+trust_tier: gold
+materialization:
+  type: table

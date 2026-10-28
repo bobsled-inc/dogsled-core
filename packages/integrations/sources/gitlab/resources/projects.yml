@@ -1,0 +1,111 @@
+type: resource
+name: projects
+description: GitLab projects accessible to the authenticated user
+api:
+  endpoint: /projects
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+    order_by: ${{ input.order_by }}
+    sort: ${{ input.sort }}
+    membership: ${{ input.membership }}
+input:
+  per_page:
+    type: integer
+    description: Number of projects per page (max 100)
+    default: 100
+  order_by:
+    type: string
+    description: Field to order by
+    default: updated_at
+    enum:
+      - id
+      - name
+      - path
+      - created_at
+      - updated_at
+      - last_activity_at
+  sort:
+    type: string
+    description: Sort direction
+    default: desc
+    enum:
+      - asc
+      - desc
+  membership:
+    type: string
+    description: Limit to projects the user is a member of
+    default: 'true'
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Project ID
+  name:
+    type: string
+    path: $.name
+    description: Project name
+  path_with_namespace:
+    type: string
+    path: $.path_with_namespace
+    description: Full path including namespace (e.g. group/project)
+  description:
+    type: string
+    path: $.description
+    description: Project description
+  web_url:
+    type: string
+    path: $.web_url
+    description: URL to the project on GitLab
+  default_branch:
+    type: string
+    path: $.default_branch
+    description: Default branch name
+  visibility:
+    type: string
+    path: $.visibility
+    description: Project visibility (private, internal, public)
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether the project is archived
+  star_count:
+    type: integer
+    path: $.star_count
+    description: Number of stars
+  forks_count:
+    type: integer
+    path: $.forks_count
+    description: Number of forks
+  open_issues_count:
+    type: integer
+    path: $.open_issues_count
+    description: Number of open issues
+  namespace_name:
+    type: string
+    path: $.namespace.name
+    description: Namespace/group name
+  namespace_path:
+    type: string
+    path: $.namespace.path
+    description: Namespace/group path
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the project was created
+  last_activity_at:
+    type: timestamp
+    path: $.last_activity_at
+    description: When the project last had activity
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: last_activity_at
+  cursor_param: last_activity_after

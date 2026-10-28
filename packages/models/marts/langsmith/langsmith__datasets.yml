@@ -1,0 +1,68 @@
+spec_version: '0.2'
+name: langsmith__datasets
+type: model
+description: Dataset catalog for LangSmith examples and evaluation runs.
+grain: dataset_id
+source:
+  ref: stg_langsmith__datasets
+columns:
+  - name: dataset_id
+    expr: stg_langsmith__datasets.dataset_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique LangSmith dataset identifier.
+  - name: dataset_name
+    expr: stg_langsmith__datasets.name
+    semantic_role: name
+    description: Dataset display name.
+  - name: description
+    expr: stg_langsmith__datasets.description
+    semantic_role: categorical
+    description: Human-readable dataset description.
+  - name: data_type
+    expr: stg_langsmith__datasets.data_type
+    semantic_role: categorical
+    description: LangSmith dataset data type, such as kv, llm, or chat.
+  - name: tenant_id
+    expr: stg_langsmith__datasets.tenant_id
+    semantic_role: entity_id
+    description: LangSmith tenant that owns the dataset.
+  - name: example_count
+    expr: stg_langsmith__datasets.example_count
+    semantic_role: measure
+    description: Number of examples in the dataset.
+  - name: session_count
+    expr: stg_langsmith__datasets.session_count
+    semantic_role: measure
+    description: Number of sessions or experiments linked to the dataset.
+  - name: created_at
+    expr: stg_langsmith__datasets.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the dataset was created.
+  - name: modified_at
+    expr: stg_langsmith__datasets.modified_at
+    semantic_role: event_timestamp
+    description: Timestamp when the dataset was last modified.
+  - name: last_session_start_time
+    expr: stg_langsmith__datasets.last_session_start_time
+    semantic_role: event_timestamp
+    description: Most recent linked session start time, when present.
+  - name: externally_managed
+    expr: stg_langsmith__datasets.externally_managed
+    semantic_role: categorical
+    description: Whether the dataset is managed by an external process.
+  - name: baseline_experiment_id
+    expr: stg_langsmith__datasets.baseline_experiment_id
+    semantic_role: entity_id
+    description: Baseline experiment or session identifier linked to the dataset.
+  - name: metadata
+    expr: stg_langsmith__datasets.metadata
+    semantic_role: categorical
+    description: Dataset metadata payload.
+tags:
+  - langsmith
+  - datasets
+  - evaluation
+trust_tier: gold
+materialization:
+  type: table

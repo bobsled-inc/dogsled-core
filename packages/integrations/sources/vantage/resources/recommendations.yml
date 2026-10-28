@@ -1,0 +1,220 @@
+type: resource
+name: recommendations
+description: Cost optimization recommendations across cloud providers
+api:
+  endpoint: /recommendations
+  method: GET
+  query_params:
+    provider: ${{ input.provider }}
+    status: ${{ input.status }}
+    workspace_token: ${{ input.workspace_token }}
+    start_date: ${{ input.start_date }}
+    end_date: ${{ input.end_date }}
+    category: ${{ input.category }}
+    type: ${{ input.type }}
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  provider:
+    type: string
+    description: Filter by provider.
+    enum:
+      - aws
+      - gcp
+      - azure
+      - kubernetes
+      - datadog
+  status:
+    type: string
+    description: Filter by status.
+    enum:
+      - active
+      - archived
+  workspace_token:
+    type: string
+    description: Filter by workspace.
+  start_date:
+    type: timestamp
+    description: Filter recommendations created on/after this YYYY-MM-DD date.
+  end_date:
+    type: timestamp
+    description: Filter recommendations created on/before this YYYY-MM-DD date.
+  category:
+    type: string
+    description: Filter by exact recommendation category.
+  type:
+    type: string
+    description: Fuzzy filter by recommendation type (e.g. aws, aws:ec2, aws:ec2:rightsizing).
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The number of results to return. The maximum is 1000.
+    default: 1000
+query:
+  filters:
+    status:
+      operators:
+        - eq
+      enum:
+        - active
+        - archived
+      description: Filter by status.
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+    category:
+      operators:
+        - eq
+      description: Filter by exact recommendation category.
+      bind:
+        eq:
+          input: category
+      compile:
+        eq:
+          mode: http_query
+          param: category
+    created_at:
+      operators:
+        - gte
+        - lte
+      description: Filter recommendations created on/after this YYYY-MM-DD date.
+      bind:
+        gte:
+          input: start_date
+        lte:
+          input: end_date
+      compile:
+        gte:
+          mode: http_query
+          param: start_date
+        lte:
+          mode: http_query
+          param: end_date
+    provider:
+      operators:
+        - eq
+      enum:
+        - aws
+        - gcp
+        - azure
+        - kubernetes
+        - datadog
+      description: Filter by provider.
+      bind:
+        eq:
+          input: provider
+      compile:
+        eq:
+          mode: http_query
+          param: provider
+    type:
+      operators:
+        - eq
+      description: Fuzzy filter by recommendation type (e.g. aws, aws:ec2, aws:ec2:rightsizing).
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+    workspace_token:
+      operators:
+        - eq
+      description: Filter by workspace.
+      bind:
+        eq:
+          input: workspace_token
+      compile:
+        eq:
+          mode: http_query
+          param: workspace_token
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the recommendation.
+  type:
+    type: string
+    path: $.type
+    description: The type of the Recommendation.
+  category:
+    type: string
+    path: $.category
+    description: The category of the Recommendation.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The token for the Workspace.
+  provider:
+    type: string
+    path: $.provider
+    description: The provider the Recommendation is for.
+  status:
+    type: string
+    path: $.status
+    description: The status of the recommendation.
+  provider_account_id:
+    type: string
+    path: $.provider_account_id
+    description: The account ID of the provider.
+  description:
+    type: string
+    path: $.description
+    description: Description of the recommendation.
+  potential_savings:
+    type: string
+    path: $.potential_savings
+    description: The monthly potential savings.
+  service:
+    type: string
+    path: $.service
+    description: The service the Recommendation is for.
+  resources_affected_count:
+    type: integer
+    path: $.resources_affected_count
+    description: The number of resources related to the Recommendation.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the Recommendation was created.
+extract:
+  record_path: $.recommendations
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  for_each:
+    resource: workspaces
+    field: token
+    input: workspace_token
+  table:
+    primary_key:
+      - token
+    load_strategy: merge
+    trust_tier: silver
+lookup:
+  description: Get recommendation by token
+  api:
+    endpoint: /recommendations/${{ input.recommendation_token }}
+    method: GET
+  input:
+    recommendation_token:
+      type: string
+      required: true
+incremental:
+  strategy: server_filter
+  cursor_field: created_at
+  cursor_type: timestamp
+  since_argument: start_date
+  until_argument: end_date
+  value_format: date
+  lookback_seconds: 86400
+  initial_lookback_seconds: 2592000
+  window_size_seconds: 86400

@@ -1,0 +1,73 @@
+type: resource
+name: list_environments
+description: List Environments
+api:
+  endpoint: /deploy/environments
+  method: GET
+  query_params:
+    org-id: ${{ input.org_id }}
+    page-size: ${{ input.page_size }}
+    page-token: ${{ input.page_token }}
+input:
+  org_id:
+    type: string
+    required: true
+    description: An opaque identifier of an organization used in query parameters.
+  page_size:
+    type: integer
+    required: true
+    description: The number of results per page.
+    default: 100
+  page_token:
+    type: string
+    description: A token to specify which page of results to fetch.
+output:
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The time when the environment was created
+  description:
+    type: string
+    path: $.description
+    description: Short description given to the environment
+  id:
+    type: string
+    path: $.id
+    description: 'The environment ID (format: uuid)'
+  labels:
+    type: array
+    path: $.labels
+    description: The labels associated to the environment
+  name:
+    type: string
+    path: $.name
+    description: The environment name
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The time when the environment was updated
+extract:
+  record_path: $.items
+  paginated: false
+  for_each:
+    resource: get_collaborations
+    field: id
+    input: org_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get Environment
+  api:
+    endpoint: /deploy/environments/${{ input.environment_id }}
+    method: GET
+  input:
+    environment_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_environments_smoke
+      input:
+        org_id: b9291e0d-a11e-41fb-8517-c545388b5953

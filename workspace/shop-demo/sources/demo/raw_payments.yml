@@ -1,0 +1,16 @@
+spec_version: '0.2'
+name: raw_payments
+type: source
+source_type: warehouse_table
+connection: duckdb
+table: raw.raw_payments
+description: Loaded seed table for payments.
+trust_tier: bronze
+schema:
+  columns:
+    - { name: payment_id, type: STRING }
+    - { name: order_id, type: STRING }
+    - { name: payment_method, type: STRING }
+    - { name: amount, type: NUMBER }
+    - { name: status, type: STRING }
+    - { name: paid_at, type: TIMESTAMP }

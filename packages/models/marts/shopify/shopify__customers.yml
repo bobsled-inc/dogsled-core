@@ -1,0 +1,67 @@
+spec_version: '0.2'
+name: shopify__customers
+type: model
+description: Shopify customers enriched with observed order activity by email address.
+grain: customer_id
+source:
+  ref: stg_shopify__customers
+joins:
+  - ref: stg_shopify__orders
+    type: left
+    on: stg_shopify__customers.email = stg_shopify__orders.email
+    pre_aggregate:
+      group_by:
+        - email
+      columns:
+        - name: order_count
+          expr: COUNT(*)
+        - name: first_order_at
+          expr: MIN(created_at)
+        - name: most_recent_order_at
+          expr: MAX(created_at)
+columns:
+  - name: customer_id
+    expr: stg_shopify__customers.customer_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Shopify customer identifier.
+  - name: email
+    expr: stg_shopify__customers.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer email address.
+  - name: first_name
+    expr: stg_shopify__customers.first_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer first name.
+  - name: last_name
+    expr: stg_shopify__customers.last_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer last name.
+  - name: order_count
+    expr: COALESCE(stg_shopify__orders.order_count, 0)
+    semantic_role: measure
+    description: Observed order count for the customer email address.
+  - name: first_order_at
+    expr: stg_shopify__orders.first_order_at
+    semantic_role: event_timestamp
+    description: First order timestamp observed for the customer email.
+  - name: most_recent_order_at
+    expr: stg_shopify__orders.most_recent_order_at
+    semantic_role: event_timestamp
+    description: Most recent order timestamp observed for the customer email.
+  - name: created_at
+    expr: stg_shopify__customers.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the customer record was created.
+tags:
+  - shopify
+  - customers
+trust_tier: gold
+materialization:
+  type: table

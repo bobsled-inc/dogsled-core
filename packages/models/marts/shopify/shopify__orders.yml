@@ -1,0 +1,45 @@
+spec_version: '0.2'
+name: shopify__orders
+type: model
+description: Normalized Shopify orders at one row per order.
+grain: order_id
+source:
+  ref: stg_shopify__orders
+columns:
+  - name: order_id
+    expr: stg_shopify__orders.order_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Shopify order identifier.
+  - name: order_name
+    expr: stg_shopify__orders.name
+    semantic_role: categorical
+    description: Human-readable Shopify order name.
+  - name: email
+    expr: stg_shopify__orders.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer email captured on the order.
+  - name: financial_status
+    expr: stg_shopify__orders.financial_status
+    semantic_role: categorical
+    description: Financial processing state of the order.
+  - name: fulfillment_status
+    expr: stg_shopify__orders.fulfillment_status
+    semantic_role: categorical
+    description: Fulfillment state of the order.
+  - name: created_at
+    expr: stg_shopify__orders.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the order was created.
+  - name: updated_at
+    expr: stg_shopify__orders.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the order was last updated.
+tags:
+  - shopify
+  - orders
+trust_tier: gold
+materialization:
+  type: table

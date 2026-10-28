@@ -1,0 +1,17 @@
+spec_version: '0.2'
+type: model
+name: customer_lifetime
+description: Fictional shop customer_lifetime.
+grain:
+  - customer_id
+source:
+  ref: order_summary
+columns:
+  - name: customer_id
+    expr: customer_id
+  - name: total_spent
+    expr: SUM(amount)
+materialization:
+  type: table
+group_by:
+  - customer_id

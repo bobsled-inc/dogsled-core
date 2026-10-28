@@ -1,0 +1,109 @@
+{
+  "name": "dogsled",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup": "pnpm install && pnpm run setup:sqlite && pnpm build",
+    "agent:context": "node ./scripts/agent/context.mjs",
+    "setup:sqlite": "for d in node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3; do echo \"Installing native binary for $d\" && (cd \"$d\" && ./node_modules/.bin/prebuild-install); done",
+    "build": "pnpm_config_verify_deps_before_run=false turbo run build",
+    "typecheck": "pnpm_config_verify_deps_before_run=false turbo run typecheck",
+    "typecheck:ci": "node ./scripts/ci/run-typecheck-with-guidance.mjs",
+    "lint": "pnpm_config_verify_deps_before_run=false turbo run lint",
+    "lint:ci": "node ./scripts/ci/run-eslint-with-guidance.mjs",
+    "lint:fix": "pnpm_config_verify_deps_before_run=false turbo run lint:fix",
+    "test": "pnpm_config_verify_deps_before_run=false turbo run test",
+    "test:unit": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=2 --filter='!@bobsled-inc/dogsled' && pnpm --filter @bobsled-inc/dogsled test:unit",
+    "test:structural": "vitest run --config ./vitest.structural.config.mjs",
+    "test:packed-catalog": "node ./scripts/ci/test-packed-catalog.mjs",
+    "docs:ci": "node ./scripts/ci/validate-docs.mjs && node ./scripts/docs/cli-reference.mjs --check",
+    "file-size:ci": "node ./scripts/ci/check-file-sizes.mjs",
+    "security:audit": "audit-ci --config ./audit-ci.json",
+    "guard:privacy": "node ./scripts/guards/privacy.mjs",
+    "security:fast": "node ./scripts/security/secretlint-tracked.mjs && node ./scripts/security/fast.mjs && node ./scripts/guards/privacy.mjs && vitest run --config ./vitest.security.config.mjs",
+    "security:collect": "node ./scripts/security/collect.mjs",
+    "security:normalize": "node ./scripts/security/normalize.mjs",
+    "security:verify": "node ./scripts/security/verify.mjs",
+    "security:packet": "node ./scripts/security/packet.mjs",
+    "security:release": "node ./scripts/security/release.mjs",
+    "check": "pnpm typecheck:ci && pnpm lint:ci && pnpm docs:ci && pnpm file-size:ci && pnpm format:check",
+    "precommit": "pnpm build && pnpm check && pnpm test:unit && pnpm test:structural",
+    "format": "prettier --write --cache .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
+    "e2e": "node --test scripts/e2e/harness.test.mjs && node scripts/e2e/run.mjs",
+    "e2e:golden-path-quickstart": "node scripts/e2e/run.mjs golden-path-quickstart",
+    "e2e:mock-api-pipeline": "node scripts/e2e/run.mjs mock-api-pipeline",
+    "e2e:incremental-cursors": "node scripts/e2e/run.mjs incremental-cursors",
+    "e2e:fan-out": "node scripts/e2e/run.mjs fan-out",
+    "e2e:postgres-pipeline": "node scripts/e2e/run.mjs postgres-pipeline",
+    "e2e:models-full": "node scripts/e2e/run.mjs models-full",
+    "e2e:semantic-layer-vq": "node scripts/e2e/run.mjs semantic-layer-vq",
+    "e2e:osi-roundtrip": "node scripts/e2e/run.mjs osi-roundtrip",
+    "e2e:doctor-skills": "node scripts/e2e/run.mjs doctor-skills",
+    "e2e:secret-redaction": "node scripts/e2e/run.mjs secret-redaction",
+    "e2e:old-formats": "node scripts/e2e/run.mjs old-formats",
+    "e2e:agentic-mock": "node scripts/e2e/run.mjs agentic-mock",
+    "e2e:explorer-smoke": "node scripts/e2e/run.mjs explorer-smoke",
+    "e2e:multi-warehouse-ecom": "node scripts/e2e/run.mjs multi-warehouse-ecom",
+    "e2e:network-audit": "node scripts/e2e/run.mjs network-audit",
+    "e2e:outsider": "node scripts/e2e/outsider.mjs",
+    "test:unit:ci:model": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/model-spec'",
+    "test:unit:ci:graph": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/entity-graph' --filter='@bobsled-inc/extractor' --filter='@bobsled-inc/sdk-codegen' --filter='@bobsled-inc/explorer'",
+    "test:unit:ci:dogsled": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/dogsled'",
+    "test:unit:ci:rest": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='!@bobsled-inc/model-spec' --filter='!@bobsled-inc/entity-graph' --filter='!@bobsled-inc/extractor' --filter='!@bobsled-inc/sdk-codegen' --filter='!@bobsled-inc/explorer' --filter='!@bobsled-inc/dogsled'"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml,md,mjs}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "@secretlint/secretlint-rule-preset-recommend": "catalog:security",
+    "audit-ci": "catalog:security",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "husky": "catalog:dev-packages",
+    "lint-staged": "catalog:dev-packages",
+    "prettier": "catalog:dev-packages",
+    "fast-check": "catalog:testing",
+    "secretlint": "catalog:security",
+    "turbo": "catalog:dev-packages",
+    "vitest": "catalog:testing",
+    "playwright": "catalog:",
+    "semver": "7.8.5"
+  },
+  "description": "Extract, load and model data with YAML project files.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git"
+  }
+}

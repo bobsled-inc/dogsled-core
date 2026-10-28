@@ -1,0 +1,133 @@
+type: resource
+name: get_organization_memberships
+description: List Organization Memberships
+api:
+  endpoint: /organization_memberships
+  method: GET
+  query_params:
+    page_token: ${{ input.page_token }}
+    count: ${{ input.count }}
+    email: ${{ input.email }}
+    organization: ${{ input.organization }}
+    user: ${{ input.user }}
+input:
+  page_token:
+    type: string
+    description: The token to pass to get the next or previous portion of the collection
+  count:
+    type: number
+    description: The number of rows to return
+    default: 20
+    minimum: 1
+    maximum: 100
+  email:
+    type: string
+    description: Indicates if the results should be filtered by email address
+  organization:
+    type: string
+    description: Indicates if the results should be filtered by organization
+  user:
+    type: string
+    description: Indicates if the results should be filtered by user
+query:
+  filters:
+    organization:
+      operators:
+        - eq
+      description: Indicates if the results should be filtered by organization
+      bind:
+        eq:
+          input: organization
+      compile:
+        eq:
+          mode: http_query
+          param: organization
+output:
+  uri:
+    type: string
+    path: $.uri
+    description: 'Canonical reference (unique identifier) for the membership (format: uri)'
+  role:
+    type: string
+    path: $.role
+    description: The user's role in the organization
+  user_uri:
+    type: string
+    path: $.user.uri
+    description: 'Canonical reference (unique identifier) for the user (format: uri)'
+  user_name:
+    type: string
+    path: $.user.name
+    description: The user's name (human-readable format)
+  user_slug:
+    type: string
+    path: $.user.slug
+    description: The portion of URL for the user's scheduling page (where invitees book sessions),
+      rendered in a human-readable format
+  user_email:
+    type: string
+    path: $.user.email
+    description: "The user's email address (format: email)"
+  user_scheduling_url:
+    type: string
+    path: $.user.scheduling_url
+    description:
+      "The URL of the user's Calendly landing page (that lists all the user's event types)
+      (format: uri)"
+  user_timezone:
+    type: string
+    path: $.user.timezone
+    description: The time zone to use when presenting time to the user
+  user_avatar_url:
+    type: string
+    path: $.user.avatar_url
+    description: "The URL of the user's avatar (image) (format: uri)"
+  user_created_at:
+    type: timestamp
+    path: $.user.created_at
+    description: The moment when the user's record was created
+  user_updated_at:
+    type: timestamp
+    path: $.user.updated_at
+    description: The moment when the user's record was last updated
+  organization:
+    type: string
+    path: $.organization
+    description: 'A unique reference to the organization (format: uri)'
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The moment when the membership record was last updated
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The moment when the membership record was created
+extract:
+  record_path: $.collection
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next_page_token
+    cursor_param: page_token
+  table:
+    primary_key:
+      - uri
+    trust_tier: silver
+verify:
+  suppress:
+    - PAGINATION_MISMATCH
+lookup:
+  description: Get Organization Membership
+  api:
+    endpoint: /organization_memberships/${{ input.uuid }}
+    method: GET
+  input:
+    uuid:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: get_organization_memberships_smoke
+      input:
+        email: user@example.com
+        organization: https://api.calendly.com/organizations/012345678901234567890
+        user: https://api.calendly.com/users/012345678901234567890

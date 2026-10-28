@@ -1,0 +1,95 @@
+type: resource
+name: routes
+description: Daily route planning and scheduling context for appointment dispatch.
+api:
+  endpoint: /route/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    routeIDs: '${{ input.route_ids }}'
+    assignedTech: '${{ input.assigned_tech }}'
+    apiCanSchedule: '${{ input.api_can_schedule }}'
+    dateStart: '${{ input.date_start }}'
+    dateEnd: '${{ input.date_end }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  route_ids:
+    type: string
+    description: Optional route ID filter.
+  assigned_tech:
+    type: integer
+    description: Optional assigned technician filter.
+  api_can_schedule:
+    type: integer
+    description: Filter by scheduling capability flag.
+  date_start:
+    type: string
+    description: Route date lower bound.
+  date_end:
+    type: string
+    description: Route date upper bound.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  route_id:
+    type: integer
+    path: $.routeID
+    description: Route unique ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Owning office ID.
+  template_id:
+    type: integer
+    path: $.templateID
+    description: Source route template ID.
+  title:
+    type: string
+    path: $.title
+    description: Route title/label.
+  date:
+    type: timestamp
+    path: $.date
+    description: Route date.
+  day_id:
+    type: integer
+    path: $.dayID
+    description: Day identifier for route.
+  group_id:
+    type: integer
+    path: $.groupID
+    description: Route group ID.
+  group_title:
+    type: string
+    path: $.groupTitle
+    description: Route group title.
+  assigned_tech:
+    type: integer
+    path: $.assignedTech
+    description: Assigned technician user ID if any.
+  distance_score:
+    type: number
+    path: $.distanceScore
+    description: Route efficiency score if provided.
+  average_latitude:
+    type: number
+    path: $.averageLatitude
+    description: Mean latitude for route points.
+  average_longitude:
+    type: number
+    path: $.averageLongitude
+    description: Mean longitude for route points.
+
+extract:
+  record_path: '$..[?(@.routeID)]'
+  table:
+    primary_key:
+      - route_id
+    trust_tier: silver

@@ -1,0 +1,68 @@
+spec_version: '0.2'
+name: quickbooks__invoices
+type: model
+description: QuickBooks invoices enriched with customer and payment context.
+grain: invoice_id
+source:
+  ref: stg_quickbooks__invoices
+joins:
+  - ref: stg_quickbooks__customers
+    type: left
+    on: stg_quickbooks__invoices.customer_id = stg_quickbooks__customers.customer_id
+  - ref: stg_quickbooks__payment_applications
+    type: left
+    on: stg_quickbooks__invoices.invoice_id = stg_quickbooks__payment_applications.invoice_id
+    pre_aggregate:
+      group_by:
+        - invoice_id
+      columns:
+        - name: total_paid_amount
+          expr: COALESCE(SUM(stg_quickbooks__payment_applications.applied_amount), 0)
+columns:
+  - name: invoice_id
+    expr: stg_quickbooks__invoices.invoice_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique QuickBooks invoice identifier.
+  - name: customer_id
+    expr: stg_quickbooks__invoices.customer_id
+    semantic_role: entity_id
+    references: stg_quickbooks__customers.customer_id
+    description: Customer tied to the invoice.
+  - name: customer_name
+    expr: stg_quickbooks__customers.name
+    semantic_role: categorical
+    description: Customer display name from the related customer record.
+  - name: total_amount
+    expr: stg_quickbooks__invoices.total_amt
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total invoice amount.
+  - name: balance
+    expr: stg_quickbooks__invoices.balance
+    semantic_role: measure
+    tags:
+      - financial
+    description: Outstanding balance on the invoice.
+  - name: total_paid_amount
+    expr: COALESCE(stg_quickbooks__payment_applications.total_paid_amount, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total amount paid against the invoice.
+  - name: due_date
+    expr: stg_quickbooks__invoices.due_date
+    semantic_role: event_timestamp
+    description: Date when the invoice payment is due.
+  - name: created_at
+    expr: stg_quickbooks__invoices.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the invoice was created.
+tags:
+  - quickbooks
+  - invoices
+  - finance
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,12 @@
+spec_version: '0.2'
+name: company_truthset
+type: truthset
+description: Labeled company pairs for threshold regression and tuning examples.
+resolution_ref: company_resolution
+
+labels:
+  format: csv
+  path: data/company_truthset.csv
+
+targets:
+  min_auto_merge_precision: 0.95

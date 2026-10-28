@@ -1,0 +1,45 @@
+type: resource
+name: campaign_members
+description: Campaign members from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q:
+      SELECT Id,CampaignId,LeadId,ContactId,Status,FirstRespondedDate,CreatedDate,LastModifiedDate FROM
+      CampaignMember
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  campaign_id:
+    type: string
+    path: $.CampaignId
+  lead_id:
+    type: string
+    path: $.LeadId
+  contact_id:
+    type: string
+    path: $.ContactId
+  status:
+    type: string
+    path: $.Status
+  first_responded_date:
+    type: timestamp
+    path: $.FirstRespondedDate
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

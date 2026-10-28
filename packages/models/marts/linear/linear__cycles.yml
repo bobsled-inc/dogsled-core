@@ -1,0 +1,63 @@
+spec_version: '0.2'
+name: linear__cycles
+type: model
+description: Sprint cycles with date bounds, progress, and team association.
+grain: cycle_id
+source:
+  ref: stg_linear__cycles
+columns:
+  - name: cycle_id
+    expr: stg_linear__cycles.cycle_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Linear cycle identifier.
+  - name: number
+    expr: stg_linear__cycles.number
+    semantic_role: categorical
+    description: Sequential cycle number within the team.
+  - name: name
+    expr: stg_linear__cycles.name
+    semantic_role: categorical
+    description: Optional human-readable cycle name.
+  - name: starts_at
+    expr: stg_linear__cycles.starts_at
+    semantic_role: event_timestamp
+    description: Timestamp when the cycle is scheduled to begin.
+  - name: ends_at
+    expr: stg_linear__cycles.ends_at
+    semantic_role: event_timestamp
+    description: Timestamp when the cycle is scheduled to end.
+  - name: completed_at
+    expr: stg_linear__cycles.completed_at
+    semantic_role: event_timestamp
+    description: Timestamp when the cycle was marked as completed.
+  - name: progress
+    expr: stg_linear__cycles.progress
+    semantic_role: measure
+    description: Completion progress as a decimal between 0 and 1.
+  - name: team_id
+    expr: stg_linear__cycles.team_id
+    semantic_role: entity_id
+    description: UUID of the team that owns this cycle.
+  - name: team_name
+    expr: stg_linear__cycles.team_name
+    semantic_role: categorical
+    description: Display name of the owning team.
+  - name: team_key
+    expr: stg_linear__cycles.team_key
+    semantic_role: categorical
+    description: Short key prefix of the owning team.
+  - name: created_at
+    expr: stg_linear__cycles.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the cycle was created.
+  - name: updated_at
+    expr: stg_linear__cycles.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the cycle was last modified.
+tags:
+  - linear
+  - cycles
+trust_tier: gold
+materialization:
+  type: table

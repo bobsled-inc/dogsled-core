@@ -1,0 +1,21 @@
+spec_version: '1'
+type: resource
+name: customers
+integration: local_exports
+source:
+  path: customers.csv
+  format: csv
+  options:
+    header: true
+replication:
+  method: full_refresh
+extract:
+  table:
+    primary_key:
+      - id
+    load_strategy: full_refresh
+output:
+  id:
+    type: integer
+  name:
+    type: string

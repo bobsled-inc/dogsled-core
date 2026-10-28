@@ -1,0 +1,30 @@
+spec_version: '0.2'
+name: stg_orders
+type: model
+description: Staged orders with line item aggregation. Materialized as a VIEW (live/lazy query).
+grain: order_id
+source:
+  ref: duckdb.orders
+joins:
+  - ref: duckdb.line_items
+    type: left
+    on: orders.id = line_items.order_id
+columns:
+  - name: order_id
+    expr: orders.id
+    primary_key: true
+  - name: customer_id
+    expr: orders.customer_id
+  - name: created_at
+    expr: orders.created_at
+  - name: status
+    expr: orders.status
+  - name: total_amount
+    expr: orders.total_amount
+  - name: item_count
+    expr: COUNT(line_items.id)
+  - name: total_quantity
+    expr: COALESCE(SUM(line_items.quantity), 0)
+materialization:
+  type: view
+group_by: [order_id, customer_id, created_at, status, total_amount]

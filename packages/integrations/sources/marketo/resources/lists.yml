@@ -1,0 +1,41 @@
+type: resource
+name: lists
+description: Static and smart lists in Marketo.
+api:
+  endpoint: /rest/v1/lists.json
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    maxReturn: ${{ input.max_return }}
+input:
+  offset:
+    type: integer
+    default: 0
+  max_return:
+    type: integer
+    default: 200
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  description:
+    type: string
+    path: $.description
+  program_name:
+    type: string
+    path: $.programName
+  workspace_name:
+    type: string
+    path: $.workspaceName
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+extract:
+  record_path: $.result
+  paginated: false
+  table:
+    primary_key:
+      - id

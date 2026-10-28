@@ -1,0 +1,263 @@
+type: resource
+name: list_contacts
+description: List all contacts
+api:
+  endpoint: /contacts
+  method: GET
+input: {}
+output:
+  type:
+    type: string
+    path: $.type
+    description: The type of object.
+  id:
+    type: string
+    path: $.id
+    description: The unique identifier for the contact which is given by Intercom.
+  external_id:
+    type: string
+    path: $.external_id
+    description: The unique identifier for the contact which is provided by the Client.
+  workspace_id:
+    type: string
+    path: $.workspace_id
+    description: The id of the workspace which the contact belongs to.
+  role:
+    type: string
+    path: $.role
+    description: The role of the contact.
+  email:
+    type: string
+    path: $.email
+    description: The contact's email.
+  email_domain:
+    type: string
+    path: $.email_domain
+    description: The contact's email domain.
+  phone:
+    type: string
+    path: $.phone
+    description: The contacts phone.
+  name:
+    type: string
+    path: $.name
+    description: The contacts name.
+  owner_id:
+    type: integer
+    path: $.owner_id
+    description: The id of an admin that has been assigned account ownership of the contact.
+  has_hard_bounced:
+    type: boolean
+    path: $.has_hard_bounced
+    description: Whether the contact has had an email sent to them hard bounce.
+  marked_email_as_spam:
+    type: boolean
+    path: $.marked_email_as_spam
+    description: Whether the contact has marked an email sent to them as spam.
+  unsubscribed_from_emails:
+    type: boolean
+    path: $.unsubscribed_from_emails
+    description: Whether the contact is unsubscribed from emails.
+  created_at:
+    type: integer
+    path: $.created_at
+    description: (UNIX timestamp) The time when the contact was created.
+  updated_at:
+    type: integer
+    path: $.updated_at
+    description: (UNIX timestamp) The time when the contact was last updated.
+  signed_up_at:
+    type: integer
+    path: $.signed_up_at
+    description: (UNIX timestamp) The time specified for when a contact signed up.
+  last_seen_at:
+    type: integer
+    path: $.last_seen_at
+    description: (UNIX timestamp) The time when the contact was last seen (either where the Intercom
+      Messenger was installed or when specified manually).
+  last_replied_at:
+    type: integer
+    path: $.last_replied_at
+    description: (UNIX timestamp) The time when the contact last messaged in.
+  last_contacted_at:
+    type: integer
+    path: $.last_contacted_at
+    description: (UNIX timestamp) The time when the contact was last messaged.
+  last_email_opened_at:
+    type: integer
+    path: $.last_email_opened_at
+    description: (UNIX timestamp) The time when the contact last opened an email.
+  last_email_clicked_at:
+    type: integer
+    path: $.last_email_clicked_at
+    description: (UNIX timestamp) The time when the contact last clicked a link in an email.
+  language_override:
+    type: string
+    path: $.language_override
+    description:
+      A preferred language setting for the contact, used by the Intercom Messenger even if
+      their browser settings change.
+  browser:
+    type: string
+    path: $.browser
+    description: The name of the browser which the contact is using.
+  browser_version:
+    type: string
+    path: $.browser_version
+    description: The version of the browser which the contact is using.
+  browser_language:
+    type: string
+    path: $.browser_language
+    description: The language set by the browser which the contact is using.
+  os:
+    type: string
+    path: $.os
+    description: The operating system which the contact is using.
+  android_app_name:
+    type: string
+    path: $.android_app_name
+    description: The name of the Android app which the contact is using.
+  android_app_version:
+    type: string
+    path: $.android_app_version
+    description: The version of the Android app which the contact is using.
+  android_device:
+    type: string
+    path: $.android_device
+    description: The Android device which the contact is using.
+  android_os_version:
+    type: string
+    path: $.android_os_version
+    description: The version of the Android OS which the contact is using.
+  android_sdk_version:
+    type: string
+    path: $.android_sdk_version
+    description: The version of the Android SDK which the contact is using.
+  android_last_seen_at:
+    type: integer
+    path: $.android_last_seen_at
+    description: (UNIX timestamp) The time when the contact was last seen on an Android device.
+  ios_app_name:
+    type: string
+    path: $.ios_app_name
+    description: The name of the iOS app which the contact is using.
+  ios_app_version:
+    type: string
+    path: $.ios_app_version
+    description: The version of the iOS app which the contact is using.
+  ios_device:
+    type: string
+    path: $.ios_device
+    description: The iOS device which the contact is using.
+  ios_os_version:
+    type: string
+    path: $.ios_os_version
+    description: The version of iOS which the contact is using.
+  ios_sdk_version:
+    type: string
+    path: $.ios_sdk_version
+    description: The version of the iOS SDK which the contact is using.
+  ios_last_seen_at:
+    type: integer
+    path: $.ios_last_seen_at
+    description: (UNIX timestamp) The last time the contact used the iOS app.
+  custom_attributes:
+    type: object
+    path: $.custom_attributes
+    description: The custom attributes which are set for the contact.
+  avatar_type:
+    type: string
+    path: $.avatar.type
+    description: The type of object
+  avatar_image_url:
+    type: string
+    path: $.avatar.image_url
+    description: An image URL containing the avatar of a contact.
+  tags_data:
+    type: array
+    path: $.tags.data
+    description: This object represents the tags attached to a contact.
+  tags_url:
+    type: string
+    path: $.tags.url
+    description: 'url to get more tag resources for this contact (format: uri)'
+  tags_total_count:
+    type: integer
+    path: $.tags.total_count
+    description: Int representing the total number of tags attached to this contact
+  tags_has_more:
+    type: boolean
+    path: $.tags.has_more
+    description: Whether there's more Addressable Objects to be viewed.
+  notes_data:
+    type: array
+    path: $.notes.data
+    description: This object represents the notes attached to a contact.
+  notes_url:
+    type: string
+    path: $.notes.url
+    description: 'Url to get more company resources for this contact (format: uri)'
+  notes_total_count:
+    type: integer
+    path: $.notes.total_count
+    description: Int representing the total number of companyies attached to this contact
+  notes_has_more:
+    type: boolean
+    path: $.notes.has_more
+    description: Whether there's more Addressable Objects to be viewed.
+  companies_data:
+    type: array
+    path: $.companies.data
+    description: An array of company data objects attached to the contact.
+  companies_url:
+    type: string
+    path: $.companies.url
+    description: 'Url to get more company resources for this contact (format: uri)'
+  companies_total_count:
+    type: integer
+    path: $.companies.total_count
+    description: Integer representing the total number of companies attached to this contact
+  companies_has_more:
+    type: boolean
+    path: $.companies.has_more
+    description: Whether there's more Addressable Objects to be viewed.
+  location_type:
+    type: string
+    path: $.location.type
+    description: Always location
+  location_country:
+    type: string
+    path: $.location.country
+    description: The country that the contact is located in
+  location_region:
+    type: string
+    path: $.location.region
+    description: The overal region that the contact is located in
+  location_city:
+    type: string
+    path: $.location.city
+    description: The city that the contact is located in
+  social_profiles_data:
+    type: array
+    path: $.social_profiles.data
+    description: A list of social profiles objects associated with the contact.
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get a contact
+  api:
+    endpoint: /contacts/${{ input.contact_id }}
+    method: GET
+  input:
+    contact_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_contacts_smoke
+      input:
+        intercom_version: '2.14'

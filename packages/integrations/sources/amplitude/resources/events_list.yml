@@ -1,0 +1,22 @@
+type: resource
+name: events_list
+description: List event types available in Amplitude
+api:
+  endpoint: /api/2/events/list
+  method: GET
+input: {}
+output:
+  event_type:
+    type: string
+    path: $.event_type
+    description: Event type name
+  display_name:
+    type: string
+    path: $.display_name
+    description: Display name
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - event_type
+    trust_tier: silver

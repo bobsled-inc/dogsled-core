@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: stripe_total_charge_amount
+description: Total Stripe charge amount. Group results by currency before comparing or combining values.
+model: stripe__daily_overview
+expression: SUM({stripe__daily_overview}.total_charge_amount)
+synonyms:
+  - charge volume
+  - gross charge amount
+  - total charges
+tags:
+  - stripe
+  - billing
+  - finance

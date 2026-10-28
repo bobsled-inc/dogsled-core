@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: chargebee_successful_payment_amount
+description: Total amount from successful Chargebee payment transactions. Group results by currency before comparing or combining values.
+model: chargebee__transactions
+expression: SUM(CASE WHEN {chargebee__transactions}.transaction_type = 'payment' AND {chargebee__transactions}.transaction_status = 'success' THEN {chargebee__transactions}.amount ELSE 0 END)
+synonyms: [successful payment volume, collected payment amount, successful payments]
+tags: [chargebee, payments, finance]

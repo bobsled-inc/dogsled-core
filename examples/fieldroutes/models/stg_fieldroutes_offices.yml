@@ -1,0 +1,29 @@
+spec_version: '0.2'
+name: stg_fieldroutes_offices
+type: model
+description: Staging offices from FieldRoutes `/office/search`.
+grain: OFFICE_ID
+source:
+  ref: fieldroutes.offices
+columns:
+  - name: OFFICE_ID
+    expr: office_id
+    primary_key: true
+  - name: OFFICE_NAME
+    expr: office_name
+  - name: COMPANY_ID
+    expr: company_id
+  - name: CONTACT_NUMBER
+    expr: contact_number
+  - name: CONTACT_EMAIL
+    expr: contact_email
+  - name: TIME_ZONE
+    expr: time_zone
+  - name: CITY
+    expr: city
+  - name: STATE
+    expr: state
+  - name: ZIP
+    expr: zip
+materialization:
+  type: view

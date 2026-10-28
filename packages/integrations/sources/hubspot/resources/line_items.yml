@@ -1,0 +1,69 @@
+type: resource
+name: line_items
+description: HubSpot CRM line items representing individual product entries attached to deals, linking products to specific deal transactions
+api:
+  endpoint: /crm/v3/objects/line_items
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of line item records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot line item properties to include in the response
+    default: name,quantity,price,amount,hs_product_id,hs_line_item_currency_code,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the line item record, returned as a numeric string
+  name:
+    type: string
+    path: $.properties.name
+    description: Display name of the line item, typically inherited from the associated product but can be overridden per deal
+  quantity:
+    type: string
+    path: $.properties.quantity
+    description: Number of units of this line item included in the deal, stored as a numeric string (e.g. '5')
+  price:
+    type: string
+    path: $.properties.price
+    description: Unit price of this line item in the deal's currency, stored as a numeric string, may differ from the product catalog price
+  amount:
+    type: string
+    path: $.properties.amount
+    description: Total amount for this line item (quantity multiplied by price), stored as a numeric string in the deal's currency
+  product_id:
+    type: string
+    path: $.properties.hs_product_id
+    description: HubSpot ID of the product record this line item was created from, references the products endpoint
+  currency_code:
+    type: string
+    path: $.properties.hs_line_item_currency_code
+    description: ISO 4217 currency code for this line item (e.g. USD, EUR, GBP)
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the line item was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the line item record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

@@ -1,0 +1,96 @@
+type: resource
+name: get_tasks
+description: List Asana tasks with optional project and modification filters
+api:
+  endpoint: /tasks
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    project: ${{ input.project }}
+    modified_since: ${{ input.modified_since }}
+input:
+  limit:
+    type: integer
+    description: Number of tasks to return per page
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response
+  project:
+    type: string
+    description: Optional Asana project GID used to scope tasks
+  modified_since:
+    type: timestamp
+    description: Only return tasks modified after this timestamp
+output:
+  gid:
+    type: string
+    path: $.gid
+    description: Asana task identifier
+  name:
+    type: string
+    path: $.name
+    description: Task name
+  resource_type:
+    type: string
+    path: $.resource_type
+    description: Asana resource type
+  completed:
+    type: boolean
+    path: $.completed
+    description: Whether the task is completed
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the task was created
+  completed_at:
+    type: timestamp
+    path: $.completed_at
+    description: Timestamp when the task was completed
+  due_at:
+    type: timestamp
+    path: $.due_at
+    description: Timestamp when the task is due
+  due_on:
+    type: string
+    path: $.due_on
+    description: Date when the task is due (YYYY-MM-DD date string)
+  modified_at:
+    type: timestamp
+    path: $.modified_at
+    description: Timestamp when the task was last modified
+  assignee_gid:
+    type: string
+    path: $.assignee.gid
+    description: GID of the user assigned to the task
+  assignee_name:
+    type: string
+    path: $.assignee.name
+    description: Display name of the assigned user
+  project_gid:
+    type: string
+    path: $.memberships[0].project.gid
+    description: GID of the parent project
+  project_name:
+    type: string
+    path: $.memberships[0].project.name
+    description: Name of the parent project
+  workspace_gid:
+    type: string
+    path: $.workspace.gid
+    description: GID of the workspace containing the task
+  workspace_name:
+    type: string
+    path: $.workspace.name
+    description: Name of the workspace containing the task
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  table:
+    primary_key:
+      - gid
+    trust_tier: silver

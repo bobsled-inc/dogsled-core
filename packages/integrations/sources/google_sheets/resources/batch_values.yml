@@ -1,0 +1,48 @@
+type: resource
+name: batch_values
+description: Value ranges returned by batch value requests.
+api:
+  endpoint: /spreadsheets/${{ input.spreadsheet_id }}/values:batchGet
+  method: GET
+  query_params:
+    ranges: ${{ input.ranges }}
+    majorDimension: ${{ input.major_dimension }}
+input:
+  spreadsheet_id:
+    type: string
+    required: true
+    default: spreadsheet_id
+  ranges:
+    type: array
+    default:
+      - Sheet1!A:Z
+  major_dimension:
+    type: string
+    default: ROWS
+query:
+  filters:
+    major_dimension:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: major_dimension
+      compile:
+        eq:
+          mode: http_query
+          param: majorDimension
+output:
+  range:
+    type: string
+    path: $.range
+  major_dimension:
+    type: string
+    path: $.majorDimension
+  values:
+    type: array
+    path: $.values
+extract:
+  record_path: $.valueRanges
+  table:
+    primary_key:
+      - range

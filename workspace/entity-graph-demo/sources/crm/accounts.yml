@@ -1,0 +1,22 @@
+spec_version: '0.2'
+name: accounts
+type: source
+source_type: warehouse_table
+connection: crm
+table: raw.crm_accounts
+description: Synthetic internal CRM accounts export for the Entity Graph demo workspace.
+trust_tier: silver
+schema:
+  columns:
+    - name: account_id
+      type: STRING
+    - name: name
+      type: STRING
+    - name: website
+      type: STRING
+    - name: phone
+      type: STRING
+    - name: country
+      type: STRING
+    - name: updated_at
+      type: TIMESTAMP

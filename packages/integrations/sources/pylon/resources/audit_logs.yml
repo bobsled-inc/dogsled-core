@@ -1,0 +1,76 @@
+type: resource
+name: audit_logs
+description: Audit trail of actions performed by users and contacts
+api:
+  endpoint: /audit-logs
+  method: GET
+  query_params:
+    start_time: ${{ input.start_time }}
+    end_time: ${{ input.end_time }}
+input:
+  start_time:
+    type: timestamp
+    description: Start of the audit-log time window (RFC3339). Populated automatically by incremental extraction; the /audit-logs endpoint requires a bounded window.
+  end_time:
+    type: timestamp
+    description: End of the audit-log time window (RFC3339). Populated automatically by incremental extraction; the /audit-logs endpoint requires a bounded window.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique audit log identifier
+  action:
+    type: string
+    path: $.action
+    description: The action that was performed
+  action_happened_at:
+    type: timestamp
+    path: $.action_happened_at
+    description: When the action occurred
+  actor_user_id:
+    type: string
+    path: $.actor_user_id
+    description: User ID of the actor (if internal user)
+  actor_contact_id:
+    type: string
+    path: $.actor_contact_id
+    description: Contact ID of the actor (if external contact)
+  object_type:
+    type: string
+    path: $.object_type
+    description: Type of object affected
+  object_id:
+    type: string
+    path: $.object_id
+    description: ID of the affected object
+  source:
+    type: string
+    path: $.source
+    description: Source of the action
+  link:
+    type: string
+    path: $.link
+    description: Link to the affected resource
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the audit log entry was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id
+incremental:
+  strategy: server_filter
+  cursor_field: created_at
+  cursor_type: timestamp
+  since_argument: start_time
+  until_argument: end_time
+  value_format: iso8601
+  lookback_seconds: 86400
+  initial_lookback_seconds: 2592000
+  window_size_seconds: 604800

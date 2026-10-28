@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: source
+name: benchmarks
+description: Fictional targets in a second DuckDB file.
+source_type: warehouse_table
+connection: auxiliary
+table: main.benchmarks
+schema:
+  columns:
+    - name: customer_id
+      type: INTEGER
+    - name: target
+      type: DOUBLE

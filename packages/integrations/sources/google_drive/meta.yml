@@ -1,0 +1,9 @@
+display_name: Google Drive (MCP)
+category: productivity
+tags: [file-storage, documents, mcp]
+logo_url: https://ssl.gstatic.com/docs/doclist/images/drive_2022q3_32dp.png
+docs_url: https://developers.google.com/drive
+auth_setup:
+  - env: GOOGLE_DRIVE_ACCESS_TOKEN
+    description: OAuth 2.0 access token with a Google Drive read scope
+    docs_url: https://developers.google.com/workspace/guides/configure-mcp-servers

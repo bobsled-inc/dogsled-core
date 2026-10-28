@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: orders
+type: source
+source_type: warehouse_table
+connection: snowflake
+table: RAW.ORDERS
+description: Raw Snowflake order events. One row per order update.
+trust_tier: bronze
+schema:
+  columns:
+    - name: ORDER_ID
+      type: NUMBER
+      description: Stable order identifier.
+    - name: CUSTOMER_ID
+      type: NUMBER
+      description: Customer identifier from the commerce system.
+    - name: ORDER_STATUS
+      type: VARCHAR
+      description: Current order lifecycle status.
+    - name: ORDER_TOTAL
+      type: NUMBER
+      description: Order total in USD.
+    - name: UPDATED_AT
+      type: TIMESTAMP
+      description: Last update timestamp from the source system.

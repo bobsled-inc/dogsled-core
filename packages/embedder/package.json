@@ -1,0 +1,85 @@
+{
+  "name": "@bobsled-inc/embedder",
+  "version": "0.20.224",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "packages/embedder"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js",
+      "default": "./dist/runtime/index.js"
+    },
+    "./schema": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js",
+      "default": "./dist/config.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@bobsled-inc/ai": "workspace:*",
+    "@bobsled-inc/connections": "workspace:*",
+    "@bobsled-inc/loader": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "commander": "catalog:dev-packages",
+    "js-tiktoken": "catalog:",
+    "zod": "catalog:dev-packages"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:dev-packages",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "tsup": "catalog:cli",
+    "tsx": "catalog:dev-packages",
+    "typescript": "catalog:dev-packages",
+    "@vitest/coverage-v8": "catalog:testing",
+    "vitest": "catalog:testing"
+  },
+  "description": "Protocol-native embedding pipeline for enriching Dogsled records with vector representations.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "embeddings",
+    "vectors",
+    "ai"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  }
+}

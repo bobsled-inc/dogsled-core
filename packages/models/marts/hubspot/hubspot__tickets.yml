@@ -1,0 +1,59 @@
+spec_version: '0.2'
+name: hubspot__tickets
+type: model
+description: HubSpot support tickets enriched with owner and pipeline stage labels.
+grain: ticket_id
+source:
+  ref: stg_hubspot__tickets
+joins:
+  - ref: stg_hubspot__owners
+    type: left
+    on: stg_hubspot__tickets.owner_id = stg_hubspot__owners.owner_id
+  - ref: stg_hubspot__ticket_pipelines
+    type: left
+    on: stg_hubspot__tickets.pipeline = stg_hubspot__ticket_pipelines.ticket_pipeline_id
+  - ref: stg_hubspot__ticket_pipeline_stages
+    type: left
+    on: stg_hubspot__tickets.pipeline_stage = stg_hubspot__ticket_pipeline_stages.ticket_pipeline_stage_id
+columns:
+  - name: ticket_id
+    expr: stg_hubspot__tickets.ticket_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique HubSpot ticket identifier.
+  - name: subject
+    expr: stg_hubspot__tickets.subject
+    semantic_role: categorical
+    description: Subject line of the ticket.
+  - name: priority
+    expr: stg_hubspot__tickets.priority
+    semantic_role: categorical
+    description: Priority level assigned to the ticket.
+  - name: pipeline_label
+    expr: stg_hubspot__ticket_pipelines.label
+    semantic_role: categorical
+    description: Display label of the ticket pipeline.
+  - name: stage_label
+    expr: stg_hubspot__ticket_pipeline_stages.label
+    semantic_role: categorical
+    description: Display label of the current ticket stage.
+  - name: ticket_state
+    expr: stg_hubspot__ticket_pipeline_stages.metadata_ticket_state
+    semantic_role: categorical
+    description: Open or closed state derived from the ticket stage metadata.
+  - name: owner_email
+    expr: stg_hubspot__owners.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the assigned ticket owner.
+  - name: created_at
+    expr: stg_hubspot__tickets.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the ticket was created.
+tags:
+  - hubspot
+  - tickets
+trust_tier: gold
+materialization:
+  type: table

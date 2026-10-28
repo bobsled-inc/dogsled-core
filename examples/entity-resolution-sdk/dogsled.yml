@@ -1,0 +1,13 @@
+platform:
+  models:
+    mention_disambiguation_v1:
+      provider: openrouter
+      model: moonshotai/kimi-k2
+      api_key: $OPENROUTER_API_KEY
+    relationship_extraction_v1:
+      provider: openrouter
+      model: moonshotai/kimi-k2
+      api_key: $OPENROUTER_API_KEY
+  budget:
+    ai_cost_daily_usd: 5
+    per_source_rpm: 60

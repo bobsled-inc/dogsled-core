@@ -1,0 +1,38 @@
+type: resource
+name: departments
+description: List Greenhouse departments
+api:
+  endpoint: /departments
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  per_page:
+    type: integer
+    description: Number of departments to return per page
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Greenhouse department identifier
+  name:
+    type: string
+    path: $.name
+    description: Department name
+  parent_id:
+    type: integer
+    path: $.parent_id
+    description: Parent department identifier
+  external_id:
+    type: string
+    path: $.external_id
+    description: External identifier for the department
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

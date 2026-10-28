@@ -1,0 +1,21 @@
+spec_version: '1'
+type: resource
+name: events
+integration: test_bigquery
+source:
+  table: events
+  dataset: analytics
+replication:
+  method: incremental_append
+  cursor_field: created_at
+  cursor_type: timestamp
+output:
+  event_id: { type: integer }
+  event_type: { type: string }
+  payload: { type: object }
+  created_at: { type: timestamp }
+extract:
+  table:
+    primary_key: [event_id]
+    load_strategy: append
+    trust_tier: bronze

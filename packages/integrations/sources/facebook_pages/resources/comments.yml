@@ -1,0 +1,47 @@
+type: resource
+name: comments
+description: Comments on a Facebook Page post.
+api:
+  endpoint: /${{ input.post_id }}/comments
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  post_id:
+    type: string
+    default: '123'
+  fields:
+    type: string
+    default: id,message,created_time,from
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  message:
+    type: string
+    path: $.message
+  created_time:
+    type: timestamp
+    path: $.created_time
+  from_id:
+    type: string
+    path: $.from.id
+  from_name:
+    type: string
+    path: $.from.name
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: posts
+    field: id
+    input: post_id

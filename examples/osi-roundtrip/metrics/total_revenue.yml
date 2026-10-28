@@ -1,0 +1,6 @@
+spec_version: '0.2'
+type: metric
+name: total_revenue
+description: Fictional revenue.
+model: order_summary
+expression: SUM(total)

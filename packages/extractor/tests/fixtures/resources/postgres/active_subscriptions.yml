@@ -1,0 +1,23 @@
+spec_version: '1'
+type: resource
+name: active_subscriptions
+integration: test_postgres
+source:
+  sql: |
+    SELECT s.*, p.name as plan_name
+    FROM public.subscriptions s
+    JOIN public.plans p ON s.plan_id = p.id
+    WHERE s.status = 'active'
+replication:
+  method: incremental_append
+  cursor_field: created_at
+  cursor_type: timestamp
+output:
+  id: { type: integer }
+  plan_name: { type: string }
+  created_at: { type: timestamp }
+extract:
+  table:
+    primary_key: [id]
+    load_strategy: append
+    trust_tier: bronze

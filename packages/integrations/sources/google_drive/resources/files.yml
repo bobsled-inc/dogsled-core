@@ -1,0 +1,39 @@
+type: resource
+name: files
+description: Files and folders in Google Drive
+tool:
+  tool_name: search_files
+  arguments:
+    query: ${{ input.query }}
+input:
+  query:
+    type: string
+    description: Google Drive structured search query
+    default: owner = 'me'
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique file ID
+  name:
+    type: string
+    path: $.title
+    description: File or folder name
+  mime_type:
+    type: string
+    path: $.mimeType
+    description: MIME type of the file
+  modified_time:
+    type: timestamp
+    path: $.modifiedTime
+    description: Timestamp when the file was last modified
+  size:
+    type: string
+    path: $.fileSize
+    description: File size in bytes
+extract:
+  record_path: $.files
+  table:
+    primary_key:
+      - id
+via: mcp

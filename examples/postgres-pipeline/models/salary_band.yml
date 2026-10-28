@@ -1,0 +1,15 @@
+spec_version: '0.2'
+type: model
+name: salary_band
+description: Fictional salary bands.
+grain:
+  - id
+source:
+  ref: local_pg.staff
+columns:
+  - name: id
+    expr: id
+  - name: band
+    expr: CASE WHEN salary >= 60000 THEN 'higher' ELSE 'lower' END
+materialization:
+  type: view

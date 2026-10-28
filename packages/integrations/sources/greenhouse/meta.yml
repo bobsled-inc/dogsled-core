@@ -1,0 +1,9 @@
+display_name: Greenhouse
+category: crm
+logo_url: https://www.greenhouse.com/favicon.ico
+tags: [recruiting, ats, hiring]
+docs_url: https://harvestdocs.greenhouse.io/reference/introduction
+auth_setup:
+  - env: GREENHOUSE_API_KEY
+    description: Greenhouse Harvest API key used as the basic-auth username
+    docs_url: https://harvestdocs.greenhouse.io/reference/authentication

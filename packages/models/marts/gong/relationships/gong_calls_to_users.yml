@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: gong_calls_to_users
+description: Each Gong call belongs to one primary user.
+left_model: gong__calls
+right_model: gong__users
+join_columns:
+  - left: user_id
+    right: user_id
+join_type: left
+relationship_type: many_to_one
+tags: [gong, calls, users]

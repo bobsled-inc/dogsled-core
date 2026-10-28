@@ -1,0 +1,4 @@
+spec_version: '0.2'
+type: metric
+name: broken
+# missing expression + model/models

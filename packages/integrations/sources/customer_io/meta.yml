@@ -1,0 +1,12 @@
+display_name: Customer.io
+category: marketing
+tags:
+  - lifecycle-marketing
+  - messaging
+  - customer-engagement
+docs_url: https://docs.customer.io/integrations/api/app/
+openapi_url: https://docs.customer.io/files/journeys-app.json
+auth_setup:
+  - env: CUSTOMER_IO_APP_API_KEY
+    description: Customer.io App API key used as a bearer token.
+    docs_url: https://docs.customer.io/integrations/api/app/

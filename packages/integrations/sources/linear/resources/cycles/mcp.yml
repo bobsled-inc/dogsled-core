@@ -1,0 +1,55 @@
+type: resource
+name: cycles_mcp
+via: mcp
+entity: cycles
+description: Cycles (sprints) from Linear teams
+tool:
+  tool_name: list_cycles
+input:
+  teamId:
+    type: string
+    required: true
+    description: UUID of the team to list cycles for
+  type:
+    type: string
+    description: Cycle filter to request from Linear MCP
+    enum:
+      - current
+      - previous
+      - next
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique cycle UUID
+  number:
+    type: integer
+    path: $.number
+    description: Cycle number within the team
+  name:
+    type: string
+    path: $.name
+    description: Cycle name
+  starts_at:
+    type: timestamp
+    path: $.startsAt
+    description: Cycle start timestamp
+  ends_at:
+    type: timestamp
+    path: $.endsAt
+    description: Cycle end timestamp
+  progress:
+    type: number
+    path: $.progress
+    description: Cycle completion progress (0-1)
+extract:
+  record_path: $.cycles
+  for_each:
+    resource: teams_mcp
+    field: id
+    input: teamId
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - id

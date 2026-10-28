@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: quickbooks_total_invoice_amount
+description: Total amount invoiced in QuickBooks. Use only when the company file uses a common reporting currency.
+model: quickbooks__invoices
+expression: SUM({quickbooks__invoices}.total_amount)
+synonyms: [invoice amount, invoice value, total billed amount]
+tags: [quickbooks, accounting, finance]

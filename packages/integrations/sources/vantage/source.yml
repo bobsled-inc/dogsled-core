@@ -1,0 +1,27 @@
+spec_version: '2'
+type: source
+name: vantage
+description: Vantage cloud cost management and optimization platform
+transports:
+  - id: default
+    base_url: https://api.vantage.sh/v2
+    auth:
+      type: bearer
+      token: ${{ env.VANTAGE_API_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 5
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 1
+      burst: 1
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

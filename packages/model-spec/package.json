@@ -1,0 +1,119 @@
+{
+  "name": "@bobsled-inc/model-spec",
+  "version": "0.20.224",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "packages/model-spec"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/compiler/index.js",
+  "types": "./dist/compiler/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/compiler/index.d.ts",
+      "import": "./dist/compiler/index.js",
+      "default": "./dist/compiler/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/compiler/schemas.d.ts",
+      "import": "./dist/compiler/schemas.js",
+      "default": "./dist/compiler/schemas.js"
+    },
+    "./project": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js",
+      "default": "./dist/api/index.js"
+    },
+    "./ossie": {
+      "types": "./dist/ossie/index.d.ts",
+      "import": "./dist/ossie/index.js",
+      "default": "./dist/ossie/index.js"
+    },
+    "./edit": {
+      "types": "./dist/edit/index.d.ts",
+      "import": "./dist/edit/index.js",
+      "default": "./dist/edit/index.js"
+    },
+    "./shared": {
+      "types": "./dist/shared.d.ts",
+      "import": "./dist/shared.js",
+      "default": "./dist/shared.js"
+    },
+    "./selection": {
+      "types": "./dist/selection.d.ts",
+      "import": "./dist/selection.js",
+      "default": "./dist/selection.js"
+    },
+    "./agentic": {
+      "types": "./dist/agentic/index.d.ts",
+      "import": "./dist/agentic/index.js",
+      "default": "./dist/agentic/index.js"
+    },
+    "./interchange": {
+      "types": "./dist/interchange/index.d.ts",
+      "import": "./dist/interchange/index.js",
+      "default": "./dist/interchange/index.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@bobsled-inc/connections": "workspace:*",
+    "@bobsled-inc/project-index": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "@polyglot-sql/sdk": "catalog:",
+    "ajv": "catalog:",
+    "chalk": "catalog:cli",
+    "commander": "catalog:dev-packages",
+    "json-canonicalize": "catalog:",
+    "node-sql-parser": "catalog:dev-packages",
+    "yaml": "catalog:app-packages",
+    "zod": "catalog:dev-packages"
+  },
+  "devDependencies": {
+    "@bobsled-inc/models": "workspace:*",
+    "@types/node": "catalog:dev-packages",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "tsup": "catalog:cli",
+    "tsx": "catalog:dev-packages",
+    "typescript": "catalog:dev-packages",
+    "vitest": "catalog:testing"
+  },
+  "description": "Declarative semantic data modeling compiler for multiple SQL dialects.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "sql",
+    "modeling",
+    "compiler"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  }
+}

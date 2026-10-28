@@ -1,0 +1,39 @@
+spec_version: '0.2'
+name: stg_fieldroutes_tickets
+type: model
+description: Staging tickets from FieldRoutes `/ticket/search`.
+grain: TICKET_ID
+source:
+  ref: fieldroutes.tickets
+columns:
+  - name: TICKET_ID
+    expr: ticket_id
+    primary_key: true
+  - name: CUSTOMER_ID
+    expr: customer_id
+  - name: OFFICE_ID
+    expr: office_id
+  - name: SUBSCRIPTION_ID
+    expr: subscription_id
+  - name: DATE_CREATED
+    expr: date_created
+  - name: INVOICE_DATE
+    expr: invoice_date
+  - name: ACTIVE
+    expr: active
+  - name: SUB_TOTAL
+    expr: sub_total
+  - name: TAX_AMOUNT
+    expr: tax_amount
+  - name: TOTAL
+    expr: total
+  - name: PRODUCTION_VALUE
+    expr: production_value
+  - name: SERVICE_CHARGE
+    expr: service_charge
+  - name: BALANCE
+    expr: balance
+  - name: SERVICE_ID
+    expr: service_id
+materialization:
+  type: view

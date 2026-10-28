@@ -1,0 +1,14 @@
+display_name: Salesforce
+category: crm
+tags:
+  - crm
+  - sales
+  - pipeline
+docs_url: https://developer.salesforce.com/docs/apis
+auth_setup:
+  - env: SALESFORCE_DOMAIN
+    description: Salesforce instance domain, for example your-company.my.salesforce.com
+  - env: SALESFORCE_API_VERSION
+    description: Salesforce REST API version, for example v62.0
+  - env: SALESFORCE_ACCESS_TOKEN
+    description: Salesforce OAuth access token

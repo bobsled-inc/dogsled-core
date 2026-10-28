@@ -1,0 +1,27 @@
+spec_version: '2'
+type: source
+name: peopledatalabs
+description: People Data Labs person enrichment API
+transports:
+  - id: default
+    base_url: https://api.peopledatalabs.com
+    auth:
+      type: api-key
+      header: X-Api-Key
+      key: ${{ env.PEOPLEDATALABS_API_KEY }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 4
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 10
+      burst: 20
+    headers:
+      Accept: application/json
+default_transport: default

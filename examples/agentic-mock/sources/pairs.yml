@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: source
+name: pairs
+source_type: warehouse_table
+connection: local
+table: main.pairs
+schema:
+  columns:
+    - name: pair_id
+      type: string
+      primary_key: true
+    - name: evidence
+      type: STRING

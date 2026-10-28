@@ -1,0 +1,46 @@
+type: resource
+name: companies
+description: List all Companies
+api:
+  endpoint: /companies
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk company identifier
+  name:
+    type: string
+    path: $.name
+    description: Company name
+  description:
+    type: string
+    path: $.description
+    description: Company description
+  note:
+    type: string
+    path: $.note
+    description: Internal note stored on the company
+  domains:
+    type: array
+    path: $.domains
+    description: Domains associated with the company
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Company creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Company last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

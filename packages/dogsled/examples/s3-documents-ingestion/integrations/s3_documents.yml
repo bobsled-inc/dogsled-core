@@ -1,0 +1,21 @@
+spec_version: '1'
+type: integration
+name: s3_documents
+description: Amazon S3 bucket holding documents (PDF, DOCX, PPTX, HTML, Markdown, text, email) to ingest.
+source_type: s3
+auth_env_vars: [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN]
+connection:
+  bucket: documents
+  # AWS region the bucket lives in — edit to match your bucket.
+  region: us-east-1
+  # endpoint: https://minio.example.com   # uncomment for S3-compatible stores
+  # force_path_style: true                 # required by some S3-compatible stores
+auth:
+  # default_chain uses the AWS SDK default credential chain (IAM role,
+  # instance profile, or AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY in the env).
+  type: default_chain
+  # Custom endpoints require static_env with the declared names above.
+  # type: static_env
+  # access_key_id_env: AWS_ACCESS_KEY_ID
+  # secret_access_key_env: AWS_SECRET_ACCESS_KEY
+  # session_token_env: AWS_SESSION_TOKEN   # optional

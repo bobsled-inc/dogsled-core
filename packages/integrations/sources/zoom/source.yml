@@ -1,0 +1,31 @@
+spec_version: '2'
+type: source
+name: zoom
+description: Zoom REST API for users, meetings, webinars, and recordings.
+transports:
+  - id: default
+    base_url: https://api.zoom.us/v2
+    auth:
+      type: oauth2
+      grant_type: authorization_code
+      token_url: https://zoom.us/oauth/token
+      client_id: ${{ env.ZOOM_CLIENT_ID }}
+      client_secret: ${{ env.ZOOM_CLIENT_SECRET }}
+      refresh_token: ${{ env.ZOOM_REFRESH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 10
+      burst: 20
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

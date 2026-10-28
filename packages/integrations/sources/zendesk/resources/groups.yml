@@ -1,0 +1,52 @@
+type: resource
+name: groups
+description: List Zendesk groups
+api:
+  endpoint: /groups
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of groups to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk group identifier
+  name:
+    type: string
+    path: $.name
+    description: Group name
+  description:
+    type: string
+    path: $.description
+    description: Group description
+  is_public:
+    type: boolean
+    path: $.is_public
+    description: Whether the group is public
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Group creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Group last update timestamp
+extract:
+  record_path: $.groups
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

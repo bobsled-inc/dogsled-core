@@ -1,0 +1,40 @@
+spec_version: '0.2'
+name: vantage__budgets
+type: model
+description: Budget detail records with cost report and workspace association.
+grain: budget_id
+source:
+  ref: stg_vantage__budgets
+columns:
+  - name: budget_id
+    expr: stg_vantage__budgets.token
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique budget identifier.
+  - name: name
+    expr: stg_vantage__budgets.name
+    semantic_role: categorical
+    description: Budget name.
+  - name: workspace_token
+    expr: stg_vantage__budgets.workspace_token
+    semantic_role: entity_id
+    description: Workspace the budget belongs to.
+  - name: cost_report_token
+    expr: stg_vantage__budgets.cost_report_token
+    semantic_role: entity_id
+    description: Cost report associated with the budget.
+  - name: user_token
+    expr: stg_vantage__budgets.user_token
+    semantic_role: entity_id
+    description: User who created the budget.
+  - name: created_at
+    expr: stg_vantage__budgets.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the budget was created.
+tags:
+  - vantage
+  - budgets
+  - costs
+trust_tier: gold
+materialization:
+  type: table

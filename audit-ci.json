@@ -1,0 +1,13 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "allowlist": [
+    {
+      "GHSA-xcx6-jx8p-x3h5|packages__connections>snowflake-sdk>@azure/identity>@azure/msal-node": {
+        "active": true,
+        "notes": "pnpm reports this one path for the MSAL Node copy reached through both Snowflake and Tedious. The advisory affects the MSAL authorization-code flow. Snowflake workload identity uses DefaultAzureCredential, whose chain never calls acquireTokenByCode; its broker and VS Code credentials need an Azure Identity plugin, and Dogsled registers none. Tedious loads Azure Identity but never constructs an Azure credential, because Dogsled's SQL Server destination hard-codes authentication type 'default'. msal-node 7.1.0 becomes age-eligible on 2026-11-03T22:41:13.211Z. See docs/dependency-security.md. Owner: security/release maintainers",
+        "expiry": "2026-11-05T00:00:00Z"
+      }
+    }
+  ]
+}

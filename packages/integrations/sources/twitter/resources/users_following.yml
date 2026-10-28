@@ -1,0 +1,50 @@
+type: resource
+name: users_following
+description: Users followed by the authenticated X user.
+api:
+  endpoint: /2/users/${{ input.id }}/following
+  method: GET
+  query_params:
+    max_results: ${{ input.max_results }}
+    pagination_token: ${{ input.pagination_token }}
+input:
+  id:
+    type: string
+    default: '2244994945'
+  max_results:
+    type: integer
+    default: 100
+  pagination_token:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  username:
+    type: string
+    path: $.username
+  created_at:
+    type: timestamp
+    path: $.created_at
+  following_count:
+    type: integer
+    path: $.public_metrics.following_count
+  tweet_count:
+    type: integer
+    path: $.public_metrics.tweet_count
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.meta.next_token
+    cursor_param: pagination_token
+  for_each:
+    resource: users_me
+    field: id
+    input: id

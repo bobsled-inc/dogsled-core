@@ -1,0 +1,3865 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateForgetSql > snapshots the forget plan for bigquery 1`] = `
+[
+  {
+    "ignore_error_patterns": undefined,
+    "name": "forget_tombstone_upsert",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__forgotten_records\` (\`tombstone_id\`, \`source_ref\`, \`source_pk_json\`, \`requested_at\`, \`reason\`, \`content_hash\`)
+WITH
+incoming_requests AS (
+SELECT
+  '7b4b86bb8874c6a795bbde78edd48569' AS \`tombstone_id\`,
+  'crm.accounts' AS \`source_ref\`,
+  '{"account_id":"pii@example.com"}' AS \`source_pk_json\`,
+  '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e' AS \`content_hash\`
+)
+SELECT
+  incoming.\`tombstone_id\`,
+  incoming.\`source_ref\`,
+  incoming.\`source_pk_json\`,
+  CURRENT_TIMESTAMP,
+  'gdpr erasure',
+  incoming.\`content_hash\`
+FROM incoming_requests incoming
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM \`entity_graph\`.\`company__forgotten_records\` existing
+  WHERE existing.\`tombstone_id\` = incoming.\`tombstone_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_retire_events",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__entity_id_events\` (
+  \`event_id\`,
+  \`event_type\`,
+  \`entity_id\`,
+  \`previous_entity_id\`,
+  \`record_id\`,
+  \`component_id\`,
+  \`source_ref\`,
+  \`source_pk_json\`,
+  \`source_system\`,
+  \`source_entity_id\`,
+  \`reason\`,
+  \`created_at\`
+)
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+, event_candidates AS (
+  SELECT
+    TO_HEX(MD5(CONCAT('retire', '|', cw.\`entity_id\`, '|', COALESCE(cw.\`record_id\`, ''), '|', tr.\`content_hash\`))) AS \`event_id\`,
+    'retire' AS \`event_type\`,
+    cw.\`entity_id\` AS \`entity_id\`,
+    NULL AS \`previous_entity_id\`,
+    cw.\`record_id\` AS \`record_id\`,
+    cw.\`component_id\` AS \`component_id\`,
+    cw.\`source_ref\` AS \`source_ref\`,
+    cw.\`source_pk_json\` AS \`source_pk_json\`,
+    cw.\`source_system\` AS \`source_system\`,
+    cw.\`source_entity_id\` AS \`source_entity_id\`,
+    'erasure' AS \`reason\`
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT
+  candidate.\`event_id\`,
+  candidate.\`event_type\`,
+  candidate.\`entity_id\`,
+  candidate.\`previous_entity_id\`,
+  candidate.\`record_id\`,
+  candidate.\`component_id\`,
+  candidate.\`source_ref\`,
+  candidate.\`source_pk_json\`,
+  candidate.\`source_system\`,
+  candidate.\`source_entity_id\`,
+  candidate.\`reason\`,
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM \`entity_graph\`.\`company__entity_id_events\` existing
+  WHERE existing.\`event_id\` = candidate.\`event_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_split_events",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__entity_id_events\` (
+  \`event_id\`,
+  \`event_type\`,
+  \`entity_id\`,
+  \`previous_entity_id\`,
+  \`record_id\`,
+  \`component_id\`,
+  \`source_ref\`,
+  \`source_pk_json\`,
+  \`source_system\`,
+  \`source_entity_id\`,
+  \`reason\`,
+  \`created_at\`
+)
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+, event_candidates AS (
+  SELECT
+    TO_HEX(MD5(CONCAT('split', '|', cw.\`entity_id\`, '|', COALESCE(cw.\`record_id\`, ''), '|', tr.\`content_hash\`))) AS \`event_id\`,
+    'split' AS \`event_type\`,
+    cw.\`entity_id\` AS \`entity_id\`,
+    cw.\`entity_id\` AS \`previous_entity_id\`,
+    cw.\`record_id\` AS \`record_id\`,
+    cw.\`component_id\` AS \`component_id\`,
+    cw.\`source_ref\` AS \`source_ref\`,
+    cw.\`source_pk_json\` AS \`source_pk_json\`,
+    cw.\`source_system\` AS \`source_system\`,
+    cw.\`source_entity_id\` AS \`source_entity_id\`,
+    'erasure' AS \`reason\`
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT
+  candidate.\`event_id\`,
+  candidate.\`event_type\`,
+  candidate.\`entity_id\`,
+  candidate.\`previous_entity_id\`,
+  candidate.\`record_id\`,
+  candidate.\`component_id\`,
+  candidate.\`source_ref\`,
+  candidate.\`source_pk_json\`,
+  candidate.\`source_system\`,
+  candidate.\`source_entity_id\`,
+  candidate.\`reason\`,
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM \`entity_graph\`.\`company__entity_id_events\` existing
+  WHERE existing.\`event_id\` = candidate.\`event_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_review_decisions",
+    "sql": "UPDATE \`entity_graph\`.\`company__review_decisions\`
+SET
+  \`reason\` = CASE WHEN \`reason\` IS NULL THEN NULL ELSE TO_HEX(SHA256(CAST(\`reason\` AS STRING))) END,
+  \`human_feedback_reason\` = CASE WHEN \`human_feedback_reason\` IS NULL THEN NULL ELSE TO_HEX(SHA256(CAST(\`human_feedback_reason\` AS STRING))) END
+WHERE \`pair_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION DISTINCT
+  SELECT TO_HEX(MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`)))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION DISTINCT
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+SELECT \`pair_id\` FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_audit_payloads",
+    "sql": "UPDATE \`entity_graph\`.\`audit_log\`
+SET
+  \`payload\` = PARSE_JSON('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["audit_log"],"row_counts":{"redacted":1}}'),
+  \`reason\` = 'erasure_redacted'
+WHERE \`subject_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION DISTINCT
+  SELECT TO_HEX(MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`)))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION DISTINCT
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+, affected_subjects AS (
+  SELECT \`record_id\` AS \`subject_id\` FROM target_records
+  UNION DISTINCT SELECT \`entity_id\` AS \`subject_id\` FROM affected_crosswalks
+  UNION DISTINCT SELECT \`pair_id\` AS \`subject_id\` FROM affected_pairs
+)
+SELECT \`subject_id\` FROM affected_subjects
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_semantic_scores",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__pair_semantic_scores\`
+WHERE \`pair_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION DISTINCT
+  SELECT TO_HEX(MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`)))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION DISTINCT
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+SELECT \`pair_id\` FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_document_mentions",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__document_mentions\`
+WHERE \`resolved_entity_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT \`entity_id\` FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_survivorship_audit",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__survivorship_audit\`
+WHERE \`entity_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT \`entity_id\` FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_embedding_cache",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__embedding_cache\`
+WHERE \`content_hash\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+, affected_embeddings AS (
+  SELECT TO_HEX(MD5(CONCAT('openai_text_embedding_3_small', '', 'text-embedding-3-small', '', '1536', '', CAST(std.\`standardized_name\` AS STRING)))) AS \`content_hash\`
+  FROM \`entity_graph\`.\`company__standardized\` std
+  JOIN target_records tr ON std.\`record_id\` = tr.\`record_id\`
+  WHERE std.\`standardized_name\` IS NOT NULL
+)
+SELECT \`content_hash\` FROM affected_embeddings
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_review_queue",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__review_queue\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_scores",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__pair_scores\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_candidate_pairs",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__candidate_pairs\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_match_inbox",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__match_inbox\`
+WHERE \`record_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_crosswalks",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__crosswalks\`
+WHERE CONCAT(\`source_ref\`, '|', \`source_pk_json\`) IN (
+SELECT CONCAT(\`forgotten\`.\`source_ref\`, '|', \`forgotten\`.\`source_pk_json\`)
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_standardized",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__standardized\`
+WHERE \`record_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": undefined,
+    "name": "audit_erasure_7b4b86bb8874",
+    "sql": "INSERT INTO \`entity_graph\`.\`audit_log\` (
+  \`event_id\`, \`category\`, \`subject_type\`, \`subject_id\`,
+  \`cluster_id\`, \`edge_id\`, \`payload\`, \`reason\`,
+  \`actor\`, \`actor_type\`, \`occurred_at\`
+)
+SELECT
+  CONCAT('eg-', CAST(CURRENT_TIMESTAMP AS STRING), '-', 'erasure', '-', '7b4b86bb8874c6a795bbde78edd48569', '-', '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e'),
+  'mutation',
+  'forgotten_record',
+  '7b4b86bb8874c6a795bbde78edd48569',
+  NULL,
+  NULL,
+  JSON '{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["__standardized","__candidate_pairs","__pair_scores","__pair_semantic_scores","__crosswalks","__review_queue","__review_decisions","__document_mentions","__embedding_cache","__match_inbox","__survivorship_audit","audit_log"],"row_counts":{"requested_records":1}}',
+  'gdpr erasure',
+  'system',
+  'system',
+  CURRENT_TIMESTAMP
+FROM (SELECT 1) AS \`audit_source\`",
+  },
+]
+`;
+
+exports[`generateForgetSql > snapshots the forget plan for databricks 1`] = `
+[
+  {
+    "ignore_error_patterns": undefined,
+    "name": "forget_tombstone_upsert",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__forgotten_records\` (\`tombstone_id\`, \`source_ref\`, \`source_pk_json\`, \`requested_at\`, \`reason\`, \`content_hash\`)
+WITH
+incoming_requests AS (
+SELECT
+  '7b4b86bb8874c6a795bbde78edd48569' AS \`tombstone_id\`,
+  'crm.accounts' AS \`source_ref\`,
+  '{"account_id":"pii@example.com"}' AS \`source_pk_json\`,
+  '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e' AS \`content_hash\`
+)
+SELECT
+  incoming.\`tombstone_id\`,
+  incoming.\`source_ref\`,
+  incoming.\`source_pk_json\`,
+  CURRENT_TIMESTAMP,
+  'gdpr erasure',
+  incoming.\`content_hash\`
+FROM incoming_requests incoming
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM \`entity_graph\`.\`company__forgotten_records\` existing
+  WHERE existing.\`tombstone_id\` = incoming.\`tombstone_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_retire_events",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__entity_id_events\` (
+  \`event_id\`,
+  \`event_type\`,
+  \`entity_id\`,
+  \`previous_entity_id\`,
+  \`record_id\`,
+  \`component_id\`,
+  \`source_ref\`,
+  \`source_pk_json\`,
+  \`source_system\`,
+  \`source_entity_id\`,
+  \`reason\`,
+  \`created_at\`
+)
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('retire', '|', cw.\`entity_id\`, '|', COALESCE(cw.\`record_id\`, ''), '|', tr.\`content_hash\`)) AS \`event_id\`,
+    'retire' AS \`event_type\`,
+    cw.\`entity_id\` AS \`entity_id\`,
+    NULL AS \`previous_entity_id\`,
+    cw.\`record_id\` AS \`record_id\`,
+    cw.\`component_id\` AS \`component_id\`,
+    cw.\`source_ref\` AS \`source_ref\`,
+    cw.\`source_pk_json\` AS \`source_pk_json\`,
+    cw.\`source_system\` AS \`source_system\`,
+    cw.\`source_entity_id\` AS \`source_entity_id\`,
+    'erasure' AS \`reason\`
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT
+  candidate.\`event_id\`,
+  candidate.\`event_type\`,
+  candidate.\`entity_id\`,
+  candidate.\`previous_entity_id\`,
+  candidate.\`record_id\`,
+  candidate.\`component_id\`,
+  candidate.\`source_ref\`,
+  candidate.\`source_pk_json\`,
+  candidate.\`source_system\`,
+  candidate.\`source_entity_id\`,
+  candidate.\`reason\`,
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM \`entity_graph\`.\`company__entity_id_events\` existing
+  WHERE existing.\`event_id\` = candidate.\`event_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_split_events",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__entity_id_events\` (
+  \`event_id\`,
+  \`event_type\`,
+  \`entity_id\`,
+  \`previous_entity_id\`,
+  \`record_id\`,
+  \`component_id\`,
+  \`source_ref\`,
+  \`source_pk_json\`,
+  \`source_system\`,
+  \`source_entity_id\`,
+  \`reason\`,
+  \`created_at\`
+)
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('split', '|', cw.\`entity_id\`, '|', COALESCE(cw.\`record_id\`, ''), '|', tr.\`content_hash\`)) AS \`event_id\`,
+    'split' AS \`event_type\`,
+    cw.\`entity_id\` AS \`entity_id\`,
+    cw.\`entity_id\` AS \`previous_entity_id\`,
+    cw.\`record_id\` AS \`record_id\`,
+    cw.\`component_id\` AS \`component_id\`,
+    cw.\`source_ref\` AS \`source_ref\`,
+    cw.\`source_pk_json\` AS \`source_pk_json\`,
+    cw.\`source_system\` AS \`source_system\`,
+    cw.\`source_entity_id\` AS \`source_entity_id\`,
+    'erasure' AS \`reason\`
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT
+  candidate.\`event_id\`,
+  candidate.\`event_type\`,
+  candidate.\`entity_id\`,
+  candidate.\`previous_entity_id\`,
+  candidate.\`record_id\`,
+  candidate.\`component_id\`,
+  candidate.\`source_ref\`,
+  candidate.\`source_pk_json\`,
+  candidate.\`source_system\`,
+  candidate.\`source_entity_id\`,
+  candidate.\`reason\`,
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM \`entity_graph\`.\`company__entity_id_events\` existing
+  WHERE existing.\`event_id\` = candidate.\`event_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_review_decisions",
+    "sql": "UPDATE \`entity_graph\`.\`company__review_decisions\`
+SET
+  \`reason\` = CASE WHEN \`reason\` IS NULL THEN NULL ELSE SHA2(CAST(\`reason\` AS STRING), 256) END,
+  \`human_feedback_reason\` = CASE WHEN \`human_feedback_reason\` IS NULL THEN NULL ELSE SHA2(CAST(\`human_feedback_reason\` AS STRING), 256) END
+WHERE \`pair_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+SELECT \`pair_id\` FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_audit_payloads",
+    "sql": "UPDATE \`entity_graph\`.\`audit_log\`
+SET
+  \`payload\` = '{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["audit_log"],"row_counts":{"redacted":1}}',
+  \`reason\` = 'erasure_redacted'
+WHERE \`subject_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+, affected_subjects AS (
+  SELECT \`record_id\` AS \`subject_id\` FROM target_records
+  UNION SELECT \`entity_id\` AS \`subject_id\` FROM affected_crosswalks
+  UNION SELECT \`pair_id\` AS \`subject_id\` FROM affected_pairs
+)
+SELECT \`subject_id\` FROM affected_subjects
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_semantic_scores",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__pair_semantic_scores\`
+WHERE \`pair_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+SELECT \`pair_id\` FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_document_mentions",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__document_mentions\`
+WHERE \`resolved_entity_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT \`entity_id\` FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_survivorship_audit",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__survivorship_audit\`
+WHERE \`entity_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT \`entity_id\` FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_embedding_cache",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__embedding_cache\`
+WHERE \`content_hash\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+, affected_embeddings AS (
+  SELECT MD5(CONCAT('openai_text_embedding_3_small', '', 'text-embedding-3-small', '', '1536', '', CAST(std.\`standardized_name\` AS STRING))) AS \`content_hash\`
+  FROM \`entity_graph\`.\`company__standardized\` std
+  JOIN target_records tr ON std.\`record_id\` = tr.\`record_id\`
+  WHERE std.\`standardized_name\` IS NOT NULL
+)
+SELECT \`content_hash\` FROM affected_embeddings
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_review_queue",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__review_queue\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_scores",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__pair_scores\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_candidate_pairs",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__candidate_pairs\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_match_inbox",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__match_inbox\`
+WHERE \`record_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_crosswalks",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__crosswalks\`
+WHERE CONCAT(\`source_ref\`, '|', \`source_pk_json\`) IN (
+SELECT CONCAT(\`forgotten\`.\`source_ref\`, '|', \`forgotten\`.\`source_pk_json\`)
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_standardized",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__standardized\`
+WHERE \`record_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": undefined,
+    "name": "audit_erasure_7b4b86bb8874",
+    "sql": "INSERT INTO \`entity_graph\`.\`audit_log\` (
+  \`event_id\`, \`category\`, \`subject_type\`, \`subject_id\`,
+  \`cluster_id\`, \`edge_id\`, \`payload\`, \`reason\`,
+  \`actor\`, \`actor_type\`, \`occurred_at\`
+)
+SELECT
+  CONCAT('eg-', CAST(CURRENT_TIMESTAMP AS STRING), '-', 'erasure', '-', '7b4b86bb8874c6a795bbde78edd48569', '-', '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e'),
+  'mutation',
+  'forgotten_record',
+  '7b4b86bb8874c6a795bbde78edd48569',
+  NULL,
+  NULL,
+  '{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["__standardized","__candidate_pairs","__pair_scores","__pair_semantic_scores","__crosswalks","__review_queue","__review_decisions","__document_mentions","__embedding_cache","__match_inbox","__survivorship_audit","audit_log"],"row_counts":{"requested_records":1}}',
+  'gdpr erasure',
+  'system',
+  'system',
+  CURRENT_TIMESTAMP
+FROM VALUES (1) AS \`audit_source\`(\`dummy\`)",
+  },
+]
+`;
+
+exports[`generateForgetSql > snapshots the forget plan for duckdb 1`] = `
+[
+  {
+    "ignore_error_patterns": undefined,
+    "name": "forget_tombstone_upsert",
+    "sql": "INSERT INTO "entity_graph"."company__forgotten_records" ("tombstone_id", "source_ref", "source_pk_json", "requested_at", "reason", "content_hash")
+WITH
+incoming_requests AS (
+SELECT
+  '7b4b86bb8874c6a795bbde78edd48569' AS "tombstone_id",
+  'crm.accounts' AS "source_ref",
+  '{"account_id":"pii@example.com"}' AS "source_pk_json",
+  '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e' AS "content_hash"
+)
+SELECT
+  incoming."tombstone_id",
+  incoming."source_ref",
+  incoming."source_pk_json",
+  CURRENT_TIMESTAMP,
+  'gdpr erasure',
+  incoming."content_hash"
+FROM incoming_requests incoming
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM "entity_graph"."company__forgotten_records" existing
+  WHERE existing."tombstone_id" = incoming."tombstone_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_retire_events",
+    "sql": "INSERT INTO "entity_graph"."company__entity_id_events" (
+  "event_id",
+  "event_type",
+  "entity_id",
+  "previous_entity_id",
+  "record_id",
+  "component_id",
+  "source_ref",
+  "source_pk_json",
+  "source_system",
+  "source_entity_id",
+  "reason",
+  "created_at"
+)
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('retire', '|', cw."entity_id", '|', COALESCE(cw."record_id", ''), '|', tr."content_hash")) AS "event_id",
+    'retire' AS "event_type",
+    cw."entity_id" AS "entity_id",
+    NULL AS "previous_entity_id",
+    cw."record_id" AS "record_id",
+    cw."component_id" AS "component_id",
+    cw."source_ref" AS "source_ref",
+    cw."source_pk_json" AS "source_pk_json",
+    cw."source_system" AS "source_system",
+    cw."source_entity_id" AS "source_entity_id",
+    'erasure' AS "reason"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT
+  candidate."event_id",
+  candidate."event_type",
+  candidate."entity_id",
+  candidate."previous_entity_id",
+  candidate."record_id",
+  candidate."component_id",
+  candidate."source_ref",
+  candidate."source_pk_json",
+  candidate."source_system",
+  candidate."source_entity_id",
+  candidate."reason",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "entity_graph"."company__entity_id_events" existing
+  WHERE existing."event_id" = candidate."event_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_split_events",
+    "sql": "INSERT INTO "entity_graph"."company__entity_id_events" (
+  "event_id",
+  "event_type",
+  "entity_id",
+  "previous_entity_id",
+  "record_id",
+  "component_id",
+  "source_ref",
+  "source_pk_json",
+  "source_system",
+  "source_entity_id",
+  "reason",
+  "created_at"
+)
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('split', '|', cw."entity_id", '|', COALESCE(cw."record_id", ''), '|', tr."content_hash")) AS "event_id",
+    'split' AS "event_type",
+    cw."entity_id" AS "entity_id",
+    cw."entity_id" AS "previous_entity_id",
+    cw."record_id" AS "record_id",
+    cw."component_id" AS "component_id",
+    cw."source_ref" AS "source_ref",
+    cw."source_pk_json" AS "source_pk_json",
+    cw."source_system" AS "source_system",
+    cw."source_entity_id" AS "source_entity_id",
+    'erasure' AS "reason"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT
+  candidate."event_id",
+  candidate."event_type",
+  candidate."entity_id",
+  candidate."previous_entity_id",
+  candidate."record_id",
+  candidate."component_id",
+  candidate."source_ref",
+  candidate."source_pk_json",
+  candidate."source_system",
+  candidate."source_entity_id",
+  candidate."reason",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "entity_graph"."company__entity_id_events" existing
+  WHERE existing."event_id" = candidate."event_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_review_decisions",
+    "sql": "UPDATE "entity_graph"."company__review_decisions"
+SET
+  "reason" = CASE WHEN "reason" IS NULL THEN NULL ELSE sha256(CAST("reason" AS TEXT)) END,
+  "human_feedback_reason" = CASE WHEN "human_feedback_reason" IS NULL THEN NULL ELSE sha256(CAST("human_feedback_reason" AS TEXT)) END
+WHERE "pair_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+SELECT "pair_id" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_audit_payloads",
+    "sql": "UPDATE "entity_graph"."audit_log"
+SET
+  "payload" = json('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["audit_log"],"row_counts":{"redacted":1}}'),
+  "reason" = 'erasure_redacted'
+WHERE "subject_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+, affected_subjects AS (
+  SELECT "record_id" AS "subject_id" FROM target_records
+  UNION SELECT "entity_id" AS "subject_id" FROM affected_crosswalks
+  UNION SELECT "pair_id" AS "subject_id" FROM affected_pairs
+)
+SELECT "subject_id" FROM affected_subjects
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_semantic_scores",
+    "sql": "DELETE FROM "entity_graph"."company__pair_semantic_scores"
+WHERE "pair_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+SELECT "pair_id" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_document_mentions",
+    "sql": "DELETE FROM "entity_graph"."company__document_mentions"
+WHERE "resolved_entity_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT "entity_id" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_survivorship_audit",
+    "sql": "DELETE FROM "entity_graph"."company__survivorship_audit"
+WHERE "entity_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT "entity_id" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_embedding_cache",
+    "sql": "DELETE FROM "entity_graph"."company__embedding_cache"
+WHERE "content_hash" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+, affected_embeddings AS (
+  SELECT MD5(CONCAT('openai_text_embedding_3_small', '', 'text-embedding-3-small', '', '1536', '', CAST(std."standardized_name" AS TEXT))) AS "content_hash"
+  FROM "entity_graph"."company__standardized" std
+  JOIN target_records tr ON std."record_id" = tr."record_id"
+  WHERE std."standardized_name" IS NOT NULL
+)
+SELECT "content_hash" FROM affected_embeddings
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_review_queue",
+    "sql": "DELETE FROM "entity_graph"."company__review_queue"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_scores",
+    "sql": "DELETE FROM "entity_graph"."company__pair_scores"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_candidate_pairs",
+    "sql": "DELETE FROM "entity_graph"."company__candidate_pairs"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_match_inbox",
+    "sql": "DELETE FROM "entity_graph"."company__match_inbox"
+WHERE "record_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_crosswalks",
+    "sql": "DELETE FROM "entity_graph"."company__crosswalks"
+WHERE CONCAT("source_ref", '|', "source_pk_json") IN (
+SELECT CONCAT("forgotten"."source_ref", '|', "forgotten"."source_pk_json")
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_standardized",
+    "sql": "DELETE FROM "entity_graph"."company__standardized"
+WHERE "record_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": undefined,
+    "name": "audit_erasure_7b4b86bb8874",
+    "sql": "INSERT INTO "entity_graph"."audit_log" (
+  "event_id", "category", "subject_type", "subject_id",
+  "cluster_id", "edge_id", "payload", "reason",
+  "actor", "actor_type", "occurred_at"
+)
+SELECT
+  CONCAT('eg-', CAST(CURRENT_TIMESTAMP AS TEXT), '-', 'erasure', '-', '7b4b86bb8874c6a795bbde78edd48569', '-', '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e'),
+  'mutation',
+  'forgotten_record',
+  '7b4b86bb8874c6a795bbde78edd48569',
+  NULL,
+  NULL,
+  json('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["__standardized","__candidate_pairs","__pair_scores","__pair_semantic_scores","__crosswalks","__review_queue","__review_decisions","__document_mentions","__embedding_cache","__match_inbox","__survivorship_audit","audit_log"],"row_counts":{"requested_records":1}}'),
+  'gdpr erasure',
+  'system',
+  'system',
+  CURRENT_TIMESTAMP
+FROM (SELECT 1) AS "audit_source"",
+  },
+]
+`;
+
+exports[`generateForgetSql > snapshots the forget plan for mysql 1`] = `
+[
+  {
+    "ignore_error_patterns": undefined,
+    "name": "forget_tombstone_upsert",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__forgotten_records\` (\`tombstone_id\`, \`source_ref\`, \`source_pk_json\`, \`requested_at\`, \`reason\`, \`content_hash\`)
+WITH
+incoming_requests AS (
+SELECT
+  '7b4b86bb8874c6a795bbde78edd48569' AS \`tombstone_id\`,
+  'crm.accounts' AS \`source_ref\`,
+  '{"account_id":"pii@example.com"}' AS \`source_pk_json\`,
+  '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e' AS \`content_hash\`
+)
+SELECT
+  incoming.\`tombstone_id\`,
+  incoming.\`source_ref\`,
+  incoming.\`source_pk_json\`,
+  CURRENT_TIMESTAMP,
+  'gdpr erasure',
+  incoming.\`content_hash\`
+FROM incoming_requests incoming
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM \`entity_graph\`.\`company__forgotten_records\` existing
+  WHERE existing.\`tombstone_id\` = incoming.\`tombstone_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_retire_events",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__entity_id_events\` (
+  \`event_id\`,
+  \`event_type\`,
+  \`entity_id\`,
+  \`previous_entity_id\`,
+  \`record_id\`,
+  \`component_id\`,
+  \`source_ref\`,
+  \`source_pk_json\`,
+  \`source_system\`,
+  \`source_entity_id\`,
+  \`reason\`,
+  \`created_at\`
+)
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('retire', '|', cw.\`entity_id\`, '|', COALESCE(cw.\`record_id\`, ''), '|', tr.\`content_hash\`)) AS \`event_id\`,
+    'retire' AS \`event_type\`,
+    cw.\`entity_id\` AS \`entity_id\`,
+    NULL AS \`previous_entity_id\`,
+    cw.\`record_id\` AS \`record_id\`,
+    cw.\`component_id\` AS \`component_id\`,
+    cw.\`source_ref\` AS \`source_ref\`,
+    cw.\`source_pk_json\` AS \`source_pk_json\`,
+    cw.\`source_system\` AS \`source_system\`,
+    cw.\`source_entity_id\` AS \`source_entity_id\`,
+    'erasure' AS \`reason\`
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT
+  candidate.\`event_id\`,
+  candidate.\`event_type\`,
+  candidate.\`entity_id\`,
+  candidate.\`previous_entity_id\`,
+  candidate.\`record_id\`,
+  candidate.\`component_id\`,
+  candidate.\`source_ref\`,
+  candidate.\`source_pk_json\`,
+  candidate.\`source_system\`,
+  candidate.\`source_entity_id\`,
+  candidate.\`reason\`,
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM \`entity_graph\`.\`company__entity_id_events\` existing
+  WHERE existing.\`event_id\` = candidate.\`event_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_split_events",
+    "sql": "INSERT INTO \`entity_graph\`.\`company__entity_id_events\` (
+  \`event_id\`,
+  \`event_type\`,
+  \`entity_id\`,
+  \`previous_entity_id\`,
+  \`record_id\`,
+  \`component_id\`,
+  \`source_ref\`,
+  \`source_pk_json\`,
+  \`source_system\`,
+  \`source_entity_id\`,
+  \`reason\`,
+  \`created_at\`
+)
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('split', '|', cw.\`entity_id\`, '|', COALESCE(cw.\`record_id\`, ''), '|', tr.\`content_hash\`)) AS \`event_id\`,
+    'split' AS \`event_type\`,
+    cw.\`entity_id\` AS \`entity_id\`,
+    cw.\`entity_id\` AS \`previous_entity_id\`,
+    cw.\`record_id\` AS \`record_id\`,
+    cw.\`component_id\` AS \`component_id\`,
+    cw.\`source_ref\` AS \`source_ref\`,
+    cw.\`source_pk_json\` AS \`source_pk_json\`,
+    cw.\`source_system\` AS \`source_system\`,
+    cw.\`source_entity_id\` AS \`source_entity_id\`,
+    'erasure' AS \`reason\`
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT
+  candidate.\`event_id\`,
+  candidate.\`event_type\`,
+  candidate.\`entity_id\`,
+  candidate.\`previous_entity_id\`,
+  candidate.\`record_id\`,
+  candidate.\`component_id\`,
+  candidate.\`source_ref\`,
+  candidate.\`source_pk_json\`,
+  candidate.\`source_system\`,
+  candidate.\`source_entity_id\`,
+  candidate.\`reason\`,
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM \`entity_graph\`.\`company__entity_id_events\` existing
+  WHERE existing.\`event_id\` = candidate.\`event_id\`
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_review_decisions",
+    "sql": "UPDATE \`entity_graph\`.\`company__review_decisions\`
+SET
+  \`reason\` = CASE WHEN \`reason\` IS NULL THEN NULL ELSE SHA2(CAST(\`reason\` AS CHAR), 256) END,
+  \`human_feedback_reason\` = CASE WHEN \`human_feedback_reason\` IS NULL THEN NULL ELSE SHA2(CAST(\`human_feedback_reason\` AS CHAR), 256) END
+WHERE \`pair_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+SELECT \`pair_id\` FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_audit_payloads",
+    "sql": "UPDATE \`entity_graph\`.\`audit_log\`
+SET
+  \`payload\` = CAST('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["audit_log"],"row_counts":{"redacted":1}}' AS JSON),
+  \`reason\` = 'erasure_redacted'
+WHERE \`subject_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+, affected_subjects AS (
+  SELECT \`record_id\` AS \`subject_id\` FROM target_records
+  UNION SELECT \`entity_id\` AS \`subject_id\` FROM affected_crosswalks
+  UNION SELECT \`pair_id\` AS \`subject_id\` FROM affected_pairs
+)
+SELECT \`subject_id\` FROM affected_subjects
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_semantic_scores",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__pair_semantic_scores\`
+WHERE \`pair_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__pair_scores\` ps
+  WHERE ps.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR ps.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp.\`record_a_id\`, cp.\`record_b_id\`), '||', GREATEST(cp.\`record_a_id\`, cp.\`record_b_id\`))) AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__candidate_pairs\` cp
+  WHERE cp.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR cp.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+  UNION
+  SELECT rq.\`pair_id\` AS \`pair_id\`
+  FROM \`entity_graph\`.\`company__review_queue\` rq
+  WHERE rq.\`record_a_id\` IN (SELECT \`record_id\` FROM target_records) OR rq.\`record_b_id\` IN (SELECT \`record_id\` FROM target_records)
+)
+SELECT \`pair_id\` FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_document_mentions",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__document_mentions\`
+WHERE \`resolved_entity_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT \`entity_id\` FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_survivorship_audit",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__survivorship_audit\`
+WHERE \`entity_id\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM \`entity_graph\`.\`company__crosswalks\` cw
+  JOIN target_records tr
+    ON cw.\`source_ref\` = tr.\`source_ref\`
+   AND cw.\`source_pk_json\` = tr.\`source_pk_json\`
+)
+SELECT \`entity_id\` FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_embedding_cache",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__embedding_cache\`
+WHERE \`content_hash\` IN (
+WITH
+target_records AS (
+  SELECT
+    \`forgotten\`.\`tombstone_id\` AS \`tombstone_id\`,
+    \`forgotten\`.\`source_ref\` AS \`source_ref\`,
+    \`forgotten\`.\`source_pk_json\` AS \`source_pk_json\`,
+    \`forgotten\`.\`content_hash\` AS \`content_hash\`,
+    \`forgotten\`.\`tombstone_id\` AS \`record_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+, affected_embeddings AS (
+  SELECT MD5(CONCAT('openai_text_embedding_3_small', '', 'text-embedding-3-small', '', '1536', '', CAST(std.\`standardized_name\` AS CHAR))) AS \`content_hash\`
+  FROM \`entity_graph\`.\`company__standardized\` std
+  JOIN target_records tr ON std.\`record_id\` = tr.\`record_id\`
+  WHERE std.\`standardized_name\` IS NOT NULL
+)
+SELECT \`content_hash\` FROM affected_embeddings
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_review_queue",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__review_queue\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_scores",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__pair_scores\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_candidate_pairs",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__candidate_pairs\`
+WHERE \`record_a_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR \`record_b_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_match_inbox",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__match_inbox\`
+WHERE \`record_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_crosswalks",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__crosswalks\`
+WHERE CONCAT(\`source_ref\`, '|', \`source_pk_json\`) IN (
+SELECT CONCAT(\`forgotten\`.\`source_ref\`, '|', \`forgotten\`.\`source_pk_json\`)
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_standardized",
+    "sql": "DELETE FROM \`entity_graph\`.\`company__standardized\`
+WHERE \`record_id\` IN (
+SELECT \`forgotten\`.\`tombstone_id\`
+  FROM \`entity_graph\`.\`company__forgotten_records\` AS \`forgotten\`
+  WHERE \`forgotten\`.\`tombstone_id\` IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": undefined,
+    "name": "audit_erasure_7b4b86bb8874",
+    "sql": "INSERT INTO \`entity_graph\`.\`audit_log\` (
+  \`event_id\`, \`category\`, \`subject_type\`, \`subject_id\`,
+  \`cluster_id\`, \`edge_id\`, \`payload\`, \`reason\`,
+  \`actor\`, \`actor_type\`, \`occurred_at\`
+)
+SELECT
+  CONCAT('eg-', CAST(CURRENT_TIMESTAMP AS CHAR), '-', 'erasure', '-', '7b4b86bb8874c6a795bbde78edd48569', '-', '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e'),
+  'mutation',
+  'forgotten_record',
+  '7b4b86bb8874c6a795bbde78edd48569',
+  NULL,
+  NULL,
+  CAST('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["__standardized","__candidate_pairs","__pair_scores","__pair_semantic_scores","__crosswalks","__review_queue","__review_decisions","__document_mentions","__embedding_cache","__match_inbox","__survivorship_audit","audit_log"],"row_counts":{"requested_records":1}}' AS JSON),
+  'gdpr erasure',
+  'system',
+  'system',
+  CURRENT_TIMESTAMP
+FROM (SELECT 1) AS \`audit_source\`",
+  },
+]
+`;
+
+exports[`generateForgetSql > snapshots the forget plan for postgres 1`] = `
+[
+  {
+    "ignore_error_patterns": undefined,
+    "name": "forget_tombstone_upsert",
+    "sql": "INSERT INTO "entity_graph"."company__forgotten_records" ("tombstone_id", "source_ref", "source_pk_json", "requested_at", "reason", "content_hash")
+WITH
+incoming_requests AS (
+SELECT
+  '7b4b86bb8874c6a795bbde78edd48569' AS "tombstone_id",
+  'crm.accounts' AS "source_ref",
+  '{"account_id":"pii@example.com"}' AS "source_pk_json",
+  '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e' AS "content_hash"
+)
+SELECT
+  incoming."tombstone_id",
+  incoming."source_ref",
+  incoming."source_pk_json",
+  CURRENT_TIMESTAMP,
+  'gdpr erasure',
+  incoming."content_hash"
+FROM incoming_requests incoming
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM "entity_graph"."company__forgotten_records" existing
+  WHERE existing."tombstone_id" = incoming."tombstone_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_retire_events",
+    "sql": "INSERT INTO "entity_graph"."company__entity_id_events" (
+  "event_id",
+  "event_type",
+  "entity_id",
+  "previous_entity_id",
+  "record_id",
+  "component_id",
+  "source_ref",
+  "source_pk_json",
+  "source_system",
+  "source_entity_id",
+  "reason",
+  "created_at"
+)
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('retire', '|', cw."entity_id", '|', COALESCE(cw."record_id", ''), '|', tr."content_hash")) AS "event_id",
+    'retire' AS "event_type",
+    cw."entity_id" AS "entity_id",
+    NULL AS "previous_entity_id",
+    cw."record_id" AS "record_id",
+    cw."component_id" AS "component_id",
+    cw."source_ref" AS "source_ref",
+    cw."source_pk_json" AS "source_pk_json",
+    cw."source_system" AS "source_system",
+    cw."source_entity_id" AS "source_entity_id",
+    'erasure' AS "reason"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT
+  candidate."event_id",
+  candidate."event_type",
+  candidate."entity_id",
+  candidate."previous_entity_id",
+  candidate."record_id",
+  candidate."component_id",
+  candidate."source_ref",
+  candidate."source_pk_json",
+  candidate."source_system",
+  candidate."source_entity_id",
+  candidate."reason",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "entity_graph"."company__entity_id_events" existing
+  WHERE existing."event_id" = candidate."event_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_split_events",
+    "sql": "INSERT INTO "entity_graph"."company__entity_id_events" (
+  "event_id",
+  "event_type",
+  "entity_id",
+  "previous_entity_id",
+  "record_id",
+  "component_id",
+  "source_ref",
+  "source_pk_json",
+  "source_system",
+  "source_entity_id",
+  "reason",
+  "created_at"
+)
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('split', '|', cw."entity_id", '|', COALESCE(cw."record_id", ''), '|', tr."content_hash")) AS "event_id",
+    'split' AS "event_type",
+    cw."entity_id" AS "entity_id",
+    cw."entity_id" AS "previous_entity_id",
+    cw."record_id" AS "record_id",
+    cw."component_id" AS "component_id",
+    cw."source_ref" AS "source_ref",
+    cw."source_pk_json" AS "source_pk_json",
+    cw."source_system" AS "source_system",
+    cw."source_entity_id" AS "source_entity_id",
+    'erasure' AS "reason"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT
+  candidate."event_id",
+  candidate."event_type",
+  candidate."entity_id",
+  candidate."previous_entity_id",
+  candidate."record_id",
+  candidate."component_id",
+  candidate."source_ref",
+  candidate."source_pk_json",
+  candidate."source_system",
+  candidate."source_entity_id",
+  candidate."reason",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "entity_graph"."company__entity_id_events" existing
+  WHERE existing."event_id" = candidate."event_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_review_decisions",
+    "sql": "UPDATE "entity_graph"."company__review_decisions"
+SET
+  "reason" = CASE WHEN "reason" IS NULL THEN NULL ELSE ENCODE(DIGEST(CAST("reason" AS TEXT), 'sha256'), 'hex') END,
+  "human_feedback_reason" = CASE WHEN "human_feedback_reason" IS NULL THEN NULL ELSE ENCODE(DIGEST(CAST("human_feedback_reason" AS TEXT), 'sha256'), 'hex') END
+WHERE "pair_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+SELECT "pair_id" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_audit_payloads",
+    "sql": "UPDATE "entity_graph"."audit_log"
+SET
+  "payload" = '{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["audit_log"],"row_counts":{"redacted":1}}'::jsonb,
+  "reason" = 'erasure_redacted'
+WHERE "subject_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+, affected_subjects AS (
+  SELECT "record_id" AS "subject_id" FROM target_records
+  UNION SELECT "entity_id" AS "subject_id" FROM affected_crosswalks
+  UNION SELECT "pair_id" AS "subject_id" FROM affected_pairs
+)
+SELECT "subject_id" FROM affected_subjects
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_semantic_scores",
+    "sql": "DELETE FROM "entity_graph"."company__pair_semantic_scores"
+WHERE "pair_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+SELECT "pair_id" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_document_mentions",
+    "sql": "DELETE FROM "entity_graph"."company__document_mentions"
+WHERE "resolved_entity_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT "entity_id" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_survivorship_audit",
+    "sql": "DELETE FROM "entity_graph"."company__survivorship_audit"
+WHERE "entity_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT "entity_id" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_embedding_cache",
+    "sql": "DELETE FROM "entity_graph"."company__embedding_cache"
+WHERE "content_hash" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+, affected_embeddings AS (
+  SELECT MD5(CONCAT('openai_text_embedding_3_small', '', 'text-embedding-3-small', '', '1536', '', CAST(std."standardized_name" AS TEXT))) AS "content_hash"
+  FROM "entity_graph"."company__standardized" std
+  JOIN target_records tr ON std."record_id" = tr."record_id"
+  WHERE std."standardized_name" IS NOT NULL
+)
+SELECT "content_hash" FROM affected_embeddings
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_review_queue",
+    "sql": "DELETE FROM "entity_graph"."company__review_queue"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_scores",
+    "sql": "DELETE FROM "entity_graph"."company__pair_scores"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_candidate_pairs",
+    "sql": "DELETE FROM "entity_graph"."company__candidate_pairs"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_match_inbox",
+    "sql": "DELETE FROM "entity_graph"."company__match_inbox"
+WHERE "record_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_crosswalks",
+    "sql": "DELETE FROM "entity_graph"."company__crosswalks"
+WHERE CONCAT("source_ref", '|', "source_pk_json") IN (
+SELECT CONCAT("forgotten"."source_ref", '|', "forgotten"."source_pk_json")
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_standardized",
+    "sql": "DELETE FROM "entity_graph"."company__standardized"
+WHERE "record_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": undefined,
+    "name": "audit_erasure_7b4b86bb8874",
+    "sql": "INSERT INTO "entity_graph"."audit_log" (
+  "event_id", "category", "subject_type", "subject_id",
+  "cluster_id", "edge_id", "payload", "reason",
+  "actor", "actor_type", "occurred_at"
+)
+SELECT
+  CONCAT('eg-', CAST(CURRENT_TIMESTAMP AS TEXT), '-', 'erasure', '-', '7b4b86bb8874c6a795bbde78edd48569', '-', '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e'),
+  'mutation',
+  'forgotten_record',
+  '7b4b86bb8874c6a795bbde78edd48569',
+  NULL,
+  NULL,
+  '{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["__standardized","__candidate_pairs","__pair_scores","__pair_semantic_scores","__crosswalks","__review_queue","__review_decisions","__document_mentions","__embedding_cache","__match_inbox","__survivorship_audit","audit_log"],"row_counts":{"requested_records":1}}'::jsonb,
+  'gdpr erasure',
+  'system',
+  'system',
+  CURRENT_TIMESTAMP
+FROM (SELECT 1) AS "audit_source"",
+  },
+]
+`;
+
+exports[`generateForgetSql > snapshots the forget plan for redshift 1`] = `
+[
+  {
+    "ignore_error_patterns": undefined,
+    "name": "forget_tombstone_upsert",
+    "sql": "INSERT INTO "entity_graph"."company__forgotten_records" ("tombstone_id", "source_ref", "source_pk_json", "requested_at", "reason", "content_hash")
+WITH
+incoming_requests AS (
+SELECT
+  '7b4b86bb8874c6a795bbde78edd48569' AS "tombstone_id",
+  'crm.accounts' AS "source_ref",
+  '{"account_id":"pii@example.com"}' AS "source_pk_json",
+  '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e' AS "content_hash"
+)
+SELECT
+  incoming."tombstone_id",
+  incoming."source_ref",
+  incoming."source_pk_json",
+  CURRENT_TIMESTAMP,
+  'gdpr erasure',
+  incoming."content_hash"
+FROM incoming_requests incoming
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM "entity_graph"."company__forgotten_records" existing
+  WHERE existing."tombstone_id" = incoming."tombstone_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_retire_events",
+    "sql": "INSERT INTO "entity_graph"."company__entity_id_events" (
+  "event_id",
+  "event_type",
+  "entity_id",
+  "previous_entity_id",
+  "record_id",
+  "component_id",
+  "source_ref",
+  "source_pk_json",
+  "source_system",
+  "source_entity_id",
+  "reason",
+  "created_at"
+)
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('retire', '|', cw."entity_id", '|', COALESCE(cw."record_id", ''), '|', tr."content_hash")) AS "event_id",
+    'retire' AS "event_type",
+    cw."entity_id" AS "entity_id",
+    NULL AS "previous_entity_id",
+    cw."record_id" AS "record_id",
+    cw."component_id" AS "component_id",
+    cw."source_ref" AS "source_ref",
+    cw."source_pk_json" AS "source_pk_json",
+    cw."source_system" AS "source_system",
+    cw."source_entity_id" AS "source_entity_id",
+    'erasure' AS "reason"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT
+  candidate."event_id",
+  candidate."event_type",
+  candidate."entity_id",
+  candidate."previous_entity_id",
+  candidate."record_id",
+  candidate."component_id",
+  candidate."source_ref",
+  candidate."source_pk_json",
+  candidate."source_system",
+  candidate."source_entity_id",
+  candidate."reason",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "entity_graph"."company__entity_id_events" existing
+  WHERE existing."event_id" = candidate."event_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_split_events",
+    "sql": "INSERT INTO "entity_graph"."company__entity_id_events" (
+  "event_id",
+  "event_type",
+  "entity_id",
+  "previous_entity_id",
+  "record_id",
+  "component_id",
+  "source_ref",
+  "source_pk_json",
+  "source_system",
+  "source_entity_id",
+  "reason",
+  "created_at"
+)
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('split', '|', cw."entity_id", '|', COALESCE(cw."record_id", ''), '|', tr."content_hash")) AS "event_id",
+    'split' AS "event_type",
+    cw."entity_id" AS "entity_id",
+    cw."entity_id" AS "previous_entity_id",
+    cw."record_id" AS "record_id",
+    cw."component_id" AS "component_id",
+    cw."source_ref" AS "source_ref",
+    cw."source_pk_json" AS "source_pk_json",
+    cw."source_system" AS "source_system",
+    cw."source_entity_id" AS "source_entity_id",
+    'erasure' AS "reason"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT
+  candidate."event_id",
+  candidate."event_type",
+  candidate."entity_id",
+  candidate."previous_entity_id",
+  candidate."record_id",
+  candidate."component_id",
+  candidate."source_ref",
+  candidate."source_pk_json",
+  candidate."source_system",
+  candidate."source_entity_id",
+  candidate."reason",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "entity_graph"."company__entity_id_events" existing
+  WHERE existing."event_id" = candidate."event_id"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_review_decisions",
+    "sql": "UPDATE "entity_graph"."company__review_decisions"
+SET
+  "reason" = CASE WHEN "reason" IS NULL THEN NULL ELSE SHA2(CAST("reason" AS VARCHAR), 256) END,
+  "human_feedback_reason" = CASE WHEN "human_feedback_reason" IS NULL THEN NULL ELSE SHA2(CAST("human_feedback_reason" AS VARCHAR), 256) END
+WHERE "pair_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+SELECT "pair_id" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_audit_payloads",
+    "sql": "UPDATE "entity_graph"."audit_log"
+SET
+  "payload" = json_parse('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["audit_log"],"row_counts":{"redacted":1}}'),
+  "reason" = 'erasure_redacted'
+WHERE "subject_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+, affected_subjects AS (
+  SELECT "record_id" AS "subject_id" FROM target_records
+  UNION SELECT "entity_id" AS "subject_id" FROM affected_crosswalks
+  UNION SELECT "pair_id" AS "subject_id" FROM affected_pairs
+)
+SELECT "subject_id" FROM affected_subjects
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_semantic_scores",
+    "sql": "DELETE FROM "entity_graph"."company__pair_semantic_scores"
+WHERE "pair_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__pair_scores" ps
+  WHERE ps."record_a_id" IN (SELECT "record_id" FROM target_records) OR ps."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."record_a_id", cp."record_b_id"), '||', GREATEST(cp."record_a_id", cp."record_b_id"))) AS "pair_id"
+  FROM "entity_graph"."company__candidate_pairs" cp
+  WHERE cp."record_a_id" IN (SELECT "record_id" FROM target_records) OR cp."record_b_id" IN (SELECT "record_id" FROM target_records)
+  UNION
+  SELECT rq."pair_id" AS "pair_id"
+  FROM "entity_graph"."company__review_queue" rq
+  WHERE rq."record_a_id" IN (SELECT "record_id" FROM target_records) OR rq."record_b_id" IN (SELECT "record_id" FROM target_records)
+)
+SELECT "pair_id" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_document_mentions",
+    "sql": "DELETE FROM "entity_graph"."company__document_mentions"
+WHERE "resolved_entity_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT "entity_id" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_survivorship_audit",
+    "sql": "DELETE FROM "entity_graph"."company__survivorship_audit"
+WHERE "entity_id" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "entity_graph"."company__crosswalks" cw
+  JOIN target_records tr
+    ON cw."source_ref" = tr."source_ref"
+   AND cw."source_pk_json" = tr."source_pk_json"
+)
+SELECT "entity_id" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_embedding_cache",
+    "sql": "DELETE FROM "entity_graph"."company__embedding_cache"
+WHERE "content_hash" IN (
+WITH
+target_records AS (
+  SELECT
+    "forgotten"."tombstone_id" AS "tombstone_id",
+    "forgotten"."source_ref" AS "source_ref",
+    "forgotten"."source_pk_json" AS "source_pk_json",
+    "forgotten"."content_hash" AS "content_hash",
+    "forgotten"."tombstone_id" AS "record_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+, affected_embeddings AS (
+  SELECT MD5(CONCAT('openai_text_embedding_3_small', '', 'text-embedding-3-small', '', '1536', '', CAST(std."standardized_name" AS VARCHAR(65535)))) AS "content_hash"
+  FROM "entity_graph"."company__standardized" std
+  JOIN target_records tr ON std."record_id" = tr."record_id"
+  WHERE std."standardized_name" IS NOT NULL
+)
+SELECT "content_hash" FROM affected_embeddings
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_review_queue",
+    "sql": "DELETE FROM "entity_graph"."company__review_queue"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_scores",
+    "sql": "DELETE FROM "entity_graph"."company__pair_scores"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_candidate_pairs",
+    "sql": "DELETE FROM "entity_graph"."company__candidate_pairs"
+WHERE "record_a_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "record_b_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_match_inbox",
+    "sql": "DELETE FROM "entity_graph"."company__match_inbox"
+WHERE "record_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_crosswalks",
+    "sql": "DELETE FROM "entity_graph"."company__crosswalks"
+WHERE CONCAT("source_ref", '|', "source_pk_json") IN (
+SELECT CONCAT("forgotten"."source_ref", '|', "forgotten"."source_pk_json")
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_standardized",
+    "sql": "DELETE FROM "entity_graph"."company__standardized"
+WHERE "record_id" IN (
+SELECT "forgotten"."tombstone_id"
+  FROM "entity_graph"."company__forgotten_records" AS "forgotten"
+  WHERE "forgotten"."tombstone_id" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": undefined,
+    "name": "audit_erasure_7b4b86bb8874",
+    "sql": "INSERT INTO "entity_graph"."audit_log" (
+  "event_id", "category", "subject_type", "subject_id",
+  "cluster_id", "edge_id", "payload", "reason",
+  "actor", "actor_type", "occurred_at"
+)
+SELECT
+  CONCAT('eg-', CAST(CURRENT_TIMESTAMP AS VARCHAR(65535)), '-', 'erasure', '-', '7b4b86bb8874c6a795bbde78edd48569', '-', '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e'),
+  'mutation',
+  'forgotten_record',
+  '7b4b86bb8874c6a795bbde78edd48569',
+  NULL,
+  NULL,
+  json_parse('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["__standardized","__candidate_pairs","__pair_scores","__pair_semantic_scores","__crosswalks","__review_queue","__review_decisions","__document_mentions","__embedding_cache","__match_inbox","__survivorship_audit","audit_log"],"row_counts":{"requested_records":1}}'),
+  'gdpr erasure',
+  'system',
+  'system',
+  CURRENT_TIMESTAMP
+FROM (SELECT 1) AS "audit_source"",
+  },
+]
+`;
+
+exports[`generateForgetSql > snapshots the forget plan for snowflake 1`] = `
+[
+  {
+    "ignore_error_patterns": undefined,
+    "name": "forget_tombstone_upsert",
+    "sql": "INSERT INTO "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" ("TOMBSTONE_ID", "SOURCE_REF", "SOURCE_PK_JSON", "REQUESTED_AT", "REASON", "CONTENT_HASH")
+WITH
+incoming_requests AS (
+SELECT
+  '7b4b86bb8874c6a795bbde78edd48569' AS "TOMBSTONE_ID",
+  'crm.accounts' AS "SOURCE_REF",
+  '{"account_id":"pii@example.com"}' AS "SOURCE_PK_JSON",
+  '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e' AS "CONTENT_HASH"
+)
+SELECT
+  incoming."TOMBSTONE_ID",
+  incoming."SOURCE_REF",
+  incoming."SOURCE_PK_JSON",
+  CURRENT_TIMESTAMP,
+  'gdpr erasure',
+  incoming."CONTENT_HASH"
+FROM incoming_requests incoming
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" existing
+  WHERE existing."TOMBSTONE_ID" = incoming."TOMBSTONE_ID"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_retire_events",
+    "sql": "INSERT INTO "ENTITY_GRAPH"."COMPANY__ENTITY_ID_EVENTS" (
+  "EVENT_ID",
+  "EVENT_TYPE",
+  "ENTITY_ID",
+  "PREVIOUS_ENTITY_ID",
+  "RECORD_ID",
+  "COMPONENT_ID",
+  "SOURCE_REF",
+  "SOURCE_PK_JSON",
+  "SOURCE_SYSTEM",
+  "SOURCE_ENTITY_ID",
+  "REASON",
+  "CREATED_AT"
+)
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "ENTITY_GRAPH"."COMPANY__CROSSWALKS" cw
+  JOIN target_records tr
+    ON cw."SOURCE_REF" = tr."SOURCE_REF"
+   AND cw."SOURCE_PK_JSON" = tr."SOURCE_PK_JSON"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('retire', '|', cw."ENTITY_ID", '|', COALESCE(cw."RECORD_ID", ''), '|', tr."CONTENT_HASH")) AS "EVENT_ID",
+    'retire' AS "EVENT_TYPE",
+    cw."ENTITY_ID" AS "ENTITY_ID",
+    NULL AS "PREVIOUS_ENTITY_ID",
+    cw."RECORD_ID" AS "RECORD_ID",
+    cw."COMPONENT_ID" AS "COMPONENT_ID",
+    cw."SOURCE_REF" AS "SOURCE_REF",
+    cw."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    cw."SOURCE_SYSTEM" AS "SOURCE_SYSTEM",
+    cw."SOURCE_ENTITY_ID" AS "SOURCE_ENTITY_ID",
+    'erasure' AS "REASON"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."SOURCE_REF" = tr."SOURCE_REF"
+   AND cw."SOURCE_PK_JSON" = tr."SOURCE_PK_JSON"
+)
+SELECT
+  candidate."EVENT_ID",
+  candidate."EVENT_TYPE",
+  candidate."ENTITY_ID",
+  candidate."PREVIOUS_ENTITY_ID",
+  candidate."RECORD_ID",
+  candidate."COMPONENT_ID",
+  candidate."SOURCE_REF",
+  candidate."SOURCE_PK_JSON",
+  candidate."SOURCE_SYSTEM",
+  candidate."SOURCE_ENTITY_ID",
+  candidate."REASON",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "ENTITY_GRAPH"."COMPANY__ENTITY_ID_EVENTS" existing
+  WHERE existing."EVENT_ID" = candidate."EVENT_ID"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_entity_id_split_events",
+    "sql": "INSERT INTO "ENTITY_GRAPH"."COMPANY__ENTITY_ID_EVENTS" (
+  "EVENT_ID",
+  "EVENT_TYPE",
+  "ENTITY_ID",
+  "PREVIOUS_ENTITY_ID",
+  "RECORD_ID",
+  "COMPONENT_ID",
+  "SOURCE_REF",
+  "SOURCE_PK_JSON",
+  "SOURCE_SYSTEM",
+  "SOURCE_ENTITY_ID",
+  "REASON",
+  "CREATED_AT"
+)
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "ENTITY_GRAPH"."COMPANY__CROSSWALKS" cw
+  JOIN target_records tr
+    ON cw."SOURCE_REF" = tr."SOURCE_REF"
+   AND cw."SOURCE_PK_JSON" = tr."SOURCE_PK_JSON"
+)
+, event_candidates AS (
+  SELECT
+    MD5(CONCAT('split', '|', cw."ENTITY_ID", '|', COALESCE(cw."RECORD_ID", ''), '|', tr."CONTENT_HASH")) AS "EVENT_ID",
+    'split' AS "EVENT_TYPE",
+    cw."ENTITY_ID" AS "ENTITY_ID",
+    cw."ENTITY_ID" AS "PREVIOUS_ENTITY_ID",
+    cw."RECORD_ID" AS "RECORD_ID",
+    cw."COMPONENT_ID" AS "COMPONENT_ID",
+    cw."SOURCE_REF" AS "SOURCE_REF",
+    cw."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    cw."SOURCE_SYSTEM" AS "SOURCE_SYSTEM",
+    cw."SOURCE_ENTITY_ID" AS "SOURCE_ENTITY_ID",
+    'erasure' AS "REASON"
+  FROM affected_crosswalks cw
+  JOIN target_records tr
+    ON cw."SOURCE_REF" = tr."SOURCE_REF"
+   AND cw."SOURCE_PK_JSON" = tr."SOURCE_PK_JSON"
+)
+SELECT
+  candidate."EVENT_ID",
+  candidate."EVENT_TYPE",
+  candidate."ENTITY_ID",
+  candidate."PREVIOUS_ENTITY_ID",
+  candidate."RECORD_ID",
+  candidate."COMPONENT_ID",
+  candidate."SOURCE_REF",
+  candidate."SOURCE_PK_JSON",
+  candidate."SOURCE_SYSTEM",
+  candidate."SOURCE_ENTITY_ID",
+  candidate."REASON",
+  CURRENT_TIMESTAMP
+FROM event_candidates candidate
+WHERE NOT EXISTS (
+  SELECT 1 FROM "ENTITY_GRAPH"."COMPANY__ENTITY_ID_EVENTS" existing
+  WHERE existing."EVENT_ID" = candidate."EVENT_ID"
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_review_decisions",
+    "sql": "UPDATE "ENTITY_GRAPH"."COMPANY__REVIEW_DECISIONS"
+SET
+  "REASON" = CASE WHEN "REASON" IS NULL THEN NULL ELSE SHA2(CAST("REASON" AS VARCHAR), 256) END,
+  "HUMAN_FEEDBACK_REASON" = CASE WHEN "HUMAN_FEEDBACK_REASON" IS NULL THEN NULL ELSE SHA2(CAST("HUMAN_FEEDBACK_REASON" AS VARCHAR), 256) END
+WHERE "PAIR_ID" IN (
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."PAIR_ID" AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__PAIR_SCORES" ps
+  WHERE ps."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR ps."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."RECORD_A_ID", cp."RECORD_B_ID"), '||', GREATEST(cp."RECORD_A_ID", cp."RECORD_B_ID"))) AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__CANDIDATE_PAIRS" cp
+  WHERE cp."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR cp."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+  UNION
+  SELECT rq."PAIR_ID" AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__REVIEW_QUEUE" rq
+  WHERE rq."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR rq."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+)
+SELECT "PAIR_ID" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_redact_audit_payloads",
+    "sql": "UPDATE "ENTITY_GRAPH"."AUDIT_LOG"
+SET
+  "PAYLOAD" = PARSE_JSON('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["audit_log"],"row_counts":{"redacted":1}}'),
+  "REASON" = 'erasure_redacted'
+WHERE "SUBJECT_ID" IN (
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "ENTITY_GRAPH"."COMPANY__CROSSWALKS" cw
+  JOIN target_records tr
+    ON cw."SOURCE_REF" = tr."SOURCE_REF"
+   AND cw."SOURCE_PK_JSON" = tr."SOURCE_PK_JSON"
+)
+,
+affected_pairs AS (
+  SELECT ps."PAIR_ID" AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__PAIR_SCORES" ps
+  WHERE ps."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR ps."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."RECORD_A_ID", cp."RECORD_B_ID"), '||', GREATEST(cp."RECORD_A_ID", cp."RECORD_B_ID"))) AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__CANDIDATE_PAIRS" cp
+  WHERE cp."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR cp."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+  UNION
+  SELECT rq."PAIR_ID" AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__REVIEW_QUEUE" rq
+  WHERE rq."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR rq."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+)
+, affected_subjects AS (
+  SELECT "RECORD_ID" AS "SUBJECT_ID" FROM target_records
+  UNION SELECT "ENTITY_ID" AS "SUBJECT_ID" FROM affected_crosswalks
+  UNION SELECT "PAIR_ID" AS "SUBJECT_ID" FROM affected_pairs
+)
+SELECT "SUBJECT_ID" FROM affected_subjects
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_semantic_scores",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__PAIR_SEMANTIC_SCORES"
+WHERE "PAIR_ID" IN (
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_pairs AS (
+  SELECT ps."PAIR_ID" AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__PAIR_SCORES" ps
+  WHERE ps."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR ps."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+  UNION
+  SELECT MD5(CONCAT(LEAST(cp."RECORD_A_ID", cp."RECORD_B_ID"), '||', GREATEST(cp."RECORD_A_ID", cp."RECORD_B_ID"))) AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__CANDIDATE_PAIRS" cp
+  WHERE cp."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR cp."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+  UNION
+  SELECT rq."PAIR_ID" AS "PAIR_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__REVIEW_QUEUE" rq
+  WHERE rq."RECORD_A_ID" IN (SELECT "RECORD_ID" FROM target_records) OR rq."RECORD_B_ID" IN (SELECT "RECORD_ID" FROM target_records)
+)
+SELECT "PAIR_ID" FROM affected_pairs
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_document_mentions",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__DOCUMENT_MENTIONS"
+WHERE "RESOLVED_ENTITY_ID" IN (
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "ENTITY_GRAPH"."COMPANY__CROSSWALKS" cw
+  JOIN target_records tr
+    ON cw."SOURCE_REF" = tr."SOURCE_REF"
+   AND cw."SOURCE_PK_JSON" = tr."SOURCE_PK_JSON"
+)
+SELECT "ENTITY_ID" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_survivorship_audit",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__SURVIVORSHIP_AUDIT"
+WHERE "ENTITY_ID" IN (
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+,
+affected_crosswalks AS (
+  SELECT cw.*
+  FROM "ENTITY_GRAPH"."COMPANY__CROSSWALKS" cw
+  JOIN target_records tr
+    ON cw."SOURCE_REF" = tr."SOURCE_REF"
+   AND cw."SOURCE_PK_JSON" = tr."SOURCE_PK_JSON"
+)
+SELECT "ENTITY_ID" FROM affected_crosswalks
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_embedding_cache",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__EMBEDDING_CACHE"
+WHERE "CONTENT_HASH" IN (
+WITH
+target_records AS (
+  SELECT
+    "FORGOTTEN"."TOMBSTONE_ID" AS "TOMBSTONE_ID",
+    "FORGOTTEN"."SOURCE_REF" AS "SOURCE_REF",
+    "FORGOTTEN"."SOURCE_PK_JSON" AS "SOURCE_PK_JSON",
+    "FORGOTTEN"."CONTENT_HASH" AS "CONTENT_HASH",
+    "FORGOTTEN"."TOMBSTONE_ID" AS "RECORD_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)
+, affected_embeddings AS (
+  SELECT MD5(CONCAT('openai_text_embedding_3_small', '', 'text-embedding-3-small', '', '1536', '', CAST(std."STANDARDIZED_NAME" AS VARCHAR))) AS "CONTENT_HASH"
+  FROM "ENTITY_GRAPH"."COMPANY__STANDARDIZED" std
+  JOIN target_records tr ON std."RECORD_ID" = tr."RECORD_ID"
+  WHERE std."STANDARDIZED_NAME" IS NOT NULL
+)
+SELECT "CONTENT_HASH" FROM affected_embeddings
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_review_queue",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__REVIEW_QUEUE"
+WHERE "RECORD_A_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "RECORD_B_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_pair_scores",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__PAIR_SCORES"
+WHERE "RECORD_A_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "RECORD_B_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_candidate_pairs",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__CANDIDATE_PAIRS"
+WHERE "RECORD_A_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+) OR "RECORD_B_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_match_inbox",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__MATCH_INBOX"
+WHERE "RECORD_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_crosswalks",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__CROSSWALKS"
+WHERE CONCAT("SOURCE_REF", '|', "SOURCE_PK_JSON") IN (
+SELECT CONCAT("FORGOTTEN"."SOURCE_REF", '|', "FORGOTTEN"."SOURCE_PK_JSON")
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": [
+      "does not exist",
+      "not found",
+      "unknown table",
+      "no such table",
+      "table or view",
+    ],
+    "name": "forget_purge_standardized",
+    "sql": "DELETE FROM "ENTITY_GRAPH"."COMPANY__STANDARDIZED"
+WHERE "RECORD_ID" IN (
+SELECT "FORGOTTEN"."TOMBSTONE_ID"
+  FROM "ENTITY_GRAPH"."COMPANY__FORGOTTEN_RECORDS" AS "FORGOTTEN"
+  WHERE "FORGOTTEN"."TOMBSTONE_ID" IN ('7b4b86bb8874c6a795bbde78edd48569')
+)",
+  },
+  {
+    "ignore_error_patterns": undefined,
+    "name": "audit_erasure_7b4b86bb8874",
+    "sql": "INSERT INTO "ENTITY_GRAPH"."AUDIT_LOG" (
+  "EVENT_ID", "CATEGORY", "SUBJECT_TYPE", "SUBJECT_ID",
+  "CLUSTER_ID", "EDGE_ID", "PAYLOAD", "REASON",
+  "ACTOR", "ACTOR_TYPE", "OCCURRED_AT"
+)
+SELECT
+  CONCAT('eg-', CAST(CURRENT_TIMESTAMP AS VARCHAR), '-', 'erasure', '-', '7b4b86bb8874c6a795bbde78edd48569', '-', '6b919f07f3e2cbda625b4927528ba099212c70e29acced5481a84a67da160d8e'),
+  'mutation',
+  'forgotten_record',
+  '7b4b86bb8874c6a795bbde78edd48569',
+  NULL,
+  NULL,
+  PARSE_JSON('{"kind":"erasure","tombstone_id":"7b4b86bb8874c6a795bbde78edd48569","tables":["__standardized","__candidate_pairs","__pair_scores","__pair_semantic_scores","__crosswalks","__review_queue","__review_decisions","__document_mentions","__embedding_cache","__match_inbox","__survivorship_audit","audit_log"],"row_counts":{"requested_records":1}}'),
+  'gdpr erasure',
+  'system',
+  'system',
+  CURRENT_TIMESTAMP
+FROM (SELECT 1) AS "AUDIT_SOURCE"",
+  },
+]
+`;

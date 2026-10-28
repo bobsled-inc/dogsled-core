@@ -1,0 +1,51 @@
+spec_version: '0.2'
+name: smartlead__campaign_statistics
+type: model
+description: Email send and engagement outcomes observed in Smartlead campaign statistics.
+grain:
+  - campaign_id
+  - lead_email
+  - sequence_number
+source:
+  ref: stg_smartlead__campaign_statistics
+columns:
+  - name: campaign_id
+    expr: stg_smartlead__campaign_statistics.campaign_id
+    semantic_role: entity_id
+    description: Campaign that produced the statistics row.
+  - name: lead_email
+    expr: stg_smartlead__campaign_statistics.lead_email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Lead email address associated with the send.
+  - name: sequence_number
+    expr: stg_smartlead__campaign_statistics.sequence_number
+    semantic_role: categorical
+    description: Sequence position of the outbound email.
+  - name: sent_time
+    expr: stg_smartlead__campaign_statistics.sent_time
+    semantic_role: event_timestamp
+    description: Timestamp when the email was sent.
+  - name: is_opened
+    expr: stg_smartlead__campaign_statistics.is_opened
+    semantic_role: categorical
+    description: Whether the email was opened.
+  - name: is_clicked
+    expr: stg_smartlead__campaign_statistics.is_clicked
+    semantic_role: categorical
+    description: Whether the email recorded a click.
+  - name: is_replied
+    expr: stg_smartlead__campaign_statistics.is_replied
+    semantic_role: categorical
+    description: Whether the lead replied to the email.
+  - name: is_bounced
+    expr: stg_smartlead__campaign_statistics.is_bounced
+    semantic_role: categorical
+    description: Whether the email bounced.
+tags:
+  - smartlead
+  - engagement
+trust_tier: gold
+materialization:
+  type: table

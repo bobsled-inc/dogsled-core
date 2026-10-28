@@ -1,0 +1,53 @@
+type: resource
+name: list_vendors
+description: List vendors configured in Brex
+api:
+  endpoint: /v1/vendors
+  method: GET
+  query_params:
+    cursor: ${{ input.cursor }}
+    limit: ${{ input.limit }}
+    name: ${{ input.name }}
+input:
+  cursor:
+    type: string
+  limit:
+    type: integer
+  name:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+    description: 'Vendor ID: Can be passed to /transfers endpoint to specify counterparty.'
+  company_name:
+    type: string
+    path: $.company_name
+  email:
+    type: string
+    path: $.email
+  phone:
+    type: string
+    path: $.phone
+  payment_accounts:
+    type: array
+    path: $.payment_accounts
+extract:
+  record_path: $.items
+  pagination:
+    type: cursor
+    cursor_param: cursor
+    cursor_path: $.next_cursor
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: ''
+  api:
+    endpoint: /v1/vendors/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true

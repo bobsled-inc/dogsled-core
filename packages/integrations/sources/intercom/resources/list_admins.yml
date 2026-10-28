@@ -1,0 +1,82 @@
+type: resource
+name: list_admins
+description: List all admins
+api:
+  endpoint: /admins
+  method: GET
+input: {}
+output:
+  type:
+    type: string
+    path: $.type
+    description: String representing the object's type.
+  id:
+    type: string
+    path: $.id
+    description: The id representing the admin.
+  name:
+    type: string
+    path: $.name
+    description: The name of the admin.
+  email:
+    type: string
+    path: $.email
+    description: The email of the admin.
+  job_title:
+    type: string
+    path: $.job_title
+    description: The job title of the admin.
+  away_mode_enabled:
+    type: boolean
+    path: $.away_mode_enabled
+    description: Identifies if this admin is currently set in away mode.
+  away_mode_reassign:
+    type: boolean
+    path: $.away_mode_reassign
+    description:
+      Identifies if this admin is set to automatically reassign new conversations to the apps
+      default inbox.
+  away_status_reason_id:
+    type: integer
+    path: $.away_status_reason_id
+    description: The unique identifier of the away status reason
+  has_inbox_seat:
+    type: boolean
+    path: $.has_inbox_seat
+    description: Identifies if this admin has a paid inbox seat to restrict/allow features that require them.
+  team_ids:
+    type: array
+    path: $.team_ids
+    description: This object represents the avatar associated with the admin.
+  avatar:
+    type: string
+    path: $.avatar
+    description: 'Image for the associated team or teammate (format: uri)'
+  team_priority_level_primary_team_ids:
+    type: array
+    path: $.team_priority_level.primary_team_ids
+    description: The primary team ids for the team
+  team_priority_level_secondary_team_ids:
+    type: array
+    path: $.team_priority_level.secondary_team_ids
+    description: The secondary team ids for the team
+extract:
+  record_path: $.admins
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Retrieve an admin
+  api:
+    endpoint: /admins/${{ input.admin_id }}
+    method: GET
+  input:
+    admin_id:
+      type: integer
+      required: true
+test:
+  fixtures:
+    - name: list_admins_smoke
+      input:
+        intercom_version: '2.14'

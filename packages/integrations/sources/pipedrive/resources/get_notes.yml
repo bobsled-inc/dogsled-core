@@ -1,0 +1,78 @@
+type: resource
+name: get_notes
+description: Get recently changed notes from Pipedrive.
+api:
+  endpoint: /recents
+  method: GET
+  query_params:
+    items: note
+    since_timestamp: ${{ input.since_timestamp }}
+    start: ${{ input.start }}
+    limit: ${{ input.limit }}
+input:
+  since_timestamp:
+    type: timestamp
+    description: Return notes updated on or after this timestamp.
+  start:
+    type: integer
+    description: Pagination start offset.
+    default: 0
+  limit:
+    type: integer
+    description: Maximum number of notes to return.
+    default: 50
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive note identifier.
+  content:
+    type: string
+    path: $.content
+    description: Note body content.
+  user_id:
+    type: integer
+    path: $.user_id
+    description: Owner user identifier.
+  deal_id:
+    type: integer
+    path: $.deal_id
+    description: Related deal identifier.
+  person_id:
+    type: integer
+    path: $.person_id
+    description: Related person identifier.
+  org_id:
+    type: integer
+    path: $.org_id
+    description: Related organization identifier.
+  lead_id:
+    type: string
+    path: $.lead_id
+    description: Related lead identifier.
+  active_flag:
+    type: boolean
+    path: $.active_flag
+    description: Whether the note is active.
+  add_time:
+    type: timestamp
+    path: $.add_time
+    description: Note creation timestamp.
+  update_time:
+    type: timestamp
+    path: $.update_time
+    description: Note update timestamp.
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: start
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: update_time
+  cursor_param: since_timestamp

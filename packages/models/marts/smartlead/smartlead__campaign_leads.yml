@@ -1,0 +1,45 @@
+spec_version: '0.2'
+name: smartlead__campaign_leads
+type: model
+description: Lead enrollment detail for Smartlead campaigns.
+grain: campaign_lead_map_id
+source:
+  ref: stg_smartlead__campaign_leads
+columns:
+  - name: campaign_lead_map_id
+    expr: stg_smartlead__campaign_leads.campaign_lead_map_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique lead-to-campaign mapping identifier.
+  - name: lead_id
+    expr: stg_smartlead__campaign_leads.lead_id
+    semantic_role: entity_id
+    description: Lead identifier.
+  - name: email
+    expr: stg_smartlead__campaign_leads.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Lead email address.
+  - name: status
+    expr: stg_smartlead__campaign_leads.status
+    semantic_role: categorical
+    description: Current campaign status for the lead.
+  - name: company_name
+    expr: stg_smartlead__campaign_leads.company_name
+    semantic_role: categorical
+    description: Company name associated with the lead.
+  - name: is_unsubscribed
+    expr: stg_smartlead__campaign_leads.is_unsubscribed
+    semantic_role: categorical
+    description: Whether the lead has unsubscribed globally.
+  - name: created_at
+    expr: stg_smartlead__campaign_leads.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the lead was added to the campaign.
+tags:
+  - smartlead
+  - leads
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,146 @@
+type: resource
+name: get_deals
+description: Get all deals
+api:
+  endpoint: /deals
+  method: GET
+  query_params:
+    user_id: ${{ input.user_id }}
+    filter_id: ${{ input.filter_id }}
+    stage_id: ${{ input.stage_id }}
+    status: ${{ input.status }}
+    start: ${{ input.start }}
+    limit: ${{ input.limit }}
+    sort: ${{ input.sort }}
+    owned_by_you: ${{ input.owned_by_you }}
+input:
+  user_id:
+    type: integer
+    description:
+      If supplied, only deals matching the given user will be returned. However, `filter_id`
+      and `owned_by_you` takes precedence over `user_id` when supplied.
+  filter_id:
+    type: integer
+    description: ID of the filter to use
+  stage_id:
+    type: integer
+    description: If supplied, only deals within the given stage will be returned.
+  status:
+    type: string
+    description: Only fetch deals with specific status. If omitted, all not deleted deals are fetched.
+    enum:
+      - open
+      - won
+      - lost
+      - deleted
+      - all_not_deleted
+    default: all_not_deleted
+  start:
+    type: integer
+    description: Pagination start
+    default: 0
+  limit:
+    type: integer
+    description: Items shown per page
+  sort:
+    type: string
+    description:
+      Field names and sorting mode separated by a comma (`field_name_1 ASC`, `field_name_2
+      DESC`). Only first-level field keys are supported (no nested keys).
+  owned_by_you:
+    type: number
+    description: When supplied, only deals owned by you are returned. However, `filter_id` takes
+      precedence over `owned_by_you` when both are supplied.
+query:
+  filters:
+    stage_id:
+      operators:
+        - eq
+      description: If supplied, only deals within the given stage will be returned.
+      bind:
+        eq:
+          input: stage_id
+      compile:
+        eq:
+          mode: http_query
+          param: stage_id
+    status:
+      operators:
+        - eq
+      enum:
+        - open
+        - won
+        - lost
+        - deleted
+      description: Only fetch deals with specific status. If omitted, all not deleted deals are fetched.
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive deal identifier
+  title:
+    type: string
+    path: $.title
+    description: Deal title
+  value:
+    type: number
+    path: $.value
+    description: Deal value in the default currency
+  currency:
+    type: string
+    path: $.currency
+    description: Currency used for the deal value
+  status:
+    type: string
+    path: $.status
+    description: Current deal status
+  stage_id:
+    type: integer
+    path: $.stage_id
+    description: Pipeline stage identifier
+  pipeline_id:
+    type: integer
+    path: $.pipeline_id
+    description: Pipeline identifier
+  person_id:
+    type: integer
+    path: $.person_id
+    description: Related person identifier
+  org_id:
+    type: integer
+    path: $.org_id
+    description: Related organization identifier
+  add_time:
+    type: timestamp
+    path: $.add_time
+    description: Deal creation timestamp
+  update_time:
+    type: timestamp
+    path: $.update_time
+    description: Deal update timestamp
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: start
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get details of a deal
+  api:
+    endpoint: /deals/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: integer
+      required: true

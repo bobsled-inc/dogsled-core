@@ -1,0 +1,30 @@
+type: resource
+name: custom_roles
+description: List LaunchDarkly custom roles
+api:
+  endpoint: /roles
+  method: GET
+input: {}
+output:
+  key:
+    type: string
+    path: $.key
+    description: Custom role key
+  name:
+    type: string
+    path: $.name
+    description: Custom role name
+  description:
+    type: string
+    path: $.description
+    description: Custom role description
+  base_permissions:
+    type: string
+    path: $.basePermissions
+    description: Base permissions for the role
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - key
+    trust_tier: silver

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: smartlead_campaign_lead_count
+description: Number of Smartlead campaign lead mappings.
+model: smartlead__campaign_leads
+expression: COUNT({smartlead__campaign_leads}.campaign_lead_map_id)
+synonyms: [campaign leads, enrolled leads, lead count]
+tags: [smartlead, outbound, leads]

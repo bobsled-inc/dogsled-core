@@ -1,0 +1,10 @@
+display_name: Asana
+category: task-management
+logo_url: https://asana.com/favicon.ico
+tags: [asana, tasks, projects, workspaces]
+docs_url: https://developers.asana.com/reference/rest-api-reference
+openapi_url: https://raw.githubusercontent.com/Asana/openapi/master/defs/asana_oas.yaml
+auth_setup:
+  - env: ASANA_ACCESS_TOKEN
+    description: Asana personal access token for the target workspace or organization
+    docs_url: https://developers.asana.com/docs/personal-access-token

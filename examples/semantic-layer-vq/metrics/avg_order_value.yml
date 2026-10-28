@@ -1,0 +1,6 @@
+spec_version: '0.2'
+type: metric
+name: avg_order_value
+description: Fictional order amount in units.
+model: order_summary
+expression: AVG(amount)

@@ -1,0 +1,38 @@
+type: resource
+name: list_exports
+description: List SendGrid contact export jobs
+api:
+  endpoint: /v3/contactdb/exports
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Export job identifier
+  export_type:
+    type: string
+    path: $.export_type
+    description: SendGrid export job type
+  status:
+    type: string
+    path: $.status
+    description: Current export job status
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the export was created
+  completed_at:
+    type: timestamp
+    path: $.completed_at
+    description: Timestamp when the export completed
+  expires_at:
+    type: timestamp
+    path: $.expires_at
+    description: Timestamp when the export download expires
+extract:
+  record_path: $.result
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,10 @@
+display_name: Segment
+category: analytics
+tags:
+  - cdp
+  - tracking-plans
+  - destinations
+docs_url: https://docs.segmentapis.com/
+auth_setup:
+  - env: SEGMENT_TOKEN
+    description: Segment Public API token

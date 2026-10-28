@@ -1,0 +1,40 @@
+spec_version: '0.2'
+name: klaviyo__campaigns
+type: model
+description: Klaviyo campaign detail with status and lifecycle timestamps.
+grain: campaign_id
+source:
+  ref: stg_klaviyo__campaigns
+columns:
+  - name: campaign_id
+    expr: stg_klaviyo__campaigns.campaign_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Klaviyo campaign identifier.
+  - name: name
+    expr: stg_klaviyo__campaigns.name
+    semantic_role: categorical
+    description: Campaign name.
+  - name: status
+    expr: stg_klaviyo__campaigns.status
+    semantic_role: categorical
+    description: Current campaign status.
+  - name: type
+    expr: stg_klaviyo__campaigns.type
+    semantic_role: categorical
+    description: Campaign type (email or sms).
+  - name: created_at
+    expr: stg_klaviyo__campaigns.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the campaign was created.
+  - name: updated_at
+    expr: stg_klaviyo__campaigns.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the campaign was last updated.
+tags:
+  - klaviyo
+  - marketing
+  - campaigns
+trust_tier: gold
+materialization:
+  type: table

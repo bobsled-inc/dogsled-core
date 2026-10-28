@@ -1,0 +1,56 @@
+type: resource
+name: access_grants
+description: Access grants controlling team permissions on resources
+api:
+  endpoint: /access_grants
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the access grant.
+  resource_token:
+    type: string
+    path: $.resource_token
+    description: The token of the resource the grant applies to.
+  team_token:
+    type: string
+    path: $.team_token
+    description: The token of the Team with access.
+  access:
+    type: string
+    path: $.access
+    description: The level of access granted.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the access grant was created.
+extract:
+  record_path: $.access_grants
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get access grant by token
+  api:
+    endpoint: /access_grants/${{ input.access_grant_token }}
+    method: GET
+  input:
+    access_grant_token:
+      type: string
+      required: true

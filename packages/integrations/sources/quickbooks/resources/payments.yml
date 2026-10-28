@@ -1,0 +1,41 @@
+type: resource
+name: payments
+description: Payment entities from QuickBooks Online.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    query: select * from Payment maxresults 1000
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  customer_id:
+    type: string
+    path: $.CustomerRef.value
+  amount:
+    type: number
+    path: $.TotalAmt
+  unapplied_amount:
+    type: number
+    path: $.UnappliedAmt
+  payment_method:
+    type: string
+    paths:
+      - $.PaymentMethodRef.name
+      - $.PaymentMethodRef.value
+  sync_token:
+    type: string
+    path: $.SyncToken
+  created_at:
+    type: timestamp
+    path: $.MetaData.CreateTime
+  updated_at:
+    type: timestamp
+    path: $.MetaData.LastUpdatedTime
+extract:
+  record_path: $.QueryResponse.Payment
+  table:
+    primary_key:
+      - id

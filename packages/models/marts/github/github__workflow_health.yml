@@ -1,0 +1,60 @@
+spec_version: '0.2'
+name: github__workflow_health
+type: model
+description: Workflow-level execution health summary built from recent workflow runs.
+grain: workflow_id
+source:
+  ref: stg_github__workflows
+joins:
+  - ref: stg_github__workflow_runs
+    type: left
+    on: stg_github__workflows.workflow_id = stg_github__workflow_runs.workflow_id
+    pre_aggregate:
+      group_by:
+        - workflow_id
+      columns:
+        - name: total_runs
+          expr: COUNT(*)
+        - name: successful_runs
+          expr: SUM(CASE WHEN conclusion = 'success' THEN 1 ELSE 0 END)
+        - name: failed_runs
+          expr: SUM(CASE WHEN conclusion = 'failure' THEN 1 ELSE 0 END)
+        - name: latest_run_at
+          expr: MAX(created_at)
+columns:
+  - name: workflow_id
+    expr: stg_github__workflows.workflow_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique workflow identifier.
+  - name: name
+    expr: stg_github__workflows.name
+    semantic_role: categorical
+    description: Workflow name.
+  - name: state
+    expr: stg_github__workflows.state
+    semantic_role: categorical
+    description: Current workflow enabled or disabled state.
+  - name: total_runs
+    expr: COALESCE(stg_github__workflow_runs.total_runs, 0)
+    semantic_role: measure
+    description: Total workflow runs observed.
+  - name: successful_runs
+    expr: COALESCE(stg_github__workflow_runs.successful_runs, 0)
+    semantic_role: measure
+    description: Successful workflow runs observed.
+  - name: failed_runs
+    expr: COALESCE(stg_github__workflow_runs.failed_runs, 0)
+    semantic_role: measure
+    description: Failed workflow runs observed.
+  - name: latest_run_at
+    expr: stg_github__workflow_runs.latest_run_at
+    semantic_role: event_timestamp
+    description: Timestamp of the latest observed workflow run. NULL when no runs exist.
+tags:
+  - github
+  - workflows
+  - summary
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,46 @@
+type: resource
+name: offers
+description: List Greenhouse offers
+api:
+  endpoint: /offers
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  per_page:
+    type: integer
+    description: Number of offers to return per page
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Greenhouse offer identifier
+  application_id:
+    type: integer
+    path: $.application_id
+    description: Application identifier associated with the offer
+  candidate_id:
+    type: integer
+    path: $.candidate_id
+    description: Candidate identifier associated with the offer
+  status:
+    type: string
+    path: $.status
+    description: Offer status
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Offer creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Offer last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

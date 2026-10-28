@@ -1,0 +1,77 @@
+type: resource
+name: segments
+description: Cost allocation segments with filters and priority
+api:
+  endpoint: /segments
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+    default: 1000
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the segment.
+  title:
+    type: string
+    path: $.title
+    description: The title of the Segment.
+  description:
+    type: string
+    path: $.description
+    description: The description of the Segment.
+  parent_segment_token:
+    type: string
+    path: $.parent_segment_token
+    description: The token of the parent Segment.
+  track_unallocated:
+    type: boolean
+    path: $.track_unallocated
+    description: Track Unallocated Costs not assigned to any Segment.
+  priority:
+    type: integer
+    path: $.priority
+    description: Costs are assigned in priority order across all Segments.
+  filter:
+    type: string
+    path: $.filter
+    description: The filter applied to the Segment.
+  report_token:
+    type: string
+    path: $.report_token
+    description: The token for the Report the Segment has generated.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The token for the Workspace the Segment is a part of.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the Segment was created.
+extract:
+  record_path: $.segments
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get segment by token
+  api:
+    endpoint: /segments/${{ input.segment_token }}
+    method: GET
+  input:
+    segment_token:
+      type: string
+      required: true

@@ -1,0 +1,17 @@
+spec_version: '0.2'
+type: model
+name: product_stats
+description: Fictional shop product_stats.
+grain:
+  - category_id
+source:
+  ref: local_duckdb.products
+columns:
+  - name: category_id
+    expr: category_id
+  - name: product_count
+    expr: COUNT(*)
+materialization:
+  type: table
+group_by:
+  - category_id

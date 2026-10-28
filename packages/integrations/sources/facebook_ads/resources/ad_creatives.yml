@@ -1,0 +1,50 @@
+type: resource
+name: ad_creatives
+description: Ad creatives for each Meta ad account.
+api:
+  endpoint: /${{ input.ad_account_id }}/adcreatives
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  ad_account_id:
+    type: string
+    default: act_1
+  fields:
+    type: string
+    default: id,name,title,body,object_type,status
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  title:
+    type: string
+    path: $.title
+  body:
+    type: string
+    path: $.body
+  object_type:
+    type: string
+    path: $.object_type
+  status:
+    type: string
+    path: $.status
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

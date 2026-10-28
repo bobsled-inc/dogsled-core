@@ -1,0 +1,42 @@
+spec_version: '0.2'
+name: github__pull_request_activity
+type: model
+description: Pull request activity summarized by state and draft status.
+grain:
+  - state
+  - draft
+  - merged
+source:
+  ref: stg_github__pull_requests
+columns:
+  - name: state
+    expr: stg_github__pull_requests.state
+    semantic_role: categorical
+    description: Open or closed state.
+  - name: draft
+    expr: stg_github__pull_requests.draft
+    semantic_role: categorical
+    description: Draft status of the pull request.
+  - name: merged
+    expr: stg_github__pull_requests.merged
+    semantic_role: categorical
+    description: Whether pull requests in the bucket are merged.
+  - name: pull_request_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Count of pull requests in the bucket.
+  - name: total_changed_files
+    expr: SUM(COALESCE(stg_github__pull_requests.changed_files, 0))
+    semantic_role: measure
+    description: Total changed files across pull requests in the bucket.
+group_by:
+  - state
+  - draft
+  - merged
+tags:
+  - github
+  - pull-requests
+  - summary
+trust_tier: gold
+materialization:
+  type: table

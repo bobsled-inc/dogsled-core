@@ -1,0 +1,95 @@
+type: resource
+name: labels_graphql
+via: graphql
+entity: labels
+description: Issue labels from Linear used to categorize and tag issues with visual color coding, supporting hierarchical label groups and team-scoped labels
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  issueLabels(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id name description color\n      isGroup\n      parent { id name }\n      team { id name key }\n      createdAt updatedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique label UUID assigned by Linear
+  name:
+    type: string
+    path: $.name
+    description: Display name of the label shown on issues (e.g. "Bug", "Feature", "Tech Debt")
+  description:
+    type: string
+    path: $.description
+    description: Optional description explaining when and how this label should be applied to issues
+  color:
+    type: string
+    path: $.color
+    description: Hex color code used to render the label chip in the UI (e.g.
+  is_group:
+    type: boolean
+    path: $.isGroup
+    description: "Whether this label is a group container for child labels \u2014 group labels organize related labels into collapsible hierarchies"
+  parent_id:
+    type: string
+    path: $.parent.id
+    description: UUID of the parent label group if this label belongs to a hierarchical group, null for top-level labels
+  parent_name:
+    type: string
+    path: $.parent.name
+    description: Display name of the parent label group
+  team_id:
+    type: string
+    path: $.team.id
+    description: UUID of the team this label is scoped to, null for workspace-wide labels available to all teams
+  team_name:
+    type: string
+    path: $.team.name
+    description: Display name of the team this label belongs to
+  team_key:
+    type: string
+    path: $.team.key
+    description: Short key prefix of the team this label is scoped to (e.g. ENG)
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the label was first created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the label was last modified
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.issueLabels.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.issueLabels.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

@@ -1,0 +1,30 @@
+type: resource
+name: accounts
+description: Facebook Pages with linked Instagram business accounts.
+api:
+  endpoint: /me/accounts
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+input:
+  fields:
+    type: string
+    default: id,name,instagram_business_account{id,name,username,followers_count,media_count}
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  instagram_business_account_id:
+    type: string
+    path: $.instagram_business_account.id
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next

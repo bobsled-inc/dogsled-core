@@ -1,0 +1,48 @@
+spec_version: '0.2'
+name: asana__users
+type: model
+description: Asana workspace users with task rollups.
+grain: user_id
+source:
+  ref: stg_asana__get_workspace_users
+joins:
+  - ref: stg_asana__get_tasks
+    type: left
+    on: stg_asana__get_workspace_users.gid = stg_asana__get_tasks.assignee_gid
+    pre_aggregate:
+      group_by:
+        - assignee_gid
+      columns:
+        - name: task_count
+          expr: COUNT(*)
+        - name: completed_task_count
+          expr: countif(completed = true)
+columns:
+  - name: user_id
+    expr: stg_asana__get_workspace_users.gid
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Asana user identifier.
+  - name: name
+    expr: stg_asana__get_workspace_users.name
+    semantic_role: categorical
+    description: User display name.
+  - name: email
+    expr: stg_asana__get_workspace_users.email
+    semantic_role: categorical
+    description: User email address.
+  - name: task_count
+    expr: COALESCE(stg_asana__get_tasks.task_count, 0)
+    semantic_role: measure
+    description: Number of tasks assigned to the user.
+  - name: completed_task_count
+    expr: COALESCE(stg_asana__get_tasks.completed_task_count, 0)
+    semantic_role: measure
+    description: Number of completed tasks assigned to the user.
+tags:
+  - asana
+  - users
+  - project-management
+trust_tier: gold
+materialization:
+  type: table

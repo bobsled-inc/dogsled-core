@@ -1,0 +1,10 @@
+display_name: Pylon
+category: communication
+tags: [customer-support, ticketing, issues, knowledge-base, crm]
+logo_url: https://www.usepylon.com/favicon.ico
+docs_url: https://docs.usepylon.com/pylon-docs/developer/api
+openapi_url: https://static.usepylon.com/openapi.json
+auth_setup:
+  - env: PYLON_API_TOKEN
+    description: Pylon API token (created by Admin users in Settings > API)
+    docs_url: https://docs.usepylon.com/pylon-docs/developer/api

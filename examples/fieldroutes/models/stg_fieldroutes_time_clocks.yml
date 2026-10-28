@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: stg_fieldroutes_time_clocks
+type: model
+description: Staging time-clock entries from FieldRoutes `/timeClock/search`.
+grain: ENTRY_ID
+source:
+  ref: fieldroutes.time_clocks
+columns:
+  - name: ENTRY_ID
+    expr: entry_id
+    primary_key: true
+  - name: EMPLOYEE_ID
+    expr: employee_id
+  - name: OFFICE_ID
+    expr: office_id
+  - name: TIME_IN
+    expr: time_in
+  - name: TIME_OUT
+    expr: time_out
+  - name: CLOCK_CATEGORY_ID
+    expr: clock_category_id
+  - name: PAID
+    expr: paid
+materialization:
+  type: view

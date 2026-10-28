@@ -1,0 +1,57 @@
+type: resource
+name: get_folders
+description: Get folders for each ClickUp space.
+api:
+  endpoint: /v2/space/${{ input.space_id }}/folder
+  method: GET
+  query_params:
+    archived: ${{ input.archived }}
+input:
+  space_id:
+    type: number
+    required: true
+    description: Space identifier.
+  archived:
+    type: boolean
+    description: Whether to include archived folders.
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  orderindex:
+    type: integer
+    path: $.orderindex
+  override_statuses:
+    type: boolean
+    path: $.override_statuses
+  hidden:
+    type: boolean
+    path: $.hidden
+  task_count:
+    type: string
+    path: $.task_count
+  lists:
+    type: array
+    path: $.lists
+  space_id:
+    type: string
+    path: $.space.id
+  space_name:
+    type: string
+    path: $.space.name
+  space_access:
+    type: boolean
+    path: $.space.access
+extract:
+  record_path: $.folders
+  for_each:
+    resource: get_spaces
+    field: id
+    input: space_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,136 @@
+type: resource
+name: list_your_organizations
+description: Return a list of organizations available to the authenticated session in a region.
+api:
+  endpoint: /api/0/organizations/
+  method: GET
+  query_params:
+    owner: ${{ input.owner }}
+    cursor: ${{ input.cursor }}
+    query: ${{ input.query }}
+    sortBy: ${{ input.sort_by }}
+input:
+  owner:
+    type: boolean
+    description: Specify `true` to restrict results to organizations in which you are an owner.
+  cursor:
+    type: string
+    description:
+      A pointer to the last object fetched and its sort order; used to retrieve the next or
+      previous results.
+    minLength: 1
+  query:
+    type: string
+    description: >
+      Filters results by using [query syntax](/product/sentry-basics/search/).
+
+
+      Valid query fields include:
+
+      - `id`: The organization ID
+
+      - `slug`: The organization slug
+
+      - `status`: The organization's current status (one of `active`, `pending_deletion`, or
+      `deletion_in_progress`)
+
+      - `email` or `member_id`: Filter your organizations by the emails or [organization member
+      IDs](/api/organizations/list-an-organizations-members/) of specific members included
+
+      - `platform`: Filter your organizations to those with at least one project using this platform
+
+      - `query`: Filter your organizations by name, slug, and members that contain this substring
+
+
+      Example: `query=(slug:foo AND status:active) OR
+      (email:[thing-one@example.com,thing-two@example.com] AND query:bar)`
+  sort_by:
+    type: string
+    description: >
+      The field to sort results by, in descending order. If not specified the results are sorted by
+      the date they were created.
+
+
+      Valid fields include:
+
+      - `members`: By number of members
+
+      - `projects`: By number of projects
+
+      - `events`: By number of events in the past 24 hours
+query:
+  search:
+    dialect: sentry_organization_query
+    bind:
+      input: query
+output:
+  features:
+    type: array
+    path: $.features
+  extra_options:
+    type: object
+    path: $.extraOptions
+  access:
+    type: array
+    path: $.access
+  onboarding_tasks:
+    type: array
+    path: $.onboardingTasks
+  id:
+    type: string
+    path: $.id
+  slug:
+    type: string
+    path: $.slug
+  status_id:
+    type: string
+    path: $.status.id
+  status_name:
+    type: string
+    path: $.status.name
+  name:
+    type: string
+    path: $.name
+  date_created:
+    type: timestamp
+    path: $.dateCreated
+  is_early_adopter:
+    type: boolean
+    path: $.isEarlyAdopter
+  require2_fa:
+    type: boolean
+    path: $.require2FA
+  avatar_avatar_type:
+    type: string
+    path: $.avatar.avatarType
+  avatar_avatar_uuid:
+    type: string
+    path: $.avatar.avatarUuid
+  avatar_avatar_url:
+    type: string
+    path: $.avatar.avatarUrl
+  links_organization_url:
+    type: string
+    path: $.links.organizationUrl
+  links_region_url:
+    type: string
+    path: $.links.regionUrl
+  has_auth_provider:
+    type: boolean
+    path: $.hasAuthProvider
+  allow_member_invite:
+    type: boolean
+    path: $.allowMemberInvite
+  allow_member_project_creation:
+    type: boolean
+    path: $.allowMemberProjectCreation
+  allow_superuser_access:
+    type: boolean
+    path: $.allowSuperuserAccess
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id

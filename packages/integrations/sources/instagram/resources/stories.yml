@@ -1,0 +1,40 @@
+type: resource
+name: stories
+description: Stories for each Instagram business account.
+api:
+  endpoint: /${{ input.ig_user_id }}/stories
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+input:
+  ig_user_id:
+    type: string
+    default: '123'
+  fields:
+    type: string
+    default: id,media_type,media_url,timestamp
+output:
+  id:
+    type: string
+    path: $.id
+  media_type:
+    type: string
+    path: $.media_type
+  media_url:
+    type: string
+    path: $.media_url
+  timestamp:
+    type: timestamp
+    path: $.timestamp
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: accounts
+    field: instagram_business_account_id
+    input: ig_user_id

@@ -1,0 +1,12 @@
+name: chargebee
+display_name: Chargebee
+description: Subscription billing analytics models for Chargebee customers, subscriptions, invoices, and transactions.
+tags:
+  - chargebee
+  - billing
+  - subscriptions
+include_resources:
+  - list_customers
+  - list_invoices
+  - list_subscriptions
+  - list_transactions

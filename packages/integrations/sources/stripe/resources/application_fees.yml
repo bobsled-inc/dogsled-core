@@ -1,0 +1,81 @@
+type: resource
+name: application_fees
+description: Stripe Connect application fees
+api:
+  endpoint: /v1/application_fees
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of application fees per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Application fee ID (fee_xxx)
+  amount:
+    type: integer
+    path: $.amount
+    description: Application fee amount in cents
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO currency code
+  charge:
+    type: string
+    path: $.charge
+    description: Charge ID associated with the application fee
+  account:
+    type: string
+    path: $.account
+    description: Connected account ID
+  refunded:
+    type: boolean
+    path: $.refunded
+    description: Whether the application fee has been fully refunded
+  amount_refunded:
+    type: integer
+    path: $.amount_refunded
+    description: Amount refunded in cents
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when application fee was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

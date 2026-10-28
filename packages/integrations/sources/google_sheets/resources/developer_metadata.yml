@@ -1,0 +1,33 @@
+type: resource
+name: developer_metadata
+description: Developer metadata attached to a spreadsheet.
+api:
+  endpoint: /spreadsheets/${{ input.spreadsheet_id }}/developerMetadata:search
+  method: POST
+  request_body:
+    dataFilters:
+      - developerMetadataLookup:
+          visibility: DOCUMENT
+input:
+  spreadsheet_id:
+    type: string
+    required: true
+    default: spreadsheet_id
+output:
+  metadata_id:
+    type: integer
+    path: $.developerMetadata.metadataId
+  key:
+    type: string
+    path: $.developerMetadata.metadataKey
+  value:
+    type: string
+    path: $.developerMetadata.metadataValue
+  visibility:
+    type: string
+    path: $.developerMetadata.visibility
+extract:
+  record_path: $.matchedDeveloperMetadata
+  table:
+    primary_key:
+      - metadata_id

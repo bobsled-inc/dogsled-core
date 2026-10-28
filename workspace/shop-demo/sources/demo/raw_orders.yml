@@ -1,0 +1,14 @@
+spec_version: '0.2'
+name: raw_orders
+type: source
+source_type: warehouse_table
+connection: duckdb
+table: raw.raw_orders
+description: Loaded seed table for order headers.
+trust_tier: bronze
+schema:
+  columns:
+    - { name: order_id, type: STRING }
+    - { name: customer_id, type: STRING }
+    - { name: ordered_at, type: TIMESTAMP }
+    - { name: status, type: STRING }

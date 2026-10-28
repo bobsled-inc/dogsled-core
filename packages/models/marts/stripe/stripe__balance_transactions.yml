@@ -1,0 +1,97 @@
+spec_version: '0.2'
+name: stripe__balance_transactions
+type: model
+description: Stripe balance ledger activity enriched with charge and refund context.
+grain: balance_transaction_id
+source:
+  ref: stg_stripe__balance_transactions
+joins:
+  - ref: stg_stripe__refunds
+    type: left
+    on: stg_stripe__balance_transactions.source_id = stg_stripe__refunds.refund_id
+  - ref: stg_stripe__charges
+    type: left
+    on: stg_stripe__balance_transactions.source_id = stg_stripe__charges.charge_id OR stg_stripe__refunds.charge_id = stg_stripe__charges.charge_id
+  - ref: stg_stripe__customers
+    type: left
+    on: stg_stripe__charges.customer_id = stg_stripe__customers.customer_id
+columns:
+  - name: balance_transaction_id
+    expr: stg_stripe__balance_transactions.balance_transaction_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique balance transaction identifier.
+  - name: source_id
+    expr: stg_stripe__balance_transactions.source_id
+    semantic_role: entity_id
+    description: Stripe object that generated the ledger entry.
+  - name: charge_id
+    expr: stg_stripe__charges.charge_id
+    semantic_role: entity_id
+    references: stg_stripe__charges.charge_id
+    description: Charge that generated the ledger row when applicable.
+  - name: refund_id
+    expr: stg_stripe__refunds.refund_id
+    semantic_role: entity_id
+    references: stg_stripe__refunds.refund_id
+    description: Refund that generated the ledger row when applicable.
+  - name: customer_id
+    expr: stg_stripe__charges.customer_id
+    semantic_role: entity_id
+    references: stg_stripe__customers.customer_id
+    description: Customer resolved through the related charge, including refund-sourced ledger rows.
+  - name: customer_email
+    expr: stg_stripe__customers.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the customer resolved from the related charge.
+  - name: reporting_category
+    expr: stg_stripe__balance_transactions.reporting_category
+    semantic_role: categorical
+    description: Reporting category assigned by Stripe.
+  - name: type
+    expr: stg_stripe__balance_transactions.type
+    semantic_role: categorical
+    description: Underlying ledger transaction type.
+  - name: status
+    expr: stg_stripe__balance_transactions.status
+    semantic_role: categorical
+    description: Availability state of the balance transaction.
+  - name: amount
+    expr: stg_stripe__balance_transactions.amount
+    semantic_role: measure
+    tags:
+      - financial
+    description: Gross amount of the balance transaction.
+  - name: fee
+    expr: stg_stripe__balance_transactions.fee
+    semantic_role: measure
+    tags:
+      - financial
+    description: Fees deducted from the balance transaction.
+  - name: net
+    expr: stg_stripe__balance_transactions.net
+    semantic_role: measure
+    tags:
+      - financial
+    description: Net effect of the transaction after fees.
+  - name: currency
+    expr: stg_stripe__balance_transactions.currency
+    semantic_role: categorical
+    description: Currency of the ledger entry.
+  - name: available_on
+    expr: stg_stripe__balance_transactions.available_on
+    semantic_role: time_dimension
+    description: When funds become available for payout.
+  - name: created_at
+    expr: stg_stripe__balance_transactions.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the balance transaction was created.
+tags:
+  - stripe
+  - billing
+  - ledger
+trust_tier: gold
+materialization:
+  type: table

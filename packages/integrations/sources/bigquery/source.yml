@@ -1,0 +1,25 @@
+spec_version: '2'
+type: source
+name: bigquery
+description: Google BigQuery via MCP server
+transports:
+  - id: mcp
+    type: mcp_stdio
+    command: npx
+    args:
+      - -y
+      - '@ergut/mcp-bigquery-server@1.0.4'
+      - --project
+      - ${{ env.BIGQUERY_PROJECT_ID }}
+      - --location
+      - ${{ env.BIGQUERY_LOCATION }}
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+    timeout_ms: 60000
+    retry:
+      max_retries: 3
+      backoff: exponential
+    rate_limit:
+      requests_per_second: 2
+      burst: 5
+default_transport: mcp

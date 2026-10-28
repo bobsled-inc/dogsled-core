@@ -1,0 +1,64 @@
+type: resource
+name: page_insights
+description: Engagement and reach insights for a Facebook Page.
+api:
+  endpoint: /${{ input.page_id }}/insights
+  method: GET
+  query_params:
+    metric: ${{ input.metric }}
+    period: ${{ input.period }}
+input:
+  page_id:
+    type: string
+    default: '123'
+  metric:
+    type: string
+    default: page_impressions,page_engaged_users,page_fans,page_views_total
+  period:
+    type: string
+    default: day
+query:
+  filters:
+    period:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: period
+      compile:
+        eq:
+          mode: http_query
+          param: period
+output:
+  page_id:
+    type: string
+    path: $.__input__.page_id
+  name:
+    type: string
+    path: $.name
+  period:
+    type: string
+    path: $.period
+  title:
+    type: string
+    path: $.title
+  description:
+    type: string
+    path: $.description
+  value:
+    type: integer
+    path: $.values.0.value
+  end_time:
+    type: string
+    path: $.values.0.end_time
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - page_id
+      - name
+      - end_time
+  for_each:
+    resource: pages
+    field: id
+    input: page_id

@@ -1,0 +1,133 @@
+type: resource
+name: issues_mcp
+via: mcp
+entity: issues
+description: Issues from Linear with state, assignee, and project metadata
+tool:
+  tool_name: list_issues
+input:
+  team:
+    type: string
+    description: Optional team name or ID to filter issues
+  cycle:
+    type: string
+    description: Optional cycle name, number, or ID to filter issues
+  label:
+    type: string
+    description: Optional label name or ID to filter issues
+  limit:
+    type: integer
+    description: Maximum number of issues per MCP page
+    default: 250
+  query:
+    type: string
+    description: Optional search string for issue title or description
+  state:
+    type: string
+    description: Optional state type, name, or ID to filter issues
+  orderBy:
+    type: string
+    description: Sort field for Linear MCP pagination
+    default: updatedAt
+    enum:
+      - createdAt
+      - updatedAt
+  project:
+    type: string
+    description: Optional project name or ID to filter issues
+  priority:
+    type: number
+    description: Optional priority filter (0=none, 1=urgent, 2=high, 3=normal, 4=low)
+  assignee:
+    type: string
+    description: Optional user ID, name, email, or "me" to filter issues
+  delegate:
+    type: string
+    description: Optional delegate agent name or ID to filter issues
+  parentId:
+    type: string
+    description: Optional parent issue ID to filter sub-issues
+  createdAt:
+    type: string
+    description: Optional created-after ISO 8601 date or duration
+  updatedAt:
+    type: string
+    description: Optional updated-after ISO 8601 date or duration
+  includeArchived:
+    type: boolean
+    description: Include archived issues
+    default: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Issue identifier returned by the Linear MCP server
+  identifier:
+    type: string
+    path: $.id
+    description: Human-readable issue identifier (e.g. TEAM-{number})
+  title:
+    type: string
+    path: $.title
+    description: Issue title
+  description:
+    type: string
+    path: $.description
+    description: Issue description in markdown
+  priority:
+    type: integer
+    path: $.priority
+    description: Priority as integer (0=none, 1=urgent, 2=high, 3=medium, 4=low)
+  priority_label:
+    type: string
+    path: $.priorityLabel
+    description: Human-readable priority label
+  state_name:
+    type: string
+    path: $.state.name
+    description: Name of the workflow state
+  state_type:
+    type: string
+    path: $.state.type
+    description: State category (backlog, unstarted, started, completed, cancelled)
+  assignee_id:
+    type: string
+    path: $.assignee.id
+    description: UUID of the assigned user
+  assignee_name:
+    type: string
+    path: $.assignee.name
+    description: Display name of the assignee
+  team_id:
+    type: string
+    path: $.team.id
+    description: UUID of the team
+  team_name:
+    type: string
+    path: $.team.name
+    description: Team display name
+  project_id:
+    type: string
+    path: $.project.id
+    description: UUID of the parent project
+  project_name:
+    type: string
+    path: $.project.name
+    description: Project display name
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Timestamp when the issue was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Timestamp when the issue was last updated
+extract:
+  record_path: $.issues
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.pageInfo.endCursor
+    cursor_argument: cursor
+  table:
+    primary_key:
+      - id

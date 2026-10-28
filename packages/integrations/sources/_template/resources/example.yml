@@ -1,0 +1,17 @@
+type: resource
+name: example
+description: Example resource - replace with actual endpoint
+api:
+  endpoint: /v1/examples
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique identifier
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

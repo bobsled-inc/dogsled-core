@@ -1,0 +1,54 @@
+type: resource
+name: components
+description: List components for projects returned by the Jira project search stream.
+api:
+  endpoint: /rest/api/3/project/${{ input.project_id }}/components
+  method: GET
+input:
+  project_id:
+    type: string
+    required: true
+    description: Project identifier to list components for.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Component identifier.
+  name:
+    type: string
+    path: $.name
+    description: Component name.
+  description:
+    type: string
+    path: $.description
+    description: Component description.
+  lead_account_id:
+    type: string
+    path: $.lead.accountId
+    description: Account ID of the component lead.
+  lead_display_name:
+    type: string
+    path: $.lead.displayName
+    description: Display name of the component lead.
+  assignee_type:
+    type: string
+    path: $.assigneeType
+    description: Default assignee type for issues in this component.
+  project:
+    type: string
+    path: $.project
+    description: Project key the component belongs to.
+  self:
+    type: string
+    path: $.self
+    description: Jira API URL for the component.
+extract:
+  record_path: $
+  for_each:
+    resource: search_projects
+    field: id
+    input: project_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,6 @@
+display_name: LangSmith
+category: developer-tools
+tags: [observability, evaluation, llm, langchain]
+docs_url: https://docs.smith.langchain.com
+# No auth_setup block: this custom_api source documents its required env vars
+# inline via source.yml `auth_env_vars` (LANGSMITH_API_KEY).

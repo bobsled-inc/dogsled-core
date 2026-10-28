@@ -1,0 +1,59 @@
+type: resource
+name: metric_schema
+description: Dimensions, units, and aggregations supported by one Vercel observability metric.
+api:
+  endpoint: /v2/observability/schema/${{ input.metric_id }}
+  method: GET
+input:
+  metric_id:
+    type: string
+    required: true
+    description: Metric identifier from metric_catalog.
+output:
+  id:
+    type: string
+    path: $.id
+    semantic_role: entity_id
+    description: Metric identifier.
+  description:
+    type: string
+    path: $.description
+    description: Metric description.
+  dimensions:
+    type: array
+    path: $.dimensions
+    description: Supported metric dimensions; preserve unfamiliar dimensions.
+  unit:
+    type: string
+    path: $.unit
+    semantic_role: categorical
+    description: Metric unit.
+  aggregations:
+    type: array
+    path: $.aggregations
+    description: Supported aggregation names.
+  default_aggregation:
+    type: string
+    path: $.defaultAggregation
+    semantic_role: categorical
+    description: Default aggregation selected by Vercel.
+  metric_id:
+    type: string
+    path: $.__input__.metric_id
+    semantic_role: entity_id
+    description: Caller-selected metric identifier.
+extract:
+  record_path: $
+  paginated: false
+  for_each:
+    resource: metric_catalog
+    field: id
+    input: metric_id
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - metric_id
+      - id
+    load_strategy: full_refresh
+    trust_tier: silver

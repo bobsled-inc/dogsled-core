@@ -1,0 +1,65 @@
+spec_version: '0.2'
+name: stg_customers
+type: model
+description: Cleaned customer staging model with semantic metadata and expectations.
+grain: customer_id
+source:
+  ref: duckdb.raw_customers
+columns:
+  - name: customer_id
+    expr: customer_id
+    description: Stable customer identifier.
+    semantic_role: entity_id
+    primary_key: true
+  - name: email
+    expr: lower(trim(email))
+    description: Normalized customer email address.
+    semantic_role: email
+    pii: true
+    format: rfc5322
+  - name: company_name
+    expr: trim(company_name)
+    description: Normalized buyer company name.
+    semantic_role: name
+    embedding_candidate: true
+  - name: age
+    expr: age
+    description: Customer age in years.
+    semantic_role: measure
+    unit: years
+  - name: status
+    expr: lower(trim(status))
+    description: Normalized customer lifecycle status.
+    semantic_role: categorical
+materialization:
+  type: view
+expect:
+  - kind: primary_key
+    columns: [customer_id]
+  - kind: non_null
+    column: email
+  - kind: unique
+    columns: [email]
+  - kind: in_range
+    column: age
+    min: 0
+    max: 150
+  - kind: regex
+    column: email
+    pattern: '^.+@.+$'
+  - kind: schema_contains
+    columns: [customer_id, email, company_name, age, status]
+  - kind: row_count_between
+    min: 1
+  - kind: accepted_values
+    column: status
+    values: [active, inactive, prospect]
+    severity: warn
+  - kind: expression
+    expression: 'age >= 0'
+  - kind: custom
+    sql: |
+      SELECT COUNT(*) AS violation_count
+      FROM {model}
+      WHERE age < 0
+    description: No negative ages

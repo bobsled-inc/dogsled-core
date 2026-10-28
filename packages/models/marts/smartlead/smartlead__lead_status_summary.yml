@@ -1,0 +1,32 @@
+spec_version: '0.2'
+name: smartlead__lead_status_summary
+type: model
+description: Lead count summary grouped by campaign lead status and unsubscribe state.
+grain:
+  - status
+  - is_unsubscribed
+source:
+  ref: stg_smartlead__campaign_leads
+columns:
+  - name: status
+    expr: stg_smartlead__campaign_leads.status
+    semantic_role: categorical
+    description: Campaign lead status bucket.
+  - name: is_unsubscribed
+    expr: stg_smartlead__campaign_leads.is_unsubscribed
+    semantic_role: categorical
+    description: Whether leads in the bucket have unsubscribed.
+  - name: lead_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of campaign leads in the bucket.
+group_by:
+  - status
+  - is_unsubscribed
+tags:
+  - smartlead
+  - leads
+  - summary
+trust_tier: gold
+materialization:
+  type: table

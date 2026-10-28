@@ -1,0 +1,101 @@
+type: resource
+name: list_conferences
+description: List conferences for each Twilio account
+api:
+  endpoint: /2010-04-01/Accounts/${{ input.account_sid }}/Conferences.json
+  method: GET
+  query_params:
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+    FriendlyName: ${{ input.friendly_name }}
+    Status: ${{ input.status }}
+input:
+  account_sid:
+    type: string
+    description: Twilio account SID to list conferences from
+    required: true
+  page_size:
+    type: integer
+    description: Number of conferences to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+  friendly_name:
+    type: string
+    description: Optional conference friendly name filter
+  status:
+    type: string
+    description: Optional conference status filter
+    enum:
+      - init
+      - in-progress
+      - completed
+query:
+  filters:
+    friendly_name:
+      operators:
+        - eq
+      description: Optional conference friendly name filter
+      bind:
+        eq:
+          input: friendly_name
+      compile:
+        eq:
+          mode: http_query
+          param: FriendlyName
+    status:
+      operators:
+        - eq
+      enum:
+        - init
+        - in-progress
+        - completed
+      description: Optional conference status filter
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: Status
+output:
+  sid:
+    type: string
+    path: $.sid
+    description: Twilio conference SID
+  account_sid:
+    type: string
+    path: $.account_sid
+    description: Parent Twilio account SID
+  friendly_name:
+    type: string
+    path: $.friendly_name
+    description: Conference friendly name
+  status:
+    type: string
+    path: $.status
+    description: Current conference status
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Timestamp when the conference was created
+  date_updated:
+    type: timestamp
+    path: $.date_updated
+    description: Timestamp when the conference was last updated
+extract:
+  record_path: $.conferences
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  for_each:
+    resource: list_account
+    field: sid
+    input: account_sid
+  table:
+    primary_key:
+      - sid
+    trust_tier: silver

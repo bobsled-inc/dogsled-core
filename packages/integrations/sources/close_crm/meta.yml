@@ -1,0 +1,13 @@
+display_name: Close CRM
+category: crm
+logo_url: https://close.com/favicon.ico
+tags:
+  - close
+  - crm
+  - sales
+  - leads
+docs_url: https://developer.close.com/
+auth_setup:
+  - env: CLOSE_API_KEY
+    description: Close API key used as the basic auth username with an empty password
+    docs_url: https://developer.close.com/topics/authentication/

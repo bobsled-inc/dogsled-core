@@ -1,0 +1,53 @@
+spec_version: '0.2'
+name: smartlead__email_accounts
+type: model
+description: Sender account detail for Smartlead email accounts.
+grain: email_account_id
+source:
+  ref: stg_smartlead__email_accounts
+columns:
+  - name: email_account_id
+    expr: stg_smartlead__email_accounts.email_account_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Smartlead email account identifier.
+  - name: from_name
+    expr: stg_smartlead__email_accounts.from_name
+    semantic_role: categorical
+    description: Sender display name.
+  - name: from_email
+    expr: stg_smartlead__email_accounts.from_email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Sender email address.
+  - name: type
+    expr: stg_smartlead__email_accounts.type
+    semantic_role: categorical
+    description: Account provider type.
+  - name: campaign_count
+    expr: stg_smartlead__email_accounts.campaign_count
+    semantic_role: measure
+    description: Number of campaigns using the account.
+  - name: message_per_day
+    expr: stg_smartlead__email_accounts.message_per_day
+    semantic_role: measure
+    description: Configured daily sending limit.
+  - name: daily_sent_count
+    expr: stg_smartlead__email_accounts.daily_sent_count
+    semantic_role: measure
+    description: Emails already sent today by the account.
+  - name: warmup_status
+    expr: stg_smartlead__email_accounts.warmup_status
+    semantic_role: categorical
+    description: Warmup status for the sender account.
+  - name: warmup_total_sent
+    expr: stg_smartlead__email_accounts.warmup_total_sent
+    semantic_role: measure
+    description: Total warmup emails sent by the account.
+tags:
+  - smartlead
+  - email-accounts
+trust_tier: gold
+materialization:
+  type: table

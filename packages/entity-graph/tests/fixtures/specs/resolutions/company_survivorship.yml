@@ -1,0 +1,10 @@
+spec_version: '0.2'
+name: company_survivorship
+type: survivorship
+description: Choose golden-record company attributes after clustering.
+resolution_ref: company_resolution
+
+default_timestamp_field: updated_at
+
+outputs:
+  target_schema: entity_graph

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: vercel_total_billed_cost
+description: Total billed Vercel cost for one complete snapshot. Group results by billing currency before comparing or combining values.
+model: vercel__daily_overview
+expression: SUM({vercel__daily_overview}.total_billed_cost)
+synonyms: [billed cost, Vercel spend, gross Vercel cost]
+tags: [vercel, billing, finance]

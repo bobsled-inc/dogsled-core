@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: vq
+name: revenue_by_customer
+nlq: What revenue did each fictional customer generate in the requested date range?
+sql: SELECT orders.customer_id, customers.name AS customer_name, SUM(orders.amount) AS total_revenue
+  FROM {shop_api.api_orders} orders JOIN {shop_api.api_customers} customers ON orders.customer_id =
+  customers.id WHERE orders.order_date BETWEEN {start_date} AND {end_date} GROUP BY
+  orders.customer_id, customers.name ORDER BY orders.customer_id
+parameters:
+  - name: start_date
+    type: date
+  - name: end_date
+    type: date

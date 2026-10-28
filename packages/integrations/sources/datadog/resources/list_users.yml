@@ -1,0 +1,51 @@
+type: resource
+name: list_users
+description: List all users
+api:
+  endpoint: /api/v1/user
+  method: GET
+input: {}
+output:
+  access_role:
+    type: string
+    path: $.access_role
+    description: The access role of the user.
+  disabled:
+    type: boolean
+    path: $.disabled
+    description: The new disabled status of the user.
+  email:
+    type: string
+    path: $.email
+    description: The new email of the user.
+  handle:
+    type: string
+    path: $.handle
+    description: The user handle, must be a valid email.
+  icon:
+    type: string
+    path: $.icon
+    description: Gravatar icon associated to the user.
+  name:
+    type: string
+    path: $.name
+    description: The name of the user.
+  verified:
+    type: boolean
+    path: $.verified
+    description: Whether or not the user logged in Datadog at least once.
+extract:
+  record_path: $.users
+  table:
+    primary_key:
+      - name
+    trust_tier: silver
+lookup:
+  description: Get user details
+  api:
+    endpoint: /api/v1/user/${{ input.user_handle }}
+    method: GET
+  input:
+    user_handle:
+      type: string
+      required: true

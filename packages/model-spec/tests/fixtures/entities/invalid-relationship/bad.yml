@@ -1,0 +1,4 @@
+spec_version: '0.2'
+type: relationship
+name: broken
+# missing left/right model refs + join_type

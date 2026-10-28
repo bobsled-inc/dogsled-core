@@ -1,0 +1,21 @@
+spec_version: '0.2'
+type: model
+name: postgres_order_summary
+description: Fictional shop order headers.
+grain:
+  - order_id
+source:
+  ref: local_pg.orders
+columns:
+  - name: order_id
+    expr: id
+  - name: customer_id
+    expr: customer_id
+  - name: amount
+    expr: amount
+materialization:
+  type: table
+expect:
+  - kind: row_count_between
+    min: 16
+    max: 16

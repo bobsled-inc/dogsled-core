@@ -1,0 +1,209 @@
+type: resource
+name: dependency_graph_manifests
+description: Repository dependency manifests from GitHub's dependency graph with nested dependency entries.
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query:
+      "query($repositoryId: ID!, $after: String, $manifestsFirst: Int!, $dependenciesFirst: Int!, $withDependencies: Boolean) {\n  node(id: $repositoryId) {\n    ... on Repository {\n      dependencyGraphManifests(first: $manifestsFirst, after: $after, withDependencies: $withDependencies) {\n        nodes {\n          id\n          filename\n          blobPath\n          dependenciesCount\n          exceedsMaxSize\n          parseable\n          repository {\n            id\n            name\n            owner { login }\n          }\n          dependencies(first: $dependenciesFirst) {\n            totalCount\n            pageInfo { hasNextPage endCursor }\n            nodes {\n              hasDependencies\n              packageManager\n              packageName\n              packageUrl\n              relationship\n              requirements\n              repository {\n                id\n                name\n                url\n              }\n            }\n          }\n    \
+      \    }\n        pageInfo { hasNextPage endCursor }\n      }\n    }\n  }\n}"
+    variables:
+      repositoryId: ${{ input.repository_id }}
+      after: null
+      manifestsFirst: ${{ input.manifests_first }}
+      dependenciesFirst: ${{ input.dependencies_first }}
+      withDependencies: ${{ input.with_dependencies }}
+input:
+  repository_id:
+    type: string
+    description: GitHub GraphQL node ID for the repository. Defaults to a sample repo and is populated automatically during full extraction from repos.node_id.
+    default: R_kgDOExample
+  owner:
+    type: string
+    description: Optional repository owner login populated by repos fanout and used for repository context output.
+  repo:
+    type: string
+    description: Optional repository name populated by repos fanout and used for repository context output.
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  manifests_first:
+    type: integer
+    description: Number of manifests to fetch per page (GitHub GraphQL max 100)
+    default: 100
+  dependencies_first:
+    type: integer
+    description: Number of dependency entries to include per manifest row
+    default: 100
+  with_dependencies:
+    type: boolean
+    description: When true, only return manifests that currently contain dependency entries
+    default: false
+query:
+  filters:
+    repository_id:
+      operators:
+        - eq
+      description: GitHub GraphQL node ID for the repository. Defaults to a sample repo and is populated automatically during full extraction from repos.node_id.
+      bind:
+        eq:
+          input: repository_id
+      compile:
+        eq:
+          mode: direct_arg
+          argument: repository_id
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: string
+    semantic_role: entity_id
+    path: $.id
+    description: GraphQL node ID of the dependency manifest
+  repository_id:
+    type: string
+    semantic_role: entity_id
+    path: $.repository.id
+    description: GraphQL node ID of the repository that owns the manifest
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_owner_login:
+    type: string
+    semantic_role: name
+    path: $.repository.owner.login
+    description: Owner login returned by GitHub for the repository that owns the manifest
+  filename:
+    type: string
+    semantic_role: identifier
+    path: $.filename
+    description: Fully qualified manifest filename in the repository
+  blob_path:
+    type: string
+    semantic_role: identifier
+    path: $.blobPath
+    description: GitHub blob path for the manifest file
+  dependencies_count:
+    type: integer
+    semantic_role: count
+    path: $.dependenciesCount
+    description: Number of dependencies GitHub associated with the manifest
+  dependencies_total_count:
+    type: integer
+    semantic_role: count
+    path: $.dependencies.totalCount
+    description: Number of dependency entries returned by the nested dependency connection
+  dependencies_has_next_page:
+    type: boolean
+    semantic_role: categorical
+    path: $.dependencies.pageInfo.hasNextPage
+    description: True when the nested dependency list has additional pages
+  dependencies_end_cursor:
+    type: string
+    semantic_role: categorical
+    path: $.dependencies.pageInfo.endCursor
+    description: Cursor for the next page of nested dependency entries
+  exceeds_max_size:
+    type: boolean
+    semantic_role: categorical
+    path: $.exceedsMaxSize
+    description: True when GitHub marked the manifest too large to parse fully
+  parseable:
+    type: boolean
+    semantic_role: categorical
+    path: $.parseable
+    description: True when GitHub successfully parsed the manifest
+  dependencies:
+    type: array
+    semantic_role: categorical
+    path: $.dependencies.nodes
+    description: Dependency entries GitHub resolved for the manifest
+    items:
+      type: object
+      semantic_role: categorical
+      path: $
+      properties:
+        has_dependencies:
+          type: boolean
+          semantic_role: categorical
+          path: $.hasDependencies
+          description: True when the dependency itself has downstream dependencies
+        package_manager:
+          type: string
+          semantic_role: identifier
+          path: $.packageManager
+          description: Package ecosystem used by the dependency
+        package_name:
+          type: string
+          semantic_role: identifier
+          path: $.packageName
+          description: Canonical package name used by the package manager
+        package_url:
+          type: string
+          semantic_role: url
+          path: $.packageUrl
+          description: Package URL (PURL) or GitHub package URL for the dependency
+        relationship:
+          type: string
+          semantic_role: categorical
+          path: $.relationship
+          description: Relationship to the manifest such as direct or transitive
+        requirements:
+          type: string
+          semantic_role: categorical
+          path: $.requirements
+          description: Version requirement string from the manifest
+        package_repository:
+          type: object
+          semantic_role: categorical
+          path: $.repository
+          description: GitHub repository metadata for the dependency package, when available
+          properties:
+            id:
+              type: string
+              semantic_role: entity_id
+              path: $.id
+              description: GraphQL node ID of the dependency repository
+            name:
+              type: string
+              semantic_role: name
+              path: $.name
+              description: Name of the dependency repository
+            url:
+              type: string
+              semantic_role: url
+              path: $.url
+              description: Browser URL of the dependency repository
+extract:
+  record_path: $.data.node.dependencyGraphManifests.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.node.dependencyGraphManifests.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: node_id
+        input: repository_id
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+via: graphql

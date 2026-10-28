@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: entity_relationship
+name: works_at
+left_entity: contact
+right_entity: company
+join_columns:
+  - left: email_domain
+    right: domain
+relationship_type: many_to_one
+review:
+  thresholds:
+    auto_confirm: 0.92
+    review: 0.65
+    auto_reject: 0.4

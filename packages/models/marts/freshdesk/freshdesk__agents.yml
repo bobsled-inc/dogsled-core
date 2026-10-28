@@ -1,0 +1,70 @@
+spec_version: '0.2'
+name: freshdesk__agents
+type: model
+description: Freshdesk agents enriched with assigned-ticket counts.
+grain: agent_id
+source:
+  ref: stg_freshdesk__agents
+joins:
+  - ref: stg_freshdesk__tickets
+    type: left
+    on: stg_freshdesk__agents.agent_id = stg_freshdesk__tickets.responder_id
+    pre_aggregate:
+      group_by:
+        - responder_id
+      columns:
+        - name: assigned_ticket_count
+          expr: COUNT(*)
+        - name: latest_assigned_ticket_at
+          expr: MAX(created_at)
+columns:
+  - name: agent_id
+    expr: stg_freshdesk__agents.agent_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Freshdesk agent identifier.
+  - name: contact_email
+    expr: stg_freshdesk__agents.contact_email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Agent email address.
+  - name: available
+    expr: stg_freshdesk__agents.available
+    semantic_role: categorical
+    description: Whether the agent is currently available.
+  - name: occasional
+    expr: stg_freshdesk__agents.occasional
+    semantic_role: categorical
+    description: Whether the agent is marked as occasional.
+  - name: active
+    expr: stg_freshdesk__agents.active
+    semantic_role: categorical
+    description: Whether the agent is active.
+  - name: ticket_scope
+    expr: stg_freshdesk__agents.ticket_scope
+    semantic_role: categorical
+    description: Numeric scope code for ticket visibility.
+  - name: assigned_ticket_count
+    expr: COALESCE(stg_freshdesk__tickets.assigned_ticket_count, 0)
+    semantic_role: measure
+    description: Number of tickets assigned to the agent.
+  - name: latest_assigned_ticket_at
+    expr: stg_freshdesk__tickets.latest_assigned_ticket_at
+    semantic_role: event_timestamp
+    description: Timestamp of the most recent ticket assigned to the agent.
+  - name: created_at
+    expr: stg_freshdesk__agents.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the agent record was created.
+  - name: updated_at
+    expr: stg_freshdesk__agents.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the agent record was last updated.
+tags:
+  - freshdesk
+  - agents
+  - support
+trust_tier: gold
+materialization:
+  type: table

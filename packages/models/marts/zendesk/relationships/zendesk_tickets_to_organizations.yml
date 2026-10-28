@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: zendesk_tickets_to_organizations
+description: Each Zendesk ticket can belong to one organization.
+left_model: zendesk__tickets
+right_model: zendesk__organizations
+join_columns:
+  - left: organization_id
+    right: organization_id
+join_type: left
+relationship_type: many_to_one
+tags: [zendesk, tickets, organizations]

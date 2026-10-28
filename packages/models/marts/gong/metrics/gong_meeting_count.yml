@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: gong_meeting_count
+description: Number of Gong meetings.
+model: gong__meetings
+expression: COUNT({gong__meetings}.meeting_id)
+synonyms: [meetings, meeting count, number of meetings]
+tags: [gong, revenue, meetings]

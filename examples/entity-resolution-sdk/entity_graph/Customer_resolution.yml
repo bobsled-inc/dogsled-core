@@ -1,0 +1,47 @@
+spec_version: '0.2'
+name: Customer
+type: resolution
+description: Resolve customer accounts from CRM and document evidence.
+
+inputs:
+  - ref: raw.customers
+    role: internal
+    id_fields: [customer_id]
+
+standardize:
+  - field: domain
+    transforms: [lowercase, trim]
+
+blocking:
+  rules:
+    - name: domain_block
+      key: domain
+
+deterministic_rules:
+  - name: exact_domain
+    conditions:
+      - field: domain
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: domain
+      algorithm: exact
+      weight: 1.0
+
+thresholds:
+  auto_merge: 0.95
+  review: 0.6
+  auto_reject: 0.4
+
+profile:
+  display_name:
+    field: name
+    source_precedence: [raw.customers]
+  attributes:
+    - field: domain
+    - field: segment

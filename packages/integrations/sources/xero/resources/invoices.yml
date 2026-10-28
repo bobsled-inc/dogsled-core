@@ -1,0 +1,61 @@
+type: resource
+name: invoices
+description: Sales invoices and bills in the connected Xero tenant.
+api:
+  endpoint: /Invoices
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    pageSize: ${{ input.page_size }}
+    summaryOnly: ${{ input.summary_only }}
+input:
+  page:
+    type: integer
+    description: Page number to retrieve from Xero.
+    default: 1
+  page_size:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 100
+  summary_only:
+    type: boolean
+    description: Return Xero summary fields only.
+    default: true
+output:
+  invoice_id:
+    type: string
+    path: $.InvoiceID
+    description: Xero invoice identifier.
+  invoice_number:
+    type: string
+    path: $.InvoiceNumber
+    description: Human-readable invoice number.
+  type:
+    type: string
+    path: $.Type
+    description: Invoice type.
+  status:
+    type: string
+    path: $.Status
+    description: Invoice status.
+  total:
+    type: number
+    path: $.Total
+    description: Invoice total amount.
+  date:
+    type: string
+    path: $.Date
+    description: Invoice date.
+  updated_date_utc:
+    type: string
+    path: $.UpdatedDateUTC
+    description: Last update timestamp in UTC.
+extract:
+  record_path: $.Invoices
+  pagination:
+    type: page_number
+    page_param: page
+  table:
+    primary_key:
+      - invoice_id
+    trust_tier: silver

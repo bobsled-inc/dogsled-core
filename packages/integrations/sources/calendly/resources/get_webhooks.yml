@@ -1,0 +1,149 @@
+type: resource
+name: get_webhooks
+description: List Webhook Subscriptions
+api:
+  endpoint: /webhook_subscriptions
+  method: GET
+  query_params:
+    organization: ${{ input.organization }}
+    user: ${{ input.user }}
+    page_token: ${{ input.page_token }}
+    count: ${{ input.count }}
+    sort: ${{ input.sort }}
+    scope: ${{ input.scope }}
+input:
+  organization:
+    type: string
+    required: true
+    description: Indicates if the results should be filtered by organization
+  user:
+    type: string
+    description:
+      Indicates if the results should be filtered by user. This parameter is only required if
+      the `scope` parameter is set to `user`.
+  page_token:
+    type: string
+    description: The token to pass to get the next or previous portion of the collection
+  count:
+    type: number
+    description: The number of rows to return
+    default: 20
+    minimum: 1
+    maximum: 100
+  sort:
+    type: string
+    description: >-
+      Order results by the specified field and direction. Accepts comma-separated list of
+      {field}:{direction} values.
+
+      Supported fields are: created_at.
+
+      Sort direction is specified as: asc, desc.
+  scope:
+    type: string
+    description: Filter the list by organization or user
+    enum:
+      - organization
+      - user
+    default: organization
+query:
+  filters:
+    scope:
+      operators:
+        - eq
+      enum:
+        - organization
+        - user
+      description: Filter the list by organization or user.
+      bind:
+        eq:
+          input: scope
+          preserve_default: true
+      compile:
+        eq:
+          mode: http_query
+          param: scope
+    user:
+      operators:
+        - eq
+      description:
+        Indicates if the results should be filtered by user. This parameter is only required if
+        the `scope` parameter is set to `user`.
+      bind:
+        eq:
+          input: user
+      compile:
+        eq:
+          mode: http_query
+          param: user
+output:
+  uri:
+    type: string
+    path: $.uri
+    description: 'Canonical reference (unique identifier) for the webhook (format: uri)'
+  callback_url:
+    type: string
+    path: $.callback_url
+    description: 'The callback URL to use when the event is triggered (format: uri)'
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The moment when the webhook subscription was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The moment when the webhook subscription was last updated
+  retry_started_at:
+    type: timestamp
+    path: $.retry_started_at
+    description: The date and time the webhook subscription is retried
+  state:
+    type: string
+    path: $.state
+    description: Indicates if the webhook subscription is "active" or "disabled"
+  events:
+    type: array
+    path: $.events
+    description: A list of events to which the webhook is subscribed
+  scope:
+    type: string
+    path: $.scope
+    description: The scope of the webhook subscription
+  organization:
+    type: string
+    path: $.organization
+    description: "The URI of the organization that's associated with the webhook subscription (format: uri)"
+  user:
+    type: string
+    path: $.user
+    description: "The URI of the user that's associated with the webhook subscription (format: uri)"
+  creator:
+    type: string
+    path: $.creator
+    description: 'The URI of the user who created the webhook subscription (format: uri)'
+extract:
+  record_path: $.collection
+  for_each:
+    resource: get_organization_memberships
+    field: organization
+    input: organization
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next_page_token
+    cursor_param: page_token
+  table:
+    primary_key:
+      - uri
+    trust_tier: silver
+verify:
+  suppress:
+    - PAGINATION_MISMATCH
+lookup:
+  description: Get Webhook Subscription
+  api:
+    endpoint: /webhook_subscriptions/${{ input.webhook_uuid }}
+    method: GET
+  input:
+    webhook_uuid:
+      type: string
+      required: true

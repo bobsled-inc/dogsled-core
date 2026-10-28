@@ -1,0 +1,78 @@
+spec_version: '0.2'
+name: salesforce__contacts
+type: model
+description: Salesforce contacts enriched with account context and opportunity role counts.
+grain: contact_id
+source:
+  ref: stg_salesforce__contacts
+joins:
+  - ref: stg_salesforce__accounts
+    type: left
+    on: stg_salesforce__contacts.account_id = stg_salesforce__accounts.account_id
+  - ref: stg_salesforce__opportunity_contact_roles
+    type: left
+    on: stg_salesforce__contacts.contact_id = stg_salesforce__opportunity_contact_roles.contact_id
+    pre_aggregate:
+      group_by:
+        - contact_id
+      columns:
+        - name: opportunity_role_count
+          expr: COUNT(*)
+        - name: primary_opportunity_role_count
+          expr: countif(is_primary = TRUE)
+columns:
+  - name: contact_id
+    expr: stg_salesforce__contacts.contact_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Salesforce contact identifier.
+  - name: account_id
+    expr: stg_salesforce__contacts.account_id
+    semantic_role: entity_id
+    references: stg_salesforce__accounts.account_id
+    description: Account associated with the contact.
+  - name: account_name
+    expr: stg_salesforce__accounts.name
+    semantic_role: categorical
+    description: Name of the related account.
+  - name: first_name
+    expr: stg_salesforce__contacts.first_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact first name.
+  - name: last_name
+    expr: stg_salesforce__contacts.last_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact last name.
+  - name: email
+    expr: stg_salesforce__contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact email address.
+  - name: opportunity_role_count
+    expr: COALESCE(stg_salesforce__opportunity_contact_roles.opportunity_role_count, 0)
+    semantic_role: measure
+    description: Number of opportunity-contact-role assignments for the contact.
+  - name: primary_opportunity_role_count
+    expr: COALESCE(stg_salesforce__opportunity_contact_roles.primary_opportunity_role_count, 0)
+    semantic_role: measure
+    description: Number of primary opportunity roles owned by the contact.
+  - name: created_at
+    expr: stg_salesforce__contacts.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was created.
+  - name: updated_at
+    expr: stg_salesforce__contacts.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was last updated.
+tags:
+  - salesforce
+  - crm
+  - contacts
+trust_tier: gold
+materialization:
+  type: table

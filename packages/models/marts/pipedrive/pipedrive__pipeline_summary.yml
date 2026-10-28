@@ -1,0 +1,74 @@
+spec_version: '0.2'
+name: pipedrive__pipeline_summary
+type: model
+description: Pipedrive deal summary by pipeline and stage.
+grain:
+  - pipeline_id
+  - stage_id
+source:
+  ref: stg_pipedrive__get_deals
+joins:
+  - ref: stg_pipedrive__get_pipelines
+    type: left
+    on: stg_pipedrive__get_deals.pipeline_id = stg_pipedrive__get_pipelines.get_pipeline_id
+  - ref: stg_pipedrive__get_stages
+    type: left
+    on: stg_pipedrive__get_deals.stage_id = stg_pipedrive__get_stages.get_stage_id
+columns:
+  - name: pipeline_id
+    expr: stg_pipedrive__get_deals.pipeline_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_pipelines.get_pipeline_id
+    description: Stable pipeline identifier.
+  - name: pipeline_name
+    expr: stg_pipedrive__get_pipelines.name
+    semantic_role: categorical
+    description: Pipeline name.
+  - name: stage_id
+    expr: stg_pipedrive__get_deals.stage_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_stages.get_stage_id
+    description: Stable stage identifier.
+  - name: stage_name
+    expr: stg_pipedrive__get_stages.name
+    semantic_role: categorical
+    description: Stage name.
+  - name: stage_order
+    expr: stg_pipedrive__get_stages.order_nr
+    semantic_role: categorical
+    description: Display order of the stage within the pipeline.
+  - name: deal_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of deals in the pipeline-stage bucket.
+  - name: open_deal_count
+    expr: countif(stg_pipedrive__get_deals.status = 'open')
+    semantic_role: measure
+    description: Number of open deals in the bucket.
+  - name: won_deal_count
+    expr: countif(stg_pipedrive__get_deals.status = 'won')
+    semantic_role: measure
+    description: Number of won deals in the bucket.
+  - name: lost_deal_count
+    expr: countif(stg_pipedrive__get_deals.status = 'lost')
+    semantic_role: measure
+    description: Number of lost deals in the bucket.
+  - name: total_value
+    expr: SUM(stg_pipedrive__get_deals.value)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total deal value in the bucket.
+group_by:
+  - pipeline_id
+  - pipeline_name
+  - stage_id
+  - stage_name
+  - stage_order
+tags:
+  - pipedrive
+  - pipeline
+  - summary
+trust_tier: gold
+materialization:
+  type: table

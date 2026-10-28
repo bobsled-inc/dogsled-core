@@ -1,0 +1,44 @@
+type: resource
+name: workflow_states_mcp
+via: mcp
+entity: workflow_states
+description: Workflow states from Linear teams
+tool:
+  tool_name: list_issue_statuses
+input:
+  team:
+    type: string
+    required: true
+    description: UUID of the team to list workflow states for
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique workflow state UUID
+  name:
+    type: string
+    path: $.name
+    description: State name (e.g. In Progress, Done)
+  type:
+    type: string
+    path: $.type
+    description: State category (backlog, unstarted, started, completed, cancelled)
+  color:
+    type: string
+    path: $.color
+    description: State color as hex string
+  position:
+    type: number
+    path: $.position
+    description: Display position within the team workflow
+extract:
+  record_path: $.states
+  for_each:
+    resource: teams_mcp
+    field: id
+    input: team
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - id

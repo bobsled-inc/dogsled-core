@@ -1,0 +1,132 @@
+spec_version: '0.2'
+name: vercel__billing_charges
+type: model
+description: FOCUS billing detail at the selected snapshot and record ordinal; billed and effective costs remain separate.
+grain:
+  - snapshot_id
+  - record_ordinal
+source:
+  ref: stg_vercel__billing_charges
+columns:
+  - name: snapshot_id
+    expr: stg_vercel__billing_charges.snapshot_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Complete bounded billing snapshot selected for analysis.
+  - name: record_ordinal
+    expr: stg_vercel__billing_charges.record_ordinal
+    primary_key: true
+    semantic_role: entity_id
+    description: JSONL record ordinal within the selected snapshot.
+  - name: snapshot_from
+    expr: stg_vercel__billing_charges.snapshot_from
+    semantic_role: time_dimension
+    description: Inclusive snapshot start.
+  - name: snapshot_to
+    expr: stg_vercel__billing_charges.snapshot_to
+    semantic_role: time_dimension
+    description: Exclusive snapshot end.
+  - name: retrieval_time
+    expr: stg_vercel__billing_charges.retrieval_time
+    semantic_role: time_dimension
+    description: UTC retrieval time for the selected snapshot.
+  - name: team_id
+    expr: stg_vercel__billing_charges.team_id
+    semantic_role: entity_id
+    description: Team scope used for the request.
+  - name: team_slug
+    expr: stg_vercel__billing_charges.team_slug
+    semantic_role: categorical
+    description: Team slug used for the request.
+  - name: project_id
+    expr: stg_vercel__billing_charges.project_id
+    semantic_role: entity_id
+    references: stg_vercel__projects.project_id
+    description: Project identifier when Vercel exposes a recognized tag key; otherwise null.
+  - name: project_name
+    expr: stg_vercel__billing_charges.project_name
+    semantic_role: categorical
+    description: Project name when Vercel exposes a recognized tag key; otherwise null.
+  - name: billed_cost
+    expr: stg_vercel__billing_charges.billed_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Native billed cost.
+  - name: effective_cost
+    expr: stg_vercel__billing_charges.effective_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Native effective cost.
+  - name: billing_currency
+    expr: stg_vercel__billing_charges.billing_currency
+    semantic_role: categorical
+    description: Billing currency.
+  - name: consumed_quantity
+    expr: stg_vercel__billing_charges.consumed_quantity
+    semantic_role: measure
+    description: Native consumed quantity.
+  - name: consumed_unit
+    expr: stg_vercel__billing_charges.consumed_unit
+    semantic_role: categorical
+    description: Unit for consumed quantity.
+  - name: pricing_quantity
+    expr: stg_vercel__billing_charges.pricing_quantity
+    semantic_role: measure
+    description: Native pricing quantity.
+  - name: pricing_unit
+    expr: stg_vercel__billing_charges.pricing_unit
+    semantic_role: categorical
+    description: Unit for pricing quantity.
+  - name: charge_period_start
+    expr: stg_vercel__billing_charges.charge_period_start
+    semantic_role: time_dimension
+    description: Native charge period start.
+  - name: charge_period_end
+    expr: stg_vercel__billing_charges.charge_period_end
+    semantic_role: time_dimension
+    description: Native charge period end.
+  - name: charge_category
+    expr: stg_vercel__billing_charges.charge_category
+    semantic_role: categorical
+    description: FOCUS charge category.
+  - name: service_name
+    expr: stg_vercel__billing_charges.service_name
+    semantic_role: categorical
+    description: Native service name.
+  - name: service_category
+    expr: stg_vercel__billing_charges.service_category
+    semantic_role: categorical
+    description: Native service category.
+  - name: service_provider_name
+    expr: stg_vercel__billing_charges.service_provider_name
+    semantic_role: categorical
+    description: Native service provider.
+  - name: region_id
+    expr: stg_vercel__billing_charges.region_id
+    semantic_role: categorical
+    description: Native region identifier.
+  - name: region_name
+    expr: stg_vercel__billing_charges.region_name
+    semantic_role: categorical
+    description: Native region name.
+  - name: tags
+    expr: stg_vercel__billing_charges.tags
+    semantic_role: categorical
+    description: Native Vercel tags preserved as JSON.
+  - name: pricing_category
+    expr: stg_vercel__billing_charges.pricing_category
+    semantic_role: categorical
+    description: FOCUS pricing category.
+  - name: pricing_currency
+    expr: stg_vercel__billing_charges.pricing_currency
+    semantic_role: categorical
+    description: Pricing currency.
+tags:
+  - vercel
+  - billing
+  - finance
+trust_tier: gold
+materialization:
+  type: table

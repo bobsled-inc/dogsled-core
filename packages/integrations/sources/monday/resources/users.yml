@@ -1,0 +1,35 @@
+type: resource
+name: users
+description: Users in Monday.com.
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: query { users { id name email enabled is_admin created_at last_activity } }
+    variables: {}
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  email:
+    type: string
+    path: $.email
+  enabled:
+    type: boolean
+    path: $.enabled
+  is_admin:
+    type: boolean
+    path: $.is_admin
+  created_at:
+    type: timestamp
+    path: $.created_at
+extract:
+  record_path: $.data.users
+  table:
+    primary_key:
+      - id
+via: graphql

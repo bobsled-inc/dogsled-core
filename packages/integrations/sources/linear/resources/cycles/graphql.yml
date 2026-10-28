@@ -1,0 +1,107 @@
+type: resource
+name: cycles_graphql
+via: graphql
+entity: cycles
+description: Sprint cycles from Linear representing time-boxed iterations that teams use to plan and track work within a defined period
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  cycles(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id number name description\n      startsAt endsAt completedAt\n      progress scopeHistory completedScopeHistory\n      team { id name key }\n      createdAt updatedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique cycle UUID assigned by Linear
+  number:
+    type: integer
+    path: $.number
+    description: Sequential cycle number within the team, auto-incremented (e.g. 1, 2, 3)
+  name:
+    type: string
+    path: $.name
+    description: Optional human-readable cycle name, may be null if the team uses only numbered cycles
+  description:
+    type: string
+    path: $.description
+    description: Optional cycle description outlining the sprint goals or focus areas in markdown format
+  starts_at:
+    type: timestamp
+    path: $.startsAt
+    description: ISO 8601 timestamp when the cycle is scheduled to begin
+  ends_at:
+    type: timestamp
+    path: $.endsAt
+    description: ISO 8601 timestamp when the cycle is scheduled to end
+  completed_at:
+    type: timestamp
+    path: $.completedAt
+    description: ISO 8601 timestamp when the cycle was marked as completed, null if still active or upcoming
+  progress:
+    type: number
+    path: $.progress
+    description: Current cycle completion progress as a decimal between 0 and 1, calculated from completed vs total scope
+  scope_history:
+    type: array
+    path: $.scopeHistory
+    description: Historical array of total scope (number of issues) snapshots taken at regular intervals throughout the cycle, used for burndown charts
+  completed_scope_history:
+    type: array
+    path: $.completedScopeHistory
+    description: Historical array of completed scope snapshots taken at regular intervals throughout the cycle, paired with scope_history for burndown visualization
+  team_id:
+    type: string
+    path: $.team.id
+    description: UUID of the team that owns this cycle
+  team_name:
+    type: string
+    path: $.team.name
+    description: Display name of the team that owns this cycle
+  team_key:
+    type: string
+    path: $.team.key
+    description: Short key prefix of the owning team used in issue identifiers (e.g. ENG)
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the cycle was first created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the cycle was last modified
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.cycles.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.cycles.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

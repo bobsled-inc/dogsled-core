@@ -1,0 +1,93 @@
+type: resource
+name: list_an_organization_s_releases
+description: Return a list of releases for a given organization.
+api:
+  endpoint: /api/0/organizations/${{ input.organization_id_or_slug }}/releases/
+  method: GET
+  query_params:
+    query: ${{ input.query }}
+    cursor: ${{ input.cursor }}
+input:
+  organization_id_or_slug:
+    type: string
+    required: true
+    description: The ID or slug of the organization.
+  query:
+    type: string
+    description: This parameter can be used to create a "starts with" filter for the version.
+  cursor:
+    type: string
+    description:
+      A pointer to the last object fetched and its sort order; used to retrieve the next or
+      previous results.
+query:
+  search:
+    dialect: sentry_release_prefix
+    bind:
+      input: query
+output:
+  id:
+    type: integer
+    path: $.id
+  authors:
+    type: array
+    path: $.authors
+  commit_count:
+    type: integer
+    path: $.commitCount
+  data:
+    type: object
+    path: $.data
+  date_created:
+    type: timestamp
+    path: $.dateCreated
+  date_released:
+    type: timestamp
+    path: $.dateReleased
+  deploy_count:
+    type: integer
+    path: $.deployCount
+  first_event:
+    type: timestamp
+    path: $.firstEvent
+  last_commit:
+    type: object
+    path: $.lastCommit
+  last_deploy:
+    type: object
+    path: $.lastDeploy
+  last_event:
+    type: timestamp
+    path: $.lastEvent
+  new_groups:
+    type: integer
+    path: $.newGroups
+  owner:
+    type: object
+    path: $.owner
+  projects:
+    type: array
+    path: $.projects
+  ref:
+    type: string
+    path: $.ref
+  short_version:
+    type: string
+    path: $.shortVersion
+  version:
+    type: string
+    path: $.version
+  url:
+    type: string
+    path: $.url
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  for_each:
+    resource: list_your_organizations
+    field: slug
+    input: organization_id_or_slug
+  table:
+    primary_key:
+      - id

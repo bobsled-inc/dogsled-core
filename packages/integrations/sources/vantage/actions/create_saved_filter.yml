@@ -1,0 +1,40 @@
+type: action
+transport: api
+name: create_saved_filter
+integration: vantage
+tags:
+  - cloud-infra
+  - finops
+  - saved-filters
+  - vantage
+description: Create a Vantage saved filter for reusable FinOps reporting slices.
+api:
+  endpoint: /saved_filters
+  method: POST
+  request_body:
+    title: ${{ mapped.title }}
+    workspace_token: ${{ mapped.workspace_token }}
+    filter: ${{ mapped.filter }}
+input:
+  title:
+    type: string
+    required: true
+    description: Display name for the saved filter.
+  workspace_token:
+    type: string
+    description: Workspace token when the API token can access multiple workspaces.
+  filter:
+    type: string
+    description: Optional VQL filter expression to save.
+field_mapping:
+  fields:
+    title: title
+    workspace_token: workspace_token
+    filter: filter
+  unmapped_fields: ignore
+activate:
+  operation: create
+  result_path: $.token
+error_handling:
+  on_record_error: skip
+  consecutive_failure_threshold: 10

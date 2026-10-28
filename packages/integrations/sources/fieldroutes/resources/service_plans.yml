@@ -1,0 +1,123 @@
+type: resource
+name: service_plans
+description: One-time and service-plan records capturing planned and recurring service details.
+api:
+  endpoint: /servicePlan/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    active: '${{ input.active }}'
+    customerIDs: '${{ input.customer_ids }}'
+    soldBy: '${{ input.sold_by }}'
+    preferredTech: '${{ input.preferred_tech }}'
+    frequency: '${{ input.frequency }}'
+    dateAddedStart: '${{ input.date_added_start }}'
+    dateAddedEnd: '${{ input.date_added_end }}'
+    dateUpdatedStart: '${{ input.date_updated_start }}'
+    dateUpdatedEnd: '${{ input.date_updated_end }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  active:
+    type: integer
+    description: Active status filter.
+  customer_ids:
+    type: string
+    description: Optional customer filter.
+  sold_by:
+    type: integer
+    description: Sales rep filter.
+  preferred_tech:
+    type: integer
+    description: Preferred technician filter.
+  frequency:
+    type: integer
+    description: Service cadence in days/months.
+  date_added_start:
+    type: string
+    description: Lower bound for `dateAdded`.
+  date_added_end:
+    type: string
+    description: Upper bound for `dateAdded`.
+  date_updated_start:
+    type: string
+    description: Lower bound for `dateUpdated`.
+  date_updated_end:
+    type: string
+    description: Upper bound for `dateUpdated`.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  service_plan_id:
+    type: integer
+    path: $.subscriptionID
+    description: Service plan unique ID (same numeric key used by API).
+  customer_id:
+    type: integer
+    path: $.customerID
+    description: Customer receiving service plan.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Office owner.
+  active:
+    type: integer
+    path: $.active
+    description: Active flag.
+  service_type:
+    type: integer
+    path: $.serviceType
+    description: Service type ID.
+  service_id:
+    type: integer
+    path: $.serviceID
+    description: Related service definition ID.
+  frequency:
+    type: integer
+    path: $.frequency
+    description: Service frequency.
+  date_added:
+    type: timestamp
+    path: $.dateAdded
+    description: Service plan creation date.
+  date_cancelled:
+    type: timestamp
+    path: $.dateCancelled
+    description: Cancellation date if canceled.
+  date_updated:
+    type: timestamp
+    path: $.dateUpdated
+    description: Last update.
+  last_completed:
+    type: timestamp
+    path: $.lastCompleted
+    description: Last completed service date.
+  next_service:
+    type: string
+    path: $.nextService
+    description: Next scheduled service date/indicator.
+  lead_stage:
+    type: integer
+    path: $.leadStageID
+    description: Optional lead stage.
+  contract_value:
+    type: number
+    path: $.contractValue
+    description: Contract value for the plan.
+  annual_recurring_value:
+    type: number
+    path: $.annualRecurringValue
+    description: Annual recurring value if present.
+
+extract:
+  record_path: '$..[?(@.subscriptionID)]'
+  table:
+    primary_key:
+      - service_plan_id
+    trust_tier: silver

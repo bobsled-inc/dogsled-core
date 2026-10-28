@@ -1,0 +1,189 @@
+type: resource
+name: list_monitors
+description: Get all monitors
+api:
+  endpoint: /api/v1/monitor
+  method: GET
+  query_params:
+    group_states: ${{ input.group_states }}
+    name: ${{ input.name }}
+    tags: ${{ input.tags }}
+    monitor_tags: ${{ input.monitor_tags }}
+    with_downtimes: ${{ input.with_downtimes }}
+    id_offset: ${{ input.id_offset }}
+    page: ${{ input.page }}
+    page_size: ${{ input.page_size }}
+input:
+  group_states:
+    type: string
+    description: |-
+      When specified, shows additional information about the group states.
+      Choose one or more from `all`, `alert`, `warn`, and `no data`.
+  name:
+    type: string
+    description: A string to filter monitors by name.
+  tags:
+    type: string
+    description: >-
+      A comma separated list indicating what tags, if any, should be used to filter the list of
+      monitors by scope.
+
+      For example, `host:host0`.
+  monitor_tags:
+    type: string
+    description: >-
+      A comma separated list indicating what service and/or custom tags, if any, should be used to
+      filter the list of monitors.
+
+      Tags created in the Datadog UI automatically have the service key prepended. For example,
+      `service:my-app`.
+  with_downtimes:
+    type: boolean
+    description: If this argument is set to true, then the returned data includes all current active
+      downtimes for each monitor.
+  id_offset:
+    type: integer
+    description:
+      Use this parameter for paginating through large sets of monitors. Start with a value of
+      zero, make a request, set the value to the last ID of result set, and then repeat until the
+      response is empty.
+  page:
+    type: integer
+    description: The page to start paginating from. If this argument is not specified, the request
+      returns all monitors without pagination.
+  page_size:
+    type: integer
+    description:
+      The number of monitors to return per page. If the page argument is not specified, the
+      default behavior returns all monitors without a `page_size` limit. However, if page is
+      specified and `page_size` is not, the argument defaults to 100.
+    default: 100
+    maximum: 1000
+query:
+  filters:
+    name:
+      operators:
+        - eq
+      description: A string to filter monitors by name.
+      bind:
+        eq:
+          input: name
+      compile:
+        eq:
+          mode: http_query
+          param: name
+output:
+  assets:
+    type: array
+    path: $.assets
+    description:
+      The list of monitor assets tied to a monitor, which represents key links for users to
+      take action on monitor alerts (for example, runbooks).
+  created:
+    type: timestamp
+    path: $.created
+    description: Timestamp of the monitor creation.
+  creator_email:
+    type: string
+    path: $.creator.email
+    description: Email of the creator.
+  creator_handle:
+    type: string
+    path: $.creator.handle
+    description: Handle of the creator.
+  creator_name:
+    type: string
+    path: $.creator.name
+    description: Name of the creator.
+  deleted:
+    type: timestamp
+    path: $.deleted
+    description: Whether or not the monitor is deleted.
+  draft_status:
+    type: string
+    path: $.draft_status
+    description: Indicates whether the monitor is in a draft or published state.
+  id:
+    type: integer
+    path: $.id
+    description: ID of this monitor.
+  matching_downtimes:
+    type: array
+    path: $.matching_downtimes
+    description: A list of active v1 downtimes that match this monitor.
+  message:
+    type: string
+    path: $.message
+    description: A message to include with notifications for this monitor.
+  modified:
+    type: timestamp
+    path: $.modified
+    description: Last timestamp when the monitor was edited.
+  multi:
+    type: boolean
+    path: $.multi
+    description: Whether or not the monitor is broken down on different groups.
+  name:
+    type: string
+    path: $.name
+    description: The monitor name.
+  options:
+    type: object
+    path: $.options
+    description: List of options associated with your monitor.
+  overall_state:
+    type: string
+    path: $.overall_state
+    description: The different states your monitor can be in.
+  priority:
+    type: integer
+    path: $.priority
+    description: Integer from 1 (high) to 5 (low) indicating alert severity.
+  query:
+    type: string
+    path: $.query
+    description: The monitor query.
+  restricted_roles:
+    type: array
+    path: $.restricted_roles
+    description: A list of unique role identifiers to define which roles are allowed to edit the monitor.
+  state_groups:
+    type: object
+    path: $.state.groups
+    description: Dictionary where the keys are groups (comma separated lists of tags) and the values are
+  tags:
+    type: array
+    path: $.tags
+    description: Tags associated to your monitor.
+  type:
+    type: string
+    path: $.type
+    description: The type of the monitor.
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: page_size
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get a monitor's details
+  api:
+    endpoint: /api/v1/monitor/${{ input.monitor_id }}
+    method: GET
+  input:
+    monitor_id:
+      type: integer
+      required: true
+test:
+  fixtures:
+    - name: list_monitors_smoke
+      input:
+        group_states: alert
+        tags: host:host0
+        monitor_tags: service:my-app
+        page: 0
+        page_size: 20

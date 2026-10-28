@@ -1,0 +1,46 @@
+type: resource
+name: zones_list_load_balancers
+description: List load balancers configured for each Cloudflare zone
+api:
+  endpoint: /zones/${{ input.zone_id }}/load_balancers
+  method: GET
+input:
+  zone_id:
+    type: string
+    description: Cloudflare zone identifier
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Cloudflare load balancer identifier
+  name:
+    type: string
+    path: $.name
+    description: Load balancer name
+  description:
+    type: string
+    path: $.description
+    description: Load balancer description
+  enabled:
+    type: boolean
+    path: $.enabled
+    description: Whether the load balancer is enabled
+  created_on:
+    type: timestamp
+    path: $.created_on
+    description: Timestamp when the load balancer was created
+  modified_on:
+    type: timestamp
+    path: $.modified_on
+    description: Timestamp when the load balancer was last modified
+extract:
+  record_path: $.result
+  for_each:
+    resource: zones_get
+    field: id
+    input: zone_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

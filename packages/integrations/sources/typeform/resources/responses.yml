@@ -1,0 +1,52 @@
+type: resource
+name: responses
+description: List responses for each Typeform form
+api:
+  endpoint: /forms/${{ input.form_id }}/responses
+  method: GET
+  query_params:
+    page_size: ${{ input.page_size }}
+    after: ${{ input.after }}
+input:
+  form_id:
+    type: string
+    required: true
+    description: Typeform form identifier
+  page_size:
+    type: integer
+    description: Page size
+    default: 100
+  after:
+    type: string
+    description: Pagination cursor
+output:
+  landing_id:
+    type: string
+    path: $.landing_id
+    description: Landing identifier
+  token:
+    type: string
+    path: $.token
+    description: Response token
+  submitted_at:
+    type: timestamp
+    path: $.submitted_at
+    description: Submission timestamp
+  response_type:
+    type: string
+    path: $.response_type
+    description: Response type
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - landing_id
+    trust_tier: silver
+  pagination:
+    type: cursor
+    cursor_param: after
+    cursor_path: $.page.next_token
+  for_each:
+    resource: forms
+    field: id
+    input: form_id

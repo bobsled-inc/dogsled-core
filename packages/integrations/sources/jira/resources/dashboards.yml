@@ -1,0 +1,61 @@
+type: resource
+name: dashboards
+description: Search Jira dashboards with optional name filtering and pagination.
+api:
+  endpoint: /rest/api/3/dashboard/search
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    dashboardName: ${{ input.dashboard_name }}
+input:
+  start_at:
+    type: integer
+    description: Zero-based offset for the first dashboard in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of dashboards to return per page.
+    default: 50
+  dashboard_name:
+    type: string
+    description: Filter dashboards by name (substring match).
+output:
+  id:
+    type: string
+    path: $.id
+    description: Dashboard identifier.
+  name:
+    type: string
+    path: $.name
+    description: Dashboard name.
+  description:
+    type: string
+    path: $.description
+    description: Dashboard description.
+  owner_account_id:
+    type: string
+    path: $.owner.accountId
+    description: Account ID of the dashboard owner.
+  owner_display_name:
+    type: string
+    path: $.owner.displayName
+    description: Display name of the dashboard owner.
+  view:
+    type: string
+    path: $.view
+    description: URL to view the dashboard in the browser.
+  self:
+    type: string
+    path: $.self
+    description: Jira API URL for the dashboard.
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

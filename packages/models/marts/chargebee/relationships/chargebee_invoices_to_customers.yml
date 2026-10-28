@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: chargebee_invoices_to_customers
+description: Each Chargebee invoice belongs to one customer.
+left_model: chargebee__invoices
+right_model: chargebee__customers
+join_columns:
+  - left: customer_id
+    right: customer_id
+join_type: left
+relationship_type: many_to_one
+tags: [chargebee, invoices, customers]

@@ -1,0 +1,73 @@
+type: resource
+name: ad_insights
+description: Daily performance reports for a TikTok advertiser.
+api:
+  endpoint: /report/integrated/get
+  method: POST
+  request_body:
+    advertiser_id: ${{ input.advertiser_id }}
+    data_level: AUCTION_AD
+    dimensions:
+      - ad_id
+      - stat_time_day
+    metrics:
+      - impressions
+      - clicks
+      - spend
+      - conversion
+      - ctr
+      - cpc
+    start_date: ${{ input.start_date }}
+    end_date: ${{ input.end_date }}
+    page: 1
+    page_size: 1000
+input:
+  advertiser_id:
+    type: string
+    default: '123'
+  start_date:
+    type: string
+    required: true
+  end_date:
+    type: string
+    required: true
+output:
+  ad_id:
+    type: string
+    path: $.dimensions.ad_id
+  stat_time_day:
+    type: string
+    path: $.dimensions.stat_time_day
+  impressions:
+    type: integer
+    path: $.metrics.impressions
+  clicks:
+    type: integer
+    path: $.metrics.clicks
+  spend:
+    type: number
+    path: $.metrics.spend
+  conversion:
+    type: integer
+    path: $.metrics.conversion
+  ctr:
+    type: number
+    path: $.metrics.ctr
+  cpc:
+    type: number
+    path: $.metrics.cpc
+extract:
+  record_path: $.data.list
+  table:
+    primary_key:
+      - ad_id
+      - stat_time_day
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: page_size
+    total_pages_path: $.data.page_info.total_page
+  for_each:
+    resource: advertisers
+    field: advertiser_id
+    input: advertiser_id

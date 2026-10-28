@@ -1,0 +1,24 @@
+[
+  {
+    "name": "local_db",
+    "type": "duckdb",
+    "db_path": "data.duckdb",
+    "schema": "main"
+  },
+  {
+    "name": "postgres",
+    "type": "postgres",
+    "host": "127.0.0.1",
+    "port": 5432,
+    "database": "showcase",
+    "schema": "fanout",
+    "username": "postgres",
+    "password": "$SHOWCASE_PG_PASSWORD",
+    "auth_env_vars": ["SHOWCASE_PG_PASSWORD"]
+  },
+  {
+    "name": "archive",
+    "type": "local",
+    "format": "jsonl"
+  }
+]

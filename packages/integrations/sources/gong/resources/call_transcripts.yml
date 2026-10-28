@@ -1,0 +1,51 @@
+type: resource
+name: call_transcripts
+description: Transcript fragments returned by Gong transcript endpoints.
+api:
+  endpoint: /calls/transcript
+  method: POST
+  request_body:
+    filter:
+      fromDateTime: ${{ input.from_date_time }}
+      toDateTime: ${{ input.to_date_time }}
+    cursor: ${{ input.cursor }}
+input:
+  from_date_time:
+    type: string
+    description: Start date-time in ISO 8601 format.
+    default: 2020-01-01T00:00:00Z
+  to_date_time:
+    type: string
+    description: End date-time in ISO 8601 format.
+    default: 2099-12-31T23:59:59Z
+  cursor:
+    type: string
+output:
+  call_id:
+    type: string
+    path: $.callId
+  speaker_id:
+    type: string
+    path: $.speakerId
+  text:
+    type: string
+    path: $.text
+  start_time_ms:
+    type: integer
+    path: $.startTimeMs
+  end_time_ms:
+    type: integer
+    path: $.endTimeMs
+  topic:
+    type: string
+    path: $.topic
+extract:
+  record_path: $.transcripts
+  table:
+    primary_key:
+      - call_id
+      - start_time_ms
+  pagination:
+    type: cursor
+    cursor_path: $.records.cursor
+    cursor_param: cursor

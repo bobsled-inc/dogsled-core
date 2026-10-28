@@ -1,0 +1,190 @@
+type: resource
+name: deployments
+description: Deployments for a GitHub repository representing code shipped to specific environments with status tracking
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/deployments
+  method: GET
+  query_params:
+    environment: ${{ input.environment }}
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: my-org
+  repo:
+    type: string
+    description: Repository name
+    default: my-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  environment:
+    type: string
+    description: Filter deployments by target environment name (e.g. "production", "staging", "preview")
+  per_page:
+    type: integer
+    description: Number of deployments to return per page (max 100)
+    default: 100
+query:
+  filters:
+    environment:
+      operators:
+        - eq
+      description: Filter deployments by target environment name (e.g. "production", "staging", "preview")
+      bind:
+        eq:
+          input: environment
+      compile:
+        eq:
+          mode: http_query
+          param: environment
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the deployment
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  sha:
+    type: string
+    semantic_role: identifier
+    path: $.sha
+    description: Full 40-character SHA of the commit being deployed
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this deployment resource
+  statuses_url:
+    type: string
+    semantic_role: url
+    path: $.statuses_url
+    description: REST API URL for listing deployment status updates (success, failure, pending, etc.)
+  repository_url:
+    type: string
+    semantic_role: url
+    path: $.repository_url
+    description: REST API URL for the repository this deployment belongs to
+  ref:
+    type: string
+    semantic_role: identifier
+    path: $.ref
+    description: "Git ref that was deployed \u2014 typically a branch name (e.g. \"main\"), tag (e.g. \"v1.0.0\"), or commit SHA"
+  task:
+    type: string
+    semantic_role: categorical
+    path: $.task
+    description: "The deployment task \u2014 typically \"deploy\" but can be custom (e.g. \"deploy:migrations\", \"rollback\")"
+  environment:
+    type: string
+    semantic_role: categorical
+    path: $.environment
+    description: Target deployment environment name (e.g. "production", "staging", "preview", "qa")
+  description:
+    type: string
+    semantic_role: categorical
+    path: $.description
+    description: Optional description of the deployment provided by the deploying service or user
+  original_environment:
+    type: string
+    semantic_role: categorical
+    path: $.original_environment
+    description: Original environment name before any automatic environment name mapping by GitHub
+  transient_environment:
+    type: boolean
+    semantic_role: categorical
+    path: $.transient_environment
+    description: True if the environment is ephemeral and will be destroyed after the deployment is inactive (e.g. PR preview environments)
+  production_environment:
+    type: boolean
+    semantic_role: categorical
+    path: $.production_environment
+    description: True if this deployment targets a production environment
+  creator_login:
+    type: string
+    semantic_role: name
+    path: $.creator.login
+    description: GitHub username of the user or app that created the deployment
+  creator_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.creator.id
+    description: Unique numeric identifier of the deployment creator
+  creator_type:
+    type: string
+    semantic_role: categorical
+    path: $.creator.type
+    description: "Type of the creator account \u2014 \"User\" for human-initiated deployments, \"Bot\" for CI/CD app deployments"
+  payload:
+    type: string
+    semantic_role: categorical
+    path: $.payload
+    description: JSON payload containing additional deployment metadata passed by the deploying service (structure varies by integration)
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the deployment was created and queued
+  updated_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.updated_at
+    description: Timestamp when the deployment was last updated (typically when a new status is posted)
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single deployment by repository owner, name, and deployment ID
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/deployments/${{ input.deployment_id }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    deployment_id:
+      type: integer
+      required: true
+      description: The numeric deployment ID
+  extract:
+    record_path: $
+via: rest

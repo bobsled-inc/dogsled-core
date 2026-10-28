@@ -1,0 +1,50 @@
+type: resource
+name: applications
+description: List Greenhouse applications
+api:
+  endpoint: /applications
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  per_page:
+    type: integer
+    description: Number of applications to return per page
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Greenhouse application identifier
+  candidate_id:
+    type: integer
+    path: $.candidate_id
+    description: Candidate identifier
+  prospect:
+    type: boolean
+    path: $.prospect
+    description: Whether the application is a prospect record
+  applied_at:
+    type: timestamp
+    path: $.applied_at
+    description: Time when the candidate applied
+  rejected_at:
+    type: timestamp
+    path: $.rejected_at
+    description: Time when the application was rejected
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Application creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Application last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

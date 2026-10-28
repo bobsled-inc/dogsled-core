@@ -1,0 +1,181 @@
+packages:
+  - packages/*
+  - apps/*
+
+catalog:
+  '@apidevtools/swagger-parser': 12.1.0
+  '@ai-sdk/amazon-bedrock': 4.0.96
+  '@aws-sdk/credential-providers': 3.1017.0
+  '@aws-sdk/client-s3': 3.1017.0
+  '@clickhouse/client': 1.18.2
+  '@google-cloud/bigquery': 8.1.1
+  '@polyglot-sql/sdk': 0.1.13
+  '@turbopuffer/turbopuffer': 2.8.0
+  '@types/pg': 8.20.0
+  ai: 6.0.168
+  ajv: 8.18.0
+  cron-parser: 5.5.0
+  google-auth-library: 9.15.1
+  highlight.js: 11.11.1
+  js-tiktoken: 1.0.21
+  json-canonicalize: 2.0.0
+  mermaid: 11.16.1
+  next: 15.5.28
+  next-themes: 0.4.6
+  openapi-types: 12.1.3
+  playwright: 1.63.0
+  react-test-renderer: ^19.2.5
+  undici: 8.12.2
+  vite-tsconfig-paths: 6.1.1
+  vitest: 4.1.12
+
+catalogMode: strict
+
+overrides:
+  source-map-js: 1.2.2
+  # Security/compatibility pins for transitive dependencies; revisit when upstream packages absorb the fixes.
+  basic-ftp: 6.2.1
+  thrift: 0.23.0
+  '@tootallnate/once': 2.0.1
+  body-parser: 2.4.0
+  dompurify: 3.4.17
+  fast-xml-parser: 5.7.0
+  ip-address: 10.7.4
+  qs: 6.16.1
+  fast-uri: 3.1.9
+  fast-xml-builder: 1.1.9
+  axios: 1.20.0
+  # GHSA-g7r4-m6w7-qqqr: Windows development-server path containment.
+  esbuild: 0.28.2
+  # GHSA-238p-pmpm-9mq7: prototype-pollution rendering gadget.
+  katex: 0.18.9
+  # GHSA-866g-f22w-33x8: bound provider response consumption.
+  '@ai-sdk/provider-utils@4': 4.0.56
+  # GHSA-3f6p-5ww8-9rcr: keep optional driver tests on fixed code.
+  mysql2: 3.24.4
+  # GHSA-jqcg-44mw-7w3h: fixed Express proxy address parsing.
+  proxy-addr: 2.0.8
+  # GHSA-rfgv-xxqx-mfg5, GHSA-w293-vg96-wgc3, GHSA-xjj6-f33q-929c, GHSA-2m5v-pch6-74hx,
+  # GHSA-4w7w-5xrc-9h26 and GHSA-qrxm-fqhp-jwvm: nested client fixes.
+  undici@7: 7.30.1
+  # GHSA-xjj6-f33q-929c, GHSA-2m5v-pch6-74hx and GHSA-qrxm-fqhp-jwvm: AI SDK download client.
+  undici@6: 6.29.1
+  # GHSA-4qx8-w7c3-pj3p, GHSA-9j65-hcg3-gc64 and GHSA-9qmh-m7c6-f92p: Snowflake TOML parser.
+  toml: 5.0.1
+  # GHSA-4p3w-j4w9-5jqw: fixed date parsing.
+  moment: 2.31.0
+  # GHSA-hxh3-vqpv-xpqv: fixed SDK server dependency.
+  hono: 4.13.11
+  # GHSA-p498-v437-472g: fixed development filesystem dependency.
+  '@humanfs/node': 0.16.8
+  vite: 7.3.7
+  lodash: 4.18.1
+  path-to-regexp: 8.4.2
+  postcss: 8.5.23
+  sharp: 0.35.5
+  js-yaml: 4.3.2
+  brace-expansion@5: 5.0.12
+  nanoid@3: 3.3.18
+  axios>form-data: 4.0.6
+  '@types/request>form-data': 2.5.6
+  thrift>ws: 5.2.5
+  uuid@<11.1.1: 11.1.1
+  uuid@13: 13.0.1
+
+allowBuilds:
+  # Native addons that require build/postinstall hooks; keep in sync with
+  # `pnpm approve-builds` if new build-script dependencies appear.
+  better-sqlite3: true
+  esbuild: true
+  lz4: true
+  sharp: true
+
+catalogs:
+  app-packages:
+    compromise: 14.15.0
+    jsonpath-plus: 10.4.0
+    yaml: 2.8.3
+  aws-sdk:
+    '@aws-crypto/sha256-js': 5.2.0
+    '@aws-sdk/credential-providers': 3.1017.0
+    '@smithy/signature-v4': 5.4.5
+  ai-sdk:
+    '@ai-sdk/amazon-bedrock': 4.0.96
+    '@ai-sdk/anthropic': 3.0.53
+    '@ai-sdk/google': 3.0.53
+    '@ai-sdk/openai': 3.0.53
+    '@openrouter/ai-sdk-provider': 2.9.0
+    ai: 6.0.168
+    # Community fork from a different publisher: ollama-ai-provider-v2.
+    # https://github.com/nordwestt/ollama-ai-provider-v2
+    ollama-ai-provider: npm:ollama-ai-provider-v2@3.6.0
+  cli:
+    chalk: 5.6.2
+    tsup: 8.5.1
+  dev-packages:
+    '@types/node': 25.5.0
+    commander: 14.0.3
+    globals: 17.3.0
+    husky: 9.1.7
+    lint-staged: 16.4.0
+    node-sql-parser: 5.4.0
+    prettier: 3.8.1
+    tsx: 4.21.0
+    turbo: 2.10.5
+    typescript: 6.0.2
+    zod: 4.6.6
+  duckdb:
+    '@duckdb/node-api': 1.4.4-r.3
+  eslint:
+    '@typescript-eslint/eslint-plugin': 8.58.0
+    '@typescript-eslint/parser': 8.58.0
+    eslint: 10.2.0
+  mcp:
+    '@modelcontextprotocol/sdk': 1.32.0
+  security:
+    '@secretlint/secretlint-rule-preset-recommend': 13.0.2
+    audit-ci: 7.1.0
+    secretlint: 13.0.2
+  sqlite:
+    '@types/better-sqlite3': 7.6.13
+    better-sqlite3: 12.11.1
+  testing:
+    '@vitest/coverage-v8': 4.1.12
+    fast-check: 4.9.0
+    vitest: 4.1.12
+
+# pnpm expresses the release-age gate in minutes. Apply the full three-week
+# delay to every package without package-level bypasses.
+minimumReleaseAge: 30240
+
+# Owner-approved security-fix exemptions: exact versions only, each listed with
+# its removal date in docs/dependency-security.md. Remove an entry once that
+# version meets the release age above.
+minimumReleaseAgeExclude:
+  - undici@8.12.2 || 7.30.1 || 6.29.1
+  - zod@4.6.6
+  - toml@5.0.1
+  - dompurify@3.4.17
+  - next@15.5.28
+  - body-parser@2.4.0
+  - ip-address@10.7.4
+  - qs@6.16.1
+  - fast-uri@3.1.9
+  - vitest@4.1.12
+  - '@vitest/coverage-v8@4.1.12'
+  - '@vitest/pretty-format@4.1.12'
+  - '@vitest/mocker@4.1.12'
+  - '@vitest/snapshot@4.1.12'
+  - '@vitest/spy@4.1.12'
+  - '@vitest/runner@4.1.12'
+  - '@vitest/expect@4.1.12'
+  - '@vitest/utils@4.1.12'
+  - '@next/swc-linux-arm64-gnu@15.5.28'
+  - '@next/swc-linux-x64-musl@15.5.28'
+  - '@next/swc-darwin-x64@15.5.28'
+  - '@next/swc-linux-arm64-musl@15.5.28'
+  - '@next/swc-darwin-arm64@15.5.28'
+  - '@next/swc-win32-arm64-msvc@15.5.28'
+  - '@next/swc-linux-x64-gnu@15.5.28'
+  - '@next/env@15.5.28'
+  - '@next/swc-win32-x64-msvc@15.5.28'

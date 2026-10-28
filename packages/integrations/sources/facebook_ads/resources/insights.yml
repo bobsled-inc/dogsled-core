@@ -1,0 +1,66 @@
+type: resource
+name: insights
+description: Daily performance insights for each Meta ad account.
+api:
+  endpoint: /${{ input.ad_account_id }}/insights
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+    level: ${{ input.level }}
+    time_increment: ${{ input.time_increment }}
+input:
+  ad_account_id:
+    type: string
+    default: act_1
+  fields:
+    type: string
+    default: account_id,campaign_id,adset_id,ad_id,impressions,clicks,spend,date_start,date_stop
+  limit:
+    type: integer
+    default: 100
+  level:
+    type: string
+    default: ad
+  time_increment:
+    type: integer
+    default: 1
+output:
+  account_id:
+    type: string
+    path: $.account_id
+  campaign_id:
+    type: string
+    path: $.campaign_id
+  adset_id:
+    type: string
+    path: $.adset_id
+  ad_id:
+    type: string
+    path: $.ad_id
+  impressions:
+    type: integer
+    path: $.impressions
+  clicks:
+    type: integer
+    path: $.clicks
+  spend:
+    type: number
+    path: $.spend
+  date_start:
+    type: string
+    path: $.date_start
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - account_id
+      - ad_id
+      - date_start
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

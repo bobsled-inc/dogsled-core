@@ -1,0 +1,26 @@
+type: resource
+name: sobjects
+description: Objects available in the authenticated Salesforce org.
+api:
+  endpoint: /sobjects
+  method: GET
+input: {}
+output:
+  name:
+    type: string
+    path: $.name
+  label:
+    type: string
+    path: $.label
+  custom:
+    type: boolean
+    path: $.custom
+  key_prefix:
+    type: string
+    path: $.keyPrefix
+extract:
+  record_path: $.sobjects
+  table:
+    primary_key:
+      - name
+    trust_tier: silver

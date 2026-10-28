@@ -1,0 +1,41 @@
+spec_version: '0.2'
+name: customer_event_revenue_incremental
+type: model
+description: Incremental customer events enriched with account metadata from Snowflake.
+grain: event_id
+publish:
+  target: databricks
+  target_schema: analytics
+source:
+  ref: databricks.events
+joins:
+  - ref: snowflake.accounts
+    type: left
+    on: databricks.events.account_id = snowflake.accounts.account_id
+columns:
+  - name: event_id
+    expr: databricks.events.event_id
+    type: integer
+    primary_key: true
+  - name: account_id
+    expr: databricks.events.account_id
+    type: integer
+  - name: account_name
+    expr: snowflake.accounts.account_name
+    type: string
+  - name: segment
+    expr: snowflake.accounts.segment
+    type: string
+  - name: event_ts
+    expr: databricks.events.event_ts
+    type: timestamp
+  - name: event_value
+    expr: databricks.events.event_value
+    type: number
+materialization:
+  type: incremental
+  strategy: merge
+  unique_key: event_id
+  cursor_field: event_ts
+  incremental_filter: "event_ts > (SELECT COALESCE(MAX(event_ts), TIMESTAMP '1970-01-01') FROM self)"
+  on_schema_change: full_refresh

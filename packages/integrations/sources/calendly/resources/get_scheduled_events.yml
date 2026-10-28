@@ -1,0 +1,200 @@
+type: resource
+name: get_scheduled_events
+description: List Events
+api:
+  endpoint: /scheduled_events
+  method: GET
+  query_params:
+    user: ${{ input.user }}
+    organization: ${{ input.organization }}
+    invitee_email: ${{ input.invitee_email }}
+    status: ${{ input.status }}
+    sort: ${{ input.sort }}
+    min_start_time: ${{ input.min_start_time }}
+    max_start_time: ${{ input.max_start_time }}
+    page_token: ${{ input.page_token }}
+    count: ${{ input.count }}
+input:
+  user:
+    type: string
+    description: Return events that are scheduled with the user associated with this URI
+  organization:
+    type: string
+    description: Return events that are scheduled with the organization associated with this URI
+  invitee_email:
+    type: string
+    description: Return events that are scheduled with the invitee associated with this email address
+  status:
+    type: string
+    description: Whether the scheduled event is `active` or `canceled`
+    enum:
+      - active
+      - canceled
+  sort:
+    type: string
+    description: >-
+      Order results by the specified field and direction. Accepts comma-separated list of
+      {field}:{direction} values.
+
+      Supported fields are: start_time.
+
+      Sort direction is specified as: asc, desc.
+  min_start_time:
+    type: timestamp
+    description: 'Include events with start times after this time (sample time format:
+      "2020-01-02T03:04:05.678123Z"). This time should use the UTC timezone.'
+  max_start_time:
+    type: timestamp
+    description: 'Include events with start times prior to this time (sample time format:
+      "2020-01-02T03:04:05.678123Z"). This time should use the UTC timezone.'
+  page_token:
+    type: string
+    description: The token to pass to get the next or previous portion of the collection
+  count:
+    type: number
+    description: The number of rows to return
+    default: 20
+    minimum: 1
+    maximum: 100
+query:
+  filters:
+    start_time:
+      operators:
+        - gte
+        - lte
+      description: 'Include events with start times after this time (sample time format:
+        "2020-01-02T03:04:05.678123Z"). This time should use the UTC timezone.'
+      bind:
+        gte:
+          input: min_start_time
+        lte:
+          input: max_start_time
+      compile:
+        gte:
+          mode: http_query
+          param: min_start_time
+        lte:
+          mode: http_query
+          param: max_start_time
+    status:
+      operators:
+        - eq
+      enum:
+        - active
+        - canceled
+      description: Whether the scheduled event is `active` or `canceled`
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  uri:
+    type: string
+    path: $.uri
+    description: 'Canonical reference (unique identifier) for the resource (format: uri)'
+  name:
+    type: string
+    path: $.name
+    description: The event name
+  status:
+    type: string
+    path: $.status
+    description: Indicates if the event is "active" or "canceled"
+  start_time:
+    type: timestamp
+    path: $.start_time
+    description: The moment the event was scheduled to start in UTC time
+  end_time:
+    type: timestamp
+    path: $.end_time
+    description: The moment the event was scheduled to end in UTC time
+  event_type:
+    type: string
+    path: $.event_type
+    description: 'The event type associated with this event (format: uri)'
+  location:
+    type: object
+    path: $.location
+    description: The polymorphic base type for an event location that Calendly supports
+  invitees_counter_total:
+    type: number
+    path: $.invitees_counter.total
+    description: Total invitees for an event, including invitees that have canceled
+  invitees_counter_active:
+    type: number
+    path: $.invitees_counter.active
+    description: Total invitees for an event that have not canceled
+  invitees_counter_limit:
+    type: number
+    path: $.invitees_counter.limit
+    description: Maximum number of active invitees that can book the event
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The moment when the event was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The moment when the event was last updated
+  event_memberships:
+    type: array
+    path: $.event_memberships
+    description: Event membership list
+  event_guests:
+    type: array
+    path: $.event_guests
+    description: Additional people added to an event by an invitee
+  cancellation_canceled_by:
+    type: string
+    path: $.cancellation.canceled_by
+    description: Name of the person who canceled
+  cancellation_reason:
+    type: string
+    path: $.cancellation.reason
+    description: Reason that the cancellation occurred
+  cancellation_canceler_type:
+    type: string
+    path: $.cancellation.canceler_type
+  calendar_event_kind:
+    type: string
+    path: $.calendar_event.kind
+    description: Indicates the calendar provider the event belongs to.
+  calendar_event_external_id:
+    type: string
+    path: $.calendar_event.external_id
+    description: the id provided from the calendar provider for this calendar event.
+extract:
+  record_path: $.collection
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next_page_token
+    cursor_param: page_token
+  table:
+    primary_key:
+      - calendar_event_external_id
+    trust_tier: silver
+verify:
+  suppress:
+    - PAGINATION_MISMATCH
+lookup:
+  description: Get Event
+  api:
+    endpoint: /scheduled_events/${{ input.uuid }}
+    method: GET
+  input:
+    uuid:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: get_scheduled_events_smoke
+      input:
+        user: https://api.calendly.com/users/EBHAAFHDCAEQTSEZ
+        organization: https://api.calendly.com/organizations/EBHAAFHDCAEQTSEZ
+        invitee_email: alice@example.com
+        sort: start_time:asc
+        min_start_time: 2020-01-02T12:30:00.000000Z
+        max_start_time: 2020-01-02T12:30:00.000000Z

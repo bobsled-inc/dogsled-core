@@ -1,0 +1,7 @@
+name: github
+display_name: GitHub
+description: Engineering system models for GitHub repositories, pull requests, and workflow health.
+tags:
+  - github
+  - developer-tools
+  - engineering

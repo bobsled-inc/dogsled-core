@@ -1,0 +1,42 @@
+type: resource
+name: get_authorized_user
+description: Get Authorized User
+api:
+  endpoint: /v2/user
+  method: GET
+input: {}
+output:
+  user_id:
+    type: integer
+    path: $.user.id
+  user_username:
+    type: string
+    path: $.user.username
+  user_email:
+    type: string
+    path: $.user.email
+  user_color:
+    type: string
+    path: $.user.color
+  user_profile_picture:
+    type: string
+    path: $.user.profilePicture
+  user_initials:
+    type: string
+    path: $.user.initials
+  user_week_start_day:
+    type: integer
+    path: $.user.week_start_day
+    description: The user's preferred start of the calendar week setting.
+  user_global_font_support:
+    type: boolean
+    path: $.user.global_font_support
+  user_timezeone:
+    type: string
+    path: $.user.timezeone
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - user_id
+    trust_tier: silver

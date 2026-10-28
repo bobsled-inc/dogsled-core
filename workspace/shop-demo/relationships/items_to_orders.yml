@@ -1,0 +1,9 @@
+spec_version: '0.2'
+type: relationship
+name: items_to_orders
+left_model: stg_order_items
+right_model: stg_orders
+join_columns:
+  - left: order_id
+    right: order_id
+relationship_type: many_to_one

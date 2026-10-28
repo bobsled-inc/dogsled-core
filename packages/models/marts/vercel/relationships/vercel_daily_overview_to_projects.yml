@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: vercel_daily_overview_to_projects
+description: Each project-attributed Vercel daily cost row belongs to one project.
+left_model: vercel__daily_overview
+right_model: vercel__projects
+join_columns:
+  - left: project_id
+    right: project_id
+join_type: left
+relationship_type: many_to_one
+tags: [vercel, billing, projects]

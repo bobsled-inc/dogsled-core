@@ -1,0 +1,20 @@
+display_name: Confluence
+category: productivity
+logo_url: https://wac-cdn.atlassian.com/assets/img/favicons/atlassian/favicon.png
+tags:
+  - confluence
+  - wiki
+  - knowledge-base
+  - atlassian
+docs_url: https://developer.atlassian.com/cloud/confluence/rest/v1/intro/
+openapi_url: https://dac-static.atlassian.com/cloud/confluence/swagger.v3.json
+auth_setup:
+  - env: CONFLUENCE_SITE
+    description: Atlassian site name without the .atlassian.net suffix
+    docs_url: https://support.atlassian.com/organization-administration/docs/manage-your-atlassian-domain/
+  - env: CONFLUENCE_EMAIL
+    description: Atlassian account email used for API authentication
+    docs_url: https://support.atlassian.com/atlassian-account/docs/manage-your-email-addresses/
+  - env: CONFLUENCE_API_TOKEN
+    description: Atlassian API token used with the account email for basic auth
+    docs_url: https://id.atlassian.com/manage-profile/security/api-tokens

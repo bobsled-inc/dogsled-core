@@ -1,0 +1,106 @@
+type: resource
+name: disputes
+description: Stripe disputes representing chargebacks and payment disputes initiated by cardholders
+  through their bank
+api:
+  endpoint: /v1/disputes
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of disputes to return per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique dispute identifier prefixed with dp_ (e.g. dp_1A2b3C4d5E6f7G)
+  amount:
+    type: integer
+    path: $.amount
+    description:
+      Disputed amount in the smallest currency unit (e.g. cents for USD). This is the amount
+      the cardholder is contesting
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO 4217 currency code in lowercase (e.g. usd, eur, gbp)
+  charge:
+    type: string
+    path: $.charge
+    description: ID of the charge (ch_xxx) that was disputed by the cardholder
+  payment_intent:
+    type: string
+    path: $.payment_intent
+    description: ID of the payment intent (pi_xxx) associated with the disputed charge
+  reason:
+    type: string
+    path: $.reason
+    description:
+      'Reason for the dispute as categorized by the card network. Possible values: duplicate
+      (customer claims charged twice), fraudulent (customer denies making the purchase),
+      subscription_canceled (customer claims subscription was canceled), product_unacceptable
+      (product/service not as described), product_not_received (customer did not receive product),
+      unrecognized (customer does not recognize the charge), credit_not_processed (expected credit
+      not received), general (other/uncategorized reason)'
+  status:
+    type: string
+    path: $.status
+    description:
+      'Current status of the dispute. Possible values: warning_needs_response (early fraud
+      warning requiring response), warning_under_review (early warning under review by Stripe),
+      warning_closed (early warning resolved), needs_response (dispute requires evidence
+      submission), under_review (evidence submitted and under review by card network), won (dispute
+      resolved in your favor), lost (dispute resolved in cardholder favor, funds deducted)'
+  evidence_due_by:
+    type: integer
+    path: $.evidence_details.due_by
+    description:
+      Unix timestamp deadline for submitting dispute evidence. After this date, the dispute
+      is automatically resolved in the cardholder favor if no evidence is submitted
+  is_charge_refundable:
+    type: boolean
+    path: $.is_charge_refundable
+    description: Whether the original charge associated with this dispute is eligible for refund.
+      Usually false once a dispute is opened
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the dispute was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

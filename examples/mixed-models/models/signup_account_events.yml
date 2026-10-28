@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: signup_account_events
+type: model
+description: >-
+  Mixed model (D) joining a live/lazy API source (signups) with a Snowflake
+  warehouse table (accounts) and a BigQuery warehouse table (events).
+grain: event_id
+# `execution.engine` is the engine the join runs in. A warehouse handle stages
+# the foreign leaves into that warehouse and materializes there (the same path
+# `publish: bigquery` takes). `publish: bigquery` is an equivalent alias.
+execution:
+  engine: bigquery
+  staging: ephemeral
+source:
+  ref: bigquery.events
+joins:
+  - ref: lake.signups
+    type: inner
+    on: bigquery.events.account_id = lake.signups.account_id
+  - ref: snowflake.accounts
+    type: left
+    on: bigquery.events.account_id = snowflake.accounts.account_id
+columns:
+  - { name: event_id, expr: bigquery.events.event_id, type: integer, primary_key: true }
+  - { name: account_id, expr: bigquery.events.account_id, type: integer }
+  - { name: account_name, expr: snowflake.accounts.account_name, type: string }
+  - { name: segment, expr: snowflake.accounts.segment, type: string }
+  - { name: user_id, expr: lake.signups.user_id, type: integer }
+  - { name: event_value, expr: bigquery.events.event_value, type: number }
+# Persisted (table) so the join materializes into the engine. For the live
+# (recompute-on-read) variant, set execution.engine to the `lake` DuckDB
+# integration and materialization.type to view (see README).
+materialization:
+  type: table

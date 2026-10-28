@@ -1,0 +1,28 @@
+type: resource
+name: profiles
+description: Profiles from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Name,UserType FROM Profile
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.Name
+  user_type:
+    type: string
+    path: $.UserType
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

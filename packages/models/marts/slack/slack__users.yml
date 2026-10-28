@@ -1,0 +1,77 @@
+spec_version: '0.2'
+name: slack__users
+type: model
+description: User detail with profile information and role flags for Slack workspace members.
+grain: user_id
+source:
+  ref: stg_slack__users
+columns:
+  - name: user_id
+    expr: stg_slack__users.user_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Slack user identifier (e.g. U01ABC23DEF).
+  - name: name
+    expr: stg_slack__users.name
+    semantic_role: categorical
+    description: Username (handle) without the @ prefix.
+  - name: display_name
+    expr: stg_slack__users.display_name
+    semantic_role: categorical
+    description: Display name chosen by the user.
+  - name: real_name
+    expr: stg_slack__users.real_name
+    semantic_role: categorical
+    description: Full real name from the user profile.
+  - name: email
+    expr: stg_slack__users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address from the user profile.
+  - name: title
+    expr: stg_slack__users.title
+    semantic_role: categorical
+    description: Job title from the user profile.
+  - name: is_bot
+    expr: stg_slack__users.is_bot
+    semantic_role: categorical
+    description: Whether this is a bot user.
+  - name: is_admin
+    expr: stg_slack__users.is_admin
+    semantic_role: categorical
+    description: Whether the user has workspace admin privileges.
+  - name: is_owner
+    expr: stg_slack__users.is_owner
+    semantic_role: categorical
+    description: Whether the user is a workspace owner.
+  - name: is_restricted
+    expr: stg_slack__users.is_restricted
+    semantic_role: categorical
+    description: Whether the user is a multi-channel guest.
+  - name: is_ultra_restricted
+    expr: stg_slack__users.is_ultra_restricted
+    semantic_role: categorical
+    description: Whether the user is a single-channel guest.
+  - name: is_deleted
+    expr: stg_slack__users.deleted_at
+    semantic_role: categorical
+    description: Whether the user has been deactivated.
+  - name: team_id
+    expr: stg_slack__users.team_id
+    semantic_role: entity_id
+    description: Workspace team ID this user belongs to.
+  - name: tz
+    expr: stg_slack__users.tz
+    semantic_role: categorical
+    description: IANA timezone identifier for the user.
+  - name: updated_at
+    expr: stg_slack__users.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the user profile was last updated.
+tags:
+  - slack
+  - users
+trust_tier: gold
+materialization:
+  type: table

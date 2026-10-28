@@ -1,0 +1,50 @@
+type: resource
+name: tracking_plan_rules
+description: Rules attached to each Segment tracking plan.
+api:
+  endpoint: /tracking-plans/${{ input.tracking_plan_id }}/rules
+  method: GET
+  query_params:
+    pagination.count: ${{ input.pagination_count }}
+    pagination.cursor: ${{ input.pagination_cursor }}
+input:
+  tracking_plan_id:
+    type: string
+    default: plan_1
+  pagination_count:
+    type: integer
+    default: 100
+  pagination_cursor:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  type:
+    type: string
+    path: $.type
+  enabled:
+    type: boolean
+    path: $.enabled
+  description:
+    type: string
+    path: $.description
+  tracking_plan_id:
+    type: string
+    path: $.trackingPlanId
+extract:
+  record_path: $.data.rules
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.data.pagination.next
+    cursor_param: pagination.cursor
+  for_each:
+    resource: tracking_plans
+    field: id
+    input: tracking_plan_id

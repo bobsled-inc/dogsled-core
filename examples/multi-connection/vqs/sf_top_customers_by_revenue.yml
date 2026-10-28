@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: vq
+name: sf_top_customers_by_revenue
+description: Top 10 Snowflake customers by lifetime revenue.
+nlq: Who are our top 10 customers by total revenue?
+sql: |
+  SELECT CUSTOMER_ID, CUSTOMER_NAME, TOTAL_REVENUE
+  FROM {sf_mart_customer_revenue}
+  ORDER BY TOTAL_REVENUE DESC
+  LIMIT 10
+connection: snowflake
+tags: [customer360, snowflake]

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: zendesk_open_ticket_count
+description: Number of Zendesk tickets in new, open, pending, or hold status.
+model: zendesk__tickets
+expression: SUM(CASE WHEN {zendesk__tickets}.status IN ('new', 'open', 'pending', 'hold') THEN 1 ELSE 0 END)
+synonyms: [open tickets, unresolved tickets, active tickets]
+tags: [zendesk, support, tickets]

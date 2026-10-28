@@ -1,0 +1,5 @@
+spec_version: '0.2'
+type: vq
+name: shop_revenue
+nlq: How many fictional orders and revenue units are in the combined shop?
+sql: SELECT count(*) AS orders, SUM(amount) AS revenue FROM mixed_order_report

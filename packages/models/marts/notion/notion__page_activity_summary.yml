@@ -1,0 +1,42 @@
+spec_version: '0.2'
+name: notion__page_activity_summary
+type: model
+description: Page counts by parent type and archive status for Notion workspace activity overview.
+grain:
+  - parent_type
+  - is_archived
+source:
+  ref: stg_notion__pages
+columns:
+  - name: parent_type
+    expr: stg_notion__pages.parent_type
+    primary_key: true
+    semantic_role: categorical
+    description: Type of parent object (workspace, page, or database).
+  - name: is_archived
+    expr: stg_notion__pages.archived
+    primary_key: true
+    semantic_role: categorical
+    description: Whether the pages in this bucket are archived.
+  - name: page_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total number of pages in the parent type and archive status bucket.
+  - name: most_recent_created_time
+    expr: MAX(stg_notion__pages.created_time)
+    semantic_role: event_timestamp
+    description: Most recent page creation timestamp in the bucket.
+  - name: most_recent_edited_time
+    expr: MAX(stg_notion__pages.last_edited_time)
+    semantic_role: event_timestamp
+    description: Most recent page edit timestamp in the bucket.
+group_by:
+  - parent_type
+  - is_archived
+tags:
+  - notion
+  - collaboration
+  - pages
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,22 @@
+spec_version: '0.2'
+name: companies
+type: source
+source_type: warehouse_table
+connection: hubspot
+table: raw.hubspot_companies
+description: Synthetic HubSpot companies export for the Entity Graph demo workspace.
+trust_tier: gold
+schema:
+  columns:
+    - name: hs_object_id
+      type: STRING
+    - name: name
+      type: STRING
+    - name: website
+      type: STRING
+    - name: phone
+      type: STRING
+    - name: country
+      type: STRING
+    - name: updated_at
+      type: TIMESTAMP

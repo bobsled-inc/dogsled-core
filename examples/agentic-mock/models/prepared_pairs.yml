@@ -1,0 +1,19 @@
+spec_version: '0.2'
+type: model
+name: prepared_pairs
+description: Prepare non-null fictional assignment keys and evidence.
+grain:
+  - pair_id
+source:
+  ref: local.pairs
+columns:
+  - name: pair_id
+    expr: pair_id
+    type: string
+    primary_key: true
+  - name: evidence
+    expr: evidence
+    type: string
+    not_null: true
+materialization:
+  type: table

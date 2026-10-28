@@ -1,0 +1,22 @@
+spec_version: '0.2'
+name: salesforce_contacts
+type: source
+source_type: warehouse_table
+connection: revops
+table: RAW.SALESFORCE_CONTACTS
+description: Salesforce contact records attached to sales accounts.
+trust_tier: silver
+schema:
+  columns:
+    - name: salesforce_contact_id
+      type: VARCHAR
+    - name: salesforce_account_id
+      type: VARCHAR
+    - name: contact_name
+      type: VARCHAR
+    - name: email
+      type: VARCHAR
+    - name: email_domain
+      type: VARCHAR
+    - name: title
+      type: VARCHAR

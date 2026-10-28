@@ -1,0 +1,67 @@
+type: resource
+name: products
+description: Product/service catalog data for margin and mix analysis.
+api:
+  endpoint: /product/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    code: '${{ input.code }}'
+    category: '${{ input.category }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  code:
+    type: string
+    description: Optional product code filter.
+  category:
+    type: string
+    description: Optional product category filter.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  product_id:
+    type: integer
+    path: $.productID
+    description: Product unique ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Owning office.
+  description:
+    type: string
+    path: $.description
+    description: Product description.
+  code:
+    type: string
+    path: $.code
+    description: Product SKU code.
+  category:
+    type: string
+    path: $.category
+    description: Product category.
+  gl_account_id:
+    type: integer
+    path: $.glAccountID
+    description: G/L account mapping ID.
+  amount:
+    type: number
+    path: $.amount
+    description: Unit price.
+  taxable:
+    type: integer
+    path: $.taxable
+    description: Taxable flag.
+
+extract:
+  record_path: '$..[?(@.productID)]'
+  table:
+    primary_key:
+      - product_id
+    trust_tier: silver

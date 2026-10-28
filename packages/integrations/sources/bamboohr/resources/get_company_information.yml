@@ -1,0 +1,46 @@
+type: resource
+name: get_company_information
+description: Get Company Information
+api:
+  endpoint: /api/v1/company_information
+  method: GET
+input: {}
+output:
+  legal_name:
+    type: string
+    path: $.legalName
+    description: The legal name of the company.
+  display_name:
+    type: string
+    path: $.displayName
+    description: The display name of the company.
+  address_line1:
+    type: string
+    path: $.address.line1
+    description: The first line of the address.
+  address_line2:
+    type: string
+    path: $.address.line2
+    description: The second line of the address.
+  address_city:
+    type: string
+    path: $.address.city
+    description: The city.
+  address_state:
+    type: string
+    path: $.address.state
+    description: The state or province abbreviation.
+  address_zip:
+    type: string
+    path: $.address.zip
+    description: The ZIP or postal code.
+  phone:
+    type: string
+    path: $.phone
+    description: The primary contact phone number of the company.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - legal_name
+    trust_tier: silver

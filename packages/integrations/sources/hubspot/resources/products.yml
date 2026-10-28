@@ -1,0 +1,69 @@
+type: resource
+name: products
+description: HubSpot CRM products representing items in your product catalog that can be added to deals as line items
+api:
+  endpoint: /crm/v3/objects/products
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of product records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot product properties to include in the response
+    default: name,description,price,hs_sku,hs_cost_of_goods_sold,hs_recurring_billing_period,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the product record, returned as a numeric string
+  name:
+    type: string
+    path: $.properties.name
+    description: Display name of the product as shown in the HubSpot product library
+  description:
+    type: string
+    path: $.properties.description
+    description: Detailed text description of the product, used in quotes and proposals
+  price:
+    type: string
+    path: $.properties.price
+    description: Unit price of the product in the portal's default currency, stored as a numeric string (e.g. '99.99')
+  sku:
+    type: string
+    path: $.properties.hs_sku
+    description: Stock keeping unit identifier for the product, used for inventory and order management
+  cost_of_goods_sold:
+    type: string
+    path: $.properties.hs_cost_of_goods_sold
+    description: Cost of goods sold per unit in the portal's default currency, stored as a numeric string, used for margin calculations
+  recurring_billing_period:
+    type: string
+    path: $.properties.hs_recurring_billing_period
+    description: Billing frequency for recurring products, expressed as a period code (e.g. P1M for monthly, P12M for annually, P3M for quarterly)
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the product was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the product record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

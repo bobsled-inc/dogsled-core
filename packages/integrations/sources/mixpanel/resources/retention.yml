@@ -1,0 +1,41 @@
+type: resource
+name: retention
+description: Retention report results from Mixpanel.
+api:
+  endpoint: /retention
+  method: GET
+  query_params:
+    unit: ${{ input.unit }}
+    interval: ${{ input.interval }}
+input:
+  unit:
+    type: string
+    default: day
+  interval:
+    type: integer
+    default: 30
+output:
+  cohort:
+    type: string
+    path: $.cohort
+  period:
+    type: integer
+    path: $.period
+  retained_count:
+    type: integer
+    path: $.retained_count
+  started_count:
+    type: integer
+    path: $.started_count
+  retention_rate:
+    type: number
+    path: $.retention_rate
+  segment:
+    type: string
+    path: $.segment
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - cohort
+      - period

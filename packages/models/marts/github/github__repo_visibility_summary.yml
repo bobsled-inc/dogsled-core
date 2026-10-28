@@ -1,0 +1,44 @@
+spec_version: '0.2'
+name: github__repo_visibility_summary
+type: model
+description: Repository counts and engagement metrics grouped by visibility and language.
+grain:
+  - visibility
+  - language
+source:
+  ref: stg_github__repos
+columns:
+  - name: visibility
+    expr: stg_github__repos.visibility
+    semantic_role: categorical
+    description: Visibility bucket for the repository group.
+  - name: language
+    expr: stg_github__repos.language
+    semantic_role: categorical
+    description: Primary language bucket for the repository group.
+  - name: repo_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of repositories in the visibility and language bucket.
+  - name: total_stars
+    expr: SUM(stg_github__repos.stargazers_count)
+    semantic_role: measure
+    description: Total stars across repositories in the bucket.
+  - name: total_forks
+    expr: SUM(stg_github__repos.forks_count)
+    semantic_role: measure
+    description: Total forks across repositories in the bucket.
+  - name: total_open_issues
+    expr: SUM(stg_github__repos.open_issues_count)
+    semantic_role: measure
+    description: Total open issues and pull requests across the bucket.
+group_by:
+  - visibility
+  - language
+tags:
+  - github
+  - repos
+  - summary
+trust_tier: gold
+materialization:
+  type: table

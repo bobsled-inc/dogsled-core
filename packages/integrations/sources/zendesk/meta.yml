@@ -1,0 +1,12 @@
+display_name: Zendesk
+category: support
+logo_url: https://www.zendesk.com/favicon.ico
+tags: [support, tickets, helpdesk]
+docs_url: https://developer.zendesk.com/api-reference/
+auth_setup:
+  - env: ZENDESK_SUBDOMAIN
+    description: Zendesk account subdomain without the .zendesk.com suffix
+    docs_url: https://developer.zendesk.com/api-reference/introduction/security-and-auth/
+  - env: ZENDESK_TOKEN
+    description: Zendesk OAuth bearer token or API access token
+    docs_url: https://developer.zendesk.com/api-reference/introduction/security-and-auth/

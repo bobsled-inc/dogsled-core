@@ -1,0 +1,14 @@
+display_name: LaunchDarkly
+category: developer-tools
+logo_url: https://launchdarkly.com/favicon.ico
+tags:
+  - launchdarkly
+  - feature-flags
+  - deployments
+  - developer-tools
+docs_url: https://launchdarkly.com/docs/api
+openapi_url: openapi.verify.yml
+auth_setup:
+  - env: LAUNCHDARKLY_ACCESS_TOKEN
+    description: LaunchDarkly API access token
+    docs_url: https://launchdarkly.com/docs/home/account/api

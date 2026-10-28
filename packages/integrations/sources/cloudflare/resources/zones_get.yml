@@ -1,0 +1,99 @@
+type: resource
+name: zones_get
+description: List Cloudflare zones visible to the API token
+api:
+  endpoint: /zones
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    per_page: ${{ input.per_page }}
+    name: ${{ input.name }}
+    status: ${{ input.status }}
+input:
+  page:
+    type: integer
+    description: Cloudflare page index
+    default: 1
+  per_page:
+    type: integer
+    description: Number of zones to return per page
+    default: 50
+  name:
+    type: string
+    description: Optional zone name filter
+  status:
+    type: string
+    description: Optional zone status filter
+    enum:
+      - initializing
+      - pending
+      - active
+      - moved
+query:
+  filters:
+    name:
+      operators:
+        - eq
+      description: Optional zone name filter
+      bind:
+        eq:
+          input: name
+      compile:
+        eq:
+          mode: http_query
+          param: name
+    status:
+      operators:
+        - eq
+      enum:
+        - initializing
+        - pending
+        - active
+        - moved
+      description: Optional zone status filter
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  id:
+    type: string
+    path: $.id
+    description: Cloudflare zone identifier
+  name:
+    type: string
+    path: $.name
+    description: Zone name
+  status:
+    type: string
+    path: $.status
+    description: Current zone status
+  paused:
+    type: boolean
+    path: $.paused
+    description: Whether Cloudflare services are paused for the zone
+  type:
+    type: string
+    path: $.type
+    description: Zone ownership type
+  created_on:
+    type: timestamp
+    path: $.created_on
+    description: Timestamp when the zone was created
+  account_id:
+    type: string
+    path: $.account.id
+    description: Parent account identifier
+extract:
+  record_path: $.result
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: fieldroutes
+description: FieldRoutes API for field service customers, jobs, plans, and operational events.
+transports:
+  - id: rest
+    base_url: https://${{ env.FIELDROUTES_SUBDOMAIN }}.fieldroutes.com/api
+    auth:
+      type: api-key
+      query_param: authenticationToken
+      key: ${{ env.FIELDROUTES_AUTH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 10
+      burst: 20
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: rest

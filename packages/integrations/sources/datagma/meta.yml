@@ -1,0 +1,12 @@
+display_name: Datagma
+category: crm
+logo_url: https://datagma.com/favicon.ico
+tags:
+  - people-finder
+  - enrichment
+  - prospecting
+docs_url: https://datagmaapi.readme.io/reference/ingressservice_findpeople
+auth_setup:
+  - env: DATAGMA_API_KEY
+    description: Datagma API key
+    docs_url: https://datagmaapi.readme.io/reference/getting-started-with-your-api

@@ -1,0 +1,29 @@
+type: resource
+name: surveys
+description: Customer satisfaction surveys (NPS, CSAT, custom)
+api:
+  endpoint: /surveys
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique survey identifier
+  name:
+    type: string
+    path: $.name
+    description: Survey name
+  type:
+    type: string
+    path: $.type
+    description: Survey type (nps, csat, custom)
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the survey was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

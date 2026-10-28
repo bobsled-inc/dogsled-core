@@ -1,0 +1,15 @@
+spec_version: '0.2'
+type: relationship
+name: linear_project_delivery_to_projects
+description: Each Linear project delivery row summarizes one project.
+left_model: linear__project_delivery
+right_model: linear__projects
+join_columns:
+  - left: project_id
+    right: project_id
+join_type: left
+relationship_type: one_to_one
+tags:
+  - linear
+  - engineering
+  - planning

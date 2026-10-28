@@ -1,0 +1,100 @@
+type: resource
+name: dependency_graph_sbom
+description: SPDX SBOM export for a repository from GitHub's dependency graph, including dependencies submitted via the dependency submission API.
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/dependency-graph/sbom
+  method: GET
+input:
+  owner:
+    type: string
+    description: Repository owner or organization login. Supply this alongside repos.org when extracting another org.
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name without the owner prefix. Populated automatically during full extraction from repos.name.
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  spdx_id:
+    type: string
+    semantic_role: entity_id
+    path: $.SPDXID
+    description: SPDX document identifier for the exported SBOM
+  spdx_version:
+    type: string
+    semantic_role: identifier
+    path: $.spdxVersion
+    description: SPDX schema version of the exported SBOM
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Human-readable name of the SBOM document
+  comment:
+    type: string
+    semantic_role: categorical
+    path: $.comment
+    description: Optional GitHub-generated comment included with the SBOM
+  data_license:
+    type: string
+    semantic_role: identifier
+    path: $.dataLicense
+    description: SPDX data license for the document
+  document_namespace:
+    type: string
+    semantic_role: identifier
+    path: $.documentNamespace
+    description: Unique namespace URI for the exported SBOM document
+  creation_created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.creationInfo.created
+    description: Timestamp when GitHub generated the SBOM export
+  creation_creators:
+    type: array
+    semantic_role: categorical
+    path: $.creationInfo.creators
+    description: SPDX creators recorded in the document creation info
+  packages:
+    type: array
+    semantic_role: categorical
+    path: $.packages
+    description: Packages GitHub included in the dependency graph SBOM
+  relationships:
+    type: array
+    semantic_role: categorical
+    path: $.relationships
+    description: SPDX relationships describing the dependency graph edges
+extract:
+  record_path: $.sbom
+  table:
+    primary_key:
+      - document_namespace
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+via: rest

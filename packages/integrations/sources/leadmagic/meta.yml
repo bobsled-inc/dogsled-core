@@ -1,0 +1,12 @@
+display_name: LeadMagic
+category: crm
+logo_url: https://docs.leadmagic.io/favicon.ico
+tags:
+  - email-finder
+  - enrichment
+  - prospecting
+docs_url: https://docs.leadmagic.io/reference/email-finder
+auth_setup:
+  - env: LEADMAGIC_API_KEY
+    description: LeadMagic API key
+    docs_url: https://docs.leadmagic.io/docs/authentication

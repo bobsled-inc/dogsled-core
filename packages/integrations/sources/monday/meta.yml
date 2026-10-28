@@ -1,0 +1,10 @@
+display_name: Monday
+category: task-management
+tags:
+  - projects
+  - boards
+  - work-management
+docs_url: https://developer.monday.com/api-reference/reference
+auth_setup:
+  - env: MONDAY_API_TOKEN
+    description: Monday.com API token

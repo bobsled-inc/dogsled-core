@@ -1,0 +1,13 @@
+display_name: Apollo
+category: crm
+logo_url: https://www.apollo.io/favicon.ico
+tags:
+  - apollo
+  - sales
+  - prospecting
+  - contacts
+docs_url: https://docs.apollo.io/
+auth_setup:
+  - env: APOLLO_API_KEY
+    description: Apollo API key
+    docs_url: https://docs.apollo.io/

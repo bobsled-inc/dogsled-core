@@ -1,0 +1,17 @@
+display_name: FieldRoutes
+category: productivity
+logo_url: https://www.fieldroutes.com/favicon.ico
+tags:
+  - field-service
+  - operations
+  - jobs
+  - customers
+  - billing
+docs_url: https://api.fieldroutes.com/documentation
+auth_setup:
+  - env: FIELDROUTES_SUBDOMAIN
+    description: The subdomain part for your FieldRoutes tenant (for example, acme, not full URL).
+    docs_url: https://api.fieldroutes.com/documentation
+  - env: FIELDROUTES_AUTH_TOKEN
+    description: FieldRoutes authentication token (query-based `authenticationToken`).
+    docs_url: https://api.fieldroutes.com/documentation

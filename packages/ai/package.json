@@ -1,0 +1,82 @@
+{
+  "name": "@bobsled-inc/ai",
+  "version": "0.20.224",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "packages/ai"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./test-stubs": {
+      "types": "./dist/test-stubs.d.ts",
+      "import": "./dist/test-stubs.js",
+      "default": "./dist/test-stubs.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "!dist/metafile-*.json"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "catalog:ai-sdk",
+    "@ai-sdk/anthropic": "catalog:ai-sdk",
+    "@ai-sdk/google": "catalog:ai-sdk",
+    "@ai-sdk/openai": "catalog:ai-sdk",
+    "@aws-sdk/credential-providers": "catalog:",
+    "@bobsled-inc/connections": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "@openrouter/ai-sdk-provider": "catalog:ai-sdk",
+    "ai": "catalog:ai-sdk",
+    "ollama-ai-provider": "catalog:ai-sdk",
+    "zod": "catalog:dev-packages"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:dev-packages",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "tsup": "catalog:cli",
+    "typescript": "catalog:dev-packages",
+    "@vitest/coverage-v8": "catalog:testing",
+    "vitest": "catalog:testing"
+  },
+  "description": "Provider-neutral AI model roles, budgets, and structured generation primitives for Dogsled.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "ai",
+    "llm",
+    "budgets"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  }
+}

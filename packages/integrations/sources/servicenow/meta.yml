@@ -1,0 +1,15 @@
+display_name: ServiceNow
+category: support
+tags:
+  - itsm
+  - enterprise
+  - incidents
+  - servicenow
+docs_url: https://docs.servicenow.com/bundle/latest/page/integrate/inbound-rest/concept/c_TableAPI.html
+auth_setup:
+  - env: SERVICENOW_INSTANCE
+    description: ServiceNow instance name (the part before .service-now.com)
+  - env: SERVICENOW_USERNAME
+    description: ServiceNow user with read access to target tables
+  - env: SERVICENOW_PASSWORD
+    description: ServiceNow user password

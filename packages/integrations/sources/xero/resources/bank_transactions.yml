@@ -1,0 +1,52 @@
+type: resource
+name: bank_transactions
+description: Spent and received money transactions in Xero.
+api:
+  endpoint: /BankTransactions
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    pageSize: ${{ input.page_size }}
+input:
+  page:
+    type: integer
+    description: Page number to retrieve from Xero.
+    default: 1
+  page_size:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 100
+output:
+  bank_transaction_id:
+    type: string
+    path: $.BankTransactionID
+    description: Xero bank transaction identifier.
+  type:
+    type: string
+    path: $.Type
+    description: Bank transaction type.
+  status:
+    type: string
+    path: $.Status
+    description: Bank transaction status.
+  total:
+    type: number
+    path: $.Total
+    description: Total amount for the transaction.
+  date:
+    type: string
+    path: $.Date
+    description: Transaction date.
+  updated_date_utc:
+    type: string
+    path: $.UpdatedDateUTC
+    description: Last update timestamp in UTC.
+extract:
+  record_path: $.BankTransactions
+  pagination:
+    type: page_number
+    page_param: page
+  table:
+    primary_key:
+      - bank_transaction_id
+    trust_tier: silver

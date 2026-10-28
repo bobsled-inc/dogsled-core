@@ -1,0 +1,69 @@
+spec_version: '0.2'
+name: vercel__daily_overview
+type: model
+description: Daily Vercel financial overview derived from daily costs without joining operational data that could multiply spend.
+grain:
+  - snapshot_id
+  - date
+  - team_id
+  - project_id
+  - billing_currency
+source:
+  ref: vercel__daily_costs
+columns:
+  - name: snapshot_id
+    expr: vercel__daily_costs.snapshot_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Selected complete billing snapshot.
+  - name: date
+    expr: vercel__daily_costs.date
+    primary_key: true
+    semantic_role: time_dimension
+    description: UTC billing day.
+  - name: team_id
+    expr: vercel__daily_costs.team_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Vercel team identifier.
+  - name: project_id
+    expr: vercel__daily_costs.project_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_vercel__projects.project_id
+    description: Project identifier when available; null remains unattributed.
+  - name: billing_currency
+    expr: vercel__daily_costs.billing_currency
+    primary_key: true
+    semantic_role: categorical
+    description: Billing currency.
+  - name: charge_count
+    expr: SUM(vercel__daily_costs.charge_count)
+    semantic_role: measure
+    description: Charge line count across native service and unit buckets.
+  - name: total_billed_cost
+    expr: SUM(vercel__daily_costs.total_billed_cost)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Daily native billed cost.
+  - name: total_effective_cost
+    expr: SUM(vercel__daily_costs.total_effective_cost)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Daily native effective cost.
+group_by:
+  - snapshot_id
+  - date
+  - team_id
+  - project_id
+  - billing_currency
+tags:
+  - vercel
+  - billing
+  - daily
+  - overview
+trust_tier: gold
+materialization:
+  type: table

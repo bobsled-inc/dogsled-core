@@ -1,0 +1,79 @@
+spec_version: '0.2'
+name: github__issues
+type: model
+description: Repository issues with state, labels, milestone, and engagement metadata.
+grain: issue_id
+source:
+  ref: stg_github__issues
+columns:
+  - name: issue_id
+    expr: stg_github__issues.issue_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique GitHub issue identifier.
+  - name: number
+    expr: stg_github__issues.number
+    semantic_role: categorical
+    description: Repository-scoped issue number.
+  - name: title
+    expr: stg_github__issues.title
+    semantic_role: categorical
+    description: Issue title.
+  - name: state
+    expr: stg_github__issues.state
+    semantic_role: categorical
+    description: Issue state (open or closed).
+  - name: state_reason
+    expr: stg_github__issues.state_reason
+    semantic_role: categorical
+    description: Reason for closure (completed, not_planned, or null).
+  - name: user_login
+    expr: stg_github__issues.user_login
+    semantic_role: categorical
+    description: GitHub username of the issue author.
+  - name: assignee_login
+    expr: stg_github__issues.assignee_login
+    semantic_role: categorical
+    description: GitHub username of the primary assignee.
+  - name: assignees_count
+    expr: stg_github__issues.assignees_count
+    semantic_role: measure
+    description: Number of users assigned to this issue.
+  - name: labels
+    expr: stg_github__issues.labels
+    semantic_role: categorical
+    description: Label names applied to the issue.
+  - name: milestone_title
+    expr: stg_github__issues.milestone_title
+    semantic_role: categorical
+    description: Associated milestone title.
+  - name: comments
+    expr: stg_github__issues.comments
+    semantic_role: measure
+    description: Number of comments on the issue.
+  - name: reactions_total
+    expr: stg_github__issues.reactions_total
+    semantic_role: measure
+    description: Total emoji reactions on the issue.
+  - name: author_association
+    expr: stg_github__issues.author_association
+    semantic_role: categorical
+    description: Author relationship to the repository.
+  - name: created_at
+    expr: stg_github__issues.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was created.
+  - name: closed_at
+    expr: stg_github__issues.closed_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was closed.
+  - name: updated_at
+    expr: stg_github__issues.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was last updated.
+tags:
+  - github
+  - issues
+trust_tier: gold
+materialization:
+  type: table

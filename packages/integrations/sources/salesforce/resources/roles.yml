@@ -1,0 +1,31 @@
+type: resource
+name: roles
+description: User roles from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Name,ParentRoleId,DeveloperName FROM UserRole
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.Name
+  parent_role_id:
+    type: string
+    path: $.ParentRoleId
+  developer_name:
+    type: string
+    path: $.DeveloperName
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

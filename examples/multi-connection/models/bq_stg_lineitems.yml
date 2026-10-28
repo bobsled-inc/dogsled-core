@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: bq_stg_lineitems
+type: model
+description: BigQuery staging — lineitems with derived line_total. Grain is (order_id, line_number) — synthesized into a single lineitem_id.
+grain: lineitem_id
+source:
+  ref: bigquery.lineitems
+columns:
+  - name: lineitem_id
+    expr: 'l_orderkey * 100 + l_linenumber'
+    primary_key: true
+  - name: order_id
+    expr: l_orderkey
+  - name: line_number
+    expr: l_linenumber
+  - name: product
+    expr: l_product
+  - name: qty
+    expr: l_quantity
+  - name: price
+    expr: l_extendedprice
+  - name: line_total
+    expr: l_quantity * l_extendedprice
+materialization:
+  type: view

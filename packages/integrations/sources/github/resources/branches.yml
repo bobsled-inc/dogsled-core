@@ -1,0 +1,120 @@
+type: resource
+name: branches
+description: Branches for a GitHub repository with protection status and latest commit information
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/branches
+  method: GET
+  query_params:
+    protected: ${{ input.protected }}
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  protected:
+    type: boolean
+    description: If true, only return branches that have branch protection rules configured
+  per_page:
+    type: integer
+    description: Number of branches to return per page (max 100)
+    default: 100
+query:
+  filters:
+    protected:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: protected
+      compile:
+        eq:
+          mode: http_query
+          param: protected
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Name of the branch (e.g. "main", "feature/my-feature", "release/v2.0")
+  commit_sha:
+    type: string
+    semantic_role: identifier
+    path: $.commit.sha
+    description: Full 40-character SHA of the latest commit on this branch
+  commit_url:
+    type: string
+    semantic_role: url
+    path: $.commit.url
+    description: REST API URL for the latest commit on this branch
+  protected:
+    type: boolean
+    semantic_role: categorical
+    path: $.protected
+    description: True if the branch has branch protection rules configured (e.g. required reviews, status checks, restrictions)
+  protection_url:
+    type: string
+    semantic_role: url
+    path: $.protection.url
+    description: REST API URL for the branch protection configuration, null if unprotected
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - repository_full_name
+      - name
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single branch by repository owner, name, and branch name
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/branches/${{ input.branch }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    branch:
+      type: string
+      required: true
+      description: Branch name to look up (e.g. "main")
+  extract:
+    record_path: $
+via: rest

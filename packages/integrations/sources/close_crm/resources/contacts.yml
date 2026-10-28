@@ -1,0 +1,49 @@
+type: resource
+name: contacts
+description: List Close CRM contacts
+api:
+  endpoint: /contact/
+  method: GET
+  query_params:
+    _skip: ${{ input.skip }}
+    _limit: ${{ input.limit }}
+input:
+  skip:
+    type: integer
+    description: Pagination offset
+    default: 0
+  limit:
+    type: integer
+    description: Page size
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Contact identifier
+  lead_id:
+    type: string
+    path: $.lead_id
+    description: Associated lead identifier
+  name:
+    type: string
+    path: $.name
+    description: Contact name
+  title:
+    type: string
+    path: $.title
+    description: Contact title
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Contact creation timestamp
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: offset
+    offset_param: _skip
+    limit_param: _limit

@@ -1,0 +1,16 @@
+spec_version: '1'
+auth_env_vars: [SHOWCASE_PG_PASSWORD]
+type: integration
+name: local_pg
+source_type: postgres
+connection:
+  host: 127.0.0.1
+  port: 5432
+  database: showcase
+  schema: pipeline
+  ssl:
+    mode: disable
+auth:
+  type: password
+  user: postgres
+  password_env: SHOWCASE_PG_PASSWORD

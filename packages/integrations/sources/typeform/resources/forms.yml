@@ -1,0 +1,44 @@
+type: resource
+name: forms
+description: List Typeform forms
+api:
+  endpoint: /forms
+  method: GET
+  query_params:
+    page_size: ${{ input.page_size }}
+    after: ${{ input.after }}
+input:
+  page_size:
+    type: integer
+    description: Page size
+    default: 100
+  after:
+    type: string
+    description: Pagination cursor
+output:
+  id:
+    type: string
+    path: $.id
+    description: Form identifier
+  title:
+    type: string
+    path: $.title
+    description: Form title
+  workspace_id:
+    type: string
+    path: $.workspace.href
+    description: Workspace reference
+  last_updated_at:
+    type: timestamp
+    path: $.last_updated_at
+    description: Last update timestamp
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: cursor
+    cursor_param: after
+    cursor_path: $.page.next_token

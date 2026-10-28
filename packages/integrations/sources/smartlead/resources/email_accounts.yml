@@ -1,0 +1,104 @@
+type: resource
+name: email_accounts
+description: Email sending accounts with SMTP/IMAP configuration, warmup status, and daily sending limits
+api:
+  endpoint: /api/v1/email-accounts/
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Number of accounts per page (max 100)
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Unique email account identifier
+  from_name:
+    type: string
+    path: $.from_name
+    description: Sender display name
+  from_email:
+    type: string
+    path: $.from_email
+    description: Sender email address
+  username:
+    type: string
+    path: $.username
+    description: Account username
+  type:
+    type: string
+    path: $.type
+    description: Account type (GMAIL, OUTLOOK, SMTP)
+  client_id:
+    type: integer
+    path: $.client_id
+    description: Client ID for agency accounts
+  campaign_count:
+    type: integer
+    path: $.campaign_count
+    description: Number of campaigns using this account
+  message_per_day:
+    type: integer
+    path: $.message_per_day
+    description: Daily sending limit
+  daily_sent_count:
+    type: integer
+    path: $.daily_sent_count
+    description: Emails sent today
+  is_smtp_success:
+    type: boolean
+    path: $.is_smtp_success
+    description: Whether SMTP connection is successful
+  is_imap_success:
+    type: boolean
+    path: $.is_imap_success
+    description: Whether IMAP connection is successful
+  smtp_host:
+    type: string
+    path: $.smtp_host
+    description: SMTP server hostname
+  smtp_port:
+    type: integer
+    path: $.smtp_port
+    description: SMTP server port
+  warmup_status:
+    type: string
+    path: $.warmup_details.status
+    description: Email warmup status (ACTIVE, INACTIVE)
+  warmup_reputation:
+    type: string
+    path: $.warmup_details.warmup_reputation
+    description: Warmup reputation score
+  warmup_total_sent:
+    type: integer
+    path: $.warmup_details.total_sent_count
+    description: Total warmup emails sent
+  warmup_spam_count:
+    type: integer
+    path: $.warmup_details.total_spam_count
+    description: Total warmup emails marked as spam
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the account was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the account was last updated
+extract:
+  record_path: $
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id

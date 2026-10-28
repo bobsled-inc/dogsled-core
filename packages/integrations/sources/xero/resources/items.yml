@@ -1,0 +1,115 @@
+type: resource
+name: items
+description: Items configured in Xero.
+api:
+  endpoint: /Items
+  method: GET
+  query_params:
+    where: ${{ input.where }}
+    order: ${{ input.order }}
+    unitdp: ${{ input.unitdp }}
+input:
+  where:
+    type: string
+    description: Filter by an any element
+  order:
+    type: string
+    description: Order by an any element
+  unitdp:
+    type: integer
+    description: e.g. unitdp=4 – (Unit Decimal Places) You can opt in to use four decimal places for
+      unit amounts
+output:
+  code:
+    type: string
+    path: $.Code
+    description: User defined item code (max length = 30)
+  inventory_asset_account_code:
+    type: string
+    path: $.InventoryAssetAccountCode
+    description: The inventory asset account for the item.
+  name:
+    type: string
+    path: $.Name
+    description: The name of the item (max length = 50)
+  is_sold:
+    type: boolean
+    path: $.IsSold
+    description: Boolean value, defaults to true.
+  is_purchased:
+    type: boolean
+    path: $.IsPurchased
+    description: Boolean value, defaults to true.
+  description:
+    type: string
+    path: $.Description
+    description: The sales description of the item (max length = 4000)
+  purchase_description:
+    type: string
+    path: $.PurchaseDescription
+    description: The purchase description of the item (max length = 4000)
+  purchase_details_unit_price:
+    type: number
+    path: $.PurchaseDetails.UnitPrice
+    description: Unit Price of the item.
+  purchase_details_account_code:
+    type: string
+    path: $.PurchaseDetails.AccountCode
+    description: Default account code to be used for purchased/sale.
+  purchase_details_cogsaccount_code:
+    type: string
+    path: $.PurchaseDetails.COGSAccountCode
+    description: Cost of goods sold account.
+  purchase_details_tax_type:
+    type: string
+    path: $.PurchaseDetails.TaxType
+    description: The tax type from TaxRates
+  sales_details_unit_price:
+    type: number
+    path: $.SalesDetails.UnitPrice
+    description: Unit Price of the item.
+  sales_details_account_code:
+    type: string
+    path: $.SalesDetails.AccountCode
+    description: Default account code to be used for purchased/sale.
+  sales_details_cogsaccount_code:
+    type: string
+    path: $.SalesDetails.COGSAccountCode
+    description: Cost of goods sold account.
+  sales_details_tax_type:
+    type: string
+    path: $.SalesDetails.TaxType
+    description: The tax type from TaxRates
+  is_tracked_as_inventory:
+    type: boolean
+    path: $.IsTrackedAsInventory
+    description: True for items that are tracked as inventory.
+  total_cost_pool:
+    type: number
+    path: $.TotalCostPool
+    description: The value of the item on hand.
+  quantity_on_hand:
+    type: number
+    path: $.QuantityOnHand
+    description: The quantity of the item on hand
+  updated_date_utc:
+    type: string
+    path: $.UpdatedDateUTC
+    description: Last modified date in UTC format
+  item_id:
+    type: string
+    path: $.ItemID
+    description: 'The Xero identifier for an Item (format: uuid)'
+  status_attribute_string:
+    type: string
+    path: $.StatusAttributeString
+    description: Status of object
+  validation_errors:
+    type: array
+    path: $.ValidationErrors
+    description: Displays array of validation error messages from the API
+extract:
+  record_path: $.Items
+  table:
+    primary_key:
+      - item_id

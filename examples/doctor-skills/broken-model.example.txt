@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: model
+name: broken
+description: Missing source diagnostic.
+grain: [id]
+source:
+  ref: local_duckdb.missing_source
+columns:
+  - name: id
+    expr: id
+materialization:
+  type: view

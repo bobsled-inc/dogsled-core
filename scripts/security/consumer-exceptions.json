@@ -1,0 +1,42 @@
+[
+  {
+    "advisory": "GHSA-c475-qrg2-pj4r",
+    "package": "basic-ftp",
+    "versions": ["5.3.1"],
+    "path": "@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp",
+    "owner": "security/release maintainers",
+    "status": "not_applicable",
+    "expiry": "2026-11-20T00:00:00Z",
+    "reason": "Databricks uses plain HTTP/HTTPS agents unless options.proxy is supplied. The loader destination, loader check command and connections runner omit proxy options, tested by regression; FTP/PAC cannot reach Client.list. See docs/dependency-security.md.",
+    "parentVersions": {
+      "@databricks/sql": ["2.0.0", "2.2.0"]
+    }
+  },
+  {
+    "advisory": "GHSA-xcx6-jx8p-x3h5",
+    "package": "@azure/msal-node",
+    "versions": ["6.0.1"],
+    "path": "snowflake-sdk>@azure/identity>@azure/msal-node",
+    "owner": "security/release maintainers",
+    "status": "not_applicable",
+    "expiry": "2026-11-05T00:00:00Z",
+    "reason": "The advisory affects the MSAL authorization-code flow. Snowflake workload identity uses DefaultAzureCredential, whose chain never calls acquireTokenByCode; its broker and VS Code credentials need an Azure Identity plugin, and Dogsled registers none. Tedious loads Azure Identity but never constructs an Azure credential, because Dogsled's SQL Server destination hard-codes authentication type 'default'. msal-node 7.1.0 becomes age-eligible on 2026-11-03T22:41:13.211Z, but Azure Identity 4.14.0 still requires msal-node ^6, so consumer trees need a new Azure Identity release. See docs/dependency-security.md.",
+    "parentVersions": {
+      "snowflake-sdk": ["3.4.0"],
+      "@azure/identity": ["4.13.3", "4.14.0"]
+    }
+  },
+  {
+    "advisory": "GHSA-xcx6-jx8p-x3h5",
+    "package": "@azure/msal-node",
+    "versions": ["6.0.1"],
+    "path": "tedious>@azure/identity>@azure/msal-node",
+    "owner": "security/release maintainers",
+    "status": "not_applicable",
+    "expiry": "2026-11-05T00:00:00Z",
+    "reason": "The advisory affects the MSAL authorization-code flow. Snowflake workload identity uses DefaultAzureCredential, whose chain never calls acquireTokenByCode; its broker and VS Code credentials need an Azure Identity plugin, and Dogsled registers none. Tedious loads Azure Identity but never constructs an Azure credential, because Dogsled's SQL Server destination hard-codes authentication type 'default'. msal-node 7.1.0 becomes age-eligible on 2026-11-03T22:41:13.211Z, but Azure Identity 4.14.0 still requires msal-node ^6, so consumer trees need a new Azure Identity release. See docs/dependency-security.md.",
+    "parentVersions": {
+      "@azure/identity": ["4.13.3", "4.14.0"]
+    }
+  }
+]

@@ -1,0 +1,20 @@
+name: salesforce
+display_name: Salesforce
+description: CRM and revenue analytics models for Salesforce accounts, pipeline, support, and campaign activity.
+tags:
+  - salesforce
+  - crm
+  - revenue
+include_resources:
+  - accounts
+  - campaign_members
+  - campaigns
+  - cases
+  - contacts
+  - leads
+  - opportunities
+  - opportunity_contact_roles
+  - opportunity_line_items
+  - pricebook_entries
+  - products
+  - users

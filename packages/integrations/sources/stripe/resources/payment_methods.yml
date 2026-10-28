@@ -1,0 +1,116 @@
+type: resource
+name: payment_methods
+description: Stripe payment methods representing saved instruments customers use to make payments
+api:
+  endpoint: /v1/payment_methods
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    customer: ${{ input.customer }}
+    type: ${{ input.type }}
+input:
+  limit:
+    type: integer
+    description: Number of payment methods to return per page (max 100)
+    default: 100
+  customer:
+    type: string
+    description: Customer ID (cus_xxx) whose payment methods to list. Required for listing payment methods
+  type:
+    type: string
+    description:
+      'Filter by payment method type. Common values: card, us_bank_account, sepa_debit, link,
+      cashapp, paypal'
+query:
+  filters:
+    customer:
+      operators:
+        - eq
+      description: Customer ID (cus_xxx) whose payment methods to list. Required for listing payment methods
+      bind:
+        eq:
+          input: customer
+      compile:
+        eq:
+          mode: http_query
+          param: customer
+    type:
+      operators:
+        - eq
+      description:
+        'Filter by payment method type. Common values: card, us_bank_account, sepa_debit, link,
+        cashapp, paypal'
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique payment method identifier prefixed with pm_ (e.g. pm_1A2b3C4d5E6f7G)
+  type:
+    type: string
+    path: $.type
+    description:
+      'Type of payment method. Common values: card (credit or debit card), us_bank_account
+      (ACH), sepa_debit (European bank debit), link (Stripe Link), cashapp (Cash App Pay)'
+  customer:
+    type: string
+    path: $.customer
+    description:
+      ID of the customer (cus_xxx) this payment method is attached to. Null if not attached
+      to a customer
+  billing_details_email:
+    type: string
+    path: $.billing_details.email
+    description: Email address associated with the billing details of this payment method
+  billing_details_name:
+    type: string
+    path: $.billing_details.name
+    description: Full name associated with the billing details of this payment method
+  billing_details_phone:
+    type: string
+    path: $.billing_details.phone
+    description: Phone number associated with the billing details of this payment method
+  card_brand:
+    type: string
+    path: $.card.brand
+    description:
+      'Card brand. Possible values: visa, mastercard, amex, discover, diners, jcb, unionpay,
+      unknown. Null for non-card payment methods'
+  card_last4:
+    type: string
+    path: $.card.last4
+    description: Last four digits of the card number (e.g. 4242). Null for non-card payment methods
+  card_exp_month:
+    type: integer
+    path: $.card.exp_month
+    description: Card expiration month (1-12). Null for non-card payment methods
+  card_exp_year:
+    type: integer
+    path: $.card.exp_year
+    description: Card expiration year as a four-digit number (e.g. 2025). Null for non-card payment methods
+  card_funding:
+    type: string
+    path: $.card.funding
+    description:
+      'Card funding type. Possible values: credit, debit, prepaid, unknown. Null for non-card
+      payment methods'
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the payment method was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

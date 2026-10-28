@@ -1,0 +1,168 @@
+type: resource
+name: metric_query
+description: One bounded Vercel observability query envelope with data, summary, statistics, and coverage context.
+api:
+  endpoint: /v2/observability/query
+  method: POST
+  request_body:
+    metric: ${{ input.metric }}
+    scope: ${{ input.scope }}
+    aggregation: ${{ input.aggregation }}
+    groupBy: ${{ input.group_by }}
+    filter: ${{ input.filter }}
+    limit: ${{ input.limit }}
+    orderBy: ${{ input.order_by }}
+    orderDirection: ${{ input.order_direction }}
+    granularity: ${{ input.granularity }}
+    startTime: ${{ input.start_time }}
+    endTime: ${{ input.end_time }}
+    bucketTimezone: ${{ input.bucket_timezone }}
+input:
+  query_key:
+    type: string
+    required: true
+    description: Stable caller-supplied key for this query recipe and window.
+  metric:
+    type: string
+    required: true
+    description: Metric identifier discovered from metric_catalog.
+  scope:
+    type: object
+    required: true
+    description: Vercel owner or project scope object.
+  aggregation:
+    type: string
+    description: Requested metric aggregation.
+  group_by:
+    type: array
+    items:
+      type: string
+    description: Requested dimensions; do not assume every metric supports every dimension.
+  filter:
+    type: string
+    description: Vercel query filter expression.
+  limit:
+    type: integer
+    description: Maximum grouped result count.
+  order_by:
+    type: string
+    description: Rollup column used to order grouped results.
+  order_direction:
+    type: string
+    enum:
+      - asc
+      - desc
+    description: Grouped result ordering direction.
+  granularity:
+    type: object
+    description: Vercel time bucket configuration.
+  start_time:
+    type: timestamp
+    required: true
+    description: Inclusive UTC query start.
+  end_time:
+    type: timestamp
+    required: true
+    description: Exclusive UTC query end.
+  bucket_timezone:
+    type: string
+    description: IANA timezone used only to align calendar buckets.
+  retrieval_time:
+    type: timestamp
+    required: true
+    description: Caller-recorded UTC retrieval time for freshness and provisional-status analysis.
+output:
+  query_key:
+    type: string
+    path: $.__input__.query_key
+    semantic_role: entity_id
+    description: Stable caller-supplied query identity.
+  metric:
+    type: string
+    path: $.__input__.metric
+    semantic_role: categorical
+    description: Queried metric identifier.
+  scope:
+    type: object
+    path: $.__input__.scope
+    description: Scope used for the query.
+  aggregation:
+    type: string
+    path: $.__input__.aggregation
+    semantic_role: categorical
+    description: Requested aggregation.
+  group_by:
+    type: array
+    path: $.__input__.group_by
+    description: Requested grouping dimensions.
+  filter:
+    type: string
+    path: $.__input__.filter
+    description: Requested filter expression.
+  limit:
+    type: integer
+    path: $.__input__.limit
+    semantic_role: measure
+    description: Requested maximum grouped result count.
+  order_by:
+    type: string
+    path: $.__input__.order_by
+    semantic_role: categorical
+    description: Requested result ordering column.
+  order_direction:
+    type: string
+    path: $.__input__.order_direction
+    semantic_role: categorical
+    description: Requested result ordering direction.
+  granularity:
+    type: object
+    path: $.__input__.granularity
+    description: Requested time bucket configuration.
+  start_time:
+    type: timestamp
+    path: $.__input__.start_time
+    semantic_role: time_dimension
+    description: Inclusive UTC query start.
+  end_time:
+    type: timestamp
+    path: $.__input__.end_time
+    semantic_role: time_dimension
+    description: Exclusive UTC query end.
+  bucket_timezone:
+    type: string
+    path: $.__input__.bucket_timezone
+    semantic_role: categorical
+    description: Requested IANA timezone used to align calendar buckets.
+  retrieval_time:
+    type: timestamp
+    path: $.__input__.retrieval_time
+    semantic_role: event_timestamp
+    description: UTC time at which the response was retrieved.
+  data:
+    type: array
+    path: $.data
+    description: Metric result rows preserved as returned by Vercel.
+  summary:
+    type: object
+    path: $.summary
+    description: Query summary or control totals returned by Vercel.
+  statistics:
+    type: object
+    path: $.statistics
+    description: Query execution statistics returned by Vercel.
+  coverage:
+    type: object
+    path: $.coverage
+    description: Coverage metadata when returned by Vercel; grouped results are not assumed exhaustive.
+extract:
+  record_path: $
+  paginated: false
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - query_key
+      - start_time
+      - end_time
+    load_strategy: full_refresh
+    trust_tier: silver

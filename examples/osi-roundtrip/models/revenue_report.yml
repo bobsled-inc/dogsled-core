@@ -1,0 +1,17 @@
+spec_version: '0.2'
+type: model
+name: revenue_report
+description: Fictional revenue_report.
+grain:
+  - status
+source:
+  ref: order_summary
+columns:
+  - name: status
+    expr: status
+    type: string
+  - name: total
+    expr: total
+    type: number
+materialization:
+  type: table

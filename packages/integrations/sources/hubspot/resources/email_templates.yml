@@ -1,0 +1,56 @@
+type: resource
+name: email_templates
+description: HubSpot marketing emails via the v3 Marketing Emails API
+api:
+  endpoint: /marketing/v3/emails
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+input:
+  limit:
+    type: integer
+    description: Number of emails to return per page (max 100)
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique identifier for the marketing email
+  name:
+    type: string
+    path: $.name
+    description: Name of the marketing email
+  subject:
+    type: string
+    path: $.subject
+    description: Subject line of the email
+  state:
+    type: string
+    path: $.state
+    description: Current state of the email (DRAFT, PUBLISHED, etc.)
+  campaign:
+    type: string
+    path: $.campaign
+    description: Associated campaign GUID
+  campaign_name:
+    type: string
+    path: $.campaignName
+    description: Name of the associated campaign
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: When the marketing email was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: When the marketing email was last updated
+extract:
+  record_path: $.emails
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

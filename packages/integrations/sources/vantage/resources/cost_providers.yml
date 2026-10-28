@@ -1,0 +1,50 @@
+type: resource
+name: cost_providers
+description: Available cloud cost providers
+api:
+  endpoint: /cost_providers
+  method: GET
+  query_params:
+    workspace_token: ${{ input.workspace_token }}
+input:
+  workspace_token:
+    type: string
+    description: The token of the Workspace to list CostProviders for.
+query:
+  filters:
+    workspace_token:
+      operators:
+        - eq
+      description: The token of the Workspace to list CostProviders for.
+      bind:
+        eq:
+          input: workspace_token
+      compile:
+        eq:
+          mode: http_query
+          param: workspace_token
+output:
+  workspace_token:
+    type: string
+    path: $.__input__.workspace_token
+    description: The workspace this provider belongs to (from for_each iteration).
+  name:
+    type: string
+    path: $.name
+    description: The name of the CostProvider.
+  key:
+    type: string
+    path: $.key
+    description: The key of the CostProvider, useful for filtering Costs.
+extract:
+  record_path: $.cost_providers
+  for_each:
+    resource: workspaces
+    field: token
+    input: workspace_token
+  table:
+    primary_key:
+      - workspace_token
+      - key
+    load_strategy: full_refresh
+    trust_tier: silver

@@ -1,0 +1,60 @@
+spec_version: '1'
+type: resource
+name: items
+integration: incremental_demo
+description: Demo items with status, tenant, and updated_at filters
+api:
+  endpoint: /items
+  method: GET
+  query_params:
+    status: '${{ input.status }}'
+    tenant: '${{ input.tenant }}'
+    updated_after: '${{ input.updated_after }}'
+input:
+  status:
+    type: string
+  tenant:
+    type: string
+  updated_after:
+    type: string
+query:
+  filters:
+    status:
+      operators: [eq]
+      bind:
+        eq:
+          input: status
+    tenant:
+      operators: [eq]
+      bind:
+        eq:
+          input: tenant
+    updated_at:
+      operators: [gte]
+      bind:
+        gte:
+          input: updated_after
+output:
+  id:
+    type: integer
+    path: $.id
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+  status:
+    type: string
+    path: $.status
+  tenant:
+    type: string
+    path: $.tenant
+extract:
+  record_path: $
+  incremental:
+    strategy: filter
+    cursor_field: updated_at
+    cursor_type: timestamp
+    since_argument: updated_after
+    value_format: iso8601
+  table:
+    primary_key: [id]
+    load_strategy: merge

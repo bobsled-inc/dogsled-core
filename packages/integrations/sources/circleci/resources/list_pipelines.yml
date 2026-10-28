@@ -1,0 +1,124 @@
+type: resource
+name: list_pipelines
+description: Get a list of pipelines
+api:
+  endpoint: /pipeline
+  method: GET
+  query_params:
+    org-slug: ${{ input.org_slug }}
+    page-token: ${{ input.page_token }}
+    mine: ${{ input.mine }}
+input:
+  org_slug:
+    type: string
+    description:
+      Org slug in the form `vcs-slug/org-name`. For projects that use GitLab or GitHub App,
+      use `circleci` as the `vcs-slug` and replace the `org-name` with the organization ID (found in
+      Organization Settings).
+  page_token:
+    type: string
+    description: A token to retrieve the next page of results.
+  mine:
+    type: boolean
+    description: Only include entries created by your user.
+output:
+  id:
+    type: string
+    path: $.id
+    description: The unique ID of the pipeline.
+  errors:
+    type: array
+    path: $.errors
+    description: A sequence of errors that have occurred within the pipeline.
+  project_slug:
+    type: string
+    path: $.project_slug
+    description: The project-slug for the pipeline.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The date and time the pipeline was last updated.
+  number:
+    type: integer
+    path: $.number
+    description: The number of the pipeline.
+  trigger_parameters:
+    type: object
+    path: $.trigger_parameters
+  state:
+    type: string
+    path: $.state
+    description: The current state of the pipeline.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time the pipeline was created.
+  trigger_type:
+    type: string
+    path: $.trigger.type
+    description: The type of trigger.
+  trigger_received_at:
+    type: timestamp
+    path: $.trigger.received_at
+    description: The date and time the trigger was received.
+  trigger_actor:
+    type: object
+    path: $.trigger.actor
+    description: The user who triggered the Pipeline.
+  vcs_provider_name:
+    type: string
+    path: $.vcs.provider_name
+    description: Name of the VCS provider (e.
+  vcs_target_repository_url:
+    type: string
+    path: $.vcs.target_repository_url
+    description: URL for the repository the trigger targets (i.
+  vcs_branch:
+    type: string
+    path: $.vcs.branch
+    description: The branch where the pipeline ran.
+  vcs_review_id:
+    type: string
+    path: $.vcs.review_id
+    description: The code review id.
+  vcs_review_url:
+    type: string
+    path: $.vcs.review_url
+    description: The code review URL.
+  vcs_revision:
+    type: string
+    path: $.vcs.revision
+    description: The code revision the pipeline ran.
+  vcs_tag:
+    type: string
+    path: $.vcs.tag
+    description: The tag used by the pipeline.
+  vcs_commit:
+    type: object
+    path: $.vcs.commit
+    description: The latest commit in the pipeline.
+  vcs_origin_repository_url:
+    type: string
+    path: $.vcs.origin_repository_url
+    description: URL for the repository where the trigger originated.
+extract:
+  record_path: $.items
+  paginated: false
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get a pipeline by ID
+  api:
+    endpoint: /pipeline/${{ input.pipeline_id }}
+    method: GET
+  input:
+    pipeline_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_pipelines_smoke
+      input:
+        org_slug: gh/CircleCI-Public

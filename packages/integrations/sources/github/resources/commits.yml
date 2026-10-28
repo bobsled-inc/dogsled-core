@@ -1,0 +1,208 @@
+type: resource
+name: commits
+description: Commits for a GitHub repository with author, committer, message, and change statistics
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/commits
+  method: GET
+  query_params:
+    sha: ${{ input.sha }}
+    since: ${{ input.since }}
+    until: ${{ input.until }}
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: my-org
+  repo:
+    type: string
+    description: Repository name
+    default: my-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and passed to downstream child resources.
+  sha:
+    type: string
+    description: SHA or branch name to start listing commits from (defaults to the repository default branch)
+  since:
+    type: string
+    description: Only return commits after this ISO 8601 timestamp (e.g. "2024-01-01T00:00:00Z")
+  until:
+    type: string
+    description: Only return commits before this ISO 8601 timestamp (e.g. "2024-12-31T23:59:59Z")
+  per_page:
+    type: integer
+    description: Number of commits to return per page (max 100)
+    default: 100
+query:
+  filters:
+    sha:
+      operators:
+        - eq
+      description: SHA or branch name to start listing commits from (defaults to the repository default branch)
+      bind:
+        eq:
+          input: sha
+      compile:
+        eq:
+          mode: http_query
+          param: sha
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  sha:
+    type: string
+    semantic_role: identifier
+    path: $.sha
+    description: Full 40-character SHA-1 hash uniquely identifying this commit in the git object database
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the commit diff and details on github.com
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this commit resource
+  message:
+    type: string
+    semantic_role: categorical
+    path: $.commit.message
+    description: Full commit message including subject line and body, typically following conventional commit format
+  author_name:
+    type: string
+    semantic_role: name
+    path: $.commit.author.name
+    description: Display name of the git author (the person who originally wrote the changes)
+  author_email:
+    type: string
+    semantic_role: email
+    path: $.commit.author.email
+    description: Email address of the git author as configured in their git settings
+  author_date:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.commit.author.date
+    description: Timestamp when the commit was originally authored (may differ from commit date for rebased/cherry-picked commits)
+  committer_name:
+    type: string
+    semantic_role: name
+    path: $.commit.committer.name
+    description: Display name of the committer (the person who applied the commit, may differ from author for rebases, cherry-picks, or merge commits)
+  committer_email:
+    type: string
+    semantic_role: email
+    path: $.commit.committer.email
+    description: Email address of the committer
+  committer_date:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.commit.committer.date
+    description: Timestamp when the commit was applied to the repository (may be later than author_date for rebased commits)
+  author_login:
+    type: string
+    semantic_role: name
+    path: $.author.login
+    description: GitHub username of the commit author (resolved from email), null if the email is not associated with a GitHub account
+  author_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.author.id
+    description: Unique numeric identifier of the GitHub user who authored the commit
+  committer_login:
+    type: string
+    semantic_role: name
+    path: $.committer.login
+    description: GitHub username of the committer (resolved from email), often "web-flow" for commits merged via the GitHub UI
+  committer_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.committer.id
+    description: Unique numeric identifier of the GitHub user who committed the change
+  tree_sha:
+    type: string
+    semantic_role: identifier
+    path: $.commit.tree.sha
+    description: SHA of the git tree object representing the repository state at this commit
+  parent_count:
+    type: integer
+    semantic_role: count
+    path: $.parents.length
+    description: "Number of parent commits \u2014 1 for normal commits, 2+ for merge commits, 0 for the initial commit"
+  verified:
+    type: boolean
+    semantic_role: categorical
+    path: $.commit.verification.verified
+    description: True if the commit signature has been verified by GitHub (GPG or S/MIME signed)
+  verification_reason:
+    type: string
+    semantic_role: categorical
+    path: $.commit.verification.reason
+    description: "Reason for verification status \u2014 \"valid\" if signature verified, \"unsigned\" if not signed, or other error reasons"
+  comment_count:
+    type: integer
+    semantic_role: count
+    path: $.commit.comment_count
+    description: Number of comments posted on this specific commit
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - repository_full_name
+      - sha
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single commit by repository owner, name, and ref (SHA, branch, or tag)
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/commits/${{ input.ref }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    ref:
+      type: string
+      required: true
+      description: Commit SHA, branch name, or tag name to look up
+  extract:
+    record_path: $
+incremental:
+  strategy: cursor
+  cursor_field: author_date
+  cursor_param: since
+via: rest

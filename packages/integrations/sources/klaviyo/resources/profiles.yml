@@ -1,0 +1,55 @@
+type: resource
+name: profiles
+description: Profiles stored in Klaviyo.
+api:
+  endpoint: /profiles
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[cursor]: ${{ input.page_cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 100
+  page_cursor:
+    type: string
+    description: Cursor returned by the previous page.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Klaviyo object identifier.
+  type:
+    type: string
+    path: $.type
+    description: JSON:API resource type.
+  email:
+    type: string
+    path: $.attributes.email
+    description: Primary email address.
+  first_name:
+    type: string
+    path: $.attributes.first_name
+    description: Profile first name.
+  last_name:
+    type: string
+    path: $.attributes.last_name
+    description: Profile last name.
+  created:
+    type: timestamp
+    path: $.attributes.created
+    description: Creation timestamp.
+  updated:
+    type: timestamp
+    path: $.attributes.updated
+    description: Last update timestamp.
+extract:
+  record_path: $.data
+  pagination:
+    type: next_url
+    next_url_path: $.links.next
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

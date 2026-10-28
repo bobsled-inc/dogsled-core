@@ -1,0 +1,18 @@
+spec_version: '1'
+type: integration
+name: github_public
+description: Unauthenticated public GitHub REST API sample
+transport:
+  type: http
+  base_url: https://api.github.com
+  auth:
+    type: none
+  timeout_ms: 30000
+  retry:
+    retry_on: [429, 503]
+    max_retries: 3
+    backoff: exponential
+    retry_after_header: true
+  headers:
+    Accept: application/vnd.github+json
+    User-Agent: dogsled-first-ingest-sample

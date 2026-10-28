@@ -1,0 +1,29 @@
+type: resource
+name: teams
+description: Support teams that issues can be assigned to
+api:
+  endpoint: /teams
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique team identifier
+  name:
+    type: string
+    path: $.name
+    description: Team display name
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the team was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the team was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

@@ -1,0 +1,115 @@
+type: resource
+name: dns_records_for_a_zone_list_dns_records
+description: List DNS records for each Cloudflare zone
+api:
+  endpoint: /zones/${{ input.zone_id }}/dns_records
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    per_page: ${{ input.per_page }}
+    type: ${{ input.type }}
+    name: ${{ input.name }}
+input:
+  zone_id:
+    type: string
+    description: Cloudflare zone identifier
+    required: true
+  page:
+    type: integer
+    description: Cloudflare page index
+    default: 1
+  per_page:
+    type: integer
+    description: Number of DNS records to return per page
+    default: 100
+  type:
+    type: string
+    description: Optional DNS record type filter
+    enum:
+      - A
+      - AAAA
+      - CNAME
+      - MX
+      - NS
+      - PTR
+      - SRV
+      - TXT
+  name:
+    type: string
+    description: Optional DNS record name filter
+query:
+  filters:
+    name:
+      operators:
+        - eq
+      description: Optional DNS record name filter
+      bind:
+        eq:
+          input: name
+      compile:
+        eq:
+          mode: http_query
+          param: name
+    type:
+      operators:
+        - eq
+      enum:
+        - A
+        - AAAA
+        - CNAME
+        - MX
+        - NS
+        - PTR
+        - SRV
+        - TXT
+      description: Optional DNS record type filter
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+output:
+  id:
+    type: string
+    path: $.id
+    description: Cloudflare DNS record identifier
+  zone_id:
+    type: string
+    path: $.zone_id
+    description: Parent zone identifier
+  type:
+    type: string
+    path: $.type
+    description: DNS record type
+  name:
+    type: string
+    path: $.name
+    description: DNS record name
+  content:
+    type: string
+    path: $.content
+    description: DNS record content
+  proxied:
+    type: boolean
+    path: $.proxied
+    description: Whether Cloudflare proxying is enabled
+  ttl:
+    type: integer
+    path: $.ttl
+    description: DNS record TTL in seconds
+extract:
+  record_path: $.result
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  for_each:
+    resource: zones_get
+    field: id
+    input: zone_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,52 @@
+type: resource
+name: views
+description: List Zendesk views
+api:
+  endpoint: /views
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of views to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk view identifier
+  title:
+    type: string
+    path: $.title
+    description: View title
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the view is active
+  position:
+    type: integer
+    path: $.position
+    description: View position in the UI
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: View creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: View last update timestamp
+extract:
+  record_path: $.views
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

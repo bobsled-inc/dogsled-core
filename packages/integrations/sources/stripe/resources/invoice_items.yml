@@ -1,0 +1,64 @@
+type: resource
+name: invoice_items
+description: Stripe pending invoice line items
+api:
+  endpoint: /v1/invoiceitems
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+input:
+  limit:
+    type: integer
+    description: Number of invoice items per page (max 100)
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Invoice item ID (ii_xxx)
+  customer:
+    type: string
+    path: $.customer
+    description: Customer ID associated with the invoice item
+  amount:
+    type: integer
+    path: $.amount
+    description: Invoice item amount in cents
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO currency code
+  description:
+    type: string
+    path: $.description
+    description: Invoice item description
+  invoice:
+    type: string
+    path: $.invoice
+    description: Invoice ID the item belongs to
+  proration:
+    type: boolean
+    path: $.proration
+    description: Whether the invoice item is a proration
+  quantity:
+    type: integer
+    path: $.quantity
+    description: Quantity of the invoice item
+  unit_amount:
+    type: integer
+    path: $.unit_amount
+    description: Unit amount in cents
+  date:
+    type: integer
+    path: $.date
+    description: Unix timestamp when invoice item was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

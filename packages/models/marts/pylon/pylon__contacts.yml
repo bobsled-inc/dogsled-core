@@ -1,0 +1,43 @@
+spec_version: '0.2'
+name: pylon__contacts
+type: model
+description: Customer contacts with account association.
+grain: contact_id
+source:
+  ref: stg_pylon__contacts
+columns:
+  - name: contact_id
+    expr: stg_pylon__contacts.contact_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique contact identifier.
+  - name: name
+    expr: stg_pylon__contacts.name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact display name.
+  - name: email
+    expr: stg_pylon__contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact email address.
+  - name: account_id
+    expr: stg_pylon__contacts.account_id
+    semantic_role: entity_id
+    description: Account ID the contact belongs to.
+  - name: created_at
+    expr: stg_pylon__contacts.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was created.
+  - name: updated_at
+    expr: stg_pylon__contacts.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was last updated.
+tags:
+  - pylon
+  - contacts
+trust_tier: gold
+materialization:
+  type: table

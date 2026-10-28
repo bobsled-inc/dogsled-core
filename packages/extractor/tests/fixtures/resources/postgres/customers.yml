@@ -1,0 +1,22 @@
+spec_version: '1'
+type: resource
+name: customers
+integration: test_postgres
+source:
+  table: customers
+  schema: public
+replication:
+  method: incremental_merge
+  cursor_field: updated_at
+  cursor_type: timestamp
+  primary_key: [id]
+output:
+  id: { type: integer }
+  name: { type: string }
+  email: { type: string }
+  updated_at: { type: timestamp }
+extract:
+  table:
+    primary_key: [id]
+    load_strategy: merge
+    trust_tier: bronze

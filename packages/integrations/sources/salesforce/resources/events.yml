@@ -1,0 +1,54 @@
+type: resource
+name: events
+description: Events from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT
+      Id,Subject,StartDateTime,EndDateTime,WhoId,WhatId,Location,OwnerId,IsAllDayEvent,CreatedDate,LastModifiedDate
+      FROM Event
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  subject:
+    type: string
+    path: $.Subject
+  start_date_time:
+    type: timestamp
+    path: $.StartDateTime
+  end_date_time:
+    type: timestamp
+    path: $.EndDateTime
+  who_id:
+    type: string
+    path: $.WhoId
+  what_id:
+    type: string
+    path: $.WhatId
+  location:
+    type: string
+    path: $.Location
+  owner_id:
+    type: string
+    path: $.OwnerId
+  is_all_day_event:
+    type: boolean
+    path: $.IsAllDayEvent
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

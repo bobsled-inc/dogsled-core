@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: pylon_feature_request_evidence_count
+description: Total evidence attached to Pylon feature requests.
+model: pylon__feature_requests
+expression: SUM({pylon__feature_requests}.evidence_count)
+synonyms: [request evidence, customer evidence, evidence count]
+tags: [pylon, product, feedback]

@@ -1,0 +1,5 @@
+generated/
+.smoke-receipt.json
+.tmp/
+*.duckdb
+*.duckdb.wal

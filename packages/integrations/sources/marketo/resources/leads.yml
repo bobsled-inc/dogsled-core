@@ -1,0 +1,43 @@
+type: resource
+name: leads
+description: Lead records from Marketo.
+api:
+  endpoint: /rest/v1/leads.json
+  method: GET
+  query_params:
+    nextPageToken: ${{ input.next_page_token }}
+    batchSize: ${{ input.batch_size }}
+input:
+  next_page_token:
+    type: string
+  batch_size:
+    type: integer
+    default: 300
+output:
+  id:
+    type: string
+    path: $.id
+  email:
+    type: string
+    path: $.email
+  first_name:
+    type: string
+    path: $.firstName
+  last_name:
+    type: string
+    path: $.lastName
+  created_at:
+    type: timestamp
+    path: $.createdAt
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+extract:
+  record_path: $.result
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: nextPageToken

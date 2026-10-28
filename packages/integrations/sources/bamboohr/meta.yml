@@ -1,0 +1,13 @@
+display_name: BambooHR
+category: productivity
+logo_url: https://www.bamboohr.com/favicon.ico
+tags: [hr, employees, time-off]
+docs_url: https://documentation.bamboohr.com/docs
+openapi_url: https://openapi.bamboohr.io/main/latest/docs/openapi/public-openapi.yaml
+auth_setup:
+  - env: BAMBOOHR_SUBDOMAIN
+    description: BambooHR company subdomain without the .bamboohr.com suffix
+    docs_url: https://documentation.bamboohr.com/docs/getting-started
+  - env: BAMBOOHR_API_KEY
+    description: BambooHR API key used as the basic-auth username
+    docs_url: https://documentation.bamboohr.com/docs/getting-started

@@ -1,0 +1,48 @@
+type: resource
+name: search_posts_recent
+description: Recent search results from the X API.
+api:
+  endpoint: /2/tweets/search/recent
+  method: GET
+  query_params:
+    query: ${{ input.query }}
+    max_results: ${{ input.max_results }}
+    next_token: ${{ input.next_token }}
+input:
+  query:
+    type: string
+    required: true
+    default: from:twitterdev
+  max_results:
+    type: integer
+    default: 100
+  next_token:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  author_id:
+    type: string
+    path: $.author_id
+  text:
+    type: string
+    path: $.text
+  created_at:
+    type: timestamp
+    path: $.created_at
+  lang:
+    type: string
+    path: $.lang
+  retweet_count:
+    type: integer
+    path: $.public_metrics.retweet_count
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.meta.next_token
+    cursor_param: next_token

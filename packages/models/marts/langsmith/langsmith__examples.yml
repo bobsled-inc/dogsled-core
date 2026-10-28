@@ -1,0 +1,65 @@
+spec_version: '0.2'
+name: langsmith__examples
+type: model
+description: Dataset examples enriched with dataset context.
+grain: example_id
+source:
+  ref: stg_langsmith__examples
+joins:
+  - ref: stg_langsmith__datasets
+    type: left
+    on: stg_langsmith__examples.dataset_id = stg_langsmith__datasets.dataset_id
+columns:
+  - name: example_id
+    expr: stg_langsmith__examples.example_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique LangSmith example identifier.
+  - name: dataset_id
+    expr: stg_langsmith__examples.dataset_id
+    semantic_role: entity_id
+    references: stg_langsmith__datasets.dataset_id
+    description: Dataset that owns the example.
+  - name: dataset_name
+    expr: stg_langsmith__datasets.name
+    semantic_role: name
+    description: Dataset display name.
+  - name: example_name
+    expr: stg_langsmith__examples.name
+    semantic_role: name
+    description: Example display name.
+  - name: source_run_id
+    expr: stg_langsmith__examples.source_run_id
+    semantic_role: entity_id
+    description: Run used to create the example, when present.
+  - name: inputs
+    expr: stg_langsmith__examples.inputs
+    semantic_role: categorical
+    description: Input payload for the example.
+  - name: outputs
+    expr: stg_langsmith__examples.outputs
+    semantic_role: categorical
+    description: Reference output payload for the example.
+  - name: metadata
+    expr: stg_langsmith__examples.metadata
+    semantic_role: categorical
+    description: Example metadata payload.
+  - name: attachment_urls
+    expr: stg_langsmith__examples.attachment_urls
+    semantic_role: categorical
+    description: Attachment URLs associated with the example.
+  - name: created_at
+    expr: stg_langsmith__examples.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the example was created.
+  - name: modified_at
+    expr: stg_langsmith__examples.modified_at
+    semantic_role: event_timestamp
+    description: Timestamp when the example was last modified.
+tags:
+  - langsmith
+  - examples
+  - evaluation
+trust_tier: gold
+materialization:
+  type: table

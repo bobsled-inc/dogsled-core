@@ -1,0 +1,56 @@
+type: resource
+name: subscriptions
+description: Subscriptions for a Zuora billing account.
+api:
+  endpoint: /v1/subscriptions/accounts/${{ input.account_key }}
+  method: GET
+  query_params:
+    pageSize: ${{ input.page_size }}
+input:
+  account_key:
+    type: string
+    default: '123'
+  page_size:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  subscriptionNumber:
+    type: string
+    path: $.subscriptionNumber
+  accountId:
+    type: string
+    path: $.accountId
+  status:
+    type: string
+    path: $.status
+  termStartDate:
+    type: string
+    path: $.termStartDate
+  termEndDate:
+    type: string
+    path: $.termEndDate
+  contractEffectiveDate:
+    type: string
+    path: $.contractEffectiveDate
+  createdDate:
+    type: timestamp
+    path: $.createdDate
+  updatedDate:
+    type: timestamp
+    path: $.updatedDate
+extract:
+  record_path: $.subscriptions
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: pageSize
+  for_each:
+    resource: accounts
+    field: id
+    input: account_key

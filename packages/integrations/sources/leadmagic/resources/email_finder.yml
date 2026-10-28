@@ -1,0 +1,53 @@
+type: resource
+name: email_finder
+description: Find a work email address using a target's name plus company domain.
+api:
+  endpoint: /email-finder
+  method: POST
+  request_body:
+    first_name: ${{ input.first_name }}
+    last_name: ${{ input.last_name }}
+    company_domain: ${{ input.company_domain }}
+output:
+  email:
+    type: string
+    path: $.email
+    description: Work email returned by LeadMagic.
+  status:
+    type: string
+    path: $.status
+    description: LeadMagic email quality classification such as valid or valid_catch_all.
+  result:
+    type: object
+    path: $
+    description: Full LeadMagic response payload.
+input:
+  first_name:
+    type: string
+    required: true
+    description: First name of the target person.
+  last_name:
+    type: string
+    required: true
+    description: Last name of the target person.
+  company_domain:
+    type: string
+    required: true
+    description: Company domain for the target person.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - email
+    trust_tier: silver
+billing:
+  mode: billable
+  ownership: third_party
+  unit: match
+  estimation:
+    model: per_match
+    amount: 1
+    currency: provider_credit
+    notes: LeadMagic charges when a valid email is found.
+  authorization:
+    requires_plan: true

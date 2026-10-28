@@ -1,0 +1,31 @@
+spec_version: '2'
+type: source
+name: google_sheets
+description: Google Sheets API for spreadsheet metadata, tabs, and values.
+transports:
+  - id: default
+    base_url: https://sheets.googleapis.com/v4
+    auth:
+      type: oauth2
+      grant_type: authorization_code
+      token_url: https://oauth2.googleapis.com/token
+      client_id: ${{ env.GOOGLE_CLIENT_ID }}
+      client_secret: ${{ env.GOOGLE_CLIENT_SECRET }}
+      refresh_token: ${{ env.GOOGLE_REFRESH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

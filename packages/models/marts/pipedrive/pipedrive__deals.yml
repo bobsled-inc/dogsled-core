@@ -1,0 +1,137 @@
+spec_version: '0.2'
+name: pipedrive__deals
+type: model
+description: Pipedrive deals enriched with stage, pipeline, contact, organization, and activity rollups.
+grain: deal_id
+source:
+  ref: stg_pipedrive__get_deals
+joins:
+  - ref: stg_pipedrive__get_stages
+    type: left
+    on: stg_pipedrive__get_deals.stage_id = stg_pipedrive__get_stages.get_stage_id
+  - ref: stg_pipedrive__get_pipelines
+    type: left
+    on: stg_pipedrive__get_deals.pipeline_id = stg_pipedrive__get_pipelines.get_pipeline_id
+  - ref: stg_pipedrive__get_persons
+    type: left
+    on: stg_pipedrive__get_deals.person_id = stg_pipedrive__get_persons.get_person_id
+  - ref: stg_pipedrive__get_organizations
+    type: left
+    on: stg_pipedrive__get_deals.org_id = stg_pipedrive__get_organizations.get_organization_id
+  - ref: stg_pipedrive__get_activities
+    type: left
+    on: stg_pipedrive__get_deals.get_deal_id = stg_pipedrive__get_activities.deal_id
+    pre_aggregate:
+      group_by:
+        - deal_id
+      columns:
+        - name: activity_count
+          expr: COUNT(*)
+        - name: completed_activity_count
+          expr: countif(done = TRUE)
+        - name: upcoming_activity_count
+          expr: countif(done = FALSE)
+  - ref: stg_pipedrive__get_notes
+    type: left
+    on: stg_pipedrive__get_deals.get_deal_id = stg_pipedrive__get_notes.deal_id
+    pre_aggregate:
+      group_by:
+        - deal_id
+      columns:
+        - name: note_count
+          expr: COUNT(*)
+columns:
+  - name: deal_id
+    expr: stg_pipedrive__get_deals.get_deal_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Pipedrive deal identifier.
+  - name: deal_title
+    expr: stg_pipedrive__get_deals.title
+    semantic_role: categorical
+    description: Deal title.
+  - name: status
+    expr: stg_pipedrive__get_deals.status
+    semantic_role: categorical
+    description: Current deal status.
+  - name: value
+    expr: stg_pipedrive__get_deals.value
+    semantic_role: measure
+    tags:
+      - financial
+    description: Deal value in the default currency.
+  - name: currency
+    expr: stg_pipedrive__get_deals.currency
+    semantic_role: categorical
+    description: Currency used for the deal value.
+  - name: stage_id
+    expr: stg_pipedrive__get_deals.stage_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_stages.get_stage_id
+    description: Stage the deal currently occupies.
+  - name: stage_name
+    expr: stg_pipedrive__get_stages.name
+    semantic_role: categorical
+    description: Pipeline stage name.
+  - name: stage_probability
+    expr: stg_pipedrive__get_stages.deal_probability
+    semantic_role: measure
+    description: Default win probability for the stage.
+  - name: pipeline_id
+    expr: stg_pipedrive__get_deals.pipeline_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_pipelines.get_pipeline_id
+    description: Pipeline the deal belongs to.
+  - name: pipeline_name
+    expr: stg_pipedrive__get_pipelines.name
+    semantic_role: categorical
+    description: Pipeline name.
+  - name: person_id
+    expr: stg_pipedrive__get_deals.person_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_persons.get_person_id
+    description: Related Pipedrive person.
+  - name: person_name
+    expr: stg_pipedrive__get_persons.name
+    semantic_role: categorical
+    description: Name of the related person.
+  - name: organization_id
+    expr: stg_pipedrive__get_deals.org_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_organizations.get_organization_id
+    description: Related Pipedrive organization.
+  - name: organization_name
+    expr: stg_pipedrive__get_organizations.name
+    semantic_role: categorical
+    description: Name of the related organization.
+  - name: activity_count
+    expr: COALESCE(stg_pipedrive__get_activities.activity_count, 0)
+    semantic_role: measure
+    description: Number of activities linked to the deal.
+  - name: completed_activity_count
+    expr: COALESCE(stg_pipedrive__get_activities.completed_activity_count, 0)
+    semantic_role: measure
+    description: Number of completed activities linked to the deal.
+  - name: upcoming_activity_count
+    expr: COALESCE(stg_pipedrive__get_activities.upcoming_activity_count, 0)
+    semantic_role: measure
+    description: Number of incomplete activities linked to the deal.
+  - name: note_count
+    expr: COALESCE(stg_pipedrive__get_notes.note_count, 0)
+    semantic_role: measure
+    description: Number of notes linked to the deal.
+  - name: created_at
+    expr: stg_pipedrive__get_deals.add_time
+    semantic_role: event_timestamp
+    description: Timestamp when the deal was created.
+  - name: updated_at
+    expr: stg_pipedrive__get_deals.update_time
+    semantic_role: event_timestamp
+    description: Timestamp when the deal was last updated.
+tags:
+  - pipedrive
+  - deals
+  - crm
+trust_tier: gold
+materialization:
+  type: table

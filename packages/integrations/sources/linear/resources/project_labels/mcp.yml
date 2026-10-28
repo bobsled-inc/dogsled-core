@@ -1,0 +1,76 @@
+type: resource
+name: project_labels_mcp
+via: mcp
+entity: project_labels
+description: Project labels from Linear workspace through the Linear MCP server
+tool:
+  tool_name: list_project_labels
+input:
+  name:
+    type: string
+    description: Optional project label name filter
+  limit:
+    type: integer
+    description: Maximum number of project labels per MCP page
+    default: 250
+  orderBy:
+    type: string
+    description: Sort field for Linear MCP pagination
+    default: updatedAt
+    enum:
+      - createdAt
+      - updatedAt
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique project label UUID
+  name:
+    type: string
+    path: $.name
+    description: Project label name
+  description:
+    type: string
+    path: $.description
+    description: Project label description
+  color:
+    type: string
+    path: $.color
+    description: Project label color as a hex string
+  is_group:
+    type: boolean
+    path: $.isGroup
+    description: Whether this project label is a group
+  parent_id:
+    type: string
+    path: $.parent.id
+    description: UUID of the parent project label group
+  parent_name:
+    type: string
+    path: $.parent.name
+    description: Name of the parent project label group
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Timestamp when the project label was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Timestamp when the project label was last updated
+  archived_at:
+    type: timestamp
+    path: $.archivedAt
+    description: Timestamp when the project label was archived
+  last_applied_at:
+    type: timestamp
+    path: $.lastAppliedAt
+    description: Timestamp when the project label was last applied
+extract:
+  record_path: $.projectLabels
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.pageInfo.endCursor
+    cursor_argument: cursor
+  table:
+    primary_key:
+      - id

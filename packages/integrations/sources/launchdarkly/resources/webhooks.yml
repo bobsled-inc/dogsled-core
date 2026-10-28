@@ -1,0 +1,30 @@
+type: resource
+name: webhooks
+description: List LaunchDarkly webhooks
+api:
+  endpoint: /webhooks
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $._id
+    description: Webhook identifier
+  name:
+    type: string
+    path: $.name
+    description: Webhook name
+  url:
+    type: string
+    path: $.url
+    description: Destination URL
+  on:
+    type: boolean
+    path: $.on
+    description: Whether the webhook is enabled
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

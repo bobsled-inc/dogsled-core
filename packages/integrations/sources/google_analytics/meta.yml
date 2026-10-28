@@ -1,0 +1,14 @@
+display_name: Google Analytics
+category: analytics
+tags:
+  - ga4
+  - reports
+  - web-analytics
+docs_url: https://developers.google.com/analytics/devguides/reporting/data/v1/rest
+auth_setup:
+  - env: GOOGLE_CLIENT_ID
+    description: Google OAuth client ID
+  - env: GOOGLE_CLIENT_SECRET
+    description: Google OAuth client secret
+  - env: GOOGLE_REFRESH_TOKEN
+    description: Google OAuth refresh token with Analytics scopes

@@ -1,0 +1,10 @@
+display_name: Twitter
+category: marketing
+tags:
+  - social
+  - x
+  - posts
+docs_url: https://developer.x.com/en/docs/x-api
+auth_setup:
+  - env: TWITTER_BEARER_TOKEN
+    description: X API bearer token

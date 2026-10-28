@@ -1,0 +1,33 @@
+spec_version: '0.2'
+name: stg_products
+type: model
+description: Clean product catalog with normalized categories.
+grain: product_id
+source:
+  ref: duckdb.raw_products
+columns:
+  - name: product_id
+    expr: product_id
+    primary_key: true
+    semantic_role: entity_id
+  - name: sku
+    expr: upper(trim(sku))
+    semantic_role: categorical
+  - name: product_name
+    expr: trim(product_name)
+    semantic_role: name
+  - name: category
+    expr: "CASE lower(trim(category)) WHEN 'accessory' THEN 'accessories' ELSE lower(trim(category)) END"
+    semantic_role: categorical
+  - name: unit_price
+    expr: unit_price
+    semantic_role: currency
+    unit: usd
+materialization:
+  type: view
+expect:
+  - kind: primary_key
+    columns: [product_id]
+  - kind: accepted_values
+    column: category
+    values: [coffee, tea, accessories, subscription]

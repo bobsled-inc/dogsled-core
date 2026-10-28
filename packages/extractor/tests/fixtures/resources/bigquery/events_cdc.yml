@@ -1,0 +1,20 @@
+spec_version: '1'
+type: resource
+name: events_cdc
+integration: test_bigquery
+source:
+  table: events
+  dataset: analytics
+replication:
+  method: change_tracking
+  change_tracking:
+    type: appends
+output:
+  event_id: { type: integer }
+  created_at: { type: timestamp }
+  _change_type: { type: string }
+extract:
+  table:
+    primary_key: [event_id]
+    load_strategy: append
+    trust_tier: bronze

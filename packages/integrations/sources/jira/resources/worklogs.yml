@@ -1,0 +1,77 @@
+type: resource
+name: worklogs
+description: List work logs for issues returned by the Jira issue search stream.
+api:
+  endpoint: /rest/api/3/issue/${{ input.issue_id }}/worklog
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+input:
+  issue_id:
+    type: string
+    required: true
+    description: Jira issue identifier to list worklogs for.
+  start_at:
+    type: integer
+    description: Zero-based offset for the first worklog in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of worklogs to return per page.
+    default: 50
+output:
+  id:
+    type: string
+    path: $.id
+    description: Worklog identifier.
+  issue_id:
+    type: string
+    path: $.issueId
+    description: Identifier of the issue this worklog belongs to.
+  author_account_id:
+    type: string
+    path: $.author.accountId
+    description: Account ID of the worklog author.
+  author_display_name:
+    type: string
+    path: $.author.displayName
+    description: Display name of the worklog author.
+  time_spent:
+    type: string
+    path: $.timeSpent
+    description: Human-readable time spent such as 3h 20m.
+  time_spent_seconds:
+    type: integer
+    path: $.timeSpentSeconds
+    description: Time spent in seconds.
+  comment:
+    type: object
+    path: $.comment
+    description: Atlassian document format worklog comment.
+  started:
+    type: timestamp
+    path: $.started
+    description: Timestamp when the work started.
+  created:
+    type: timestamp
+    path: $.created
+    description: Worklog creation timestamp.
+  updated:
+    type: timestamp
+    path: $.updated
+    description: Worklog update timestamp.
+extract:
+  record_path: $.worklogs
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  for_each:
+    resource: search_issues
+    field: id
+    input: issue_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

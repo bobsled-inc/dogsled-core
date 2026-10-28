@@ -1,0 +1,50 @@
+type: resource
+name: ads
+description: Ads for each Meta ad account.
+api:
+  endpoint: /${{ input.ad_account_id }}/ads
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  ad_account_id:
+    type: string
+    default: act_1
+  fields:
+    type: string
+    default: id,name,status,adset_id,campaign_id,creative{id,name}
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  adset_id:
+    type: string
+    path: $.adset_id
+  campaign_id:
+    type: string
+    path: $.campaign_id
+  creative_id:
+    type: string
+    path: $.creative.id
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

@@ -1,0 +1,92 @@
+type: resource
+name: get_routing_forms
+description: List Routing Forms
+api:
+  endpoint: /routing_forms
+  method: GET
+  query_params:
+    organization: ${{ input.organization }}
+    count: ${{ input.count }}
+    page_token: ${{ input.page_token }}
+    sort: ${{ input.sort }}
+input:
+  organization:
+    type: string
+    required: true
+    description: View organization routing forms associated with the organization's URI.
+  count:
+    type: number
+    description: The number of rows to return
+    default: 20
+    minimum: 1
+    maximum: 100
+  page_token:
+    type: string
+    description: The token to pass to get the next or previous portion of the collection
+  sort:
+    type: string
+    description:
+      'Order results by the specified field and direction. Accepts comma-separated list of
+      {field}:{direction} values. Supported fields are: created_at. Sort direction is specified as:
+      asc, desc.'
+output:
+  uri:
+    type: string
+    path: $.uri
+    description: Canonical reference (unique identifier) for the routing form.
+  organization:
+    type: string
+    path: $.organization
+    description: The URI of the organization that's associated with the routing form.
+  name:
+    type: string
+    path: $.name
+    description: The routing form name (in human-readable format).
+  status:
+    type: string
+    path: $.status
+    description: Indicates if the form is in "draft" or "published" status.
+  questions:
+    type: array
+    path: $.questions
+    description: An ordered collection of Routing Form non-deleted questions.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The moment the routing form was created.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The moment when the routing form was last updated.
+extract:
+  record_path: $.collection
+  for_each:
+    resource: get_organization_memberships
+    field: organization
+    input: organization
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next_page_token
+    cursor_param: page_token
+  table:
+    primary_key:
+      - uri
+    trust_tier: silver
+verify:
+  suppress:
+    - PAGINATION_MISMATCH
+lookup:
+  description: Get Routing Form
+  api:
+    endpoint: /routing_forms/${{ input.uuid }}
+    method: GET
+  input:
+    uuid:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: get_routing_forms_smoke
+      input:
+        organization: https://api.calendly.com/organizations/EBHAAFHDCAEQTSEZ
+        sort: created_at:asc

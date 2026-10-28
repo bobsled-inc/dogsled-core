@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: bq_fct_to_lineitems
+description: BigQuery — fact orders expand to lineitems.
+left_model: bq_fct_orders
+right_model: bq_stg_lineitems
+join_columns:
+  - left: order_id
+    right: order_id
+join_type: left
+relationship_type: one_to_many
+tags: [bigquery]

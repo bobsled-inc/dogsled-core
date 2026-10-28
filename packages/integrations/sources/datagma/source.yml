@@ -1,0 +1,27 @@
+spec_version: '2'
+type: source
+name: datagma
+description: Datagma people-finding API
+transports:
+  - id: default
+    base_url: https://gateway.datagma.net
+    auth:
+      type: api-key
+      query_param: apiId
+      key: ${{ env.DATAGMA_API_KEY }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+default_transport: default

@@ -1,0 +1,46 @@
+type: action
+transport: api
+name: create_note
+integration: hubspot
+tags:
+  - crm
+  - notes
+  - hubspot
+description: Create a HubSpot CRM note for internal tracking or follow-up context.
+api:
+  endpoint: /crm/v3/objects/notes
+  method: POST
+  request_body:
+    properties:
+      hs_timestamp: ${{ mapped.timestamp }}
+      hs_note_body: ${{ mapped.body }}
+      hubspot_owner_id: ${{ mapped.owner_id }}
+      hs_attachment_ids: ${{ mapped.attachment_ids }}
+input:
+  timestamp:
+    type: timestamp
+    required: true
+    description: Note timestamp in ISO 8601 or Unix milliseconds, as required by HubSpot.
+  body:
+    type: string
+    required: true
+    description: Note text content.
+  owner_id:
+    type: string
+    description: Optional HubSpot owner ID to attribute the note to.
+  attachment_ids:
+    type: string
+    description: Optional semicolon-separated HubSpot attachment IDs.
+field_mapping:
+  fields:
+    timestamp: timestamp
+    body: body
+    owner_id: owner_id
+    attachment_ids: attachment_ids
+  unmapped_fields: ignore
+activate:
+  operation: create
+  result_path: $.id
+error_handling:
+  on_record_error: skip
+  consecutive_failure_threshold: 20

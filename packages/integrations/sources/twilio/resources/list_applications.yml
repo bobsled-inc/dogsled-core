@@ -1,0 +1,78 @@
+type: resource
+name: list_applications
+description: List Twilio applications owned by each account
+api:
+  endpoint: /2010-04-01/Accounts/${{ input.account_sid }}/Applications.json
+  method: GET
+  query_params:
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+    FriendlyName: ${{ input.friendly_name }}
+input:
+  account_sid:
+    type: string
+    description: Twilio account SID to list applications from
+    required: true
+  page_size:
+    type: integer
+    description: Number of applications to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+  friendly_name:
+    type: string
+    description: Optional exact application friendly name filter
+query:
+  filters:
+    friendly_name:
+      operators:
+        - eq
+      description: Optional exact application friendly name filter
+      bind:
+        eq:
+          input: friendly_name
+      compile:
+        eq:
+          mode: http_query
+          param: FriendlyName
+output:
+  sid:
+    type: string
+    path: $.sid
+    description: Twilio application SID
+  account_sid:
+    type: string
+    path: $.account_sid
+    description: Parent Twilio account SID
+  friendly_name:
+    type: string
+    path: $.friendly_name
+    description: Application friendly name
+  api_version:
+    type: string
+    path: $.api_version
+    description: Twilio API version used by the application
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Timestamp when the application was created
+  date_updated:
+    type: timestamp
+    path: $.date_updated
+    description: Timestamp when the application was last updated
+extract:
+  record_path: $.applications
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  for_each:
+    resource: list_account
+    field: sid
+    input: account_sid
+  table:
+    primary_key:
+      - sid
+    trust_tier: silver

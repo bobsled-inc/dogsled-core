@@ -1,0 +1,73 @@
+type: resource
+name: meetings
+description: HubSpot CRM meeting engagement records
+api:
+  endpoint: /crm/v3/objects/meetings
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of meeting records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of meeting properties to return
+    default: hs_timestamp,hs_meeting_title,hs_meeting_body,hs_meeting_start_time,hs_meeting_end_time,hs_meeting_outcome,hubspot_owner_id,hs_createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the meeting record
+  timestamp:
+    type: timestamp
+    path: $.properties.hs_timestamp
+    description: When the meeting was logged
+  title:
+    type: string
+    path: $.properties.hs_meeting_title
+    description: Title of the meeting
+  body:
+    type: string
+    path: $.properties.hs_meeting_body
+    description: Description or notes for the meeting
+  start_time:
+    type: timestamp
+    path: $.properties.hs_meeting_start_time
+    description: Scheduled start time of the meeting
+  end_time:
+    type: timestamp
+    path: $.properties.hs_meeting_end_time
+    description: Scheduled end time of the meeting
+  outcome:
+    type: string
+    path: $.properties.hs_meeting_outcome
+    description: Outcome of the meeting (e.g. SCHEDULED, COMPLETED, CANCELED)
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID assigned to this meeting
+  created_at:
+    type: timestamp
+    path: $.properties.hs_createdate
+    description: When the meeting record was created
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: When the meeting record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

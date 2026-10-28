@@ -1,0 +1,24 @@
+spec_version: '2'
+type: source
+name: smartlead
+description: Smartlead cold email outreach platform API for campaigns, leads, email accounts, and analytics
+transports:
+  - id: default
+    base_url: https://server.smartlead.ai
+    auth:
+      type: api-key
+      query_param: api_key
+      key: ${{ env.SMARTLEAD_API_KEY }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    headers:
+      User-Agent: dogsled-extractor
+default_transport: default

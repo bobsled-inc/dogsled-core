@@ -1,0 +1,41 @@
+type: resource
+name: segmentation
+description: Segmentation report results from Mixpanel.
+api:
+  endpoint: /segmentation
+  method: GET
+  query_params:
+    unit: ${{ input.unit }}
+    interval: ${{ input.interval }}
+input:
+  unit:
+    type: string
+    default: day
+  interval:
+    type: integer
+    default: 30
+output:
+  event:
+    type: string
+    path: $.event
+  date:
+    type: string
+    path: $.date
+  total:
+    type: number
+    path: $.total
+  unique:
+    type: number
+    path: $.unique
+  average:
+    type: number
+    path: $.average
+  segment:
+    type: string
+    path: $.segment
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - event
+      - date

@@ -1,0 +1,85 @@
+type: resource
+name: plans
+description: Stripe subscription plans (legacy, but widely used)
+api:
+  endpoint: /v1/plans
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of plans per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Plan ID (plan_xxx)
+  amount:
+    type: integer
+    path: $.amount
+    description: Plan amount in cents
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO currency code
+  interval:
+    type: string
+    path: $.interval
+    description: Billing interval (day/week/month/year)
+  interval_count:
+    type: integer
+    path: $.interval_count
+    description: Number of intervals between billings
+  product:
+    type: string
+    path: $.product
+    description: Product ID associated with the plan
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the plan is currently active
+  nickname:
+    type: string
+    path: $.nickname
+    description: Plan nickname
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when plan was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

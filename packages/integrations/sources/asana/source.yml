@@ -1,0 +1,27 @@
+spec_version: '2'
+type: source
+name: asana
+description: Asana REST API for workspaces, projects, and tasks
+transports:
+  - id: default
+    base_url: https://app.asana.com/api/1.0
+    auth:
+      type: bearer
+      token: ${{ env.ASANA_ACCESS_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

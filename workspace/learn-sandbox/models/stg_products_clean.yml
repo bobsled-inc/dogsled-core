@@ -1,0 +1,23 @@
+spec_version: '0.2'
+name: stg_products_clean
+type: model
+description: Product catalog with reusable cleaning expressions for agent-authored models.
+grain: product_id
+source:
+  ref: duckdb.products
+columns:
+  - name: product_id
+    expr: products.id
+    primary_key: true
+  - name: product_name
+    expr: products.name
+  - name: normalized_name
+    expr: normalize_company(products.name)
+  - name: category_key
+    expr: fingerprint(products.category)
+  - name: price
+    expr: products.price
+  - name: in_stock
+    expr: products.in_stock
+materialization:
+  type: view

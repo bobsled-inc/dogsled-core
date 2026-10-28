@@ -1,0 +1,418 @@
+type: resource
+name: list_invoices
+description: List invoices
+api:
+  endpoint: /invoices
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    include_deleted: ${{ input.include_deleted }}
+    id: ${{ input.id }}
+    subscription_id: ${{ input.subscription_id }}
+    customer_id: ${{ input.customer_id }}
+    recurring: ${{ input.recurring }}
+    status: ${{ input.status }}
+    price_type: ${{ input.price_type }}
+    date: ${{ input.date }}
+    paid_at: ${{ input.paid_at }}
+    total: ${{ input.total }}
+    amount_paid: ${{ input.amount_paid }}
+    amount_adjusted: ${{ input.amount_adjusted }}
+    credits_applied: ${{ input.credits_applied }}
+    amount_due: ${{ input.amount_due }}
+    dunning_status: ${{ input.dunning_status }}
+    payment_owner: ${{ input.payment_owner }}
+    updated_at: ${{ input.updated_at }}
+    channel: ${{ input.channel }}
+    voided_at: ${{ input.voided_at }}
+    void_reason_code: ${{ input.void_reason_code }}
+    sort_by: ${{ input.sort_by }}
+    einvoice: ${{ input.einvoice }}
+input:
+  limit:
+    type: integer
+    description: The number of resources to be returned.
+    default: 10
+    minimum: 1
+    maximum: 100
+  offset:
+    type: string
+    description: >-
+      Determines your position in the list for pagination. To ensure that the next page is retrieved
+      correctly, always set `offset`
+
+      to the value of `next_offset`
+
+      obtained in the previous iteration of the API call.
+    maxLength: 1000
+  include_deleted:
+    type: boolean
+    description: >-
+      If set to true, includes the deleted resources in the response. For the deleted resources in
+      the response, the '**deleted**
+
+      ' attribute will be '**true**
+
+      '.
+    default: false
+  id:
+    type: object
+    description: |-
+      optional, string filter
+
+      The invoice number. Acts as a identifier for invoice and typically generated sequentially.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *id\[is\] = "INVOICE_654"*
+  subscription_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      To filter based on subscription_id.
+      NOTE: Not to be used if *consolidated invoicing*
+      is enabled.
+      **Supported operators :**
+      is, is_not, starts_with, is_present, in, not_in
+
+      **Example →**
+      *subscription_id\[is\] = "3bdjnDnsdQn"*
+  customer_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      The identifier of the customer this invoice belongs to.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *customer_id\[is\] = "3bdjnDnsdQn"*
+  recurring:
+    type: object
+    description: >-
+      optional, boolean filter
+
+
+      Boolean indicating whether this invoice belongs to a subscription. Possible values are :
+      *true, false*
+
+
+      **Supported operators :**
+
+      is
+
+
+      **Example →**
+
+      *recurring\[is\] = "true"*
+  status:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      Current status of this invoice. Possible values are : paid, posted, payment_due, not_paid,
+      voided, pending.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *status\[is\] = "paid"*
+  price_type:
+    type: object
+    description: |-
+      optional, enumerated string filter
+
+      The price type of the invoice. Possible values are : tax_exclusive, tax_inclusive.
+
+      **Supported operators :**
+      is, is_not, in, not_in
+
+      **Example →**
+      *price_type\[is\] = "tax_exclusive"*
+  date:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      The document date displayed on the invoice PDF.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *date\[on\] = "1394532759"*
+  paid_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      Timestamp indicating the date \& time this invoice got paid.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *paid_at\[before\] = "1394532759"*
+  total:
+    type: object
+    description: >-
+      optional, in cents filter
+
+
+      Invoiced amount displayed in cents; that is, a decimal point is not present between the whole
+      number and the decimal part. For example, $499.99 is displayed as 49999, and so on.
+
+      **Supported operators :**
+
+      is, is_not, lt, lte, gt, gte, between
+
+
+      **Example →**
+
+      *total\[gt\] = "1000"*
+  amount_paid:
+    type: object
+    description: >-
+      optional, in cents filter
+
+      Payments collected successfully for the invoice. This is the sum of
+      linked_payments[].txn_amount
+
+      for all `linked_payments[]`
+
+      that have `txn_status`
+
+      as `success`.
+
+      Supported operators :
+
+      is, is_not, lt, lte, gt, gte, between
+
+      Example →
+
+      amount_paid[lt] = "800"
+  amount_adjusted:
+    type: object
+    description: |-
+      optional, in cents filter
+
+      Total adjustments made against this invoice.
+      **Supported operators :**
+      is, is_not, lt, lte, gt, gte, between
+
+      **Example →**
+      *amount_adjusted\[gte\] = "100"*
+  credits_applied:
+    type: object
+    description: |-
+      optional, in cents filter
+
+      Total credits applied against this invoice.
+      **Supported operators :**
+      is, is_not, lt, lte, gt, gte, between
+
+      **Example →**
+      *credits_applied\[lte\] = "100"*
+  amount_due:
+    type: object
+    description: |-
+      optional, in cents filter
+      The unpaid amount that is due on the invoice. This is calculated as: total
+
+
+      amount_paid
+
+      sum of applied_credits.applied_amount
+      sum of adjustment_credit_notes.cn_total
+      sum of linked_taxes_withheld.amount.
+      Supported operators :
+      is, is_not, lt, lte, gt, gte, between
+
+      Example →
+      amount_due[lt] = "200"
+  dunning_status:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      Current dunning status of the invoice. Possible values are : in_progress, exhausted, stopped,
+      success.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in, is_present
+
+
+      **Example →**
+
+      *dunning_status\[is\] = "in_progress"*
+  payment_owner:
+    type: object
+    description: |-
+      optional, string filter
+
+      Payment owner of an invoice.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *payment_owner\[is\] = "payment_customer"*
+  updated_at:
+    type: object
+    description: >-
+      optional, timestamp(UTC) in seconds filter
+
+      To filter based on `updated_at`.
+
+      This attribute will be present only if the resource has been updated after 2016-09-28. It is
+      advisable when using this filter, to pass the `sort_by`
+
+      input parameter as `updated_at`
+
+      for a faster response.
+
+      Supported operators :
+
+      after, before, on, between
+
+      Example →
+
+      updated_at[after] = "1243545465"
+  channel:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      The subscription channel this object originated from and is maintained in. Possible values are
+      : web, app_store, play_store.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *channel\[is\] = "APP STORE"*
+  voided_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      Timestamp indicating the date \& time this invoice got voided.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *voided_at\[on\] = "1394532759"*
+  void_reason_code:
+    type: object
+    description: >-
+      optional, string filter
+
+
+      Reason code for voiding the invoice. Select from a list of reason codes set in the Chargebee
+      app in **Settings \> Configure Chargebee \> Reason Codes \> Invoices \> Void invoice** .
+
+      Must be passed if set as mandatory in the app. The codes are case-sensitive.
+
+      **Supported operators :**
+
+      is, is_not, starts_with, in, not_in
+
+
+      **Example →**
+
+      *void_reason_code\[is_not\] = "Other"*
+  sort_by:
+    type: object
+    description: |-
+      optional, string filter
+
+      Sorts based on the specified attribute.
+      **Supported attributes :**
+      date, updated_at
+
+      **Supported sort-orders :**
+      asc, desc
+
+      **Example →**
+      *sort_by\[asc\] = "date"*
+
+      This will sort the result based on the 'date' attribute in ascending(earliest first) order.
+  einvoice:
+    type: object
+    description: Parameters for einvoice
+output:
+  invoice_id:
+    type: string
+    path: $.invoice.id
+    description: Unique Chargebee invoice identifier
+  invoice:
+    type: object
+    path: $.invoice
+    description: Resource object representing invoice
+extract:
+  record_path: $.list
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - invoice_id
+    trust_tier: silver
+lookup:
+  description: Retrieve an invoice
+  api:
+    endpoint: /invoices/${{ input.invoice_id }}
+    method: GET
+  input:
+    invoice_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_invoices_smoke
+      input:
+        chargebee_request_origin_device: Android
+        chargebee_request_origin_user: user@example.com
+        chargebee_request_origin_user_encoded: dXNlci7QutCy0ZbRgtC+0YfQutCwQGV4YW1wbGUuY29t
+        chargebee_request_origin_ip: 192.168.1.2
+        chargebee_business_entity_id: null
+        limit: null
+        offset: null
+        include_deleted: null
+        id: INVOICE_654
+        subscription_id: 3bdjnDnsdQn
+        customer_id: 3bdjnDnsdQn
+        recurring: 'true'
+        status: paid
+        price_type: tax_exclusive
+        date: '1394532759'
+        paid_at: '1394532759'
+        total: '1000'
+        amount_paid: '800'
+        amount_adjusted: '100'
+        credits_applied: '100'
+        amount_due: '200'
+        dunning_status: in_progress
+        payment_owner: payment_customer
+        updated_at: '1243545465'
+        channel: APP STORE
+        voided_at: '1394532759'
+        void_reason_code: Other
+        sort_by: null
+        einvoice: null

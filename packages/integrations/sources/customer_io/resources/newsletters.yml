@@ -1,0 +1,83 @@
+type: resource
+name: newsletters
+description: Newsletters configured in Customer.io.
+api:
+  endpoint: /v1/newsletters
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    sort: ${{ input.sort }}
+    start: ${{ input.start }}
+input:
+  limit:
+    type: integer
+    description: The maximum number of results you want to retrieve per page.
+  sort:
+    type: string
+    description:
+      Determine how you want to sort results, `asc` for chronological order and `desc` for
+      reverse chronological order.
+    enum:
+      - asc
+      - desc
+  start:
+    type: string
+    description: The token for the page of results you want to return. Responses contain a `next`
+      property. Use this property as the `start` value to return the next page of results.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: The identifier for a newsletter.
+  deduplicate_id:
+    type: string
+    path: $.deduplicate_id
+    description:
+      An identifier in the format `id:timestamp` where the id is the id of the object you are
+      working with (Campaigns, Deliveries, Exports, Identities, Newsletters, Segments, and
+      Templates), and the timestamp is the last time the object was updated.
+  content_ids:
+    type: array
+    path: $.content_ids
+    description: A list of messages contained by a newsletter.
+  name:
+    type: string
+    path: $.name
+    description: The name of the newsletter.
+  sent_at:
+    type: integer
+    path: $.sent_at
+    description: The last time the newsletter was sent.
+  created:
+    type: integer
+    path: $.created
+    description: The date time when the referenced ID was created.
+  updated:
+    type: integer
+    path: $.updated
+    description: The date time when the referenced ID was last updated.
+  type:
+    type: string
+    path: $.type
+    description: The type of newsletter—`email`, `twilio`, etc.
+  tags:
+    type: array
+    path: $.tags
+    description: An array of tags you set on this newsletter.
+  recipient_segment_ids:
+    type: array
+    path: $.recipient_segment_ids
+    description: A list of segments used in a newsletter's recipient filter, returned if newsletter
+      recipients were filtered by one or more segments.
+  subscription_topic_id:
+    type: integer
+    path: $.subscription_topic_id
+    description: The identifier of a subscription topic.
+extract:
+  record_path: $.newsletters
+  pagination:
+    type: next_url
+    next_url_path: $.next
+  table:
+    primary_key:
+      - id

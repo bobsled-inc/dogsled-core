@@ -1,0 +1,43 @@
+type: resource
+name: campaigns
+description: Campaigns configured in Marketo.
+api:
+  endpoint: /rest/v1/campaigns.json
+  method: GET
+  query_params:
+    nextPageToken: ${{ input.next_page_token }}
+    batchSize: ${{ input.batch_size }}
+input:
+  next_page_token:
+    type: string
+  batch_size:
+    type: integer
+    default: 200
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  description:
+    type: string
+    path: $.description
+  type:
+    type: string
+    path: $.type
+  status:
+    type: string
+    path: $.status
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+extract:
+  record_path: $.result
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: nextPageToken

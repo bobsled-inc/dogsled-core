@@ -1,0 +1,31 @@
+type: resource
+name: file_contents
+description: Content of individual Google Drive files
+tool:
+  tool_name: read_file_content
+  arguments:
+    fileId: ${{ input.file_id }}
+input:
+  file_id:
+    type: string
+    description: Google Drive file ID to read
+    required: true
+output:
+  file_id:
+    type: string
+    path: $.file_id
+    description: ID of the file that was read
+  content:
+    type: string
+    path: $.fileContent
+    description: Text content of the file
+extract:
+  record_path: $
+  for_each:
+    resource: files
+    field: id
+    input: file_id
+  table:
+    primary_key:
+      - file_id
+via: mcp

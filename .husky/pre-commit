@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Skip local developer hooks in CI, where the canonical repository gate runs
+# explicitly. Local commits still receive the full lint-staged pass.
+if [ -n "$GITHUB_ACTIONS" ]; then
+  exit 0
+fi
+
+pnpm exec lint-staged

@@ -1,0 +1,82 @@
+type: resource
+name: product_variants
+description: Product variants in Shopify.
+api:
+  endpoint: /products/${{ input.product_id }}/variants.json
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+input:
+  product_id:
+    type: integer
+    required: true
+    description: Product ID to retrieve variants for.
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Shopify object identifier.
+  product_id:
+    type: integer
+    path: $.product_id
+    description: ID of the associated product.
+  title:
+    type: string
+    path: $.title
+    description: Variant title.
+  sku:
+    type: string
+    path: $.sku
+    description: Stock keeping unit.
+  price:
+    type: string
+    path: $.price
+    description: Variant price.
+  compare_at_price:
+    type: string
+    path: $.compare_at_price
+    description: Compare-at price for showing a markdown.
+  position:
+    type: integer
+    path: $.position
+    description: Position of the variant in the product listing.
+  inventory_quantity:
+    type: integer
+    path: $.inventory_quantity
+    description: Available inventory quantity.
+  weight:
+    type: number
+    path: $.weight
+    description: Weight of the variant.
+  weight_unit:
+    type: string
+    path: $.weight_unit
+    description: Unit of measurement for weight.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation timestamp.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Last update timestamp.
+extract:
+  record_path: $.variants
+  pagination:
+    type: link_header
+  for_each:
+    resource: products
+    field: id
+    input: product_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,75 @@
+type: resource
+name: campaign_statistics
+description: Per-email send statistics for a campaign with open, click, reply, and bounce tracking
+api:
+  endpoint: /api/v1/campaigns/${{ input.campaign_id }}/statistics
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  campaign_id:
+    type: integer
+    description: Campaign ID to retrieve statistics for
+    required: true
+  limit:
+    type: integer
+    description: Number of records per page (max 1000)
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+output:
+  campaign_id:
+    type: integer
+    from:
+      input: campaign_id
+    description: Campaign ID that produced the statistics row
+  lead_email:
+    type: string
+    path: $.lead_email
+    description: Lead email address
+  lead_name:
+    type: string
+    path: $.lead_name
+    description: Lead display name
+  sequence_number:
+    type: integer
+    path: $.sequence_number
+    description: Email sequence position (1-20)
+  sent_time:
+    type: timestamp
+    path: $.sent_time
+    description: When the email was sent
+  is_opened:
+    type: boolean
+    path: $.is_opened
+    description: Whether the email was opened
+  is_clicked:
+    type: boolean
+    path: $.is_clicked
+    description: Whether a link was clicked
+  is_replied:
+    type: boolean
+    path: $.is_replied
+    description: Whether the lead replied
+  is_bounced:
+    type: boolean
+    path: $.is_bounced
+    description: Whether the email bounced
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  for_each:
+    resource: campaigns
+    field: id
+    input: campaign_id
+  table:
+    primary_key:
+      - campaign_id
+      - lead_email
+      - sequence_number

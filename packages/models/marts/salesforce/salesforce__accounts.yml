@@ -1,0 +1,73 @@
+spec_version: '0.2'
+name: salesforce__accounts
+type: model
+description: Salesforce accounts enriched with contact and case rollups.
+grain: account_id
+source:
+  ref: stg_salesforce__accounts
+joins:
+  - ref: stg_salesforce__contacts
+    type: left
+    on: stg_salesforce__accounts.account_id = stg_salesforce__contacts.account_id
+    pre_aggregate:
+      group_by:
+        - account_id
+      columns:
+        - name: contact_count
+          expr: COUNT(*)
+  - ref: stg_salesforce__cases
+    type: left
+    on: stg_salesforce__accounts.account_id = stg_salesforce__cases.account_id
+    pre_aggregate:
+      group_by:
+        - account_id
+      columns:
+        - name: case_count
+          expr: COUNT(*)
+        - name: open_case_count
+          expr: countif(is_closed = FALSE)
+columns:
+  - name: account_id
+    expr: stg_salesforce__accounts.account_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Salesforce account identifier.
+  - name: account_name
+    expr: stg_salesforce__accounts.name
+    semantic_role: categorical
+    description: Account name.
+  - name: account_type
+    expr: stg_salesforce__accounts.type
+    semantic_role: categorical
+    description: Salesforce account type.
+  - name: industry
+    expr: stg_salesforce__accounts.industry
+    semantic_role: categorical
+    description: Industry assigned to the account.
+  - name: contact_count
+    expr: COALESCE(stg_salesforce__contacts.contact_count, 0)
+    semantic_role: measure
+    description: Number of contacts associated with the account.
+  - name: case_count
+    expr: COALESCE(stg_salesforce__cases.case_count, 0)
+    semantic_role: measure
+    description: Number of support cases attached to the account.
+  - name: open_case_count
+    expr: COALESCE(stg_salesforce__cases.open_case_count, 0)
+    semantic_role: measure
+    description: Number of still-open cases attached to the account.
+  - name: created_at
+    expr: stg_salesforce__accounts.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the account was created.
+  - name: updated_at
+    expr: stg_salesforce__accounts.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the account was last updated.
+tags:
+  - salesforce
+  - crm
+  - accounts
+trust_tier: gold
+materialization:
+  type: table

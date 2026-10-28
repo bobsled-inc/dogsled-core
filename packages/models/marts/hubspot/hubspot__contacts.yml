@@ -1,0 +1,59 @@
+spec_version: '0.2'
+name: hubspot__contacts
+type: model
+description: Core HubSpot contact records with lifecycle and company fields.
+grain: contact_id
+source:
+  ref: stg_hubspot__contacts
+columns:
+  - name: contact_id
+    expr: stg_hubspot__contacts.contact_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique HubSpot contact identifier.
+  - name: firstname
+    expr: stg_hubspot__contacts.firstname
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact first name.
+  - name: lastname
+    expr: stg_hubspot__contacts.lastname
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact last name.
+  - name: email
+    expr: stg_hubspot__contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Primary contact email address.
+  - name: phone
+    expr: stg_hubspot__contacts.phone
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Primary contact phone number.
+  - name: company
+    expr: stg_hubspot__contacts.company
+    semantic_role: categorical
+    description: Company name captured on the contact record.
+  - name: lifecycle_stage
+    expr: stg_hubspot__contacts.lifecycle_stage
+    semantic_role: categorical
+    description: Contact lifecycle stage in HubSpot.
+  - name: created_at
+    expr: stg_hubspot__contacts.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was created.
+  - name: updated_at
+    expr: stg_hubspot__contacts.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was last updated.
+tags:
+  - hubspot
+  - contacts
+trust_tier: gold
+materialization:
+  type: table

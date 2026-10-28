@@ -1,0 +1,44 @@
+type: resource
+name: page_properties
+description: "Retrieve a specific property value from a Notion page. This endpoint is required for paginated property types \u2014 rollups, relations, rich_text, title, and people properties that may contain more items than fit in a single page response. For simple properties (number, checkbox, date, etc.), the value is already included in the page object."
+api:
+  endpoint: /v1/pages/${{ input.page_id }}/properties/${{ input.property_id }}
+  method: GET
+  query_params:
+    page_size: '100'
+input:
+  page_id:
+    type: string
+    description: The UUID of the page whose property to retrieve. This page must be accessible to the integration.
+    required: true
+  property_id:
+    type: string
+    description: The ID or name of the property to retrieve. Property IDs are returned in the page's properties object. For database pages, this corresponds to a column in the database schema.
+    required: true
+output:
+  object:
+    type: string
+    path: $.object
+    description: Either "list" for paginated properties (relations, rollups, people, rich_text, title) or "property_item" for single-value properties. Determines whether results are in a paginated array or a direct value.
+  type:
+    type: string
+    path: $.type
+    description: "The property value type \u2014 \"rich_text\", \"number\", \"select\", \"multi_select\", \"date\", \"formula\", \"relation\", \"rollup\", \"people\", \"files\", \"checkbox\", \"url\", \"email\", \"phone_number\", \"created_time\", \"created_by\", \"last_edited_time\", \"last_edited_by\", \"title\", \"status\", \"unique_id\". Determines which nested field contains the actual value."
+  result_id:
+    type: string
+    path: $.results[*].id
+    description: For paginated list properties, the UUID of each individual item in the results array. For relation properties, these are the IDs of the related pages.
+  result_type:
+    type: string
+    path: $.results[*].type
+    description: For paginated list properties, the type of each result item. Matches the property type (e.g., "relation", "rich_text", "people").
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: start_cursor
+  table:
+    primary_key:
+      - result_id
+via: rest

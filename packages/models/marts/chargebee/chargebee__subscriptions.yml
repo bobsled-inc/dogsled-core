@@ -1,0 +1,73 @@
+spec_version: '0.2'
+name: chargebee__subscriptions
+type: model
+description: Chargebee subscriptions with curated plan, billing, and customer context.
+grain: subscription_id
+source:
+  ref: stg_chargebee__list_subscriptions
+columns:
+  - name: subscription_id
+    expr: stg_chargebee__list_subscriptions.subscription_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Chargebee subscription identifier.
+  - name: customer_id
+    expr: COALESCE(json_value(stg_chargebee__list_subscriptions.subscription, 'customer_id'), json_value(stg_chargebee__list_subscriptions.customer, 'id'))
+    semantic_role: entity_id
+    references: stg_chargebee__list_customers.customer_id
+    description: Customer tied to the subscription.
+  - name: customer_email
+    expr: json_value(stg_chargebee__list_subscriptions.customer, 'email')
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the subscribed customer.
+  - name: plan_id
+    expr: json_value(stg_chargebee__list_subscriptions.subscription, 'plan_id')
+    semantic_role: entity_id
+    description: Plan identifier on the subscription.
+  - name: subscription_status
+    expr: json_value(stg_chargebee__list_subscriptions.subscription, 'status')
+    semantic_role: categorical
+    description: Current subscription status.
+  - name: currency_code
+    expr: json_value(stg_chargebee__list_subscriptions.subscription, 'currency_code')
+    semantic_role: categorical
+    description: Currency used for the subscription.
+  - name: billing_period
+    expr: CAST(NULLIF(json_value(stg_chargebee__list_subscriptions.subscription, 'billing_period'), '') AS BIGINT)
+    semantic_role: measure
+    description: Billing period count for the subscription.
+  - name: billing_period_unit
+    expr: json_value(stg_chargebee__list_subscriptions.subscription, 'billing_period_unit')
+    semantic_role: categorical
+    description: Billing period unit for the subscription.
+  - name: mrr
+    expr: COALESCE(CAST(NULLIF(json_value(stg_chargebee__list_subscriptions.subscription, 'mrr'), '') AS NUMERIC(16, 2)) / 100.0, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Monthly recurring revenue value normalized into standard currency units.
+  - name: current_term_end_at
+    expr: TO_TIMESTAMP(CAST(NULLIF(json_value(stg_chargebee__list_subscriptions.subscription, 'current_term_end'), '') AS BIGINT))
+    semantic_role: event_timestamp
+    description: Timestamp when the current billing term ends.
+  - name: next_billing_at
+    expr: TO_TIMESTAMP(CAST(NULLIF(json_value(stg_chargebee__list_subscriptions.subscription, 'next_billing_at'), '') AS BIGINT))
+    semantic_role: event_timestamp
+    description: Timestamp of the next scheduled billing event.
+  - name: cancelled_at
+    expr: TO_TIMESTAMP(CAST(NULLIF(json_value(stg_chargebee__list_subscriptions.subscription, 'cancelled_at'), '') AS BIGINT))
+    semantic_role: event_timestamp
+    description: Timestamp when the subscription was canceled.
+  - name: created_at
+    expr: TO_TIMESTAMP(CAST(NULLIF(json_value(stg_chargebee__list_subscriptions.subscription, 'created_at'), '') AS BIGINT))
+    semantic_role: event_timestamp
+    description: Timestamp when the subscription was created.
+tags:
+  - chargebee
+  - subscriptions
+  - billing
+trust_tier: gold
+materialization:
+  type: table

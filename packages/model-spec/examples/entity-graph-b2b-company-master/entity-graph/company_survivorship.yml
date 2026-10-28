@@ -1,0 +1,11 @@
+spec_version: '0.2'
+name: company_survivorship
+type: survivorship
+description: Choose golden-record company attributes after clustering.
+resolution_ref: company_resolution
+
+# Synthesize default recency rules from the linked resolution spec using 'updated_at'.
+default_timestamp_field: updated_at
+
+outputs:
+  target_schema: ENTITY_GRAPH

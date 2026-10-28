@@ -1,0 +1,6 @@
+dialect: snowflake
+schema: ANALYTICS
+sources_dir: sources
+models_dir: models
+seeds_dir: seeds
+entity_graph_dir: entity-graph

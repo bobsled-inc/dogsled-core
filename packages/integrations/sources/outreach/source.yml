@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: outreach
+description: Outreach REST API for sales execution objects and user directories.
+transports:
+  - id: default
+    base_url: https://api.outreach.io/api/v2
+    auth:
+      type: bearer
+      token: ${{ env.OUTREACH_ACCESS_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+      Content-Type: application/vnd.api+json
+default_transport: default

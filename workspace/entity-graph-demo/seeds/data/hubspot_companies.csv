@@ -1,0 +1,12 @@
+hs_object_id,name,website,phone,country,updated_at
+hs_1001,Acme Corporation,https://acme.com,+1 212-555-0101,US,2026-03-28T10:00:00Z
+hs_1002,Globex Inc,globex.io,415-555-0102,US,2026-03-29T08:00:00Z
+hs_1003,Initech,www.initech.com,+1 (312) 555-0103,US,2026-03-15T12:00:00Z
+hs_1004,Tyrell Corporation,https://www.tyrellcorp.com,+1-213-555-0199,US,2026-03-30T14:30:00Z
+hs_1005,Stark Industries LLC,starkindustries.com,(212) 555-0105,US,2026-03-28T09:00:00Z
+hs_1006,Wayne Enterprises Inc,https://wayneenterprises.com,(206) 555-0106,US,2026-03-27T12:00:00Z
+hs_1007,Oscorp Industries,https://oscorp.com,+1-646-555-0155,US,2026-03-26T11:30:00Z
+hs_1008,Cyberdyne Systems Corp,www.cyberdyne.ai,858-555-0108,US,2026-03-28T10:15:00Z
+hs_1009,LexCorp,https://lexcorp.com,+1-312-555-0166,US,2026-03-24T13:45:00Z
+hs_1010,Umbrella Corporation,https://www.umbrella.org,212-555-0110,US,2026-03-29T07:00:00Z
+hs_1011,Massive Dynamic,https://massivedynamic.com,+1-646-555-0177,US,2026-03-20T16:00:00Z

@@ -1,0 +1,10 @@
+# Model roles for the entity-graph agent review demo. The `reviewer` role
+# backs `agent_policy.model: reviewer` in entity-graph/company_resolution.yml.
+# The api_key is env indirection — export ANTHROPIC_API_KEY before running
+# `entity-graph resolve review`; never put literal secrets here.
+platform:
+  models:
+    reviewer:
+      provider: anthropic
+      model: claude-sonnet-4-5
+      api_key: $ANTHROPIC_API_KEY

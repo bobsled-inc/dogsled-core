@@ -1,0 +1,69 @@
+type: resource
+name: get_stages
+description: Get all stages
+api:
+  endpoint: /stages
+  method: GET
+  query_params:
+    pipeline_id: ${{ input.pipeline_id }}
+input:
+  pipeline_id:
+    type: integer
+    description:
+      The ID of the pipeline to fetch stages for. If omitted, stages for all pipelines will
+      be fetched.
+query:
+  filters:
+    pipeline_id:
+      operators:
+        - eq
+      description:
+        The ID of the pipeline to fetch stages for. If omitted, stages for all pipelines will
+        be fetched.
+      bind:
+        eq:
+          input: pipeline_id
+      compile:
+        eq:
+          mode: http_query
+          param: pipeline_id
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive stage identifier
+  name:
+    type: string
+    path: $.name
+    description: Stage name
+  order_nr:
+    type: integer
+    path: $.order_nr
+    description: Stage position within the pipeline
+  pipeline_id:
+    type: integer
+    path: $.pipeline_id
+    description: Pipeline identifier
+  deal_probability:
+    type: integer
+    path: $.deal_probability
+    description: Default win probability for deals in the stage
+  active_flag:
+    type: boolean
+    path: $.active_flag
+    description: Whether the stage is active
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get one stage
+  api:
+    endpoint: /stages/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: integer
+      required: true

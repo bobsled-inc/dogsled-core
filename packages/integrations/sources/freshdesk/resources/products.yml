@@ -1,0 +1,47 @@
+type: resource
+name: products
+description: List All Products
+api:
+  endpoint: /products
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Unique ID of the product
+  name:
+    type: string
+    path: $.name
+    description: Name of the product
+  description:
+    type: string
+    path: $.description
+    description: Description of the product
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Product creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Product updated timestamp
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: View a Product
+  api:
+    endpoint: /products/${{ input.product_id }}
+    method: GET
+  input:
+    product_id:
+      type: integer
+      required: true

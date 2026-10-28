@@ -1,0 +1,35 @@
+type: resource
+name: list_bases
+description: List Airtable bases accessible to the token
+api:
+  endpoint: /v0/meta/bases
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+input:
+  offset:
+    type: string
+    description: Pagination cursor returned by Airtable
+output:
+  id:
+    type: string
+    path: $.id
+    description: Base identifier
+  name:
+    type: string
+    path: $.name
+    description: Base name
+  permission_level:
+    type: string
+    path: $.permissionLevel
+    description: Permission level for the current token
+extract:
+  record_path: $.bases
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: cursor
+    cursor_param: offset
+    cursor_path: $.offset

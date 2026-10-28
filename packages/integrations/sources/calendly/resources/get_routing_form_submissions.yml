@@ -1,0 +1,121 @@
+type: resource
+name: get_routing_form_submissions
+description: List Routing Form Submissions
+api:
+  endpoint: /routing_form_submissions
+  method: GET
+  query_params:
+    form: ${{ input.form }}
+    count: ${{ input.count }}
+    page_token: ${{ input.page_token }}
+    sort: ${{ input.sort }}
+input:
+  form:
+    type: string
+    required: true
+    description: View routing form submissions associated with the routing form's URI.
+  count:
+    type: number
+    description: The number of rows to return
+    default: 20
+    minimum: 1
+    maximum: 100
+  page_token:
+    type: string
+    description: The token to pass to get the next or previous portion of the collection
+  sort:
+    type: string
+    description:
+      'Order results by the specified field and direction. Accepts comma-separated list of
+      {field}:{direction} values. Supported fields are: created_at. Sort direction is specified as:
+      asc, desc.'
+output:
+  uri:
+    type: string
+    path: $.uri
+    description: Canonical reference (unique identifier) for the routing form submission.
+  routing_form:
+    type: string
+    path: $.routing_form
+    description: The URI of the routing form that's associated with the submission.
+  questions_and_answers:
+    type: array
+    path: $.questions_and_answers
+    description: All Routing Form Submission questions with answers.
+  tracking_utm_campaign:
+    type: string
+    path: $.tracking.utm_campaign
+    description: The UTM parameter used to track a campaign.
+  tracking_utm_source:
+    type: string
+    path: $.tracking.utm_source
+    description: The UTM parameter that identifies the source (platform where the traffic originates).
+  tracking_utm_medium:
+    type: string
+    path: $.tracking.utm_medium
+    description: The UTM parameter that identifies the type of input
+  tracking_utm_content:
+    type: string
+    path: $.tracking.utm_content
+    description: UTM content tracking parameter.
+  tracking_utm_term:
+    type: string
+    path: $.tracking.utm_term
+    description: The UTM parameter used to track keywords.
+  tracking_salesforce_uuid:
+    type: string
+    path: $.tracking.salesforce_uuid
+    description: The Salesforce record unique identifier.
+  result:
+    type: object
+    path: $.result
+    description: The polymorphic base type for a Routing Form Submission result.
+  submitter:
+    type: string
+    path: $.submitter
+    description: The reference to the Invitee resource when routing form submission results in a
+      scheduled meeting.
+  submitter_type:
+    type: string
+    path: $.submitter_type
+    description: Type of the respondent resource that submitted the form and scheduled a meeting.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The moment the routing form was submitted.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The moment when the routing form submission was last updated.
+extract:
+  record_path: $.collection
+  for_each:
+    resource: get_routing_forms
+    field: uri
+    input: form
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next_page_token
+    cursor_param: page_token
+  table:
+    primary_key:
+      - uri
+    trust_tier: silver
+verify:
+  suppress:
+    - PAGINATION_MISMATCH
+lookup:
+  description: Get Routing Form Submission
+  api:
+    endpoint: /routing_form_submissions/${{ input.uuid }}
+    method: GET
+  input:
+    uuid:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: get_routing_form_submissions_smoke
+      input:
+        form: https://api.calendly.com/routing_forms/AAAAAAAAAAAAAAAA
+        sort: created_at:asc

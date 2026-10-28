@@ -1,0 +1,93 @@
+type: resource
+name: persons
+description: People profiles tracked in each PostHog project.
+api:
+  endpoint: /api/projects/${{ input.project_id }}/persons/
+  method: GET
+  query_params:
+    distinct_id: ${{ input.distinct_id }}
+    email: ${{ input.email }}
+    format: ${{ input.format }}
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    properties: ${{ input.properties }}
+    search: ${{ input.search }}
+input:
+  distinct_id:
+    type: string
+    description: Filter list by distinct id.
+  email:
+    type: string
+    description: Filter persons by email (exact match)
+  format:
+    type: string
+    enum:
+      - csv
+      - json
+  limit:
+    type: integer
+    description: Number of results to return per page.
+    default: 100
+  offset:
+    type: integer
+    description: The initial index from which to return the results.
+    default: 0
+  project_id:
+    type: integer
+    required: true
+    description:
+      Project ID of the project you're trying to access. To find the ID of the project, make
+      a call to /api/projects/.
+  properties:
+    type: array
+    description: Filter Persons by person properties.
+  search:
+    type: string
+    description: Search persons, either by email (full text search) or distinct_id (exact match).
+output:
+  project_id:
+    type: integer
+    from:
+      resource: projects
+      path: $.id
+  id:
+    type: integer
+    path: $.id
+    description: Numeric person ID.
+  name:
+    type: string
+    path: $.name
+    description: Display name derived from person properties (email, name, or username).
+  distinct_ids:
+    type: array
+    path: $.distinct_ids
+  properties:
+    type: string
+    path: $.properties
+    description: Key-value map of person properties set via $set and $set_once operations.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When this person was first seen (ISO 8601).
+  uuid:
+    type: string
+    path: $.uuid
+    description: Unique identifier (UUID) for this person.
+  last_seen_at:
+    type: timestamp
+    path: $.last_seen_at
+    description: Timestamp of the last event from this person, or null.
+extract:
+  record_path: $.results
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - project_id
+      - id
+  for_each:
+    resource: projects
+    field: id
+    input: project_id

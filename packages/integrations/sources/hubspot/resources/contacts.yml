@@ -1,0 +1,69 @@
+type: resource
+name: contacts
+description: HubSpot CRM contacts with properties
+api:
+  endpoint: /crm/v3/objects/contacts
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of contacts per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of properties to return
+    default: firstname,lastname,email,phone,company,lifecyclestage,createdate,lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Contact ID
+  firstname:
+    type: string
+    path: $.properties.firstname
+    description: First name
+  lastname:
+    type: string
+    path: $.properties.lastname
+    description: Last name
+  email:
+    type: string
+    path: $.properties.email
+    description: Email address
+  phone:
+    type: string
+    path: $.properties.phone
+    description: Phone number
+  company:
+    type: string
+    path: $.properties.company
+    description: Company name
+  lifecycle_stage:
+    type: string
+    path: $.properties.lifecyclestage
+    description: Lifecycle stage (subscriber, lead, opportunity, customer)
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: When the contact was created
+  updated_at:
+    type: timestamp
+    path: $.properties.lastmodifieddate
+    description: When the contact was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

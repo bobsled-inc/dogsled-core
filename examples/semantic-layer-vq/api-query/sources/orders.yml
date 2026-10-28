@@ -1,0 +1,22 @@
+spec_version: '0.2'
+type: source
+name: api_orders
+source_type: api_resource
+integration: shop_api
+resource: orders
+connection: shop_api
+mode: live
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: customer_id
+      type: INTEGER
+    - name: product_id
+      type: INTEGER
+    - name: amount
+      type: DOUBLE
+    - name: order_date
+      type: STRING
+    - name: status
+      type: STRING

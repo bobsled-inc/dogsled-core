@@ -1,0 +1,56 @@
+type: resource
+name: deals
+description: Deals from a Freshsales CRM view.
+api:
+  endpoint: /deals/view/${{ input.view_id }}
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  view_id:
+    type: string
+    default: '4'
+    description:
+      Freshsales view ID from the Filters API. Defaults to the built-in all-deals view from
+      the API docs.
+  per_page:
+    type: integer
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  amount:
+    type: number
+    path: $.amount
+  sales_account_id:
+    type: integer
+    path: $.sales_account_id
+  deal_stage_id:
+    type: integer
+    path: $.deal_stage_id
+  probability:
+    type: integer
+    path: $.probability
+  expected_close:
+    type: string
+    path: $.expected_close
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+extract:
+  record_path: $.deals
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+    total_pages_path: $.meta.total_pages

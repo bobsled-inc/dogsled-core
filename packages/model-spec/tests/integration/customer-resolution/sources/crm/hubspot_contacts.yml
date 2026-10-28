@@ -1,0 +1,22 @@
+spec_version: '0.2'
+name: hubspot_contacts
+type: source
+source_type: warehouse_table
+connection: crm
+table: raw.hubspot_contacts
+description: Synthetic HubSpot contact export used for customer-resolution integration coverage.
+trust_tier: silver
+schema:
+  columns:
+    - name: hubspot_contact_id
+      type: STRING
+    - name: email
+      type: STRING
+    - name: first_name
+      type: STRING
+    - name: last_name
+      type: STRING
+    - name: phone
+      type: STRING
+    - name: country
+      type: STRING

@@ -1,0 +1,94 @@
+type: resource
+name: projects
+description: Projects visible to the authenticated Vercel team, including framework and build configuration.
+api:
+  endpoint: /v10/projects
+  method: GET
+  query_params:
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+    limit: ${{ input.limit }}
+    search: ${{ input.search }}
+input:
+  team_id:
+    type: string
+    description: Vercel team identifier. Use this or team_slug to scope the request.
+  team_slug:
+    type: string
+    description: Vercel team slug. Use this or team_id to scope the request.
+  limit:
+    type: integer
+    default: 100
+    minimum: 1
+    maximum: 100
+    description: Maximum projects per page.
+  search:
+    type: string
+    description: Optional project-name search.
+output:
+  id:
+    type: string
+    path: $.id
+    semantic_role: entity_id
+    description: Stable Vercel project identifier.
+  name:
+    type: string
+    path: $.name
+    semantic_role: categorical
+    description: Project name.
+  account_id:
+    type: string
+    path: $.accountId
+    semantic_role: entity_id
+    description: Owning Vercel team or account identifier.
+  framework:
+    type: string
+    path: $.framework
+    semantic_role: categorical
+    description: Detected or configured framework.
+  node_version:
+    type: string
+    path: $.nodeVersion
+    description: Node.js version configured for builds.
+  root_directory:
+    type: string
+    path: $.rootDirectory
+    description: Project root directory when configured.
+  build_command:
+    type: string
+    path: $.buildCommand
+    description: Configured build command.
+  output_directory:
+    type: string
+    path: $.outputDirectory
+    description: Configured output directory.
+  created_at:
+    type: integer
+    path: $.createdAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Project creation time as a Unix timestamp in milliseconds.
+  updated_at:
+    type: integer
+    path: $.updatedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Last project update time as a Unix timestamp in milliseconds.
+  project_settings:
+    type: object
+    path: $.projectSettings
+    description: Native Vercel project settings preserved for downstream analysis.
+  link:
+    type: object
+    path: $.link
+    description: Source-control link metadata when available.
+extract:
+  record_path: $.projects
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next
+    cursor_param: from
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

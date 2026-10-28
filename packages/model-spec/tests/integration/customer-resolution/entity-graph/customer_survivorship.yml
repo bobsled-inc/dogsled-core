@@ -1,0 +1,27 @@
+spec_version: '0.2'
+name: customer_survivorship
+type: survivorship
+description: Pick golden customer attributes after clustering the synthetic customer dataset.
+resolution_ref: customer_resolution
+
+# Seed data has no timestamp column, so use source_priority (trust-tier order)
+# instead of the default recency strategy that requires updated_at.
+attribute_rules:
+  - attribute: email
+    strategy: source_priority
+    source_order: [ecom.shopify_customers, crm.hubspot_contacts, support.zendesk_users]
+  - attribute: first_name
+    strategy: source_priority
+    source_order: [ecom.shopify_customers, crm.hubspot_contacts, support.zendesk_users]
+  - attribute: last_name
+    strategy: source_priority
+    source_order: [ecom.shopify_customers, crm.hubspot_contacts, support.zendesk_users]
+  - attribute: phone
+    strategy: source_priority
+    source_order: [ecom.shopify_customers, crm.hubspot_contacts, support.zendesk_users]
+  - attribute: country
+    strategy: source_priority
+    source_order: [ecom.shopify_customers, crm.hubspot_contacts, support.zendesk_users]
+
+outputs:
+  target_schema: entity_graph_test

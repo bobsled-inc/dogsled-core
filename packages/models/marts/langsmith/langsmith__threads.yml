@@ -1,0 +1,68 @@
+spec_version: '0.2'
+name: langsmith__threads
+type: model
+description: Thread-level rollup of LangSmith multi-turn conversations derived from root runs that share thread_id.
+grain: thread_id
+source:
+  ref: stg_langsmith__runs
+joins:
+  - ref: stg_langsmith__sessions
+    type: left
+    on: stg_langsmith__runs.session_id = stg_langsmith__sessions.session_id
+where: stg_langsmith__runs.thread_id IS NOT NULL AND stg_langsmith__runs.parent_run_id IS NULL
+columns:
+  - name: thread_id
+    expr: stg_langsmith__runs.thread_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Thread identifier shared by the conversation root runs.
+  - name: session_id
+    expr: stg_langsmith__runs.session_id
+    semantic_role: entity_id
+    references: stg_langsmith__sessions.session_id
+    description: Session or project that owns the thread.
+  - name: session_name
+    expr: stg_langsmith__sessions.name
+    semantic_role: name
+    description: Session or project display name.
+  - name: turn_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of observed root-run turns in the thread.
+  - name: error_turn_count
+    expr: SUM(CASE WHEN stg_langsmith__runs.error IS NOT NULL THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Number of observed turns in the thread with captured errors.
+  - name: first_turn_start_at
+    expr: MIN(stg_langsmith__runs.start_time)
+    semantic_role: event_timestamp
+    description: Earliest observed turn start timestamp in the thread.
+  - name: last_turn_start_at
+    expr: MAX(stg_langsmith__runs.start_time)
+    semantic_role: event_timestamp
+    description: Latest observed turn start timestamp in the thread.
+  - name: last_turn_end_at
+    expr: MAX(stg_langsmith__runs.end_time)
+    semantic_role: event_timestamp
+    description: Latest observed turn end timestamp in the thread.
+  - name: total_tokens
+    expr: SUM(stg_langsmith__runs.total_tokens)
+    semantic_role: measure
+    description: Total tokens attributed to observed root-run turns in the thread.
+  - name: total_cost
+    expr: SUM(stg_langsmith__runs.total_cost)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total cost attributed to observed root-run turns in the thread.
+group_by:
+  - thread_id
+  - session_id
+  - session_name
+tags:
+  - langsmith
+  - threads
+  - conversations
+trust_tier: gold
+materialization:
+  type: table

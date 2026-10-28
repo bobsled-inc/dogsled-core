@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: shopify_product_variants_to_products
+description: Each Shopify product variant belongs to one product.
+left_model: shopify__product_variants
+right_model: shopify__products
+join_columns:
+  - left: product_id
+    right: product_id
+join_type: left
+relationship_type: many_to_one
+tags: [shopify, variants, products]

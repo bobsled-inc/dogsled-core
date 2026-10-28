@@ -1,0 +1,35 @@
+title: '[Connector]: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the connector proposal below. Maintainers and agents implement accepted ideas. Use synthetic examples only: no customer names, credentials, private endpoints or undisclosed security issues.
+  - type: input
+    id: system
+    attributes:
+      label: Which public API or system?
+      description: Include a public documentation link and version when available.
+    validations:
+      required: true
+  - type: input
+    id: auth
+    attributes:
+      label: Authentication type
+      description: Name the mechanism, such as OAuth, API key or service identity. Never include a credential.
+    validations:
+      required: true
+  - type: textarea
+    id: objects
+    attributes:
+      label: Objects and operations
+      description: Which objects should Dogsled read or write, and what concrete workflow needs them?
+    validations:
+      required: true
+  - type: textarea
+    id: response
+    attributes:
+      label: Synthetic response shape
+      description: Show field names and example types using invented values, or link to the public API schema.
+      render: json
+    validations:
+      required: true

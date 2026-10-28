@@ -1,0 +1,35 @@
+spec_version: '0.2'
+name: stg_fieldroutes_routes
+type: model
+description: Staging routes from FieldRoutes `/route/search`.
+grain: ROUTE_ID
+source:
+  ref: fieldroutes.routes
+columns:
+  - name: ROUTE_ID
+    expr: route_id
+    primary_key: true
+  - name: OFFICE_ID
+    expr: office_id
+  - name: TEMPLATE_ID
+    expr: template_id
+  - name: TITLE
+    expr: title
+  - name: DATE
+    expr: date
+  - name: DAY_ID
+    expr: day_id
+  - name: GROUP_ID
+    expr: group_id
+  - name: GROUP_TITLE
+    expr: group_title
+  - name: ASSIGNED_TECH
+    expr: assigned_tech
+  - name: DISTANCE_SCORE
+    expr: distance_score
+  - name: AVERAGE_LATITUDE
+    expr: average_latitude
+  - name: AVERAGE_LONGITUDE
+    expr: average_longitude
+materialization:
+  type: view

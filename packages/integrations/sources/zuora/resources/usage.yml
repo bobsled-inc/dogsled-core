@@ -1,0 +1,56 @@
+type: resource
+name: usage
+description: Usage records for a Zuora billing account.
+api:
+  endpoint: /v1/usage/accounts/${{ input.account_key }}
+  method: GET
+  query_params:
+    pageSize: ${{ input.page_size }}
+input:
+  account_key:
+    type: string
+    default: '123'
+  page_size:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  accountId:
+    type: string
+    path: $.accountId
+  subscriptionId:
+    type: string
+    path: $.subscriptionId
+  chargeId:
+    type: string
+    path: $.chargeId
+  quantity:
+    type: number
+    path: $.quantity
+  startDateTime:
+    type: timestamp
+    path: $.startDateTime
+  endDateTime:
+    type: timestamp
+    path: $.endDateTime
+  unitOfMeasure:
+    type: string
+    path: $.unitOfMeasure
+  description:
+    type: string
+    path: $.description
+extract:
+  record_path: $.usage
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: pageSize
+  for_each:
+    resource: accounts
+    field: id
+    input: account_key

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: quickbooks_total_payment_amount
+description: Total amount of QuickBooks customer payments. Use only when the company file uses a common reporting currency.
+model: quickbooks__payments
+expression: SUM({quickbooks__payments}.amount)
+synonyms: [payments received, customer payments, payment total]
+tags: [quickbooks, accounting, finance]

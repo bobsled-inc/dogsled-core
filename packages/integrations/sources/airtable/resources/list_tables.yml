@@ -1,0 +1,38 @@
+type: resource
+name: list_tables
+description: List tables for each Airtable base
+api:
+  endpoint: /v0/meta/bases/${{ input.base_id }}/tables
+  method: GET
+input:
+  base_id:
+    type: string
+    required: true
+    description: Airtable base identifier
+output:
+  id:
+    type: string
+    path: $.id
+    description: Table identifier
+  name:
+    type: string
+    path: $.name
+    description: Table name
+  primary_field_id:
+    type: string
+    path: $.primaryFieldId
+    description: Primary field identifier
+  description:
+    type: string
+    path: $.description
+    description: Table description
+extract:
+  record_path: $.tables
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: list_bases
+    field: id
+    input: base_id

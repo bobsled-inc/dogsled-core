@@ -1,0 +1,16 @@
+display_name: Amplitude
+category: analytics
+logo_url: https://amplitude.com/favicon.ico
+tags:
+  - amplitude
+  - analytics
+  - events
+  - product
+docs_url: https://amplitude.com/docs/apis/analytics/dashboard-rest
+auth_setup:
+  - env: AMPLITUDE_API_KEY
+    description: Amplitude project API key used as the basic auth username
+    docs_url: https://amplitude.com/docs/apis/analytics/dashboard-rest
+  - env: AMPLITUDE_SECRET_KEY
+    description: Amplitude secret key used as the basic auth password
+    docs_url: https://amplitude.com/docs/apis/analytics/dashboard-rest

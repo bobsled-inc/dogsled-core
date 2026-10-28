@@ -1,0 +1,57 @@
+type: resource
+name: changelogs
+description: List change history entries for issues returned by the Jira issue search stream.
+api:
+  endpoint: /rest/api/3/issue/${{ input.issue_id }}/changelog
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+input:
+  issue_id:
+    type: string
+    required: true
+    description: Jira issue identifier to list changelogs for.
+  start_at:
+    type: integer
+    description: Zero-based offset for the first changelog entry in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of changelog entries to return per page.
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Changelog entry identifier.
+  author_account_id:
+    type: string
+    path: $.author.accountId
+    description: Account ID of the user who made the change.
+  author_display_name:
+    type: string
+    path: $.author.displayName
+    description: Display name of the user who made the change.
+  created:
+    type: timestamp
+    path: $.created
+    description: Timestamp when the change was made.
+  items:
+    type: array
+    path: $.items
+    description: Array of changed fields with field, fieldtype, from, fromString, to, and toString.
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  for_each:
+    resource: search_issues
+    field: id
+    input: issue_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,34 @@
+type: resource
+name: sheets
+description: Sheet tabs within a spreadsheet.
+api:
+  endpoint: /spreadsheets/${{ input.spreadsheet_id }}
+  method: GET
+  query_params:
+    fields: spreadsheetId,sheets.properties
+input:
+  spreadsheet_id:
+    type: string
+    required: true
+    default: spreadsheet_id
+output:
+  sheet_id:
+    type: integer
+    path: $.properties.sheetId
+  title:
+    type: string
+    path: $.properties.title
+  index:
+    type: integer
+    path: $.properties.index
+  hidden:
+    type: boolean
+    path: $.properties.hidden
+  sheet_type:
+    type: string
+    path: $.properties.sheetType
+extract:
+  record_path: $.sheets
+  table:
+    primary_key:
+      - sheet_id

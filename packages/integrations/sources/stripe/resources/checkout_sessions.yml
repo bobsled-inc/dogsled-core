@@ -1,0 +1,89 @@
+type: resource
+name: checkout_sessions
+description: Stripe Checkout sessions
+api:
+  endpoint: /v1/checkout/sessions
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of checkout sessions per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Checkout session ID (cs_xxx)
+  customer:
+    type: string
+    path: $.customer
+    description: Customer ID associated with the session
+  payment_intent:
+    type: string
+    path: $.payment_intent
+    description: Payment intent ID for the session
+  payment_status:
+    type: string
+    path: $.payment_status
+    description: Payment status (paid/unpaid/no_payment_required)
+  status:
+    type: string
+    path: $.status
+    description: Session status (open/complete/expired)
+  mode:
+    type: string
+    path: $.mode
+    description: Session mode (payment/setup/subscription)
+  amount_total:
+    type: integer
+    path: $.amount_total
+    description: Total amount in cents
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO currency code
+  url:
+    type: string
+    path: $.url
+    description: URL to the checkout session
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when checkout session was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

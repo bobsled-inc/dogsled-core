@@ -1,0 +1,125 @@
+type: resource
+name: search_user
+description: Search users
+api:
+  endpoint: /wiki/rest/api/search/user
+  method: GET
+  query_params:
+    cql: ${{ input.cql }}
+    start: ${{ input.start }}
+    limit: ${{ input.limit }}
+    expand: ${{ input.expand }}
+    sitePermissionTypeFilter: ${{ input.site_permission_type_filter }}
+input:
+  cql:
+    type: string
+    required: true
+    description: >-
+      The CQL query to be used for the search. See
+
+      [Advanced Searching using
+      CQL](https://developer.atlassian.com/cloud/confluence/advanced-searching-using-cql/)
+
+      for instructions on how to build a CQL query.
+
+
+      Example queries:
+                cql=type=user will return up to 10k users
+                cql=user="1234" will return user with accountId "1234"
+                You can also use IN, NOT IN, != operators
+                cql=user IN ("12", "34") will return users with accountids "12" and "34"
+                cql=user.fullname~jo will return users with nickname/full name starting with "jo"
+                cql=user.accountid="123" will return user with accountId "123"
+  start:
+    type: integer
+    description: The starting index of the returned users.
+    default: 0
+    minimum: 0
+  limit:
+    type: integer
+    description: |-
+      The maximum number of user objects to return per page.
+      Note, this may be restricted by fixed system limits.
+    default: 25
+    minimum: 0
+  expand:
+    type: array
+    description: |-
+      A multi-value parameter indicating which properties of the user to expand.
+
+      - `operations` returns the operations for the user, which are used
+      when setting permissions.
+      - `personalSpace` returns the personal space of the user.
+  site_permission_type_filter:
+    type: string
+    description: >-
+      Filters users by permission type. Use `none` to default to licensed users,
+      `externalCollaborator`
+
+      for external/guest users, and `all` to include all permission types.
+    enum:
+      - all
+      - externalCollaborator
+      - none
+    default: none
+output:
+  user_account_id:
+    type: string
+    path: $.user.accountId
+    description: Confluence account identifier for the search result user.
+  content:
+    type: object
+    path: $.content
+    description: Base object for all content types.
+  user:
+    type: object
+    path: $.user
+  space:
+    type: object
+    path: $.space
+  title:
+    type: string
+    path: $.title
+  excerpt:
+    type: string
+    path: $.excerpt
+  url:
+    type: string
+    path: $.url
+  result_parent_container_title:
+    type: string
+    path: $.resultParentContainer.title
+  result_parent_container_display_url:
+    type: string
+    path: $.resultParentContainer.displayUrl
+  result_global_container_title:
+    type: string
+    path: $.resultGlobalContainer.title
+  result_global_container_display_url:
+    type: string
+    path: $.resultGlobalContainer.displayUrl
+  breadcrumbs:
+    type: array
+    path: $.breadcrumbs
+  entity_type:
+    type: string
+    path: $.entityType
+  icon_css_class:
+    type: string
+    path: $.iconCssClass
+  last_modified:
+    type: timestamp
+    path: $.lastModified
+  friendly_last_modified:
+    type: string
+    path: $.friendlyLastModified
+  score:
+    type: number
+    path: $.score
+extract:
+  record_path: $.results
+  paginated: false
+  table:
+    trust_tier: silver
+    primary_key:
+      - user_account_id

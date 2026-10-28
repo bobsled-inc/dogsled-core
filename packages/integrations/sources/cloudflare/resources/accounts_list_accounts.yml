@@ -1,0 +1,62 @@
+type: resource
+name: accounts_list_accounts
+description: List Cloudflare accounts available to the API token
+api:
+  endpoint: /accounts
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    per_page: ${{ input.per_page }}
+    name: ${{ input.name }}
+input:
+  page:
+    type: integer
+    description: Cloudflare page index
+    default: 1
+  per_page:
+    type: integer
+    description: Number of accounts to return per page
+    default: 50
+  name:
+    type: string
+    description: Optional account name filter
+query:
+  filters:
+    name:
+      operators:
+        - eq
+      description: Optional account name filter
+      bind:
+        eq:
+          input: name
+      compile:
+        eq:
+          mode: http_query
+          param: name
+output:
+  id:
+    type: string
+    path: $.id
+    description: Cloudflare account identifier
+  name:
+    type: string
+    path: $.name
+    description: Account display name
+  type:
+    type: string
+    path: $.type
+    description: Cloudflare account type
+  created_on:
+    type: timestamp
+    path: $.created_on
+    description: Timestamp when the account was created
+extract:
+  record_path: $.result
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

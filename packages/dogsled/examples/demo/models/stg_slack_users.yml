@@ -1,0 +1,67 @@
+spec_version: '0.2'
+name: stg_slack_users
+type: model
+description: Staged Slack users with profile and role metadata
+grain: user_id
+source:
+  ref: warehouse.slack_users
+columns:
+  - name: user_id
+    expr: t0.id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique user identifier
+  - name: team_id
+    expr: t0.team_id
+    semantic_role: entity_id
+    description: Workspace identifier
+  - name: username
+    expr: t0.name
+    semantic_role: categorical
+    description: Username handle
+  - name: real_name
+    expr: t0.real_name
+    semantic_role: categorical
+    description: Full display name
+  - name: display_name
+    expr: t0.display_name
+    semantic_role: categorical
+    description: Display name set by the user
+  - name: email
+    expr: t0.email
+    semantic_role: categorical
+    description: Email address
+  - name: job_title
+    expr: t0.title
+    semantic_role: categorical
+    description: Job title from profile
+  - name: is_deleted
+    expr: t0.deleted
+    semantic_role: categorical
+    description: True if the user has been deactivated
+  - name: is_admin
+    expr: t0.is_admin
+    semantic_role: categorical
+    description: True if the user is a workspace admin
+  - name: is_owner
+    expr: t0.is_owner
+    semantic_role: categorical
+    description: True if the user is a workspace owner
+  - name: is_bot
+    expr: t0.is_bot
+    semantic_role: categorical
+    description: True if this is a bot user
+  - name: is_guest
+    expr: t0.is_restricted
+    semantic_role: categorical
+    description: True if this is a guest user
+  - name: timezone
+    expr: t0.tz
+    semantic_role: categorical
+    description: Timezone identifier
+  - name: updated_at_unix
+    expr: t0.updated
+    semantic_role: event_timestamp
+    description: Unix timestamp of the most recent profile update
+materialization:
+  type: view

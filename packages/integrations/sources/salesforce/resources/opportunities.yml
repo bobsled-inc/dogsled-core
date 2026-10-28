@@ -1,0 +1,43 @@
+type: resource
+name: opportunities
+description: Opportunities from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Name,AccountId,StageName,Amount,CloseDate,CreatedDate,LastModifiedDate FROM Opportunity
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.Name
+  account_id:
+    type: string
+    path: $.AccountId
+  stage_name:
+    type: string
+    path: $.StageName
+  amount:
+    type: number
+    path: $.Amount
+  close_date:
+    type: string
+    path: $.CloseDate
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

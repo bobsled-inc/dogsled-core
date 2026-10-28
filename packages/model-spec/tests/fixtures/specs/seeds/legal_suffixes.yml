@@ -1,0 +1,27 @@
+spec_version: '0.2'
+name: legal_suffixes
+type: seed
+description: Legal entity suffixes for company name normalization.
+
+payload:
+  format: csv
+  path: data/legal_suffixes.csv
+  delimiter: ','
+
+schema:
+  columns:
+    - name: suffix
+      type: STRING
+      primary_key: true
+    - name: normalized_form
+      type: STRING
+
+materialization:
+  type: table
+  target_schema: bms_seeds
+  on_conflict: replace
+
+validation:
+  max_rows: 100000
+  required_columns: [suffix, normalized_form]
+  unique_columns: [suffix]

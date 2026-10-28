@@ -1,0 +1,6 @@
+# The live/lazy api_resource source caches into this DuckDB file. For the live
+# (view) engine it must be the SAME file the `lake` integration points at, so the
+# hydrated sources.* tables are visible to the model build.
+default_destination:
+  dest: duckdb
+  dbPath: ./data/lake.duckdb

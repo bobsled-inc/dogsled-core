@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: intercom_contacts_to_admins
+description: Each Intercom contact can belong to one admin owner.
+left_model: intercom__contacts
+right_model: intercom__admins
+join_columns:
+  - left: owner_id
+    right: admin_id
+join_type: left
+relationship_type: many_to_one
+tags: [intercom, contacts, admins]

@@ -1,0 +1,15 @@
+spec_version: '1'
+type: resource
+name: events
+integration: acme_delta
+source:
+  table: events
+  database: analytics
+replication:
+  method: incremental_append
+  cursor_field: event_timestamp
+  cursor_type: timestamp
+output:
+  event_id: { type: integer }
+  event_type: { type: string }
+  event_timestamp: { type: timestamp }

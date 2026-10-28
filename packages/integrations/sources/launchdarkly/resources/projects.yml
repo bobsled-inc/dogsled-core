@@ -1,0 +1,30 @@
+type: resource
+name: projects
+description: List LaunchDarkly projects
+api:
+  endpoint: /projects
+  method: GET
+input: {}
+output:
+  key:
+    type: string
+    path: $.key
+    description: Project key
+  name:
+    type: string
+    path: $.name
+    description: Project name
+  tags:
+    type: array
+    path: $.tags
+    description: Project tags
+  include_in_snippet_by_default:
+    type: boolean
+    path: $.includeInSnippetByDefault
+    description: Whether new flags default to client-side snippet inclusion
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - key
+    trust_tier: silver

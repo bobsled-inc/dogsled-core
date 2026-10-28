@@ -1,0 +1,47 @@
+spec_version: '0.2'
+name: Deal
+type: resolution
+description: Resolve sales deals.
+
+inputs:
+  - ref: raw.deals
+    role: internal
+    id_fields: [deal_id]
+
+standardize:
+  - field: deal_name
+    transforms: [lowercase, trim]
+
+blocking:
+  rules:
+    - name: deal_name_block
+      key: deal_name
+
+deterministic_rules:
+  - name: exact_deal_id
+    conditions:
+      - field: deal_id
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: deal_name
+      algorithm: exact
+      weight: 1.0
+
+thresholds:
+  auto_merge: 0.95
+  review: 0.6
+  auto_reject: 0.4
+
+profile:
+  display_name:
+    field: deal_name
+    source_precedence: [raw.deals]
+  attributes:
+    - field: stage
+    - field: amount

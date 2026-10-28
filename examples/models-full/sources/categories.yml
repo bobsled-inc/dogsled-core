@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: source
+name: categories
+description: Fictional categories.
+source_type: warehouse_table
+connection: local_duckdb
+table: main.categories
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: name
+      type: STRING

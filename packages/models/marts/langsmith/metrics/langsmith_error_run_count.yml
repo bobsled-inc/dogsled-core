@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: langsmith_error_run_count
+description: Number of LangSmith runs that recorded an error.
+model: langsmith__runs
+expression: SUM(CASE WHEN {langsmith__runs}.error IS NOT NULL THEN 1 ELSE 0 END)
+synonyms: [error runs, failed runs, run errors]
+tags: [langsmith, ai, reliability]

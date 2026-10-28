@@ -1,0 +1,82 @@
+type: resource
+name: shares
+description: Active Bobsled shares and their destination metadata.
+health_check:
+  preferred: true
+api:
+  endpoint: /api/v1/shares/
+  method: GET
+  query_params:
+    pageSize: ${{ input.page_size }}
+    lastShareId: ${{ input.last_share_id }}
+    shareStatus: ${{ input.share_status }}
+input:
+  page_size:
+    type: integer
+    required: true
+    default: 100
+  last_share_id:
+    type: string
+  share_status:
+    type: string
+    required: true
+    default: active
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique share ID.
+  name:
+    type: string
+    path: $.name
+    description: Share name.
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Share creation time in epoch milliseconds.
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Share update time in epoch milliseconds.
+  description:
+    type: string
+    path: $.description
+    description: Share description.
+  source_location_id:
+    type: string
+    path: $.sourceLocationId
+    description: Source location ID.
+  consumer_organization_name:
+    type: string
+    path: $.consumerOrganizationName
+    description: Consumer organization name.
+  destination_cloud:
+    type: string
+    path: $.destinationLocation.cloud
+    description: Destination cloud.
+  destination_product:
+    type: string
+    path: $.destinationLocation.product
+    description: Destination product.
+  destination_region:
+    type: string
+    path: $.destinationLocation.region
+    description: Destination region.
+extract:
+  record_path: $.data.shares
+  pagination:
+    type: cursor
+    cursor_path: $.data.shares[-1].id
+    cursor_param: lastShareId
+  table:
+    primary_key:
+      - id
+lookup:
+  description: Get one Bobsled share by ID.
+  api:
+    endpoint: /api/v1/shares/${{ input.id }}/
+    method: GET
+  input:
+    id:
+      type: string
+      required: true

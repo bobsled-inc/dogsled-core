@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: chargebee_total_mrr
+description: Monthly recurring revenue from active and non-renewing Chargebee subscriptions. Group results by currency before comparing or combining values.
+model: chargebee__subscription_status_summary
+expression: SUM(CASE WHEN {chargebee__subscription_status_summary}.subscription_status IN ('active', 'non_renewing') THEN {chargebee__subscription_status_summary}.total_mrr ELSE 0 END)
+synonyms: [active subscription MRR, recurring subscription revenue, active and non-renewing MRR]
+tags: [chargebee, subscriptions, finance]

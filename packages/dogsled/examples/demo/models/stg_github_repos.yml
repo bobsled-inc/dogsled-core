@@ -1,0 +1,157 @@
+spec_version: '0.2'
+name: stg_github_repos
+type: model
+description: Staged GitHub repositories with full metadata for semantic modeling
+grain: repo_id
+source:
+  ref: warehouse.github_repos
+columns:
+  # Identity
+  - name: repo_id
+    expr: t0.id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique numeric identifier assigned by GitHub to the repository
+  - name: node_id
+    expr: t0.node_id
+    semantic_role: categorical
+    description: Global relay ID used by the GitHub GraphQL API
+  - name: repo_name
+    expr: t0.name
+    semantic_role: categorical
+    description: Short repository name without the owner prefix
+  - name: repo_full_name
+    expr: t0.full_name
+    semantic_role: categorical
+    description: Fully qualified repository name including the owner (e.g. "octocat/Hello-World")
+
+  # Owner
+  - name: owner_login
+    expr: t0.owner_login
+    semantic_role: categorical
+    description: GitHub username or organization login that owns the repository
+  - name: owner_id
+    expr: t0.owner_id
+    semantic_role: entity_id
+    description: Unique numeric identifier of the repository owner
+
+  # URLs
+  - name: html_url
+    expr: t0.html_url
+    semantic_role: categorical
+    description: Browser-accessible URL for the repository on github.com
+  - name: clone_url
+    expr: t0.clone_url
+    semantic_role: categorical
+    description: HTTPS URL used to clone the repository via git
+  - name: homepage
+    expr: t0.homepage
+    semantic_role: categorical
+    description: Optional external homepage URL configured in repository settings
+
+  # Description & metadata
+  - name: description
+    expr: t0.description
+    semantic_role: categorical
+    description: Free-text summary of the repository set by the owner
+  - name: language
+    expr: t0.language
+    semantic_role: categorical
+    description: Primary programming language detected by GitHub
+  - name: default_branch
+    expr: t0.default_branch
+    semantic_role: categorical
+    description: Name of the branch used as the default target for pull requests
+  - name: visibility
+    expr: t0.visibility
+    semantic_role: categorical
+    description: Repository visibility level — "public", "private", or "internal"
+  - name: license_name
+    expr: t0.license_name
+    semantic_role: categorical
+    description: SPDX identifier of the repository license (e.g. "MIT", "Apache-2.0"), null if none
+
+  # Flags
+  - name: is_private
+    expr: t0.private
+    semantic_role: categorical
+    description: True if the repository is not publicly accessible
+  - name: is_fork
+    expr: t0.fork
+    semantic_role: categorical
+    description: True if the repository was created by forking another repository
+  - name: is_archived
+    expr: t0.archived
+    semantic_role: categorical
+    description: True if the repository has been archived and is read-only
+  - name: is_disabled
+    expr: t0.disabled
+    semantic_role: categorical
+    description: True if the repository has been disabled by GitHub
+  - name: is_template
+    expr: t0.is_template
+    semantic_role: categorical
+    description: True if the repository is configured as a template for creating new repos
+  - name: has_issues
+    expr: t0.has_issues
+    semantic_role: categorical
+    description: True if the GitHub Issues feature is enabled
+  - name: has_projects
+    expr: t0.has_projects
+    semantic_role: categorical
+    description: True if the GitHub Projects feature is enabled
+  - name: has_wiki
+    expr: t0.has_wiki
+    semantic_role: categorical
+    description: True if the GitHub Wiki feature is enabled
+  - name: has_pages
+    expr: t0.has_pages
+    semantic_role: categorical
+    description: True if the repository has GitHub Pages enabled
+  - name: has_downloads
+    expr: t0.has_downloads
+    semantic_role: categorical
+    description: True if the repository has the Downloads feature enabled
+  - name: allow_forking
+    expr: t0.allow_forking
+    semantic_role: categorical
+    description: True if forking is allowed for this repository
+
+  # Counters
+  - name: size_kb
+    expr: t0.size
+    semantic_role: measure
+    description: Approximate repository size in kilobytes as reported by GitHub
+  - name: stargazers_count
+    expr: t0.stargazers_count
+    semantic_role: measure
+    description: Number of users who have starred the repository
+  - name: watchers_count
+    expr: t0.watchers_count
+    semantic_role: measure
+    description: Number of users watching the repository for notifications
+  - name: forks_count
+    expr: t0.forks_count
+    semantic_role: measure
+    description: Total number of forks created from this repository
+  - name: open_issues_count
+    expr: t0.open_issues_count
+    semantic_role: measure
+    description: Combined count of open issues and open pull requests
+    business_rule: GitHub counts both issues and pull requests in this field
+
+  # Timestamps
+  - name: created_at
+    expr: t0.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the repository was first created on GitHub
+  - name: updated_at
+    expr: t0.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp of the most recent update to repository metadata or settings
+  - name: pushed_at
+    expr: t0.pushed_at
+    semantic_role: event_timestamp
+    description: Timestamp of the most recent git push to any branch
+materialization:
+  type: view

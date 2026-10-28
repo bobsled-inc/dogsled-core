@@ -1,0 +1,93 @@
+type: resource
+name: list_incoming_phone_numbers
+description: List incoming phone numbers owned by each Twilio account
+api:
+  endpoint: /2010-04-01/Accounts/${{ input.account_sid }}/IncomingPhoneNumbers.json
+  method: GET
+  query_params:
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+    FriendlyName: ${{ input.friendly_name }}
+    PhoneNumber: ${{ input.phone_number }}
+input:
+  account_sid:
+    type: string
+    description: Twilio account SID to list phone numbers from
+    required: true
+  page_size:
+    type: integer
+    description: Number of phone numbers to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+  friendly_name:
+    type: string
+    description: Optional exact friendly name filter
+  phone_number:
+    type: string
+    description: Optional phone number filter
+query:
+  filters:
+    friendly_name:
+      operators:
+        - eq
+      description: Optional exact friendly name filter
+      bind:
+        eq:
+          input: friendly_name
+      compile:
+        eq:
+          mode: http_query
+          param: FriendlyName
+    phone_number:
+      operators:
+        - eq
+      description: Optional phone number filter
+      bind:
+        eq:
+          input: phone_number
+      compile:
+        eq:
+          mode: http_query
+          param: PhoneNumber
+output:
+  sid:
+    type: string
+    path: $.sid
+    description: Twilio incoming phone number SID
+  account_sid:
+    type: string
+    path: $.account_sid
+    description: Parent Twilio account SID
+  phone_number:
+    type: string
+    path: $.phone_number
+    description: E.164 phone number
+  friendly_name:
+    type: string
+    path: $.friendly_name
+    description: Human-readable phone number label
+  origin:
+    type: string
+    path: $.origin
+    description: Twilio phone number origin
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Timestamp when the phone number resource was created
+extract:
+  record_path: $.incoming_phone_numbers
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  for_each:
+    resource: list_account
+    field: sid
+    input: account_sid
+  table:
+    primary_key:
+      - sid
+    trust_tier: silver

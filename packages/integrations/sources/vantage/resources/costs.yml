@@ -1,0 +1,117 @@
+type: resource
+name: costs
+description: Cloud costs data with filtering and grouping
+api:
+  endpoint: /costs
+  method: GET
+  query_params:
+    cost_report_token: ${{ input.cost_report_token }}
+    start_date: ${{ input.start_date }}
+    end_date: ${{ input.end_date }}
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  cost_report_token:
+    type: string
+    description: The CostReport token.
+  start_date:
+    type: timestamp
+    description: Start date for costs (YYYY-MM-DD). Used for incremental extraction.
+  end_date:
+    type: timestamp
+    description: End date for costs (YYYY-MM-DD). Used for incremental extraction.
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 5000.
+    default: 5000
+query:
+  filters:
+    accrued_at:
+      operators:
+        - gte
+        - lte
+      description: Start date for costs (YYYY-MM-DD). Used for incremental extraction.
+      bind:
+        gte:
+          input: start_date
+        lte:
+          input: end_date
+      compile:
+        gte:
+          mode: http_query
+          param: start_date
+        lte:
+          mode: http_query
+          param: end_date
+    cost_report_token:
+      operators:
+        - eq
+      description: The CostReport token.
+      bind:
+        eq:
+          input: cost_report_token
+      compile:
+        eq:
+          mode: http_query
+          param: cost_report_token
+output:
+  accrued_at:
+    type: timestamp
+    path: $.accrued_at
+    description: The date the cost was accrued (YYYY-MM-DD).
+  amount:
+    type: string
+    path: $.amount
+    description: The sum of the costs.
+  currency:
+    type: string
+    path: $.currency
+    description: The currency of the cost.
+  provider:
+    type: string
+    path: $.provider
+    description: The cloud provider (e.g. aws, gcp, azure).
+  account_id:
+    type: string
+    path: $.account_id
+    description: The provider account identifier.
+  service:
+    type: string
+    path: $.service
+    description: The cloud service name.
+  cost_report_token:
+    type: string
+    path: $.__input__.cost_report_token
+    description: The token of the cost report these costs belong to.
+extract:
+  record_path: $.costs
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  for_each:
+    resource: cost_reports
+    field: token
+    input: cost_report_token
+  table:
+    primary_key:
+      - cost_report_token
+      - accrued_at
+      - provider
+      - account_id
+      - service
+    load_strategy: merge
+    partition_by: accrued_at
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: accrued_at
+  cursor_type: timestamp
+  since_argument: start_date
+  until_argument: end_date
+  value_format: date
+  lookback_seconds: 172800
+  initial_lookback_seconds: 2592000

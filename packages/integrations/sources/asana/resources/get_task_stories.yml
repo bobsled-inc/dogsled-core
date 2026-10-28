@@ -1,0 +1,60 @@
+type: resource
+name: get_task_stories
+description: List stories and comments attached to each Asana task
+api:
+  endpoint: /tasks/${{ input.task_gid }}/stories
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  task_gid:
+    type: string
+    description: Asana task GID to list stories from
+    required: true
+  limit:
+    type: integer
+    description: Number of stories to return per page
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response
+output:
+  gid:
+    type: string
+    path: $.gid
+    description: Asana story identifier
+  resource_type:
+    type: string
+    path: $.resource_type
+    description: Asana resource type
+  resource_subtype:
+    type: string
+    path: $.resource_subtype
+    description: Asana story subtype
+  text:
+    type: string
+    path: $.text
+    description: Story text content
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the story was created
+  created_by_gid:
+    type: string
+    path: $.created_by.gid
+    description: User GID that created the story
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  for_each:
+    resource: get_tasks
+    field: gid
+    input: task_gid
+  table:
+    primary_key:
+      - gid
+    trust_tier: silver

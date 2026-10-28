@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: line_items
+type: seed
+description: E-commerce order line items for learn-sandbox tutorial.
+payload:
+  format: csv
+  path: data/line_items.csv
+  delimiter: ','
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+      primary_key: true
+    - name: order_id
+      type: INTEGER
+    - name: product_id
+      type: INTEGER
+    - name: quantity
+      type: INTEGER
+    - name: unit_price
+      type: NUMBER
+materialization:
+  type: table
+  target_schema: main
+  on_conflict: replace

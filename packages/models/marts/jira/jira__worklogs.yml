@@ -1,0 +1,77 @@
+spec_version: '0.2'
+name: jira__worklogs
+type: model
+description: Jira worklogs enriched with their related issue and project context.
+grain: worklog_id
+source:
+  ref: stg_jira__worklogs
+joins:
+  - ref: stg_jira__search_issues
+    type: left
+    on: stg_jira__worklogs.issue_id = stg_jira__search_issues.search_issue_id
+columns:
+  - name: worklog_id
+    expr: stg_jira__worklogs.worklog_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Jira worklog identifier.
+  - name: issue_id
+    expr: stg_jira__worklogs.issue_id
+    semantic_role: entity_id
+    references: stg_jira__search_issues.search_issue_id
+    description: Jira issue linked to the worklog.
+  - name: issue_key
+    expr: stg_jira__search_issues.key
+    semantic_role: categorical
+    description: Human-readable issue key.
+  - name: issue_summary
+    expr: stg_jira__search_issues.summary
+    semantic_role: categorical
+    description: Summary of the related issue.
+  - name: project_id
+    expr: stg_jira__search_issues.project_id
+    semantic_role: entity_id
+    description: Project that owns the issue tied to the worklog.
+  - name: project_key
+    expr: stg_jira__search_issues.project_key
+    semantic_role: categorical
+    description: Project key associated with the worklog.
+  - name: project_name
+    expr: stg_jira__search_issues.project_name
+    semantic_role: categorical
+    description: Project name associated with the worklog.
+  - name: author_account_id
+    expr: stg_jira__worklogs.author_account_id
+    semantic_role: entity_id
+    description: Account ID of the worklog author.
+  - name: author_display_name
+    expr: stg_jira__worklogs.author_display_name
+    semantic_role: categorical
+    description: Display name of the worklog author.
+  - name: time_spent_text
+    expr: stg_jira__worklogs.time_spent
+    semantic_role: categorical
+    description: Human-readable time-spent string.
+  - name: time_spent_seconds
+    expr: stg_jira__worklogs.time_spent_seconds
+    semantic_role: measure
+    description: Time logged in seconds.
+  - name: started_at
+    expr: stg_jira__worklogs.started
+    semantic_role: event_timestamp
+    description: Timestamp when the work started.
+  - name: created_at
+    expr: stg_jira__worklogs.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the worklog was created.
+  - name: updated_at
+    expr: stg_jira__worklogs.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the worklog was last updated.
+tags:
+  - jira
+  - worklogs
+  - engineering
+trust_tier: gold
+materialization:
+  type: table

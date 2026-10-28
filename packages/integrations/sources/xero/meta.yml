@@ -1,0 +1,21 @@
+display_name: Xero
+category: finance
+tags:
+  - accounting
+  - bookkeeping
+  - invoicing
+docs_url: https://developer.xero.com/documentation/api/accounting/overview/
+openapi_url: https://raw.githubusercontent.com/XeroAPI/Xero-OpenAPI/master/xero_accounting.yaml
+auth_setup:
+  - env: XERO_CLIENT_ID
+    description: OAuth client ID for the Xero app.
+    docs_url: https://developer.xero.com/documentation/guides/oauth2/overview/
+  - env: XERO_CLIENT_SECRET
+    description: OAuth client secret for the Xero app.
+    docs_url: https://developer.xero.com/documentation/guides/oauth2/overview/
+  - env: XERO_REFRESH_TOKEN
+    description: Refresh token used to mint Xero access tokens.
+    docs_url: https://developer.xero.com/documentation/guides/oauth2/token-types/
+  - env: XERO_TENANT_ID
+    description: Xero tenant ID header value for the target organization.
+    docs_url: https://developer.xero.com/documentation/guides/oauth2/tenants/

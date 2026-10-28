@@ -1,0 +1,29 @@
+spec_version: '2'
+type: source
+name: datadog
+description: Datadog API for dashboards, hosts, monitors, SLOs, and users
+transports:
+  - id: default
+    base_url: https://api.datadoghq.com
+    auth:
+      type: api-key
+      key: ${{ env.DATADOG_API_KEY }}
+      header: DD-API-KEY
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+      DD-APPLICATION-KEY: ${{ env.DATADOG_APPLICATION_KEY }}
+default_transport: default

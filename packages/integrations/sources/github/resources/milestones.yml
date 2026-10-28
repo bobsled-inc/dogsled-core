@@ -1,0 +1,200 @@
+type: resource
+name: milestones
+description: Milestones for a GitHub repository used to track progress toward project goals with issue grouping and due dates
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/milestones
+  method: GET
+  query_params:
+    state: ${{ input.state }}
+    sort: ${{ input.sort }}
+    direction: ${{ input.direction }}
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: my-org
+  repo:
+    type: string
+    description: Repository name
+    default: my-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  state:
+    type: string
+    description: Filter milestones by state
+    default: open
+    enum:
+      - open
+      - closed
+      - all
+  sort:
+    type: string
+    description: Field to sort results by
+    default: due_on
+    enum:
+      - due_on
+      - completeness
+  direction:
+    type: string
+    description: Sort order direction
+    default: asc
+    enum:
+      - asc
+      - desc
+  per_page:
+    type: integer
+    description: Number of milestones to return per page (max 100)
+    default: 100
+query:
+  filters:
+    state:
+      operators:
+        - eq
+      enum:
+        - open
+        - closed
+        - all
+      description: Filter milestones by state
+      bind:
+        eq:
+          input: state
+      compile:
+        eq:
+          mode: http_query
+          param: state
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the milestone
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  number:
+    type: integer
+    semantic_role: identifier
+    path: $.number
+    description: Repository-scoped milestone number, used in API paths and issue references
+  title:
+    type: string
+    semantic_role: name
+    path: $.title
+    description: Display title of the milestone (e.g. "v2.0 Release", "Q1 Sprint 3")
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the milestone and its associated issues on github.com
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this milestone resource
+  state:
+    type: string
+    semantic_role: categorical
+    path: $.state
+    description: "Current state of the milestone \u2014 \"open\" if active and accepting issues, or \"closed\" if completed or abandoned"
+  description:
+    type: string
+    semantic_role: categorical
+    path: $.description
+    description: Free-text description of the milestone goals, scope, and acceptance criteria
+  creator_login:
+    type: string
+    semantic_role: name
+    path: $.creator.login
+    description: GitHub username of the user who created the milestone
+  creator_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.creator.id
+    description: Unique numeric identifier of the milestone creator
+  open_issues:
+    type: integer
+    semantic_role: count
+    path: $.open_issues
+    description: Number of issues in this milestone that are still open (unresolved)
+  closed_issues:
+    type: integer
+    semantic_role: count
+    path: $.closed_issues
+    description: Number of issues in this milestone that have been closed (resolved)
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the milestone was first created
+  updated_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.updated_at
+    description: Timestamp when the milestone was last modified (title, description, state, or due date change)
+  due_on:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.due_on
+    description: Target completion date for the milestone in ISO 8601 format, null if no due date is set
+  closed_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.closed_at
+    description: Timestamp when the milestone was closed, null if still open
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single milestone by repository owner, name, and milestone number
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/milestones/${{ input.milestone_number }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    milestone_number:
+      type: integer
+      required: true
+      description: The milestone number
+  extract:
+    record_path: $
+via: rest

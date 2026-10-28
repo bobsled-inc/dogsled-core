@@ -1,0 +1,71 @@
+type: resource
+name: financial_commitments
+description: Financial commitments (reserved instances, savings plans)
+api:
+  endpoint: /financial_commitments
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the financial commitment.
+  type:
+    type: string
+    path: $.type
+    description: The type of commitment (e.g. reserved_instance, savings_plan).
+  provider:
+    type: string
+    path: $.provider
+    description: The cloud provider.
+  service:
+    type: string
+    path: $.service
+    description: The service the commitment applies to.
+  account_id:
+    type: string
+    path: $.account_id
+    description: The account identifier.
+  region:
+    type: string
+    path: $.region
+    description: The region for the commitment.
+  status:
+    type: string
+    path: $.status
+    description: The status of the commitment.
+  start_at:
+    type: timestamp
+    path: $.start_at
+    description: The start date of the commitment.
+  end_at:
+    type: timestamp
+    path: $.end_at
+    description: The end date of the commitment.
+  amount:
+    type: string
+    path: $.amount
+    description: The amount of the commitment.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The token of the Workspace.
+extract:
+  record_path: $.financial_commitments
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver

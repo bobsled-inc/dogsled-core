@@ -1,0 +1,57 @@
+type: resource
+name: subscription_items
+description: Items within Stripe subscriptions
+api:
+  endpoint: /v1/subscription_items
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    subscription: ${{ input.subscription }}
+input:
+  limit:
+    type: integer
+    description: Number of subscription items per page (max 100)
+    default: 100
+  subscription:
+    type: string
+    description: Subscription ID to list items for
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Subscription item ID (si_xxx)
+  subscription:
+    type: string
+    path: $.subscription
+    description: Subscription ID the item belongs to
+  price_id:
+    type: string
+    path: $.price.id
+    description: Price ID for the subscription item
+  price_unit_amount:
+    type: integer
+    path: $.price.unit_amount
+    description: Unit amount of the price in cents
+  price_currency:
+    type: string
+    path: $.price.currency
+    description: Three-letter ISO currency code of the price
+  quantity:
+    type: integer
+    path: $.quantity
+    description: Quantity of the subscription item
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when subscription item was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

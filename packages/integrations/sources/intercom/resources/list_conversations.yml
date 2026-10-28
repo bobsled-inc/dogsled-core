@@ -1,0 +1,270 @@
+type: resource
+name: list_conversations
+description: List all conversations
+api:
+  endpoint: /conversations
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+    starting_after: ${{ input.starting_after }}
+input:
+  per_page:
+    type: integer
+    description: How many results per page
+    default: 20
+    maximum: 150
+  starting_after:
+    type: string
+    description: String used to get the next page of conversations.
+output:
+  type:
+    type: string
+    path: $.type
+    description: Always conversation.
+  id:
+    type: string
+    path: $.id
+    description: The id representing the conversation.
+  title:
+    type: string
+    path: $.title
+    description: The title given to the conversation.
+  created_at:
+    type: integer
+    path: $.created_at
+    description: The time the conversation was created.
+  updated_at:
+    type: integer
+    path: $.updated_at
+    description: The last time the conversation was updated.
+  waiting_since:
+    type: integer
+    path: $.waiting_since
+    description: The last time a Contact responded to an Admin.
+  snoozed_until:
+    type: integer
+    path: $.snoozed_until
+    description: If set this is the time in the future when this conversation will be marked as open.
+  open:
+    type: boolean
+    path: $.open
+    description: Indicates whether a conversation is open (true) or closed (false).
+  state:
+    type: string
+    path: $.state
+    description: Can be set to "open", "closed" or "snoozed".
+  read:
+    type: boolean
+    path: $.read
+    description: Indicates whether a conversation has been read.
+  priority:
+    type: string
+    path: $.priority
+    description: If marked as priority, it will return priority or else not_priority.
+  admin_assignee_id:
+    type: integer
+    path: $.admin_assignee_id
+    description: The id of the admin assigned to the conversation.
+  team_assignee_id:
+    type: string
+    path: $.team_assignee_id
+    description: The id of the team assigned to the conversation.
+  company:
+    type: object
+    path: $.company
+    description: Companies allow you to represent organizations using your product.
+  tags_type:
+    type: string
+    path: $.tags.type
+    description: The type of the object
+  tags_tags:
+    type: array
+    path: $.tags.tags
+    description: A list of tags objects associated with the conversation.
+  conversation_rating_rating:
+    type: integer
+    path: $.conversation_rating.rating
+    description: The rating, between 1 and 5, for the conversation.
+  conversation_rating_remark:
+    type: string
+    path: $.conversation_rating.remark
+    description: An optional field to add a remark to correspond to the number rating
+  conversation_rating_created_at:
+    type: integer
+    path: $.conversation_rating.created_at
+    description: The time the rating was requested in the conversation being rated.
+  conversation_rating_updated_at:
+    type: integer
+    path: $.conversation_rating.updated_at
+    description: The time the rating was last updated.
+  conversation_rating_contact:
+    type: object
+    path: $.conversation_rating.contact
+    description: reference to contact object
+  conversation_rating_teammate:
+    type: object
+    path: $.conversation_rating.teammate
+    description: reference to another object
+  source_type:
+    type: string
+    path: $.source.type
+    description:
+      This includes conversation, email, facebook, instagram, phone_call, phone_switch, push,
+      sms, twitter and whatsapp.
+  source_id:
+    type: string
+    path: $.source.id
+    description: The id representing the message.
+  source_delivered_as:
+    type: string
+    path: $.source.delivered_as
+    description: The conversation's initiation type.
+  source_subject:
+    type: string
+    path: $.source.subject
+    description: Optional.
+  source_body:
+    type: string
+    path: $.source.body
+    description: The message body, which may contain HTML.
+  source_author:
+    type: object
+    path: $.source.author
+    description: The object who initiated the conversation, which can be a Contact, Admin or Team.
+  source_attachments:
+    type: array
+    path: $.source.attachments
+    description: A list of attachments for the part.
+  source_url:
+    type: string
+    path: $.source.url
+    description: The URL where the conversation was started.
+  source_redacted:
+    type: boolean
+    path: $.source.redacted
+    description: Whether or not the source message has been redacted.
+  contacts_type:
+    type: string
+    path: $.contacts.type
+  contacts_contacts:
+    type: array
+    path: $.contacts.contacts
+    description: The list of contacts (users or leads) involved in this conversation.
+  teammates_type:
+    type: string
+    path: $.teammates.type
+    description: The type of the object - `admin.
+  teammates_teammates:
+    type: array
+    path: $.teammates.teammates
+    description: The list of teammates who participated in the conversation (wrote at least one
+      conversation part).
+  custom_attributes:
+    type: object
+    path: $.custom_attributes
+    description:
+      An object containing the different custom attributes associated to the conversation as
+      key-value pairs.
+  first_contact_reply_created_at:
+    type: integer
+    path: $.first_contact_reply.created_at
+  first_contact_reply_type:
+    type: string
+    path: $.first_contact_reply.type
+  first_contact_reply_url:
+    type: string
+    path: $.first_contact_reply.url
+  sla_applied_type:
+    type: string
+    path: $.sla_applied.type
+    description: object type
+  sla_applied_sla_name:
+    type: string
+    path: $.sla_applied.sla_name
+    description: The name of the SLA as given by the teammate when it was created.
+  sla_applied_sla_status:
+    type: string
+    path: $.sla_applied.sla_status
+    description: 'SLA statuses:'
+  statistics:
+    type: object
+    path: $.statistics
+    description:
+      A Statistics object containing all information required for reporting, with timestamps
+      and calculated metrics.
+  linked_objects_type:
+    type: string
+    path: $.linked_objects.type
+    description: Always list.
+  linked_objects_total_count:
+    type: integer
+    path: $.linked_objects.total_count
+    description: The total number of linked objects.
+  linked_objects_has_more:
+    type: boolean
+    path: $.linked_objects.has_more
+    description: Whether or not there are more linked objects than returned.
+  linked_objects_data:
+    type: array
+    path: $.linked_objects.data
+    description: An array containing the linked conversations and linked tickets.
+  ai_agent_participated:
+    type: boolean
+    path: $.ai_agent_participated
+    description: Indicates whether the AI Agent participated in the conversation.
+  ai_agent_source_type:
+    type: string
+    path: $.ai_agent.source_type
+    description: The type of the source that triggered AI Agent involvement in the conversation.
+  ai_agent_source_title:
+    type: string
+    path: $.ai_agent.source_title
+    description: The title of the source that triggered AI Agent involvement in the conversation.
+  ai_agent_last_answer_type:
+    type: string
+    path: $.ai_agent.last_answer_type
+    description: The type of the last answer delivered by AI Agent.
+  ai_agent_resolution_state:
+    type: string
+    path: $.ai_agent.resolution_state
+    description: The resolution state of AI Agent.
+  ai_agent_rating:
+    type: integer
+    path: $.ai_agent.rating
+    description: The customer satisfaction rating given to AI Agent, from 1-5.
+  ai_agent_rating_remark:
+    type: string
+    path: $.ai_agent.rating_remark
+    description: The customer satisfaction rating remark given to AI Agent.
+  ai_agent_created_at:
+    type: integer
+    path: $.ai_agent.created_at
+    description: The time when the AI agent rating was created.
+  ai_agent_updated_at:
+    type: integer
+    path: $.ai_agent.updated_at
+    description: The time when the AI agent rating was last updated.
+  ai_agent_content_sources:
+    type: string
+    path: $.ai_agent.content_sources
+extract:
+  record_path: $.conversations
+  paginated: false
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Retrieve a conversation
+  api:
+    endpoint: /conversations/${{ input.conversation_id }}
+    method: GET
+  input:
+    conversation_id:
+      type: integer
+      required: true
+test:
+  fixtures:
+    - name: list_conversations_smoke
+      input:
+        intercom_version: '2.14'

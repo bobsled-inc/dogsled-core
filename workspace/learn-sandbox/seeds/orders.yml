@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: orders
+type: seed
+description: E-commerce orders for learn-sandbox tutorial.
+payload:
+  format: csv
+  path: data/orders.csv
+  delimiter: ','
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+      primary_key: true
+    - name: customer_id
+      type: INTEGER
+    - name: created_at
+      type: TIMESTAMP
+    - name: status
+      type: STRING
+    - name: total_amount
+      type: NUMBER
+materialization:
+  type: table
+  target_schema: main
+  on_conflict: replace

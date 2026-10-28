@@ -1,0 +1,115 @@
+type: resource
+name: list_hosts
+description: Get all hosts for your organization
+api:
+  endpoint: /api/v1/hosts
+  method: GET
+  query_params:
+    filter: ${{ input.filter }}
+    sort_field: ${{ input.sort_field }}
+    sort_dir: ${{ input.sort_dir }}
+    start: ${{ input.start }}
+    count: ${{ input.count }}
+    from: ${{ input.from }}
+    include_muted_hosts_data: ${{ input.include_muted_hosts_data }}
+    include_hosts_metadata: ${{ input.include_hosts_metadata }}
+input:
+  filter:
+    type: string
+    description: String to filter search results.
+  sort_field:
+    type: string
+    description: Sort hosts by this field.
+  sort_dir:
+    type: string
+    description: Direction of sort. Options include `asc` and `desc`.
+  start:
+    type: integer
+    description:
+      Specify the starting point for the host search results. For example, if you set `count`
+      to 100 and the first 100 results have already been returned, you can set `start` to `101` to
+      get the next 100 results.
+  count:
+    type: integer
+    description: Number of hosts to return. Max 1000.
+  from:
+    type: integer
+    description: Number of seconds since UNIX epoch from which you want to search your hosts.
+  include_muted_hosts_data:
+    type: boolean
+    description: Include information on the muted status of hosts and when the mute expires.
+  include_hosts_metadata:
+    type: boolean
+    description: Include additional metadata about the hosts (agent_version, machine, platform,
+      processor, etc.).
+output:
+  aliases:
+    type: array
+    path: $.aliases
+    description: Host aliases collected by Datadog.
+  apps:
+    type: array
+    path: $.apps
+    description: The Datadog integrations reporting metrics for the host.
+  aws_name:
+    type: string
+    path: $.aws_name
+    description: AWS name of your host.
+  host_name:
+    type: string
+    path: $.host_name
+    description: The host name.
+  id:
+    type: integer
+    path: $.id
+    description: The host ID.
+  is_muted:
+    type: boolean
+    path: $.is_muted
+    description: If a host is muted or unmuted.
+  last_reported_time:
+    type: integer
+    path: $.last_reported_time
+    description: Last time the host reported a metric data point.
+  meta:
+    type: object
+    path: $.meta
+    description: Metadata associated with your host.
+  metrics_cpu:
+    type: number
+    path: $.metrics.cpu
+    description: The percent of CPU used (everything but idle).
+  metrics_iowait:
+    type: number
+    path: $.metrics.iowait
+    description: The percent of CPU spent waiting on the IO (not reported for all platforms).
+  metrics_load:
+    type: number
+    path: $.metrics.load
+    description: The system load over the last 15 minutes.
+  mute_timeout:
+    type: integer
+    path: $.mute_timeout
+    description: Timeout of the mute applied to your host.
+  name:
+    type: string
+    path: $.name
+    description: The host name.
+  sources:
+    type: array
+    path: $.sources
+    description: Source or cloud provider associated with your host.
+  tags_by_source:
+    type: object
+    path: $.tags_by_source
+    description: List of tags for each source (AWS, Datadog Agent, Chef.
+  up:
+    type: boolean
+    path: $.up
+    description: Displays UP when the expected metrics are received and displays `?
+extract:
+  record_path: $.host_list
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

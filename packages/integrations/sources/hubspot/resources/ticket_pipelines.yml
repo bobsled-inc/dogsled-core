@@ -1,0 +1,38 @@
+type: resource
+name: ticket_pipelines
+description: HubSpot ticket pipelines defining the stages that support tickets progress through
+api:
+  endpoint: /crm/v3/pipelines/tickets
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the ticket pipeline
+  label:
+    type: string
+    path: $.label
+    description: Human-readable display name of the ticket pipeline
+  display_order:
+    type: integer
+    path: $.displayOrder
+    description: Zero-based integer controlling the sort order of this pipeline
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: When the ticket pipeline was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: When the ticket pipeline was last modified
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether this ticket pipeline has been archived
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

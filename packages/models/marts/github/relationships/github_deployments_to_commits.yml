@@ -1,0 +1,15 @@
+spec_version: '0.2'
+type: relationship
+name: github_deployments_to_commits
+description: Each GitHub deployment references the commit that it deploys.
+left_model: github__deployments
+right_model: github__commits
+join_columns:
+  - left: sha
+    right: sha
+join_type: left
+relationship_type: many_to_one
+tags:
+  - github
+  - engineering
+  - deployments

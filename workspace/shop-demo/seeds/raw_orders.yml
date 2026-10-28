@@ -1,0 +1,15 @@
+spec_version: '0.2'
+name: raw_orders
+type: seed
+description: Raw order headers.
+payload: { format: csv, path: data/raw_orders.csv, delimiter: ',' }
+schema:
+  columns:
+    - { name: order_id, type: STRING, primary_key: true }
+    - { name: customer_id, type: STRING }
+    - { name: ordered_at, type: TIMESTAMP }
+    - { name: status, type: STRING }
+materialization: { type: table, target_schema: raw, on_conflict: replace }
+validation:
+  required_columns: [order_id, customer_id, ordered_at, status]
+  unique_columns: [order_id]

@@ -1,0 +1,69 @@
+type: resource
+name: sprints
+description: List sprints within agile boards.
+api:
+  endpoint: /rest/agile/1.0/board/${{ input.board_id }}/sprint
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+input:
+  board_id:
+    type: integer
+    required: true
+    description: Board identifier to list sprints for.
+  start_at:
+    type: integer
+    description: Zero-based offset for the first sprint in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of sprints to return per page.
+    default: 50
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Sprint identifier.
+  name:
+    type: string
+    path: $.name
+    description: Sprint name.
+  state:
+    type: string
+    path: $.state
+    description: Sprint state such as active, closed, or future.
+  start_date:
+    type: timestamp
+    path: $.startDate
+    description: Sprint start timestamp.
+  end_date:
+    type: timestamp
+    path: $.endDate
+    description: Sprint end timestamp.
+  complete_date:
+    type: timestamp
+    path: $.completeDate
+    description: Sprint completion timestamp.
+  board_id:
+    type: integer
+    path: $.originBoardId
+    description: Identifier of the board this sprint originated from.
+  goal:
+    type: string
+    path: $.goal
+    description: Sprint goal description.
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  for_each:
+    resource: boards
+    field: id
+    input: board_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

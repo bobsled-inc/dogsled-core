@@ -1,0 +1,124 @@
+type: resource
+name: thread_replies
+description: Replies within a Slack message thread including full message content, author, and
+  nested threading context
+api:
+  endpoint: /conversations.replies
+  method: GET
+  query_params:
+    channel: ${{ input.channel }}
+    ts: ${{ input.ts }}
+    limit: ${{ input.limit }}
+    oldest: ${{ input.oldest }}
+    latest: ${{ input.latest }}
+    inclusive: ${{ input.inclusive }}
+input:
+  channel:
+    type: string
+    description: Channel ID containing the thread (e.g. C01ABC23DEF)
+  ts:
+    type: string
+    description: Timestamp of the parent message that started the thread (e.g. 1234567890.123456)
+  limit:
+    type: integer
+    description: Number of replies to return per page (max 999)
+    default: 200
+  oldest:
+    type: string
+    description: Unix timestamp — only replies after this time are returned
+  latest:
+    type: string
+    description: Unix timestamp — only replies before this time are returned
+  inclusive:
+    type: string
+    description: Include replies with oldest or latest timestamps when set to true
+    default: 'false'
+query:
+  filters:
+    channel_id:
+      operators:
+        - eq
+      description: Channel ID containing the thread (e.g. C01ABC23DEF)
+      bind:
+        eq:
+          input: channel
+      compile:
+        eq:
+          mode: http_query
+          param: channel
+    ts:
+      operators:
+        - eq
+      description: Timestamp of the parent message that started the thread (e.g. 1234567890.123456)
+      bind:
+        eq:
+          input: ts
+      compile:
+        eq:
+          mode: http_query
+          param: ts
+output:
+  ts:
+    type: string
+    path: $.ts
+    description: Reply timestamp serving as the unique identifier within the channel
+  channel_id:
+    type: string
+    path: $.__channel_id
+    description: Channel ID this reply belongs to, injected from the request context
+  thread_ts:
+    type: string
+    path: $.thread_ts
+    description: Timestamp of the parent message that started this thread
+  type:
+    type: string
+    path: $.type
+    description: Event type, typically "message"
+  text:
+    type: string
+    path: $.text
+    description: Full reply text content with Slack mrkdwn formatting, user mentions, channel
+      references, and links
+  user:
+    type: string
+    path: $.user
+    description: User ID of the reply author
+  bot_id:
+    type: string
+    path: $.bot_id
+    description: Bot ID if the reply was sent by a bot integration
+  app_id:
+    type: string
+    path: $.app_id
+    description: App ID if the reply was sent by a Slack app
+  parent_user_id:
+    type: string
+    path: $.parent_user_id
+    description: User ID of the author of the parent message that started the thread
+  reactions_count:
+    type: integer
+    path: $.reactions.length()
+    description: Number of distinct emoji reactions on this reply
+  files_count:
+    type: integer
+    path: $.files.length()
+    description: Number of files uploaded with this reply
+  edited_ts:
+    type: string
+    path: $.edited.ts
+    description: Timestamp when the reply was last edited
+  edited_by:
+    type: string
+    path: $.edited.user
+    description: User ID of who last edited the reply
+extract:
+  record_path: $.messages
+  pagination:
+    type: cursor
+    cursor_path: $.response_metadata.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - ts
+      - channel_id
+    trust_tier: silver

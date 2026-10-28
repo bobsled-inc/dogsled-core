@@ -1,0 +1,30 @@
+type: resource
+name: invoices
+description: List Recurly invoices
+api:
+  endpoint: /invoices
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Invoice identifier
+  number:
+    type: string
+    path: $.number
+    description: Invoice number
+  state:
+    type: string
+    path: $.state
+    description: Invoice state
+  total:
+    type: number
+    path: $.total
+    description: Invoice total
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

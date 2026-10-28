@@ -1,0 +1,49 @@
+type: resource
+name: users_rest
+via: rest
+entity: users
+description: List all users in the Notion workspace. Returns both human users (person type) and bot integrations (bot type). User IDs appear throughout Notion as created_by and last_edited_by references on pages, blocks, and databases.
+api:
+  endpoint: /v1/users
+  method: GET
+  query_params:
+    page_size: '100'
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique user UUID. This ID is referenced in created_by and last_edited_by fields across all Notion objects (pages, databases, blocks, comments).
+  object:
+    type: string
+    path: $.object
+    description: Always "user" for this resource. Identifies the object type in the Notion API.
+  type:
+    type: string
+    path: $.type
+    description: "User type \u2014 \"person\" for human workspace members or \"bot\" for API integrations and automations. Determines which nested fields (person or bot) contain additional details."
+  name:
+    type: string
+    path: $.name
+    description: Display name of the user as shown in the Notion UI. For person users this is their profile name; for bots this is the integration name.
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL to the user's avatar image. May be null if no avatar has been set. For person users this is their profile photo; for bots this is the integration icon.
+  email:
+    type: string
+    path: $.person.email
+    description: Email address of the user. Only present for person-type users. Null for bot users. This is the email associated with their Notion account.
+  bot_owner_type:
+    type: string
+    path: $.bot.owner.type
+    description: "For bot users only \u2014 the type of owner. \"workspace\" means the bot is installed workspace-wide; \"user\" means it was created by a specific user. Null for person-type users."
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: start_cursor
+  table:
+    primary_key:
+      - id

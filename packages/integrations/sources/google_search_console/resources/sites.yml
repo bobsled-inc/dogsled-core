@@ -1,0 +1,19 @@
+type: resource
+name: sites
+description: Verified sites in Google Search Console.
+api:
+  endpoint: /sites
+  method: GET
+input: {}
+output:
+  siteUrl:
+    type: string
+    path: $.siteUrl
+  permissionLevel:
+    type: string
+    path: $.permissionLevel
+extract:
+  record_path: $.siteEntry
+  table:
+    primary_key:
+      - siteUrl

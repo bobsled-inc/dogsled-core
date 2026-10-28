@@ -1,0 +1,102 @@
+type: resource
+name: payments
+description: Payment events and payment applications for cashflow analytics.
+api:
+  endpoint: /payment/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    customerIDs: '${{ input.customer_ids }}'
+    status: '${{ input.status }}'
+    paymentIDs: '${{ input.payment_ids }}'
+    date: '${{ input.date }}'
+    dateUpdated: '${{ input.date_updated }}'
+    employeeID: '${{ input.employee_id }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  customer_ids:
+    type: string
+    description: Optional customer filter.
+  status:
+    type: string
+    description: Payment status filter.
+  payment_ids:
+    type: string
+    description: Optional payment ID filter.
+  date:
+    type: string
+    description: Lower/upper bound wrapper depending on query object usage.
+  date_updated:
+    type: string
+    description: Update-date filter.
+  employee_id:
+    type: integer
+    description: Employee filter.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  payment_id:
+    type: integer
+    path: $.paymentID
+    description: Payment unique ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Office owner of payment.
+  customer_id:
+    type: integer
+    path: $.customerID
+    description: Customer receiving service.
+  date:
+    type: timestamp
+    path: $.date
+    description: Payment capture date.
+  payment_method:
+    type: integer
+    path: $.paymentMethod
+    description: Payment method code.
+  status:
+    type: string
+    path: $.status
+    description: Payment status text/code.
+  amount:
+    type: number
+    path: $.amount
+    description: Payment amount.
+  applied_amount:
+    type: number
+    path: $.appliedAmount
+    description: Amount applied to outstanding invoices.
+  unassigned_amount:
+    type: number
+    path: $.unassignedAmount
+    description: Unassigned payment amount.
+  write_off:
+    type: number
+    path: $.writeOff
+    description: Write-off amount.
+  transaction_id:
+    type: string
+    path: $.transactionID
+    description: Gateway/reference transaction ID.
+  employee_id:
+    type: integer
+    path: $.employeeID
+    description: Employee who recorded the payment.
+  date_updated:
+    type: timestamp
+    path: $.dateUpdated
+    description: Last update timestamp.
+extract:
+  record_path: '$..[?(@.paymentID)]'
+  table:
+    primary_key:
+      - payment_id
+    trust_tier: silver

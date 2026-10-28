@@ -1,0 +1,63 @@
+type: resource
+name: time_clocks
+description: Employee time clock punches for labor cost and productivity calculations.
+api:
+  endpoint: /timeClock/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    employeeIDs: '${{ input.employee_ids }}'
+    paid: '${{ input.paid }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  employee_ids:
+    type: string
+    description: Optional employee ID filter.
+  paid:
+    type: integer
+    description: Paid flag filter.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  entry_id:
+    type: integer
+    path: $.entryID
+    description: Time clock entry ID.
+  employee_id:
+    type: integer
+    path: $.employeeID
+    description: Employee ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Office ID.
+  time_in:
+    type: timestamp
+    path: $.timeIn
+    description: Clock-in timestamp.
+  time_out:
+    type: timestamp
+    path: $.timeOut
+    description: Clock-out timestamp.
+  clock_category_id:
+    type: integer
+    path: $.clockCategoryID
+    description: Time clock category.
+  paid:
+    type: integer
+    path: $.paid
+    description: Paid flag.
+
+extract:
+  record_path: '$..[?(@.entryID)]'
+  table:
+    primary_key:
+      - entry_id
+    trust_tier: silver

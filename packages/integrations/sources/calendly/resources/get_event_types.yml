@@ -1,0 +1,196 @@
+type: resource
+name: get_event_types
+description: List User's Event Types
+api:
+  endpoint: /event_types
+  method: GET
+  query_params:
+    active: ${{ input.active }}
+    organization: ${{ input.organization }}
+    user: ${{ input.user }}
+    sort: ${{ input.sort }}
+    admin_managed: ${{ input.admin_managed }}
+    page_token: ${{ input.page_token }}
+    count: ${{ input.count }}
+input:
+  active:
+    type: boolean
+    description:
+      Return only active event types if true, only inactive if false, or all event types if
+      this parameter is omitted.
+  organization:
+    type: string
+    description: View available personal, team, and organization event types associated with the
+      organization's URI.
+  user:
+    type: string
+    description: View available personal, team, and organization event types associated with the user's URI.
+  sort:
+    type: string
+    description: >-
+      Order results by the specified field and direction. Accepts comma-separated list of
+      {field}:{direction} values.
+
+      Supported fields are: name.
+
+      Sort direction is specified as: asc, desc.
+    default: name:asc
+  admin_managed:
+    type: boolean
+    description: Return only admin managed event types if true, exclude admin managed event types if
+      false, or include all event types if this parameter is omitted.
+  page_token:
+    type: string
+    description: The token to pass to get the next or previous portion of the collection
+  count:
+    type: number
+    description: The number of rows to return
+    default: 20
+    minimum: 1
+    maximum: 100
+query:
+  filters:
+    active:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: active
+      compile:
+        eq:
+          mode: http_query
+          param: active
+    admin_managed:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: admin_managed
+      compile:
+        eq:
+          mode: http_query
+          param: admin_managed
+output:
+  uri:
+    type: string
+    path: $.uri
+    description: 'Canonical reference (unique identifier) for the event type (format: uri)'
+  name:
+    type: string
+    path: $.name
+    description: The event type name (in human-readable format)
+  active:
+    type: boolean
+    path: $.active
+    description: Indicates if the event is active or not.
+  slug:
+    type: string
+    path: $.slug
+    description: The portion of the event type's URL that identifies a specific web page (in a
+      human-readable format)
+  scheduling_url:
+    type: string
+    path: $.scheduling_url
+    description: 'The URL of the user’s scheduling site where invitees book this event type (format: uri)'
+  duration:
+    type: number
+    path: $.duration
+    description: The length of sessions booked with this event type
+  kind:
+    type: string
+    path: $.kind
+    description: Indicates if the event type is "solo" (belongs to an individual user) or "group"
+  pooling_type:
+    type: string
+    path: $.pooling_type
+    description:
+      Indicates if the event type is "round robin" (alternates between hosts) or "collective"
+      (invitees pick a time when all participants are available) or "null" (the event type doesn’t
+      consider the availa
+  type:
+    type: string
+    path: $.type
+    description:
+      Indicates if the event type is "AdhocEventType" (ad hoc event) or "StandardEventType"
+      (standard event type)
+  color:
+    type: string
+    path: $.color
+    description: The hexadecimal color value of the event type's scheduling page
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The moment the event type was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The moment the event type was last updated
+  internal_note:
+    type: string
+    path: $.internal_note
+    description: Contents of a note that may be associated with the event type
+  description_plain:
+    type: string
+    path: $.description_plain
+    description: The event type's description (in non formatted text)
+  description_html:
+    type: string
+    path: $.description_html
+    description: The event type's description (formatted with HTML)
+  profile_type:
+    type: string
+    path: $.profile.type
+    description: Indicates if the profile belongs to a "user" (individual) or "team"
+  profile_name:
+    type: string
+    path: $.profile.name
+    description: Human-readable name for the profile of the user that's associated with the event type
+  profile_owner:
+    type: string
+    path: $.profile.owner
+    description: 'The unique reference to the user associated with the profile (format: uri)'
+  secret:
+    type: boolean
+    path: $.secret
+    description: Indicates if the event type is hidden on the owner's main scheduling page
+  booking_method:
+    type: string
+    path: $.booking_method
+    description: Indicates if the event type is for a poll or an instant booking
+  custom_questions:
+    type: array
+    path: $.custom_questions
+  deleted_at:
+    type: timestamp
+    path: $.deleted_at
+    description: The moment the event type was deleted
+  kind_description:
+    type: string
+    path: $.kind_description
+    description: A formatted description of the kind of event type.
+  admin_managed:
+    type: boolean
+    path: $.admin_managed
+    description: Indicates if this event type is managed by an organization admin
+extract:
+  record_path: $.collection
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next_page_token
+    cursor_param: page_token
+  table:
+    primary_key:
+      - uri
+    trust_tier: silver
+verify:
+  suppress:
+    - PAGINATION_MISMATCH
+lookup:
+  description: Get Event Type
+  api:
+    endpoint: /event_types/${{ input.uuid }}
+    method: GET
+  input:
+    uuid:
+      type: string
+      required: true

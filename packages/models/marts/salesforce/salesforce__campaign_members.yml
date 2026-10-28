@@ -1,0 +1,99 @@
+spec_version: '0.2'
+name: salesforce__campaign_members
+type: model
+description: Salesforce campaign membership records enriched with campaign, contact, and lead context.
+grain: campaign_member_id
+source:
+  ref: stg_salesforce__campaign_members
+joins:
+  - ref: stg_salesforce__campaigns
+    type: left
+    on: stg_salesforce__campaign_members.campaign_id = stg_salesforce__campaigns.campaign_id
+  - ref: stg_salesforce__contacts
+    type: left
+    on: stg_salesforce__campaign_members.contact_id = stg_salesforce__contacts.contact_id
+  - ref: stg_salesforce__leads
+    type: left
+    on: stg_salesforce__campaign_members.lead_id = stg_salesforce__leads.lead_id
+columns:
+  - name: campaign_member_id
+    expr: stg_salesforce__campaign_members.campaign_member_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Salesforce campaign membership identifier.
+  - name: campaign_id
+    expr: stg_salesforce__campaign_members.campaign_id
+    semantic_role: entity_id
+    references: stg_salesforce__campaigns.campaign_id
+    description: Campaign tied to the membership.
+  - name: campaign_name
+    expr: stg_salesforce__campaigns.name
+    semantic_role: categorical
+    description: Campaign name.
+  - name: campaign_status
+    expr: stg_salesforce__campaigns.status
+    semantic_role: categorical
+    description: Current status of the campaign.
+  - name: campaign_type
+    expr: stg_salesforce__campaigns.type
+    semantic_role: categorical
+    description: Campaign type classification.
+  - name: member_status
+    expr: stg_salesforce__campaign_members.status
+    semantic_role: categorical
+    description: Participation status for the member.
+  - name: contact_id
+    expr: stg_salesforce__campaign_members.contact_id
+    semantic_role: entity_id
+    references: stg_salesforce__contacts.contact_id
+    description: Contact attached to the campaign membership when present.
+  - name: contact_email
+    expr: stg_salesforce__contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact email for the campaign member.
+  - name: lead_id
+    expr: stg_salesforce__campaign_members.lead_id
+    semantic_role: entity_id
+    references: stg_salesforce__leads.lead_id
+    description: Lead attached to the campaign membership when present.
+  - name: lead_first_name
+    expr: stg_salesforce__leads.first_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Lead first name.
+  - name: lead_last_name
+    expr: stg_salesforce__leads.last_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Lead last name.
+  - name: lead_company
+    expr: stg_salesforce__leads.company
+    semantic_role: categorical
+    description: Company captured on the lead.
+  - name: lead_status
+    expr: stg_salesforce__leads.status
+    semantic_role: categorical
+    description: Current lead status.
+  - name: first_responded_date
+    expr: stg_salesforce__campaign_members.first_responded_date
+    semantic_role: event_timestamp
+    description: Timestamp when the member first responded to the campaign.
+  - name: created_at
+    expr: stg_salesforce__campaign_members.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the campaign membership was created.
+  - name: updated_at
+    expr: stg_salesforce__campaign_members.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the campaign membership was last updated.
+tags:
+  - salesforce
+  - marketing
+  - campaigns
+trust_tier: gold
+materialization:
+  type: table

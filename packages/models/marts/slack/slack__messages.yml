@@ -1,0 +1,91 @@
+spec_version: '0.2'
+name: slack__messages
+type: model
+description: Top-level message detail with user and channel context for Slack workspace messages.
+grain:
+  - message_ts
+  - channel_id
+source:
+  ref: stg_slack__messages
+joins:
+  - ref: stg_slack__users
+    type: left
+    on: stg_slack__messages.user_id = stg_slack__users.user_id
+  - ref: stg_slack__channels
+    type: left
+    on: stg_slack__messages.channel_id = stg_slack__channels.channel_id
+columns:
+  - name: message_ts
+    expr: stg_slack__messages.ts
+    primary_key: true
+    semantic_role: entity_id
+    description: Message timestamp serving as the unique identifier within the channel.
+  - name: channel_id
+    expr: stg_slack__messages.channel_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_slack__channels.channel_id
+    description: Channel ID the message belongs to.
+  - name: channel_name
+    expr: stg_slack__channels.name
+    semantic_role: categorical
+    description: Channel name from the joined channel record.
+  - name: user_id
+    expr: stg_slack__messages.user_id
+    semantic_role: entity_id
+    references: stg_slack__users.user_id
+    description: User ID of the message author.
+  - name: user_name
+    expr: stg_slack__users.name
+    semantic_role: categorical
+    description: Username of the message author.
+  - name: user_display_name
+    expr: stg_slack__users.display_name
+    semantic_role: categorical
+    description: Display name of the message author.
+  - name: subtype
+    expr: stg_slack__messages.subtype
+    semantic_role: categorical
+    description: Message subtype for special messages like channel_join or bot_message.
+  - name: text_length
+    expr: LENGTH(stg_slack__messages.text)
+    semantic_role: measure
+    description: Character count of the message text.
+  - name: is_thread_parent
+    expr: stg_slack__messages.thread_ts = stg_slack__messages.ts
+    semantic_role: categorical
+    description: Whether this message is the parent of a thread.
+  - name: reply_count
+    expr: stg_slack__messages.reply_count
+    semantic_role: measure
+    description: Number of replies in the thread if this is a parent message.
+  - name: reply_users_count
+    expr: stg_slack__messages.reply_users_count
+    semantic_role: measure
+    description: Number of unique users who replied in the thread.
+  - name: reactions_count
+    expr: stg_slack__messages.reactions_count
+    semantic_role: measure
+    description: Number of distinct emoji reactions on this message.
+  - name: attachments_count
+    expr: stg_slack__messages.attachments_count
+    semantic_role: measure
+    description: Number of rich attachments on the message.
+  - name: files_count
+    expr: stg_slack__messages.files_count
+    semantic_role: measure
+    description: Number of files uploaded with this message.
+  - name: bot_id
+    expr: stg_slack__messages.bot_id
+    semantic_role: entity_id
+    description: Bot ID if the message was sent by a bot integration.
+  - name: app_id
+    expr: stg_slack__messages.app_id
+    semantic_role: entity_id
+    description: App ID if the message was sent by a Slack app.
+tags:
+  - slack
+  - messages
+trust_tier: gold
+materialization:
+  type: table

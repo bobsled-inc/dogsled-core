@@ -1,0 +1,34 @@
+type: resource
+name: list_webhooks
+description: List webhooks configured for an Airtable base
+api:
+  endpoint: /v0/bases/${{ input.base_id }}/webhooks
+  method: GET
+input:
+  base_id:
+    type: string
+    required: true
+    description: Airtable base identifier
+output:
+  id:
+    type: string
+    path: $.id
+    description: Webhook identifier
+  notification_url:
+    type: string
+    path: $.notificationUrl
+    description: Webhook notification URL
+  cursor_for_next_payload:
+    type: integer
+    path: $.cursorForNextPayload
+    description: Cursor for the next payload
+extract:
+  record_path: $.webhooks
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: list_bases
+    field: id
+    input: base_id

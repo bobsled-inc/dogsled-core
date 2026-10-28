@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "rootDir": ".",
+    "sourceMap": false
+  },
+  "include": [
+    "tests/unit/commands/run-cli-entrypoint.test.ts",
+    "tests/unit/commands/run-cli.test.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

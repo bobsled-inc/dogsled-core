@@ -1,0 +1,34 @@
+type: resource
+name: get_issue_link_types
+description: List Jira issue link types
+api:
+  endpoint: /rest/api/3/issueLinkType
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira issue link type identifier
+  name:
+    type: string
+    path: $.name
+    description: Issue link type name
+  inward:
+    type: string
+    path: $.inward
+    description: Inward relationship phrase
+  outward:
+    type: string
+    path: $.outward
+    description: Outward relationship phrase
+  self:
+    type: string
+    path: $.self
+    description: API URL for the issue link type
+extract:
+  record_path: $.issueLinkTypes
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

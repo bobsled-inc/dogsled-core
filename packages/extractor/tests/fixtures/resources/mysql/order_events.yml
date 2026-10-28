@@ -1,0 +1,20 @@
+spec_version: '1'
+type: resource
+name: order_events
+integration: test_mysql
+source:
+  table: order_events
+replication:
+  method: incremental_append
+  cursor_field: created_at
+  cursor_type: timestamp
+output:
+  id: { type: integer }
+  order_id: { type: integer }
+  event_type: { type: string }
+  created_at: { type: timestamp }
+extract:
+  table:
+    primary_key: [id]
+    load_strategy: append
+    trust_tier: bronze

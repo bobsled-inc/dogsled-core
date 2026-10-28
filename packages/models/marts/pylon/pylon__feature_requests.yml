@@ -1,0 +1,43 @@
+spec_version: '0.2'
+name: pylon__feature_requests
+type: model
+description: Customer feature requests with status and evidence tracking.
+grain: feature_request_id
+source:
+  ref: stg_pylon__feature_requests
+columns:
+  - name: feature_request_id
+    expr: stg_pylon__feature_requests.feature_request_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique feature request identifier.
+  - name: title
+    expr: stg_pylon__feature_requests.title
+    semantic_role: categorical
+    description: Feature request title.
+  - name: description
+    expr: stg_pylon__feature_requests.description
+    semantic_role: categorical
+    description: Feature request description.
+  - name: request_status
+    expr: stg_pylon__feature_requests.request_status
+    semantic_role: categorical
+    description: Status (new, in_progress, closed, archived, or custom slug).
+  - name: evidence_count
+    expr: stg_pylon__feature_requests.evidence_count
+    semantic_role: measure
+    description: Number of evidence items supporting the request.
+  - name: created_at
+    expr: stg_pylon__feature_requests.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the feature request was created.
+  - name: updated_at
+    expr: stg_pylon__feature_requests.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the feature request was last updated.
+tags:
+  - pylon
+  - feedback
+trust_tier: gold
+materialization:
+  type: table

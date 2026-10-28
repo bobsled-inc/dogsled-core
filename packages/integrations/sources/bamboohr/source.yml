@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: bamboohr
+description: BambooHR HR platform API
+transports:
+  - id: default
+    base_url: https://${{ env.BAMBOOHR_SUBDOMAIN }}.bamboohr.com
+    auth:
+      type: basic
+      username: ${{ env.BAMBOOHR_API_KEY }}
+      password: x
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 10
+      burst: 20
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

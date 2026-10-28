@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: asana_project_count
+description: Number of Asana projects.
+model: asana__projects
+expression: COUNT({asana__projects}.project_id)
+synonyms: [projects, project count, number of projects]
+tags: [asana, productivity, planning]

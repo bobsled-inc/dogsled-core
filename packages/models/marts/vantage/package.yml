@@ -1,0 +1,7 @@
+name: vantage
+display_name: Vantage
+description: Cloud cost observability models for Vantage spend detail, cost reports, and provider coverage.
+tags:
+  - vantage
+  - cloud-infra
+  - finance

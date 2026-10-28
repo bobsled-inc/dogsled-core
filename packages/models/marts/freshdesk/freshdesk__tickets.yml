@@ -1,0 +1,85 @@
+spec_version: '0.2'
+name: freshdesk__tickets
+type: model
+description: Freshdesk tickets enriched with requester, responder, and company context.
+grain: ticket_id
+source:
+  ref: stg_freshdesk__tickets
+joins:
+  - ref: stg_freshdesk__contacts
+    type: left
+    on: stg_freshdesk__tickets.requester_id = stg_freshdesk__contacts.contact_id
+  - ref: stg_freshdesk__agents
+    type: left
+    on: stg_freshdesk__tickets.responder_id = stg_freshdesk__agents.agent_id
+  - ref: stg_freshdesk__companies
+    type: left
+    on: stg_freshdesk__contacts.company_id = stg_freshdesk__companies.company_id
+columns:
+  - name: ticket_id
+    expr: stg_freshdesk__tickets.ticket_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Freshdesk ticket identifier.
+  - name: subject
+    expr: stg_freshdesk__tickets.subject
+    semantic_role: categorical
+    description: Ticket subject line.
+  - name: status
+    expr: stg_freshdesk__tickets.status
+    semantic_role: categorical
+    description: Numeric Freshdesk ticket status code.
+  - name: priority
+    expr: stg_freshdesk__tickets.priority
+    semantic_role: categorical
+    description: Numeric Freshdesk ticket priority code.
+  - name: requester_id
+    expr: stg_freshdesk__tickets.requester_id
+    semantic_role: entity_id
+    references: stg_freshdesk__contacts.contact_id
+    description: Requester contact identifier.
+  - name: requester_name
+    expr: stg_freshdesk__contacts.name
+    semantic_role: categorical
+    description: Name of the requester contact.
+  - name: requester_email
+    expr: stg_freshdesk__contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the requester contact.
+  - name: responder_id
+    expr: stg_freshdesk__tickets.responder_id
+    semantic_role: entity_id
+    references: stg_freshdesk__agents.agent_id
+    description: Assigned Freshdesk agent identifier.
+  - name: responder_email
+    expr: stg_freshdesk__agents.contact_email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the assigned agent.
+  - name: company_id
+    expr: stg_freshdesk__contacts.company_id
+    semantic_role: entity_id
+    references: stg_freshdesk__companies.company_id
+    description: Company associated with the requester contact.
+  - name: company_name
+    expr: stg_freshdesk__companies.name
+    semantic_role: categorical
+    description: Name of the associated company.
+  - name: created_at
+    expr: stg_freshdesk__tickets.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the ticket was created.
+  - name: updated_at
+    expr: stg_freshdesk__tickets.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the ticket was last updated.
+tags:
+  - freshdesk
+  - tickets
+  - support
+trust_tier: gold
+materialization:
+  type: table

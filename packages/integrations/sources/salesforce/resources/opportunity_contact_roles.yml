@@ -1,0 +1,41 @@
+type: resource
+name: opportunity_contact_roles
+description: Opportunity contact roles from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,OpportunityId,ContactId,Role,IsPrimary,CreatedDate,LastModifiedDate FROM
+      OpportunityContactRole
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  opportunity_id:
+    type: string
+    path: $.OpportunityId
+  contact_id:
+    type: string
+    path: $.ContactId
+  role:
+    type: string
+    path: $.Role
+  is_primary:
+    type: boolean
+    path: $.IsPrimary
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

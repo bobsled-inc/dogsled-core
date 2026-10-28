@@ -1,0 +1,66 @@
+type: resource
+name: account_insights
+description: Daily insights for each Instagram business account.
+api:
+  endpoint: /${{ input.ig_user_id }}/insights
+  method: GET
+  query_params:
+    metric: ${{ input.metric }}
+    period: ${{ input.period }}
+input:
+  ig_user_id:
+    type: string
+    default: '123'
+  metric:
+    type: string
+    default: impressions,reach,follower_count,profile_views
+  period:
+    type: string
+    default: day
+query:
+  filters:
+    period:
+      operators:
+        - eq
+      description: Insights aggregation period.
+      bind:
+        eq:
+          input: period
+          preserve_default: true
+      compile:
+        eq:
+          mode: http_query
+          param: period
+output:
+  ig_user_id:
+    type: string
+    path: $.__input__.ig_user_id
+  name:
+    type: string
+    path: $.name
+  period:
+    type: string
+    path: $.period
+  title:
+    type: string
+    path: $.title
+  description:
+    type: string
+    path: $.description
+  value:
+    type: integer
+    path: $.values.0.value
+  end_time:
+    type: string
+    path: $.values.0.end_time
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - ig_user_id
+      - name
+      - end_time
+  for_each:
+    resource: accounts
+    field: instagram_business_account_id
+    input: ig_user_id

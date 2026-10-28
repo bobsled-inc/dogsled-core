@@ -1,0 +1,18 @@
+display_name: Google Ads
+category: marketing
+tags:
+  - ads
+  - search
+  - performance-marketing
+docs_url: https://developers.google.com/google-ads/api/rest/reference/rest
+auth_setup:
+  - env: GOOGLE_ADS_API_VERSION
+    description: Google Ads API version, for example v20
+  - env: GOOGLE_ADS_DEVELOPER_TOKEN
+    description: Google Ads developer token
+  - env: GOOGLE_CLIENT_ID
+    description: Google OAuth client ID
+  - env: GOOGLE_CLIENT_SECRET
+    description: Google OAuth client secret
+  - env: GOOGLE_REFRESH_TOKEN
+    description: Google OAuth refresh token with Google Ads scopes

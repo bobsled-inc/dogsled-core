@@ -1,0 +1,13 @@
+spec_version: '1'
+auth_env_vars: [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY]
+type: integration
+name: acme_iceberg_direct
+source_type: iceberg
+connection:
+  mode: direct
+  warehouse_path: s3://my-bucket/warehouse
+storage:
+  type: aws_credentials
+  access_key_id_env: AWS_ACCESS_KEY_ID
+  secret_access_key_env: AWS_SECRET_ACCESS_KEY
+  region: us-east-1

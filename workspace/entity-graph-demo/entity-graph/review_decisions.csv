@@ -1,0 +1,4 @@
+pair_id,decision,confidence,reviewer,reason
+shopify:1001__hubspot:2001,merge,0.98,tutorial,Same website and normalized company name.
+shopify:1006__hubspot:2007,not_match,0.92,tutorial,Different domain after standardization.
+hubspot:2008__zendesk:3009,defer,0.55,tutorial,Needs source-system owner review.

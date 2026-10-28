@@ -1,0 +1,89 @@
+spec_version: '0.2'
+name: vercel__deployment_details
+type: model
+description: Detailed Vercel deployment configuration and lifecycle metadata, enriched with project context.
+grain: deployment_detail_id
+source:
+  ref: stg_vercel__deployment_details
+joins:
+  - ref: stg_vercel__deployments
+    type: left
+    on: stg_vercel__deployment_details.uid = stg_vercel__deployments.uid
+  - ref: stg_vercel__projects
+    type: left
+    on: stg_vercel__deployment_details.project_id = stg_vercel__projects.project_id
+columns:
+  - name: deployment_detail_id
+    expr: stg_vercel__deployment_details.deployment_detail_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Identifier returned by the deployment detail endpoint.
+  - name: deployment_id
+    expr: stg_vercel__deployment_details.uid
+    semantic_role: entity_id
+    references: stg_vercel__deployments.uid
+    description: Deployment UID when returned by the detail endpoint.
+  - name: project_id
+    expr: stg_vercel__deployment_details.project_id
+    semantic_role: entity_id
+    references: stg_vercel__projects.project_id
+    description: Vercel project identifier.
+  - name: team_id
+    expr: stg_vercel__deployment_details.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for the extraction request.
+  - name: team_slug
+    expr: stg_vercel__deployment_details.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for the extraction request.
+  - name: project_name
+    expr: stg_vercel__projects.name
+    semantic_role: categorical
+    description: Project name from the project catalog when the deployment project is known.
+  - name: project_framework
+    expr: stg_vercel__projects.framework
+    semantic_role: categorical
+    description: Framework configured or detected for the deployment project.
+  - name: deployment_name
+    expr: stg_vercel__deployment_details.name
+    semantic_role: categorical
+    description: Deployment name.
+  - name: target
+    expr: stg_vercel__deployment_details.target
+    semantic_role: categorical
+    description: Deployment target environment.
+  - name: ready_state
+    expr: stg_vercel__deployment_details.ready_state
+    semantic_role: categorical
+    description: Deployment readiness state.
+  - name: created_at
+    expr: stg_vercel__deployment_details.created_at
+    semantic_role: event_timestamp
+    description: Deployment creation timestamp.
+  - name: building_at
+    expr: stg_vercel__deployment_details.building_at
+    semantic_role: event_timestamp
+    description: Time the deployment began building.
+  - name: ready_at
+    expr: stg_vercel__deployment_details.ready
+    semantic_role: event_timestamp
+    description: Time the deployment became ready when Vercel provides it.
+  - name: meta
+    expr: stg_vercel__deployment_details.meta
+    semantic_role: categorical
+    description: Source-control metadata.
+  - name: project_settings
+    expr: stg_vercel__deployment_details.project_settings
+    semantic_role: categorical
+    description: Project settings associated with the deployment.
+  - name: resource_config
+    expr: stg_vercel__deployment_details.resource_config
+    semantic_role: categorical
+    description: Deployment resource configuration, including build-machine settings when available.
+tags:
+  - vercel
+  - deployments
+  - operations
+trust_tier: gold
+materialization:
+  type: table

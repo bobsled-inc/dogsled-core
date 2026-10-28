@@ -1,0 +1,261 @@
+{
+  "@ai-sdk/provider-utils@4.0.56": {
+    "files": {
+      "src/secure-json-parse.ts": "4fd335b4e8fb2f5c11a10a37342c96a4ba0f4dbeb1ad122675326b3c9e878cbb",
+      "dist/index.js.map": "c0da097518a3bc1482cef6d87c50c839c939445f93657d07659b6b2188c9eafd",
+      "dist/index.mjs.map": "d53eba1147cc4054608937ddcaec7d447512a54bc5cc23c67a8036cbd433b177"
+    },
+    "licenses": ["BSD-3-Clause", "ISC"],
+    "notices": [
+      {
+        "name": "Reviewed per-file license 1",
+        "text": "// Licensed under BSD-3-Clause (this file only)\n// Code adapted from https://github.com/fastify/secure-json-parse/blob/783fcb1b5434709466759847cec974381939673a/index.js\n//\n// Copyright (c) Vercel, Inc. (https://vercel.com)\n// Copyright (c) 2019 The Fastify Team\n// Copyright (c) 2019, Sideway Inc, and project contributors\n// All rights reserved.\n//\n// The complete list of contributors can be found at:\n// - https://github.com/hapijs/bourne/graphs/contributors\n// - https://github.com/fastify/secure-json-parse/graphs/contributors\n// - https://github.com/vercel/ai/commits/main/packages/provider-utils/src/secure-parse-json.ts\n//\n// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n//\n// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n//\n// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n//\n// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.\n//\n// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      }
+    ]
+  },
+  "ai@6.0.168": {
+    "files": {
+      "src/util/deep-partial.ts": "3e00972ec1a04b2bac58ea038f753d8f7bc6994a4e048b5ff7b5b228ceaffed2",
+      "src/util/value-of.ts": "aa525aac11606e158a7d6d901430fc6d9272b728a36742b32073d9f86b8ea482"
+    },
+    "licenses": ["MIT"],
+    "notices": [
+      {
+        "name": "Reviewed per-file license 1",
+        "text": "// License for this File only:\n//\n// MIT License\n//\n// Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n// Copyright (c) Vercel, Inc. (https://vercel.com)\n//\n// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated\n// documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation\n// the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and\n// to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n//\n// The above copyright notice and this permission notice shall be included in all copies or substantial portions\n// of the Software.\n//\n// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\n// TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL\n// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF\n// CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS\n// IN THE SOFTWARE."
+      }
+    ]
+  },
+  "@aws-crypto/util@5.2.0": {
+    "files": {
+      "src/convertToBuffer.ts": "65fb16e681d1fa3b062672762a07252a0e12166774cdbe8828ad23670d42706b",
+      "src/index.ts": "282fb4fad18478075759e5d45658426617e6896189084bba85fadecb073dee01",
+      "src/isEmptyData.ts": "5cdf55c5398decab1047e475380282bf3dabf1ec29d255a76712cea3ae13f08d",
+      "src/numToUint8.ts": "60dc8d38a9d3eccdd13488da6b2fc9f88804eabe94ad74716a79a7147c05a42d",
+      "src/uint32ArrayFrom.ts": "0791262e728755142fe5ac4f2afd1a60aa49460561abb79569e31b021fd84c17",
+      "build/module/convertToBuffer.js": "bae94409c9d42b63985f8361b72071b715932a24042b73704de5b6f19661e017",
+      "build/module/isEmptyData.js": "dce89cd3b1dcd54617e92bf3f153222e9f993180db45156939bbd0ed6871a029",
+      "build/module/numToUint8.js": "c66846b8dd446e338bffad5186f152c0852c64964e90e8005376b146a24d1313",
+      "build/module/uint32ArrayFrom.js": "73f3ffbee40e8441f1e7464ef3f10a2e54fe736237e08fe093802a8967e12237",
+      "build/module/index.js": "6b603d1cad1d1210ad4fc6ba022e7dde243e8b62a3565d1c5e871b9a2bf1e43c"
+    },
+    "licenses": ["Apache-2.0"],
+    "notices": [
+      {
+        "name": "Reviewed per-file license 1",
+        "text": "// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.\n// SPDX-License-Identifier: Apache-2.0"
+      },
+      {
+        "name": "Reviewed input file license 2",
+        "text": "// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.\n// SPDX-License-Identifier: Apache-2.0\n// IE 11 does not support Array.from, so we do it manually"
+      }
+    ]
+  },
+  "@aws-crypto/crc32@5.2.0": {
+    "files": {
+      "src/aws_crc32.ts": "4cf3ea7b5c9743fdbcabfda412607599355369d6a7c481f57e8a78841b2524d8",
+      "build/module/aws_crc32.js": "ca2894f52de34b54fa64222ba67396b521d56a17c8acb4b0cc65f4d3266f8cb3"
+    },
+    "licenses": ["Apache-2.0"],
+    "notices": [
+      {
+        "name": "Reviewed per-file license 1",
+        "text": "// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.\n// SPDX-License-Identifier: Apache-2.0"
+      }
+    ]
+  },
+  "@openrouter/ai-sdk-provider@2.9.0": {
+    "files": {
+      "dist/index.js.map": "5a5bbaab96f77afa17703415b670b49fc60483da88a3e6f262ee34167b673a1f",
+      "dist/index.mjs.map": "1ef6dc51a4b4de79c0f805569ddd4b0eb57e54cecfdec3638ee7ba2565112559",
+      "dist/internal/index.js.map": "d4dcfb5375137a40276f96cbcafe49ce247e4a72f992ac98fb955d91c1b20740",
+      "dist/internal/index.mjs.map": "126ce37e30552d194eff18e3c6899b2b2094d542dd7b6a73913fdc8f2602f776"
+    },
+    "licenses": ["BSD-3-Clause"],
+    "notices": [
+      {
+        "name": "Reviewed per-file license 1",
+        "text": "// Licensed under BSD-3-Clause (this file only)\n// Code adapted from https://github.com/fastify/secure-json-parse/blob/783fcb1b5434709466759847cec974381939673a/index.js\n//\n// Copyright (c) Vercel, Inc. (https://vercel.com)\n// Copyright (c) 2019 The Fastify Team\n// Copyright (c) 2019, Sideway Inc, and project contributors\n// All rights reserved.\n//\n// The complete list of contributors can be found at:\n// - https://github.com/hapijs/bourne/graphs/contributors\n// - https://github.com/fastify/secure-json-parse/graphs/contributors\n// - https://github.com/vercel/ai/commits/main/packages/provider-utils/src/secure-parse-json.ts\n//\n// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n//\n// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n//\n// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n//\n// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.\n//\n// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      }
+    ]
+  },
+  "@ai-sdk/provider-utils@4.0.23": {
+    "license": "Apache-2.0",
+    "source": "https://github.com/vercel/ai/blob/%40ai-sdk/provider-utils%404.0.23/LICENSE",
+    "tarballIntegrity": "sha512-z8GlDaCmRSDlqkMF2f4/RFgWxdarvIbyuk+m6WXT1LYgsnGiXRJGTD2Z1+SDl3LqtFuRtGX1aghYvQLoHL/9pg==",
+    "files": {},
+    "licenses": ["BSD-3-Clause", "ISC"],
+    "packageDocuments": [
+      {
+        "name": "Reviewed upstream package LICENSE",
+        "text": "Copyright 2023 Vercel, Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n\nApache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright [yyyy] [name of copyright owner]\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License."
+      },
+      {
+        "name": "src/to-json-schema/zod3-to-json-schema/LICENSE",
+        "text": "ISC License\n\nCopyright (c) 2020, Stefan Terdell\nCopyright (c) 2025, Vercel Inc.\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE."
+      }
+    ],
+    "notices": [
+      {
+        "name": "Reviewed per-file license 1",
+        "text": "// Licensed under BSD-3-Clause (this file only)\n// Code adapted from https://github.com/fastify/secure-json-parse/blob/783fcb1b5434709466759847cec974381939673a/index.js\n//\n// Copyright (c) Vercel, Inc. (https://vercel.com)\n// Copyright (c) 2019 The Fastify Team\n// Copyright (c) 2019, Sideway Inc, and project contributors\n// All rights reserved.\n//\n// The complete list of contributors can be found at:\n// - https://github.com/hapijs/bourne/graphs/contributors\n// - https://github.com/fastify/secure-json-parse/graphs/contributors\n// - https://github.com/vercel/ai/commits/main/packages/provider-utils/src/secure-parse-json.ts\n//\n// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n//\n// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n//\n// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n//\n// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.\n//\n// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      }
+    ]
+  },
+  "@opentelemetry/api@1.9.0": {
+    "files": {
+      "build/esm/platform/node/globalThis.js": "cf39f67e96753617891aa8d03ae15877dea433ea913fbe075b3314f99e7c14fc",
+      "build/esm/platform/node/index.js": "aad2cc309fa73ecf321664b15c1589879e8a3784561607facaca7ee2154e2411",
+      "build/esm/platform/index.js": "267c0bf48356e8014cb453a8a086a857dc1340f78fa1160cb1daf35db0f9ad80",
+      "build/esm/version.js": "357182c62aa4d3dbb27b3c6c990eab6fd8995b623e9d073f218a502f6559b72f",
+      "build/esm/internal/semver.js": "eaecf7120a7b9be0dec2e45c8263e045382e240e56a9d35f373a1f498b9f6105",
+      "build/esm/internal/global-utils.js": "05f101daf300d3273bc67b8956ad13dd7fa949a4101e17f487d9f0c81d5f5f91",
+      "build/esm/diag/ComponentLogger.js": "204246fa354e3fdf0943b91eb7af08d0afb0fa4f14e01ce21b8b270c46afcbb4",
+      "build/esm/diag/types.js": "b0fa07b774602b020c46d2cefad9883fbcda6586e6b4a625e6fd85e61694f85a",
+      "build/esm/diag/internal/logLevelLogger.js": "d6fbfb24cd7c2f3b7586188a35b1238fac74ee8b12483f201e1876e1a6af77b2",
+      "build/esm/api/diag.js": "4ef7e828ab781beeddc2a1105ce24602ea8928cb7cd4c190ae2ebfa44de10edb",
+      "build/esm/baggage/internal/baggage-impl.js": "be12d84e9e5367754445c16de3e30f5453886545f7b4eeba7b0d831c76d75546",
+      "build/esm/baggage/internal/symbol.js": "e96f26787ef4eecdc80afed3d52c6180a73ac7aa15a90a87e56e8fbf8bc9c839",
+      "build/esm/baggage/utils.js": "ed25696431e16186ab82dff1e6989f2082828df4a9f4edf4a73fbae760d865fe",
+      "build/esm/context/context.js": "5f9bfac959cdc05f99268ec18b69908e2e53fe8b91242b7bda55890b82f3f154",
+      "build/esm/diag/consoleLogger.js": "b7f2c77fc8320a62ff6f1a17baccbf80fa8393c198850dc4153f1f873f44a65d",
+      "build/esm/metrics/NoopMeter.js": "a0437a23134f5d998abcfb5742704f96112d7f9e26431699c2f0841895f18e4e",
+      "build/esm/metrics/Metric.js": "8f5ab3303db67a79ee964ba9d812e27d5920780e9af24bc1d8c859a712e47d05",
+      "build/esm/propagation/TextMapPropagator.js": "bf03e6977be1023a1bfb627110519970425efadc39ee2611b26c54f6d8dad745",
+      "build/esm/context/NoopContextManager.js": "e56511984637e699cd953e1fece4c5b068465d29e18dac6952b5add1fa2938a8",
+      "build/esm/api/context.js": "9ee263a9341ba9fe56a7a5eef20ea84a3dfa735ca5932bdf5167ce8c3211d5d7",
+      "build/esm/trace/trace_flags.js": "16f1dac75d404f90d5b8ae7636c50bdf4adc52ee251b11211197f1d275605ca5",
+      "build/esm/trace/invalid-span-constants.js": "087fdeb366e4d0aab0494883604d845e72741958c8502bffb949edd1ef6d417f",
+      "build/esm/trace/NonRecordingSpan.js": "07b4807b331a7987eeac3da0e793f42219402b8167c7b3fe2546da5d19434347",
+      "build/esm/trace/context-utils.js": "043336e921d7bef27a00f3522729a96f2d58a67d7c5cbdc9a84bbd5db49c4b9c",
+      "build/esm/trace/spancontext-utils.js": "cb55af41c044e226e0a3fbe2098946e29315c9773f7b55c136abce0445667c62",
+      "build/esm/trace/NoopTracer.js": "acfcee66c376e19265b490de8b83d858f577d7cde6b6ea4806cb7fcea9f03750",
+      "build/esm/trace/ProxyTracer.js": "0fc47b17289d37ef1db28e096ba2462a1dedcbe5273312770363fb625fe7cd5e",
+      "build/esm/trace/NoopTracerProvider.js": "4cda8cb44ae55f9bf92f7b48b57ab5968ff9511016ce06c0788546d4478807ba",
+      "build/esm/trace/ProxyTracerProvider.js": "e0a6fdee077b66f17acda3d81ce689f9843d5ba7febcc240ed3a1bd6a5ddbb6e",
+      "build/esm/trace/SamplingResult.js": "f342fdb560efd40ee8cc983a0f378b5f7c60c493aabf569c01a3136b3c9d099c",
+      "build/esm/trace/span_kind.js": "47c31acd49aaa39ed13c86d256edd2cf7caedfd6e5c17ae09d2dd14048a17191",
+      "build/esm/trace/internal/tracestate-validators.js": "df058faec64fdb53b0b5cdbb433859575ee8795418b6c8bb693a6659e202a4de",
+      "build/esm/trace/internal/tracestate-impl.js": "e51bd1ed863d584d37087fd8b096ea8658dd916ccd9e5c9bdfb669ac0a267fb3",
+      "build/esm/trace/internal/utils.js": "2b60bde7752cad81a78d64a5e94f92a1b0cf823b5c927c8daa8b1d84d7779f5c",
+      "build/esm/context-api.js": "cded91b718f148a6f465649512b03bf736a8b366452277bc2995a95cec774f98",
+      "build/esm/diag-api.js": "529e0e2a1ba1a6200f3d21bef3835a106f698e1020387a106afc7ab2ca59b1a3",
+      "build/esm/metrics/NoopMeterProvider.js": "8e6810b2e27a9b2ea542a2a98c3a7b1ddecf4f918c22aa4c83032f845837fee3",
+      "build/esm/api/metrics.js": "5f4b861e15bf89246d8777d8121e17436ef15b3880b3d82d7e7ad0f23d8f3c81",
+      "build/esm/metrics-api.js": "70bf2fb2a8b69a9de9b7554aa75bedf59d529a3aa8a8e37bd437e784d9e301b1",
+      "build/esm/propagation/NoopTextMapPropagator.js": "b2289118bb5f96ab6c3f6d6a7296b7f7a31b9652dde678558e7cecc6cd1a045f",
+      "build/esm/baggage/context-helpers.js": "f43649a3b7f2315e3f93c5a2c7324bae926d02e43d001adcd897324debcfd6e6",
+      "build/esm/api/propagation.js": "6f914f7b7c7131e502d2109eda5fac89d036b14758734622fd1ec9b7c8f38030",
+      "build/esm/propagation-api.js": "388fe9e18ba2b689a0d336b5cebbe2bd6317f16fc41fb0767f6a47255d634278",
+      "build/esm/api/trace.js": "24ba0c66d6e1547253a703d0f0b49eaa07df10f876de08b30e5347b9ac09cc97",
+      "build/esm/trace-api.js": "5a13fbf3bec87e70143129a2373b5ff6503f7984a5aed0713a55bec4c56b20e7",
+      "build/esm/index.js": "65ee113fbf337097c347ba1e2c46f2e9cce33ea630514b7348177ef295ca04c1",
+      "build/esm/platform/node/globalThis.js.map": "ab04b674a6e6a35c399db6d862d244990eb1d3a8324d1fe4ed6dd6450f969140",
+      "build/esm/platform/node/index.js.map": "a9413c69b7db6584a08657d310e876cb92e17ec7b605fea9d404fd2c93bd76fb",
+      "build/esm/platform/index.js.map": "e439e5c9f4ea67f3c84f21f5071e7acc1073a07878a284b046ce30dc713c9434",
+      "build/esm/version.js.map": "3d9f35603d5f0fcd59ce9665d63452dbd84fd1eee7aa8ffa3e47dfcf48e89bb1",
+      "build/esm/internal/semver.js.map": "1010fce6957d05722abf7ade864a937b602d9de3c5338653eeebad524bcd1359",
+      "build/esm/internal/global-utils.js.map": "e241a9044760fc5bc1858891d858897379621d712935efbc95ec62b6e52ca0ba",
+      "build/esm/diag/ComponentLogger.js.map": "66abf9a9aa3b7843996ac3ce053ae85a39ab85e9a8c1a7b9326e0c96039333b7",
+      "build/esm/diag/types.js.map": "689c116b581b83917d19b51644e93784d689ca876e6aa0f334dbf764358469ac",
+      "build/esm/diag/internal/logLevelLogger.js.map": "3da8cc3001e61d1e908283566fb293b6003c95ddf5ed5fc8cdd3b94e55b0263e",
+      "build/esm/api/diag.js.map": "14d630556f7b920bea58f667d7d57481de13c03e66bf1dbd7e80f9da921bcca7",
+      "build/esm/baggage/internal/baggage-impl.js.map": "1aaa10c79ef619f1ae33b8b9f8681e2f2250c9dc1dff72f29d86f5c884641f88",
+      "build/esm/baggage/internal/symbol.js.map": "9ceef7dd90ee19bded0fda9b916fa3356fe09b6ae7872f55c2de5b027939c204",
+      "build/esm/baggage/utils.js.map": "bc9d0523974a4f7b1cb08676c49822288db5c5b7e7d35b953897e5e7deecf7ee",
+      "build/esm/context/context.js.map": "2e35ae42010b5916bcfa27c9150fdef08bb14c77877ca311481bf32f0b9ded5a",
+      "build/esm/diag/consoleLogger.js.map": "9a62df4cf44963fd20d84db6fcccc36776bc45068e66e56f6b564a3cc620c461",
+      "build/esm/metrics/NoopMeter.js.map": "9409dcbbe199e817744371651ae79f15d6665f1ee60b61b02606cb16c54c8b45",
+      "build/esm/metrics/Metric.js.map": "412a2c42d17b73d34176dcf56adbc0241f5e07ac1330e060683f97b8230128b3",
+      "build/esm/propagation/TextMapPropagator.js.map": "e6e923a064b073dfd7db93aeb49503765ef7acfade0cc09c03c0471fb44ea0e5",
+      "build/esm/context/NoopContextManager.js.map": "fc6dd5d8cd3277e7a938502267051afff2e6405e39e34dbbc2a2ca8aeaa841b3",
+      "build/esm/api/context.js.map": "a3f33825c55e0510f66b75fe087da70c0829a381c3787a23ebf6a2a60aea83af",
+      "build/esm/trace/trace_flags.js.map": "8dfa248608962c09ea024c1290b7dd8fe536fd92b83d009b9976ad6433c56db8",
+      "build/esm/trace/invalid-span-constants.js.map": "e7aae9fd147adc7fb7ee345abd528645f94ba35bac4504d977e995faadbdb757",
+      "build/esm/trace/NonRecordingSpan.js.map": "ba0e72aeb7b8c1296a4ca14fa8057f1f40c5cc059a8fcf5e7ffbe599d6243993",
+      "build/esm/trace/context-utils.js.map": "1e3ba1d2a5291bfdebf45700416439f273ea08b8872840889f8666f29177a004",
+      "build/esm/trace/spancontext-utils.js.map": "217c18235941d5d4b003a2a2a402cd3ac9e4fc1a4c95f45161dc86187d585410",
+      "build/esm/trace/NoopTracer.js.map": "99cc89f78cd9516ea9ef08dee2e5f7792a9ce13d269e6b97c1c7ea10f8facee5",
+      "build/esm/trace/ProxyTracer.js.map": "2a700707fc007e61de25c62ff531ade2acb9061cde67f19b5ece706bae435e02",
+      "build/esm/trace/NoopTracerProvider.js.map": "8b56cd958d403fd64e485a90fbd8d67b1f4adf9b0e9cf71a1a71d28884e8b6d6",
+      "build/esm/trace/ProxyTracerProvider.js.map": "a4eaf406747d15a1edac9c7a87bc4cad2e37b55d5ab51b779beb387ec5629897",
+      "build/esm/trace/SamplingResult.js.map": "5a118562c3f1f9245e927d7efb50822e03825672c917c06f97f9d64e45824446",
+      "build/esm/trace/span_kind.js.map": "a75f853413e7e39b857bd1c2d0a8a1985c1661bcfcadcaa2f33a2da838c93f8e",
+      "build/esm/trace/status.js.map": "7e60b7b0ac441771361ae2cac0b0cd0d226c28a38faaeb735959ea27ea0ad010",
+      "build/esm/trace/internal/tracestate-validators.js.map": "eecd7ea0e3bc5815f409654667a054504126e0a4cc894dc47f3909615cbe3d06",
+      "build/esm/trace/internal/tracestate-impl.js.map": "1eb455c36ad9d1fa8a39f4dba76a18c1711e2f296c109918920c3367d15a2c2d",
+      "build/esm/trace/internal/utils.js.map": "b61126f2df1b182ac12fccb18161e44516d958a15a70f6dfc7515a03361bd2d9",
+      "build/esm/context-api.js.map": "9573c7727a60f9ba97546872662b51937539c22ccaa2db984464ea817daaf501",
+      "build/esm/diag-api.js.map": "0ee036104497521761e548ac57695870579ae0e178f8e072e156b69d24026dd5",
+      "build/esm/metrics/NoopMeterProvider.js.map": "46e6b165e59a38de8379af25196974d0103fe08c0b4cd60163f8fb0de7f874c6",
+      "build/esm/api/metrics.js.map": "33c2a997c83deb38209470736fb439ffe0fa89fc60dcf14650fc11481305bef9",
+      "build/esm/metrics-api.js.map": "b8b4eec6761ba11db50aeae2ce8d9e755b6e548d9590b9458acd23ac4f285104",
+      "build/esm/propagation/NoopTextMapPropagator.js.map": "e1f89ed8de7e1ba918dcb05cc10ed9886a73a22a6797161359e1575d8076a747",
+      "build/esm/baggage/context-helpers.js.map": "ae70529fbad6e8fdf647c4f206539292c682a88c1c8816a834f71c303652d238",
+      "build/esm/api/propagation.js.map": "5c7a0767cfe38b8c9c126462ebf5f62a317ea8abe05dfbdbb3b817d4f9c10531",
+      "build/esm/propagation-api.js.map": "19634ad84e1a9b40d302b7f965400e01b681b4bfabfec18d08d8b92a40e9343f",
+      "build/esm/api/trace.js.map": "de0961f46a6fcf2049a8be8e350e2042d8c1b4b40828882c95b451bbdcb7960b",
+      "build/esm/trace-api.js.map": "e955ff4c8c7507ebc2a4c4df9659394e89a026cbe04af1e4879e586be1702d4b",
+      "build/esm/index.js.map": "0b3fc67ec13aecf09ca0bcf0212194ca31ccb3f724c4977e53124f8549bd9276"
+    },
+    "licenses": [],
+    "notices": [
+      {
+        "name": "Reviewed input file license 1",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/** only globals that common to node and browsers are allowed */\n// eslint-disable-next-line node/no-unsupported-features/es-builtins"
+      },
+      {
+        "name": "Reviewed input file license 2",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */"
+      },
+      {
+        "name": "Reviewed input file license 3",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n// this is autogenerated file, see scripts/version-update.js"
+      },
+      {
+        "name": "Reviewed input file license 4",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * Defines the available internal logging levels for the diagnostic logger, the numeric values\n * of the levels are defined to match the original values from the initial LogLevel to avoid\n * compatibility/migration issues for any implementation that assume the numeric ordering.\n */"
+      },
+      {
+        "name": "Reviewed input file license 5",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * Symbol used to make BaggageEntryMetadata an opaque type\n */"
+      },
+      {
+        "name": "Reviewed input file license 6",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/** Get a key to uniquely identify a context value */"
+      },
+      {
+        "name": "Reviewed input file license 7",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/** The Type of value. It describes how the data is reported. */"
+      },
+      {
+        "name": "Reviewed input file license 8",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * @deprecated use the one declared in @opentelemetry/sdk-trace-base instead.\n * A sampling decision that determines how a {@link Span} will be recorded\n * and collected.\n */"
+      },
+      {
+        "name": "Reviewed input file license 9",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n// Split module-level variable definition into separate files to allow\n// tree-shaking on each api instance."
+      },
+      {
+        "name": "Reviewed input file license 10",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * No-op implementations of {@link TextMapPropagator}.\n */"
+      },
+      {
+        "name": "Reviewed input file license 11",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n/** only globals that common to node and browsers are allowed */\n// eslint-disable-next-line node/no-unsupported-features/es-builtins"
+      },
+      {
+        "name": "Reviewed input file license 12",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n// this is autogenerated file, see scripts/version-update.js"
+      },
+      {
+        "name": "Reviewed input file license 13",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n/**\n * Symbol used to make BaggageEntryMetadata an opaque type\n */"
+      },
+      {
+        "name": "Reviewed input file license 14",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n// Split module-level variable definition into separate files to allow\n// tree-shaking on each api instance."
+      }
+    ]
+  }
+}

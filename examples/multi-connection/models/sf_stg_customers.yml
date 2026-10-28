@@ -1,0 +1,21 @@
+spec_version: '0.2'
+name: sf_stg_customers
+type: model
+description: Snowflake staging — cleaned customer rows, TPC-H-flavored columns renamed.
+grain: customer_id
+source:
+  ref: snowflake.customers
+columns:
+  - name: CUSTOMER_ID
+    expr: C_CUSTKEY
+    primary_key: true
+  - name: CUSTOMER_NAME
+    expr: C_NAME
+  - name: EMAIL
+    expr: C_EMAIL
+  - name: COUNTRY
+    expr: C_COUNTRY
+  - name: CREATED_AT
+    expr: C_CREATED_AT
+materialization:
+  type: view

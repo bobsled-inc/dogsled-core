@@ -1,0 +1,69 @@
+type: resource
+name: deals
+description: HubSpot CRM deals representing sales opportunities tracked through your pipeline stages
+api:
+  endpoint: /crm/v3/objects/deals
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of deal records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot deal properties to include in the response
+    default: dealname,amount,dealstage,pipeline,closedate,hubspot_owner_id,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the deal record, returned as a numeric string
+  deal_name:
+    type: string
+    path: $.properties.dealname
+    description: Name of the deal as displayed in the HubSpot CRM pipeline board
+  amount:
+    type: string
+    path: $.properties.amount
+    description: Monetary value of the deal in the portal's default currency, stored as a numeric string (e.g. '50000.00')
+  deal_stage:
+    type: string
+    path: $.properties.dealstage
+    description: Internal identifier of the current pipeline stage for this deal (e.g. appointmentscheduled, qualifiedtobuy, closedwon, closedlost), references pipeline_stages
+  pipeline:
+    type: string
+    path: $.properties.pipeline
+    description: Internal identifier of the pipeline this deal belongs to, references the pipelines endpoint
+  close_date:
+    type: timestamp
+    path: $.properties.closedate
+    description: Expected or actual close date for the deal in ISO 8601 format
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID of the sales rep assigned to this deal, references the owners endpoint
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the deal was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the deal record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

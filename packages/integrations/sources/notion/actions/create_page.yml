@@ -1,0 +1,73 @@
+type: action
+transport: api
+name: create_page
+integration: notion
+tags:
+  - productivity
+  - notion
+  - reverse-etl
+description: Create a Notion database page from a reverse ETL sync row. This action is create-only and does not perform lookup or upsert deduplication.
+api:
+  endpoint: /v1/pages
+  method: POST
+  headers:
+    Notion-Version: 2022-06-28
+  request_body:
+    parent:
+      database_id: ${{ mapped.database_id }}
+    properties:
+      Name:
+        title:
+          - text:
+              content: ${{ mapped.title }}
+      Email:
+        email: ${{ mapped.email }}
+      Number:
+        number: ${{ mapped.number }}
+      URL:
+        url: ${{ mapped.url }}
+      Checkbox:
+        checkbox: ${{ mapped.checkbox }}
+      Date:
+        date:
+          start: ${{ mapped.date }}
+input:
+  database_id:
+    type: string
+    required: true
+    description: Notion database ID that receives the new page.
+  title:
+    type: string
+    required: true
+    description: Value for the database title property named Name.
+  email:
+    type: string
+    description: Optional value for an email property named Email.
+  number:
+    type: number
+    description: Optional value for a number property named Number.
+  url:
+    type: string
+    description: Optional value for a URL property named URL.
+  checkbox:
+    type: boolean
+    description: Optional value for a checkbox property named Checkbox.
+  date:
+    type: timestamp
+    description: Optional ISO timestamp or date value for a date property named Date.
+field_mapping:
+  fields:
+    database_id: database_id
+    title: title
+    email: email
+    number: number
+    url: url
+    checkbox: checkbox
+    date: date
+  unmapped_fields: ignore
+activate:
+  operation: create
+  result_path: $.id
+error_handling:
+  on_record_error: skip
+  consecutive_failure_threshold: 10

@@ -1,0 +1,70 @@
+type: resource
+name: fulfillments
+description: Fulfillments for orders in Shopify.
+api:
+  endpoint: /orders/${{ input.order_id }}/fulfillments.json
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+    updated_at_min: ${{ input.updated_at_min }}
+input:
+  order_id:
+    type: integer
+    required: true
+    description: Order ID to retrieve fulfillments for.
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+  updated_at_min:
+    type: timestamp
+    description: Only return records updated on or after this timestamp.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Shopify object identifier.
+  order_id:
+    type: integer
+    path: $.order_id
+    description: ID of the associated order.
+  status:
+    type: string
+    path: $.status
+    description: Fulfillment status (pending, open, success, cancelled, error, failure).
+  tracking_company:
+    type: string
+    path: $.tracking_company
+    description: Shipping carrier name.
+  tracking_number:
+    type: string
+    path: $.tracking_number
+    description: Tracking number for the fulfillment.
+  tracking_url:
+    type: string
+    path: $.tracking_url
+    description: URL for tracking the fulfillment.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation timestamp.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Last update timestamp.
+extract:
+  record_path: $.fulfillments
+  pagination:
+    type: link_header
+  for_each:
+    resource: orders
+    field: id
+    input: order_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

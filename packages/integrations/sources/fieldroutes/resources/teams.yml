@@ -1,0 +1,51 @@
+type: resource
+name: teams
+description: Technician teams for resource balancing and territory analysis.
+api:
+  endpoint: /team/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    teamID: '${{ input.team_id }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  team_id:
+    type: integer
+    description: Optional team ID filter.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  team_id:
+    type: integer
+    path: $.teamID
+    description: Team unique ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Owning office.
+  name:
+    type: string
+    path: $.name
+    description: Team name.
+  team_leader:
+    type: integer
+    path: $.teamLeader
+    description: Team leader employee ID.
+  employee_ids:
+    type: array
+    path: $.employeeIDs
+    description: Members of team.
+
+extract:
+  record_path: '$..[?(@.teamID)]'
+  table:
+    primary_key:
+      - team_id
+    trust_tier: silver

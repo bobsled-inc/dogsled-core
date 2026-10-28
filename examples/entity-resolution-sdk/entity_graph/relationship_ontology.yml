@@ -1,0 +1,48 @@
+spec_version: '0.2'
+type: relationship_ontology
+name: default_relationships
+relations:
+  - relation_type: customer_has_deal
+    description: A customer owns or is commercially associated with a deal.
+    left_entity: Customer
+    right_entity: Deal
+    direction: directed
+    cardinality: one_to_many
+    aliases: []
+    exclusive_with: []
+    temporal: stateful
+    review_thresholds:
+      auto_confirm: 0.92
+      review: 0.55
+      auto_reject: 0.3
+    relationship_semantics:
+      definition: A customer owns, sponsors, or is commercially associated with a deal.
+      positive_examples:
+        - 'Acme owns the Project Atlas renewal.'
+        - 'The Atlas deal is associated with Acme.'
+      negative_examples:
+        - 'Acme was mentioned in the same document as Project Atlas.'
+        - "Project Atlas uses Acme's API."
+      signal_phrases: [owns, associated with, renewed, signed, commercial]
+  - relation_type: document_mentions_customer
+    description: A document contains evidence about a customer.
+    left_entity: Document
+    right_entity: Customer
+    direction: directed
+    cardinality: many_to_many
+    aliases: []
+    exclusive_with: []
+    temporal: event
+    review_thresholds:
+      auto_confirm: 0.92
+      review: 0.55
+      auto_reject: 0.3
+    relationship_semantics:
+      definition: A document contains a span of evidence about a customer.
+      positive_examples:
+        - 'The document mentions Acme in the renewal context.'
+        - 'A customer note describes Globex.'
+      negative_examples:
+        - 'Acme owns Project Atlas.'
+        - 'The document is stored in the customer warehouse.'
+      signal_phrases: [mentions, describes, note about, evidence about]

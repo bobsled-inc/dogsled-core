@@ -1,0 +1,164 @@
+type: resource
+name: anomaly_alerts
+description: Cost anomaly alerts with provider and service attribution
+api:
+  endpoint: /anomaly_alerts
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+    start_date: ${{ input.start_date }}
+    end_date: ${{ input.end_date }}
+    provider: ${{ input.provider }}
+    service: ${{ input.service }}
+    cost_report_token: ${{ input.cost_report_token }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+    default: 1000
+  start_date:
+    type: timestamp
+    description: The start date of the anomalies to return. ISO 8601 formatted.
+  end_date:
+    type: timestamp
+    description: The end date of the anomalies to return. ISO 8601 formatted.
+  provider:
+    type: string
+    description: The provider of the anomalies to return.
+  service:
+    type: string
+    description: The service of the anomalies to return.
+  cost_report_token:
+    type: string
+    description: The cost report token of the anomalies to return.
+query:
+  filters:
+    cost_report_token:
+      operators:
+        - eq
+      description: The cost report token of the anomalies to return.
+      bind:
+        eq:
+          input: cost_report_token
+      compile:
+        eq:
+          mode: http_query
+          param: cost_report_token
+    created_at:
+      operators:
+        - gte
+        - lte
+      description: The start date of the anomalies to return. ISO 8601 formatted.
+      bind:
+        gte:
+          input: start_date
+        lte:
+          input: end_date
+      compile:
+        gte:
+          mode: http_query
+          param: start_date
+        lte:
+          mode: http_query
+          param: end_date
+    provider:
+      operators:
+        - eq
+      description: The provider of the anomalies to return.
+      bind:
+        eq:
+          input: provider
+      compile:
+        eq:
+          mode: http_query
+          param: provider
+    service:
+      operators:
+        - eq
+      description: The service of the anomalies to return.
+      bind:
+        eq:
+          input: service
+      compile:
+        eq:
+          mode: http_query
+          param: service
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the anomaly alert.
+  category:
+    type: string
+    path: $.category
+    description: The category of the AnomalyAlert.
+  service:
+    type: string
+    path: $.service
+    description: The provider service causing the AnomalyAlert.
+  provider:
+    type: string
+    path: $.provider
+    description: The provider of the service causing the AnomalyAlert.
+  amount:
+    type: string
+    path: $.amount
+    description: The amount observed.
+  previous_amount:
+    type: string
+    path: $.previous_amount
+    description: The previous amount observed.
+  seven_day_average:
+    type: string
+    path: $.seven_day_average
+    description: The seven day average of the amount observed.
+  status:
+    type: string
+    path: $.status
+    description: The status of the AnomalyAlert.
+  cost_report_token:
+    type: string
+    path: $.cost_report_token
+    description: The token of the Report associated with the AnomalyAlert.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the AnomalyAlert was created.
+  alerted_at:
+    type: timestamp
+    path: $.alerted_at
+    description: The date and time, in UTC, the AnomalyAlert is sent.
+extract:
+  record_path: $.anomaly_alerts
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    load_strategy: merge
+    trust_tier: silver
+lookup:
+  description: Get anomaly alert by token
+  api:
+    endpoint: /anomaly_alerts/${{ input.anomaly_alert_token }}
+    method: GET
+  input:
+    anomaly_alert_token:
+      type: string
+      required: true
+incremental:
+  strategy: server_filter
+  cursor_field: created_at
+  cursor_type: timestamp
+  since_argument: start_date
+  until_argument: end_date
+  value_format: date
+  lookback_seconds: 86400
+  initial_lookback_seconds: 2592000
+  window_size_seconds: 86400

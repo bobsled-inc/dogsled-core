@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: stripe_paid_charge_count
+description: Number of Stripe charges marked as paid.
+model: stripe__daily_overview
+expression: SUM({stripe__daily_overview}.paid_charge_count)
+synonyms:
+  - paid charges
+  - successful charges
+  - paid charge count
+tags:
+  - stripe
+  - billing
+  - finance

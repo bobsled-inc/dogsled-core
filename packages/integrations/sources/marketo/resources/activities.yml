@@ -1,0 +1,43 @@
+type: resource
+name: activities
+description: Activity records from Marketo.
+api:
+  endpoint: /rest/v1/activities.json
+  method: GET
+  query_params:
+    nextPageToken: ${{ input.next_page_token }}
+    batchSize: ${{ input.batch_size }}
+input:
+  next_page_token:
+    type: string
+  batch_size:
+    type: integer
+    default: 300
+output:
+  id:
+    type: string
+    path: $.marketoGUID
+  activity_type_id:
+    type: integer
+    path: $.activityTypeId
+  lead_id:
+    type: string
+    path: $.leadId
+  primary_attribute_value:
+    type: string
+    path: $.primaryAttributeValue
+  activity_date:
+    type: timestamp
+    path: $.activityDate
+  campaign_id:
+    type: string
+    path: $.campaignId
+extract:
+  record_path: $.result
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: nextPageToken

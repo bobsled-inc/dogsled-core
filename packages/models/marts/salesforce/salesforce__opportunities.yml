@@ -1,0 +1,111 @@
+spec_version: '0.2'
+name: salesforce__opportunities
+type: model
+description: Salesforce opportunities with rolled-up product and contact-role activity.
+grain: opportunity_id
+source:
+  ref: stg_salesforce__opportunities
+joins:
+  - ref: stg_salesforce__accounts
+    type: left
+    on: stg_salesforce__opportunities.account_id = stg_salesforce__accounts.account_id
+  - ref: stg_salesforce__opportunity_line_items
+    type: left
+    on: stg_salesforce__opportunities.opportunity_id = stg_salesforce__opportunity_line_items.opportunity_id
+    pre_aggregate:
+      group_by:
+        - opportunity_id
+      columns:
+        - name: line_item_count
+          expr: COUNT(*)
+        - name: product_count
+          expr: count_distinct(product2_id)
+        - name: total_quantity
+          expr: SUM(quantity)
+        - name: total_line_amount
+          expr: SUM(total_price)
+  - ref: stg_salesforce__opportunity_contact_roles
+    type: left
+    on: stg_salesforce__opportunities.opportunity_id = stg_salesforce__opportunity_contact_roles.opportunity_id
+    pre_aggregate:
+      group_by:
+        - opportunity_id
+      columns:
+        - name: contact_role_count
+          expr: COUNT(*)
+        - name: primary_contact_role_count
+          expr: countif(is_primary = TRUE)
+columns:
+  - name: opportunity_id
+    expr: stg_salesforce__opportunities.opportunity_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Salesforce opportunity identifier.
+  - name: opportunity_name
+    expr: stg_salesforce__opportunities.name
+    semantic_role: categorical
+    description: Opportunity name.
+  - name: account_id
+    expr: stg_salesforce__opportunities.account_id
+    semantic_role: entity_id
+    references: stg_salesforce__accounts.account_id
+    description: Account tied to the opportunity.
+  - name: account_name
+    expr: stg_salesforce__accounts.name
+    semantic_role: categorical
+    description: Name of the account tied to the opportunity.
+  - name: stage_name
+    expr: stg_salesforce__opportunities.stage_name
+    semantic_role: categorical
+    description: Current pipeline stage of the opportunity.
+  - name: amount
+    expr: stg_salesforce__opportunities.amount
+    semantic_role: measure
+    tags:
+      - financial
+    description: Opportunity amount.
+  - name: close_date
+    expr: CAST(stg_salesforce__opportunities.close_date AS DATE)
+    semantic_role: time_dimension
+    description: Expected or actual opportunity close date.
+  - name: line_item_count
+    expr: COALESCE(stg_salesforce__opportunity_line_items.line_item_count, 0)
+    semantic_role: measure
+    description: Number of line items attached to the opportunity.
+  - name: product_count
+    expr: COALESCE(stg_salesforce__opportunity_line_items.product_count, 0)
+    semantic_role: measure
+    description: Count of distinct products attached to the opportunity.
+  - name: total_quantity
+    expr: COALESCE(stg_salesforce__opportunity_line_items.total_quantity, 0)
+    semantic_role: measure
+    description: Total product quantity across opportunity line items.
+  - name: total_line_amount
+    expr: COALESCE(stg_salesforce__opportunity_line_items.total_line_amount, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Sum of opportunity line-item totals.
+  - name: contact_role_count
+    expr: COALESCE(stg_salesforce__opportunity_contact_roles.contact_role_count, 0)
+    semantic_role: measure
+    description: Number of contacts linked to the opportunity.
+  - name: primary_contact_role_count
+    expr: COALESCE(stg_salesforce__opportunity_contact_roles.primary_contact_role_count, 0)
+    semantic_role: measure
+    description: Number of primary contact roles on the opportunity.
+  - name: created_at
+    expr: stg_salesforce__opportunities.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the opportunity was created.
+  - name: updated_at
+    expr: stg_salesforce__opportunities.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the opportunity was last updated.
+tags:
+  - salesforce
+  - revenue
+  - opportunities
+trust_tier: gold
+materialization:
+  type: table

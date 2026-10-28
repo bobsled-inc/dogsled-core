@@ -1,0 +1,10 @@
+display_name: GitHub
+category: developer-tools
+tags: [git, version-control, ci-cd]
+logo_url: https://github.githubassets.com/favicons/favicon.svg
+docs_url: https://docs.github.com/en/rest
+openapi_url: https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json
+auth_setup:
+  - env: GITHUB_TOKEN
+    description: Personal access token or GitHub App token
+    docs_url: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens

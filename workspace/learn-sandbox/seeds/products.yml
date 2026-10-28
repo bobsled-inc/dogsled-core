@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: products
+type: seed
+description: E-commerce product catalog for learn-sandbox tutorial.
+payload:
+  format: csv
+  path: data/products.csv
+  delimiter: ','
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+      primary_key: true
+    - name: name
+      type: STRING
+    - name: category
+      type: STRING
+    - name: price
+      type: NUMBER
+    - name: in_stock
+      type: BOOLEAN
+materialization:
+  type: table
+  target_schema: main
+  on_conflict: replace

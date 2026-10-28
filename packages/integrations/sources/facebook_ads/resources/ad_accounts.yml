@@ -1,0 +1,40 @@
+type: resource
+name: ad_accounts
+description: Ad accounts accessible to the current Meta user.
+api:
+  endpoint: /me/adaccounts
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  fields:
+    type: string
+    default: id,name,account_id,account_status,currency
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  account_id:
+    type: string
+    path: $.account_id
+  account_status:
+    type: integer
+    path: $.account_status
+  currency:
+    type: string
+    path: $.currency
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next

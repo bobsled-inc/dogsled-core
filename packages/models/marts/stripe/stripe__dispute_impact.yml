@@ -1,0 +1,31 @@
+spec_version: '0.2'
+name: stripe__dispute_impact
+type: model
+description: Chargeback and dispute analysis grouped by reason.
+grain: reason
+source:
+  ref: stg_stripe__disputes
+columns:
+  - name: reason
+    expr: stg_stripe__disputes.reason
+    semantic_role: categorical
+    description: Dispute reason category (duplicate, fraudulent, subscription_canceled, etc.).
+  - name: dispute_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of disputes for this reason.
+  - name: total_amount
+    expr: SUM(stg_stripe__disputes.amount)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total disputed amount in standard currency units.
+group_by:
+  - reason
+tags:
+  - stripe
+  - billing
+  - disputes
+trust_tier: gold
+materialization:
+  type: table

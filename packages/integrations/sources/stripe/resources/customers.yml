@@ -1,0 +1,89 @@
+type: resource
+name: customers
+description: Stripe customers
+api:
+  endpoint: /v1/customers
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of customers per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Customer ID (cus_xxx)
+  name:
+    type: string
+    path: $.name
+    description: Customer name
+  email:
+    type: string
+    path: $.email
+    description: Customer email
+  phone:
+    type: string
+    path: $.phone
+    description: Customer phone number
+  description:
+    type: string
+    path: $.description
+    description: Customer description
+  currency:
+    type: string
+    path: $.currency
+    description: Default currency for customer
+  balance:
+    type: integer
+    path: $.balance
+    description: Current balance in cents
+  delinquent:
+    type: boolean
+    path: $.delinquent
+    description: Whether the customer has unpaid invoices
+  default_source:
+    type: string
+    path: $.default_source
+    description: Default payment source ID
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when customer was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

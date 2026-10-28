@@ -1,0 +1,83 @@
+spec_version: '0.2'
+name: stg_linear_issues
+type: model
+description: Staged Linear issues with full workflow and assignment metadata
+grain: issue_id
+source:
+  ref: warehouse.linear_issues
+columns:
+  - name: issue_id
+    expr: t0.id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique issue UUID
+  - name: identifier
+    expr: t0.identifier
+    semantic_role: categorical
+    description: Human-readable issue identifier (e.g. ENG-123)
+  - name: title
+    expr: t0.title
+    semantic_role: categorical
+    description: Issue title
+  - name: description
+    expr: t0.description
+    semantic_role: categorical
+    description: Issue description in markdown
+  - name: priority
+    expr: t0.priority
+    semantic_role: measure
+    description: Priority as integer (0=none, 1=urgent, 2=high, 3=medium, 4=low)
+  - name: priority_label
+    expr: t0.priority_label
+    semantic_role: categorical
+    description: Human-readable priority label
+  - name: estimate
+    expr: t0.estimate
+    semantic_role: measure
+    description: Effort estimate in points
+  - name: state_name
+    expr: t0.state_name
+    semantic_role: categorical
+    description: Name of the workflow state
+  - name: state_type
+    expr: t0.state_type
+    semantic_role: categorical
+    description: State category — backlog, unstarted, started, completed, cancelled
+  - name: assignee_name
+    expr: t0.assignee_name
+    semantic_role: categorical
+    description: Display name of the assignee
+  - name: assignee_email
+    expr: t0.assignee_email
+    semantic_role: categorical
+    description: Email of the assignee
+  - name: team_name
+    expr: t0.team_name
+    semantic_role: categorical
+    description: Team display name
+  - name: team_key
+    expr: t0.team_key
+    semantic_role: categorical
+    description: Team key prefix
+  - name: project_name
+    expr: t0.project_name
+    semantic_role: categorical
+    description: Project display name
+  - name: created_at
+    expr: t0.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was created
+  - name: updated_at
+    expr: t0.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was last updated
+  - name: completed_at
+    expr: t0.completed_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was completed
+  - name: due_date
+    expr: t0.due_date
+    semantic_role: categorical
+    description: Due date as YYYY-MM-DD string
+materialization:
+  type: view

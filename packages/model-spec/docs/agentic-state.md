@@ -1,0 +1,364 @@
+# Agentic execution state and restart
+
+Dogsled saves agentic checkpoints under the project `.dogsled/model-spec` directory by default.
+A supplied `AgenticStateStore` replaces all local agentic storage. Execution state
+needs no warehouse or database service.
+
+The bounded execution API supports ordered map/reduce plans with `llm_call` or
+`agent_loop` steps and a supplied executor. Without a publisher it returns accepted output with `publication: 'pending'`.
+With a publisher it holds ownership through durable confirmation. See
+[Database publication and recovery](agentic-publication.md) for the API and ownership
+contract. A loop retry starts the whole assignment again. It does not restore
+an internal conversation or remote session.
+
+## Start and resume
+
+Use the public `@bobsled-inc/model-spec/agentic` exports:
+
+```typescript
+import { executeAgenticRun, resolveAgenticModel } from '@bobsled-inc/model-spec/agentic';
+
+// host supplies input schemas, profiles, tokensPerAssignment, prepare and executeAgent.
+// model is a validated AgenticModelSpec.
+const context = {
+  resolved: resolveAgenticModel(model, host),
+  integration: 'lake',
+  target: 'main.pair_assessments',
+  inputRef: 'undecided_pairs',
+};
+const result = await executeAgenticRun(host, context, {
+  projectDirectory,
+  run: { id: savedRunId, mode: 'start', scope: 'my-project' },
+  maxAttempts: 3,
+});
+
+// In another process, use the same directory, scope, model and run ID.
+const recovered = await executeAgenticRun(host, context, {
+  projectDirectory,
+  run: { id: savedRunId, mode: 'resume', scope: 'my-project' },
+  maxAttempts: 3,
+});
+```
+
+The host must retain the run ID. The default scope is the integration handle.
+Each scope, model name and run ID identifies one run. Changed definitions,
+resolved profiles, targets, input contracts or limits cause a conflict.
+A repeated start with the same identity opens that run; use a new ID for new work.
+An explicit resume fails if the run is missing.
+
+Dogsled saves the definition and initial deadline before input preparation. An
+explicit retry of unfinished work saves a new execution window before it continues.
+Each window has the model's full `limits.timeout_seconds` allowance, measured from
+the new invocation. This also applies when `mode: 'start'` opens an existing run.
+Once preparation is sealed, the saved assignments contain the frozen input rows. Resume uses those
+rows and does not query the input source again. Input source changes after sealing
+do not change this run. There is no reuse between different run IDs.
+
+Before an executor call, Dogsled saves the attempt and its full token reservation.
+It saves verified usage and an accepted result together. An interrupted call
+retains its full reservation. A retry starts the whole assignment with a new
+attempt ID. It does not reconnect a remote session. Accepted assignments never
+run again. Failed outcomes retry automatically only when `error.retryable` is true. A thrown
+executor error stops the current invocation; a later resume can retry it.
+
+### Retry a saved terminal failure
+
+After fixing the cause, a host can explicitly retry work saved with
+`error.retryable: false`:
+
+```typescript
+await executeAgenticRun(host, context, {
+  projectDirectory,
+  run: { id: savedRunId, mode: 'resume', scope: 'my-project' },
+  retryFailedAssignments: true,
+});
+```
+
+Set this option only for an explicit retry request. Ordinary resume and repeated
+start keep their existing behavior. The option requires `mode: 'resume'`.
+Dogsled saves the request in the execution window before it calls the executor.
+It permits a new attempt after an earlier terminal failure. If that attempt also
+returns a terminal failure, the invocation stops again. It does not loop.
+
+This keeps accepted answers, frozen inputs, usage charges, and attempt history.
+It does not reset token or attempt limits, override excess usage, or change
+publication and cursor rules. An assignment with no attempts left still cannot
+run. The caller must fix errors such as invalid credentials before retrying.
+All hosts sharing these checkpoints must use a version that understands the
+optional `execution_windows[].retry_failed` marker.
+
+### Assignment progress
+
+Pass `onProgress` to `executeAgenticRun`, or `agentic.onProgress` to `runProject`.
+The callback receives an `AgenticRunProgress` value on opening a saved run and
+after each verified checkpoint:
+
+```typescript
+await executeAgenticRun(host, context, {
+  projectDirectory,
+  run: { id: savedRunId, mode: 'resume' },
+  onProgress: (progress) => renderProgress(progress),
+});
+```
+
+`total`, `accepted`, `running`, `pending`, and `failed` count assignments, not
+output rows or pipeline tasks. Each assignment belongs to one count. Accepted
+includes valid empty answers. A retryable failed attempt remains pending while
+attempts remain. A terminal failure counts as failed until an explicit restart
+allows another attempt. An interrupted attempt from an older execution window
+counts as pending when resumed.
+
+`steps` gives the same counts for each authored step. `totalIsFinal` is false
+until all steps have fixed their work. A later reduce step can add assignments,
+so a host must not show an overall percentage before this flag becomes true.
+`status` and `publication` keep saved answers separate from confirmed warehouse
+publication. An accepted answer is not proof that its output was published.
+
+The values include only counts and run, model, and step identifiers. They contain
+no input rows, answers, or provider errors. The callback gets a separate value and
+cannot modify saved state. Keep it brief: Dogsled awaits it before continuing.
+Callback errors do not fail a run or repeat model calls. Delivery is best effort,
+not a durable event subscription. Reopening a run reports its current counts;
+hosts can use the run ID, model name, and revision to ignore repeated reports.
+
+The default is three attempts per assignment, including interrupted attempts.
+The host can set one through ten attempts. All retries share the original
+token limit and assignment attempt limit. An explicit retry gets a fresh execution
+deadline. Assignment retries and automatic lease recovery within that invocation
+share its deadline; they cannot extend it. Usage above a reservation remains
+recorded and stops further work.
+
+Checkpoints retain the original `started_at`, `deadline_at`, assignment templates,
+and input retrieval times. The optional `execution_windows` history records each
+explicit retry and its deadline. Live executor calls and the returned `deadlineAt`
+use the current window. Accepted results remain bound to the window in which their
+assignment attempt started. A new window cannot make an old late result acceptable.
+Completed runs are reused; confirmed publication is not repeated.
+
+The updated runner can read older checkpoints without retry windows. Once a retry
+window is saved, use the updated runner to resume it. Supplied stores must use the
+current `applyAgenticCheckpoint` transition, including `begin_execution`.
+
+An empty result is still accepted work. `processedKeys` records its keys even when
+`rows` is empty. An empty prepared input seals an empty work set and completes.
+
+## Starting fresh after a failed incremental run
+
+Use a new run ID with `mode: 'start'` to replace an unfinished incremental batch.
+Omitting `agentic.run` from `runProject` creates that new ID automatically. Using
+the same ID resumes the saved work and keeps its original token allowance.
+
+A fresh start keeps the last committed input cursor. It reads the inputs again and
+processes records after that cursor. Unpublished results from the old batch are not
+reused. The old checkpoint and its token charges stay recorded; the new run has its
+own allowance. Starting fresh can therefore incur additional AI costs.
+
+Dogsled first acquires exclusive ownership of the old checkpoint. A live owner blocks
+takeover. Dogsled then saves a permanent `superseded` marker before changing cursor
+ownership with a compare-and-swap. A superseded run cannot resume or publish. If the
+process stops between these writes, another fresh start can finish the takeover.
+No checkpoint or cursor is deleted, and committed progress is not reset.
+
+If the old run has prepared or confirmed publication, its warehouse write may already
+have succeeded. Dogsled reports that the old run must be resumed to finish publication
+and cursor recovery. A fresh start does not skip this check.
+
+Local, DuckDB, and warehouse cursor stores support takeover. Custom cursor stores
+must throw the exported `AgenticCursorConflict` with the current run ID when `begin`
+finds a different owner, and implement `supersede` as an atomic owner comparison and
+replacement that preserves committed cursor values. The coordinator retires the old
+checkpoint under its state-store session before calling this method. Stores without
+this optional method continue to reject takeover. All coordinators sharing a store
+must use the updated checkpoint schema and `applyAgenticCheckpoint` implementation
+before fresh-start takeover is enabled.
+
+## Mixed model runs
+
+`runProject` accepts the same options in `agentic` alongside
+`agentic.host` and `agentic.publisher`, or the test-only
+`experimentalAgenticProbe`. If the run identity is omitted, Dogsled creates a fresh local run ID.
+Hosts that need restart must set and retain an explicit ID.
+
+A host that supplies regular `state` must also supply `agentic.stateStore` or
+configure `checkpoint_store` in `model-spec.yml`.
+Dogsled reports a configuration error if checkpoint support is missing. Regular
+model state remains compatible and uses its existing shape.
+
+The probe publication callback is still a test seam. Its success is not a durable
+publication receipt. On probe resume of already completed execution, Dogsled reports
+pending publication and blocks downstream models. It does not call the publisher
+again. A host must resolve publication separately before it can use this as a
+production pipeline.
+
+## Supplied store contract
+
+Pass `stateStore` to `executeAgenticRun`, or `agentic.stateStore` to `runProject`.
+The store implements `acquire(key)` and returns an exclusive session with `read`,
+`create`, `checkpoint` and `release` methods. These contracts and their runtime
+schemas are exported from the agentic subpath.
+
+The session is the ownership capability. Every method must reject obsolete
+ownership. Distributed hosts must use a fenced lease or an equivalent database
+transaction. The built-in warehouse stores implement this contract for the databases listed
+below; custom stores must provide equivalent guarantees.
+
+`create` inserts a new preparing record only. `checkpoint` must apply the exported
+`applyAgenticCheckpoint` transition under the same transaction that saves it.
+The transition validates expected revisions, stable operation IDs, reservations,
+retry bounds and accepted results. Duplicate commands have one effect. Reusing
+an operation ID with a different payload causes a conflict. Reads return `null`
+only when the run does not exist. Storage failures must throw.
+
+Every saved record must be durable before the method resolves. After an uncertain
+checkpoint response, Dogsled reads the saved receipt before it dispatches more work.
+The host must retain snapshots and their contents for its declared recovery period.
+The current API uses bounded whole snapshots rather than unbounded record lists.
+The local implementation limits each file to 16 MiB; hosts should enforce the same
+bound. All input and outcome values also use the existing agentic contract bounds.
+
+Use `AgenticStateError` with a safe code: `conflict`, `missing`, `corrupt`,
+`unavailable`, `limit` or `expired`. Dogsled removes other storage error messages at
+the host boundary. Do not put credentials or raw provider responses in errors.
+
+## Local files, ownership and retention
+
+`.dogsled/model-spec/run-state.json` remains the state entry point. Its compatible `agentic`
+extension maps hashed run keys to digest-named snapshot files in `.dogsled/model-spec`. Snapshots
+contain the frozen definition, input, attempts, usage, results and completion.
+Reads check the digest, schema and scoped identity. Missing or damaged files cause
+an explicit error. Dogsled does not replace them with empty state.
+
+Regular and agentic saves use a shared file lock and update the current state.
+They preserve unrelated model entries and unknown compatible fields. Each save
+synchronizes the replacement file, renames it, then synchronizes the directory.
+Agentic ownership spans execution and publication confirmation. Dogsled checks it again
+before protected state changes.
+
+Local ownership supports one host with a persistent local file system. It does
+not support network file systems or multiple hosts. Locks include the host and
+process ID. Dogsled reclaims a lock only after that process no longer exists. A
+live process, a reused live process ID or an unknown host is never reclaimed.
+A crash during lock recovery fails closed: an operator must confirm that no
+writer remains before removing the recovery lock. Do not remove a live lock.
+
+State directory and artifact symlinks are rejected. Snapshot names cannot escape
+`.dogsled/model-spec`. Files use private permissions. Local limits are 100 retained runs, 16 MiB
+per file, 2,000 directory entries and a 256 MiB directory budget. The budget check
+includes orphan files and space for the next write. Exceeding a limit stops before
+execution or the next checkpoint.
+
+There is no automatic expiry. Referenced snapshots remain until the host removes
+that run. After a successful checkpoint, Dogsled removes the previous snapshot.
+A crash can leave an unreferenced snapshot or temporary file. For cleanup, stop
+all project writers, back up `.dogsled/model-spec`, retain every snapshot named by `run-state.json`,
+and remove only unreferenced snapshot or temporary files. Do not delete active run
+records or pending-publication records that the host still needs. Deleting a run
+record or required artifact removes its ability to resume. Temporary containers
+must mount the same persistent project directory to recover local runs.
+
+## Warehouse checkpoints
+
+Configure a warehouse checkpoint store in the project `model-spec.yml`:
+
+```yaml
+checkpoint_store:
+  integration: analytics_warehouse
+  schema: track_checkpoints
+  lease_seconds: 300 # Optional. Default: 120. Range: 10–600 whole seconds.
+```
+
+The integration supplies the database or catalog and authentication. `schema` is
+one schema name, not a SQL expression or a qualified path. For BigQuery, set one
+`connection.project_id` on the integration. Keep credentials in the existing
+integration secret mechanism.
+
+The CLI resolves this store automatically. Library callers can use the same
+configuration or supply an `AgenticStateStore`. Dogsled still rejects supplied
+regular state without a supplied or configured checkpoint store. An unknown
+checkpoint integration is an error. An explicit warehouse configuration never
+falls back to local files.
+
+The warehouse store uses the SQL runners for PostgreSQL, Snowflake, BigQuery, and
+Databricks. Databricks requires catalog-managed tables and catalog commits, as
+publication does. DuckDB and ClickHouse are rejected by this store. Plain CLI
+execution without this setting retains the existing local checkpoint default.
+
+Checkpoint data includes prepared input records, accepted results, and intermediate
+results. Each run uses two tables named from a hash of its scope, model, and run ID.
+A control table contains one ownership lease and the current snapshot reference.
+A payload table contains bounded, base64-encoded JSON chunks. Base64 is an encoding,
+not encryption. Apply warehouse access and encryption policies to both tables.
+
+The store stages a new snapshot, then atomically changes the current reference
+under exclusive ownership. It removes old payload chunks in the same transaction.
+Every protected write checks the owner token and warehouse-clock lease expiry.
+The default lease is two minutes. Set `checkpoint_store.lease_seconds` to an integer
+from 10 to 600 to allow more time for warehouse queueing. The store attempts renewal
+every one-third of the lease period. A longer lease also delays takeover after a
+worker crashes. Library callers can set `leaseMs` from 10,000 to 600,000 on the store
+factory. This setting does not change the model execution deadline.
+
+If the warehouse session loses ownership, Dogsled cancels active assignments and
+closes that session. It can make up to two recovery attempts. Each attempt must
+acquire exclusive ownership and reload the saved checkpoint before doing more work.
+Dogsled reuses saved results and reconciles saved publication receipts. Work without
+a saved result can run again; its previous token reservation remains charged.
+Automatic lease recovery does not reset the current execution deadline, token budget,
+or assignment attempt limit. A later explicit retry can open a new execution window.
+If another worker owns the run, or the warehouse still cannot grant ownership,
+Dogsled stops. It does not steal an active lease or report success for unfinished work.
+
+Supplied stores can expose `AgenticStateSession.ownershipLost` to cancel active
+calls and throw `AgenticStateError('lease_lost')` to request this bounded recovery.
+Use `conflict` for conflicting state or another active owner; Dogsled does not retry
+those errors automatically. Existing stores without the optional signal continue
+to work.
+
+Snapshots are limited to 16 MiB before encoding. The store stops if retained
+payload data exceeds 64 MiB before a new write. Failed writes can leave orphan
+chunks. Successful writes remove superseded chunks. Run tables do not expire
+automatically. Stop all owners before operator cleanup, and keep runs needed for
+resume or publication recovery.
+
+The checkpoint schema needs schema/table creation, SELECT, INSERT, UPDATE, and
+DELETE permissions. The built-in warehouse publisher also uses this schema name
+for control, stage-manifest, receipt, staging-data, and processed-key tables.
+Publication tables stay in the output database or catalog and use its integration,
+so publication and its receipt can commit together. To keep checkpoints and
+publication tables in one physical schema, configure the checkpoint integration
+with the same database or catalog as the model output.
+Final output still uses the model's configured destination.
+
+Without a configured checkpoint store, warehouse publication keeps its existing
+target-schema default. DuckDB keeps its separate `_dogsled_agentic_publication`
+schema. Hosts that supply their own publisher control its storage location;
+`createSqlAgenticPublisher` accepts `systemSchema` for built-in warehouse publishers.
+
+Finish existing runs before upgrading or changing this schema. Start a fresh run
+after the change. Existing publication tables are not moved or deleted. Keep old
+receipts and stages until no run needs them for recovery. Configured schema changes
+are included in the run identity and cannot silently redirect a resumed run.
+Caller-supplied SQL runners must preserve transaction connection identity and must
+not replay writes after an ambiguous transport failure.
+
+Cloud support needs live verification for each configured integration. The
+credentialed test is `tests/integration/warehouse/cloud-checkpoint-store.test.ts`.
+Local PostgreSQL tests cover saved work, ownership takeover, and a lost commit
+response. These tests do not replace live Snowflake, BigQuery, or Databricks proof.
+
+## Incremental input progress
+
+Input cursors track successful batches across run IDs. They are separate from
+per-run checkpoints. See [incremental agentic inputs](../README.md#incremental-agentic-inputs)
+for the YAML contract, shared storage, and host preparation requirements. Resume failed work to reuse its saved results, or follow the
+[fresh-start takeover rules](#starting-fresh-after-a-failed-incremental-run).
+Prepared or confirmed publication must be reconciled before a new batch.
+
+After confirmed warehouse publication, `runProject` returns the model completion
+entry in `state.models` under `<integration>.<model>`, including `priorFqName`,
+`targetSchema`, and `targetDatabase` when set. Hosts can use these fields to
+register the saved table. Dry runs, failed publication, and experimental probes
+do not create this entry. Agentic checkpoints and incremental cursors remain in
+the agentic state store.
+
+Token reservations and deadlines can be disabled. See [optional execution limits](agentic-contracts.md#optional-execution-limits) for YAML inheritance, unlimited usage accounting, and executor migration.

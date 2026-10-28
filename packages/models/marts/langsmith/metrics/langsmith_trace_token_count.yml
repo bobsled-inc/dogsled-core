@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: langsmith_trace_token_count
+description: Total tokens across root LangSmith traces. Child runs are excluded because root runs contain aggregate trace token usage.
+model: langsmith__runs
+expression: SUM(CASE WHEN {langsmith__runs}.parent_run_id IS NULL THEN {langsmith__runs}.total_tokens ELSE 0 END)
+synonyms: [trace token usage, root run tokens, aggregate trace tokens]
+tags: [langsmith, ai, cost]

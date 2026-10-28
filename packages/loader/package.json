@@ -1,0 +1,151 @@
+{
+  "name": "@bobsled-inc/loader",
+  "version": "0.20.224",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "packages/loader"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/runtime/index.js",
+  "types": "./dist/runtime/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js",
+      "default": "./dist/runtime/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js",
+      "default": "./dist/runtime/index.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit && pnpm run typecheck:cli-tests",
+    "typecheck:cli-tests": "tsc --noEmit -p tsconfig.cli-tests.json",
+    "lint": "eslint . --cache",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@bobsled-inc/connections": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "chalk": "catalog:cli",
+    "commander": "catalog:dev-packages",
+    "@duckdb/node-api": "catalog:duckdb",
+    "yaml": "catalog:app-packages",
+    "zod": "catalog:dev-packages"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-s3": ">=3.1017.0",
+    "@aws-sdk/credential-providers": ">=3.0.0",
+    "@clickhouse/client": ">=1.0.0",
+    "@turbopuffer/turbopuffer": ">=2.0.0",
+    "@databricks/sql": ">=2.0.0",
+    "@google-cloud/bigquery": ">=8.1.1",
+    "@google-cloud/storage": "7.19.0",
+    "google-auth-library": ">=9.0.0",
+    "chromadb": ">=1.0.0",
+    "mysql2": ">=3.22.0",
+    "pg": "^8.4.0",
+    "better-sqlite3": ">=12.0.0",
+    "snowflake-sdk": ">=3.4.0",
+    "tedious": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-s3": {
+      "optional": true
+    },
+    "@aws-sdk/credential-providers": {
+      "optional": true
+    },
+    "@clickhouse/client": {
+      "optional": true
+    },
+    "@turbopuffer/turbopuffer": {
+      "optional": true
+    },
+    "chromadb": {
+      "optional": true
+    },
+    "@databricks/sql": {
+      "optional": true
+    },
+    "@google-cloud/bigquery": {
+      "optional": true
+    },
+    "@google-cloud/storage": {
+      "optional": true
+    },
+    "google-auth-library": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    },
+    "mysql2": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "snowflake-sdk": {
+      "optional": true
+    },
+    "tedious": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "@aws-sdk/credential-providers": "catalog:",
+    "@databricks/sql": "2.2.0",
+    "chromadb": "^1.9.0",
+    "@clickhouse/client": "catalog:",
+    "@turbopuffer/turbopuffer": "catalog:",
+    "better-sqlite3": "catalog:sqlite",
+    "@types/better-sqlite3": "catalog:sqlite",
+    "google-auth-library": "catalog:",
+    "snowflake-sdk": "3.4.0",
+    "@types/node": "catalog:dev-packages",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "tsup": "catalog:cli",
+    "tsx": "catalog:dev-packages",
+    "typescript": "catalog:dev-packages",
+    "@vitest/coverage-v8": "catalog:testing",
+    "vitest": "catalog:testing"
+  },
+  "description": "Universal Dogsled protocol loader for databases, warehouses, lakes, vectors, and files.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "loader",
+    "warehouses",
+    "data-lakes"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  }
+}

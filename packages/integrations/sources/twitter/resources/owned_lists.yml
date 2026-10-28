@@ -1,0 +1,50 @@
+type: resource
+name: owned_lists
+description: Lists owned by the authenticated X user.
+api:
+  endpoint: /2/users/${{ input.id }}/owned_lists
+  method: GET
+  query_params:
+    max_results: ${{ input.max_results }}
+    pagination_token: ${{ input.pagination_token }}
+input:
+  id:
+    type: string
+    default: '2244994945'
+  max_results:
+    type: integer
+    default: 100
+  pagination_token:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  description:
+    type: string
+    path: $.description
+  follower_count:
+    type: integer
+    path: $.follower_count
+  member_count:
+    type: integer
+    path: $.member_count
+  owner_id:
+    type: string
+    path: $.owner_id
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.meta.next_token
+    cursor_param: pagination_token
+  for_each:
+    resource: users_me
+    field: id
+    input: id

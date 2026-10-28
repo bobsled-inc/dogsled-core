@@ -1,0 +1,72 @@
+spec_version: '0.2'
+name: zendesk__users
+type: model
+description: Zendesk users enriched with assigned-ticket rollups.
+grain: user_id
+source:
+  ref: stg_zendesk__users
+joins:
+  - ref: stg_zendesk__tickets
+    type: left
+    on: stg_zendesk__users.user_id = stg_zendesk__tickets.assignee_id
+    pre_aggregate:
+      group_by:
+        - assignee_id
+      columns:
+        - name: assigned_ticket_count
+          expr: COUNT(*)
+        - name: open_assigned_ticket_count
+          expr: countif(status != 'closed' AND status != 'solved')
+        - name: high_priority_ticket_count
+          expr: countif(priority = 'high' OR priority = 'urgent')
+columns:
+  - name: user_id
+    expr: stg_zendesk__users.user_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Zendesk user identifier.
+  - name: user_name
+    expr: stg_zendesk__users.name
+    semantic_role: categorical
+    description: Zendesk user display name.
+  - name: email
+    expr: stg_zendesk__users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Zendesk user email address.
+  - name: role
+    expr: stg_zendesk__users.role
+    semantic_role: categorical
+    description: Zendesk role assigned to the user.
+  - name: active
+    expr: stg_zendesk__users.active
+    semantic_role: categorical
+    description: Whether the user is active.
+  - name: assigned_ticket_count
+    expr: COALESCE(stg_zendesk__tickets.assigned_ticket_count, 0)
+    semantic_role: measure
+    description: Number of tickets currently or historically assigned to the user.
+  - name: open_assigned_ticket_count
+    expr: COALESCE(stg_zendesk__tickets.open_assigned_ticket_count, 0)
+    semantic_role: measure
+    description: Number of assigned tickets that are not solved or closed.
+  - name: high_priority_ticket_count
+    expr: COALESCE(stg_zendesk__tickets.high_priority_ticket_count, 0)
+    semantic_role: measure
+    description: Number of high- or urgent-priority tickets assigned to the user.
+  - name: created_at
+    expr: stg_zendesk__users.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the user was created.
+  - name: updated_at
+    expr: stg_zendesk__users.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the user was last updated.
+tags:
+  - zendesk
+  - users
+  - support
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,55 @@
+type: resource
+name: contacts
+description: Contacts from a Freshsales CRM view.
+api:
+  endpoint: /contacts/view/${{ input.view_id }}
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  view_id:
+    type: string
+    default: '3'
+    description: Freshsales view ID from the Filters API. Defaults to the built-in all-contacts view
+      from the API docs.
+  per_page:
+    type: integer
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+  first_name:
+    type: string
+    path: $.first_name
+  last_name:
+    type: string
+    path: $.last_name
+  email:
+    type: string
+    path: $.email
+  mobile_number:
+    type: string
+    path: $.mobile_number
+  job_title:
+    type: string
+    path: $.job_title
+  company_id:
+    type: integer
+    path: $.company_id
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+extract:
+  record_path: $.contacts
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+    total_pages_path: $.meta.total_pages

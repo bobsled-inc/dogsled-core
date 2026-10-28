@@ -1,0 +1,38 @@
+type: resource
+name: users_mcp
+via: mcp
+entity: users
+description: Users in the Notion workspace
+tool:
+  tool_name: list-all-users
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique user UUID
+  name:
+    type: string
+    path: $.name
+    description: User display name
+  type:
+    type: string
+    path: $.type
+    description: User type (person or bot)
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL of the user avatar
+  email:
+    type: string
+    path: $.person.email
+    description: User email address (people only)
+extract:
+  record_path: $.results
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.next_cursor
+    cursor_argument: start_cursor
+  table:
+    primary_key:
+      - id

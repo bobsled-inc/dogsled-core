@@ -1,0 +1,60 @@
+spec_version: '0.2'
+name: github__workflow_runs
+type: model
+description: Workflow run detail joined to workflow metadata.
+grain: workflow_run_id
+source:
+  ref: stg_github__workflow_runs
+joins:
+  - ref: stg_github__workflows
+    type: left
+    on: stg_github__workflow_runs.workflow_id = stg_github__workflows.workflow_id
+columns:
+  - name: workflow_run_id
+    expr: stg_github__workflow_runs.workflow_run_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique GitHub workflow run identifier.
+  - name: workflow_id
+    expr: stg_github__workflow_runs.workflow_id
+    semantic_role: entity_id
+    references: stg_github__workflows.workflow_id
+    description: Workflow definition associated with the run.
+  - name: workflow_name
+    expr: stg_github__workflows.name
+    semantic_role: categorical
+    description: Name of the workflow definition.
+  - name: status
+    expr: stg_github__workflow_runs.status
+    semantic_role: categorical
+    description: Execution status of the workflow run.
+  - name: conclusion
+    expr: stg_github__workflow_runs.conclusion
+    semantic_role: categorical
+    description: Final conclusion of the run when completed.
+  - name: event
+    expr: stg_github__workflow_runs.event
+    semantic_role: categorical
+    description: GitHub event that triggered the run.
+  - name: head_branch
+    expr: stg_github__workflow_runs.head_branch
+    semantic_role: categorical
+    description: Branch name on which the run executed.
+  - name: actor_login
+    expr: stg_github__workflow_runs.actor_login
+    semantic_role: categorical
+    description: Login of the actor who triggered the run.
+  - name: created_at
+    expr: stg_github__workflow_runs.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the workflow run was queued.
+  - name: run_started_at
+    expr: stg_github__workflow_runs.run_started_at
+    semantic_role: event_timestamp
+    description: Timestamp when the workflow run started execution.
+tags:
+  - github
+  - workflows
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,317 @@
+type: resource
+name: search_projects
+description: Get projects paginated
+api:
+  endpoint: /rest/api/3/project/search
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    orderBy: ${{ input.order_by }}
+    id: ${{ input.id }}
+    keys: ${{ input.keys }}
+    query: ${{ input.query }}
+    typeKey: ${{ input.type_key }}
+    categoryId: ${{ input.category_id }}
+    action: ${{ input.action }}
+    expand: ${{ input.expand }}
+    status: ${{ input.status }}
+    properties: ${{ input.properties }}
+    propertyQuery: ${{ input.property_query }}
+input:
+  start_at:
+    type: integer
+    description: The index of the first item to return in a page of results (page offset).
+    default: 0
+  max_results:
+    type: integer
+    description:
+      The maximum number of items to return per page. Must be less than or equal to 100. If a
+      value greater than 100 is provided, the `maxResults` parameter will default to 100.
+    default: 50
+    maximum: 100
+  order_by:
+    type: string
+    description: >-
+      [Order](#ordering) the results by a field.
+
+       *  `category` Sorts by project category. A complete list of category IDs is found using [Get all project categories](#api-rest-api-3-projectCategory-get).
+       *  `issueCount` Sorts by the total number of issues in each project.
+       *  `key` Sorts by project key.
+       *  `lastIssueUpdatedTime` Sorts by the last issue update time.
+       *  `name` Sorts by project name.
+       *  `owner` Sorts by project lead.
+       *  `archivedDate` EXPERIMENTAL. Sorts by project archived date.
+       *  `deletedDate` EXPERIMENTAL. Sorts by project deleted date.
+    enum:
+      - category
+      - -category
+      - +category
+      - key
+      - -key
+      - +key
+      - name
+      - -name
+      - +name
+      - owner
+      - -owner
+      - +owner
+      - issueCount
+      - -issueCount
+      - +issueCount
+      - lastIssueUpdatedDate
+      - -lastIssueUpdatedDate
+      - +lastIssueUpdatedDate
+      - archivedDate
+      - +archivedDate
+      - -archivedDate
+      - deletedDate
+      - +deletedDate
+      - -deletedDate
+    default: key
+  id:
+    type: array
+    description: The project IDs to filter the results by. To include multiple IDs, provide an
+      ampersand-separated list. For example, `id=10000&id=10001`. Up to 50 project IDs can be
+      provided.
+  keys:
+    type: array
+    description: The project keys to filter the results by. To include multiple keys, provide an
+      ampersand-separated list. For example, `keys=PA&keys=PB`. Up to 50 project keys can be
+      provided.
+  query:
+    type: string
+    description:
+      Filter the results using a literal string. Projects with a matching `key` or `name` are
+      returned (case insensitive).
+  type_key:
+    type: string
+    description: Orders results by the [project
+      type](https://confluence.atlassian.com/x/GwiiLQ#Jiraapplicationsoverview-Productfeaturesandprojecttypes).
+      This parameter accepts a comma-separated list. Valid values are `business`, `service_desk`,
+      and `software`.
+  category_id:
+    type: integer
+    description:
+      The ID of the project's category. A complete list of category IDs is found using the
+      [Get all project categories](#api-rest-api-3-projectCategory-get) operation.
+  action:
+    type: string
+    description: >-
+      Filter results by projects for which the user can:
+
+       *  `view` the project, meaning that they have one of the following permissions:
+          
+           *  *Browse projects* [project permission](https://confluence.atlassian.com/x/yodKLg) for the project.
+           *  *Administer projects* [project permission](https://confluence.atlassian.com/x/yodKLg) for the project.
+           *  *Administer Jira* [global permission](https://confluence.atlassian.com/x/x4dKLg).
+       *  `browse` the project, meaning that they have the *Browse projects* [project permission](https://confluence.atlassian.com/x/yodKLg) for the project.
+       *  `edit` the project, meaning that they have one of the following permissions:
+          
+           *  *Administer projects* [project permission](https://confluence.atlassian.com/x/yodKLg) for the project.
+           *  *Administer Jira* [global permission](https://confluence.atlassian.com/x/x4dKLg).
+       *  `create` the project, meaning that they have the *Create issues* [project permission](https://confluence.atlassian.com/x/yodKLg) for the project in which the issue is created.
+    enum:
+      - view
+      - browse
+      - edit
+      - create
+    default: view
+  expand:
+    type: string
+    description: >-
+      Use [expand](#expansion) to include additional information in the response. This parameter
+      accepts a comma-separated list. Expanded options include:
+
+       *  `description` Returns the project description.
+       *  `projectKeys` Returns all project keys associated with a project.
+       *  `lead` Returns information about the project lead.
+       *  `issueTypes` Returns all issue types associated with the project.
+       *  `url` Returns the URL associated with the project.
+       *  `insight` EXPERIMENTAL. Returns the insight details of total issue count and last issue update time for the project.
+  status:
+    type: array
+    description: |-
+      EXPERIMENTAL. Filter results by project status:
+
+       *  `live` Search live projects.
+       *  `archived` Search archived projects.
+       *  `deleted` Search deleted projects, those in the recycle bin.
+  properties:
+    type: array
+    description:
+      EXPERIMENTAL. A list of project properties to return for the project. This parameter
+      accepts a comma-separated list.
+  property_query:
+    type: string
+    description: EXPERIMENTAL. A query string used to search properties. The query string cannot be
+      specified using a JSON object. For example, to search for the value of `nested` from
+      `{"something":{"nested":1,"other":2}}` use `[thepropertykey].something.nested=1`. Note that
+      the propertyQuery key is enclosed in square brackets to enable searching where the
+      propertyQuery key includes dot (.) or equals (=) characters. Note that `thepropertykey` is
+      only returned when included in `properties`.
+query:
+  filters:
+    expand:
+      operators:
+        - eq
+      description: Use [expand](#expansion) to include additional information in the response. This
+        parameter accepts a comma-separated list. Expanded options include:\n\n *  `description`
+        Returns the project description.\n *  `projectKeys` Returns all project keys associated with
+        a project.\n *  `lead` Returns information about the project lead.\n *  `issueTypes` Returns
+        all issue types associated with the project.\n *  `url` Returns the URL associated with the
+        project.\n *  `insight` EXPERIMENTAL. Returns the insight details of total issue count and
+        last issue update time for the project.
+      bind:
+        eq:
+          input: expand
+      compile:
+        eq:
+          mode: http_query
+          param: expand
+output:
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether the project is archived.
+  archived_by:
+    type: string
+    path: $.archivedBy
+    description: The user who archived the project.
+  archived_date:
+    type: timestamp
+    path: $.archivedDate
+    description: The date when the project was archived.
+  assignee_type:
+    type: string
+    path: $.assigneeType
+    description: The default assignee when creating issues for this project.
+  avatar_urls:
+    type: string
+    path: $.avatarUrls
+    description: The URLs of the project's avatars.
+  components:
+    type: array
+    path: $.components
+    description: List of the components contained in the project.
+  deleted:
+    type: boolean
+    path: $.deleted
+    description: Whether the project is marked as deleted.
+  deleted_by:
+    type: string
+    path: $.deletedBy
+    description: The user who marked the project as deleted.
+  deleted_date:
+    type: timestamp
+    path: $.deletedDate
+    description: The date when the project was marked as deleted.
+  description:
+    type: string
+    path: $.description
+    description: A brief description of the project.
+  email:
+    type: string
+    path: $.email
+    description: An email address associated with the project.
+  expand:
+    type: string
+    path: $.expand
+    description: Expand options that include additional project details in the response.
+  favourite:
+    type: boolean
+    path: $.favourite
+    description: Whether the project is selected as a favorite.
+  id:
+    type: string
+    path: $.id
+    description: The ID of the project.
+  insight:
+    type: string
+    path: $.insight
+    description: Insights about the project.
+  is_private:
+    type: boolean
+    path: $.isPrivate
+    description: Whether the project is private from the user's perspective.
+  issue_type_hierarchy:
+    type: string
+    path: $.issueTypeHierarchy
+    description: The issue type hierarchy for the project.
+  issue_types:
+    type: array
+    path: $.issueTypes
+    description: List of the issue types available in the project.
+  key:
+    type: string
+    path: $.key
+    description: The key of the project.
+  landing_page_info:
+    type: string
+    path: $.landingPageInfo
+    description: The project landing page info.
+  lead:
+    type: string
+    path: $.lead
+    description: The username of the project lead.
+  name:
+    type: string
+    path: $.name
+    description: The name of the project.
+  permissions:
+    type: string
+    path: $.permissions
+    description: User permissions on the project
+  project_category:
+    type: string
+    path: $.projectCategory
+    description: The category the project belongs to.
+  project_type_key:
+    type: string
+    path: $.projectTypeKey
+    description: The [project type](https://confluence.
+  properties:
+    type: object
+    path: $.properties
+    description: Map of project properties
+  retention_till_date:
+    type: timestamp
+    path: $.retentionTillDate
+    description: The date when the project is deleted permanently.
+  roles:
+    type: object
+    path: $.roles
+    description: The name and self URL for each role defined in the project.
+  self:
+    type: string
+    path: $.self
+    description: The URL of the project details.
+  simplified:
+    type: boolean
+    path: $.simplified
+    description: Whether the project is simplified.
+  style:
+    type: string
+    path: $.style
+    description: The type of the project.
+  url:
+    type: string
+    path: $.url
+    description: A link to information about this project, such as project documentation.
+  uuid:
+    type: string
+    path: $.uuid
+    description: Unique ID for next-gen projects.
+  versions:
+    type: array
+    path: $.versions
+    description: The versions defined in the project.
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id

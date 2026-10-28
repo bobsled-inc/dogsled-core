@@ -1,0 +1,239 @@
+type: resource
+name: messages
+description: Message delivery records across campaigns, newsletters, and transactional sends.
+api:
+  endpoint: /v1/messages
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    limit: ${{ input.limit }}
+    type: ${{ input.type }}
+    metric: ${{ input.metric }}
+    drafts: ${{ input.drafts }}
+    campaign_id: ${{ input.campaign_id }}
+    newsletter_id: ${{ input.newsletter_id }}
+    action_id: ${{ input.action_id }}
+    start_ts: ${{ input.start_ts }}
+    end_ts: ${{ input.end_ts }}
+    get_tracked_responses: ${{ input.get_tracked_responses }}
+input:
+  start:
+    type: string
+    description: The token for the page of results you want to return. Responses contain a `next`
+      property. Use this property as the `start` value to return the next page of results.
+  limit:
+    type: integer
+    description: The maximum number of results you want to retrieve per page.
+    default: 50
+    maximum: 1000
+  type:
+    type: string
+    description: The type of item you want to return metrics for. When empty, the response contains
+      metrics for all possible types.
+    enum:
+      - email
+      - webhook
+      - twilio
+      - whatsapp
+      - slack
+      - push
+      - in_app
+  metric:
+    type: string
+    description: Determines the metric(s) you want to return.
+    enum:
+      - attempted
+      - sent
+      - delivered
+      - opened
+      - clicked
+      - converted
+      - bounced
+      - spammed
+      - unsubscribed
+      - dropped
+      - failed
+      - undeliverable
+  drafts:
+    type: boolean
+    description: If true, your request returns drafts rather than active/sent messages.
+  campaign_id:
+    type: integer
+    description: The campaign you want to filter for.
+  newsletter_id:
+    type: integer
+    description: The newsletter you want to filter for.
+  action_id:
+    type: integer
+    description: The action you want to filter for.
+  start_ts:
+    type: integer
+    description: The beginning timestamp for your query.
+  end_ts:
+    type: integer
+    description: The ending timestamp for your query.
+  get_tracked_responses:
+    type: boolean
+    description: If true, the response includes `tracked_responses` for each message—an object
+      containing tracked response option names for in-app survey responses.
+    default: false
+query:
+  filters:
+    action_id:
+      operators:
+        - eq
+      description: The action you want to filter for.
+      bind:
+        eq:
+          input: action_id
+      compile:
+        eq:
+          mode: http_query
+          param: action_id
+    campaign_id:
+      operators:
+        - eq
+      description: The campaign you want to filter for.
+      bind:
+        eq:
+          input: campaign_id
+      compile:
+        eq:
+          mode: http_query
+          param: campaign_id
+    newsletter_id:
+      operators:
+        - eq
+      description: The newsletter you want to filter for.
+      bind:
+        eq:
+          input: newsletter_id
+      compile:
+        eq:
+          mode: http_query
+          param: newsletter_id
+    type:
+      operators:
+        - eq
+      enum:
+        - email
+        - webhook
+        - twilio
+        - whatsapp
+        - slack
+        - push
+        - in_app
+      description:
+        The type of item you want to return metrics for. When empty, the response contains
+        metrics for all possible types.
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+output:
+  id:
+    type: string
+    path: $.id
+    description: The identifier for a delivery—the instance of a message intended for an individual recipient.
+  deduplicate_id:
+    type: string
+    path: $.deduplicate_id
+    description:
+      An identifier in the format `id:timestamp` where the id is the id of the object you are
+      working with (Campaigns, Deliveries, Exports, Identities, Newsletters, Segments, and
+      Templates), and the timestamp is the last time the object was updated.
+  message_template_id:
+    type: integer
+    path: $.message_template_id
+    description: The identifier of the message template used to create a message.
+  customer_id:
+    type: string
+    path: $.customer_id
+    description: The ID of a customer profile, analogous to a "person" in the UI.
+  customer_identifiers_email:
+    type: string
+    path: $.customer_identifiers.email
+    description: A person's email address, if set.
+  customer_identifiers_id:
+    type: string
+    path: $.customer_identifiers.id
+    description: A person's unique ID, if set.
+  customer_identifiers_cio_id:
+    type: string
+    path: $.customer_identifiers.cio_id
+    description: A unique identifier set by Customer.
+  recipient:
+    type: string
+    path: $.recipient
+    description: The recipient address for an action.
+  subject:
+    type: string
+    path: $.subject
+    description: The subject line for an `email` action.
+  metrics:
+    type: object
+    path: $.metrics
+    description:
+      Metrics for an individual instance of a message; each item in the object represents the
+      timestamp when a message achieved a particular metric.
+  created:
+    type: integer
+    path: $.created
+    description: The date time when the referenced ID was created.
+  failure_message:
+    type: string
+    path: $.failure_message
+    description: Explains why a message failed, if applicable.
+  campaign_id:
+    type: integer
+    path: $.campaign_id
+    description: The identifier for a campaign.
+  action_id:
+    type: integer
+    path: $.action_id
+    description: The identifier for an action.
+  parent_action_id:
+    type: integer
+    path: $.parent_action_id
+    description:
+      The ID of the parent action, if the action occurred within a campaign and has a parent
+      (like a randomized split, etc).
+  newsletter_id:
+    type: integer
+    path: $.newsletter_id
+    description: The identifier for a newsletter.
+  content_id:
+    type: integer
+    path: $.content_id
+    description: The identifier for a message in a newsletter.
+  broadcast_id:
+    type: integer
+    path: $.broadcast_id
+    description: The identifier for a broadcast.
+  trigger_event_id:
+    type: string
+    path: $.trigger_event_id
+    description:
+      The id of the event that triggered an event-triggered campaign (not an API-triggered
+      broadcast).
+  type:
+    type: string
+    path: $.type
+    description: The type of message/action.
+  forgotten:
+    type: boolean
+    path: $.forgotten
+    description: If true message contents are not retained by Customer.
+  tracked_responses:
+    type: object
+    path: $.tracked_responses
+    description: An object containing tracked response option names for in-app survey responses.
+extract:
+  record_path: $.messages
+  paginated: false
+  table:
+    primary_key:
+      - id

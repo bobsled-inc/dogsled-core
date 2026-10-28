@@ -1,0 +1,77 @@
+type: resource
+name: accounts_get_audit_logs
+description: List audit log events for each Cloudflare account visible to the API token
+api:
+  endpoint: /accounts/${{ input.account_id }}/audit_logs
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    per_page: ${{ input.per_page }}
+    since: ${{ input.since }}
+    before: ${{ input.before }}
+    direction: ${{ input.direction }}
+input:
+  account_id:
+    type: string
+    description: Cloudflare account identifier
+    required: true
+  page:
+    type: integer
+    description: Page index of audit log events to return
+    default: 1
+  per_page:
+    type: integer
+    description: Number of audit log events to return per page
+    default: 50
+  since:
+    type: timestamp
+    description: Only return events created on or after this timestamp
+  before:
+    type: timestamp
+    description: Only return events created before this timestamp
+  direction:
+    type: string
+    description: Sort direction for the audit log window
+    enum:
+      - desc
+      - asc
+    default: desc
+output:
+  id:
+    type: string
+    path: $.id
+    description: Cloudflare audit log identifier
+  when:
+    type: timestamp
+    path: $.when
+    description: Timestamp when the audited action occurred
+  action_type:
+    type: string
+    path: $.action.type
+    description: Type of action captured by the audit event
+  actor_email:
+    type: string
+    path: $.actor.email
+    description: Email address of the actor that triggered the event
+  resource_type:
+    type: string
+    path: $.resource.type
+    description: Cloudflare resource type affected by the event
+  resource_id:
+    type: string
+    path: $.resource.id
+    description: Cloudflare resource identifier affected by the event
+extract:
+  record_path: $.result
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  for_each:
+    resource: accounts_list_accounts
+    field: id
+    input: account_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

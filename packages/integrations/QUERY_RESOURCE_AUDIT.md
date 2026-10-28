@@ -1,0 +1,663 @@
+# Query Resource Catalog Audit
+
+Generate this report with `pnpm --filter @bobsled-inc/integrations audit:query-resources`.
+
+## Summary
+
+Schema version: 1
+
+| Bucket                               |   Count |
+| ------------------------------------ | ------: |
+| `wrapper_backed`                     |      11 |
+| `discovery_only`                     |      93 |
+| `query_ready`                        |       0 |
+| `query_ready_after_scalar_cleanup`   |       5 |
+| `search_ready_needs_semantic_review` |       0 |
+| `search_ready_semantically_blocked`  |       2 |
+| `blocked_by_billing`                 |       7 |
+| `not_a_fit`                          |     457 |
+| `not_a_fit_non_http`                 |      17 |
+| **Total resources**                  | **592** |
+
+## Current Query Catalog
+
+- Total query resources: 104 (wrapper-backed + discovery-only)
+- Wrapper-backed: 11
+- Discovery-only: 93
+
+## wrapper_backed (11)
+
+- `calendly.get_event_types` - typed wrapper `queryResources.calendly.getEventTypes` - reasons: `existing_query_wrapper`
+- `github.branches` - typed wrapper `queryResources.github.branches` - reasons: `existing_query_wrapper`
+- `github.issues` - typed wrapper `queryResources.github.issues` - reasons: `existing_query_wrapper`
+- `github.pull_requests` - typed wrapper `queryResources.github.pullRequests` - reasons: `existing_query_wrapper`
+- `jira.search_issues` - typed wrapper `queryResources.jira.searchIssues` - reasons: `existing_query_wrapper`
+- `stripe.customers` - typed wrapper `queryResources.stripe.customers` - reasons: `existing_query_wrapper`
+- `stripe.invoices` - typed wrapper `queryResources.stripe.invoices` - reasons: `existing_query_wrapper`
+- `stripe.prices` - typed wrapper `queryResources.stripe.prices` - reasons: `existing_query_wrapper`
+- `stripe.products` - typed wrapper `queryResources.stripe.products` - reasons: `existing_query_wrapper`
+- `stripe.subscriptions` - typed wrapper `queryResources.stripe.subscriptions` - reasons: `existing_query_wrapper`
+- `twilio.list_usage_records` - typed wrapper `queryResources.twilio.listUsageRecords` - reasons: `existing_query_wrapper`
+
+## discovery_only (93)
+
+- `asana.get_projects` - reasons: `existing_query_discovery`
+- `bamboohr.list_time_off_requests` - reasons: `existing_query_discovery`
+- `bamboohr.list_whos_out` - reasons: `existing_query_discovery`
+- `brex.list_expenses` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `budget_id->budget_id.eq:input_not_scalar`, `expense_type->expense_type.eq:input_not_scalar`, `payment_status->payment_status.eq:input_not_scalar`, `spending_entity_id->spending_entity_id.eq:input_not_scalar`, `status->status.eq:input_not_scalar`, `user_id->user_id.eq:input_not_scalar`
+- `brex.list_users` - reasons: `existing_query_discovery`
+- `calendly.activity_log` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `action->action.eq:input_not_scalar`, `namespace->namespace.eq:input_not_scalar`
+- `calendly.get_organization_memberships` - reasons: `existing_query_discovery`
+- `calendly.get_scheduled_events` - reasons: `existing_query_discovery`
+- `calendly.get_user_availability_schedules` - reasons: `existing_query_discovery`
+- `calendly.get_webhooks` - reasons: `existing_query_discovery`
+- `clickup.get_filtered_team_tasks` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `assignees->assignees.eq:input_not_scalar`, `custom_fields->custom_fields.eq:input_not_scalar`, `tags->tags.eq:input_not_scalar`
+- `clickup.get_folderless_lists` - reasons: `existing_query_discovery`
+- `clickup.get_lists` - reasons: `existing_query_discovery`
+- `clickup.get_spaces` - reasons: `existing_query_discovery`
+- `cloudflare.accounts_list_accounts` - reasons: `existing_query_discovery`
+- `cloudflare.dns_records_for_a_zone_list_dns_records` - reasons: `existing_query_discovery`
+- `cloudflare.zones_get` - reasons: `existing_query_discovery`
+- `cloudflare.zones_list_page_rules` - reasons: `existing_query_discovery`
+- `confluence.get_audit_records` - reasons: `existing_query_discovery`
+- `customer_io.activities` - reasons: `existing_query_discovery`
+- `customer_io.messages` - reasons: `existing_query_discovery`
+- `datadog.list_events` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `tags->tags.eq:output_not_scalar`
+- `datadog.list_monitors` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `tags->tags.eq:output_not_scalar`
+- `datadog.list_slos` - reasons: `existing_query_discovery`
+- `facebook_pages.page_insights` - reasons: `existing_query_discovery`
+- `github.check_runs` - reasons: `existing_query_discovery`
+- `github.commits` - reasons: `existing_query_discovery`
+- `github.dependency_graph_manifests` - reasons: `existing_query_discovery`
+- `github.deployments` - reasons: `existing_query_discovery`
+- `github.milestones` - reasons: `existing_query_discovery`
+- `github.workflow_runs` - reasons: `existing_query_discovery`
+- `google_sheets.batch_values` - reasons: `existing_query_discovery`
+- `hubspot.owners` - reasons: `existing_query_discovery`
+- `instagram.account_insights` - reasons: `existing_query_discovery`
+- `jira.boards` - reasons: `existing_query_discovery`
+- `jira.find_users` - reasons: `existing_query_discovery`
+- `jira.search_fields` - reasons: `existing_query_discovery`
+- `jira.search_projects` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `id->id.eq:input_not_scalar`, `properties->properties.eq:input_not_scalar`
+- `jira.search_statuses` - reasons: `existing_query_discovery`
+- `notion.pages_rest` - reasons: `existing_query_discovery`
+- `pagerduty.list_services` - reasons: `existing_query_discovery`
+- `pagerduty.list_users` - reasons: `existing_query_discovery`
+- `pipedrive.get_activities` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `done->done.eq:incompatible_scalar_types`
+- `pipedrive.get_deals` - reasons: `existing_query_discovery`
+- `pipedrive.get_stages` - reasons: `existing_query_discovery`
+- `posthog.events` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `distinct_id->distinct_id.eq:incompatible_scalar_types`, `properties->properties.eq:input_not_scalar`
+- `posthog.feature_flags` - reasons: `existing_query_discovery`, `unresolved_scalar_cleanup_blockers`
+  - blockers: `active->active.eq:incompatible_scalar_types`, `tags->tags.eq:output_not_scalar`
+- `posthog.projects` - reasons: `existing_query_discovery`
+- `sentry.list_an_organization_s_issues` - reasons: `existing_query_discovery`
+- `sentry.list_an_organization_s_releases` - reasons: `existing_query_discovery`
+- `sentry.list_your_organizations` - reasons: `existing_query_discovery`
+- `servicenow.change_requests` - reasons: `existing_query_discovery`
+- `servicenow.cmdb_ci` - reasons: `existing_query_discovery`
+- `servicenow.groups` - reasons: `existing_query_discovery`
+- `servicenow.incidents` - reasons: `existing_query_discovery`
+- `servicenow.problems` - reasons: `existing_query_discovery`
+- `servicenow.users` - reasons: `existing_query_discovery`
+- `slack.thread_replies` - reasons: `existing_query_discovery`
+- `stripe.application_fees` - reasons: `existing_query_discovery`
+- `stripe.balance_transactions` - reasons: `existing_query_discovery`
+- `stripe.charges` - reasons: `existing_query_discovery`
+- `stripe.checkout_sessions` - reasons: `existing_query_discovery`
+- `stripe.coupons` - reasons: `existing_query_discovery`
+- `stripe.credit_notes` - reasons: `existing_query_discovery`
+- `stripe.disputes` - reasons: `existing_query_discovery`
+- `stripe.events` - reasons: `existing_query_discovery`
+- `stripe.payment_intents` - reasons: `existing_query_discovery`
+- `stripe.payment_methods` - reasons: `existing_query_discovery`
+- `stripe.payouts` - reasons: `existing_query_discovery`
+- `stripe.plans` - reasons: `existing_query_discovery`
+- `stripe.promotion_codes` - reasons: `existing_query_discovery`
+- `stripe.refunds` - reasons: `existing_query_discovery`
+- `stripe.setup_intents` - reasons: `existing_query_discovery`
+- `stripe.tax_rates` - reasons: `existing_query_discovery`
+- `stripe.transfers` - reasons: `existing_query_discovery`
+- `stripe.webhook_endpoints` - reasons: `existing_query_discovery`
+- `twilio.list_account` - reasons: `existing_query_discovery`
+- `twilio.list_applications` - reasons: `existing_query_discovery`
+- `twilio.list_call` - reasons: `existing_query_discovery`
+- `twilio.list_conferences` - reasons: `existing_query_discovery`
+- `twilio.list_incoming_phone_numbers` - reasons: `existing_query_discovery`
+- `twilio.list_message` - reasons: `existing_query_discovery`
+- `vantage.anomaly_alerts` - reasons: `existing_query_discovery`
+- `vantage.audit_logs` - reasons: `existing_query_discovery`
+- `vantage.cost_provider_accounts` - reasons: `existing_query_discovery`
+- `vantage.cost_providers` - reasons: `existing_query_discovery`
+- `vantage.cost_reports` - reasons: `existing_query_discovery`
+- `vantage.cost_services` - reasons: `existing_query_discovery`
+- `vantage.costs` - reasons: `existing_query_discovery`
+- `vantage.folders` - reasons: `existing_query_discovery`
+- `vantage.integrations` - reasons: `existing_query_discovery`
+- `vantage.recommendations` - reasons: `existing_query_discovery`
+- `zoom.users` - reasons: `existing_query_discovery`
+
+## query_ready (0)
+
+_No resources._
+
+## query_ready_after_scalar_cleanup (5)
+
+- `clickup.get_tasks` - reasons: `generated_filter_candidates`, `scalar_cleanup_required`
+  - blockers: `assignees->assignees.eq:input_not_scalar`, `custom_fields->custom_fields.eq:input_not_scalar`, `tags->tags.eq:input_not_scalar`, `watchers->watchers.eq:input_not_scalar`
+- `intercom.list_activity_logs` - reasons: `generated_filter_candidates`, `scalar_cleanup_required`
+  - blockers: `created_at_before->created_at.lte:incompatible_scalar_types`
+- `posthog.persons` - reasons: `generated_filter_candidates`, `scalar_cleanup_required`
+  - blockers: `properties->properties.eq:input_not_scalar`
+- `vantage.tags` - reasons: `generated_filter_candidates`, `scalar_cleanup_required`
+  - blockers: `providers->providers.eq:input_not_scalar`
+- `zoom.meetings` - reasons: `generated_filter_candidates`, `scalar_cleanup_required`
+  - blockers: `type->type.eq:incompatible_scalar_types`
+
+## search_ready_needs_semantic_review (0)
+
+_No resources._
+
+## search_ready_semantically_blocked (2)
+
+- `front.list_contacts` - reasons: `front_q_query_object_requires_structured_filters`
+  - candidate search: `q` (front_q_query_object)
+- `front.list_conversations` - reasons: `front_q_query_object_requires_structured_filters`
+  - candidate search: `q` (front_q_query_object)
+
+## blocked_by_billing (7)
+
+- `apollo.search_companies` - reasons: `billing_metadata_present`
+- `datagma.find_people` - reasons: `billing_metadata_present`
+- `exa.search` - reasons: `billing_metadata_present`
+- `findymail.email_finder` - reasons: `billing_metadata_present`
+- `hunter.email_finder` - reasons: `billing_metadata_present`
+- `leadmagic.email_finder` - reasons: `billing_metadata_present`
+- `peopledatalabs.person_enrich` - reasons: `billing_metadata_present`
+
+## not_a_fit (457)
+
+- `airtable.list_bases` - reasons: `no_safe_query_or_search_candidate`
+- `airtable.list_records` - reasons: `no_safe_query_or_search_candidate`
+- `airtable.list_tables` - reasons: `no_safe_query_or_search_candidate`
+- `airtable.list_views` - reasons: `no_safe_query_or_search_candidate`
+- `airtable.list_webhooks` - reasons: `no_safe_query_or_search_candidate`
+- `amplitude.composition` - reasons: `no_safe_query_or_search_candidate`
+- `amplitude.events_list` - reasons: `no_safe_query_or_search_candidate`
+- `amplitude.sessions_average` - reasons: `no_safe_query_or_search_candidate`
+- `amplitude.user_search` - reasons: `no_safe_query_or_search_candidate`
+- `amplitude.users_report` - reasons: `no_safe_query_or_search_candidate`
+- `apollo.search_contacts` - reasons: `no_safe_query_or_search_candidate`
+- `apollo.search_people` - reasons: `no_safe_query_or_search_candidate`
+- `apollo.search_sequences` - reasons: `no_safe_query_or_search_candidate`
+- `apollo.search_tasks` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_portfolios` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_project_sections` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_task_stories` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_tasks` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_workspace_tags` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_workspace_teams` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_workspace_users` - reasons: `no_safe_query_or_search_candidate`
+- `asana.get_workspaces` - reasons: `no_safe_query_or_search_candidate`
+- `bamboohr.get_company_information` - reasons: `no_safe_query_or_search_candidate`
+- `bamboohr.get_employees_directory` - reasons: `no_safe_query_or_search_candidate`
+- `bamboohr.get_job_summaries` - reasons: `no_safe_query_or_search_candidate`
+- `bamboohr.list_employees` - reasons: `no_safe_query_or_search_candidate`
+- `bamboohr.list_fields` - reasons: `no_safe_query_or_search_candidate`
+- `bamboohr.list_timesheet_entries` - reasons: `no_safe_query_or_search_candidate`
+- `brex.list_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `brex.list_linked_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `brex.list_transfers` - reasons: `no_safe_query_or_search_candidate`
+- `brex.list_vendors` - reasons: `no_safe_query_or_search_candidate`
+- `calendly.get_my_user_account` - reasons: `no_safe_query_or_search_candidate`
+- `calendly.get_routing_form_submissions` - reasons: `no_safe_query_or_search_candidate`
+- `calendly.get_routing_forms` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_coupons` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_credit_notes` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_customers` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_events` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_invoices` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_item_prices` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_orders` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_products` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_subscriptions` - reasons: `no_safe_query_or_search_candidate`
+- `chargebee.list_transactions` - reasons: `no_safe_query_or_search_candidate`
+- `circleci.get_collaborations` - reasons: `no_safe_query_or_search_candidate`
+- `circleci.get_current_user` - reasons: `no_safe_query_or_search_candidate`
+- `circleci.get_webhooks` - reasons: `no_safe_query_or_search_candidate`
+- `circleci.list_contexts` - reasons: `no_safe_query_or_search_candidate`
+- `circleci.list_environments` - reasons: `no_safe_query_or_search_candidate`
+- `circleci.list_pipelines` - reasons: `no_safe_query_or_search_candidate`
+- `clickup.get_authorized_teams` - reasons: `no_safe_query_or_search_candidate`
+- `clickup.get_authorized_user` - reasons: `no_safe_query_or_search_candidate`
+- `clickup.get_folders` - reasons: `no_safe_query_or_search_candidate`
+- `clickup.get_webhooks` - reasons: `no_safe_query_or_search_candidate`
+- `close_crm.contacts` - reasons: `no_safe_query_or_search_candidate`
+- `close_crm.leads` - reasons: `no_safe_query_or_search_candidate`
+- `close_crm.opportunities` - reasons: `no_safe_query_or_search_candidate`
+- `close_crm.tasks` - reasons: `no_safe_query_or_search_candidate`
+- `close_crm.users` - reasons: `no_safe_query_or_search_candidate`
+- `cloudflare.accounts_get_audit_logs` - reasons: `no_safe_query_or_search_candidate`
+- `cloudflare.accounts_list_workers_scripts` - reasons: `no_safe_query_or_search_candidate`
+- `cloudflare.zones_list_load_balancers` - reasons: `no_safe_query_or_search_candidate`
+- `cloudflare.zones_list_rulesets` - reasons: `no_safe_query_or_search_candidate`
+- `confluence.get_current_user` - reasons: `no_safe_query_or_search_candidate`
+- `confluence.get_groups` - reasons: `no_safe_query_or_search_candidate`
+- `confluence.search_content_by_cql` - reasons: `no_safe_query_or_search_candidate`
+- `confluence.search_groups` - reasons: `no_safe_query_or_search_candidate`
+- `confluence.search_user` - reasons: `no_safe_query_or_search_candidate`
+- `customer_io.newsletters` - reasons: `no_safe_query_or_search_candidate`
+- `customer_io.segments` - reasons: `no_safe_query_or_search_candidate`
+- `customer_io.transactional_messages` - reasons: `no_safe_query_or_search_candidate`
+- `customer_io.workspaces` - reasons: `no_safe_query_or_search_candidate`
+- `datadog.list_dashboards` - reasons: `no_safe_query_or_search_candidate`
+- `datadog.list_hosts` - reasons: `no_safe_query_or_search_candidate`
+- `datadog.list_users` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_ads.ad_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_ads.ad_creatives` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_ads.ad_sets` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_ads.ads` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_ads.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_ads.insights` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_pages.comments` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_pages.feed` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_pages.pages` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_pages.posts` - reasons: `no_safe_query_or_search_candidate`
+- `facebook_pages.videos` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.agents` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.companies` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.contact_fields` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.contacts` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.conversations` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.groups` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.products` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.ticket_fields` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.ticket_forms` - reasons: `no_safe_query_or_search_candidate`
+- `freshdesk.tickets` - reasons: `no_safe_query_or_search_candidate`
+- `freshsales.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `freshsales.appointments` - reasons: `no_safe_query_or_search_candidate`
+- `freshsales.contacts` - reasons: `no_safe_query_or_search_candidate`
+- `freshsales.deals` - reasons: `no_safe_query_or_search_candidate`
+- `freshsales.notes` - reasons: `no_safe_query_or_search_candidate`
+- `freshsales.tasks` - reasons: `no_safe_query_or_search_candidate`
+- `front.list_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `front.list_channels` - reasons: `no_safe_query_or_search_candidate`
+- `front.list_inboxes` - reasons: `no_safe_query_or_search_candidate`
+- `front.list_teams` - reasons: `no_safe_query_or_search_candidate`
+- `github.dependency_graph_sbom` - reasons: `no_safe_query_or_search_candidate`
+- `github.dependency_review` - reasons: `no_safe_query_or_search_candidate`
+- `github.environments` - reasons: `no_safe_query_or_search_candidate`
+- `github.labels` - reasons: `no_safe_query_or_search_candidate`
+- `github.members` - reasons: `no_safe_query_or_search_candidate`
+- `github.pull_request_reviews` - reasons: `no_safe_query_or_search_candidate`
+- `github.releases` - reasons: `no_safe_query_or_search_candidate`
+- `github.repos` - reasons: `no_safe_query_or_search_candidate`
+- `github.teams` - reasons: `no_safe_query_or_search_candidate`
+- `github.workflows` - reasons: `no_safe_query_or_search_candidate`
+- `gitlab.projects` - reasons: `no_safe_query_or_search_candidate`
+- `gong.call_transcripts` - reasons: `no_safe_query_or_search_candidate`
+- `gong.calls` - reasons: `no_safe_query_or_search_candidate`
+- `gong.meetings` - reasons: `no_safe_query_or_search_candidate`
+- `gong.scorecards` - reasons: `no_safe_query_or_search_candidate`
+- `gong.trackers` - reasons: `no_safe_query_or_search_candidate`
+- `gong.users` - reasons: `no_safe_query_or_search_candidate`
+- `google_ads.accessible_customers` - reasons: `no_safe_query_or_search_candidate`
+- `google_ads.ad_groups` - reasons: `no_safe_query_or_search_candidate`
+- `google_ads.ads` - reasons: `no_safe_query_or_search_candidate`
+- `google_ads.campaign_stats` - reasons: `no_safe_query_or_search_candidate`
+- `google_ads.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `google_ads.labels` - reasons: `no_safe_query_or_search_candidate`
+- `google_analytics.compatibility` - reasons: `no_safe_query_or_search_candidate`
+- `google_analytics.metadata_dimensions` - reasons: `no_safe_query_or_search_candidate`
+- `google_analytics.run_funnel_report` - reasons: `no_safe_query_or_search_candidate`
+- `google_analytics.run_pivot_report` - reasons: `no_safe_query_or_search_candidate`
+- `google_analytics.run_realtime_report` - reasons: `no_safe_query_or_search_candidate`
+- `google_analytics.run_report` - reasons: `no_safe_query_or_search_candidate`
+- `google_search_console.search_analytics` - reasons: `no_safe_query_or_search_candidate`
+- `google_search_console.sitemaps` - reasons: `no_safe_query_or_search_candidate`
+- `google_search_console.sites` - reasons: `no_safe_query_or_search_candidate`
+- `google_sheets.batch_values_by_filter` - reasons: `no_safe_query_or_search_candidate`
+- `google_sheets.developer_metadata` - reasons: `no_safe_query_or_search_candidate`
+- `google_sheets.named_ranges` - reasons: `no_safe_query_or_search_candidate`
+- `google_sheets.sheets` - reasons: `no_safe_query_or_search_candidate`
+- `google_sheets.spreadsheet_properties` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.applications` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.candidates` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.departments` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.job_posts` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.jobs` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.offers` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.offices` - reasons: `no_safe_query_or_search_candidate`
+- `greenhouse.users` - reasons: `no_safe_query_or_search_candidate`
+- `helpscout.conversations` - reasons: `no_safe_query_or_search_candidate`
+- `helpscout.customers` - reasons: `no_safe_query_or_search_candidate`
+- `helpscout.mailboxes` - reasons: `no_safe_query_or_search_candidate`
+- `helpscout.tags` - reasons: `no_safe_query_or_search_candidate`
+- `helpscout.users` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.calls` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.companies` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.contact_lists` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.contacts` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.custom_objects` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.deals` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.email_templates` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.emails` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.engagements` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.feedback_submissions` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.forms` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.line_items` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.marketing_events` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.meetings` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.notes` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.pipeline_stages` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.pipelines` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.products` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.quotes` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.tasks` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.ticket_pipeline_stages` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.ticket_pipelines` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.tickets` - reasons: `no_safe_query_or_search_candidate`
+- `hubspot.workflows` - reasons: `no_safe_query_or_search_candidate`
+- `instagram.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `instagram.media` - reasons: `no_safe_query_or_search_candidate`
+- `instagram.media_insights` - reasons: `no_safe_query_or_search_candidate`
+- `instagram.stories` - reasons: `no_safe_query_or_search_candidate`
+- `intercom.list_admins` - reasons: `no_safe_query_or_search_candidate`
+- `intercom.list_contacts` - reasons: `no_safe_query_or_search_candidate`
+- `intercom.list_conversations` - reasons: `no_safe_query_or_search_candidate`
+- `intercom.list_tags` - reasons: `no_safe_query_or_search_candidate`
+- `intercom.list_teams` - reasons: `no_safe_query_or_search_candidate`
+- `jira.changelogs` - reasons: `no_safe_query_or_search_candidate`
+- `jira.components` - reasons: `no_safe_query_or_search_candidate`
+- `jira.dashboards` - reasons: `no_safe_query_or_search_candidate`
+- `jira.filters` - reasons: `no_safe_query_or_search_candidate`
+- `jira.get_audit_records` - reasons: `no_safe_query_or_search_candidate`
+- `jira.get_issue_comments` - reasons: `no_safe_query_or_search_candidate`
+- `jira.get_issue_link_types` - reasons: `no_safe_query_or_search_candidate`
+- `jira.get_issue_types` - reasons: `no_safe_query_or_search_candidate`
+- `jira.get_project_categories` - reasons: `no_safe_query_or_search_candidate`
+- `jira.search_priorities` - reasons: `no_safe_query_or_search_candidate`
+- `jira.search_resolutions` - reasons: `no_safe_query_or_search_candidate`
+- `jira.sprints` - reasons: `no_safe_query_or_search_candidate`
+- `jira.versions` - reasons: `no_safe_query_or_search_candidate`
+- `jira.worklogs` - reasons: `no_safe_query_or_search_candidate`
+- `klaviyo.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `klaviyo.events` - reasons: `no_safe_query_or_search_candidate`
+- `klaviyo.flows` - reasons: `no_safe_query_or_search_candidate`
+- `klaviyo.lists` - reasons: `no_safe_query_or_search_candidate`
+- `klaviyo.profiles` - reasons: `no_safe_query_or_search_candidate`
+- `klaviyo.segments` - reasons: `no_safe_query_or_search_candidate`
+- `launchdarkly.audit_log_entries` - reasons: `no_safe_query_or_search_candidate`
+- `launchdarkly.custom_roles` - reasons: `no_safe_query_or_search_candidate`
+- `launchdarkly.integrations` - reasons: `no_safe_query_or_search_candidate`
+- `launchdarkly.members` - reasons: `no_safe_query_or_search_candidate`
+- `launchdarkly.projects` - reasons: `no_safe_query_or_search_candidate`
+- `launchdarkly.webhooks` - reasons: `no_safe_query_or_search_candidate`
+- `lever.feedback_forms` - reasons: `no_safe_query_or_search_candidate`
+- `lever.opportunities` - reasons: `no_safe_query_or_search_candidate`
+- `lever.postings` - reasons: `no_safe_query_or_search_candidate`
+- `lever.requisitions` - reasons: `no_safe_query_or_search_candidate`
+- `lever.users` - reasons: `no_safe_query_or_search_candidate`
+- `linear.comments` - reasons: `no_safe_query_or_search_candidate`
+- `linear.cycles_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linear.documents_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linear.initiatives` - reasons: `no_safe_query_or_search_candidate`
+- `linear.issues_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linear.labels_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linear.project_milestones` - reasons: `no_safe_query_or_search_candidate`
+- `linear.projects_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linear.roadmaps` - reasons: `no_safe_query_or_search_candidate`
+- `linear.teams_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linear.users_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linear.workflow_states_graphql` - reasons: `no_safe_query_or_search_candidate`
+- `linkedin_ads.ad_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `linkedin_ads.ad_creatives` - reasons: `no_safe_query_or_search_candidate`
+- `linkedin_ads.campaign_groups` - reasons: `no_safe_query_or_search_candidate`
+- `linkedin_ads.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `linkedin_ads.lead_forms` - reasons: `no_safe_query_or_search_candidate`
+- `mailchimp.activity_feed` - reasons: `no_safe_query_or_search_candidate`
+- `mailchimp.audiences` - reasons: `no_safe_query_or_search_candidate`
+- `mailchimp.automations` - reasons: `no_safe_query_or_search_candidate`
+- `mailchimp.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `mailchimp.templates` - reasons: `no_safe_query_or_search_candidate`
+- `marketo.activities` - reasons: `no_safe_query_or_search_candidate`
+- `marketo.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `marketo.leads` - reasons: `no_safe_query_or_search_candidate`
+- `marketo.lists` - reasons: `no_safe_query_or_search_candidate`
+- `marketo.programs` - reasons: `no_safe_query_or_search_candidate`
+- `marketo.users` - reasons: `no_safe_query_or_search_candidate`
+- `mixpanel.annotations` - reasons: `no_safe_query_or_search_candidate`
+- `mixpanel.cohorts` - reasons: `no_safe_query_or_search_candidate`
+- `mixpanel.funnels` - reasons: `no_safe_query_or_search_candidate`
+- `mixpanel.profiles` - reasons: `no_safe_query_or_search_candidate`
+- `mixpanel.retention` - reasons: `no_safe_query_or_search_candidate`
+- `mixpanel.segmentation` - reasons: `no_safe_query_or_search_candidate`
+- `monday.board_summaries` - reasons: `no_safe_query_or_search_candidate`
+- `monday.boards` - reasons: `no_safe_query_or_search_candidate`
+- `monday.item_details` - reasons: `no_safe_query_or_search_candidate`
+- `monday.teams` - reasons: `no_safe_query_or_search_candidate`
+- `monday.users` - reasons: `no_safe_query_or_search_candidate`
+- `monday.workspaces` - reasons: `no_safe_query_or_search_candidate`
+- `notion.blocks` - reasons: `no_safe_query_or_search_candidate`
+- `notion.comments_rest` - reasons: `no_safe_query_or_search_candidate`
+- `notion.database_items` - reasons: `no_safe_query_or_search_candidate`
+- `notion.page_properties` - reasons: `no_safe_query_or_search_candidate`
+- `notion.users_rest` - reasons: `no_safe_query_or_search_candidate`
+- `outreach.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `outreach.calls` - reasons: `no_safe_query_or_search_candidate`
+- `outreach.prospects` - reasons: `no_safe_query_or_search_candidate`
+- `outreach.sequence_states` - reasons: `no_safe_query_or_search_candidate`
+- `outreach.sequences` - reasons: `no_safe_query_or_search_candidate`
+- `outreach.users` - reasons: `no_safe_query_or_search_candidate`
+- `pagerduty.list_business_services` - reasons: `no_safe_query_or_search_candidate`
+- `pagerduty.list_escalation_policies` - reasons: `no_safe_query_or_search_candidate`
+- `pagerduty.list_incidents` - reasons: `no_safe_query_or_search_candidate`
+- `pagerduty.list_schedules` - reasons: `no_safe_query_or_search_candidate`
+- `pagerduty.list_teams` - reasons: `no_safe_query_or_search_candidate`
+- `pagerduty.list_vendors` - reasons: `no_safe_query_or_search_candidate`
+- `pinterest_ads.ad_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `pinterest_ads.ad_groups` - reasons: `no_safe_query_or_search_candidate`
+- `pinterest_ads.ads` - reasons: `no_safe_query_or_search_candidate`
+- `pinterest_ads.analytics` - reasons: `no_safe_query_or_search_candidate`
+- `pinterest_ads.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_leads` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_notes` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_organizations` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_persons` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_pipelines` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_products` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_users` - reasons: `no_safe_query_or_search_candidate`
+- `pipedrive.get_webhooks` - reasons: `no_safe_query_or_search_candidate`
+- `posthog.event_definitions` - reasons: `no_safe_query_or_search_candidate`
+- `posthog.organizations` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.audit_logs` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.contacts` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.custom_fields` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.feature_requests` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.issues` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.knowledge_bases` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.macros` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.surveys` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.tags` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.tasks` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.teams` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.ticket_forms` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.user_roles` - reasons: `no_safe_query_or_search_candidate`
+- `pylon.users` - reasons: `no_safe_query_or_search_candidate`
+- `quickbooks.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `quickbooks.bills` - reasons: `no_safe_query_or_search_candidate`
+- `quickbooks.customers` - reasons: `no_safe_query_or_search_candidate`
+- `quickbooks.invoices` - reasons: `no_safe_query_or_search_candidate`
+- `quickbooks.journal_entries` - reasons: `no_safe_query_or_search_candidate`
+- `quickbooks.payments` - reasons: `no_safe_query_or_search_candidate`
+- `quickbooks.vendors` - reasons: `no_safe_query_or_search_candidate`
+- `recurly.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `recurly.coupons` - reasons: `no_safe_query_or_search_candidate`
+- `recurly.invoices` - reasons: `no_safe_query_or_search_candidate`
+- `recurly.plans` - reasons: `no_safe_query_or_search_candidate`
+- `recurly.subscriptions` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.account_contact_roles` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.attachments` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.campaign_members` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.cases` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.contacts` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.content_documents` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.events` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.groups` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.lead_status` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.leads` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.notes` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.opportunities` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.opportunity_contact_roles` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.opportunity_line_items` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.opportunity_stages` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.pricebook_entries` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.pricebooks` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.products` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.profiles` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.roles` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.sobjects` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.tasks` - reasons: `no_safe_query_or_search_candidate`
+- `salesforce.users` - reasons: `no_safe_query_or_search_candidate`
+- `segment.connected_destinations` - reasons: `no_safe_query_or_search_candidate`
+- `segment.destinations` - reasons: `no_safe_query_or_search_candidate`
+- `segment.functions` - reasons: `no_safe_query_or_search_candidate`
+- `segment.sources` - reasons: `no_safe_query_or_search_candidate`
+- `segment.tracking_plan_rules` - reasons: `no_safe_query_or_search_candidate`
+- `segment.tracking_plans` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.get_export_details` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.list_contact_db_list` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.list_custom_field` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.list_exports` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.list_recipient` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.list_reserved_fields` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.list_segments` - reasons: `no_safe_query_or_search_candidate`
+- `sendgrid.list_status` - reasons: `no_safe_query_or_search_candidate`
+- `sentry.list_an_organization_s_available_integrations` - reasons: `no_safe_query_or_search_candidate`
+- `sentry.list_an_organization_s_environments` - reasons: `no_safe_query_or_search_candidate`
+- `sentry.list_an_organization_s_members` - reasons: `no_safe_query_or_search_candidate`
+- `sentry.list_an_organization_s_projects` - reasons: `no_safe_query_or_search_candidate`
+- `sentry.list_an_organization_s_repositories` - reasons: `no_safe_query_or_search_candidate`
+- `sentry.list_an_organization_s_teams` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.blogs` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.collects` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.custom_collections` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.customers` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.fulfillments` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.inventory_items` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.inventory_levels` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.locations` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.order_transactions` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.orders` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.pages` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.product_variants` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.products` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.smart_collections` - reasons: `no_safe_query_or_search_candidate`
+- `shopify.themes` - reasons: `no_safe_query_or_search_candidate`
+- `slack.channels` - reasons: `no_safe_query_or_search_candidate`
+- `slack.messages` - reasons: `no_safe_query_or_search_candidate`
+- `slack.reactions` - reasons: `no_safe_query_or_search_candidate`
+- `slack.users` - reasons: `no_safe_query_or_search_candidate`
+- `smartlead.campaign_leads` - reasons: `no_safe_query_or_search_candidate`
+- `smartlead.campaign_statistics` - reasons: `no_safe_query_or_search_candidate`
+- `smartlead.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `smartlead.email_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `snapchat_ads.ad_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `snapchat_ads.ad_squads` - reasons: `no_safe_query_or_search_candidate`
+- `snapchat_ads.ads` - reasons: `no_safe_query_or_search_candidate`
+- `snapchat_ads.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `snapchat_ads.organizations` - reasons: `no_safe_query_or_search_candidate`
+- `snapchat_ads.stats` - reasons: `no_safe_query_or_search_candidate`
+- `stripe.invoice_items` - reasons: `no_safe_query_or_search_candidate`
+- `stripe.subscription_items` - reasons: `no_safe_query_or_search_candidate`
+- `tiktok_ads.ad_groups` - reasons: `no_safe_query_or_search_candidate`
+- `tiktok_ads.ad_insights` - reasons: `no_safe_query_or_search_candidate`
+- `tiktok_ads.ads` - reasons: `no_safe_query_or_search_candidate`
+- `tiktok_ads.advertisers` - reasons: `no_safe_query_or_search_candidate`
+- `tiktok_ads.campaigns` - reasons: `no_safe_query_or_search_candidate`
+- `twilio.list_queues` - reasons: `no_safe_query_or_search_candidate`
+- `twitter.owned_lists` - reasons: `no_safe_query_or_search_candidate`
+- `twitter.search_posts_recent` - reasons: `no_safe_query_or_search_candidate`
+- `twitter.user_posts` - reasons: `no_safe_query_or_search_candidate`
+- `twitter.users_followers` - reasons: `no_safe_query_or_search_candidate`
+- `twitter.users_following` - reasons: `no_safe_query_or_search_candidate`
+- `twitter.users_me` - reasons: `no_safe_query_or_search_candidate`
+- `typeform.forms` - reasons: `no_safe_query_or_search_candidate`
+- `typeform.images` - reasons: `no_safe_query_or_search_candidate`
+- `typeform.responses` - reasons: `no_safe_query_or_search_candidate`
+- `typeform.themes` - reasons: `no_safe_query_or_search_candidate`
+- `typeform.workspaces` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.access_grants` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.anomaly_notifications` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.billing_rules` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.budget_alerts` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.budgets` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.business_metrics` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.cost_alerts` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.dashboards` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.exchange_rates` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.financial_commitment_reports` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.financial_commitments` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.invoices` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.managed_accounts` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.report_notifications` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.resource_reports` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.saved_filters` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.segments` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.teams` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.users` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.virtual_tag_configs` - reasons: `no_safe_query_or_search_candidate`
+- `vantage.workspaces` - reasons: `no_safe_query_or_search_candidate`
+- `xero.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `xero.bank_transactions` - reasons: `no_safe_query_or_search_candidate`
+- `xero.contacts` - reasons: `no_safe_query_or_search_candidate`
+- `xero.invoices` - reasons: `no_safe_query_or_search_candidate`
+- `xero.items` - reasons: `no_safe_query_or_search_candidate`
+- `xero.payments` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.groups` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.macros` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.organizations` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.ticket_fields` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.ticket_forms` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.tickets` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.users` - reasons: `no_safe_query_or_search_candidate`
+- `zendesk.views` - reasons: `no_safe_query_or_search_candidate`
+- `zoom.meeting_participants` - reasons: `no_safe_query_or_search_candidate`
+- `zoom.recordings` - reasons: `no_safe_query_or_search_candidate`
+- `zoom.webinars` - reasons: `no_safe_query_or_search_candidate`
+- `zuora.accounts` - reasons: `no_safe_query_or_search_candidate`
+- `zuora.invoices` - reasons: `no_safe_query_or_search_candidate`
+- `zuora.payments` - reasons: `no_safe_query_or_search_candidate`
+- `zuora.products` - reasons: `no_safe_query_or_search_candidate`
+- `zuora.subscriptions` - reasons: `no_safe_query_or_search_candidate`
+- `zuora.usage` - reasons: `no_safe_query_or_search_candidate`
+
+## not_a_fit_non_http (17)
+
+- `bigquery.query_results` - reasons: `mcp_tool_resource`
+- `google_drive.file_contents` - reasons: `mcp_tool_resource`
+- `google_drive.files` - reasons: `mcp_tool_resource`
+- `linear.cycles_mcp` - reasons: `mcp_tool_resource`
+- `linear.documents_mcp` - reasons: `mcp_tool_resource`
+- `linear.issues_mcp` - reasons: `mcp_tool_resource`
+- `linear.labels_mcp` - reasons: `mcp_tool_resource`
+- `linear.projects_mcp` - reasons: `mcp_tool_resource`
+- `linear.teams_mcp` - reasons: `mcp_tool_resource`
+- `linear.users_mcp` - reasons: `mcp_tool_resource`
+- `linear.workflow_states_mcp` - reasons: `mcp_tool_resource`
+- `notion.comments_mcp` - reasons: `mcp_tool_resource`
+- `notion.databases_mcp` - reasons: `mcp_tool_resource`
+- `notion.pages_mcp` - reasons: `mcp_tool_resource`
+- `notion.users_mcp` - reasons: `mcp_tool_resource`
+- `snowflake.query_results` - reasons: `mcp_tool_resource`
+- `snowflake.tables` - reasons: `mcp_tool_resource`

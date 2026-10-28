@@ -1,0 +1,76 @@
+type: resource
+name: owners
+description: HubSpot owners representing users in your HubSpot account who can be assigned to CRM
+  records like contacts, companies, deals, and tickets
+api:
+  endpoint: /crm/v3/owners
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    email: ${{ input.email }}
+input:
+  limit:
+    type: integer
+    description: Number of owner records to return per page (max 100)
+    default: 100
+  email:
+    type: string
+    description: Filter owners by exact email address match, leave empty to return all owners
+    default: ''
+query:
+  filters:
+    email:
+      operators:
+        - eq
+      description: Filter owners by exact email address match, leave empty to return all owners
+      bind:
+        eq:
+          input: email
+      compile:
+        eq:
+          mode: http_query
+          param: email
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the owner, returned as a numeric string. This is the
+      value stored in hubspot_owner_id fields on CRM records.
+  email:
+    type: string
+    path: $.email
+    description: Email address of the HubSpot user associated with this owner record
+  first_name:
+    type: string
+    path: $.firstName
+    description: First name of the HubSpot owner
+  last_name:
+    type: string
+    path: $.lastName
+    description: Last name of the HubSpot owner
+  type:
+    type: string
+    path: $.type
+    description: Type of the owner record, typically PERSON for individual users
+  user_id:
+    type: string
+    path: $.userId
+    description: Internal HubSpot user ID associated with this owner, distinct from the owner ID
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp of when the owner record was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp of when the owner record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

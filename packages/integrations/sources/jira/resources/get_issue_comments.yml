@@ -1,0 +1,92 @@
+type: resource
+name: get_issue_comments
+description: List comments for issues returned by the Jira issue search stream.
+api:
+  endpoint: /rest/api/3/issue/${{ input.issue_id_or_key }}/comment
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    orderBy: ${{ input.order_by }}
+input:
+  issue_id_or_key:
+    type: string
+    required: true
+    description: Jira issue id or key such as 10001 or TEAM-{number}.
+  start_at:
+    type: integer
+    description: Zero-based offset for the first comment in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of comments to return per page.
+    default: 100
+  order_by:
+    type: string
+    description: Comment ordering expression supported by Jira.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira comment identifier.
+  self:
+    type: string
+    path: $.self
+    description: Jira API URL for the comment.
+  body:
+    type: object
+    path: $.body
+    description: Atlassian document format body payload.
+  author_account_id:
+    type: string
+    path: $.author.accountId
+    description: Account ID of the comment author.
+  author_display_name:
+    type: string
+    path: $.author.displayName
+    description: Display name of the comment author.
+  update_author_account_id:
+    type: string
+    path: $.updateAuthor.accountId
+    description: Account ID of the last user to edit the comment.
+  update_author_display_name:
+    type: string
+    path: $.updateAuthor.displayName
+    description: Display name of the last user to edit the comment.
+  created:
+    type: timestamp
+    path: $.created
+    description: Comment creation timestamp.
+  updated:
+    type: timestamp
+    path: $.updated
+    description: Comment update timestamp.
+  jsd_public:
+    type: boolean
+    path: $.jsdPublic
+    description: Whether the comment is public in Jira Service Management.
+  visibility_type:
+    type: string
+    path: $.visibility.type
+    description: Visibility type when the comment is restricted.
+  visibility_value:
+    type: string
+    path: $.visibility.value
+    description: Visibility target when the comment is restricted.
+extract:
+  record_path: $.comments
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  for_each:
+    resource: search_issues
+    field: id
+    input: issue_id_or_key
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+verify:
+  suppress:
+    - FIELD_TYPE_MISMATCH

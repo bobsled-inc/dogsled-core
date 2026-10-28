@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: vq
+name: bq_recent_orders
+description: Most recent orders from the BigQuery analytics dataset.
+nlq: Show me the last 20 orders, newest first.
+sql: |
+  SELECT order_id, customer_id, order_date, total, status
+  FROM {bq_fct_orders}
+  ORDER BY order_date DESC
+  LIMIT 20
+connection: bigquery
+tags: [ops, bigquery]

@@ -1,0 +1,18 @@
+spec_version: '0.2'
+name: customers
+type: source
+source_type: warehouse_table
+connection: snowflake
+table: RAW.CUSTOMERS
+schema:
+  columns:
+    - name: C_CUSTKEY
+      type: NUMBER
+    - name: C_NAME
+      type: VARCHAR
+    - name: C_EMAIL
+      type: VARCHAR
+    - name: C_COUNTRY
+      type: VARCHAR
+    - name: C_CREATED_AT
+      type: TIMESTAMP_NTZ

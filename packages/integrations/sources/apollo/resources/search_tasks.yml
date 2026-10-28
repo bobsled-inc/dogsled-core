@@ -1,0 +1,33 @@
+type: resource
+name: search_tasks
+description: Search Apollo tasks
+api:
+  endpoint: /api/v1/tasks/search
+  method: POST
+  request_body:
+    page: 1
+    per_page: 100
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Task identifier
+  subject:
+    type: string
+    path: $.subject
+    description: Task subject
+  status:
+    type: string
+    path: $.status
+    description: Task status
+  due_at:
+    type: timestamp
+    path: $.due_at
+    description: Due timestamp
+extract:
+  record_path: $.tasks
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

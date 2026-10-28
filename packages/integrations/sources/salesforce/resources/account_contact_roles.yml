@@ -1,0 +1,40 @@
+type: resource
+name: account_contact_roles
+description: Account contact roles from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,AccountId,ContactId,Role,IsPrimary,CreatedDate,LastModifiedDate FROM AccountContactRole
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  account_id:
+    type: string
+    path: $.AccountId
+  contact_id:
+    type: string
+    path: $.ContactId
+  role:
+    type: string
+    path: $.Role
+  is_primary:
+    type: boolean
+    path: $.IsPrimary
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

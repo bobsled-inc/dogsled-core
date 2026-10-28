@@ -1,0 +1,18 @@
+spec_version: '0.2'
+name: orders
+type: source
+source_type: warehouse_table
+connection: bigquery
+table: dogsled_multi_conn_raw.orders
+schema:
+  columns:
+    - name: o_orderkey
+      type: INT64
+    - name: o_custkey
+      type: INT64
+    - name: o_orderdate
+      type: DATE
+    - name: o_totalprice
+      type: NUMERIC
+    - name: o_status
+      type: STRING

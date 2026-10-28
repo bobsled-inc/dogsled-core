@@ -1,0 +1,60 @@
+type: resource
+name: virtual_tag_configs
+description: Virtual tag configurations for cost allocation
+api:
+  endpoint: /virtual_tag_configs
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+output:
+  token:
+    type: string
+    path: $.token
+    description: The token of the VirtualTagConfig.
+  key:
+    type: string
+    path: $.key
+    description: The key of the VirtualTagConfig.
+  created_by_token:
+    type: string
+    path: $.created_by_token
+    description: The token of the Creator of the VirtualTagConfig.
+  overridable:
+    type: boolean
+    path: $.overridable
+    description: Whether the VirtualTagConfig can override a provider-supplied tag.
+  backfill_until:
+    type: timestamp
+    path: $.backfill_until
+    description: The earliest month VirtualTagConfig should be backfilled to.
+  values:
+    type: array
+    path: $.values
+    description: Values for the VirtualTagConfig.
+extract:
+  record_path: $.virtual_tag_configs
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get virtual tag config by token
+  api:
+    endpoint: /virtual_tag_configs/${{ input.token }}
+    method: GET
+  input:
+    token:
+      type: string
+      required: true

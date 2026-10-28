@@ -1,0 +1,47 @@
+spec_version: '0.2'
+name: asana__projects
+type: model
+description: Asana projects with workspace and team context.
+grain: project_id
+source:
+  ref: stg_asana__get_projects
+joins:
+  - ref: stg_asana__get_workspaces
+    type: left
+    on: stg_asana__get_projects.workspace_gid = stg_asana__get_workspaces.gid
+  - ref: stg_asana__get_workspace_teams
+    type: left
+    on: stg_asana__get_projects.team_gid = stg_asana__get_workspace_teams.gid
+columns:
+  - name: project_id
+    expr: stg_asana__get_projects.gid
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Asana project identifier.
+  - name: name
+    expr: stg_asana__get_projects.name
+    semantic_role: categorical
+    description: Project name.
+  - name: archived
+    expr: stg_asana__get_projects.archived
+    semantic_role: categorical
+    description: Whether the project is archived.
+  - name: team_name
+    expr: COALESCE(stg_asana__get_workspace_teams.name, stg_asana__get_projects.team_name)
+    semantic_role: categorical
+    description: Name of the team that owns the project.
+  - name: workspace_name
+    expr: COALESCE(stg_asana__get_workspaces.name, stg_asana__get_projects.workspace_name)
+    semantic_role: categorical
+    description: Name of the workspace.
+  - name: created_at
+    expr: stg_asana__get_projects.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the project was created.
+tags:
+  - asana
+  - projects
+  - project-management
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,11 @@
+{
+  "contract_version": 2,
+  "attempt_id": "attempt-1",
+  "status": "failed",
+  "error": {
+    "kind": "provider",
+    "code": "provider_unavailable",
+    "retryable": true
+  },
+  "usage": { "status": "unknown", "reason": "interrupted" }
+}

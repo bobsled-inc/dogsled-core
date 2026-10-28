@@ -1,0 +1,33 @@
+type: resource
+name: labels
+description: Label entities returned by a Google Ads search query.
+api:
+  endpoint: /customers/${{ input.customer_id }}/googleAds:search
+  method: POST
+  request_body:
+    query: SELECT label.id, label.name, label.status FROM label ORDER BY label.id
+    pageSize: 1000
+input:
+  customer_id:
+    type: string
+    required: true
+    default: '1234567890'
+output:
+  label_id:
+    type: string
+    path: $.label.id
+  name:
+    type: string
+    path: $.label.name
+  status:
+    type: string
+    path: $.label.status
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - label_id
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: pageToken

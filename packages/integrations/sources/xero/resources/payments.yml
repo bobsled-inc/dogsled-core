@@ -1,0 +1,52 @@
+type: resource
+name: payments
+description: Payments recorded against invoices and credit notes in Xero.
+api:
+  endpoint: /Payments
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    pageSize: ${{ input.page_size }}
+input:
+  page:
+    type: integer
+    description: Page number to retrieve from Xero.
+    default: 1
+  page_size:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 100
+output:
+  payment_id:
+    type: string
+    path: $.PaymentID
+    description: Xero payment identifier.
+  date:
+    type: string
+    path: $.Date
+    description: Payment date.
+  amount:
+    type: number
+    path: $.Amount
+    description: Payment amount.
+  reference:
+    type: string
+    path: $.Reference
+    description: Payment reference.
+  status:
+    type: string
+    path: $.Status
+    description: Payment status.
+  updated_date_utc:
+    type: string
+    path: $.UpdatedDateUTC
+    description: Last update timestamp in UTC.
+extract:
+  record_path: $.Payments
+  pagination:
+    type: page_number
+    page_param: page
+  table:
+    primary_key:
+      - payment_id
+    trust_tier: silver

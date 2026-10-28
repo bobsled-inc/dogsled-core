@@ -1,0 +1,9 @@
+spec_version: '1'
+type: integration
+name: local_docs
+description: Local document files for the first-PDF tutorial
+source_type: local
+connection:
+  base_directory: sources
+auth:
+  type: none

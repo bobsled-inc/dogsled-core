@@ -1,0 +1,16 @@
+spec_version: '0.2'
+name: stg_orders
+type: model
+description: 'Staging orders with cleaned fields and computed metrics.'
+grain: order_id
+source:
+  ref: ecom.raw_orders
+columns:
+  - name: ORDER_ID
+    expr: ID
+  - name: SUBTOTAL
+    expr: 'CAST(SUBTOTAL / 100.0 AS NUMERIC(16, 2))'
+  - name: ORDERED_AT
+    expr: "TIMESTAMP_TRUNC('day', ORDERED_AT)"
+materialization:
+  type: view

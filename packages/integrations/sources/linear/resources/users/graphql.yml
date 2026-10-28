@@ -1,0 +1,107 @@
+type: resource
+name: users_graphql
+via: graphql
+entity: users
+description: Users and members in the Linear workspace including their roles, activity status, and profile information
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  users(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id name displayName email avatarUrl\n      active admin guest\n      statusLabel statusEmoji\n      timezone\n      createdAt updatedAt lastSeen archivedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique user UUID assigned by Linear
+  name:
+    type: string
+    path: $.name
+    description: Full name of the user as configured in their Linear profile
+  display_name:
+    type: string
+    path: $.displayName
+    description: Shortened display name used in the Linear UI, often the user's first name
+  email:
+    type: string
+    path: $.email
+    description: Primary email address associated with the user's Linear account
+  avatar_url:
+    type: string
+    path: $.avatarUrl
+    description: URL to the user's profile avatar image, may be a Gravatar or uploaded photo
+  active:
+    type: boolean
+    path: $.active
+    description: "Whether the user account is currently active in the workspace \u2014 false indicates a deactivated or suspended user"
+  admin:
+    type: boolean
+    path: $.admin
+    description: Whether the user has administrative privileges in the Linear workspace, granting access to workspace settings and user management
+  guest:
+    type: boolean
+    path: $.guest
+    description: Whether the user is a guest with limited access, typically an external collaborator who can only see specific teams or projects
+  status_label:
+    type: string
+    path: $.statusLabel
+    description: Custom status text set by the user to communicate their current availability or focus (e.g. "On vacation", "In meetings")
+  status_emoji:
+    type: string
+    path: $.statusEmoji
+    description: Emoji associated with the user's current status, displayed alongside the status label in the UI
+  timezone:
+    type: string
+    path: $.timezone
+    description: IANA timezone identifier for the user (e.g. America/New_York, Europe/London), used for scheduling and time display
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the user account was first created in Linear
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the user profile was last modified
+  last_seen:
+    type: timestamp
+    path: $.lastSeen
+    description: ISO 8601 timestamp of the user's most recent activity in Linear, useful for identifying inactive users
+  archived_at:
+    type: timestamp
+    path: $.archivedAt
+    description: ISO 8601 timestamp when the user was archived or removed from the workspace, null if the user is still active
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.users.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.users.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

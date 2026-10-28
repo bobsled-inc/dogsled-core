@@ -1,0 +1,76 @@
+type: resource
+name: financial_commitment_reports
+description: Financial commitment reports (reserved instances, savings plans)
+api:
+  endpoint: /financial_commitment_reports
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the report.
+  title:
+    type: string
+    path: $.title
+    description: The title of the FinancialCommitmentReport.
+  default:
+    type: boolean
+    path: $.default
+    description: Whether the report is the default.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The token for the Workspace.
+  user_token:
+    type: string
+    path: $.user_token
+    description: The token for the User who created this report.
+  start_date:
+    type: timestamp
+    path: $.start_date
+    description: The start date for the report.
+  end_date:
+    type: timestamp
+    path: $.end_date
+    description: The end date for the report.
+  date_interval:
+    type: string
+    path: $.date_interval
+    description: The date range for the report.
+  filter:
+    type: string
+    path: $.filter
+    description: The filter applied to the report.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the report was created.
+extract:
+  record_path: $.financial_commitment_reports
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get financial commitment report by token
+  api:
+    endpoint: /financial_commitment_reports/${{ input.financial_commitment_report_token }}
+    method: GET
+  input:
+    financial_commitment_report_token:
+      type: string
+      required: true

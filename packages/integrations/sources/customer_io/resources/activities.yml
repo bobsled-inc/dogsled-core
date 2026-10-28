@@ -1,0 +1,133 @@
+type: resource
+name: activities
+description: Activity feed events emitted by Customer.io.
+api:
+  endpoint: /v1/activities
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    type: ${{ input.type }}
+    name: ${{ input.name }}
+    deleted: ${{ input.deleted }}
+    customer_id: ${{ input.customer_id }}
+    id_type: ${{ input.id_type }}
+    limit: ${{ input.limit }}
+input:
+  start:
+    type: string
+    description: The token for the page of results you want to return. Responses contain a `next`
+      property. Use this property as the `start` value to return the next page of results.
+  type:
+    type: string
+    description:
+      The type of activity you want to search for. Types with `_o:<object_type_id>` are for
+      objects and types with `_r:<object_type_id>` are for relationships.
+  name:
+    type: string
+    description: The name of the event or attribute you want to return.
+  deleted:
+    type: boolean
+    description: If true, return results for deleted people.
+    default: false
+  customer_id:
+    type: string
+    description: >
+      The `identifier` of the person you want to look up. By default, this is a person's `id`. You
+      can use the `id_type` parameter to look up a person by `email` or `cio_id`.
+
+
+      If you use a person's `cio_id`, you must prefix the value value with `cio_` when using it to
+      find or reference a person (i.e. `cio_03000010` for a `cio_id` value of 03000010).
+  id_type:
+    type: string
+    description:
+      The type of `customer_id` you want to use to reference a person. If you don't provide
+      this parameter, we assume that the `customer_id` in your request is a person's `id`.
+    enum:
+      - id
+      - email
+      - cio_id
+  limit:
+    type: integer
+    description: The maximum number of results you want to retrieve per page.
+    default: 10
+    maximum: 100
+query:
+  filters:
+    customer_id:
+      operators:
+        - eq
+      description: >
+        The `identifier` of the person you want to look up. By default, this is a person's `id`. You
+        can use the `id_type` parameter to look up a person by `email` or `cio_id`. If you use a
+        person's `cio_id`, you must prefix the value with `cio_` when using it to find or reference
+        a person (i.e. `cio_03000010` for a `cio_id` value of 03000010).
+      bind:
+        eq:
+          input: customer_id
+      compile:
+        eq:
+          mode: http_query
+          param: customer_id
+    type:
+      operators:
+        - eq
+      description:
+        The type of activity you want to search for. Types with `_o:<object_type_id>` are for
+        objects and types with `_r:<object_type_id>` are for relationships.
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+output:
+  customer_id:
+    type: string
+    path: $.customer_id
+    description: The ID of a customer profile, analogous to a "person" in the UI.
+  customer_identifiers_email:
+    type: string
+    path: $.customer_identifiers.email
+    description: A person's email address, if set.
+  customer_identifiers_id:
+    type: string
+    path: $.customer_identifiers.id
+    description: A person's unique ID, if set.
+  customer_identifiers_cio_id:
+    type: string
+    path: $.customer_identifiers.cio_id
+    description: A unique identifier set by Customer.
+  data:
+    type: object
+    path: $.data
+    description: Additional data associated with the activity.
+  delivery_id:
+    type: string
+    path: $.delivery_id
+    description: The message ID.
+  delivery_type:
+    type: string
+    path: $.delivery_type
+    description: The recipient device, if applicable.
+  id:
+    type: string
+    path: $.id
+    description: The identifier for the action.
+  timestamp:
+    type: integer
+    path: $.timestamp
+    description: The date and time when the action occurred.
+  type:
+    type: string
+    path: $.type
+    description: The type of activity.
+extract:
+  record_path: $.activities
+  pagination:
+    type: next_url
+    next_url_path: $.next
+  table:
+    primary_key:
+      - id

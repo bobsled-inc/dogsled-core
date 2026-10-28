@@ -1,0 +1,44 @@
+type: resource
+name: pricebook_entries
+description: Pricebook entries from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Pricebook2Id,Product2Id,UnitPrice,IsActive,Name,CreatedDate,LastModifiedDate FROM
+      PricebookEntry
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  pricebook2_id:
+    type: string
+    path: $.Pricebook2Id
+  product2_id:
+    type: string
+    path: $.Product2Id
+  unit_price:
+    type: number
+    path: $.UnitPrice
+  is_active:
+    type: boolean
+    path: $.IsActive
+  name:
+    type: string
+    path: $.Name
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

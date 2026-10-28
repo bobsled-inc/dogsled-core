@@ -1,0 +1,92 @@
+type: resource
+name: sessions
+description: List LangSmith projects/tracing sessions. Sessions scope trace runs and evaluation runs.
+api:
+  endpoint: /sessions
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Maximum number of sessions to return per page.
+    default: 100
+    minimum: 1
+    maximum: 100
+  offset:
+    type: integer
+    description: Number of sessions to skip for pagination.
+    default: 0
+    minimum: 0
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique session/project identifier (UUID).
+    semantic_role: entity_id
+  tenant_id:
+    type: string
+    path: $.tenant_id
+    description: LangSmith tenant identifier that owns the session/project.
+    semantic_role: entity_id
+  name:
+    type: string
+    path: $.name
+    description: Session/project name.
+    semantic_role: name
+  description:
+    type: string
+    path: $.description
+    description: Human-readable session/project description.
+    semantic_role: categorical
+  start_time:
+    type: timestamp
+    path: $.start_time
+    description: Timestamp when the session/project began receiving runs.
+    semantic_role: event_timestamp
+  reference_dataset_id:
+    type: string
+    path: $.reference_dataset_id
+    description: Dataset identifier linked to this session for evaluation projects, when present.
+    semantic_role: entity_id
+  trace_tier:
+    type: string
+    path: $.trace_tier
+    description: Trace retention or indexing tier for the session.
+    semantic_role: categorical
+  test_run_number:
+    type: integer
+    path: $.test_run_number
+    description: Evaluation test run number for the session, when present.
+    semantic_role: count
+  extra:
+    type: object
+    path: $.extra
+    description: Additional LangSmith session metadata.
+    semantic_role: categorical
+  feedback_stats:
+    type: object
+    path: $.feedback_stats
+    description: Aggregated feedback statistics for runs in the session.
+    semantic_role: categorical
+  session_feedback_stats:
+    type: object
+    path: $.session_feedback_stats
+    description: Aggregated feedback statistics attached directly to the session.
+    semantic_role: categorical
+  run_facets:
+    type: object
+    path: $.run_facets
+    description: Faceted run summary data for the session, when present.
+    semantic_role: categorical
+extract:
+  record_path: $
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: bronze

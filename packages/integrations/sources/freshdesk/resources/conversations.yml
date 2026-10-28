@@ -1,0 +1,84 @@
+type: resource
+name: conversations
+description: List ticket conversations for each Freshdesk ticket.
+api:
+  endpoint: /tickets/${{ input.ticket_id }}/conversations
+  method: GET
+input:
+  ticket_id:
+    type: integer
+    required: true
+    description: Freshdesk ticket identifier.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk conversation identifier.
+  incoming:
+    type: boolean
+    path: $.incoming
+    description: Whether the conversation is incoming from the requester.
+  private:
+    type: boolean
+    path: $.private
+    description: Whether the conversation is private to agents.
+  body:
+    type: string
+    path: $.body
+    description: HTML body of the conversation.
+  body_text:
+    type: string
+    path: $.body_text
+    description: Plain-text body of the conversation.
+  user_id:
+    type: integer
+    path: $.user_id
+    description: Agent or contact identifier that authored the conversation.
+  support_email:
+    type: string
+    path: $.support_email
+    description: Support mailbox used for the conversation.
+  source:
+    type: integer
+    path: $.source
+    description: Numeric source channel identifier.
+  from_email:
+    type: string
+    path: $.from_email
+    description: Sender email address.
+  to_emails:
+    type: array
+    path: $.to_emails
+    description: Recipient email addresses.
+  cc_emails:
+    type: array
+    path: $.cc_emails
+    description: CC recipient email addresses.
+  bcc_emails:
+    type: array
+    path: $.bcc_emails
+    description: BCC recipient email addresses.
+  attachments:
+    type: array
+    path: $.attachments
+    description: Attachment metadata for the conversation.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Conversation creation timestamp.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Conversation update timestamp.
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  for_each:
+    resource: tickets
+    field: id
+    input: ticket_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

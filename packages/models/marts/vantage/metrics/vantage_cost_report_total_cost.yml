@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: vantage_cost_report_total_cost
+description: Total cloud cost within a Vantage cost report. Filter or group by cost report and currency to avoid combining overlapping reports or currencies.
+model: vantage__daily_costs
+expression: SUM({vantage__daily_costs}.total_amount)
+synonyms: [cost report spend, report cloud cost, cost report total]
+tags: [vantage, cloud, finance]

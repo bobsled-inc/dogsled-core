@@ -1,0 +1,30 @@
+spec_version: '2'
+type: source
+name: zuora
+description: Zuora REST API for subscription billing accounts, subscriptions, invoices, and payments.
+transports:
+  - id: default
+    base_url: https://rest.zuora.com
+    auth:
+      type: oauth2
+      grant_type: client_credentials
+      token_url: https://rest.zuora.com/oauth/token
+      client_id: ${{ env.ZUORA_CLIENT_ID }}
+      client_secret: ${{ env.ZUORA_CLIENT_SECRET }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 20
+      burst: 40
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

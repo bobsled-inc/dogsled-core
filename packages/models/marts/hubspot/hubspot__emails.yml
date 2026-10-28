@@ -1,0 +1,45 @@
+spec_version: '0.2'
+name: hubspot__emails
+type: model
+description: HubSpot CRM email engagements enriched with owner details.
+grain: email_id
+source:
+  ref: stg_hubspot__emails
+joins:
+  - ref: stg_hubspot__owners
+    type: left
+    on: stg_hubspot__emails.owner_id = stg_hubspot__owners.owner_id
+columns:
+  - name: email_id
+    expr: stg_hubspot__emails.email_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique HubSpot email engagement identifier.
+  - name: timestamp
+    expr: stg_hubspot__emails.timestamp
+    semantic_role: event_timestamp
+    description: When the email was sent or received.
+  - name: subject
+    expr: stg_hubspot__emails.subject
+    semantic_role: categorical
+    description: Subject line of the email.
+  - name: status
+    expr: stg_hubspot__emails.status
+    semantic_role: categorical
+    description: Delivery or processing status of the email.
+  - name: direction
+    expr: stg_hubspot__emails.direction
+    semantic_role: categorical
+    description: Direction of the email, such as outbound or inbound.
+  - name: owner_email
+    expr: stg_hubspot__owners.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the owner responsible for the email record.
+tags:
+  - hubspot
+  - emails
+trust_tier: gold
+materialization:
+  type: table

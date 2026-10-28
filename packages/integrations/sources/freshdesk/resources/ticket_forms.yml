@@ -1,0 +1,38 @@
+type: resource
+name: ticket_forms
+description: List all ticket forms
+api:
+  endpoint: /ticket-forms
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk ticket form identifier
+  name:
+    type: string
+    path: $.name
+    description: Ticket form name
+  description:
+    type: string
+    path: $.description
+    description: Ticket form description
+  position:
+    type: integer
+    path: $.position
+    description: Display order of the form
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Ticket form creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Ticket form last update timestamp
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

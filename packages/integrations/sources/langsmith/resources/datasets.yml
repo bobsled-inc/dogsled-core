@@ -1,0 +1,112 @@
+type: resource
+name: datasets
+description: List datasets in the LangSmith workspace. Datasets are named collections of examples used for evaluation and testing.
+api:
+  endpoint: /datasets
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Maximum number of datasets to return per page.
+    default: 100
+    minimum: 1
+    maximum: 100
+  offset:
+    type: integer
+    description: Number of datasets to skip for pagination.
+    default: 0
+    minimum: 0
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique dataset identifier (UUID).
+    semantic_role: entity_id
+  name:
+    type: string
+    path: $.name
+    description: Dataset name.
+    semantic_role: name
+  description:
+    type: string
+    path: $.description
+    description: Human-readable dataset description.
+    semantic_role: categorical
+  inputs_schema_definition:
+    type: object
+    path: $.inputs_schema_definition
+    description: JSON schema definition for dataset example inputs, when present.
+    semantic_role: categorical
+  outputs_schema_definition:
+    type: object
+    path: $.outputs_schema_definition
+    description: JSON schema definition for dataset example outputs, when present.
+    semantic_role: categorical
+  externally_managed:
+    type: boolean
+    path: $.externally_managed
+    description: Whether the dataset is managed by an external process.
+    semantic_role: categorical
+  transformations:
+    type: object
+    path: $.transformations
+    description: Dataset transformation configuration, when present.
+    semantic_role: categorical
+  data_type:
+    type: string
+    path: $.data_type
+    description: Dataset data type (e.g. kv, llm, chat).
+    semantic_role: categorical
+  tenant_id:
+    type: string
+    path: $.tenant_id
+    description: LangSmith tenant identifier that owns the dataset.
+    semantic_role: entity_id
+  example_count:
+    type: integer
+    path: $.example_count
+    description: Number of examples contained in the dataset.
+    semantic_role: count
+  session_count:
+    type: integer
+    path: $.session_count
+    description: Number of test sessions run against the dataset.
+    semantic_role: count
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the dataset was created.
+    semantic_role: event_timestamp
+  modified_at:
+    type: timestamp
+    path: $.modified_at
+    description: Timestamp when the dataset was last modified.
+    semantic_role: event_timestamp
+  last_session_start_time:
+    type: timestamp
+    path: $.last_session_start_time
+    description: Most recent linked session start time, when present.
+    semantic_role: event_timestamp
+  metadata:
+    type: object
+    path: $.metadata
+    description: Additional dataset metadata.
+    semantic_role: categorical
+  baseline_experiment_id:
+    type: string
+    path: $.baseline_experiment_id
+    description: Baseline experiment/session identifier linked to the dataset, when present.
+    semantic_role: entity_id
+extract:
+  record_path: $
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: bronze

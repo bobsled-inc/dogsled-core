@@ -1,0 +1,39 @@
+spec_version: '0.2'
+name: fct_fieldroutes_tickets
+type: model
+description: Ticket fact for revenue, balance, and service activity analytics.
+grain: TICKET_ID
+source:
+  ref: stg_fieldroutes_tickets
+columns:
+  - name: TICKET_ID
+    expr: TICKET_ID
+    primary_key: true
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+  - name: OFFICE_ID
+    expr: OFFICE_ID
+  - name: SUBSCRIPTION_ID
+    expr: SUBSCRIPTION_ID
+  - name: DATE_CREATED
+    expr: DATE_CREATED
+  - name: INVOICE_DATE
+    expr: INVOICE_DATE
+  - name: ACTIVE
+    expr: ACTIVE
+  - name: SUB_TOTAL
+    expr: SUB_TOTAL
+  - name: TAX_AMOUNT
+    expr: TAX_AMOUNT
+  - name: TOTAL
+    expr: TOTAL
+  - name: PRODUCTION_VALUE
+    expr: PRODUCTION_VALUE
+  - name: SERVICE_CHARGE
+    expr: SERVICE_CHARGE
+  - name: BALANCE
+    expr: BALANCE
+  - name: SERVICE_ID
+    expr: SERVICE_ID
+materialization:
+  type: view

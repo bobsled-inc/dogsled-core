@@ -1,0 +1,14 @@
+name: quickbooks
+display_name: QuickBooks
+description: Accounting and financial analytics models for QuickBooks customers, invoices, bills, payments, and vendors.
+tags:
+  - quickbooks
+  - accounting
+  - finance
+include_resources:
+  - customers
+  - invoices
+  - bills
+  - payments
+  - payment_applications
+  - vendors

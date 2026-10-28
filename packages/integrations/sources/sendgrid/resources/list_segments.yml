@@ -1,0 +1,31 @@
+type: resource
+name: list_segments
+description: List SendGrid contact segments
+api:
+  endpoint: /v3/contactdb/segments
+  method: GET
+input: {}
+output:
+  name:
+    type: string
+    path: $.name
+    description: Segment name
+  list_id:
+    type: integer
+    path: $.list_id
+    description: Parent SendGrid list identifier
+  conditions:
+    type: string
+    path: $.conditions
+    description: Segment filter definition
+  recipient_count:
+    type: integer
+    path: $.recipient_count
+    description: Number of recipients currently in the segment
+extract:
+  record_path: $.segments
+  table:
+    primary_key:
+      - name
+      - list_id
+    trust_tier: silver

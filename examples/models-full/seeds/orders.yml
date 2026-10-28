@@ -1,0 +1,25 @@
+spec_version: '0.2'
+type: seed
+name: orders
+description: Fictional orders.
+payload:
+  format: csv
+  path: data/orders.csv
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: customer_id
+      type: INTEGER
+    - name: product_id
+      type: INTEGER
+    - name: amount
+      type: DOUBLE
+    - name: order_date
+      type: DATE
+    - name: status
+      type: STRING
+materialization:
+  type: table
+  target_schema: main
+  on_conflict: replace

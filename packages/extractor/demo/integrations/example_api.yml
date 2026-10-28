@@ -1,0 +1,24 @@
+spec_version: '1'
+type: integration
+name: example_api
+auth_env_vars: [EXAMPLE_API_TOKEN]
+description: Example HTTPS integration
+transport:
+  base_url: https://api.example.com
+  auth:
+    type: bearer
+    token: ${{ env.EXAMPLE_API_TOKEN }}
+  timeout_ms: 30000
+  retry:
+    retry_on:
+      - 429
+      - 503
+    max_retries: 3
+    backoff: exponential
+    retry_after_header: true
+  rate_limit:
+    requests_per_second: 10
+    burst: 20
+  headers:
+    Accept: application/json
+    User-Agent: dogsled-extractor/0.1

@@ -1,0 +1,8 @@
+spec_version: '1'
+type: integration
+name: crm
+source_type: duckdb
+connection:
+  schema: entity_graph_test
+auth:
+  type: memory

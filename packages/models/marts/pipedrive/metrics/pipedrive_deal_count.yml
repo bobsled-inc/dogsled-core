@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: pipedrive_deal_count
+description: Number of Pipedrive deals.
+model: pipedrive__deals
+expression: COUNT({pipedrive__deals}.deal_id)
+synonyms: [deals, deal count, opportunities]
+tags: [pipedrive, crm, pipeline]

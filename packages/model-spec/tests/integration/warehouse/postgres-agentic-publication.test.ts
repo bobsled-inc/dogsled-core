@@ -1,0 +1,273 @@
+import { randomUUID } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { resolveRunner, type PostgresIntegration } from '@bobsled-inc/connections';
+import { createLocalAgenticStateStore, executeAgenticRun } from '../../../src/agentic/index.js';
+import { createSqlAgenticPublisher } from '../../../src/agentic/sql-publisher.js';
+import { publicationNames } from '../../../src/agentic/sql-publication-dialect.js';
+import { runFixture } from '../../unit/agentic/state-fixture.js';
+
+// Run against a dedicated database with DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres.
+// Each test creates and drops its own random schema.
+const enabled = process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').some((name) =>
+  ['postgres', 'all'].includes(name.trim())
+);
+describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
+  const cleanups: Array<() => Promise<void>> = [];
+  afterEach(async () => {
+    for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
+  });
+  async function setup() {
+    for (const name of ['HOST', 'DATABASE', 'USER', 'PASSWORD']) {
+      if (!process.env[`DOGSLED_MODEL_SPEC_POSTGRES_${name}`]) {
+        throw new Error(`DOGSLED_MODEL_SPEC_POSTGRES_${name} is required`);
+      }
+    }
+    const integration: PostgresIntegration = {
+      spec_version: '1',
+      type: 'integration',
+      name: 'lake',
+      source_type: 'postgres',
+      connection: {
+        host: process.env.DOGSLED_MODEL_SPEC_POSTGRES_HOST!,
+        port: Number(process.env.DOGSLED_MODEL_SPEC_POSTGRES_PORT ?? 5432),
+        database: process.env.DOGSLED_MODEL_SPEC_POSTGRES_DATABASE!,
+      },
+      auth: {
+        type: 'password',
+        user: process.env.DOGSLED_MODEL_SPEC_POSTGRES_USER!,
+        password: process.env.DOGSLED_MODEL_SPEC_POSTGRES_PASSWORD!,
+      },
+    };
+    const inspect = async (sql: string) => {
+      const runner = await resolveRunner(integration);
+      try {
+        return await runner.query!(sql);
+      } finally {
+        await runner.close?.();
+      }
+    };
+    const schema = `agentic_test_${randomUUID().replaceAll('-', '')}`;
+    await inspect(`CREATE SCHEMA "${schema}"`);
+    cleanups.push(async () => {
+      await inspect(`DROP SCHEMA "${schema}" CASCADE`);
+    });
+    const directory = await mkdtemp(join(tmpdir(), 'agentic-postgres-'));
+    cleanups.push(async () => {
+      await rm(directory, { recursive: true, force: true });
+    });
+    const publisher = await createSqlAgenticPublisher(integration);
+    cleanups.push(() => publisher.close());
+    const fixture = runFixture(2);
+    fixture.host.supportedDialects = ['postgres'];
+    const target = `${schema}.pair_assessments`;
+    const context = () => ({ ...fixture.context(), target });
+    const names = publicationNames(target, 'postgres');
+    return { ...fixture, context, names, target, integration, publisher, directory, inspect };
+  }
+  it('replaces explicit keys and keeps untouched rows and provenance across reopen', async () => {
+    const f = await setup();
+    f.host.executeAgent = async ({ assignment }) => ({
+      contract_version: 2,
+      attempt_id: assignment.attempt_id,
+      status: 'succeeded',
+      usage: { status: 'unknown', reason: 'unavailable' },
+      rows: [
+        {
+          pair_id: assignment.input.rows[0]!.pair_id,
+          assessment: "first ' finding",
+          _dogsled_evidence: null,
+          _dogsled_confidence: null,
+          _dogsled_reason: null,
+        },
+      ],
+    });
+    const run = (id: string) =>
+      executeAgenticRun(f.host, f.context(), {
+        run: { id, mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      });
+    expect((await run('first')).publication).toBe('confirmed');
+    f.host.prepare = async () => [{ pair_id: 'p0' }];
+    expect((await run('replacement')).publication).toBe('confirmed');
+    expect(
+      await f.inspect(`SELECT pair_id, _dogsled_run_id FROM ${f.target} ORDER BY pair_id`)
+    ).toEqual([
+      { pair_id: 'p0', _dogsled_run_id: 'replacement' },
+      { pair_id: 'p1', _dogsled_run_id: 'first' },
+    ]);
+    f.host.executeAgent = async ({ assignment }) => ({
+      contract_version: 2,
+      attempt_id: assignment.attempt_id,
+      status: 'succeeded',
+      usage: { status: 'unknown', reason: 'unavailable' },
+      rows: [],
+    });
+    expect((await run('second')).publication).toBe('confirmed');
+    expect(await f.inspect(`SELECT pair_id, assessment, _dogsled_run_id FROM ${f.target}`)).toEqual(
+      [{ pair_id: 'p1', assessment: "first ' finding", _dogsled_run_id: 'first' }]
+    );
+    await f.publisher.close();
+  });
+  it('leaves an absent target absent on empty input and creates an empty table for processed zero findings', async () => {
+    const f = await setup();
+    f.host.prepare = async () => [];
+    await executeAgenticRun(f.host, f.context(), {
+      run: { id: 'empty', mode: 'start' },
+      projectDirectory: f.directory,
+      publisher: f.publisher,
+    });
+    expect(
+      await f.inspect(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema = '${f.names.schema}' AND table_name = 'pair_assessments'`
+      )
+    ).toEqual([]);
+    f.host.prepare = async () => [{ pair_id: 'p0' }];
+    await executeAgenticRun(f.host, f.context(), {
+      run: { id: 'zero', mode: 'start' },
+      projectDirectory: f.directory,
+      publisher: f.publisher,
+    });
+    expect(await f.inspect(`SELECT * FROM ${f.target}`)).toEqual([]);
+  });
+
+  it('rejects incompatible schema and unsafe final checks before agent calls', async () => {
+    const f = await setup();
+    f.host.executeAgent = vi.fn(f.host.executeAgent);
+    await f.inspect(`CREATE TABLE ${f.target} (pair_id VARCHAR)`);
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'schema', mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      })
+    ).rejects.toThrow('rebuild');
+    expect(f.host.executeAgent).not.toHaveBeenCalled();
+    await f.inspect(`DROP TABLE ${f.target}`);
+    f.model.tests = [{ type: 'custom', sql: 'SELECT 1' }];
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'custom', mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      })
+    ).rejects.toThrow('custom SQL');
+    expect(f.host.executeAgent).not.toHaveBeenCalled();
+    f.model.tests = [{ type: 'not_null' }];
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'malformed', mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      })
+    ).rejects.toThrow('complete tests');
+    expect(f.host.executeAgent).not.toHaveBeenCalled();
+    f.model.tests = [];
+    f.model.expect = [{ kind: 'row_count_between', min: 1, severity: 'warn' }];
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'warn', mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      })
+    ).rejects.toThrow('warning severity');
+    expect(f.host.executeAgent).not.toHaveBeenCalled();
+  });
+
+  it('rejects failed final checks without creating the target', async () => {
+    const f = await setup();
+    f.model.expect = [{ kind: 'row_count_between', min: 1 }];
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'checks', mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      })
+    ).rejects.toThrow('final check failed');
+    expect(
+      await f.inspect(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema = '${f.names.schema}' AND table_name = 'pair_assessments'`
+      )
+    ).toEqual([]);
+  });
+
+  it('recovers after target commit before state confirmation with both stores reopened', async () => {
+    const f = await setup();
+    const local = createLocalAgenticStateStore(f.directory);
+    const brokenStore = {
+      async acquire(key: Parameters<typeof local.acquire>[0]) {
+        const session = await local.acquire(key);
+        return {
+          ...session,
+          checkpoint: async (command: Parameters<typeof session.checkpoint>[0]) => {
+            if (command.type === 'confirm_publication') throw new Error('state unavailable');
+            return session.checkpoint(command);
+          },
+        };
+      },
+    };
+    f.host.executeAgent = vi.fn(f.host.executeAgent);
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'lost', mode: 'start' },
+        projectDirectory: f.directory,
+        stateStore: brokenStore,
+        publisher: f.publisher,
+      })
+    ).rejects.toThrow();
+    expect(await f.inspect(`SELECT COUNT(*) AS n FROM ${f.names.receipts}`)).toEqual([{ n: '1' }]);
+    await f.publisher.close();
+    const reopened = await createSqlAgenticPublisher(f.integration);
+    const resumed = await executeAgenticRun(f.host, f.context(), {
+      run: { id: 'lost', mode: 'resume' },
+      projectDirectory: f.directory,
+      publisher: reopened,
+    });
+    expect(resumed.publication).toBe('confirmed');
+    expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
+    expect(await f.inspect(`SELECT revision FROM ${f.names.control}`)).toEqual([{ revision: '1' }]);
+    await reopened.close();
+  });
+
+  it('rejects a stale prepared version after another publication and rejects an obsolete fence', async () => {
+    const f = await setup();
+    const stopBeforeCommit = {
+      ...f.publisher,
+      commit: async () => {
+        throw new Error('before commit');
+      },
+    };
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'old', mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: stopBeforeCommit,
+      })
+    ).rejects.toThrow('before commit');
+    const local = createLocalAgenticStateStore(f.directory);
+    const session = await local.acquire({ scope: 'lake', model: f.model.name, id: 'old' });
+    const snapshot = await session.read();
+    await session.release();
+    const first = await f.publisher.claim(f.context().target);
+    const other = await createSqlAgenticPublisher(f.integration);
+    await other.claim(f.context().target);
+    await expect(f.publisher.commit(snapshot!.publication_intent!, first)).rejects.toThrow('Stale');
+    await executeAgenticRun(f.host, f.context(), {
+      run: { id: 'new', mode: 'start' },
+      projectDirectory: f.directory,
+      publisher: other,
+    });
+    await expect(
+      executeAgenticRun(f.host, f.context(), {
+        run: { id: 'old', mode: 'resume' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      })
+    ).rejects.toThrow('Stale');
+    expect(await f.inspect(`SELECT revision FROM ${f.names.control}`)).toEqual([{ revision: '1' }]);
+    await other.close();
+  });
+});

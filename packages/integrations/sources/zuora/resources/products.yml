@@ -1,0 +1,43 @@
+type: resource
+name: products
+description: Products in the Zuora product catalog.
+api:
+  endpoint: /v1/catalog/products
+  method: GET
+  query_params:
+    pageSize: ${{ input.page_size }}
+input:
+  page_size:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  sku:
+    type: string
+    path: $.sku
+  description:
+    type: string
+    path: $.description
+  category:
+    type: string
+    path: $.category
+  effectiveStartDate:
+    type: string
+    path: $.effectiveStartDate
+  effectiveEndDate:
+    type: string
+    path: $.effectiveEndDate
+extract:
+  record_path: $.products
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: pageSize

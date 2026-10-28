@@ -1,0 +1,22 @@
+type: resource
+name: list_reserved_fields
+description: List SendGrid reserved contact field definitions
+api:
+  endpoint: /v3/contactdb/reserved_fields
+  method: GET
+input: {}
+output:
+  name:
+    type: string
+    path: $.name
+    description: Reserved field name
+  type:
+    type: string
+    path: $.type
+    description: Reserved field data type
+extract:
+  record_path: $.reserved_fields
+  table:
+    primary_key:
+      - name
+    trust_tier: silver

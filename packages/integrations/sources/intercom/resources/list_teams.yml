@@ -1,0 +1,60 @@
+type: resource
+name: list_teams
+description: List all teams
+api:
+  endpoint: /teams
+  method: GET
+input: {}
+output:
+  type:
+    type: string
+    path: $.type
+    description: Value is always "team"
+  id:
+    type: string
+    path: $.id
+    description: The id of the team
+  name:
+    type: string
+    path: $.name
+    description: The name of the team
+  admin_ids:
+    type: array
+    path: $.admin_ids
+    description: The list of admin IDs that are a part of the team.
+  admin_priority_level_primary_admin_ids:
+    type: array
+    path: $.admin_priority_level.primary_admin_ids
+    description: The primary admin ids for the team
+  admin_priority_level_secondary_admin_ids:
+    type: array
+    path: $.admin_priority_level.secondary_admin_ids
+    description: The secondary admin ids for the team
+  assignment_limit:
+    type: integer
+    path: $.assignment_limit
+    description: The assignment limit for the team.
+  distribution_method:
+    type: string
+    path: $.distribution_method
+    description: Describes how assignments are distributed among the team members
+extract:
+  record_path: $.teams
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Retrieve a team
+  api:
+    endpoint: /teams/${{ input.team_id }}
+    method: GET
+  input:
+    team_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_teams_smoke
+      input:
+        intercom_version: '2.14'

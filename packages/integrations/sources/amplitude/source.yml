@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: amplitude
+description: Amplitude analytics APIs for events, users, sessions, and realtime reports
+transports:
+  - id: default
+    base_url: https://amplitude.com
+    auth:
+      type: basic
+      username: ${{ env.AMPLITUDE_API_KEY }}
+      password: ${{ env.AMPLITUDE_SECRET_KEY }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

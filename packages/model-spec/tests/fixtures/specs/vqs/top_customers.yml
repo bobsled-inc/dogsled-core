@@ -1,0 +1,11 @@
+spec_version: '0.2'
+type: vq
+name: top_customers
+nlq: Who are our top 10 customers by order volume?
+sql: |
+  SELECT customer_id, SUM(total) AS volume
+  FROM {fct_orders}
+  GROUP BY customer_id
+  ORDER BY volume DESC
+  LIMIT 10
+tags: [customer360]

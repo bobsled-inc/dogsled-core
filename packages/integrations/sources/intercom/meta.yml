@@ -1,0 +1,14 @@
+display_name: Intercom
+category: crm
+logo_url: https://www.intercom.com/favicon.ico
+tags:
+  - intercom
+  - support
+  - crm
+  - conversations
+docs_url: https://developers.intercom.com/docs/references/rest-api/api.intercom.io
+openapi_url: https://raw.githubusercontent.com/intercom/Intercom-OpenAPI/main/descriptions/2.15/api.intercom.io.yaml
+auth_setup:
+  - env: INTERCOM_ACCESS_TOKEN
+    description: Intercom access token for the REST API
+    docs_url: https://developers.intercom.com/docs/build-an-integration/learn-more/authentication

@@ -1,0 +1,164 @@
+type: resource
+name: pull_request_reviews
+description: Reviews submitted on a pull request, including reviewer identity, state, and submission timing.
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/pulls/${{ input.pull_number }}/reviews
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+    page: ${{ input.page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by pull request fanout and used for repository context output.
+  pull_number:
+    type: integer
+    description: Pull request number to fetch reviews for
+    required: true
+  pull_request_id:
+    type: integer
+    description: Optional unique numeric identifier of the parent pull request populated by pull request fanout.
+  per_page:
+    type: integer
+    description: Number of reviews to return per page (max 100)
+    default: 100
+  page:
+    type: integer
+    description: Page number to fetch
+    default: 1
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  pull_request_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.__input__.pull_request_id
+    description: Unique numeric identifier of the parent pull request from fanout context
+  pull_request_number:
+    type: integer
+    semantic_role: identifier
+    path: $.__input__.pull_number
+    description: Repository-scoped number of the parent pull request from fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the pull request review
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  user_login:
+    type: string
+    semantic_role: name
+    path: $.user.login
+    description: GitHub username of the reviewer
+  user_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.user.id
+    description: Unique numeric identifier of the reviewer
+  body:
+    type: string
+    semantic_role: categorical
+    path: $.body
+    description: Markdown body of the review
+  state:
+    type: string
+    semantic_role: categorical
+    path: $.state
+    description: Review state such as APPROVED, CHANGES_REQUESTED, COMMENTED, or DISMISSED
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser URL for the pull request review on GitHub
+  pull_request_url:
+    type: string
+    semantic_role: url
+    path: $.pull_request_url
+    description: REST API URL for the parent pull request
+  links_html_href:
+    type: string
+    semantic_role: url
+    path: $._links.html.href
+    description: Browser URL for the pull request review on GitHub
+  links_pull_request_href:
+    type: string
+    semantic_role: url
+    path: $._links.pull_request.href
+    description: REST API URL for the parent pull request
+  submitted_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.submitted_at
+    description: Timestamp when the review was submitted
+  commit_id:
+    type: string
+    semantic_role: entity_id
+    path: $.commit_id
+    description: Commit SHA the review applies to
+  body_html:
+    type: string
+    semantic_role: categorical
+    path: $.body_html
+    description: HTML-rendered review body, when returned by GitHub
+  body_text:
+    type: string
+    semantic_role: categorical
+    path: $.body_text
+    description: Plain-text review body, when returned by GitHub
+  author_association:
+    type: string
+    semantic_role: categorical
+    path: $.author_association
+    description: Relationship of the reviewer to the repository
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: pull_requests
+    bindings:
+      - field: owner
+        input: owner
+        source: input
+      - field: repo
+        input: repo
+        source: input
+      - field: repository_full_name
+        input: repository_full_name
+        source: input
+      - field: id
+        input: pull_request_id
+      - field: number
+        input: pull_number
+via: rest

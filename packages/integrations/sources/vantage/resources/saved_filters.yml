@@ -1,0 +1,64 @@
+type: resource
+name: saved_filters
+description: Saved cost report filters
+api:
+  endpoint: /saved_filters
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the saved filter.
+  title:
+    type: string
+    path: $.title
+    description: The title of the SavedFilter.
+  cost_report_tokens:
+    type: array
+    path: $.cost_report_tokens
+    description: The tokens for any CostReports the SavedFilter is applied to.
+  filter:
+    type: string
+    path: $.filter
+    description: The SavedFilter's filter expression.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The token for the Workspace the SavedFilter is a part of.
+  created_by:
+    type: string
+    path: $.created_by
+    description: The token for the Creator of this SavedFilter.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the filter was created.
+extract:
+  record_path: $.saved_filters
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get saved filter by token
+  api:
+    endpoint: /saved_filters/${{ input.saved_filter_token }}
+    method: GET
+  input:
+    saved_filter_token:
+      type: string
+      required: true

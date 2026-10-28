@@ -1,0 +1,12 @@
+display_name: People Data Labs
+category: crm
+logo_url: https://docs.peopledatalabs.com/img/favicon.ico
+tags:
+  - enrichment
+  - people
+  - prospecting
+docs_url: https://docs.peopledatalabs.com/docs/person-enrichment-api
+auth_setup:
+  - env: PEOPLEDATALABS_API_KEY
+    description: People Data Labs API key
+    docs_url: https://docs.peopledatalabs.com/docs/authentication

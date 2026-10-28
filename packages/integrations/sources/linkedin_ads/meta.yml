@@ -1,0 +1,16 @@
+display_name: LinkedIn Ads
+category: marketing
+tags:
+  - linkedin
+  - ads
+  - campaigns
+docs_url: https://learn.microsoft.com/en-us/linkedin/marketing/
+auth_setup:
+  - env: LINKEDIN_API_VERSION
+    description: LinkedIn Marketing API version, for example 202506
+  - env: LINKEDIN_CLIENT_ID
+    description: LinkedIn OAuth client ID
+  - env: LINKEDIN_CLIENT_SECRET
+    description: LinkedIn OAuth client secret
+  - env: LINKEDIN_REFRESH_TOKEN
+    description: LinkedIn OAuth refresh token

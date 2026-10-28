@@ -1,0 +1,35 @@
+type: resource
+name: run_pivot_report
+description: Pivoted GA4 report rows for a property.
+api:
+  endpoint: /properties/${{ input.property_id }}:runPivotReport
+  method: POST
+  request_body:
+    dateRanges:
+      - startDate: 30daysAgo
+        endDate: today
+    dimensions:
+      - name: date
+    metrics:
+      - name: activeUsers
+    pivots:
+      - fieldNames:
+          - date
+        limit: '1000'
+input:
+  property_id:
+    type: string
+    required: true
+    default: '123456789'
+output:
+  dimension_key:
+    type: string
+    path: $.dimensionValues.0.value
+  metric_value:
+    type: string
+    path: $.metricValues.0.value
+extract:
+  record_path: $.rows
+  table:
+    primary_key:
+      - dimension_key

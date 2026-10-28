@@ -1,0 +1,25 @@
+type: resource
+name: organizations
+description: Snapchat organizations accessible to the authenticated user.
+api:
+  endpoint: /me/organizations
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.organization.id
+  name:
+    type: string
+    path: $.organization.name
+  status:
+    type: string
+    path: $.organization.status
+extract:
+  record_path: $.organizations
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next_link

@@ -1,0 +1,124 @@
+type: resource
+name: payment_intents
+description: Stripe payment intents representing the modern payment flow for tracking a payment from
+  creation through completion
+api:
+  endpoint: /v1/payment_intents
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of payment intents to return per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique payment intent identifier prefixed with pi_ (e.g. pi_1A2b3C4d5E6f7G)
+  amount:
+    type: integer
+    path: $.amount
+    description:
+      Amount intended to be collected in the smallest currency unit (e.g. cents for USD). A
+      value of 2500 represents $25.00 USD
+  amount_received:
+    type: integer
+    path: $.amount_received
+    description:
+      Amount actually collected in the smallest currency unit. May differ from amount if the
+      payment was partially funded
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO 4217 currency code in lowercase (e.g. usd, eur, gbp)
+  status:
+    type: string
+    path: $.status
+    description:
+      'Current status in the payment lifecycle. Possible values: requires_payment_method (no
+      payment method attached), requires_confirmation (needs confirmation to proceed),
+      requires_action (awaiting customer action like 3D Secure), processing (payment is being
+      processed), requires_capture (authorized but not yet captured), canceled (canceled by merchant
+      or customer), succeeded (payment completed successfully)'
+  customer:
+    type: string
+    path: $.customer
+    description: ID of the customer (cus_xxx) associated with this payment intent, if one was specified
+  description:
+    type: string
+    path: $.description
+    description: Arbitrary text description of the payment intent, typically describing what is being paid for
+  payment_method:
+    type: string
+    path: $.payment_method
+    description: ID of the payment method (pm_xxx) used or to be used for this payment intent
+  latest_charge:
+    type: string
+    path: $.latest_charge
+    description:
+      ID of the most recent charge (ch_xxx) created by this payment intent. A payment intent
+      may create multiple charges if retried
+  client_secret:
+    type: string
+    path: $.client_secret
+    description:
+      Secret used on the client side to confirm the payment. Should only be shared with your
+      frontend, never logged or stored server-side
+  capture_method:
+    type: string
+    path: $.capture_method
+    description: 'How funds are captured. Possible values: automatic (captured immediately on
+      confirmation), automatic_async (captured asynchronously after confirmation), manual (requires
+      a separate capture call after authorization)'
+  confirmation_method:
+    type: string
+    path: $.confirmation_method
+    description: 'How the payment intent is confirmed. Possible values: automatic (confirmed
+      automatically on the server), manual (requires explicit confirmation via API call)'
+  setup_future_usage:
+    type: string
+    path: $.setup_future_usage
+    description: 'Indicates intent to save the payment method for future use. Possible values:
+      on_session (for payments when customer is present), off_session (for recurring or
+      merchant-initiated payments). Null if not saving the payment method'
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the payment intent was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

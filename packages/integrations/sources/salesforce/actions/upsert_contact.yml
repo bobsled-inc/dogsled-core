@@ -1,0 +1,53 @@
+type: action
+transport: api
+name: upsert_contact
+integration: salesforce
+tags:
+  - crm
+  - contacts
+  - salesforce
+description: Upsert a contact in Salesforce by email address.
+api:
+  endpoint: /sobjects/Contact/Email/${{ input.email }}
+  method: PATCH
+  request_body:
+    FirstName: ${{ mapped.first_name }}
+    LastName: ${{ mapped.last_name }}
+    Title: ${{ mapped.title }}
+    Phone: ${{ mapped.phone }}
+input:
+  email:
+    type: string
+    required: true
+    description: Contact email address used as the external ID.
+  first_name:
+    type: string
+    description: Contact first name.
+  last_name:
+    type: string
+    required: true
+    description: Contact last name.
+  title:
+    type: string
+    description: Job title.
+  phone:
+    type: string
+    description: Phone number.
+field_mapping:
+  fields:
+    email: email
+    first_name: first_name
+    last_name: last_name
+    title: title
+    phone: phone
+  unmapped_fields: ignore
+activate:
+  operation: upsert
+  identity:
+    fields:
+      - email
+    strategy: external_id
+  result_path: $
+error_handling:
+  on_record_error: skip
+  consecutive_failure_threshold: 20

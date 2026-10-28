@@ -1,0 +1,58 @@
+type: resource
+name: list_services
+description: List PagerDuty services configured in the account
+api:
+  endpoint: /services
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    query: ${{ input.query }}
+input:
+  limit:
+    type: integer
+    description: Number of services to return per page
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+  query:
+    type: string
+    description: Optional search string for service names
+query:
+  search:
+    dialect: provider_search
+    bind:
+      input: query
+output:
+  id:
+    type: string
+    path: $.id
+    description: PagerDuty service identifier
+  name:
+    type: string
+    path: $.name
+    description: Service name
+  description:
+    type: string
+    path: $.description
+    description: Service description
+  status:
+    type: string
+    path: $.status
+    description: Current service status
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the service was created
+extract:
+  record_path: $.services
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

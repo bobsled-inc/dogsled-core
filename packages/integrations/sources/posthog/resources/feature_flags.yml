@@ -1,0 +1,221 @@
+type: resource
+name: feature_flags
+description: Feature flags defined in each PostHog project.
+api:
+  endpoint: /api/projects/${{ input.project_id }}/feature_flags/
+  method: GET
+  query_params:
+    active: ${{ input.active }}
+    created_by_id: ${{ input.created_by_id }}
+    evaluation_runtime: ${{ input.evaluation_runtime }}
+    excluded_properties: ${{ input.excluded_properties }}
+    has_evaluation_contexts: ${{ input.has_evaluation_contexts }}
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    search: ${{ input.search }}
+    tags: ${{ input.tags }}
+    type: ${{ input.type }}
+input:
+  active:
+    type: string
+    enum:
+      - STALE
+      - 'false'
+      - 'true'
+  created_by_id:
+    type: string
+    description: The User ID which initially created the feature flag.
+  evaluation_runtime:
+    type: string
+    description: Filter feature flags by their evaluation runtime.
+    enum:
+      - both
+      - client
+      - server
+  excluded_properties:
+    type: string
+    description: JSON-encoded list of feature flag keys to exclude from the results.
+  has_evaluation_contexts:
+    type: string
+    description:
+      Filter feature flags by presence of evaluation contexts. 'true' returns only flags with
+      at least one evaluation context, 'false' returns only flags without.
+    enum:
+      - 'false'
+      - 'true'
+  limit:
+    type: integer
+    description: Number of results to return per page.
+    default: 100
+  offset:
+    type: integer
+    description: The initial index from which to return the results.
+    default: 0
+  project_id:
+    type: integer
+    required: true
+    description:
+      Project ID of the project you're trying to access. To find the ID of the project, make
+      a call to /api/projects/.
+  search:
+    type: string
+    description: Search by feature flag key or name. Case insensitive.
+  tags:
+    type: string
+    description: JSON-encoded list of tag names to filter feature flags by.
+  type:
+    type: string
+    enum:
+      - boolean
+      - experiment
+      - multivariant
+      - remote_config
+query:
+  filters:
+    evaluation_runtime:
+      operators:
+        - eq
+      enum:
+        - both
+        - client
+        - server
+      description: Filter feature flags by their evaluation runtime.
+      bind:
+        eq:
+          input: evaluation_runtime
+      compile:
+        eq:
+          mode: http_query
+          param: evaluation_runtime
+output:
+  project_id:
+    type: integer
+    from:
+      resource: projects
+      path: $.id
+  id:
+    type: integer
+    path: $.id
+  name:
+    type: string
+    path: $.name
+    description: contains the description for the flag (field name `name` is kept for backwards-compatibility)
+  key:
+    type: string
+    path: $.key
+  filters:
+    type: object
+    path: $.filters
+  deleted:
+    type: boolean
+    path: $.deleted
+  active:
+    type: boolean
+    path: $.active
+  created_by:
+    type: string
+    path: $.created_by
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+  version:
+    type: integer
+    path: $.version
+  last_modified_by:
+    type: string
+    path: $.last_modified_by
+  ensure_experience_continuity:
+    type: boolean
+    path: $.ensure_experience_continuity
+  experiment_set:
+    type: array
+    path: $.experiment_set
+  experiment_set_metadata:
+    type: array
+    path: $.experiment_set_metadata
+  surveys:
+    type: object
+    path: $.surveys
+  features:
+    type: object
+    path: $.features
+  rollback_conditions:
+    type: string
+    path: $.rollback_conditions
+  performed_rollback:
+    type: boolean
+    path: $.performed_rollback
+  can_edit:
+    type: boolean
+    path: $.can_edit
+  tags:
+    type: array
+    path: $.tags
+  evaluation_contexts:
+    type: array
+    path: $.evaluation_contexts
+  usage_dashboard:
+    type: integer
+    path: $.usage_dashboard
+  analytics_dashboards:
+    type: array
+    path: $.analytics_dashboards
+  has_enriched_analytics:
+    type: boolean
+    path: $.has_enriched_analytics
+  user_access_level:
+    type: string
+    path: $.user_access_level
+    description: The effective access level the user has for this object
+  creation_context:
+    type: string
+    path: $.creation_context
+    description: Indicates the origin product of the feature flag.
+  is_remote_configuration:
+    type: boolean
+    path: $.is_remote_configuration
+  has_encrypted_payloads:
+    type: boolean
+    path: $.has_encrypted_payloads
+  status:
+    type: string
+    path: $.status
+  evaluation_runtime:
+    type: string
+    path: $.evaluation_runtime
+    description: Specifies where this feature flag should be evaluated
+  bucketing_identifier:
+    type: string
+    path: $.bucketing_identifier
+    description: Identifier used for bucketing users into rollout and variants
+  last_called_at:
+    type: timestamp
+    path: $.last_called_at
+    description: Last time this feature flag was called (from $feature_flag_called events)
+  create_in_folder:
+    type: string
+    path: $._create_in_folder
+  should_create_usage_dashboard:
+    type: boolean
+    path: $._should_create_usage_dashboard
+  is_used_in_replay_settings:
+    type: boolean
+    path: $.is_used_in_replay_settings
+    description: Check if this feature flag is used in any team's session recording linked flag setting.
+extract:
+  record_path: $.results
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - project_id
+      - id
+  for_each:
+    resource: projects
+    field: id
+    input: project_id

@@ -1,0 +1,52 @@
+spec_version: '0.2'
+name: intercom__contacts
+type: model
+description: Contact detail from Intercom.
+grain: contact_id
+source:
+  ref: stg_intercom__list_contacts
+columns:
+  - name: contact_id
+    expr: stg_intercom__list_contacts.list_contact_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Intercom contact identifier.
+  - name: email
+    expr: stg_intercom__list_contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact email address.
+  - name: name
+    expr: stg_intercom__list_contacts.name
+    semantic_role: categorical
+    description: Contact display name.
+  - name: phone
+    expr: stg_intercom__list_contacts.phone
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact phone number.
+  - name: role
+    expr: stg_intercom__list_contacts.role
+    semantic_role: categorical
+    description: Contact role (user or lead).
+  - name: owner_id
+    expr: stg_intercom__list_contacts.owner_id
+    semantic_role: entity_id
+    description: Admin ID of the contact owner.
+  - name: created_at
+    expr: stg_intercom__list_contacts.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was created.
+  - name: last_seen_at
+    expr: stg_intercom__list_contacts.last_seen_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was last seen.
+tags:
+  - intercom
+  - support
+  - contacts
+trust_tier: gold
+materialization:
+  type: table

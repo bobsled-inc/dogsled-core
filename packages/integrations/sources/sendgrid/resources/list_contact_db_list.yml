@@ -1,0 +1,26 @@
+type: resource
+name: list_contact_db_list
+description: List SendGrid marketing contact lists
+api:
+  endpoint: /v3/contactdb/lists
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: SendGrid list identifier
+  name:
+    type: string
+    path: $.name
+    description: List name
+  recipient_count:
+    type: integer
+    path: $.recipient_count
+    description: Number of recipients currently assigned to the list
+extract:
+  record_path: $.lists
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

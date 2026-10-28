@@ -1,0 +1,42 @@
+spec_version: '0.2'
+type: model
+name: order_summary
+description: Fictional shop order_summary.
+grain:
+  - order_id
+source:
+  ref: local_duckdb.orders
+columns:
+  - name: order_id
+    expr: local_duckdb.orders.id
+  - name: customer_id
+    expr: local_duckdb.orders.customer_id
+  - name: customer_name
+    expr: local_duckdb.customers.name
+  - name: amount
+    expr: ROUND(COALESCE(local_duckdb.orders.amount, 0), 2)
+  - name: order_date
+    expr: local_duckdb.orders.order_date
+  - name: status
+    expr: local_duckdb.orders.status
+materialization:
+  type: view
+joins:
+  - ref: local_duckdb.customers
+    type: inner
+    on: local_duckdb.orders.customer_id = local_duckdb.customers.id
+expect:
+  - kind: non_null
+    column: customer_id
+  - kind: primary_key
+    columns:
+      - order_id
+  - kind: row_count_between
+    min: 100
+    max: 100
+  - kind: accepted_values
+    column: status
+    values:
+      - pending
+      - shipped
+      - delivered

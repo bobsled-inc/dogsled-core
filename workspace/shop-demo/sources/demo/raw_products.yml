@@ -1,0 +1,15 @@
+spec_version: '0.2'
+name: raw_products
+type: source
+source_type: warehouse_table
+connection: duckdb
+table: raw.raw_products
+description: Loaded seed table for products.
+trust_tier: bronze
+schema:
+  columns:
+    - { name: product_id, type: STRING }
+    - { name: sku, type: STRING }
+    - { name: product_name, type: STRING }
+    - { name: category, type: STRING }
+    - { name: unit_price, type: NUMBER }

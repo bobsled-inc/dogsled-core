@@ -1,0 +1,47 @@
+spec_version: '0.2'
+name: Document
+type: resolution
+description: Resolve document identities from ingested document rows.
+
+inputs:
+  - ref: raw.documents
+    role: internal
+    id_fields: [document_id]
+
+standardize:
+  - field: document_id
+    transforms: [trim]
+
+blocking:
+  rules:
+    - name: document_id_block
+      key: document_id
+
+deterministic_rules:
+  - name: exact_document_id
+    conditions:
+      - field: document_id
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: document_id
+      algorithm: exact
+      weight: 1.0
+
+thresholds:
+  auto_merge: 1.0
+  review: 0.9
+  auto_reject: 0.0
+
+profile:
+  display_name:
+    field: title
+    source_precedence: [raw.documents]
+  attributes:
+    - field: source_uri
+    - field: format

@@ -1,0 +1,30 @@
+type: resource
+name: campaigns
+description: List Mailchimp campaigns
+api:
+  endpoint: /3.0/campaigns
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Campaign identifier
+  type:
+    type: string
+    path: $.type
+    description: Campaign type
+  status:
+    type: string
+    path: $.status
+    description: Campaign status
+  create_time:
+    type: timestamp
+    path: $.create_time
+    description: Campaign creation time
+extract:
+  record_path: $.campaigns
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

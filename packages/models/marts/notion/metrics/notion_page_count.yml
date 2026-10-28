@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: notion_page_count
+description: Number of Notion pages.
+model: notion__pages
+expression: COUNT({notion__pages}.page_id)
+synonyms: [pages, page count, workspace pages]
+tags: [notion, content, collaboration]

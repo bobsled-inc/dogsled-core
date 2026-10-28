@@ -1,0 +1,33 @@
+type: resource
+name: search_sequences
+description: Search Apollo sequences
+api:
+  endpoint: /api/v1/emailer_campaigns/search
+  method: POST
+  request_body:
+    page: 1
+    per_page: 100
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Sequence identifier
+  name:
+    type: string
+    path: $.name
+    description: Sequence name
+  state:
+    type: string
+    path: $.state
+    description: Sequence state
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation timestamp
+extract:
+  record_path: $.emailer_campaigns
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,27 @@
+spec_version: '0.2'
+name: page_activity_summary
+type: model
+description: Page counts grouped by parent type and status
+grain: [parent_type, is_archived]
+source:
+  ref: stg_notion_pages
+columns:
+  - name: parent_type
+    expr: stg_notion_pages.parent_type
+    semantic_role: categorical
+    description: Parent type of the pages
+  - name: is_archived
+    expr: stg_notion_pages.is_archived
+    semantic_role: categorical
+    description: Whether pages are archived
+  - name: page_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total number of pages
+  - name: trashed_count
+    expr: SUM(CASE WHEN stg_notion_pages.is_trashed THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Number of trashed pages
+group_by: [parent_type, is_archived]
+materialization:
+  type: view

@@ -1,0 +1,130 @@
+type: resource
+name: contract_commitments
+description: Bounded Vercel enterprise contract commitments and native quantity and cost fields.
+api:
+  endpoint: /v1/billing/contract-commitments
+  method: GET
+  response_format: jsonl
+  query_params:
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+input:
+  snapshot_id:
+    type: string
+    required: true
+    description: Caller-supplied immutable identifier for this commitments snapshot.
+  retrieval_time:
+    type: timestamp
+    required: true
+    description: UTC time at which this bounded snapshot was retrieved.
+  team_id:
+    type: string
+    description: Vercel team identifier.
+  team_slug:
+    type: string
+    description: Vercel team slug.
+output:
+  snapshot_id:
+    type: string
+    path: $.__input__.snapshot_id
+    semantic_role: entity_id
+    description: Caller-supplied commitments snapshot identity.
+  record_ordinal:
+    type: integer
+    path: $.__input__.__record_ordinal__
+    semantic_role: entity_id
+    description: Zero-based ordinal assigned to the JSONL record within the retrieval.
+  team_id:
+    type: string
+    path: $.__input__.team_id
+    semantic_role: entity_id
+    description: Team scope supplied by the caller when available.
+  team_slug:
+    type: string
+    path: $.__input__.team_slug
+    semantic_role: categorical
+    description: Team slug supplied by the caller when available.
+  retrieval_time:
+    type: timestamp
+    path: $.__input__.retrieval_time
+    semantic_role: time_dimension
+    description: UTC time at which this snapshot was retrieved.
+  contract_id:
+    type: string
+    path: $.ContractId
+    semantic_role: entity_id
+    description: Native contract identifier.
+  commitment_id:
+    type: string
+    path: $.ContractCommitmentId
+    semantic_role: entity_id
+    description: Native commitment identifier.
+  commitment_category:
+    type: string
+    path: $.ContractCommitmentCategory
+    semantic_role: categorical
+    description: FOCUS contract commitment category.
+  commitment_type:
+    type: string
+    path: $.ContractCommitmentType
+    semantic_role: categorical
+    description: Provider-assigned commitment type.
+  commitment_description:
+    type: string
+    path: $.ContractCommitmentDescription
+    semantic_role: categorical
+    description: Provider-supplied commitment description.
+  contract_period_start:
+    type: timestamp
+    path: $.ContractPeriodStart
+    semantic_role: time_dimension
+    description: Overall contract period start.
+  contract_period_end:
+    type: timestamp
+    path: $.ContractPeriodEnd
+    semantic_role: time_dimension
+    description: Overall contract period end.
+  commitment_period_start:
+    type: timestamp
+    path: $.ContractCommitmentPeriodStart
+    semantic_role: time_dimension
+    description: Commitment period start.
+  commitment_period_end:
+    type: timestamp
+    path: $.ContractCommitmentPeriodEnd
+    semantic_role: time_dimension
+    description: Commitment period end.
+  commitment_quantity:
+    type: number
+    path: $.ContractCommitmentQuantity
+    semantic_role: measure
+    description: Quantity associated with the commitment.
+  commitment_unit:
+    type: string
+    path: $.ContractCommitmentUnit
+    semantic_role: categorical
+    description: Unit for the commitment quantity.
+  commitment_cost:
+    type: number
+    path: $.ContractCommitmentCost
+    semantic_role: measure
+    unit: billing_currency
+    tags:
+      - financial
+    description: Native cost associated with the commitment.
+  currency:
+    type: string
+    path: $.BillingCurrency
+    semantic_role: categorical
+    description: Commitment currency.
+extract:
+  record_path: $
+  paginated: false
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - snapshot_id
+      - record_ordinal
+    load_strategy: full_refresh
+    trust_tier: silver

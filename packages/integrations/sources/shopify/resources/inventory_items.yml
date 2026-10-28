@@ -1,0 +1,67 @@
+type: resource
+name: inventory_items
+description: Inventory items in Shopify.
+api:
+  endpoint: /inventory_items.json
+  method: GET
+  query_params:
+    ids: ${{ input.ids }}
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+    updated_at_min: ${{ input.updated_at_min }}
+input:
+  ids:
+    type: string
+    required: true
+    description: Comma-separated inventory item IDs.
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+  updated_at_min:
+    type: timestamp
+    description: Only return records updated on or after this timestamp.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Shopify object identifier.
+  sku:
+    type: string
+    path: $.sku
+    description: Stock keeping unit.
+  cost:
+    type: string
+    path: $.cost
+    description: Unit cost of the inventory item.
+  tracked:
+    type: boolean
+    path: $.tracked
+    description: Whether inventory tracking is enabled.
+  country_code_of_origin:
+    type: string
+    path: $.country_code_of_origin
+    description: Country code where the item originates.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation timestamp.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Last update timestamp.
+extract:
+  record_path: $.inventory_items
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: updated_at_min

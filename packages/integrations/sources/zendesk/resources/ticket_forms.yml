@@ -1,0 +1,52 @@
+type: resource
+name: ticket_forms
+description: List Zendesk ticket forms
+api:
+  endpoint: /ticket_forms
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of ticket forms to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk ticket form identifier
+  name:
+    type: string
+    path: $.name
+    description: Ticket form name
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the form is active
+  default:
+    type: boolean
+    path: $.default
+    description: Whether the form is the default form
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Ticket form creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Ticket form last update timestamp
+extract:
+  record_path: $.ticket_forms
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

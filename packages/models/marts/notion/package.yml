@@ -1,0 +1,7 @@
+name: notion
+display_name: Notion
+description: Workspace content and collaboration analytics models for Notion pages, database items, and users.
+tags:
+  - notion
+  - collaboration
+  - productivity

@@ -1,0 +1,5 @@
+state_dir: .extractor
+output_dir: output
+batch_dir: batch
+default_output: stdout
+default_batch_format: jsonl

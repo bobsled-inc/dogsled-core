@@ -1,0 +1,15 @@
+name: asana
+display_name: Asana
+description: Project and task management analytics models for Asana workspaces, projects, tasks, and users.
+tags:
+  - asana
+  - project-management
+  - engineering
+include_resources:
+  - get_portfolios
+  - get_projects
+  - get_tasks
+  - get_task_projects
+  - get_workspace_teams
+  - get_workspace_users
+  - get_workspaces

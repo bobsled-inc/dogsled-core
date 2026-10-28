@@ -1,0 +1,31 @@
+spec_version: '0.2'
+name: bq_mart_customer_revenue
+type: model
+description: BigQuery mart — lifetime revenue per customer. Demonstrates target_schema override (dogsled_multi_conn_mart).
+grain: customer_id
+
+source:
+  ref: bq_fct_orders
+
+columns:
+  - name: customer_id
+    expr: customer_id
+    primary_key: true
+  - name: customer_name
+    expr: customer_name
+  - name: country
+    expr: country
+  - name: order_count
+    expr: 'raw_sql(COUNT(DISTINCT order_id))'
+  - name: total_revenue
+    expr: 'raw_sql(SUM(total))'
+
+group_by:
+  - customer_id
+  - customer_name
+  - country
+
+target_schema: dogsled_multi_conn_mart
+
+materialization:
+  type: view

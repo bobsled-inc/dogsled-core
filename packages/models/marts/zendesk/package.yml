@@ -1,0 +1,11 @@
+name: zendesk
+display_name: Zendesk
+description: Support analytics models for Zendesk tickets, agents, organizations, and ticket volume.
+tags:
+  - zendesk
+  - support
+  - customer-service
+include_resources:
+  - organizations
+  - tickets
+  - users

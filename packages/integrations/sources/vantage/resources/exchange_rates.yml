@@ -1,0 +1,45 @@
+type: resource
+name: exchange_rates
+description: Currency exchange rates for multi-currency cost reporting
+api:
+  endpoint: /exchange_rates
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+output:
+  from:
+    type: string
+    path: $.from
+    description: The source currency code.
+  to:
+    type: string
+    path: $.to
+    description: The target currency code.
+  rate:
+    type: number
+    path: $.rate
+    description: The exchange rate.
+  effective_at:
+    type: timestamp
+    path: $.effective_at
+    description: The date the rate is effective.
+extract:
+  record_path: $.exchange_rates
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - from
+      - to
+      - effective_at
+    trust_tier: silver

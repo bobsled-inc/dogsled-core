@@ -1,0 +1,16 @@
+display_name: Mailchimp
+category: marketing
+logo_url: https://mailchimp.com/favicon.ico
+tags:
+  - mailchimp
+  - marketing
+  - campaigns
+  - audiences
+docs_url: https://mailchimp.com/developer/marketing/api/
+auth_setup:
+  - env: MAILCHIMP_SERVER_PREFIX
+    description: Mailchimp data center prefix such as us21
+    docs_url: https://mailchimp.com/developer/marketing/docs/fundamentals/#api-structure
+  - env: MAILCHIMP_API_KEY
+    description: Mailchimp API key used as the basic auth password
+    docs_url: https://mailchimp.com/help/about-api-keys/

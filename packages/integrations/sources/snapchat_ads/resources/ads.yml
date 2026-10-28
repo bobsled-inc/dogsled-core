@@ -1,0 +1,41 @@
+type: resource
+name: ads
+description: Ads for a Snapchat ad account.
+api:
+  endpoint: /adaccounts/${{ input.ad_account_id }}/ads
+  method: GET
+input:
+  ad_account_id:
+    type: string
+    default: '123'
+output:
+  id:
+    type: string
+    path: $.ad.id
+  name:
+    type: string
+    path: $.ad.name
+  ad_squad_id:
+    type: string
+    path: $.ad.ad_squad_id
+  status:
+    type: string
+    path: $.ad.status
+  type:
+    type: string
+    path: $.ad.type
+  creative_id:
+    type: string
+    path: $.ad.creative_id
+extract:
+  record_path: $.ads
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next_link
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

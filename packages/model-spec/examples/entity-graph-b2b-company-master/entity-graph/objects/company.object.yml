@@ -1,0 +1,10 @@
+spec_version: '1'
+type: object
+name: company
+identity:
+  resolution_ref: ../company_resolution.yml
+links:
+  - relation_ref: ../relationships/works_at.entity-relationship.yml
+    direction: inbound
+  - relation_ref: ../relationships/subsidiary_of.entity-relationship.yml
+    direction: bidirectional

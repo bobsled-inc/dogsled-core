@@ -1,0 +1,33 @@
+type: resource
+name: search_contacts
+description: Search Apollo contacts
+api:
+  endpoint: /api/v1/contacts/search
+  method: POST
+  request_body:
+    page: 1
+    per_page: 100
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Contact identifier
+  first_name:
+    type: string
+    path: $.first_name
+    description: First name
+  last_name:
+    type: string
+    path: $.last_name
+    description: Last name
+  email:
+    type: string
+    path: $.email
+    description: Email address
+extract:
+  record_path: $.contacts
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

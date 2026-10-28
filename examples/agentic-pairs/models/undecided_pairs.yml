@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: model
+name: undecided_pairs
+description: Prepare synthetic pairs that still need an assessment.
+grain: [pair_id]
+source: { ref: local.raw_pairs }
+where: "status = 'undecided'"
+columns:
+  - { name: pair_id, expr: pair_id, type: string, primary_key: true }
+  - { name: left_record, expr: left_record, type: string, not_null: true }
+  - { name: right_record, expr: right_record, type: string, not_null: true }
+  - { name: prepared_evidence, expr: prepared_evidence, type: string, not_null: true }
+materialization: { type: table }

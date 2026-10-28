@@ -1,0 +1,47 @@
+type: resource
+name: get_users
+description: Get all users
+api:
+  endpoint: /users
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive user identifier
+  name:
+    type: string
+    path: $.name
+    description: User full name
+  email:
+    type: string
+    path: $.email
+    description: User email address
+  active_flag:
+    type: boolean
+    path: $.active_flag
+    description: Whether the user is active
+  created:
+    type: timestamp
+    path: $.created
+    description: User creation timestamp
+  modified:
+    type: timestamp
+    path: $.modified
+    description: User update timestamp
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get one user
+  api:
+    endpoint: /users/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: integer
+      required: true

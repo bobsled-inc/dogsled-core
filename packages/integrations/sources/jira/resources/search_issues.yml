@@ -1,0 +1,220 @@
+type: resource
+name: search_issues
+description: Search Jira issues with JQL and paginated issue results.
+api:
+  endpoint: /rest/api/3/search
+  method: GET
+  query_params:
+    jql: ${{ input.jql }}
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    fields: ${{ input.fields }}
+    expand: ${{ input.expand }}
+    fieldsByKeys: ${{ input.fields_by_keys }}
+    properties: ${{ input.properties }}
+    validateQuery: ${{ input.validate_query }}
+input:
+  jql:
+    type: string
+    description: JQL query used to filter issues. If omitted, Jira returns issues the caller can browse.
+  start_at:
+    type: integer
+    description: Zero-based offset for the first issue in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of issues to return per page.
+    default: 50
+    maximum: 100
+  fields:
+    type: array
+    description: Specific issue fields to include in the response.
+  expand:
+    type: string
+    description: Comma-separated expansions such as names, schema, or renderedFields.
+  fields_by_keys:
+    type: boolean
+    description: Whether fields in the request are referenced by field key instead of field ID.
+  properties:
+    type: array
+    description: Issue property keys to include with each issue.
+  validate_query:
+    type: string
+    description: Query validation mode.
+    enum:
+      - strict
+      - warn
+      - none
+    default: strict
+query:
+  search:
+    dialect: jira_jql
+    bind:
+      input: jql
+    docs: https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira issue identifier.
+  key:
+    type: string
+    path: $.key
+    description: Human-readable issue key.
+  self:
+    type: string
+    path: $.self
+    description: Jira API URL for the issue.
+  summary:
+    type: string
+    path: $.fields.summary
+    description: Issue summary.
+  status_id:
+    type: string
+    path: $.fields.status.id
+    description: Status identifier.
+  status_name:
+    type: string
+    path: $.fields.status.name
+    description: Status name.
+  status_category_key:
+    type: string
+    path: $.fields.status.statusCategory.key
+    description: Status category key such as new, indeterminate, or done.
+  issue_type_id:
+    type: string
+    path: $.fields.issuetype.id
+    description: Issue type identifier.
+  issue_type_name:
+    type: string
+    path: $.fields.issuetype.name
+    description: Issue type name.
+  project_id:
+    type: string
+    path: $.fields.project.id
+    description: Project identifier.
+  project_key:
+    type: string
+    path: $.fields.project.key
+    description: Project key.
+  project_name:
+    type: string
+    path: $.fields.project.name
+    description: Project name.
+  priority_id:
+    type: string
+    path: $.fields.priority.id
+    description: Priority identifier.
+  priority_name:
+    type: string
+    path: $.fields.priority.name
+    description: Priority name.
+  assignee_account_id:
+    type: string
+    path: $.fields.assignee.accountId
+    description: Account ID of the assigned user.
+  assignee_display_name:
+    type: string
+    path: $.fields.assignee.displayName
+    description: Display name of the assigned user.
+  reporter_account_id:
+    type: string
+    path: $.fields.reporter.accountId
+    description: Account ID of the issue reporter.
+  reporter_display_name:
+    type: string
+    path: $.fields.reporter.displayName
+    description: Display name of the issue reporter.
+  creator_account_id:
+    type: string
+    path: $.fields.creator.accountId
+    description: Account ID of the issue creator.
+  creator_display_name:
+    type: string
+    path: $.fields.creator.displayName
+    description: Display name of the issue creator.
+  resolution_name:
+    type: string
+    path: $.fields.resolution.name
+    description: Resolution name when the issue is resolved.
+  labels:
+    type: array
+    path: $.fields.labels
+    description: Labels attached to the issue.
+  components:
+    type: array
+    path: $.fields.components
+    description: Components attached to the issue.
+  fix_versions:
+    type: array
+    path: $.fields.fixVersions
+    description: Fix versions attached to the issue.
+  created:
+    type: timestamp
+    path: $.fields.created
+    description: Issue creation timestamp.
+  updated:
+    type: timestamp
+    path: $.fields.updated
+    description: Most recent update timestamp.
+  resolution_date:
+    type: timestamp
+    path: $.fields.resolutiondate
+    description: Resolution timestamp.
+  due_date:
+    type: string
+    path: $.fields.duedate
+    description: Due date in YYYY-MM-DD format.
+  parent_id:
+    type: string
+    path: $.fields.parent.id
+    description: Parent issue identifier for subtasks.
+  parent_key:
+    type: string
+    path: $.fields.parent.key
+    description: Parent issue key for subtasks.
+  time_estimate:
+    type: integer
+    path: $.fields.timeestimate
+    description: Remaining estimate in seconds.
+  aggregate_time_estimate:
+    type: integer
+    path: $.fields.aggregatetimeestimate
+    description: Aggregate remaining estimate in seconds.
+  time_spent:
+    type: integer
+    path: $.fields.timespent
+    description: Time spent in seconds.
+  subtasks:
+    type: array
+    path: $.fields.subtasks
+    description: Subtask references.
+extract:
+  record_path: $.issues
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+verify:
+  suppress:
+    - DEPRECATED_OPERATION
+lookup:
+  description: Get a single issue by issue id or key.
+  api:
+    endpoint: /rest/api/3/issue/${{ input.issue_id_or_key }}
+    method: GET
+  input:
+    issue_id_or_key:
+      type: string
+      required: true
+      description: Jira issue id or key such as 10001 or TEAM-{number}.
+test:
+  fixtures:
+    - name: search_issues_smoke
+      input:
+        jql: ORDER BY updated DESC
+        max_results: 50

@@ -1,0 +1,40 @@
+spec_version: '0.2'
+name: zendesk_users
+type: seed
+description: Synthetic Zendesk users for end-to-end customer entity resolution.
+
+payload:
+  format: csv
+  path: data/zendesk_users.csv
+  delimiter: ','
+
+schema:
+  columns:
+    - name: zendesk_user_id
+      type: STRING
+      primary_key: true
+    - name: email
+      type: STRING
+    - name: first_name
+      type: STRING
+    - name: last_name
+      type: STRING
+    - name: phone
+      type: STRING
+    - name: country
+      type: STRING
+
+materialization:
+  type: table
+  target_schema: raw
+  on_conflict: replace
+
+validation:
+  required_columns:
+    - zendesk_user_id
+    - email
+    - first_name
+    - last_name
+    - phone
+    - country
+  unique_columns: [zendesk_user_id]

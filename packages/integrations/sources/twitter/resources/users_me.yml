@@ -1,0 +1,33 @@
+type: resource
+name: users_me
+description: The authenticated X user profile.
+api:
+  endpoint: /2/users/me
+  method: GET
+  query_params:
+    user.fields: created_at,verified,public_metrics
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  username:
+    type: string
+    path: $.username
+  created_at:
+    type: timestamp
+    path: $.created_at
+  verified:
+    type: boolean
+    path: $.verified
+  followers_count:
+    type: integer
+    path: $.public_metrics.followers_count
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

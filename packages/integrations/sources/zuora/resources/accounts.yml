@@ -1,0 +1,46 @@
+type: resource
+name: accounts
+description: Billing accounts in Zuora.
+api:
+  endpoint: /v1/accounts
+  method: GET
+  query_params:
+    pageSize: ${{ input.page_size }}
+input:
+  page_size:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  accountNumber:
+    type: string
+    path: $.accountNumber
+  status:
+    type: string
+    path: $.status
+  currency:
+    type: string
+    path: $.currency
+  balance:
+    type: number
+    path: $.balance
+  createdDate:
+    type: timestamp
+    path: $.createdDate
+  updatedDate:
+    type: timestamp
+    path: $.updatedDate
+extract:
+  record_path: $.accounts
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: pageSize

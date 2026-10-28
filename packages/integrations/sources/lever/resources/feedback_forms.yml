@@ -1,0 +1,41 @@
+type: resource
+name: feedback_forms
+description: List Lever feedback forms
+api:
+  endpoint: /feedback/forms
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    limit: ${{ input.limit }}
+input:
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+  limit:
+    type: integer
+    description: Page size
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Feedback form identifier
+  name:
+    type: string
+    path: $.name
+    description: Feedback form name
+  archived_at:
+    type: timestamp
+    path: $.archivedAt
+    description: Archived timestamp
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit

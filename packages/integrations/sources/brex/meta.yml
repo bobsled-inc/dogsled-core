@@ -1,0 +1,14 @@
+display_name: Brex
+category: finance
+logo_url: https://www.brex.com/logo.png
+tags:
+  - brex
+  - payments
+  - expenses
+  - finance
+docs_url: https://developer.brex.com/openapi/payments_api
+openapi_url: openapi.verify.yml
+auth_setup:
+  - env: BREX_ACCESS_TOKEN
+    description: Brex OAuth access token with scopes for the selected APIs
+    docs_url: https://developer.brex.com/docs/authentication

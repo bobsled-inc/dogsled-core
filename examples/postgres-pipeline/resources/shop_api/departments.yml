@@ -1,0 +1,36 @@
+spec_version: '1'
+type: resource
+description: Fictional paginated shop records.
+name: departments
+integration: shop_api
+api:
+  endpoint: /departments
+  method: GET
+input:
+  id:
+    type: integer
+query:
+  filters:
+    id:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: id
+output:
+  id:
+    type: integer
+    path: $.id
+  name:
+    type: string
+    path: $.name
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id
+    load_strategy: full_refresh

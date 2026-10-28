@@ -1,0 +1,37 @@
+type: resource
+name: payment_applications
+description: Invoice applications for each QuickBooks Online payment.
+api:
+  endpoint: /payment/${{ input.payment_id }}
+  method: GET
+input:
+  payment_id:
+    type: string
+    description: Payment ID whose invoice applications should be retrieved.
+    required: true
+output:
+  payment_id:
+    type: string
+    from:
+      resource: payments
+      path: $.id
+  invoice_id:
+    type: string
+    path: $.LinkedTxn[0].TxnId
+  transaction_type:
+    type: string
+    path: $.LinkedTxn[0].TxnType
+  applied_amount:
+    type: number
+    path: $.Amount
+extract:
+  record_path: $.Payment.Line
+  for_each:
+    resource: payments
+    field: id
+    input: payment_id
+  table:
+    primary_key:
+      - payment_id
+      - invoice_id
+    trust_tier: silver

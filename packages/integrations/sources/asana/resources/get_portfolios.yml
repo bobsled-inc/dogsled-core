@@ -1,0 +1,57 @@
+type: resource
+name: get_portfolios
+description: List Asana portfolios scoped to each workspace
+api:
+  endpoint: /portfolios
+  method: GET
+  query_params:
+    workspace: ${{ input.workspace_gid }}
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  workspace_gid:
+    type: string
+    description: Asana workspace GID used to scope the portfolio list
+    required: true
+  limit:
+    type: integer
+    description: Number of portfolios to return per page
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response
+output:
+  gid:
+    type: string
+    path: $.gid
+    description: Asana portfolio identifier
+  name:
+    type: string
+    path: $.name
+    description: Portfolio name
+  resource_type:
+    type: string
+    path: $.resource_type
+    description: Asana resource type
+  workspace_gid:
+    type: string
+    path: $.workspace.gid
+    description: GID of the workspace containing the portfolio
+  workspace_name:
+    type: string
+    path: $.workspace.name
+    description: Name of the workspace containing the portfolio
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  for_each:
+    resource: get_workspaces
+    field: gid
+    input: workspace_gid
+  table:
+    primary_key:
+      - gid
+    trust_tier: silver

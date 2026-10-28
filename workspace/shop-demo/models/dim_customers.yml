@@ -1,0 +1,52 @@
+spec_version: '0.2'
+name: dim_customers
+type: model
+description: Customer dimension with order and revenue rollups.
+grain: customer_id
+source:
+  ref: stg_customers
+joins:
+  - ref: fct_orders
+    type: left
+    on: stg_customers.customer_id = fct_orders.customer_id
+columns:
+  - name: customer_id
+    expr: stg_customers.customer_id
+    primary_key: true
+    semantic_role: entity_id
+  - name: full_name
+    expr: stg_customers.full_name
+    semantic_role: name
+  - name: email
+    expr: stg_customers.email
+    semantic_role: email
+    pii: true
+  - name: company_name
+    expr: stg_customers.company_name
+    semantic_role: name
+    embedding_candidate: true
+  - name: state
+    expr: stg_customers.state
+    semantic_role: categorical
+  - name: status
+    expr: stg_customers.status
+    semantic_role: categorical
+  - name: order_count
+    expr: COUNT(fct_orders.order_id)
+    semantic_role: count
+  - name: lifetime_revenue
+    expr: SUM(fct_orders.order_total)
+    semantic_role: currency
+    unit: usd
+  - name: first_ordered_at
+    expr: MIN(fct_orders.ordered_at)
+    semantic_role: event_timestamp
+  - name: last_ordered_at
+    expr: MAX(fct_orders.ordered_at)
+    semantic_role: event_timestamp
+materialization:
+  type: table
+group_by: [customer_id, full_name, email, company_name, state, status]
+expect:
+  - kind: primary_key
+    columns: [customer_id]

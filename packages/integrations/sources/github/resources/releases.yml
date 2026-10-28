@@ -1,0 +1,158 @@
+type: resource
+name: releases
+description: Releases for a GitHub repository representing versioned distributions with assets, changelogs, and release metadata
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/releases
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  per_page:
+    type: integer
+    description: Number of releases to return per page (max 100)
+    default: 100
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the release
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Human-readable title of the release (e.g. "v2.1.0 - Performance Improvements"), may differ from tag name
+  tag_name:
+    type: string
+    semantic_role: identifier
+    path: $.tag_name
+    description: Git tag associated with this release (e.g. "v2.1.0"), used as the version identifier
+  target_commitish:
+    type: string
+    semantic_role: identifier
+    path: $.target_commitish
+    description: Branch or commit SHA the release tag points to (e.g. "main" or a full SHA)
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the release page on github.com
+  tarball_url:
+    type: string
+    semantic_role: url
+    path: $.tarball_url
+    description: URL to download the source code as a gzipped tar archive
+  zipball_url:
+    type: string
+    semantic_role: url
+    path: $.zipball_url
+    description: URL to download the source code as a zip archive
+  draft:
+    type: boolean
+    semantic_role: categorical
+    path: $.draft
+    description: True if the release is a draft and not yet published (only visible to collaborators)
+  prerelease:
+    type: boolean
+    semantic_role: categorical
+    path: $.prerelease
+    description: "True if the release is marked as a pre-release (e.g. alpha, beta, release candidate) \u2014 not considered production-ready"
+  body:
+    type: string
+    semantic_role: categorical
+    path: $.body
+    description: Full Markdown body text of the release notes, typically containing changelogs, migration guides, and contributor acknowledgments
+  author_login:
+    type: string
+    semantic_role: name
+    path: $.author.login
+    description: GitHub username of the user who created the release
+  author_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.author.id
+    description: Unique numeric identifier of the release author
+  assets_count:
+    type: integer
+    semantic_role: count
+    path: $.assets.length
+    description: Number of binary assets (e.g. compiled binaries, installers) attached to the release
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the release was first created (may be earlier than published_at for draft releases)
+  published_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.published_at
+    description: Timestamp when the release was published and made visible, null for draft releases
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single release by repository owner, name, and release ID
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/releases/${{ input.release_id }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    release_id:
+      type: integer
+      required: true
+      description: The numeric release ID
+  extract:
+    record_path: $
+via: rest

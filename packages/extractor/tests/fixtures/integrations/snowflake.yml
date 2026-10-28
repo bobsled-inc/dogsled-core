@@ -1,0 +1,14 @@
+spec_version: '1'
+auth_env_vars: [SNOWFLAKE_ACCOUNT, SNOWFLAKE_TOKEN, SNOWFLAKE_WAREHOUSE]
+type: integration
+name: test_snowflake
+source_type: snowflake
+connection:
+  account_identifier_env: SNOWFLAKE_ACCOUNT
+  warehouse_env: SNOWFLAKE_WAREHOUSE
+  database: TEST_DB
+  schema: PUBLIC
+  role: TEST_ROLE
+auth:
+  type: pat
+  token_env: SNOWFLAKE_TOKEN

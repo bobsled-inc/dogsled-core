@@ -1,0 +1,131 @@
+type: resource
+name: appointments
+description: Appointment records including service window, assignments, and completion/payment status.
+api:
+  endpoint: /appointment/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    status: '${{ input.status }}'
+    customerIDs: '${{ input.customer_ids }}'
+    routeIDs: '${{ input.route_ids }}'
+    subscriptionIDs: '${{ input.subscription_ids }}'
+    dateStart: '${{ input.date_start }}'
+    dateEnd: '${{ input.date_end }}'
+    dateUpdatedStart: '${{ input.date_updated_start }}'
+    dateUpdatedEnd: '${{ input.date_updated_end }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  status:
+    type: integer
+    description: Appointment status code.
+  customer_ids:
+    type: string
+    description: Optional customer filter.
+  route_ids:
+    type: string
+    description: Optional route ID filter.
+  subscription_ids:
+    type: string
+    description: Optional subscription filter.
+  date_start:
+    type: string
+    description: Appointment date lower bound.
+  date_end:
+    type: string
+    description: Appointment date upper bound.
+  date_updated_start:
+    type: string
+    description: Appointment update lower bound.
+  date_updated_end:
+    type: string
+    description: Appointment update upper bound.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  appointment_id:
+    type: integer
+    path: $.appointmentID
+    description: Appointment unique ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Office that owns the appointment.
+  customer_id:
+    type: integer
+    path: $.customerID
+    description: Customer the job belongs to.
+  route_id:
+    type: integer
+    path: $.routeID
+    description: Assigned route ID.
+  spot_id:
+    type: integer
+    path: $.spotID
+    description: Assigned spot ID.
+  subscription_id:
+    type: integer
+    path: $.subscriptionID
+    description: Optional subscription anchor.
+  date:
+    type: timestamp
+    path: $.date
+    description: Scheduled appointment date.
+  start:
+    type: timestamp
+    path: $.start
+    description: Window start time.
+  end:
+    type: timestamp
+    path: $.end
+    description: Window end time.
+  duration:
+    type: integer
+    path: $.duration
+    description: Service duration in minutes.
+  status:
+    type: integer
+    path: $.status
+    description: Appointment status code.
+  status_text:
+    type: string
+    path: $.statusText
+    description: Friendly status label.
+  completed_by:
+    type: integer
+    path: $.completedBy
+    description: Employee ID who closed the appointment.
+  serviced_by:
+    type: integer
+    path: $.servicedBy
+    description: Technician who performed the service.
+  ticket_id:
+    type: integer
+    path: $.ticketID
+    description: Invoiced ticket for this appointment.
+  amount_collected:
+    type: number
+    path: $.amountCollected
+    description: Payment collected at completion.
+  payment_method:
+    type: integer
+    path: $.paymentMethod
+    description: Payment method code.
+  date_completed:
+    type: timestamp
+    path: $.dateCompleted
+    description: Actual completion timestamp.
+
+extract:
+  record_path: '$..[?(@.appointmentID)]'
+  table:
+    primary_key:
+      - appointment_id
+    trust_tier: silver

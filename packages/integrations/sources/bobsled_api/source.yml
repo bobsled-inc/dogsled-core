@@ -1,0 +1,43 @@
+spec_version: '2'
+type: source
+name: bobsled_api
+description: Bobsled REST API for shares and data-sharing metadata.
+auth_env_vars: [CUSTOM_USER_PROOF]
+transports:
+  - id: default
+    base_url: https://${{ env.BOBSLED_API_HOST }}
+    auth:
+      type: custom-token
+      token_url: https://${{ env.BOBSLED_API_HOST }}/api/v1/auth/generateToken/
+      token_request:
+        method: POST
+        headers:
+          sled-client-id: ${{ env.BOBSLED_CLIENT_ID }}
+          sled-service-account-email: ${{ env.BOBSLED_SERVICE_ACCOUNT_EMAIL }}
+          sled-service-account-secret: ${{ env.BOBSLED_SERVICE_ACCOUNT_SECRET }}
+      token_response_path: data.token
+      token_prefix: 'Bearer '
+      token_ttl_seconds: 3600
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+      sled-client-id: ${{ env.BOBSLED_CLIENT_ID }}
+    # Signed assertion naming the human on whose behalf the host runs this
+    # request. Dogsled relays it from the caller's `x-custom-user-proof` chat
+    # header as `CUSTOM_USER_PROOF`; omitted when the host sets nothing.
+    optional_headers:
+      x-bobsled-delegated-user: ${{ env.CUSTOM_USER_PROOF }}
+default_transport: default

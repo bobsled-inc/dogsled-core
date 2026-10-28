@@ -1,0 +1,12 @@
+zendesk_user_id,email,first_name,last_name,phone,country
+zd_001,alice.johnson@example.com,Alice,Johnson,3125550101,US
+zd_002,sara.chen@gmail.example.com,Sara,Chen,4085550105,US
+zd_003,michael.lee@example.com,Michael,Lee,2065550104,US
+zd_004,lisa.thompson@example.com,Lisa,Thompson,2135550106,US
+zd_005,mark.tayler@biz.example.com,Mark,Tayler,9195550109,US
+zd_006,nora.martinez@example.com,Nora,Martinez,6025550109,US
+zd_007,daniel.green@example.com,Daniel,Green,5035550113,US
+zd_008,olivia.martin@example.com,Olivia,Martin,2145550114,US
+zd_009,ryan.scott@example.com,Ryan,Scott,8015550119,US
+zd_010,erin.brooks@example.com,Erin,Brooks,2255550120,US
+zd_011,bella.foster@vendor.example.com,Bella,Foster,3125550198,US

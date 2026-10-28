@@ -1,0 +1,68 @@
+type: resource
+name: roadmaps
+description: Roadmaps from Linear providing a high-level visual timeline view for organizing and presenting projects and initiatives to stakeholders
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  roadmaps(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id name description slugId\n      creator { id name email }\n      createdAt updatedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique roadmap UUID assigned by Linear
+  name:
+    type: string
+    path: $.name
+    description: Human-readable roadmap name displayed in the Linear sidebar and navigation (e.g. "Q1 2024 Engineering Roadmap", "Product Roadmap")
+  description:
+    type: string
+    path: $.description
+    description: Optional roadmap description in markdown format explaining the scope, audience, and purpose of this particular roadmap view
+  slug_id:
+    type: string
+    path: $.slugId
+    description: URL-safe slug identifier used in the roadmap's web URL path for shareable links
+  creator_id:
+    type: string
+    path: $.creator.id
+    description: UUID of the user who originally created the roadmap
+  creator_name:
+    type: string
+    path: $.creator.name
+    description: Display name of the roadmap creator
+  creator_email:
+    type: string
+    path: $.creator.email
+    description: Email address of the roadmap creator
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the roadmap was first created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the roadmap was last modified, including changes to its project assignments
+extract:
+  record_path: $.data.roadmaps.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.roadmaps.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter
+via: graphql

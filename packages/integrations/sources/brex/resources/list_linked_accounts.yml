@@ -1,0 +1,44 @@
+type: resource
+name: list_linked_accounts
+description: List linked bank accounts available for Brex transfers
+api:
+  endpoint: /v1/linked_accounts
+  method: GET
+  query_params:
+    cursor: ${{ input.cursor }}
+    limit: ${{ input.limit }}
+input:
+  cursor:
+    type: string
+  limit:
+    type: integer
+output:
+  id:
+    type: string
+    path: $.id
+  bank_details:
+    type: string
+    path: $.bank_details
+  brex_account_id:
+    type: string
+    path: $.brex_account_id
+    description: ''
+  last_four:
+    type: string
+    path: $.last_four
+  available_balance:
+    type: string
+    path: $.available_balance
+  current_balance:
+    type: string
+    path: $.current_balance
+extract:
+  record_path: $.items
+  pagination:
+    type: cursor
+    cursor_param: cursor
+    cursor_path: $.next_cursor
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

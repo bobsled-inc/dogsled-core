@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: gong_call_count
+description: Number of Gong calls.
+model: gong__calls
+expression: COUNT({gong__calls}.call_id)
+synonyms: [calls, recorded calls, call volume]
+tags: [gong, revenue, calls]

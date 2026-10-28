@@ -1,0 +1,69 @@
+spec_version: '0.2'
+name: chargebee__transactions
+type: model
+description: Chargebee transactions enriched with customer context and normalized amounts.
+grain: transaction_id
+source:
+  ref: stg_chargebee__list_transactions
+joins:
+  - ref: stg_chargebee__list_customers
+    type: left
+    on: json_value(stg_chargebee__list_transactions.transaction, 'customer_id') = stg_chargebee__list_customers.customer_id
+columns:
+  - name: transaction_id
+    expr: stg_chargebee__list_transactions.transaction_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Chargebee transaction identifier.
+  - name: customer_id
+    expr: json_value(stg_chargebee__list_transactions.transaction, 'customer_id')
+    semantic_role: entity_id
+    references: stg_chargebee__list_customers.customer_id
+    description: Customer tied to the transaction.
+  - name: customer_email
+    expr: json_value(stg_chargebee__list_customers.customer, 'email')
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer email from the related Chargebee customer record.
+  - name: subscription_id
+    expr: json_value(stg_chargebee__list_transactions.transaction, 'subscription_id')
+    semantic_role: entity_id
+    description: Subscription tied to the transaction when present.
+  - name: transaction_status
+    expr: json_value(stg_chargebee__list_transactions.transaction, 'status')
+    semantic_role: categorical
+    description: Current transaction status.
+  - name: transaction_type
+    expr: json_value(stg_chargebee__list_transactions.transaction, 'type')
+    semantic_role: categorical
+    description: Transaction type.
+  - name: gateway
+    expr: json_value(stg_chargebee__list_transactions.transaction, 'gateway')
+    semantic_role: categorical
+    description: Payment gateway used for the transaction.
+  - name: payment_method
+    expr: json_value(stg_chargebee__list_transactions.transaction, 'payment_method')
+    semantic_role: categorical
+    description: Payment method used for the transaction.
+  - name: currency_code
+    expr: json_value(stg_chargebee__list_transactions.transaction, 'currency_code')
+    semantic_role: categorical
+    description: Currency used for the transaction.
+  - name: amount
+    expr: COALESCE(CAST(NULLIF(json_value(stg_chargebee__list_transactions.transaction, 'amount'), '') AS NUMERIC(16, 2)) / 100.0, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Transaction amount normalized into standard currency units.
+  - name: transaction_date
+    expr: TO_TIMESTAMP(CAST(NULLIF(json_value(stg_chargebee__list_transactions.transaction, 'date'), '') AS BIGINT))
+    semantic_role: event_timestamp
+    description: Transaction timestamp.
+tags:
+  - chargebee
+  - transactions
+  - billing
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: pylon__ticket_volume_summary
+type: model
+description: Daily support ticket volume grouped by state.
+grain:
+  - state
+  - created_date
+source:
+  ref: stg_pylon__issues
+columns:
+  - name: state
+    expr: stg_pylon__issues.state
+    primary_key: true
+    semantic_role: categorical
+    description: Issue state (new, waiting_on_you, waiting_on_customer, on_hold, closed).
+  - name: created_date
+    expr: CAST(stg_pylon__issues.created_at AS DATE)
+    primary_key: true
+    semantic_role: time_dimension
+    description: Date the issue was created.
+  - name: issue_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of issues created on this date with this state.
+group_by:
+  - state
+  - created_date
+tags:
+  - pylon
+  - issues
+  - summary
+trust_tier: gold
+materialization:
+  type: table

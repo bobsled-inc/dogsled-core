@@ -1,0 +1,68 @@
+type: resource
+name: tickets
+description: List Zendesk tickets
+api:
+  endpoint: /tickets
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of tickets to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk ticket identifier
+  subject:
+    type: string
+    path: $.subject
+    description: Ticket subject line
+  status:
+    type: string
+    path: $.status
+    description: Ticket status
+  priority:
+    type: string
+    path: $.priority
+    description: Ticket priority
+  requester_id:
+    type: integer
+    path: $.requester_id
+    description: Requester user identifier
+  submitter_id:
+    type: integer
+    path: $.submitter_id
+    description: Submitter user identifier
+  assignee_id:
+    type: integer
+    path: $.assignee_id
+    description: Assigned agent identifier
+  organization_id:
+    type: integer
+    path: $.organization_id
+    description: Related organization identifier
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Ticket creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Ticket last update timestamp
+extract:
+  record_path: $.tickets
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

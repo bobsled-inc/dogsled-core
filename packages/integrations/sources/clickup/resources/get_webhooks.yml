@@ -1,0 +1,61 @@
+type: resource
+name: get_webhooks
+description: Get Webhooks
+api:
+  endpoint: /v2/team/${{ input.team_id }}/webhook
+  method: GET
+input:
+  team_id:
+    type: number
+    required: true
+    description: Workspace ID
+output:
+  id:
+    type: string
+    path: $.id
+  userid:
+    type: integer
+    path: $.userid
+  team_id:
+    type: integer
+    path: $.team_id
+  endpoint:
+    type: string
+    path: $.endpoint
+  client_id:
+    type: string
+    path: $.client_id
+  events:
+    type: array
+    path: $.events
+  task_id:
+    type: string
+    path: $.task_id
+  list_id:
+    type: string
+    path: $.list_id
+  folder_id:
+    type: string
+    path: $.folder_id
+  space_id:
+    type: string
+    path: $.space_id
+  health_status:
+    type: string
+    path: $.health.status
+  health_fail_count:
+    type: integer
+    path: $.health.fail_count
+  secret:
+    type: string
+    path: $.secret
+extract:
+  record_path: $.webhooks
+  for_each:
+    resource: get_authorized_teams
+    field: id
+    input: team_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,56 @@
+type: resource
+name: segments
+description: Segments defined in Customer.io.
+api:
+  endpoint: /v1/segments
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: The identifier for a segment; used to target a segment in requests.
+  deduplicate_id:
+    type: string
+    path: $.deduplicate_id
+    description:
+      An identifier in the format `id:timestamp` where the id is the id of the object you are
+      working with (Campaigns, Deliveries, Exports, Identities, Newsletters, Segments, and
+      Templates), and the timestamp is the last time the object was updated.
+  name:
+    type: string
+    path: $.name
+    description: The name of the segment.
+  description:
+    type: string
+    path: $.description
+    description: A description for the segment.
+  state:
+    type: string
+    path: $.state
+    description: The state of the segment.
+  progress:
+    type: integer
+    path: $.progress
+    description: The progress of the segment calculation, from 0 to 100.
+  type:
+    type: string
+    path: $.type
+    description: The type of segment.
+  tags:
+    type: array
+    path: $.tags
+    description: The tags assigned to the segment, if any.
+  created_at:
+    type: integer
+    path: $.created_at
+    description: The date time when the referenced ID was created.
+  updated_at:
+    type: integer
+    path: $.updated_at
+    description: The date time when the referenced ID was last updated.
+extract:
+  record_path: $.segments
+  table:
+    primary_key:
+      - id

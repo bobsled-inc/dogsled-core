@@ -1,0 +1,20 @@
+spec_version: '0.2'
+type: model
+name: daily_revenue
+description: Fictional shop daily_revenue.
+grain:
+  - order_date
+source:
+  ref: local_duckdb.orders
+columns:
+  - name: order_date
+    expr: order_date
+  - name: total_revenue
+    expr: SUM(amount)
+materialization:
+  type: incremental
+  strategy: merge
+  unique_key: order_date
+  incremental_filter: order_date >= (SELECT COALESCE(MAX(order_date), DATE '1970-01-01') FROM self)
+group_by:
+  - order_date

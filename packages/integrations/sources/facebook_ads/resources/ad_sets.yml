@@ -1,0 +1,50 @@
+type: resource
+name: ad_sets
+description: Ad sets for each Meta ad account.
+api:
+  endpoint: /${{ input.ad_account_id }}/adsets
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  ad_account_id:
+    type: string
+    default: act_1
+  fields:
+    type: string
+    default: id,name,status,campaign_id,daily_budget,start_time,end_time
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  campaign_id:
+    type: string
+    path: $.campaign_id
+  daily_budget:
+    type: number
+    path: $.daily_budget
+  start_time:
+    type: timestamp
+    path: $.start_time
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

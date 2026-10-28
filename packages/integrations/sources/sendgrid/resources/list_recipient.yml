@@ -1,0 +1,53 @@
+type: resource
+name: list_recipient
+description: List SendGrid marketing recipients
+api:
+  endpoint: /v3/contactdb/recipients
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    page_size: ${{ input.page_size }}
+input:
+  page:
+    type: integer
+    description: Page index of recipients to return
+    default: 1
+  page_size:
+    type: integer
+    description: Number of recipients to return per page
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: SendGrid recipient identifier
+  email:
+    type: string
+    path: $.email
+    description: Recipient email address
+  first_name:
+    type: string
+    path: $.first_name
+    description: Recipient first name
+  last_name:
+    type: string
+    path: $.last_name
+    description: Recipient last name
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the recipient was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Timestamp when the recipient was last updated
+extract:
+  record_path: $.recipients
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: page_size
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

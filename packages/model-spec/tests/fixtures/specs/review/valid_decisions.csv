@@ -1,0 +1,4 @@
+pair_id,decision,reviewer,reason,decided_at
+abc123,merge,john,Same company verified,2026-04-14T12:00:00Z
+def456,not_match,jane,Different entities,2026-04-14T12:01:00Z
+ghi789,defer,,,

@@ -1,0 +1,9 @@
+spec_version: '1'
+type: integration
+name: incremental_demo
+description: HTTPS fixture for lazy-query incremental and partial materialization tests
+transport:
+  type: http
+  base_url: https://127.0.0.1:${PORT}
+  auth:
+    type: none

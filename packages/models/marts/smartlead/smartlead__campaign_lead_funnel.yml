@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: smartlead__campaign_lead_funnel
+type: model
+description: Lead funnel by status showing volume at each stage.
+grain: status
+source:
+  ref: stg_smartlead__campaign_leads
+columns:
+  - name: status
+    expr: stg_smartlead__campaign_leads.status
+    semantic_role: categorical
+    description: Lead status in campaign (STARTED, INPROGRESS, COMPLETED, PAUSED, STOPPED).
+  - name: lead_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of leads in this status.
+group_by:
+  - status
+tags:
+  - smartlead
+  - leads
+  - funnel
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,48 @@
+spec_version: '0.2'
+name: notion__pages
+type: model
+description: Page detail with creator context for Notion workspace content.
+grain: page_id
+source:
+  ref: stg_notion__pages
+joins:
+  - ref: stg_notion__users
+    type: left
+    on: stg_notion__pages.created_by_id = stg_notion__users.user_id
+columns:
+  - name: page_id
+    expr: stg_notion__pages.page_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Notion page identifier.
+  - name: creator_name
+    expr: stg_notion__users.name
+    semantic_role: categorical
+    description: Name of the user who created the page.
+  - name: created_time
+    expr: stg_notion__pages.created_time
+    semantic_role: event_timestamp
+    description: Timestamp when the page was created.
+  - name: last_edited_time
+    expr: stg_notion__pages.last_edited_time
+    semantic_role: event_timestamp
+    description: Timestamp when the page was last edited.
+  - name: parent_type
+    expr: stg_notion__pages.parent_type
+    semantic_role: categorical
+    description: Type of parent object (workspace, page, or database).
+  - name: archived
+    expr: stg_notion__pages.archived
+    semantic_role: categorical
+    description: Whether the page is archived.
+  - name: url
+    expr: stg_notion__pages.url
+    semantic_role: categorical
+    description: URL to the page in Notion.
+tags:
+  - notion
+  - collaboration
+  - pages
+trust_tier: gold
+materialization:
+  type: table

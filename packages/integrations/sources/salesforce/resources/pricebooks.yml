@@ -1,0 +1,40 @@
+type: resource
+name: pricebooks
+description: Pricebooks from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Name,IsActive,IsStandard,Description,CreatedDate,LastModifiedDate FROM Pricebook2
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.Name
+  is_active:
+    type: boolean
+    path: $.IsActive
+  is_standard:
+    type: boolean
+    path: $.IsStandard
+  description:
+    type: string
+    path: $.Description
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

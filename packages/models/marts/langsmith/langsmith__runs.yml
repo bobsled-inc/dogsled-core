@@ -1,0 +1,175 @@
+spec_version: '0.2'
+name: langsmith__runs
+type: model
+description: LangSmith run detail enriched with session, dataset, and example context.
+grain: run_id
+source:
+  ref: stg_langsmith__runs
+joins:
+  - ref: stg_langsmith__sessions
+    type: left
+    on: stg_langsmith__runs.session_id = stg_langsmith__sessions.session_id
+  - ref: stg_langsmith__datasets
+    type: left
+    on: stg_langsmith__runs.reference_dataset_id = stg_langsmith__datasets.dataset_id
+  - ref: stg_langsmith__examples
+    type: left
+    on: stg_langsmith__runs.reference_example_id = stg_langsmith__examples.example_id
+columns:
+  - name: run_id
+    expr: stg_langsmith__runs.run_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique LangSmith run identifier.
+  - name: trace_id
+    expr: stg_langsmith__runs.trace_id
+    semantic_role: entity_id
+    description: Identifier shared by all runs in the same trace.
+  - name: session_id
+    expr: stg_langsmith__runs.session_id
+    semantic_role: entity_id
+    references: stg_langsmith__sessions.session_id
+    description: Session or project that owns the run.
+  - name: session_name
+    expr: stg_langsmith__sessions.name
+    semantic_role: name
+    description: Session or project display name.
+  - name: run_name
+    expr: stg_langsmith__runs.name
+    semantic_role: name
+    description: Run display name.
+  - name: run_type
+    expr: stg_langsmith__runs.run_type
+    semantic_role: categorical
+    description: LangSmith run type, such as chain, llm, tool, retriever, or embedding.
+  - name: status
+    expr: stg_langsmith__runs.status
+    semantic_role: categorical
+    description: Run execution status.
+  - name: parent_run_id
+    expr: stg_langsmith__runs.parent_run_id
+    semantic_role: entity_id
+    description: Direct parent run identifier for nested traces.
+  - name: thread_id
+    expr: stg_langsmith__runs.thread_id
+    semantic_role: entity_id
+    description: Thread identifier associated with the run.
+  - name: reference_dataset_id
+    expr: stg_langsmith__runs.reference_dataset_id
+    semantic_role: entity_id
+    references: stg_langsmith__datasets.dataset_id
+    description: Reference dataset linked to the run.
+  - name: reference_dataset_name
+    expr: stg_langsmith__datasets.name
+    semantic_role: name
+    description: Reference dataset display name.
+  - name: reference_example_id
+    expr: stg_langsmith__runs.reference_example_id
+    semantic_role: entity_id
+    references: stg_langsmith__examples.example_id
+    description: Reference example linked to the run.
+  - name: reference_example_name
+    expr: stg_langsmith__examples.name
+    semantic_role: name
+    description: Reference example display name.
+  - name: start_time
+    expr: stg_langsmith__runs.start_time
+    semantic_role: event_timestamp
+    description: Timestamp when the run started.
+  - name: end_time
+    expr: stg_langsmith__runs.end_time
+    semantic_role: event_timestamp
+    description: Timestamp when the run ended.
+  - name: total_tokens
+    expr: stg_langsmith__runs.total_tokens
+    semantic_role: measure
+    description: Total tokens attributed to the run.
+  - name: prompt_tokens
+    expr: stg_langsmith__runs.prompt_tokens
+    semantic_role: measure
+    description: Prompt tokens attributed to the run.
+  - name: completion_tokens
+    expr: stg_langsmith__runs.completion_tokens
+    semantic_role: measure
+    description: Completion tokens attributed to the run.
+  - name: total_cost
+    expr: stg_langsmith__runs.total_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total cost attributed to the run.
+  - name: prompt_cost
+    expr: stg_langsmith__runs.prompt_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Prompt cost attributed to the run.
+  - name: completion_cost
+    expr: stg_langsmith__runs.completion_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Completion cost attributed to the run.
+  - name: error
+    expr: stg_langsmith__runs.error
+    semantic_role: categorical
+    description: Error message captured for failed runs.
+  - name: inputs
+    expr: stg_langsmith__runs.inputs
+    semantic_role: categorical
+    description: Raw input payload captured for the run.
+  - name: inputs_preview
+    expr: stg_langsmith__runs.inputs_preview
+    semantic_role: categorical
+    description: Preview text for the run inputs.
+  - name: input_message
+    expr: stg_langsmith__runs.input_message
+    semantic_role: categorical
+    description: Last input message content when the run input has a messages array.
+  - name: outputs
+    expr: stg_langsmith__runs.outputs
+    semantic_role: categorical
+    description: Raw output payload captured for the run.
+  - name: outputs_preview
+    expr: stg_langsmith__runs.outputs_preview
+    semantic_role: categorical
+    description: Preview text for the run outputs.
+  - name: output_message
+    expr: stg_langsmith__runs.output_message
+    semantic_role: categorical
+    description: Assistant output content when the run output has a content field.
+  - name: messages
+    expr: stg_langsmith__runs.messages
+    semantic_role: categorical
+    description: Message payloads associated with the run.
+  - name: extra
+    expr: stg_langsmith__runs.extra
+    semantic_role: categorical
+    description: Additional run metadata.
+  - name: tags
+    expr: stg_langsmith__runs.tags
+    semantic_role: categorical
+    description: Tags attached to the run.
+  - name: feedback_stats
+    expr: stg_langsmith__runs.feedback_stats
+    semantic_role: categorical
+    description: Aggregated feedback statistics attached to the run.
+  - name: app_path
+    expr: stg_langsmith__runs.app_path
+    semantic_role: url
+    description: LangSmith application path for opening the run.
+  - name: in_dataset
+    expr: stg_langsmith__runs.in_dataset
+    semantic_role: categorical
+    description: Whether the run is included in a dataset.
+  - name: trace_tier
+    expr: stg_langsmith__runs.trace_tier
+    semantic_role: categorical
+    description: Trace retention or indexing tier for the run.
+tags:
+  - langsmith
+  - runs
+  - traces
+trust_tier: gold
+materialization:
+  type: table

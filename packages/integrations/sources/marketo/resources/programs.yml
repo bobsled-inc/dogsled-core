@@ -1,0 +1,41 @@
+type: resource
+name: programs
+description: Programs configured in Marketo.
+api:
+  endpoint: /rest/asset/v1/programs.json
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    maxReturn: ${{ input.max_return }}
+input:
+  offset:
+    type: integer
+    default: 0
+  max_return:
+    type: integer
+    default: 200
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  type:
+    type: string
+    path: $.type
+  channel:
+    type: string
+    path: $.channel
+  created_at:
+    type: timestamp
+    path: $.createdAt
+extract:
+  record_path: $.result
+  paginated: false
+  table:
+    primary_key:
+      - id

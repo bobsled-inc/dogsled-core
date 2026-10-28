@@ -1,0 +1,10 @@
+spec_version: '0.2'
+type: vq
+name: top_products
+nlq: Which fictional products belong to a category?
+sql: SELECT products.id, products.name, categories.name AS category FROM {shop_api.api_products}
+  products JOIN {shop_api.api_categories} categories ON products.category_id = categories.id WHERE
+  categories.name = {category} ORDER BY products.id
+parameters:
+  - name: category
+    type: string

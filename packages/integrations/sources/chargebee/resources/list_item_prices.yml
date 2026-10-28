@@ -1,0 +1,308 @@
+type: resource
+name: list_item_prices
+description: List item prices
+api:
+  endpoint: /item_prices
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    id: ${{ input.id }}
+    name: ${{ input.name }}
+    pricing_model: ${{ input.pricing_model }}
+    item_id: ${{ input.item_id }}
+    item_family_id: ${{ input.item_family_id }}
+    item_type: ${{ input.item_type }}
+    currency_code: ${{ input.currency_code }}
+    price_variant_id: ${{ input.price_variant_id }}
+    trial_period: ${{ input.trial_period }}
+    trial_period_unit: ${{ input.trial_period_unit }}
+    status: ${{ input.status }}
+    updated_at: ${{ input.updated_at }}
+    business_entity_id: ${{ input.business_entity_id }}
+    include_site_level_resources: ${{ input.include_site_level_resources }}
+    period_unit: ${{ input.period_unit }}
+    period: ${{ input.period }}
+    channel: ${{ input.channel }}
+    sort_by: ${{ input.sort_by }}
+input:
+  limit:
+    type: integer
+    description: The number of resources to be returned.
+    default: 10
+    minimum: 1
+    maximum: 100
+  offset:
+    type: string
+    description: >-
+      Determines your position in the list for pagination. To ensure that the next page is retrieved
+      correctly, always set `offset`
+
+      to the value of `next_offset`
+
+      obtained in the previous iteration of the API call.
+    maxLength: 1000
+  id:
+    type: object
+    description: |-
+      optional, string filter
+
+      Filter item prices based on their [id](/docs/api/item_prices)
+      .
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *id\[is\] = "basic_USD"*
+  name:
+    type: object
+    description: |-
+      optional, string filter
+      Filter item prices based on their `name`
+      s.
+      Supported operators :
+      is, is_not, starts_with, in, not_in
+      Example →
+      name[is] = "basic USD"
+  pricing_model:
+    type: object
+    description: |-
+      optional, enumerated string filter
+      Filter item prices based on their `pricing_model`.
+      Possible values are : flat_fee, per_unit, tiered, volume, stairstep.
+      Supported operators :
+      is, is_not, in, not_in
+      Example →
+      pricing_model[is] = "flat_fee"
+  item_id:
+    type: object
+    description: |-
+      optional, string filter
+      Filter item prices based on their `item_id`
+      .
+      Supported operators :
+      is, is_not, starts_with, in, not_in
+      Example →
+      item_id[is] = "basic"
+  item_family_id:
+    type: object
+    description: |-
+      optional, string filter
+      Filter item prices based on `item_family_id`
+      .
+      Supported operators :
+      is, is_not, starts_with, in, not_in
+      Example →
+      item_family_id[is] = "Acme"
+  item_type:
+    type: object
+    description: |-
+      optional, enumerated string filter
+      Filter item prices based on `item_type`.
+      Possible values are : plan, addon, charge.
+      Supported operators :
+      is, is_not, in, not_in
+      Example →
+      item_type[is_not] = "plan"
+  currency_code:
+    type: object
+    description: |-
+      optional, string filter
+      Filter item prices based on their `currency_code`
+      .
+      Supported operators :
+      is, is_not, starts_with, in, not_in
+      Example →
+      currency_code[is_not] = "USD"
+  price_variant_id:
+    type: object
+    description: |-
+      optional, string filter
+      Filter item prices based on their `price_variant_id`
+      .
+      Supported operators :
+      is, is_not, starts_with, in, not_in
+      Example →
+      price_variant_id[is] = "tamilNadu-India"
+  trial_period:
+    type: object
+    description: |-
+      optional, integer filter
+      Filter item prices based on their `trial_period`
+      .
+      Supported operators :
+      is, is_not, lt, lte, gt, gte, between
+      Example →
+      trial_period[is] = "14"
+  trial_period_unit:
+    type: object
+    description: |-
+      optional, enumerated string filter
+      Filter item prices based on their `trial_period_unit`.
+      Possible values are : day, month.
+      Supported operators :
+      is, is_not, in, not_in
+      Example →
+      trial_period_unit[is] = "day"
+  status:
+    type: object
+    description: |-
+      optional, enumerated string filter
+      Filter item prices based on their `status`.
+      Possible values are : active, archived.
+      Supported operators :
+      is, is_not, in, not_in
+      Example →
+      status[is] = "active"
+  updated_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+      Filter item prices based on their `updated_at`
+      .
+      Supported operators :
+      after, before, on, between
+      Example →
+      updated_at[after] = "1243545465"
+  business_entity_id:
+    type: object
+    description: |-
+      optional, string filter
+      The unique ID of the
+      business entity
+      of this `item_price`.
+      Learn more
+      about all the scenarios before using this filter.
+
+      Supported operators :
+      is, is_present
+      Example →
+      business_entity_id[is_present] = "true"
+  include_site_level_resources:
+    type: object
+    description: >-
+      optional, boolean filter
+
+      Default value is `true` . To exclude site-level resources in specific cases, set this
+      parameter to `false`.
+
+      Possible values are : true, false
+
+      Supported operators :
+
+      is
+
+      Example →
+
+      include_site_level_resources[is] = "null"
+  period_unit:
+    type: object
+    description: |-
+      optional, enumerated string filter
+      Filter item prices based on their `period_unit`.
+      Possible values are : day, week, month, year.
+      Supported operators :
+      is, is_not, in, not_in
+      Example →
+      period_unit[is] = "month"
+  period:
+    type: object
+    description: |-
+      optional, integer filter
+      Filter item prices based on their `period`
+      .
+      Supported operators :
+      is, is_not, lt, lte, gt, gte, between
+      Example →
+      period[is] = "3"
+  channel:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      The subscription channel this object originated from and is maintained in. Possible values are
+      : web, app_store, play_store.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *channel\[is\] = "APP STORE"*
+  sort_by:
+    type: object
+    description: |-
+      optional, string filter
+
+      Sorts based on the specified attribute.
+      **Supported attributes :**
+      name, id, updated_at
+
+      **Supported sort-orders :**
+      asc, desc
+
+      **Example →**
+      *sort_by\[asc\] = "name"*
+
+      This will sort the result based on the 'name' attribute in ascending(earliest first) order.
+output:
+  item_price_id:
+    type: string
+    path: $.item_price.id
+    description: Unique Chargebee item price identifier
+  item_price:
+    type: object
+    path: $.item_price
+    description: Resource object representing item_price
+extract:
+  record_path: $.list
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - item_price_id
+    trust_tier: silver
+lookup:
+  description: Retrieve an item price
+  api:
+    endpoint: /item_prices/${{ input.item_price_id }}
+    method: GET
+  input:
+    item_price_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_item_prices_smoke
+      input:
+        chargebee_request_origin_device: Android
+        chargebee_request_origin_user: user@example.com
+        chargebee_request_origin_user_encoded: dXNlci7QutCy0ZbRgtC+0YfQutCwQGV4YW1wbGUuY29t
+        chargebee_request_origin_ip: 192.168.1.2
+        chargebee_business_entity_id: null
+        limit: null
+        offset: null
+        id: basic_USD
+        name: basic USD
+        pricing_model: flat_fee
+        item_id: basic
+        item_family_id: Acme
+        item_type: plan
+        currency_code: USD
+        price_variant_id: tamilNadu-India
+        trial_period: '14'
+        trial_period_unit: day
+        status: active
+        updated_at: '1243545465'
+        business_entity_id: business_entity_id
+        include_site_level_resources: null
+        period_unit: month
+        period: '3'
+        channel: APP STORE
+        sort_by: null

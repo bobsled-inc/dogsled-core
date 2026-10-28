@@ -1,0 +1,30 @@
+type: resource
+name: automations
+description: List Mailchimp automations
+api:
+  endpoint: /3.0/automations
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Automation identifier
+  status:
+    type: string
+    path: $.status
+    description: Automation status
+  emails_sent:
+    type: integer
+    path: $.emails_sent
+    description: Emails sent
+  recipients_list_id:
+    type: string
+    path: $.recipients.list_id
+    description: Audience identifier
+extract:
+  record_path: $.automations
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

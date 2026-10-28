@@ -1,0 +1,128 @@
+type: resource
+name: workflows
+description: GitHub Actions workflow definitions for a repository representing CI/CD pipelines and automated processes
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/actions/workflows
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  per_page:
+    type: integer
+    description: Number of workflows to return per page (max 100)
+    default: 100
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the workflow definition
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Human-readable name of the workflow as defined in the YAML file's "name" field (e.g. "CI", "Deploy to Production")
+  path:
+    type: string
+    semantic_role: identifier
+    path: $.path
+    description: Path to the workflow YAML file relative to the repository root (e.g. ".github/workflows/ci.yml")
+  state:
+    type: string
+    semantic_role: categorical
+    path: $.state
+    description: "Current state of the workflow \u2014 \"active\" if enabled and can be triggered, \"disabled_manually\" if turned off by a user, \"disabled_inactivity\" if auto-disabled due to 60+ days of inactivity, or \"disabled_fork\" if disabled on a fork"
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the workflow and its run history on github.com
+  badge_url:
+    type: string
+    semantic_role: url
+    path: $.badge_url
+    description: URL for the workflow status badge image (SVG) that can be embedded in README files to show pass/fail status
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this workflow resource
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the workflow was first detected by GitHub Actions
+  updated_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.updated_at
+    description: Timestamp when the workflow file was last modified
+extract:
+  record_path: $.workflows
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single workflow by repository owner, name, and workflow ID
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/actions/workflows/${{ input.workflow_id }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    workflow_id:
+      type: integer
+      required: true
+      description: The numeric workflow ID or the workflow file name (e.g. "ci.yml")
+  extract:
+    record_path: $
+via: rest

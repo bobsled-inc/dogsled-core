@@ -1,0 +1,7 @@
+.extractor/
+batch/
+output/
+*.duckdb
+*.duckdb.wal
+*.protocol.jsonl
+protocol-sample.jsonl

@@ -1,0 +1,5 @@
+spec_version: '0.2'
+type: vq
+name: revenue
+nlq: What is fictional revenue?
+sql: SELECT SUM(total) FROM {revenue_report}

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: smartlead_replied_sequence_count
+description: Number of Smartlead campaign sequence records marked as replied.
+model: smartlead__campaign_statistics
+expression: SUM(CASE WHEN {smartlead__campaign_statistics}.is_replied THEN 1 ELSE 0 END)
+synonyms: [email replies, replied emails, reply count]
+tags: [smartlead, outbound, engagement]

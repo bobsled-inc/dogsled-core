@@ -1,0 +1,4 @@
+integrations_dir: integrations
+resources_dir: resources
+state_dir: .extractor
+output_dir: output

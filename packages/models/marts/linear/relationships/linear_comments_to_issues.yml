@@ -1,0 +1,15 @@
+spec_version: '0.2'
+type: relationship
+name: linear_comments_to_issues
+description: Each Linear comment belongs to one issue.
+left_model: linear__comments
+right_model: linear__issues
+join_columns:
+  - left: issue_id
+    right: issue_id
+join_type: left
+relationship_type: many_to_one
+tags:
+  - linear
+  - engineering
+  - collaboration

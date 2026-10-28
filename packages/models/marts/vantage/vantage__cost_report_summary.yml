@@ -1,0 +1,69 @@
+spec_version: '0.2'
+name: vantage__cost_report_summary
+type: model
+description: Cost report metadata enriched with aggregated spend and row counts.
+grain: token
+source:
+  ref: stg_vantage__cost_reports
+joins:
+  - ref: stg_vantage__costs
+    type: left
+    on: stg_vantage__cost_reports.token = stg_vantage__costs.cost_report_token
+    pre_aggregate:
+      group_by:
+        - cost_report_token
+      columns:
+        - name: cost_row_count
+          expr: COUNT(*)
+        - name: total_amount
+          expr: SUM(CAST(amount AS DOUBLE))
+        - name: first_cost_date
+          expr: MIN(accrued_at)
+        - name: last_cost_date
+          expr: MAX(accrued_at)
+columns:
+  - name: token
+    expr: stg_vantage__cost_reports.token
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Vantage cost report token.
+  - name: title
+    expr: stg_vantage__cost_reports.title
+    semantic_role: categorical
+    description: Title of the cost report.
+  - name: date_interval
+    expr: stg_vantage__cost_reports.date_interval
+    semantic_role: categorical
+    description: Configured report date interval.
+  - name: date_bin
+    expr: stg_vantage__cost_reports.date_bin
+    semantic_role: categorical
+    description: Configured date bin for the report.
+  - name: workspace_token
+    expr: stg_vantage__cost_reports.workspace_token
+    semantic_role: entity_id
+    description: Workspace owning the cost report.
+  - name: cost_row_count
+    expr: COALESCE(stg_vantage__costs.cost_row_count, 0)
+    semantic_role: measure
+    description: Number of cost rows associated with the report.
+  - name: total_amount
+    expr: COALESCE(stg_vantage__costs.total_amount, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total spend associated with the report.
+  - name: first_cost_date
+    expr: stg_vantage__costs.first_cost_date
+    semantic_role: time_dimension
+    description: First cost accrual timestamp observed for the report.
+  - name: last_cost_date
+    expr: stg_vantage__costs.last_cost_date
+    semantic_role: time_dimension
+    description: Last cost accrual timestamp observed for the report.
+tags:
+  - vantage
+  - cost-reports
+trust_tier: gold
+materialization:
+  type: table

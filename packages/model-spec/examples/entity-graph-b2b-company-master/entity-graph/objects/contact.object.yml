@@ -1,0 +1,8 @@
+spec_version: '1'
+type: object
+name: contact
+identity:
+  resolution_ref: ../contact_resolution.yml
+links:
+  - relation_ref: ../relationships/works_at.entity-relationship.yml
+    direction: outbound

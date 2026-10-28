@@ -1,0 +1,30 @@
+type: resource
+name: get_current_user
+description: User Information
+api:
+  endpoint: /me
+  method: GET
+input: {}
+output:
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL to the user's avatar on the VCS
+  id:
+    type: string
+    path: $.id
+    description: The unique ID of the user.
+  login:
+    type: string
+    path: $.login
+    description: The login information for the user on the VCS.
+  name:
+    type: string
+    path: $.name
+    description: The name of the user.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: zendesk_orgs
+type: seed
+description: Synthetic Zendesk organizations export for the Entity Graph demo.
+
+payload:
+  format: csv
+  path: data/zendesk_orgs.csv
+  delimiter: ','
+
+schema:
+  columns:
+    - name: org_id
+      type: STRING
+      primary_key: true
+    - name: name
+      type: STRING
+    - name: website
+      type: STRING
+    - name: phone
+      type: STRING
+    - name: country
+      type: STRING
+    - name: updated_at
+      type: TIMESTAMP
+
+materialization:
+  type: table
+  target_schema: raw
+  on_conflict: replace
+
+validation:
+  required_columns: [org_id, name, website, phone, country, updated_at]
+  unique_columns: [org_id]

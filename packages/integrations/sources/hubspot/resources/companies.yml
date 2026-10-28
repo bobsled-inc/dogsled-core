@@ -1,0 +1,89 @@
+type: resource
+name: companies
+description: HubSpot CRM companies representing organizations and businesses in your CRM database
+api:
+  endpoint: /crm/v3/objects/companies
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of company records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot company properties to include in the response
+    default: name,domain,industry,phone,city,state,country,annualrevenue,numberofemployees,lifecyclestage,hubspot_owner_id,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the company record, returned as a numeric string
+  name:
+    type: string
+    path: $.properties.name
+    description: Display name of the company as entered in HubSpot CRM
+  domain:
+    type: string
+    path: $.properties.domain
+    description: Primary web domain associated with the company (e.g. example.com), used for company deduplication and enrichment
+  industry:
+    type: string
+    path: $.properties.industry
+    description: Industry classification of the company, selected from HubSpot's predefined industry list (e.g. COMPUTER_SOFTWARE, FINANCIAL_SERVICES)
+  phone:
+    type: string
+    path: $.properties.phone
+    description: Primary phone number for the company
+  city:
+    type: string
+    path: $.properties.city
+    description: City where the company is located
+  state:
+    type: string
+    path: $.properties.state
+    description: State or region where the company is located
+  country:
+    type: string
+    path: $.properties.country
+    description: Country where the company is headquartered
+  annual_revenue:
+    type: string
+    path: $.properties.annualrevenue
+    description: Annual revenue of the company in the portal's default currency, stored as a numeric string
+  number_of_employees:
+    type: string
+    path: $.properties.numberofemployees
+    description: Total number of employees at the company, stored as a numeric string
+  lifecycle_stage:
+    type: string
+    path: $.properties.lifecyclestage
+    description: Current lifecycle stage of the company in your sales process (e.g. subscriber, lead, marketingqualifiedlead, salesqualifiedlead, opportunity, customer, evangelist)
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID of the user assigned to this company, references the owners endpoint
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the company record was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the company record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

@@ -1,0 +1,32 @@
+spec_version: '2'
+type: source
+name: google_ads
+description: Google Ads API for customer access, campaign entities, and performance reporting.
+transports:
+  - id: default
+    base_url: https://googleads.googleapis.com/${{ env.GOOGLE_ADS_API_VERSION }}
+    auth:
+      type: oauth2
+      grant_type: authorization_code
+      token_url: https://oauth2.googleapis.com/token
+      client_id: ${{ env.GOOGLE_CLIENT_ID }}
+      client_secret: ${{ env.GOOGLE_CLIENT_SECRET }}
+      refresh_token: ${{ env.GOOGLE_REFRESH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+      developer-token: ${{ env.GOOGLE_ADS_DEVELOPER_TOKEN }}
+default_transport: default

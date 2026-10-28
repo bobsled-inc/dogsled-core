@@ -1,0 +1,6 @@
+spec_version: '0.2'
+type: metric
+name: postgres_revenue
+description: Fictional sales in units.
+model: postgres_order_summary
+expression: SUM(amount)

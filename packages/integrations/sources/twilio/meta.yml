@@ -1,0 +1,13 @@
+display_name: Twilio
+category: communication
+logo_url: https://www.twilio.com/favicon.ico
+tags: [twilio, sms, messaging, voice]
+docs_url: https://www.twilio.com/docs/usage/api
+openapi_url: https://raw.githubusercontent.com/twilio/twilio-oai/main/spec/json/twilio_api_v2010.json
+auth_setup:
+  - env: TWILIO_ACCOUNT_SID
+    description: Twilio Account SID used as the HTTP basic auth username
+    docs_url: https://www.twilio.com/docs/iam/api/account
+  - env: TWILIO_AUTH_TOKEN
+    description: Twilio Auth Token used as the HTTP basic auth password
+    docs_url: https://www.twilio.com/docs/iam/api/authtoken

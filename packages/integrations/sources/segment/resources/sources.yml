@@ -1,0 +1,43 @@
+type: resource
+name: sources
+description: Sources in the Segment workspace.
+api:
+  endpoint: /sources
+  method: GET
+  query_params:
+    pagination.count: ${{ input.pagination_count }}
+    pagination.cursor: ${{ input.pagination_cursor }}
+input:
+  pagination_count:
+    type: integer
+    default: 100
+  pagination_cursor:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  slug:
+    type: string
+    path: $.slug
+  enabled:
+    type: boolean
+    path: $.enabled
+  created_at:
+    type: timestamp
+    path: $.createdAt
+  metadata_id:
+    type: string
+    path: $.metadata.id
+extract:
+  record_path: $.data.sources
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.data.pagination.next
+    cursor_param: pagination.cursor

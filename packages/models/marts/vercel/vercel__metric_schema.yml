@@ -1,0 +1,56 @@
+spec_version: '0.2'
+name: vercel__metric_schema
+type: model
+description: Supported dimensions, units, and aggregations for each Vercel observability metric.
+grain:
+  - metric_id
+  - metric_schema_id
+source:
+  ref: stg_vercel__metric_schema
+joins:
+  - ref: stg_vercel__metric_catalog
+    type: left
+    on: stg_vercel__metric_schema.metric_id = stg_vercel__metric_catalog.metric_catalog_id
+columns:
+  - name: metric_id
+    expr: stg_vercel__metric_schema.metric_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_vercel__metric_catalog.metric_catalog_id
+    description: Metric identifier used by the query endpoint.
+  - name: metric_schema_id
+    expr: stg_vercel__metric_schema.metric_schema_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Identifier returned by the metric schema endpoint.
+  - name: metric_description
+    expr: stg_vercel__metric_schema.description
+    semantic_role: categorical
+    description: Metric description returned by Vercel.
+  - name: catalog_description
+    expr: stg_vercel__metric_catalog.description
+    semantic_role: categorical
+    description: Metric description from the account metric catalog.
+  - name: dimensions
+    expr: stg_vercel__metric_schema.dimensions
+    semantic_role: categorical
+    description: Supported dimensions, preserved as returned so new Vercel dimensions remain queryable.
+  - name: unit
+    expr: stg_vercel__metric_schema.unit
+    semantic_role: categorical
+    description: Native metric unit.
+  - name: aggregations
+    expr: stg_vercel__metric_schema.aggregations
+    semantic_role: categorical
+    description: Supported aggregation names.
+  - name: default_aggregation
+    expr: stg_vercel__metric_schema.default_aggregation
+    semantic_role: categorical
+    description: Default aggregation selected by Vercel.
+tags:
+  - vercel
+  - observability
+  - metrics
+trust_tier: gold
+materialization:
+  type: table

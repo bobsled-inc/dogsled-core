@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: sf_fct_to_lineitems
+description: Snowflake — fact orders expand to lineitems.
+left_model: sf_fct_orders
+right_model: sf_stg_lineitems
+join_columns:
+  - left: ORDER_ID
+    right: ORDER_ID
+join_type: left
+relationship_type: one_to_many
+tags: [snowflake]

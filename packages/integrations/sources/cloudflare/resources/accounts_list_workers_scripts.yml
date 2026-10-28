@@ -1,0 +1,42 @@
+type: resource
+name: accounts_list_workers_scripts
+description: List Workers scripts deployed under each Cloudflare account
+api:
+  endpoint: /accounts/${{ input.account_id }}/workers/scripts
+  method: GET
+input:
+  account_id:
+    type: string
+    description: Cloudflare account identifier
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Workers script identifier
+  created_on:
+    type: timestamp
+    path: $.created_on
+    description: Timestamp when the script was created
+  modified_on:
+    type: timestamp
+    path: $.modified_on
+    description: Timestamp when the script was last modified
+  etag:
+    type: string
+    path: $.etag
+    description: Current Workers script entity tag
+  logpush:
+    type: boolean
+    path: $.logpush
+    description: Whether logpush is enabled for the script
+extract:
+  record_path: $.result
+  for_each:
+    resource: accounts_list_accounts
+    field: id
+    input: account_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

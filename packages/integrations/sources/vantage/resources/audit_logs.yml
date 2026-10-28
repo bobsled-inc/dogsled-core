@@ -1,0 +1,107 @@
+type: resource
+name: audit_logs
+description: Audit log events for compliance and tracking
+api:
+  endpoint: /audit_logs
+  method: GET
+  query_params:
+    start_date: ${{ input.start_date }}
+    end_date: ${{ input.end_date }}
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  start_date:
+    type: timestamp
+    description: Start date for audit logs (YYYY-MM-DD). Used for incremental extraction.
+  end_date:
+    type: timestamp
+    description: End date for audit logs (YYYY-MM-DD). Used for incremental extraction.
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+    default: 1000
+query:
+  filters:
+    created_at:
+      operators:
+        - gte
+        - lte
+      description: Start date for audit logs (YYYY-MM-DD). Used for incremental extraction.
+      bind:
+        gte:
+          input: start_date
+        lte:
+          input: end_date
+      compile:
+        gte:
+          mode: http_query
+          param: start_date
+        lte:
+          mode: http_query
+          param: end_date
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the audit log entry.
+  action:
+    type: string
+    path: $.action
+    description: The action that was performed.
+  description:
+    type: string
+    path: $.description
+    description: A description of the audit event.
+  target_type:
+    type: string
+    path: $.target_type
+    description: The type of the target resource.
+  target_token:
+    type: string
+    path: $.target_token
+    description: The token of the target resource.
+  user_token:
+    type: string
+    path: $.user_token
+    description: The token of the User who performed the action.
+  user_email:
+    type: string
+    path: $.user_email
+    description: The email of the User who performed the action.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the audit event occurred.
+extract:
+  record_path: $.audit_logs
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+    load_strategy: append
+lookup:
+  description: Get audit log entry by token
+  api:
+    endpoint: /audit_logs/${{ input.audit_log_token }}
+    method: GET
+  input:
+    audit_log_token:
+      type: string
+      required: true
+incremental:
+  strategy: server_filter
+  cursor_field: created_at
+  cursor_type: timestamp
+  since_argument: start_date
+  until_argument: end_date
+  value_format: date
+  lookback_seconds: 86400
+  initial_lookback_seconds: 2592000
+  window_size_seconds: 86400

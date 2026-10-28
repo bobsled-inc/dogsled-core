@@ -1,0 +1,95 @@
+type: resource
+name: list_transfers
+description: List Brex outgoing and incoming transfers
+api:
+  endpoint: /v1/transfers
+  method: GET
+  query_params:
+    cursor: ${{ input.cursor }}
+    limit: ${{ input.limit }}
+input:
+  cursor:
+    type: string
+  limit:
+    type: integer
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique ID associated with the transfer
+  counterparty:
+    type: string
+    path: $.counterparty
+  description:
+    type: string
+    path: $.description
+    description: Description of the transfer
+  payment_type:
+    type: string
+    path: $.payment_type
+  amount_amount:
+    type: integer
+    path: $.amount.amount
+    description: The amount of money, in the smallest denomination of the currency indicated by currency.
+  amount_currency:
+    type: string
+    path: $.amount.currency
+    description: The type of currency, in ISO 4217 format.
+  process_date:
+    type: timestamp
+    path: $.process_date
+    description: Transaction processing date
+  originating_account:
+    type: object
+    path: $.originating_account
+    description: Originating account details for the transfer
+  status:
+    type: string
+    path: $.status
+    description: '`PROCESSING`: We have started to process the sending or receiving of this transaction.'
+  cancellation_reason:
+    type: string
+    path: $.cancellation_reason
+  estimated_delivery_date:
+    type: timestamp
+    path: $.estimated_delivery_date
+    description: Estimated delivery date for transfer
+  creator_user_id:
+    type: string
+    path: $.creator_user_id
+    description: User ID of the transfer initiator
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Date of transfer creation
+  display_name:
+    type: string
+    path: $.display_name
+    description: Human readable name for the transaction
+  external_memo:
+    type: string
+    path: $.external_memo
+    description: External memo for the transfer.
+  is_ppro_enabled:
+    type: boolean
+    path: $.is_ppro_enabled
+    description: If Principal Protection (PPRO) is enabled
+extract:
+  record_path: $.items
+  pagination:
+    type: cursor
+    cursor_param: cursor
+    cursor_path: $.next_cursor
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: ''
+  api:
+    endpoint: /v1/transfers/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true

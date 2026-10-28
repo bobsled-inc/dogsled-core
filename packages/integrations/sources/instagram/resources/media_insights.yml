@@ -1,0 +1,43 @@
+type: resource
+name: media_insights
+description: Performance insights for each Instagram media post.
+api:
+  endpoint: /${{ input.media_id }}/insights
+  method: GET
+  query_params:
+    metric: ${{ input.metric }}
+input:
+  media_id:
+    type: string
+    default: '123'
+  metric:
+    type: string
+    default: impressions,reach,engagement,saved
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  period:
+    type: string
+    path: $.period
+  title:
+    type: string
+    path: $.title
+  description:
+    type: string
+    path: $.description
+  value:
+    type: integer
+    path: $.values.0.value
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  for_each:
+    resource: media
+    field: id
+    input: media_id

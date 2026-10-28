@@ -1,0 +1,34 @@
+type: resource
+name: get_collaborations
+description: Collaborations
+api:
+  endpoint: /me/collaborations
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: 'The UUID of the organization (format: uuid)'
+  vcs_type:
+    type: string
+    path: $.vcs-type
+    description: The VCS provider
+  name:
+    type: string
+    path: $.name
+    description: The name of the organization
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL to the user's avatar on the VCS
+  slug:
+    type: string
+    path: $.slug
+    description: The slug of the organization
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

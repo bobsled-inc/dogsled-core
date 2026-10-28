@@ -1,0 +1,56 @@
+type: resource
+name: invoices
+description: Invoices for a Zuora billing account.
+api:
+  endpoint: /v1/invoices/accounts/${{ input.account_key }}
+  method: GET
+  query_params:
+    pageSize: ${{ input.page_size }}
+input:
+  account_key:
+    type: string
+    default: '123'
+  page_size:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  invoiceNumber:
+    type: string
+    path: $.invoiceNumber
+  accountId:
+    type: string
+    path: $.accountId
+  status:
+    type: string
+    path: $.status
+  amount:
+    type: number
+    path: $.amount
+  balance:
+    type: number
+    path: $.balance
+  invoiceDate:
+    type: string
+    path: $.invoiceDate
+  dueDate:
+    type: string
+    path: $.dueDate
+  createdDate:
+    type: timestamp
+    path: $.createdDate
+extract:
+  record_path: $.invoices
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: pageSize
+  for_each:
+    resource: accounts
+    field: id
+    input: account_key

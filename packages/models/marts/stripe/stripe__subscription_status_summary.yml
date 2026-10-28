@@ -1,0 +1,40 @@
+spec_version: '0.2'
+name: stripe__subscription_status_summary
+type: model
+description: Subscription volume and billing timing summarized by subscription status and collection method.
+grain:
+  - status
+  - collection_method
+source:
+  ref: stg_stripe__subscriptions
+columns:
+  - name: status
+    expr: stg_stripe__subscriptions.status
+    semantic_role: categorical
+    description: Subscription lifecycle state.
+  - name: collection_method
+    expr: stg_stripe__subscriptions.collection_method
+    semantic_role: categorical
+    description: How Stripe collects payment for the subscription.
+  - name: subscription_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total subscriptions in the status and collection method bucket.
+  - name: cancel_at_period_end_count
+    expr: SUM(CASE WHEN stg_stripe__subscriptions.cancel_at_period_end THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Count of subscriptions scheduled to cancel at period end.
+  - name: latest_period_end
+    expr: MAX(stg_stripe__subscriptions.current_period_end)
+    semantic_role: measure
+    description: Latest current-period end timestamp among subscriptions in the bucket.
+group_by:
+  - status
+  - collection_method
+tags:
+  - stripe
+  - billing
+  - subscriptions
+trust_tier: gold
+materialization:
+  type: table

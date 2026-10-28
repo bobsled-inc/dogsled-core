@@ -1,0 +1,14 @@
+display_name: Marketo
+category: marketing
+tags:
+  - automation
+  - lead-gen
+  - campaigns
+docs_url: https://experienceleague.adobe.com/en/docs/marketo-developer/marketo/rest/marketo-rest-api
+auth_setup:
+  - env: MARKETO_MUNCHKIN_ID
+    description: Marketo Munchkin ID used to build the API host
+  - env: MARKETO_CLIENT_ID
+    description: Marketo API client ID
+  - env: MARKETO_CLIENT_SECRET
+    description: Marketo API client secret

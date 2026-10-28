@@ -1,0 +1,73 @@
+type: resource
+name: budget_alerts
+description: Budget threshold alerts with notification channels
+api:
+  endpoint: /budget_alerts
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The number of results to return. The maximum is 1000.
+    default: 1000
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the budget alert.
+  budget_tokens:
+    type: array
+    path: $.budget_tokens
+    description: The tokens for the Budgets that the Budget Alert is monitoring.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The token for the Workspace.
+  user_token:
+    type: string
+    path: $.user_token
+    description: The token for the User who created this BudgetAlert.
+  threshold:
+    type: integer
+    path: $.threshold
+    description: Alerts only send if they reach this number (as a percentage).
+  duration_in_days:
+    type: integer
+    path: $.duration_in_days
+    description: The number of days from the start or end of the month to trigger the alert.
+  period_to_track:
+    type: string
+    path: $.period_to_track
+    description: The period tracked on the alert.
+  integration_provider:
+    type: string
+    path: $.integration_provider
+    description: The provider used for sending alerts.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the Budget Alert was created.
+extract:
+  record_path: $.budget_alerts
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get budget alert by token
+  api:
+    endpoint: /budget_alerts/${{ input.budget_alert_token }}
+    method: GET
+  input:
+    budget_alert_token:
+      type: string
+      required: true

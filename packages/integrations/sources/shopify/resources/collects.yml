@@ -1,0 +1,54 @@
+type: resource
+name: collects
+description: Product-to-collection relationships in Shopify.
+api:
+  endpoint: /collects.json
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+    updated_at_min: ${{ input.updated_at_min }}
+input:
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+  updated_at_min:
+    type: timestamp
+    description: Only return records updated on or after this timestamp.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Shopify object identifier.
+  collection_id:
+    type: integer
+    path: $.collection_id
+    description: Collection identifier.
+  product_id:
+    type: integer
+    path: $.product_id
+    description: Product identifier.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation timestamp.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Last update timestamp.
+extract:
+  record_path: $.collects
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: updated_at_min

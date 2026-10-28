@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: relationship
+name: notion_pages_to_activity_summary
+description: Each Notion page contributes to one parent and archive-state activity summary.
+left_model: notion__pages
+right_model: notion__page_activity_summary
+join_columns:
+  - left: parent_type
+    right: parent_type
+  - left: archived
+    right: is_archived
+join_type: left
+relationship_type: many_to_one
+tags: [notion, pages, activity]

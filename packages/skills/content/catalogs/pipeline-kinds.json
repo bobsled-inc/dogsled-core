@@ -1,0 +1,5 @@
+{
+  "kind": "pipeline-kinds",
+  "description": "Bounded enum of pipeline `type:` values the host agent may emit under `pipelines:` in `dogsled.yml` (`extract`, `models`, `entity-graph`). Append-only — removing a value is a breaking change.",
+  "values": ["extract", "models", "entity-graph"]
+}

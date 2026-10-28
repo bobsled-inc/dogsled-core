@@ -1,0 +1,69 @@
+type: resource
+name: filters
+description: Search saved JQL filters with optional name filtering and pagination.
+api:
+  endpoint: /rest/api/3/filter/search
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    filterName: ${{ input.filter_name }}
+    expand: ${{ input.expand }}
+input:
+  start_at:
+    type: integer
+    description: Zero-based offset for the first filter in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of filters to return per page.
+    default: 50
+  filter_name:
+    type: string
+    description: Filter results by filter name (substring match).
+  expand:
+    type: string
+    description: Comma-separated list of expansions to include in the response.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Filter identifier.
+  name:
+    type: string
+    path: $.name
+    description: Filter name.
+  description:
+    type: string
+    path: $.description
+    description: Filter description.
+  jql:
+    type: string
+    path: $.jql
+    description: JQL query string for the filter.
+  owner_account_id:
+    type: string
+    path: $.owner.accountId
+    description: Account ID of the filter owner.
+  owner_display_name:
+    type: string
+    path: $.owner.displayName
+    description: Display name of the filter owner.
+  favourite:
+    type: boolean
+    path: $.favourite
+    description: Whether the filter is marked as a favourite.
+  self:
+    type: string
+    path: $.self
+    description: Jira API URL for the filter.
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

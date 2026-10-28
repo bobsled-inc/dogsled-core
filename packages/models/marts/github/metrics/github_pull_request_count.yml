@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: github_pull_request_count
+description: Number of GitHub pull requests.
+model: github__pull_requests
+expression: COUNT({github__pull_requests}.pull_request_id)
+synonyms:
+  - pull requests
+  - PR count
+  - number of pull requests
+tags:
+  - github
+  - engineering
+  - delivery

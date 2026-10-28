@@ -1,0 +1,45 @@
+type: resource
+name: campaigns
+description: Campaigns for a TikTok advertiser.
+api:
+  endpoint: /campaign/get
+  method: GET
+  query_params:
+    advertiser_id: ${{ input.advertiser_id }}
+input:
+  advertiser_id:
+    type: string
+    default: '123'
+output:
+  campaign_id:
+    type: string
+    path: $.campaign_id
+  campaign_name:
+    type: string
+    path: $.campaign_name
+  status:
+    type: string
+    path: $.status
+  objective_type:
+    type: string
+    path: $.objective_type
+  budget:
+    type: number
+    path: $.budget
+  budget_mode:
+    type: string
+    path: $.budget_mode
+extract:
+  record_path: $.data.list
+  table:
+    primary_key:
+      - campaign_id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: page_size
+    total_pages_path: $.data.page_info.total_page
+  for_each:
+    resource: advertisers
+    field: advertiser_id
+    input: advertiser_id

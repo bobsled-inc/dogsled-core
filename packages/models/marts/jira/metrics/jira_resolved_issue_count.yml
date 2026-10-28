@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: jira_resolved_issue_count
+description: Number of Jira issues with a resolution date.
+model: jira__issues
+expression: SUM(CASE WHEN {jira__issues}.resolution_date IS NOT NULL THEN 1 ELSE 0 END)
+synonyms: [resolved issues, completed issues, issues resolved]
+tags: [jira, engineering, delivery]

@@ -1,0 +1,65 @@
+type: resource
+name: feedback_submissions
+description: HubSpot CRM feedback submissions capturing customer survey responses from NPS, CSAT, CES, and custom feedback surveys
+api:
+  endpoint: /crm/v3/objects/feedback_submissions
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of feedback submission records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot feedback submission properties to include in the response
+    default: hs_submission_name,hs_content,hs_survey_channel,hs_survey_type,hs_sentiment,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the feedback submission record, returned as a numeric string
+  submission_name:
+    type: string
+    path: $.properties.hs_submission_name
+    description: Name or title of the feedback submission, typically auto-generated from the survey and respondent
+  content:
+    type: string
+    path: $.properties.hs_content
+    description: Free-text response content provided by the customer in the feedback survey
+  survey_channel:
+    type: string
+    path: $.properties.hs_survey_channel
+    description: Channel through which the survey was delivered to the customer (e.g. EMAIL, WEB, IN_APP)
+  survey_type:
+    type: string
+    path: $.properties.hs_survey_type
+    description: Type of feedback survey that generated this submission (e.g. NPS for Net Promoter Score, CSAT for Customer Satisfaction, CES for Customer Effort Score, CUSTOM)
+  sentiment:
+    type: string
+    path: $.properties.hs_sentiment
+    description: Sentiment classification of the feedback response, typically POSITIVE, NEUTRAL, or NEGATIVE based on the survey score
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the feedback submission was first recorded in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the feedback submission record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

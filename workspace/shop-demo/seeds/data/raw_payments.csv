@@ -1,0 +1,11 @@
+payment_id,order_id,payment_method,amount,status,paid_at
+PAY001,O1001,Card,68.00,succeeded,2026-01-05 10:02:00
+PAY002,O1002,CARD,49.50,succeeded,2026-01-08 11:32:00
+PAY003,O1003,invoice,45.00,pending,2026-01-11 15:50:00
+PAY004,O1004,card,32.00,refunded,2026-01-19 09:25:00
+PAY005,O1005,paypal,39.50,succeeded,2026-02-04 16:03:00
+PAY006,O1006,card,90.00,succeeded,2026-02-09 10:12:00
+PAY007,O1007,gift_card,42.00,succeeded,2026-02-16 12:27:00
+PAY008,O1008,card,50.00,succeeded,2026-02-22 14:57:00
+PAY009,O1009,card,16.00,cancelled,2026-03-02 08:40:00
+PAY010,O1010,invoice,57.00,succeeded,2026-03-10 17:18:00

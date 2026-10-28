@@ -1,0 +1,15 @@
+hubspot_contact_id,email,first_name,last_name,phone,country
+hs_001,alice.johnson@example.com,Alice,Johnson,(312) 555-0101,US
+hs_002,emily.davis@example.com,Emily,Davis,415-555-0102,US
+hs_003,bob.smith@acme.example.com,Bob,Smith,6465550103,US
+hs_004,michael.lee@example.com,Michael,Lee,2065550104,US
+hs_005,dana.kim@vendor.example.com,Dana,Kim,9175550195,US
+hs_006,lisa.thompson@example.com,Lisa,Thompson,2135550106,US
+hs_007,priya.patel@example.com,Priya,Patel,4695550107,US
+hs_008,amanda.white@example.com,Amanda,White,6175550108,US
+hs_009,mark.taylor@biz.example.com,Mark,Taylor,9195550109,US
+hs_010,c.rivera@corp.example.com,Carlos,Rivera,7135551112,US
+hs_011,jessica.browne@mail.example.com,Jessica,Browne,9175550111,US
+hs_012,kevin.wright@example.com,Kevin,Wright,3035550110,US
+hs_013,daniel.green@example.com,Daniel,Green,5035550113,US
+hs_014,chad.adamson@vendor.example.com,Chad,Adamson,7025550199,US

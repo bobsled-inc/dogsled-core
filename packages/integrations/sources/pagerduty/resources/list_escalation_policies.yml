@@ -1,0 +1,49 @@
+type: resource
+name: list_escalation_policies
+description: List PagerDuty escalation policies configured in the account
+api:
+  endpoint: /escalation_policies
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Number of escalation policies to return per page
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+output:
+  id:
+    type: string
+    path: $.id
+    description: PagerDuty escalation policy identifier
+  summary:
+    type: string
+    path: $.summary
+    description: Escalation policy summary
+  description:
+    type: string
+    path: $.description
+    description: Escalation policy description
+  self:
+    type: string
+    path: $.self
+    description: API URL for the escalation policy
+  html_url:
+    type: string
+    path: $.html_url
+    description: Browser URL for the escalation policy
+extract:
+  record_path: $.escalation_policies
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

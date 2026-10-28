@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: stripe_total_refunded_amount
+description: Total amount refunded through Stripe. Group results by currency before comparing or combining values.
+model: stripe__daily_overview
+expression: SUM({stripe__daily_overview}.total_refunded_amount)
+synonyms:
+  - refunds
+  - refunded amount
+  - total refunds
+tags:
+  - stripe
+  - billing
+  - finance

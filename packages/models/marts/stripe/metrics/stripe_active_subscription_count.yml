@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: stripe_active_subscription_count
+description: Number of Stripe subscriptions whose current status is active or trialing.
+model: stripe__subscription_details
+expression: SUM(CASE WHEN {stripe__subscription_details}.status IN ('active', 'trialing') THEN 1 ELSE 0 END)
+synonyms:
+  - active subscriptions
+  - current subscriptions
+  - live subscriptions
+tags:
+  - stripe
+  - subscriptions
+  - finance

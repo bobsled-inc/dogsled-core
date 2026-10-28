@@ -1,0 +1,49 @@
+type: resource
+name: list_schedules
+description: List PagerDuty schedules configured in the account
+api:
+  endpoint: /schedules
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Number of schedules to return per page
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+output:
+  id:
+    type: string
+    path: $.id
+    description: PagerDuty schedule identifier
+  summary:
+    type: string
+    path: $.summary
+    description: Schedule summary
+  description:
+    type: string
+    path: $.description
+    description: Schedule description
+  self:
+    type: string
+    path: $.self
+    description: API URL for the schedule
+  html_url:
+    type: string
+    path: $.html_url
+    description: Browser URL for the schedule
+extract:
+  record_path: $.schedules
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

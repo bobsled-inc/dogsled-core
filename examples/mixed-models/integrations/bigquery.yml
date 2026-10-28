@@ -1,0 +1,13 @@
+spec_version: '1'
+auth_env_vars: [BIGQUERY_CREDENTIALS, BIGQUERY_PROJECT, XWH_SHARED_STAGING_URI]
+type: integration
+name: bigquery
+source_type: bigquery
+connection:
+  project_id: ${{ env.BIGQUERY_PROJECT }}
+  default_location: US
+auth:
+  type: service_account
+  credentials: ${{ env.BIGQUERY_CREDENTIALS }}
+cross_warehouse_staging:
+  uri: ${{ env.XWH_SHARED_STAGING_URI }}

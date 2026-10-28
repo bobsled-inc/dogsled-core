@@ -1,0 +1,11 @@
+name: slack
+display_name: Slack
+description: Communication analytics models for Slack channels, messages, users, and workspace activity.
+tags:
+  - slack
+  - communication
+  - collaboration
+include_resources:
+  - channels
+  - messages
+  - users

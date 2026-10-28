@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: pagerduty
+description: PagerDuty REST API for incidents, services, and users
+transports:
+  - id: default
+    base_url: https://api.pagerduty.com
+    auth:
+      type: api-key
+      header: Authorization
+      key: Token token=${{ env.PAGERDUTY_API_KEY }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 5
+    headers:
+      Accept: application/vnd.pagerduty+json;version=2
+      User-Agent: dogsled-extractor
+default_transport: default

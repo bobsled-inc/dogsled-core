@@ -1,0 +1,33 @@
+type: resource
+name: journal_entries
+description: JournalEntry entities from QuickBooks Online.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    query: select * from JournalEntry maxresults 1000
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  doc_number:
+    type: string
+    path: $.DocNumber
+  adjustment:
+    type: boolean
+    path: $.Adjustment
+  sync_token:
+    type: string
+    path: $.SyncToken
+  created_at:
+    type: timestamp
+    path: $.MetaData.CreateTime
+  updated_at:
+    type: timestamp
+    path: $.MetaData.LastUpdatedTime
+extract:
+  record_path: $.QueryResponse.JournalEntry
+  table:
+    primary_key:
+      - id

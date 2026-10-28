@@ -1,0 +1,44 @@
+type: resource
+name: databases_mcp
+via: mcp
+entity: databases
+description: Databases from Notion workspace via search
+tool:
+  tool_name: search-notion-content
+  arguments:
+    search_type: database
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique database UUID
+  title:
+    type: string
+    path: $.title
+    description: Database title
+  url:
+    type: string
+    path: $.url
+    description: Notion URL for the database
+  created_time:
+    type: timestamp
+    path: $.created_time
+    description: Timestamp when the database was created
+  last_edited_time:
+    type: timestamp
+    path: $.last_edited_time
+    description: Timestamp when the database was last edited
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether the database is archived
+extract:
+  record_path: $.results
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.next_cursor
+    cursor_argument: start_cursor
+  table:
+    primary_key:
+      - id

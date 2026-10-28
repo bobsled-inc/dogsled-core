@@ -1,0 +1,29 @@
+type: resource
+name: tags
+description: Tags used to categorize and organize issues and accounts
+api:
+  endpoint: /tags
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique tag identifier
+  name:
+    type: string
+    path: $.name
+    description: Tag display name
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the tag was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the tag was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

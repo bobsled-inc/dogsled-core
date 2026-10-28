@@ -1,0 +1,6 @@
+spec_version: '0.2'
+type: metric
+name: order_conversion_rate
+description: Orders divided by site sessions
+expression: SUM(orders.count) / NULLIF(SUM(sessions.count), 0)
+models: [fct_orders, fct_sessions]

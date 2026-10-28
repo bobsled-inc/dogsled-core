@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: notion_database_items_to_pages
+description: Each Notion database item corresponds to one page.
+left_model: notion__database_items
+right_model: notion__pages
+join_columns:
+  - left: database_item_id
+    right: page_id
+join_type: left
+relationship_type: one_to_one
+tags: [notion, databases, pages]

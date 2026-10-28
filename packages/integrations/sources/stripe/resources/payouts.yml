@@ -1,0 +1,115 @@
+type: resource
+name: payouts
+description: Stripe payouts representing transfers of funds from your Stripe balance to your
+  external bank account or debit card
+api:
+  endpoint: /v1/payouts
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of payouts to return per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique payout identifier prefixed with po_ (e.g. po_1A2b3C4d5E6f7G)
+  amount:
+    type: integer
+    path: $.amount
+    description: Amount of the payout in the smallest currency unit (e.g. cents for USD). A value of
+      50000 represents a $500.00 USD payout
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO 4217 currency code in lowercase (e.g. usd, eur, gbp)
+  status:
+    type: string
+    path: $.status
+    description:
+      'Current status of the payout. Possible values: paid (successfully deposited), pending
+      (submitted but not yet deposited), in_transit (in transit to bank), canceled (canceled before
+      arrival), failed (bank rejected the payout)'
+  arrival_date:
+    type: integer
+    path: $.arrival_date
+    description: Unix timestamp for the estimated date the payout will arrive in the bank account.
+      Actual arrival may vary by bank
+  method:
+    type: string
+    path: $.method
+    description:
+      'Payout delivery method. Possible values: standard (1-3 business days), instant (within
+      minutes, higher fee)'
+  type:
+    type: string
+    path: $.type
+    description:
+      'Destination type for the payout. Possible values: bank_account (ACH or wire transfer),
+      card (debit card push)'
+  description:
+    type: string
+    path: $.description
+    description: Description of the payout, visible in your Stripe Dashboard and bank statement
+  failure_code:
+    type: string
+    path: $.failure_code
+    description: Error code explaining payout failure (e.g. account_closed, insufficient_funds,
+      no_account). Null if the payout has not failed
+  failure_message:
+    type: string
+    path: $.failure_message
+    description:
+      Human-readable message providing additional details about the payout failure. Null if
+      the payout has not failed
+  destination:
+    type: string
+    path: $.destination
+    description: ID of the bank account or card (ba_xxx or card_xxx) the payout was sent to
+  balance_transaction:
+    type: string
+    path: $.balance_transaction
+    description: ID of the balance transaction (txn_xxx) that describes the financial impact of this
+      payout on your Stripe balance
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the payout was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

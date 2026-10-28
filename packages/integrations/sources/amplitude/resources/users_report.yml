@@ -1,0 +1,35 @@
+type: resource
+name: users_report
+description: Fetch Amplitude users report rows
+api:
+  endpoint: /api/2/users
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    end: ${{ input.end }}
+    m: ${{ input.metric }}
+input:
+  start:
+    type: string
+    description: Start date in YYYYMMDD format
+  end:
+    type: string
+    description: End date in YYYYMMDD format
+  metric:
+    type: string
+    description: User metric such as active or new
+output:
+  label:
+    type: string
+    path: $.label
+    description: Series label
+  value:
+    type: number
+    path: $.value
+    description: Metric value
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - label
+    trust_tier: silver

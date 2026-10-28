@@ -1,0 +1,83 @@
+spec_version: '0.2'
+name: stripe__subscription_details
+type: model
+description: Current subscription state with customer and invoice context.
+grain: subscription_id
+source:
+  ref: stg_stripe__subscriptions
+joins:
+  - ref: stg_stripe__customers
+    type: left
+    on: stg_stripe__subscriptions.customer_id = stg_stripe__customers.customer_id
+  - ref: stg_stripe__invoices
+    type: left
+    on: stg_stripe__subscriptions.latest_invoice_id = stg_stripe__invoices.invoice_id
+columns:
+  - name: subscription_id
+    expr: stg_stripe__subscriptions.subscription_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Stripe subscription identifier.
+  - name: customer_id
+    expr: stg_stripe__subscriptions.customer_id
+    semantic_role: entity_id
+    references: stg_stripe__customers.customer_id
+    description: Customer attached to the subscription.
+  - name: customer_email
+    expr: stg_stripe__customers.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the subscribed customer.
+  - name: status
+    expr: stg_stripe__subscriptions.status
+    semantic_role: categorical
+    description: Subscription status such as active, trialing, or canceled.
+  - name: collection_method
+    expr: stg_stripe__subscriptions.collection_method
+    semantic_role: categorical
+    description: How Stripe attempts to collect payment for the subscription.
+  - name: current_period_start
+    expr: stg_stripe__subscriptions.current_period_start
+    semantic_role: time_dimension
+    description: Beginning of the active billing period.
+  - name: current_period_end
+    expr: stg_stripe__subscriptions.current_period_end
+    semantic_role: time_dimension
+    description: End of the active billing period.
+  - name: trial_start
+    expr: stg_stripe__subscriptions.trial_start
+    semantic_role: time_dimension
+    description: Timestamp when the subscription trial started.
+  - name: trial_end
+    expr: stg_stripe__subscriptions.trial_end
+    semantic_role: time_dimension
+    description: Timestamp when the trial period ends or ended.
+  - name: cancel_at_period_end
+    expr: stg_stripe__subscriptions.cancel_at_period_end
+    semantic_role: categorical
+    description: Whether the subscription will cancel at the end of the current term.
+  - name: latest_invoice_id
+    expr: stg_stripe__subscriptions.latest_invoice_id
+    semantic_role: entity_id
+    references: stg_stripe__invoices.invoice_id
+    description: Most recent invoice generated for the subscription.
+  - name: latest_invoice_status
+    expr: stg_stripe__invoices.status
+    semantic_role: categorical
+    description: Status of the most recent invoice.
+  - name: billing_cycle_anchor
+    expr: stg_stripe__subscriptions.billing_cycle_anchor
+    semantic_role: time_dimension
+    description: Anchor date used for the recurring billing cycle.
+  - name: created_at
+    expr: stg_stripe__subscriptions.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the subscription was created.
+tags:
+  - stripe
+  - billing
+  - subscriptions
+trust_tier: gold
+materialization:
+  type: table

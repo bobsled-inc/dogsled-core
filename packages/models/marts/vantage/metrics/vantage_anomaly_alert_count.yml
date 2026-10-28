@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: vantage_anomaly_alert_count
+description: Number of Vantage anomaly alerts.
+model: vantage__anomaly_alerts
+expression: COUNT({vantage__anomaly_alerts}.anomaly_alert_id)
+synonyms: [cost anomalies, anomaly alerts, spend alerts]
+tags: [vantage, cloud, anomalies]

@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: freshdesk_tickets_to_companies
+description: Each Freshdesk ticket can belong to one company.
+left_model: freshdesk__tickets
+right_model: freshdesk__companies
+join_columns:
+  - left: company_id
+    right: company_id
+join_type: left
+relationship_type: many_to_one
+tags: [freshdesk, tickets, companies]

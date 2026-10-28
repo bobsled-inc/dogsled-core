@@ -1,0 +1,119 @@
+type: resource
+name: projects_graphql
+via: graphql
+entity: projects
+description: Projects from Linear representing larger bodies of work that group related issues together with progress tracking, timelines, and team ownership
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  projects(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id name description color icon state slugId url\n      progress startDate targetDate\n      lead { id name email }\n      createdAt updatedAt completedAt canceledAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique project UUID assigned by Linear
+  name:
+    type: string
+    path: $.name
+    description: Human-readable project name displayed in the Linear UI
+  description:
+    type: string
+    path: $.description
+    description: Detailed project description in markdown format explaining the project scope and goals
+  color:
+    type: string
+    path: $.color
+    description: Hex color code used to visually distinguish the project in the Linear UI (e.g.
+  icon:
+    type: string
+    path: $.icon
+    description: Emoji or icon identifier displayed alongside the project name in Linear
+  state:
+    type: string
+    path: $.state
+    description: "Current lifecycle state of the project \u2014 one of planned, started, paused, completed, or canceled"
+  slug_id:
+    type: string
+    path: $.slugId
+    description: URL-safe slug identifier used in the project's web URL path
+  url:
+    type: string
+    path: $.url
+    description: Full web URL to the project page in the Linear application
+  progress:
+    type: number
+    path: $.progress
+    description: Calculated project completion progress as a decimal between 0 and 1, based on the ratio of completed issues to total issues
+  start_date:
+    type: string
+    path: $.startDate
+    description: Planned project start date as a YYYY-MM-DD string
+  target_date:
+    type: string
+    path: $.targetDate
+    description: Target completion date for the project as a YYYY-MM-DD string, used for timeline tracking
+  lead_id:
+    type: string
+    path: $.lead.id
+    description: UUID of the user designated as the project lead responsible for driving the project forward
+  lead_name:
+    type: string
+    path: $.lead.name
+    description: Display name of the project lead
+  lead_email:
+    type: string
+    path: $.lead.email
+    description: Email address of the project lead
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the project was first created in Linear
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the project was last modified, including any changes to issues within it
+  completed_at:
+    type: timestamp
+    path: $.completedAt
+    description: ISO 8601 timestamp when the project was marked as completed, null if still active
+  canceled_at:
+    type: timestamp
+    path: $.canceledAt
+    description: ISO 8601 timestamp when the project was canceled, null if not canceled
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.projects.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.projects.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

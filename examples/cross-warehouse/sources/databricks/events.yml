@@ -1,0 +1,17 @@
+spec_version: '0.2'
+name: events
+type: source
+source_type: warehouse_table
+connection: databricks
+table: main.raw.events
+schema:
+  columns:
+    - name: event_id
+      type: integer
+      primary_key: true
+    - name: account_id
+      type: integer
+    - name: event_ts
+      type: timestamp
+    - name: event_value
+      type: number

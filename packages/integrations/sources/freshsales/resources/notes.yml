@@ -1,0 +1,34 @@
+type: resource
+name: notes
+description: Notes embedded on each Freshsales contact record.
+api:
+  endpoint: /contacts/${{ input.contact_id }}
+  method: GET
+  query_params:
+    include: notes
+input:
+  contact_id:
+    type: string
+    default: '123'
+output:
+  id:
+    type: integer
+    path: $.id
+  description:
+    type: string
+    path: $.description
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+extract:
+  record_path: $.contact.notes
+  table:
+    primary_key:
+      - id
+  for_each:
+    resource: contacts
+    field: id
+    input: contact_id

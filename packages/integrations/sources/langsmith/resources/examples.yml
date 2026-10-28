@@ -1,0 +1,96 @@
+type: resource
+name: examples
+description: List examples within a LangSmith dataset. Examples are the input/output rows that make up a dataset.
+api:
+  endpoint: /examples
+  method: GET
+  query_params:
+    dataset: ${{ input.dataset_id }}
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  dataset_id:
+    type: string
+    required: true
+    description: Dataset UUID to list examples for.
+  limit:
+    type: integer
+    description: Maximum number of examples to return per page.
+    default: 100
+    minimum: 1
+    maximum: 100
+  offset:
+    type: integer
+    description: Number of examples to skip for pagination.
+    default: 0
+    minimum: 0
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique example identifier (UUID).
+    semantic_role: entity_id
+  name:
+    type: string
+    path: $.name
+    description: LangSmith display name for the example.
+    semantic_role: name
+  dataset_id:
+    type: string
+    path: $.dataset_id
+    description: Identifier of the dataset this example belongs to.
+    semantic_role: entity_id
+  source_run_id:
+    type: string
+    path: $.source_run_id
+    description: Source run identifier used to create the example, when present.
+    semantic_role: entity_id
+  inputs:
+    type: object
+    path: $.inputs
+    description: Input payload for the example.
+    semantic_role: categorical
+  outputs:
+    type: object
+    path: $.outputs
+    description: Reference output payload for the example.
+    semantic_role: categorical
+  metadata:
+    type: object
+    path: $.metadata
+    description: Arbitrary metadata attached to the example.
+    semantic_role: categorical
+  attachment_urls:
+    type: array
+    path: $.attachment_urls
+    description: Attachment URLs associated with the example, when present.
+    semantic_role: categorical
+    items:
+      type: string
+      path: $
+      description: Example attachment URL.
+      semantic_role: url
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the example was created.
+    semantic_role: event_timestamp
+  modified_at:
+    type: timestamp
+    path: $.modified_at
+    description: Timestamp when the example was last modified.
+    semantic_role: event_timestamp
+extract:
+  for_each:
+    resource: datasets
+    field: id
+    input: dataset_id
+  record_path: $
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: bronze

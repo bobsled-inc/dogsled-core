@@ -1,0 +1,55 @@
+type: resource
+name: disbursements
+description: Disbursement records for payout reconciliation and processor analytics.
+api:
+  endpoint: /disbursement/search
+  method: POST
+  query_params:
+    gatewayDisbursementID: '${{ input.disbursement_id }}'
+    gatewayDisbursementIDs: '${{ input.disbursement_ids }}'
+    dateCreated: '${{ input.date_created }}'
+    dateUpdated: '${{ input.date_updated }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  disbursement_id:
+    type: integer
+    description: Optional gateway disbursement ID filter.
+  disbursement_ids:
+    type: string
+    description: Optional disbursement ID list.
+  date_created:
+    type: string
+    description: Lower/upper bound with query object support.
+  date_updated:
+    type: string
+    description: Update-date filter.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  disbursement_id:
+    type: integer
+    path: $.gatewayDisbursementID
+    description: Gateway disbursement unique identifier.
+  date_created:
+    type: timestamp
+    path: $.dateCreated
+    description: Disbursement creation date.
+  date_updated:
+    type: timestamp
+    path: $.dateUpdated
+    description: Last update date.
+  amount:
+    type: number
+    path: $.amount
+    description: Disbursement amount.
+
+extract:
+  record_path: '$..[?(@.gatewayDisbursementID)]'
+  table:
+    primary_key:
+      - disbursement_id
+    trust_tier: silver

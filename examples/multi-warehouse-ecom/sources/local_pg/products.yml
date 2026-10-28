@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: source
+name: products
+source_type: warehouse_table
+connection: local_pg
+table: ecommerce.products
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: name
+      type: STRING

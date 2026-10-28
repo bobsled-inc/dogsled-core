@@ -1,0 +1,122 @@
+type: resource
+name: get_leads
+description: Get all leads
+api:
+  endpoint: /leads
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    start: ${{ input.start }}
+    archived_status: ${{ input.archived_status }}
+input:
+  limit:
+    type: integer
+    description:
+      For pagination, the limit of entries to be returned. If not provided, 100 items will be
+      returned.
+  start:
+    type: integer
+    description: For pagination, the position that represents the first result for the page
+  archived_status:
+    type: string
+    description: Filtering based on archived status of a Lead. If not provided, `All` is used.
+    enum:
+      - archived
+      - not_archived
+      - all
+output:
+  id:
+    type: string
+    path: $.id
+    description: 'The unique ID of the Lead in the UUID format (format: uuid)'
+  title:
+    type: string
+    path: $.title
+    description: The title of the Lead
+  owner_id:
+    type: integer
+    path: $.owner_id
+    description: The ID of the User who owns the Lead
+  creator_id:
+    type: integer
+    path: $.creator_id
+    description: The ID of the User who created the Lead
+  label_ids:
+    type: array
+    path: $.label_ids
+    description: The IDs of the Lead Labels which are associated with the Lead
+  person_id:
+    type: integer
+    path: $.person_id
+    description: The ID of a Person which this Lead is linked to
+  organization_id:
+    type: integer
+    path: $.organization_id
+    description: The ID of an Organization which this Lead is linked to
+  source_name:
+    type: string
+    path: $.source_name
+    description: Defines where the Lead comes from.
+  is_archived:
+    type: boolean
+    path: $.is_archived
+    description: A flag indicating whether the Lead is archived or not
+  was_seen:
+    type: boolean
+    path: $.was_seen
+    description: A flag indicating whether the Lead was seen by someone in the Pipedrive UI
+  value_amount:
+    type: number
+    path: $.value.amount
+  value_currency:
+    type: string
+    path: $.value.currency
+  expected_close_date:
+    type: timestamp
+    path: $.expected_close_date
+    description: The date of when the Deal which will be created from the Lead is expected to be closed.
+  next_activity_id:
+    type: integer
+    path: $.next_activity_id
+    description: The ID of the next activity associated with the Lead
+  add_time:
+    type: timestamp
+    path: $.add_time
+    description: The date and time of when the Lead was created.
+  update_time:
+    type: timestamp
+    path: $.update_time
+    description: The date and time of when the Lead was last updated.
+  visible_to:
+    type: string
+    path: $.visible_to
+    description: Visibility of the Lead.
+  cc_email:
+    type: string
+    path: $.cc_email
+    description: The CC email of the lead
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: start
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get one lead
+  api:
+    endpoint: /leads/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: get_leads_smoke
+      input:
+        limit: 100
+        start: 0

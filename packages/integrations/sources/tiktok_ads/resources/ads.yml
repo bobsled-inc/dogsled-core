@@ -1,0 +1,45 @@
+type: resource
+name: ads
+description: Ads for a TikTok advertiser.
+api:
+  endpoint: /ad/get
+  method: GET
+  query_params:
+    advertiser_id: ${{ input.advertiser_id }}
+input:
+  advertiser_id:
+    type: string
+    default: '123'
+output:
+  ad_id:
+    type: string
+    path: $.ad_id
+  ad_name:
+    type: string
+    path: $.ad_name
+  adgroup_id:
+    type: string
+    path: $.adgroup_id
+  status:
+    type: string
+    path: $.status
+  call_to_action:
+    type: string
+    path: $.call_to_action
+  image_mode:
+    type: string
+    path: $.image_mode
+extract:
+  record_path: $.data.list
+  table:
+    primary_key:
+      - ad_id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: page_size
+    total_pages_path: $.data.page_info.total_page
+  for_each:
+    resource: advertisers
+    field: advertiser_id
+    input: advertiser_id

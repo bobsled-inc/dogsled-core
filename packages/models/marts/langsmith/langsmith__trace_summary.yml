@@ -1,0 +1,75 @@
+spec_version: '0.2'
+name: langsmith__trace_summary
+type: model
+description: Trace-level rollup of run counts, errors, tokens, and costs.
+grain: trace_id
+source:
+  ref: stg_langsmith__runs
+joins:
+  - ref: stg_langsmith__sessions
+    type: left
+    on: stg_langsmith__runs.session_id = stg_langsmith__sessions.session_id
+columns:
+  - name: trace_id
+    expr: stg_langsmith__runs.trace_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Identifier shared by all runs in the trace.
+  - name: session_id
+    expr: stg_langsmith__runs.session_id
+    semantic_role: entity_id
+    references: stg_langsmith__sessions.session_id
+    description: Session or project that owns the trace.
+  - name: session_name
+    expr: stg_langsmith__sessions.name
+    semantic_role: name
+    description: Session or project display name.
+  - name: run_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total runs observed in the trace.
+  - name: root_run_count
+    expr: SUM(CASE WHEN stg_langsmith__runs.parent_run_id IS NULL THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Number of root runs in the trace.
+  - name: error_run_count
+    expr: SUM(CASE WHEN stg_langsmith__runs.error IS NOT NULL THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Number of runs in the trace with captured errors.
+  - name: first_run_start_at
+    expr: MIN(stg_langsmith__runs.start_time)
+    semantic_role: event_timestamp
+    description: Earliest run start timestamp in the trace.
+  - name: last_run_end_at
+    expr: MAX(stg_langsmith__runs.end_time)
+    semantic_role: event_timestamp
+    description: Latest run end timestamp in the trace.
+  - name: total_tokens
+    expr: SUM(stg_langsmith__runs.total_tokens)
+    semantic_role: measure
+    description: Total tokens attributed to the trace.
+  - name: prompt_tokens
+    expr: SUM(stg_langsmith__runs.prompt_tokens)
+    semantic_role: measure
+    description: Prompt tokens attributed to the trace.
+  - name: completion_tokens
+    expr: SUM(stg_langsmith__runs.completion_tokens)
+    semantic_role: measure
+    description: Completion tokens attributed to the trace.
+  - name: total_cost
+    expr: SUM(stg_langsmith__runs.total_cost)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total cost attributed to the trace.
+group_by:
+  - trace_id
+  - session_id
+  - session_name
+tags:
+  - langsmith
+  - traces
+  - summary
+trust_tier: gold
+materialization:
+  type: table

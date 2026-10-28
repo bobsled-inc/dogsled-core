@@ -1,0 +1,54 @@
+spec_version: '0.2'
+name: shopify__fulfillments
+type: model
+description: Fulfillment events joined back to their source orders.
+grain: fulfillment_id
+source:
+  ref: stg_shopify__fulfillments
+joins:
+  - ref: stg_shopify__orders
+    type: left
+    on: stg_shopify__fulfillments.order_id = stg_shopify__orders.order_id
+columns:
+  - name: fulfillment_id
+    expr: stg_shopify__fulfillments.fulfillment_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique fulfillment identifier.
+  - name: order_id
+    expr: stg_shopify__fulfillments.order_id
+    semantic_role: entity_id
+    references: stg_shopify__orders.order_id
+    description: Associated Shopify order identifier.
+  - name: order_name
+    expr: stg_shopify__orders.name
+    semantic_role: categorical
+    description: Human-readable order name.
+  - name: email
+    expr: stg_shopify__orders.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer email attached to the fulfilled order.
+  - name: status
+    expr: stg_shopify__fulfillments.status
+    semantic_role: categorical
+    description: Fulfillment processing status.
+  - name: tracking_company
+    expr: stg_shopify__fulfillments.tracking_company
+    semantic_role: categorical
+    description: Shipping carrier handling the fulfillment.
+  - name: tracking_number
+    expr: stg_shopify__fulfillments.tracking_number
+    semantic_role: categorical
+    description: Shipment tracking number.
+  - name: created_at
+    expr: stg_shopify__fulfillments.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the fulfillment was created.
+tags:
+  - shopify
+  - fulfillment
+trust_tier: gold
+materialization:
+  type: table

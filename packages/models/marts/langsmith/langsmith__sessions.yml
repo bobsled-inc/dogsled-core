@@ -1,0 +1,73 @@
+spec_version: '0.2'
+name: langsmith__sessions
+type: model
+description: LangSmith projects and evaluation sessions enriched with dataset context.
+grain: session_id
+source:
+  ref: stg_langsmith__sessions
+joins:
+  - ref: stg_langsmith__datasets
+    type: left
+    on: stg_langsmith__sessions.reference_dataset_id = stg_langsmith__datasets.dataset_id
+columns:
+  - name: session_id
+    expr: stg_langsmith__sessions.session_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique LangSmith session or project identifier.
+  - name: tenant_id
+    expr: stg_langsmith__sessions.tenant_id
+    semantic_role: entity_id
+    description: LangSmith tenant that owns the session.
+  - name: session_name
+    expr: stg_langsmith__sessions.name
+    semantic_role: name
+    description: Session or project display name.
+  - name: description
+    expr: stg_langsmith__sessions.description
+    semantic_role: categorical
+    description: Human-readable session or project description.
+  - name: start_time
+    expr: stg_langsmith__sessions.start_time
+    semantic_role: event_timestamp
+    description: Timestamp when the session began receiving runs.
+  - name: reference_dataset_id
+    expr: stg_langsmith__sessions.reference_dataset_id
+    semantic_role: entity_id
+    references: stg_langsmith__datasets.dataset_id
+    description: Dataset linked to the session for evaluation projects.
+  - name: reference_dataset_name
+    expr: stg_langsmith__datasets.name
+    semantic_role: name
+    description: Name of the linked reference dataset.
+  - name: trace_tier
+    expr: stg_langsmith__sessions.trace_tier
+    semantic_role: categorical
+    description: Trace retention or indexing tier for the session.
+  - name: test_run_number
+    expr: stg_langsmith__sessions.test_run_number
+    semantic_role: measure
+    description: Evaluation test run number for the session.
+  - name: feedback_stats
+    expr: stg_langsmith__sessions.feedback_stats
+    semantic_role: categorical
+    description: Aggregated feedback statistics for runs in the session.
+  - name: session_feedback_stats
+    expr: stg_langsmith__sessions.session_feedback_stats
+    semantic_role: categorical
+    description: Aggregated feedback statistics attached directly to the session.
+  - name: run_facets
+    expr: stg_langsmith__sessions.run_facets
+    semantic_role: categorical
+    description: Faceted run summary payload for the session.
+  - name: extra
+    expr: stg_langsmith__sessions.extra
+    semantic_role: categorical
+    description: Additional session metadata payload.
+tags:
+  - langsmith
+  - sessions
+  - projects
+trust_tier: gold
+materialization:
+  type: table

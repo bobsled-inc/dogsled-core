@@ -1,0 +1,48 @@
+{
+  "name": "@bobsled-inc/explorer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./scripts/next-dev.mjs",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3333",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --import tsx --test --test-concurrency=1 ./scripts/*.test.mjs ./scripts/*.test.ts ./scripts/*.test.tsx && vitest run"
+  },
+  "dependencies": {
+    "@bobsled-inc/integrations": "workspace:*",
+    "@bobsled-inc/model-spec": "workspace:*",
+    "@bobsled-inc/models": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "@duckdb/node-api": "catalog:duckdb",
+    "@google-cloud/bigquery": "catalog:",
+    "cron-parser": "catalog:",
+    "highlight.js": "catalog:",
+    "mermaid": "catalog:",
+    "next": "catalog:",
+    "next-themes": "catalog:",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "yaml": "catalog:app-packages",
+    "zod": "catalog:dev-packages"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "catalog:dev-packages",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "react-test-renderer": "catalog:",
+    "tailwindcss": "^4.3.0",
+    "tsx": "catalog:dev-packages",
+    "typescript": "^5.8.0",
+    "vite-tsconfig-paths": "catalog:",
+    "vitest": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "apps/explorer"
+  }
+}

@@ -1,0 +1,51 @@
+type: resource
+name: opportunity_line_items
+description: Opportunity line items from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT
+      Id,OpportunityId,PricebookEntryId,Product2Id,Name,Quantity,UnitPrice,TotalPrice,CreatedDate,LastModifiedDate
+      FROM OpportunityLineItem
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  opportunity_id:
+    type: string
+    path: $.OpportunityId
+  pricebook_entry_id:
+    type: string
+    path: $.PricebookEntryId
+  product2_id:
+    type: string
+    path: $.Product2Id
+  name:
+    type: string
+    path: $.Name
+  quantity:
+    type: number
+    path: $.Quantity
+  unit_price:
+    type: number
+    path: $.UnitPrice
+  total_price:
+    type: number
+    path: $.TotalPrice
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

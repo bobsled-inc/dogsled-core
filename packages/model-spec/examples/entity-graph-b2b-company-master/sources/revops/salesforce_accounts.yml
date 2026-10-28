@@ -1,0 +1,26 @@
+spec_version: '0.2'
+name: salesforce_accounts
+type: source
+source_type: warehouse_table
+connection: revops
+table: RAW.SALESFORCE_ACCOUNTS
+description: Salesforce account records owned by the sales team.
+trust_tier: gold
+schema:
+  columns:
+    - name: salesforce_account_id
+      type: VARCHAR
+    - name: account_name
+      type: VARCHAR
+    - name: company_name
+      type: VARCHAR
+    - name: domain
+      type: VARCHAR
+    - name: parent_domain
+      type: VARCHAR
+    - name: phone
+      type: VARCHAR
+    - name: duns_number
+      type: VARCHAR
+    - name: billing_country
+      type: VARCHAR

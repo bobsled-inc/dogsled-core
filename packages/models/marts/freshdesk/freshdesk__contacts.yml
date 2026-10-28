@@ -1,0 +1,74 @@
+spec_version: '0.2'
+name: freshdesk__contacts
+type: model
+description: Freshdesk contacts enriched with company context and ticket counts.
+grain: contact_id
+source:
+  ref: stg_freshdesk__contacts
+joins:
+  - ref: stg_freshdesk__companies
+    type: left
+    on: stg_freshdesk__contacts.company_id = stg_freshdesk__companies.company_id
+  - ref: stg_freshdesk__tickets
+    type: left
+    on: stg_freshdesk__contacts.contact_id = stg_freshdesk__tickets.requester_id
+    pre_aggregate:
+      group_by:
+        - requester_id
+      columns:
+        - name: ticket_count
+          expr: COUNT(*)
+columns:
+  - name: contact_id
+    expr: stg_freshdesk__contacts.contact_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Freshdesk contact identifier.
+  - name: contact_name
+    expr: stg_freshdesk__contacts.name
+    semantic_role: categorical
+    description: Contact full name.
+  - name: email
+    expr: stg_freshdesk__contacts.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact email address.
+  - name: phone
+    expr: stg_freshdesk__contacts.phone
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Contact phone number.
+  - name: company_id
+    expr: stg_freshdesk__contacts.company_id
+    semantic_role: entity_id
+    references: stg_freshdesk__companies.company_id
+    description: Company associated with the contact.
+  - name: company_name
+    expr: stg_freshdesk__companies.name
+    semantic_role: categorical
+    description: Name of the associated company.
+  - name: active
+    expr: stg_freshdesk__contacts.active
+    semantic_role: categorical
+    description: Whether the contact is active.
+  - name: ticket_count
+    expr: COALESCE(stg_freshdesk__tickets.ticket_count, 0)
+    semantic_role: measure
+    description: Number of tickets requested by the contact.
+  - name: created_at
+    expr: stg_freshdesk__contacts.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was created.
+  - name: updated_at
+    expr: stg_freshdesk__contacts.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the contact was last updated.
+tags:
+  - freshdesk
+  - contacts
+  - support
+trust_tier: gold
+materialization:
+  type: table

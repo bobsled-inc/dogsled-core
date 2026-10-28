@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: pylon_feature_requests_to_pipeline
+description: Each Pylon feature request contributes to one status pipeline row.
+left_model: pylon__feature_requests
+right_model: pylon__feature_request_pipeline
+join_columns:
+  - left: request_status
+    right: request_status
+join_type: left
+relationship_type: many_to_one
+tags: [pylon, feature-requests, pipeline]

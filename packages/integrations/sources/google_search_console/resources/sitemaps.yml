@@ -1,0 +1,42 @@
+type: resource
+name: sitemaps
+description: Sitemaps submitted for a Google Search Console property.
+api:
+  endpoint: /sites/${{ input.site_url }}/sitemaps
+  method: GET
+input:
+  site_url:
+    type: string
+    required: true
+    default: https://example.com/
+output:
+  path:
+    type: string
+    path: $.path
+  lastSubmitted:
+    type: timestamp
+    path: $.lastSubmitted
+  isPending:
+    type: boolean
+    path: $.isPending
+  isSitemapsIndex:
+    type: boolean
+    path: $.isSitemapsIndex
+  lastDownloaded:
+    type: timestamp
+    path: $.lastDownloaded
+  warnings:
+    type: integer
+    path: $.warnings
+  errors:
+    type: integer
+    path: $.errors
+extract:
+  record_path: $.sitemap
+  table:
+    primary_key:
+      - path
+  for_each:
+    resource: sites
+    field: siteUrl
+    input: site_url

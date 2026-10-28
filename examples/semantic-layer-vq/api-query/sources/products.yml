@@ -1,0 +1,16 @@
+spec_version: '0.2'
+type: source
+name: api_products
+source_type: api_resource
+integration: shop_api
+resource: products
+connection: shop_api
+mode: live
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: category_id
+      type: INTEGER
+    - name: name
+      type: STRING

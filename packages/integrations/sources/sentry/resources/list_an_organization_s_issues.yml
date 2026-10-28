@@ -1,0 +1,317 @@
+type: resource
+name: list_an_organization_s_issues
+description: Return a list of issues for an organization.
+api:
+  endpoint: /api/0/organizations/${{ input.organization_id_or_slug }}/issues/
+  method: GET
+  query_params:
+    environment: ${{ input.environment }}
+    project: ${{ input.project }}
+    statsPeriod: ${{ input.stats_period }}
+    start: ${{ input.start }}
+    end: ${{ input.end }}
+    groupStatsPeriod: ${{ input.group_stats_period }}
+    shortIdLookup: ${{ input.short_id_lookup }}
+    query: ${{ input.query }}
+    viewId: ${{ input.view_id }}
+    sort: ${{ input.sort }}
+    limit: ${{ input.limit }}
+    expand: ${{ input.expand }}
+    collapse: ${{ input.collapse }}
+    cursor: ${{ input.cursor }}
+input:
+  organization_id_or_slug:
+    type: string
+    required: true
+    description: The ID or slug of the organization the resource belongs to.
+  environment:
+    type: array
+    description: The name of environments to filter by.
+  project:
+    type: array
+    description: |
+      The IDs of projects to filter by. `-1` means all available projects.
+      For example, the following are valid parameters:
+      - `/?project=1234&project=56789`
+      - `/?project=-1`
+  stats_period:
+    type: string
+    description: >-
+      The period of time for the query, will override the start & end parameters, a number followed
+      by one of:
+
+      - `d` for days
+
+      - `h` for hours
+
+      - `m` for minutes
+
+      - `s` for seconds
+
+      - `w` for weeks
+
+
+      For example, `24h`, to mean query data starting from 24 hours ago to now.
+  start:
+    type: timestamp
+    description: The start of the period of time for the query, expected in ISO-8601 format. For
+      example, `2001-12-14T12:34:56.7890`.
+  end:
+    type: timestamp
+    description:
+      The end of the period of time for the query, expected in ISO-8601 format. For example,
+      `2001-12-14T12:34:56.7890`.
+  group_stats_period:
+    type: string
+    description: The timeline on which stats for the groups should be presented.
+    enum:
+      - ''
+      - 14d
+      - 24h
+      - auto
+  short_id_lookup:
+    type: string
+    description: If this is set to `1` then the query will be parsed for issue short IDs. These may
+      ignore other filters (e.g. projects), which is why it is an opt-in.
+    enum:
+      - '0'
+      - '1'
+  query:
+    type: string
+    description: An optional search query for filtering issues. A default query will apply if no
+      view/query is set. For all results use this parameter with an empty string.
+    default: is:unresolved
+  view_id:
+    type: string
+    description:
+      The ID of the view to use. If no query is present, the view's query and filters will be
+      applied.
+  sort:
+    type: string
+    description:
+      The sort order of the view. Options include 'Last Seen' (`date`), 'First Seen' (`new`),
+      'Trends' (`trends`), 'Events' (`freq`), 'Users' (`user`), and 'Date Added' (`inbox`).
+    enum:
+      - date
+      - freq
+      - inbox
+      - new
+      - trends
+      - user
+    default: date
+  limit:
+    type: integer
+    description: The maximum number of issues to affect. The maximum is 100.
+    default: 100
+  expand:
+    type: array
+    description: Additional data to include in the response.
+  collapse:
+    type: array
+    description: Fields to remove from the response to improve query performance.
+  cursor:
+    type: string
+    description:
+      A pointer to the last object fetched and its sort order; used to retrieve the next or
+      previous results.
+    minLength: 1
+query:
+  search:
+    dialect: sentry_issue_query
+    bind:
+      input: query
+output:
+  id:
+    type: string
+    path: $.id
+  share_id:
+    type: string
+    path: $.shareId
+  short_id:
+    type: string
+    path: $.shortId
+  title:
+    type: string
+    path: $.title
+  culprit:
+    type: string
+    path: $.culprit
+  permalink:
+    type: string
+    path: $.permalink
+  logger:
+    type: string
+    path: $.logger
+  level:
+    type: string
+    path: $.level
+  status:
+    type: string
+    path: $.status
+  status_details:
+    type: object
+    path: $.statusDetails
+  substatus:
+    type: string
+    path: $.substatus
+  is_public:
+    type: boolean
+    path: $.isPublic
+  platform:
+    type: string
+    path: $.platform
+  priority:
+    type: string
+    path: $.priority
+  priority_locked_at:
+    type: timestamp
+    path: $.priorityLockedAt
+  seer_fixability_score:
+    type: number
+    path: $.seerFixabilityScore
+  seer_autofix_last_triggered:
+    type: timestamp
+    path: $.seerAutofixLastTriggered
+  seer_explorer_autofix_last_triggered:
+    type: timestamp
+    path: $.seerExplorerAutofixLastTriggered
+  project_id:
+    type: string
+    path: $.project.id
+  project_name:
+    type: string
+    path: $.project.name
+  project_slug:
+    type: string
+    path: $.project.slug
+  project_platform:
+    type: string
+    path: $.project.platform
+  type:
+    type: string
+    path: $.type
+  issue_type:
+    type: string
+    path: $.issueType
+  issue_category:
+    type: string
+    path: $.issueCategory
+  metadata:
+    type: object
+    path: $.metadata
+  num_comments:
+    type: integer
+    path: $.numComments
+  assigned_to_type:
+    type: string
+    path: $.assignedTo.type
+  assigned_to_id:
+    type: string
+    path: $.assignedTo.id
+  assigned_to_name:
+    type: string
+    path: $.assignedTo.name
+  assigned_to_email:
+    type: string
+    path: $.assignedTo.email
+  is_bookmarked:
+    type: boolean
+    path: $.isBookmarked
+  is_subscribed:
+    type: boolean
+    path: $.isSubscribed
+  subscription_details_disabled:
+    type: boolean
+    path: $.subscriptionDetails.disabled
+  subscription_details_reason:
+    type: string
+    path: $.subscriptionDetails.reason
+  has_seen:
+    type: boolean
+    path: $.hasSeen
+  annotations:
+    type: array
+    path: $.annotations
+  is_unhandled:
+    type: boolean
+    path: $.isUnhandled
+  count:
+    type: string
+    path: $.count
+  user_count:
+    type: integer
+    path: $.userCount
+  first_seen:
+    type: timestamp
+    path: $.firstSeen
+  last_seen:
+    type: timestamp
+    path: $.lastSeen
+  stats:
+    type: object
+    path: $.stats
+  lifetime:
+    type: object
+    path: $.lifetime
+  filtered_count:
+    type: string
+    path: $.filtered.count
+  filtered_user_count:
+    type: integer
+    path: $.filtered.userCount
+  filtered_first_seen:
+    type: timestamp
+    path: $.filtered.firstSeen
+  filtered_last_seen:
+    type: timestamp
+    path: $.filtered.lastSeen
+  filtered_stats:
+    type: object
+    path: $.filtered.stats
+  session_count:
+    type: integer
+    path: $.sessionCount
+  inbox_reason:
+    type: integer
+    path: $.inbox.reason
+  inbox_reason_details:
+    type: object
+    path: $.inbox.reason_details
+  inbox_date_added:
+    type: timestamp
+    path: $.inbox.date_added
+  owners_type:
+    type: string
+    path: $.owners.type
+  owners_owner:
+    type: string
+    path: $.owners.owner
+  owners_date_added:
+    type: timestamp
+    path: $.owners.date_added
+  plugin_actions:
+    type: array
+    path: $.pluginActions
+  plugin_issues:
+    type: array
+    path: $.pluginIssues
+  integration_issues:
+    type: array
+    path: $.integrationIssues
+  sentry_app_issues:
+    type: array
+    path: $.sentryAppIssues
+  latest_event_has_attachments:
+    type: boolean
+    path: $.latestEventHasAttachments
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  for_each:
+    resource: list_your_organizations
+    field: slug
+    input: organization_id_or_slug
+  table:
+    primary_key:
+      - id

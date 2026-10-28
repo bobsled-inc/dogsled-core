@@ -1,0 +1,88 @@
+type: resource
+name: list_an_organization_s_teams
+description: Returns a list of teams bound to a organization.
+api:
+  endpoint: /api/0/organizations/${{ input.organization_id_or_slug }}/teams/
+  method: GET
+  query_params:
+    detailed: ${{ input.detailed }}
+    cursor: ${{ input.cursor }}
+input:
+  organization_id_or_slug:
+    type: string
+    required: true
+    description: The ID or slug of the organization the resource belongs to.
+  detailed:
+    type: string
+    description: |
+
+      Specify `"0"` to return team details that do not include projects.
+  cursor:
+    type: string
+    description:
+      A pointer to the last object fetched and its sort order; used to retrieve the next or
+      previous results.
+    minLength: 1
+output:
+  id:
+    type: string
+    path: $.id
+  slug:
+    type: string
+    path: $.slug
+  name:
+    type: string
+    path: $.name
+  date_created:
+    type: timestamp
+    path: $.dateCreated
+  is_member:
+    type: boolean
+    path: $.isMember
+  team_role:
+    type: string
+    path: $.teamRole
+  flags:
+    type: object
+    path: $.flags
+  access:
+    type: array
+    path: $.access
+  has_access:
+    type: boolean
+    path: $.hasAccess
+  is_pending:
+    type: boolean
+    path: $.isPending
+  member_count:
+    type: integer
+    path: $.memberCount
+  avatar_avatar_type:
+    type: string
+    path: $.avatar.avatarType
+  avatar_avatar_uuid:
+    type: string
+    path: $.avatar.avatarUuid
+  avatar_avatar_url:
+    type: string
+    path: $.avatar.avatarUrl
+  external_teams:
+    type: array
+    path: $.externalTeams
+  organization:
+    type: object
+    path: $.organization
+  projects:
+    type: array
+    path: $.projects
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  for_each:
+    resource: list_your_organizations
+    field: slug
+    input: organization_id_or_slug
+  table:
+    primary_key:
+      - id

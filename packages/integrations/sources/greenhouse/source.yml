@@ -1,0 +1,29 @@
+spec_version: '2'
+type: source
+name: greenhouse
+description: Extract candidates, applications, jobs, and recruiting metadata from Greenhouse Harvest.
+transports:
+  - id: default
+    base_url: https://harvest.greenhouse.io/v1
+    auth:
+      type: basic
+      username: ${{ env.GREENHOUSE_API_KEY }}
+      password: ''
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+        - 504
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

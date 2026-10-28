@@ -1,0 +1,10 @@
+{
+  "_v": 1,
+  "type": "BATCH",
+  "stream": "items",
+  "encoding": {
+    "format": "jsonl",
+    "compression": "gzip"
+  },
+  "manifest": ["file:///tmp/items-0.jsonl", "file:///tmp/items-1.jsonl"]
+}

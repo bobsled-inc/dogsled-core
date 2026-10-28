@@ -1,0 +1,42 @@
+type: resource
+name: ad_groups
+description: Ad groups for a Pinterest ad account.
+api:
+  endpoint: /ad_accounts/${{ input.ad_account_id }}/ad_groups
+  method: GET
+input:
+  ad_account_id:
+    type: string
+    default: '123'
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  campaign_id:
+    type: string
+    path: $.campaign_id
+  status:
+    type: string
+    path: $.status
+  budget_in_micro_currency:
+    type: integer
+    path: $.budget_in_micro_currency
+  bid_in_micro_currency:
+    type: integer
+    path: $.bid_in_micro_currency
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.bookmark
+    cursor_param: bookmark
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

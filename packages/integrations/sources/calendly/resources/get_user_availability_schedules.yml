@@ -1,0 +1,70 @@
+type: resource
+name: get_user_availability_schedules
+description: List User Availability Schedules
+api:
+  endpoint: /user_availability_schedules
+  method: GET
+  query_params:
+    user: ${{ input.user }}
+input:
+  user:
+    type: string
+    description: A URI reference to a user
+query:
+  filters:
+    user:
+      operators:
+        - eq
+      description: A URI reference to a user
+      bind:
+        eq:
+          input: user
+      compile:
+        eq:
+          mode: http_query
+          param: user
+output:
+  uri:
+    type: string
+    path: $.uri
+    description: A URI reference to this Availability Schedule.
+  default:
+    type: boolean
+    path: $.default
+    description: This is the default Availability Schedule in use.
+  name:
+    type: string
+    path: $.name
+    description: The name of this Availability Schedule.
+  user:
+    type: string
+    path: $.user
+    description: A URI reference to a User.
+  timezone:
+    type: string
+    path: $.timezone
+    description: The timezone for which this Availability Schedule is originated in.
+  rules:
+    type: array
+    path: $.rules
+    description: The rules of this Availability Schedule.
+extract:
+  record_path: $.collection
+  table:
+    primary_key:
+      - uri
+    trust_tier: silver
+lookup:
+  description: Get User Availability Schedule
+  api:
+    endpoint: /user_availability_schedules/${{ input.uuid }}
+    method: GET
+  input:
+    uuid:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: get_user_availability_schedules_smoke
+      input:
+        user: https://api.calendly.com/users/abc123

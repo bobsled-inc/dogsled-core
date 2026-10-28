@@ -1,0 +1,15 @@
+display_name: PostHog
+category: analytics
+tags:
+  - product-analytics
+  - events
+  - feature-flags
+docs_url: https://posthog.com/docs/api
+openapi_url: https://app.posthog.com/api/schema/
+auth_setup:
+  - env: POSTHOG_HOST
+    description: PostHog hostname without scheme, for example app.posthog.com.
+    docs_url: https://posthog.com/docs/api
+  - env: POSTHOG_API_TOKEN
+    description: PostHog personal API key for authenticated requests.
+    docs_url: https://posthog.com/docs/api

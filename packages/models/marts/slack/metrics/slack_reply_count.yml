@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: slack_reply_count
+description: Total replies recorded on Slack messages.
+model: slack__messages
+expression: SUM({slack__messages}.reply_count)
+synonyms: [replies, thread replies, reply volume]
+tags: [slack, collaboration, threads]

@@ -1,0 +1,31 @@
+spec_version: '2'
+type: source
+name: helpscout
+description: Help Scout Mailbox API for mailboxes, conversations, customers, and users.
+transports:
+  - id: default
+    base_url: https://api.helpscout.net/v2
+    auth:
+      type: oauth2
+      grant_type: authorization_code
+      token_url: https://api.helpscout.net/v2/oauth2/token
+      client_id: ${{ env.HELPSCOUT_CLIENT_ID }}
+      client_secret: ${{ env.HELPSCOUT_CLIENT_SECRET }}
+      refresh_token: ${{ env.HELPSCOUT_REFRESH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

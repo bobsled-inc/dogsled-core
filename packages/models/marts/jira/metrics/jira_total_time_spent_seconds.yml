@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: jira_total_time_spent_seconds
+description: Total time logged on Jira issues, in seconds.
+model: jira__issues
+expression: SUM({jira__issues}.time_spent_seconds)
+synonyms: [time spent, logged time, worklog seconds]
+tags: [jira, engineering, delivery]

@@ -1,0 +1,19 @@
+spec_version: '0.2'
+type: model
+name: order_summary
+description: Fictional order_summary.
+grain:
+  - status
+source:
+  ref: typed_orders
+columns:
+  - name: status
+    expr: status
+    type: string
+  - name: total
+    expr: SUM(amount)
+    type: number
+materialization:
+  type: table
+group_by:
+  - status

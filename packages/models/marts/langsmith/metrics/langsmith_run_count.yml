@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: langsmith_run_count
+description: Number of LangSmith runs.
+model: langsmith__runs
+expression: COUNT({langsmith__runs}.run_id)
+synonyms: [runs, LLM runs, execution count]
+tags: [langsmith, ai, observability]

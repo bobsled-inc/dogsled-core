@@ -1,0 +1,31 @@
+spec_version: '0.2'
+name: stg_notion_users
+type: model
+description: Staged Notion workspace users
+grain: user_id
+source:
+  ref: warehouse.notion_users
+columns:
+  - name: user_id
+    expr: t0.id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique user UUID
+  - name: user_name
+    expr: t0.name
+    semantic_role: categorical
+    description: Display name
+  - name: user_type
+    expr: t0.user_type
+    semantic_role: categorical
+    description: User type — "person" or "bot"
+  - name: email
+    expr: t0.email
+    semantic_role: categorical
+    description: Email address (person type only)
+  - name: avatar_url
+    expr: t0.avatar_url
+    semantic_role: categorical
+    description: URL of the user avatar image
+materialization:
+  type: view

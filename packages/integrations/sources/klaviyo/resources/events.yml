@@ -1,0 +1,51 @@
+type: resource
+name: events
+description: Events tracked in Klaviyo.
+api:
+  endpoint: /events
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[cursor]: ${{ input.page_cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 100
+  page_cursor:
+    type: string
+    description: Cursor returned by the previous page.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Klaviyo object identifier.
+  type:
+    type: string
+    path: $.type
+    description: JSON:API resource type.
+  metric_id:
+    type: string
+    path: $.relationships.metric.data.id
+    description: Associated metric identifier.
+  profile_id:
+    type: string
+    path: $.relationships.profile.data.id
+    description: Associated profile identifier.
+  time:
+    type: timestamp
+    path: $.attributes.datetime
+    description: Event timestamp.
+  value:
+    type: number
+    path: $.attributes.value
+    description: Numeric event value when present.
+extract:
+  record_path: $.data
+  pagination:
+    type: next_url
+    next_url_path: $.links.next
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

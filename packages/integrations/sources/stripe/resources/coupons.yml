@@ -1,0 +1,117 @@
+type: resource
+name: coupons
+description: Stripe coupons representing discount codes that can be applied to subscriptions and invoices
+api:
+  endpoint: /v1/coupons
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of coupons to return per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description:
+      Unique coupon identifier. Unlike most Stripe objects, coupon IDs can be custom strings
+      (e.g. SUMMER2024) or auto-generated alphanumeric codes
+  name:
+    type: string
+    path: $.name
+    description:
+      Human-readable name of the coupon displayed to customers on invoices and receipts (e.g.
+      Summer Sale 20% Off)
+  amount_off:
+    type: integer
+    path: $.amount_off
+    description:
+      Fixed discount amount in the smallest currency unit (e.g. cents for USD). A value of
+      1000 represents $10.00 off. Null if the coupon uses percent_off instead
+  percent_off:
+    type: number
+    path: $.percent_off
+    description:
+      Percentage discount applied to the subtotal (e.g. 25.5 represents 25.5% off). Null if
+      the coupon uses amount_off instead
+  currency:
+    type: string
+    path: $.currency
+    description:
+      Three-letter ISO 4217 currency code in lowercase for the amount_off discount. Only set
+      when amount_off is used. Null for percentage coupons
+  duration:
+    type: string
+    path: $.duration
+    description: 'How long the coupon discount applies. Possible values: once (applied to a single
+      invoice), repeating (applied for a specified number of months), forever (applied indefinitely
+      to all future invoices)'
+  duration_in_months:
+    type: integer
+    path: $.duration_in_months
+    description:
+      Number of months the coupon discount applies when duration is repeating. Null for once
+      or forever coupons
+  max_redemptions:
+    type: integer
+    path: $.max_redemptions
+    description:
+      Maximum number of times this coupon can be redeemed across all customers. Null if there
+      is no redemption limit
+  times_redeemed:
+    type: integer
+    path: $.times_redeemed
+    description: Number of times this coupon has been applied to a customer or subscription. Counts
+      toward max_redemptions if set
+  valid:
+    type: boolean
+    path: $.valid
+    description: Whether the coupon can currently be applied. False if the coupon has expired (past
+      redeem_by), reached max_redemptions, or been deleted
+  redeem_by:
+    type: integer
+    path: $.redeem_by
+    description:
+      Unix timestamp after which the coupon can no longer be redeemed. Null if the coupon has
+      no expiration date
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the coupon was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

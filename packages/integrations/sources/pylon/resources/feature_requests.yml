@@ -1,0 +1,47 @@
+type: resource
+name: feature_requests
+description: Customer feature requests with status, evidence count, and account associations
+api:
+  endpoint: /feature-requests/search
+  method: POST
+  request_body:
+    limit: 1000
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique feature request identifier
+  title:
+    type: string
+    path: $.title
+    description: Feature request title
+  description:
+    type: string
+    path: $.description
+    description: Feature request description
+  request_status:
+    type: string
+    path: $.request_status
+    description: Status (new, in_progress, closed, archived, or custom slug)
+  account_ids:
+    type: array
+    path: $.account_ids
+    description: Account IDs associated with the request
+  evidence_count:
+    type: integer
+    path: $.evidence_count
+    description: Number of evidence items supporting the request
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the feature request was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the feature request was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

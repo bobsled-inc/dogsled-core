@@ -1,0 +1,62 @@
+type: resource
+name: products
+description: Products in Shopify.
+api:
+  endpoint: /products.json
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+    updated_at_min: ${{ input.updated_at_min }}
+input:
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+  updated_at_min:
+    type: timestamp
+    description: Only return records updated on or after this timestamp.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Shopify object identifier.
+  title:
+    type: string
+    path: $.title
+    description: Product title.
+  vendor:
+    type: string
+    path: $.vendor
+    description: Product vendor.
+  product_type:
+    type: string
+    path: $.product_type
+    description: Product type.
+  status:
+    type: string
+    path: $.status
+    description: Product status.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation timestamp.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Last update timestamp.
+extract:
+  record_path: $.products
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: updated_at_min

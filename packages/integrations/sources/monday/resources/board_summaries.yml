@@ -1,0 +1,34 @@
+type: resource
+name: board_summaries
+description: Board summaries with groups and lightweight item details.
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: 'query($boardIds: [ID!]) { boards(ids: $boardIds) { id name groups { id title } items_page(limit: 25) { items { id name state updated_at } } } }'
+    variables:
+      boardIds: ${{ input.board_ids }}
+input:
+  board_ids:
+    type: array
+    default:
+      - '1'
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  groups:
+    type: array
+    path: $.groups
+  items_page:
+    type: object
+    path: $.items_page
+extract:
+  record_path: $.data.boards
+  table:
+    primary_key:
+      - id
+via: graphql

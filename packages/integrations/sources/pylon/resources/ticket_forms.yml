@@ -1,0 +1,29 @@
+type: resource
+name: ticket_forms
+description: Ticket form configurations for customer issue submission
+api:
+  endpoint: /ticket-forms
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique ticket form identifier
+  name:
+    type: string
+    path: $.name
+    description: Ticket form display name
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the ticket form was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the ticket form was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

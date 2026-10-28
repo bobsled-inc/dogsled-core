@@ -1,0 +1,38 @@
+type: resource
+name: ad_accounts
+description: Ad accounts for a Snapchat organization.
+api:
+  endpoint: /organizations/${{ input.organization_id }}/adaccounts
+  method: GET
+input:
+  organization_id:
+    type: string
+    default: '123'
+output:
+  id:
+    type: string
+    path: $.adaccount.id
+  name:
+    type: string
+    path: $.adaccount.name
+  status:
+    type: string
+    path: $.adaccount.status
+  currency:
+    type: string
+    path: $.adaccount.currency
+  timezone:
+    type: string
+    path: $.adaccount.timezone
+extract:
+  record_path: $.adaccounts
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next_link
+  for_each:
+    resource: organizations
+    field: id
+    input: organization_id

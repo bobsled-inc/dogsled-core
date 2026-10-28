@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: linear_issue_count
+description: Number of Linear issues.
+model: linear__issues
+expression: COUNT({linear__issues}.issue_id)
+synonyms:
+  - issues
+  - issue count
+  - number of issues
+tags:
+  - linear
+  - engineering
+  - planning

@@ -1,0 +1,16 @@
+spec_version: '0.2'
+name: raw_order_items
+type: source
+source_type: warehouse_table
+connection: ecom
+table: RAW.RAW_ORDER_ITEMS
+schema:
+  columns:
+    - name: ID
+      type: NUMBER
+    - name: ORDER_ID
+      type: NUMBER
+    - name: PRODUCT_ID
+      type: NUMBER
+    - name: QUANTITY
+      type: NUMBER

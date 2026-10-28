@@ -1,0 +1,30 @@
+type: resource
+name: templates
+description: List Mailchimp templates
+api:
+  endpoint: /3.0/templates
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Template identifier
+  name:
+    type: string
+    path: $.name
+    description: Template name
+  type:
+    type: string
+    path: $.type
+    description: Template type
+  created_by:
+    type: string
+    path: $.created_by
+    description: Creator username
+extract:
+  record_path: $.templates
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

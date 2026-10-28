@@ -1,0 +1,44 @@
+type: resource
+name: boards
+description: Boards in Monday.com.
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: 'query($page: Int!, $limit: Int!) { boards(page: $page, limit: $limit) { id name state board_kind items_count } }'
+    variables:
+      page: ${{ input.page }}
+      limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    default: 1
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  state:
+    type: string
+    path: $.state
+  board_kind:
+    type: string
+    path: $.board_kind
+  items_count:
+    type: integer
+    path: $.items_count
+extract:
+  record_path: $.data.boards
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: variables.page
+    per_page_param: variables.limit
+via: graphql

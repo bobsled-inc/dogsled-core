@@ -1,0 +1,160 @@
+type: resource
+name: integrations
+description: Connected cloud provider integrations and their status
+api:
+  endpoint: /integrations
+  method: GET
+  query_params:
+    provider: ${{ input.provider }}
+    account_identifier: ${{ input.account_identifier }}
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  provider:
+    type: string
+    description: Query by provider name to list all Integrations for a specific provider.
+    enum:
+      - aws
+      - azure
+      - gcp
+      - snowflake
+      - databricks
+      - mongo
+      - datadog
+      - fastly
+      - new_relic
+      - opencost
+      - open_ai
+      - oracle
+      - confluent
+      - planetscale
+      - coralogix
+      - kubernetes
+      - custom_provider
+      - github
+      - linode
+      - grafana
+      - clickhouse
+      - temporal
+      - twilio
+      - azure_csp
+      - anthropic
+      - anyscale
+      - cursor
+      - elastic
+      - vercel
+      - redis_cloud
+      - circle_ci
+  account_identifier:
+    type: string
+    description: Query by account identifier to list all Integrations that match a specific account.
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The number of results to return. The maximum is 1000.
+query:
+  filters:
+    account_identifier:
+      operators:
+        - eq
+      description: Query by account identifier to list all Integrations that match a specific account.
+      bind:
+        eq:
+          input: account_identifier
+      compile:
+        eq:
+          mode: http_query
+          param: account_identifier
+    provider:
+      operators:
+        - eq
+      enum:
+        - aws
+        - azure
+        - gcp
+        - snowflake
+        - databricks
+        - mongo
+        - datadog
+        - fastly
+        - new_relic
+        - opencost
+        - open_ai
+        - oracle
+        - confluent
+        - planetscale
+        - coralogix
+        - kubernetes
+        - custom_provider
+        - github
+        - linode
+        - grafana
+        - clickhouse
+        - temporal
+        - twilio
+        - azure_csp
+        - anthropic
+        - anyscale
+        - cursor
+        - elastic
+        - vercel
+        - redis_cloud
+        - circle_ci
+      description: Query by provider name to list all Integrations for a specific provider.
+      bind:
+        eq:
+          input: provider
+      compile:
+        eq:
+          mode: http_query
+          param: provider
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the integration.
+  provider:
+    type: string
+    path: $.provider
+    description: The name of the Integration.
+  account_identifier:
+    type: string
+    path: $.account_identifier
+    description: The account identifier.
+  status:
+    type: string
+    path: $.status
+    description: The status of the Integration.
+  last_updated:
+    type: timestamp
+    path: $.last_updated
+    description: The date and time, in UTC, when the Integration was last updated.
+  workspace_tokens:
+    type: array
+    path: $.workspace_tokens
+    description: The tokens for any Workspaces that the account belongs to.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the Integration was created.
+extract:
+  record_path: $.integrations
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get integration by token
+  api:
+    endpoint: /integrations/${{ input.integration_token }}
+    method: GET
+  input:
+    integration_token:
+      type: string
+      required: true

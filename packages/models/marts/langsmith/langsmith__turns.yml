@@ -1,0 +1,137 @@
+spec_version: '0.2'
+name: langsmith__turns
+type: model
+description: Conversation turn detail for LangSmith threaded root runs, including raw payloads and convenience message fields.
+grain: turn_id
+source:
+  ref: stg_langsmith__runs
+joins:
+  - ref: stg_langsmith__sessions
+    type: left
+    on: stg_langsmith__runs.session_id = stg_langsmith__sessions.session_id
+where: stg_langsmith__runs.thread_id IS NOT NULL AND stg_langsmith__runs.parent_run_id IS NULL
+columns:
+  - name: turn_id
+    expr: stg_langsmith__runs.run_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Root run identifier for this conversation turn.
+  - name: thread_id
+    expr: stg_langsmith__runs.thread_id
+    semantic_role: entity_id
+    references: langsmith__threads.thread_id
+    description: Thread identifier associated with the turn.
+  - name: trace_id
+    expr: stg_langsmith__runs.trace_id
+    semantic_role: entity_id
+    description: Trace identifier for the turn.
+  - name: session_id
+    expr: stg_langsmith__runs.session_id
+    semantic_role: entity_id
+    references: stg_langsmith__sessions.session_id
+    description: Session or project that owns the turn.
+  - name: session_name
+    expr: stg_langsmith__sessions.name
+    semantic_role: name
+    description: Session or project display name.
+  - name: run_name
+    expr: stg_langsmith__runs.name
+    semantic_role: name
+    description: Root run name for the turn.
+  - name: run_type
+    expr: stg_langsmith__runs.run_type
+    semantic_role: categorical
+    description: Root run type for the turn.
+  - name: status
+    expr: stg_langsmith__runs.status
+    semantic_role: categorical
+    description: Turn execution status.
+  - name: start_time
+    expr: stg_langsmith__runs.start_time
+    semantic_role: event_timestamp
+    description: Timestamp when the turn started.
+  - name: end_time
+    expr: stg_langsmith__runs.end_time
+    semantic_role: event_timestamp
+    description: Timestamp when the turn ended.
+  - name: input_message
+    expr: stg_langsmith__runs.input_message
+    semantic_role: categorical
+    description: Last input message content when the run input has a messages array.
+  - name: output_message
+    expr: stg_langsmith__runs.output_message
+    semantic_role: categorical
+    description: Assistant output content when the run output has a content field.
+  - name: inputs
+    expr: stg_langsmith__runs.inputs
+    semantic_role: categorical
+    description: Raw input payload captured for the turn.
+  - name: inputs_preview
+    expr: stg_langsmith__runs.inputs_preview
+    semantic_role: categorical
+    description: Preview text for turn inputs.
+  - name: outputs
+    expr: stg_langsmith__runs.outputs
+    semantic_role: categorical
+    description: Raw output payload captured for the turn.
+  - name: outputs_preview
+    expr: stg_langsmith__runs.outputs_preview
+    semantic_role: categorical
+    description: Preview text for turn outputs.
+  - name: messages
+    expr: stg_langsmith__runs.messages
+    semantic_role: categorical
+    description: Message payloads associated with the turn.
+  - name: error
+    expr: stg_langsmith__runs.error
+    semantic_role: categorical
+    description: Error message captured for the turn.
+  - name: total_tokens
+    expr: stg_langsmith__runs.total_tokens
+    semantic_role: measure
+    description: Total tokens attributed to the turn.
+  - name: prompt_tokens
+    expr: stg_langsmith__runs.prompt_tokens
+    semantic_role: measure
+    description: Prompt tokens attributed to the turn.
+  - name: completion_tokens
+    expr: stg_langsmith__runs.completion_tokens
+    semantic_role: measure
+    description: Completion tokens attributed to the turn.
+  - name: total_cost
+    expr: stg_langsmith__runs.total_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total cost attributed to the turn.
+  - name: prompt_cost
+    expr: stg_langsmith__runs.prompt_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Prompt cost attributed to the turn.
+  - name: completion_cost
+    expr: stg_langsmith__runs.completion_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Completion cost attributed to the turn.
+  - name: feedback_stats
+    expr: stg_langsmith__runs.feedback_stats
+    semantic_role: categorical
+    description: Aggregated feedback statistics attached to the turn.
+  - name: tags
+    expr: stg_langsmith__runs.tags
+    semantic_role: categorical
+    description: Tags attached to the turn.
+  - name: app_path
+    expr: stg_langsmith__runs.app_path
+    semantic_role: url
+    description: LangSmith application path for opening the turn in the UI.
+tags:
+  - langsmith
+  - turns
+  - conversations
+trust_tier: gold
+materialization:
+  type: table

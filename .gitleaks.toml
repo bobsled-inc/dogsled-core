@@ -1,0 +1,13 @@
+title = "Dogsled gitleaks configuration"
+
+[extend]
+useDefault = true
+
+
+[[allowlists]]
+description = "Self-signed localhost TLS fixtures used only by integration tests"
+targetRules = ["private-key"]
+condition = "AND"
+paths = ['(?:^|/)packages/(?:extractor/tests/integration/helpers/fake-server\.ts|dogsled/tests/integration/fixtures/fake-server-key\.pem)$']
+regexTarget = "match"
+regexes = ['-----BEGIN (?:RSA )?PRIVATE KEY-----']

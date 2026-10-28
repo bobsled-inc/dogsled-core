@@ -1,0 +1,45 @@
+type: resource
+name: lead_forms
+description: lead forms from LinkedIn Marketing APIs.
+api:
+  endpoint: /leadForms
+  method: GET
+  query_params:
+    q: search
+    start: ${{ input.start }}
+    count: ${{ input.count }}
+input:
+  start:
+    type: integer
+    default: 0
+  count:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  account:
+    type: string
+    path: $.account
+  created_at:
+    type: timestamp
+    path: $.createdAt
+  last_modified_at:
+    type: timestamp
+    path: $.lastModifiedAt
+extract:
+  record_path: $.elements
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: offset
+    offset_param: start
+    limit_param: count

@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: linear__issue_state_summary
+type: model
+description: Issue volume, average estimate, and priority grouped by workflow state type.
+grain: state_type
+source:
+  ref: stg_linear__issues
+columns:
+  - name: state_type
+    expr: stg_linear__issues.state_type
+    primary_key: true
+    semantic_role: categorical
+    description: Workflow state type (backlog, unstarted, started, completed, cancelled).
+  - name: issue_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of issues in this state type.
+  - name: avg_estimate
+    expr: AVG(stg_linear__issues.estimate)
+    semantic_role: measure
+    description: Average estimate in points for issues in this state type.
+  - name: avg_priority
+    expr: AVG(stg_linear__issues.priority)
+    semantic_role: measure
+    description: Average priority rank for issues in this state type.
+group_by:
+  - state_type
+tags:
+  - linear
+  - issues
+  - summary
+trust_tier: gold
+materialization:
+  type: table

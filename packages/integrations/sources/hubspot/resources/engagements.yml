@@ -1,0 +1,61 @@
+type: resource
+name: engagements
+description: HubSpot CRM engagements representing activity records including calls, emails, meetings, notes, and tasks associated with CRM records
+api:
+  endpoint: /crm/v3/objects/engagements
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of engagement records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot engagement properties to include in the response
+    default: hs_engagement_type,hs_timestamp,hubspot_owner_id,hs_body_preview,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the engagement record, returned as a numeric string
+  engagement_type:
+    type: string
+    path: $.properties.hs_engagement_type
+    description: Type of engagement activity, one of CALL, EMAIL, MEETING, NOTE, or TASK
+  timestamp:
+    type: timestamp
+    path: $.properties.hs_timestamp
+    description: ISO 8601 timestamp of when the engagement activity occurred or is scheduled to occur
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID of the user who created or is assigned to this engagement, references the owners endpoint
+  body_preview:
+    type: string
+    path: $.properties.hs_body_preview
+    description: Truncated plain-text preview of the engagement body content, useful for displaying summaries without loading full content
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the engagement record was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the engagement record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

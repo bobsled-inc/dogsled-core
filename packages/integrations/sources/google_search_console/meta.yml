@@ -1,0 +1,15 @@
+display_name: Google Search Console
+category: analytics
+tags:
+  - google
+  - seo
+  - search
+  - analytics
+docs_url: https://developers.google.com/webmaster-tools/v1/api_reference_index
+auth_setup:
+  - env: GOOGLE_CLIENT_ID
+    description: Google OAuth client ID
+  - env: GOOGLE_CLIENT_SECRET
+    description: Google OAuth client secret
+  - env: GOOGLE_REFRESH_TOKEN
+    description: Google OAuth refresh token with webmasters.readonly scope

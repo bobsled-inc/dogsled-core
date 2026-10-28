@@ -1,0 +1,27 @@
+spec_version: '0.2'
+type: model
+model_kind: agentic
+name: pair_assessments
+description: Assess prepared pairs without authorizing a merge.
+grain: [pair_id]
+sources:
+  pairs: { ref: undecided_pairs }
+llm: { profile: review }
+limits:
+  tokens: 100000
+  timeout_seconds: 600
+plan:
+  steps:
+    - id: assess
+      source: { ref: pairs }
+      map: { over: pairs, group_by: [pair_id] }
+      execution: { mode: llm_call }
+      instructions: Assess only the supplied evidence and return advice.
+      columns:
+        - { name: pair_id, type: string, nullable: false }
+        - { name: assessment, type: string, nullable: false }
+output: { from: assess }
+materialization:
+  type: table
+  strategy: replace_processed_keys
+  keys: [pair_id]

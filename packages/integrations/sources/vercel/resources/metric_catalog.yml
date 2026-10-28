@@ -1,0 +1,27 @@
+type: resource
+name: metric_catalog
+description: Metric identifiers and descriptions available to the authenticated Vercel account.
+api:
+  endpoint: /v2/observability/schema
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    semantic_role: entity_id
+    description: Metric identifier used by the query endpoint.
+  description:
+    type: string
+    path: $.description
+    description: Metric description returned by Vercel.
+extract:
+  record_path: $.metrics
+  paginated: false
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - id
+    load_strategy: full_refresh
+    trust_tier: silver

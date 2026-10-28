@@ -1,0 +1,56 @@
+type: resource
+name: analytics
+description: Daily analytics for a Pinterest ad account.
+api:
+  endpoint: /ad_accounts/${{ input.ad_account_id }}/analytics
+  method: GET
+  query_params:
+    start_date: ${{ input.start_date }}
+    end_date: ${{ input.end_date }}
+    granularity: ${{ input.granularity }}
+    columns: ${{ input.columns }}
+input:
+  ad_account_id:
+    type: string
+    default: '123'
+  start_date:
+    type: string
+    required: true
+  end_date:
+    type: string
+    required: true
+  granularity:
+    type: string
+    default: DAY
+  columns:
+    type: string
+    default: IMPRESSION_1,CLICKTHROUGH_1,SPEND_IN_MICRO_DOLLAR,TOTAL_ENGAGEMENT
+output:
+  ad_account_id:
+    type: string
+    path: $.__input__.ad_account_id
+  date:
+    type: string
+    path: $.DATE
+  impressions:
+    type: integer
+    path: $.IMPRESSION_1
+  clicks:
+    type: integer
+    path: $.CLICKTHROUGH_1
+  spend_in_micro_dollar:
+    type: integer
+    path: $.SPEND_IN_MICRO_DOLLAR
+  total_engagement:
+    type: integer
+    path: $.TOTAL_ENGAGEMENT
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - ad_account_id
+      - date
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

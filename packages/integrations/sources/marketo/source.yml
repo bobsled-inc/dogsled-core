@@ -1,0 +1,36 @@
+spec_version: '2'
+type: source
+name: marketo
+description: Marketo REST API for leads, programs, campaigns, and activities.
+transports:
+  - id: default
+    base_url: https://${{ env.MARKETO_MUNCHKIN_ID }}.mktorest.com
+    auth:
+      type: custom-token
+      token_url: https://${{ env.MARKETO_MUNCHKIN_ID }}.mktorest.com/identity/oauth/token
+      token_request:
+        method: POST
+        body:
+          grant_type: client_credentials
+          client_id: ${{ env.MARKETO_CLIENT_ID }}
+          client_secret: ${{ env.MARKETO_CLIENT_SECRET }}
+      token_response_path: access_token
+      token_prefix: 'Bearer '
+      token_ttl_seconds: 3500
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

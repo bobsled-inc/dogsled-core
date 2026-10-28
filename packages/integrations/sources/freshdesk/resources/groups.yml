@@ -1,0 +1,55 @@
+type: resource
+name: groups
+description: List all groups
+api:
+  endpoint: /groups
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk group identifier
+  name:
+    type: string
+    path: $.name
+    description: Group name
+  description:
+    type: string
+    path: $.description
+    description: Group description
+  escalate_to:
+    type: integer
+    path: $.escalate_to
+    description: Group used for escalation, if configured
+  auto_ticket_assign:
+    type: boolean
+    path: $.auto_ticket_assign
+    description: Whether ticket auto-assignment is enabled
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Group creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Group last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: View a group
+  api:
+    endpoint: /groups/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: integer
+      required: true

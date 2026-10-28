@@ -1,0 +1,10 @@
+display_name: PagerDuty
+category: cloud-infra
+logo_url: https://www.pagerduty.com/favicon.ico
+tags: [pagerduty, incidents, services, on-call]
+docs_url: https://developer.pagerduty.com/api-reference/
+openapi_url: https://raw.githubusercontent.com/PagerDuty/api-schema/main/reference/REST/openapiv3.json
+auth_setup:
+  - env: PAGERDUTY_API_KEY
+    description: PagerDuty REST API token used in the Authorization header
+    docs_url: https://support.pagerduty.com/main/docs/api-access-keys

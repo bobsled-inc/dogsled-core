@@ -1,0 +1,13 @@
+name: intercom
+display_name: Intercom
+description: Customer support and engagement analytics models for Intercom contacts, conversations, and admins.
+tags:
+  - intercom
+  - support
+  - engagement
+include_resources:
+  - list_admins
+  - list_contacts
+  - list_conversations
+  - list_tags
+  - list_teams

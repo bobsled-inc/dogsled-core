@@ -1,0 +1,27 @@
+spec_version: '2'
+type: source
+name: hunter
+description: Hunter Email Finder API
+transports:
+  - id: default
+    base_url: https://api.hunter.io
+    auth:
+      type: api-key
+      query_param: api_key
+      key: ${{ env.HUNTER_API_KEY }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 15
+      burst: 30
+    headers:
+      Accept: application/json
+default_transport: default

@@ -1,0 +1,41 @@
+spec_version: '0.2'
+type: model
+model_kind: agentic
+name: pair_assessments
+description: Deterministic fictional findings using a test AI model.
+grain:
+  - pair_id
+sources:
+  pairs:
+    ref: prepared_pairs
+llm:
+  profile: review
+limits:
+  tokens: 100000
+  timeout_seconds: 180
+plan:
+  steps:
+    - id: assess
+      source:
+        ref: pairs
+      map:
+        over: pairs
+        group_by:
+          - pair_id
+      execution:
+        mode: llm_call
+      instructions: Return one deterministic finding using only fictional prepared evidence.
+      columns:
+        - name: pair_id
+          type: string
+          nullable: false
+        - name: assessment
+          type: string
+          nullable: false
+output:
+  from: assess
+materialization:
+  type: table
+  strategy: replace_processed_keys
+  keys:
+    - pair_id

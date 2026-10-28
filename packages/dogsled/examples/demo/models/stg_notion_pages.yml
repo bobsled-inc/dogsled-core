@@ -1,0 +1,47 @@
+spec_version: '0.2'
+name: stg_notion_pages
+type: model
+description: Staged Notion pages with authorship and lifecycle metadata
+grain: page_id
+source:
+  ref: warehouse.notion_pages
+columns:
+  - name: page_id
+    expr: t0.id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique page UUID
+  - name: page_url
+    expr: t0.url
+    semantic_role: categorical
+    description: Notion URL for the page
+  - name: parent_type
+    expr: t0.parent_type
+    semantic_role: categorical
+    description: Parent type — database_id, page_id, or workspace
+  - name: created_by_id
+    expr: t0.created_by_id
+    semantic_role: entity_id
+    description: UUID of the user who created the page
+  - name: last_edited_by_id
+    expr: t0.last_edited_by_id
+    semantic_role: entity_id
+    description: UUID of the user who last edited the page
+  - name: is_archived
+    expr: t0.archived
+    semantic_role: categorical
+    description: True if the page has been archived
+  - name: is_trashed
+    expr: t0.in_trash
+    semantic_role: categorical
+    description: True if the page is in the trash
+  - name: created_at
+    expr: t0.created_time
+    semantic_role: event_timestamp
+    description: Timestamp when the page was created
+  - name: last_edited_at
+    expr: t0.last_edited_time
+    semantic_role: event_timestamp
+    description: Timestamp when the page was last edited
+materialization:
+  type: view

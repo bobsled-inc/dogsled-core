@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: intercom_open_conversation_count
+description: Number of Intercom conversations in the open state.
+model: intercom__conversations
+expression: SUM(CASE WHEN {intercom__conversations}.state = 'open' THEN 1 ELSE 0 END)
+synonyms: [open conversations, unresolved conversations, open support threads]
+tags: [intercom, support, conversations]

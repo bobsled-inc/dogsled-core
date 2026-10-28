@@ -1,0 +1,53 @@
+spec_version: '0.2'
+name: quickbooks__payments
+type: model
+description: QuickBooks payments enriched with customer context.
+grain: payment_id
+source:
+  ref: stg_quickbooks__payments
+joins:
+  - ref: stg_quickbooks__customers
+    type: left
+    on: stg_quickbooks__payments.customer_id = stg_quickbooks__customers.customer_id
+columns:
+  - name: payment_id
+    expr: stg_quickbooks__payments.payment_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique QuickBooks payment identifier.
+  - name: customer_id
+    expr: stg_quickbooks__payments.customer_id
+    semantic_role: entity_id
+    references: stg_quickbooks__customers.customer_id
+    description: Customer tied to the payment.
+  - name: customer_name
+    expr: stg_quickbooks__customers.name
+    semantic_role: categorical
+    description: Customer display name from the related customer record.
+  - name: amount
+    expr: stg_quickbooks__payments.amount
+    semantic_role: measure
+    tags:
+      - financial
+    description: Payment amount.
+  - name: unapplied_amount
+    expr: stg_quickbooks__payments.unapplied_amount
+    semantic_role: measure
+    tags:
+      - financial
+    description: Portion of the payment not applied to a transaction.
+  - name: method
+    expr: stg_quickbooks__payments.payment_method
+    semantic_role: categorical
+    description: Payment method used.
+  - name: created_at
+    expr: stg_quickbooks__payments.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the payment was created.
+tags:
+  - quickbooks
+  - payments
+  - finance
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,24 @@
+spec_version: '0.2'
+name: vantage__provider_footprint
+type: model
+description: Provider-account coverage summary grouped by connected provider type.
+grain: provider
+source:
+  ref: stg_vantage__cost_provider_accounts
+columns:
+  - name: provider
+    expr: stg_vantage__cost_provider_accounts.provider
+    semantic_role: categorical
+    description: Cloud or SaaS provider type.
+  - name: account_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of connected accounts for the provider.
+group_by:
+  - provider
+tags:
+  - vantage
+  - providers
+trust_tier: gold
+materialization:
+  type: table

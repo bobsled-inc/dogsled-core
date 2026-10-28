@@ -1,0 +1,13 @@
+display_name: Lever
+category: crm
+logo_url: https://hire.lever.co/favicon.ico
+tags:
+  - lever
+  - recruiting
+  - ats
+  - candidates
+docs_url: https://hire.lever.co/developer/documentation
+auth_setup:
+  - env: LEVER_API_KEY
+    description: Lever API key used as the basic auth username
+    docs_url: https://hire.lever.co/developer/documentation#authentication

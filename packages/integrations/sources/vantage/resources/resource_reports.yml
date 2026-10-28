@@ -1,0 +1,60 @@
+type: resource
+name: resource_reports
+description: Resource-level cost reports for granular visibility
+api:
+  endpoint: /resource_reports
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the resource report.
+  title:
+    type: string
+    path: $.title
+    description: The title of the ResourceReport.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The token of the Workspace.
+  user_token:
+    type: string
+    path: $.user_token
+    description: The token of the User who created this report.
+  filter:
+    type: string
+    path: $.filter
+    description: The VQL filter applied to the report.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the report was created.
+extract:
+  record_path: $.resource_reports
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get resource report by token
+  api:
+    endpoint: /resource_reports/${{ input.resource_report_token }}
+    method: GET
+  input:
+    resource_report_token:
+      type: string
+      required: true

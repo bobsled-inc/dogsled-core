@@ -1,0 +1,14 @@
+display_name: Google Sheets
+category: productivity
+tags:
+  - spreadsheets
+  - documents
+  - tabular
+docs_url: https://developers.google.com/workspace/sheets/api/reference/rest
+auth_setup:
+  - env: GOOGLE_CLIENT_ID
+    description: Google OAuth client ID
+  - env: GOOGLE_CLIENT_SECRET
+    description: Google OAuth client secret
+  - env: GOOGLE_REFRESH_TOKEN
+    description: Google OAuth refresh token with Sheets scopes

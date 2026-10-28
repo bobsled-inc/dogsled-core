@@ -1,0 +1,76 @@
+name: PR metadata
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  pr-metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/validate-pr-change-type.mjs
+            scripts/release/change-type.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Validate change type with trusted base code
+        run: node scripts/ci/validate-pr-change-type.mjs
+      - name: Check DCO sign-offs from commit metadata
+        if: github.repository == 'bobsled-inc/dogsled-core' && github.event.repository.private == false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          function validateSignoffs(commits, expected) {
+            if (!Number.isSafeInteger(expected) || expected < 1 || expected > 250 || commits.length !== expected) throw new Error('Cannot verify the complete PR commit list (maximum 250).');
+            for (const entry of commits) {
+              const author = entry.commit?.author;
+              if (!author?.name || !author?.email || typeof entry.commit?.message !== 'string') throw new Error('Missing commit author metadata.');
+              const signoffs = [...entry.commit.message.matchAll(/^Signed-off-by:\s+(.+?)\s+<([^<>\r\n]+)>\s*$/gim)];
+              const canonicalDependabot = entry.author?.id === 49699333 && entry.author?.login === 'dependabot[bot]' && entry.author?.type === 'Bot' && author.name === 'dependabot[bot]' && author.email === '49699333+dependabot[bot]@users.noreply.github.com';
+              if (!signoffs.some(([, name, email]) => name.trim().toLowerCase() === author.name.trim().toLowerCase() && (email.toLowerCase() === author.email.toLowerCase() || (canonicalDependabot && email.toLowerCase() === 'support@github.com')))) throw new Error('Every commit requires its author DCO sign-off. Use git commit -s.');
+            }
+          }
+
+          async function checkDco({ event, repository, request }) {
+            if (repository !== 'bobsled-inc/dogsled-core' || event.repository?.private !== false) return;
+            const pr = event.pull_request;
+            if (!Number.isSafeInteger(pr?.number) || pr.number < 1) throw new Error('Invalid PR number.');
+            if (!Number.isSafeInteger(pr.commits) || pr.commits < 1 || pr.commits > 250) throw new Error('Cannot verify the complete PR commit list (maximum 250).');
+            const commits = [];
+            for (let page = 1; page <= Math.ceil(pr.commits / 100); page += 1) {
+              const batch = await request(`/repos/bobsled-inc/dogsled-core/pulls/${pr.number}/commits?per_page=100&page=${page}`);
+              if (!Array.isArray(batch)) throw new Error('Invalid commits response.');
+              commits.push(...batch);
+            }
+            if (commits.at(-1)?.sha !== pr.head?.sha) throw new Error('PR head changed; rerun the metadata check.');
+            validateSignoffs(commits, pr.commits);
+          }
+
+          const event = JSON.parse(await (await import('node:fs/promises')).readFile(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          await checkDco({ event, repository: process.env.GITHUB_REPOSITORY, request: async (route) => {
+            const response = await fetch(`https://api.github.com${route}`, {
+              headers: { authorization: `Bearer ${process.env.GH_TOKEN}`, accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10' },
+              signal: AbortSignal.timeout(15000),
+            });
+            if (!response.ok) throw new Error(`DCO metadata request failed (${response.status}).`);
+            return response.json();
+          }});
+          JS

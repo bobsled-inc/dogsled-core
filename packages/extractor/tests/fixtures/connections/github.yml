@@ -1,0 +1,23 @@
+spec_version: '0.1'
+name: github
+type: connection
+base_url: https://api.github.com
+
+auth:
+  type: bearer_token
+  token_env: GITHUB_TOKEN
+
+rate_limit:
+  requests_per_second: 10
+  burst: 20
+  retry_on: [429, 503]
+  max_retries: 3
+  backoff: exponential
+  retry_after_header: true
+
+pagination:
+  type: link_header
+
+headers:
+  Accept: application/vnd.github.v3+json
+  User-Agent: dogsled-extractor/0.1

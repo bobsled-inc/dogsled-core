@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-16T12:49:36.148Z",
+  "rules": {
+    "email-address": 0,
+    "personal-machine-path": 0,
+    "artifact-registry": 0,
+    "vercel-preview-host": 0,
+    "neon-host": 0,
+    "clickhouse-cloud-host": 0,
+    "managed-service-host": 0,
+    "hosted-consumer-wording": 0,
+    "dogsled-subdomain": 0,
+    "gcloud-project-url": 0,
+    "linear-link": 0,
+    "notion-link": 0,
+    "slack-archive-link": 0,
+    "private-github-repo": 0,
+    "ticket-id-in-source": 0,
+    "operator-host": 0
+  },
+  "areas": {}
+}

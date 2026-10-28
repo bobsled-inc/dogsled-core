@@ -1,0 +1,65 @@
+spec_version: '0.2'
+name: stg_customers
+type: model
+description: Cleaned and enriched customer records with field-level semantic metadata.
+grain: customer_id
+source:
+  ref: duckdb.raw_customers
+columns:
+  - name: customer_id
+    expr: customer_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Stable surrogate customer key.
+  - name: full_name
+    expr: trim(full_name)
+    semantic_role: name
+    description: Customer display name.
+  - name: email
+    expr: lower(trim(email))
+    semantic_role: email
+    pii: true
+    description: Normalized email address.
+    format: rfc5322
+  - name: company_name
+    expr: collapse_whitespace(lower(strip_legal_suffixes(company_name)))
+    semantic_role: name
+    description: Normalized buyer company name with legal suffixes stripped.
+    embedding_candidate: true
+  - name: phone
+    expr: strip_country_code(digits_only(phone))
+    semantic_role: phone
+    pii: true
+    description: Phone number reduced to digits, with a leading US country code removed.
+  - name: website
+    expr: strip_www(lower(website))
+    semantic_role: url
+    description: Cleaned domain without protocol or www prefix.
+  - name: state
+    expr: upper(trim(state))
+    semantic_role: categorical
+    description: Two-letter US state code.
+  - name: status
+    expr: lower(trim(status))
+    semantic_role: categorical
+    description: Customer lifecycle status.
+  - name: created_at
+    expr: created_at
+    semantic_role: event_timestamp
+    description: Account creation timestamp.
+materialization:
+  type: view
+expect:
+  - kind: primary_key
+    columns: [customer_id]
+  - kind: non_null
+    column: email
+  - kind: regex
+    column: email
+    pattern: '^.+@.+\..+$'
+  - kind: accepted_values
+    column: status
+    values: [active, inactive, prospect]
+    severity: warn
+  - kind: row_count_between
+    min: 1

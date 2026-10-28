@@ -1,0 +1,300 @@
+type: resource
+name: list_orders
+description: List orders
+api:
+  endpoint: /orders
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    include_deleted: ${{ input.include_deleted }}
+    exclude_deleted_credit_notes: ${{ input.exclude_deleted_credit_notes }}
+    id: ${{ input.id }}
+    invoice_id: ${{ input.invoice_id }}
+    subscription_id: ${{ input.subscription_id }}
+    status: ${{ input.status }}
+    shipping_date: ${{ input.shipping_date }}
+    shipped_at: ${{ input.shipped_at }}
+    order_type: ${{ input.order_type }}
+    order_date: ${{ input.order_date }}
+    paid_on: ${{ input.paid_on }}
+    updated_at: ${{ input.updated_at }}
+    created_at: ${{ input.created_at }}
+    resent_status: ${{ input.resent_status }}
+    is_resent: ${{ input.is_resent }}
+    original_order_id: ${{ input.original_order_id }}
+    sort_by: ${{ input.sort_by }}
+input:
+  limit:
+    type: integer
+    description: The number of resources to be returned.
+    default: 10
+    minimum: 1
+    maximum: 100
+  offset:
+    type: string
+    description: >-
+      Determines your position in the list for pagination. To ensure that the next page is retrieved
+      correctly, always set `offset`
+
+      to the value of `next_offset`
+
+      obtained in the previous iteration of the API call.
+    maxLength: 1000
+  include_deleted:
+    type: boolean
+    description: If set to true, includes the deleted resources in the response. For the deleted
+      resources in the response, the
+      '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*deleted\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*
+      ' attribute will be
+      '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*true\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*
+      '.
+    default: false
+  exclude_deleted_credit_notes:
+    type: boolean
+    description: Flag to indicate whether deleted credit notes should be passed or not.
+  id:
+    type: object
+    description: |-
+      optional, string filter
+
+      Uniquely identifies the order. It is the api identifier for the order.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *id\[is\] = "890"*
+  invoice_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      The invoice number which acts as an identifier for invoice and is generated sequentially.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *invoice_id\[is\] = "INVOICE_982"*
+  subscription_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      The subscription for which the order is created.
+      **Supported operators :**
+      is, is_not, starts_with
+
+      **Example →**
+      *subscription_id\[is_not\] = "null"*
+  status:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      The status of this order. Possible values are : new, processing, complete, cancelled, voided,
+      queued, awaiting_shipment, on_hold, delivered, shipped, partially_delivered, returned.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *status\[is\] = "queued"*
+  shipping_date:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      This is the date on which the order will be delivered to the customer.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *shipping_date\[after\] = "1435054328"*
+  shipped_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      The time at which the order was shipped.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *shipped_at\[before\] = "1435054328"*
+  order_type:
+    type: object
+    description: |-
+      optional, enumerated string filter
+
+      Order type. Possible values are : manual, system_generated.
+
+      **Supported operators :**
+      is, is_not, in, not_in
+
+      **Example →**
+      *order_type\[is_not\] = "system_generated"*
+  order_date:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      The date on which the order will start getting processed.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *order_date\[before\] = "1435054328"*
+  paid_on:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      The timestamp indicating the date \& time the order's invoice got paid.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *paid_on\[on\] = "1435054328"*
+  updated_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      To filter based on updated at .
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *updated_at\[on\] = "1243545465"*
+  created_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      The time at which the order was created.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *created_at\[after\] = "1435054328"*
+  resent_status:
+    type: object
+    description: |-
+      optional, enumerated string filter
+
+      Resent order status. Possible values are : fully_resent, partially_resent.
+
+      **Supported operators :**
+      is, is_not, in, not_in
+
+      **Example →**
+      *resent_status\[is\] = "fully_resent"*
+  is_resent:
+    type: object
+    description: |-
+      optional, boolean filter
+
+      Order is resent order or not. Possible values are : *true, false*
+
+      **Supported operators :**
+      is
+
+      **Example →**
+      *is_resent\[is\] = "false"*
+  original_order_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      If resent order what is the parent order id.
+      **Supported operators :**
+      is, is_not, starts_with
+
+      **Example →**
+      *original_order_id\[is\] = "1xRt6ifdr"*
+  sort_by:
+    type: object
+    description: >-
+      optional, string filter
+
+
+      Sorts based on the specified attribute.
+
+      **Supported attributes :**
+
+      created_at, updated_at
+
+
+      **Supported sort-orders :**
+
+      asc, desc
+
+
+      **Example →**
+
+      *sort_by\[asc\] = "created_at"*
+
+
+      This will sort the result based on the 'created_at' attribute in ascending(earliest first)
+      order.
+output:
+  order_id:
+    type: string
+    path: $.order.id
+    description: Unique Chargebee order identifier
+  order:
+    type: object
+    path: $.order
+    description: Resource object representing order
+extract:
+  record_path: $.list
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - order_id
+    trust_tier: silver
+lookup:
+  description: Retrieve an order
+  api:
+    endpoint: /orders/${{ input.order_id }}
+    method: GET
+  input:
+    order_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_orders_smoke
+      input:
+        chargebee_request_origin_device: Android
+        chargebee_request_origin_user: user@example.com
+        chargebee_request_origin_user_encoded: dXNlci7QutCy0ZbRgtC+0YfQutCwQGV4YW1wbGUuY29t
+        chargebee_request_origin_ip: 192.168.1.2
+        chargebee_business_entity_id: null
+        limit: null
+        offset: null
+        include_deleted: null
+        exclude_deleted_credit_notes: null
+        id: '890'
+        invoice_id: INVOICE_982
+        subscription_id: null
+        status: queued
+        shipping_date: '1435054328'
+        shipped_at: '1435054328'
+        order_type: system_generated
+        order_date: '1435054328'
+        paid_on: '1435054328'
+        updated_at: '1243545465'
+        created_at: '1435054328'
+        resent_status: fully_resent
+        is_resent: 'false'
+        original_order_id: 1xRt6ifdr
+        sort_by: null

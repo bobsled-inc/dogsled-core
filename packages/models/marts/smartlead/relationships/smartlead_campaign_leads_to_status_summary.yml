@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: relationship
+name: smartlead_campaign_leads_to_status_summary
+description: Each Smartlead campaign lead contributes to one status and unsubscribe summary row.
+left_model: smartlead__campaign_leads
+right_model: smartlead__lead_status_summary
+join_columns:
+  - left: status
+    right: status
+  - left: is_unsubscribed
+    right: is_unsubscribed
+join_type: left
+relationship_type: many_to_one
+tags: [smartlead, leads, status]

@@ -1,0 +1,53 @@
+type: resource
+name: stats
+description: Performance statistics for a Snapchat ad account.
+api:
+  endpoint: /adaccounts/${{ input.ad_account_id }}/stats
+  method: GET
+  query_params:
+    granularity: ${{ input.granularity }}
+    start_time: ${{ input.start_time }}
+    end_time: ${{ input.end_time }}
+input:
+  ad_account_id:
+    type: string
+    default: '123'
+  granularity:
+    type: string
+    default: DAY
+  start_time:
+    type: string
+    required: true
+  end_time:
+    type: string
+    required: true
+output:
+  ad_account_id:
+    type: string
+    path: $.__input__.ad_account_id
+  start_time:
+    type: string
+    path: $.timeseries_stat.start_time
+  end_time:
+    type: string
+    path: $.timeseries_stat.end_time
+  impressions:
+    type: integer
+    path: $.timeseries_stat.stats.impressions
+  swipes:
+    type: integer
+    path: $.timeseries_stat.stats.swipes
+  spend:
+    type: integer
+    path: $.timeseries_stat.stats.spend
+extract:
+  record_path: $.timeseries_stats
+  table:
+    primary_key:
+      - ad_account_id
+      - start_time
+      - end_time
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

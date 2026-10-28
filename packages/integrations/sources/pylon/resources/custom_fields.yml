@@ -1,0 +1,41 @@
+type: resource
+name: custom_fields
+description: Custom field definitions for issues, accounts, and other entities
+api:
+  endpoint: /custom-fields
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique custom field identifier
+  name:
+    type: string
+    path: $.name
+    description: Custom field display name
+  slug:
+    type: string
+    path: $.slug
+    description: Custom field slug for API references
+  field_type:
+    type: string
+    path: $.field_type
+    description: Field data type (text, number, select, etc.)
+  entity_type:
+    type: string
+    path: $.entity_type
+    description: Entity type the field applies to (issue, account, etc.)
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the custom field was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the custom field was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

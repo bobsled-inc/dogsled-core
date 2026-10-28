@@ -1,0 +1,15 @@
+spec_version: '1'
+auth_env_vars: [DOGSLED_MC_SF_ACCOUNT, DOGSLED_MC_SF_PRIVATE_KEY_PATH, DOGSLED_MC_SF_USER]
+type: integration
+name: snowflake
+source_type: snowflake
+connection:
+  account_identifier: ${{ env.DOGSLED_MC_SF_ACCOUNT }}
+  warehouse: DOGSLED_MULTI_CONN_WH
+  user: ${{ env.DOGSLED_MC_SF_USER }}
+  role: DOGSLED_MULTI_CONN_ROLE
+  database: DOGSLED_MULTI_CONN_DB
+  schema: STAGING
+auth:
+  type: rsa_key
+  private_key_path: ${{ env.DOGSLED_MC_SF_PRIVATE_KEY_PATH }}

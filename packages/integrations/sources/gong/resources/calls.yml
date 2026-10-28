@@ -1,0 +1,43 @@
+type: resource
+name: calls
+description: Calls captured in Gong.
+api:
+  endpoint: /calls
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    cursor: ${{ input.cursor }}
+input:
+  limit:
+    type: integer
+    default: 100
+  cursor:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  title:
+    type: string
+    path: $.title
+  started_at:
+    type: timestamp
+    path: $.started
+  direction:
+    type: string
+    path: $.direction
+  duration:
+    type: integer
+    path: $.duration
+  primary_user_id:
+    type: string
+    path: $.primaryUserId
+extract:
+  record_path: $.calls
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.records.cursor
+    cursor_param: cursor

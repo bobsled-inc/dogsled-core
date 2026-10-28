@@ -1,0 +1,61 @@
+type: resource
+name: list_queues
+description: List queues configured for each Twilio account
+api:
+  endpoint: /2010-04-01/Accounts/${{ input.account_sid }}/Queues.json
+  method: GET
+  query_params:
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+input:
+  account_sid:
+    type: string
+    description: Twilio account SID to list queues from
+    required: true
+  page_size:
+    type: integer
+    description: Number of queues to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+output:
+  sid:
+    type: string
+    path: $.sid
+    description: Twilio queue SID
+  account_sid:
+    type: string
+    path: $.account_sid
+    description: Parent Twilio account SID
+  friendly_name:
+    type: string
+    path: $.friendly_name
+    description: Queue friendly name
+  current_size:
+    type: integer
+    path: $.current_size
+    description: Current queue size
+  average_wait_time:
+    type: integer
+    path: $.average_wait_time
+    description: Average queue wait time in seconds
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Timestamp when the queue was created
+extract:
+  record_path: $.queues
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  for_each:
+    resource: list_account
+    field: sid
+    input: account_sid
+  table:
+    primary_key:
+      - sid
+    trust_tier: silver

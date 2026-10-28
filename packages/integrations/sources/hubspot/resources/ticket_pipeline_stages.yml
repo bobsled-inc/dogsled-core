@@ -1,0 +1,51 @@
+type: resource
+name: ticket_pipeline_stages
+description: HubSpot ticket pipeline stages representing the individual steps that tickets move through
+api:
+  endpoint: /crm/v3/pipelines/tickets/${{ input.pipeline_id }}/stages
+  method: GET
+input:
+  pipeline_id:
+    type: string
+    description: HubSpot ticket pipeline ID to retrieve stages for, references the id field from the
+      ticket_pipelines resource
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the ticket pipeline stage
+  label:
+    type: string
+    path: $.label
+    description: Human-readable display name of the stage
+  display_order:
+    type: integer
+    path: $.displayOrder
+    description: Zero-based integer controlling the sort order of this stage within the pipeline
+  metadata_ticket_state:
+    type: string
+    path: $.metadata.ticketState
+    description: Whether tickets in this stage are open or closed
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: When the ticket pipeline stage was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: When the ticket pipeline stage was last modified
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether this ticket pipeline stage has been archived
+extract:
+  record_path: $.results
+  for_each:
+    resource: ticket_pipelines
+    field: id
+    input: pipeline_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

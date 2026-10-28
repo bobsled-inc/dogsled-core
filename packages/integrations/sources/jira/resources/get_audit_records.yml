@@ -1,0 +1,104 @@
+type: resource
+name: get_audit_records
+description: Get audit records
+api:
+  endpoint: /rest/api/3/auditing/record
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    limit: ${{ input.limit }}
+    filter: ${{ input.filter }}
+    from: ${{ input.from }}
+    to: ${{ input.to }}
+input:
+  offset:
+    type: integer
+    description: The number of records to skip before returning the first result.
+    default: 0
+  limit:
+    type: integer
+    description: The maximum number of results to return.
+    default: 1000
+  filter:
+    type: string
+    description: The strings to match with audit field content, space separated.
+  from:
+    type: string
+    description:
+      The date and time on or after which returned audit records must have been created. If
+      `to` is provided `from` must be before `to` or no audit records are returned.
+  to:
+    type: string
+    description:
+      The date and time on or before which returned audit results must have been created. If
+      `from` is provided `to` must be after `from` or no audit records are returned.
+output:
+  associated_items:
+    type: array
+    path: $.associatedItems
+    description: The list of items associated with the changed record.
+  author_key:
+    type: string
+    path: $.authorKey
+    description: Deprecated, use `authorAccountId` instead.
+  category:
+    type: string
+    path: $.category
+    description: The category of the audit record.
+  changed_values:
+    type: array
+    path: $.changedValues
+    description: The list of values changed in the record event.
+  created:
+    type: timestamp
+    path: $.created
+    description: The date and time on which the audit record was created.
+  description:
+    type: string
+    path: $.description
+    description: The description of the audit record.
+  event_source:
+    type: string
+    path: $.eventSource
+    description: The event the audit record originated from.
+  id:
+    type: integer
+    path: $.id
+    description: The ID of the audit record.
+  object_item_id:
+    type: string
+    path: $.objectItem.id
+    description: The ID of the associated record.
+  object_item_name:
+    type: string
+    path: $.objectItem.name
+    description: The name of the associated record.
+  object_item_parent_id:
+    type: string
+    path: $.objectItem.parentId
+    description: The ID of the associated parent record.
+  object_item_parent_name:
+    type: string
+    path: $.objectItem.parentName
+    description: The name of the associated parent record.
+  object_item_type_name:
+    type: string
+    path: $.objectItem.typeName
+    description: The type of the associated record.
+  remote_address:
+    type: string
+    path: $.remoteAddress
+    description: The URL of the computer where the creation of the audit record was initiated.
+  summary:
+    type: string
+    path: $.summary
+    description: The summary of the audit record.
+extract:
+  record_path: $.records
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id

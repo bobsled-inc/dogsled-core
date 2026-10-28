@@ -1,0 +1,16 @@
+spec_version: '1'
+auth_env_vars: [SHOWCASE_PG_HOST, SHOWCASE_PG_PASSWORD, SHOWCASE_PG_USER]
+type: integration
+name: local_pg
+source_type: postgres
+connection:
+  host_env: SHOWCASE_PG_HOST
+  port: 5432
+  database: showcase
+  schema: ecommerce
+  ssl:
+    mode: disable
+auth:
+  type: password
+  user_env: SHOWCASE_PG_USER
+  password_env: SHOWCASE_PG_PASSWORD

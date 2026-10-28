@@ -1,0 +1,51 @@
+type: resource
+name: forms
+description: HubSpot marketing forms used to capture lead information and submissions on websites,
+  landing pages, and embedded widgets
+api:
+  endpoint: /marketing/v3/forms
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+input:
+  limit:
+    type: integer
+    description: Number of form records to return per page (max 100)
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the form, returned as a UUID string
+  name:
+    type: string
+    path: $.name
+    description: Display name of the form as shown in the HubSpot marketing forms list
+  form_type:
+    type: string
+    path: $.formType
+    description: Type of form, such as hubspot for native HubSpot forms or captured for externally
+      captured forms
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp of when the form was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp of when the form configuration was last modified
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether this form has been archived (soft-deleted) in HubSpot, archived forms stop
+      accepting submissions
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

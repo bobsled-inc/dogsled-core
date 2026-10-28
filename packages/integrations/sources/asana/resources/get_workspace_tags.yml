@@ -1,0 +1,48 @@
+type: resource
+name: get_workspace_tags
+description: List Asana tags defined in each workspace
+api:
+  endpoint: /workspaces/${{ input.workspace_gid }}/tags
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  workspace_gid:
+    type: string
+    description: Asana workspace GID to list tags from
+    required: true
+  limit:
+    type: integer
+    description: Number of tags to return per page
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response
+output:
+  gid:
+    type: string
+    path: $.gid
+    description: Asana tag identifier
+  name:
+    type: string
+    path: $.name
+    description: Tag name
+  resource_type:
+    type: string
+    path: $.resource_type
+    description: Asana resource type
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  for_each:
+    resource: get_workspaces
+    field: gid
+    input: workspace_gid
+  table:
+    primary_key:
+      - gid
+    trust_tier: silver

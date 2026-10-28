@@ -1,0 +1,145 @@
+{
+  "name": "@bobsled-inc/extractor",
+  "version": "0.20.224",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "packages/extractor"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/runtime/index.js",
+  "types": "./dist/runtime/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js",
+      "default": "./dist/runtime/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "default": "./dist/core/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/framework-runtime/index.d.ts",
+      "import": "./dist/framework-runtime/index.js",
+      "default": "./dist/framework-runtime/index.js"
+    },
+    "./resources": {
+      "types": "./dist/resources/index.d.ts",
+      "import": "./dist/resources/index.js",
+      "default": "./dist/resources/index.js"
+    },
+    "./extractor": {
+      "types": "./dist/extractor/index.d.ts",
+      "import": "./dist/extractor/index.js",
+      "default": "./dist/extractor/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "core": [
+        "./dist/core/index.d.ts"
+      ],
+      "extractor": [
+        "./dist/extractor/index.d.ts"
+      ],
+      "runtime": [
+        "./dist/framework-runtime/index.d.ts"
+      ],
+      "resources": [
+        "./dist/resources/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "test": "vitest run",
+    "test:unit": "vitest run --exclude 'tests/integration/**'"
+  },
+  "dependencies": {
+    "@bobsled-inc/api-resource": "workspace:*",
+    "@apidevtools/swagger-parser": "catalog:",
+    "@aws-crypto/sha256-js": "catalog:aws-sdk",
+    "@smithy/signature-v4": "catalog:aws-sdk",
+    "@bobsled-inc/ai": "workspace:*",
+    "@bobsled-inc/document-parsers": "workspace:*",
+    "@bobsled-inc/project-index": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "@modelcontextprotocol/sdk": "catalog:mcp",
+    "jsonpath-plus": "catalog:app-packages",
+    "chalk": "catalog:cli",
+    "commander": "catalog:dev-packages",
+    "undici": "catalog:",
+    "yaml": "catalog:app-packages",
+    "@duckdb/node-api": "catalog:duckdb",
+    "zod": "catalog:dev-packages",
+    "@bobsled-inc/connections": "workspace:*"
+  },
+  "optionalDependencies": {
+    "pg": "^8.4.0"
+  },
+  "peerDependencies": {
+    "@clickhouse/client": ">=1.0.0",
+    "@google-cloud/bigquery": ">=8.1.1",
+    "google-auth-library": ">=9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@clickhouse/client": {
+      "optional": true
+    },
+    "@google-cloud/bigquery": {
+      "optional": true
+    },
+    "google-auth-library": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@clickhouse/client": "catalog:",
+    "@google-cloud/bigquery": "catalog:",
+    "@types/node": "catalog:dev-packages",
+    "@types/pg": "8.20.0",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "google-auth-library": "catalog:",
+    "globals": "catalog:dev-packages",
+    "openapi-types": "catalog:",
+    "tsup": "catalog:cli",
+    "tsx": "catalog:dev-packages",
+    "typescript": "catalog:dev-packages",
+    "@vitest/coverage-v8": "catalog:testing",
+    "vitest": "catalog:testing"
+  },
+  "description": "YAML-driven API, warehouse, file, and MCP extraction runtime for Dogsled.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "extractor",
+    "api",
+    "mcp"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  }
+}

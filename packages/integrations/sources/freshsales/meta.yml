@@ -1,0 +1,14 @@
+display_name: Freshsales
+category: crm
+status: untested with live API
+tags:
+  - crm
+  - freshworks
+  - sales
+  - freshsales
+docs_url: https://developers.freshworks.com/crm/api/
+auth_setup:
+  - env: FRESHSALES_DOMAIN
+    description: Freshsales account subdomain (the part before .myfreshworks.com)
+  - env: FRESHSALES_API_KEY
+    description: Freshsales API key for authentication

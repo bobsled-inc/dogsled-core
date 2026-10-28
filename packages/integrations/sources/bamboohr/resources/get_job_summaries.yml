@@ -1,0 +1,97 @@
+type: resource
+name: get_job_summaries
+description: Get Job Summaries
+api:
+  endpoint: /api/v1/applicant_tracking/jobs
+  method: GET
+  query_params:
+    statusGroups: ${{ input.status_groups }}
+    status_ids: ${{ input.status_ids }}
+    sortBy: ${{ input.sort_by }}
+    sortOrder: ${{ input.sort_order }}
+input:
+  status_groups:
+    type: string
+    description:
+      'One or more status groups to filter positions by, comma-separated (e.g. `Draft,Open`).
+      Allowed values: `ALL`, `DRAFT_AND_OPEN`, `Open`, `Filled`, `Draft`, `Deleted`, `On Hold`,
+      `Canceled`. Defaults to all non-deleted positions.'
+  status_ids:
+    type: string
+    description:
+      One or more specific job opening status IDs to filter by, comma-separated (e.g. `1,2`).
+      Combined with `statusGroups` when both are provided.
+  sort_by:
+    type: string
+    description: A specific field to sort the results by.
+    enum:
+      - count
+      - title
+      - lead
+      - created
+      - status
+  sort_order:
+    type: string
+    description: Order by which to sort results.
+    enum:
+      - ASC
+      - DESC
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Job opening ID
+  title_id:
+    type: string
+    path: $.title.id
+    description: Title ID, or null if not set
+  title_label:
+    type: string
+    path: $.title.label
+    description: Title text
+  posted_date:
+    type: timestamp
+    path: $.postedDate
+    description: ISO 8601 datetime when the job opening was posted
+  location:
+    type: string
+    path: $.location
+    description: Location information
+  department:
+    type: string
+    path: $.department
+    description: Department information
+  status_id:
+    type: integer
+    path: $.status.id
+    description: Status ID
+  status_label:
+    type: string
+    path: $.status.label
+    description: Status name
+  hiring_lead:
+    type: string
+    path: $.hiringLead
+    description: The hiring lead for this job opening
+  new_applicants_count:
+    type: integer
+    path: $.newApplicantsCount
+    description: Number of applicants in 'New' status
+  active_applicants_count:
+    type: integer
+    path: $.activeApplicantsCount
+    description: Number of applicants in an active status
+  total_applicants_count:
+    type: integer
+    path: $.totalApplicantsCount
+    description: Total number of applicants
+  posting_url:
+    type: string
+    path: $.postingUrl
+    description: Public URL for the job posting, or null if not posted
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

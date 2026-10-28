@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: stg_payments
+type: model
+description: Payment records with normalized method and status fields.
+grain: payment_id
+source:
+  ref: duckdb.raw_payments
+columns:
+  - name: payment_id
+    expr: payment_id
+    primary_key: true
+    semantic_role: entity_id
+  - name: order_id
+    expr: order_id
+    references: stg_orders.order_id
+    semantic_role: entity_id
+  - name: payment_method
+    expr: lower(trim(payment_method))
+    semantic_role: categorical
+  - name: amount
+    expr: amount
+    semantic_role: currency
+    unit: usd
+  - name: status
+    expr: lower(trim(status))
+    semantic_role: categorical
+  - name: paid_at
+    expr: paid_at
+    semantic_role: event_timestamp
+materialization:
+  type: view
+expect:
+  - kind: primary_key
+    columns: [payment_id]

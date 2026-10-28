@@ -1,0 +1,76 @@
+type: resource
+name: members
+description: Members of a GitHub organization with profile information and role metadata
+api:
+  endpoint: /orgs/${{ input.org }}/members
+  method: GET
+  query_params:
+    role: ${{ input.role }}
+    per_page: ${{ input.per_page }}
+input:
+  org:
+    type: string
+    description: GitHub organization login name
+    default: bobsled-inc
+  role:
+    type: string
+    description: Filter members by their role in the organization
+    default: all
+    enum:
+      - all
+      - admin
+      - member
+  per_page:
+    type: integer
+    description: Number of members to return per page (max 100)
+    default: 100
+output:
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the user account
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  login:
+    type: string
+    semantic_role: name
+    path: $.login
+    description: GitHub username (handle) used for @mentions, commits, and authentication
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the user profile on github.com
+  avatar_url:
+    type: string
+    semantic_role: url
+    path: $.avatar_url
+    description: URL to the user's profile avatar image (typically a Gravatar or uploaded photo)
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this user resource
+  type:
+    type: string
+    semantic_role: categorical
+    path: $.type
+    description: "Account type \u2014 \"User\" for human accounts or \"Bot\" for GitHub App bot accounts"
+  site_admin:
+    type: boolean
+    semantic_role: categorical
+    path: $.site_admin
+    description: True if the user is a GitHub site administrator (GitHub staff)
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+via: rest

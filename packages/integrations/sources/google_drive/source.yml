@@ -1,0 +1,19 @@
+spec_version: '2'
+type: source
+name: google_drive
+description: Google Drive file access via Google's official remote MCP server
+transports:
+  - id: mcp
+    type: mcp_http
+    url: https://drivemcp.googleapis.com/mcp/v1
+    auth:
+      type: bearer
+      token: ${{ env.GOOGLE_DRIVE_ACCESS_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      max_retries: 3
+      backoff: exponential
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+default_transport: mcp

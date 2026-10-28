@@ -1,0 +1,34 @@
+type: resource
+name: get_issue_types
+description: List Jira issue types visible to the authenticated user
+api:
+  endpoint: /rest/api/3/issuetype
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira issue type identifier
+  name:
+    type: string
+    path: $.name
+    description: Issue type name
+  description:
+    type: string
+    path: $.description
+    description: Issue type description
+  subtask:
+    type: boolean
+    path: $.subtask
+    description: Whether the issue type is a subtask type
+  hierarchy_level:
+    type: integer
+    path: $.hierarchyLevel
+    description: Issue type hierarchy level
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,66 @@
+spec_version: '0.2'
+name: vantage__anomaly_alerts
+type: model
+description: Cost anomaly alerts with provider, service, and amount attribution.
+grain: anomaly_alert_id
+source:
+  ref: stg_vantage__anomaly_alerts
+columns:
+  - name: anomaly_alert_id
+    expr: stg_vantage__anomaly_alerts.token
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique anomaly alert identifier.
+  - name: category
+    expr: stg_vantage__anomaly_alerts.category
+    semantic_role: categorical
+    description: Anomaly alert category.
+  - name: service
+    expr: stg_vantage__anomaly_alerts.service
+    semantic_role: categorical
+    description: Provider service causing the anomaly.
+  - name: provider
+    expr: stg_vantage__anomaly_alerts.provider
+    semantic_role: categorical
+    description: Cloud provider of the anomalous service.
+  - name: amount
+    expr: CAST(stg_vantage__anomaly_alerts.amount AS DOUBLE)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Observed cost amount.
+  - name: previous_amount
+    expr: CAST(stg_vantage__anomaly_alerts.previous_amount AS DOUBLE)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Previous observed cost amount.
+  - name: seven_day_average
+    expr: CAST(stg_vantage__anomaly_alerts.seven_day_average AS DOUBLE)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Seven-day average of the observed amount.
+  - name: status
+    expr: stg_vantage__anomaly_alerts.status
+    semantic_role: categorical
+    description: Anomaly alert status.
+  - name: cost_report_token
+    expr: stg_vantage__anomaly_alerts.cost_report_token
+    semantic_role: entity_id
+    description: Cost report associated with the alert.
+  - name: alerted_at
+    expr: stg_vantage__anomaly_alerts.alerted_at
+    semantic_role: event_timestamp
+    description: Timestamp when the alert was sent.
+  - name: created_at
+    expr: stg_vantage__anomaly_alerts.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the anomaly alert was created.
+tags:
+  - vantage
+  - anomalies
+  - costs
+trust_tier: gold
+materialization:
+  type: table

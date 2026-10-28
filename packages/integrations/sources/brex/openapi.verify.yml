@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Brex Verify Subset
+  version: '1.0'
+servers:
+  - url: https://api.brex.com
+paths:
+  /v1/expenses:
+    get:
+      responses:
+        '200':
+          description: OK
+  /v1/linked_accounts:
+    get:
+      responses:
+        '200':
+          description: OK
+  /v1/transfers:
+    get:
+      responses:
+        '200':
+          description: OK
+  /v1/vendors:
+    get:
+      responses:
+        '200':
+          description: OK
+  /v2/accounts/cash:
+    get:
+      responses:
+        '200':
+          description: OK
+  /v2/users:
+    get:
+      responses:
+        '200':
+          description: OK

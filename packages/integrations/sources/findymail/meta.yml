@@ -1,0 +1,12 @@
+display_name: Findymail
+category: crm
+logo_url: https://www.findymail.com/favicon.ico
+tags:
+  - email-finder
+  - enrichment
+  - prospecting
+docs_url: https://www.findymail.com/api/email-finder/
+auth_setup:
+  - env: FINDYMAIL_API_KEY
+    description: Findymail API key
+    docs_url: https://www.findymail.com/api/email-finder/

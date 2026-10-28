@@ -1,0 +1,74 @@
+spec_version: '0.2'
+name: freshdesk__conversations
+type: model
+description: Freshdesk conversation activity with channel and attachment counts.
+grain: conversation_id
+source:
+  ref: stg_freshdesk__conversations
+columns:
+  - name: conversation_id
+    expr: stg_freshdesk__conversations.conversation_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Freshdesk conversation identifier.
+  - name: incoming
+    expr: stg_freshdesk__conversations.incoming
+    semantic_role: categorical
+    description: Whether the conversation is incoming from the requester.
+  - name: private
+    expr: stg_freshdesk__conversations.private
+    semantic_role: categorical
+    description: Whether the conversation is private to agents.
+  - name: user_id
+    expr: stg_freshdesk__conversations.user_id
+    semantic_role: entity_id
+    description: Agent or contact identifier that authored the conversation.
+  - name: support_email
+    expr: stg_freshdesk__conversations.support_email
+    semantic_role: categorical
+    description: Support mailbox used for the conversation.
+  - name: source
+    expr: stg_freshdesk__conversations.source
+    semantic_role: categorical
+    description: Numeric source channel code for the conversation.
+  - name: from_email
+    expr: stg_freshdesk__conversations.from_email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Sender email address.
+  - name: body_text
+    expr: stg_freshdesk__conversations.body_text
+    semantic_role: categorical
+    description: Plain-text body of the conversation.
+  - name: recipient_count
+    expr: array_size(stg_freshdesk__conversations.to_emails)
+    semantic_role: measure
+    description: Number of direct recipients on the conversation.
+  - name: cc_count
+    expr: array_size(stg_freshdesk__conversations.cc_emails)
+    semantic_role: measure
+    description: Number of CC recipients on the conversation.
+  - name: bcc_count
+    expr: array_size(stg_freshdesk__conversations.bcc_emails)
+    semantic_role: measure
+    description: Number of BCC recipients on the conversation.
+  - name: attachment_count
+    expr: array_size(stg_freshdesk__conversations.attachments)
+    semantic_role: measure
+    description: Number of attachments on the conversation.
+  - name: created_at
+    expr: stg_freshdesk__conversations.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the conversation was created.
+  - name: updated_at
+    expr: stg_freshdesk__conversations.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the conversation was last updated.
+tags:
+  - freshdesk
+  - conversations
+  - support
+trust_tier: gold
+materialization:
+  type: table

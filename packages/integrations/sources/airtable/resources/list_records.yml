@@ -1,0 +1,60 @@
+type: resource
+name: list_records
+description: List records from an Airtable table
+api:
+  endpoint: /v0/${{ input.base_id }}/${{ input.table_id_or_name }}
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    pageSize: ${{ input.page_size }}
+    view: ${{ input.view }}
+input:
+  base_id:
+    type: string
+    required: true
+    description: Airtable base identifier
+  table_id_or_name:
+    type: string
+    required: true
+    description: Table identifier or URL-safe table name
+  offset:
+    type: string
+    description: Pagination cursor returned by Airtable
+  page_size:
+    type: integer
+    description: Page size
+    default: 100
+  view:
+    type: string
+    description: Optional view name or ID
+output:
+  id:
+    type: string
+    path: $.id
+    description: Record identifier
+  created_time:
+    type: timestamp
+    path: $.createdTime
+    description: Record creation timestamp
+  fields:
+    type: object
+    path: $.fields
+    description: Record field values
+extract:
+  record_path: $.records
+  for_each:
+    resource: list_tables
+    bindings:
+      - source: input
+        field: base_id
+        input: base_id
+      - field: id
+        input: table_id_or_name
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: cursor
+    cursor_param: offset
+    cursor_path: $.offset

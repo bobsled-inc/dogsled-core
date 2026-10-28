@@ -1,0 +1,40 @@
+type: resource
+name: leads
+description: Leads from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,FirstName,LastName,Company,Status,CreatedDate,LastModifiedDate FROM Lead
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  first_name:
+    type: string
+    path: $.FirstName
+  last_name:
+    type: string
+    path: $.LastName
+  company:
+    type: string
+    path: $.Company
+  status:
+    type: string
+    path: $.Status
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

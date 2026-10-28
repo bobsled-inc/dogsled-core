@@ -1,0 +1,30 @@
+type: resource
+name: audiences
+description: List Mailchimp audiences
+api:
+  endpoint: /3.0/lists
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Audience identifier
+  name:
+    type: string
+    path: $.name
+    description: Audience name
+  stats_member_count:
+    type: integer
+    path: $.stats.member_count
+    description: Current audience member count
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Audience creation timestamp
+extract:
+  record_path: $.lists
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

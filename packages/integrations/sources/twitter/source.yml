@@ -1,0 +1,27 @@
+spec_version: '2'
+type: source
+name: twitter
+description: X API v2 for users, timelines, followers, and lists.
+transports:
+  - id: default
+    base_url: https://api.x.com
+    auth:
+      type: bearer
+      token: ${{ env.TWITTER_BEARER_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

@@ -1,0 +1,12 @@
+{
+  "_v": 1,
+  "type": "PROGRESS",
+  "event": "resource_complete",
+  "resource": "items",
+  "timestamp": "2026-04-15T16:00:00.000Z",
+  "data": {
+    "records_emitted": 10,
+    "api_calls": 2,
+    "duration_ms": 125
+  }
+}

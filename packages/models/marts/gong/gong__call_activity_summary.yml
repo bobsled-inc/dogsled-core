@@ -1,0 +1,38 @@
+spec_version: '0.2'
+name: gong__call_activity_summary
+type: model
+description: Call counts and average duration summarized by user and direction.
+grain:
+  - user_id
+  - direction
+source:
+  ref: stg_gong__calls
+columns:
+  - name: user_id
+    expr: stg_gong__calls.primary_user_id
+    primary_key: true
+    semantic_role: entity_id
+    description: User associated with the calls.
+  - name: direction
+    expr: stg_gong__calls.direction
+    primary_key: true
+    semantic_role: categorical
+    description: Call direction (inbound or outbound).
+  - name: call_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total calls in the user and direction bucket.
+  - name: avg_duration
+    expr: AVG(stg_gong__calls.duration)
+    semantic_role: measure
+    description: Average call duration in seconds for the bucket.
+group_by:
+  - user_id
+  - direction
+tags:
+  - gong
+  - calls
+  - activity
+trust_tier: gold
+materialization:
+  type: table

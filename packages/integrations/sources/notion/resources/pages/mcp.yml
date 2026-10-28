@@ -1,0 +1,44 @@
+type: resource
+name: pages_mcp
+via: mcp
+entity: pages
+description: Pages from Notion workspace via search
+tool:
+  tool_name: search-notion-content
+  arguments:
+    search_type: page
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique page UUID
+  title:
+    type: string
+    path: $.title
+    description: Page title
+  url:
+    type: string
+    path: $.url
+    description: Notion URL for the page
+  created_time:
+    type: timestamp
+    path: $.created_time
+    description: Timestamp when the page was created
+  last_edited_time:
+    type: timestamp
+    path: $.last_edited_time
+    description: Timestamp when the page was last edited
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether the page is archived
+extract:
+  record_path: $.results
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.next_cursor
+    cursor_argument: start_cursor
+  table:
+    primary_key:
+      - id

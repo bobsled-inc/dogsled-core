@@ -1,0 +1,56 @@
+type: resource
+name: inventory_levels
+description: Inventory levels by location in Shopify.
+api:
+  endpoint: /inventory_levels.json
+  method: GET
+  query_params:
+    location_ids: ${{ input.location_ids }}
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+    updated_at_min: ${{ input.updated_at_min }}
+input:
+  location_ids:
+    type: string
+    required: true
+    description: Comma-separated location IDs.
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+  updated_at_min:
+    type: timestamp
+    description: Only return records updated on or after this timestamp.
+output:
+  inventory_item_id:
+    type: integer
+    path: $.inventory_item_id
+    description: ID of the inventory item.
+  location_id:
+    type: integer
+    path: $.location_id
+    description: ID of the location.
+  available:
+    type: integer
+    path: $.available
+    description: Available inventory quantity.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Last update timestamp.
+extract:
+  record_path: $.inventory_levels
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - inventory_item_id
+      - location_id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: updated_at_min

@@ -1,0 +1,34 @@
+type: resource
+name: integrations
+description: List configured LaunchDarkly integrations
+api:
+  endpoint: /integrations
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $._id
+    description: Integration identifier
+  key:
+    type: string
+    path: $.key
+    description: Integration key
+  name:
+    type: string
+    path: $.name
+    description: Integration name
+  kind:
+    type: string
+    path: $.kind
+    description: Integration kind
+  enabled:
+    type: boolean
+    path: $.enabled
+    description: Whether integration is enabled
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

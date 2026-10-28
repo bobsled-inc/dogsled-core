@@ -1,0 +1,39 @@
+spec_version: '0.2'
+name: smartlead__campaigns
+type: model
+description: Campaign configuration detail for Smartlead outbound campaigns.
+grain: campaign_id
+source:
+  ref: stg_smartlead__campaigns
+columns:
+  - name: campaign_id
+    expr: stg_smartlead__campaigns.campaign_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Smartlead campaign identifier.
+  - name: name
+    expr: stg_smartlead__campaigns.name
+    semantic_role: categorical
+    description: Campaign name.
+  - name: status
+    expr: stg_smartlead__campaigns.status
+    semantic_role: categorical
+    description: Campaign lifecycle status.
+  - name: max_leads_per_day
+    expr: stg_smartlead__campaigns.max_leads_per_day
+    semantic_role: measure
+    description: Maximum leads the campaign can contact per day.
+  - name: follow_up_percentage
+    expr: stg_smartlead__campaigns.follow_up_percentage
+    semantic_role: measure
+    description: Configured follow-up percentage for the campaign.
+  - name: created_at
+    expr: stg_smartlead__campaigns.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the campaign was created.
+tags:
+  - smartlead
+  - campaigns
+trust_tier: gold
+materialization:
+  type: table

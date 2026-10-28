@@ -1,0 +1,241 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Create a release, retry an immutable tag, or perform first-time restricted publication
+        required: true
+        default: new
+        type: choice
+        options: [new, preview, retry, bootstrap]
+      bump:
+        description: Version increment for new releases; major under 0.x advances the minor
+        required: true
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+      version:
+        description: New 0.x.y-preview.N version for preview, or existing stable/preview version for retry
+        required: false
+        type: string
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  prepare:
+    if: github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      tag: ${{ steps.plan.outputs.tag }}
+      commit: ${{ steps.candidate.outputs.commit }}
+      prerelease: ${{ steps.plan.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate retry origin before using tag contents
+        if: inputs.mode == 'retry'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          node scripts/release/version.mjs validate-retry-origin
+          git -c core.hooksPath=/dev/null checkout --detach "refs/tags/v$RELEASE_VERSION"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Require reviewed package access settings
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const pkg = JSON.parse(readFileSync('packages/dogsled/package.json', 'utf8'));
+          if (pkg.name !== '@bobsled-inc/dogsled' || !['restricted', 'public'].includes(pkg.publishConfig?.access)) throw new Error('Apply the reviewed version/access release PR first.');
+          JS
+      - name: Plan immutable version
+        id: plan
+        env:
+          RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_BUMP: ${{ inputs.bump }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          case "$RELEASE_MODE" in
+            new) node scripts/release/version.mjs prepare-manual ;;
+            preview) node scripts/release/version.mjs prepare-preview ;;
+            retry) node scripts/release/version.mjs verify-retry ;;
+            bootstrap) node scripts/release/version.mjs prepare-bootstrap ;;
+            *) exit 1 ;;
+          esac
+      - run: pnpm run setup:sqlite
+      - run: pnpm security:fast
+      - run: pnpm precommit
+      - run: pnpm test:packed-catalog -- --skip-build
+      - name: Create immutable release tag
+        if: inputs.mode != 'retry'
+        env:
+          RELEASE_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git diff --quiet -- packages/dogsled/package.json; then
+            git add packages/dogsled/package.json
+            git commit -m "Release $RELEASE_TAG"
+          fi
+          git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+      - name: Install reviewed SBOM generator
+        run: npm install --global @cyclonedx/cdxgen@12.8.0 --ignore-scripts --registry=https://registry.npmjs.org/
+      - name: Verify reviewed release tarball
+        run: pnpm security:release --execute --out "$RUNNER_TEMP/npm-release"
+      - name: Preserve the verified release commit and tag
+        id: candidate
+        env:
+          RELEASE_TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          git bundle create "$RUNNER_TEMP/npm-release/release.bundle" "refs/tags/$RELEASE_TAG"
+          printf 'commit=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-release-${{ steps.plan.outputs.version }}
+          path: ${{ runner.temp }}/npm-release
+          if-no-files-found: error
+          retention-days: 7
+
+  tag:
+    if: github.repository == 'bobsled-inc/dogsled-core' && inputs.mode != 'retry'
+    needs: prepare
+    environment: npm-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-release-${{ needs.prepare.outputs.version }}
+          path: ${{ runner.temp }}/npm-release
+      - name: Push the verified immutable tag without running hooks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_COMMIT: ${{ needs.prepare.outputs.commit }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: |
+          git -c core.hooksPath=/dev/null fetch "$RUNNER_TEMP/npm-release/release.bundle" "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$RELEASE_COMMIT"
+          node scripts/release/version.mjs verify-candidate
+          gh auth setup-git
+          git -c core.hooksPath=/dev/null push origin "refs/tags/$RELEASE_TAG"
+
+  publish:
+    if: >-
+      !cancelled() && github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.prepare.result == 'success' &&
+      (needs.tag.result == 'success' || (inputs.mode == 'retry' && needs.tag.result == 'skipped'))
+    needs: [prepare, tag]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Install reviewed trusted-publishing client
+        run: npm install --global npm@11.18.0 --ignore-scripts --registry=https://registry.npmjs.org/
+      - run: test "$(npm --version)" = '11.18.0'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-release-${{ needs.prepare.outputs.version }}
+          path: ${{ runner.temp }}/npm-release
+      - name: Read current repository visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          visibility="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')"
+          case "$visibility" in private|public) ;; *) exit 1 ;; esac
+          printf 'RELEASE_REPOSITORY_VISIBILITY=%s\n' "$visibility" >> "$GITHUB_ENV"
+      - name: Publish subsequent releases with OIDC
+        if: inputs.mode != 'bootstrap'
+        env:
+          NPM_READ_TOKEN: ${{ secrets.NPM_READ_TOKEN }}
+        run: node scripts/release/publish.mjs "$RUNNER_TEMP/npm-release"
+      - name: Publish the first restricted package with a short-lived token
+        if: inputs.mode == 'bootstrap'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/npm-bootstrap.npmrc
+        run: |
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          if (!process.env.NODE_AUTH_TOKEN) throw new Error('The protected bootstrap environment token is required.');
+          writeFileSync(process.env.NPM_CONFIG_USERCONFIG, '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n', { mode: 0o600 });
+          JS
+          node scripts/release/publish.mjs "$RUNNER_TEMP/npm-release" --bootstrap
+      - name: Remove bootstrap configuration and require token revocation
+        if: always() && inputs.mode == 'bootstrap'
+        run: |
+          rm -f "$RUNNER_TEMP/npm-bootstrap.npmrc"
+          printf '%s\n' 'Verify registry integrity. Revoke the bootstrap token and delete the npm-release environment secret immediately, including on failure. An npm owner adds the trusted publisher with 2FA before the next release.' >> "$GITHUB_STEP_SUMMARY"
+
+  finalize:
+    if: >-
+      !cancelled() && github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.prepare.result == 'success' && needs.publish.result == 'success'
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-release-${{ needs.prepare.outputs.version }}
+          path: ${{ runner.temp }}/npm-release
+      - name: Create or complete the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_COMMIT: ${{ needs.prepare.outputs.commit }}
+          RELEASE_PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          node scripts/release/finalize-github-release.mjs \
+            "$RUNNER_TEMP/npm-release/release-report.json#npm release artifact report" \
+            "$RUNNER_TEMP/npm-release/sbom.json#CycloneDX SBOM"

@@ -1,0 +1,31 @@
+type: resource
+name: sessions_average
+description: Fetch average session report rows
+api:
+  endpoint: /api/2/sessions/average
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    end: ${{ input.end }}
+input:
+  start:
+    type: string
+    description: Start date in YYYYMMDD format
+  end:
+    type: string
+    description: End date in YYYYMMDD format
+output:
+  label:
+    type: string
+    path: $.label
+    description: Series label
+  value:
+    type: number
+    path: $.value
+    description: Average session value
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - label
+    trust_tier: silver

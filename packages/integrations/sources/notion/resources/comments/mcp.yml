@@ -1,0 +1,44 @@
+type: resource
+name: comments_mcp
+via: mcp
+entity: comments
+description: Comments on Notion pages
+tool:
+  tool_name: retrieve-comments
+  arguments:
+    block_id: ${{ input.page_id }}
+input:
+  page_id:
+    type: string
+    description: Page UUID to retrieve comments for
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique comment UUID
+  discussion_id:
+    type: string
+    path: $.discussion_id
+    description: Discussion thread UUID
+  created_time:
+    type: timestamp
+    path: $.created_time
+    description: Timestamp when the comment was created
+  last_edited_time:
+    type: timestamp
+    path: $.last_edited_time
+    description: Timestamp when the comment was last edited
+  created_by_id:
+    type: string
+    path: $.created_by.id
+    description: UUID of the user who created the comment
+extract:
+  record_path: $.results
+  for_each:
+    resource: pages_mcp
+    field: id
+    input: page_id
+  table:
+    primary_key:
+      - id

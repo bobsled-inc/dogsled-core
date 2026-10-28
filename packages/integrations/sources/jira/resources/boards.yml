@@ -1,0 +1,97 @@
+type: resource
+name: boards
+description: List Jira agile boards including Scrum, Kanban, and simple boards.
+api:
+  endpoint: /rest/agile/1.0/board
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    type: ${{ input.type }}
+    name: ${{ input.name }}
+input:
+  start_at:
+    type: integer
+    description: Zero-based offset for the first board in the page.
+    default: 0
+  max_results:
+    type: integer
+    description: Maximum number of boards to return per page.
+    default: 50
+  type:
+    type: string
+    description: Filter boards by type.
+    enum:
+      - scrum
+      - kanban
+      - simple
+  name:
+    type: string
+    description: Filter boards by name (substring match).
+query:
+  filters:
+    name:
+      operators:
+        - contains
+      description: Filter boards by name (substring match).
+      bind:
+        contains:
+          input: name
+      compile:
+        contains:
+          mode: http_query
+          param: name
+    type:
+      operators:
+        - eq
+      enum:
+        - scrum
+        - kanban
+        - simple
+      description: Filter boards by type.
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Board identifier.
+  name:
+    type: string
+    path: $.name
+    description: Board name.
+  type:
+    type: string
+    path: $.type
+    description: Board type such as scrum, kanban, or simple.
+  self:
+    type: string
+    path: $.self
+    description: Jira API URL for the board.
+  location_project_id:
+    type: integer
+    path: $.location.projectId
+    description: Project identifier where the board is located.
+  location_project_key:
+    type: string
+    path: $.location.projectKey
+    description: Project key where the board is located.
+  location_project_name:
+    type: string
+    path: $.location.projectName
+    description: Project name where the board is located.
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

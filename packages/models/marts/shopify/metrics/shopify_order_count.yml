@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: shopify_order_count
+description: Number of Shopify orders.
+model: shopify__orders
+expression: COUNT({shopify__orders}.order_id)
+synonyms: [orders, order volume, number of orders]
+tags: [shopify, commerce, orders]

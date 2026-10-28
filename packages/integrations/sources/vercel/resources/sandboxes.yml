@@ -1,0 +1,222 @@
+type: resource
+name: sandboxes
+description: Vercel sandbox configuration, tags, current session, and cumulative counters.
+api:
+  endpoint: /v2/sandboxes
+  method: GET
+  query_params:
+    project: ${{ input.project_id }}
+    namePrefix: ${{ input.name_prefix }}
+    limit: ${{ input.limit }}
+    cursor: ${{ input.cursor }}
+    sortBy: ${{ input.sort_by }}
+    sortOrder: ${{ input.sort_order }}
+    status: ${{ input.status }}
+    tags: ${{ input.tags_filter }}
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+input:
+  project_id:
+    type: string
+    description: Restrict the list to one Vercel project.
+  name_prefix:
+    type: string
+    description: Restrict the list to sandbox names with this prefix.
+  limit:
+    type: integer
+    default: 50
+    minimum: 1
+    maximum: 50
+    description: Maximum sandboxes per page. Vercel documents a maximum of 50.
+  cursor:
+    type: string
+    description: Sandbox pagination cursor.
+  sort_by:
+    type: string
+    description: Native sandbox sort field.
+  sort_order:
+    type: string
+    enum:
+      - asc
+      - desc
+    description: Native sandbox sort direction.
+  status:
+    type: string
+    description: Optional sandbox status filter.
+  tags_filter:
+    type: string
+    description: Native sandbox tag filter expression.
+  team_id:
+    type: string
+    description: Vercel team identifier.
+  team_slug:
+    type: string
+    description: Vercel team slug.
+output:
+  project_id:
+    type: string
+    path: $.__input__.project_id
+    semantic_role: entity_id
+    description: Caller-selected project scope; null when the list was team-wide.
+  team_id:
+    type: string
+    path: $.__input__.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for this request.
+  team_slug:
+    type: string
+    path: $.__input__.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for this request.
+  name:
+    type: string
+    path: $.name
+    semantic_role: entity_id
+    description: Stable sandbox name within the project.
+  current_snapshot_id:
+    type: string
+    path: $.currentSnapshotId
+    semantic_role: entity_id
+    description: Current sandbox snapshot identifier.
+  current_session_id:
+    type: string
+    path: $.currentSessionId
+    semantic_role: entity_id
+    description: Current sandbox session identifier.
+  status:
+    type: string
+    path: $.status
+    semantic_role: categorical
+    description: Current sandbox status.
+  status_updated_at:
+    type: integer
+    path: $.statusUpdatedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Time the sandbox status last changed.
+  persistent:
+    type: boolean
+    path: $.persistent
+    description: Whether the sandbox persists between sessions.
+  region:
+    type: string
+    path: $.region
+    semantic_role: categorical
+    description: Primary sandbox region.
+  failover_regions:
+    type: array
+    path: $.failoverRegions
+    description: Configured failover regions.
+  vcpus:
+    type: number
+    path: $.vcpus
+    semantic_role: measure
+    unit: vcpu
+    description: Allocated virtual CPUs.
+  memory:
+    type: number
+    path: $.memory
+    semantic_role: measure
+    unit: megabytes
+    description: Allocated memory.
+  runtime:
+    type: string
+    path: $.runtime
+    semantic_role: categorical
+    description: Sandbox runtime.
+  image:
+    type: string
+    path: $.image
+    description: Sandbox image identifier.
+  timeout:
+    type: number
+    path: $.timeout
+    semantic_role: measure
+    unit: milliseconds
+    description: Sandbox timeout configuration.
+  snapshot_expiration:
+    type: number
+    path: $.snapshotExpiration
+    semantic_role: measure
+    unit: milliseconds
+    description: Snapshot expiration interval in milliseconds.
+  keep_last_snapshots:
+    type: object
+    path: $.keepLastSnapshots
+    description: Snapshot retention settings returned by Vercel.
+  network_policy:
+    type: object
+    path: $.networkPolicy
+    description: Sandbox network policy.
+  network_id:
+    type: string
+    path: $.networkId
+    semantic_role: entity_id
+    description: Vercel network identifier when assigned.
+  cwd:
+    type: string
+    path: $.cwd
+    semantic_role: categorical
+    description: Sandbox working directory.
+  tags:
+    type: object
+    path: $.tags
+    description: User-defined sandbox tags preserved for workload mapping.
+  mounts:
+    type: object
+    path: $.mounts
+    description: Sandbox mounts returned by Vercel.
+  total_egress_bytes:
+    type: number
+    path: $.totalEgressBytes
+    semantic_role: measure
+    unit: bytes
+    description: Cumulative sandbox egress counter. Do not sum repeated observations.
+  total_ingress_bytes:
+    type: number
+    path: $.totalIngressBytes
+    semantic_role: measure
+    unit: bytes
+    description: Cumulative sandbox ingress counter. Do not sum repeated observations.
+  total_active_cpu_duration_ms:
+    type: number
+    path: $.totalActiveCpuDurationMs
+    semantic_role: measure
+    unit: milliseconds
+    description: Cumulative active CPU duration counter. Do not sum repeated observations.
+  total_duration_ms:
+    type: number
+    path: $.totalDurationMs
+    semantic_role: measure
+    unit: milliseconds
+    description: Cumulative sandbox duration counter. Do not sum repeated observations.
+  created_at:
+    type: integer
+    path: $.createdAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Sandbox creation time.
+  updated_at:
+    type: integer
+    path: $.updatedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Sandbox update time.
+  expires_at:
+    type: integer
+    path: $.expiresAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Sandbox expiration time.
+extract:
+  record_path: $.sandboxes
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next
+    cursor_param: cursor
+  table:
+    primary_key:
+      - project_id
+      - name
+    load_strategy: merge
+    trust_tier: silver

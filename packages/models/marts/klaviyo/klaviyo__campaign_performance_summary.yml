@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: klaviyo__campaign_performance_summary
+type: model
+description: Klaviyo campaign counts summarized by status and type.
+grain:
+  - status
+  - type
+source:
+  ref: stg_klaviyo__campaigns
+columns:
+  - name: status
+    expr: stg_klaviyo__campaigns.status
+    primary_key: true
+    semantic_role: categorical
+    description: Campaign status.
+  - name: type
+    expr: stg_klaviyo__campaigns.type
+    primary_key: true
+    semantic_role: categorical
+    description: Campaign type (email or sms).
+  - name: campaign_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total campaigns in the status and type bucket.
+group_by:
+  - status
+  - type
+tags:
+  - klaviyo
+  - marketing
+  - campaigns
+trust_tier: gold
+materialization:
+  type: table

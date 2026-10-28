@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: int_order_items_ephemeral
+type: model
+description: Ephemeral intermediate model inlined into downstream SQL instead of materialized.
+grain: line_item_id
+source:
+  ref: duckdb.line_items
+joins:
+  - ref: stg_products_clean
+    type: left
+    on: line_items.product_id = stg_products_clean.product_id
+columns:
+  - name: line_item_id
+    expr: line_items.id
+    primary_key: true
+  - name: order_id
+    expr: line_items.order_id
+  - name: product_id
+    expr: line_items.product_id
+  - name: normalized_product_name
+    expr: stg_products_clean.normalized_name
+  - name: extended_amount
+    expr: line_items.quantity * line_items.unit_price
+materialization:
+  type: ephemeral

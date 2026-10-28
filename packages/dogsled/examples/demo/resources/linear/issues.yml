@@ -1,0 +1,136 @@
+spec_version: '1'
+type: resource
+name: issues
+integration: linear
+description: Issues from Linear with state, assignee, team, and project metadata
+
+api:
+  endpoint: '/graphql'
+  method: POST
+  request_body:
+    query: >-
+      query($after: String) {
+        issues(first: 50, after: $after, orderBy: updatedAt) {
+          nodes {
+            id identifier title description
+            priority priorityLabel estimate
+            state { id name type }
+            assignee { id name email }
+            team { id name key }
+            project { id name }
+            createdAt updatedAt completedAt canceledAt dueDate
+          }
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+    variables:
+      after: null
+
+input: {}
+
+output:
+  id:
+    type: string
+    path: '$.id'
+    description: Unique issue UUID
+  identifier:
+    type: string
+    path: '$.identifier'
+    description: Human-readable issue identifier (e.g. ENG-123)
+  title:
+    type: string
+    path: '$.title'
+    description: Issue title
+  description:
+    type: string
+    path: '$.description'
+    description: Issue description in markdown
+  priority:
+    type: integer
+    path: '$.priority'
+    description: Priority as integer (0=none, 1=urgent, 2=high, 3=medium, 4=low)
+  priority_label:
+    type: string
+    path: '$.priorityLabel'
+    description: Human-readable priority label
+  estimate:
+    type: number
+    path: '$.estimate'
+    description: Effort estimate in points
+  state_id:
+    type: string
+    path: '$.state.id'
+    description: UUID of the workflow state
+  state_name:
+    type: string
+    path: '$.state.name'
+    description: Name of the workflow state (e.g. In Progress, Done)
+  state_type:
+    type: string
+    path: '$.state.type'
+    description: State category — backlog, unstarted, started, completed, cancelled
+  assignee_id:
+    type: string
+    path: '$.assignee.id'
+    description: UUID of the assigned user
+  assignee_name:
+    type: string
+    path: '$.assignee.name'
+    description: Display name of the assignee
+  assignee_email:
+    type: string
+    path: '$.assignee.email'
+    description: Email of the assignee
+  team_id:
+    type: string
+    path: '$.team.id'
+    description: UUID of the team
+  team_name:
+    type: string
+    path: '$.team.name'
+    description: Team display name
+  team_key:
+    type: string
+    path: '$.team.key'
+    description: Team key prefix used in issue identifiers
+  project_id:
+    type: string
+    path: '$.project.id'
+    description: UUID of the parent project
+  project_name:
+    type: string
+    path: '$.project.name'
+    description: Project display name
+  created_at:
+    type: timestamp
+    path: '$.createdAt'
+    description: Timestamp when the issue was created
+  updated_at:
+    type: timestamp
+    path: '$.updatedAt'
+    description: Timestamp when the issue was last updated
+  completed_at:
+    type: timestamp
+    path: '$.completedAt'
+    description: Timestamp when the issue was completed
+  canceled_at:
+    type: timestamp
+    path: '$.canceledAt'
+    description: Timestamp when the issue was cancelled
+  due_date:
+    type: string
+    path: '$.dueDate'
+    description: Due date as YYYY-MM-DD string
+
+extract:
+  record_path: '$.data.issues.nodes'
+  pagination:
+    type: cursor
+    cursor_path: '$.data.issues.pageInfo.endCursor'
+    cursor_param: variables.after
+  incremental:
+    cursor_field: updated_at
+    cursor_param: variables.updatedAfter
+  table:
+    primary_key: [id]
+    trust_tier: silver

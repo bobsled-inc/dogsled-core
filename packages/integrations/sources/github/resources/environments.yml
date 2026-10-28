@@ -1,0 +1,125 @@
+type: resource
+name: environments
+description: Deployment environments configured for a GitHub repository, including protection rules and branch deployment policy metadata.
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/environments
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+    page: ${{ input.page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  per_page:
+    type: integer
+    description: Number of environments to return per page (max 100)
+    default: 100
+  page:
+    type: integer
+    description: Page number to fetch
+    default: 1
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the environment
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Environment name, such as production or staging
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for the environment
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser URL for the environment deployment activity log
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the environment was created
+  updated_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.updated_at
+    description: Timestamp when the environment was last updated
+  protection_rule_types:
+    type: array
+    semantic_role: categorical
+    path: $.protection_rules[*].type
+    description: Types of protection rules configured on the environment
+  protection_rules:
+    type: array
+    semantic_role: categorical
+    path: $.protection_rules
+    description: Full protection rule objects configured on the environment
+  deployment_branch_policy_protected_branches:
+    type: boolean
+    semantic_role: categorical
+    path: $.deployment_branch_policy.protected_branches
+    description: True when only protected branches may deploy to the environment
+  deployment_branch_policy_custom_branch_policies:
+    type: boolean
+    semantic_role: categorical
+    path: $.deployment_branch_policy.custom_branch_policies
+    description: True when custom branch policies are configured for the environment
+  deployment_branch_policy:
+    type: object
+    semantic_role: categorical
+    path: $.deployment_branch_policy
+    description: Deployment branch policy configuration for the environment
+extract:
+  record_path: $.environments
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+via: rest

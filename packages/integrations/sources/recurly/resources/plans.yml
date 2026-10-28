@@ -1,0 +1,30 @@
+type: resource
+name: plans
+description: List Recurly plans
+api:
+  endpoint: /plans
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Plan identifier
+  code:
+    type: string
+    path: $.code
+    description: Plan code
+  name:
+    type: string
+    path: $.name
+    description: Plan name
+  state:
+    type: string
+    path: $.state
+    description: Plan state
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

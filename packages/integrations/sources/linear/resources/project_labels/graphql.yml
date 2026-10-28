@@ -1,0 +1,107 @@
+type: resource
+name: project_labels_graphql
+via: graphql
+entity: project_labels
+description: Project labels from Linear for organizing projects by custom label groups
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  projectLabels(first: 50, after: $after, orderBy: updatedAt, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id name description color isGroup\n      parent { id name }\n      creator { id name email }\n      createdAt updatedAt archivedAt lastAppliedAt retiredAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: ISO 8601 timestamp used to fetch project labels updated on or after this date
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique project label UUID
+  name:
+    type: string
+    path: $.name
+    description: Project label name
+  description:
+    type: string
+    path: $.description
+    description: Project label description
+  color:
+    type: string
+    path: $.color
+    description: Label color as a hex string
+  is_group:
+    type: boolean
+    path: $.isGroup
+    description: Whether this label is a project label group
+  parent_id:
+    type: string
+    path: $.parent.id
+    description: UUID of the parent project label group
+  parent_name:
+    type: string
+    path: $.parent.name
+    description: Name of the parent project label group
+  creator_id:
+    type: string
+    path: $.creator.id
+    description: UUID of the user who created the project label
+  creator_name:
+    type: string
+    path: $.creator.name
+    description: Display name of the user who created the project label
+  creator_email:
+    type: string
+    path: $.creator.email
+    description: Email address of the user who created the project label
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Timestamp when the project label was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Timestamp when the project label was last updated
+  archived_at:
+    type: timestamp
+    path: $.archivedAt
+    description: Timestamp when the project label was archived
+  last_applied_at:
+    type: timestamp
+    path: $.lastAppliedAt
+    description: Timestamp when the project label was last applied
+  retired_at:
+    type: timestamp
+    path: $.retiredAt
+    description: Timestamp when the project label was retired
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.projectLabels.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.projectLabels.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

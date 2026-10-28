@@ -1,0 +1,45 @@
+type: resource
+name: contacts
+description: Customer contacts with email, account association, and profile information
+api:
+  endpoint: /contacts
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique contact identifier
+  name:
+    type: string
+    path: $.name
+    description: Contact display name
+  email:
+    type: string
+    path: $.email
+    description: Contact email address
+  account_id:
+    type: string
+    path: $.account_id
+    description: Account ID the contact belongs to
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL of the contact avatar
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the contact was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the contact was last updated
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id

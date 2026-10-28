@@ -1,0 +1,24 @@
+spec_version: '0.2'
+name: order_items
+type: model
+description: 'Order line items joined with product details.'
+grain: order_item_id
+source:
+  ref: ecom.raw_order_items
+joins:
+  - ref: ecom.raw_products
+    type: left
+    on: 'ecom.raw_order_items.PRODUCT_ID = ecom.raw_products.ID'
+columns:
+  - name: ORDER_ITEM_ID
+    expr: ecom.raw_order_items.ID
+  - name: ORDER_ID
+    expr: ecom.raw_order_items.ORDER_ID
+  - name: PRODUCT_NAME
+    expr: ecom.raw_products.NAME
+  - name: QUANTITY
+    expr: ecom.raw_order_items.QUANTITY
+  - name: LINE_TOTAL
+    expr: 'ecom.raw_order_items.QUANTITY * ecom.raw_products.PRICE'
+materialization:
+  type: view

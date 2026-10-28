@@ -1,0 +1,50 @@
+type: resource
+name: tickets
+description: List all tickets
+api:
+  endpoint: /tickets
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk ticket identifier
+  subject:
+    type: string
+    path: $.subject
+    description: Ticket subject line
+  status:
+    type: integer
+    path: $.status
+    description: Numeric Freshdesk ticket status
+  priority:
+    type: integer
+    path: $.priority
+    description: Numeric Freshdesk ticket priority
+  requester_id:
+    type: integer
+    path: $.requester_id
+    description: Contact identifier for the requester
+  responder_id:
+    type: integer
+    path: $.responder_id
+    description: Agent identifier currently assigned to the ticket
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Ticket creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Ticket last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

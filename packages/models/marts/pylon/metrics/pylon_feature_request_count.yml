@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: pylon_feature_request_count
+description: Number of Pylon feature requests.
+model: pylon__feature_requests
+expression: COUNT({pylon__feature_requests}.feature_request_id)
+synonyms: [feature requests, product requests, request count]
+tags: [pylon, product, feedback]

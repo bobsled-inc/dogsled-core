@@ -1,0 +1,194 @@
+openapi: '3.0.3'
+info:
+  title: GitHub REST API
+  description: GitHub's v3 REST API.
+  version: '1.1.4'
+servers:
+  - url: https://api.github.com
+paths:
+  /repos/{owner}/{repo}/issues:
+    get:
+      operationId: listIssues
+      summary: List repository issues
+      tags:
+        - issues
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+          example: octocat
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+          example: hello-world
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [open, closed, all]
+            default: open
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 30
+            maximum: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: since
+          in: query
+          description: Only show results that were last updated after the given time
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Issue'
+  /repos/{owner}/{repo}/issues/{issue_number}:
+    get:
+      operationId: getIssue
+      summary: Get an issue
+      tags:
+        - issues
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: issue_number
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+  /repos/{owner}/{repo}/pulls:
+    get:
+      operationId: listPullRequests
+      summary: List pull requests
+      tags:
+        - pulls
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [open, closed, all]
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 30
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PullRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Issue:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        title:
+          type: string
+        state:
+          type: string
+        body:
+          type: string
+        user:
+          type: object
+          properties:
+            login:
+              type: string
+            id:
+              type: integer
+            avatar_url:
+              type: string
+              format: uri
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+    PullRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        title:
+          type: string
+        state:
+          type: string
+        user:
+          type: object
+          properties:
+            login:
+              type: string
+            id:
+              type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        merged_at:
+          type: string
+          format: date-time

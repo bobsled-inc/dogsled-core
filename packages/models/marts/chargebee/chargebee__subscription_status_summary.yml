@@ -1,0 +1,42 @@
+spec_version: '0.2'
+name: chargebee__subscription_status_summary
+type: model
+description: Chargebee subscription counts and MRR summarized by status and currency.
+grain:
+  - subscription_status
+  - currency_code
+source:
+  ref: stg_chargebee__list_subscriptions
+columns:
+  - name: subscription_status
+    expr: json_value(stg_chargebee__list_subscriptions.subscription, 'status')
+    semantic_role: categorical
+    description: Chargebee subscription status.
+  - name: currency_code
+    expr: json_value(stg_chargebee__list_subscriptions.subscription, 'currency_code')
+    semantic_role: categorical
+    description: Currency used by subscriptions in the bucket.
+  - name: subscription_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of subscriptions in the bucket.
+  - name: distinct_customer_count
+    expr: count_distinct(COALESCE(json_value(stg_chargebee__list_subscriptions.subscription, 'customer_id'), json_value(stg_chargebee__list_subscriptions.customer, 'id')))
+    semantic_role: measure
+    description: Number of distinct customers represented in the bucket.
+  - name: total_mrr
+    expr: SUM(COALESCE(CAST(NULLIF(json_value(stg_chargebee__list_subscriptions.subscription, 'mrr'), '') AS NUMERIC(16, 2)) / 100.0, 0))
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total monthly recurring revenue in the bucket, normalized into standard currency units.
+group_by:
+  - subscription_status
+  - currency_code
+tags:
+  - chargebee
+  - subscriptions
+  - summary
+trust_tier: gold
+materialization:
+  type: table

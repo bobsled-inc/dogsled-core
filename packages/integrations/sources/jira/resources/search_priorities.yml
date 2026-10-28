@@ -1,0 +1,61 @@
+type: resource
+name: search_priorities
+description: Search Jira priorities
+api:
+  endpoint: /rest/api/3/priority/search
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    priorityName: ${{ input.priority_name }}
+    onlyDefault: ${{ input.only_default }}
+input:
+  start_at:
+    type: integer
+    description: The index of the first priority to return
+    default: 0
+  max_results:
+    type: integer
+    description: The maximum number of priorities to return per page
+    default: 50
+  priority_name:
+    type: string
+    description: Optional priority name search string
+  only_default:
+    type: boolean
+    description: Whether to only return default priorities
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira priority identifier
+  name:
+    type: string
+    path: $.name
+    description: Priority name
+  description:
+    type: string
+    path: $.description
+    description: Priority description
+  is_default:
+    type: boolean
+    path: $.isDefault
+    description: Whether the priority is a default option
+  status_color:
+    type: string
+    path: $.statusColor
+    description: UI color used for the priority
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+verify:
+  suppress:
+    - DEPRECATED_OPERATION
+    - PAGINATION_MISMATCH

@@ -1,0 +1,7 @@
+name: shopify
+display_name: Shopify
+description: Commerce models for Shopify customers, orders, product catalog, and inventory.
+tags:
+  - shopify
+  - ecommerce
+  - retail

@@ -1,0 +1,31 @@
+spec_version: '2'
+type: source
+name: snapchat_ads
+description: Snapchat Marketing API for organizations, ad accounts, campaigns, ad squads, and ads.
+transports:
+  - id: default
+    base_url: https://adsapi.snapchat.com/v1
+    auth:
+      type: oauth2
+      grant_type: authorization_code
+      token_url: https://accounts.snapchat.com/login/oauth2/access_token
+      client_id: ${{ env.SNAPCHAT_CLIENT_ID }}
+      client_secret: ${{ env.SNAPCHAT_CLIENT_SECRET }}
+      refresh_token: ${{ env.SNAPCHAT_REFRESH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

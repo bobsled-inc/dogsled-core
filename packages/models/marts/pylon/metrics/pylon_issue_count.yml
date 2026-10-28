@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: pylon_issue_count
+description: Number of Pylon issues.
+model: pylon__issues
+expression: COUNT({pylon__issues}.issue_id)
+synonyms: [issues, support tickets, issue volume]
+tags: [pylon, support, issues]

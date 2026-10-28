@@ -1,0 +1,76 @@
+spec_version: '0.2'
+name: hubspot__deals
+type: model
+description: HubSpot deals enriched with owner, pipeline, and stage labels.
+grain: deal_id
+source:
+  ref: stg_hubspot__deals
+joins:
+  - ref: stg_hubspot__owners
+    type: left
+    on: stg_hubspot__deals.owner_id = stg_hubspot__owners.owner_id
+  - ref: stg_hubspot__pipelines
+    type: left
+    on: stg_hubspot__deals.pipeline = stg_hubspot__pipelines.pipeline_id
+  - ref: stg_hubspot__pipeline_stages
+    type: left
+    on: stg_hubspot__deals.deal_stage = stg_hubspot__pipeline_stages.pipeline_stage_id
+columns:
+  - name: deal_id
+    expr: stg_hubspot__deals.deal_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique HubSpot deal identifier.
+  - name: deal_name
+    expr: stg_hubspot__deals.deal_name
+    semantic_role: categorical
+    description: Display name of the deal.
+  - name: amount
+    expr: stg_hubspot__deals.amount
+    semantic_role: measure
+    tags:
+      - financial
+    description: Deal amount in the portal currency.
+  - name: pipeline_id
+    expr: stg_hubspot__deals.pipeline
+    semantic_role: entity_id
+    references: stg_hubspot__pipelines.pipeline_id
+    description: Pipeline identifier for the deal.
+  - name: pipeline_label
+    expr: stg_hubspot__pipelines.label
+    semantic_role: categorical
+    description: Display label of the deal pipeline.
+  - name: deal_stage_id
+    expr: stg_hubspot__deals.deal_stage
+    semantic_role: entity_id
+    references: stg_hubspot__pipeline_stages.pipeline_stage_id
+    description: Current stage identifier for the deal.
+  - name: deal_stage_label
+    expr: stg_hubspot__pipeline_stages.label
+    semantic_role: categorical
+    description: Current stage label for the deal.
+  - name: owner_id
+    expr: stg_hubspot__deals.owner_id
+    semantic_role: entity_id
+    references: stg_hubspot__owners.owner_id
+    description: Assigned owner of the deal.
+  - name: owner_email
+    expr: stg_hubspot__owners.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the assigned deal owner.
+  - name: close_date
+    expr: stg_hubspot__deals.close_date
+    semantic_role: time_dimension
+    description: Expected or actual close date of the deal.
+  - name: created_at
+    expr: stg_hubspot__deals.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the deal was created.
+tags:
+  - hubspot
+  - deals
+trust_tier: gold
+materialization:
+  type: table

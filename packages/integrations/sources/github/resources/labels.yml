@@ -1,0 +1,113 @@
+type: resource
+name: labels
+description: Labels for a GitHub repository used to categorize and filter issues and pull requests
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/labels
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  per_page:
+    type: integer
+    description: Number of labels to return per page (max 100)
+    default: 100
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the label
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Display name of the label as shown on issues and pull requests (e.g. "bug", "enhancement", "help wanted")
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this label resource
+  color:
+    type: string
+    semantic_role: identifier
+    path: $.color
+    description: Six-character hex color code for the label background without the leading hash (e.g. "d73a4a" for red, "0075ca" for blue)
+  description:
+    type: string
+    semantic_role: categorical
+    path: $.description
+    description: Optional description explaining when to apply this label and what it signifies
+  default:
+    type: boolean
+    semantic_role: categorical
+    path: $.default
+    description: True if this is one of GitHub's default labels automatically created with new repositories (e.g. "bug", "documentation", "enhancement")
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single label by repository owner, name, and label name
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/labels/${{ input.name }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    name:
+      type: string
+      required: true
+      description: The label name (URL-encoded if it contains special characters)
+  extract:
+    record_path: $
+via: rest

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: shopify_inventory_quantity
+description: Total available Shopify inventory across inventory items and locations.
+model: shopify__inventory_levels
+expression: SUM({shopify__inventory_levels}.available)
+synonyms: [available inventory, units in stock, inventory quantity]
+tags: [shopify, commerce, inventory]

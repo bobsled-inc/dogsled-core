@@ -1,0 +1,36 @@
+type: resource
+name: workspaces
+description: List Typeform workspaces
+api:
+  endpoint: /workspaces
+  method: GET
+  query_params:
+    page_size: ${{ input.page_size }}
+    after: ${{ input.after }}
+input:
+  page_size:
+    type: integer
+    description: Page size
+    default: 100
+  after:
+    type: string
+    description: Pagination cursor
+output:
+  id:
+    type: string
+    path: $.id
+    description: Workspace identifier
+  name:
+    type: string
+    path: $.name
+    description: Workspace name
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: cursor
+    cursor_param: after
+    cursor_path: $.page.next_token

@@ -1,0 +1,22 @@
+spec_version: '0.2'
+name: customers
+type: source
+source_type: warehouse_table
+connection: shopify
+table: raw.shopify_customers
+description: Synthetic Shopify company export (B2B customers) for the Entity Graph demo workspace.
+trust_tier: silver
+schema:
+  columns:
+    - name: source_id
+      type: STRING
+    - name: name
+      type: STRING
+    - name: website
+      type: STRING
+    - name: phone
+      type: STRING
+    - name: country
+      type: STRING
+    - name: updated_at
+      type: TIMESTAMP

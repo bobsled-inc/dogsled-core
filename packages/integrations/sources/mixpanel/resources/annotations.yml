@@ -1,0 +1,31 @@
+type: resource
+name: annotations
+description: Project annotations in Mixpanel.
+api:
+  endpoint: /annotations
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  description:
+    type: string
+    path: $.description
+  date:
+    type: timestamp
+    path: $.date
+  created_by:
+    type: string
+    path: $.created_by
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+  project_id:
+    type: string
+    path: $.project_id
+extract:
+  record_path: $.annotations
+  table:
+    primary_key:
+      - id

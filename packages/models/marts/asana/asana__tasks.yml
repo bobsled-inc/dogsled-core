@@ -1,0 +1,73 @@
+spec_version: '0.2'
+name: asana__tasks
+type: model
+description: Asana tasks enriched with assignee and workspace context.
+grain: task_id
+source:
+  ref: stg_asana__get_tasks
+joins:
+  - ref: stg_asana__get_workspace_users
+    type: left
+    on: stg_asana__get_tasks.assignee_gid = stg_asana__get_workspace_users.gid
+  - ref: stg_asana__get_workspaces
+    type: left
+    on: stg_asana__get_tasks.workspace_gid = stg_asana__get_workspaces.gid
+columns:
+  - name: task_id
+    expr: stg_asana__get_tasks.gid
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Asana task identifier.
+  - name: name
+    expr: stg_asana__get_tasks.name
+    semantic_role: categorical
+    description: Task name.
+  - name: completed
+    expr: stg_asana__get_tasks.completed
+    semantic_role: categorical
+    description: Whether the task is completed.
+  - name: assignee_gid
+    expr: stg_asana__get_tasks.assignee_gid
+    semantic_role: entity_id
+    references: stg_asana__get_workspace_users.gid
+    description: GID of the assigned user.
+  - name: assignee_name
+    expr: COALESCE(stg_asana__get_workspace_users.name, stg_asana__get_tasks.assignee_name)
+    semantic_role: categorical
+    description: Display name of the assigned user.
+  - name: workspace_gid
+    expr: stg_asana__get_tasks.workspace_gid
+    semantic_role: entity_id
+    references: stg_asana__get_workspaces.gid
+    description: GID of the workspace.
+  - name: workspace_name
+    expr: COALESCE(stg_asana__get_workspaces.name, stg_asana__get_tasks.workspace_name)
+    semantic_role: categorical
+    description: Name of the workspace.
+  - name: due_at
+    expr: stg_asana__get_tasks.due_at
+    semantic_role: time_dimension
+    description: Timestamp when the task is due.
+  - name: due_on
+    expr: stg_asana__get_tasks.due_on
+    semantic_role: time_dimension
+    description: Date when the task is due.
+  - name: completed_at
+    expr: stg_asana__get_tasks.completed_at
+    semantic_role: event_timestamp
+    description: Timestamp when the task was completed.
+  - name: created_at
+    expr: stg_asana__get_tasks.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the task was created.
+  - name: modified_at
+    expr: stg_asana__get_tasks.modified_at
+    semantic_role: event_timestamp
+    description: Timestamp when the task was last modified.
+tags:
+  - asana
+  - tasks
+  - project-management
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: source
+name: raw_pairs
+source_type: warehouse_table
+connection: local
+table: main.raw_pairs
+schema:
+  columns:
+    - { name: pair_id, type: string, primary_key: true }
+    - { name: left_record, type: string }
+    - { name: right_record, type: string }
+    - { name: prepared_evidence, type: string }
+    - { name: status, type: string }

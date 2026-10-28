@@ -1,0 +1,82 @@
+type: resource
+name: get_webhooks
+description: List webhooks
+api:
+  endpoint: /webhook
+  method: GET
+  query_params:
+    scope-id: ${{ input.scope_id }}
+    scope-type: ${{ input.scope_type }}
+input:
+  scope_id:
+    type: string
+    required: true
+    description: ID of the scope being used (at the moment, only project ID is supported)
+  scope_type:
+    type: string
+    required: true
+    description: Type of the scope being used
+    enum:
+      - project
+    default: project
+output:
+  url:
+    type: string
+    path: $.url
+    description: URL to deliver the webhook to.
+  verify_tls:
+    type: boolean
+    path: $.verify-tls
+    description: Whether to enforce TLS certificate verification when delivering the webhook
+  id:
+    type: string
+    path: $.id
+    description: 'The unique ID of the webhook (format: uuid)'
+  signing_secret:
+    type: string
+    path: $.signing-secret
+    description:
+      Masked value of the secret used to build an HMAC hash of the payload and passed as a
+      header in the webhook request
+  updated_at:
+    type: timestamp
+    path: $.updated-at
+    description: The date and time the webhook was last updated.
+  name:
+    type: string
+    path: $.name
+    description: Name of the webhook
+  created_at:
+    type: timestamp
+    path: $.created-at
+    description: The date and time the webhook was created.
+  scope_id:
+    type: string
+    path: $.scope.id
+    description: 'ID of the scope being used (at the moment, only project ID is supported) (format: uuid)'
+  scope_type:
+    type: string
+    path: $.scope.type
+    description: Type of the scope being used
+  events:
+    type: array
+    path: $.events
+    description: Events that will trigger the webhook
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+verify:
+  suppress:
+    - INPUT_COMPLETENESS
+lookup:
+  description: Get a webhook
+  api:
+    endpoint: /webhook/${{ input.webhook_id }}
+    method: GET
+  input:
+    webhook_id:
+      type: string
+      required: true

@@ -1,0 +1,73 @@
+spec_version: '0.2'
+name: langsmith__session_run_summary
+type: model
+description: Session-level run health, token, and cost summary by run type and status.
+grain:
+  - session_id
+  - run_type
+  - status
+source:
+  ref: stg_langsmith__runs
+joins:
+  - ref: stg_langsmith__sessions
+    type: left
+    on: stg_langsmith__runs.session_id = stg_langsmith__sessions.session_id
+columns:
+  - name: session_id
+    expr: stg_langsmith__runs.session_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_langsmith__sessions.session_id
+    description: Session or project that owns the runs.
+  - name: session_name
+    expr: stg_langsmith__sessions.name
+    semantic_role: name
+    description: Session or project display name.
+  - name: run_type
+    expr: stg_langsmith__runs.run_type
+    primary_key: true
+    semantic_role: categorical
+    description: LangSmith run type, such as chain, llm, tool, retriever, or embedding.
+  - name: status
+    expr: stg_langsmith__runs.status
+    primary_key: true
+    semantic_role: categorical
+    description: Run execution status.
+  - name: run_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of runs in the session, type, and status bucket.
+  - name: error_run_count
+    expr: SUM(CASE WHEN stg_langsmith__runs.error IS NOT NULL THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Number of runs in the bucket with captured errors.
+  - name: first_run_start_at
+    expr: MIN(stg_langsmith__runs.start_time)
+    semantic_role: event_timestamp
+    description: Earliest run start timestamp in the bucket.
+  - name: last_run_end_at
+    expr: MAX(stg_langsmith__runs.end_time)
+    semantic_role: event_timestamp
+    description: Latest run end timestamp in the bucket.
+  - name: total_tokens
+    expr: SUM(stg_langsmith__runs.total_tokens)
+    semantic_role: measure
+    description: Total tokens attributed to the bucket.
+  - name: total_cost
+    expr: SUM(stg_langsmith__runs.total_cost)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total cost attributed to the bucket.
+group_by:
+  - session_id
+  - session_name
+  - run_type
+  - status
+tags:
+  - langsmith
+  - sessions
+  - summary
+trust_tier: gold
+materialization:
+  type: table

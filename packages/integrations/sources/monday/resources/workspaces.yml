@@ -1,0 +1,29 @@
+type: resource
+name: workspaces
+description: Workspaces in Monday.com.
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: query { workspaces { id name kind description } }
+    variables: {}
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  kind:
+    type: string
+    path: $.kind
+  description:
+    type: string
+    path: $.description
+extract:
+  record_path: $.data.workspaces
+  table:
+    primary_key:
+      - id
+via: graphql

@@ -1,0 +1,35 @@
+type: resource
+name: metadata_dimensions
+description: Metadata dimensions available for a GA4 property.
+api:
+  endpoint: /properties/${{ input.property_id }}/metadata
+  method: GET
+input:
+  property_id:
+    type: string
+    required: true
+    default: '123456789'
+output:
+  api_name:
+    type: string
+    path: $.apiName
+  ui_name:
+    type: string
+    path: $.uiName
+  category:
+    type: string
+    path: $.category
+  description:
+    type: string
+    path: $.description
+  deprecated_api_names:
+    type: array
+    path: $.deprecatedApiNames
+  custom_definition:
+    type: boolean
+    path: $.customDefinition
+extract:
+  record_path: $.dimensions
+  table:
+    primary_key:
+      - api_name

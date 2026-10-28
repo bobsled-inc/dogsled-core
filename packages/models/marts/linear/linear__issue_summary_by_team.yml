@@ -1,0 +1,44 @@
+spec_version: '0.2'
+name: linear__issue_summary_by_team
+type: model
+description: Issue volume, estimate, and average priority grouped by team and state type.
+grain:
+  - team_id
+  - state_type
+source:
+  ref: stg_linear__issues
+columns:
+  - name: team_id
+    expr: stg_linear__issues.team_id
+    semantic_role: entity_id
+    description: Stable Linear team identifier.
+  - name: team_name
+    expr: stg_linear__issues.team_name
+    semantic_role: categorical
+    description: Team display name.
+  - name: state_type
+    expr: stg_linear__issues.state_type
+    semantic_role: categorical
+    description: State category such as started or completed.
+  - name: issue_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Count of issues for the team and state bucket.
+  - name: total_estimate
+    expr: SUM(stg_linear__issues.estimate)
+    semantic_role: measure
+    description: Sum of issue estimates in the bucket.
+  - name: avg_priority
+    expr: AVG(stg_linear__issues.priority)
+    semantic_role: measure
+    description: Average priority level in the bucket.
+group_by:
+  - team_id
+  - state_type
+  - team_name
+tags:
+  - linear
+  - teams
+trust_tier: gold
+materialization:
+  type: table

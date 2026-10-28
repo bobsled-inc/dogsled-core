@@ -1,0 +1,52 @@
+spec_version: '1'
+type: resource
+name: users
+integration: notion
+description: Users and bots in the Notion workspace
+
+api:
+  endpoint: '/v1/users'
+  method: GET
+  query_params:
+    page_size: '${{ input.page_size }}'
+
+input:
+  page_size:
+    type: integer
+    description: Number of users to return per page (max 100)
+    default: 100
+
+output:
+  id:
+    type: string
+    path: '$.id'
+    description: Unique user UUID
+  name:
+    type: string
+    path: '$.name'
+    description: Display name of the user or bot
+  object:
+    type: string
+    path: '$.object'
+    description: Always "user"
+  user_type:
+    type: string
+    path: '$.type'
+    description: User type — "person" or "bot"
+  email:
+    type: string
+    path: '$.person.email'
+    description: Email address (only present for person type)
+  avatar_url:
+    type: string
+    path: '$.avatar_url'
+    description: URL of the user avatar image
+
+extract:
+  record_path: '$.results'
+  pagination:
+    type: cursor
+    cursor_path: '$.next_cursor'
+    cursor_param: start_cursor
+  table:
+    primary_key: [id]

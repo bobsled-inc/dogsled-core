@@ -1,0 +1,12 @@
+spec_version: '0.2'
+name: events
+type: source
+# Warehouse table in W2 (BigQuery) — model C.
+source_type: warehouse_table
+connection: bigquery
+table: raw.events
+schema:
+  columns:
+    - { name: event_id, type: integer, primary_key: true }
+    - { name: account_id, type: integer }
+    - { name: event_value, type: number }

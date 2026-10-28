@@ -1,0 +1,58 @@
+type: resource
+name: versions
+description: List versions and releases for projects returned by the Jira project search stream.
+api:
+  endpoint: /rest/api/3/project/${{ input.project_id }}/versions
+  method: GET
+input:
+  project_id:
+    type: string
+    required: true
+    description: Project identifier to list versions for.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Version identifier.
+  name:
+    type: string
+    path: $.name
+    description: Version name.
+  description:
+    type: string
+    path: $.description
+    description: Version description.
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether the version is archived.
+  released:
+    type: boolean
+    path: $.released
+    description: Whether the version has been released.
+  start_date:
+    type: string
+    path: $.startDate
+    description: Version start date in YYYY-MM-DD format.
+  release_date:
+    type: string
+    path: $.releaseDate
+    description: Version release date in YYYY-MM-DD format.
+  project_id:
+    type: integer
+    path: $.projectId
+    description: Identifier of the project this version belongs to.
+  self:
+    type: string
+    path: $.self
+    description: Jira API URL for the version.
+extract:
+  record_path: $
+  for_each:
+    resource: search_projects
+    field: id
+    input: project_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

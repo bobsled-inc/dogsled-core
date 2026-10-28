@@ -1,0 +1,7 @@
+sources_dir: sources
+seeds_dir: seeds
+models_dir: models
+metrics_dir: metrics
+relationships_dir: relationships
+vqs_dir: vqs
+integrations_dir: integrations

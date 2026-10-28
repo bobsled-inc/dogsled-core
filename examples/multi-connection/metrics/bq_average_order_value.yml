@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: bq_average_order_value
+description: Average order value (AOV) on BigQuery fact orders.
+model: bq_fct_orders
+expression: SUM(total) / NULLIF(COUNT(DISTINCT order_id), 0)
+synonyms: [aov]
+tags: [kpi, bigquery]

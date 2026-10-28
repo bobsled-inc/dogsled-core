@@ -1,0 +1,54 @@
+spec_version: '0.2'
+name: notion__users
+type: model
+description: User detail with page creation rollups for Notion workspace members.
+grain: user_id
+source:
+  ref: stg_notion__users
+joins:
+  - ref: stg_notion__pages
+    type: left
+    on: stg_notion__users.user_id = stg_notion__pages.created_by_id
+    pre_aggregate:
+      group_by:
+        - created_by_id
+      columns:
+        - name: page_count
+          expr: COUNT(*)
+        - name: most_recent_page_at
+          expr: MAX(created_time)
+columns:
+  - name: user_id
+    expr: stg_notion__users.user_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Notion user identifier.
+  - name: name
+    expr: stg_notion__users.name
+    semantic_role: categorical
+    description: Display name of the user.
+  - name: type
+    expr: stg_notion__users.type
+    semantic_role: categorical
+    description: User type (person or bot).
+  - name: email
+    expr: stg_notion__users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the user.
+  - name: page_count
+    expr: COALESCE(stg_notion__pages.page_count, 0)
+    semantic_role: measure
+    description: Number of pages created by the user.
+  - name: most_recent_page_at
+    expr: stg_notion__pages.most_recent_page_at
+    semantic_role: event_timestamp
+    description: Timestamp of the most recent page created by the user.
+tags:
+  - notion
+  - collaboration
+  - users
+trust_tier: gold
+materialization:
+  type: table

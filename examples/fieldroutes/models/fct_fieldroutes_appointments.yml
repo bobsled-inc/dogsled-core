@@ -1,0 +1,43 @@
+spec_version: '0.2'
+name: fct_fieldroutes_appointments
+type: model
+description: Core appointment fact for operations, scheduling, and dispatch analytics.
+grain: APPOINTMENT_ID
+source:
+  ref: stg_fieldroutes_appointments
+columns:
+  - name: APPOINTMENT_ID
+    expr: APPOINTMENT_ID
+    primary_key: true
+  - name: OFFICE_ID
+    expr: OFFICE_ID
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+  - name: ROUTE_ID
+    expr: ROUTE_ID
+  - name: SPOT_ID
+    expr: SPOT_ID
+  - name: SUBSCRIPTION_ID
+    expr: SUBSCRIPTION_ID
+  - name: APPOINTMENT_DATE
+    expr: DATE
+  - name: START_TIME
+    expr: START
+  - name: END_TIME
+    expr: END
+  - name: DURATION_MINUTES
+    expr: DURATION
+  - name: STATUS
+    expr: STATUS
+  - name: STATUS_TEXT
+    expr: STATUS_TEXT
+  - name: COMPLETED_BY
+    expr: COMPLETED_BY
+  - name: SERVICED_BY
+    expr: SERVICED_BY
+  - name: TICKET_ID
+    expr: TICKET_ID
+  - name: AMOUNT_COLLECTED
+    expr: AMOUNT_COLLECTED
+materialization:
+  type: view

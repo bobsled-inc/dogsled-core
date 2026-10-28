@@ -1,0 +1,50 @@
+type: resource
+name: campaigns
+description: Campaigns for each Meta ad account.
+api:
+  endpoint: /${{ input.ad_account_id }}/campaigns
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  ad_account_id:
+    type: string
+    default: act_1
+  fields:
+    type: string
+    default: id,name,status,objective,start_time,stop_time
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  objective:
+    type: string
+    path: $.objective
+  start_time:
+    type: timestamp
+    path: $.start_time
+  stop_time:
+    type: timestamp
+    path: $.stop_time
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

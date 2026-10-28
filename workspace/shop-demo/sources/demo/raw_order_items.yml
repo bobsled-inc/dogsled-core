@@ -1,0 +1,15 @@
+spec_version: '0.2'
+name: raw_order_items
+type: source
+source_type: warehouse_table
+connection: duckdb
+table: raw.raw_order_items
+description: Loaded seed table for order line items.
+trust_tier: bronze
+schema:
+  columns:
+    - { name: order_item_id, type: STRING }
+    - { name: order_id, type: STRING }
+    - { name: product_id, type: STRING }
+    - { name: quantity, type: NUMBER }
+    - { name: unit_price, type: NUMBER }

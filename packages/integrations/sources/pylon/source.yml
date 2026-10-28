@@ -1,0 +1,26 @@
+spec_version: '2'
+type: source
+name: pylon
+description: Pylon customer support platform API for issues, accounts, contacts, and knowledge base
+transports:
+  - id: default
+    base_url: https://api.usepylon.com
+    auth:
+      type: bearer
+      token: ${{ env.PYLON_API_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 0.15
+      burst: 2
+    headers:
+      User-Agent: dogsled-extractor
+default_transport: default

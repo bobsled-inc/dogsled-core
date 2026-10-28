@@ -1,0 +1,7 @@
+display_name: Template
+category: developer-tools
+tags: [example]
+docs_url: https://docs.example.com
+auth_setup:
+  - env: TEMPLATE_API_TOKEN
+    description: API token for authentication

@@ -1,0 +1,164 @@
+spec_version: '0.2'
+name: vercel__sandboxes
+type: model
+description: Vercel sandbox configuration and cumulative usage counters, retained without summing repeated observations.
+grain:
+  - project_id
+  - sandbox_name
+source:
+  ref: stg_vercel__sandboxes
+joins:
+  - ref: stg_vercel__projects
+    type: left
+    on: stg_vercel__sandboxes.project_id = stg_vercel__projects.project_id
+columns:
+  - name: project_id
+    expr: stg_vercel__sandboxes.project_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_vercel__projects.project_id
+    description: Vercel project scope when supplied.
+  - name: team_id
+    expr: stg_vercel__sandboxes.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for the extraction request.
+  - name: team_slug
+    expr: stg_vercel__sandboxes.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for the extraction request.
+  - name: sandbox_name
+    expr: stg_vercel__sandboxes.name
+    primary_key: true
+    semantic_role: entity_id
+    description: Stable sandbox name within a project.
+  - name: project_name
+    expr: stg_vercel__projects.name
+    semantic_role: categorical
+    description: Project name from the project catalog when the sandbox project is known.
+  - name: project_account_id
+    expr: stg_vercel__projects.account_id
+    semantic_role: entity_id
+    description: Owning Vercel team or account identifier from the project catalog.
+  - name: project_framework
+    expr: stg_vercel__projects.framework
+    semantic_role: categorical
+    description: Framework configured or detected for the sandbox project.
+  - name: current_snapshot_id
+    expr: stg_vercel__sandboxes.current_snapshot_id
+    semantic_role: entity_id
+    description: Current snapshot identifier.
+  - name: current_session_id
+    expr: stg_vercel__sandboxes.current_session_id
+    semantic_role: entity_id
+    description: Current session identifier.
+  - name: status
+    expr: stg_vercel__sandboxes.status
+    semantic_role: categorical
+    description: Current sandbox status.
+  - name: status_updated_at
+    expr: stg_vercel__sandboxes.status_updated_at
+    semantic_role: event_timestamp
+    description: Time the sandbox status last changed.
+  - name: region
+    expr: stg_vercel__sandboxes.region
+    semantic_role: categorical
+    description: Primary region.
+  - name: failover_regions
+    expr: stg_vercel__sandboxes.failover_regions
+    semantic_role: categorical
+    description: Configured failover regions.
+  - name: vcpus
+    expr: stg_vercel__sandboxes.vcpus
+    semantic_role: measure
+    unit: vcpu
+    description: Allocated virtual CPUs.
+  - name: memory
+    expr: stg_vercel__sandboxes.memory
+    semantic_role: measure
+    unit: megabytes
+    description: Allocated memory.
+  - name: runtime
+    expr: stg_vercel__sandboxes.runtime
+    semantic_role: categorical
+    description: Sandbox runtime.
+  - name: image
+    expr: stg_vercel__sandboxes.image
+    semantic_role: categorical
+    description: Sandbox image identifier.
+  - name: timeout
+    expr: stg_vercel__sandboxes.timeout
+    semantic_role: measure
+    unit: milliseconds
+    description: Sandbox timeout configuration.
+  - name: snapshot_expiration
+    expr: stg_vercel__sandboxes.snapshot_expiration
+    semantic_role: measure
+    unit: milliseconds
+    description: Snapshot expiration interval in milliseconds.
+  - name: keep_last_snapshots
+    expr: stg_vercel__sandboxes.keep_last_snapshots
+    semantic_role: categorical
+    description: Snapshot retention settings returned by Vercel.
+  - name: network_policy
+    expr: stg_vercel__sandboxes.network_policy
+    semantic_role: categorical
+    description: Sandbox network policy.
+  - name: network_id
+    expr: stg_vercel__sandboxes.network_id
+    semantic_role: entity_id
+    description: Vercel network identifier when assigned.
+  - name: cwd
+    expr: stg_vercel__sandboxes.cwd
+    semantic_role: categorical
+    description: Sandbox working directory.
+  - name: persistent
+    expr: stg_vercel__sandboxes.persistent
+    semantic_role: categorical
+    description: Whether the sandbox persists between sessions.
+  - name: tags
+    expr: stg_vercel__sandboxes.tags
+    semantic_role: categorical
+    description: User-defined tags for workload mapping.
+  - name: mounts
+    expr: stg_vercel__sandboxes.mounts
+    semantic_role: categorical
+    description: Sandbox mounts returned by Vercel.
+  - name: total_egress_bytes
+    expr: stg_vercel__sandboxes.total_egress_bytes
+    semantic_role: measure
+    unit: bytes
+    description: Latest cumulative egress counter.
+  - name: total_ingress_bytes
+    expr: stg_vercel__sandboxes.total_ingress_bytes
+    semantic_role: measure
+    unit: bytes
+    description: Latest cumulative ingress counter.
+  - name: total_active_cpu_duration_ms
+    expr: stg_vercel__sandboxes.total_active_cpu_duration_ms
+    semantic_role: measure
+    unit: milliseconds
+    description: Latest cumulative active CPU counter.
+  - name: total_duration_ms
+    expr: stg_vercel__sandboxes.total_duration_ms
+    semantic_role: measure
+    unit: milliseconds
+    description: Latest cumulative duration counter.
+  - name: created_at
+    expr: stg_vercel__sandboxes.created_at
+    semantic_role: event_timestamp
+    description: Sandbox creation timestamp.
+  - name: updated_at
+    expr: stg_vercel__sandboxes.updated_at
+    semantic_role: event_timestamp
+    description: Sandbox update timestamp.
+  - name: expires_at
+    expr: stg_vercel__sandboxes.expires_at
+    semantic_role: event_timestamp
+    description: Sandbox expiration timestamp when supplied.
+tags:
+  - vercel
+  - sandboxes
+  - operations
+trust_tier: gold
+materialization:
+  type: table

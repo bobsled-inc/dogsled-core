@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: jira_issue_count
+description: Number of Jira issues.
+model: jira__issues
+expression: COUNT({jira__issues}.issue_id)
+synonyms: [issues, ticket count, issue volume]
+tags: [jira, engineering, planning]

@@ -1,0 +1,208 @@
+spec_version: '1'
+type: resource
+name: repos
+integration: github
+description: Repositories for a GitHub organization with full metadata
+
+api:
+  endpoint: '/orgs/${{ input.org }}/repos'
+  method: GET
+  query_params:
+    per_page: '${{ input.per_page }}'
+    sort: '${{ input.sort }}'
+    direction: '${{ input.direction }}'
+
+input:
+  org:
+    type: string
+    description: GitHub organization login name
+    default: octocat
+  per_page:
+    type: integer
+    description: Number of repositories to return per page (max 100)
+    default: 100
+  sort:
+    type: string
+    description: Field to sort results by
+    default: updated
+    enum: [created, updated, pushed, full_name]
+  direction:
+    type: string
+    description: Sort order direction
+    default: desc
+    enum: [asc, desc]
+
+output:
+  # Identity
+  id:
+    type: integer
+    path: '$.id'
+    description: Unique numeric identifier assigned by GitHub to the repository
+  node_id:
+    type: string
+    path: '$.node_id'
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    path: '$.name'
+    description: Short repository name without the owner prefix (e.g. "demo-repo")
+  full_name:
+    type: string
+    path: '$.full_name'
+    description: Fully qualified repository name including the owner (e.g. "octocat/Hello-World")
+
+  # Owner
+  owner_login:
+    type: string
+    path: '$.owner.login'
+    description: GitHub username or organization login that owns the repository
+  owner_id:
+    type: integer
+    path: '$.owner.id'
+    description: Unique numeric identifier of the repository owner
+
+  # URLs
+  html_url:
+    type: string
+    path: '$.html_url'
+    description: Browser-accessible URL for the repository on github.com
+  clone_url:
+    type: string
+    path: '$.clone_url'
+    description: HTTPS URL used to clone the repository via git
+  homepage:
+    type: string
+    path: '$.homepage'
+    description: Optional external homepage URL configured in repository settings
+
+  # Description & metadata
+  description:
+    type: string
+    path: '$.description'
+    description: Free-text summary of the repository set by the owner
+  language:
+    type: string
+    path: '$.language'
+    description: Primary programming language detected by GitHub (e.g. "TypeScript", "Python")
+  default_branch:
+    type: string
+    path: '$.default_branch'
+    description: Name of the branch used as the default target for pull requests (e.g. "main")
+  visibility:
+    type: string
+    path: '$.visibility'
+    description: Repository visibility level — "public", "private", or "internal"
+  license_name:
+    type: string
+    path: '$.license.spdx_id'
+    description: SPDX identifier of the repository license (e.g. "MIT", "Apache-2.0"), null if none
+
+  # Flags
+  private:
+    type: boolean
+    path: '$.private'
+    description: True if the repository is not publicly accessible
+  fork:
+    type: boolean
+    path: '$.fork'
+    description: True if the repository was created by forking another repository
+  archived:
+    type: boolean
+    path: '$.archived'
+    description: True if the repository has been archived and is read-only
+  disabled:
+    type: boolean
+    path: '$.disabled'
+    description: True if the repository has been disabled by GitHub (e.g. DMCA takedown)
+  is_template:
+    type: boolean
+    path: '$.is_template'
+    description: True if the repository is configured as a template for creating new repos
+  has_issues:
+    type: boolean
+    path: '$.has_issues'
+    description: True if the GitHub Issues feature is enabled for this repository
+  has_projects:
+    type: boolean
+    path: '$.has_projects'
+    description: True if the GitHub Projects feature is enabled for this repository
+  has_wiki:
+    type: boolean
+    path: '$.has_wiki'
+    description: True if the GitHub Wiki feature is enabled for this repository
+  has_pages:
+    type: boolean
+    path: '$.has_pages'
+    description: True if the repository has GitHub Pages enabled
+  has_downloads:
+    type: boolean
+    path: '$.has_downloads'
+    description: True if the repository has the Downloads feature enabled
+  allow_forking:
+    type: boolean
+    path: '$.allow_forking'
+    description: True if forking is allowed for this repository
+
+  # Counters
+  size:
+    type: integer
+    path: '$.size'
+    description: Approximate repository size in kilobytes as reported by GitHub
+  stargazers_count:
+    type: integer
+    path: '$.stargazers_count'
+    description: Number of users who have starred the repository
+  watchers_count:
+    type: integer
+    path: '$.watchers_count'
+    description: Number of users watching the repository for notifications
+  forks_count:
+    type: integer
+    path: '$.forks_count'
+    description: Total number of forks created from this repository
+  open_issues_count:
+    type: integer
+    path: '$.open_issues_count'
+    description: Combined count of open issues and open pull requests
+
+  # Timestamps
+  created_at:
+    type: timestamp
+    path: '$.created_at'
+    description: Timestamp when the repository was first created on GitHub
+  updated_at:
+    type: timestamp
+    path: '$.updated_at'
+    description: Timestamp of the most recent update to repository metadata or settings
+  pushed_at:
+    type: timestamp
+    path: '$.pushed_at'
+    description: Timestamp of the most recent git push to any branch in the repository
+
+extract:
+  record_path: '$'
+  pagination:
+    type: link_header
+  incremental:
+    cursor_field: updated_at
+    cursor_param: since
+  table:
+    primary_key: [id]
+    trust_tier: silver
+
+lookup:
+  description: Fetch a single repository by owner and name
+  api:
+    endpoint: '/repos/${{ input.owner }}/${{ input.repo }}'
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+  extract:
+    record_path: '$'

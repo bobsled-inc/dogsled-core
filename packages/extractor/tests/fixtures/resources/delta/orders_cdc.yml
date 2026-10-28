@@ -1,0 +1,17 @@
+spec_version: '1'
+type: resource
+name: orders_cdc
+integration: acme_delta
+source:
+  table: orders
+  database: analytics
+replication:
+  method: change_tracking
+  change_tracking:
+    type: cdf
+  primary_key: [order_id]
+output:
+  order_id: { type: integer }
+  amount: { type: number }
+  updated_at: { type: timestamp }
+  _change_type: { type: string }

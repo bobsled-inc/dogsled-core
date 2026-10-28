@@ -1,0 +1,25 @@
+spec_version: '0.2'
+name: sf_stg_lineitems
+type: model
+description: Snowflake staging — lineitems with derived LINE_TOTAL. Grain is (order_id, line_number) — synthesized into a single LINEITEM_ID.
+grain: lineitem_id
+source:
+  ref: snowflake.lineitems
+columns:
+  - name: LINEITEM_ID
+    expr: 'L_ORDERKEY * 100 + L_LINENUMBER'
+    primary_key: true
+  - name: ORDER_ID
+    expr: L_ORDERKEY
+  - name: LINE_NUMBER
+    expr: L_LINENUMBER
+  - name: PRODUCT
+    expr: L_PRODUCT
+  - name: QTY
+    expr: L_QUANTITY
+  - name: PRICE
+    expr: L_EXTENDEDPRICE
+  - name: LINE_TOTAL
+    expr: L_QUANTITY * L_EXTENDEDPRICE
+materialization:
+  type: view

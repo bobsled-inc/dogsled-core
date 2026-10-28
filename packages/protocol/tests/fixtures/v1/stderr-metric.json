@@ -1,0 +1,12 @@
+{
+  "_v": 1,
+  "type": "METRIC",
+  "stream": "items",
+  "metrics": {
+    "records_emitted": 10,
+    "api_calls": 2,
+    "duration_ms": 125,
+    "estimate_confidence": "exact"
+  },
+  "time": "2026-04-15T16:00:00.000Z"
+}

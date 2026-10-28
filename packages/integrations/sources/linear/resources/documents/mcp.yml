@@ -1,0 +1,71 @@
+type: resource
+name: documents_mcp
+via: mcp
+entity: documents
+description: Documents from Linear workspace
+tool:
+  tool_name: list_documents
+input:
+  limit:
+    type: integer
+    description: Maximum number of documents per MCP page
+    default: 250
+  query:
+    type: string
+    description: Optional document search string
+  orderBy:
+    type: string
+    description: Sort field for Linear MCP pagination
+    default: updatedAt
+    enum:
+      - createdAt
+      - updatedAt
+  createdAt:
+    type: string
+    description: Optional created-after ISO 8601 date or duration
+  updatedAt:
+    type: string
+    description: Optional updated-after ISO 8601 date or duration
+  creatorId:
+    type: string
+    description: Optional creator user ID filter
+  projectId:
+    type: string
+    description: Optional project ID filter
+  initiativeId:
+    type: string
+    description: Optional initiative ID filter
+  includeArchived:
+    type: boolean
+    description: Include archived documents
+    default: false
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique document UUID
+  title:
+    type: string
+    path: $.title
+    description: Document title
+  content:
+    type: string
+    path: $.content
+    description: Document content in markdown
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Timestamp when the document was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Timestamp when the document was last updated
+extract:
+  record_path: $.documents
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.pageInfo.endCursor
+    cursor_argument: cursor
+  table:
+    primary_key:
+      - id

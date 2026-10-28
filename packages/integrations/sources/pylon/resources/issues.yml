@@ -1,0 +1,99 @@
+type: resource
+name: issues
+description: Support issues (conversations and tickets) with state, priority, assignee, and account metadata
+api:
+  endpoint: /issues/search
+  method: POST
+  request_body:
+    limit: 100
+    filter:
+      field: created_at
+      operator: time_is_after
+      value: 2000-01-01T00:00:00Z
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique issue identifier
+  issue_number:
+    type: integer
+    path: $.issue_number
+    description: Human-readable issue number
+  title:
+    type: string
+    path: $.title
+    description: Issue title
+  body_html:
+    type: string
+    path: $.body_html
+    description: Issue body in HTML
+  state:
+    type: string
+    path: $.state
+    description: Issue state (new, waiting_on_you, waiting_on_customer, on_hold, closed)
+  priority:
+    type: string
+    path: $.priority
+    description: Issue priority (urgent, high, medium, low)
+  type:
+    type: string
+    path: $.type
+    description: Issue type (conversation or ticket)
+  source:
+    type: string
+    path: $.source
+    description: Issue source (slack, email, chat_widget, api, etc.)
+  assignee_id:
+    type: string
+    path: $.assignee_id
+    description: User ID of the assignee
+  team_id:
+    type: string
+    path: $.team_id
+    description: Team ID the issue belongs to
+  account_id:
+    type: string
+    path: $.account_id
+    description: Account ID of the customer
+  requester_id:
+    type: string
+    path: $.requester_id
+    description: Contact ID of the requester
+  tags:
+    type: string
+    path: $.tags
+    description: Tags assigned to the issue
+  ticket_form_id:
+    type: string
+    path: $.ticket_form_id
+    description: Ticket form used to create the issue
+  customer_portal_visible:
+    type: boolean
+    path: $.customer_portal_visible
+    description: Whether the issue is visible in the customer portal
+  snoozed_until:
+    type: timestamp
+    path: $.snoozed_until
+    description: Snooze expiry timestamp
+  closed_at:
+    type: timestamp
+    path: $.closed_at
+    description: When the issue was closed
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the issue was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the issue was last updated
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id

@@ -1,0 +1,190 @@
+type: resource
+name: sandbox_sessions
+description: Vercel sandbox sessions with lifecycle, allocation, and post-stop CPU and network measurements.
+api:
+  endpoint: /v2/sandboxes/sessions
+  method: GET
+  query_params:
+    project: ${{ input.project_id }}
+    name: ${{ input.sandbox_name }}
+    limit: ${{ input.limit }}
+    cursor: ${{ input.cursor }}
+    sortOrder: ${{ input.sort_order }}
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+input:
+  project_id:
+    type: string
+    description: Restrict sessions to one Vercel project.
+  sandbox_name:
+    type: string
+    description: Restrict sessions to one sandbox name.
+  limit:
+    type: integer
+    default: 50
+    minimum: 1
+    maximum: 50
+    description: Maximum sessions per page.
+  cursor:
+    type: string
+    description: Session pagination cursor.
+  sort_order:
+    type: string
+    enum:
+      - asc
+      - desc
+    description: Session sort direction.
+  team_id:
+    type: string
+    description: Vercel team identifier.
+  team_slug:
+    type: string
+    description: Vercel team slug.
+output:
+  id:
+    type: string
+    path: $.id
+    semantic_role: entity_id
+    description: Stable sandbox session identifier.
+  source_sandbox_name:
+    type: string
+    path: $.sourceSandboxName
+    semantic_role: entity_id
+    description: Sandbox name that created the session.
+  project_id:
+    type: string
+    path: $.projectId
+    semantic_role: entity_id
+    description: Vercel project identifier.
+  team_id:
+    type: string
+    path: $.__input__.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for this request.
+  team_slug:
+    type: string
+    path: $.__input__.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for this request.
+  region:
+    type: string
+    path: $.region
+    semantic_role: categorical
+    description: Session region.
+  status:
+    type: string
+    path: $.status
+    semantic_role: categorical
+    description: Session lifecycle status.
+  memory:
+    type: number
+    path: $.memory
+    semantic_role: measure
+    unit: megabytes
+    description: Allocated session memory.
+  vcpus:
+    type: number
+    path: $.vcpus
+    semantic_role: measure
+    unit: vcpu
+    description: Allocated session virtual CPUs.
+  runtime:
+    type: string
+    path: $.runtime
+    semantic_role: categorical
+    description: Session runtime.
+  cwd:
+    type: string
+    path: $.cwd
+    semantic_role: categorical
+    description: Session working directory.
+  timeout:
+    type: number
+    path: $.timeout
+    semantic_role: measure
+    unit: milliseconds
+    description: Session timeout configuration.
+  requested_at:
+    type: integer
+    path: $.requestedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session request time.
+  started_at:
+    type: integer
+    path: $.startedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session start time.
+  requested_stop_at:
+    type: integer
+    path: $.requestedStopAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Requested stop time.
+  snapshotted_at:
+    type: integer
+    path: $.snapshottedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Time at which a snapshot was requested.
+  stopped_at:
+    type: integer
+    path: $.stoppedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Successful stop time when available.
+  aborted_at:
+    type: integer
+    path: $.abortedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Abort time when available.
+  duration:
+    type: number
+    path: $.duration
+    semantic_role: measure
+    unit: milliseconds
+    description: Session duration when Vercel supplies it.
+  active_cpu_duration_ms:
+    type: number
+    path: $.activeCpuDurationMs
+    semantic_role: measure
+    unit: milliseconds
+    description: Active CPU duration, documented as available after a successful stop. Null is not zero.
+  network_transfer:
+    type: object
+    path: $.networkTransfer
+    description: Post-stop network transfer measurements when available.
+  network_policy:
+    type: object
+    path: $.networkPolicy
+    description: Session network policy.
+  source_snapshot_id:
+    type: string
+    path: $.sourceSnapshotId
+    semantic_role: entity_id
+    description: Snapshot from which the session was created.
+  created_at:
+    type: integer
+    path: $.createdAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session creation time.
+  updated_at:
+    type: integer
+    path: $.updatedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session update time.
+extract:
+  record_path: $.sessions
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id
+    load_strategy: merge
+    trust_tier: silver

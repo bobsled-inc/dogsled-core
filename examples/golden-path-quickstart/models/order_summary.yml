@@ -1,0 +1,22 @@
+spec_version: '0.2'
+type: model
+name: order_summary
+description: Fictional order totals loaded from CSV.
+grain:
+  - id
+source:
+  ref: local_lake.orders
+columns:
+  - name: id
+    expr: id
+    primary_key: true
+  - name: customer_id
+    expr: customer_id
+  - name: amount
+    expr: amount
+materialization:
+  type: table
+expect:
+  - kind: row_count_between
+    min: 25
+    max: 25

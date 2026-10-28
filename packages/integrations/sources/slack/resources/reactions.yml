@@ -1,0 +1,63 @@
+type: resource
+name: reactions
+description: Emoji reactions on Slack messages with the reacting users, useful for understanding
+  engagement and sentiment signals
+api:
+  endpoint: /reactions.list
+  method: GET
+  query_params:
+    user: ${{ input.user }}
+    count: ${{ input.count }}
+    full: ${{ input.full }}
+input:
+  user:
+    type: string
+    description: User ID to fetch reactions for — if omitted, returns reactions by the authenticated user
+  count:
+    type: integer
+    description: Number of items to return per page (max 999)
+    default: 200
+  full:
+    type: string
+    description: Set to true to return complete reaction information including all users who reacted
+    default: 'true'
+output:
+  message_ts:
+    type: string
+    path: $.message.ts
+    description: Timestamp of the message that was reacted to
+  channel_id:
+    type: string
+    path: $.channel
+    description: Channel ID where the reacted message lives
+  message_text:
+    type: string
+    path: $.message.text
+    description: Text content of the message that was reacted to
+  message_user:
+    type: string
+    path: $.message.user
+    description: User ID of the message author
+  reaction_name:
+    type: string
+    path: $.message.reactions[*].name
+    description: Emoji name of the reaction (without colons, e.g. thumbsup, heart, eyes)
+  reaction_count:
+    type: integer
+    path: $.message.reactions[*].count
+    description: Number of users who added this specific reaction
+  reaction_users:
+    type: string
+    path: $.message.reactions[*].users
+    description: List of user IDs who added this reaction
+extract:
+  record_path: $.items
+  pagination:
+    type: cursor
+    cursor_path: $.response_metadata.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - message_ts
+      - channel_id
+    trust_tier: bronze

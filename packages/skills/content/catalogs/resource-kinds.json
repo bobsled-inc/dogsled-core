@@ -1,0 +1,5 @@
+{
+  "kind": "resource-kinds",
+  "description": "Bounded enum of resource kinds the host agent may emit in extract pipeline configuration. Append-only — removing a value is a breaking change.",
+  "values": ["api", "warehouse", "file", "mcp"]
+}

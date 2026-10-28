@@ -1,0 +1,272 @@
+type: resource
+name: issues
+description: Issues for a GitHub repository including bug reports, feature requests, and tasks with full metadata
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/issues
+  method: GET
+  query_params:
+    state: ${{ input.state }}
+    sort: ${{ input.sort }}
+    direction: ${{ input.direction }}
+    since: ${{ input.since }}
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  state:
+    type: string
+    description: Filter issues by state
+    default: open
+    enum:
+      - open
+      - closed
+      - all
+  sort:
+    type: string
+    description: Field to sort results by
+    default: created
+    enum:
+      - created
+      - updated
+      - comments
+  direction:
+    type: string
+    description: Sort order direction
+    default: desc
+    enum:
+      - asc
+      - desc
+  since:
+    type: string
+    description: Only return issues updated after this ISO 8601 timestamp (e.g. "2024-01-01T00:00:00Z")
+  per_page:
+    type: integer
+    description: Number of issues to return per page (max 100)
+    default: 100
+query:
+  filters:
+    state:
+      operators:
+        - eq
+      enum:
+        - open
+        - closed
+      bind:
+        eq:
+          input: state
+      compile:
+        eq:
+          mode: http_query
+          param: state
+    updated_at:
+      operators:
+        - gte
+      bind:
+        gte:
+          input: since
+      compile:
+        gte:
+          mode: http_query
+          param: since
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the issue across all repositories
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  number:
+    type: integer
+    semantic_role: identifier
+    path: $.number
+    description: Repository-scoped issue number displayed in the UI (e.g.
+  title:
+    type: string
+    semantic_role: name
+    path: $.title
+    description: Short summary title of the issue as written by the author
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the issue on github.com
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this issue resource
+  state:
+    type: string
+    semantic_role: categorical
+    path: $.state
+    description: "Current state of the issue \u2014 \"open\" if unresolved or \"closed\" if completed/dismissed"
+  state_reason:
+    type: string
+    semantic_role: categorical
+    path: $.state_reason
+    description: "Reason the issue was closed \u2014 \"completed\" if resolved, \"not_planned\" if dismissed, or null if still open"
+  locked:
+    type: boolean
+    semantic_role: categorical
+    path: $.locked
+    description: True if the issue conversation has been locked by a maintainer, preventing new comments
+  active_lock_reason:
+    type: string
+    semantic_role: categorical
+    path: $.active_lock_reason
+    description: "Reason the issue was locked \u2014 \"off-topic\", \"too heated\", \"resolved\", \"spam\", or null if unlocked"
+  user_login:
+    type: string
+    semantic_role: name
+    path: $.user.login
+    description: GitHub username of the user who created the issue
+  user_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.user.id
+    description: Unique numeric identifier of the issue author
+  assignee_login:
+    type: string
+    semantic_role: name
+    path: $.assignee.login
+    description: GitHub username of the primary assignee, or null if unassigned
+  assignees_count:
+    type: integer
+    semantic_role: count
+    path: $.assignees.length
+    description: Number of users assigned to this issue (GitHub allows multiple assignees)
+  labels:
+    type: string
+    semantic_role: categorical
+    path: $.labels[*].name
+    description: Comma-separated list of label names applied to the issue, used for categorization and filtering
+  milestone_title:
+    type: string
+    semantic_role: name
+    path: $.milestone.title
+    description: Title of the milestone this issue is associated with, or null if not milestoned
+  milestone_number:
+    type: integer
+    semantic_role: identifier
+    path: $.milestone.number
+    description: Repository-scoped number of the associated milestone
+  reactions_total:
+    type: integer
+    semantic_role: count
+    path: $.reactions.total_count
+    description: Total count of all emoji reactions on the issue (thumbs up, heart, etc.)
+  reactions_plus_one:
+    type: integer
+    semantic_role: count
+    path: $.reactions.+1
+    description: Count of thumbs-up (+1) reactions, often used as a voting mechanism for feature requests
+  reactions_minus_one:
+    type: integer
+    semantic_role: count
+    path: $.reactions.-1
+    description: Count of thumbs-down (-1) reactions
+  comments:
+    type: integer
+    semantic_role: count
+    path: $.comments
+    description: Number of comments posted on the issue, excluding the initial issue body
+  body:
+    type: string
+    semantic_role: categorical
+    path: $.body
+    description: Full Markdown body text of the issue as written by the author
+  author_association:
+    type: string
+    semantic_role: categorical
+    path: $.author_association
+    description: "Relationship of the issue author to the repository \u2014 \"OWNER\", \"MEMBER\", \"COLLABORATOR\", \"CONTRIBUTOR\", \"FIRST_TIMER\", \"FIRST_TIME_CONTRIBUTOR\", or \"NONE\""
+  is_pull_request:
+    type: boolean
+    semantic_role: categorical
+    path: $.pull_request.url
+    description: Non-null if this issue is actually a pull request (GitHub API returns PRs mixed with issues)
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the issue was first created
+  updated_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.updated_at
+    description: Timestamp of the most recent update to the issue (comment, label change, state change, etc.)
+  closed_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.closed_at
+    description: Timestamp when the issue was closed, or null if still open
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single issue by repository owner, name, and issue number
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/issues/${{ input.issue_number }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    issue_number:
+      type: integer
+      required: true
+      description: The issue number (e.g. 42)
+  extract:
+    record_path: $
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: since
+via: rest

@@ -1,0 +1,43 @@
+type: resource
+name: get_pipelines
+description: Get all pipelines
+api:
+  endpoint: /pipelines
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive pipeline identifier
+  name:
+    type: string
+    path: $.name
+    description: Pipeline name
+  url_title:
+    type: string
+    path: $.url_title
+    description: URL-friendly pipeline name
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the pipeline is active
+  order_nr:
+    type: integer
+    path: $.order_nr
+    description: Pipeline display order
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get one pipeline
+  api:
+    endpoint: /pipelines/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: integer
+      required: true

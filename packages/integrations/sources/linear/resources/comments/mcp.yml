@@ -1,0 +1,81 @@
+type: resource
+name: comments_mcp
+via: mcp
+entity: comments
+description: Comments for Linear issues from the Linear MCP server
+tool:
+  tool_name: list_comments
+input:
+  issueId:
+    type: string
+    required: true
+    description: UUID or identifier of the issue whose comments should be listed
+  limit:
+    type: integer
+    description: Maximum number of comments per MCP page
+    default: 250
+  orderBy:
+    type: string
+    description: Sort field for Linear MCP pagination
+    default: updatedAt
+    enum:
+      - createdAt
+      - updatedAt
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique comment UUID
+  body:
+    type: string
+    path: $.body
+    description: Comment body in markdown
+  issue_id:
+    type: string
+    path: $.__input__.issueId
+    description: Issue ID used to request these comments
+  user_id:
+    type: string
+    path: $.user.id
+    description: UUID of the comment author
+  user_name:
+    type: string
+    path: $.user.name
+    description: Display name of the comment author
+  user_email:
+    type: string
+    path: $.user.email
+    description: Email address of the comment author
+  parent_id:
+    type: string
+    path: $.parent.id
+    description: UUID of the parent comment when this is a reply
+  resolved_at:
+    type: timestamp
+    path: $.resolvedAt
+    description: Timestamp when the comment thread was resolved
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Timestamp when the comment was posted
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Timestamp when the comment was last updated
+  edited_at:
+    type: timestamp
+    path: $.editedAt
+    description: Timestamp when the comment body was last edited
+extract:
+  record_path: $.comments
+  for_each:
+    resource: issues_mcp
+    field: id
+    input: issueId
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.pageInfo.endCursor
+    cursor_argument: cursor
+  table:
+    primary_key:
+      - id

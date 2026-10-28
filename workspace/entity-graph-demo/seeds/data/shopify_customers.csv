@@ -1,0 +1,13 @@
+source_id,name,website,phone,country,updated_at
+sh_001,Acme Corp,https://www.acme.com,+1-212-555-0101,US,2026-03-12T14:02:00Z
+sh_002,Globex Inc.,https://globex.io,+1 415 555 0102,US,2026-03-18T08:30:00Z
+sh_003,Initech LLC,http://initech.com,(312) 555-0103,US,2026-02-27T11:45:00Z
+sh_004,Soylent Incorporated,https://soylent.co,+1-646-555-0104,US,2026-03-20T16:10:00Z
+sh_005,Stark Industries,https://starkindustries.com,+1 212 555 0105,US,2026-03-22T09:00:00Z
+sh_006,Wayne Enterprises,https://wayneenterprises.com,+1-206-555-0106,US,2026-03-05T13:00:00Z
+sh_007,Wonka Industries,https://wonka.co,+1-213-555-0107,US,2026-03-15T10:22:00Z
+sh_008,Cyberdyne Systems,https://cyberdyne.ai,+1-858-555-0108,US,2026-03-19T11:30:00Z
+sh_009,Aperture Science,https://aperture-labs.com,+1-617-555-0109,US,2026-03-21T18:45:00Z
+sh_010,Umbrella Corp,https://umbrella.org,+1-212-555-0110,US,2026-03-25T07:12:00Z
+sh_011,Lumen Data Works,https://lumendata.io,+1-206-555-0142,US,2026-03-26T09:15:00Z
+sh_012,Vandelay Industries Group,https://vandelay.example,+1-908-555-0177,US,2026-03-26T10:05:00Z

@@ -1,0 +1,50 @@
+type: resource
+name: tasks
+description: Tasks in Freshsales CRM.
+api:
+  endpoint: /tasks
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+    filter: ${{ input.filter }}
+input:
+  per_page:
+    type: integer
+    default: 100
+  filter:
+    type: string
+    default: open
+output:
+  id:
+    type: integer
+    path: $.id
+  title:
+    type: string
+    path: $.title
+  description:
+    type: string
+    path: $.description
+  status:
+    type: integer
+    path: $.status
+  due_date:
+    type: string
+    path: $.due_date
+  owner_id:
+    type: integer
+    path: $.owner_id
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+extract:
+  record_path: $.tasks
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page

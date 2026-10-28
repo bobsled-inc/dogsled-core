@@ -1,0 +1,29 @@
+type: action
+transport: api
+name: create_campaign
+integration: smartlead
+tags:
+  - marketing
+  - campaigns
+  - smartlead
+description: Create a Smartlead campaign in drafted status for safe setup and iteration.
+api:
+  endpoint: /api/v1/campaigns/create
+  method: POST
+  request_body:
+    name: ${{ mapped.name }}
+input:
+  name:
+    type: string
+    required: true
+    description: Name for the new drafted campaign.
+field_mapping:
+  fields:
+    name: name
+  unmapped_fields: ignore
+activate:
+  operation: create
+  result_path: $.id
+error_handling:
+  on_record_error: skip
+  consecutive_failure_threshold: 10

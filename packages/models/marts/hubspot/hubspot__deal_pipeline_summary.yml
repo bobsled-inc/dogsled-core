@@ -1,0 +1,57 @@
+spec_version: '0.2'
+name: hubspot__deal_pipeline_summary
+type: model
+description: Pipeline-stage summary of HubSpot deals and pipeline value.
+grain:
+  - pipeline_id
+  - deal_stage_id
+source:
+  ref: stg_hubspot__deals
+joins:
+  - ref: stg_hubspot__pipelines
+    type: left
+    on: stg_hubspot__deals.pipeline = stg_hubspot__pipelines.pipeline_id
+  - ref: stg_hubspot__pipeline_stages
+    type: left
+    on: stg_hubspot__deals.deal_stage = stg_hubspot__pipeline_stages.pipeline_stage_id
+columns:
+  - name: pipeline_id
+    expr: stg_hubspot__deals.pipeline
+    semantic_role: entity_id
+    references: stg_hubspot__pipelines.pipeline_id
+    description: Stable pipeline identifier.
+  - name: deal_stage_id
+    expr: stg_hubspot__deals.deal_stage
+    semantic_role: entity_id
+    references: stg_hubspot__pipeline_stages.pipeline_stage_id
+    description: Stable deal stage identifier.
+  - name: pipeline_label
+    expr: stg_hubspot__pipelines.label
+    semantic_role: categorical
+    description: Human-readable pipeline label.
+  - name: deal_stage_label
+    expr: stg_hubspot__pipeline_stages.label
+    semantic_role: categorical
+    description: Human-readable deal stage label.
+  - name: deal_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of deals in the pipeline stage.
+  - name: total_amount
+    expr: SUM(stg_hubspot__deals.amount)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total pipeline amount for the pipeline stage.
+group_by:
+  - pipeline_id
+  - deal_stage_id
+  - pipeline_label
+  - deal_stage_label
+tags:
+  - hubspot
+  - deals
+  - pipeline
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,60 @@
+type: resource
+name: zones_list_rulesets
+description: List rulesets configured for each Cloudflare zone
+api:
+  endpoint: /zones/${{ input.zone_id }}/rulesets
+  method: GET
+  query_params:
+    cursor: ${{ input.cursor }}
+    per_page: ${{ input.per_page }}
+input:
+  zone_id:
+    type: string
+    description: Cloudflare zone identifier
+    required: true
+  cursor:
+    type: string
+    description: Cursor returned by the previous response page
+  per_page:
+    type: integer
+    description: Number of rulesets to return per page
+    default: 50
+output:
+  id:
+    type: string
+    path: $.id
+    description: Cloudflare ruleset identifier
+  name:
+    type: string
+    path: $.name
+    description: Ruleset name
+  kind:
+    type: string
+    path: $.kind
+    description: Ruleset kind
+  phase:
+    type: string
+    path: $.phase
+    description: Ruleset execution phase
+  version:
+    type: string
+    path: $.version
+    description: Ruleset version
+  last_updated:
+    type: timestamp
+    path: $.last_updated
+    description: Timestamp when the ruleset was last updated
+extract:
+  record_path: $.result
+  pagination:
+    type: cursor
+    cursor_path: $.result_info.cursors.after
+    cursor_param: cursor
+  for_each:
+    resource: zones_get
+    field: id
+    input: zone_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

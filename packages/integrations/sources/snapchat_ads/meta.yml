@@ -1,0 +1,15 @@
+display_name: Snapchat Ads
+category: marketing
+tags:
+  - snapchat
+  - ads
+  - social
+  - marketing
+docs_url: https://marketingapi.snapchat.com/docs/
+auth_setup:
+  - env: SNAPCHAT_CLIENT_ID
+    description: Snapchat Marketing API OAuth client ID
+  - env: SNAPCHAT_CLIENT_SECRET
+    description: Snapchat Marketing API OAuth client secret
+  - env: SNAPCHAT_REFRESH_TOKEN
+    description: Snapchat Marketing API OAuth refresh token

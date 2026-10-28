@@ -1,0 +1,9 @@
+display_name: GitLab
+category: developer-tools
+tags: [git, version-control, ci-cd, devops]
+logo_url: https://about.gitlab.com/ico/favicon.ico
+docs_url: https://docs.gitlab.com/ee/api/rest/
+auth_setup:
+  - env: GITLAB_TOKEN
+    description: GitLab personal access token or project token
+    docs_url: https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html

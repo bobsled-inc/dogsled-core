@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: zendesk_ticket_count
+description: Number of Zendesk tickets.
+model: zendesk__tickets
+expression: COUNT({zendesk__tickets}.ticket_id)
+synonyms: [tickets, support tickets, ticket volume]
+tags: [zendesk, support, tickets]

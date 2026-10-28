@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: source
+name: orders
+source_type: warehouse_table
+connection: local_duckdb
+table: main.orders
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: amount
+      type: DOUBLE
+    - name: status
+      type: STRING

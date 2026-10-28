@@ -1,0 +1,9 @@
+spec_version: '1'
+type: integration
+name: lake
+source_type: duckdb
+connection:
+  schema: sources
+auth:
+  type: file
+  path: ./data/lake.duckdb

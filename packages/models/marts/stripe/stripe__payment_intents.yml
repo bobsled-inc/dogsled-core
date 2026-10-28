@@ -1,0 +1,61 @@
+spec_version: '0.2'
+name: stripe__payment_intents
+type: model
+description: Payment intent records tracking the payment lifecycle from creation to completion.
+grain: payment_intent_id
+source:
+  ref: stg_stripe__payment_intents
+columns:
+  - name: payment_intent_id
+    expr: stg_stripe__payment_intents.payment_intent_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Stripe payment intent identifier.
+  - name: amount
+    expr: stg_stripe__payment_intents.amount
+    semantic_role: measure
+    tags:
+      - financial
+    description: Amount intended to collect in standard currency units.
+  - name: amount_received
+    expr: stg_stripe__payment_intents.amount_received
+    semantic_role: measure
+    tags:
+      - financial
+    description: Amount actually collected in standard currency units.
+  - name: currency
+    expr: stg_stripe__payment_intents.currency
+    semantic_role: categorical
+    description: ISO currency code.
+  - name: status
+    expr: stg_stripe__payment_intents.status
+    semantic_role: categorical
+    description: Payment lifecycle status (requires_payment_method, processing, succeeded, canceled, etc.).
+  - name: customer_id
+    expr: stg_stripe__payment_intents.customer_id
+    semantic_role: entity_id
+    references: stg_stripe__customers.customer_id
+    description: Customer associated with this payment intent.
+  - name: payment_method_id
+    expr: stg_stripe__payment_intents.payment_method_id
+    semantic_role: entity_id
+    description: Payment method used for this intent.
+  - name: capture_method
+    expr: stg_stripe__payment_intents.capture_method
+    semantic_role: categorical
+    description: How funds are captured (automatic, manual).
+  - name: latest_charge_id
+    expr: stg_stripe__payment_intents.latest_charge_id
+    semantic_role: entity_id
+    description: Most recent charge created by this payment intent.
+  - name: created_at
+    expr: stg_stripe__payment_intents.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the payment intent was created.
+tags:
+  - stripe
+  - billing
+  - payments
+trust_tier: gold
+materialization:
+  type: table

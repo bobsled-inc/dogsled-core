@@ -1,0 +1,38 @@
+type: resource
+name: contact_fields
+description: List all contacts fields
+api:
+  endpoint: /contact_fields
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk contact field identifier
+  name:
+    type: string
+    path: $.name
+    description: Internal contact field name
+  label:
+    type: string
+    path: $.label
+    description: Display label shown for the field
+  type:
+    type: string
+    path: $.type
+    description: Field data type
+  required_for_agents:
+    type: boolean
+    path: $.required_for_agents
+    description: Whether the field is required for agent workflows
+  position:
+    type: integer
+    path: $.position
+    description: Display order of the field
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

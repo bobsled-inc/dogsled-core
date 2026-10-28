@@ -1,0 +1,71 @@
+type: resource
+name: campaigns
+description: Cold email campaigns with status, schedule settings, and sending configuration
+api:
+  endpoint: /api/v1/campaigns/
+  method: GET
+  query_params:
+    include_tags: 'true'
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Unique campaign identifier
+  name:
+    type: string
+    path: $.name
+    description: Campaign name
+  status:
+    type: string
+    path: $.status
+    description: Campaign status (ACTIVE, PAUSED, STOPPED, ARCHIVED, DRAFTED)
+  max_leads_per_day:
+    type: integer
+    path: $.max_leads_per_day
+    description: Maximum number of leads contacted per day
+  min_time_btwn_emails:
+    type: integer
+    path: $.min_time_btwn_emails
+    description: Minimum time between emails in minutes
+  follow_up_percentage:
+    type: number
+    path: $.follow_up_percentage
+    description: Follow-up email percentage
+  send_as_plain_text:
+    type: boolean
+    path: $.send_as_plain_text
+    description: Whether emails are sent as plain text
+  enable_ai_esp_matching:
+    type: boolean
+    path: $.enable_ai_esp_matching
+    description: Whether AI ESP matching is enabled
+  stop_lead_settings:
+    type: string
+    path: $.stop_lead_settings
+    description: Conditions to stop contacting a lead
+  parent_campaign_id:
+    type: integer
+    path: $.parent_campaign_id
+    description: Parent campaign ID for sub-campaigns
+  client_id:
+    type: integer
+    path: $.client_id
+    description: Client ID for agency accounts
+  schedule_start_time:
+    type: string
+    path: $.schedule_start_time
+    description: Scheduled start time
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the campaign was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the campaign was last updated
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id

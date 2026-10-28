@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bobsled-inc/dogsled-core/schemas/security-finding-v1.json",
+  "title": "Dogsled normalized security finding",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "fingerprint",
+    "rootCause",
+    "tool",
+    "rule",
+    "severity",
+    "confidence",
+    "location",
+    "message",
+    "classification",
+    "disposition",
+    "verification",
+    "codexRationale",
+    "humanDecision"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "fingerprint": { "type": "string", "minLength": 8 },
+    "rootCause": { "type": "string", "minLength": 1 },
+    "tool": { "type": "string", "minLength": 1 },
+    "rule": { "type": "string", "minLength": 1 },
+    "severity": { "enum": ["P1", "P2", "P3"] },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "location": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "classification": {
+      "enum": ["confirmed", "likely", "uncertain", "false_positive"]
+    },
+    "disposition": {
+      "enum": ["fixed", "accepted", "deferred", "not_applicable"]
+    },
+    "verification": { "type": "array", "items": { "type": "string" } },
+    "codexRationale": { "type": "string" },
+    "humanDecision": { "type": "string" }
+  },
+  "additionalProperties": true
+}

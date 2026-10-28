@@ -1,0 +1,31 @@
+type: resource
+name: cohorts
+description: Cohorts configured in Mixpanel.
+api:
+  endpoint: /cohorts/list
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  type:
+    type: string
+    path: $.type
+  count:
+    type: integer
+    path: $.count
+  created_at:
+    type: timestamp
+    path: $.created
+  updated_at:
+    type: timestamp
+    path: $.last_modified
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - id

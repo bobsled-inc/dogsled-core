@@ -1,0 +1,18 @@
+spec_version: '0.2'
+name: lineitems
+type: source
+source_type: warehouse_table
+connection: bigquery
+table: dogsled_multi_conn_raw.lineitems
+schema:
+  columns:
+    - name: l_orderkey
+      type: INT64
+    - name: l_linenumber
+      type: INT64
+    - name: l_product
+      type: STRING
+    - name: l_quantity
+      type: INT64
+    - name: l_extendedprice
+      type: NUMERIC

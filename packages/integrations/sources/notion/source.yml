@@ -1,0 +1,40 @@
+spec_version: '2'
+type: source
+name: notion
+description: Notion API
+transports:
+  - id: rest
+    base_url: https://api.notion.com
+    auth:
+      type: bearer
+      token: ${{ env.NOTION_API_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 3
+      burst: 5
+    headers:
+      Notion-Version: 2022-06-28
+      User-Agent: dogsled-extractor
+  - id: mcp
+    type: mcp_http
+    url: https://mcp.notion.com/mcp
+    auth:
+      type: bearer
+      token: ${{ env.NOTION_API_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      max_retries: 3
+      backoff: exponential
+    rate_limit:
+      requests_per_second: 3
+      burst: 6
+default_transport: rest

@@ -1,0 +1,8 @@
+spec_version: '1'
+type: integration
+name: analytics_bq
+source_type: bigquery
+connection:
+  project_id: acme-data
+auth:
+  type: adc

@@ -1,0 +1,13 @@
+spec_version: '1'
+auth_env_vars: [SF_ACCOUNT, SF_USER]
+type: integration
+name: snowflake_prod
+source_type: snowflake
+connection:
+  account_identifier: '${{ env.SF_ACCOUNT }}'
+  warehouse: COMPUTE_WH
+  user: '${{ env.SF_USER }}'
+  role: DOGSLED_AI_ROLE
+auth:
+  type: rsa_key
+  private_key_path: /tmp/sf.pem

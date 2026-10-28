@@ -1,0 +1,32 @@
+spec_version: '0.2'
+name: hubspot__contact_lifecycle_summary
+type: model
+description: Contact counts grouped by lifecycle stage and company name.
+grain:
+  - lifecycle_stage
+  - company
+source:
+  ref: stg_hubspot__contacts
+columns:
+  - name: lifecycle_stage
+    expr: stg_hubspot__contacts.lifecycle_stage
+    semantic_role: categorical
+    description: HubSpot contact lifecycle stage.
+  - name: company
+    expr: stg_hubspot__contacts.company
+    semantic_role: categorical
+    description: Company name stored on the contact record.
+  - name: contact_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Count of contacts in the lifecycle-stage and company bucket.
+group_by:
+  - lifecycle_stage
+  - company
+tags:
+  - hubspot
+  - contacts
+  - lifecycle
+trust_tier: gold
+materialization:
+  type: table

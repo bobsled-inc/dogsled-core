@@ -1,0 +1,85 @@
+type: resource
+name: credit_notes
+description: Stripe invoice credit notes
+api:
+  endpoint: /v1/credit_notes
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of credit notes per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Credit note ID (cn_xxx)
+  invoice:
+    type: string
+    path: $.invoice
+    description: Invoice ID the credit note applies to
+  amount:
+    type: integer
+    path: $.amount
+    description: Credit note amount in cents
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO currency code
+  status:
+    type: string
+    path: $.status
+    description: Credit note status (issued/void)
+  reason:
+    type: string
+    path: $.reason
+    description: Reason for the credit note (duplicate/fraudulent/order_change/product_unsatisfactory)
+  memo:
+    type: string
+    path: $.memo
+    description: Credit note memo
+  customer:
+    type: string
+    path: $.customer
+    description: Customer ID associated with the credit note
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when credit note was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

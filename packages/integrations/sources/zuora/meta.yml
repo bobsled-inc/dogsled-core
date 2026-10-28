@@ -1,0 +1,13 @@
+display_name: Zuora
+category: finance
+tags:
+  - billing
+  - subscriptions
+  - payments
+  - zuora
+docs_url: https://developer.zuora.com/api-references/api/overview/
+auth_setup:
+  - env: ZUORA_CLIENT_ID
+    description: Zuora OAuth client ID
+  - env: ZUORA_CLIENT_SECRET
+    description: Zuora OAuth client secret

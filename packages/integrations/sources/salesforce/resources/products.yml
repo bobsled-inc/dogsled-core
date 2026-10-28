@@ -1,0 +1,43 @@
+type: resource
+name: products
+description: Products from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Name,ProductCode,Family,Description,IsActive,CreatedDate,LastModifiedDate FROM Product2
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.Name
+  product_code:
+    type: string
+    path: $.ProductCode
+  family:
+    type: string
+    path: $.Family
+  description:
+    type: string
+    path: $.Description
+  is_active:
+    type: boolean
+    path: $.IsActive
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

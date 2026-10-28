@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: linear_completed_issue_count
+description: Number of Linear issues with a completion timestamp.
+model: linear__issues
+expression: SUM(CASE WHEN {linear__issues}.completed_at IS NOT NULL THEN 1 ELSE 0 END)
+synonyms:
+  - completed issues
+  - finished issues
+  - issues completed
+tags:
+  - linear
+  - engineering
+  - delivery

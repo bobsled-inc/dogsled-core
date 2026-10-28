@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: raw_customers
+type: source
+source_type: warehouse_table
+connection: duckdb
+table: RAW.CUSTOMERS
+description: Raw customer records from commerce.
+schema:
+  columns:
+    - name: customer_id
+      type: VARCHAR
+      description: Stable customer identifier.
+      semantic_role: entity_id
+      references: customers.customer_id
+    - name: email
+      type: VARCHAR
+      description: Customer email address.
+      semantic_role: email
+      format: rfc5322
+      pii: true
+    - name: company_name
+      type: VARCHAR
+      description: Buyer company name.
+      semantic_role: name
+      embedding_candidate: true
+    - name: age
+      type: INTEGER
+      description: Customer age in years.
+      semantic_role: measure
+      unit: years
+    - name: status
+      type: VARCHAR
+      description: Lifecycle status from the commerce system.
+      semantic_role: categorical

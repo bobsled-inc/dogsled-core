@@ -1,0 +1,236 @@
+type: resource
+name: get_tasks
+description: Get Tasks
+api:
+  endpoint: /v2/list/${{ input.list_id }}/task
+  method: GET
+  query_params:
+    archived: ${{ input.archived }}
+    include_markdown_description: ${{ input.include_markdown_description }}
+    page: ${{ input.page }}
+    order_by: ${{ input.order_by }}
+    reverse: ${{ input.reverse }}
+    subtasks: ${{ input.subtasks }}
+    statuses: ${{ input.statuses }}
+    include_closed: ${{ input.include_closed }}
+    include_timl: ${{ input.include_timl }}
+    assignees: ${{ input.assignees }}
+    watchers: ${{ input.watchers }}
+    tags: ${{ input.tags }}
+    due_date_gt: ${{ input.due_date_gt }}
+    due_date_lt: ${{ input.due_date_lt }}
+    date_created_gt: ${{ input.date_created_gt }}
+    date_created_lt: ${{ input.date_created_lt }}
+    date_updated_gt: ${{ input.date_updated_gt }}
+    date_updated_lt: ${{ input.date_updated_lt }}
+    date_done_gt: ${{ input.date_done_gt }}
+    date_done_lt: ${{ input.date_done_lt }}
+    custom_fields: ${{ input.custom_fields }}
+    custom_field: ${{ input.custom_field }}
+    custom_items: ${{ input.custom_items }}
+input:
+  list_id:
+    type: number
+    required: true
+    description: 'To find the list_id: \ 1. In the Sidebar, hover over the List and click the **ellipsis ...** menu. \ 2. Select **Copy link.** \ 3. Use the copied URL to find the list_id. The list_id is the number that follows /li in the URL.'
+  archived:
+    type: boolean
+  include_markdown_description:
+    type: boolean
+    description: To return task descriptions in Markdown format, use `?include_markdown_description=true`.
+  page:
+    type: integer
+    description: Page to fetch (starts at 0).
+  order_by:
+    type: string
+    description: "Order by a particular field. By default, tasks are ordered by `created`.\\\n \\\nOptions include: `id`, `created`, `updated`, and `due_date`."
+  reverse:
+    type: boolean
+    description: Tasks are displayed in reverse order.
+  subtasks:
+    type: boolean
+    description: Include or exclude subtasks. By default, subtasks are excluded.
+  statuses:
+    type: array
+    description: "Filter by statuses. To include closed tasks, use the `include_closed` parameter. \\\n \\\nFor example: \\\n \\\n`?statuses[]=to%20do&statuses[]=in%20progress`"
+  include_closed:
+    type: boolean
+    description: "Include or excluse closed tasks. By default, they are excluded.\\\n \\\nTo include closed tasks, use `include_closed: true`."
+  include_timl:
+    type: boolean
+    description: "Include Tasks in Multiple Lists. By default, tasks that exist in multiple lists are excluded from the response.\\\n \\\nTo include tasks that exist in multiple lists, use `include_timl: true`."
+  assignees:
+    type: array
+    description: "Filter by Assignees. For example: \\\n \\\n`?assignees[]=1234&assignees[]=5678`"
+  watchers:
+    type: array
+    description: Filter by watchers.
+  tags:
+    type: array
+    description: "Filter by tags. For example: \\\n \\\n`?tags[]=tag1&tags[]=this%20tag`"
+  due_date_gt:
+    type: integer
+    description: Filter by due date greater than Unix time in milliseconds.
+  due_date_lt:
+    type: integer
+    description: Filter by due date less than Unix time in milliseconds.
+  date_created_gt:
+    type: integer
+    description: Filter by date created greater than Unix time in milliseconds.
+  date_created_lt:
+    type: integer
+    description: Filter by date created less than Unix time in milliseconds.
+  date_updated_gt:
+    type: integer
+    description: Filter by date updated greater than Unix time in milliseconds.
+  date_updated_lt:
+    type: integer
+    description: Filter by date updated less than Unix time in milliseconds.
+  date_done_gt:
+    type: integer
+    description: Filter by date done greater than Unix time in milliseconds.
+  date_done_lt:
+    type: integer
+    description: Filter by date done less than Unix time in milliseconds.
+  custom_fields:
+    type: array
+    description: "Include tasks with specific values in one or more Custom Fields. Custom Relationships are included.\\\n \\\nFor example: `?custom_fields=[{\"field_id\":\"abcdefghi12345678\",\"operator\":\"=\",\"value\":\"1234\"},{\"field_id\":\"jklmnop123456\",\"operator\":\"<\",\"value\":\"5\"}]`\\\n \\\nOnly set Custom Field values display in the `value` property of the `custom_fields` parameter. If you want to include tasks with specific values in only one Custom Field, use `custom_field` instead.\\\n \\\nLearn more about [filtering using Custom Fields.](doc:taskfilters)"
+  custom_field:
+    type: array
+    description: Include tasks with specific values in only one Custom Field. This Custom Field can be a Custom Relationship.
+  custom_items:
+    type: array
+    description: "Filter by custom task types. For example: \\\n \\\n`?custom_items[]=0&custom_items[]=1300` \\\n \\\nIncluding `0` returns tasks. Including `1` returns Milestones. Including any other number returns the custom task type as defined in your Workspace."
+output:
+  id:
+    type: string
+    path: $.id
+  custom_item_id:
+    type: string
+    path: $.custom_item_id
+  name:
+    type: string
+    path: $.name
+  status_id:
+    type: string
+    path: $.status.id
+  status_status:
+    type: string
+    path: $.status.status
+  status_color:
+    type: string
+    path: $.status.color
+  status_orderindex:
+    type: integer
+    path: $.status.orderindex
+  status_type:
+    type: string
+    path: $.status.type
+  markdown_description:
+    type: string
+    path: $.markdown_description
+  orderindex:
+    type: string
+    path: $.orderindex
+  date_created:
+    type: string
+    path: $.date_created
+  date_updated:
+    type: string
+    path: $.date_updated
+  date_closed:
+    type: string
+    path: $.date_closed
+  date_done:
+    type: string
+    path: $.date_done
+  creator_id:
+    type: integer
+    path: $.creator.id
+  creator_username:
+    type: string
+    path: $.creator.username
+  creator_color:
+    type: string
+    path: $.creator.color
+  creator_profile_picture:
+    type: string
+    path: $.creator.profilePicture
+  assignees:
+    type: array
+    path: $.assignees
+  watchers:
+    type: array
+    path: $.watchers
+  checklists:
+    type: array
+    path: $.checklists
+  tags:
+    type: array
+    path: $.tags
+  parent:
+    type: string
+    path: $.parent
+  priority_color:
+    type: string
+    path: $.priority.color
+  priority_id:
+    type: string
+    path: $.priority.id
+  priority_orderindex:
+    type: string
+    path: $.priority.orderindex
+  priority_priority:
+    type: string
+    path: $.priority.priority
+  due_date:
+    type: string
+    path: $.due_date
+  start_date:
+    type: string
+    path: $.start_date
+  points:
+    type: string
+    path: $.points
+  time_estimate:
+    type: string
+    path: $.time_estimate
+  time_spent:
+    type: string
+    path: $.time_spent
+  custom_fields:
+    type: array
+    path: $.custom_fields
+  locations:
+    type: array
+    path: $.locations
+    description: Array of Lists where the task has been added.
+  list_id:
+    type: string
+    path: $.list.id
+  folder_id:
+    type: string
+    path: $.folder.id
+  space_id:
+    type: string
+    path: $.space.id
+  url:
+    type: string
+    path: $.url
+extract:
+  record_path: $.tasks
+  pagination:
+    type: page_number
+    page_param: page
+  for_each:
+    resource: get_lists
+    field: id
+    input: list_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: date_updated
+  cursor_param: date_updated_gt

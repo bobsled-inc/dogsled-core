@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: crm_accounts
+type: seed
+description: Synthetic internal CRM accounts export for the Entity Graph demo.
+
+payload:
+  format: csv
+  path: data/crm_accounts.csv
+  delimiter: ','
+
+schema:
+  columns:
+    - name: account_id
+      type: STRING
+      primary_key: true
+    - name: name
+      type: STRING
+    - name: website
+      type: STRING
+    - name: phone
+      type: STRING
+    - name: country
+      type: STRING
+    - name: updated_at
+      type: TIMESTAMP
+
+materialization:
+  type: table
+  target_schema: raw
+  on_conflict: replace
+
+validation:
+  required_columns: [account_id, name, website, phone, country, updated_at]
+  unique_columns: [account_id]

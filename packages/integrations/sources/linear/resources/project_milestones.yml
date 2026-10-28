@@ -1,0 +1,64 @@
+type: resource
+name: project_milestones
+description: Project milestones from Linear representing key checkpoints or deliverables within a project, used to track progress toward specific goals with target dates
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  projectMilestones(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id name description\n      targetDate\n      project { id name }\n      createdAt updatedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique milestone UUID assigned by Linear
+  name:
+    type: string
+    path: $.name
+    description: Human-readable milestone name describing the deliverable or checkpoint (e.g. "Alpha Release", "Design Review Complete")
+  description:
+    type: string
+    path: $.description
+    description: Optional detailed description of the milestone in markdown format, outlining acceptance criteria and scope of the deliverable
+  target_date:
+    type: string
+    path: $.targetDate
+    description: Target completion date for the milestone as a YYYY-MM-DD string, used for timeline tracking and deadline visibility
+  project_id:
+    type: string
+    path: $.project.id
+    description: UUID of the parent project this milestone belongs to
+  project_name:
+    type: string
+    path: $.project.name
+    description: Display name of the parent project
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the milestone was first created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the milestone was last modified
+extract:
+  record_path: $.data.projectMilestones.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.projectMilestones.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter
+via: graphql

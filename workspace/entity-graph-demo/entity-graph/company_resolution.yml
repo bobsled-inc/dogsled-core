@@ -1,0 +1,113 @@
+spec_version: '0.2'
+name: company_resolution
+type: resolution
+description: Resolve companies across Shopify, HubSpot, Zendesk, and CRM sources.
+
+inputs:
+  - ref: shopify.customers
+    role: internal
+    trust_tier: silver
+    id_fields: [source_id]
+  - ref: hubspot.companies
+    role: provider
+    trust_tier: gold
+    id_fields: [hs_object_id]
+  - ref: zendesk.orgs
+    role: provider
+    trust_tier: silver
+    id_fields: [org_id]
+  - ref: crm.accounts
+    role: internal
+    trust_tier: silver
+    id_fields: [account_id]
+
+standardize:
+  - field: name
+    transforms: [lowercase, trim, collapse_whitespace, strip_legal_suffixes]
+  - field: website
+    transforms: [lowercase, strip_protocol, strip_www]
+  - field: phone
+    transforms: [digits_only, strip_country_code]
+  - field: country
+    transforms: [lowercase, trim]
+
+blocking:
+  rules:
+    - name: exact_website
+      key: standardized_website
+    - name: name_country_prefix
+      key: "CONCAT(LEFT(standardized_name, 6), '|', standardized_country)"
+  candidate_limit: 50000
+
+deterministic_rules:
+  - name: website_match
+    conditions:
+      - field: standardized_website
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: standardized_name
+      algorithm: jaro_winkler
+      weight: 0.5
+    - field: standardized_website
+      algorithm: exact
+      weight: 0.3
+    - field: standardized_phone
+      algorithm: exact
+      weight: 0.15
+    - field: standardized_country
+      algorithm: exact
+      weight: 0.05
+
+thresholds:
+  auto_merge: 0.93
+  review: 0.6
+  auto_reject: 0.5
+
+agent_policy:
+  enabled: true
+  approval_policy: on_failure
+  max_pairs_per_run: 25
+  batch_size: 10
+  max_cost_usd: 5
+  auto_apply_threshold: 0.85
+  context_fields: [name, website, phone, country]
+  # Model role for `entity-graph resolve review` — resolved against
+  # `platform.models` in this directory's dogsled.yml. Export ANTHROPIC_API_KEY
+  # to run the real judge; without it the review fail-softs to deferred pairs.
+  model: reviewer
+  # Or bring your own agent instead of the model role: an external reviewer
+  # (docs/reference/advanced/entity-graph-reviewer-contract.md) receives each batch as
+  # entity_graph_review_request.v1 and answers with {decisions}. When set,
+  # it wins over `model`. Uncomment one of:
+  # reviewer:
+  #   kind: command
+  #   command: 'node sample-reviewer.mjs'
+  #   timeout_s: 120
+  # reviewer:
+  #   kind: http
+  #   url: https://reviewer.example/review
+  #   auth_token: ${{ env.DOGSLED_REVIEWER_TOKEN }}
+  #   timeout_s: 300
+  #   poll_interval_s: 5
+
+entity_semantics:
+  definition: >-
+    A company is a distinct legal business entity. Two records match when they
+    refer to the same underlying business, even across rebrands, legal-suffix
+    changes, or marketing-vs-legal name variants.
+  categories:
+    - name: subsidiary
+      description: Subsidiaries are separate companies — do not merge them into the parent.
+  positive_examples:
+    - 'Acme Corp / https://acme.com ↔ Acme Corporation / acme.com (same domain, suffix variant)'
+  negative_examples:
+    - 'Acme US ↔ Acme Japan (regional subsidiaries with different registrations)'
+
+outputs:
+  target_schema: entity_graph_demo

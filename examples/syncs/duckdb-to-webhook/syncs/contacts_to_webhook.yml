@@ -1,0 +1,33 @@
+spec_version: '1'
+type: sync
+name: contacts_to_webhook
+description: Push eligible contact projection rows to a webhook action.
+tags: [example, contacts]
+
+source:
+  type: projection
+  connection: duckdb
+  projection_ref: main.contacts_to_webhook_projection
+  cursor:
+    field: observed_at
+    tie_breaker_fields: [entity_id]
+    initial_value: '1970-01-01T00:00:00.000Z'
+  filters:
+    readiness_status: eligible
+
+target:
+  action: webhook/notify_contact
+  entity_key:
+    fields: [email]
+  input_mapping:
+    email: email
+    first_name: first_name
+    last_name: last_name
+
+options:
+  state_backend: local
+  checkpoint_interval_records: 100
+  page_size: 500
+  on_record_error: skip
+  consecutive_failure_threshold: 10
+  lease_ttl_seconds: 900

@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: asana_task_projects_to_projects
+description: Each Asana task-project membership belongs to one project.
+left_model: asana__task_projects
+right_model: asana__projects
+join_columns:
+  - left: project_id
+    right: project_id
+join_type: left
+relationship_type: many_to_one
+tags: [asana, tasks, projects]

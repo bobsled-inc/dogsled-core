@@ -1,0 +1,33 @@
+type: resource
+name: vendors
+description: Vendor entities from QuickBooks Online.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    query: select * from Vendor maxresults 1000
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.DisplayName
+  active:
+    type: boolean
+    path: $.Active
+  sync_token:
+    type: string
+    path: $.SyncToken
+  created_at:
+    type: timestamp
+    path: $.MetaData.CreateTime
+  updated_at:
+    type: timestamp
+    path: $.MetaData.LastUpdatedTime
+extract:
+  record_path: $.QueryResponse.Vendor
+  table:
+    primary_key:
+      - id

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: freshdesk_ticket_count
+description: Number of Freshdesk tickets.
+model: freshdesk__tickets
+expression: COUNT({freshdesk__tickets}.ticket_id)
+synonyms: [tickets, ticket volume, number of tickets]
+tags: [freshdesk, support, tickets]

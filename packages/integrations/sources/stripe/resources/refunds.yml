@@ -1,0 +1,97 @@
+type: resource
+name: refunds
+description: Stripe refunds representing full or partial reversals of previously completed charges
+api:
+  endpoint: /v1/refunds
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of refunds to return per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique refund identifier prefixed with re_ (e.g. re_1A2b3C4d5E6f7G)
+  amount:
+    type: integer
+    path: $.amount
+    description: Amount refunded in the smallest currency unit (e.g. cents for USD). A value of 500
+      represents a $5.00 USD refund
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO 4217 currency code in lowercase (e.g. usd, eur, gbp)
+  charge:
+    type: string
+    path: $.charge
+    description: ID of the charge (ch_xxx) that was refunded
+  payment_intent:
+    type: string
+    path: $.payment_intent
+    description: ID of the payment intent (pi_xxx) associated with the refunded charge
+  reason:
+    type: string
+    path: $.reason
+    description: 'Reason for the refund. Possible values: duplicate (accidental duplicate charge),
+      fraudulent (charge was fraudulent), requested_by_customer (customer requested the refund).
+      Null if no reason was specified'
+  status:
+    type: string
+    path: $.status
+    description:
+      'Current status of the refund. Possible values: succeeded (refund completed and funds
+      returned to customer), pending (refund submitted but not yet processed), failed (refund could
+      not be processed), canceled (refund was canceled before processing)'
+  balance_transaction:
+    type: string
+    path: $.balance_transaction
+    description: ID of the balance transaction (txn_xxx) that describes the financial impact of this
+      refund on your Stripe balance
+  receipt_number:
+    type: string
+    path: $.receipt_number
+    description: Transaction number that appears on email receipts sent for this refund. Null if no
+      receipt was sent
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the refund was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

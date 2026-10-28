@@ -1,0 +1,10 @@
+spec_version: '1'
+type: integration
+name: shop_api
+auth_env_vars: [SHOWCASE_API_AUTHORITY, SHOWCASE_API_TOKEN]
+transport:
+  type: http
+  base_url: https://${{ env.SHOWCASE_API_AUTHORITY }}
+  auth:
+    type: bearer
+    token: ${{ env.SHOWCASE_API_TOKEN }}

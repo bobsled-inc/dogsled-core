@@ -1,0 +1,8 @@
+spec_version: '1'
+type: integration
+name: duckdb
+source_type: duckdb
+connection:
+  schema: analytics
+auth:
+  type: memory

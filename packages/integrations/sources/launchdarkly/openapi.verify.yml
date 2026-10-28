@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: LaunchDarkly Verify Subset
+  version: '1.0'
+servers:
+  - url: https://app.launchdarkly.com/api/v2
+paths:
+  /auditlog:
+    get:
+      responses:
+        '200':
+          description: OK
+  /integrations:
+    get:
+      responses:
+        '200':
+          description: OK
+  /members:
+    get:
+      responses:
+        '200':
+          description: OK
+  /projects:
+    get:
+      responses:
+        '200':
+          description: OK
+  /roles:
+    get:
+      responses:
+        '200':
+          description: OK
+  /webhooks:
+    get:
+      responses:
+        '200':
+          description: OK

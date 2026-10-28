@@ -1,0 +1,53 @@
+spec_version: '0.2'
+name: quickbooks__bills
+type: model
+description: QuickBooks bills enriched with vendor context.
+grain: bill_id
+source:
+  ref: stg_quickbooks__bills
+joins:
+  - ref: stg_quickbooks__vendors
+    type: left
+    on: stg_quickbooks__bills.vendor_id = stg_quickbooks__vendors.vendor_id
+columns:
+  - name: bill_id
+    expr: stg_quickbooks__bills.bill_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique QuickBooks bill identifier.
+  - name: vendor_id
+    expr: stg_quickbooks__bills.vendor_id
+    semantic_role: entity_id
+    references: stg_quickbooks__vendors.vendor_id
+    description: Vendor tied to the bill.
+  - name: vendor_name
+    expr: stg_quickbooks__vendors.name
+    semantic_role: categorical
+    description: Vendor display name from the related vendor record.
+  - name: total_amount
+    expr: stg_quickbooks__bills.total_amt
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total bill amount.
+  - name: balance
+    expr: stg_quickbooks__bills.balance
+    semantic_role: measure
+    tags:
+      - financial
+    description: Outstanding balance on the bill.
+  - name: due_date
+    expr: stg_quickbooks__bills.due_date
+    semantic_role: event_timestamp
+    description: Date when the bill payment is due.
+  - name: created_at
+    expr: stg_quickbooks__bills.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the bill was created.
+tags:
+  - quickbooks
+  - bills
+  - finance
+trust_tier: gold
+materialization:
+  type: table

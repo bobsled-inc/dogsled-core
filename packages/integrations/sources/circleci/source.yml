@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: circleci
+description: CircleCI API v2 for pipelines, users, contexts, and webhooks
+transports:
+  - id: default
+    base_url: https://circleci.com/api/v2
+    auth:
+      type: api-key
+      key: ${{ env.CIRCLECI_API_KEY }}
+      header: Circle-Token
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 5
+      burst: 10
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

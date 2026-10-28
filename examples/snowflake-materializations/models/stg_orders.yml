@@ -1,0 +1,30 @@
+spec_version: '0.2'
+name: stg_orders
+type: model
+description: Clean staging view over raw Snowflake orders.
+grain:
+  - order_id
+source:
+  ref: snowflake.orders
+columns:
+  - name: ORDER_ID
+    expr: ORDER_ID
+    description: Stable order identifier.
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+    description: Customer identifier from the commerce system.
+  - name: ORDER_STATUS
+    expr: ORDER_STATUS
+    description: Current order lifecycle status.
+  - name: ORDER_TOTAL
+    expr: ORDER_TOTAL
+    description: Order total in USD.
+  - name: UPDATED_AT
+    expr: UPDATED_AT
+    description: Last update timestamp from the source system.
+target_schema: ANALYTICS
+tags: [snowflake, staging]
+owner: data-platform
+trust_tier: silver
+materialization:
+  type: view

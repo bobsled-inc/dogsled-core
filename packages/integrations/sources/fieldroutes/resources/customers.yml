@@ -1,0 +1,115 @@
+type: resource
+name: customers
+description: Customer master records and customer attributes for CRM and operational joins.
+api:
+  endpoint: /customer/search
+  method: POST
+  query_params:
+    officeIDs: '${{ input.office_ids }}'
+    active: '${{ input.active }}'
+    customerIDs: '${{ input.customer_ids }}'
+    dateUpdatedStart: '${{ input.date_updated_start }}'
+    dateUpdatedEnd: '${{ input.date_updated_end }}'
+    dateAddedStart: '${{ input.date_added_start }}'
+    dateAddedEnd: '${{ input.date_added_end }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_ids:
+    type: integer
+    description: Optional office filter (one or more office IDs as a query object or comma-separated list supported by FieldRoutes).
+  active:
+    type: integer
+    description: Active status filter (`1` for active, `0` for inactive, `-3` for leads).
+  customer_ids:
+    type: string
+    description: Optional customer ID or query object for targeted extraction.
+  date_updated_start:
+    type: string
+    description: Lower-bound date for `dateUpdated`.
+  date_updated_end:
+    type: string
+    description: Upper-bound date for `dateUpdated`.
+  date_added_start:
+    type: string
+    description: Lower-bound date for `dateAdded`.
+  date_added_end:
+    type: string
+    description: Upper-bound date for `dateAdded`.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved `customer` records (recommended for extractor output).
+    default: 1
+
+output:
+  customer_id:
+    type: integer
+    path: $.customerID
+    description: Customer unique ID.
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Owning office ID.
+  first_name:
+    type: string
+    path: $.fname
+    description: Customer first name.
+  last_name:
+    type: string
+    path: $.lname
+    description: Customer last name.
+  company_name:
+    type: string
+    path: $.companyName
+    description: Billing/company name.
+  email:
+    type: string
+    path: $.email
+    description: Primary customer email.
+  phone:
+    type: string
+    path: $.phone1
+    description: Primary phone number.
+  status:
+    type: integer
+    path: $.status
+    description: 1 = Active, 0 = Inactive.
+  status_text:
+    type: string
+    path: $.statusText
+    description: Friendly status label.
+  date_added:
+    type: timestamp
+    path: $.dateAdded
+    description: When the customer was created.
+  date_updated:
+    type: timestamp
+    path: $.dateUpdated
+    description: Last customer record update.
+  balance:
+    type: number
+    path: $.balance
+    description: Outstanding customer balance.
+  responsible_balance:
+    type: number
+    path: $.responsibleBalance
+    description: Outstanding balance for responsible staff accounting.
+  preferred_tech_id:
+    type: integer
+    path: $.preferredTechID
+    description: Preferred technician ID.
+  region_id:
+    type: integer
+    path: $.regionID
+    description: Customer region ID.
+  subscription_ids:
+    type: array
+    path: $.subscriptionIDs
+    description: Subscriptions attached to this customer.
+
+extract:
+  record_path: '$..[?(@.customerID)]'
+  table:
+    primary_key:
+      - customer_id
+    trust_tier: silver

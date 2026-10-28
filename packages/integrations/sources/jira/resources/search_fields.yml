@@ -1,0 +1,84 @@
+type: resource
+name: search_fields
+description: List Jira fields visible to the authenticated user
+api:
+  endpoint: /rest/api/3/field/search
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    type: ${{ input.type }}
+    query: ${{ input.query }}
+    orderBy: ${{ input.order_by }}
+input:
+  start_at:
+    type: integer
+    description: The index of the first field to return
+    default: 0
+  max_results:
+    type: integer
+    description: The maximum number of fields to return per page
+    default: 50
+  type:
+    type: string
+    description: Optional Jira field type filter
+    enum:
+      - custom
+      - system
+  query:
+    type: string
+    description: Optional field name search string
+  order_by:
+    type: string
+    description: Optional field sort order
+    enum:
+      - contextsCount
+      - lastUsed
+      - name
+      - projectsCount
+      - screensCount
+      - trackedFields
+query:
+  search:
+    dialect: provider_search
+    bind:
+      input: query
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira field identifier
+  key:
+    type: string
+    path: $.key
+    description: Jira field key
+  name:
+    type: string
+    path: $.name
+    description: Field display name
+  type_display_name:
+    type: string
+    path: $.typeDisplayName
+    description: Human-readable Jira field type
+  is_locked:
+    type: boolean
+    path: $.isLocked
+    description: Whether the field is locked
+  screens_count:
+    type: integer
+    path: $.screensCount
+    description: Number of screens using the field
+  projects_count:
+    type: integer
+    path: $.projectsCount
+    description: Number of projects using the field
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

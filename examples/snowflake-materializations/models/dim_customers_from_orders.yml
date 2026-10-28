@@ -1,0 +1,29 @@
+spec_version: '0.2'
+name: dim_customers_from_orders
+type: model
+description: Curated customer rollup materialized as a Snowflake table.
+grain:
+  - customer_id
+source:
+  ref: stg_orders
+columns:
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+    description: Customer identifier.
+  - name: FIRST_ORDER_AT
+    expr: raw_sql(MIN(UPDATED_AT))
+    description: First observed order update timestamp.
+  - name: LAST_ORDER_AT
+    expr: raw_sql(MAX(UPDATED_AT))
+    description: Most recent observed order update timestamp.
+  - name: LIFETIME_REVENUE
+    expr: raw_sql(SUM(ORDER_TOTAL))
+    description: Total order revenue observed for the customer.
+group_by:
+  - CUSTOMER_ID
+target_schema: ANALYTICS
+tags: [snowflake, curated]
+owner: data-platform
+trust_tier: gold
+materialization:
+  type: table

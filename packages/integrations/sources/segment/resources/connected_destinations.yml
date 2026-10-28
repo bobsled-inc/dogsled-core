@@ -1,0 +1,50 @@
+type: resource
+name: connected_destinations
+description: Destinations connected to each Segment source.
+api:
+  endpoint: /sources/${{ input.source_id }}/connected-destinations
+  method: GET
+  query_params:
+    pagination.count: ${{ input.pagination_count }}
+    pagination.cursor: ${{ input.pagination_cursor }}
+input:
+  source_id:
+    type: string
+    default: source_1
+  pagination_count:
+    type: integer
+    default: 100
+  pagination_cursor:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  enabled:
+    type: boolean
+    path: $.enabled
+  source_id:
+    type: string
+    path: $.sourceId
+  metadata_id:
+    type: string
+    path: $.metadata.id
+  created_at:
+    type: timestamp
+    path: $.createdAt
+extract:
+  record_path: $.data.destinations
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.data.pagination.next
+    cursor_param: pagination.cursor
+  for_each:
+    resource: sources
+    field: id
+    input: source_id

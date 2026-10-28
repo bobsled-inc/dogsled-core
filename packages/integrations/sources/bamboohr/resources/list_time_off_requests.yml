@@ -1,0 +1,174 @@
+type: resource
+name: list_time_off_requests
+description: List Time Off Requests
+api:
+  endpoint: /api/v1/time_off/requests
+  method: GET
+  query_params:
+    id: ${{ input.id }}
+    action: ${{ input.action }}
+    employeeId: ${{ input.employee_id }}
+    start: ${{ input.start }}
+    end: ${{ input.end }}
+    type: ${{ input.type }}
+    status: ${{ input.status }}
+    excludeNote: ${{ input.exclude_note }}
+input:
+  id:
+    type: integer
+    description: A particular request ID to limit the response to.
+  action:
+    type: string
+    description:
+      Limit to requests the caller can `view`, requests they can `approve`, or only their own
+      requests via `myRequests`. Defaults to `view`.
+    enum:
+      - view
+      - approve
+      - myRequests
+    default: view
+  employee_id:
+    type: integer
+    description: A particular employee ID to limit the response to.
+  start:
+    type: timestamp
+    required: true
+    description: Only include requests that end on or after this date. YYYY-MM-DD format.
+  end:
+    type: timestamp
+    required: true
+    description: Only include requests that start on or before this date. YYYY-MM-DD format.
+  type:
+    type: string
+    description:
+      A comma-separated list of time off type IDs to filter by. If omitted, requests of all
+      types are included.
+  status:
+    type: string
+    description: A comma-separated list of request status values to filter by. Accepted values are
+      approved, denied, superceded, requested, and canceled. If omitted, requests of all statuses
+      are included.
+  exclude_note:
+    type: string
+    description: When set to any truthy value, omits the `notes` object from each request in the response.
+query:
+  filters:
+    id:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: id
+      compile:
+        eq:
+          mode: http_query
+          param: id
+    employee_id:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: employee_id
+      compile:
+        eq:
+          mode: http_query
+          param: employeeId
+output:
+  id:
+    type: integer
+    path: $.id
+    description: The time off request ID.
+  employee_id:
+    type: integer
+    path: $.employeeId
+    description: The ID of the employee.
+  name:
+    type: string
+    path: $.name
+    description: The employee's full name.
+  start:
+    type: timestamp
+    path: $.start
+    description: The start date of the request in YYYY-MM-DD format.
+  end:
+    type: timestamp
+    path: $.end
+    description: The end date of the request in YYYY-MM-DD format.
+  created:
+    type: timestamp
+    path: $.created
+    description: The date the request was created in YYYY-MM-DD format (company timezone).
+  status_last_changed:
+    type: timestamp
+    path: $.status.lastChanged
+    description: The date the status was last changed (company timezone).
+  status_last_changed_by_user_id:
+    type: integer
+    path: $.status.lastChangedByUserId
+    description: The user ID who last changed the status.
+  status_status:
+    type: string
+    path: $.status.status
+    description: The current status value.
+  type_id:
+    type: integer
+    path: $.type.id
+    description: The time off type ID.
+  type_name:
+    type: string
+    path: $.type.name
+    description: The time off type name.
+  type_icon:
+    type: string
+    path: $.type.icon
+    description: The icon name for the time off type.
+  amount_unit:
+    type: string
+    path: $.amount.unit
+    description: The unit of measurement.
+  amount_amount:
+    type: number
+    path: $.amount.amount
+    description: The total amount requested.
+  actions_view:
+    type: boolean
+    path: $.actions.view
+    description: Whether the user can view this request.
+  actions_edit:
+    type: boolean
+    path: $.actions.edit
+    description: Whether the user can edit this request.
+  actions_cancel:
+    type: boolean
+    path: $.actions.cancel
+    description: Whether the user can cancel this request.
+  actions_approve:
+    type: boolean
+    path: $.actions.approve
+    description: Whether the user can approve this request.
+  actions_deny:
+    type: boolean
+    path: $.actions.deny
+    description: Whether the user can deny this request.
+  actions_bypass:
+    type: boolean
+    path: $.actions.bypass
+    description: Whether the user can bypass the approval workflow.
+  dates:
+    type: object
+    path: $.dates
+    description: A map of dates (YYYY-MM-DD) to daily amounts.
+  notes_employee:
+    type: string
+    path: $.notes.employee
+    description: Note from the employee.
+  notes_manager:
+    type: string
+    path: $.notes.manager
+    description: Note from the manager.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

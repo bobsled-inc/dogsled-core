@@ -1,0 +1,149 @@
+type: resource
+name: events
+description: Events captured for each PostHog project.
+api:
+  endpoint: /api/projects/${{ input.project_id }}/events/
+  method: GET
+  query_params:
+    after: ${{ input.after }}
+    before: ${{ input.before }}
+    distinct_id: ${{ input.distinct_id }}
+    event: ${{ input.event }}
+    format: ${{ input.format }}
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    person_id: ${{ input.person_id }}
+    properties: ${{ input.properties }}
+    select: ${{ input.select }}
+    where: ${{ input.where }}
+input:
+  after:
+    type: timestamp
+    description: 'Only return events with a timestamp after this time. Default: now() - 24 hours.'
+  before:
+    type: timestamp
+    description: 'Only return events with a timestamp before this time. Default: now() + 5 seconds.'
+  distinct_id:
+    type: integer
+    description: Filter list by distinct id.
+  event:
+    type: string
+    description: Filter list by event. For example `user sign up` or `$pageview`.
+  format:
+    type: string
+    enum:
+      - csv
+      - json
+  limit:
+    type: integer
+    description: The maximum number of results to return
+    default: 100
+  offset:
+    type: integer
+    description:
+      'Allows to skip first offset rows. Will fail for value larger than 100000. Read about
+      proper way of paginating:
+      https://posthog.com/docs/api/queries#5-use-timestamp-based-pagination-instead-of-offset'
+    default: 0
+  person_id:
+    type: integer
+    description: Filter list by person id.
+  project_id:
+    type: integer
+    required: true
+    description:
+      Project ID of the project you're trying to access. To find the ID of the project, make
+      a call to /api/projects/.
+  properties:
+    type: array
+    description: Filter events by event property, person property, cohort, groups and more.
+  select:
+    type: array
+    description: (Experimental) JSON-serialized array of HogQL expressions to return
+  where:
+    type: array
+    description: (Experimental) JSON-serialized array of HogQL expressions that must pass
+query:
+  filters:
+    timestamp:
+      operators:
+        - gte
+        - lte
+      description: Bound events to the incremental extraction window.
+      bind:
+        gte:
+          input: after
+        lte:
+          input: before
+      compile:
+        gte:
+          mode: http_query
+          param: after
+        lte:
+          mode: http_query
+          param: before
+    event:
+      operators:
+        - eq
+      description: Filter list by event. For example `user sign up` or `$pageview`.
+      bind:
+        eq:
+          input: event
+      compile:
+        eq:
+          mode: http_query
+          param: event
+output:
+  project_id:
+    type: integer
+    from:
+      resource: projects
+      path: $.id
+  id:
+    type: string
+    path: $.id
+  distinct_id:
+    type: string
+    path: $.distinct_id
+  properties:
+    type: object
+    path: $.properties
+  event:
+    type: string
+    path: $.event
+  timestamp:
+    type: timestamp
+    path: $.timestamp
+  person:
+    type: object
+    path: $.person
+  elements:
+    type: array
+    path: $.elements
+  elements_chain:
+    type: string
+    path: $.elements_chain
+extract:
+  record_path: $.results
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - project_id
+      - id
+  for_each:
+    resource: projects
+    field: id
+    input: project_id
+incremental:
+  strategy: server_filter
+  cursor_field: timestamp
+  cursor_type: timestamp
+  since_argument: after
+  until_argument: before
+  value_format: iso8601
+  lookback_seconds: 86400
+  initial_lookback_seconds: 2592000
+  window_size_seconds: 86400

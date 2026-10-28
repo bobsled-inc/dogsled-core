@@ -1,0 +1,56 @@
+type: resource
+name: ticket_fields
+description: List Zendesk ticket fields
+api:
+  endpoint: /ticket_fields
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of ticket fields to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk ticket field identifier
+  title:
+    type: string
+    path: $.title
+    description: Ticket field title
+  type:
+    type: string
+    path: $.type
+    description: Ticket field type
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the field is active
+  position:
+    type: integer
+    path: $.position
+    description: Ticket field position
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Ticket field creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Ticket field last update timestamp
+extract:
+  record_path: $.ticket_fields
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

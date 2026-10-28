@@ -1,0 +1,50 @@
+type: resource
+name: find_people
+description: Identify up to 10 people with a target job title inside a company.
+api:
+  endpoint: /api/ingress/v1/find_people
+  method: GET
+  query_params:
+    company: ${{ input.company }}
+    title: ${{ input.title }}
+output:
+  company:
+    type: string
+    path: $.__input__.company
+    description: Company input used for the search.
+  title:
+    type: string
+    path: $.__input__.title
+    description: Job title input used for the search.
+  result:
+    type: object
+    path: $
+    description: Full Datagma response payload for the people-finding request.
+input:
+  company:
+    type: string
+    required: true
+    description: Company name or domain to search within.
+  title:
+    type: string
+    required: true
+    description: Target job title to search for.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - company
+      - title
+    trust_tier: silver
+billing:
+  mode: billable
+  ownership: third_party
+  unit: credit
+  estimation:
+    model: upper_bound
+    amount: 10
+    currency: provider_credit
+    notes: Datagma documents Find People as 10 credits for successful searches and 1 credit for
+      no-result searches.
+  authorization:
+    requires_plan: true

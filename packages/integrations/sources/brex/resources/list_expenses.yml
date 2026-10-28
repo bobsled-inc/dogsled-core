@@ -1,0 +1,355 @@
+type: resource
+name: list_expenses
+description: List expenses
+api:
+  endpoint: /v1/expenses
+  method: GET
+  query_params:
+    expand[]: ${{ input.expand }}
+    user_id[]: ${{ input.user_id }}
+    parent_expense_id[]: ${{ input.parent_expense_id }}
+    budget_id[]: ${{ input.budget_id }}
+    spending_entity_id[]: ${{ input.spending_entity_id }}
+    expense_type[]: ${{ input.expense_type }}
+    status[]: ${{ input.status }}
+    payment_status[]: ${{ input.payment_status }}
+    purchased_at_start: ${{ input.purchased_at_start }}
+    purchased_at_end: ${{ input.purchased_at_end }}
+    updated_at_start: ${{ input.updated_at_start }}
+    updated_at_end: ${{ input.updated_at_end }}
+    payment_posted_at_start: ${{ input.payment_posted_at_start }}
+    payment_posted_at_end: ${{ input.payment_posted_at_end }}
+    load_custom_fields: ${{ input.load_custom_fields }}
+    cursor: ${{ input.cursor }}
+    limit: ${{ input.limit }}
+input:
+  expand:
+    type: array
+    description: Get additional details for the expense, e.g. merchant mcc code, by passing in
+      `expand[]=merchant`. Query parameters include `location`, `department`, `merchant`,
+      `receipts.download_uris`, `user`, `budget`, `payment`, `spending_entity` and `policy`.
+  user_id:
+    type: array
+    description: Get expenses belong to provided user(s).
+  parent_expense_id:
+    type: array
+    description: Get itemized expenses belong to provided parent expenses ID(s).
+  budget_id:
+    type: array
+  spending_entity_id:
+    type: array
+  expense_type:
+    type: array
+  status:
+    type: array
+  payment_status:
+    type: array
+  purchased_at_start:
+    type: timestamp
+    description: >
+
+      Shows only expenses with a `purchased_at` on or after this date-time. This parameter is the
+      date-time notation as defined by [RFC 3339, section
+      5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+  purchased_at_end:
+    type: timestamp
+    description: >
+
+      Shows only expenses with a `purchased_at` on or before this date-time. This parameter is the
+      date-time notation as defined by [RFC 3339, section
+      5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+  updated_at_start:
+    type: timestamp
+    description: >
+
+      Shows only expenses with a `updated_at` on or after this date-time. This parameter is the
+      date-time notation as defined by [RFC 3339, section
+      5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+  updated_at_end:
+    type: timestamp
+    description: >
+
+      Shows only expenses with a `updated_at` on or before this date-time. This parameter is the
+      date-time notation as defined by [RFC 3339, section
+      5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+  payment_posted_at_start:
+    type: timestamp
+    description: >
+
+      Shows only expenses with a `payment_posted_at` on or after this date-time. This parameter is
+      the date-time notation as defined by [RFC 3339, section
+      5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+  payment_posted_at_end:
+    type: timestamp
+    description: >
+
+      Shows only expenses with a `payment_posted_at` on or before this date-time. This parameter is
+      the date-time notation as defined by [RFC 3339, section
+      5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+  load_custom_fields:
+    type: boolean
+    description: Load custom fields for the expenses.
+  cursor:
+    type: string
+    description: >
+
+      The cursor to use for pagination. This is the `next_cursor` value returned from the previous
+      response.
+  limit:
+    type: integer
+    description: |
+
+      Controls the maximum number of expenses returned in the response, can't be greater than 100
+query:
+  filters:
+    payment_posted_at:
+      operators:
+        - gte
+        - lte
+      description: >
+        Shows only expenses with a `payment_posted_at` on or after this date-time. This parameter is
+        the date-time notation as defined by [RFC 3339, section
+        5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+      bind:
+        gte:
+          input: payment_posted_at_start
+        lte:
+          input: payment_posted_at_end
+      compile:
+        gte:
+          mode: http_query
+          param: payment_posted_at_start
+        lte:
+          mode: http_query
+          param: payment_posted_at_end
+    purchased_at:
+      operators:
+        - gte
+        - lte
+      description: >
+        Shows only expenses with a `purchased_at` on or after this date-time. This parameter is the
+        date-time notation as defined by [RFC 3339, section
+        5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+      bind:
+        gte:
+          input: purchased_at_start
+        lte:
+          input: purchased_at_end
+      compile:
+        gte:
+          mode: http_query
+          param: purchased_at_start
+        lte:
+          mode: http_query
+          param: purchased_at_end
+    updated_at:
+      operators:
+        - gte
+        - lte
+      description: >
+        Shows only expenses with an `updated_at` on or after this date-time. This parameter is the
+        date-time notation as defined by [RFC 3339, section
+        5.6](https://tools.ietf.org/html/rfc3339#section-5.6), e.g. 2022-11-12T23:59:59.999
+      bind:
+        gte:
+          input: updated_at_start
+        lte:
+          input: updated_at_end
+      compile:
+        gte:
+          mode: http_query
+          param: updated_at_start
+        lte:
+          mode: http_query
+          param: updated_at_end
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique ID associated with the expense.
+  memo:
+    type: string
+    path: $.memo
+    description: The memo of the expense.
+  location_id:
+    type: string
+    path: $.location_id
+  location:
+    type: string
+    path: $.location
+  address:
+    type: string
+    path: $.address
+  department_id:
+    type: string
+    path: $.department_id
+  department:
+    type: string
+    path: $.department
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The last time the expense was updated.
+  payment_posted_at:
+    type: timestamp
+    path: $.payment_posted_at
+  category:
+    type: string
+    path: $.category
+  merchant_id:
+    type: string
+    path: $.merchant_id
+  merchant:
+    type: string
+    path: $.merchant
+  receipts:
+    type: array
+    path: $.receipts
+    description: A list of receipts associated with the expense.
+  budget_id:
+    type: string
+    path: $.budget_id
+  budget:
+    type: string
+    path: $.budget
+  expense_type:
+    type: string
+    path: $.expense_type
+  original_amount:
+    type: string
+    path: $.original_amount
+  billing_amount:
+    type: string
+    path: $.billing_amount
+  budget_amount:
+    type: string
+    path: $.budget_amount
+  purchased_amount:
+    type: string
+    path: $.purchased_amount
+  usd_equivalent_amount:
+    type: string
+    path: $.usd_equivalent_amount
+  purchased_at:
+    type: timestamp
+    path: $.purchased_at
+    description: The time the purchase was made.
+  status:
+    type: string
+    path: $.status
+  payment_status:
+    type: string
+    path: $.payment_status
+  user_id:
+    type: string
+    path: $.user_id
+  user:
+    type: string
+    path: $.user
+  payment:
+    type: string
+    path: $.payment
+  custom_fields:
+    type: array
+    path: $.custom_fields
+    description: A list of custom field values associated with the expense.
+  trip_id:
+    type: string
+    path: $.trip_id
+    description: The trip ID associated with the expense if it is a trip expense.
+  spending_entity_id:
+    type: string
+    path: $.spending_entity_id
+    description: The spending entity ID associated with the expense.
+  spending_entity:
+    type: string
+    path: $.spending_entity
+  billing_entity_id:
+    type: string
+    path: $.billing_entity_id
+    description: ID of the legal entity responsible for billing the expense.
+  exported_at:
+    type: timestamp
+    path: $.exported_at
+    description: Timestamp when the expense was exported to the accounting system.
+  integration_spending_entity_id:
+    type: string
+    path: $.integration_spending_entity_id
+    description: ID of the spending entity in accounting.
+  integration_billing_entity_id:
+    type: string
+    path: $.integration_billing_entity_id
+    description: ID of the billing entity in accounting.
+  review:
+    type: string
+    path: $.review
+  repayment:
+    type: string
+    path: $.repayment
+  approved_at:
+    type: timestamp
+    path: $.approved_at
+    description: The time the expense is approved.
+  submitted_at:
+    type: timestamp
+    path: $.submitted_at
+    description: The time the expense is submitted,
+  completion_date:
+    type: timestamp
+    path: $.completion_date
+    description: The time payment will be completed/is completed.
+  policy:
+    type: string
+    path: $.policy
+  expense_line_items:
+    type: array
+    path: $.expense_line_items
+    description: The expense line items.
+  dashboard_url:
+    type: string
+    path: $.dashboard_url
+    description: URL to view the expense in the Brex dashboard.
+extract:
+  record_path: $.items
+  pagination:
+    type: cursor
+    cursor_param: cursor
+    cursor_path: $.next_cursor
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get an expense
+  api:
+    endpoint: /v1/expenses/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_expenses_smoke
+      input:
+        expand: |
+
+          ?expand[]=merchant&expand[]=location
+        purchased_at_start: |
+
+          2023-01-01T23:59:59.999
+        purchased_at_end: |
+
+          2023-01-10T23:59:59.999
+        updated_at_start: |
+
+          2023-01-01T23:59:59.999
+        updated_at_end: |
+
+          2023-01-10T23:59:59.999
+        payment_posted_at_start: |
+
+          2023-01-01T23:59:59.999
+        payment_posted_at_end: |
+
+          2023-01-10T23:59:59.999

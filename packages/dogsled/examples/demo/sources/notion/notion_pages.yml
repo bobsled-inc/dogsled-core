@@ -1,0 +1,42 @@
+spec_version: '0.2'
+name: notion_pages
+type: source
+source_type: warehouse_table
+connection: warehouse
+table: raw.notion_pages
+description: Raw Notion page data extracted from the Notion search API
+schema:
+  columns:
+    - name: id
+      type: VARCHAR
+      description: Unique page UUID
+    - name: object
+      type: VARCHAR
+      description: Object type — "page" or "database"
+    - name: url
+      type: VARCHAR
+      description: Notion URL for the page
+    - name: public_url
+      type: VARCHAR
+      description: Public URL if the page is published
+    - name: parent_type
+      type: VARCHAR
+      description: Parent type — "database_id", "page_id", or "workspace"
+    - name: created_by_id
+      type: VARCHAR
+      description: UUID of the user who created the page
+    - name: last_edited_by_id
+      type: VARCHAR
+      description: UUID of the user who last edited the page
+    - name: archived
+      type: BOOLEAN
+      description: True if the page has been archived
+    - name: in_trash
+      type: BOOLEAN
+      description: True if the page is in the trash
+    - name: created_time
+      type: TIMESTAMP
+      description: Timestamp when the page was created
+    - name: last_edited_time
+      type: TIMESTAMP
+      description: Timestamp when the page was last edited

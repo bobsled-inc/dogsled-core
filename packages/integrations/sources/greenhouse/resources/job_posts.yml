@@ -1,0 +1,46 @@
+type: resource
+name: job_posts
+description: List Greenhouse job posts
+api:
+  endpoint: /job_posts
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  per_page:
+    type: integer
+    description: Number of job posts to return per page
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Greenhouse job post identifier
+  title:
+    type: string
+    path: $.title
+    description: Job post title
+  live:
+    type: boolean
+    path: $.live
+    description: Whether the job post is live
+  content:
+    type: string
+    path: $.content
+    description: Job post body content
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Job post creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Job post last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

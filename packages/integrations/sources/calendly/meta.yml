@@ -1,0 +1,10 @@
+display_name: Calendly
+category: productivity
+logo_url: https://calendly.com/favicon.ico
+tags: [scheduling, meetings, events]
+docs_url: https://developer.calendly.com/api-docs
+openapi_url: https://raw.githubusercontent.com/tcampb-calendly/openapi-json/master/openapi.json
+auth_setup:
+  - env: CALENDLY_TOKEN
+    description: Calendly personal access token or OAuth access token
+    docs_url: https://developer.calendly.com/how-to-auth

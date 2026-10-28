@@ -1,0 +1,91 @@
+spec_version: '0.2'
+name: quickbooks__customers
+type: model
+description: QuickBooks customers enriched with invoice and payment rollups.
+grain: customer_id
+source:
+  ref: stg_quickbooks__customers
+joins:
+  - ref: stg_quickbooks__invoices
+    type: left
+    on: stg_quickbooks__customers.customer_id = stg_quickbooks__invoices.customer_id
+    pre_aggregate:
+      group_by:
+        - customer_id
+      columns:
+        - name: total_invoice_count
+          expr: COUNT(*)
+        - name: total_invoice_amount
+          expr: COALESCE(SUM(stg_quickbooks__invoices.total_amt), 0)
+        - name: total_invoice_balance
+          expr: COALESCE(SUM(stg_quickbooks__invoices.balance), 0)
+  - ref: stg_quickbooks__payments
+    type: left
+    on: stg_quickbooks__customers.customer_id = stg_quickbooks__payments.customer_id
+    pre_aggregate:
+      group_by:
+        - customer_id
+      columns:
+        - name: total_payment_amount
+          expr: COALESCE(SUM(stg_quickbooks__payments.amount), 0)
+        - name: payment_count
+          expr: COUNT(*)
+columns:
+  - name: customer_id
+    expr: stg_quickbooks__customers.customer_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique QuickBooks customer identifier.
+  - name: name
+    expr: stg_quickbooks__customers.name
+    semantic_role: categorical
+    description: Customer display name.
+  - name: email
+    expr: stg_quickbooks__customers.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer email address.
+  - name: balance
+    expr: stg_quickbooks__customers.balance
+    semantic_role: measure
+    tags:
+      - financial
+    description: Outstanding balance on the customer account.
+  - name: total_invoice_count
+    expr: COALESCE(stg_quickbooks__invoices.total_invoice_count, 0)
+    semantic_role: measure
+    description: Total number of invoices for the customer.
+  - name: total_invoice_amount
+    expr: COALESCE(stg_quickbooks__invoices.total_invoice_amount, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total invoice amount for the customer.
+  - name: total_invoice_balance
+    expr: COALESCE(stg_quickbooks__invoices.total_invoice_balance, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total outstanding invoice balance for the customer.
+  - name: total_payment_amount
+    expr: COALESCE(stg_quickbooks__payments.total_payment_amount, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total payment amount received from the customer.
+  - name: payment_count
+    expr: COALESCE(stg_quickbooks__payments.payment_count, 0)
+    semantic_role: measure
+    description: Total number of payments received from the customer.
+  - name: created_at
+    expr: stg_quickbooks__customers.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the customer was created.
+tags:
+  - quickbooks
+  - customers
+  - finance
+trust_tier: gold
+materialization:
+  type: table

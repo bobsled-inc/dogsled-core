@@ -1,0 +1,39 @@
+type: resource
+name: customers
+description: customers from Help Scout.
+api:
+  endpoint: /customers
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+input:
+  page:
+    type: integer
+    default: 1
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  email:
+    type: string
+    path: $.email
+  created_at:
+    type: timestamp
+    path: $.createdAt
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+  status:
+    type: string
+    path: $.status
+extract:
+  record_path: $._embedded.customers
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $._links.next.href

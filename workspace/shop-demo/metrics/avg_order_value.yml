@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: avg_order_value
+description: Average revenue per order.
+expression: AVG(order_total)
+model: fct_orders
+synonyms:
+  - aov

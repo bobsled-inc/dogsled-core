@@ -1,0 +1,42 @@
+type: resource
+name: bills
+description: Bill entities from QuickBooks Online.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    query: select * from Bill maxresults 1000
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  doc_number:
+    type: string
+    path: $.DocNumber
+  vendor_id:
+    type: string
+    path: $.VendorRef.value
+  total_amt:
+    type: number
+    path: $.TotalAmt
+  balance:
+    type: number
+    path: $.Balance
+  due_date:
+    type: string
+    path: $.DueDate
+  sync_token:
+    type: string
+    path: $.SyncToken
+  created_at:
+    type: timestamp
+    path: $.MetaData.CreateTime
+  updated_at:
+    type: timestamp
+    path: $.MetaData.LastUpdatedTime
+extract:
+  record_path: $.QueryResponse.Bill
+  table:
+    primary_key:
+      - id

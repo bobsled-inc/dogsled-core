@@ -1,0 +1,36 @@
+spec_version: '0.2'
+name: quickbooks__payment_applications
+type: model
+description: Amounts from QuickBooks payments applied to individual invoices.
+grain:
+  - payment_id
+  - invoice_id
+source:
+  ref: stg_quickbooks__payment_applications
+  filter: transaction_type = 'Invoice' AND invoice_id IS NOT NULL
+columns:
+  - name: payment_id
+    expr: stg_quickbooks__payment_applications.payment_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_quickbooks__payments.payment_id
+    description: Payment that supplied the applied amount.
+  - name: invoice_id
+    expr: stg_quickbooks__payment_applications.invoice_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_quickbooks__invoices.invoice_id
+    description: Invoice that received the applied amount.
+  - name: applied_amount
+    expr: stg_quickbooks__payment_applications.applied_amount
+    semantic_role: measure
+    tags:
+      - financial
+    description: Portion of the payment applied to the invoice.
+tags:
+  - quickbooks
+  - payments
+  - invoices
+trust_tier: gold
+materialization:
+  type: table

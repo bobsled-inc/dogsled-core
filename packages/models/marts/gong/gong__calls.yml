@@ -1,0 +1,56 @@
+spec_version: '0.2'
+name: gong__calls
+type: model
+description: Enriched Gong calls with user context.
+grain: call_id
+source:
+  ref: stg_gong__calls
+joins:
+  - ref: stg_gong__users
+    type: left
+    on: stg_gong__calls.primary_user_id = stg_gong__users.user_id
+columns:
+  - name: call_id
+    expr: stg_gong__calls.call_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Gong call identifier.
+  - name: title
+    expr: stg_gong__calls.title
+    semantic_role: categorical
+    description: Title of the call.
+  - name: started_at
+    expr: stg_gong__calls.started_at
+    semantic_role: event_timestamp
+    description: Timestamp when the call started.
+  - name: duration
+    expr: stg_gong__calls.duration
+    semantic_role: measure
+    description: Call duration in seconds.
+  - name: direction
+    expr: stg_gong__calls.direction
+    semantic_role: categorical
+    description: Call direction (inbound or outbound).
+  - name: user_id
+    expr: stg_gong__calls.primary_user_id
+    semantic_role: entity_id
+    references: stg_gong__users.user_id
+    description: User associated with the call.
+  - name: user_name
+    expr: CONCAT(stg_gong__users.first_name, ' ', stg_gong__users.last_name)
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Name of the user on the call.
+  - name: user_email
+    expr: stg_gong__users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the user on the call.
+tags:
+  - gong
+  - calls
+trust_tier: gold
+materialization:
+  type: table

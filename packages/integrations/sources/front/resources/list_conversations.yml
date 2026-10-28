@@ -1,0 +1,146 @@
+type: resource
+name: list_conversations
+description: List conversations
+api:
+  endpoint: /conversations
+  method: GET
+  query_params:
+    q: ${{ input.q }}
+    limit: ${{ input.limit }}
+    page_token: ${{ input.page_token }}
+    sort_by: ${{ input.sort_by }}
+    sort_order: ${{ input.sort_order }}
+input:
+  q:
+    type: string
+    description:
+      '[Search query object](https://dev.frontapp.com/docs/query-object-q) with a property
+      `statuses`, whose value should be a list of conversation statuses (`assigned`, `unassigned`,
+      `archived`, or `trashed`). If ticketing is enabled, this endpoint accepts either
+      `status_categories` (`open`, `waiting`, `resolved`) or `status_ids` as an alternative.'
+  limit:
+    type: integer
+    description: Max number of results per [page](https://dev.frontapp.com/docs/pagination)
+    maximum: 100
+  page_token:
+    type: string
+    description: Token to use to request the [next page](https://dev.frontapp.com/docs/pagination)
+  sort_by:
+    type: string
+    description: Field used to sort the conversations. Only supports `date`.
+  sort_order:
+    type: string
+    description: Order by which results should be sorted
+    enum:
+      - asc
+      - desc
+output:
+  links_self:
+    type: string
+    path: $._links.self
+    description: Link to resource
+  links_related:
+    type: object
+    path: $._links.related
+  id:
+    type: string
+    path: $.id
+    description: Unique identifier of the conversation
+  subject:
+    type: string
+    path: $.subject
+    description: Subject of the message for email message
+  status:
+    type: string
+    path: $.status
+    description: Status of the conversation
+  status_id:
+    type: string
+    path: $.status_id
+    description: Unique identifier of the conversation status category, only present if ticketing is enabled
+  status_category:
+    type: string
+    path: $.status_category
+    description: Status category of the conversation
+  ticket_ids:
+    type: array
+    path: $.ticket_ids
+    description: List of ticket ids associated with the conversation
+  assignee:
+    type: object
+    path: $.assignee
+    description: Partial representation of the teammate assigned to the conversation
+  recipient_links:
+    type: object
+    path: $.recipient._links
+  recipient_name:
+    type: string
+    path: $.recipient.name
+    description: Name of the recipient.
+  recipient_handle:
+    type: string
+    path: $.recipient.handle
+    description: Handle of the contact.
+  recipient_role:
+    type: string
+    path: $.recipient.role
+    description: Role of the recipient
+  tags:
+    type: array
+    path: $.tags
+    description: List of the tags for this conversation
+  links:
+    type: array
+    path: $.links
+    description: List of the links for this conversation
+  custom_fields:
+    type: object
+    path: $.custom_fields
+    description: Custom fields for this conversation
+  created_at:
+    type: number
+    path: $.created_at
+    description: Timestamp at which the conversation was created.
+  updated_at:
+    type: number
+    path: $.updated_at
+    description: Timestamp at which the conversation was last updated.
+  waiting_since:
+    type: number
+    path: $.waiting_since
+    description: Timestamp of the oldest unreplied message.
+  is_private:
+    type: boolean
+    path: $.is_private
+    description: Whether or not the conversation is private
+  scheduled_reminders:
+    type: array
+    path: $.scheduled_reminders
+    description: List of scheduled (non-expired and non-canceled) reminders for this conversation
+  metadata_external_conversation_ids:
+    type: array
+    path: $.metadata.external_conversation_ids
+    description: List of external_ids for partner channel associated with the conversation.
+extract:
+  record_path: $._results
+  paginated: false
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get conversation
+  api:
+    endpoint: /conversations/${{ input.conversation_id }}
+    method: GET
+  input:
+    conversation_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_conversations_smoke
+      input:
+        limit: 25
+        page_token: example_page_token
+        sort_order: asc

@@ -1,0 +1,50 @@
+type: resource
+name: list_inboxes
+description: List inboxes
+api:
+  endpoint: /inboxes
+  method: GET
+input: {}
+output:
+  links_self:
+    type: string
+    path: $._links.self
+    description: Link to resource
+  links_related:
+    type: object
+    path: $._links.related
+  id:
+    type: string
+    path: $.id
+    description: Unique identifier for the inbox
+  name:
+    type: string
+    path: $.name
+    description: Name of the inbox
+  is_private:
+    type: boolean
+    path: $.is_private
+    description: Whether or not the inbox is individual
+  is_public:
+    type: boolean
+    path: $.is_public
+    description: Whether or not the inbox is available to all members of a team by default
+  custom_fields:
+    type: object
+    path: $.custom_fields
+    description: Custom fields for this inbox
+extract:
+  record_path: $._results
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get inbox
+  api:
+    endpoint: /inboxes/${{ input.inbox_id }}
+    method: GET
+  input:
+    inbox_id:
+      type: string
+      required: true

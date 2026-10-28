@@ -1,0 +1,42 @@
+type: resource
+name: custom_objects
+description: HubSpot custom object schema definitions
+api:
+  endpoint: /crm/v3/schemas
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique identifier for the custom object schema
+  name:
+    type: string
+    path: $.name
+    description: Internal name of the custom object
+  label_singular:
+    type: string
+    path: $.labels.singular
+    description: Singular display label for the custom object
+  label_plural:
+    type: string
+    path: $.labels.plural
+    description: Plural display label for the custom object
+  primary_display_property:
+    type: string
+    path: $.primaryDisplayProperty
+    description: Property used as the primary display value for records
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: When the custom object schema was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: When the custom object schema was last updated
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

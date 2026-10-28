@@ -1,0 +1,12 @@
+spec_version: '1'
+type: integration
+name: snowflake_analytics
+source_type: snowflake
+connection:
+  account_identifier: xt00000
+  warehouse: COMPUTE_WH
+  role: BMS_TEST_ROLE
+  schema: ANALYTICS
+auth:
+  type: pat
+  token: tok-placeholder

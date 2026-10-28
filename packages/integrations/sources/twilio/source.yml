@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: twilio
+description: Twilio REST API for accounts, calls, and messages
+transports:
+  - id: default
+    base_url: https://api.twilio.com
+    auth:
+      type: basic
+      username: ${{ env.TWILIO_ACCOUNT_SID }}
+      password: ${{ env.TWILIO_AUTH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 5
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

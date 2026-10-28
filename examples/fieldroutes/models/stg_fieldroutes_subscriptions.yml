@@ -1,0 +1,43 @@
+spec_version: '0.2'
+name: stg_fieldroutes_subscriptions
+type: model
+description: Staging subscriptions from FieldRoutes `/subscription/search`.
+grain: SUBSCRIPTION_ID
+source:
+  ref: fieldroutes.subscriptions
+columns:
+  - name: SUBSCRIPTION_ID
+    expr: subscription_id
+    primary_key: true
+  - name: CUSTOMER_ID
+    expr: customer_id
+  - name: OFFICE_ID
+    expr: office_id
+  - name: ACTIVE
+    expr: active
+  - name: STATUS_TEXT
+    expr: status_text
+  - name: SERVICE_TYPE
+    expr: service_type
+  - name: SERVICE_ID
+    expr: service_id
+  - name: FREQUENCY
+    expr: frequency
+  - name: DATE_ADDED
+    expr: date_added
+  - name: DATE_CANCELLED
+    expr: date_cancelled
+  - name: DATE_UPDATED
+    expr: date_updated
+  - name: NEXT_SERVICE
+    expr: next_service
+  - name: INITIAL_QUOTE
+    expr: initial_quote
+  - name: INITIAL_DISCOUNT
+    expr: initial_discount
+  - name: RECURRING_CHARGE
+    expr: recurring_charge
+  - name: CONTRACT_VALUE
+    expr: contract_value
+materialization:
+  type: view

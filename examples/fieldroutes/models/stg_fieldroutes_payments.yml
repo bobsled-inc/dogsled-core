@@ -1,0 +1,37 @@
+spec_version: '0.2'
+name: stg_fieldroutes_payments
+type: model
+description: Staging payments from FieldRoutes `/payment/search`.
+grain: PAYMENT_ID
+source:
+  ref: fieldroutes.payments
+columns:
+  - name: PAYMENT_ID
+    expr: payment_id
+    primary_key: true
+  - name: OFFICE_ID
+    expr: office_id
+  - name: CUSTOMER_ID
+    expr: customer_id
+  - name: DATE
+    expr: date
+  - name: PAYMENT_METHOD
+    expr: payment_method
+  - name: STATUS
+    expr: status
+  - name: AMOUNT
+    expr: amount
+  - name: APPLIED_AMOUNT
+    expr: applied_amount
+  - name: UNASSIGNED_AMOUNT
+    expr: unassigned_amount
+  - name: WRITE_OFF
+    expr: write_off
+  - name: TRANSACTION_ID
+    expr: transaction_id
+  - name: EMPLOYEE_ID
+    expr: employee_id
+  - name: DATE_UPDATED
+    expr: date_updated
+materialization:
+  type: view

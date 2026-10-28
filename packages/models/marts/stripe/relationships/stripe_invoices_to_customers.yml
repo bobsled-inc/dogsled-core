@@ -1,0 +1,15 @@
+spec_version: '0.2'
+type: relationship
+name: stripe_invoices_to_customers
+description: Each Stripe invoice can belong to one customer.
+left_model: stripe__invoice_details
+right_model: stripe__customer_overview
+join_columns:
+  - left: customer_id
+    right: customer_id
+join_type: left
+relationship_type: many_to_one
+tags:
+  - stripe
+  - billing
+  - customers

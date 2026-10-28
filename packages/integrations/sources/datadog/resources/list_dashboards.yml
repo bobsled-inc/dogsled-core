@@ -1,0 +1,81 @@
+type: resource
+name: list_dashboards
+description: Get all dashboards
+api:
+  endpoint: /api/v1/dashboard
+  method: GET
+  query_params:
+    filter[shared]: ${{ input.filter_shared }}
+    filter[deleted]: ${{ input.filter_deleted }}
+    count: ${{ input.count }}
+    start: ${{ input.start }}
+input:
+  filter_shared:
+    type: boolean
+    description: |-
+      When `true`, this query only returns shared custom created
+      or cloned dashboards.
+  filter_deleted:
+    type: boolean
+    description: |-
+      When `true`, this query returns only deleted custom-created
+      or cloned dashboards. This parameter is incompatible with `filter[shared]`.
+  count:
+    type: integer
+    description: The maximum number of dashboards returned in the list.
+    default: 100
+  start:
+    type: integer
+    description: The specific offset to use as the beginning of the returned response.
+output:
+  author_handle:
+    type: string
+    path: $.author_handle
+    description: Identifier of the dashboard author.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation date of the dashboard.
+  description:
+    type: string
+    path: $.description
+    description: Description of the dashboard.
+  id:
+    type: string
+    path: $.id
+    description: Dashboard identifier.
+  is_read_only:
+    type: boolean
+    path: $.is_read_only
+    description: Whether this dashboard is read-only.
+  layout_type:
+    type: string
+    path: $.layout_type
+    description: Layout type of the dashboard.
+  modified_at:
+    type: timestamp
+    path: $.modified_at
+    description: Modification date of the dashboard.
+  title:
+    type: string
+    path: $.title
+    description: Title of the dashboard.
+  url:
+    type: string
+    path: $.url
+    description: URL of the dashboard.
+extract:
+  record_path: $.dashboards
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get a dashboard
+  api:
+    endpoint: /api/v1/dashboard/${{ input.dashboard_id }}
+    method: GET
+  input:
+    dashboard_id:
+      type: string
+      required: true

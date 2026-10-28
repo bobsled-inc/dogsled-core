@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: salesforce_opportunity_line_items_to_opportunities
+description: Each Salesforce opportunity line item belongs to one opportunity.
+left_model: salesforce__opportunity_line_items
+right_model: salesforce__opportunities
+join_columns:
+  - left: opportunity_id
+    right: opportunity_id
+join_type: left
+relationship_type: many_to_one
+tags: [salesforce, line-items, opportunities]

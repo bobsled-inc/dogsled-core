@@ -1,0 +1,37 @@
+spec_version: '0.2'
+name: fct_fieldroutes_payments
+type: model
+description: Payment fact for cash, collections, and write-off tracking.
+grain: PAYMENT_ID
+source:
+  ref: stg_fieldroutes_payments
+columns:
+  - name: PAYMENT_ID
+    expr: PAYMENT_ID
+    primary_key: true
+  - name: OFFICE_ID
+    expr: OFFICE_ID
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+  - name: PAYMENT_DATE
+    expr: DATE
+  - name: PAYMENT_METHOD
+    expr: PAYMENT_METHOD
+  - name: STATUS
+    expr: STATUS
+  - name: AMOUNT
+    expr: AMOUNT
+  - name: APPLIED_AMOUNT
+    expr: APPLIED_AMOUNT
+  - name: UNASSIGNED_AMOUNT
+    expr: UNASSIGNED_AMOUNT
+  - name: WRITE_OFF
+    expr: WRITE_OFF
+  - name: TRANSACTION_ID
+    expr: TRANSACTION_ID
+  - name: EMPLOYEE_ID
+    expr: EMPLOYEE_ID
+  - name: DATE_UPDATED
+    expr: DATE_UPDATED
+materialization:
+  type: view

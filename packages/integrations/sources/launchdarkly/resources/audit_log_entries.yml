@@ -1,0 +1,49 @@
+type: resource
+name: audit_log_entries
+description: List LaunchDarkly audit log entries
+api:
+  endpoint: /auditlog
+  method: GET
+  query_params:
+    before: ${{ input.before }}
+    after: ${{ input.after }}
+    limit: ${{ input.limit }}
+input:
+  before:
+    type: string
+    description: Unix epoch milliseconds upper bound
+  after:
+    type: string
+    description: Unix epoch milliseconds lower bound
+  limit:
+    type: integer
+    description: Maximum entries to return
+    default: 20
+output:
+  id:
+    type: string
+    path: $._id
+    description: Audit log entry identifier
+  kind:
+    type: string
+    path: $.kind
+    description: Audit log event kind
+  date:
+    type: timestamp
+    path: $.date
+    description: Entry timestamp
+  description:
+    type: string
+    path: $.description
+    description: Human-readable entry description
+  member_email:
+    type: string
+    path: $.member.email
+    description: Email of the member who made the change
+extract:
+  record_path: $.items
+  paginated: false
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,49 @@
+type: resource
+name: users
+description: List Close CRM users
+api:
+  endpoint: /user/
+  method: GET
+  query_params:
+    _skip: ${{ input.skip }}
+    _limit: ${{ input.limit }}
+input:
+  skip:
+    type: integer
+    description: Pagination offset
+    default: 0
+  limit:
+    type: integer
+    description: Page size
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: User identifier
+  email:
+    type: string
+    path: $.email
+    description: User email
+  first_name:
+    type: string
+    path: $.first_name
+    description: First name
+  last_name:
+    type: string
+    path: $.last_name
+    description: Last name
+  status:
+    type: string
+    path: $.status
+    description: User status
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: offset
+    offset_param: _skip
+    limit_param: _limit

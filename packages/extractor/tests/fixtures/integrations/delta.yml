@@ -1,0 +1,13 @@
+spec_version: '1'
+auth_env_vars: [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY]
+type: integration
+name: acme_delta
+source_type: delta
+connection:
+  storage_url: s3://my-bucket/delta-tables
+  default_schema: analytics
+storage:
+  type: aws_credentials
+  access_key_id_env: AWS_ACCESS_KEY_ID
+  secret_access_key_env: AWS_SECRET_ACCESS_KEY
+  region: us-east-1

@@ -1,0 +1,20 @@
+spec_version: '0.2'
+type: model
+name: typed_orders
+description: Fictional typed_orders.
+grain:
+  - order_id
+source:
+  ref: local_duckdb.orders
+columns:
+  - name: order_id
+    expr: id
+    type: integer
+  - name: amount
+    expr: amount
+    type: number
+  - name: status
+    expr: status
+    type: string
+materialization:
+  type: table

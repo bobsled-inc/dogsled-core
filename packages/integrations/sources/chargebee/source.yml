@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: chargebee
+description: Chargebee subscription billing API
+transports:
+  - id: default
+    base_url: https://${{ env.CHARGEBEE_SITE }}.chargebee.com/api/v2
+    auth:
+      type: basic
+      username: ${{ env.CHARGEBEE_API_KEY }}
+      password: ''
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 10
+      burst: 20
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

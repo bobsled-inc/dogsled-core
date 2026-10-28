@@ -1,0 +1,60 @@
+spec_version: '0.2'
+name: slack_channels
+type: source
+source_type: warehouse_table
+connection: warehouse
+table: raw.slack_channels
+description: Raw Slack channel data extracted from the Slack Web API
+schema:
+  columns:
+    - name: id
+      type: VARCHAR
+      description: Unique channel identifier (e.g. C01ABC23DEF)
+    - name: name
+      type: VARCHAR
+      description: Channel name without the # prefix
+    - name: name_normalized
+      type: VARCHAR
+      description: Normalized channel name
+    - name: is_channel
+      type: BOOLEAN
+      description: True if this is a public channel
+    - name: is_group
+      type: BOOLEAN
+      description: True if this is a private channel
+    - name: is_im
+      type: BOOLEAN
+      description: True if this is a direct message
+    - name: is_mpim
+      type: BOOLEAN
+      description: True if this is a group direct message
+    - name: is_private
+      type: BOOLEAN
+      description: True if the channel is private
+    - name: is_archived
+      type: BOOLEAN
+      description: True if the channel has been archived
+    - name: is_general
+      type: BOOLEAN
+      description: True if this is the default #general channel
+    - name: is_member
+      type: BOOLEAN
+      description: True if the bot/user is a member
+    - name: num_members
+      type: NUMBER
+      description: Number of members in the channel
+    - name: creator
+      type: VARCHAR
+      description: User ID of the channel creator
+    - name: topic
+      type: VARCHAR
+      description: Current channel topic text
+    - name: purpose
+      type: VARCHAR
+      description: Current channel purpose text
+    - name: created
+      type: NUMBER
+      description: Unix timestamp when the channel was created
+    - name: updated
+      type: NUMBER
+      description: Unix timestamp of the most recent update

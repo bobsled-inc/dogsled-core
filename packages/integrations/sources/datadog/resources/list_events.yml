@@ -1,0 +1,170 @@
+type: resource
+name: list_events
+description: Get a list of events
+api:
+  endpoint: /api/v1/events
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    end: ${{ input.end }}
+    priority: ${{ input.priority }}
+    sources: ${{ input.sources }}
+    tags: ${{ input.tags }}
+    unaggregated: ${{ input.unaggregated }}
+    exclude_aggregate: ${{ input.exclude_aggregate }}
+    page: ${{ input.page }}
+input:
+  start:
+    type: integer
+    required: true
+    description: POSIX timestamp.
+  end:
+    type: integer
+    required: true
+    description: POSIX timestamp.
+  priority:
+    type: string
+    description: Priority of your events, either `low` or `normal`.
+    enum:
+      - normal
+      - low
+  sources:
+    type: string
+    description: A comma separated string of sources.
+  tags:
+    type: string
+    description:
+      A comma separated list indicating what tags, if any, should be used to filter the list
+      of events.
+  unaggregated:
+    type: boolean
+    description: >-
+      Set unaggregated to `true` to return all events within the specified [`start`,`end`]
+      timeframe.
+
+      Otherwise if an event is aggregated to a parent event with a timestamp outside of the
+      timeframe,
+
+      it won't be available in the output. Aggregated events with `is_aggregate=true` in the
+      response will still be returned unless exclude_aggregate is set to `true.`
+    default: true
+  exclude_aggregate:
+    type: boolean
+    description: >-
+      Set `exclude_aggregate` to `true` to only return unaggregated events where
+      `is_aggregate=false` in the response. If the `exclude_aggregate` parameter is set to `true`,
+
+      then the unaggregated parameter is ignored and will be `true` by default.
+  page:
+    type: integer
+    description: >-
+      By default 1000 results are returned per request. Set page to the number of the page to return
+      with `0` being the first page. The page parameter can only be used
+
+      when either unaggregated or exclude_aggregate is set to `true.`
+    maximum: 2147483647
+query:
+  filters:
+    priority:
+      operators:
+        - eq
+      enum:
+        - normal
+        - low
+      description: Priority of your events, either `low` or `normal`.
+      bind:
+        eq:
+          input: priority
+      compile:
+        eq:
+          mode: http_query
+          param: priority
+output:
+  alert_type:
+    type: string
+    path: $.alert_type
+    description: If an alert event is enabled, set its type.
+  date_happened:
+    type: integer
+    path: $.date_happened
+    description: POSIX timestamp of the event.
+  device_name:
+    type: string
+    path: $.device_name
+    description: A device name.
+  host:
+    type: string
+    path: $.host
+    description: Host name to associate with the event.
+  id:
+    type: integer
+    path: $.id
+    description: Integer ID of the event.
+  id_str:
+    type: string
+    path: $.id_str
+    description: Handling IDs as large 64-bit numbers can cause loss of accuracy issues with some
+      programming languages.
+  payload:
+    type: string
+    path: $.payload
+    description: Payload of the event.
+  priority:
+    type: string
+    path: $.priority
+    description: The priority of the event.
+  source_type_name:
+    type: string
+    path: $.source_type_name
+    description: The type of event being posted.
+  tags:
+    type: array
+    path: $.tags
+    description: A list of tags to apply to the event.
+  text:
+    type: string
+    path: $.text
+    description: The body of the event.
+  title:
+    type: string
+    path: $.title
+    description: The event title.
+  url:
+    type: string
+    path: $.url
+    description: URL of the event.
+extract:
+  record_path: $.events
+  pagination:
+    type: page_number
+    page_param: page
+    start_page: 0
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get an event
+  api:
+    endpoint: /api/v1/events/${{ input.event_id }}
+    method: GET
+  input:
+    event_id:
+      type: integer
+      required: true
+test:
+  fixtures:
+    - name: list_events_smoke
+      input:
+        priority: normal
+        tags: host:host0
+incremental:
+  strategy: server_filter
+  cursor_field: date_happened
+  cursor_type: integer
+  since_argument: start
+  until_argument: end
+  value_format: unix_seconds
+  lookback_seconds: 3600
+  initial_lookback_seconds: 86400
+  window_size_seconds: 86400

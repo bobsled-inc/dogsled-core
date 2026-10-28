@@ -1,0 +1,16 @@
+spec_version: '1'
+type: integration
+name: gcs_documents
+description: Google Cloud Storage bucket holding documents (PDF, DOCX, PPTX, HTML, Markdown, text, email) to ingest.
+source_type: gcs
+auth_env_vars: [GCS_SERVICE_ACCOUNT_JSON]
+connection:
+  bucket: documents
+  # project_id: my-gcp-project   # optional
+auth:
+  # adc uses Application Default Credentials (Workload Identity, a GCE service
+  # account, or `gcloud auth application-default login` locally).
+  type: adc
+  # To use an explicit service-account key instead, swap the block above for:
+  # type: service_account_json
+  # credentials_json_env: GCS_SERVICE_ACCOUNT_JSON

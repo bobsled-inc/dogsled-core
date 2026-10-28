@@ -1,0 +1,40 @@
+type: resource
+name: contacts
+description: Contacts from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,FirstName,LastName,Email,AccountId,CreatedDate,LastModifiedDate FROM Contact
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  first_name:
+    type: string
+    path: $.FirstName
+  last_name:
+    type: string
+    path: $.LastName
+  email:
+    type: string
+    path: $.Email
+  account_id:
+    type: string
+    path: $.AccountId
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

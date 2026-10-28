@@ -1,0 +1,99 @@
+{
+  "name": "@bobsled-inc/integrations",
+  "version": "0.20.224",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "packages/integrations"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./catalog": {
+      "types": "./dist/catalog.d.ts",
+      "import": "./dist/catalog.js",
+      "default": "./dist/catalog.js"
+    },
+    "./validation": {
+      "types": "./dist/validation.d.ts",
+      "import": "./dist/validation.js",
+      "default": "./dist/validation.js"
+    },
+    "./actions": {
+      "types": "./dist/actions.d.ts",
+      "import": "./dist/actions.js",
+      "default": "./dist/actions.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "sources/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsx scripts/generate-catalog-manifest.ts && tsx scripts/generate-validation-catalog.ts && tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "audit:query-resources": "tsx scripts/audit-query-resources.ts",
+    "guard:query-enums": "tsx scripts/check-query-enum-alignment.ts",
+    "render:query-capabilities": "tsx scripts/render-query-capabilities.ts",
+    "render:query-table": "tsx scripts/render-query-table.ts",
+    "render:catalog": "tsx scripts/render-catalog.ts",
+    "generate:catalog": "tsx scripts/generate-catalog-manifest.ts",
+    "generate:validation-catalog": "tsx scripts/generate-validation-catalog.ts",
+    "test": "vitest run",
+    "test:query-audit": "vitest run -c vitest.query-audit.config.ts",
+    "test:types": "pnpm --filter @bobsled-inc/integrations... build && tsc --noEmit -p tsconfig.types.json",
+    "test:unit": "vitest run",
+    "test:smoke": "vitest run -c vitest.smoke.config.ts"
+  },
+  "dependencies": {
+    "@bobsled-inc/api-resource": "workspace:*",
+    "@bobsled-inc/extractor": "workspace:*",
+    "@bobsled-inc/project-index": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "yaml": "catalog:app-packages",
+    "zod": "catalog:dev-packages"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:dev-packages",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "prettier": "catalog:dev-packages",
+    "tsup": "catalog:cli",
+    "tsx": "catalog:dev-packages",
+    "typescript": "catalog:dev-packages",
+    "@vitest/coverage-v8": "catalog:testing",
+    "vitest": "catalog:testing"
+  },
+  "description": "Bundled source and action integration specifications for Dogsled.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "integrations",
+    "connectors",
+    "sources"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  }
+}

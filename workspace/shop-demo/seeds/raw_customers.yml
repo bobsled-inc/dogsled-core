@@ -1,0 +1,27 @@
+spec_version: '0.2'
+name: raw_customers
+type: seed
+description: Raw customer export with deliberate whitespace, casing, suffix, phone, and URL quality issues.
+payload:
+  format: csv
+  path: data/raw_customers.csv
+  delimiter: ','
+schema:
+  columns:
+    - { name: customer_id, type: STRING, primary_key: true }
+    - { name: full_name, type: STRING }
+    - { name: email, type: STRING }
+    - { name: company_name, type: STRING }
+    - { name: phone, type: STRING }
+    - { name: website, type: STRING }
+    - { name: state, type: STRING }
+    - { name: status, type: STRING }
+    - { name: created_at, type: TIMESTAMP }
+materialization:
+  type: table
+  target_schema: raw
+  on_conflict: replace
+validation:
+  required_columns:
+    [customer_id, full_name, email, company_name, phone, website, state, status, created_at]
+  unique_columns: [customer_id]

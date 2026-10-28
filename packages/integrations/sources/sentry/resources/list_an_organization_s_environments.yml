@@ -1,0 +1,36 @@
+type: resource
+name: list_an_organization_s_environments
+description: Lists an organization's environments.
+api:
+  endpoint: /api/0/organizations/${{ input.organization_id_or_slug }}/environments/
+  method: GET
+  query_params:
+    visibility: ${{ input.visibility }}
+input:
+  organization_id_or_slug:
+    type: string
+    required: true
+    description: The ID or slug of the organization the resource belongs to.
+  visibility:
+    type: string
+    description: The visibility of the environments to filter by. Defaults to `visible`.
+    enum:
+      - all
+      - hidden
+      - visible
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+extract:
+  record_path: $
+  for_each:
+    resource: list_your_organizations
+    field: slug
+    input: organization_id_or_slug
+  table:
+    primary_key:
+      - id

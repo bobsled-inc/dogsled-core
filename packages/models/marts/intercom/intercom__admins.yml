@@ -1,0 +1,60 @@
+spec_version: '0.2'
+name: intercom__admins
+type: model
+description: Admin detail with conversation rollups from Intercom.
+grain: admin_id
+source:
+  ref: stg_intercom__list_admins
+joins:
+  - ref: stg_intercom__list_conversations
+    type: left
+    on: stg_intercom__list_admins.list_admin_id = stg_intercom__list_conversations.admin_assignee_id
+    pre_aggregate:
+      group_by:
+        - admin_assignee_id
+      columns:
+        - name: conversation_count
+          expr: COUNT(*)
+        - name: open_conversation_count
+          expr: SUM(CASE WHEN state = 'open' THEN 1 ELSE 0 END)
+        - name: closed_conversation_count
+          expr: SUM(CASE WHEN state = 'closed' THEN 1 ELSE 0 END)
+columns:
+  - name: admin_id
+    expr: stg_intercom__list_admins.list_admin_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Intercom admin identifier.
+  - name: name
+    expr: stg_intercom__list_admins.name
+    semantic_role: categorical
+    description: Admin display name.
+  - name: email
+    expr: stg_intercom__list_admins.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Admin email address.
+  - name: has_inbox_seat
+    expr: stg_intercom__list_admins.has_inbox_seat
+    semantic_role: categorical
+    description: Whether the admin has inbox access.
+  - name: conversation_count
+    expr: COALESCE(stg_intercom__list_conversations.conversation_count, 0)
+    semantic_role: measure
+    description: Total number of conversations assigned to the admin.
+  - name: open_conversation_count
+    expr: COALESCE(stg_intercom__list_conversations.open_conversation_count, 0)
+    semantic_role: measure
+    description: Count of open conversations assigned to the admin.
+  - name: closed_conversation_count
+    expr: COALESCE(stg_intercom__list_conversations.closed_conversation_count, 0)
+    semantic_role: measure
+    description: Count of closed conversations assigned to the admin.
+tags:
+  - intercom
+  - support
+  - admins
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,16 @@
+name: pipedrive
+display_name: Pipedrive
+description: SMB CRM analytics models for Pipedrive deals, contacts, organizations, activities, and pipeline flow.
+tags:
+  - pipedrive
+  - crm
+  - revenue
+include_resources:
+  - get_activities
+  - get_deals
+  - get_notes
+  - get_organizations
+  - get_persons
+  - get_pipelines
+  - get_stages
+  - get_users

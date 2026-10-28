@@ -1,0 +1,4 @@
+# Minimal Model Spec project shell for initial FieldRoutes modeling work.
+models_dir: models
+sources_dir: sources
+integrations_dir: integrations

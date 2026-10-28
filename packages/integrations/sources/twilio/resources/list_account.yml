@@ -1,0 +1,89 @@
+type: resource
+name: list_account
+description: List Twilio accounts visible to the authenticated account
+api:
+  endpoint: /2010-04-01/Accounts.json
+  method: GET
+  query_params:
+    FriendlyName: ${{ input.friendly_name }}
+    Status: ${{ input.status }}
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+input:
+  friendly_name:
+    type: string
+    description: Optional exact account friendly name to filter on
+  status:
+    type: string
+    description: Optional account status filter
+    enum:
+      - active
+      - suspended
+      - closed
+  page_size:
+    type: integer
+    description: Number of accounts to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+query:
+  filters:
+    friendly_name:
+      operators:
+        - eq
+      description: Optional exact account friendly name to filter on
+      bind:
+        eq:
+          input: friendly_name
+      compile:
+        eq:
+          mode: http_query
+          param: FriendlyName
+    status:
+      operators:
+        - eq
+      enum:
+        - active
+        - suspended
+        - closed
+      description: Optional account status filter
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: Status
+output:
+  sid:
+    type: string
+    path: $.sid
+    description: Twilio account SID
+  friendly_name:
+    type: string
+    path: $.friendly_name
+    description: Human-readable account name
+  status:
+    type: string
+    path: $.status
+    description: Current account status
+  type:
+    type: string
+    path: $.type
+    description: Account type
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Timestamp when the account was created
+extract:
+  record_path: $.accounts
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  table:
+    primary_key:
+      - sid
+    trust_tier: silver

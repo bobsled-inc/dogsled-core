@@ -1,0 +1,93 @@
+spec_version: '0.2'
+name: pipedrive__activities
+type: model
+description: Pipedrive activities enriched with related deal, person, organization, and owner metadata.
+grain: activity_id
+source:
+  ref: stg_pipedrive__get_activities
+joins:
+  - ref: stg_pipedrive__get_deals
+    type: left
+    on: stg_pipedrive__get_activities.deal_id = stg_pipedrive__get_deals.get_deal_id
+  - ref: stg_pipedrive__get_persons
+    type: left
+    on: stg_pipedrive__get_activities.person_id = stg_pipedrive__get_persons.get_person_id
+  - ref: stg_pipedrive__get_organizations
+    type: left
+    on: stg_pipedrive__get_activities.org_id = stg_pipedrive__get_organizations.get_organization_id
+  - ref: stg_pipedrive__get_users
+    type: left
+    on: stg_pipedrive__get_activities.user_id = stg_pipedrive__get_users.get_user_id
+columns:
+  - name: activity_id
+    expr: stg_pipedrive__get_activities.get_activity_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Pipedrive activity identifier.
+  - name: subject
+    expr: stg_pipedrive__get_activities.subject
+    semantic_role: categorical
+    description: Activity subject.
+  - name: activity_type
+    expr: stg_pipedrive__get_activities.type
+    semantic_role: categorical
+    description: Activity type.
+  - name: done
+    expr: stg_pipedrive__get_activities.done
+    semantic_role: categorical
+    description: Whether the activity is complete.
+  - name: due_date
+    expr: CAST(stg_pipedrive__get_activities.due_date AS DATE)
+    semantic_role: time_dimension
+    description: Due date for the activity.
+  - name: deal_id
+    expr: stg_pipedrive__get_activities.deal_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_deals.get_deal_id
+    description: Related deal identifier.
+  - name: deal_title
+    expr: stg_pipedrive__get_deals.title
+    semantic_role: categorical
+    description: Title of the related deal.
+  - name: person_id
+    expr: stg_pipedrive__get_activities.person_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_persons.get_person_id
+    description: Related person identifier.
+  - name: person_name
+    expr: stg_pipedrive__get_persons.name
+    semantic_role: categorical
+    description: Name of the related person.
+  - name: organization_id
+    expr: stg_pipedrive__get_activities.org_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_organizations.get_organization_id
+    description: Related organization identifier.
+  - name: organization_name
+    expr: stg_pipedrive__get_organizations.name
+    semantic_role: categorical
+    description: Name of the related organization.
+  - name: owner_user_id
+    expr: stg_pipedrive__get_activities.user_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_users.get_user_id
+    description: Owning user identifier.
+  - name: owner_name
+    expr: stg_pipedrive__get_users.name
+    semantic_role: categorical
+    description: Name of the owning user.
+  - name: created_at
+    expr: stg_pipedrive__get_activities.add_time
+    semantic_role: event_timestamp
+    description: Timestamp when the activity was created.
+  - name: updated_at
+    expr: stg_pipedrive__get_activities.update_time
+    semantic_role: event_timestamp
+    description: Timestamp when the activity was last updated.
+tags:
+  - pipedrive
+  - activities
+  - crm
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,118 @@
+spec_version: '0.2'
+name: vercel__daily_costs
+type: model
+description: Daily Vercel spend grouped by selected snapshot, team, project, service, region, currency, category, and native units.
+grain:
+  - snapshot_id
+  - date
+  - team_id
+  - project_id
+  - service_name
+  - region_id
+  - billing_currency
+  - pricing_currency
+  - charge_category
+  - consumed_unit
+  - pricing_unit
+source:
+  ref: stg_vercel__billing_charges
+columns:
+  - name: snapshot_id
+    expr: stg_vercel__billing_charges.snapshot_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Selected complete billing snapshot.
+  - name: date
+    expr: CAST(stg_vercel__billing_charges.charge_period_start AS DATE)
+    primary_key: true
+    semantic_role: time_dimension
+    description: UTC day containing the native charge-period start.
+  - name: team_id
+    expr: stg_vercel__billing_charges.team_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Vercel team identifier.
+  - name: project_id
+    expr: stg_vercel__billing_charges.project_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_vercel__projects.project_id
+    description: Project identifier when available from native tags; null remains unattributed.
+  - name: service_name
+    expr: stg_vercel__billing_charges.service_name
+    primary_key: true
+    semantic_role: categorical
+    description: Native service name.
+  - name: region_id
+    expr: stg_vercel__billing_charges.region_id
+    primary_key: true
+    semantic_role: categorical
+    description: Native region identifier; null remains unattributed.
+  - name: billing_currency
+    expr: stg_vercel__billing_charges.billing_currency
+    primary_key: true
+    semantic_role: categorical
+    description: Billing currency.
+  - name: pricing_currency
+    expr: stg_vercel__billing_charges.pricing_currency
+    primary_key: true
+    semantic_role: categorical
+    description: Currency for pricing quantity. Unlike currencies are not grouped together.
+  - name: charge_category
+    expr: stg_vercel__billing_charges.charge_category
+    primary_key: true
+    semantic_role: categorical
+    description: FOCUS charge category.
+  - name: consumed_unit
+    expr: stg_vercel__billing_charges.consumed_unit
+    primary_key: true
+    semantic_role: categorical
+    description: Unit for consumed quantity. Unlike units are not summed together.
+  - name: pricing_unit
+    expr: stg_vercel__billing_charges.pricing_unit
+    primary_key: true
+    semantic_role: categorical
+    description: Unit for pricing quantity. Unlike units are not summed together.
+  - name: charge_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of charge lines in the bucket.
+  - name: total_billed_cost
+    expr: SUM(stg_vercel__billing_charges.billed_cost)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Sum of native billed costs for the bucket.
+  - name: total_effective_cost
+    expr: SUM(stg_vercel__billing_charges.effective_cost)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Sum of native effective costs for the bucket.
+  - name: total_consumed_quantity
+    expr: SUM(stg_vercel__billing_charges.consumed_quantity)
+    semantic_role: measure
+    description: Sum of consumed quantity within one native unit.
+  - name: total_pricing_quantity
+    expr: SUM(stg_vercel__billing_charges.pricing_quantity)
+    semantic_role: measure
+    description: Sum of pricing quantity within one native unit.
+group_by:
+  - snapshot_id
+  - date
+  - team_id
+  - project_id
+  - service_name
+  - region_id
+  - billing_currency
+  - pricing_currency
+  - charge_category
+  - consumed_unit
+  - pricing_unit
+tags:
+  - vercel
+  - billing
+  - daily
+trust_tier: gold
+materialization:
+  type: table

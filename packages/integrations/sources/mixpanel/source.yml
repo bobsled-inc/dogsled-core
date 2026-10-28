@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: mixpanel
+description: Mixpanel query and profile APIs for cohorts, funnels, and user profiles.
+transports:
+  - id: default
+    base_url: https://mixpanel.com/api/2.0
+    auth:
+      type: basic
+      username: ${{ env.MIXPANEL_SERVICE_ACCOUNT_USERNAME }}
+      password: ${{ env.MIXPANEL_SERVICE_ACCOUNT_SECRET }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

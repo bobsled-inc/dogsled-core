@@ -1,0 +1,52 @@
+type: resource
+name: meeting_participants
+description: Participants of a past Zoom meeting.
+api:
+  endpoint: /past_meetings/${{ input.meeting_id }}/participants
+  method: GET
+  query_params:
+    page_size: ${{ input.page_size }}
+input:
+  meeting_id:
+    type: string
+    default: '123'
+  page_size:
+    type: integer
+    default: 30
+output:
+  meeting_id:
+    type: string
+    path: $.__input__.meeting_id
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  user_email:
+    type: string
+    path: $.user_email
+  join_time:
+    type: timestamp
+    path: $.join_time
+  leave_time:
+    type: timestamp
+    path: $.leave_time
+  duration:
+    type: integer
+    path: $.duration
+extract:
+  record_path: $.participants
+  table:
+    primary_key:
+      - meeting_id
+      - join_time
+      - name
+  pagination:
+    type: cursor
+    cursor_path: $.next_page_token
+    cursor_param: next_page_token
+  for_each:
+    resource: meetings
+    field: id
+    input: meeting_id

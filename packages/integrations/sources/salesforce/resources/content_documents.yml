@@ -1,0 +1,45 @@
+type: resource
+name: content_documents
+description: Content documents from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT
+      Id,Title,FileType,ContentSize,LatestPublishedVersionId,OwnerId,CreatedDate,LastModifiedDate
+      FROM ContentDocument
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  title:
+    type: string
+    path: $.Title
+  file_type:
+    type: string
+    path: $.FileType
+  content_size:
+    type: integer
+    path: $.ContentSize
+  latest_published_version_id:
+    type: string
+    path: $.LatestPublishedVersionId
+  owner_id:
+    type: string
+    path: $.OwnerId
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

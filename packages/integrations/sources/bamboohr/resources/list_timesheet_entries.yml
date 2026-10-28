@@ -1,0 +1,96 @@
+type: resource
+name: list_timesheet_entries
+description: List Timesheet Entries
+api:
+  endpoint: /api/v1/time_tracking/timesheet_entries
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    end: ${{ input.end }}
+    employeeIds: ${{ input.employee_ids }}
+input:
+  start:
+    type: timestamp
+    required: true
+    description: YYYY-MM-DD. Only show timesheet entries on/after the specified start date. Must be
+      within the last 365 days.
+  end:
+    type: timestamp
+    required: true
+    description: YYYY-MM-DD. Only show timesheet entries on/before the specified end date. Must be
+      within the last 365 days.
+  employee_ids:
+    type: string
+    description:
+      A comma separated list of employee IDs. When specified, only entries that match these
+      employee IDs are returned. When omitted, entries for all accessible employees are returned.
+    pattern: ^(?!,)(?!.*,$)(?!.*,,)[0-9,]+$
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Timesheet entry ID
+  employee_id:
+    type: integer
+    path: $.employeeId
+    description: Employee ID
+  type:
+    type: string
+    path: $.type
+    description: Entry type
+  date:
+    type: timestamp
+    path: $.date
+    description: Date of the timesheet
+  start:
+    type: string
+    path: $.start
+    description: Start time
+  end:
+    type: string
+    path: $.end
+    description: End time
+  timezone:
+    type: string
+    path: $.timezone
+    description: Timezone
+  hours:
+    type: string
+    path: $.hours
+    description: Hours worked
+  note:
+    type: string
+    path: $.note
+    description: Note
+  project_info:
+    type: string
+    path: $.projectInfo
+  approved_at:
+    type: string
+    path: $.approvedAt
+    description: Approved time
+  approved:
+    type: boolean
+    path: $.approved
+    description: Whether the timesheet entry is approved
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Created time
+  updated_at:
+    type: string
+    path: $.updatedAt
+    description: Updated time
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+test:
+  fixtures:
+    - name: list_timesheet_entries_smoke
+      input:
+        start: 2025-01-01
+        end: 2025-03-01
+        employee_ids: 1,2,3

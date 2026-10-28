@@ -1,0 +1,9 @@
+spec_version: '0.2'
+type: relationship
+name: postgres_orders_to_customers
+left_model: postgres_order_summary
+right_model: local_pg.customers
+join_columns:
+  - left: customer_id
+    right: id
+relationship_type: many_to_one

@@ -1,0 +1,10 @@
+display_name: Gong
+category: communication
+tags:
+  - calls
+  - revenue-intelligence
+  - conversation
+docs_url: https://help.gong.io/docs
+auth_setup:
+  - env: GONG_ACCESS_TOKEN
+    description: Gong API bearer token

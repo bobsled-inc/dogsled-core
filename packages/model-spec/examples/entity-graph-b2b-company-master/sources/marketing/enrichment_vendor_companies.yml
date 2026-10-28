@@ -1,0 +1,24 @@
+spec_version: '0.2'
+name: enrichment_vendor_companies
+type: source
+source_type: warehouse_table
+connection: marketing
+table: RAW.ENRICHMENT_VENDOR_COMPANIES
+description: Enrichment vendor enrichment feed for prospecting and firmographic coverage.
+trust_tier: bronze
+schema:
+  columns:
+    - name: enrichment_vendor_company_id
+      type: VARCHAR
+    - name: company_name
+      type: VARCHAR
+    - name: domain
+      type: VARCHAR
+    - name: parent_domain
+      type: VARCHAR
+    - name: phone
+      type: VARCHAR
+    - name: duns_number
+      type: VARCHAR
+    - name: billing_country
+      type: VARCHAR

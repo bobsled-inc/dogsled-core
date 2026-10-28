@@ -1,0 +1,40 @@
+spec_version: '0.2'
+name: zendesk__ticket_volume_summary
+type: model
+description: Zendesk ticket volume summarized by status and priority.
+grain:
+  - status
+  - priority
+source:
+  ref: stg_zendesk__tickets
+columns:
+  - name: status
+    expr: stg_zendesk__tickets.status
+    semantic_role: categorical
+    description: Zendesk ticket status.
+  - name: priority
+    expr: stg_zendesk__tickets.priority
+    semantic_role: categorical
+    description: Zendesk ticket priority.
+  - name: ticket_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of tickets in the bucket.
+  - name: assigned_ticket_count
+    expr: countif(assignee_id IS NOT NULL)
+    semantic_role: measure
+    description: Number of tickets in the bucket with an assignee.
+  - name: distinct_organization_count
+    expr: count_distinct(organization_id)
+    semantic_role: measure
+    description: Number of distinct organizations represented in the bucket.
+group_by:
+  - status
+  - priority
+tags:
+  - zendesk
+  - tickets
+  - summary
+trust_tier: gold
+materialization:
+  type: table

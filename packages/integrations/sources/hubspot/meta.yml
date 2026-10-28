@@ -1,0 +1,9 @@
+display_name: HubSpot
+category: crm
+tags: [crm, marketing, sales, contacts]
+logo_url: https://www.hubspot.com/favicon.ico
+docs_url: https://developers.hubspot.com/docs/api/overview
+auth_setup:
+  - env: HUBSPOT_ACCESS_TOKEN
+    description: HubSpot private app access token
+    docs_url: https://developers.hubspot.com/docs/api/private-apps

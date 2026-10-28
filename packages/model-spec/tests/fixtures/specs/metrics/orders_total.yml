@@ -1,0 +1,7 @@
+spec_version: '0.2'
+type: metric
+name: orders_total
+description: Total order volume
+expression: SUM(total)
+model: fct_orders
+synonyms: [revenue]

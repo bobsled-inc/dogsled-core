@@ -1,0 +1,94 @@
+type: resource
+name: get_audit_records
+description: Get audit records
+api:
+  endpoint: /wiki/rest/api/audit
+  method: GET
+  query_params:
+    startDate: ${{ input.start_date }}
+    endDate: ${{ input.end_date }}
+    searchString: ${{ input.search_string }}
+    start: ${{ input.start }}
+    limit: ${{ input.limit }}
+input:
+  start_date:
+    type: string
+    description: >-
+      Filters the results to the records on or after the `startDate`.
+
+      The `startDate` must be specified as [epoch time](https://www.epochconverter.com/) in
+      milliseconds.
+  end_date:
+    type: string
+    description: >-
+      Filters the results to the records on or before the `endDate`.
+
+      The `endDate` must be specified as [epoch time](https://www.epochconverter.com/) in
+      milliseconds.
+  search_string:
+    type: string
+    description: |-
+      Filters the results to records that have string property values
+      matching the `searchString`.
+  start:
+    type: integer
+    description: The starting index of the returned records.
+    default: 0
+    minimum: 0
+  limit:
+    type: integer
+    description: |-
+      The maximum number of records to return per page.
+      Note, this may be restricted by fixed system limits.
+    default: 1000
+    minimum: 0
+query:
+  search:
+    dialect: provider_search
+    bind:
+      input: search_string
+output:
+  author:
+    type: object
+    path: $.author
+  remote_address:
+    type: string
+    path: $.remoteAddress
+  creation_date:
+    type: integer
+    path: $.creationDate
+    description: The creation date-time of the audit record, as a timestamp.
+  summary:
+    type: string
+    path: $.summary
+  description:
+    type: string
+    path: $.description
+  category:
+    type: string
+    path: $.category
+  sys_admin:
+    type: boolean
+    path: $.sysAdmin
+  super_admin:
+    type: boolean
+    path: $.superAdmin
+  affected_object_name:
+    type: string
+    path: $.affectedObject.name
+  affected_object_object_type:
+    type: string
+    path: $.affectedObject.objectType
+  changed_values:
+    type: array
+    path: $.changedValues
+  associated_objects:
+    type: array
+    path: $.associatedObjects
+extract:
+  record_path: $.results
+  paginated: false
+  table:
+    primary_key:
+      - creation_date
+    trust_tier: silver

@@ -1,0 +1,10 @@
+spec_version: '1'
+type: integration
+name: databricks
+source_type: databricks
+connection:
+  workspace_url: https://dbc-example.cloud.databricks.com
+  http_path: /sql/1.0/warehouses/abc123
+auth:
+  type: pat
+  token: dapi-placeholder

@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: linear_completed_estimate
+description: Total estimate assigned to completed Linear issues.
+model: linear__issues
+expression: SUM(CASE WHEN {linear__issues}.completed_at IS NOT NULL THEN {linear__issues}.estimate ELSE 0 END)
+synonyms:
+  - completed estimate
+  - completed points
+  - delivered estimate
+tags:
+  - linear
+  - engineering
+  - delivery

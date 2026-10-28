@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: vercel_deployment_count
+description: Number of Vercel deployments.
+model: vercel__deployments
+expression: COUNT({vercel__deployments}.deployment_id)
+synonyms: [deployments, deployment volume, deploy count]
+tags: [vercel, deployments, engineering]

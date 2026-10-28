@@ -1,0 +1,10 @@
+spec_version: '0.2'
+type: mention_extraction
+name: Customer_mentions
+entity_types: [Customer]
+ontology_ref: default_relationships
+candidate_retrieval:
+  strategy: hybrid
+  k: 10
+  min_similarity: 0.55
+extraction_role: mention_disambiguation_v1

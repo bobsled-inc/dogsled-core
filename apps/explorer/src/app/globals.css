@@ -1,0 +1,356 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-info: var(--info);
+  --color-ring: var(--ring);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+}
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --muted: #f4f4f8;
+  --muted-foreground: #6b7280;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --border: #e2e2ef;
+  --input: #e2e2ef;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f8;
+  --secondary-foreground: #0a0a0a;
+  --accent: #10b981;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+  --info: #3b82f6;
+  --ring: #6366f1;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --muted: #1a1a2e;
+  --muted-foreground: #a0a0b8;
+  --card: #111122;
+  --card-foreground: #fafafa;
+  --border: #2a2a3e;
+  --input: #2a2a3e;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e32;
+  --secondary-foreground: #fafafa;
+  --accent: #10b981;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+  --info: #3b82f6;
+  --ring: #6366f1;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+.hljs {
+  color: var(--color-foreground);
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: color-mix(in srgb, var(--color-muted-foreground) 72%, white 12%);
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal {
+  color: #f59e0b;
+}
+
+.hljs-number,
+.hljs-attr,
+.hljs-attribute {
+  color: #60a5fa;
+}
+
+.hljs-string,
+.hljs-meta .hljs-string,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: #34d399;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-symbol {
+  color: #c084fc;
+}
+
+.hljs-operator,
+.hljs-punctuation,
+.hljs-subst {
+  color: color-mix(in srgb, var(--color-foreground) 82%, transparent);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
+
+/* DAG node hover + active state — applies to Mermaid-rendered .node groups */
+.dag-node-active rect,
+.dag-node-active polygon,
+.dag-node-active path:not([class*='arrow']) {
+  stroke: var(--color-primary) !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-primary) 40%, transparent));
+}
+g.node:hover rect,
+g.node:hover polygon,
+g.node:hover path:not([class*='arrow']) {
+  stroke: var(--color-primary) !important;
+  stroke-width: 2px !important;
+  cursor: pointer;
+}
+
+/* DAG layer color fills — applied via mermaid `classDef ... :::dagLayerX`
+ * which the parser renders as a class on the `g.node`. Light mode uses
+ * tint-50/100 levels; dark mode uses translucent saturated fills. */
+.dagLayerSource rect,
+.dagLayerSource polygon,
+.dagLayerSource path:not([class*='arrow']) {
+  fill: #dbeafe !important; /* blue-100 */
+  stroke: #60a5fa !important; /* blue-400 */
+}
+.dark .dagLayerSource rect,
+.dark .dagLayerSource polygon,
+.dark .dagLayerSource path:not([class*='arrow']) {
+  fill: rgba(59, 130, 246, 0.18) !important;
+  stroke: #3b82f6 !important;
+}
+
+.dagLayerStaging rect,
+.dagLayerStaging polygon,
+.dagLayerStaging path:not([class*='arrow']) {
+  fill: #fef3c7 !important; /* amber-100 */
+  stroke: #fbbf24 !important;
+}
+.dark .dagLayerStaging rect,
+.dark .dagLayerStaging polygon,
+.dark .dagLayerStaging path:not([class*='arrow']) {
+  fill: rgba(245, 158, 11, 0.18) !important;
+  stroke: #f59e0b !important;
+}
+
+.dagLayerDimension rect,
+.dagLayerDimension polygon,
+.dagLayerDimension path:not([class*='arrow']) {
+  fill: #d1fae5 !important; /* emerald-100 */
+  stroke: #34d399 !important;
+}
+.dark .dagLayerDimension rect,
+.dark .dagLayerDimension polygon,
+.dark .dagLayerDimension path:not([class*='arrow']) {
+  fill: rgba(16, 185, 129, 0.18) !important;
+  stroke: #10b981 !important;
+}
+
+.dagLayerFact rect,
+.dagLayerFact polygon,
+.dagLayerFact path:not([class*='arrow']) {
+  fill: #cffafe !important; /* cyan-100 */
+  stroke: #22d3ee !important;
+}
+.dark .dagLayerFact rect,
+.dark .dagLayerFact polygon,
+.dark .dagLayerFact path:not([class*='arrow']) {
+  fill: rgba(6, 182, 212, 0.18) !important;
+  stroke: #06b6d4 !important;
+}
+
+.dagLayerProfile rect,
+.dagLayerProfile polygon,
+.dagLayerProfile path:not([class*='arrow']) {
+  fill: #e0e7ff !important; /* indigo-100 */
+  stroke: #818cf8 !important;
+}
+.dark .dagLayerProfile rect,
+.dark .dagLayerProfile polygon,
+.dark .dagLayerProfile path:not([class*='arrow']) {
+  fill: rgba(99, 102, 241, 0.2) !important;
+  stroke: #6366f1 !important;
+}
+
+.dagLayerEntityGraph rect,
+.dagLayerEntityGraph polygon,
+.dagLayerEntityGraph path:not([class*='arrow']) {
+  fill: #fde68a !important; /* amber-200 — slightly darker than staging */
+  stroke: #f59e0b !important;
+}
+.dark .dagLayerEntityGraph rect,
+.dark .dagLayerEntityGraph polygon,
+.dark .dagLayerEntityGraph path:not([class*='arrow']) {
+  fill: rgba(217, 119, 6, 0.22) !important;
+  stroke: #d97706 !important;
+}
+
+.dagLayerGolden rect,
+.dagLayerGolden polygon,
+.dagLayerGolden path:not([class*='arrow']) {
+  fill: #ffe4e6 !important; /* rose-100 */
+  stroke: #fb7185 !important;
+}
+.dark .dagLayerGolden rect,
+.dark .dagLayerGolden polygon,
+.dark .dagLayerGolden path:not([class*='arrow']) {
+  fill: rgba(244, 63, 94, 0.18) !important;
+  stroke: #f43f5e !important;
+}
+
+.dagLayerMart rect,
+.dagLayerMart polygon,
+.dagLayerMart path:not([class*='arrow']) {
+  fill: #f5d0fe !important; /* fuchsia-100 */
+  stroke: #e879f9 !important;
+}
+.dark .dagLayerMart rect,
+.dark .dagLayerMart polygon,
+.dark .dagLayerMart path:not([class*='arrow']) {
+  fill: rgba(217, 70, 239, 0.18) !important;
+  stroke: #d946ef !important;
+}
+
+/* Dim non-chain nodes/edges when a node is selected. The active node + its
+ * up/down lineage stay at full opacity; everything else fades to ~30%. */
+.dag-node-dim {
+  opacity: 0.3;
+  transition: opacity 150ms ease;
+}
+.dag-edge-dim {
+  opacity: 0.25;
+  transition: opacity 150ms ease;
+}
+
+/* Visual click hint for nodes inside an interactive DAG. The cursor change
+ * doesn't depend on the per-node a11y attribute walk firing — keyboard a11y
+ * (tabindex/role) is still set imperatively, but if HMR or a render race
+ * delays that walk, users still get the pointer cursor as a click affordance.
+ * The interactive container is marked `data-dag-interactive="true"` by
+ * <ModelDag> when an `onNodeClick` handler is provided. */
+[data-dag-interactive='true'] g.node {
+  cursor: pointer;
+}
+
+/* Pipeline run animations. `dag-node-running` pulses while a step is in
+ * flight; `dag-node-complete` flashes once and then locks in a "freshly run"
+ * highlight. We override `dag-node-dim` here so a running/completed node
+ * stays at full opacity even if the user has narrowed the chain to an
+ * unrelated branch. */
+.dag-node-running {
+  opacity: 1 !important;
+  animation: dag-node-pulse 1200ms ease-in-out infinite;
+}
+.dag-node-running rect,
+.dag-node-running polygon,
+.dag-node-running path:not([class*='arrow']) {
+  stroke: var(--color-primary) !important;
+  stroke-width: 2.5px !important;
+}
+@keyframes dag-node-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-primary) 35%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-primary) 70%, transparent));
+  }
+}
+
+.dag-node-complete {
+  opacity: 1 !important;
+  animation: dag-node-flash 1200ms ease-out 1;
+}
+.dag-node-complete rect,
+.dag-node-complete polygon,
+.dag-node-complete path:not([class*='arrow']) {
+  stroke: #10b981 !important; /* emerald-500 */
+  stroke-width: 2.5px !important;
+}
+@keyframes dag-node-flash {
+  0% {
+    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.85));
+  }
+  60% {
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.55));
+  }
+  100% {
+    filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.35));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dag-node-running,
+  .dag-node-complete {
+    animation: none !important;
+  }
+
+  .dag-node-dim,
+  .dag-edge-dim {
+    transition: none;
+  }
+}

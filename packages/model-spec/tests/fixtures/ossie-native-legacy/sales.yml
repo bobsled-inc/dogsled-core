@@ -1,0 +1,153 @@
+version: 0.2.0.dev0
+name: sales
+description: Orders, customers, and revenue
+
+datasets:
+  - name: raw_orders
+    description: Orders received from the warehouse
+    source: raw.orders
+    fields:
+      - name: order_id
+        datatype: Integer
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: order_id }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"sql_type":"BIGINT"}'
+      - name: customer_id
+        datatype: Integer
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"sql_type":"BIGINT"}'
+      - name: gross_amount
+        datatype: Decimal
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: gross_amount }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"sql_type":"DECIMAL(18,2)"}'
+      - name: discount
+        datatype: Decimal
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: discount }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"sql_type":"DECIMAL(18,2)"}'
+    custom_extensions:
+      - vendor_name: DOGSLED
+        data: '{"extension_version":"1","kind":"source","connection":"warehouse"}'
+
+  - name: raw_customers
+    description: Customers received from the warehouse
+    source: raw.customers
+    fields:
+      - name: customer_id
+        datatype: Integer
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"sql_type":"BIGINT"}'
+      - name: customer_name
+        datatype: String
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: customer_name }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"sql_type":"VARCHAR"}'
+    custom_extensions:
+      - vendor_name: DOGSLED
+        data: '{"extension_version":"1","kind":"source","connection":"warehouse"}'
+
+  - name: clean_orders
+    description: One row per order with discounts deducted
+    source: analytics.clean_orders
+    primary_key: [order_id]
+    fields:
+      - name: order_id
+        datatype: Integer
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: order_id }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"build_expression":"order_id","sql_type":"BIGINT"}'
+      - name: customer_id
+        datatype: Integer
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"build_expression":"customer_id","sql_type":"BIGINT"}'
+      - name: net_amount
+        description: Gross amount less the discount
+        datatype: Decimal
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: net_amount }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"build_expression":"gross_amount - discount","sql_type":"DECIMAL(18,2)"}'
+    custom_extensions:
+      - vendor_name: DOGSLED
+        data: |
+          {
+            "extension_version": "1",
+            "kind": "derived",
+            "grain": ["order_id"],
+            "build": {
+              "source": {"ref": "warehouse.raw_orders"},
+              "materialization": {"type": "table"}
+            }
+          }
+
+  - name: customers
+    description: One row per customer
+    source: analytics.customers
+    primary_key: [customer_id]
+    fields:
+      - name: customer_id
+        datatype: Integer
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"build_expression":"customer_id","sql_type":"BIGINT"}'
+      - name: customer_name
+        datatype: String
+        expression:
+          dialects: [{ dialect: ANSI_SQL, expression: customer_name }]
+        custom_extensions:
+          - vendor_name: DOGSLED
+            data: '{"build_expression":"customer_name","sql_type":"VARCHAR"}'
+    custom_extensions:
+      - vendor_name: DOGSLED
+        data: |
+          {
+            "extension_version": "1",
+            "kind": "derived",
+            "grain": ["customer_id"],
+            "build": {
+              "source": {"ref": "warehouse.raw_customers"},
+              "materialization": {"type": "view"}
+            }
+          }
+
+metrics:
+  - name: revenue
+    description: Total sales after discounts
+    datatype: Decimal
+    expression:
+      dialects:
+        - dialect: ANSI_SQL
+          expression: SUM(clean_orders.net_amount)
+
+relationships:
+  - name: orders_customer
+    from: clean_orders
+    to: customers
+    from_columns: [customer_id]
+    to_columns: [customer_id]
+    custom_extensions:
+      - vendor_name: DOGSLED
+        data: '{"join_type":"left","description":"Each order belongs to one customer"}'

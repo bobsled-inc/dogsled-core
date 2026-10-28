@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: source
+name: customers
+source_type: warehouse_table
+connection: local_lake
+table: bronze.customers
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+    - name: name
+      type: STRING

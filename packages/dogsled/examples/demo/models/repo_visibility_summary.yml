@@ -1,0 +1,43 @@
+spec_version: '0.2'
+name: repo_visibility_summary
+type: model
+description: Repository summary metrics grouped by visibility and language
+grain: [visibility, language]
+source:
+  ref: stg_github_repos
+columns:
+  - name: visibility
+    expr: stg_github_repos.visibility
+    semantic_role: categorical
+    description: Repository visibility level — "public", "private", or "internal"
+  - name: language
+    expr: stg_github_repos.language
+    semantic_role: categorical
+    description: Primary programming language detected by GitHub
+  - name: repo_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total number of repositories in this visibility and language group
+  - name: total_stars
+    expr: SUM(stg_github_repos.stargazers_count)
+    semantic_role: measure
+    description: Sum of stars across all repositories in this group
+  - name: total_forks
+    expr: SUM(stg_github_repos.forks_count)
+    semantic_role: measure
+    description: Sum of forks across all repositories in this group
+  - name: total_open_issues
+    expr: SUM(stg_github_repos.open_issues_count)
+    semantic_role: measure
+    description: Sum of open issues and pull requests across all repositories in this group
+  - name: avg_size_kb
+    expr: AVG(stg_github_repos.size_kb)
+    semantic_role: measure
+    description: Average repository size in kilobytes across this group
+  - name: archived_count
+    expr: SUM(CASE WHEN stg_github_repos.is_archived THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Number of archived repositories in this group
+group_by: [visibility, language]
+materialization:
+  type: view

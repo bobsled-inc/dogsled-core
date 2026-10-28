@@ -1,0 +1,50 @@
+spec_version: '0.2'
+name: quickbooks__vendor_spend_summary
+type: model
+description: QuickBooks vendor spend summarized by vendor.
+grain:
+  - vendor_id
+  - vendor_name
+source:
+  ref: stg_quickbooks__bills
+joins:
+  - ref: stg_quickbooks__vendors
+    type: left
+    on: stg_quickbooks__bills.vendor_id = stg_quickbooks__vendors.vendor_id
+columns:
+  - name: vendor_id
+    expr: stg_quickbooks__bills.vendor_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_quickbooks__vendors.vendor_id
+    description: Vendor identifier for the spend bucket.
+  - name: vendor_name
+    expr: stg_quickbooks__vendors.name
+    semantic_role: categorical
+    description: Vendor display name.
+  - name: total_spend
+    expr: COALESCE(SUM(stg_quickbooks__bills.total_amt), 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total bill amount for the vendor.
+  - name: outstanding_balance
+    expr: COALESCE(SUM(stg_quickbooks__bills.balance), 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total outstanding bill balance for the vendor.
+  - name: bill_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of bills for the vendor.
+group_by:
+  - vendor_id
+  - vendor_name
+tags:
+  - quickbooks
+  - vendors
+  - summary
+trust_tier: gold
+materialization:
+  type: table

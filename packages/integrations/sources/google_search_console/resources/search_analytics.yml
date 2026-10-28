@@ -1,0 +1,77 @@
+type: resource
+name: search_analytics
+description: Search performance data for a Google Search Console property.
+api:
+  endpoint: /sites/${{ input.site_url }}/searchAnalytics/query
+  method: POST
+  request_body:
+    startDate: ${{ input.start_date }}
+    endDate: ${{ input.end_date }}
+    dimensions:
+      - date
+      - query
+      - page
+      - country
+      - device
+    rowLimit: 25000
+    startRow: 0
+input:
+  site_url:
+    type: string
+    required: true
+    default: https://example.com/
+  start_date:
+    type: string
+    required: true
+  end_date:
+    type: string
+    required: true
+output:
+  site_url:
+    type: string
+    path: $.__input__.site_url
+  date:
+    type: string
+    path: $.keys[0]
+  query:
+    type: string
+    path: $.keys[1]
+  page:
+    type: string
+    path: $.keys[2]
+  country:
+    type: string
+    path: $.keys[3]
+  device:
+    type: string
+    path: $.keys[4]
+  clicks:
+    type: integer
+    path: $.clicks
+  impressions:
+    type: integer
+    path: $.impressions
+  ctr:
+    type: number
+    path: $.ctr
+  position:
+    type: number
+    path: $.position
+extract:
+  record_path: $.rows
+  table:
+    primary_key:
+      - site_url
+      - date
+      - query
+      - page
+      - country
+      - device
+  pagination:
+    type: offset
+    offset_param: startRow
+    limit_param: rowLimit
+  for_each:
+    resource: sites
+    field: siteUrl
+    input: site_url

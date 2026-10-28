@@ -1,0 +1,58 @@
+type: resource
+name: accounts
+description: Company accounts from a Freshsales CRM view.
+api:
+  endpoint: /sales_accounts/view/${{ input.view_id }}
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  view_id:
+    type: string
+    default: '2'
+    description: Freshsales view ID from the Filters API. Defaults to the built-in all-accounts view
+      from the API docs.
+  per_page:
+    type: integer
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  website:
+    type: string
+    path: $.website
+  industry_type_id:
+    type: integer
+    path: $.industry_type_id
+  number_of_employees:
+    type: integer
+    path: $.number_of_employees
+  city:
+    type: string
+    path: $.city
+  state:
+    type: string
+    path: $.state
+  country:
+    type: string
+    path: $.country
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+extract:
+  record_path: $.sales_accounts
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+    total_pages_path: $.meta.total_pages

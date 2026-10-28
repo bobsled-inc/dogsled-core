@@ -1,0 +1,40 @@
+type: resource
+name: item_details
+description: Detailed Monday.com items including update collections.
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: 'query($itemIds: [ID!]) { items(ids: $itemIds) { id name state updated_at group { id title } board { id name } updates { id body created_at } } }'
+    variables:
+      itemIds: ${{ input.item_ids }}
+input:
+  item_ids:
+    type: array
+    default:
+      - '1'
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  state:
+    type: string
+    path: $.state
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+  group_id:
+    type: string
+    path: $.group.id
+  board_id:
+    type: string
+    path: $.board.id
+extract:
+  record_path: $.data.items
+  table:
+    primary_key:
+      - id
+via: graphql

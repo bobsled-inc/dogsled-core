@@ -1,0 +1,506 @@
+import * as fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { assertDriverVersion } from '@bobsled-inc/connections';
+
+import { assertBacktickIdentifier, CommandError, EXIT_VALIDATION } from '@bobsled-inc/protocol';
+import {
+  sanitizeSchemaName,
+  sanitizeTableName,
+  SYSTEM_COLUMNS,
+  enforceSchemaContract,
+  reverseMapDbType,
+} from './database.js';
+import { withRetry } from '../retry.js';
+
+import type { BatchEncoding, SchemaColumn, ColumnType } from '@bobsled-inc/protocol';
+import type {
+  DatabaseDestination,
+  EnsureTableOptions,
+  LoadResult,
+  SchemaComparisonResult,
+} from './database.js';
+import type { LoaderLogger } from '../logger.js';
+
+export interface MySqlConnectionLike {
+  execute(query: string, params?: unknown[]): Promise<[unknown, unknown[]]>;
+  release(): void;
+}
+
+export interface MySqlPoolLike {
+  getConnection(): Promise<MySqlConnectionLike>;
+  end(): Promise<void>;
+}
+
+export interface MySqlDestinationOptions {
+  host: string;
+  port?: number;
+  database: string;
+  user: string;
+  password?: string;
+  ssl?: boolean;
+  pool?: MySqlPoolLike;
+  logger?: LoaderLogger;
+}
+
+function buildUnsupportedVectorError(): CommandError {
+  return new CommandError(
+    JSON.stringify({
+      code: 'UNSUPPORTED_COLUMN_TYPE',
+      message: 'MySQL destination does not support vector columns',
+      destination: 'mysql',
+      columnType: 'vector',
+    }),
+    EXIT_VALIDATION
+  );
+}
+
+function mapMySqlType(type: ColumnType): string {
+  switch (type) {
+    case 'integer':
+      return 'BIGINT';
+    case 'number':
+      return 'DOUBLE';
+    case 'boolean':
+      return 'TINYINT(1)';
+    case 'timestamp':
+      return 'DATETIME(6)';
+    case 'string':
+      return 'TEXT';
+    case 'array':
+      return 'JSON';
+    case 'object':
+      return 'JSON';
+    case 'vector':
+      throw buildUnsupportedVectorError();
+    default: {
+      const _exhaustive: never = type;
+      throw new Error(`Unsupported column type: ${_exhaustive}`);
+    }
+  }
+}
+
+function quoteMySqlIdentifier(identifier: string): string {
+  assertBacktickIdentifier(identifier, 'MySQL identifier');
+  const escaped = identifier.replace(/`/g, '``');
+  return `\`${escaped}\``;
+}
+
+export class MySqlDestination implements DatabaseDestination {
+  private readonly host: string;
+  private readonly port: number;
+  private readonly database: string;
+  private readonly user: string;
+  private readonly password?: string;
+  private readonly ssl: boolean;
+  private readonly logger?: LoaderLogger;
+  private pool?: MySqlPoolLike;
+  private truncatedTables = new Set<string>();
+  private columnCache = new Map<string, Map<string, string>>();
+
+  constructor(options: MySqlDestinationOptions) {
+    this.host = options.host;
+    this.port = options.port ?? 3306;
+    this.database = options.database;
+    this.user = options.user;
+    this.password = options.password;
+    this.ssl = options.ssl ?? false;
+    this.logger = options.logger;
+    if (options.pool) {
+      this.pool = options.pool;
+    }
+  }
+
+  private async getPool(): Promise<MySqlPoolLike> {
+    if (this.pool) {
+      return this.pool;
+    }
+
+    assertDriverVersion('mysql2', '3.22.0', createRequire(import.meta.url), 'mysql2/promise');
+    try {
+      const mysql = await import('mysql2/promise');
+      const pool = mysql.createPool({
+        host: this.host,
+        port: this.port,
+        database: this.database,
+        user: this.user,
+        password: this.password,
+        ssl: this.ssl ? { rejectUnauthorized: true } : undefined,
+        waitForConnections: true,
+        connectionLimit: 10,
+      });
+      this.pool = pool as unknown as MySqlPoolLike;
+      return this.pool;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to load mysql2. Install it to use --dest mysql. ${message}`);
+    }
+  }
+
+  private async query(sql: string, params?: unknown[]): Promise<unknown[]> {
+    return withRetry(async () => {
+      const pool = await this.getPool();
+      const conn = await pool.getConnection();
+      try {
+        const [rows] = await conn.execute(sql, params);
+        return rows as unknown[];
+      } finally {
+        conn.release();
+      }
+    });
+  }
+
+  async initialize(): Promise<void> {
+    await this.query('SELECT 1');
+  }
+
+  async ensureTable(
+    schemaName: string,
+    tableName: string,
+    columns: SchemaColumn[],
+    options?: EnsureTableOptions
+  ): Promise<void> {
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const cacheKey = `${safeSchema}.${safeTable}`;
+
+    const cachedColumns = this.columnCache.get(cacheKey);
+    if (cachedColumns) {
+      const qualifiedTable = `${quoteMySqlIdentifier(safeSchema)}.${quoteMySqlIdentifier(safeTable)}`;
+
+      // Build comparison from cached types
+      const systemColumnNames: Set<string> = new Set([
+        SYSTEM_COLUMNS.TIME_EXTRACTED,
+        SYSTEM_COLUMNS.LOADED_AT,
+      ]);
+      const newColumns: SchemaColumn[] = [];
+      const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
+      const requestedNames = new Set(columns.map((c) => c.name));
+      const removedColumns: string[] = [];
+
+      for (const col of columns) {
+        const existingType = cachedColumns.get(col.name);
+        const expectedType = mapMySqlType(col.type);
+
+        if (existingType === undefined) {
+          newColumns.push(col);
+        } else {
+          const normalizedExisting = existingType.toUpperCase().split('(')[0]!;
+          const normalizedExpected = expectedType.toUpperCase().split('(')[0]!;
+          const isJsonCompatible =
+            normalizedExisting === 'JSON' && (col.type === 'array' || col.type === 'object');
+          if (normalizedExisting !== normalizedExpected && !isJsonCompatible) {
+            typeConflicts.push({
+              column: col.name,
+              existingType: existingType,
+              expectedType: expectedType,
+              existingColumnType: reverseMapDbType(existingType),
+              expectedColumnType: col.type,
+            });
+          }
+        }
+      }
+
+      for (const existingName of cachedColumns.keys()) {
+        if (!requestedNames.has(existingName) && !systemColumnNames.has(existingName)) {
+          removedColumns.push(existingName);
+        }
+      }
+
+      const comparison: SchemaComparisonResult = { newColumns, removedColumns, typeConflicts };
+      const { columnsToAdd, columnsToWiden } = enforceSchemaContract(
+        options?.schemaBehavior,
+        comparison,
+        qualifiedTable
+      );
+
+      if (columnsToAdd.length > 0) {
+        const newColumnDefs = columnsToAdd.map(
+          (col) => `${quoteMySqlIdentifier(col.name)} ${mapMySqlType(col.type)}`
+        );
+        const ddl = `ALTER TABLE ${qualifiedTable} ${newColumnDefs.map((d) => `ADD COLUMN ${d}`).join(', ')}`;
+        await this.query(ddl);
+      }
+
+      for (const conflict of columnsToWiden) {
+        const newSqlType = mapMySqlType(conflict.expectedColumnType);
+        const widenDdl = `ALTER TABLE ${qualifiedTable} MODIFY COLUMN ${quoteMySqlIdentifier(conflict.column)} ${newSqlType}`;
+        await this.query(widenDdl);
+      }
+
+      // Update cache after changes
+      for (const col of columnsToAdd) {
+        cachedColumns.set(col.name, mapMySqlType(col.type));
+      }
+      for (const conflict of columnsToWiden) {
+        cachedColumns.set(conflict.column, mapMySqlType(conflict.expectedColumnType));
+      }
+
+      if (options?.keyProperties && options.keyProperties.length > 0) {
+        await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties);
+      }
+
+      return;
+    }
+
+    const qualifiedTable = `${quoteMySqlIdentifier(safeSchema)}.${quoteMySqlIdentifier(safeTable)}`;
+
+    const existingCols = (await this.query(
+      `SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+      [safeSchema, safeTable]
+    )) as Array<{ COLUMN_NAME: string; DATA_TYPE: string; COLUMN_TYPE: string }>;
+
+    if (existingCols.length === 0) {
+      const colDefs = [
+        ...columns.map((c) => `${quoteMySqlIdentifier(c.name)} ${mapMySqlType(c.type)}`),
+        `${quoteMySqlIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)} DATETIME(6)`,
+        `${quoteMySqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)`,
+      ];
+      const ddl = `CREATE TABLE IF NOT EXISTS ${qualifiedTable} (${colDefs.join(', ')})`;
+      await this.query(ddl);
+
+      const columnMap = new Map<string, string>([
+        ...columns.map((c): [string, string] => [c.name, mapMySqlType(c.type)]),
+        [SYSTEM_COLUMNS.TIME_EXTRACTED, 'DATETIME(6)'],
+        [SYSTEM_COLUMNS.LOADED_AT, 'DATETIME(6)'],
+      ]);
+      this.columnCache.set(cacheKey, columnMap);
+
+      if (options?.keyProperties && options.keyProperties.length > 0) {
+        await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties);
+      }
+
+      return;
+    }
+
+    // Build existing type map for comparison
+    const existingTypeMap = new Map<string, string>();
+    for (const col of existingCols) {
+      existingTypeMap.set(col.COLUMN_NAME, col.DATA_TYPE);
+    }
+
+    // Build schema comparison
+    const systemColumnNames: Set<string> = new Set([
+      SYSTEM_COLUMNS.TIME_EXTRACTED,
+      SYSTEM_COLUMNS.LOADED_AT,
+    ]);
+    const newColumns: SchemaColumn[] = [];
+    const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
+    const requestedNames = new Set(columns.map((c) => c.name));
+    const removedColumns: string[] = [];
+
+    const existingMap = new Map(existingCols.map((col) => [col.COLUMN_NAME, col]));
+
+    for (const col of columns) {
+      const existing = existingMap.get(col.name);
+      const expectedType = mapMySqlType(col.type);
+
+      if (!existing) {
+        newColumns.push(col);
+      } else {
+        const existingType = existing.DATA_TYPE.toUpperCase();
+        const normalizedExpected = expectedType.toUpperCase().split('(')[0]!;
+        const isJsonCompatible =
+          existingType === 'JSON' && (col.type === 'array' || col.type === 'object');
+        if (existingType !== normalizedExpected && !isJsonCompatible) {
+          typeConflicts.push({
+            column: col.name,
+            existingType: existing.DATA_TYPE,
+            expectedType: expectedType,
+            existingColumnType: reverseMapDbType(existing.DATA_TYPE),
+            expectedColumnType: col.type,
+          });
+        }
+      }
+    }
+
+    for (const existingName of existingTypeMap.keys()) {
+      if (!requestedNames.has(existingName) && !systemColumnNames.has(existingName)) {
+        removedColumns.push(existingName);
+      }
+    }
+
+    const comparison: SchemaComparisonResult = { newColumns, removedColumns, typeConflicts };
+    const { columnsToAdd, columnsToWiden } = enforceSchemaContract(
+      options?.schemaBehavior,
+      comparison,
+      qualifiedTable
+    );
+
+    const newColumnDefs: string[] = columnsToAdd.map(
+      (col) => `${quoteMySqlIdentifier(col.name)} ${mapMySqlType(col.type)}`
+    );
+
+    if (!existingMap.has(SYSTEM_COLUMNS.TIME_EXTRACTED)) {
+      newColumnDefs.push(`${quoteMySqlIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)} DATETIME(6)`);
+    }
+    if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
+      newColumnDefs.push(
+        `${quoteMySqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)`
+      );
+    }
+
+    if (newColumnDefs.length > 0) {
+      const ddl = `ALTER TABLE ${qualifiedTable} ${newColumnDefs.map((d) => `ADD COLUMN ${d}`).join(', ')}`;
+      await this.query(ddl);
+    }
+
+    // Widen columns one at a time
+    for (const conflict of columnsToWiden) {
+      const newSqlType = mapMySqlType(conflict.expectedColumnType);
+      const widenDdl = `ALTER TABLE ${qualifiedTable} MODIFY COLUMN ${quoteMySqlIdentifier(conflict.column)} ${newSqlType}`;
+      await this.query(widenDdl);
+    }
+
+    // Update column cache
+    const columnMap = new Map<string, string>(existingTypeMap);
+    for (const col of columnsToAdd) {
+      columnMap.set(col.name, mapMySqlType(col.type));
+    }
+    for (const conflict of columnsToWiden) {
+      columnMap.set(conflict.column, mapMySqlType(conflict.expectedColumnType));
+    }
+    columnMap.set(SYSTEM_COLUMNS.TIME_EXTRACTED, 'DATETIME(6)');
+    columnMap.set(SYSTEM_COLUMNS.LOADED_AT, 'DATETIME(6)');
+    this.columnCache.set(cacheKey, columnMap);
+
+    if (options?.keyProperties && options.keyProperties.length > 0) {
+      await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties);
+    }
+  }
+
+  private async ensureUniqueIndex(
+    qualifiedTable: string,
+    tableName: string,
+    keyProperties: string[]
+  ): Promise<void> {
+    if (keyProperties.length === 0) return;
+    const keyColList = keyProperties.map(quoteMySqlIdentifier).join(', ');
+    const indexName = quoteMySqlIdentifier(`_dogsled_uq_${tableName}`);
+    await this.query(`CREATE UNIQUE INDEX ${indexName} ON ${qualifiedTable} (${keyColList})`).catch(
+      (err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes('Duplicate key name')) throw err;
+      }
+    );
+  }
+
+  async loadAndFinalize(
+    schemaName: string,
+    tableName: string,
+    filePath: string,
+    columns: SchemaColumn[],
+    strategy: 'append' | 'merge' | 'full_refresh',
+    keyColumns: string[],
+    _sourceEncoding?: BatchEncoding
+  ): Promise<LoadResult> {
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const qualifiedTable = `${quoteMySqlIdentifier(safeSchema)}.${quoteMySqlIdentifier(safeTable)}`;
+
+    const dataCols = [...columns.map((c) => c.name), SYSTEM_COLUMNS.TIME_EXTRACTED];
+    const allCols = [...dataCols, SYSTEM_COLUMNS.LOADED_AT];
+    const colList = allCols.map(quoteMySqlIdentifier).join(', ');
+
+    const data = await fs.readFile(filePath, 'utf-8');
+    const rows: unknown[][] = [];
+
+    for (const line of data.trim().split('\n')) {
+      if (line.trim() === '') continue;
+      const record = JSON.parse(line);
+      const rowParams: unknown[] = [];
+      for (let ci = 0; ci < columns.length; ci++) {
+        const col = columns[ci]!;
+        const val = record[col.name];
+        if (val === null || val === undefined) {
+          rowParams.push(null);
+        } else if (col.type === 'array' || col.type === 'object') {
+          rowParams.push(JSON.stringify(val));
+        } else {
+          rowParams.push(val);
+        }
+      }
+      rowParams.push(record[SYSTEM_COLUMNS.TIME_EXTRACTED] ?? null);
+      rows.push(rowParams);
+    }
+
+    if (strategy === 'full_refresh') {
+      const qualifiedKey = `${safeSchema}.${safeTable}`;
+      const alreadyTruncated = this.truncatedTables.has(qualifiedKey);
+      if (!alreadyTruncated) {
+        await this.query(`TRUNCATE TABLE ${qualifiedTable}`);
+        this.truncatedTables.add(qualifiedKey);
+      }
+    }
+
+    if (strategy === 'append' || strategy === 'full_refresh') {
+      if (rows.length === 0) {
+        return { rowsAffected: 0 };
+      }
+      const batchSize = 500;
+      const rowPlaceholder = `(${dataCols.map(() => '?').join(', ')}, CURRENT_TIMESTAMP(6))`;
+      let rowsAffected = 0;
+      for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize);
+        const placeholders = batch.map(() => rowPlaceholder).join(', ');
+        const flatParams = batch.flat();
+        const sql = `INSERT INTO ${qualifiedTable} (${colList}) VALUES ${placeholders}`;
+        await this.query(sql, flatParams);
+        rowsAffected += batch.length;
+      }
+      return { rowsAffected };
+    }
+
+    if (strategy === 'merge') {
+      if (keyColumns.length === 0) {
+        throw new Error('merge strategy requires at least one key column');
+      }
+
+      if (rows.length === 0) {
+        return { rowsAffected: 0 };
+      }
+
+      const timeGuardExpr = `(VALUES(${quoteMySqlIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)}) >= ${quoteMySqlIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)} OR ${quoteMySqlIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)} IS NULL)`;
+      const updateSet = allCols
+        .filter((c) => !keyColumns.includes(c))
+        .map((c) => {
+          const col = quoteMySqlIdentifier(c);
+          return `${col} = IF(${timeGuardExpr}, VALUES(${col}), ${col})`;
+        })
+        .join(', ');
+
+      const batchSize = 500;
+      const rowPlaceholder = `(${dataCols.map(() => '?').join(', ')}, CURRENT_TIMESTAMP(6))`;
+      let rowsAffected = 0;
+      for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize);
+        const placeholders = batch.map(() => rowPlaceholder).join(', ');
+        const flatParams = batch.flat();
+        const sql = `INSERT INTO ${qualifiedTable} (${colList}) VALUES ${placeholders} ON DUPLICATE KEY UPDATE ${updateSet}`;
+        await this.query(sql, flatParams);
+        rowsAffected += batch.length;
+      }
+      return { rowsAffected };
+    }
+
+    return { rowsAffected: 0 };
+  }
+
+  getTruncatedTables(): Set<string> {
+    return new Set(this.truncatedTables);
+  }
+
+  setTruncatedTables(tables: Set<string>): void {
+    this.truncatedTables = new Set(tables);
+  }
+
+  async close(): Promise<void> {
+    if (this.pool) {
+      try {
+        await this.pool.end();
+      } catch {
+        // Best-effort cleanup
+      }
+      this.pool = undefined;
+    }
+  }
+}

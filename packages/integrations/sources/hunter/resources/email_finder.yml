@@ -1,0 +1,61 @@
+type: resource
+name: email_finder
+description: Find the most likely professional email address for a person at a company.
+api:
+  endpoint: /v2/email-finder
+  method: GET
+  query_params:
+    first_name: ${{ input.first_name }}
+    last_name: ${{ input.last_name }}
+    domain: ${{ input.domain }}
+output:
+  email:
+    type: string
+    path: $.data.email
+    description: Verified professional email address.
+  score:
+    type: integer
+    path: $.data.score
+    description: Hunter confidence score for the generated email.
+  domain:
+    type: string
+    path: $.data.domain
+    description: Company domain used for the search.
+  position:
+    type: string
+    path: $.data.position
+    description: Job title returned with the match.
+  linkedin_url:
+    type: string
+    path: $.data.linkedin_url
+    description: LinkedIn URL returned by Hunter when available.
+input:
+  first_name:
+    type: string
+    required: true
+    description: First name of the target person.
+  last_name:
+    type: string
+    required: true
+    description: Last name of the target person.
+  domain:
+    type: string
+    required: true
+    description: Company domain associated with the target person.
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - email
+    trust_tier: silver
+billing:
+  mode: billable
+  ownership: third_party
+  unit: credit
+  estimation:
+    model: per_request
+    amount: 1
+    currency: provider_credit
+    notes: Hunter documents Email Finder as 1 credit per API call.
+  authorization:
+    requires_plan: true

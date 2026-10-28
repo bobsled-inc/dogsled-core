@@ -1,0 +1,45 @@
+type: resource
+name: requisitions
+description: List Lever requisitions
+api:
+  endpoint: /requisitions
+  method: GET
+  query_params:
+    offset: ${{ input.offset }}
+    limit: ${{ input.limit }}
+input:
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+  limit:
+    type: integer
+    description: Page size
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Requisition identifier
+  name:
+    type: string
+    path: $.name
+    description: Requisition name
+  state:
+    type: string
+    path: $.state
+    description: Requisition state
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Requisition creation timestamp
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit

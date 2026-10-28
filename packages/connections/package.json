@@ -1,0 +1,109 @@
+{
+  "name": "@bobsled-inc/connections",
+  "version": "0.20.224",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "directory": "packages/connections"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@bobsled-inc/project-index": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "undici": "catalog:",
+    "yaml": "catalog:app-packages",
+    "zod": "catalog:dev-packages"
+  },
+  "peerDependencies": {
+    "@aws-sdk/rds-signer": ">=3.0.0",
+    "@clickhouse/client": ">=1.0.0",
+    "@databricks/sql": ">=2.0.0",
+    "@duckdb/node-api": "^1.4.4-r.3",
+    "@google-cloud/bigquery": ">=8.1.1",
+    "google-auth-library": ">=9.0.0",
+    "pg": "^8.4.0",
+    "snowflake-sdk": ">=3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/rds-signer": {
+      "optional": true
+    },
+    "@clickhouse/client": {
+      "optional": true
+    },
+    "@databricks/sql": {
+      "optional": true
+    },
+    "@duckdb/node-api": {
+      "optional": true
+    },
+    "@google-cloud/bigquery": {
+      "optional": true
+    },
+    "google-auth-library": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "snowflake-sdk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@duckdb/node-api": "catalog:duckdb",
+    "google-auth-library": "catalog:",
+    "@types/node": "catalog:dev-packages",
+    "@types/pg": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "tsup": "catalog:cli",
+    "typescript": "catalog:dev-packages",
+    "@vitest/coverage-v8": "catalog:testing",
+    "vitest": "catalog:testing"
+  },
+  "description": "Typed connection schemas, secret resolution, and warehouse runners for Dogsled.",
+  "keywords": [
+    "dogsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "connections",
+    "warehouses",
+    "secrets"
+  ],
+  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+  }
+}

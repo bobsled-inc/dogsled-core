@@ -1,0 +1,99 @@
+spec_version: '0.2'
+name: stripe__customer_overview
+type: model
+description: Customer-level Stripe payment performance and subscription health.
+grain: customer_id
+source:
+  ref: stg_stripe__customers
+joins:
+  - ref: stg_stripe__charges
+    type: left
+    on: stg_stripe__customers.customer_id = stg_stripe__charges.customer_id
+    pre_aggregate:
+      group_by:
+        - customer_id
+      columns:
+        - name: charge_count
+          expr: COUNT(*)
+        - name: total_charge_amount
+          expr: SUM(amount)
+        - name: total_refunded_amount
+          expr: SUM(amount_refunded)
+        - name: most_recent_charge_at
+          expr: MAX(created_at)
+  - ref: stg_stripe__subscriptions
+    type: left
+    on: stg_stripe__customers.customer_id = stg_stripe__subscriptions.customer_id
+    pre_aggregate:
+      group_by:
+        - customer_id
+      columns:
+        - name: active_subscription_count
+          expr: SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END)
+        - name: trialing_subscription_count
+          expr: SUM(CASE WHEN status = 'trialing' THEN 1 ELSE 0 END)
+columns:
+  - name: customer_id
+    expr: stg_stripe__customers.customer_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Stripe customer identifier.
+  - name: email
+    expr: stg_stripe__customers.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Customer email address.
+  - name: currency
+    expr: stg_stripe__customers.currency
+    semantic_role: categorical
+    description: Default currency configured for the customer.
+  - name: delinquent
+    expr: stg_stripe__customers.delinquent
+    semantic_role: categorical
+    description: Whether the customer currently has unpaid invoices.
+  - name: balance
+    expr: stg_stripe__customers.balance
+    semantic_role: measure
+    tags:
+      - financial
+    description: Outstanding customer balance in standard currency units.
+  - name: charge_count
+    expr: COALESCE(stg_stripe__charges.charge_count, 0)
+    semantic_role: measure
+    description: Total number of charges associated with the customer.
+  - name: total_charge_amount
+    expr: COALESCE(stg_stripe__charges.total_charge_amount, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Lifetime gross charge volume for the customer.
+  - name: total_refunded_amount
+    expr: COALESCE(stg_stripe__charges.total_refunded_amount, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Lifetime refunded volume associated with the customer.
+  - name: active_subscription_count
+    expr: COALESCE(stg_stripe__subscriptions.active_subscription_count, 0)
+    semantic_role: measure
+    description: Count of currently active subscriptions for the customer.
+  - name: trialing_subscription_count
+    expr: COALESCE(stg_stripe__subscriptions.trialing_subscription_count, 0)
+    semantic_role: measure
+    description: Count of subscriptions that are presently in trial.
+  - name: most_recent_charge_at
+    expr: stg_stripe__charges.most_recent_charge_at
+    semantic_role: event_timestamp
+    description: Timestamp of the customer’s most recent charge.
+  - name: created_at
+    expr: stg_stripe__customers.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the Stripe customer record was created.
+tags:
+  - stripe
+  - billing
+  - customers
+trust_tier: gold
+materialization:
+  type: table

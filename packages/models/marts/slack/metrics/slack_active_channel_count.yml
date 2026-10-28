@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: slack_active_channel_count
+description: Number of Slack channels that are not archived.
+model: slack__channels
+expression: SUM(CASE WHEN {slack__channels}.is_archived THEN 0 ELSE 1 END)
+synonyms: [active channels, open channels, current channels]
+tags: [slack, collaboration, channels]

@@ -1,0 +1,38 @@
+spec_version: '0.2'
+name: company_resolution
+type: resolution
+description: Resolve companies across sources.
+
+inputs:
+  - ref: crm.companies
+    role: internal
+    trust_tier: gold
+    id_fields: [company_id]
+
+# standardize: omitted — this fixture is intentionally minimal for testing
+# blocking/scoring/threshold/review stages without field normalization.
+blocking:
+  rules:
+    - name: exact_domain
+      key: domain
+
+scoring:
+  method: weighted_features
+  features:
+    - field: company_name
+      algorithm: jaro_winkler
+      weight: 1.0
+
+thresholds:
+  auto_merge: 0.93
+  review: 0.6
+  auto_reject: 0.55
+
+semantic_triage:
+  provider: openai_text_embedding_3_small
+  fields: [company_name, domain]
+  promote_to_merge_threshold: 0.94
+  promote_to_reject_threshold: 0.55
+
+outputs:
+  target_schema: ENTITY_GRAPH

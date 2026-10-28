@@ -1,0 +1,69 @@
+type: resource
+name: tickets
+description: HubSpot CRM tickets representing customer support requests and service issues
+api:
+  endpoint: /crm/v3/objects/tickets
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of ticket records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot ticket properties to include in the response
+    default: subject,content,hs_pipeline,hs_pipeline_stage,hs_ticket_priority,hubspot_owner_id,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the ticket record, returned as a numeric string
+  subject:
+    type: string
+    path: $.properties.subject
+    description: Subject line or title of the support ticket as displayed in the HubSpot service hub
+  content:
+    type: string
+    path: $.properties.content
+    description: Full text body or description of the support ticket, may contain HTML formatting
+  pipeline:
+    type: string
+    path: $.properties.hs_pipeline
+    description: Internal identifier of the ticket pipeline this ticket belongs to (e.g. support_pipeline)
+  pipeline_stage:
+    type: string
+    path: $.properties.hs_pipeline_stage
+    description: Internal identifier of the current stage within the ticket pipeline (e.g. new, waiting, closed)
+  priority:
+    type: string
+    path: $.properties.hs_ticket_priority
+    description: Priority level of the ticket, typically one of LOW, MEDIUM, or HIGH
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID of the support agent assigned to this ticket, references the owners endpoint
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the ticket was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the ticket record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

@@ -1,0 +1,26 @@
+type: resource
+name: list_custom_field
+description: List SendGrid recipient custom fields
+api:
+  endpoint: /v3/contactdb/custom_fields
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: SendGrid custom field identifier
+  name:
+    type: string
+    path: $.name
+    description: Custom field name
+  type:
+    type: string
+    path: $.type
+    description: Custom field data type
+extract:
+  record_path: $.custom_fields
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

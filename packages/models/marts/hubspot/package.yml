@@ -1,0 +1,7 @@
+name: hubspot
+display_name: HubSpot
+description: CRM and support analytics models for HubSpot contacts, companies, deals, tickets, and email engagements.
+tags:
+  - hubspot
+  - crm
+  - sales

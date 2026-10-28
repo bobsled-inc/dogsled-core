@@ -1,0 +1,161 @@
+type: resource
+name: subscriptions
+description: Stripe recurring subscriptions that charge customers on a periodic basis
+api:
+  endpoint: /v1/subscriptions
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+    status: ${{ input.status }}
+    customer: ${{ input.customer }}
+input:
+  limit:
+    type: integer
+    description: Number of subscriptions to return per page (max 100)
+    default: 100
+  status:
+    type: string
+    description:
+      'Filter by subscription status. Possible values: active, past_due, canceled, trialing,
+      unpaid, incomplete, incomplete_expired, paused, all. Defaults to all non-canceled
+      subscriptions if not specified'
+  customer:
+    type: string
+    description: Filter subscriptions by customer ID (cus_xxx) to retrieve all subscriptions for a
+      specific customer
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+    customer:
+      operators:
+        - eq
+      description: Filter subscriptions by customer ID (cus_xxx) to retrieve all subscriptions for a
+        specific customer
+      bind:
+        eq:
+          input: customer
+      compile:
+        eq:
+          mode: http_query
+          param: customer
+    status:
+      operators:
+        - eq
+      description:
+        'Filter by subscription status. Possible values: active, past_due, canceled, trialing,
+        unpaid, incomplete, incomplete_expired, paused, all. Defaults to all non-canceled
+        subscriptions if not specified'
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique subscription identifier prefixed with sub_ (e.g. sub_1A2b3C4d5E6f7G)
+  customer:
+    type: string
+    path: $.customer
+    description: ID of the customer (cus_xxx) who owns this subscription
+  status:
+    type: string
+    path: $.status
+    description: 'Current status of the subscription. Possible values: active (billing normally),
+      past_due (payment failed but retrying), canceled (fully canceled), trialing (in trial period),
+      unpaid (all retries exhausted), incomplete (initial payment failed), incomplete_expired
+      (initial payment window expired), paused (collection paused)'
+  current_period_start:
+    type: integer
+    path: $.current_period_start
+    description: Unix timestamp marking the start of the current billing period
+  current_period_end:
+    type: integer
+    path: $.current_period_end
+    description: Unix timestamp marking the end of the current billing period. The subscription will
+      renew or cancel at this time
+  cancel_at_period_end:
+    type: boolean
+    path: $.cancel_at_period_end
+    description: Whether the subscription will be canceled at the end of the current billing period
+      rather than immediately
+  canceled_at:
+    type: integer
+    path: $.canceled_at
+    description: Unix timestamp when the subscription was canceled. Null if the subscription has not
+      been canceled
+  ended_at:
+    type: integer
+    path: $.ended_at
+    description:
+      Unix timestamp when the subscription ended. Differs from canceled_at as a subscription
+      may be canceled but continue until period end
+  trial_start:
+    type: integer
+    path: $.trial_start
+    description: Unix timestamp when the trial period started. Null if the subscription has no trial
+  trial_end:
+    type: integer
+    path: $.trial_end
+    description: Unix timestamp when the trial period ends or ended. Null if the subscription has no trial
+  default_payment_method:
+    type: string
+    path: $.default_payment_method
+    description:
+      ID of the default payment method (pm_xxx) for this subscription. Overrides the customer
+      default payment method
+  latest_invoice:
+    type: string
+    path: $.latest_invoice
+    description: ID of the most recent invoice (in_xxx) generated for this subscription
+  collection_method:
+    type: string
+    path: $.collection_method
+    description:
+      'How payment is collected. Possible values: charge_automatically (auto-charge payment
+      method on file), send_invoice (email invoice to customer)'
+  billing_cycle_anchor:
+    type: integer
+    path: $.billing_cycle_anchor
+    description:
+      Unix timestamp that determines the date of each billing cycle. The subscription bills
+      on the same day of month as this anchor date
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the subscription was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

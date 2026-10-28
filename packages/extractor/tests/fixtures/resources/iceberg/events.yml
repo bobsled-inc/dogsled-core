@@ -1,0 +1,15 @@
+spec_version: '1'
+type: resource
+name: user_events
+integration: acme_iceberg_catalog
+source:
+  table: user_events
+  database: analytics
+replication:
+  method: incremental_append
+  cursor_field: event_timestamp
+  cursor_type: timestamp
+output:
+  user_id: { type: integer }
+  event_type: { type: string }
+  event_timestamp: { type: string }

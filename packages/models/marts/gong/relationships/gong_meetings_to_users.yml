@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: gong_meetings_to_users
+description: Each Gong meeting belongs to one organizer.
+left_model: gong__meetings
+right_model: gong__users
+join_columns:
+  - left: organizer_user_id
+    right: user_id
+join_type: left
+relationship_type: many_to_one
+tags: [gong, meetings, users]

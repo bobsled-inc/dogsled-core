@@ -1,0 +1,6 @@
+integrations_dir: integrations
+resources_dir: resources
+state_dir: .extractor
+output_dir: output
+batch_dir: batch
+default_output: stdout

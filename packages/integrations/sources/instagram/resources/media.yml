@@ -1,0 +1,56 @@
+type: resource
+name: media
+description: Media posts for each Instagram business account.
+api:
+  endpoint: /${{ input.ig_user_id }}/media
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  ig_user_id:
+    type: string
+    default: '123'
+  fields:
+    type: string
+    default: id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  caption:
+    type: string
+    path: $.caption
+  media_type:
+    type: string
+    path: $.media_type
+  media_url:
+    type: string
+    path: $.media_url
+  permalink:
+    type: string
+    path: $.permalink
+  timestamp:
+    type: timestamp
+    path: $.timestamp
+  like_count:
+    type: integer
+    path: $.like_count
+  comments_count:
+    type: integer
+    path: $.comments_count
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: accounts
+    field: instagram_business_account_id
+    input: ig_user_id

@@ -1,0 +1,18 @@
+spec_version: '0.2'
+type: agent_task_profile
+name: customer_review_batch
+entity: customer
+operation: review_batch
+mode: apply
+selection:
+  threshold_bands: [review]
+  limit: 25
+policy:
+  allow_writes: true
+  max_apply_count: 25
+  require_truthset_precision: 0.95
+post_apply:
+  cluster: true
+  survivorship: true
+output:
+  decision_bundle_path: review/customer_agent_bundle.yml

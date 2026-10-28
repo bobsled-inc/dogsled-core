@@ -1,0 +1,134 @@
+spec_version: '0.2'
+name: pipedrive__persons
+type: model
+description: Pipedrive persons enriched with organization, owner, and activity context.
+grain: person_id
+source:
+  ref: stg_pipedrive__get_persons
+joins:
+  - ref: stg_pipedrive__get_users
+    type: left
+    on: stg_pipedrive__get_persons.owner_id = stg_pipedrive__get_users.get_user_id
+  - ref: stg_pipedrive__get_organizations
+    type: left
+    on: stg_pipedrive__get_persons.org_id = stg_pipedrive__get_organizations.get_organization_id
+  - ref: stg_pipedrive__get_deals
+    type: left
+    on: stg_pipedrive__get_persons.get_person_id = stg_pipedrive__get_deals.person_id
+    pre_aggregate:
+      group_by:
+        - person_id
+      columns:
+        - name: deal_count
+          expr: COUNT(*)
+        - name: open_deal_count
+          expr: countif(status = 'open')
+        - name: total_value
+          expr: SUM(value)
+  - ref: stg_pipedrive__get_activities
+    type: left
+    on: stg_pipedrive__get_persons.get_person_id = stg_pipedrive__get_activities.person_id
+    pre_aggregate:
+      group_by:
+        - person_id
+      columns:
+        - name: activity_count
+          expr: COUNT(*)
+        - name: completed_activity_count
+          expr: countif(done = TRUE)
+  - ref: stg_pipedrive__get_notes
+    type: left
+    on: stg_pipedrive__get_persons.get_person_id = stg_pipedrive__get_notes.person_id
+    pre_aggregate:
+      group_by:
+        - person_id
+      columns:
+        - name: note_count
+          expr: COUNT(*)
+columns:
+  - name: person_id
+    expr: stg_pipedrive__get_persons.get_person_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Pipedrive person identifier.
+  - name: person_name
+    expr: stg_pipedrive__get_persons.name
+    semantic_role: categorical
+    description: Person full name.
+  - name: owner_id
+    expr: stg_pipedrive__get_persons.owner_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_users.get_user_id
+    description: Owning Pipedrive user identifier.
+  - name: owner_name
+    expr: stg_pipedrive__get_users.name
+    semantic_role: categorical
+    description: Name of the owning user.
+  - name: owner_email
+    expr: stg_pipedrive__get_users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the owning user.
+  - name: organization_id
+    expr: stg_pipedrive__get_persons.org_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_organizations.get_organization_id
+    description: Related organization identifier.
+  - name: organization_name
+    expr: stg_pipedrive__get_organizations.name
+    semantic_role: categorical
+    description: Name of the related organization.
+  - name: phone
+    expr: stg_pipedrive__get_persons.phone
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Phone values attached to the person.
+  - name: email
+    expr: stg_pipedrive__get_persons.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email values attached to the person.
+  - name: deal_count
+    expr: COALESCE(stg_pipedrive__get_deals.deal_count, 0)
+    semantic_role: measure
+    description: Number of deals linked to the person.
+  - name: open_deal_count
+    expr: COALESCE(stg_pipedrive__get_deals.open_deal_count, 0)
+    semantic_role: measure
+    description: Number of open deals linked to the person.
+  - name: total_value
+    expr: COALESCE(stg_pipedrive__get_deals.total_value, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total value of deals linked to the person.
+  - name: activity_count
+    expr: COALESCE(stg_pipedrive__get_activities.activity_count, 0)
+    semantic_role: measure
+    description: Number of activities linked to the person.
+  - name: completed_activity_count
+    expr: COALESCE(stg_pipedrive__get_activities.completed_activity_count, 0)
+    semantic_role: measure
+    description: Number of completed activities linked to the person.
+  - name: note_count
+    expr: COALESCE(stg_pipedrive__get_notes.note_count, 0)
+    semantic_role: measure
+    description: Number of notes linked to the person.
+  - name: created_at
+    expr: stg_pipedrive__get_persons.add_time
+    semantic_role: event_timestamp
+    description: Timestamp when the person was created.
+  - name: updated_at
+    expr: stg_pipedrive__get_persons.update_time
+    semantic_role: event_timestamp
+    description: Timestamp when the person was last updated.
+tags:
+  - pipedrive
+  - persons
+  - crm
+trust_tier: gold
+materialization:
+  type: table

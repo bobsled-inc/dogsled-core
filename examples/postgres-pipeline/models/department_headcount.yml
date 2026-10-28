@@ -1,0 +1,30 @@
+spec_version: '0.2'
+type: model
+name: department_headcount
+description: Fictional department size.
+grain:
+  - department_id
+source:
+  ref: local_pg.staff
+joins:
+  - ref: local_pg.departments
+    type: inner
+    on: local_pg.staff.department_id = local_pg.departments.id
+columns:
+  - name: department_id
+    expr: local_pg.departments.id
+  - name: department_name
+    expr: local_pg.departments.name
+  - name: headcount
+    expr: COUNT(*)
+group_by:
+  - department_id
+  - department_name
+materialization:
+  type: table
+expect:
+  - kind: row_count_between
+    min: 10
+    max: 10
+  - kind: non_null
+    column: department_name

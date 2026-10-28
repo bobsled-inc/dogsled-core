@@ -1,0 +1,15 @@
+spec_version: '0.2'
+type: relationship
+name: linear_cycle_velocity_to_cycles
+description: Each Linear cycle velocity row summarizes one cycle.
+left_model: linear__cycle_velocity
+right_model: linear__cycles
+join_columns:
+  - left: cycle_id
+    right: cycle_id
+join_type: left
+relationship_type: one_to_one
+tags:
+  - linear
+  - engineering
+  - delivery

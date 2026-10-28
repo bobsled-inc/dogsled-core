@@ -1,0 +1,77 @@
+type: resource
+name: webhook_endpoints
+description: Stripe webhook endpoint configurations
+api:
+  endpoint: /v1/webhook_endpoints
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of webhook endpoints per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Webhook endpoint ID (we_xxx)
+  url:
+    type: string
+    path: $.url
+    description: URL the webhook sends events to
+  enabled_events:
+    type: array
+    path: $.enabled_events
+    description: List of events the webhook is enabled for
+  status:
+    type: string
+    path: $.status
+    description: Webhook endpoint status (enabled/disabled)
+  api_version:
+    type: string
+    path: $.api_version
+    description: Stripe API version for the webhook
+  description:
+    type: string
+    path: $.description
+    description: Webhook endpoint description
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when webhook endpoint was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

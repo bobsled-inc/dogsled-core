@@ -1,0 +1,37 @@
+type: resource
+name: knowledge_bases
+description: Knowledge base collections with language and slug configuration
+api:
+  endpoint: /knowledge-bases
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique knowledge base identifier
+  title:
+    type: string
+    path: $.title
+    description: Knowledge base title
+  slug:
+    type: string
+    path: $.slug
+    description: URL slug for the knowledge base
+  default_language:
+    type: string
+    path: $.default_language
+    description: Default language code
+  supported_languages:
+    type: string
+    path: $.supported_languages
+    description: Supported language codes
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id

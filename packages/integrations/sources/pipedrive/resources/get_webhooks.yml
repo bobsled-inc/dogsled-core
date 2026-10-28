@@ -1,0 +1,42 @@
+type: resource
+name: get_webhooks
+description: Get all webhooks
+api:
+  endpoint: /webhooks
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive webhook identifier
+  event_action:
+    type: string
+    path: $.event_action
+    description: Webhook action that triggers the delivery
+  event_object:
+    type: string
+    path: $.event_object
+    description: Pipedrive object type associated with the webhook
+  subscription_url:
+    type: string
+    path: $.subscription_url
+    description: Target URL receiving webhook events
+  user_id:
+    type: integer
+    path: $.user_id
+    description: User identifier that owns the webhook
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the webhook is active
+  version:
+    type: string
+    path: $.version
+    description: Webhook payload version
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

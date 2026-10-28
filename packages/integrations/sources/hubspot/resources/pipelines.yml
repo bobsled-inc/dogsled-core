@@ -1,0 +1,44 @@
+type: resource
+name: pipelines
+description: HubSpot deal pipelines defining the stages and workflow that deals progress through in
+  your sales process
+api:
+  endpoint: /crm/v3/pipelines/deals
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description:
+      Unique HubSpot identifier for the pipeline, returned as a numeric string. This is the
+      value stored in the pipeline property on deal records.
+  label:
+    type: string
+    path: $.label
+    description: Human-readable display name of the pipeline as shown in the HubSpot deal board UI
+  display_order:
+    type: integer
+    path: $.displayOrder
+    description: Zero-based integer controlling the sort order of this pipeline relative to other
+      pipelines in the HubSpot UI
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp of when the pipeline was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp of when the pipeline configuration was last modified
+  archived:
+    type: boolean
+    path: $.archived
+    description:
+      Whether this pipeline has been archived (soft-deleted) in HubSpot, archived pipelines
+      are hidden from the UI but retained for historical data
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

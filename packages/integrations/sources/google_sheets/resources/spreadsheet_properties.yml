@@ -1,0 +1,34 @@
+type: resource
+name: spreadsheet_properties
+description: Spreadsheet-level properties from Google Sheets.
+api:
+  endpoint: /spreadsheets/${{ input.spreadsheet_id }}
+  method: GET
+  query_params:
+    fields: spreadsheetId,properties
+input:
+  spreadsheet_id:
+    type: string
+    required: true
+    default: spreadsheet_id
+output:
+  spreadsheet_id:
+    type: string
+    path: $.spreadsheetId
+  title:
+    type: string
+    path: $.properties.title
+  locale:
+    type: string
+    path: $.properties.locale
+  time_zone:
+    type: string
+    path: $.properties.timeZone
+  auto_recalc:
+    type: string
+    path: $.properties.autoRecalc
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - spreadsheet_id

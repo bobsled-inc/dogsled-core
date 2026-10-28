@@ -1,0 +1,34 @@
+spec_version: '0.2'
+name: intercom__conversation_volume_summary
+type: model
+description: Conversation counts by state and admin from Intercom.
+grain:
+  - state
+  - admin_assignee_id
+source:
+  ref: stg_intercom__list_conversations
+columns:
+  - name: state
+    expr: stg_intercom__list_conversations.state
+    primary_key: true
+    semantic_role: categorical
+    description: Conversation state such as open, closed, or snoozed.
+  - name: admin_assignee_id
+    expr: stg_intercom__list_conversations.admin_assignee_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Admin assigned to the conversations in the group.
+  - name: conversation_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of conversations in the state and admin bucket.
+group_by:
+  - state
+  - admin_assignee_id
+tags:
+  - intercom
+  - support
+  - conversations
+trust_tier: gold
+materialization:
+  type: table

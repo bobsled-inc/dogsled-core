@@ -1,0 +1,33 @@
+spec_version: '2'
+type: source
+name: linkedin_ads
+description: LinkedIn Marketing API for ad accounts, campaigns, and creatives.
+transports:
+  - id: default
+    base_url: https://api.linkedin.com/rest
+    auth:
+      type: oauth2
+      grant_type: authorization_code
+      token_url: https://www.linkedin.com/oauth/v2/accessToken
+      client_id: ${{ env.LINKEDIN_CLIENT_ID }}
+      client_secret: ${{ env.LINKEDIN_CLIENT_SECRET }}
+      refresh_token: ${{ env.LINKEDIN_REFRESH_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 2
+      burst: 4
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+      X-Restli-Protocol-Version: 2.0.0
+      Linkedin-Version: ${{ env.LINKEDIN_API_VERSION }}
+default_transport: default

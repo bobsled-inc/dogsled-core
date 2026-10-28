@@ -1,0 +1,66 @@
+spec_version: '0.2'
+name: shopify__inventory_levels
+type: model
+description: Inventory position by item and location with item and location metadata.
+grain:
+  - inventory_item_id
+  - location_id
+source:
+  ref: stg_shopify__inventory_levels
+joins:
+  - ref: stg_shopify__inventory_items
+    type: left
+    on: stg_shopify__inventory_levels.inventory_item_id = stg_shopify__inventory_items.inventory_item_id
+  - ref: stg_shopify__locations
+    type: left
+    on: stg_shopify__inventory_levels.location_id = stg_shopify__locations.location_id
+columns:
+  - name: inventory_item_id
+    expr: stg_shopify__inventory_levels.inventory_item_id
+    semantic_role: entity_id
+    references: stg_shopify__inventory_items.inventory_item_id
+    description: Inventory item identifier.
+    not_null: true
+    primary_key: true
+  - name: location_id
+    expr: stg_shopify__inventory_levels.location_id
+    semantic_role: entity_id
+    references: stg_shopify__locations.location_id
+    description: Location identifier.
+    not_null: true
+    primary_key: true
+  - name: location_name
+    expr: stg_shopify__locations.name
+    semantic_role: categorical
+    description: Location name.
+  - name: sku
+    expr: stg_shopify__inventory_items.sku
+    semantic_role: categorical
+    description: SKU for the inventory item.
+  - name: tracked
+    expr: stg_shopify__inventory_items.tracked
+    semantic_role: categorical
+    description: Whether inventory tracking is enabled for the item.
+  - name: cost
+    expr: stg_shopify__inventory_items.cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Unit cost of the inventory item.
+  - name: available
+    expr: stg_shopify__inventory_levels.available
+    semantic_role: measure
+    description: Available quantity at the location.
+  - name: updated_at
+    expr: stg_shopify__inventory_levels.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the inventory level was last updated.
+tags:
+  - shopify
+  - inventory
+trust_tier: gold
+tests:
+  - type: custom
+    sql: SELECT inventory_item_id, location_id, COUNT(*) AS duplicate_count FROM {name} GROUP BY inventory_item_id, location_id HAVING COUNT(*) > 1
+materialization:
+  type: table

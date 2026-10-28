@@ -1,0 +1,66 @@
+type: resource
+name: order_transactions
+description: Payment transactions for orders in Shopify.
+api:
+  endpoint: /orders/${{ input.order_id }}/transactions.json
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    page_info: ${{ input.page_info }}
+input:
+  order_id:
+    type: integer
+    required: true
+    description: Order ID to retrieve transactions for.
+  limit:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 250
+  page_info:
+    type: string
+    description: Cursor returned in Shopify Link response headers.
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Shopify object identifier.
+  order_id:
+    type: integer
+    path: $.order_id
+    description: ID of the associated order.
+  amount:
+    type: string
+    path: $.amount
+    description: Transaction amount.
+  currency:
+    type: string
+    path: $.currency
+    description: Currency code for the transaction.
+  kind:
+    type: string
+    path: $.kind
+    description: Transaction kind (sale, refund, capture, void, authorization).
+  status:
+    type: string
+    path: $.status
+    description: Transaction status (success, failure, pending, error).
+  gateway:
+    type: string
+    path: $.gateway
+    description: Payment gateway used for the transaction.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Creation timestamp.
+extract:
+  record_path: $.transactions
+  pagination:
+    type: link_header
+  for_each:
+    resource: orders
+    field: id
+    input: order_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

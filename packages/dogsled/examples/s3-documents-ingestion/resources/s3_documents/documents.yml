@@ -1,0 +1,33 @@
+spec_version: '1'
+type: resource
+name: documents
+integration: s3_documents
+description: Parse and chunk documents stored under the S3 bucket's documents/ prefix.
+
+source:
+  # Glob is provider-relative (no leading slash, no `..`). Adjust to your layout.
+  path: 'documents/**/*'
+  format: document
+  parse:
+    formats: [pdf, docx, pptx, html, md, txt, eml]
+    max_file_size_mb: 50
+    on_error: record
+  chunk:
+    max_tokens: 800
+    overlap_tokens: 120
+    tokenizer: cl100k_base
+  ingest:
+    mode: extract
+  # Optional: emit a vector column per chunk. Requires an embedding model role
+  # declared under `platform.models` in your dogsled.yml / runner. See README.
+  # embedding:
+  #   role: default_embedding_v1
+  #   field: text
+  #   as: text_embedding
+
+replication:
+  method: full_refresh
+
+output:
+  document_id:
+    type: string

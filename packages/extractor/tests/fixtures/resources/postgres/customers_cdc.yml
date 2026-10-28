@@ -1,0 +1,33 @@
+spec_version: '1'
+type: resource
+name: customers_cdc
+integration: test_postgres
+description: |
+  PostgreSQL logical replication via pgoutput.
+
+  Required setup SQL:
+  CREATE PUBLICATION track_customers_pub FOR TABLE public.customers;
+  SELECT * FROM pg_create_logical_replication_slot('track_customers_slot', 'pgoutput');
+source:
+  table: customers
+  schema: public
+replication:
+  method: change_tracking
+  primary_key: [id]
+  change_tracking:
+    plugin: pgoutput
+    slot_name: track_customers_slot
+    publication_name: track_customers_pub
+output:
+  id: { type: integer }
+  name: { type: string }
+  email: { type: string }
+  updated_at: { type: timestamp }
+  _change_type: { type: string }
+  _commit_lsn: { type: string }
+  _transaction_id: { type: integer }
+  _commit_timestamp: { type: timestamp }
+extract:
+  table:
+    load_strategy: append
+    trust_tier: bronze

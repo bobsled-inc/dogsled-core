@@ -1,0 +1,14 @@
+display_name: BigQuery (MCP)
+category: analytics
+tags: [data-warehouse, sql, mcp]
+logo_url: https://www.gstatic.com/devrel-devsite/prod/v1241c04ebcb2127897d6c18571f22a508d9ad21c72ba47af698eb5c56b85e9b1/cloud/images/favicons/onecloud/super_cloud.png
+docs_url: https://cloud.google.com/bigquery/docs
+auth_setup:
+  - env: BIGQUERY_PROJECT_ID
+    description: Google Cloud project ID
+    docs_url: https://cloud.google.com/resource-manager/docs/creating-managing-projects
+  - env: BIGQUERY_LOCATION
+    description: BigQuery dataset location (e.g. US, EU)
+  - env: GOOGLE_APPLICATION_CREDENTIALS
+    description: Path to Google Cloud service account key JSON file
+    docs_url: https://cloud.google.com/iam/docs/creating-managing-service-account-keys

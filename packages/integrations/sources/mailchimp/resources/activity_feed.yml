@@ -1,0 +1,26 @@
+type: resource
+name: activity_feed
+description: List Mailchimp account activity feed entries
+api:
+  endpoint: /3.0/activity-feed
+  method: GET
+input: {}
+output:
+  timestamp:
+    type: timestamp
+    path: $.timestamp
+    description: Activity timestamp
+  action:
+    type: string
+    path: $.action
+    description: Activity action
+  username:
+    type: string
+    path: $.username
+    description: Username that triggered the action
+extract:
+  record_path: $.activity
+  table:
+    primary_key:
+      - timestamp
+    trust_tier: silver

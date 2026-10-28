@@ -1,0 +1,33 @@
+spec_version: '0.2'
+name: asana__task_projects
+type: model
+description: Bridge between Asana tasks and every project that contains each task.
+grain:
+  - task_id
+  - project_id
+source:
+  ref: stg_asana__get_task_projects
+columns:
+  - name: task_id
+    expr: stg_asana__get_task_projects.task_gid
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_asana__get_tasks.gid
+    description: Task contained in the project.
+  - name: project_id
+    expr: stg_asana__get_task_projects.project_gid
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_asana__get_projects.gid
+    description: Project that contains the task.
+  - name: project_name
+    expr: stg_asana__get_task_projects.project_name
+    semantic_role: categorical
+    description: Name of the project that contains the task.
+tags:
+  - asana
+  - tasks
+  - projects
+trust_tier: gold
+materialization:
+  type: table

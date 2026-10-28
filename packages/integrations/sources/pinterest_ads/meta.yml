@@ -1,0 +1,16 @@
+display_name: Pinterest Ads
+category: marketing
+status: untested with live API
+tags:
+  - pinterest
+  - ads
+  - social
+  - marketing
+docs_url: https://developers.pinterest.com/docs/api/v5/
+auth_setup:
+  - env: PINTEREST_CLIENT_ID
+    description: Pinterest OAuth app ID
+  - env: PINTEREST_CLIENT_SECRET
+    description: Pinterest OAuth app secret
+  - env: PINTEREST_REFRESH_TOKEN
+    description: Pinterest OAuth refresh token with ads:read scope

@@ -1,0 +1,10 @@
+spec_version: '0.2'
+name: company_survivorship
+type: survivorship
+description: Pick golden company attributes — prefer HubSpot (gold) and most-recent updates.
+resolution_ref: company_resolution
+
+default_timestamp_field: updated_at
+
+outputs:
+  target_schema: entity_graph_demo

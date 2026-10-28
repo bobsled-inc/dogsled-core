@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: klaviyo_event_count
+description: Number of Klaviyo events.
+model: klaviyo__events
+expression: COUNT({klaviyo__events}.event_id)
+synonyms: [events, event volume, tracked events]
+tags: [klaviyo, marketing, events]

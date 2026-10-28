@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: metric
+name: github_merged_pull_request_count
+description: Number of GitHub pull requests marked as merged.
+model: github__pull_requests
+expression: SUM(CASE WHEN {github__pull_requests}.merged THEN 1 ELSE 0 END)
+synonyms:
+  - merged pull requests
+  - merged PRs
+  - PRs merged
+tags:
+  - github
+  - engineering
+  - delivery

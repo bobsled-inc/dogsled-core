@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: smartlead_email_account_performance_to_accounts
+description: Each Smartlead email account performance row summarizes one email account.
+left_model: smartlead__email_account_performance
+right_model: smartlead__email_accounts
+join_columns:
+  - left: email_account_id
+    right: email_account_id
+join_type: left
+relationship_type: one_to_one
+tags: [smartlead, email-accounts, performance]

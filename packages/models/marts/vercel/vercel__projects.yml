@@ -1,0 +1,64 @@
+spec_version: '0.2'
+name: vercel__projects
+type: model
+description: One row per Vercel project with reusable project and source-control context.
+grain: project_id
+source:
+  ref: stg_vercel__projects
+columns:
+  - name: project_id
+    expr: stg_vercel__projects.project_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Stable Vercel project identifier.
+  - name: project_name
+    expr: stg_vercel__projects.name
+    semantic_role: categorical
+    description: Vercel project name.
+  - name: account_id
+    expr: stg_vercel__projects.account_id
+    semantic_role: entity_id
+    description: Owning team or account identifier.
+  - name: framework
+    expr: stg_vercel__projects.framework
+    semantic_role: categorical
+    description: Configured or detected framework.
+  - name: node_version
+    expr: stg_vercel__projects.node_version
+    semantic_role: categorical
+    description: Configured Node.js version.
+  - name: root_directory
+    expr: stg_vercel__projects.root_directory
+    semantic_role: categorical
+    description: Configured project root directory.
+  - name: build_command
+    expr: stg_vercel__projects.build_command
+    semantic_role: categorical
+    description: Configured build command.
+  - name: output_directory
+    expr: stg_vercel__projects.output_directory
+    semantic_role: categorical
+    description: Configured output directory.
+  - name: created_at
+    expr: stg_vercel__projects.created_at
+    semantic_role: event_timestamp
+    description: Project creation timestamp.
+  - name: updated_at
+    expr: stg_vercel__projects.updated_at
+    semantic_role: event_timestamp
+    description: Last project update timestamp.
+  - name: project_settings
+    expr: stg_vercel__projects.project_settings
+    semantic_role: categorical
+    description: Native Vercel project settings.
+  - name: link
+    expr: stg_vercel__projects.link
+    semantic_role: categorical
+    description: Source-control link metadata.
+tags:
+  - vercel
+  - projects
+  - context
+trust_tier: gold
+materialization:
+  type: table

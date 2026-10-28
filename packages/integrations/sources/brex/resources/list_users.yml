@@ -1,0 +1,106 @@
+type: resource
+name: list_users
+description: List users in the Brex team directory
+api:
+  endpoint: /v2/users
+  method: GET
+  query_params:
+    cursor: ${{ input.cursor }}
+    limit: ${{ input.limit }}
+    email: ${{ input.email }}
+    remote_display_id: ${{ input.remote_display_id }}
+    expand[]: ${{ input.expand }}
+input:
+  cursor:
+    type: string
+  limit:
+    type: integer
+  email:
+    type: string
+  remote_display_id:
+    type: string
+  expand:
+    type: array
+query:
+  filters:
+    email:
+      operators:
+        - eq
+      description: Email address of the user
+      bind:
+        eq:
+          input: email
+      compile:
+        eq:
+          mode: http_query
+          param: email
+    remote_display_id:
+      operators:
+        - eq
+      description: Identifier that is displayed on the IDP or HR system, eg, if OKTA identifies you as user xyz
+      bind:
+        eq:
+          input: remote_display_id
+      compile:
+        eq:
+          mode: http_query
+          param: remote_display_id
+output:
+  id:
+    type: string
+    path: $.id
+  first_name:
+    type: string
+    path: $.first_name
+    description: First name of the user
+  last_name:
+    type: string
+    path: $.last_name
+    description: Last name of the user
+  email:
+    type: string
+    path: $.email
+    description: Email address of the user
+  status:
+    type: string
+    path: $.status
+  manager_id:
+    type: string
+    path: $.manager_id
+    description: The user id of the manager of this user
+  department_id:
+    type: string
+    path: $.department_id
+  location_id:
+    type: string
+    path: $.location_id
+  title_id:
+    type: string
+    path: $.title_id
+  metadata:
+    type: object
+    path: $.metadata
+    description: The metadata or customized attributes of the user.
+  remote_display_id:
+    type: string
+    path: $.remote_display_id
+    description: Identifier that is displayed on the IDP or HR system, eg, if OKTA identifies you as user xyz
+extract:
+  record_path: $.items
+  pagination:
+    type: cursor
+    cursor_param: cursor
+    cursor_path: $.next_cursor
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: ''
+  api:
+    endpoint: /v2/users/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true

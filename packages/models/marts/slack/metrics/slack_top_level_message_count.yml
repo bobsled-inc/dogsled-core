@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: slack_top_level_message_count
+description: Number of top-level Slack messages returned by conversation history. Thread replies are excluded.
+model: slack__messages
+expression: COUNT({slack__messages}.message_ts)
+synonyms: [top-level messages, channel posts, Slack conversation history messages]
+tags: [slack, collaboration, messages]

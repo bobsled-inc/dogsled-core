@@ -1,0 +1,153 @@
+spec_version: '0.2'
+name: vercel__sandbox_session_details
+type: model
+description: Detailed Vercel sandbox session state and final measurements, enriched with project and sandbox context.
+grain: sandbox_session_detail_id
+source:
+  ref: stg_vercel__sandbox_session_details
+joins:
+  - ref: stg_vercel__sandbox_sessions
+    type: left
+    on: stg_vercel__sandbox_session_details.sandbox_session_detail_id = stg_vercel__sandbox_sessions.sandbox_session_id
+  - ref: stg_vercel__projects
+    type: left
+    on: stg_vercel__sandbox_session_details.project_id = stg_vercel__projects.project_id
+  - ref: stg_vercel__sandboxes
+    type: left
+    on: stg_vercel__sandbox_session_details.project_id = stg_vercel__sandboxes.project_id AND stg_vercel__sandbox_session_details.source_sandbox_name = stg_vercel__sandboxes.name
+columns:
+  - name: sandbox_session_detail_id
+    expr: stg_vercel__sandbox_session_details.sandbox_session_detail_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Identifier returned by the sandbox session detail endpoint.
+  - name: session_id
+    expr: stg_vercel__sandbox_session_details.sandbox_session_detail_id
+    semantic_role: entity_id
+    references: stg_vercel__sandbox_sessions.sandbox_session_id
+    description: Sandbox session identifier.
+  - name: source_sandbox_name
+    expr: stg_vercel__sandbox_session_details.source_sandbox_name
+    semantic_role: entity_id
+    description: Sandbox name that created the session.
+  - name: project_id
+    expr: stg_vercel__sandbox_session_details.project_id
+    semantic_role: entity_id
+    references: stg_vercel__projects.project_id
+    description: Vercel project identifier.
+  - name: team_id
+    expr: stg_vercel__sandbox_session_details.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for the extraction request.
+  - name: team_slug
+    expr: stg_vercel__sandbox_session_details.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for the extraction request.
+  - name: project_name
+    expr: stg_vercel__projects.name
+    semantic_role: categorical
+    description: Project name from the project catalog when the session project is known.
+  - name: project_framework
+    expr: stg_vercel__projects.framework
+    semantic_role: categorical
+    description: Framework configured or detected for the session project.
+  - name: sandbox_tags
+    expr: stg_vercel__sandboxes.tags
+    semantic_role: categorical
+    description: Tags from the named sandbox when a matching sandbox record is available.
+  - name: region
+    expr: stg_vercel__sandbox_session_details.region
+    semantic_role: categorical
+    description: Session region.
+  - name: status
+    expr: stg_vercel__sandbox_session_details.status
+    semantic_role: categorical
+    description: Session lifecycle status.
+  - name: runtime
+    expr: stg_vercel__sandbox_session_details.runtime
+    semantic_role: categorical
+    description: Session runtime.
+  - name: timeout
+    expr: stg_vercel__sandbox_session_details.timeout
+    semantic_role: measure
+    unit: milliseconds
+    description: Session timeout configuration.
+  - name: cwd
+    expr: stg_vercel__sandbox_session_details.cwd
+    semantic_role: categorical
+    description: Session working directory.
+  - name: memory
+    expr: stg_vercel__sandbox_session_details.memory
+    semantic_role: measure
+    unit: megabytes
+    description: Allocated session memory.
+  - name: vcpus
+    expr: stg_vercel__sandbox_session_details.vcpus
+    semantic_role: measure
+    unit: vcpu
+    description: Allocated session virtual CPUs.
+  - name: requested_at
+    expr: stg_vercel__sandbox_session_details.requested_at
+    semantic_role: event_timestamp
+    description: Session request timestamp.
+  - name: started_at
+    expr: stg_vercel__sandbox_session_details.started_at
+    semantic_role: event_timestamp
+    description: Session start timestamp.
+  - name: requested_stop_at
+    expr: stg_vercel__sandbox_session_details.requested_stop_at
+    semantic_role: event_timestamp
+    description: Requested stop timestamp when available.
+  - name: stopped_at
+    expr: stg_vercel__sandbox_session_details.stopped_at
+    semantic_role: event_timestamp
+    description: Successful stop timestamp when available.
+  - name: aborted_at
+    expr: stg_vercel__sandbox_session_details.aborted_at
+    semantic_role: event_timestamp
+    description: Abort timestamp when available.
+  - name: snapshotted_at
+    expr: stg_vercel__sandbox_session_details.snapshotted_at
+    semantic_role: event_timestamp
+    description: Snapshot request timestamp when available.
+  - name: duration
+    expr: stg_vercel__sandbox_session_details.duration
+    semantic_role: measure
+    unit: milliseconds
+    description: Session duration.
+  - name: active_cpu_duration_ms
+    expr: stg_vercel__sandbox_session_details.active_cpu_duration_ms
+    semantic_role: measure
+    unit: milliseconds
+    description: Final active CPU duration when measured. Null is not zero.
+  - name: network_transfer
+    expr: stg_vercel__sandbox_session_details.network_transfer
+    semantic_role: categorical
+    description: Final network transfer measurements when available.
+  - name: network_policy
+    expr: stg_vercel__sandbox_session_details.network_policy
+    semantic_role: categorical
+    description: Session network policy.
+  - name: source_snapshot_id
+    expr: stg_vercel__sandbox_session_details.source_snapshot_id
+    semantic_role: entity_id
+    description: Snapshot from which the session was created.
+  - name: created_at
+    expr: stg_vercel__sandbox_session_details.created_at
+    semantic_role: event_timestamp
+    description: Session creation timestamp.
+  - name: updated_at
+    expr: stg_vercel__sandbox_session_details.updated_at
+    semantic_role: event_timestamp
+    description: Session update timestamp.
+  - name: routes
+    expr: stg_vercel__sandbox_session_details.routes
+    semantic_role: categorical
+    description: Public sandbox routes returned by Vercel.
+tags:
+  - vercel
+  - sandboxes
+  - sessions
+trust_tier: gold
+materialization:
+  type: table

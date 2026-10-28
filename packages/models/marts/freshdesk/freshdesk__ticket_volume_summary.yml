@@ -1,0 +1,36 @@
+spec_version: '0.2'
+name: freshdesk__ticket_volume_summary
+type: model
+description: Freshdesk ticket volume summarized by status and priority code.
+grain:
+  - status
+  - priority
+source:
+  ref: stg_freshdesk__tickets
+columns:
+  - name: status
+    expr: stg_freshdesk__tickets.status
+    semantic_role: categorical
+    description: Numeric Freshdesk ticket status code.
+  - name: priority
+    expr: stg_freshdesk__tickets.priority
+    semantic_role: categorical
+    description: Numeric Freshdesk ticket priority code.
+  - name: ticket_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of tickets in the bucket.
+  - name: assigned_ticket_count
+    expr: countif(responder_id IS NOT NULL)
+    semantic_role: measure
+    description: Number of tickets in the bucket with an assigned responder.
+group_by:
+  - status
+  - priority
+tags:
+  - freshdesk
+  - tickets
+  - summary
+trust_tier: gold
+materialization:
+  type: table

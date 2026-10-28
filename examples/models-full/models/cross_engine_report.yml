@@ -1,0 +1,24 @@
+spec_version: '0.2'
+type: model
+name: cross_engine_report
+description: Join customers with targets stored in a second DuckDB file.
+grain:
+  - customer_id
+source:
+  ref: local_duckdb.customers
+execution:
+  engine: local_duckdb
+  staging: ephemeral
+joins:
+  - ref: auxiliary.benchmarks
+    type: inner
+    on: local_duckdb.customers.id = auxiliary.benchmarks.customer_id
+columns:
+  - name: customer_id
+    expr: local_duckdb.customers.id
+  - name: customer_name
+    expr: local_duckdb.customers.name
+  - name: target
+    expr: auxiliary.benchmarks.target
+materialization:
+  type: table

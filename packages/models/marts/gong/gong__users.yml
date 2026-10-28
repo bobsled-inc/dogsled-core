@@ -1,0 +1,68 @@
+spec_version: '0.2'
+name: gong__users
+type: model
+description: User detail with call and meeting rollups.
+grain: user_id
+source:
+  ref: stg_gong__users
+joins:
+  - ref: stg_gong__calls
+    type: left
+    on: stg_gong__users.user_id = stg_gong__calls.primary_user_id
+    pre_aggregate:
+      group_by:
+        - primary_user_id
+      columns:
+        - name: call_count
+          expr: COUNT(*)
+        - name: avg_call_duration
+          expr: AVG(duration)
+  - ref: stg_gong__meetings
+    type: left
+    on: stg_gong__users.user_id = stg_gong__meetings.organizer_id
+    pre_aggregate:
+      group_by:
+        - organizer_id
+      columns:
+        - name: meeting_count
+          expr: COUNT(*)
+columns:
+  - name: user_id
+    expr: stg_gong__users.user_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Gong user identifier.
+  - name: name
+    expr: CONCAT(stg_gong__users.first_name, ' ', stg_gong__users.last_name)
+    semantic_role: categorical
+    tags:
+      - pii
+    description: User display name.
+  - name: email
+    expr: stg_gong__users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: User email address.
+  - name: title
+    expr: stg_gong__users.title
+    semantic_role: categorical
+    description: User job title.
+  - name: call_count
+    expr: COALESCE(stg_gong__calls.call_count, 0)
+    semantic_role: measure
+    description: Number of calls associated with the user.
+  - name: avg_call_duration
+    expr: stg_gong__calls.avg_call_duration
+    semantic_role: measure
+    description: Average call duration in seconds.
+  - name: meeting_count
+    expr: COALESCE(stg_gong__meetings.meeting_count, 0)
+    semantic_role: measure
+    description: Number of meetings organized by the user.
+tags:
+  - gong
+  - users
+trust_tier: gold
+materialization:
+  type: table

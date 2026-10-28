@@ -1,0 +1,77 @@
+spec_version: '0.2'
+name: jira__sprints
+type: model
+description: Jira sprints enriched with their board and project context.
+grain: sprint_id
+source:
+  ref: stg_jira__sprints
+joins:
+  - ref: stg_jira__boards
+    type: left
+    on: stg_jira__sprints.board_id = stg_jira__boards.board_id
+  - ref: stg_jira__search_projects
+    type: left
+    on: stg_jira__boards.location_project_key = stg_jira__search_projects.key
+columns:
+  - name: sprint_id
+    expr: stg_jira__sprints.sprint_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Jira sprint identifier.
+  - name: sprint_name
+    expr: stg_jira__sprints.name
+    semantic_role: categorical
+    description: Sprint name.
+  - name: sprint_state
+    expr: stg_jira__sprints.state
+    semantic_role: categorical
+    description: Sprint state such as active, closed, or future.
+  - name: board_id
+    expr: stg_jira__sprints.board_id
+    semantic_role: entity_id
+    references: stg_jira__boards.board_id
+    description: Board that owns the sprint.
+  - name: board_name
+    expr: stg_jira__boards.name
+    semantic_role: categorical
+    description: Name of the owning board.
+  - name: board_type
+    expr: stg_jira__boards.type
+    semantic_role: categorical
+    description: Type of the owning board.
+  - name: project_id
+    expr: stg_jira__search_projects.search_project_id
+    semantic_role: entity_id
+    references: stg_jira__search_projects.search_project_id
+    description: Project linked to the sprint through the board.
+  - name: project_key
+    expr: stg_jira__boards.location_project_key
+    semantic_role: categorical
+    description: Project key linked to the sprint through the board.
+  - name: project_name
+    expr: COALESCE(stg_jira__search_projects.name, stg_jira__boards.location_project_name)
+    semantic_role: categorical
+    description: Project name linked to the sprint through the board.
+  - name: goal
+    expr: stg_jira__sprints.goal
+    semantic_role: categorical
+    description: Sprint goal text.
+  - name: start_date
+    expr: stg_jira__sprints.start_date
+    semantic_role: event_timestamp
+    description: Timestamp when the sprint starts.
+  - name: end_date
+    expr: stg_jira__sprints.end_date
+    semantic_role: event_timestamp
+    description: Timestamp when the sprint is scheduled to end.
+  - name: complete_date
+    expr: stg_jira__sprints.complete_date
+    semantic_role: event_timestamp
+    description: Timestamp when the sprint completed.
+tags:
+  - jira
+  - sprints
+  - engineering
+trust_tier: gold
+materialization:
+  type: table

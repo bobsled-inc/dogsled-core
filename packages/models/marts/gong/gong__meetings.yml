@@ -1,0 +1,56 @@
+spec_version: '0.2'
+name: gong__meetings
+type: model
+description: Enriched Gong meetings with organizer context.
+grain: meeting_id
+source:
+  ref: stg_gong__meetings
+joins:
+  - ref: stg_gong__users
+    type: left
+    on: stg_gong__meetings.organizer_id = stg_gong__users.user_id
+columns:
+  - name: meeting_id
+    expr: stg_gong__meetings.meeting_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Gong meeting identifier.
+  - name: title
+    expr: stg_gong__meetings.title
+    semantic_role: categorical
+    description: Title of the meeting.
+  - name: start_time
+    expr: stg_gong__meetings.start_time
+    semantic_role: event_timestamp
+    description: Timestamp when the meeting starts.
+  - name: end_time
+    expr: stg_gong__meetings.end_time
+    semantic_role: event_timestamp
+    description: Timestamp when the meeting ends.
+  - name: organizer_user_id
+    expr: stg_gong__meetings.organizer_id
+    semantic_role: entity_id
+    references: stg_gong__users.user_id
+    description: User ID of the meeting organizer.
+  - name: organizer_name
+    expr: CONCAT(stg_gong__users.first_name, ' ', stg_gong__users.last_name)
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Name of the meeting organizer.
+  - name: organizer_email
+    expr: stg_gong__users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the meeting organizer.
+  - name: source
+    expr: stg_gong__meetings.source
+    semantic_role: categorical
+    description: Source system for the meeting.
+tags:
+  - gong
+  - meetings
+trust_tier: gold
+materialization:
+  type: table

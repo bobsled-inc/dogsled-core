@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: quickbooks_payment_applications_to_payments
+description: Each QuickBooks payment application belongs to one payment.
+left_model: quickbooks__payment_applications
+right_model: quickbooks__payments
+join_columns:
+  - left: payment_id
+    right: payment_id
+join_type: left
+relationship_type: many_to_one
+tags: [quickbooks, payment-applications, payments]

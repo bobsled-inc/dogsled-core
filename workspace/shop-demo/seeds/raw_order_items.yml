@@ -1,0 +1,16 @@
+spec_version: '0.2'
+name: raw_order_items
+type: seed
+description: Raw order line items.
+payload: { format: csv, path: data/raw_order_items.csv, delimiter: ',' }
+schema:
+  columns:
+    - { name: order_item_id, type: STRING, primary_key: true }
+    - { name: order_id, type: STRING }
+    - { name: product_id, type: STRING }
+    - { name: quantity, type: NUMBER }
+    - { name: unit_price, type: NUMBER }
+materialization: { type: table, target_schema: raw, on_conflict: replace }
+validation:
+  required_columns: [order_item_id, order_id, product_id, quantity, unit_price]
+  unique_columns: [order_item_id]

@@ -1,0 +1,35 @@
+{
+  "sandboxes": [
+    {
+      "name": "eve-worker",
+      "currentSnapshotId": "snap_1",
+      "currentSessionId": "sess_1",
+      "status": "running",
+      "statusUpdatedAt": 1788220800000,
+      "persistent": true,
+      "region": "iad1",
+      "failoverRegions": ["sfo1"],
+      "vcpus": 2,
+      "memory": 4096,
+      "runtime": "node22",
+      "image": "vercel/sandbox:latest",
+      "timeout": 900000,
+      "snapshotExpiration": 604800000,
+      "keepLastSnapshots": {
+        "count": 5,
+        "expiration": 604800000,
+        "deleteEvicted": true
+      },
+      "networkPolicy": { "mode": "allow-all" },
+      "networkId": "net_1",
+      "cwd": "/vercel/sandbox",
+      "mounts": { "workspace": { "drive": "drive_1", "mode": "read-write" } },
+      "totalEgressBytes": 1024,
+      "totalIngressBytes": 2048,
+      "totalActiveCpuDurationMs": 30000,
+      "totalDurationMs": 60000,
+      "tags": { "workload": "eve" }
+    }
+  ],
+  "pagination": { "count": 1, "next": null }
+}

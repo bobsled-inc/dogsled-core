@@ -1,0 +1,55 @@
+spec_version: '0.2'
+name: pylon__tasks
+type: model
+description: Internal tasks linked to customer accounts and projects.
+grain: task_id
+source:
+  ref: stg_pylon__tasks
+columns:
+  - name: task_id
+    expr: stg_pylon__tasks.task_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique task identifier.
+  - name: title
+    expr: stg_pylon__tasks.title
+    semantic_role: categorical
+    description: Task title.
+  - name: status
+    expr: stg_pylon__tasks.status
+    semantic_role: categorical
+    description: Task status (not_started, in_progress, completed).
+  - name: account_id
+    expr: stg_pylon__tasks.account_id
+    semantic_role: entity_id
+    description: Account ID the task belongs to.
+  - name: project_id
+    expr: stg_pylon__tasks.project_id
+    semantic_role: entity_id
+    description: Project ID the task belongs to.
+  - name: assignee_id
+    expr: stg_pylon__tasks.assignee_id
+    semantic_role: entity_id
+    description: User ID of the task assignee.
+  - name: milestone_id
+    expr: stg_pylon__tasks.milestone_id
+    semantic_role: entity_id
+    description: Milestone ID the task belongs to.
+  - name: due_date
+    expr: stg_pylon__tasks.due_date
+    semantic_role: time_dimension
+    description: Task due date.
+  - name: created_at
+    expr: stg_pylon__tasks.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the task was created.
+  - name: updated_at
+    expr: stg_pylon__tasks.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the task was last updated.
+tags:
+  - pylon
+  - tasks
+trust_tier: gold
+materialization:
+  type: table

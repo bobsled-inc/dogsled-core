@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: bq_fct_to_customers
+description: BigQuery — fact orders roll up to customers.
+left_model: bq_fct_orders
+right_model: bq_stg_customers
+join_columns:
+  - left: customer_id
+    right: customer_id
+join_type: left
+relationship_type: many_to_one
+tags: [bigquery]

@@ -1,0 +1,34 @@
+type: resource
+name: named_ranges
+description: Named ranges defined in a spreadsheet.
+api:
+  endpoint: /spreadsheets/${{ input.spreadsheet_id }}
+  method: GET
+  query_params:
+    fields: spreadsheetId,namedRanges
+input:
+  spreadsheet_id:
+    type: string
+    required: true
+    default: spreadsheet_id
+output:
+  named_range_id:
+    type: string
+    path: $.namedRangeId
+  name:
+    type: string
+    path: $.name
+  sheet_id:
+    type: integer
+    path: $.range.sheetId
+  start_row_index:
+    type: integer
+    path: $.range.startRowIndex
+  end_row_index:
+    type: integer
+    path: $.range.endRowIndex
+extract:
+  record_path: $.namedRanges
+  table:
+    primary_key:
+      - named_range_id

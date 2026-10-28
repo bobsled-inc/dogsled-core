@@ -1,0 +1,29 @@
+spec_version: '0.2'
+name: pylon__feature_request_pipeline
+type: model
+description: Feature request pipeline health by status.
+grain: request_status
+source:
+  ref: stg_pylon__feature_requests
+columns:
+  - name: request_status
+    expr: stg_pylon__feature_requests.request_status
+    semantic_role: categorical
+    description: Feature request status (new, in_progress, closed, archived).
+  - name: request_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of feature requests in this status.
+  - name: total_evidence
+    expr: SUM(stg_pylon__feature_requests.evidence_count)
+    semantic_role: measure
+    description: Total evidence items across requests in this status.
+group_by:
+  - request_status
+tags:
+  - pylon
+  - feedback
+  - summary
+trust_tier: gold
+materialization:
+  type: table

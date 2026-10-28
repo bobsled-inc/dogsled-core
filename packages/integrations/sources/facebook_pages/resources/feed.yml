@@ -1,0 +1,53 @@
+type: resource
+name: feed
+description: Full feed for a Facebook Page including visitor posts.
+api:
+  endpoint: /${{ input.page_id }}/feed
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  page_id:
+    type: string
+    default: '123'
+  fields:
+    type: string
+    default: id,message,created_time,permalink_url,type,from
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  message:
+    type: string
+    path: $.message
+  created_time:
+    type: timestamp
+    path: $.created_time
+  permalink_url:
+    type: string
+    path: $.permalink_url
+  type:
+    type: string
+    path: $.type
+  from_id:
+    type: string
+    path: $.from.id
+  from_name:
+    type: string
+    path: $.from.name
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: pages
+    field: id
+    input: page_id

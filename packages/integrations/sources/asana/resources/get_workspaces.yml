@@ -1,0 +1,40 @@
+type: resource
+name: get_workspaces
+description: List Asana workspaces available to the authenticated user
+api:
+  endpoint: /workspaces
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Number of workspaces to return per page
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response
+output:
+  gid:
+    type: string
+    path: $.gid
+    description: Asana workspace identifier
+  name:
+    type: string
+    path: $.name
+    description: Workspace name
+  resource_type:
+    type: string
+    path: $.resource_type
+    description: Asana resource type
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  table:
+    primary_key:
+      - gid
+    trust_tier: silver

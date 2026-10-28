@@ -1,0 +1,10 @@
+display_name: SendGrid
+category: marketing
+logo_url: https://sendgrid.com/favicon.ico
+tags: [sendgrid, contacts, email, marketing]
+docs_url: https://www.twilio.com/docs/sendgrid/api-reference/contacts-api
+openapi_url: https://raw.githubusercontent.com/twilio/sendgrid-oai/main/spec/json/tsg_lmc_contactdb_v3.json
+auth_setup:
+  - env: SENDGRID_API_KEY
+    description: Twilio SendGrid API key with Marketing Campaigns permissions
+    docs_url: https://www.twilio.com/docs/sendgrid/ui/account-and-settings/api-keys

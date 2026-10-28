@@ -1,0 +1,227 @@
+type: resource
+name: workflow_runs
+description: GitHub Actions workflow run history for a repository with execution status, timing, and trigger metadata
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/actions/runs
+  method: GET
+  query_params:
+    status: ${{ input.status }}
+    per_page: ${{ input.per_page }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: my-org
+  repo:
+    type: string
+    description: Repository name
+    default: my-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  status:
+    type: string
+    description: Filter runs by status or conclusion
+    enum:
+      - completed
+      - action_required
+      - cancelled
+      - failure
+      - neutral
+      - skipped
+      - stale
+      - success
+      - timed_out
+      - in_progress
+      - queued
+      - requested
+      - waiting
+      - pending
+  per_page:
+    type: integer
+    description: Number of workflow runs to return per page (max 100)
+    default: 100
+query:
+  filters:
+    status:
+      operators:
+        - eq
+      enum:
+        - completed
+        - in_progress
+        - queued
+        - requested
+        - waiting
+        - pending
+      description: Filter runs by current workflow run status
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to this workflow run
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Name of the workflow that was executed (e.g. "CI", "Deploy")
+  run_number:
+    type: integer
+    semantic_role: identifier
+    path: $.run_number
+    description: Monotonically increasing run number scoped to the workflow (e.g. run
+  run_attempt:
+    type: integer
+    semantic_role: identifier
+    path: $.run_attempt
+    description: "Attempt number for this run \u2014 starts at 1 and increments when a run is re-run"
+  workflow_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.workflow_id
+    description: Numeric ID of the workflow definition that produced this run
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser-accessible URL for viewing the run details, logs, and job breakdown on github.com
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this workflow run resource
+  status:
+    type: string
+    semantic_role: categorical
+    path: $.status
+    description: "Current execution status \u2014 \"queued\" waiting to start, \"in_progress\" currently running, \"completed\" finished execution, \"waiting\" for approval, \"requested\" pending, or \"pending\""
+  conclusion:
+    type: string
+    semantic_role: categorical
+    path: $.conclusion
+    description: "Final result of the run (only set when status is \"completed\") \u2014 \"success\", \"failure\", \"cancelled\", \"skipped\", \"timed_out\", \"action_required\", \"neutral\", or \"stale\""
+  event:
+    type: string
+    semantic_role: categorical
+    path: $.event
+    description: GitHub event that triggered the workflow run (e.g. "push", "pull_request", "schedule", "workflow_dispatch", "release")
+  head_branch:
+    type: string
+    semantic_role: identifier
+    path: $.head_branch
+    description: Name of the branch that the run was triggered on (e.g. "main", "feature/my-feature")
+  head_sha:
+    type: string
+    semantic_role: identifier
+    path: $.head_sha
+    description: Full 40-character SHA of the commit that triggered the workflow run
+  actor_login:
+    type: string
+    semantic_role: name
+    path: $.actor.login
+    description: GitHub username of the user or app that triggered the workflow run
+  actor_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.actor.id
+    description: Unique numeric identifier of the actor who triggered the run
+  triggering_actor_login:
+    type: string
+    semantic_role: name
+    path: $.triggering_actor.login
+    description: GitHub username of the user who actually initiated the run (may differ from actor for re-runs)
+  display_title:
+    type: string
+    semantic_role: name
+    path: $.display_title
+    description: Title displayed in the UI, typically the commit message subject or PR title that triggered the run
+  head_commit_message:
+    type: string
+    semantic_role: categorical
+    path: $.head_commit.message
+    description: Full commit message of the head commit that triggered the run
+  head_commit_author_name:
+    type: string
+    semantic_role: name
+    path: $.head_commit.author.name
+    description: Name of the author of the head commit
+  created_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.created_at
+    description: Timestamp when the workflow run was created (queued)
+  updated_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.updated_at
+    description: Timestamp of the most recent status change for the workflow run
+  run_started_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.run_started_at
+    description: Timestamp when the workflow run actually started executing (after queuing)
+extract:
+  record_path: $.workflow_runs
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+lookup:
+  description: Fetch a single workflow run by repository owner, name, and run ID
+  api:
+    endpoint: /repos/${{ input.owner }}/${{ input.repo }}/actions/runs/${{ input.run_id }}
+    method: GET
+  input:
+    owner:
+      type: string
+      required: true
+      description: Repository owner (user or organization login)
+    repo:
+      type: string
+      required: true
+      description: Repository name
+    run_id:
+      type: integer
+      required: true
+      description: The numeric workflow run ID
+  extract:
+    record_path: $
+via: rest

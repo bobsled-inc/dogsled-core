@@ -1,0 +1,14 @@
+spec_version: '0.2'
+name: raw_events
+type: source
+source_type: warehouse_table
+connection: analytics_bq
+table: raw.raw_events
+schema:
+  columns:
+    - name: event_id
+      type: STRING
+    - name: user_id
+      type: STRING
+    - name: occurred_at
+      type: TIMESTAMP

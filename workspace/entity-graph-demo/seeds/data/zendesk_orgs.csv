@@ -1,0 +1,9 @@
+org_id,name,website,phone,country,updated_at
+zd_201,ACME Corp,https://acme.com,2125550101,US,2026-03-10T09:00:00Z
+zd_202,Globex Incorporated,http://www.globex.io,+14155550102,US,2026-03-12T10:00:00Z
+zd_203,Tyrell Corp,tyrellcorp.com,+12135550199,US,2026-03-14T08:30:00Z
+zd_204,Soylent Inc,https://www.soylent.co,+16465550104,US,2026-03-18T13:00:00Z
+zd_205,Stark Industries,https://www.starkindustries.com,2125550105,US,2026-03-20T11:00:00Z
+zd_206,Wayne Enterprises,wayneenterprises.com,2065550106,US,2026-03-16T15:00:00Z
+zd_207,Wonka Industries Ltd,https://wonka.co,+12135550107,US,2026-03-22T12:30:00Z
+zd_208,LexCorp International,lexcorp.com,+13125550166,US,2026-03-25T09:45:00Z

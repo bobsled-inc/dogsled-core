@@ -1,0 +1,46 @@
+spec_version: '0.2'
+name: klaviyo__profiles
+type: model
+description: Klaviyo profile detail.
+grain: profile_id
+source:
+  ref: stg_klaviyo__profiles
+columns:
+  - name: profile_id
+    expr: stg_klaviyo__profiles.profile_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Klaviyo profile identifier.
+  - name: email
+    expr: stg_klaviyo__profiles.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Profile email address.
+  - name: first_name
+    expr: stg_klaviyo__profiles.first_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Profile first name.
+  - name: last_name
+    expr: stg_klaviyo__profiles.last_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Profile last name.
+  - name: created_at
+    expr: stg_klaviyo__profiles.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the profile was created.
+  - name: updated_at
+    expr: stg_klaviyo__profiles.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the profile was last updated.
+tags:
+  - klaviyo
+  - marketing
+  - profiles
+trust_tier: gold
+materialization:
+  type: table

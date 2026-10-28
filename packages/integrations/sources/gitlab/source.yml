@@ -1,0 +1,23 @@
+spec_version: '2'
+type: source
+name: gitlab
+description: GitLab REST API
+transports:
+  - id: default
+    base_url: https://gitlab.com/api/v4
+    auth:
+      type: bearer
+      token: ${{ env.GITLAB_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    headers:
+      User-Agent: dogsled-extractor
+default_transport: default

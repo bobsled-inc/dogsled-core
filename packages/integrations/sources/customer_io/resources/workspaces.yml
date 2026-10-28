@@ -1,0 +1,45 @@
+type: resource
+name: workspaces
+description: Customer.io workspaces accessible to the authenticated account.
+api:
+  endpoint: /v1/workspaces
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: The id of the workspace.
+  name:
+    type: string
+    path: $.name
+    description: The name of the workspace.
+  messages_sent:
+    type: integer
+    path: $.messages_sent
+    description:
+      The count of [messages sent](/journeys/message-statuses/#sent) via any channel (email,
+      SMS, in-app, push, slack) in the current billing period.
+  billable_messages_sent:
+    type: integer
+    path: $.billable_messages_sent
+    description:
+      The count of [emails sent](/journeys/message-statuses/#sent) that are considered for
+      billing in your current billing period.
+  people:
+    type: integer
+    path: $.people
+    description: The current count of people profiles in the workspace.
+  object_types:
+    type: integer
+    path: $.object_types
+    description: The current count of object types in the workspace.
+  objects:
+    type: integer
+    path: $.objects
+    description: The current count of object profiles in the workspace.
+extract:
+  record_path: $.workspaces
+  table:
+    primary_key:
+      - id

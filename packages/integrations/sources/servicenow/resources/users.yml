@@ -1,0 +1,68 @@
+type: resource
+name: users
+description: Users from the ServiceNow sys_user table.
+api:
+  endpoint: /table/sys_user
+  method: GET
+  query_params:
+    sysparm_fields: ${{ input.fields }}
+    sysparm_limit: ${{ input.limit }}
+    sysparm_display_value: ${{ input.display_value }}
+    sysparm_query: ${{ input.query }}
+input:
+  fields:
+    type: string
+    default: sys_id,user_name,first_name,last_name,email,active,department,title,sys_updated_on
+  query:
+    type: string
+    default: ORDERBYsys_updated_on^ORDERBYsys_id
+  limit:
+    type: integer
+    default: 1000
+  display_value:
+    type: string
+    default: 'true'
+query:
+  search:
+    dialect: servicenow_sysparm_query
+    append: ^ORDERBYsys_updated_on^ORDERBYsys_id
+    bind:
+      input: query
+      preserve_default: true
+output:
+  sys_id:
+    type: string
+    path: $.sys_id
+  user_name:
+    type: string
+    path: $.user_name
+  first_name:
+    type: string
+    path: $.first_name
+  last_name:
+    type: string
+    path: $.last_name
+  email:
+    type: string
+    path: $.email
+  active:
+    type: boolean
+    path: $.active
+  department:
+    type: string
+    path: $.department
+  title:
+    type: string
+    path: $.title
+  sys_updated_on:
+    type: timestamp
+    path: $.sys_updated_on
+extract:
+  record_path: $.result
+  table:
+    primary_key:
+      - sys_id
+  pagination:
+    type: offset
+    offset_param: sysparm_offset
+    limit_param: sysparm_limit

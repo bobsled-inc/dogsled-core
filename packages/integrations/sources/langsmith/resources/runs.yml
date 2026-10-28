@@ -1,0 +1,398 @@
+type: resource
+name: runs
+description: Query LangSmith trace and evaluation runs scoped to a session/project.
+api:
+  endpoint: /runs/query
+  method: POST
+  request_body:
+    session:
+      - ${{ input.session_id }}
+    limit: ${{ input.limit }}
+    select:
+      - id
+      - name
+      - run_type
+      - status
+      - start_time
+      - end_time
+      - trace_id
+      - session_id
+      - parent_run_id
+      - parent_run_ids
+      - child_run_ids
+      - inputs
+      - inputs_preview
+      - inputs_s3_urls
+      - outputs
+      - outputs_preview
+      - outputs_s3_urls
+      - s3_urls
+      - error
+      - extra
+      - serialized
+      - events
+      - messages
+      - dotted_order
+      - trace_min_max_start_time
+      - first_token_time
+      - last_queued_at
+      - trace_first_received_at
+      - reference_example_id
+      - reference_dataset_id
+      - thread_id
+      - manifest_id
+      - manifest_s3_id
+      - total_tokens
+      - prompt_tokens
+      - completion_tokens
+      - prompt_token_details
+      - completion_token_details
+      - total_cost
+      - prompt_cost
+      - completion_cost
+      - prompt_cost_details
+      - completion_cost_details
+      - price_model_id
+      - tags
+      - feedback_stats
+      - app_path
+      - in_dataset
+      - trace_tier
+      - ttl_seconds
+      - trace_upgrade
+input:
+  session_id:
+    type: string
+    required: true
+    description: Session/project UUID to query runs for.
+  limit:
+    type: integer
+    description: Maximum number of runs to return per page.
+    default: 100
+    minimum: 1
+    maximum: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique run identifier (UUID).
+    semantic_role: entity_id
+  name:
+    type: string
+    path: $.name
+    description: Run name.
+    semantic_role: name
+  run_type:
+    type: string
+    path: $.run_type
+    description: LangSmith run type, such as chain, llm, tool, retriever, or embedding.
+    semantic_role: categorical
+  status:
+    type: string
+    path: $.status
+    description: Run execution status.
+    semantic_role: categorical
+  start_time:
+    type: timestamp
+    path: $.start_time
+    description: Timestamp when the run started.
+    semantic_role: event_timestamp
+  end_time:
+    type: timestamp
+    path: $.end_time
+    description: Timestamp when the run ended, when available.
+    semantic_role: event_timestamp
+  trace_id:
+    type: string
+    path: $.trace_id
+    description: Identifier shared by all runs in the same trace.
+    semantic_role: entity_id
+  session_id:
+    type: string
+    path: $.session_id
+    description: Session/project identifier that owns the run.
+    semantic_role: entity_id
+  parent_run_id:
+    type: string
+    path: $.parent_run_id
+    description: Direct parent run identifier, when the run is nested.
+    semantic_role: entity_id
+  parent_run_ids:
+    type: array
+    path: $.parent_run_ids
+    description: Ordered parent run identifiers for nested traces.
+    semantic_role: categorical
+    items:
+      type: string
+      path: $
+      description: Parent run identifier.
+      semantic_role: entity_id
+  child_run_ids:
+    type: array
+    path: $.child_run_ids
+    description: Child run identifiers in the trace, when present.
+    semantic_role: categorical
+    items:
+      type: string
+      path: $
+      description: Child run identifier.
+      semantic_role: entity_id
+  direct_child_run_ids:
+    type: array
+    path: $.direct_child_run_ids
+    description: Direct child run identifiers, when present.
+    semantic_role: categorical
+    items:
+      type: string
+      path: $
+      description: Direct child run identifier.
+      semantic_role: entity_id
+  inputs:
+    type: object
+    path: $.inputs
+    description: Input payload captured for the run.
+    semantic_role: categorical
+  inputs_preview:
+    type: string
+    path: $.inputs_preview
+    description: Preview text for the run inputs, when present.
+    semantic_role: categorical
+  input_message:
+    type: string
+    path: $.inputs.messages[-1].content
+    description: Last input message content when the run input has a messages array.
+    semantic_role: categorical
+  inputs_s3_urls:
+    type: object
+    path: $.inputs_s3_urls
+    description: S3 URLs for externally stored run inputs, keyed by payload part when present.
+    semantic_role: categorical
+  outputs:
+    type: object
+    path: $.outputs
+    description: Output payload captured for the run.
+    semantic_role: categorical
+  outputs_preview:
+    type: string
+    path: $.outputs_preview
+    description: Preview text for the run outputs, when present.
+    semantic_role: categorical
+  output_message:
+    type: string
+    path: $.outputs.content
+    description: Assistant output content when the run output has a content field.
+    semantic_role: categorical
+  outputs_s3_urls:
+    type: object
+    path: $.outputs_s3_urls
+    description: S3 URLs for externally stored run outputs, keyed by payload part when present.
+    semantic_role: categorical
+  s3_urls:
+    type: object
+    path: $.s3_urls
+    description: S3 URLs associated with run payload sections, keyed by payload part when present.
+    semantic_role: categorical
+  extra:
+    type: object
+    path: $.extra
+    description: Additional run metadata.
+    semantic_role: categorical
+  serialized:
+    type: object
+    path: $.serialized
+    description: Serialized runnable or component metadata for the run, when present.
+    semantic_role: categorical
+  events:
+    type: array
+    path: $.events
+    description: Event records captured for the run, when present.
+    semantic_role: categorical
+    items:
+      type: object
+      path: $
+      description: Run event payload.
+      semantic_role: categorical
+  messages:
+    type: array
+    path: $.messages
+    description: Message payloads associated with the run, when present.
+    semantic_role: categorical
+    items:
+      type: object
+      path: $
+      description: Run message payload.
+      semantic_role: categorical
+  error:
+    type: string
+    path: $.error
+    description: Error message captured for failed runs, when present.
+    semantic_role: categorical
+  execution_order:
+    type: integer
+    path: $.execution_order
+    description: Execution order of the run within the trace.
+    semantic_role: count
+  dotted_order:
+    type: string
+    path: $.dotted_order
+    description: LangSmith dotted trace order value for nested run ordering.
+    semantic_role: identifier
+  trace_min_start_time:
+    type: timestamp
+    path: $.trace_min_start_time
+    description: Earliest start time observed in the trace, when present.
+    semantic_role: event_timestamp
+  trace_max_start_time:
+    type: timestamp
+    path: $.trace_max_start_time
+    description: Latest start time observed in the trace, when present.
+    semantic_role: event_timestamp
+  first_token_time:
+    type: timestamp
+    path: $.first_token_time
+    description: Timestamp when the first token was produced, when available.
+    semantic_role: event_timestamp
+  last_queued_at:
+    type: timestamp
+    path: $.last_queued_at
+    description: Timestamp when the run was last queued, when available.
+    semantic_role: event_timestamp
+  trace_first_received_at:
+    type: timestamp
+    path: $.trace_first_received_at
+    description: Timestamp when LangSmith first received the trace, when available.
+    semantic_role: event_timestamp
+  reference_example_id:
+    type: string
+    path: $.reference_example_id
+    description: Reference example identifier linked to the run, when present.
+    semantic_role: entity_id
+  reference_dataset_id:
+    type: string
+    path: $.reference_dataset_id
+    description: Reference dataset identifier linked to the run, when present.
+    semantic_role: entity_id
+  thread_id:
+    type: string
+    path: $.thread_id
+    description: Thread identifier associated with the run, when present.
+    semantic_role: entity_id
+  manifest_id:
+    type: string
+    path: $.manifest_id
+    description: LangSmith manifest identifier associated with the run, when present.
+    semantic_role: entity_id
+  manifest_s3_id:
+    type: string
+    path: $.manifest_s3_id
+    description: S3-backed manifest identifier associated with the run, when present.
+    semantic_role: entity_id
+  total_tokens:
+    type: integer
+    path: $.total_tokens
+    description: Total token count attributed to the run, when available.
+    semantic_role: count
+  prompt_tokens:
+    type: integer
+    path: $.prompt_tokens
+    description: Prompt token count attributed to the run, when available.
+    semantic_role: count
+  completion_tokens:
+    type: integer
+    path: $.completion_tokens
+    description: Completion token count attributed to the run, when available.
+    semantic_role: count
+  prompt_token_details:
+    type: object
+    path: $.prompt_token_details
+    description: Detailed prompt token accounting, when available.
+    semantic_role: categorical
+  completion_token_details:
+    type: object
+    path: $.completion_token_details
+    description: Detailed completion token accounting, when available.
+    semantic_role: categorical
+  total_cost:
+    type: number
+    path: $.total_cost
+    description: Total cost attributed to the run, when available.
+    semantic_role: currency
+  prompt_cost:
+    type: number
+    path: $.prompt_cost
+    description: Prompt cost attributed to the run, when available.
+    semantic_role: currency
+  completion_cost:
+    type: number
+    path: $.completion_cost
+    description: Completion cost attributed to the run, when available.
+    semantic_role: currency
+  prompt_cost_details:
+    type: object
+    path: $.prompt_cost_details
+    description: Detailed prompt cost accounting, when available.
+    semantic_role: categorical
+  completion_cost_details:
+    type: object
+    path: $.completion_cost_details
+    description: Detailed completion cost accounting, when available.
+    semantic_role: categorical
+  price_model_id:
+    type: string
+    path: $.price_model_id
+    description: Price model identifier used for cost accounting, when present.
+    semantic_role: entity_id
+  tags:
+    type: array
+    path: $.tags
+    description: Tags attached to the run.
+    semantic_role: categorical
+    items:
+      type: string
+      path: $
+      description: Run tag.
+      semantic_role: categorical
+  feedback_stats:
+    type: object
+    path: $.feedback_stats
+    description: Aggregated feedback statistics attached to the run.
+    semantic_role: categorical
+  app_path:
+    type: string
+    path: $.app_path
+    description: LangSmith application path for opening the run in the UI.
+    semantic_role: url
+  in_dataset:
+    type: boolean
+    path: $.in_dataset
+    description: Whether the run is included in a dataset.
+    semantic_role: categorical
+  trace_tier:
+    type: string
+    path: $.trace_tier
+    description: Trace retention or indexing tier for the run, when present.
+    semantic_role: categorical
+  ttl_seconds:
+    type: integer
+    path: $.ttl_seconds
+    description: Time-to-live for the run or trace in seconds, when present.
+    semantic_role: measure
+  trace_upgrade:
+    type: boolean
+    path: $.trace_upgrade
+    description: Whether the trace has been upgraded for retention or indexing.
+    semantic_role: categorical
+extract:
+  for_each:
+    resource: sessions
+    field: id
+    input: session_id
+  record_path: $.runs
+  pagination:
+    type: cursor
+    cursor_param: cursor
+    cursor_path: $.cursors.next
+  table:
+    primary_key:
+      - id
+    trust_tier: bronze

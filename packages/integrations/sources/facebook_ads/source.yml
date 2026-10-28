@@ -1,0 +1,27 @@
+spec_version: '2'
+type: source
+name: facebook_ads
+description: Meta Marketing API for ad accounts, campaigns, ads, and performance insights.
+transports:
+  - id: default
+    base_url: https://graph.facebook.com/${{ env.FACEBOOK_API_VERSION }}
+    auth:
+      type: bearer
+      token: ${{ env.FACEBOOK_ACCESS_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 3
+      burst: 6
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+default_transport: default

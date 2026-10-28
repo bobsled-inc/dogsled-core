@@ -1,0 +1,16 @@
+spec_version: '1'
+auth_env_vars:
+  [DATABRICKS_HTTP_PATH, DATABRICKS_TOKEN, DATABRICKS_WORKSPACE_URL, XWH_SHARED_STAGING_URI]
+type: integration
+name: databricks
+source_type: databricks
+connection:
+  workspace_url: ${{ env.DATABRICKS_WORKSPACE_URL }}
+  http_path: ${{ env.DATABRICKS_HTTP_PATH }}
+  catalog: main
+  schema: raw
+auth:
+  type: pat
+  token: ${{ env.DATABRICKS_TOKEN }}
+cross_warehouse_staging:
+  uri: ${{ env.XWH_SHARED_STAGING_URI }}

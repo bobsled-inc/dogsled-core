@@ -1,0 +1,14 @@
+display_name: Vercel
+category: cloud-infra
+tags:
+  - vercel
+  - cloud-infra
+  - observability
+  - finance
+  - cost-management
+docs_url: https://vercel.com/docs/rest-api
+openapi_url: https://openapi.vercel.sh
+auth_setup:
+  - env: VERCEL_TOKEN
+    description: Vercel personal, team, or OAuth token with access to the selected team and project.
+    docs_url: https://vercel.com/docs/rest-api#creating-an-oauth2-client

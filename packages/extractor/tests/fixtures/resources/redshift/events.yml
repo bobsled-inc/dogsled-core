@@ -1,0 +1,15 @@
+spec_version: '1'
+type: resource
+name: events
+integration: acme_redshift
+source:
+  table: events
+  schema: analytics
+replication:
+  method: incremental_append
+  cursor_field: created_at
+  cursor_type: timestamp
+output:
+  id: { type: integer }
+  event_type: { type: string }
+  created_at: { type: string }

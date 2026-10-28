@@ -1,0 +1,31 @@
+spec_version: '0.2'
+name: channel_activity_summary
+type: model
+description: Channel summary metrics grouped by visibility
+grain: is_public
+source:
+  ref: stg_slack_channels
+columns:
+  - name: is_public
+    expr: stg_slack_channels.is_public
+    semantic_role: categorical
+    description: Whether channels are public or private
+  - name: channel_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total number of channels
+  - name: total_members
+    expr: SUM(stg_slack_channels.num_members)
+    semantic_role: measure
+    description: Sum of members across all channels in this group
+  - name: avg_members
+    expr: AVG(stg_slack_channels.num_members)
+    semantic_role: measure
+    description: Average members per channel
+  - name: archived_count
+    expr: SUM(CASE WHEN stg_slack_channels.is_archived THEN 1 ELSE 0 END)
+    semantic_role: measure
+    description: Number of archived channels
+group_by: [is_public]
+materialization:
+  type: view

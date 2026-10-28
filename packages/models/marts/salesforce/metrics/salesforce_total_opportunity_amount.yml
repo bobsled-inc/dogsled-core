@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: salesforce_total_opportunity_amount
+description: Total amount across Salesforce opportunities. Use only when the org stores opportunity amounts in a common currency.
+model: salesforce__opportunities
+expression: SUM({salesforce__opportunities}.amount)
+synonyms: [pipeline value, opportunity value, total opportunity amount]
+tags: [salesforce, crm, finance]

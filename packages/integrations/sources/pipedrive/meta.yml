@@ -1,0 +1,10 @@
+display_name: Pipedrive
+category: crm
+logo_url: https://www.pipedrive.com/favicon.ico
+tags: [sales, pipeline, deals]
+docs_url: https://developers.pipedrive.com/docs/api/v1/
+openapi_url: https://raw.githubusercontent.com/photz/pipedrive-openapi/master/openapi.yaml
+auth_setup:
+  - env: PIPEDRIVE_API_KEY
+    description: Pipedrive API token passed as the api_token query parameter
+    docs_url: https://developers.pipedrive.com/docs/api/v1/

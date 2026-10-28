@@ -1,0 +1,26 @@
+spec_version: '0.2'
+name: dim_products
+type: model
+description: Product dimension with pricing data.
+grain: product_id
+
+source:
+  ref: ecom.raw_products
+  filter: 'IS_ACTIVE = TRUE'
+
+columns:
+  - name: PRODUCT_ID
+    expr: ID
+    primary_key: true
+    semantic_role: entity_id
+  - name: PRODUCT_NAME
+    expr: NAME
+  - name: CATEGORY
+    expr: CATEGORY
+    semantic_role: categorical
+  - name: PRICE
+    expr: 'CAST(PRICE / 100.0 AS NUMERIC(16, 2))'
+    semantic_role: measure
+
+materialization:
+  type: view

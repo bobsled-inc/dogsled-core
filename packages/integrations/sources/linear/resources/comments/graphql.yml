@@ -1,0 +1,95 @@
+type: resource
+name: comments_graphql
+via: graphql
+entity: comments
+description: Comments on Linear issues including threaded replies, resolution status, and authorship information
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  comments(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id body\n      issue { id identifier }\n      user { id name email }\n      parent { id }\n      resolvedAt\n      createdAt updatedAt editedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique comment UUID assigned by Linear
+  body:
+    type: string
+    path: $.body
+    description: Full comment text content in markdown format, supporting rich formatting including code blocks, links, and mentions
+  issue_id:
+    type: string
+    path: $.issue.id
+    description: UUID of the issue this comment belongs to, establishing the parent-child relationship
+  issue_identifier:
+    type: string
+    path: $.issue.identifier
+    description: Human-readable identifier of the parent issue (e.g. TEAM-{number}), useful for cross-referencing without joining tables
+  user_id:
+    type: string
+    path: $.user.id
+    description: UUID of the user who authored the comment
+  user_name:
+    type: string
+    path: $.user.name
+    description: Display name of the comment author
+  user_email:
+    type: string
+    path: $.user.email
+    description: Email address of the comment author
+  parent_id:
+    type: string
+    path: $.parent.id
+    description: UUID of the parent comment if this is a threaded reply, null for top-level comments on an issue
+  resolved_at:
+    type: timestamp
+    path: $.resolvedAt
+    description: ISO 8601 timestamp when the comment thread was marked as resolved, null if still open or not a resolvable thread
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the comment was first posted
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the comment record was last updated by the system
+  edited_at:
+    type: timestamp
+    path: $.editedAt
+    description: ISO 8601 timestamp when the comment body was last edited by the author, null if the comment has never been edited
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.comments.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.comments.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

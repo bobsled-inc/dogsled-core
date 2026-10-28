@@ -1,0 +1,36 @@
+type: resource
+name: advertisers
+description: TikTok ad accounts (advertisers) accessible to the authenticated app.
+api:
+  endpoint: /oauth/advertiser/get
+  method: GET
+  query_params:
+    app_id: ${{ env.TIKTOK_APP_ID }}
+    secret: ${{ env.TIKTOK_APP_SECRET }}
+input: {}
+output:
+  advertiser_id:
+    type: string
+    path: $.advertiser_id
+  advertiser_name:
+    type: string
+    path: $.advertiser_name
+  status:
+    type: string
+    path: $.status
+  currency:
+    type: string
+    path: $.currency
+  timezone:
+    type: string
+    path: $.timezone
+extract:
+  record_path: $.data.list
+  table:
+    primary_key:
+      - advertiser_id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: page_size
+    total_pages_path: $.data.page_info.total_page

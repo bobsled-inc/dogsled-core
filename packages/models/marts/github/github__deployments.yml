@@ -1,0 +1,55 @@
+spec_version: '0.2'
+name: github__deployments
+type: model
+description: Deployment records across environments with creator and production flag.
+grain: deployment_id
+source:
+  ref: stg_github__deployments
+columns:
+  - name: deployment_id
+    expr: stg_github__deployments.deployment_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique GitHub deployment identifier.
+  - name: sha
+    expr: stg_github__deployments.sha
+    semantic_role: categorical
+    description: Full SHA of the commit being deployed.
+  - name: ref
+    expr: stg_github__deployments.ref
+    semantic_role: categorical
+    description: Git ref that was deployed (branch, tag, or SHA).
+  - name: environment
+    expr: stg_github__deployments.environment
+    semantic_role: categorical
+    description: Target deployment environment (production, staging, preview, etc.).
+  - name: production_environment
+    expr: stg_github__deployments.production_environment
+    semantic_role: categorical
+    description: Whether this targets a production environment.
+  - name: task
+    expr: stg_github__deployments.task
+    semantic_role: categorical
+    description: Deployment task type (deploy, rollback, etc.).
+  - name: creator_login
+    expr: stg_github__deployments.creator_login
+    semantic_role: categorical
+    description: GitHub username of the deployment creator.
+  - name: creator_type
+    expr: stg_github__deployments.creator_type
+    semantic_role: categorical
+    description: Creator type (User or Bot).
+  - name: created_at
+    expr: stg_github__deployments.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the deployment was created.
+  - name: updated_at
+    expr: stg_github__deployments.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the deployment was last updated.
+tags:
+  - github
+  - deployments
+trust_tier: gold
+materialization:
+  type: table

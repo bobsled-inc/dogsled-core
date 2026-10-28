@@ -1,0 +1,52 @@
+spec_version: '0.2'
+name: intercom__conversations
+type: model
+description: Conversation detail with admin context from Intercom.
+grain: conversation_id
+source:
+  ref: stg_intercom__list_conversations
+joins:
+  - ref: stg_intercom__list_admins
+    type: left
+    on: stg_intercom__list_conversations.admin_assignee_id = stg_intercom__list_admins.list_admin_id
+columns:
+  - name: conversation_id
+    expr: stg_intercom__list_conversations.list_conversation_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Intercom conversation identifier.
+  - name: title
+    expr: stg_intercom__list_conversations.title
+    semantic_role: categorical
+    description: Conversation title or subject.
+  - name: state
+    expr: stg_intercom__list_conversations.state
+    semantic_role: categorical
+    description: Conversation state such as open, closed, or snoozed.
+  - name: admin_assignee_id
+    expr: stg_intercom__list_conversations.admin_assignee_id
+    semantic_role: entity_id
+    description: Admin assigned to the conversation.
+  - name: admin_name
+    expr: stg_intercom__list_admins.name
+    semantic_role: categorical
+    description: Name of the admin assigned to the conversation.
+  - name: priority
+    expr: stg_intercom__list_conversations.priority
+    semantic_role: categorical
+    description: Whether the conversation is marked as priority.
+  - name: created_at
+    expr: stg_intercom__list_conversations.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the conversation was created.
+  - name: updated_at
+    expr: stg_intercom__list_conversations.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the conversation was last updated.
+tags:
+  - intercom
+  - support
+  - conversations
+trust_tier: gold
+materialization:
+  type: table

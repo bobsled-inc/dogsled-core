@@ -1,0 +1,97 @@
+type: resource
+name: get_lists
+description: Get Lists
+api:
+  endpoint: /v2/folder/${{ input.folder_id }}/list
+  method: GET
+  query_params:
+    archived: ${{ input.archived }}
+input:
+  folder_id:
+    type: number
+    required: true
+  archived:
+    type: boolean
+query:
+  filters:
+    archived:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: archived
+      compile:
+        eq:
+          mode: http_query
+          param: archived
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  orderindex:
+    type: integer
+    path: $.orderindex
+  content:
+    type: string
+    path: $.content
+  status:
+    type: string
+    path: $.status
+  priority:
+    type: string
+    path: $.priority
+  assignee:
+    type: string
+    path: $.assignee
+  task_count:
+    type: string
+    path: $.task_count
+  due_date:
+    type: string
+    path: $.due_date
+  start_date:
+    type: string
+    path: $.start_date
+  folder_id:
+    type: string
+    path: $.folder.id
+  folder_name:
+    type: string
+    path: $.folder.name
+  folder_hidden:
+    type: boolean
+    path: $.folder.hidden
+  folder_access:
+    type: boolean
+    path: $.folder.access
+  space_id:
+    type: string
+    path: $.space.id
+  space_name:
+    type: string
+    path: $.space.name
+  space_access:
+    type: boolean
+    path: $.space.access
+  archived:
+    type: boolean
+    path: $.archived
+  override_statuses:
+    type: boolean
+    path: $.override_statuses
+  permission_level:
+    type: string
+    path: $.permission_level
+extract:
+  record_path: $.lists
+  for_each:
+    resource: get_folders
+    field: id
+    input: folder_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

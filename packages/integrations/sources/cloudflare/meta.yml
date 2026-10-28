@@ -1,0 +1,10 @@
+display_name: Cloudflare
+category: cloud-infra
+logo_url: https://www.cloudflare.com/favicon.ico
+tags: [cloudflare, dns, zones, edge]
+docs_url: https://developers.cloudflare.com/api/
+openapi_url: https://raw.githubusercontent.com/cloudflare/api-schemas/main/openapi.json
+auth_setup:
+  - env: CLOUDFLARE_API_TOKEN
+    description: Cloudflare API token with read access to accounts, zones, and DNS records
+    docs_url: https://developers.cloudflare.com/fundamentals/api/get-started/create-token/

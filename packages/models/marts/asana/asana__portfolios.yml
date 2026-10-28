@@ -1,0 +1,32 @@
+spec_version: '0.2'
+name: asana__portfolios
+type: model
+description: Asana portfolio detail with workspace context.
+grain: portfolio_id
+source:
+  ref: stg_asana__get_portfolios
+joins:
+  - ref: stg_asana__get_workspaces
+    type: left
+    on: stg_asana__get_portfolios.workspace_gid = stg_asana__get_workspaces.gid
+columns:
+  - name: portfolio_id
+    expr: stg_asana__get_portfolios.gid
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Asana portfolio identifier.
+  - name: name
+    expr: stg_asana__get_portfolios.name
+    semantic_role: categorical
+    description: Portfolio name.
+  - name: workspace_name
+    expr: COALESCE(stg_asana__get_workspaces.name, stg_asana__get_portfolios.workspace_name)
+    semantic_role: categorical
+    description: Name of the workspace that owns the portfolio.
+tags:
+  - asana
+  - portfolios
+  - project-management
+trust_tier: gold
+materialization:
+  type: table

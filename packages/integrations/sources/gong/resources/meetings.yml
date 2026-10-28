@@ -1,0 +1,43 @@
+type: resource
+name: meetings
+description: Meetings represented in Gong.
+api:
+  endpoint: /meetings
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    cursor: ${{ input.cursor }}
+input:
+  limit:
+    type: integer
+    default: 100
+  cursor:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  title:
+    type: string
+    path: $.title
+  start_time:
+    type: timestamp
+    path: $.startTime
+  end_time:
+    type: timestamp
+    path: $.endTime
+  organizer_id:
+    type: string
+    path: $.organizerId
+  source:
+    type: string
+    path: $.source
+extract:
+  record_path: $.meetings
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.records.cursor
+    cursor_param: cursor

@@ -1,0 +1,47 @@
+spec_version: '0.2'
+name: slack__channel_activity_summary
+type: model
+description: Top-level message volume summarized by channel and day for tracking workspace communication patterns.
+grain:
+  - channel_id
+  - message_date
+source:
+  ref: stg_slack__messages
+columns:
+  - name: channel_id
+    expr: stg_slack__messages.channel_id
+    primary_key: true
+    semantic_role: entity_id
+    references: stg_slack__channels.channel_id
+    description: Channel ID the messages belong to.
+  - name: message_date
+    expr: DATE(stg_slack__messages.ts)
+    primary_key: true
+    semantic_role: time_dimension
+    description: Calendar date of the messages.
+  - name: message_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total number of top-level messages in the channel on that date.
+  - name: distinct_user_count
+    expr: count_distinct(stg_slack__messages.user_id)
+    semantic_role: measure
+    description: Number of distinct users who posted messages.
+  - name: thread_parent_count
+    expr: countif(stg_slack__messages.thread_ts = stg_slack__messages.ts)
+    semantic_role: measure
+    description: Number of thread-parent messages (messages that started a thread).
+  - name: avg_text_length
+    expr: AVG(LENGTH(stg_slack__messages.text))
+    semantic_role: measure
+    description: Average message text length in characters.
+group_by:
+  - channel_id
+  - message_date
+tags:
+  - slack
+  - messages
+  - summary
+trust_tier: gold
+materialization:
+  type: table

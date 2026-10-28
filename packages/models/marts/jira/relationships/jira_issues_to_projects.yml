@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: jira_issues_to_projects
+description: Each Jira issue belongs to one project.
+left_model: jira__issues
+right_model: jira__projects
+join_columns:
+  - left: project_id
+    right: project_id
+join_type: left
+relationship_type: many_to_one
+tags: [jira, issues, projects]

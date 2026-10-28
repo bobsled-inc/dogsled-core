@@ -1,0 +1,61 @@
+type: resource
+name: users
+description: Vantage users with roles and activity
+api:
+  endpoint: /users
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+    default: 1000
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the user.
+  name:
+    type: string
+    path: $.name
+    description: The name of the User.
+  email:
+    type: string
+    path: $.email
+    description: The email of the User.
+  role:
+    type: string
+    path: $.role
+    description: The role of the User.
+  default_dashboard_token:
+    type: string
+    path: $.default_dashboard_token
+    description: The token of the default Dashboard for the User.
+  last_seen_at:
+    type: timestamp
+    path: $.last_seen_at
+    description: The last time the User logged in.
+extract:
+  record_path: $.users
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get user by token
+  api:
+    endpoint: /users/${{ input.user_token }}
+    method: GET
+  input:
+    user_token:
+      type: string
+      required: true

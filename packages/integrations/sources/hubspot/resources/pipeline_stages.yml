@@ -1,0 +1,57 @@
+type: resource
+name: pipeline_stages
+description: HubSpot deal pipeline stages representing the individual steps within a deal pipeline
+  that deals move through during the sales process
+api:
+  endpoint: /crm/v3/pipelines/deals/${{ input.pipeline_id }}/stages
+  method: GET
+input:
+  pipeline_id:
+    type: string
+    description: HubSpot pipeline ID to retrieve stages for, references the id field from the pipelines resource
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description:
+      Unique HubSpot identifier for the pipeline stage, returned as a numeric string. This is
+      the value stored in the dealstage property on deal records.
+  label:
+    type: string
+    path: $.label
+    description: Human-readable display name of the stage as shown on the deal board columns
+  display_order:
+    type: integer
+    path: $.displayOrder
+    description:
+      Zero-based integer controlling the left-to-right sort order of this stage on the deal
+      pipeline board
+  metadata_probability:
+    type: string
+    path: $.metadata.probability
+    description:
+      Win probability percentage associated with this stage (e.g. '0.5' for 50%), used for
+      weighted pipeline forecasting calculations
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp of when the pipeline stage was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp of when the pipeline stage configuration was last modified
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether this pipeline stage has been archived (soft-deleted) in HubSpot
+extract:
+  record_path: $.results
+  for_each:
+    resource: pipelines
+    field: id
+    input: pipeline_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

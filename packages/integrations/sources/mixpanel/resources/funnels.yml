@@ -1,0 +1,31 @@
+type: resource
+name: funnels
+description: Funnels configured in Mixpanel.
+api:
+  endpoint: /funnels/list
+  method: GET
+input: {}
+output:
+  funnel_id:
+    type: string
+    path: $.funnel_id
+  name:
+    type: string
+    path: $.name
+  description:
+    type: string
+    path: $.description
+  created_at:
+    type: timestamp
+    path: $.created
+  updated_at:
+    type: timestamp
+    path: $.last_modified
+  steps:
+    type: array
+    path: $.steps
+extract:
+  record_path: $.funnels
+  table:
+    primary_key:
+      - funnel_id

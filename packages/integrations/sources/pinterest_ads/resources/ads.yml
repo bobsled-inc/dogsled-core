@@ -1,0 +1,45 @@
+type: resource
+name: ads
+description: Ads for a Pinterest ad account.
+api:
+  endpoint: /ad_accounts/${{ input.ad_account_id }}/ads
+  method: GET
+input:
+  ad_account_id:
+    type: string
+    default: '123'
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  ad_group_id:
+    type: string
+    path: $.ad_group_id
+  campaign_id:
+    type: string
+    path: $.campaign_id
+  status:
+    type: string
+    path: $.status
+  creative_type:
+    type: string
+    path: $.creative_type
+  pin_id:
+    type: string
+    path: $.pin_id
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.bookmark
+    cursor_param: bookmark
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

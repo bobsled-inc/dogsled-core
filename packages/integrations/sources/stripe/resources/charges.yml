@@ -1,0 +1,135 @@
+type: resource
+name: charges
+description: Stripe payment charges representing completed or attempted payments
+api:
+  endpoint: /v1/charges
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of charges to return per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique charge identifier prefixed with ch_ (e.g. ch_1A2b3C4d5E6f7G)
+  amount:
+    type: integer
+    path: $.amount
+    description: Amount charged in the smallest currency unit (e.g. cents for USD). A value of 1000
+      represents $10.00 USD
+  amount_captured:
+    type: integer
+    path: $.amount_captured
+    description:
+      Amount captured in the smallest currency unit. May differ from amount if the charge was
+      partially captured
+  amount_refunded:
+    type: integer
+    path: $.amount_refunded
+    description: Amount refunded in the smallest currency unit. If fully refunded, equals the original amount
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO 4217 currency code in lowercase (e.g. usd, eur, gbp)
+  status:
+    type: string
+    path: $.status
+    description:
+      'Current status of the charge. Possible values: succeeded (payment completed), pending
+      (processing), failed (payment declined or errored)'
+  paid:
+    type: boolean
+    path: $.paid
+    description: Whether the charge has been successfully paid. True when status is succeeded
+  refunded:
+    type: boolean
+    path: $.refunded
+    description: Whether the charge has been fully refunded. Partial refunds set this to false
+  captured:
+    type: boolean
+    path: $.captured
+    description:
+      Whether the charge has been captured. Uncaptured charges are authorized but funds have
+      not been collected
+  description:
+    type: string
+    path: $.description
+    description: Arbitrary text description attached to the charge, typically describing the purchase
+  payment_method:
+    type: string
+    path: $.payment_method
+    description: ID of the payment method used for this charge (pm_xxx), referencing a PaymentMethod object
+  customer:
+    type: string
+    path: $.customer
+    description: ID of the customer associated with this charge (cus_xxx), if one was specified at
+      charge creation
+  invoice:
+    type: string
+    path: $.invoice
+    description:
+      ID of the invoice this charge is associated with (in_xxx), if the charge was created by
+      an invoice payment
+  balance_transaction:
+    type: string
+    path: $.balance_transaction
+    description: ID of the balance transaction (txn_xxx) that describes the financial impact of this
+      charge on your Stripe balance
+  failure_code:
+    type: string
+    path: $.failure_code
+    description: Error code explaining the reason for charge failure (e.g. card_declined,
+      insufficient_funds, expired_card). Null if the charge succeeded
+  failure_message:
+    type: string
+    path: $.failure_message
+    description:
+      Human-readable message providing additional details about the charge failure. Null if
+      the charge succeeded
+  receipt_url:
+    type: string
+    path: $.receipt_url
+    description: URL for the charge receipt. A receipt is generated for every successful charge
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the charge was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

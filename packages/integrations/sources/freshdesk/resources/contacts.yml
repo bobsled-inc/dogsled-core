@@ -1,0 +1,50 @@
+type: resource
+name: contacts
+description: List all contacts
+api:
+  endpoint: /contacts
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk contact identifier
+  name:
+    type: string
+    path: $.name
+    description: Contact full name
+  email:
+    type: string
+    path: $.email
+    description: Contact email address
+  phone:
+    type: string
+    path: $.phone
+    description: Contact phone number
+  company_id:
+    type: integer
+    path: $.company_id
+    description: Freshdesk company identifier associated with the contact
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the contact is active
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Contact creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Contact last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

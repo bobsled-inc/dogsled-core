@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: vq
+name: sf_orders_by_status
+description: Order counts and revenue totals bucketed by status.
+nlq: Break down orders by status — how many and how much revenue per bucket?
+sql: |
+  SELECT STATUS, COUNT(*) AS ORDER_COUNT, SUM(TOTAL) AS TOTAL_REVENUE
+  FROM {sf_fct_orders}
+  GROUP BY STATUS
+  ORDER BY TOTAL_REVENUE DESC
+connection: snowflake
+tags: [operational, snowflake]

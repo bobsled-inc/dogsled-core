@@ -1,0 +1,14 @@
+spec_version: '0.2'
+name: raw_orders
+type: source
+source_type: warehouse_table
+connection: ecom
+table: RAW.RAW_ORDERS
+schema:
+  columns:
+    - name: ID
+      type: NUMBER
+    - name: SUBTOTAL
+      type: NUMBER
+    - name: ORDERED_AT
+      type: TIMESTAMP

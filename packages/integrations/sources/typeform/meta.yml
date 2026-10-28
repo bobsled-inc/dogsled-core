@@ -1,0 +1,13 @@
+display_name: Typeform
+category: productivity
+logo_url: https://www.typeform.com/favicon.ico
+tags:
+  - typeform
+  - forms
+  - surveys
+  - responses
+docs_url: https://www.typeform.com/developers/
+auth_setup:
+  - env: TYPEFORM_API_TOKEN
+    description: Typeform personal access token
+    docs_url: https://www.typeform.com/developers/get-started/personal-access-token/

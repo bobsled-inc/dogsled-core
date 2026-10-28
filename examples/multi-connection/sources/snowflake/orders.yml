@@ -1,0 +1,18 @@
+spec_version: '0.2'
+name: orders
+type: source
+source_type: warehouse_table
+connection: snowflake
+table: RAW.ORDERS
+schema:
+  columns:
+    - name: O_ORDERKEY
+      type: NUMBER
+    - name: O_CUSTKEY
+      type: NUMBER
+    - name: O_ORDERDATE
+      type: DATE
+    - name: O_TOTALPRICE
+      type: NUMBER
+    - name: O_STATUS
+      type: VARCHAR

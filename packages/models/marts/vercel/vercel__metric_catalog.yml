@@ -1,0 +1,24 @@
+spec_version: '0.2'
+name: vercel__metric_catalog
+type: model
+description: Metric identifiers exposed by the authenticated Vercel account for query planning.
+grain: metric_id
+source:
+  ref: stg_vercel__metric_catalog
+columns:
+  - name: metric_id
+    expr: stg_vercel__metric_catalog.metric_catalog_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Stable Vercel metric identifier.
+  - name: description
+    expr: stg_vercel__metric_catalog.description
+    semantic_role: categorical
+    description: Metric description returned by Vercel.
+tags:
+  - vercel
+  - observability
+  - metrics
+trust_tier: gold
+materialization:
+  type: table

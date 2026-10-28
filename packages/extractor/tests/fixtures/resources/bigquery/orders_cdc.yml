@@ -1,0 +1,23 @@
+spec_version: '1'
+type: resource
+name: orders_cdc
+integration: test_bigquery
+source:
+  table: orders
+  dataset: analytics
+replication:
+  method: change_tracking
+  change_tracking:
+    type: changes
+  primary_key: [order_id]
+output:
+  order_id: { type: integer }
+  customer_id: { type: integer }
+  amount: { type: number }
+  updated_at: { type: timestamp }
+  _change_type: { type: string }
+extract:
+  table:
+    primary_key: [order_id]
+    load_strategy: merge
+    trust_tier: bronze

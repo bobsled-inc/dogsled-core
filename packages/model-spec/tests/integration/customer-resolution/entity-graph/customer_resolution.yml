@@ -1,0 +1,86 @@
+spec_version: '0.2'
+name: customer_resolution
+type: resolution
+description: Resolve synthetic B2C customers across Shopify, HubSpot, and Zendesk.
+
+inputs:
+  - ref: ecom.shopify_customers
+    role: internal
+    trust_tier: gold
+    id_fields: [shopify_customer_id]
+  - ref: crm.hubspot_contacts
+    role: internal
+    trust_tier: silver
+    id_fields: [hubspot_contact_id]
+  - ref: support.zendesk_users
+    role: provider
+    trust_tier: bronze
+    id_fields: [zendesk_user_id]
+
+standardize:
+  - field: email
+    transforms: [lowercase, trim]
+  - field: first_name
+    transforms: [lowercase, remove_punctuation, collapse_whitespace]
+  - field: last_name
+    transforms: [lowercase, remove_punctuation, collapse_whitespace]
+  - field: phone
+    transforms: [digits_only]
+  - field: country
+    transforms: [lowercase, trim]
+
+blocking:
+  rules:
+    - name: exact_email
+      key: standardized_email
+    - name: exact_phone_country
+      key: "CONCAT(standardized_phone, '|', standardized_country)"
+    - name: name_country_prefix
+      key: "CONCAT(LEFT(standardized_last_name, 5), '|', LEFT(standardized_first_name, 2), '|', standardized_country)"
+  candidate_limit: 50000
+
+deterministic_rules:
+  - name: email_match
+    conditions:
+      - field: standardized_email
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: standardized_email
+      algorithm: jaro_winkler
+      weight: 0.4
+    - field: standardized_last_name
+      algorithm: jaro_winkler
+      weight: 0.25
+    - field: standardized_first_name
+      algorithm: jaro_winkler
+      weight: 0.2
+    - field: standardized_phone
+      algorithm: exact
+      weight: 0.1
+    - field: standardized_country
+      algorithm: exact
+      weight: 0.05
+
+thresholds:
+  auto_merge: 0.99
+  review: 0.58
+  auto_reject: 0.45
+
+agent_policy:
+  enabled: true
+  approval_policy: on_failure
+  max_pairs_per_run: 25
+  batch_size: 10
+  max_cost_usd: 5
+  # Calibrated to stay above the review band so only high-confidence agent outcomes auto-apply.
+  auto_apply_threshold: 0.8
+  context_fields: [email, first_name, last_name, phone, country]
+
+outputs:
+  target_schema: entity_graph_test

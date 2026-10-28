@@ -1,0 +1,137 @@
+type: resource
+name: find_users
+description: Find users
+api:
+  endpoint: /rest/api/3/user/search
+  method: GET
+  query_params:
+    query: ${{ input.query }}
+    username: ${{ input.username }}
+    accountId: ${{ input.account_id }}
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    property: ${{ input.property }}
+input:
+  query:
+    type: string
+    description: A query string that is matched against user attributes ( `displayName`, and
+      `emailAddress`) to find relevant users. The string can match the prefix of the attribute's
+      value. For example, *query=john* matches a user with a `displayName` of *John Smith* and a
+      user with an `emailAddress` of *johnson@example.com*. Required, unless `accountId` or
+      `property` is specified.
+  username:
+    type: string
+  account_id:
+    type: string
+    description: A query string that is matched exactly against a user `accountId`. Required, unless
+      `query` or `property` is specified.
+    maxLength: 128
+  start_at:
+    type: integer
+    description: The index of the first item to return in a page of filtered results (page offset).
+    default: 0
+  max_results:
+    type: integer
+    description: The maximum number of items to return per page.
+    default: 50
+  property:
+    type: string
+    description: 'A query string used to search properties. Property keys are specified by path, so
+      property keys containing dot (.) or equals (=) characters cannot be used. The query string
+      cannot be specified using a JSON object. Example: To search for the value of `nested` from
+      `{"something":{"nested":1,"other":2}}` use `thepropertykey.something.nested=1`. Required,
+      unless `accountId` or `query` is specified.'
+query:
+  filters:
+    account_id:
+      operators:
+        - eq
+      description:
+        A query string that is matched exactly against a user `accountId`. Required, unless
+        `query` or `property` is specified.
+      bind:
+        eq:
+          input: account_id
+      compile:
+        eq:
+          mode: http_query
+          param: accountId
+output:
+  account_id:
+    type: string
+    path: $.accountId
+    description: The account ID of the user, which uniquely identifies the user across all Atlassian products.
+  account_type:
+    type: string
+    path: $.accountType
+    description: The user account type.
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the user is active.
+  app_type:
+    type: string
+    path: $.appType
+    description: The app type of the user account when accountType is 'app'.
+  application_roles:
+    type: string
+    path: $.applicationRoles
+    description: The application roles the user is assigned to.
+  avatar_urls:
+    type: string
+    path: $.avatarUrls
+    description: The avatars of the user.
+  display_name:
+    type: string
+    path: $.displayName
+    description: The display name of the user.
+  email_address:
+    type: string
+    path: $.emailAddress
+    description: The email address of the user.
+  expand:
+    type: string
+    path: $.expand
+    description: Expand options that include additional user details in the response.
+  groups:
+    type: string
+    path: $.groups
+    description: The groups that the user belongs to.
+  guest:
+    type: boolean
+    path: $.guest
+    description: Whether the user is a guest.
+  key:
+    type: string
+    path: $.key
+    description: This property is no longer available and will be removed from the documentation soon.
+  locale:
+    type: string
+    path: $.locale
+    description: The locale of the user.
+  name:
+    type: string
+    path: $.name
+    description: This property is no longer available and will be removed from the documentation soon.
+  self:
+    type: string
+    path: $.self
+    description: The URL of the user.
+  time_zone:
+    type: string
+    path: $.timeZone
+    description: The time zone specified in the user's profile.
+extract:
+  record_path: $
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - account_id
+test:
+  fixtures:
+    - name: find_users_smoke
+      input:
+        query: query

@@ -1,0 +1,7 @@
+product_id,sku,product_name,category,unit_price
+P001,COF-001,House Blend Beans,coffee,18.00
+P002,COF-002,Espresso Roast,Coffee,21.50
+P003,TEA-001,Jasmine Green Tea,TEA,14.00
+P004,ACC-001,Ceramic Pour Over,Accessories,32.00
+P005,SUB-001,Monthly Coffee Club,subscription,45.00
+P006,MUG-001,Stoneware Mug,ACCESSORY,16.00

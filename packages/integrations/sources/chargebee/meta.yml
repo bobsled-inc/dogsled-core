@@ -1,0 +1,13 @@
+display_name: Chargebee
+category: finance
+logo_url: https://www.chargebee.com/favicon.ico
+tags: [billing, subscriptions, revenue]
+docs_url: https://apidocs.chargebee.com/docs/api
+openapi_url: https://raw.githubusercontent.com/chargebee/openapi/main/spec/chargebee_api_v2_pc_v2_spec.yaml
+auth_setup:
+  - env: CHARGEBEE_SITE
+    description: Chargebee site name used as the account subdomain
+    docs_url: https://apidocs.chargebee.com/docs/api/auth?lang=curl
+  - env: CHARGEBEE_API_KEY
+    description: Chargebee API key used as the basic-auth username
+    docs_url: https://apidocs.chargebee.com/docs/api/auth?lang=curl

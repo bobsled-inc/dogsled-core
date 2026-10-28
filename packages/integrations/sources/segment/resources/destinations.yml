@@ -1,0 +1,43 @@
+type: resource
+name: destinations
+description: Destinations in the Segment workspace.
+api:
+  endpoint: /destinations
+  method: GET
+  query_params:
+    pagination.count: ${{ input.pagination_count }}
+    pagination.cursor: ${{ input.pagination_cursor }}
+input:
+  pagination_count:
+    type: integer
+    default: 100
+  pagination_cursor:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  enabled:
+    type: boolean
+    path: $.enabled
+  created_at:
+    type: timestamp
+    path: $.createdAt
+  metadata_id:
+    type: string
+    path: $.metadata.id
+  source_id:
+    type: string
+    path: $.sourceId
+extract:
+  record_path: $.data.destinations
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.data.pagination.next
+    cursor_param: pagination.cursor

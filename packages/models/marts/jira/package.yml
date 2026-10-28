@@ -1,0 +1,14 @@
+name: jira
+display_name: Jira
+description: Engineering delivery analytics models for Jira projects, issues, boards, sprints, and worklogs.
+tags:
+  - jira
+  - engineering
+  - project-management
+include_resources:
+  - boards
+  - search_issues
+  - search_priorities
+  - search_projects
+  - sprints
+  - worklogs

@@ -1,0 +1,30 @@
+type: resource
+name: subscriptions
+description: List Recurly subscriptions
+api:
+  endpoint: /subscriptions
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Subscription identifier
+  uuid:
+    type: string
+    path: $.uuid
+    description: Subscription UUID
+  state:
+    type: string
+    path: $.state
+    description: Subscription state
+  plan_code:
+    type: string
+    path: $.plan.code
+    description: Plan code
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

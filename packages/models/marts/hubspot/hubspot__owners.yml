@@ -1,0 +1,85 @@
+spec_version: '0.2'
+name: hubspot__owners
+type: model
+description: Owner-level activity summary across deals, tickets, and emails.
+grain: owner_id
+source:
+  ref: stg_hubspot__owners
+joins:
+  - ref: stg_hubspot__deals
+    type: left
+    on: stg_hubspot__owners.owner_id = stg_hubspot__deals.owner_id
+    pre_aggregate:
+      group_by:
+        - owner_id
+      columns:
+        - name: deal_count
+          expr: COUNT(*)
+        - name: pipeline_value
+          expr: SUM(amount)
+  - ref: stg_hubspot__tickets
+    type: left
+    on: stg_hubspot__owners.owner_id = stg_hubspot__tickets.owner_id
+    pre_aggregate:
+      group_by:
+        - owner_id
+      columns:
+        - name: ticket_count
+          expr: COUNT(*)
+  - ref: stg_hubspot__emails
+    type: left
+    on: stg_hubspot__owners.owner_id = stg_hubspot__emails.owner_id
+    pre_aggregate:
+      group_by:
+        - owner_id
+      columns:
+        - name: email_count
+          expr: COUNT(*)
+columns:
+  - name: owner_id
+    expr: stg_hubspot__owners.owner_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique HubSpot owner identifier.
+  - name: email
+    expr: stg_hubspot__owners.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Owner email address.
+  - name: first_name
+    expr: stg_hubspot__owners.first_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Owner first name.
+  - name: last_name
+    expr: stg_hubspot__owners.last_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Owner last name.
+  - name: deal_count
+    expr: COALESCE(stg_hubspot__deals.deal_count, 0)
+    semantic_role: measure
+    description: Count of deals assigned to the owner.
+  - name: pipeline_value
+    expr: COALESCE(stg_hubspot__deals.pipeline_value, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Sum of deal amounts assigned to the owner.
+  - name: ticket_count
+    expr: COALESCE(stg_hubspot__tickets.ticket_count, 0)
+    semantic_role: measure
+    description: Count of support tickets assigned to the owner.
+  - name: email_count
+    expr: COALESCE(stg_hubspot__emails.email_count, 0)
+    semantic_role: measure
+    description: Count of email engagement records assigned to the owner.
+tags:
+  - hubspot
+  - owners
+trust_tier: gold
+materialization:
+  type: table

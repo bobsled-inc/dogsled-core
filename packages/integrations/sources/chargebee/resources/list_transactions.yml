@@ -1,0 +1,334 @@
+type: resource
+name: list_transactions
+description: List transactions
+api:
+  endpoint: /transactions
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    include_deleted: ${{ input.include_deleted }}
+    id: ${{ input.id }}
+    customer_id: ${{ input.customer_id }}
+    subscription_id: ${{ input.subscription_id }}
+    payment_source_id: ${{ input.payment_source_id }}
+    payment_method: ${{ input.payment_method }}
+    gateway: ${{ input.gateway }}
+    gateway_account_id: ${{ input.gateway_account_id }}
+    id_at_gateway: ${{ input.id_at_gateway }}
+    reference_number: ${{ input.reference_number }}
+    type: ${{ input.type }}
+    date: ${{ input.date }}
+    amount: ${{ input.amount }}
+    amount_capturable: ${{ input.amount_capturable }}
+    status: ${{ input.status }}
+    updated_at: ${{ input.updated_at }}
+    sort_by: ${{ input.sort_by }}
+input:
+  limit:
+    type: integer
+    description: The number of resources to be returned.
+    default: 10
+    minimum: 1
+    maximum: 100
+  offset:
+    type: string
+    description: >-
+      Determines your position in the list for pagination. To ensure that the next page is retrieved
+      correctly, always set `offset`
+
+      to the value of `next_offset`
+
+      obtained in the previous iteration of the API call.
+    maxLength: 1000
+  include_deleted:
+    type: boolean
+    description: If set to true, includes the deleted resources in the response. For the deleted
+      resources in the response, the
+      '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*deleted\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*
+      ' attribute will be
+      '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*true\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*
+      '.
+    default: false
+  id:
+    type: object
+    description: |-
+      optional, string filter
+
+      Uniquely identifies the transaction.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *id\[is\] = "txn_88ybdbsnvf2"*
+  customer_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      Identifier of the customer for which this transaction is made.
+      **Supported operators :**
+      is, is_not, starts_with, is_present, in, not_in
+
+      **Example →**
+      *customer_id\[is\] = "5hjdk8nOpd"*
+  subscription_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      Identifier of the subscription for which this transaction is made.
+      **Supported operators :**
+      is, is_not, starts_with, is_present, in, not_in
+
+      **Example →**
+      *subscription_id\[is\] = "5hjdk8nOpd"*
+  payment_source_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      To filter based on Transaction payment source id.
+      **Supported operators :**
+      is, is_not, starts_with, is_present, in, not_in
+
+      **Example →**
+      *payment_source_id\[is\] = "pm_3Nl8XXUQUXDVFa2"*
+  payment_method:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      The payment method of this transaction. Possible values are : card, cash, check, chargeback,
+      bank_transfer, amazon_payments, paypal_express_checkout, direct_debit, alipay, unionpay,
+      apple_pay, wechat_pay, ach_credit, sepa_credit, ideal, google_pay, sofort, bancontact,
+      giropay, dotpay, other, upi, netbanking_emandates.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *payment_method\[is_not\] = "card"*
+  gateway:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      Gateway through which this transaction was done. Applicable only for 'Card' Payment Method.
+      Possible values are : chargebee, chargebee_payments, stripe, wepay, braintree, authorize_net,
+      paypal_pro, pin, eway, eway_rapid, worldpay, balanced_payments, beanstream, bluepay, elavon,
+      first_data_global, hdfc, migs, nmi, ogone, paymill, paypal_payflow_pro, sage_pay, tco,
+      wirecard, amazon_payments, paypal_express_checkout, gocardless, adyen, orbital, moneris_us,
+      moneris, bluesnap, cybersource, vantiv, checkout_com, paypal, ingenico_direct, exact, mollie,
+      quickbooks, razorpay, not_applicable.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *gateway\[is\] = "stripe"*
+  gateway_account_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      The gateway account used for this transaction.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *gateway_account_id\[is\] = "gw_3Nl9BNeQ7438Ks1"*
+  id_at_gateway:
+    type: object
+    description: |-
+      optional, string filter
+
+      The id with which this transaction is referred in gateway.
+      **Supported operators :**
+      is, is_not, starts_with
+
+      **Example →**
+      *id_at_gateway\[is_not\] = "txn_5678HJS89900"*
+  reference_number:
+    type: object
+    description: |-
+      optional, string filter
+      The reference number for this transaction. For example, the check number when payment_method
+      = `check`
+      .
+      Supported operators :
+      is, is_not, starts_with, is_present
+      Example →
+      reference_number[is] = "cus_u239732"
+  type:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      Type of the transaction. Possible values are : authorization, payment, refund,
+      payment_reversal.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *type\[is_not\] = "payment"*
+  date:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      Indicates when this transaction occurred.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *date\[before\] = "1435054328"*
+  amount:
+    type: object
+    description: |-
+      optional, in cents filter
+
+      Amount for this transaction.
+      **Supported operators :**
+      is, is_not, lt, lte, gt, gte, between
+
+      **Example →**
+      *amount\[gt\] = "1200"*
+  amount_capturable:
+    type: object
+    description: |-
+      optional, in cents filter
+
+      To filter based on transaction's unused authorized/blocked amount.
+      **Supported operators :**
+      is, is_not, lt, lte, gt, gte, between
+
+      **Example →**
+      *amount_capturable\[lt\] = "1200"*
+  status:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      The status of this transaction. Possible values are : in_progress, success, voided, failure,
+      timeout, needs_attention.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *status\[is\] = "success"*
+  updated_at:
+    type: object
+    description: >-
+      optional, timestamp(UTC) in seconds filter
+
+      To filter based on `updated_at`.
+
+      This attribute will be present only if the resource has been updated after 2016-09-28. It is
+      advisable when using this filter, to pass the `sort_by`
+
+      input parameter as `updated_at`
+
+      for a faster response.
+
+      Supported operators :
+
+      after, before, on, between
+
+      Example →
+
+      updated_at[after] = "1243545465"
+  sort_by:
+    type: object
+    description: |-
+      optional, string filter
+
+      Sorts based on the specified attribute.
+      **Supported attributes :**
+      date, updated_at
+
+      **Supported sort-orders :**
+      asc, desc
+
+      **Example →**
+      *sort_by\[asc\] = "date"*
+
+      This will sort the result based on the 'date' attribute in ascending(earliest first) order.
+output:
+  transaction_id:
+    type: string
+    path: $.transaction.id
+    description: Unique Chargebee transaction identifier
+  transaction:
+    type: object
+    path: $.transaction
+    description: Resource object representing transaction
+extract:
+  record_path: $.list
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - transaction_id
+    trust_tier: silver
+lookup:
+  description: Retrieve a transaction
+  api:
+    endpoint: /transactions/${{ input.transaction_id }}
+    method: GET
+  input:
+    transaction_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_transactions_smoke
+      input:
+        chargebee_request_origin_device: Android
+        chargebee_request_origin_user: user@example.com
+        chargebee_request_origin_user_encoded: dXNlci7QutCy0ZbRgtC+0YfQutCwQGV4YW1wbGUuY29t
+        chargebee_request_origin_ip: 192.168.1.2
+        chargebee_business_entity_id: null
+        limit: null
+        offset: null
+        include_deleted: null
+        id: txn_88ybdbsnvf2
+        customer_id: 5hjdk8nOpd
+        subscription_id: 5hjdk8nOpd
+        payment_source_id: pm_3Nl8XXUQUXDVFa2
+        payment_method: card
+        gateway: stripe
+        gateway_account_id: gw_3Nl9BNeQ7438Ks1
+        id_at_gateway: txn_5678HJS89900
+        reference_number: cus_u239732
+        type: payment
+        date: '1435054328'
+        amount: '1200'
+        amount_capturable: '1200'
+        status: success
+        updated_at: '1243545465'
+        sort_by: null

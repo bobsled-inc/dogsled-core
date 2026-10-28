@@ -1,0 +1,59 @@
+type: resource
+name: get_groups
+description: Get groups
+api:
+  endpoint: /wiki/rest/api/group
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    limit: ${{ input.limit }}
+    accessType: ${{ input.access_type }}
+input:
+  start:
+    type: integer
+    description: The starting index of the returned groups.
+    default: 0
+    minimum: 0
+  limit:
+    type: integer
+    description: |-
+      The maximum number of groups to return per page.
+      Note, this may be restricted by fixed system limits.
+    default: 200
+    minimum: 0
+  access_type:
+    type: string
+    description: The group permission level for which to filter results.
+    enum:
+      - user
+      - admin
+      - site-admin
+    default: null
+output:
+  type:
+    type: string
+    path: $.type
+  name:
+    type: string
+    path: $.name
+  id:
+    type: string
+    path: $.id
+  usage_type:
+    type: string
+    path: $.usageType
+    description: 'This property represents how this collection of users is used:'
+  managed_by:
+    type: string
+    path: $.managedBy
+    description: 'This property represents how this collection of users is managed:'
+  links:
+    type: object
+    path: $._links
+extract:
+  record_path: $.results
+  paginated: false
+  table:
+    primary_key:
+      - name
+    trust_tier: silver

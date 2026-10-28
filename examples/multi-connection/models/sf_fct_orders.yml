@@ -1,0 +1,35 @@
+spec_version: '0.2'
+name: sf_fct_orders
+type: model
+description: Snowflake fact — orders enriched with customer name and country. Demonstrates target_schema override (ANALYTICS instead of default STAGING).
+grain: order_id
+
+source:
+  ref: sf_stg_orders
+
+joins:
+  - ref: sf_stg_customers
+    type: left
+    on: 'sf_stg_orders.CUSTOMER_ID = sf_stg_customers.CUSTOMER_ID'
+
+columns:
+  - name: ORDER_ID
+    expr: sf_stg_orders.ORDER_ID
+    primary_key: true
+  - name: CUSTOMER_ID
+    expr: sf_stg_orders.CUSTOMER_ID
+  - name: CUSTOMER_NAME
+    expr: sf_stg_customers.CUSTOMER_NAME
+  - name: COUNTRY
+    expr: sf_stg_customers.COUNTRY
+  - name: ORDER_DATE
+    expr: sf_stg_orders.ORDER_DATE
+  - name: TOTAL
+    expr: sf_stg_orders.TOTAL
+  - name: STATUS
+    expr: sf_stg_orders.STATUS
+
+target_schema: ANALYTICS
+
+materialization:
+  type: view

@@ -1,0 +1,47 @@
+spec_version: '0.2'
+name: stg_fieldroutes_appointments
+type: model
+description: Staging appointments from FieldRoutes `/appointment/search`.
+grain: APPOINTMENT_ID
+source:
+  ref: fieldroutes.appointments
+columns:
+  - name: APPOINTMENT_ID
+    expr: appointment_id
+    primary_key: true
+  - name: OFFICE_ID
+    expr: office_id
+  - name: CUSTOMER_ID
+    expr: customer_id
+  - name: ROUTE_ID
+    expr: route_id
+  - name: SPOT_ID
+    expr: spot_id
+  - name: SUBSCRIPTION_ID
+    expr: subscription_id
+  - name: DATE
+    expr: date
+  - name: START
+    expr: start
+  - name: END
+    expr: end
+  - name: DURATION
+    expr: duration
+  - name: STATUS
+    expr: status
+  - name: STATUS_TEXT
+    expr: status_text
+  - name: COMPLETED_BY
+    expr: completed_by
+  - name: SERVICED_BY
+    expr: serviced_by
+  - name: TICKET_ID
+    expr: ticket_id
+  - name: AMOUNT_COLLECTED
+    expr: amount_collected
+  - name: PAYMENT_METHOD
+    expr: payment_method
+  - name: DATE_COMPLETED
+    expr: date_completed
+materialization:
+  type: view

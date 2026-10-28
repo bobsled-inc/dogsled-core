@@ -1,0 +1,86 @@
+type: resource
+name: list_message
+description: List SMS and MMS messages for a Twilio account
+api:
+  endpoint: /2010-04-01/Accounts/${{ input.account_sid }}/Messages.json
+  method: GET
+  query_params:
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+    DateSent: ${{ input.date_sent }}
+input:
+  account_sid:
+    type: string
+    description: Twilio account SID to read messages from
+    required: true
+  page_size:
+    type: integer
+    description: Number of messages to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+  date_sent:
+    type: timestamp
+    description: Filter messages sent on or after this date
+query:
+  filters:
+    date_sent:
+      operators:
+        - gte
+      description: Filter messages sent on or after this date
+      bind:
+        gte:
+          input: date_sent
+      compile:
+        gte:
+          mode: http_query
+          param: DateSent
+output:
+  sid:
+    type: string
+    path: $.sid
+    description: Twilio message SID
+  account_sid:
+    type: string
+    path: $.account_sid
+    description: Parent account SID
+  from:
+    type: string
+    path: $.from
+    description: Sending phone number
+  to:
+    type: string
+    path: $.to
+    description: Recipient phone number
+  status:
+    type: string
+    path: $.status
+    description: Current message status
+  direction:
+    type: string
+    path: $.direction
+    description: Direction of the message
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Timestamp when the message was created
+  date_sent:
+    type: timestamp
+    path: $.date_sent
+    description: Timestamp when the message was sent
+extract:
+  record_path: $.messages
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  for_each:
+    resource: list_account
+    field: sid
+    input: account_sid
+  table:
+    primary_key:
+      - sid
+    trust_tier: silver

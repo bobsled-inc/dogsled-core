@@ -1,0 +1,16 @@
+spec_version: '0.2'
+name: stg_events
+type: model
+description: 'Staging events from the BigQuery integration.'
+grain: event_id
+source:
+  ref: analytics_bq.raw_events
+columns:
+  - name: event_id
+    expr: event_id
+  - name: user_id
+    expr: user_id
+  - name: occurred_at
+    expr: "TIMESTAMP_TRUNC('day', occurred_at)"
+materialization:
+  type: view

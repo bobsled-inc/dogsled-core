@@ -1,0 +1,93 @@
+spec_version: '0.2'
+name: vercel__metric_query_results
+type: model
+description: One row per Vercel metric query key and UTC window, preserving result arrays and query coverage evidence.
+grain:
+  - query_key
+  - start_time
+  - end_time
+source:
+  ref: stg_vercel__metric_query
+columns:
+  - name: query_key
+    expr: stg_vercel__metric_query.query_key
+    primary_key: true
+    semantic_role: entity_id
+    description: Stable caller-supplied query recipe key.
+  - name: metric
+    expr: stg_vercel__metric_query.metric
+    semantic_role: categorical
+    description: Queried metric identifier.
+  - name: scope
+    expr: stg_vercel__metric_query.scope
+    semantic_role: categorical
+    description: Owner or project scope used by Vercel.
+  - name: aggregation
+    expr: stg_vercel__metric_query.aggregation
+    semantic_role: categorical
+    description: Requested aggregation.
+  - name: group_by
+    expr: stg_vercel__metric_query.group_by
+    semantic_role: categorical
+    description: Requested grouping dimensions.
+  - name: filter
+    expr: stg_vercel__metric_query.filter
+    semantic_role: categorical
+    description: Requested metric filter expression.
+  - name: limit
+    expr: stg_vercel__metric_query.limit
+    semantic_role: measure
+    description: Requested maximum grouped result count.
+  - name: order_by
+    expr: stg_vercel__metric_query.order_by
+    semantic_role: categorical
+    description: Requested result ordering column.
+  - name: order_direction
+    expr: stg_vercel__metric_query.order_direction
+    semantic_role: categorical
+    description: Requested result ordering direction.
+  - name: granularity
+    expr: stg_vercel__metric_query.granularity
+    semantic_role: categorical
+    description: Requested time bucket configuration.
+  - name: start_time
+    expr: stg_vercel__metric_query.start_time
+    primary_key: true
+    semantic_role: time_dimension
+    description: Inclusive UTC query start.
+  - name: end_time
+    expr: stg_vercel__metric_query.end_time
+    primary_key: true
+    semantic_role: time_dimension
+    description: Exclusive UTC query end.
+  - name: bucket_timezone
+    expr: stg_vercel__metric_query.bucket_timezone
+    semantic_role: categorical
+    description: Requested IANA timezone used to align calendar buckets.
+  - name: retrieval_time
+    expr: stg_vercel__metric_query.retrieval_time
+    semantic_role: event_timestamp
+    description: UTC retrieval time.
+  - name: data
+    expr: stg_vercel__metric_query.data
+    semantic_role: categorical
+    description: Metric result rows preserved as a JSON array.
+  - name: summary
+    expr: stg_vercel__metric_query.summary
+    semantic_role: categorical
+    description: Query summary or control totals.
+  - name: statistics
+    expr: stg_vercel__metric_query.statistics
+    semantic_role: categorical
+    description: Query execution statistics.
+  - name: coverage
+    expr: stg_vercel__metric_query.coverage
+    semantic_role: categorical
+    description: Coverage evidence when returned. Grouped result arrays are not assumed exhaustive.
+tags:
+  - vercel
+  - observability
+  - metrics
+trust_tier: gold
+materialization:
+  type: table

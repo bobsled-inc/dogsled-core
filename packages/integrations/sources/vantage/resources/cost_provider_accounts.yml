@@ -1,0 +1,59 @@
+type: resource
+name: cost_provider_accounts
+description: Cloud provider accounts connected to Vantage
+api:
+  endpoint: /cost_provider_accounts
+  method: GET
+  query_params:
+    workspace_token: ${{ input.workspace_token }}
+input:
+  workspace_token:
+    type: string
+    description: The token of the Workspace to list CostProviderAccounts for.
+query:
+  filters:
+    workspace_token:
+      operators:
+        - eq
+      description: The token of the Workspace to list CostProviderAccounts for.
+      bind:
+        eq:
+          input: workspace_token
+      compile:
+        eq:
+          mode: http_query
+          param: workspace_token
+output:
+  workspace_token:
+    type: string
+    path: $.__input__.workspace_token
+    description: The workspace this account belongs to (from for_each iteration).
+  title:
+    type: string
+    path: $.title
+    description: The display name of the provider account.
+  account_id:
+    type: string
+    path: $.account_id
+    description: The provider account identifier.
+  provider_uuid:
+    type: string
+    path: $.provider_uuid
+    description: The provider-specific unique identifier.
+  provider:
+    type: string
+    path: $.provider
+    description: The provider type (aws, azure, gcp, etc.).
+extract:
+  record_path: $.cost_provider_accounts
+  for_each:
+    resource: workspaces
+    field: token
+    input: workspace_token
+  table:
+    primary_key:
+      - workspace_token
+      - account_id
+      - provider
+    load_strategy: full_refresh
+    trust_tier: silver

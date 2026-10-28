@@ -1,0 +1,48 @@
+type: resource
+name: get_task_projects
+description: Projects associated with each Asana task.
+api:
+  endpoint: /tasks/${{ input.task_gid }}/projects
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  task_gid:
+    type: string
+    description: Task GID whose projects should be retrieved.
+    required: true
+  limit:
+    type: integer
+    description: Number of projects to return per page.
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response.
+output:
+  task_gid:
+    type: string
+    from:
+      resource: get_tasks
+      path: $.gid
+  project_gid:
+    type: string
+    path: $.gid
+  project_name:
+    type: string
+    path: $.name
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  for_each:
+    resource: get_tasks
+    field: gid
+    input: task_gid
+  table:
+    primary_key:
+      - task_gid
+      - project_gid
+    trust_tier: silver

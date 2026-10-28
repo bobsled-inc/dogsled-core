@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: vq
+name: top_customers
+nlq: Who are our top 10 customers by revenue?
+sql: |
+  SELECT customer_id, customer_email, SUM(order_total) AS revenue
+  FROM {fct_orders}
+  GROUP BY customer_id, customer_email
+  ORDER BY revenue DESC
+  LIMIT 10
+tags:
+  - shop-demo
+  - revenue

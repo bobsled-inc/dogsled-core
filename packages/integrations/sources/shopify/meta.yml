@@ -1,0 +1,14 @@
+display_name: Shopify
+category: marketing
+tags:
+  - ecommerce
+  - orders
+  - catalog
+docs_url: https://shopify.dev/docs/api/admin-rest
+auth_setup:
+  - env: SHOPIFY_STORE
+    description: Shopify store subdomain, for example acme-store.
+    docs_url: https://shopify.dev/docs/api/admin-rest
+  - env: SHOPIFY_ADMIN_ACCESS_TOKEN
+    description: Shopify Admin API access token for the store.
+    docs_url: https://shopify.dev/docs/api/admin-rest

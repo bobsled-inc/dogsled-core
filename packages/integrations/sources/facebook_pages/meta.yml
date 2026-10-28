@@ -1,0 +1,14 @@
+display_name: Facebook Pages
+category: marketing
+tags:
+  - facebook
+  - social
+  - meta
+  - pages
+  - marketing
+docs_url: https://developers.facebook.com/docs/pages-api/
+auth_setup:
+  - env: FACEBOOK_API_VERSION
+    description: Meta Graph API version, for example v25.0
+  - env: FACEBOOK_ACCESS_TOKEN
+    description: Meta access token with pages_show_list and pages_read_engagement permissions

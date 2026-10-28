@@ -1,0 +1,24 @@
+spec_version: '0.2'
+type: model
+name: mixed_order_report
+description: Join local orders with Postgres customer data.
+grain:
+  - order_id
+execution:
+  engine: local_duckdb
+  staging: ephemeral
+source:
+  ref: local_duckdb.orders
+joins:
+  - ref: local_pg.customers
+    type: inner
+    on: local_duckdb.orders.customer_id = local_pg.customers.id
+columns:
+  - name: order_id
+    expr: local_duckdb.orders.id
+  - name: customer_name
+    expr: local_pg.customers.name
+  - name: amount
+    expr: local_duckdb.orders.amount
+materialization:
+  type: table

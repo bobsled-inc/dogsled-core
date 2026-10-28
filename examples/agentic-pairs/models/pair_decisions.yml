@@ -1,0 +1,17 @@
+spec_version: '0.2'
+type: model
+name: pair_decisions
+description: Apply a fixed policy to advice. This example never authorizes a merge.
+grain: [pair_id]
+source: { ref: pair_assessments }
+columns:
+  - { name: pair_id, expr: pair_id }
+  - { name: assessment, expr: assessment }
+  - { name: reason, expr: reason }
+  - name: next_action
+    expr: >-
+      raw_sql(CASE WHEN assessment = 'same_user' THEN 'review_merge'
+      WHEN assessment = 'different_user' THEN 'keep_separate'
+      ELSE 'request_more_evidence' END)
+  - { name: merge_authorized, expr: 'raw_sql(FALSE)' }
+materialization: { type: table }

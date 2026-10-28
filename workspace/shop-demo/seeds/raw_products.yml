@@ -1,0 +1,16 @@
+spec_version: '0.2'
+name: raw_products
+type: seed
+description: Raw product catalog with inconsistent category casing.
+payload: { format: csv, path: data/raw_products.csv, delimiter: ',' }
+schema:
+  columns:
+    - { name: product_id, type: STRING, primary_key: true }
+    - { name: sku, type: STRING }
+    - { name: product_name, type: STRING }
+    - { name: category, type: STRING }
+    - { name: unit_price, type: NUMBER }
+materialization: { type: table, target_schema: raw, on_conflict: replace }
+validation:
+  required_columns: [product_id, sku, product_name, category, unit_price]
+  unique_columns: [product_id]

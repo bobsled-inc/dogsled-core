@@ -1,0 +1,241 @@
+type: resource
+name: check_runs
+description: Check runs for a Git reference in a GitHub repository, covering both GitHub Actions and external CI providers.
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/commits/${{ input.ref }}/check-runs
+  method: GET
+  query_params:
+    check_name: ${{ input.check_name }}
+    status: ${{ input.status }}
+    filter: ${{ input.filter }}
+    per_page: ${{ input.per_page }}
+    page: ${{ input.page }}
+    app_id: ${{ input.app_id }}
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: my-org
+  repo:
+    type: string
+    description: Repository name
+    default: my-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by commits fanout and used for repository context output.
+  ref:
+    type: string
+    description: Git ref to inspect for check runs. This can be a branch name, tag name, or commit SHA.
+    default: main
+  check_name:
+    type: string
+    description: Filter check runs by exact check name
+  status:
+    type: string
+    description: Filter check runs by lifecycle status
+    enum:
+      - queued
+      - in_progress
+      - completed
+  filter:
+    type: string
+    description: Whether to return only the latest completed check runs or all historical runs for the ref
+    default: latest
+    enum:
+      - latest
+      - all
+  per_page:
+    type: integer
+    description: Number of check runs to return per page (max 100)
+    default: 100
+  page:
+    type: integer
+    description: Page number to fetch
+    default: 1
+  app_id:
+    type: integer
+    description: Filter check runs to a specific GitHub App ID
+query:
+  filters:
+    app_id:
+      operators:
+        - eq
+      description: Filter check runs to a specific GitHub App ID
+      bind:
+        eq:
+          input: app_id
+      compile:
+        eq:
+          mode: http_query
+          param: app_id
+    status:
+      operators:
+        - eq
+      enum:
+        - queued
+        - in_progress
+        - completed
+      description: Filter check runs by lifecycle status
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  id:
+    type: integer
+    semantic_role: entity_id
+    path: $.id
+    description: Unique numeric identifier assigned by GitHub to the check run
+  node_id:
+    type: string
+    semantic_role: entity_id
+    path: $.node_id
+    description: Global relay ID used by the GitHub GraphQL API
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Name of the check run, such as the CI job or status check label
+  head_sha:
+    type: string
+    semantic_role: identifier
+    path: $.head_sha
+    description: Commit SHA that the check run evaluated
+  external_id:
+    type: string
+    semantic_role: entity_id
+    path: $.external_id
+    description: External identifier provided by the CI system for the check run
+  url:
+    type: string
+    semantic_role: url
+    path: $.url
+    description: REST API URL for this check run
+  html_url:
+    type: string
+    semantic_role: url
+    path: $.html_url
+    description: Browser URL for the check run details page on GitHub
+  details_url:
+    type: string
+    semantic_role: url
+    path: $.details_url
+    description: External details URL supplied by the check run provider
+  status:
+    type: string
+    semantic_role: categorical
+    path: $.status
+    description: Lifecycle status of the check run
+  conclusion:
+    type: string
+    semantic_role: categorical
+    path: $.conclusion
+    description: Final conclusion once the check run completes
+  started_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.started_at
+    description: Timestamp when the check run started
+  completed_at:
+    type: timestamp
+    semantic_role: event_timestamp
+    path: $.completed_at
+    description: Timestamp when the check run completed
+  output_title:
+    type: string
+    semantic_role: name
+    path: $.output.title
+    description: Short title attached to the check run output
+  output_summary:
+    type: string
+    semantic_role: categorical
+    path: $.output.summary
+    description: Summary text attached to the check run output
+  output_text:
+    type: string
+    semantic_role: categorical
+    path: $.output.text
+    description: Detailed text attached to the check run output
+  output_annotations_count:
+    type: integer
+    semantic_role: count
+    path: $.output.annotations_count
+    description: Number of annotations attached to the check run
+  output_annotations_url:
+    type: string
+    semantic_role: url
+    path: $.output.annotations_url
+    description: REST API URL for the check run annotations
+  check_suite_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.check_suite.id
+    description: Numeric identifier of the parent check suite
+  app_id:
+    type: integer
+    semantic_role: entity_id
+    path: $.app.id
+    description: Numeric identifier of the GitHub App that created the check run
+  app_slug:
+    type: string
+    semantic_role: identifier
+    path: $.app.slug
+    description: Slug of the GitHub App that created the check run
+  app_name:
+    type: string
+    semantic_role: name
+    path: $.app.name
+    description: Display name of the GitHub App that created the check run
+  app_owner_login:
+    type: string
+    semantic_role: name
+    path: $.app.owner.login
+    description: Login of the user or organization that owns the GitHub App
+  pull_request_numbers:
+    type: array
+    semantic_role: categorical
+    path: $.pull_requests[*].number
+    description: Pull request numbers associated with the check run, when available
+extract:
+  record_path: $.check_runs
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  for_each:
+    resource: commits
+    bindings:
+      - field: owner
+        input: owner
+        source: input
+      - field: repo
+        input: repo
+        source: input
+      - field: repository_full_name
+        input: repository_full_name
+        source: input
+      - field: sha
+        input: ref
+via: rest

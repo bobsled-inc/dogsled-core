@@ -1,0 +1,23 @@
+spec_version: '1'
+type: resource
+name: orders
+integration: local_files
+source:
+  path: orders.csv
+  format: csv
+  options:
+    header: true
+replication:
+  method: full_refresh
+extract:
+  table:
+    primary_key:
+      - id
+    load_strategy: full_refresh
+output:
+  id:
+    type: integer
+  customer_id:
+    type: integer
+  amount:
+    type: number

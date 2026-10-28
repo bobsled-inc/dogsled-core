@@ -1,0 +1,13 @@
+spec_version: '1'
+auth_env_vars: [MYSQL_HOST, MYSQL_PASSWORD, MYSQL_USER]
+type: integration
+name: test_mysql
+source_type: mysql
+connection:
+  host_env: MYSQL_HOST
+  port: 3306
+  database: test_db
+auth:
+  type: password
+  username_env: MYSQL_USER
+  password_env: MYSQL_PASSWORD

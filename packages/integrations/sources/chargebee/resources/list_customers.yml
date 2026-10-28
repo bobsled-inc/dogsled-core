@@ -1,0 +1,344 @@
+type: resource
+name: list_customers
+description: List customers
+api:
+  endpoint: /customers
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    include_deleted: ${{ input.include_deleted }}
+    id: ${{ input.id }}
+    first_name: ${{ input.first_name }}
+    last_name: ${{ input.last_name }}
+    email: ${{ input.email }}
+    company: ${{ input.company }}
+    phone: ${{ input.phone }}
+    auto_collection: ${{ input.auto_collection }}
+    taxability: ${{ input.taxability }}
+    created_at: ${{ input.created_at }}
+    updated_at: ${{ input.updated_at }}
+    offline_payment_method: ${{ input.offline_payment_method }}
+    auto_close_invoices: ${{ input.auto_close_invoices }}
+    channel: ${{ input.channel }}
+    business_entity_id: ${{ input.business_entity_id }}
+    sort_by: ${{ input.sort_by }}
+    relationship: ${{ input.relationship }}
+input:
+  limit:
+    type: integer
+    description: The number of resources to be returned.
+    default: 10
+    minimum: 1
+    maximum: 100
+  offset:
+    type: string
+    description: >-
+      Determines your position in the list for pagination. To ensure that the next page is retrieved
+      correctly, always set `offset`
+
+      to the value of `next_offset`
+
+      obtained in the previous iteration of the API call.
+    maxLength: 1000
+  include_deleted:
+    type: boolean
+    description: >-
+      If set to true, includes the deleted resources in the response. For the deleted resources in
+      the response, the '**deleted**
+
+      ' attribute will be '**true**
+
+      '.
+    default: false
+  id:
+    type: object
+    description: |-
+      optional, string filter
+
+      Identifier of the customer.
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *id\[is\] = "9bsvnHgsvmsI"*
+  first_name:
+    type: object
+    description: |-
+      optional, string filter
+
+      First name of the customer.
+      **Supported operators :**
+      is, is_not, starts_with, is_present
+
+      **Example →**
+      *first_name\[is\] = "John"*
+  last_name:
+    type: object
+    description: |-
+      optional, string filter
+
+      Last name of the customer.
+      **Supported operators :**
+      is, is_not, starts_with, is_present
+
+      **Example →**
+      *last_name\[is\] = "Clint"*
+  email:
+    type: object
+    description: |-
+      optional, string filter
+
+      Email of the customer. Configured email notifications will be sent to this email.
+      **Supported operators :**
+      is, is_not, starts_with, is_present
+
+      **Example →**
+      *email\[is\] = "john@test.com.example.com"*
+  company:
+    type: object
+    description: |-
+      optional, string filter
+
+      Company name of the customer.
+      **Supported operators :**
+      is, is_not, starts_with, is_present
+
+      **Example →**
+      *company\[is_not\] = "Globex Corp"*
+  phone:
+    type: object
+    description: |-
+      optional, string filter
+
+      Phone number of the customer.
+      **Supported operators :**
+      is, is_not, starts_with, is_present
+
+      **Example →**
+      *phone\[is_not\] = "(541) 754-3010"*
+  auto_collection:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      Whether payments needs to be collected automatically for this customer. Possible values are :
+      on, off.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *auto_collection\[is\] = "on"*
+  taxability:
+    type: object
+    description: |-
+      optional, enumerated string filter
+
+      Specifies if the customer is liable for tax. Possible values are : taxable, exempt.
+
+      **Supported operators :**
+      is, is_not, in, not_in
+
+      **Example →**
+      *taxability\[is\] = "taxable"*
+  created_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+
+      Timestamp indicating when this customer resource is created.
+      **Supported operators :**
+      after, before, on, between
+
+      **Example →**
+      *created_at\[before\] = "1435054328"*
+  updated_at:
+    type: object
+    description: >-
+      optional, timestamp(UTC) in seconds filter
+
+      To filter based on `updated_at`.
+
+      This attribute will be present only if the resource has been updated after 2016-09-28. It is
+      advisable when using this filter, to pass the `sort_by`
+
+      input parameter as `updated_at`
+
+      for a faster response.
+
+      Supported operators :
+
+      after, before, on, between
+
+      Example →
+
+      updated_at[after] = "1243545465"
+  offline_payment_method:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      The preferred offline payment method for the customer. Possible values are : no_preference,
+      cash, check, bank_transfer, ach_credit, sepa_credit.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *offline_payment_method\[is\] = "cash"*
+  auto_close_invoices:
+    type: object
+    description: >-
+      optional, boolean filter
+
+
+      Override for this customer, the [site-level
+      setting](https://www.chargebee.com/docs/2.0/metered_billing.html#configuring-metered-billing)
+
+      for auto-closing invoices. Only applicable when auto-closing invoices has been enabled for the
+      site. This attribute is also available at the [subscription
+      level](/docs/api/subscriptions/subscription-object#auto_close_invoices)
+
+      which takes precedence. Possible values are : *true, false*
+
+
+      **Supported operators :**
+
+      is
+
+
+      **Example →**
+
+      *auto_close_invoices\[is\] = "true"*
+  channel:
+    type: object
+    description: >-
+      optional, enumerated string filter
+
+
+      The subscription channel this object originated from and is maintained in. Possible values are
+      : web, app_store, play_store.
+
+
+      **Supported operators :**
+
+      is, is_not, in, not_in
+
+
+      **Example →**
+
+      *channel\[is\] = "APP STORE"*
+  business_entity_id:
+    type: object
+    description: |-
+      optional, string filter
+
+      The unique ID of the [business entity](/docs/api/advanced-features)
+      of this subscription. This is always the same as the
+      [business entity](/docs/api/subscriptions/subscription-object#customer_id)
+      of the customer.
+
+      **Supported operators :**
+      is, is_not, starts_with
+
+      **Example →**
+      *business_entity_id\[is_not\] = "business_entity_id"*
+  sort_by:
+    type: object
+    description: >-
+      optional, string filter
+
+
+      Sorts based on the specified attribute.
+
+      **Supported attributes :**
+
+      created_at, updated_at
+
+
+      **Supported sort-orders :**
+
+      asc, desc
+
+
+      **Example →**
+
+      *sort_by\[asc\] = "created_at"*
+
+
+      This will sort the result based on the 'created_at' attribute in ascending(earliest first)
+      order.
+  relationship:
+    type: object
+    description: Parameters for relationship
+output:
+  customer_id:
+    type: string
+    path: $.customer.id
+    description: Unique Chargebee customer identifier
+  customer:
+    type: object
+    path: $.customer
+    description: Resource object representing customer
+  card:
+    type: object
+    path: $.card
+    description: Resource object representing card
+extract:
+  record_path: $.list
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - customer_id
+    trust_tier: silver
+lookup:
+  description: Retrieve a customer
+  api:
+    endpoint: /customers/${{ input.customer_id }}
+    method: GET
+  input:
+    customer_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_customers_smoke
+      input:
+        chargebee_request_origin_device: Android
+        chargebee_request_origin_user: user@example.com
+        chargebee_request_origin_user_encoded: dXNlci7QutCy0ZbRgtC+0YfQutCwQGV4YW1wbGUuY29t
+        chargebee_request_origin_ip: 192.168.1.2
+        chargebee_business_entity_id: null
+        limit: null
+        offset: null
+        include_deleted: null
+        id: 9bsvnHgsvmsI
+        first_name: John
+        last_name: Clint
+        email: john@test.com.example.com
+        company: Globex Corp
+        phone: (541) 754-3010
+        auto_collection: on
+        taxability: taxable
+        created_at: '1435054328'
+        updated_at: '1243545465'
+        offline_payment_method: cash
+        auto_close_invoices: 'true'
+        channel: APP STORE
+        business_entity_id: business_entity_id
+        sort_by: null
+        relationship: null

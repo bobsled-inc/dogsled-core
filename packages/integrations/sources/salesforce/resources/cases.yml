@@ -1,0 +1,57 @@
+type: resource
+name: cases
+description: Cases from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT
+      Id,CaseNumber,Subject,Status,Priority,Origin,ContactId,AccountId,OwnerId,IsClosed,CreatedDate,LastModifiedDate
+      FROM Case
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  case_number:
+    type: string
+    path: $.CaseNumber
+  subject:
+    type: string
+    path: $.Subject
+  status:
+    type: string
+    path: $.Status
+  priority:
+    type: string
+    path: $.Priority
+  origin:
+    type: string
+    path: $.Origin
+  contact_id:
+    type: string
+    path: $.ContactId
+  account_id:
+    type: string
+    path: $.AccountId
+  owner_id:
+    type: string
+    path: $.OwnerId
+  is_closed:
+    type: boolean
+    path: $.IsClosed
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

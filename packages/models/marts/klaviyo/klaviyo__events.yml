@@ -1,0 +1,63 @@
+spec_version: '0.2'
+name: klaviyo__events
+type: model
+description: Klaviyo event detail with profile context.
+grain: event_id
+source:
+  ref: stg_klaviyo__events
+joins:
+  - ref: stg_klaviyo__profiles
+    type: left
+    on: stg_klaviyo__events.profile_id = stg_klaviyo__profiles.profile_id
+columns:
+  - name: event_id
+    expr: stg_klaviyo__events.event_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Klaviyo event identifier.
+  - name: event_type
+    expr: stg_klaviyo__events.type
+    semantic_role: categorical
+    description: Type of the tracked event.
+  - name: metric_id
+    expr: stg_klaviyo__events.metric_id
+    semantic_role: entity_id
+    description: Klaviyo metric associated with the event.
+  - name: profile_id
+    expr: stg_klaviyo__events.profile_id
+    semantic_role: entity_id
+    references: stg_klaviyo__profiles.profile_id
+    description: Profile that triggered the event.
+  - name: profile_email
+    expr: stg_klaviyo__profiles.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the profile that triggered the event.
+  - name: profile_first_name
+    expr: stg_klaviyo__profiles.first_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: First name of the profile.
+  - name: profile_last_name
+    expr: stg_klaviyo__profiles.last_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Last name of the profile.
+  - name: occurred_at
+    expr: stg_klaviyo__events.time
+    semantic_role: event_timestamp
+    description: Timestamp when the event occurred.
+  - name: value
+    expr: stg_klaviyo__events.value
+    semantic_role: measure
+    description: Numeric value associated with the event.
+tags:
+  - klaviyo
+  - marketing
+  - events
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,37 @@
+type: resource
+name: groups
+description: Groups from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Name,Type,DeveloperName,CreatedDate,LastModifiedDate FROM Group
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.Name
+  type:
+    type: string
+    path: $.Type
+  developer_name:
+    type: string
+    path: $.DeveloperName
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

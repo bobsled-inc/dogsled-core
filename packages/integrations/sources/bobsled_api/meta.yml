@@ -1,0 +1,20 @@
+display_name: Bobsled API
+category: developer-tools
+tags:
+  - data-sharing
+  - metadata
+  - shares
+docs_url: https://api.bobsled.com/reference/getting-started
+auth_setup:
+  - env: BOBSLED_API_HOST
+    description: Bobsled API host without https://, for example acme.bobsled-cloud-api.com
+    docs_url: https://api.bobsled.com/reference/getting-started
+  - env: BOBSLED_CLIENT_ID
+    description: Bobsled client ID from the Environment page
+    docs_url: https://docs.bobsled.com/docs/environment
+  - env: BOBSLED_SERVICE_ACCOUNT_EMAIL
+    description: Bobsled service account email
+    docs_url: https://docs.bobsled.com/docs/service-accounts
+  - env: BOBSLED_SERVICE_ACCOUNT_SECRET
+    description: Bobsled service account secret
+    docs_url: https://docs.bobsled.com/docs/service-accounts

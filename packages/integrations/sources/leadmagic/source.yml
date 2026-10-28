@@ -1,0 +1,28 @@
+spec_version: '2'
+type: source
+name: leadmagic
+description: LeadMagic Email Finder API
+transports:
+  - id: default
+    base_url: https://api.leadmagic.io
+    auth:
+      type: api-key
+      header: X-API-Key
+      key: ${{ env.LEADMAGIC_API_KEY }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 6
+      burst: 12
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+default_transport: default

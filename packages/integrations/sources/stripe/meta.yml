@@ -1,0 +1,10 @@
+display_name: Stripe
+category: finance
+tags: [payments, billing, subscriptions, invoices]
+logo_url: https://stripe.com/favicon.ico
+docs_url: https://docs.stripe.com/api
+openapi_url: https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.json
+auth_setup:
+  - env: STRIPE_SECRET_KEY
+    description: Stripe secret API key (starts with sk_)
+    docs_url: https://docs.stripe.com/keys

@@ -1,0 +1,17 @@
+display_name: Datadog
+category: cloud-infra
+logo_url: https://www.datadoghq.com/favicon.ico
+tags:
+  - datadog
+  - observability
+  - monitors
+  - infrastructure
+docs_url: https://docs.datadoghq.com/api/latest/
+openapi_url: https://raw.githubusercontent.com/DataDog/datadog-api-client-typescript/master/.generator/schemas/v1/openapi.yaml
+auth_setup:
+  - env: DATADOG_API_KEY
+    description: Datadog API key
+    docs_url: https://docs.datadoghq.com/account_management/api-app-keys/
+  - env: DATADOG_APPLICATION_KEY
+    description: Datadog application key used with the API key
+    docs_url: https://docs.datadoghq.com/account_management/api-app-keys/

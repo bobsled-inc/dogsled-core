@@ -1,0 +1,27 @@
+spec_version: '0.2'
+name: notion_users
+type: source
+source_type: warehouse_table
+connection: warehouse
+table: raw.notion_users
+description: Raw Notion user data extracted from the Notion API
+schema:
+  columns:
+    - name: id
+      type: VARCHAR
+      description: Unique user UUID
+    - name: name
+      type: VARCHAR
+      description: Display name of the user or bot
+    - name: object
+      type: VARCHAR
+      description: Always "user"
+    - name: user_type
+      type: VARCHAR
+      description: User type — "person" or "bot"
+    - name: email
+      type: VARCHAR
+      description: Email address (only present for person type)
+    - name: avatar_url
+      type: VARCHAR
+      description: URL of the user avatar image

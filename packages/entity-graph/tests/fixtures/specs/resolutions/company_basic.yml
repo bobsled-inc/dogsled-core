@@ -1,0 +1,71 @@
+spec_version: '0.2'
+name: company_resolution
+type: resolution
+description: Resolve company entities across CRM and Enrichment vendor.
+
+inputs:
+  - ref: ecom.crm_companies
+    role: internal
+    trust_tier: gold
+    id_fields: [salesforce_id]
+  - ref: ecom.enrichment_vendor_companies
+    role: provider
+    trust_tier: silver
+    id_fields: [zi_company_id]
+
+standardize:
+  - field: company_name
+    transforms: [lowercase, strip_legal_suffixes, collapse_whitespace]
+  - field: domain
+    transforms: [lowercase, strip_www, strip_protocol]
+
+blocking:
+  rules:
+    - name: exact_domain
+      key: domain
+    - name: name_prefix
+      key: 'standardized_company_name'
+  candidate_limit: 5000000
+
+deterministic_rules:
+  - name: duns_match
+    conditions:
+      - field: duns_number
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: standardized_company_name
+      algorithm: jaro_winkler
+      weight: 0.35
+    - field: domain
+      algorithm: exact
+      weight: 0.25
+    - field: phone
+      algorithm: exact
+      weight: 0.15
+
+thresholds:
+  auto_merge: 0.92
+  review: 0.55
+  auto_reject: 0.55
+
+agent_policy:
+  enabled: true
+  model: claude-sonnet-4
+  max_pairs_per_run: 5000
+  max_cost_usd: 50.00
+  max_embedding_cost_usd: 0.25
+
+semantic_triage:
+  provider: openai_text_embedding_3_small # embedding model/provider used for semantic similarity
+  fields: [company_name, domain] # fields concatenated for pairwise embedding comparison
+  promote_to_merge_threshold: 0.94 # 0-1 score >= threshold promotes candidate to merge
+  promote_to_reject_threshold: 0.55 # 0-1 score <= threshold promotes candidate to reject
+
+outputs:
+  target_schema: entity_graph

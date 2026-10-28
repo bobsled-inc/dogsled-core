@@ -1,0 +1,48 @@
+spec_version: '1'
+type: resource
+description: Fictional paginated shop records.
+name: orders
+integration: shop_api
+api:
+  endpoint: /orders
+  method: GET
+input:
+  id:
+    type: integer
+query:
+  filters:
+    id:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: id
+output:
+  id:
+    type: integer
+    path: $.id
+  customer_id:
+    type: integer
+    path: $.customer_id
+  product_id:
+    type: integer
+    path: $.product_id
+  amount:
+    type: number
+    path: $.amount
+  order_date:
+    type: string
+    path: $.order_date
+  status:
+    type: string
+    path: $.status
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id
+    load_strategy: full_refresh

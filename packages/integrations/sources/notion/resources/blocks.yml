@@ -1,0 +1,76 @@
+type: resource
+name: blocks
+description: "List child blocks of a page or parent block. Blocks are the fundamental content units in Notion \u2014 every piece of content (paragraphs, headings, lists, code blocks, embeds, etc.) is represented as a block. Blocks form a tree structure where pages are root blocks and content is nested within."
+api:
+  endpoint: /v1/blocks/${{ input.block_id }}/children
+  method: GET
+  query_params:
+    page_size: '100'
+input:
+  block_id:
+    type: string
+    description: The UUID of the parent page or block whose children to retrieve. Use a page ID to get the top-level content of a page, or a block ID to get nested content within a toggle, column, or other container block.
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique block UUID. This ID can be used to retrieve the block's children (if has_children is true), update the block content, or delete the block.
+  object:
+    type: string
+    path: $.object
+    description: Always "block" for this resource. Identifies the object type in the Notion API.
+  type:
+    type: string
+    path: $.type
+    description: The block type, which determines the kind of content and which type-specific property contains the block data. Common values include "paragraph", "heading_1", "heading_2", "heading_3", "bulleted_list_item", "numbered_list_item", "to_do", "toggle", "code", "quote", "callout", "divider", "table", "image", "video", "file", "bookmark", "embed", "child_page", "child_database", "column_list", "column", "synced_block", "table_of_contents", "breadcrumb", "equation", "link_preview", "link_to_page".
+  has_children:
+    type: boolean
+    path: $.has_children
+    description: True if this block contains nested child blocks. For example, toggle blocks, column blocks, and bulleted list items with sub-items will have has_children=true. Use the block's ID to fetch its children recursively.
+  parent_type:
+    type: string
+    path: $.parent.type
+    description: "Type of the parent object \u2014 \"page_id\" if this block is a direct child of a page, or \"block_id\" if nested inside another block (e.g., inside a toggle or column)."
+  parent_id:
+    type: string
+    path: $.parent[${{ $.parent.type }}]
+    description: UUID of the parent page or block that contains this block.
+  created_by_id:
+    type: string
+    path: $.created_by.id
+    description: UUID of the user who created this block.
+  last_edited_by_id:
+    type: string
+    path: $.last_edited_by.id
+    description: UUID of the user who last modified this block's content or properties.
+  archived:
+    type: boolean
+    path: $.archived
+    description: True if this block has been archived. Archived blocks are hidden from the page view but retained in the API.
+  in_trash:
+    type: boolean
+    path: $.in_trash
+    description: True if this block has been moved to the trash. Trashed blocks are scheduled for permanent deletion.
+  created_time:
+    type: timestamp
+    path: $.created_time
+    description: ISO 8601 timestamp when the block was first created.
+  last_edited_time:
+    type: timestamp
+    path: $.last_edited_time
+    description: ISO 8601 timestamp when the block was last modified. This updates when the block's content or formatting changes.
+extract:
+  for_each:
+    resource: pages_rest
+    field: id
+    input: block_id
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: start_cursor
+  table:
+    primary_key:
+      - id
+via: rest

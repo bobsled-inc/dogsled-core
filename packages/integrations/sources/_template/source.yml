@@ -1,0 +1,21 @@
+spec_version: '2'
+type: source
+name: _template
+description: Template integration - replace with actual API description
+transports:
+  - id: default
+    base_url: https://api.example.com
+    auth:
+      type: bearer
+      token: ${{ env.TEMPLATE_API_TOKEN }}
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+default_transport: default

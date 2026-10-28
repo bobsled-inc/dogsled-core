@@ -1,0 +1,65 @@
+type: resource
+name: list_incidents
+description: List PagerDuty incidents for the account
+api:
+  endpoint: /incidents
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    since: ${{ input.since }}
+    until: ${{ input.until }}
+input:
+  limit:
+    type: integer
+    description: Number of incidents to return per page
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+  since:
+    type: timestamp
+    description: Start of the incident search window
+  until:
+    type: timestamp
+    description: End of the incident search window
+output:
+  id:
+    type: string
+    path: $.id
+    description: PagerDuty incident identifier
+  incident_number:
+    type: integer
+    path: $.incident_number
+    description: Account-scoped sequential incident number
+  title:
+    type: string
+    path: $.title
+    description: Incident title
+  status:
+    type: string
+    path: $.status
+    description: Current incident status
+  urgency:
+    type: string
+    path: $.urgency
+    description: PagerDuty urgency level
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the incident was created
+  html_url:
+    type: string
+    path: $.html_url
+    description: Browser URL for the incident
+extract:
+  record_path: $.incidents
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

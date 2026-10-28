@@ -1,0 +1,61 @@
+rules:
+  - id: dogsled-node-command-exec
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Review command-string execution; prefer exact executable and argument arrays.
+    pattern-either:
+      - patterns:
+          - pattern-inside: |
+              import { ..., exec, ... } from 'node:child_process';
+              ...
+          - pattern: exec($COMMAND, ...)
+      - patterns:
+          - pattern-inside: |
+              import { ..., execSync, ... } from 'node:child_process';
+              ...
+          - pattern: execSync($COMMAND, ...)
+      - patterns:
+          - pattern-inside: |
+              import * as $CHILD_PROCESS from 'node:child_process';
+              ...
+          - pattern-either:
+              - pattern: $CHILD_PROCESS.exec($COMMAND, ...)
+              - pattern: $CHILD_PROCESS.execSync($COMMAND, ...)
+
+  - id: dogsled-child-process-shell
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Review shell-enabled subprocess execution for injection.
+    pattern-either:
+      - pattern: 'spawn($COMMAND, { ..., shell: true, ... })'
+      - pattern: 'spawnSync($COMMAND, { ..., shell: true, ... })'
+      - pattern: 'spawn($COMMAND, $ARGS, { ..., shell: true, ... })'
+      - pattern: 'spawnSync($COMMAND, $ARGS, { ..., shell: true, ... })'
+      - pattern: '$CHILD_PROCESS.spawn($COMMAND, $ARGS, { ..., shell: true, ... })'
+      - pattern: '$CHILD_PROCESS.spawnSync($COMMAND, $ARGS, { ..., shell: true, ... })'
+    paths:
+      exclude:
+        - packages/entity-graph/src/api/external-reviewer-client.ts
+        - packages/dogsled/src/commands/learn.ts
+
+  - id: dogsled-dynamic-code-execution
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Review dynamic code execution and prove its input is not attacker-controlled.
+    pattern-either:
+      - pattern: eval($CODE)
+      - pattern: new Function(...)
+    paths:
+      exclude:
+        - packages/extractor/src/runtime/clients/gcs-file-client.ts
+        - packages/extractor/src/runtime/clients/s3-file-client.ts
+        - packages/extractor/src/runtime/clients/sftp-file-client.ts
+
+  - id: dogsled-follow-http-redirects
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: Redirect-following HTTP requests require per-hop SSRF validation.
+    patterns:
+      - pattern-either:
+          - pattern: 'fetch($URL, { ..., redirect: "follow", ... })'
+          - pattern: "fetch($URL, { ..., redirect: 'follow', ... })"

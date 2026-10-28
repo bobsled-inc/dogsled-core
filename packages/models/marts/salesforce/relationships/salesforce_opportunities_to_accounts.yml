@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: salesforce_opportunities_to_accounts
+description: Each Salesforce opportunity can belong to one account.
+left_model: salesforce__opportunities
+right_model: salesforce__accounts
+join_columns:
+  - left: account_id
+    right: account_id
+join_type: left
+relationship_type: many_to_one
+tags: [salesforce, opportunities, accounts]

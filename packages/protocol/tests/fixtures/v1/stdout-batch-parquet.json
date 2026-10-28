@@ -1,0 +1,9 @@
+{
+  "_v": 1,
+  "type": "BATCH",
+  "stream": "items",
+  "encoding": {
+    "format": "parquet"
+  },
+  "manifest": ["file:///tmp/items-0.parquet", "file:///tmp/items-1.parquet"]
+}

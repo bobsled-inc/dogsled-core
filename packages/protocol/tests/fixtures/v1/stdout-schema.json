@@ -1,0 +1,16 @@
+{
+  "_v": 1,
+  "type": "SCHEMA",
+  "stream": "items",
+  "schema": {
+    "columns": [
+      { "name": "id", "type": "integer", "primary_key": true },
+      { "name": "updated_at", "type": "timestamp" }
+    ]
+  },
+  "key_properties": ["id"],
+  "load_strategy": "merge",
+  "cursor_field": "updated_at",
+  "partition_by": "updated_at",
+  "schema_behavior": "strict"
+}

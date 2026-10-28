@@ -1,0 +1,33 @@
+type: resource
+name: run_funnel_report
+description: Funnel report rows for a property.
+api:
+  endpoint: /properties/${{ input.property_id }}:runFunnelReport
+  method: POST
+  request_body:
+    dateRanges:
+      - startDate: 30daysAgo
+        endDate: today
+    funnel:
+      steps:
+        - name: Any session
+          filterExpression:
+            funnelEventFilter:
+              eventName: session_start
+input:
+  property_id:
+    type: string
+    required: true
+    default: '123456789'
+output:
+  dimension_key:
+    type: string
+    path: $.dimensionValues.0.value
+  metric_value:
+    type: string
+    path: $.metricValues.0.value
+extract:
+  record_path: $.funnelTable.rows
+  table:
+    primary_key:
+      - dimension_key

@@ -1,0 +1,51 @@
+type: resource
+name: labels_mcp
+via: mcp
+entity: labels
+description: Issue labels from Linear workspace
+tool:
+  tool_name: list_issue_labels
+input:
+  name:
+    type: string
+    description: Optional label name filter
+  team:
+    type: string
+    description: Optional team name or ID to filter labels
+  limit:
+    type: integer
+    description: Maximum number of issue labels per MCP page
+    default: 250
+  orderBy:
+    type: string
+    description: Sort field for Linear MCP pagination
+    default: updatedAt
+    enum:
+      - createdAt
+      - updatedAt
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique label UUID
+  name:
+    type: string
+    path: $.name
+    description: Label name
+  color:
+    type: string
+    path: $.color
+    description: Label color as hex string
+  description:
+    type: string
+    path: $.description
+    description: Label description
+extract:
+  record_path: $.labels
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.pageInfo.endCursor
+    cursor_argument: cursor
+  table:
+    primary_key:
+      - id

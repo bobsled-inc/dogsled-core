@@ -1,0 +1,8 @@
+name: langsmith
+display_name: LangSmith
+description: Observability and evaluation models for LangSmith projects, runs, traces, threads, turns, datasets, and examples.
+tags:
+  - langsmith
+  - llm-observability
+  - evaluation
+  - developer-tools

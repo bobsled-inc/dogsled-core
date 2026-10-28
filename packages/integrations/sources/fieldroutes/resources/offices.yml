@@ -1,0 +1,63 @@
+type: resource
+name: offices
+description: Office entities for organizational scoping and rollups.
+api:
+  endpoint: /office/search
+  method: POST
+  query_params:
+    officeID: '${{ input.office_id }}'
+    includeData: '${{ input.include_data }}'
+
+input:
+  office_id:
+    type: integer
+    description: Optional office ID filter.
+  include_data:
+    type: integer
+    description: Set to `1` to request resolved records.
+    default: 1
+
+output:
+  office_id:
+    type: integer
+    path: $.officeID
+    description: Office unique ID.
+  office_name:
+    type: string
+    path: $.officeName
+    description: Office name.
+  company_id:
+    type: integer
+    path: $.companyID
+    description: Company identifier.
+  contact_number:
+    type: string
+    path: $.contactNumber
+    description: Office contact phone.
+  contact_email:
+    type: string
+    path: $.contactEmail
+    description: Office contact email.
+  time_zone:
+    type: string
+    path: $.timeZone
+    description: Timezone string.
+  city:
+    type: string
+    path: $.city
+    description: Office city.
+  state:
+    type: string
+    path: $.state
+    description: Office state.
+  zip:
+    type: string
+    path: $.zip
+    description: Office ZIP.
+
+extract:
+  record_path: '$..[?(@.officeID)]'
+  table:
+    primary_key:
+      - office_id
+    trust_tier: silver

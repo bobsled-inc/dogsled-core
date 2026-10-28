@@ -1,0 +1,148 @@
+type: resource
+name: list_slos
+description: Get all SLOs
+api:
+  endpoint: /api/v1/slo
+  method: GET
+  query_params:
+    ids: ${{ input.ids }}
+    query: ${{ input.query }}
+    tags_query: ${{ input.tags_query }}
+    metrics_query: ${{ input.metrics_query }}
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  ids:
+    type: string
+    description: A comma separated list of the IDs of the service level objectives objects.
+  query:
+    type: string
+    description: The query string to filter results based on SLO names.
+  tags_query:
+    type: string
+    description: The query string to filter results based on a single SLO tag.
+  metrics_query:
+    type: string
+    description: The query string to filter results based on SLO numerator and denominator.
+  limit:
+    type: integer
+    description: The number of SLOs to return in the response.
+    default: 1000
+  offset:
+    type: integer
+    description: The specific offset to use as the beginning of the returned response.
+query:
+  search:
+    dialect: provider_search
+    bind:
+      input: query
+output:
+  created_at:
+    type: integer
+    path: $.created_at
+    description: Creation timestamp (UNIX time in seconds)
+  creator_email:
+    type: string
+    path: $.creator.email
+    description: Email of the creator.
+  creator_handle:
+    type: string
+    path: $.creator.handle
+    description: Handle of the creator.
+  creator_name:
+    type: string
+    path: $.creator.name
+    description: Name of the creator.
+  description:
+    type: string
+    path: $.description
+    description: A user-defined description of the service level objective.
+  groups:
+    type: array
+    path: $.groups
+    description:
+      A list of (up to 100) monitor groups that narrow the scope of a monitor service level
+      objective.
+  id:
+    type: string
+    path: $.id
+    description: A unique identifier for the service level objective object.
+  modified_at:
+    type: integer
+    path: $.modified_at
+    description: Modification timestamp (UNIX time in seconds)
+  monitor_ids:
+    type: array
+    path: $.monitor_ids
+    description: A list of monitor ids that defines the scope of a monitor service level
+  monitor_tags:
+    type: array
+    path: $.monitor_tags
+    description: The union of monitor tags for all monitors referenced by the `monitor_ids`
+  name:
+    type: string
+    path: $.name
+    description: The name of the service level objective object.
+  query_denominator:
+    type: string
+    path: $.query.denominator
+    description: A Datadog metric query for total (valid) events.
+  query_numerator:
+    type: string
+    path: $.query.numerator
+    description: A Datadog metric query for good events.
+  sli_specification:
+    type: string
+    path: $.sli_specification
+    description: A generic SLI specification.
+  tags:
+    type: array
+    path: $.tags
+    description: A list of tags associated with this service level objective.
+  target_threshold:
+    type: number
+    path: $.target_threshold
+    description: The target threshold such that when the service level indicator is above this
+  thresholds:
+    type: array
+    path: $.thresholds
+    description: The thresholds (timeframes and associated targets) for this service level
+  timeframe:
+    type: string
+    path: $.timeframe
+    description: The SLO time window options.
+  type:
+    type: string
+    path: $.type
+    description: The type of the service level objective.
+  warning_threshold:
+    type: number
+    path: $.warning_threshold
+    description: The optional warning threshold such that when the service level indicator is
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get an SLO's details
+  api:
+    endpoint: /api/v1/slo/${{ input.slo_id }}
+    method: GET
+  input:
+    slo_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_slos_smoke
+      input:
+        ids: id1, id2, id3
+        query: monitor
+        tags_query: env:prod
+        metrics_query: aws.elb.request_count

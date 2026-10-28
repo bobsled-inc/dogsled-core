@@ -1,0 +1,50 @@
+spec_version: '0.2'
+name: vantage__daily_costs
+type: model
+description: Daily cloud spend summarized within each cost report, provider, and currency.
+grain:
+  - cost_report_token
+  - date
+  - provider
+  - currency
+source:
+  ref: stg_vantage__costs
+columns:
+  - name: cost_report_token
+    expr: stg_vantage__costs.cost_report_token
+    semantic_role: entity_id
+    description: Cost report that produced the spend bucket.
+  - name: date
+    expr: CAST(stg_vantage__costs.accrued_at AS DATE)
+    semantic_role: time_dimension
+    description: Date associated with the cost bucket.
+  - name: provider
+    expr: stg_vantage__costs.provider
+    semantic_role: categorical
+    description: Cloud or SaaS provider for the spend bucket.
+  - name: currency
+    expr: stg_vantage__costs.currency
+    semantic_role: categorical
+    description: Currency of the spend bucket.
+  - name: row_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of cost rows in the bucket.
+  - name: total_amount
+    expr: SUM(CAST(stg_vantage__costs.amount AS DOUBLE))
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total spend in the bucket.
+group_by:
+  - cost_report_token
+  - date
+  - provider
+  - currency
+tags:
+  - vantage
+  - costs
+  - daily
+trust_tier: gold
+materialization:
+  type: table

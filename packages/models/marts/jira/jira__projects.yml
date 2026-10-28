@@ -1,0 +1,105 @@
+spec_version: '0.2'
+name: jira__projects
+type: model
+description: Jira projects enriched with issue and board rollups.
+grain: project_id
+source:
+  ref: stg_jira__search_projects
+joins:
+  - ref: stg_jira__search_issues
+    type: left
+    on: stg_jira__search_projects.search_project_id = stg_jira__search_issues.project_id
+    pre_aggregate:
+      group_by:
+        - project_id
+      columns:
+        - name: issue_count
+          expr: COUNT(*)
+        - name: done_issue_count
+          expr: countif(status_category_key = 'done')
+        - name: total_time_spent_seconds
+          expr: SUM(time_spent)
+        - name: total_remaining_estimate_seconds
+          expr: SUM(time_estimate)
+  - ref: stg_jira__boards
+    type: left
+    on: stg_jira__search_projects.key = stg_jira__boards.location_project_key
+    pre_aggregate:
+      group_by:
+        - location_project_key
+      columns:
+        - name: board_count
+          expr: COUNT(*)
+        - name: scrum_board_count
+          expr: countif(type = 'scrum')
+        - name: kanban_board_count
+          expr: countif(type = 'kanban')
+columns:
+  - name: project_id
+    expr: stg_jira__search_projects.search_project_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Jira project identifier.
+  - name: project_key
+    expr: stg_jira__search_projects.key
+    semantic_role: categorical
+    description: Project key.
+  - name: project_name
+    expr: stg_jira__search_projects.name
+    semantic_role: categorical
+    description: Project name.
+  - name: project_type_key
+    expr: stg_jira__search_projects.project_type_key
+    semantic_role: categorical
+    description: Jira project type.
+  - name: project_category
+    expr: stg_jira__search_projects.project_category
+    semantic_role: categorical
+    description: Project category.
+  - name: lead
+    expr: stg_jira__search_projects.lead
+    semantic_role: categorical
+    description: Username of the project lead.
+  - name: archived
+    expr: stg_jira__search_projects.archived
+    semantic_role: categorical
+    description: Whether the project is archived.
+  - name: simplified
+    expr: stg_jira__search_projects.simplified
+    semantic_role: categorical
+    description: Whether the project uses the simplified Jira workflow model.
+  - name: board_count
+    expr: COALESCE(stg_jira__boards.board_count, 0)
+    semantic_role: measure
+    description: Number of Jira boards linked to the project.
+  - name: scrum_board_count
+    expr: COALESCE(stg_jira__boards.scrum_board_count, 0)
+    semantic_role: measure
+    description: Number of scrum boards linked to the project.
+  - name: kanban_board_count
+    expr: COALESCE(stg_jira__boards.kanban_board_count, 0)
+    semantic_role: measure
+    description: Number of kanban boards linked to the project.
+  - name: issue_count
+    expr: COALESCE(stg_jira__search_issues.issue_count, 0)
+    semantic_role: measure
+    description: Number of issues in the project.
+  - name: done_issue_count
+    expr: COALESCE(stg_jira__search_issues.done_issue_count, 0)
+    semantic_role: measure
+    description: Number of issues in a done status category.
+  - name: total_time_spent_seconds
+    expr: COALESCE(stg_jira__search_issues.total_time_spent_seconds, 0)
+    semantic_role: measure
+    description: Time spent across issues in the project, in seconds.
+  - name: total_remaining_estimate_seconds
+    expr: COALESCE(stg_jira__search_issues.total_remaining_estimate_seconds, 0)
+    semantic_role: measure
+    description: Remaining estimate across project issues, in seconds.
+tags:
+  - jira
+  - projects
+  - engineering
+trust_tier: gold
+materialization:
+  type: table

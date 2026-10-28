@@ -1,0 +1,104 @@
+spec_version: '1'
+type: resource
+name: users
+integration: slack
+description: Members and bot users in the Slack workspace
+
+api:
+  endpoint: '/users.list'
+  method: GET
+  query_params:
+    limit: '${{ input.limit }}'
+
+input:
+  limit:
+    type: integer
+    description: Number of users to return per page (max 200)
+    default: 200
+
+output:
+  id:
+    type: string
+    path: '$.id'
+    description: Unique user identifier (e.g. U01ABC23DEF)
+  team_id:
+    type: string
+    path: '$.team_id'
+    description: Workspace identifier this user belongs to
+  name:
+    type: string
+    path: '$.name'
+    description: Username handle (without @)
+  real_name:
+    type: string
+    path: '$.real_name'
+    description: Full display name
+  display_name:
+    type: string
+    path: '$.profile.display_name'
+    description: Display name set by the user
+  first_name:
+    type: string
+    path: '$.profile.first_name'
+    description: First name from profile
+  last_name:
+    type: string
+    path: '$.profile.last_name'
+    description: Last name from profile
+  email:
+    type: string
+    path: '$.profile.email'
+    description: Email address (requires users:read.email scope)
+  title:
+    type: string
+    path: '$.profile.title'
+    description: Job title from profile
+  avatar_url:
+    type: string
+    path: '$.profile.image_72'
+    description: URL of the user avatar image (72px)
+  deleted:
+    type: boolean
+    path: '$.deleted'
+    description: True if the user has been deactivated
+  is_admin:
+    type: boolean
+    path: '$.is_admin'
+    description: True if the user is a workspace admin
+  is_owner:
+    type: boolean
+    path: '$.is_owner'
+    description: True if the user is a workspace owner
+  is_bot:
+    type: boolean
+    path: '$.is_bot'
+    description: True if this is a bot user
+  is_restricted:
+    type: boolean
+    path: '$.is_restricted'
+    description: True if this is a single-channel guest
+  is_app_user:
+    type: boolean
+    path: '$.is_app_user'
+    description: True if this is an app-created user
+  tz:
+    type: string
+    path: '$.tz'
+    description: Timezone identifier (e.g. America/New_York)
+  tz_offset:
+    type: integer
+    path: '$.tz_offset'
+    description: Timezone offset from UTC in seconds
+  updated:
+    type: integer
+    path: '$.updated'
+    description: Unix timestamp of the most recent profile update
+
+extract:
+  record_path: '$.members'
+  pagination:
+    type: cursor
+    cursor_path: '$.response_metadata.next_cursor'
+    cursor_param: cursor
+  table:
+    primary_key: [id]

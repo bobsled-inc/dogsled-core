@@ -1,0 +1,149 @@
+type: resource
+name: list_employees
+description: List Employees
+api:
+  endpoint: /api/v1/employees
+  method: GET
+  query_params:
+    filter: ${{ input.filter }}
+    sort: ${{ input.sort }}
+    fields: ${{ input.fields }}
+    page: ${{ input.page }}
+input:
+  filter:
+    type: object
+    description:
+      Filters used to match employees. Encode filter properties using deepObject style. If
+      the caller does not have access to the filtered field on a matching employee, that employee is
+      excluded from the results to avoid leaking sensitive data.
+  sort:
+    type: string
+    description:
+      'Comma-separated list of sortable fields. Prefix a field with "-" for descending order.
+      Allowed fields: `employeeId`, `firstName`, `lastName`, `preferredName`, `jobTitleName`,
+      `status`. Nulls sort first in ascending order and last in descending order. If the caller does
+      not have access to the sort field for an employee, that employee is excluded from the final
+      result set to avoid leaking sensitive information.'
+  fields:
+    type: string
+    description: 'Comma-separated list of additional fields to include in the response beyond the
+      default set. Supported values: `workEmail`, `homeEmail`, `bestEmail`, `middleName`,
+      `workPhone`, `workPhoneExtension`, `mobilePhone`, `homePhone`, `skypeUsername`, `linkedinUrl`,
+      `facebookUrl`, `instagramUrl`, `twitterUrl`, `pinterestUrl`. Unrecognized field names are
+      silently ignored. Field values are subject to permission checks — restricted fields will be
+      null or omitted and the field name will appear in `_restrictedFields`.'
+  page:
+    type: object
+    description: Cursor-based pagination parameters (`limit`, `after`, `before`).
+output:
+  employee_id:
+    type: string
+    path: $.employeeId
+    description: Unique identifier for the employee
+  first_name:
+    type: string
+    path: $.firstName
+    description: Employee's first name
+  last_name:
+    type: string
+    path: $.lastName
+    description: Employee's last name
+  preferred_name:
+    type: string
+    path: $.preferredName
+    description: Employee's preferred name
+  photo_url:
+    type: string
+    path: $.photoUrl
+    description: URL to employee's profile photo
+  job_title_name:
+    type: string
+    path: $.jobTitleName
+    description: Employee's current job title
+  status:
+    type: string
+    path: $.status
+    description: Employee's current status (Active or Inactive).
+  restricted_fields:
+    type: array
+    path: $._restrictedFields
+    description: Array of field names that are restricted due to permission checks
+  work_email:
+    type: string
+    path: $.workEmail
+    description: Employee's work email address.
+  home_email:
+    type: string
+    path: $.homeEmail
+    description: Employee's home email address.
+  best_email:
+    type: string
+    path: $.bestEmail
+    description: Employee's best email address.
+  middle_name:
+    type: string
+    path: $.middleName
+    description: Employee's middle name.
+  work_phone:
+    type: string
+    path: $.workPhone
+    description: Employee's work phone number.
+  work_phone_extension:
+    type: string
+    path: $.workPhoneExtension
+    description: Employee's work phone extension.
+  mobile_phone:
+    type: string
+    path: $.mobilePhone
+    description: Employee's mobile phone number.
+  home_phone:
+    type: string
+    path: $.homePhone
+    description: Employee's home phone number.
+  skype_username:
+    type: string
+    path: $.skypeUsername
+    description: Employee's Skype username.
+  linkedin_url:
+    type: string
+    path: $.linkedinUrl
+    description: Employee's LinkedIn profile URL.
+  facebook_url:
+    type: string
+    path: $.facebookUrl
+    description: Employee's Facebook profile URL.
+  instagram_url:
+    type: string
+    path: $.instagramUrl
+    description: Employee's Instagram profile URL.
+  twitter_url:
+    type: string
+    path: $.twitterUrl
+    description: Employee's Twitter/X profile URL.
+  pinterest_url:
+    type: string
+    path: $.pinterestUrl
+    description: Employee's Pinterest profile URL.
+extract:
+  record_path: $.data
+  pagination:
+    type: page_number
+    page_param: page
+  table:
+    primary_key:
+      - employee_id
+    trust_tier: silver
+lookup:
+  description: Get Employee
+  api:
+    endpoint: /api/v1/employees/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_employees_smoke
+      input:
+        fields: workEmail,mobilePhone

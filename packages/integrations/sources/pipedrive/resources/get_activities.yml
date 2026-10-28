@@ -1,0 +1,154 @@
+type: resource
+name: get_activities
+description: Get all Activities assigned to a particular User
+api:
+  endpoint: /activities
+  method: GET
+  query_params:
+    user_id: ${{ input.user_id }}
+    filter_id: ${{ input.filter_id }}
+    type: ${{ input.type }}
+    limit: ${{ input.limit }}
+    start: ${{ input.start }}
+    start_date: ${{ input.start_date }}
+    end_date: ${{ input.end_date }}
+    done: ${{ input.done }}
+input:
+  user_id:
+    type: integer
+    description:
+      The ID of the User whose Activities will be fetched. If omitted, the User associated
+      with the API token will be used. If 0, Activities for all company Users will be fetched based
+      on the permission sets.
+  filter_id:
+    type: integer
+    description:
+      The ID of the Filter to use (will narrow down results if used together with `user_id`
+      parameter)
+  type:
+    type: string
+    description:
+      Type of the Activity, can be one type or multiple types separated by a comma. This is
+      in correlation with the `key_string` parameter of ActivityTypes.
+  limit:
+    type: integer
+    description:
+      For pagination, the limit of entries to be returned. If not provided, 100 items will be
+      returned.
+  start:
+    type: integer
+    description: For pagination, the position that represents the first result for the page
+  start_date:
+    type: timestamp
+    description:
+      Use the Activity due date where you wish to begin fetching Activities from. Insert due
+      date in YYYY-MM-DD format.
+  end_date:
+    type: timestamp
+    description:
+      Use the Activity due date where you wish to stop fetching Activities from. Insert due
+      date in YYYY-MM-DD format.
+  done:
+    type: number
+    description:
+      Whether the Activity is done or not. 0 = Not done, 1 = Done. If omitted returns both
+      Done and Not done activities.
+query:
+  filters:
+    type:
+      operators:
+        - eq
+      description:
+        Type of the Activity, can be one type or multiple types separated by a comma. This is
+        in correlation with the `key_string` parameter of ActivityTypes.
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+    user_id:
+      operators:
+        - eq
+      description:
+        The ID of the User whose Activities will be fetched. If omitted, the User associated
+        with the API token will be used. If 0, Activities for all company Users will be fetched
+        based on the permission sets.
+      bind:
+        eq:
+          input: user_id
+      compile:
+        eq:
+          mode: http_query
+          param: user_id
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive activity identifier
+  subject:
+    type: string
+    path: $.subject
+    description: Activity subject
+  type:
+    type: string
+    path: $.type
+    description: Activity type
+  done:
+    type: boolean
+    path: $.done
+    description: Whether the activity is completed
+  due_date:
+    type: string
+    path: $.due_date
+    description: Due date for the activity
+  deal_id:
+    type: integer
+    path: $.deal_id
+    description: Related deal identifier
+  person_id:
+    type: integer
+    path: $.person_id
+    description: Related person identifier
+  org_id:
+    type: integer
+    path: $.org_id
+    description: Related organization identifier
+  user_id:
+    type: integer
+    path: $.user_id
+    description: Owning user identifier
+  add_time:
+    type: timestamp
+    path: $.add_time
+    description: Activity creation timestamp
+  update_time:
+    type: timestamp
+    path: $.update_time
+    description: Activity update timestamp
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: start
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get details of an Activity
+  api:
+    endpoint: /activities/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: integer
+      required: true
+test:
+  fixtures:
+    - name: get_activities_smoke
+      input:
+        limit: 100
+        start: 0

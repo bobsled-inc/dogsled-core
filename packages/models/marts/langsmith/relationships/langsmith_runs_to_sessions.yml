@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: langsmith_runs_to_sessions
+description: Each LangSmith run can belong to one session.
+left_model: langsmith__runs
+right_model: langsmith__sessions
+join_columns:
+  - left: session_id
+    right: session_id
+join_type: left
+relationship_type: many_to_one
+tags: [langsmith, runs, sessions]

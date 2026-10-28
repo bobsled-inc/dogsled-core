@@ -1,0 +1,130 @@
+type: resource
+name: dependency_review
+description: Dependency additions and removals between two Git revisions for a repository, including vulnerability advisories GitHub associates with the diff.
+api:
+  endpoint: /repos/${{ input.owner }}/${{ input.repo }}/dependency-graph/compare/${{ input.basehead }}
+  method: GET
+input:
+  owner:
+    type: string
+    description: Repository owner (user or organization login)
+    default: bobsled-inc
+  repo:
+    type: string
+    description: Repository name
+    default: demo-repo
+  repository_full_name:
+    type: string
+    description: Optional fully qualified owner/repository name populated by repos fanout and used for repository context output.
+  basehead:
+    type: string
+    description: Comparison range in the form base...head. Branch names, tags, and SHAs are supported and are URL-encoded in the request path.
+    default: main...main
+output:
+  repository_owner:
+    type: string
+    semantic_role: name
+    path: $.__input__.owner
+    description: Repository owner login from the parent repository fanout context
+  repository_name:
+    type: string
+    semantic_role: name
+    path: $.__input__.repo
+    description: Repository name from the parent repository fanout context
+  repository_full_name:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.repository_full_name
+    description: Fully qualified owner/repository name from the parent repository fanout context
+  comparison_basehead:
+    type: string
+    semantic_role: identifier
+    path: $.__input__.basehead
+    description: Git comparison range used for the dependency review request
+  change_type:
+    type: string
+    semantic_role: categorical
+    path: $.change_type
+    description: Whether the dependency was added or removed in the compared range
+  manifest:
+    type: string
+    semantic_role: identifier
+    path: $.manifest
+    description: Manifest file path GitHub attributes the dependency to
+  ecosystem:
+    type: string
+    semantic_role: categorical
+    path: $.ecosystem
+    description: Package ecosystem GitHub detected for the dependency
+  name:
+    type: string
+    semantic_role: name
+    path: $.name
+    description: Dependency package name
+  version:
+    type: string
+    semantic_role: identifier
+    path: $.version
+    description: Version string GitHub observed for the dependency in the diff
+  package_url:
+    type: string
+    semantic_role: url
+    path: $.package_url
+    description: Package URL (PURL) for the dependency when available
+  license:
+    type: string
+    semantic_role: categorical
+    path: $.license
+    description: License GitHub associated with the dependency, when available
+  source_repository_url:
+    type: string
+    semantic_role: url
+    path: $.source_repository_url
+    description: Source repository URL GitHub associated with the dependency
+  scope:
+    type: string
+    semantic_role: categorical
+    path: $.scope
+    description: Whether the dependency is used at runtime, development time, or is unknown
+  vulnerability_severities:
+    type: array
+    semantic_role: categorical
+    path: $.vulnerabilities[*].severity
+    description: Severities of advisories GitHub associated with the dependency in the compared range
+  vulnerability_advisory_ids:
+    type: array
+    semantic_role: categorical
+    path: $.vulnerabilities[*].advisory_ghsa_id
+    description: GHSA advisory identifiers associated with the dependency
+  vulnerability_advisory_urls:
+    type: array
+    semantic_role: categorical
+    path: $.vulnerabilities[*].advisory_url
+    description: Advisory URLs GitHub associated with the dependency
+  vulnerabilities:
+    type: array
+    semantic_role: categorical
+    path: $.vulnerabilities
+    description: Full advisory objects associated with the dependency diff entry
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - repository_full_name
+      - comparison_basehead
+      - manifest
+      - name
+      - change_type
+      - version
+      - scope
+    trust_tier: silver
+  for_each:
+    resource: repos
+    bindings:
+      - field: owner_login
+        input: owner
+      - field: name
+        input: repo
+      - field: full_name
+        input: repository_full_name
+via: rest

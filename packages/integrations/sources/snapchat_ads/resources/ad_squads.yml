@@ -1,0 +1,41 @@
+type: resource
+name: ad_squads
+description: Ad squads for a Snapchat ad account.
+api:
+  endpoint: /adaccounts/${{ input.ad_account_id }}/adsquads
+  method: GET
+input:
+  ad_account_id:
+    type: string
+    default: ''
+output:
+  id:
+    type: string
+    path: $.adsquad.id
+  name:
+    type: string
+    path: $.adsquad.name
+  campaign_id:
+    type: string
+    path: $.adsquad.campaign_id
+  status:
+    type: string
+    path: $.adsquad.status
+  type:
+    type: string
+    path: $.adsquad.type
+  bid_micro:
+    type: integer
+    path: $.adsquad.bid_micro
+extract:
+  record_path: $.adsquads
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next_link
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

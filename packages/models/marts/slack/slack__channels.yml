@@ -1,0 +1,76 @@
+spec_version: '0.2'
+name: slack__channels
+type: model
+description: Channel detail with membership and metadata for Slack workspace channels.
+grain: channel_id
+source:
+  ref: stg_slack__channels
+columns:
+  - name: channel_id
+    expr: stg_slack__channels.channel_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Slack channel identifier (e.g. C01ABC23DEF).
+  - name: name
+    expr: stg_slack__channels.name
+    semantic_role: categorical
+    description: Channel name without the # prefix.
+  - name: is_private
+    expr: stg_slack__channels.is_private
+    semantic_role: categorical
+    description: Whether the channel is private.
+  - name: is_archived
+    expr: stg_slack__channels.is_archived
+    semantic_role: categorical
+    description: Whether the channel has been archived.
+  - name: is_general
+    expr: stg_slack__channels.is_general
+    semantic_role: categorical
+    description: Whether this is the default #general channel.
+  - name: is_channel
+    expr: stg_slack__channels.is_channel
+    semantic_role: categorical
+    description: Whether this is a public channel.
+  - name: is_group
+    expr: stg_slack__channels.is_group
+    semantic_role: categorical
+    description: Whether this is a private channel (group).
+  - name: is_im
+    expr: stg_slack__channels.is_im
+    semantic_role: categorical
+    description: Whether this is a direct message conversation.
+  - name: is_mpim
+    expr: stg_slack__channels.is_mpim
+    semantic_role: categorical
+    description: Whether this is a group direct message.
+  - name: num_members
+    expr: stg_slack__channels.num_members
+    semantic_role: measure
+    description: Number of members in the channel.
+  - name: creator_id
+    expr: stg_slack__channels.creator_id
+    semantic_role: entity_id
+    references: stg_slack__users.user_id
+    description: User ID of the channel creator.
+  - name: topic
+    expr: stg_slack__channels.topic
+    semantic_role: categorical
+    description: Current channel topic text.
+  - name: purpose
+    expr: stg_slack__channels.purpose
+    semantic_role: categorical
+    description: Current channel purpose text.
+  - name: created_at
+    expr: stg_slack__channels.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the channel was created.
+  - name: updated_at
+    expr: stg_slack__channels.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp of the most recent channel update.
+tags:
+  - slack
+  - channels
+trust_tier: gold
+materialization:
+  type: table

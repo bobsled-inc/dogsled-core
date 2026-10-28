@@ -1,0 +1,51 @@
+type: resource
+name: lists
+description: Lists configured in Klaviyo.
+api:
+  endpoint: /lists
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[cursor]: ${{ input.page_cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 100
+  page_cursor:
+    type: string
+    description: Cursor returned by the previous page.
+output:
+  id:
+    type: string
+    path: $.id
+    description: Klaviyo object identifier.
+  type:
+    type: string
+    path: $.type
+    description: JSON:API resource type.
+  name:
+    type: string
+    path: $.attributes.name
+    description: List name.
+  created:
+    type: timestamp
+    path: $.attributes.created
+    description: Creation timestamp.
+  updated:
+    type: timestamp
+    path: $.attributes.updated
+    description: Last update timestamp.
+  profile_count:
+    type: integer
+    path: $.attributes.profile_count
+    description: Number of profiles in the list.
+extract:
+  record_path: $.data
+  pagination:
+    type: next_url
+    next_url_path: $.links.next
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

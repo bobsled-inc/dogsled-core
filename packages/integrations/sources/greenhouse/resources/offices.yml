@@ -1,0 +1,38 @@
+type: resource
+name: offices
+description: List Greenhouse offices
+api:
+  endpoint: /offices
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  per_page:
+    type: integer
+    description: Number of offices to return per page
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Greenhouse office identifier
+  name:
+    type: string
+    path: $.name
+    description: Office name
+  parent_id:
+    type: integer
+    path: $.parent_id
+    description: Parent office identifier
+  location:
+    type: object
+    path: $.location
+    description: Structured office location information
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

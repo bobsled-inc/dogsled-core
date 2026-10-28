@@ -1,0 +1,80 @@
+type: resource
+name: invoices
+description: MSP invoices with billing periods and status
+api:
+  endpoint: /invoices
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+    managed_account_token: ${{ input.managed_account_token }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+  managed_account_token:
+    type: string
+    description: Filter invoices by managed account token (MSP accounts only).
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the invoice.
+  invoice_number:
+    type: string
+    path: $.invoice_number
+    description: Sequential invoice number.
+  total:
+    type: string
+    path: $.total
+    description: Total amount for the invoice period.
+  billing_period_start:
+    type: timestamp
+    path: $.billing_period_start
+    description: Start date of the billing period.
+  billing_period_end:
+    type: timestamp
+    path: $.billing_period_end
+    description: End date of the billing period.
+  status:
+    type: string
+    path: $.status
+    description: Current status of the invoice.
+  account_token:
+    type: string
+    path: $.account_token
+    description: Token of the managed account this invoice belongs to.
+  account_name:
+    type: string
+    path: $.account_name
+    description: Name of the managed account.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, the invoice was created.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The date and time, in UTC, the invoice was last updated.
+extract:
+  record_path: $.invoices
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get invoice by token
+  api:
+    endpoint: /invoices/${{ input.invoice_token }}
+    method: GET
+  input:
+    invoice_token:
+      type: string
+      required: true

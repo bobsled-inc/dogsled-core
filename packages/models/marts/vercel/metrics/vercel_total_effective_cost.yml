@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: vercel_total_effective_cost
+description: Total effective Vercel cost for one complete snapshot. Group results by billing currency before comparing or combining values.
+model: vercel__daily_overview
+expression: SUM({vercel__daily_overview}.total_effective_cost)
+synonyms: [effective cost, net Vercel cost, adjusted Vercel spend]
+tags: [vercel, billing, finance]

@@ -1,0 +1,68 @@
+spec_version: '0.2'
+name: jira__issue_status_summary
+type: model
+description: Jira issue summary by project and workflow status.
+grain:
+  - project_id
+  - status_id
+source:
+  ref: stg_jira__search_issues
+columns:
+  - name: project_id
+    expr: stg_jira__search_issues.project_id
+    semantic_role: entity_id
+    description: Jira project identifier.
+  - name: project_key
+    expr: stg_jira__search_issues.project_key
+    semantic_role: categorical
+    description: Jira project key.
+  - name: project_name
+    expr: stg_jira__search_issues.project_name
+    semantic_role: categorical
+    description: Jira project name.
+  - name: status_id
+    expr: stg_jira__search_issues.status_id
+    semantic_role: entity_id
+    description: Jira workflow status identifier.
+  - name: status_name
+    expr: stg_jira__search_issues.status_name
+    semantic_role: categorical
+    description: Jira workflow status name.
+  - name: status_category_key
+    expr: stg_jira__search_issues.status_category_key
+    semantic_role: categorical
+    description: Jira status category key.
+  - name: issue_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of issues in the status bucket.
+  - name: resolved_issue_count
+    expr: countif(stg_jira__search_issues.resolution_date IS NOT NULL)
+    semantic_role: measure
+    description: Number of issues with a resolution timestamp.
+  - name: assignee_count
+    expr: count_distinct(stg_jira__search_issues.assignee_account_id)
+    semantic_role: measure
+    description: Number of distinct assignees represented in the bucket.
+  - name: avg_time_spent_seconds
+    expr: AVG(stg_jira__search_issues.time_spent)
+    semantic_role: measure
+    description: Average time spent across issues in the bucket, in seconds.
+  - name: avg_remaining_estimate_seconds
+    expr: AVG(stg_jira__search_issues.time_estimate)
+    semantic_role: measure
+    description: Average remaining estimate across issues in the bucket, in seconds.
+group_by:
+  - project_id
+  - project_key
+  - project_name
+  - status_id
+  - status_name
+  - status_category_key
+tags:
+  - jira
+  - issues
+  - summary
+trust_tier: gold
+materialization:
+  type: table

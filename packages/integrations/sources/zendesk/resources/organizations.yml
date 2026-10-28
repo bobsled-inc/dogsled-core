@@ -1,0 +1,52 @@
+type: resource
+name: organizations
+description: List Zendesk organizations
+api:
+  endpoint: /organizations
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of organizations to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk organization identifier
+  name:
+    type: string
+    path: $.name
+    description: Organization name
+  shared_tickets:
+    type: boolean
+    path: $.shared_tickets
+    description: Whether tickets are shared with end users in the organization
+  shared_comments:
+    type: boolean
+    path: $.shared_comments
+    description: Whether comments are shared with end users in the organization
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Organization creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Organization last update timestamp
+extract:
+  record_path: $.organizations
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

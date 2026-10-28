@@ -1,0 +1,54 @@
+type: resource
+name: tasks
+description: Tasks from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT
+      Id,Subject,Status,Priority,WhoId,WhatId,ActivityDate,OwnerId,IsClosed,CreatedDate,LastModifiedDate
+      FROM Task
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  subject:
+    type: string
+    path: $.Subject
+  status:
+    type: string
+    path: $.Status
+  priority:
+    type: string
+    path: $.Priority
+  who_id:
+    type: string
+    path: $.WhoId
+  what_id:
+    type: string
+    path: $.WhatId
+  activity_date:
+    type: timestamp
+    path: $.ActivityDate
+  owner_id:
+    type: string
+    path: $.OwnerId
+  is_closed:
+    type: boolean
+    path: $.IsClosed
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

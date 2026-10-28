@@ -1,0 +1,40 @@
+spec_version: '0.2'
+name: klaviyo__flows
+type: model
+description: Klaviyo flow detail with status and timing.
+grain: flow_id
+source:
+  ref: stg_klaviyo__flows
+columns:
+  - name: flow_id
+    expr: stg_klaviyo__flows.flow_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Klaviyo flow identifier.
+  - name: name
+    expr: stg_klaviyo__flows.name
+    semantic_role: categorical
+    description: Flow name.
+  - name: status
+    expr: stg_klaviyo__flows.status
+    semantic_role: categorical
+    description: Current flow status (live, draft, or manual).
+  - name: type
+    expr: stg_klaviyo__flows.type
+    semantic_role: categorical
+    description: Flow trigger type.
+  - name: created_at
+    expr: stg_klaviyo__flows.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the flow was created.
+  - name: updated_at
+    expr: stg_klaviyo__flows.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the flow was last updated.
+tags:
+  - klaviyo
+  - marketing
+  - flows
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,66 @@
+type: resource
+name: zones_list_page_rules
+description: List page rules configured for each Cloudflare zone
+api:
+  endpoint: /zones/${{ input.zone_id }}/pagerules
+  method: GET
+  query_params:
+    status: ${{ input.status }}
+input:
+  zone_id:
+    type: string
+    description: Cloudflare zone identifier
+    required: true
+  status:
+    type: string
+    description: Optional page rule status filter
+    enum:
+      - active
+      - disabled
+query:
+  filters:
+    status:
+      operators:
+        - eq
+      enum:
+        - active
+        - disabled
+      description: Optional page rule status filter
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  id:
+    type: string
+    path: $.id
+    description: Page rule identifier
+  status:
+    type: string
+    path: $.status
+    description: Current page rule status
+  priority:
+    type: integer
+    path: $.priority
+    description: Rule priority ordering
+  created_on:
+    type: timestamp
+    path: $.created_on
+    description: Timestamp when the page rule was created
+  modified_on:
+    type: timestamp
+    path: $.modified_on
+    description: Timestamp when the page rule was last modified
+extract:
+  record_path: $.result
+  for_each:
+    resource: zones_get
+    field: id
+    input: zone_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

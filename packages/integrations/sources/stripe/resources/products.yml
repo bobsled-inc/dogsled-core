@@ -1,0 +1,124 @@
+type: resource
+name: products
+description: Stripe products representing goods or services offered for sale in your product catalog
+api:
+  endpoint: /v1/products
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+    active: ${{ input.active }}
+input:
+  limit:
+    type: integer
+    description: Number of products to return per page (max 100)
+    default: 100
+  active:
+    type: boolean
+    description:
+      Filter by active status. Pass true to return only active products, false for archived
+      products. Omit to return all products
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    active:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: active
+      compile:
+        eq:
+          mode: http_query
+          param: active
+    created:
+      operators:
+        - gte
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique product identifier prefixed with prod_ (e.g. prod_1A2b3C4d5E6f7G)
+  name:
+    type: string
+    path: $.name
+    description: Human-readable name of the product displayed on invoices, receipts, and the Stripe Dashboard
+  description:
+    type: string
+    path: $.description
+    description: Detailed description of the product, often shown to customers on checkout pages and invoices
+  active:
+    type: boolean
+    path: $.active
+    description:
+      Whether the product is currently available for purchase. Inactive products cannot be
+      added to new subscriptions or orders
+  default_price:
+    type: string
+    path: $.default_price
+    description:
+      ID of the default price (price_xxx) for this product. Used when creating subscriptions
+      or checkout sessions without specifying a price
+  type:
+    type: string
+    path: $.type
+    description:
+      'Type of product. Possible values: good (physical product that may require shipping),
+      service (intangible product or digital good)'
+  url:
+    type: string
+    path: $.url
+    description: URL of a publicly accessible web page for this product, shown on invoices and receipts
+  images:
+    type: array
+    path: $.images
+    description:
+      List of up to 8 image URLs for this product. Images are displayed on checkout pages,
+      invoices, and the customer portal
+  metadata:
+    type: object
+    path: $.metadata
+    description:
+      Set of key-value pairs for storing additional structured information on the product.
+      Useful for internal references or integrations
+  tax_code:
+    type: string
+    path: $.tax_code
+    description:
+      Tax code ID (txcd_xxx) that classifies this product for automatic tax calculation via
+      Stripe Tax
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the product was created
+  updated:
+    type: integer
+    path: $.updated
+    description: Unix timestamp (seconds since epoch) when the product was last modified
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

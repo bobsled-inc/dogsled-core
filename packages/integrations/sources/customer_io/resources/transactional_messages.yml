@@ -1,0 +1,55 @@
+type: resource
+name: transactional_messages
+description: Transactional message templates configured in Customer.io.
+api:
+  endpoint: /v1/transactional
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: The identifier Customer.
+  name:
+    type: string
+    path: $.name
+    description: The name you set for the transactional message.
+  description:
+    type: string
+    path: $.description
+    description: A description of the transactional message.
+  send_to_unsubscribed:
+    type: boolean
+    path: $.send_to_unsubscribed
+    description: If true, people with an `unsubscribed` attribute set to `true` can trigger the message.
+  link_tracking:
+    type: boolean
+    path: $.link_tracking
+    description: If true, link tracking is enabled for this message.
+  open_tracking:
+    type: boolean
+    path: $.open_tracking
+    description: If true, open-tracking is enabled for this message.
+  hide_message_body:
+    type: boolean
+    path: $.hide_message_body
+    description:
+      If true, message contents are not retained in delivery history—you cannot recall the
+      exact contents of the message.
+  queue_drafts:
+    type: boolean
+    path: $.queue_drafts
+    description: If true, messages do not send automatically, and queue as drafts instead.
+  created_at:
+    type: integer
+    path: $.created_at
+    description: The date time when the referenced ID was created.
+  updated_at:
+    type: integer
+    path: $.updated_at
+    description: The date time when the referenced ID was last updated.
+extract:
+  record_path: $.messages
+  table:
+    primary_key:
+      - id

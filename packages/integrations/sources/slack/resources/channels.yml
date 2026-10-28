@@ -1,0 +1,101 @@
+type: resource
+name: channels
+description: Slack channels (public and private) in the workspace
+api:
+  endpoint: /conversations.list
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    exclude_archived: ${{ input.exclude_archived }}
+    types: ${{ input.types }}
+input:
+  limit:
+    type: integer
+    description: Number of channels to return per page (max 999)
+    default: 200
+  exclude_archived:
+    type: string
+    description: Set to true to exclude archived channels
+    default: 'false'
+  types:
+    type: string
+    description: Comma-separated channel types to include
+    default: public_channel,private_channel
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique channel identifier (e.g. C01ABC23DEF)
+  name:
+    type: string
+    path: $.name
+    description: Channel name without the
+  name_normalized:
+    type: string
+    path: $.name_normalized
+    description: Normalized channel name for search and comparison
+  is_channel:
+    type: boolean
+    path: $.is_channel
+    description: True if this is a public channel
+  is_group:
+    type: boolean
+    path: $.is_group
+    description: True if this is a private channel
+  is_im:
+    type: boolean
+    path: $.is_im
+    description: True if this is a direct message
+  is_mpim:
+    type: boolean
+    path: $.is_mpim
+    description: True if this is a group direct message
+  is_private:
+    type: boolean
+    path: $.is_private
+    description: True if the channel is private
+  is_archived:
+    type: boolean
+    path: $.is_archived
+    description: True if the channel has been archived
+  is_general:
+    type: boolean
+    path: $.is_general
+    description: True if this is the default
+  is_member:
+    type: boolean
+    path: $.is_member
+    description: True if the bot/user is a member of this channel
+  num_members:
+    type: integer
+    path: $.num_members
+    description: Number of members in the channel
+  creator:
+    type: string
+    path: $.creator
+    description: User ID of the channel creator
+  topic:
+    type: string
+    path: $.topic.value
+    description: Current channel topic text
+  purpose:
+    type: string
+    path: $.purpose.value
+    description: Current channel purpose text
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when the channel was created
+  updated:
+    type: integer
+    path: $.updated
+    description: Unix timestamp of the most recent channel update
+extract:
+  record_path: $.channels
+  pagination:
+    type: cursor
+    cursor_path: $.response_metadata.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id

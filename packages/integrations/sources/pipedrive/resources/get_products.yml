@@ -1,0 +1,88 @@
+type: resource
+name: get_products
+description: Get all products
+api:
+  endpoint: /products
+  method: GET
+  query_params:
+    user_id: ${{ input.user_id }}
+    filter_id: ${{ input.filter_id }}
+    ids: ${{ input.ids }}
+    first_char: ${{ input.first_char }}
+    get_summary: ${{ input.get_summary }}
+    start: ${{ input.start }}
+    limit: ${{ input.limit }}
+input:
+  user_id:
+    type: integer
+    description: If supplied, only Products owned by the given user will be returned
+  filter_id:
+    type: integer
+    description: ID of the filter to use
+  ids:
+    type: array
+    description: An array of integers with the IDs of the Products that should be returned in the response
+  first_char:
+    type: string
+    description:
+      If supplied, only Products whose name starts with the specified letter will be returned
+      (case insensitive)
+  get_summary:
+    type: boolean
+    description: If supplied, response will return the total numbers of Products in the
+      `additional_data.summary.total_count` property
+  start:
+    type: integer
+    description: Pagination start
+    default: 0
+  limit:
+    type: integer
+    description: Items shown per page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Pipedrive product identifier
+  name:
+    type: string
+    path: $.name
+    description: Product name
+  code:
+    type: string
+    path: $.code
+    description: Product code
+  owner_id:
+    type: integer
+    path: $.owner_id
+    description: Owning user identifier
+  tax:
+    type: number
+    path: $.tax
+    description: Tax percentage configured on the product
+  unit:
+    type: string
+    path: $.unit
+    description: Default unit label
+  active_flag:
+    type: boolean
+    path: $.active_flag
+    description: Whether the product is active
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: start
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get one product
+  api:
+    endpoint: /products/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: integer
+      required: true

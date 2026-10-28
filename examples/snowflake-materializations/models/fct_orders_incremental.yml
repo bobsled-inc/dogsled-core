@@ -1,0 +1,36 @@
+spec_version: '0.2'
+name: fct_orders_incremental
+type: model
+description: Incremental fact table that merges changed orders by ORDER_ID.
+grain:
+  - order_id
+source:
+  ref: stg_orders
+columns:
+  - name: ORDER_ID
+    expr: ORDER_ID
+    description: Stable order identifier.
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+    description: Customer identifier.
+  - name: ORDER_STATUS
+    expr: ORDER_STATUS
+    description: Current order lifecycle status.
+  - name: ORDER_TOTAL
+    expr: ORDER_TOTAL
+    description: Order total in USD.
+  - name: UPDATED_AT
+    expr: UPDATED_AT
+    description: Last update timestamp from the source system.
+target_schema: ANALYTICS
+tags: [snowflake, fact, incremental]
+owner: data-platform
+trust_tier: gold
+materialization:
+  type: incremental
+  strategy: merge
+  unique_key: ORDER_ID
+  # Inclusive boundary (`>=`) is safe because `unique_key: ORDER_ID` deduplicates
+  # the boundary row through MERGE; switching to `>` risks dropping rows whose
+  # UPDATED_AT exactly matches the prior MAX.
+  incremental_filter: UPDATED_AT >= (SELECT COALESCE(MAX(UPDATED_AT), TIMESTAMP '1970-01-01') FROM self)

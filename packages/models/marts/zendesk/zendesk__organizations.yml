@@ -1,0 +1,66 @@
+spec_version: '0.2'
+name: zendesk__organizations
+type: model
+description: Zendesk organizations enriched with ticket volume rollups.
+grain: organization_id
+source:
+  ref: stg_zendesk__organizations
+joins:
+  - ref: stg_zendesk__tickets
+    type: left
+    on: stg_zendesk__organizations.organization_id = stg_zendesk__tickets.organization_id
+    pre_aggregate:
+      group_by:
+        - organization_id
+      columns:
+        - name: ticket_count
+          expr: COUNT(*)
+        - name: open_ticket_count
+          expr: countif(status != 'closed' AND status != 'solved')
+        - name: high_priority_ticket_count
+          expr: countif(priority = 'high' OR priority = 'urgent')
+columns:
+  - name: organization_id
+    expr: stg_zendesk__organizations.organization_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Zendesk organization identifier.
+  - name: organization_name
+    expr: stg_zendesk__organizations.name
+    semantic_role: categorical
+    description: Organization name.
+  - name: shared_tickets
+    expr: stg_zendesk__organizations.shared_tickets
+    semantic_role: categorical
+    description: Whether tickets are shared with end users in the organization.
+  - name: shared_comments
+    expr: stg_zendesk__organizations.shared_comments
+    semantic_role: categorical
+    description: Whether comments are shared with end users in the organization.
+  - name: ticket_count
+    expr: COALESCE(stg_zendesk__tickets.ticket_count, 0)
+    semantic_role: measure
+    description: Number of tickets linked to the organization.
+  - name: open_ticket_count
+    expr: COALESCE(stg_zendesk__tickets.open_ticket_count, 0)
+    semantic_role: measure
+    description: Number of linked tickets that are not solved or closed.
+  - name: high_priority_ticket_count
+    expr: COALESCE(stg_zendesk__tickets.high_priority_ticket_count, 0)
+    semantic_role: measure
+    description: Number of high- or urgent-priority tickets linked to the organization.
+  - name: created_at
+    expr: stg_zendesk__organizations.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the organization was created.
+  - name: updated_at
+    expr: stg_zendesk__organizations.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the organization was last updated.
+tags:
+  - zendesk
+  - organizations
+  - support
+trust_tier: gold
+materialization:
+  type: table

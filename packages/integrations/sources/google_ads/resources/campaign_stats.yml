@@ -1,0 +1,42 @@
+type: resource
+name: campaign_stats
+description: Campaign metrics returned by a Google Ads search query.
+api:
+  endpoint: /customers/${{ input.customer_id }}/googleAds:search
+  method: POST
+  request_body:
+    query:
+      SELECT campaign.id, metrics.impressions, metrics.clicks, metrics.cost_micros, segments.date
+      FROM campaign WHERE segments.date DURING LAST_30_DAYS ORDER BY segments.date DESC
+    pageSize: 1000
+input:
+  customer_id:
+    type: string
+    required: true
+    default: '1234567890'
+output:
+  campaign_id:
+    type: string
+    path: $.campaign.id
+  impressions:
+    type: integer
+    path: $.metrics.impressions
+  clicks:
+    type: integer
+    path: $.metrics.clicks
+  cost_micros:
+    type: number
+    path: $.metrics.costMicros
+  date:
+    type: string
+    path: $.segments.date
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - campaign_id
+      - date
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: pageToken

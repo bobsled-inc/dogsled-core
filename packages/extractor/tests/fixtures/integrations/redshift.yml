@@ -1,0 +1,16 @@
+spec_version: '1'
+auth_env_vars: [REDSHIFT_HOST, REDSHIFT_PASSWORD, REDSHIFT_USER]
+type: integration
+name: acme_redshift
+source_type: redshift
+connection:
+  host_env: REDSHIFT_HOST
+  port: 5439
+  database: analytics
+  schema: public
+auth:
+  type: password
+  username_env: REDSHIFT_USER
+  password_env: REDSHIFT_PASSWORD
+ssl:
+  mode: require

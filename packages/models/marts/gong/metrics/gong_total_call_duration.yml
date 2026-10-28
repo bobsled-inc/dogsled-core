@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: gong_total_call_duration
+description: Total duration of Gong calls in seconds.
+model: gong__calls
+expression: SUM({gong__calls}.duration)
+synonyms: [call duration, talk time, total call time]
+tags: [gong, revenue, calls]

@@ -1,0 +1,45 @@
+type: resource
+name: macros
+description: Reusable response templates for common issue replies
+api:
+  endpoint: /macros
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique macro identifier
+  name:
+    type: string
+    path: $.name
+    description: Macro display name
+  text_html:
+    type: string
+    path: $.text_html
+    description: Macro content in HTML
+  text_type:
+    type: string
+    path: $.text_type
+    description: Type of macro text content
+  macro_group_id:
+    type: string
+    path: $.macro_group_id
+    description: ID of the macro group this belongs to
+  visibility:
+    type: string
+    path: $.visibility
+    description: Macro visibility setting
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the macro was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the macro was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

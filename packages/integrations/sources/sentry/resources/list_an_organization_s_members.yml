@@ -1,0 +1,82 @@
+type: resource
+name: list_an_organization_s_members
+description: List all organization members.
+api:
+  endpoint: /api/0/organizations/${{ input.organization_id_or_slug }}/members/
+  method: GET
+  query_params:
+    cursor: ${{ input.cursor }}
+input:
+  organization_id_or_slug:
+    type: string
+    required: true
+    description: The ID or slug of the organization the resource belongs to.
+  cursor:
+    type: string
+    description:
+      A pointer to the last object fetched and its sort order; used to retrieve the next or
+      previous results.
+    minLength: 1
+output:
+  external_users:
+    type: array
+    path: $.externalUsers
+  id:
+    type: string
+    path: $.id
+  email:
+    type: string
+    path: $.email
+  name:
+    type: string
+    path: $.name
+  user:
+    type: object
+    path: $.user
+  org_role:
+    type: string
+    path: $.orgRole
+  pending:
+    type: boolean
+    path: $.pending
+  expired:
+    type: boolean
+    path: $.expired
+  flags_idp_provisioned:
+    type: boolean
+    path: $.flags.idp:provisioned
+  flags_idp_role_restricted:
+    type: boolean
+    path: $.flags.idp:role-restricted
+  flags_sso_linked:
+    type: boolean
+    path: $.flags.sso:linked
+  flags_sso_invalid:
+    type: boolean
+    path: $.flags.sso:invalid
+  flags_member_limit_restricted:
+    type: boolean
+    path: $.flags.member-limit:restricted
+  flags_partnership_restricted:
+    type: boolean
+    path: $.flags.partnership:restricted
+  date_created:
+    type: timestamp
+    path: $.dateCreated
+  invite_status:
+    type: string
+    path: $.inviteStatus
+  inviter_name:
+    type: string
+    path: $.inviterName
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  for_each:
+    resource: list_your_organizations
+    field: slug
+    input: organization_id_or_slug
+  table:
+    primary_key:
+      - id

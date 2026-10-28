@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: klaviyo_profile_count
+description: Number of Klaviyo profiles.
+model: klaviyo__profiles
+expression: COUNT({klaviyo__profiles}.profile_id)
+synonyms: [profiles, customer profiles, audience size]
+tags: [klaviyo, marketing, profiles]

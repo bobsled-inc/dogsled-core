@@ -1,0 +1,85 @@
+type: resource
+name: get_projects
+description: List Asana projects accessible to the authenticated user
+api:
+  endpoint: /projects
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    workspace: ${{ input.workspace }}
+    archived: ${{ input.archived }}
+input:
+  limit:
+    type: integer
+    description: Number of projects to return per page
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response
+  workspace:
+    type: string
+    description: Optional workspace GID to scope the project list
+  archived:
+    type: boolean
+    description: Whether to include archived projects
+    default: false
+query:
+  filters:
+    archived:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: archived
+      compile:
+        eq:
+          mode: http_query
+          param: archived
+output:
+  gid:
+    type: string
+    path: $.gid
+    description: Asana project identifier
+  name:
+    type: string
+    path: $.name
+    description: Project name
+  resource_type:
+    type: string
+    path: $.resource_type
+    description: Asana resource type
+  archived:
+    type: boolean
+    path: $.archived
+    description: Whether the project is archived
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the project was created
+  workspace_gid:
+    type: string
+    path: $.workspace.gid
+    description: GID of the workspace containing the project
+  workspace_name:
+    type: string
+    path: $.workspace.name
+    description: Name of the workspace containing the project
+  team_gid:
+    type: string
+    path: $.team.gid
+    description: GID of the team that owns the project
+  team_name:
+    type: string
+    path: $.team.name
+    description: Name of the team that owns the project
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  table:
+    primary_key:
+      - gid
+    trust_tier: silver

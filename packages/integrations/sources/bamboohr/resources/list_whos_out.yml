@@ -1,0 +1,79 @@
+type: resource
+name: list_whos_out
+description: List Who’s Out
+api:
+  endpoint: /api/v1/time_off/whos_out
+  method: GET
+  query_params:
+    start: ${{ input.start }}
+    end: ${{ input.end }}
+    filter: ${{ input.filter }}
+input:
+  start:
+    type: timestamp
+    description: Start date in YYYY-MM-DD format. Defaults to today.
+  end:
+    type: timestamp
+    description: End date in YYYY-MM-DD format. Defaults to 14 days after the start date.
+  filter:
+    type: string
+    description:
+      Set to `off` to disable the Who's Out visibility filter and return the unfiltered feed.
+      Any other value leaves filtering enabled.
+    enum:
+      - off
+query:
+  filters:
+    end:
+      operators:
+        - eq
+      description: End date in YYYY-MM-DD format. Defaults to 14 days after the start date.
+      bind:
+        eq:
+          input: end
+      compile:
+        eq:
+          mode: http_query
+          param: end
+    start:
+      operators:
+        - eq
+      description: Start date in YYYY-MM-DD format. Defaults to today.
+      bind:
+        eq:
+          input: start
+      compile:
+        eq:
+          mode: http_query
+          param: start
+output:
+  id:
+    type: integer
+    path: $.id
+    description: The time off request ID or holiday ID.
+  type:
+    type: string
+    path: $.type
+    description: Whether this entry is a time off request or a company holiday.
+  employee_id:
+    type: integer
+    path: $.employeeId
+    description: The employee ID.
+  name:
+    type: string
+    path: $.name
+    description: The employee name or holiday name.
+  start:
+    type: timestamp
+    path: $.start
+    description: Start date in YYYY-MM-DD format.
+  end:
+    type: timestamp
+    path: $.end
+    description: End date in YYYY-MM-DD format.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

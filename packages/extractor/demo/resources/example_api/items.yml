@@ -1,0 +1,46 @@
+spec_version: '1'
+type: resource
+name: items
+integration: example_api
+description: Extract items from the example API
+api:
+  endpoint: /items
+  method: GET
+  query_params:
+    per_page: ${{ input.per_page }}
+input:
+  per_page:
+    type: integer
+    default: 100
+output:
+  id:
+    type: integer
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  incremental:
+    cursor_field: updated_at
+    cursor_param: since
+  table:
+    primary_key:
+      - id
+lookup:
+  description: Fetch a single item by id
+  api:
+    endpoint: /items/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true

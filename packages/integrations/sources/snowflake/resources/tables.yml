@@ -1,0 +1,35 @@
+type: resource
+name: tables
+description: Tables available in the configured Snowflake database and schema
+tool:
+  tool_name: list_tables
+input: {}
+output:
+  table_name:
+    type: string
+    path: $.name
+    description: Name of the table
+  schema_name:
+    type: string
+    path: $.schema_name
+    description: Schema containing the table
+  database_name:
+    type: string
+    path: $.database_name
+    description: Database containing the table
+  row_count:
+    type: integer
+    path: $.row_count
+    description: Approximate number of rows
+  created_on:
+    type: timestamp
+    path: $.created_on
+    description: Timestamp when the table was created
+extract:
+  record_path: $.tables
+  table:
+    primary_key:
+      - database_name
+      - schema_name
+      - table_name
+via: mcp

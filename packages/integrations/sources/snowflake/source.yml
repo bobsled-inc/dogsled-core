@@ -1,0 +1,25 @@
+spec_version: '2'
+type: source
+name: snowflake
+description: Snowflake data warehouse via MCP server
+transports:
+  - id: mcp
+    type: mcp_stdio
+    command: uvx
+    args:
+      - mcp-snowflake-server==0.4.0
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ env.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ env.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ env.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_WAREHOUSE: ${{ env.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: ${{ env.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{ env.SNOWFLAKE_SCHEMA }}
+    timeout_ms: 60000
+    retry:
+      max_retries: 3
+      backoff: exponential
+    rate_limit:
+      requests_per_second: 2
+      burst: 5
+default_transport: mcp

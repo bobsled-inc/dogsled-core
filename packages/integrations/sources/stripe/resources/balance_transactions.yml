@@ -1,0 +1,111 @@
+type: resource
+name: balance_transactions
+description: Stripe balance transactions representing individual entries in your Stripe account balance ledger
+api:
+  endpoint: /v1/balance_transactions
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of balance transactions to return per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique balance transaction identifier prefixed with txn_ (e.g. txn_1A2b3C4d5E6f7G)
+  amount:
+    type: integer
+    path: $.amount
+    description: Gross amount of the transaction in the smallest currency unit (e.g. cents for USD).
+      Positive for credits, negative for debits
+  available_on:
+    type: integer
+    path: $.available_on
+    description: Unix timestamp when the funds from this transaction become available for payout.
+      Typically 2 business days after creation for card payments
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO 4217 currency code in lowercase (e.g. usd, eur, gbp)
+  description:
+    type: string
+    path: $.description
+    description:
+      Human-readable description of the balance transaction, typically including the type and
+      a reference to the source object
+  fee:
+    type: integer
+    path: $.fee
+    description: Total fees deducted from this transaction in the smallest currency unit. Includes
+      Stripe processing fees and any application fees
+  net:
+    type: integer
+    path: $.net
+    description:
+      Net amount credited or debited to your balance in the smallest currency unit. Equals
+      amount minus fee
+  reporting_category:
+    type: string
+    path: $.reporting_category
+    description: Categorization for financial reporting purposes (e.g. charge, refund, payout, fee,
+      connect_collection_transfer)
+  source:
+    type: string
+    path: $.source
+    description:
+      ID of the source object that created this balance transaction (e.g. ch_xxx for charges,
+      re_xxx for refunds, po_xxx for payouts)
+  status:
+    type: string
+    path: $.status
+    description:
+      'Current status of the balance transaction. Possible values: available (funds can be
+      paid out), pending (funds not yet available for payout)'
+  type:
+    type: string
+    path: $.type
+    description:
+      'Type of transaction. Common values: charge, refund, adjustment, payout, stripe_fee,
+      application_fee, payment, transfer, connect_collection_transfer'
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the balance transaction was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

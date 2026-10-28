@@ -1,0 +1,67 @@
+type: resource
+name: tasks
+description: Tasks associated with customer accounts and projects
+api:
+  endpoint: /tasks
+  method: GET
+  query_params:
+    limit: '100'
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique task identifier
+  title:
+    type: string
+    path: $.title
+    description: Task title
+  body_html:
+    type: string
+    path: $.body_html
+    description: Task body in HTML
+  status:
+    type: string
+    path: $.status
+    description: Task status (not_started, in_progress, completed)
+  account_id:
+    type: string
+    path: $.account_id
+    description: Account ID the task belongs to
+  project_id:
+    type: string
+    path: $.project_id
+    description: Project ID the task belongs to
+  assignee_id:
+    type: string
+    path: $.assignee_id
+    description: User ID of the task assignee
+  milestone_id:
+    type: string
+    path: $.milestone_id
+    description: Milestone ID the task belongs to
+  due_date:
+    type: timestamp
+    path: $.due_date
+    description: Task due date
+  customer_portal_visible:
+    type: boolean
+    path: $.customer_portal_visible
+    description: Whether the task is visible in the customer portal
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the task was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the task was last updated
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - id

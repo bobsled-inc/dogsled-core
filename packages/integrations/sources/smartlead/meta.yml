@@ -1,0 +1,9 @@
+display_name: Smartlead
+category: marketing
+tags: [cold-email, outreach, campaigns, leads, email-warmup]
+logo_url: https://www.smartlead.ai/favicon.ico
+docs_url: https://api.smartlead.ai/api-reference
+auth_setup:
+  - env: SMARTLEAD_API_KEY
+    description: Smartlead API key (created by Admin users in Settings > API)
+    docs_url: https://api.smartlead.ai/authentication

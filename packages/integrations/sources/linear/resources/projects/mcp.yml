@@ -1,0 +1,101 @@
+type: resource
+name: projects_mcp
+via: mcp
+entity: projects
+description: Projects from Linear workspace
+tool:
+  tool_name: list_projects
+input:
+  team:
+    type: string
+    description: Optional team name or ID to filter projects
+  limit:
+    type: integer
+    description: Maximum number of projects per MCP page
+    default: 250
+  query:
+    type: string
+    description: Optional project name search string
+  state:
+    type: string
+    description: Optional project state type, name, or ID
+  member:
+    type: string
+    description: Optional user ID, name, email, or "me" to filter project membership
+  label:
+    type: string
+    description: Optional label name or ID to filter projects
+  orderBy:
+    type: string
+    description: Sort field for Linear MCP pagination
+    default: updatedAt
+    enum:
+      - createdAt
+      - updatedAt
+  createdAt:
+    type: string
+    description: Optional created-after ISO 8601 date or duration
+  updatedAt:
+    type: string
+    description: Optional updated-after ISO 8601 date or duration
+  initiative:
+    type: string
+    description: Optional initiative name or ID to filter projects
+  includeArchived:
+    type: boolean
+    description: Include archived projects
+    default: false
+  includeMilestones:
+    type: boolean
+    description: Include project milestones in returned project payloads
+    default: false
+  includeMembers:
+    type: boolean
+    description: Include project members in returned project payloads
+    default: false
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique project UUID
+  name:
+    type: string
+    path: $.name
+    description: Project name
+  description:
+    type: string
+    path: $.description
+    description: Project description
+  state:
+    type: string
+    path: $.state
+    description: Project state (planned, started, paused, completed, cancelled)
+  progress:
+    type: number
+    path: $.progress
+    description: Project completion progress (0-1)
+  start_date:
+    type: string
+    path: $.startDate
+    description: Project start date as YYYY-MM-DD
+  target_date:
+    type: string
+    path: $.targetDate
+    description: Project target completion date as YYYY-MM-DD
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Timestamp when the project was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Timestamp when the project was last updated
+extract:
+  record_path: $.projects
+  pagination:
+    type: mcp_cursor
+    cursor_path: $.pageInfo.endCursor
+    cursor_argument: cursor
+  table:
+    primary_key:
+      - id

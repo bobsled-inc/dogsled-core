@@ -1,0 +1,19 @@
+display_name: Snowflake (MCP)
+category: analytics
+tags: [data-warehouse, sql, mcp]
+logo_url: https://www.snowflake.com/favicon.ico
+docs_url: https://docs.snowflake.com
+auth_setup:
+  - env: SNOWFLAKE_ACCOUNT
+    description: Snowflake account identifier (e.g. xy12345.us-east-1)
+    docs_url: https://docs.snowflake.com/en/user-guide/admin-account-identifier
+  - env: SNOWFLAKE_USER
+    description: Snowflake username
+  - env: SNOWFLAKE_PASSWORD
+    description: Snowflake password
+  - env: SNOWFLAKE_WAREHOUSE
+    description: Snowflake warehouse name
+  - env: SNOWFLAKE_DATABASE
+    description: Snowflake database name
+  - env: SNOWFLAKE_SCHEMA
+    description: Snowflake schema name

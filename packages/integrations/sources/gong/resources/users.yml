@@ -1,0 +1,31 @@
+type: resource
+name: users
+description: Users from Gong.
+api:
+  endpoint: /users
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  email:
+    type: string
+    path: $.emailAddress
+  first_name:
+    type: string
+    path: $.firstName
+  last_name:
+    type: string
+    path: $.lastName
+  title:
+    type: string
+    path: $.title
+  active:
+    type: boolean
+    path: $.active
+extract:
+  record_path: $.users
+  table:
+    primary_key:
+      - id

@@ -1,0 +1,77 @@
+type: resource
+name: projects
+description: Projects that belong to each PostHog organization.
+api:
+  endpoint: /api/organizations/${{ input.organization_id }}/projects/
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    search: ${{ input.search }}
+input:
+  limit:
+    type: integer
+    description: Number of results to return per page.
+    default: 100
+  offset:
+    type: integer
+    description: The initial index from which to return the results.
+    default: 0
+  organization_id:
+    type: string
+    required: true
+  search:
+    type: string
+    description: A search term.
+query:
+  search:
+    dialect: provider_search
+    bind:
+      input: search
+output:
+  id:
+    type: integer
+    path: $.id
+  uuid:
+    type: string
+    path: $.uuid
+  organization:
+    type: string
+    path: $.organization
+  api_token:
+    type: string
+    path: $.api_token
+  name:
+    type: string
+    path: $.name
+  completed_snippet_onboarding:
+    type: boolean
+    path: $.completed_snippet_onboarding
+  has_completed_onboarding_for:
+    type: string
+    path: $.has_completed_onboarding_for
+  ingested_event:
+    type: boolean
+    path: $.ingested_event
+  is_demo:
+    type: boolean
+    path: $.is_demo
+  timezone:
+    type: string
+    path: $.timezone
+  access_control:
+    type: boolean
+    path: $.access_control
+extract:
+  record_path: $.results
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id
+  for_each:
+    resource: organizations
+    field: id
+    input: organization_id

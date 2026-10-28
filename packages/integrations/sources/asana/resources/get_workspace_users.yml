@@ -1,0 +1,52 @@
+type: resource
+name: get_workspace_users
+description: List users in each Asana workspace accessible to the authenticated user
+api:
+  endpoint: /workspaces/${{ input.workspace_gid }}/users
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  workspace_gid:
+    type: string
+    description: Asana workspace GID to list users from
+    required: true
+  limit:
+    type: integer
+    description: Number of users to return per page
+    default: 100
+  offset:
+    type: string
+    description: Pagination cursor returned by the previous response
+output:
+  gid:
+    type: string
+    path: $.gid
+    description: Asana user identifier
+  name:
+    type: string
+    path: $.name
+    description: User display name
+  resource_type:
+    type: string
+    path: $.resource_type
+    description: Asana resource type
+  email:
+    type: string
+    path: $.email
+    description: User email address
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.next_page.offset
+    cursor_param: offset
+  for_each:
+    resource: get_workspaces
+    field: gid
+    input: workspace_gid
+  table:
+    primary_key:
+      - gid
+    trust_tier: silver

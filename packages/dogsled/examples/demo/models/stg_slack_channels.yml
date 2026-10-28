@@ -1,0 +1,59 @@
+spec_version: '0.2'
+name: stg_slack_channels
+type: model
+description: Staged Slack channels with classification and membership metadata
+grain: channel_id
+source:
+  ref: warehouse.slack_channels
+columns:
+  - name: channel_id
+    expr: t0.id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique channel identifier
+  - name: channel_name
+    expr: t0.name
+    semantic_role: categorical
+    description: Channel name without the # prefix
+  - name: is_public
+    expr: t0.is_channel
+    semantic_role: categorical
+    description: True if this is a public channel
+  - name: is_private
+    expr: t0.is_private
+    semantic_role: categorical
+    description: True if the channel is private
+  - name: is_archived
+    expr: t0.is_archived
+    semantic_role: categorical
+    description: True if the channel has been archived
+  - name: is_general
+    expr: t0.is_general
+    semantic_role: categorical
+    description: True if this is the default #general channel
+  - name: num_members
+    expr: t0.num_members
+    semantic_role: measure
+    description: Number of members in the channel
+  - name: creator_user_id
+    expr: t0.creator
+    semantic_role: entity_id
+    description: User ID of the channel creator
+  - name: topic
+    expr: t0.topic
+    semantic_role: categorical
+    description: Current channel topic text
+  - name: purpose
+    expr: t0.purpose
+    semantic_role: categorical
+    description: Current channel purpose text
+  - name: created_at_unix
+    expr: t0.created
+    semantic_role: event_timestamp
+    description: Unix timestamp when the channel was created
+  - name: updated_at_unix
+    expr: t0.updated
+    semantic_role: event_timestamp
+    description: Unix timestamp of the most recent channel update
+materialization:
+  type: view

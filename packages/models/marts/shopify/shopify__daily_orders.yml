@@ -1,0 +1,37 @@
+spec_version: '0.2'
+name: shopify__daily_orders
+type: model
+description: Daily Shopify order counts grouped by financial and fulfillment status.
+grain:
+  - order_day
+  - financial_status
+  - fulfillment_status
+source:
+  ref: stg_shopify__orders
+columns:
+  - name: order_day
+    expr: date_trunc('day', stg_shopify__orders.created_at)
+    semantic_role: time_dimension
+    description: Calendar day when the order was created.
+  - name: financial_status
+    expr: stg_shopify__orders.financial_status
+    semantic_role: categorical
+    description: Financial status bucket.
+  - name: fulfillment_status
+    expr: stg_shopify__orders.fulfillment_status
+    semantic_role: categorical
+    description: Fulfillment status bucket.
+  - name: order_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of Shopify orders in the bucket.
+group_by:
+  - order_day
+  - financial_status
+  - fulfillment_status
+tags:
+  - shopify
+  - daily
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,45 @@
+type: resource
+name: ad_groups
+description: Ad groups for a TikTok advertiser.
+api:
+  endpoint: /adgroup/get
+  method: GET
+  query_params:
+    advertiser_id: ${{ input.advertiser_id }}
+input:
+  advertiser_id:
+    type: string
+    default: '123'
+output:
+  adgroup_id:
+    type: string
+    path: $.adgroup_id
+  adgroup_name:
+    type: string
+    path: $.adgroup_name
+  campaign_id:
+    type: string
+    path: $.campaign_id
+  status:
+    type: string
+    path: $.status
+  budget:
+    type: number
+    path: $.budget
+  bid_price:
+    type: number
+    path: $.bid_price
+extract:
+  record_path: $.data.list
+  table:
+    primary_key:
+      - adgroup_id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: page_size
+    total_pages_path: $.data.page_info.total_page
+  for_each:
+    resource: advertisers
+    field: advertiser_id
+    input: advertiser_id

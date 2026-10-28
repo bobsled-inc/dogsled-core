@@ -1,0 +1,74 @@
+type: resource
+name: teams_graphql
+via: graphql
+entity: teams
+description: Teams in the Linear workspace
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  teams(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes { id name key description private createdAt updatedAt }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique team UUID
+  name:
+    type: string
+    path: $.name
+    description: Team display name
+  key:
+    type: string
+    path: $.key
+    description: Team key prefix used in issue identifiers (e.g. ENG)
+  description:
+    type: string
+    path: $.description
+    description: Team description
+  private:
+    type: boolean
+    path: $.private
+    description: True if the team is private
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: Timestamp when the team was created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: Timestamp when the team was last updated
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.teams.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.teams.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

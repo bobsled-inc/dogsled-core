@@ -1,0 +1,50 @@
+spec_version: '0.2'
+name: vantage__costs
+type: model
+description: Detailed Vantage cloud cost observations by report, provider account, service, and accrual time.
+grain:
+  - cost_report_token
+  - accrued_at
+  - provider
+  - account_id
+  - service
+source:
+  ref: stg_vantage__costs
+columns:
+  - name: cost_report_token
+    expr: stg_vantage__costs.cost_report_token
+    semantic_role: entity_id
+    references: stg_vantage__cost_reports.token
+    description: Cost report token that produced the cost row.
+  - name: accrued_at
+    expr: stg_vantage__costs.accrued_at
+    semantic_role: time_dimension
+    description: Timestamp when the cost accrued.
+  - name: provider
+    expr: stg_vantage__costs.provider
+    semantic_role: categorical
+    description: Cloud or SaaS provider that incurred the cost.
+  - name: account_id
+    expr: stg_vantage__costs.account_id
+    semantic_role: entity_id
+    description: Provider account that incurred the cost.
+  - name: service
+    expr: stg_vantage__costs.service
+    semantic_role: categorical
+    description: Provider service that incurred the cost.
+  - name: currency
+    expr: stg_vantage__costs.currency
+    semantic_role: categorical
+    description: Currency of the cost amount.
+  - name: amount
+    expr: CAST(stg_vantage__costs.amount AS DOUBLE)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Cloud spend amount for the row.
+tags:
+  - vantage
+  - costs
+trust_tier: gold
+materialization:
+  type: table

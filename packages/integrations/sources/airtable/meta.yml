@@ -1,0 +1,13 @@
+display_name: Airtable
+category: productivity
+logo_url: https://airtable.com/favicon.ico
+tags:
+  - airtable
+  - bases
+  - records
+  - tables
+docs_url: https://airtable.com/developers/web/api/introduction
+auth_setup:
+  - env: AIRTABLE_API_TOKEN
+    description: Airtable personal access token
+    docs_url: https://airtable.com/developers/web/guides/personal-access-tokens

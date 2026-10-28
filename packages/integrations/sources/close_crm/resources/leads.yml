@@ -1,0 +1,49 @@
+type: resource
+name: leads
+description: List Close CRM leads
+api:
+  endpoint: /lead/
+  method: GET
+  query_params:
+    _skip: ${{ input.skip }}
+    _limit: ${{ input.limit }}
+input:
+  skip:
+    type: integer
+    description: Pagination offset
+    default: 0
+  limit:
+    type: integer
+    description: Page size
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+    description: Lead identifier
+  display_name:
+    type: string
+    path: $.display_name
+    description: Lead display name
+  status_label:
+    type: string
+    path: $.status_label
+    description: Lead status label
+  date_created:
+    type: timestamp
+    path: $.date_created
+    description: Lead creation timestamp
+  date_updated:
+    type: timestamp
+    path: $.date_updated
+    description: Lead update timestamp
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: offset
+    offset_param: _skip
+    limit_param: _limit

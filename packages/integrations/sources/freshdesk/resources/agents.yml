@@ -1,0 +1,50 @@
+type: resource
+name: agents
+description: View Agents
+api:
+  endpoint: /agents
+  method: GET
+input: {}
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Freshdesk agent identifier
+  contact_email:
+    type: string
+    path: $.contact.email
+    description: Agent email address
+  available:
+    type: boolean
+    path: $.available
+    description: Whether the agent is currently marked available
+  occasional:
+    type: boolean
+    path: $.occasional
+    description: Whether the agent is an occasional agent
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the agent is active
+  ticket_scope:
+    type: integer
+    path: $.ticket_scope
+    description: Freshdesk ticket visibility scope for the agent
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Agent creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Agent last update timestamp
+extract:
+  record_path: $
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: per_page
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

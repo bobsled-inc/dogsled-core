@@ -1,0 +1,184 @@
+type: resource
+name: list_products
+description: List products
+api:
+  endpoint: /products
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+    include_deleted: ${{ input.include_deleted }}
+    id: ${{ input.id }}
+    name: ${{ input.name }}
+    status: ${{ input.status }}
+    shippable: ${{ input.shippable }}
+    has_variant: ${{ input.has_variant }}
+    created_at: ${{ input.created_at }}
+    updated_at: ${{ input.updated_at }}
+    sort_by: ${{ input.sort_by }}
+input:
+  limit:
+    type: integer
+    description: The number of resources to be returned.
+    default: 10
+    minimum: 1
+    maximum: 100
+  offset:
+    type: string
+    description: >-
+      Determines your position in the list for pagination. To ensure that the next page is retrieved
+      correctly, always set `offset`
+
+      to the value of `next_offset`
+
+      obtained in the previous iteration of the API call.
+    maxLength: 1000
+  include_deleted:
+    type: boolean
+    description: If set to true, includes the deleted resources in the response. For the deleted
+      resources in the response, the
+      '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*deleted\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*
+      ' attribute will be
+      '\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*true\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*
+      '.
+    default: false
+  id:
+    type: object
+    description: |-
+      optional, string filter
+
+      Filter product based on their [id](/docs/api/products)
+      .
+      **Supported operators :**
+      is, is_not, starts_with, in, not_in
+
+      **Example →**
+      *id\[is\] = "basic"*
+  name:
+    type: object
+    description: |-
+      optional, string filter
+      Filter product based on their `name`
+      s.
+      Supported operators :
+      is, is_not, starts_with, in, not_in
+      Example →
+      name[is] = "basic"
+  status:
+    type: object
+    description: |-
+      optional, enumerated string filter
+      Filter product based on their `status`.
+      Possible values are : active, inactive.
+      Supported operators :
+      is, is_not, in, not_in
+      Example →
+      status[is] = "basic"
+  shippable:
+    type: object
+    description: |-
+      optional, boolean filter
+
+      Filter product based on whether it is shippable or not. Possible values are : *true, false*
+
+      **Supported operators :**
+      is
+
+      **Example →**
+      *shippable\[is\] = "true"*
+  has_variant:
+    type: object
+    description: |-
+      optional, boolean filter
+
+      Filter product based on whether it has variants or not. Possible values are : *true, false*
+
+      **Supported operators :**
+      is
+
+      **Example →**
+      *has_variant\[is\] = "true"*
+  created_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+      Filter product based on their `created time`
+      .
+      Supported operators :
+      after, before, on, between
+      Example →
+      created_at[after] = "1243545465"
+  updated_at:
+    type: object
+    description: |-
+      optional, timestamp(UTC) in seconds filter
+      Filter product based on their `updated time`
+      .
+      Supported operators :
+      after, before, on, between
+      Example →
+      updated_at[after] = "1243545465"
+  sort_by:
+    type: object
+    description: |-
+      optional, string filter
+
+      Sorts based on the specified attribute.
+      **Supported attributes :**
+      name, id, created_at, updated_at
+
+      **Supported sort-orders :**
+      asc, desc
+
+      **Example →**
+      *sort_by\[asc\] = "name"*
+
+      This will sort the result based on the 'name' attribute in ascending(earliest first) order.
+output:
+  product_id:
+    type: string
+    path: $.product.id
+    description: Unique Chargebee product identifier
+  product:
+    type: object
+    path: $.product
+    description: Resource object representing product
+extract:
+  record_path: $.list
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - product_id
+    trust_tier: silver
+lookup:
+  description: Retrieve a product
+  api:
+    endpoint: /products/${{ input.product_id }}
+    method: GET
+  input:
+    product_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_products_smoke
+      input:
+        chargebee_request_origin_device: Android
+        chargebee_request_origin_user: user@example.com
+        chargebee_request_origin_user_encoded: dXNlci7QutCy0ZbRgtC+0YfQutCwQGV4YW1wbGUuY29t
+        chargebee_request_origin_ip: 192.168.1.2
+        chargebee_business_entity_id: null
+        limit: null
+        offset: null
+        include_deleted: null
+        id: basic
+        name: basic
+        status: basic
+        shippable: 'true'
+        has_variant: 'true'
+        created_at: '1243545465'
+        updated_at: '1243545465'
+        sort_by: null

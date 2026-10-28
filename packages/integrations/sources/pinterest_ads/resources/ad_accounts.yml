@@ -1,0 +1,29 @@
+type: resource
+name: ad_accounts
+description: Pinterest ad accounts accessible to the authenticated user.
+api:
+  endpoint: /ad_accounts
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  currency:
+    type: string
+    path: $.currency
+  status:
+    type: string
+    path: $.status
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.bookmark
+    cursor_param: bookmark

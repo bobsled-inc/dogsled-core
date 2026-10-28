@@ -1,0 +1,36 @@
+spec_version: '0.2'
+name: fct_orders
+type: model
+description: Order fact table with customer details.
+grain: order_id
+
+source:
+  ref: stg_orders
+
+joins:
+  - ref: stg_customers
+    type: left
+    on: 'stg_orders.CUSTOMER_ID = stg_customers.CUSTOMER_ID'
+
+columns:
+  - name: ORDER_ID
+    expr: stg_orders.ORDER_ID
+    primary_key: true
+    semantic_role: entity_id
+  - name: CUSTOMER_ID
+    expr: stg_orders.CUSTOMER_ID
+    references: stg_customers.customer_id
+  - name: CUSTOMER_NAME
+    expr: stg_customers.CUSTOMER_NAME
+  - name: TOTAL
+    expr: stg_orders.TOTAL
+    semantic_role: measure
+  - name: ORDER_DATE
+    expr: stg_orders.ORDER_DATE
+    semantic_role: event_timestamp
+  - name: STATUS
+    expr: stg_orders.STATUS
+    semantic_role: categorical
+
+materialization:
+  type: view

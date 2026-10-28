@@ -1,0 +1,156 @@
+type: resource
+name: deployments
+description: Vercel deployments with project, environment, lifecycle, creator, and source-control metadata.
+api:
+  endpoint: /v7/deployments
+  method: GET
+  query_params:
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+    projectId: ${{ input.project_id }}
+    limit: ${{ input.limit }}
+    from: ${{ input.from_ms }}
+    to: ${{ input.to_ms }}
+    target: ${{ input.target }}
+    state: ${{ input.state }}
+    since: ${{ input.since_ms }}
+input:
+  team_id:
+    type: string
+    description: Vercel team identifier.
+  team_slug:
+    type: string
+    description: Vercel team slug.
+  project_id:
+    type: string
+    description: Restrict deployments to one Vercel project.
+  limit:
+    type: integer
+    default: 100
+    minimum: 1
+    maximum: 100
+    description: Maximum deployments per page.
+  from_ms:
+    type: integer
+    description: Inclusive lower bound as Unix milliseconds.
+  to_ms:
+    type: integer
+    description: Exclusive upper bound as Unix milliseconds.
+  target:
+    type: string
+    description: Deployment environment.
+  state:
+    type: string
+    description: Optional deployment state filter.
+  since_ms:
+    type: integer
+    description: Return deployments created after this Unix millisecond timestamp.
+output:
+  uid:
+    type: string
+    path: $.uid
+    semantic_role: entity_id
+    description: Stable Vercel deployment identifier.
+  name:
+    type: string
+    path: $.name
+    semantic_role: categorical
+    description: Deployment name.
+  project_id:
+    type: string
+    path: $.projectId
+    semantic_role: entity_id
+    description: Vercel project identifier.
+  team_id:
+    type: string
+    path: $.__input__.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for this request.
+  team_slug:
+    type: string
+    path: $.__input__.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for this request.
+  url:
+    type: string
+    path: $.url
+    description: Deployment URL.
+  created_at:
+    type: integer
+    path: $.createdAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Deployment creation time as Unix milliseconds.
+  created_timestamp:
+    type: integer
+    path: $.created
+    unit: unix_milliseconds
+    description: Native deployment creation timestamp preserved from the Vercel response.
+  target:
+    type: string
+    path: $.target
+    semantic_role: categorical
+    description: Deployment target environment.
+  state:
+    type: string
+    path: $.state
+    semantic_role: categorical
+    description: Current deployment state.
+  ready_state:
+    type: string
+    path: $.readyState
+    semantic_role: categorical
+    description: Current deployment readiness state.
+  source:
+    type: string
+    path: $.source
+    semantic_role: categorical
+    description: Deployment creation source.
+  creator:
+    type: object
+    path: $.creator
+    description: Deployment creator metadata.
+  meta:
+    type: object
+    path: $.meta
+    description: Source-control metadata preserved without flattening provider-specific keys.
+  building_at:
+    type: integer
+    path: $.buildingAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Time the deployment entered building state.
+  ready:
+    type: integer
+    path: $.ready
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Time the deployment became ready.
+  ready_substate:
+    type: string
+    path: $.readySubstate
+    semantic_role: categorical
+    description: Promotion substate for ready deployments.
+  error_code:
+    type: string
+    path: $.errorCode
+    description: Error code when deployment failed.
+  error_message:
+    type: string
+    path: $.errorMessage
+    description: Error message when deployment failed.
+  project_settings:
+    type: object
+    path: $.projectSettings
+    description: Project settings returned with the deployment.
+extract:
+  record_path: $.deployments
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next
+    cursor_param: until
+  table:
+    primary_key:
+      - uid
+    load_strategy: merge
+    trust_tier: silver

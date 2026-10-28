@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: pipedrive_completed_activity_count
+description: Number of completed Pipedrive activities.
+model: pipedrive__activities
+expression: SUM(CASE WHEN {pipedrive__activities}.done THEN 1 ELSE 0 END)
+synonyms: [completed activities, finished activities, activities done]
+tags: [pipedrive, crm, activity]

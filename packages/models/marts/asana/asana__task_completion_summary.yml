@@ -1,0 +1,43 @@
+spec_version: '0.2'
+name: asana__task_completion_summary
+type: model
+description: Task counts by project and completion status.
+grain:
+  - project_id
+  - completed
+source:
+  ref: stg_asana__get_task_projects
+joins:
+  - ref: stg_asana__get_tasks
+    type: left
+    on: stg_asana__get_task_projects.task_gid = stg_asana__get_tasks.gid
+columns:
+  - name: project_id
+    expr: stg_asana__get_task_projects.project_gid
+    primary_key: true
+    semantic_role: entity_id
+    description: Asana project GID.
+  - name: project_name
+    expr: stg_asana__get_task_projects.project_name
+    semantic_role: categorical
+    description: Project name.
+  - name: completed
+    expr: stg_asana__get_tasks.completed
+    primary_key: true
+    semantic_role: categorical
+    description: Whether tasks in this bucket are completed.
+  - name: task_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of tasks in the completion bucket.
+group_by:
+  - project_id
+  - project_name
+  - completed
+tags:
+  - asana
+  - tasks
+  - summary
+trust_tier: gold
+materialization:
+  type: table

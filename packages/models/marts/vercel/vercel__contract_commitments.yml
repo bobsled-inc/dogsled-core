@@ -1,0 +1,93 @@
+spec_version: '0.2'
+name: vercel__contract_commitments
+type: model
+description: Vercel contract and commitment detail kept separate from charge totals.
+grain:
+  - snapshot_id
+  - record_ordinal
+source:
+  ref: stg_vercel__contract_commitments
+columns:
+  - name: snapshot_id
+    expr: stg_vercel__contract_commitments.snapshot_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Selected commitments snapshot.
+  - name: record_ordinal
+    expr: stg_vercel__contract_commitments.record_ordinal
+    primary_key: true
+    semantic_role: entity_id
+    description: JSONL record ordinal within the selected snapshot.
+  - name: team_id
+    expr: stg_vercel__contract_commitments.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier.
+  - name: team_slug
+    expr: stg_vercel__contract_commitments.team_slug
+    semantic_role: categorical
+    description: Vercel team slug used for the request.
+  - name: retrieval_time
+    expr: stg_vercel__contract_commitments.retrieval_time
+    semantic_role: time_dimension
+    description: UTC retrieval time for the selected snapshot.
+  - name: contract_id
+    expr: stg_vercel__contract_commitments.contract_id
+    semantic_role: entity_id
+    description: Native contract identifier.
+  - name: commitment_id
+    expr: stg_vercel__contract_commitments.commitment_id
+    semantic_role: entity_id
+    description: Native commitment identifier.
+  - name: commitment_category
+    expr: stg_vercel__contract_commitments.commitment_category
+    semantic_role: categorical
+    description: FOCUS contract commitment category.
+  - name: commitment_type
+    expr: stg_vercel__contract_commitments.commitment_type
+    semantic_role: categorical
+    description: Provider-assigned commitment type.
+  - name: commitment_description
+    expr: stg_vercel__contract_commitments.commitment_description
+    semantic_role: categorical
+    description: Provider-supplied commitment description.
+  - name: contract_period_start
+    expr: stg_vercel__contract_commitments.contract_period_start
+    semantic_role: time_dimension
+    description: Overall contract period start.
+  - name: contract_period_end
+    expr: stg_vercel__contract_commitments.contract_period_end
+    semantic_role: time_dimension
+    description: Overall contract period end.
+  - name: commitment_period_start
+    expr: stg_vercel__contract_commitments.commitment_period_start
+    semantic_role: time_dimension
+    description: Commitment period start.
+  - name: commitment_period_end
+    expr: stg_vercel__contract_commitments.commitment_period_end
+    semantic_role: time_dimension
+    description: Commitment period end.
+  - name: commitment_quantity
+    expr: stg_vercel__contract_commitments.commitment_quantity
+    semantic_role: measure
+    description: Quantity associated with the commitment.
+  - name: commitment_unit
+    expr: stg_vercel__contract_commitments.commitment_unit
+    semantic_role: categorical
+    description: Commitment quantity unit.
+  - name: commitment_cost
+    expr: stg_vercel__contract_commitments.commitment_cost
+    semantic_role: measure
+    tags:
+      - financial
+    description: Native cost associated with the commitment.
+  - name: currency
+    expr: stg_vercel__contract_commitments.currency
+    semantic_role: categorical
+    description: Commitment currency.
+tags:
+  - vercel
+  - billing
+  - commitments
+trust_tier: gold
+materialization:
+  type: table

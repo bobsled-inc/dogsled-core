@@ -1,0 +1,36 @@
+spec_version: '0.2'
+name: customer_event_revenue
+type: model
+description: Customer events enriched with account metadata from Snowflake.
+grain: event_id
+publish:
+  target: databricks
+  target_schema: analytics
+source:
+  ref: databricks.events
+joins:
+  - ref: snowflake.accounts
+    type: left
+    on: databricks.events.account_id = snowflake.accounts.account_id
+columns:
+  - name: event_id
+    expr: databricks.events.event_id
+    type: integer
+    primary_key: true
+  - name: account_id
+    expr: databricks.events.account_id
+    type: integer
+  - name: account_name
+    expr: snowflake.accounts.account_name
+    type: string
+  - name: segment
+    expr: snowflake.accounts.segment
+    type: string
+  - name: event_ts
+    expr: databricks.events.event_ts
+    type: timestamp
+  - name: event_value
+    expr: databricks.events.event_value
+    type: number
+materialization:
+  type: table

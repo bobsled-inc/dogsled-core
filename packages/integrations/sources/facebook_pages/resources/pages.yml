@@ -1,0 +1,37 @@
+type: resource
+name: pages
+description: Facebook Pages managed by the authenticated user.
+api:
+  endpoint: /me/accounts
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  fields:
+    type: string
+    default: id,name,category,fan_count
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  category:
+    type: string
+    path: $.category
+  fan_count:
+    type: integer
+    path: $.fan_count
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next

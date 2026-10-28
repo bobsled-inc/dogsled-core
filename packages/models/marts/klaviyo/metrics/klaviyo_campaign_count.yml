@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: klaviyo_campaign_count
+description: Number of Klaviyo campaigns.
+model: klaviyo__campaigns
+expression: COUNT({klaviyo__campaigns}.campaign_id)
+synonyms: [campaigns, campaign count, marketing campaigns]
+tags: [klaviyo, marketing, campaigns]

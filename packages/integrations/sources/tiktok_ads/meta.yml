@@ -1,0 +1,16 @@
+display_name: TikTok Ads
+category: marketing
+status: untested with live API
+tags:
+  - tiktok
+  - ads
+  - social
+  - marketing
+docs_url: https://business-api.tiktok.com/marketing_api/docs
+auth_setup:
+  - env: TIKTOK_ACCESS_TOKEN
+    description: TikTok Marketing API access token
+  - env: TIKTOK_APP_ID
+    description: TikTok Marketing API app ID
+  - env: TIKTOK_APP_SECRET
+    description: TikTok Marketing API app secret

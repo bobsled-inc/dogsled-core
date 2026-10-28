@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: relationship
+name: intercom_conversations_to_admins
+description: Each Intercom conversation can be assigned to one admin.
+left_model: intercom__conversations
+right_model: intercom__admins
+join_columns:
+  - left: admin_assignee_id
+    right: admin_id
+join_type: left
+relationship_type: many_to_one
+tags: [intercom, conversations, admins]

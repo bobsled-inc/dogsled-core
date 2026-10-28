@@ -1,0 +1,141 @@
+spec_version: '0.2'
+name: jira__issues
+type: model
+description: Detailed Jira issues enriched with project and priority metadata.
+grain: issue_id
+source:
+  ref: stg_jira__search_issues
+joins:
+  - ref: stg_jira__search_projects
+    type: left
+    on: stg_jira__search_issues.project_id = stg_jira__search_projects.search_project_id
+  - ref: stg_jira__search_priorities
+    type: left
+    on: stg_jira__search_issues.priority_id = stg_jira__search_priorities.search_priority_id
+columns:
+  - name: issue_id
+    expr: stg_jira__search_issues.search_issue_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Jira issue identifier.
+  - name: issue_key
+    expr: stg_jira__search_issues.key
+    semantic_role: categorical
+    description: Human-readable Jira issue key.
+  - name: summary
+    expr: stg_jira__search_issues.summary
+    semantic_role: categorical
+    description: Issue summary.
+  - name: project_id
+    expr: stg_jira__search_issues.project_id
+    semantic_role: entity_id
+    references: stg_jira__search_projects.search_project_id
+    description: Project that owns the issue.
+  - name: project_key
+    expr: stg_jira__search_issues.project_key
+    semantic_role: categorical
+    description: Short project key.
+  - name: project_name
+    expr: COALESCE(stg_jira__search_projects.name, stg_jira__search_issues.project_name)
+    semantic_role: categorical
+    description: Project name.
+  - name: issue_type_id
+    expr: stg_jira__search_issues.issue_type_id
+    semantic_role: entity_id
+    description: Issue type identifier.
+  - name: issue_type_name
+    expr: stg_jira__search_issues.issue_type_name
+    semantic_role: categorical
+    description: Issue type name.
+  - name: status_id
+    expr: stg_jira__search_issues.status_id
+    semantic_role: entity_id
+    description: Workflow status identifier.
+  - name: status_name
+    expr: stg_jira__search_issues.status_name
+    semantic_role: categorical
+    description: Workflow status name.
+  - name: status_category_key
+    expr: stg_jira__search_issues.status_category_key
+    semantic_role: categorical
+    description: Jira status category key such as new, indeterminate, or done.
+  - name: priority_id
+    expr: stg_jira__search_issues.priority_id
+    semantic_role: entity_id
+    references: stg_jira__search_priorities.search_priority_id
+    description: Priority identifier.
+  - name: priority_name
+    expr: COALESCE(stg_jira__search_priorities.name, stg_jira__search_issues.priority_name)
+    semantic_role: categorical
+    description: Priority name.
+  - name: assignee_account_id
+    expr: stg_jira__search_issues.assignee_account_id
+    semantic_role: entity_id
+    description: Account ID of the assigned user.
+  - name: assignee_display_name
+    expr: stg_jira__search_issues.assignee_display_name
+    semantic_role: categorical
+    description: Display name of the assigned user.
+  - name: reporter_account_id
+    expr: stg_jira__search_issues.reporter_account_id
+    semantic_role: entity_id
+    description: Account ID of the reporting user.
+  - name: reporter_display_name
+    expr: stg_jira__search_issues.reporter_display_name
+    semantic_role: categorical
+    description: Display name of the reporting user.
+  - name: creator_account_id
+    expr: stg_jira__search_issues.creator_account_id
+    semantic_role: entity_id
+    description: Account ID of the issue creator.
+  - name: creator_display_name
+    expr: stg_jira__search_issues.creator_display_name
+    semantic_role: categorical
+    description: Display name of the issue creator.
+  - name: resolution_name
+    expr: stg_jira__search_issues.resolution_name
+    semantic_role: categorical
+    description: Resolution name when the issue is complete.
+  - name: due_date
+    expr: stg_jira__search_issues.due_date
+    semantic_role: time_dimension
+    description: Due date for the issue.
+  - name: created_at
+    expr: stg_jira__search_issues.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was created.
+  - name: updated_at
+    expr: stg_jira__search_issues.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was last updated.
+  - name: resolution_date
+    expr: stg_jira__search_issues.resolution_date
+    semantic_role: event_timestamp
+    description: Timestamp when the issue was resolved.
+  - name: remaining_estimate_seconds
+    expr: stg_jira__search_issues.time_estimate
+    semantic_role: measure
+    description: Remaining estimate in seconds.
+  - name: aggregate_remaining_estimate_seconds
+    expr: stg_jira__search_issues.aggregate_time_estimate
+    semantic_role: measure
+    description: Aggregate remaining estimate in seconds.
+  - name: time_spent_seconds
+    expr: stg_jira__search_issues.time_spent
+    semantic_role: measure
+    description: Time spent on the issue in seconds.
+  - name: parent_issue_id
+    expr: stg_jira__search_issues.parent_id
+    semantic_role: entity_id
+    description: Parent issue identifier for subtasks.
+  - name: parent_issue_key
+    expr: stg_jira__search_issues.parent_key
+    semantic_role: categorical
+    description: Parent issue key for subtasks.
+tags:
+  - jira
+  - issues
+  - engineering
+trust_tier: gold
+materialization:
+  type: table

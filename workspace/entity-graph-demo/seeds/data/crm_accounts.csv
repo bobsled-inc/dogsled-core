@@ -1,0 +1,12 @@
+account_id,name,website,phone,country,updated_at
+cr_501,Acme Corp.,https://www.acme.com,+1-212-555-0101,US,2026-03-11T14:00:00Z
+cr_502,Globex,globex.io,415-555-0102,US,2026-03-13T10:00:00Z
+cr_503,Initech Technologies,initech.com,(312) 555-0103,US,2026-03-14T16:00:00Z
+cr_504,Tyrell Corp.,https://tyrellcorp.com,213-555-0199,US,2026-03-15T09:00:00Z
+cr_505,Stark Industries Corp,https://starkindustries.com,+1 (212) 555-0105,US,2026-03-17T12:00:00Z
+cr_506,Oscorp,oscorp.com,+1-646-555-0155,US,2026-03-19T10:30:00Z
+cr_507,Aperture Science Labs,https://aperture-labs.com,+1 617 555 0109,US,2026-03-21T11:00:00Z
+cr_508,Umbrella Corp,umbrella.org,+1-212-555-0110,US,2026-03-23T08:00:00Z
+cr_509,Massive Dynamic Holdings,massivedynamic.com,646-555-0177,US,2026-03-24T15:30:00Z
+cr_510,Lumen Dataworks Inc,https://lumen-data.com,206-555-0142,US,2026-03-25T12:00:00Z
+cr_511,Vandelay Industry Grp,vandelay-group.example,908-555-0177,US,2026-03-25T13:30:00Z

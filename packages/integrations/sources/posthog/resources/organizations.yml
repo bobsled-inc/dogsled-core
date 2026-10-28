@@ -1,0 +1,108 @@
+type: resource
+name: organizations
+description: Organizations available to the authenticated PostHog user.
+api:
+  endpoint: /api/organizations/
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Number of results to return per page.
+    default: 100
+  offset:
+    type: integer
+    description: The initial index from which to return the results.
+    default: 0
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  slug:
+    type: string
+    path: $.slug
+  logo_media_id:
+    type: string
+    path: $.logo_media_id
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+  membership_level:
+    type: string
+    path: $.membership_level
+  plugins_access_level:
+    type: string
+    path: $.plugins_access_level
+  teams:
+    type: array
+    path: $.teams
+  projects:
+    type: array
+    path: $.projects
+  available_product_features:
+    type: array
+    path: $.available_product_features
+  is_member_join_email_enabled:
+    type: boolean
+    path: $.is_member_join_email_enabled
+  metadata:
+    type: object
+    path: $.metadata
+  customer_id:
+    type: string
+    path: $.customer_id
+  enforce_2fa:
+    type: boolean
+    path: $.enforce_2fa
+  members_can_invite:
+    type: boolean
+    path: $.members_can_invite
+  members_can_use_personal_api_keys:
+    type: boolean
+    path: $.members_can_use_personal_api_keys
+  allow_publicly_shared_resources:
+    type: boolean
+    path: $.allow_publicly_shared_resources
+  member_count:
+    type: integer
+    path: $.member_count
+  is_ai_data_processing_approved:
+    type: boolean
+    path: $.is_ai_data_processing_approved
+  default_experiment_stats_method:
+    type: string
+    path: $.default_experiment_stats_method
+    description: Default statistical method for new experiments in this organization.
+  default_anonymize_ips:
+    type: boolean
+    path: $.default_anonymize_ips
+    description: Default setting for 'Discard client IP data' for new projects in this organization.
+  default_role_id:
+    type: string
+    path: $.default_role_id
+    description: ID of the role to automatically assign to new members joining the organization
+  is_active:
+    type: boolean
+    path: $.is_active
+    description: Set this to 'No' to temporarily disable an organization.
+  is_not_active_reason:
+    type: string
+    path: $.is_not_active_reason
+    description: (optional) reason for why the organization has been de-activated.
+extract:
+  record_path: $.results
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - id

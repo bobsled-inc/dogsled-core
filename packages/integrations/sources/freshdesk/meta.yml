@@ -1,0 +1,13 @@
+display_name: Freshdesk
+category: support
+logo_url: https://www.freshworks.com/favicon.ico
+tags: [support, tickets, helpdesk]
+docs_url: https://developers.freshdesk.com/api/
+openapi_url: openapi.verify.yml
+auth_setup:
+  - env: FRESHDESK_DOMAIN
+    description: Freshdesk account subdomain without the .freshdesk.com suffix
+    docs_url: https://developers.freshdesk.com/api/#authentication
+  - env: FRESHDESK_API_KEY
+    description: Freshdesk API key used as the basic-auth username
+    docs_url: https://developers.freshdesk.com/api/#authentication

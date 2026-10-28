@@ -1,0 +1,39 @@
+type: resource
+name: customers
+description: Customer entities from QuickBooks Online.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    query: select * from Customer maxresults 1000
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.DisplayName
+  email:
+    type: string
+    path: $.PrimaryEmailAddr.Address
+  balance:
+    type: number
+    path: $.Balance
+  active:
+    type: boolean
+    path: $.Active
+  sync_token:
+    type: string
+    path: $.SyncToken
+  created_at:
+    type: timestamp
+    path: $.MetaData.CreateTime
+  updated_at:
+    type: timestamp
+    path: $.MetaData.LastUpdatedTime
+extract:
+  record_path: $.QueryResponse.Customer
+  table:
+    primary_key:
+      - id

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: sf_revenue_total
+description: Total order revenue across the Snowflake orders fact.
+model: sf_fct_orders
+expression: SUM(TOTAL)
+synonyms: [snowflake_revenue, sf_total_revenue]
+tags: [finance, snowflake]

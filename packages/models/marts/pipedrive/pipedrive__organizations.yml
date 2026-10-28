@@ -1,0 +1,130 @@
+spec_version: '0.2'
+name: pipedrive__organizations
+type: model
+description: Pipedrive organizations enriched with contact, deal, and activity rollups.
+grain: organization_id
+source:
+  ref: stg_pipedrive__get_organizations
+joins:
+  - ref: stg_pipedrive__get_users
+    type: left
+    on: stg_pipedrive__get_organizations.owner_id = stg_pipedrive__get_users.get_user_id
+  - ref: stg_pipedrive__get_deals
+    type: left
+    on: stg_pipedrive__get_organizations.get_organization_id = stg_pipedrive__get_deals.org_id
+    pre_aggregate:
+      group_by:
+        - org_id
+      columns:
+        - name: deal_count
+          expr: COUNT(*)
+        - name: open_deal_count
+          expr: countif(status = 'open')
+        - name: won_deal_count
+          expr: countif(status = 'won')
+        - name: lost_deal_count
+          expr: countif(status = 'lost')
+        - name: total_value
+          expr: SUM(value)
+  - ref: stg_pipedrive__get_persons
+    type: left
+    on: stg_pipedrive__get_organizations.get_organization_id = stg_pipedrive__get_persons.org_id
+    pre_aggregate:
+      group_by:
+        - org_id
+      columns:
+        - name: contact_count
+          expr: COUNT(*)
+  - ref: stg_pipedrive__get_activities
+    type: left
+    on: stg_pipedrive__get_organizations.get_organization_id = stg_pipedrive__get_activities.org_id
+    pre_aggregate:
+      group_by:
+        - org_id
+      columns:
+        - name: activity_count
+          expr: COUNT(*)
+        - name: completed_activity_count
+          expr: countif(done = TRUE)
+columns:
+  - name: organization_id
+    expr: stg_pipedrive__get_organizations.get_organization_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Pipedrive organization identifier.
+  - name: organization_name
+    expr: stg_pipedrive__get_organizations.name
+    semantic_role: categorical
+    description: Organization name.
+  - name: owner_id
+    expr: stg_pipedrive__get_organizations.owner_id
+    semantic_role: entity_id
+    references: stg_pipedrive__get_users.get_user_id
+    description: Owning Pipedrive user identifier.
+  - name: owner_name
+    expr: stg_pipedrive__get_users.name
+    semantic_role: categorical
+    description: Name of the owning user.
+  - name: owner_email
+    expr: stg_pipedrive__get_users.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email of the owning user.
+  - name: address
+    expr: stg_pipedrive__get_organizations.address
+    semantic_role: categorical
+    description: Organization address.
+  - name: visible_to
+    expr: stg_pipedrive__get_organizations.visible_to
+    semantic_role: categorical
+    description: Visibility setting for the organization.
+  - name: contact_count
+    expr: COALESCE(stg_pipedrive__get_persons.contact_count, 0)
+    semantic_role: measure
+    description: Number of contacts linked to the organization.
+  - name: deal_count
+    expr: COALESCE(stg_pipedrive__get_deals.deal_count, 0)
+    semantic_role: measure
+    description: Number of deals linked to the organization.
+  - name: open_deal_count
+    expr: COALESCE(stg_pipedrive__get_deals.open_deal_count, 0)
+    semantic_role: measure
+    description: Number of open deals linked to the organization.
+  - name: won_deal_count
+    expr: COALESCE(stg_pipedrive__get_deals.won_deal_count, 0)
+    semantic_role: measure
+    description: Number of won deals linked to the organization.
+  - name: lost_deal_count
+    expr: COALESCE(stg_pipedrive__get_deals.lost_deal_count, 0)
+    semantic_role: measure
+    description: Number of lost deals linked to the organization.
+  - name: total_value
+    expr: COALESCE(stg_pipedrive__get_deals.total_value, 0)
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total value of deals linked to the organization.
+  - name: activity_count
+    expr: COALESCE(stg_pipedrive__get_activities.activity_count, 0)
+    semantic_role: measure
+    description: Number of activities linked to the organization.
+  - name: completed_activity_count
+    expr: COALESCE(stg_pipedrive__get_activities.completed_activity_count, 0)
+    semantic_role: measure
+    description: Number of completed activities linked to the organization.
+  - name: created_at
+    expr: stg_pipedrive__get_organizations.add_time
+    semantic_role: event_timestamp
+    description: Timestamp when the organization was created.
+  - name: updated_at
+    expr: stg_pipedrive__get_organizations.update_time
+    semantic_role: event_timestamp
+    description: Timestamp when the organization was last updated.
+tags:
+  - pipedrive
+  - organizations
+  - crm
+trust_tier: gold
+materialization:
+  type: table

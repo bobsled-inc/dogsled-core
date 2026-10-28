@@ -1,0 +1,53 @@
+type: resource
+name: contacts
+description: Contacts in the connected Xero tenant.
+api:
+  endpoint: /Contacts
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    pageSize: ${{ input.page_size }}
+    summaryOnly: ${{ input.summary_only }}
+input:
+  page:
+    type: integer
+    description: Page number to retrieve from Xero.
+    default: 1
+  page_size:
+    type: integer
+    description: Number of records to retrieve per page.
+    default: 100
+  summary_only:
+    type: boolean
+    description: Return Xero summary fields only.
+    default: true
+output:
+  contact_id:
+    type: string
+    path: $.ContactID
+    description: Xero contact identifier.
+  name:
+    type: string
+    path: $.Name
+    description: Display name of the contact.
+  email_address:
+    type: string
+    path: $.EmailAddress
+    description: Primary contact email address.
+  contact_status:
+    type: string
+    path: $.ContactStatus
+    description: Current contact status in Xero.
+  updated_date_utc:
+    type: string
+    path: $.UpdatedDateUTC
+    description: Last update timestamp in UTC.
+extract:
+  record_path: $.Contacts
+  pagination:
+    type: page_number
+    page_param: page
+  table:
+    primary_key:
+      - contact_id
+    trust_tier: silver

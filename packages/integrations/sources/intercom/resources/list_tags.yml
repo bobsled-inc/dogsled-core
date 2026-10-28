@@ -1,0 +1,48 @@
+type: resource
+name: list_tags
+description: List all tags
+api:
+  endpoint: /tags
+  method: GET
+input: {}
+output:
+  type:
+    type: string
+    path: $.type
+    description: value is "tag"
+  id:
+    type: string
+    path: $.id
+    description: The id of the tag
+  name:
+    type: string
+    path: $.name
+    description: The name of the tag
+  applied_at:
+    type: integer
+    path: $.applied_at
+    description: The time when the tag was applied to the object
+  applied_by:
+    type: object
+    path: $.applied_by
+    description: The admin who applied the tag
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Find a specific tag
+  api:
+    endpoint: /tags/${{ input.tag_id }}
+    method: GET
+  input:
+    tag_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_tags_smoke
+      input:
+        intercom_version: '2.14'

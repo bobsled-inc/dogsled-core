@@ -1,0 +1,195 @@
+type: resource
+name: billing_charges
+description: Bounded Vercel FOCUS billing snapshot. Preserve each JSONL line and native monetary and quantity fields.
+api:
+  endpoint: /v1/billing/charges
+  method: GET
+  response_format: jsonl
+  query_params:
+    from: ${{ input.from }}
+    to: ${{ input.to }}
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+input:
+  from:
+    type: timestamp
+    required: true
+    description: Inclusive UTC start of the bounded billing snapshot.
+  to:
+    type: timestamp
+    required: true
+    description: Exclusive UTC end of the bounded billing snapshot. Vercel documents a maximum one-year range.
+  snapshot_id:
+    type: string
+    required: true
+    description: Caller-supplied immutable identifier for this retrieval snapshot.
+  retrieval_time:
+    type: timestamp
+    required: true
+    description: UTC time at which this bounded snapshot was retrieved.
+  team_id:
+    type: string
+    description: Vercel team identifier.
+  team_slug:
+    type: string
+    description: Vercel team slug.
+output:
+  snapshot_id:
+    type: string
+    path: $.__input__.snapshot_id
+    semantic_role: entity_id
+    description: Caller-supplied snapshot identity. Select one complete snapshot before aggregating costs.
+  record_ordinal:
+    type: integer
+    path: $.__input__.__record_ordinal__
+    semantic_role: entity_id
+    description: Zero-based ordinal assigned to the JSONL record within the retrieval.
+  snapshot_from:
+    type: timestamp
+    path: $.__input__.from
+    semantic_role: time_dimension
+    description: Inclusive UTC snapshot bound.
+  snapshot_to:
+    type: timestamp
+    path: $.__input__.to
+    semantic_role: time_dimension
+    description: Exclusive UTC snapshot bound.
+  retrieval_time:
+    type: timestamp
+    path: $.__input__.retrieval_time
+    semantic_role: time_dimension
+    description: UTC time at which this snapshot was retrieved.
+  team_id:
+    type: string
+    path: $.__input__.team_id
+    semantic_role: entity_id
+    description: Team scope supplied by the caller when available.
+  team_slug:
+    type: string
+    path: $.__input__.team_slug
+    semantic_role: categorical
+    description: Team slug supplied by the caller when available.
+  billed_cost:
+    type: number
+    path: $.BilledCost
+    semantic_role: measure
+    unit: billing_currency
+    tags:
+      - financial
+    description: Native billed cost for the FOCUS line.
+  effective_cost:
+    type: number
+    path: $.EffectiveCost
+    semantic_role: measure
+    unit: billing_currency
+    tags:
+      - financial
+    description: Native effective cost after credits or discounts when supplied by Vercel.
+  billing_currency:
+    type: string
+    path: $.BillingCurrency
+    semantic_role: categorical
+    description: Currency for billed and effective cost.
+  consumed_quantity:
+    type: number
+    path: $.ConsumedQuantity
+    semantic_role: measure
+    description: Native consumed quantity. Keep separate from pricing quantity.
+  consumed_unit:
+    type: string
+    path: $.ConsumedUnit
+    semantic_role: categorical
+    description: Unit for consumed quantity.
+  pricing_quantity:
+    type: number
+    path: $.PricingQuantity
+    semantic_role: measure
+    description: Native pricing quantity.
+  pricing_unit:
+    type: string
+    path: $.PricingUnit
+    semantic_role: categorical
+    description: Unit for pricing quantity.
+  charge_period_start:
+    type: timestamp
+    path: $.ChargePeriodStart
+    semantic_role: time_dimension
+    description: Start of the native charge period.
+  charge_period_end:
+    type: timestamp
+    path: $.ChargePeriodEnd
+    semantic_role: time_dimension
+    description: End of the native charge period.
+  charge_category:
+    type: string
+    path: $.ChargeCategory
+    semantic_role: categorical
+    description: FOCUS charge category.
+  service_name:
+    type: string
+    path: $.ServiceName
+    semantic_role: categorical
+    description: Native service name.
+  service_category:
+    type: string
+    path: $.ServiceCategory
+    semantic_role: categorical
+    description: Native service category.
+  service_provider_name:
+    type: string
+    path: $.ServiceProviderName
+    semantic_role: categorical
+    description: Native service provider name.
+  region_id:
+    type: string
+    path: $.RegionId
+    semantic_role: categorical
+    description: Native Vercel region identifier when supplied.
+  region_name:
+    type: string
+    path: $.RegionName
+    semantic_role: categorical
+    description: Native Vercel region name when supplied.
+  tags:
+    type: object
+    path: $.Tags
+    description: Native project and workload tags preserved without assuming a fixed key set.
+  project_id:
+    type: string
+    paths:
+      - $.Tags.projectId
+      - $.Tags.ProjectId
+      - $.Tags.VercelProjectId
+      - $.Tags.vercelProjectId
+    semantic_role: entity_id
+    description: Project identifier when exposed under a recognized Vercel tag key; otherwise null.
+  project_name:
+    type: string
+    paths:
+      - $.Tags.projectName
+      - $.Tags.ProjectName
+      - $.Tags.VercelProjectName
+      - $.Tags.vercelProjectName
+    semantic_role: categorical
+    description: Project name when exposed under a recognized Vercel tag key; otherwise null.
+  pricing_category:
+    type: string
+    path: $.PricingCategory
+    semantic_role: categorical
+    description: FOCUS pricing category.
+  pricing_currency:
+    type: string
+    path: $.PricingCurrency
+    semantic_role: categorical
+    description: Currency for pricing quantity.
+extract:
+  record_path: $
+  paginated: false
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - snapshot_id
+      - record_ordinal
+    load_strategy: full_refresh
+    trust_tier: silver

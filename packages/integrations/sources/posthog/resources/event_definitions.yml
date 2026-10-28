@@ -1,0 +1,114 @@
+type: resource
+name: event_definitions
+description: Event definitions configured for each PostHog project.
+api:
+  endpoint: /api/projects/${{ input.project_id }}/event_definitions/
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Number of results to return per page.
+    default: 100
+  offset:
+    type: integer
+    description: The initial index from which to return the results.
+    default: 0
+  project_id:
+    type: integer
+    required: true
+    description:
+      Project ID of the project you're trying to access. To find the ID of the project, make
+      a call to /api/projects/.
+output:
+  project_id:
+    type: integer
+    from:
+      resource: projects
+      path: $.id
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  owner:
+    type: integer
+    path: $.owner
+  description:
+    type: string
+    path: $.description
+  tags:
+    type: array
+    path: $.tags
+  created_at:
+    type: timestamp
+    path: $.created_at
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+  updated_by:
+    type: string
+    path: $.updated_by
+  last_seen_at:
+    type: timestamp
+    path: $.last_seen_at
+  last_updated_at:
+    type: timestamp
+    path: $.last_updated_at
+  verified:
+    type: boolean
+    path: $.verified
+  verified_at:
+    type: timestamp
+    path: $.verified_at
+  verified_by:
+    type: string
+    path: $.verified_by
+  hidden:
+    type: boolean
+    path: $.hidden
+  enforcement_mode:
+    type: string
+    path: $.enforcement_mode
+    description: '* `allow` - Allow'
+  is_action:
+    type: boolean
+    path: $.is_action
+  action_id:
+    type: integer
+    path: $.action_id
+  is_calculating:
+    type: boolean
+    path: $.is_calculating
+  last_calculated_at:
+    type: timestamp
+    path: $.last_calculated_at
+  created_by:
+    type: string
+    path: $.created_by
+  post_to_slack:
+    type: boolean
+    path: $.post_to_slack
+  default_columns:
+    type: array
+    path: $.default_columns
+  media_preview_urls:
+    type: array
+    path: $.media_preview_urls
+extract:
+  record_path: $.results
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  table:
+    primary_key:
+      - project_id
+      - id
+  for_each:
+    resource: projects
+    field: id
+    input: project_id

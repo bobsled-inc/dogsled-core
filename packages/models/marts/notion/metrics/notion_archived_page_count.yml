@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: notion_archived_page_count
+description: Number of archived Notion pages.
+model: notion__pages
+expression: SUM(CASE WHEN {notion__pages}.archived THEN 1 ELSE 0 END)
+synonyms: [archived pages, deleted pages, inactive pages]
+tags: [notion, content, collaboration]

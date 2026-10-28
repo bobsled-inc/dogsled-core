@@ -1,0 +1,9 @@
+display_name: Linear
+category: developer-tools
+tags: [project-management, issue-tracking]
+logo_url: https://linear.app/favicon.ico
+docs_url: https://developers.linear.app/docs
+auth_setup:
+  - env: LINEAR_API_KEY
+    description: Linear personal API key or OAuth token
+    docs_url: https://developers.linear.app/docs/graphql/working-with-the-graphql-api

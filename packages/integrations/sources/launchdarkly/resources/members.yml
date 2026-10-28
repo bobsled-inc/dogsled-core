@@ -1,0 +1,49 @@
+type: resource
+name: members
+description: List members in the LaunchDarkly account
+api:
+  endpoint: /members
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  limit:
+    type: integer
+    description: Page size
+    default: 20
+  offset:
+    type: integer
+    description: Zero-based offset
+    default: 0
+output:
+  id:
+    type: string
+    path: $._id
+    description: Member identifier
+  email:
+    type: string
+    path: $.email
+    description: Member email
+  first_name:
+    type: string
+    path: $.firstName
+    description: First name
+  last_name:
+    type: string
+    path: $.lastName
+    description: Last name
+  role:
+    type: string
+    path: $.role
+    description: Assigned role
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit

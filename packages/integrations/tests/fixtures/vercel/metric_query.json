@@ -1,0 +1,12 @@
+{
+  "data": [
+    {
+      "bucket": "2026-09-01T00:00:00Z",
+      "projectId": "app-project",
+      "count": 100
+    }
+  ],
+  "summary": { "count": 100 },
+  "statistics": { "durationMs": 12 },
+  "coverage": { "complete": true }
+}

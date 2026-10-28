@@ -1,0 +1,14 @@
+display_name: CircleCI
+category: developer-tools
+logo_url: https://circleci.com/favicon.ico
+tags:
+  - circleci
+  - ci
+  - pipelines
+  - builds
+docs_url: https://circleci.com/docs/api/v2/
+openapi_url: https://circleci.com/api/v2/openapi.json
+auth_setup:
+  - env: CIRCLECI_API_KEY
+    description: CircleCI personal API token
+    docs_url: https://circleci.com/docs/managing-api-tokens/

@@ -1,0 +1,39 @@
+type: resource
+name: tags
+description: tags from Help Scout.
+api:
+  endpoint: /tags
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+input:
+  page:
+    type: integer
+    default: 1
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  slug:
+    type: string
+    path: $.slug
+  created_at:
+    type: timestamp
+    path: $.createdAt
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+  color:
+    type: string
+    path: $.color
+extract:
+  record_path: $._embedded.tags
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $._links.next.href

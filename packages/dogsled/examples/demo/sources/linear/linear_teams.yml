@@ -1,0 +1,30 @@
+spec_version: '0.2'
+name: linear_teams
+type: source
+source_type: warehouse_table
+connection: warehouse
+table: raw.linear_teams
+description: Raw Linear team data extracted via the GraphQL API
+schema:
+  columns:
+    - name: id
+      type: VARCHAR
+      description: Unique team UUID
+    - name: name
+      type: VARCHAR
+      description: Team display name
+    - name: key
+      type: VARCHAR
+      description: Team key prefix (e.g. ENG)
+    - name: description
+      type: VARCHAR
+      description: Team description
+    - name: private
+      type: BOOLEAN
+      description: True if the team is private
+    - name: created_at
+      type: TIMESTAMP
+      description: Timestamp when the team was created
+    - name: updated_at
+      type: TIMESTAMP
+      description: Timestamp when the team was last updated

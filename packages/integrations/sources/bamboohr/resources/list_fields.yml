@@ -1,0 +1,34 @@
+type: resource
+name: list_fields
+description: List Fields
+api:
+  endpoint: /api/v1/meta/fields
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: The field identifier.
+  name:
+    type: string
+    path: $.name
+    description: The display name of the field.
+  type:
+    type: string
+    path: $.type
+    description: The data type of the field (e.
+  alias:
+    type: string
+    path: $.alias
+    description: The API alias for the field.
+  deprecated:
+    type: boolean
+    path: $.deprecated
+    description: Whether the field is deprecated and should no longer be used.
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,45 @@
+type: resource
+name: campaigns
+description: Campaigns for a Pinterest ad account.
+api:
+  endpoint: /ad_accounts/${{ input.ad_account_id }}/campaigns
+  method: GET
+input:
+  ad_account_id:
+    type: string
+    default: '123'
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  objective_type:
+    type: string
+    path: $.objective_type
+  daily_spend_cap:
+    type: integer
+    path: $.daily_spend_cap
+  lifetime_spend_cap:
+    type: integer
+    path: $.lifetime_spend_cap
+  created_time:
+    type: integer
+    path: $.created_time
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.bookmark
+    cursor_param: bookmark
+  for_each:
+    resource: ad_accounts
+    field: id
+    input: ad_account_id

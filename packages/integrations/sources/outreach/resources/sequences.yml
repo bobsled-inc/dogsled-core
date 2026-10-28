@@ -1,0 +1,42 @@
+type: resource
+name: sequences
+description: sequences from Outreach.
+api:
+  endpoint: /sequences
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.page_after }}
+input:
+  page_size:
+    type: integer
+    default: 100
+  page_after:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  type:
+    type: string
+    path: $.type
+  name:
+    type: string
+    path: $.attributes.name
+  state:
+    type: string
+    path: $.attributes.state
+  created_at:
+    type: timestamp
+    path: $.attributes.createdAt
+  updated_at:
+    type: timestamp
+    path: $.attributes.updatedAt
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.links.next

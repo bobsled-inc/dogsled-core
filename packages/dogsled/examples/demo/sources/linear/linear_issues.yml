@@ -1,0 +1,78 @@
+spec_version: '0.2'
+name: linear_issues
+type: source
+source_type: warehouse_table
+connection: warehouse
+table: raw.linear_issues
+description: Raw Linear issue data extracted via the GraphQL API
+schema:
+  columns:
+    - name: id
+      type: VARCHAR
+      description: Unique issue UUID
+    - name: identifier
+      type: VARCHAR
+      description: Human-readable issue identifier (e.g. ENG-123)
+    - name: title
+      type: VARCHAR
+      description: Issue title
+    - name: description
+      type: VARCHAR
+      description: Issue description in markdown
+    - name: priority
+      type: NUMBER
+      description: Priority as integer (0=none, 1=urgent, 2=high, 3=medium, 4=low)
+    - name: priority_label
+      type: VARCHAR
+      description: Human-readable priority label
+    - name: estimate
+      type: NUMBER
+      description: Effort estimate in points
+    - name: state_id
+      type: VARCHAR
+      description: UUID of the workflow state
+    - name: state_name
+      type: VARCHAR
+      description: Name of the workflow state
+    - name: state_type
+      type: VARCHAR
+      description: State category — backlog, unstarted, started, completed, cancelled
+    - name: assignee_id
+      type: VARCHAR
+      description: UUID of the assigned user
+    - name: assignee_name
+      type: VARCHAR
+      description: Display name of the assignee
+    - name: assignee_email
+      type: VARCHAR
+      description: Email of the assignee
+    - name: team_id
+      type: VARCHAR
+      description: UUID of the team
+    - name: team_name
+      type: VARCHAR
+      description: Team display name
+    - name: team_key
+      type: VARCHAR
+      description: Team key prefix
+    - name: project_id
+      type: VARCHAR
+      description: UUID of the parent project
+    - name: project_name
+      type: VARCHAR
+      description: Project display name
+    - name: created_at
+      type: TIMESTAMP
+      description: Timestamp when the issue was created
+    - name: updated_at
+      type: TIMESTAMP
+      description: Timestamp when the issue was last updated
+    - name: completed_at
+      type: TIMESTAMP
+      description: Timestamp when the issue was completed
+    - name: canceled_at
+      type: TIMESTAMP
+      description: Timestamp when the issue was cancelled
+    - name: due_date
+      type: VARCHAR
+      description: Due date as YYYY-MM-DD string

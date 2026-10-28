@@ -1,0 +1,66 @@
+type: resource
+name: review_summary
+description: Aggregated review score buckets and zip/city breakdown for quick service-quality KPIs.
+api:
+  endpoint: /review/summary
+  method: POST
+  query_params:
+    zipCodes: '${{ input.zip_codes }}'
+    cities: '${{ input.cities }}'
+    officeIDs: '${{ input.office_ids }}'
+    customerIDs: '${{ input.customer_ids }}'
+    startTime: '${{ input.start_time }}'
+    endTime: '${{ input.end_time }}'
+
+input:
+  summary_key:
+    type: string
+    description: Stable key for this windowed summary.
+    default: latest
+  zip_codes:
+    type: string
+    description: Optional comma-separated list of ZIP codes.
+  cities:
+    type: string
+    description: Optional comma-separated list of city names.
+  office_ids:
+    type: integer
+    description: Optional office filter.
+  customer_ids:
+    type: string
+    description: Optional customer filter.
+  start_time:
+    type: string
+    description: Lower bound for review timestamp.
+  end_time:
+    type: string
+    description: Upper bound for review timestamp.
+
+output:
+  summary_key:
+    type: string
+    path: $.__input__.summary_key
+    description: Unique key for the summary slice requested.
+  average:
+    type: number
+    path: $.average
+    description: Average star rating.
+  stars:
+    type: object
+    path: $.stars
+    description: Aggregate counts by star value.
+  zips:
+    type: object
+    path: $.zips
+    description: Zip-level aggregation object.
+  cities:
+    type: object
+    path: $.cities
+    description: City-level aggregation object.
+
+extract:
+  record_path: '$'
+  table:
+    primary_key:
+      - summary_key
+    trust_tier: silver

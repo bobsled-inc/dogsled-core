@@ -1,0 +1,17 @@
+spec_version: '0.2'
+name: raw_payments
+type: seed
+description: Raw payment records with intentionally inconsistent method casing.
+payload: { format: csv, path: data/raw_payments.csv, delimiter: ',' }
+schema:
+  columns:
+    - { name: payment_id, type: STRING, primary_key: true }
+    - { name: order_id, type: STRING }
+    - { name: payment_method, type: STRING }
+    - { name: amount, type: NUMBER }
+    - { name: status, type: STRING }
+    - { name: paid_at, type: TIMESTAMP }
+materialization: { type: table, target_schema: raw, on_conflict: replace }
+validation:
+  required_columns: [payment_id, order_id, payment_method, amount, status, paid_at]
+  unique_columns: [payment_id]

@@ -1,0 +1,14 @@
+spec_version: '0.2'
+name: raw_customers
+type: source
+source_type: warehouse_table
+connection: ecom
+table: RAW.RAW_CUSTOMERS
+schema:
+  columns:
+    - name: ID
+      type: NUMBER
+    - name: NAME
+      type: VARCHAR
+    - name: EMAIL
+      type: VARCHAR

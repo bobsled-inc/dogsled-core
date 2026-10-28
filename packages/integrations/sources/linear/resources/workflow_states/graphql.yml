@@ -1,0 +1,91 @@
+type: resource
+name: workflow_states_graphql
+via: graphql
+entity: workflow_states
+description: Workflow states from Linear defining the lifecycle stages that issues move through within each team, such as Backlog, In Progress, Done, and Canceled
+api:
+  endpoint: /graphql
+  method: POST
+  request_body:
+    query: "query($after: String, $updatedAfter: DateTimeOrDuration) {\n  workflowStates(first: 50, after: $after, filter: { updatedAt: { gte: $updatedAfter } }) {\n    nodes {\n      id name color description type position\n      team { id name key }\n      createdAt updatedAt\n    }\n    pageInfo { hasNextPage endCursor }\n  }\n}"
+    variables:
+      after: null
+      updatedAfter: ${{ input.updated_after }}
+input:
+  updated_after:
+    type: string
+    description: "ISO 8601 timestamp \u2014 only fetch records updated on or after this date (default fetches all)"
+    default: 2000-01-01 00:00:00+00:00
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique workflow state UUID assigned by Linear
+  name:
+    type: string
+    path: $.name
+    description: Display name of the workflow state shown in the issue board and status dropdowns (e.g. "In Progress", "Code Review", "Done")
+  color:
+    type: string
+    path: $.color
+    description: Hex color code used to render the state indicator in the UI (e.g.
+  description:
+    type: string
+    path: $.description
+    description: Optional description explaining what this workflow state represents and when issues should be moved into it
+  type:
+    type: string
+    path: $.type
+    description: "Category of the workflow state that determines its semantic meaning \u2014 one of backlog, unstarted, started, completed, or cancelled. Used by Linear for progress calculation and filtering"
+  position:
+    type: number
+    path: $.position
+    description: Numeric sort order position of this state within its type category, determining the left-to-right display order on the team's board view
+  team_id:
+    type: string
+    path: $.team.id
+    description: "UUID of the team this workflow state belongs to \u2014 each team maintains its own set of workflow states"
+  team_name:
+    type: string
+    path: $.team.name
+    description: Display name of the team that owns this workflow state
+  team_key:
+    type: string
+    path: $.team.key
+    description: Short key prefix of the owning team (e.g. ENG), used in issue identifiers
+  created_at:
+    type: timestamp
+    path: $.createdAt
+    description: ISO 8601 timestamp when the workflow state was first created
+  updated_at:
+    type: timestamp
+    path: $.updatedAt
+    description: ISO 8601 timestamp when the workflow state was last modified
+query:
+  filters:
+    updated_at:
+      operators:
+        - gte
+      description: Only return records updated on or after the given ISO 8601 timestamp.
+      bind:
+        gte:
+          input: updated_after
+          preserve_default: true
+      compile:
+        gte:
+          mode: direct_arg
+          argument: updated_after
+extract:
+  record_path: $.data.workflowStates.nodes
+  pagination:
+    type: cursor
+    cursor_path: $.data.workflowStates.pageInfo.endCursor
+    cursor_param: variables.after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: variables.updatedAfter

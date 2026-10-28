@@ -1,0 +1,48 @@
+spec_version: '0.2'
+name: notion__database_items
+type: model
+description: Database item detail with creator context for Notion structured data.
+grain: database_item_id
+source:
+  ref: stg_notion__database_items
+joins:
+  - ref: stg_notion__users
+    type: left
+    on: stg_notion__database_items.created_by_id = stg_notion__users.user_id
+columns:
+  - name: database_item_id
+    expr: stg_notion__database_items.database_item_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique database item identifier.
+  - name: parent_database_id
+    expr: stg_notion__database_items.parent_database_id
+    semantic_role: entity_id
+    description: Identifier of the parent database.
+  - name: creator_name
+    expr: stg_notion__users.name
+    semantic_role: categorical
+    description: Name of the user who created the item.
+  - name: created_time
+    expr: stg_notion__database_items.created_time
+    semantic_role: event_timestamp
+    description: Timestamp when the item was created.
+  - name: last_edited_time
+    expr: stg_notion__database_items.last_edited_time
+    semantic_role: event_timestamp
+    description: Timestamp when the item was last edited.
+  - name: archived
+    expr: stg_notion__database_items.archived
+    semantic_role: categorical
+    description: Whether the database item is archived.
+  - name: url
+    expr: stg_notion__database_items.url
+    semantic_role: categorical
+    description: URL to the database item in Notion.
+tags:
+  - notion
+  - collaboration
+  - database_items
+trust_tier: gold
+materialization:
+  type: table

@@ -1,0 +1,12 @@
+display_name: Exa
+category: developer-tools
+logo_url: https://exa.ai/favicon.ico
+tags:
+  - search
+  - research
+  - web
+docs_url: https://exa.ai/docs/reference/search
+auth_setup:
+  - env: EXA_API_KEY
+    description: Exa API key
+    docs_url: https://docs.exa.ai/reference/team-management/get-api-key

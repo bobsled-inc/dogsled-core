@@ -1,0 +1,65 @@
+type: resource
+name: search
+description: Search the web with Exa and return ranked results.
+api:
+  endpoint: /search
+  method: POST
+  request_body:
+    query: ${{ input.query }}
+    numResults: ${{ input.num_results }}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Result identifier.
+  title:
+    type: string
+    path: $.title
+    description: Result title.
+  url:
+    type: string
+    path: $.url
+    description: Result URL.
+  published_date:
+    type: string
+    path: $.publishedDate
+    description: Published timestamp returned by Exa.
+  author:
+    type: string
+    path: $.author
+    description: Author metadata returned by Exa.
+  summary:
+    type: string
+    path: $.summary
+    description: AI-generated result summary when available.
+input:
+  query:
+    type: string
+    description: Search query to run.
+  num_results:
+    type: integer
+    default: 10
+    description: Number of results to request from Exa.
+query:
+  search:
+    dialect: exa_search
+    bind:
+      input: query
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - url
+    trust_tier: silver
+billing:
+  mode: billable
+  ownership: third_party
+  unit: credit
+  estimation:
+    model: upper_bound
+    amount: 0.012
+    currency: usd
+    notes: Exa pricing varies by search type; use estimate as an upper bound and reconcile against
+      response cost metadata.
+  authorization:
+    requires_plan: true

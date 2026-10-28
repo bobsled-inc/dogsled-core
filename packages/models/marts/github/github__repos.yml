@@ -1,0 +1,55 @@
+spec_version: '0.2'
+name: github__repos
+type: model
+description: Repository detail for GitHub repositories with visibility and activity metadata.
+grain: repo_id
+source:
+  ref: stg_github__repos
+columns:
+  - name: repo_id
+    expr: stg_github__repos.repo_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique GitHub repository identifier.
+  - name: repo_name
+    expr: stg_github__repos.name
+    semantic_role: categorical
+    description: Short repository name.
+  - name: repo_full_name
+    expr: stg_github__repos.full_name
+    semantic_role: categorical
+    description: Fully qualified repository name.
+  - name: owner_login
+    expr: stg_github__repos.owner_login
+    semantic_role: categorical
+    description: Owner login for the repository.
+  - name: language
+    expr: stg_github__repos.language
+    semantic_role: categorical
+    description: Primary language detected by GitHub.
+  - name: visibility
+    expr: stg_github__repos.visibility
+    semantic_role: categorical
+    description: Repository visibility setting.
+  - name: stargazers_count
+    expr: stg_github__repos.stargazers_count
+    semantic_role: measure
+    description: Number of stars on the repository.
+  - name: forks_count
+    expr: stg_github__repos.forks_count
+    semantic_role: measure
+    description: Number of forks created from the repository.
+  - name: open_issues_count
+    expr: stg_github__repos.open_issues_count
+    semantic_role: measure
+    description: Open issues and pull requests tracked by GitHub.
+  - name: pushed_at
+    expr: stg_github__repos.pushed_at
+    semantic_role: event_timestamp
+    description: Timestamp of the latest push.
+tags:
+  - github
+  - repos
+trust_tier: gold
+materialization:
+  type: table

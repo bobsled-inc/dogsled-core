@@ -1,0 +1,30 @@
+type: resource
+name: get_project_categories
+description: List Jira project categories
+api:
+  endpoint: /rest/api/3/projectCategory
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira project category identifier
+  name:
+    type: string
+    path: $.name
+    description: Project category name
+  description:
+    type: string
+    path: $.description
+    description: Project category description
+  self:
+    type: string
+    path: $.self
+    description: API URL for the project category
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

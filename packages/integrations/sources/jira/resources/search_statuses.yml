@@ -1,0 +1,70 @@
+type: resource
+name: search_statuses
+description: Search Jira statuses available to the authenticated user
+api:
+  endpoint: /rest/api/3/statuses/search
+  method: GET
+  query_params:
+    startAt: ${{ input.start_at }}
+    maxResults: ${{ input.max_results }}
+    projectId: ${{ input.project_id }}
+    searchString: ${{ input.search_string }}
+    statusCategory: ${{ input.status_category }}
+input:
+  start_at:
+    type: integer
+    description: The index of the first status to return
+    default: 0
+  max_results:
+    type: integer
+    description: The maximum number of statuses to return per page
+    default: 50
+  project_id:
+    type: integer
+    description: Optional project ID used to scope the status search
+  search_string:
+    type: string
+    description: Optional status name search string
+  status_category:
+    type: string
+    description: Optional Jira status category filter
+    enum:
+      - TODO
+      - IN_PROGRESS
+      - DONE
+query:
+  search:
+    dialect: provider_search
+    bind:
+      input: search_string
+output:
+  id:
+    type: string
+    path: $.id
+    description: Jira status identifier
+  name:
+    type: string
+    path: $.name
+    description: Status name
+  description:
+    type: string
+    path: $.description
+    description: Status description
+  status_category_name:
+    type: string
+    path: $.statusCategory.name
+    description: Jira status category name
+  status_category_key:
+    type: string
+    path: $.statusCategory.key
+    description: Jira status category key
+extract:
+  record_path: $.values
+  pagination:
+    type: offset
+    offset_param: startAt
+    limit_param: maxResults
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

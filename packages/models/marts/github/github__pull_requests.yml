@@ -1,0 +1,71 @@
+spec_version: '0.2'
+name: github__pull_requests
+type: model
+description: Detailed pull request records with review and merge metadata.
+grain: pull_request_id
+source:
+  ref: stg_github__pull_requests
+columns:
+  - name: pull_request_id
+    expr: stg_github__pull_requests.pull_request_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique GitHub pull request identifier.
+  - name: number
+    expr: stg_github__pull_requests.number
+    semantic_role: categorical
+    description: Repository-scoped pull request number.
+  - name: title
+    expr: stg_github__pull_requests.title
+    semantic_role: categorical
+    description: Pull request title.
+  - name: state
+    expr: stg_github__pull_requests.state
+    semantic_role: categorical
+    description: Open or closed state of the pull request.
+  - name: draft
+    expr: stg_github__pull_requests.draft
+    semantic_role: categorical
+    description: Whether the pull request is still a draft.
+  - name: merged
+    expr: stg_github__pull_requests.merged
+    semantic_role: categorical
+    description: Whether the pull request has been merged.
+  - name: user_login
+    expr: stg_github__pull_requests.user_login
+    semantic_role: categorical
+    description: GitHub login of the pull request author.
+  - name: comments
+    expr: stg_github__pull_requests.comments
+    semantic_role: measure
+    description: Count of general comments on the pull request.
+  - name: review_comments
+    expr: stg_github__pull_requests.review_comments
+    semantic_role: measure
+    description: Count of inline review comments.
+  - name: commits
+    expr: stg_github__pull_requests.commits
+    semantic_role: measure
+    description: Number of commits in the pull request.
+  - name: additions
+    expr: stg_github__pull_requests.additions
+    semantic_role: measure
+    description: Lines added by the pull request.
+  - name: deletions
+    expr: stg_github__pull_requests.deletions
+    semantic_role: measure
+    description: Lines deleted by the pull request.
+  - name: created_at
+    expr: stg_github__pull_requests.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the pull request was opened.
+  - name: merged_at
+    expr: stg_github__pull_requests.merged_at
+    semantic_role: event_timestamp
+    description: Timestamp when the pull request was merged.
+tags:
+  - github
+  - pull-requests
+trust_tier: gold
+materialization:
+  type: table

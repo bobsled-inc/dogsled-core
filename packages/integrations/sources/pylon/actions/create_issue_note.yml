@@ -1,0 +1,61 @@
+type: action
+transport: api
+name: create_issue_note
+integration: pylon
+tags:
+  - support
+  - issues
+  - notes
+  - pylon
+description: Add an internal note to an existing Pylon issue without replying to the customer.
+api:
+  endpoint: /issues/${{ input.issue_id }}/note
+  method: POST
+  request_body:
+    body_html: ${{ mapped.body_html }}
+    attachment_urls: ${{ mapped.attachment_urls }}
+    thread_id: ${{ mapped.thread_id }}
+    message_id: ${{ mapped.message_id }}
+    thread_name: ${{ mapped.thread_name }}
+    user_id: ${{ mapped.user_id }}
+input:
+  issue_id:
+    type: string
+    required: true
+    description: Pylon issue ID to add the note to.
+  body_html:
+    type: string
+    required: true
+    description: HTML body for the internal note.
+  attachment_urls:
+    type: array
+    description: Optional attachment URLs to include with the note.
+    items:
+      type: string
+  thread_id:
+    type: string
+    description: Optional internal thread ID to post into.
+  message_id:
+    type: string
+    description: Optional internal note message ID to reply to.
+  thread_name:
+    type: string
+    description: Optional name to use when creating a new internal thread.
+  user_id:
+    type: string
+    description: Optional user ID to post the note as.
+field_mapping:
+  fields:
+    body_html: body_html
+    attachment_urls: attachment_urls
+    thread_id: thread_id
+    message_id: message_id
+    thread_name: thread_name
+    user_id: user_id
+  unmapped_fields: ignore
+activate:
+  operation: create
+  result_path: $.data.id
+error_handling:
+  on_record_error: skip
+  consecutive_failure_threshold: 10

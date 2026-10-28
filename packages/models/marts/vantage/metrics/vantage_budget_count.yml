@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: vantage_budget_count
+description: Number of Vantage budgets.
+model: vantage__budgets
+expression: COUNT({vantage__budgets}.budget_id)
+synonyms: [budgets, cloud budgets, budget count]
+tags: [vantage, cloud, budgets]

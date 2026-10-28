@@ -1,0 +1,63 @@
+spec_version: '0.2'
+name: shopify__catalog_summary
+type: model
+description: Product-level catalog summary with variant counts, inventory, and average sell price.
+grain: product_id
+source:
+  ref: stg_shopify__products
+joins:
+  - ref: stg_shopify__product_variants
+    type: left
+    on: stg_shopify__products.product_id = stg_shopify__product_variants.product_id
+    pre_aggregate:
+      group_by:
+        - product_id
+      columns:
+        - name: variant_count
+          expr: COUNT(*)
+        - name: total_inventory_quantity
+          expr: SUM(inventory_quantity)
+        - name: avg_variant_price
+          expr: AVG(price)
+columns:
+  - name: product_id
+    expr: stg_shopify__products.product_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Shopify product identifier.
+  - name: title
+    expr: stg_shopify__products.title
+    semantic_role: categorical
+    description: Product title.
+  - name: vendor
+    expr: stg_shopify__products.vendor
+    semantic_role: categorical
+    description: Vendor associated with the product.
+  - name: product_type
+    expr: stg_shopify__products.product_type
+    semantic_role: categorical
+    description: Merchant-defined product type.
+  - name: status
+    expr: stg_shopify__products.status
+    semantic_role: categorical
+    description: Current product status.
+  - name: variant_count
+    expr: COALESCE(stg_shopify__product_variants.variant_count, 0)
+    semantic_role: measure
+    description: Number of variants defined for the product.
+  - name: total_inventory_quantity
+    expr: COALESCE(stg_shopify__product_variants.total_inventory_quantity, 0)
+    semantic_role: measure
+    description: Sum of variant inventory quantities for the product.
+  - name: avg_variant_price
+    expr: stg_shopify__product_variants.avg_variant_price
+    semantic_role: measure
+    tags:
+      - financial
+    description: Average configured sell price across variants.
+tags:
+  - shopify
+  - catalog
+trust_tier: gold
+materialization:
+  type: table

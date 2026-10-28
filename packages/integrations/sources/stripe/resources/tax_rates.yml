@@ -1,0 +1,81 @@
+type: resource
+name: tax_rates
+description: Stripe tax rate configurations
+api:
+  endpoint: /v1/tax_rates
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+input:
+  limit:
+    type: integer
+    description: Number of tax rates per page (max 100)
+    default: 100
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    created:
+      operators:
+        - gte
+      description: Only return records created on or after this Unix timestamp.
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+output:
+  id:
+    type: string
+    path: $.id
+    description: Tax rate ID (txr_xxx)
+  display_name:
+    type: string
+    path: $.display_name
+    description: Display name of the tax rate
+  percentage:
+    type: number
+    path: $.percentage
+    description: Tax rate percentage
+  inclusive:
+    type: boolean
+    path: $.inclusive
+    description: Whether the tax rate is inclusive
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the tax rate is active
+  description:
+    type: string
+    path: $.description
+    description: Tax rate description
+  jurisdiction:
+    type: string
+    path: $.jurisdiction
+    description: Tax jurisdiction
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp when tax rate was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

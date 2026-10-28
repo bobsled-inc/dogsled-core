@@ -1,0 +1,60 @@
+spec_version: '1'
+type: resource
+name: teams
+integration: linear
+description: Teams in the Linear workspace
+
+api:
+  endpoint: '/graphql'
+  method: POST
+  request_body:
+    query: >-
+      query($after: String) {
+        teams(first: 50, after: $after) {
+          nodes { id name key description private createdAt updatedAt }
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+    variables:
+      after: null
+
+input: {}
+
+output:
+  id:
+    type: string
+    path: '$.id'
+    description: Unique team UUID
+  name:
+    type: string
+    path: '$.name'
+    description: Team display name
+  key:
+    type: string
+    path: '$.key'
+    description: Team key prefix used in issue identifiers (e.g. ENG)
+  description:
+    type: string
+    path: '$.description'
+    description: Team description
+  private:
+    type: boolean
+    path: '$.private'
+    description: True if the team is private
+  created_at:
+    type: timestamp
+    path: '$.createdAt'
+    description: Timestamp when the team was created
+  updated_at:
+    type: timestamp
+    path: '$.updatedAt'
+    description: Timestamp when the team was last updated
+
+extract:
+  record_path: '$.data.teams.nodes'
+  pagination:
+    type: cursor
+    cursor_path: '$.data.teams.pageInfo.endCursor'
+    cursor_param: variables.after
+  table:
+    primary_key: [id]

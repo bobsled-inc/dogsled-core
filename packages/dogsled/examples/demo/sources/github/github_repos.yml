@@ -1,0 +1,121 @@
+spec_version: '0.2'
+name: github_repos
+type: source
+source_type: warehouse_table
+connection: warehouse
+table: raw.github_repos
+description: Raw GitHub repository data extracted from the GitHub REST API
+schema:
+  columns:
+    # Identity
+    - name: id
+      type: NUMBER
+      description: Unique numeric identifier assigned by GitHub to the repository
+    - name: node_id
+      type: VARCHAR
+      description: Global relay ID used by the GitHub GraphQL API
+    - name: name
+      type: VARCHAR
+      description: Short repository name without the owner prefix (e.g. "demo-repo")
+    - name: full_name
+      type: VARCHAR
+      description: Fully qualified repository name including the owner (e.g. "octocat/Hello-World")
+
+    # Owner
+    - name: owner_login
+      type: VARCHAR
+      description: GitHub username or organization login that owns the repository
+    - name: owner_id
+      type: NUMBER
+      description: Unique numeric identifier of the repository owner
+
+    # URLs
+    - name: html_url
+      type: VARCHAR
+      description: Browser-accessible URL for the repository on github.com
+    - name: clone_url
+      type: VARCHAR
+      description: HTTPS URL used to clone the repository via git
+    - name: homepage
+      type: VARCHAR
+      description: Optional external homepage URL configured in repository settings
+
+    # Description & metadata
+    - name: description
+      type: VARCHAR
+      description: Free-text summary of the repository set by the owner
+    - name: language
+      type: VARCHAR
+      description: Primary programming language detected by GitHub (e.g. "TypeScript", "Python")
+    - name: default_branch
+      type: VARCHAR
+      description: Name of the branch used as the default target for pull requests (e.g. "main")
+    - name: visibility
+      type: VARCHAR
+      description: Repository visibility level — "public", "private", or "internal"
+    - name: license_name
+      type: VARCHAR
+      description: SPDX identifier of the repository license (e.g. "MIT", "Apache-2.0"), null if none
+
+    # Flags
+    - name: private
+      type: BOOLEAN
+      description: True if the repository is not publicly accessible
+    - name: fork
+      type: BOOLEAN
+      description: True if the repository was created by forking another repository
+    - name: archived
+      type: BOOLEAN
+      description: True if the repository has been archived and is read-only
+    - name: disabled
+      type: BOOLEAN
+      description: True if the repository has been disabled by GitHub (e.g. DMCA takedown)
+    - name: is_template
+      type: BOOLEAN
+      description: True if the repository is configured as a template for creating new repos
+    - name: has_issues
+      type: BOOLEAN
+      description: True if the GitHub Issues feature is enabled for this repository
+    - name: has_projects
+      type: BOOLEAN
+      description: True if the GitHub Projects feature is enabled for this repository
+    - name: has_wiki
+      type: BOOLEAN
+      description: True if the GitHub Wiki feature is enabled for this repository
+    - name: has_pages
+      type: BOOLEAN
+      description: True if the repository has GitHub Pages enabled
+    - name: has_downloads
+      type: BOOLEAN
+      description: True if the repository has the Downloads feature enabled
+    - name: allow_forking
+      type: BOOLEAN
+      description: True if forking is allowed for this repository
+
+    # Counters
+    - name: size
+      type: NUMBER
+      description: Approximate repository size in kilobytes, as reported by GitHub
+    - name: stargazers_count
+      type: NUMBER
+      description: Number of users who have starred the repository
+    - name: watchers_count
+      type: NUMBER
+      description: Number of users watching the repository for notifications
+    - name: forks_count
+      type: NUMBER
+      description: Total number of forks created from this repository
+    - name: open_issues_count
+      type: NUMBER
+      description: Combined count of open issues and open pull requests
+
+    # Timestamps
+    - name: created_at
+      type: TIMESTAMP
+      description: Timestamp when the repository was first created on GitHub
+    - name: updated_at
+      type: TIMESTAMP
+      description: Timestamp of the most recent update to repository metadata or settings
+    - name: pushed_at
+      type: TIMESTAMP
+      description: Timestamp of the most recent git push to any branch in the repository

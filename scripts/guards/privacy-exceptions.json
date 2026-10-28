@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "exceptions": [
+    {
+      "rule": "email-address",
+      "files": [
+        "packages/entity-graph/tests/integration/standardize-parity.test.ts"
+      ],
+      "values": [
+        "First.Last+promo@gmail.com",
+        "First.Last+promo@googlemail.com",
+        "firstlast@gmail.com",
+        "firstlast@googlemail.com"
+      ],
+      "reason": "Deliberately synthetic provider-specific UID2 normalization cases; reserved domains cannot exercise Gmail canonicalization."
+    },
+    {
+      "rule": "email-address",
+      "files": ["packages/dogsled/THIRD_PARTY_NOTICES.md"],
+      "values": [
+        "michael.hart.au@gmail.com",
+        "tj@vision-media.ca",
+        "espen@hovlandsdal.com"
+      ],
+      "reason": "Required public upstream MIT copyright attribution for the exact bundled aws4fetch, commander and eventsource-parser packages."
+    },
+    {
+      "rule": "email-address",
+      "files": [
+        "scripts/release/embedded-notices.json",
+        "packages/dogsled/THIRD_PARTY_NOTICES.md"
+      ],
+      "values": ["sindresorhus@gmail.com"],
+      "reason": "Required upstream MIT attribution in the reviewed AI SDK type-helper file licenses."
+    },
+    {
+      "rule": "email-address",
+      "files": ["SECURITY.md"],
+      "values": ["security@dogsledai.com"],
+      "reason": "Public vulnerability reporting contact."
+    },
+    {
+      "rule": "email-address",
+      "files": ["CODE_OF_CONDUCT.md", "SUPPORT.md"],
+      "values": ["maintainers@dogsledai.com"],
+      "reason": "Public Code of Conduct and other private non-security contact."
+    },
+    {
+      "rule": "email-address",
+      "files": [
+        ".github/workflows/pr-metadata.yml",
+        "tests/unit/release-ci-hardening.test.mjs"
+      ],
+      "values": ["support@github.com"],
+      "reason": "Public GitHub Dependabot DCO sign-off identity, accepted only for its canonical API account and exact noreply commit author; regression fixtures cover rejection of other identities."
+    }
+  ]
+}

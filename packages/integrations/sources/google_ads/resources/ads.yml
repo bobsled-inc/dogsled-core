@@ -1,0 +1,37 @@
+type: resource
+name: ads
+description: Ad entities returned by a Google Ads search query.
+api:
+  endpoint: /customers/${{ input.customer_id }}/googleAds:search
+  method: POST
+  request_body:
+    query: SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.status, ad_group.id FROM
+      ad_group_ad ORDER BY ad_group_ad.ad.id
+    pageSize: 1000
+input:
+  customer_id:
+    type: string
+    required: true
+    default: '1234567890'
+output:
+  ad_id:
+    type: string
+    path: $.adGroupAd.ad.id
+  name:
+    type: string
+    path: $.adGroupAd.ad.name
+  status:
+    type: string
+    path: $.adGroupAd.status
+  ad_group_id:
+    type: string
+    path: $.adGroup.id
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - ad_id
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: pageToken

@@ -1,0 +1,44 @@
+type: resource
+name: attachments
+description: Attachments from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Name,ParentId,ContentType,BodyLength,OwnerId,CreatedDate,LastModifiedDate FROM
+      Attachment
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  name:
+    type: string
+    path: $.Name
+  parent_id:
+    type: string
+    path: $.ParentId
+  content_type:
+    type: string
+    path: $.ContentType
+  body_length:
+    type: integer
+    path: $.BodyLength
+  owner_id:
+    type: string
+    path: $.OwnerId
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

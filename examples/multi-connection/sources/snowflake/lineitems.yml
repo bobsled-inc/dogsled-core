@@ -1,0 +1,18 @@
+spec_version: '0.2'
+name: lineitems
+type: source
+source_type: warehouse_table
+connection: snowflake
+table: RAW.LINEITEMS
+schema:
+  columns:
+    - name: L_ORDERKEY
+      type: NUMBER
+    - name: L_LINENUMBER
+      type: NUMBER
+    - name: L_PRODUCT
+      type: VARCHAR
+    - name: L_QUANTITY
+      type: NUMBER
+    - name: L_EXTENDEDPRICE
+      type: NUMBER

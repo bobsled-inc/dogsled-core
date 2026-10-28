@@ -1,0 +1,152 @@
+type: resource
+name: prices
+description: Stripe prices defining how much and how often to charge for products
+api:
+  endpoint: /v1/prices
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    created[gte]: ${{ input.created_gte }}
+    active: ${{ input.active }}
+    product: ${{ input.product }}
+    type: ${{ input.type }}
+input:
+  limit:
+    type: integer
+    description: Number of prices to return per page (max 100)
+    default: 100
+  active:
+    type: boolean
+    description: Filter by active status. Pass true for active prices, false for inactive. Omit to
+      return all prices
+  product:
+    type: string
+    description: Filter prices by product ID (prod_xxx) to retrieve all prices associated with a
+      specific product
+  type:
+    type: string
+    description: 'Filter by price type. Possible values: one_time (single charge), recurring
+      (subscription billing)'
+  created_gte:
+    type: integer
+    description: Only return records created on or after this Unix timestamp.
+query:
+  filters:
+    active:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: active
+      compile:
+        eq:
+          mode: http_query
+          param: active
+    created:
+      operators:
+        - gte
+      bind:
+        gte:
+          input: created_gte
+      compile:
+        gte:
+          mode: http_query
+          param: created[gte]
+    product:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: product
+      compile:
+        eq:
+          mode: http_query
+          param: product
+    type:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: type
+      compile:
+        eq:
+          mode: http_query
+          param: type
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique price identifier prefixed with price_ (e.g. price_1A2b3C4d5E6f7G)
+  product:
+    type: string
+    path: $.product
+    description: ID of the product (prod_xxx) this price is attached to
+  active:
+    type: boolean
+    path: $.active
+    description: Whether this price is available for use in new purchases. Inactive prices cannot be
+      used in new subscriptions or checkout sessions
+  currency:
+    type: string
+    path: $.currency
+    description: Three-letter ISO 4217 currency code in lowercase (e.g. usd, eur, gbp)
+  unit_amount:
+    type: integer
+    path: $.unit_amount
+    description: Price per unit in the smallest currency unit (e.g. cents for USD). A value of 999
+      represents $9.99 USD. Null for tiered pricing
+  type:
+    type: string
+    path: $.type
+    description: 'Pricing type. Possible values: one_time (customer is charged once), recurring
+      (customer is charged on a recurring basis according to the interval)'
+  billing_scheme:
+    type: string
+    path: $.billing_scheme
+    description: 'How the price is calculated. Possible values: per_unit (fixed price per unit
+      quantity), tiered (price varies based on quantity tiers)'
+  recurring_interval:
+    type: string
+    path: $.recurring.interval
+    description:
+      'Billing frequency for recurring prices. Possible values: day, week, month, year. Null
+      for one-time prices'
+  recurring_interval_count:
+    type: integer
+    path: $.recurring.interval_count
+    description: Number of intervals between each billing cycle (e.g. interval=month and
+      interval_count=3 means quarterly billing). Null for one-time prices
+  recurring_usage_type:
+    type: string
+    path: $.recurring.usage_type
+    description:
+      'How usage is measured for metered billing. Possible values: licensed (charged for a
+      fixed quantity), metered (charged based on reported usage). Null for one-time prices'
+  tax_behavior:
+    type: string
+    path: $.tax_behavior
+    description:
+      'How tax is handled for this price. Possible values: inclusive (price includes tax),
+      exclusive (tax added on top), unspecified (tax behavior not set)'
+  created:
+    type: integer
+    path: $.created
+    description: Unix timestamp (seconds since epoch) when the price was created
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.data[-1].id
+    cursor_param: starting_after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: server_filter
+  cursor_field: created
+  cursor_type: integer
+  since_argument: created[gte]
+  value_format: unix_seconds
+  initial_lookback_seconds: 2592000
+  lookback_seconds: 86400

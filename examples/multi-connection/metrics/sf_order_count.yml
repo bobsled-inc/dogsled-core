@@ -1,0 +1,7 @@
+spec_version: '0.2'
+type: metric
+name: sf_order_count
+description: Distinct order count on the Snowflake orders fact.
+model: sf_fct_orders
+expression: COUNT(DISTINCT ORDER_ID)
+tags: [volume, snowflake]

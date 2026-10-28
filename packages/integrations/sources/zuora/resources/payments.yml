@@ -1,0 +1,46 @@
+type: resource
+name: payments
+description: Payments in Zuora.
+api:
+  endpoint: /v1/payments
+  method: GET
+  query_params:
+    pageSize: ${{ input.page_size }}
+input:
+  page_size:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  paymentNumber:
+    type: string
+    path: $.paymentNumber
+  accountId:
+    type: string
+    path: $.accountId
+  status:
+    type: string
+    path: $.status
+  amount:
+    type: number
+    path: $.amount
+  effectiveDate:
+    type: string
+    path: $.effectiveDate
+  type:
+    type: string
+    path: $.type
+  createdDate:
+    type: timestamp
+    path: $.createdDate
+extract:
+  record_path: $.payments
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: pageSize

@@ -1,0 +1,31 @@
+spec_version: '0.2'
+name: issue_summary_by_team
+type: model
+description: Issue metrics grouped by team and state category
+grain: [team_name, state_type]
+source:
+  ref: stg_linear_issues
+columns:
+  - name: team_name
+    expr: stg_linear_issues.team_name
+    semantic_role: categorical
+    description: Team display name
+  - name: state_type
+    expr: stg_linear_issues.state_type
+    semantic_role: categorical
+    description: State category — backlog, unstarted, started, completed, cancelled
+  - name: issue_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Total number of issues
+  - name: total_estimate
+    expr: SUM(stg_linear_issues.estimate)
+    semantic_role: measure
+    description: Sum of effort estimates across issues
+  - name: avg_priority
+    expr: AVG(stg_linear_issues.priority)
+    semantic_role: measure
+    description: Average priority level (lower is higher priority)
+group_by: [team_name, state_type]
+materialization:
+  type: view

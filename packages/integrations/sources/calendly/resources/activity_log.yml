@@ -1,0 +1,160 @@
+type: resource
+name: activity_log
+description: List activity log entries
+api:
+  endpoint: /activity_log_entries
+  method: GET
+  query_params:
+    organization: ${{ input.organization }}
+    search_term: ${{ input.search_term }}
+    actor: ${{ input.actor }}
+    sort: ${{ input.sort }}
+    min_occurred_at: ${{ input.min_occurred_at }}
+    max_occurred_at: ${{ input.max_occurred_at }}
+    page_token: ${{ input.page_token }}
+    count: ${{ input.count }}
+    namespace: ${{ input.namespace }}
+    action: ${{ input.action }}
+input:
+  organization:
+    type: string
+    required: true
+    description: Return activity log entries from the organization associated with this URI
+  search_term:
+    type: string
+    description: >
+      Filters entries based on the search term.
+
+
+      Supported operators:
+        - `|` - to allow filtering by one term or another. Example: `this | that`
+        - `+` - to allow filtering by one term and another. Example: `this + that`
+        - `"` - to allow filtering by an exact search term. Example: `"email@website.com.example.com"`
+        - `-` - to omit specific terms from results. Example: `Added -User`
+        - `()` - to allow specifying precedence during a search. Example: `(this + that) OR (person + place)`
+        - `*` - to allow prefix searching. Example `*@other-website.com`
+    maxLength: 300
+  actor:
+    type: array
+    description: Return entries from the user(s) associated with the provided URIs
+  sort:
+    type: array
+    description: Order results by the specified field and direction. List of {field}:{direction} values.
+    default:
+      - occurred_at:desc
+  min_occurred_at:
+    type: timestamp
+    description: 'Include entries that occurred after this time (sample time format:
+      "2020-01-02T03:04:05.678Z"). This time should use the UTC timezone.'
+  max_occurred_at:
+    type: timestamp
+    description: 'Include entries that occurred prior to this time (sample time format:
+      "2020-01-02T03:04:05.678Z"). This time should use the UTC timezone.'
+  page_token:
+    type: string
+    description: The token to pass to get the next portion of the collection
+  count:
+    type: integer
+    description: The number of rows to return
+    default: 20
+    minimum: 1
+    maximum: 1000
+  namespace:
+    type: array
+    description: The categories of the entries
+  action:
+    type: array
+    description: The action(s) associated with the entries
+query:
+  filters:
+    occurred_at:
+      operators:
+        - gte
+        - lte
+      description: 'Include entries that occurred after this time (sample time format:
+        "2020-01-02T03:04:05.678Z"). This time should use the UTC timezone.'
+      bind:
+        gte:
+          input: min_occurred_at
+        lte:
+          input: max_occurred_at
+      compile:
+        gte:
+          mode: http_query
+          param: min_occurred_at
+        lte:
+          mode: http_query
+          param: max_occurred_at
+output:
+  occurred_at:
+    type: timestamp
+    path: $.occurred_at
+    description: 'The date and time of the entry (format: "2020-01-02T03:04:05.'
+  actor_uri:
+    type: string
+    path: $.actor.uri
+    description: Canonical reference (unique identifier) for the user
+  actor_type:
+    type: string
+    path: $.actor.type
+    description: The type of actor
+  actor_organization:
+    type: object
+    path: $.actor.organization
+  actor_group:
+    type: object
+    path: $.actor.group
+    description: User group information about the actor
+  actor_display_name:
+    type: string
+    path: $.actor.display_name
+    description: The user's name (human-readable format)
+  actor_alternative_identifier:
+    type: string
+    path: $.actor.alternative_identifier
+    description: Username of the actor
+  details:
+    type: object
+    path: $.details
+  fully_qualified_name:
+    type: string
+    path: $.fully_qualified_name
+  uri:
+    type: string
+    path: $.uri
+  namespace:
+    type: string
+    path: $.namespace
+  action:
+    type: string
+    path: $.action
+  organization:
+    type: string
+    path: $.organization
+extract:
+  record_path: $.collection
+  for_each:
+    resource: get_organization_memberships
+    field: organization
+    input: organization
+  pagination:
+    type: cursor
+    cursor_path: $.pagination.next_page_token
+    cursor_param: page_token
+  table:
+    primary_key:
+      - occurred_at
+      - actor_uri
+    trust_tier: silver
+verify:
+  suppress:
+    - PAGINATION_MISMATCH
+test:
+  fixtures:
+    - name: activity_log_smoke
+      input:
+        organization: https://api.calendly.com/organizations/EBHAAFHDCAEQTSEZ
+        sort:
+          - occurred_at:asc
+        min_occurred_at: 2020-01-02T12:30:00Z
+        max_occurred_at: 2020-01-02T12:30:00Z

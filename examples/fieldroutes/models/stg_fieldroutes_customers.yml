@@ -1,0 +1,41 @@
+spec_version: '0.2'
+name: stg_fieldroutes_customers
+type: model
+description: Staging customers from FieldRoutes `/customer/search`.
+grain: CUSTOMER_ID
+source:
+  ref: fieldroutes.customers
+columns:
+  - name: CUSTOMER_ID
+    expr: customer_id
+    primary_key: true
+  - name: OFFICE_ID
+    expr: office_id
+  - name: FIRST_NAME
+    expr: first_name
+  - name: LAST_NAME
+    expr: last_name
+  - name: COMPANY_NAME
+    expr: company_name
+  - name: EMAIL
+    expr: email
+  - name: PHONE
+    expr: phone
+  - name: STATUS
+    expr: status
+  - name: STATUS_TEXT
+    expr: status_text
+  - name: DATE_ADDED
+    expr: date_added
+  - name: DATE_UPDATED
+    expr: date_updated
+  - name: BALANCE
+    expr: balance
+  - name: RESPONSIBLE_BALANCE
+    expr: responsible_balance
+  - name: PREFERRED_TECH_ID
+    expr: preferred_tech_id
+  - name: REGION_ID
+    expr: region_id
+materialization:
+  type: view

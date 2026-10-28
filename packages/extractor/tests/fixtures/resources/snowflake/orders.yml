@@ -1,0 +1,23 @@
+spec_version: '1'
+type: resource
+name: orders
+integration: test_snowflake
+source:
+  table: ORDERS
+  database: ANALYTICS
+  schema: PUBLIC
+replication:
+  method: incremental_merge
+  cursor_field: updated_at
+  cursor_type: timestamp
+  primary_key: [order_id]
+output:
+  order_id: { type: integer }
+  customer_id: { type: integer }
+  amount: { type: number }
+  updated_at: { type: timestamp }
+extract:
+  table:
+    primary_key: [order_id]
+    load_strategy: merge
+    trust_tier: bronze

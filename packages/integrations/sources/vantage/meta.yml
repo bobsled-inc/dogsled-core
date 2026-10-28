@@ -1,0 +1,10 @@
+display_name: Vantage
+category: cloud-infra
+tags: [cloud-costs, cost-management, cost-optimization, finops]
+logo_url: https://www.vantage.sh/favicon.ico
+docs_url: https://docs.vantage.sh/api
+openapi_url: https://api.vantage.sh/v2/oas_v3.json
+auth_setup:
+  - env: VANTAGE_API_TOKEN
+    description: Vantage API token (OAuth2 bearer token)
+    docs_url: https://docs.vantage.sh/vantage_account#api-access-tokens

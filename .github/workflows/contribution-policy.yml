@@ -1,0 +1,93 @@
+name: Contribution policy
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contribution-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  policy:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' && github.event.repository.private == false &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Apply the contribution policy to metadata only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          function changedLineCount(files) {
+            const isLock = (name) => /(?:^|\/)(?:pnpm-lock\.yaml|package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|bun\.lockb?)$/.test(name);
+            let total = 0;
+            for (const file of files) {
+              if (typeof file.filename !== 'string') throw new Error('Missing changed-file name.');
+              if (isLock(file.filename) && (!file.previous_filename || isLock(file.previous_filename))) continue;
+              for (const field of ['additions', 'deletions']) {
+                if (!Number.isSafeInteger(file[field]) || file[field] < 0) throw new Error('Invalid changed-line count.');
+                total += file[field];
+                if (!Number.isSafeInteger(total)) throw new Error('Changed-line count exceeds its bound.');
+              }
+            }
+            return total;
+          }
+
+          async function applyContributionPolicy({ event, repository, request }) {
+            const pr = event.pull_request;
+            if (repository !== 'bobsled-inc/dogsled-core' || event.repository?.private !== false || !pr || pr.user?.login === 'dependabot[bot]' || ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(pr.author_association)) return;
+            const number = pr.number;
+            if (!Number.isSafeInteger(number) || number <= 0) throw new Error('Invalid pull request number.');
+            const root = `/repos/bobsled-inc/dogsled-core`;
+            let changed = 0;
+            for (let page = 1; page <= 30; page += 1) {
+              const files = await request('GET', `${root}/pulls/${number}/files?per_page=100&page=${page}`);
+              if (!Array.isArray(files)) throw new Error('Invalid changed-files response.');
+              changed += changedLineCount(files);
+              if (changed > 12 || files.length < 100) break;
+              if (page === 30) throw new Error('Changed-file pagination limit reached.');
+            }
+            if (changed <= 12) return;
+            await request('POST', `${root}/issues/${number}/labels`, { labels: ['contribution-policy'] });
+            const marker = '<!-- dogsled-contribution-policy -->';
+            for (let page = 1; page <= 100; page += 1) {
+              const comments = await request('GET', `${root}/issues/${number}/comments?per_page=100&page=${page}`);
+              if (!Array.isArray(comments)) throw new Error('Invalid comments response.');
+              if (comments.some((comment) => comment.user?.login === 'github-actions[bot]' && comment.user?.type === 'Bot' && comment.body?.includes(marker))) return;
+              if (comments.length < 100) break;
+              if (page === 100) throw new Error('Comment pagination limit reached.');
+            }
+            await request('POST', `${root}/issues/${number}/comments`, {
+              body: `${marker}\nThanks for the proposal. Dogsled currently accepts outside code only for small fixes that maintainers can verify directly from the patch, usually around twelve changed lines. This patch exceeds that guide after excluding lockfiles. Please read the [contribution policy](https://github.com/bobsled-inc/dogsled-core/blob/main/CONTRIBUTING.md). Maintainers decide whether to proceed; this notice does not close the PR. Bugs belong in issues and ideas or connector requests in Discussions. Accepted fixes require DCO sign-off.`,
+            });
+          }
+
+          const event = JSON.parse(await (await import('node:fs/promises')).readFile(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          await applyContributionPolicy({ event, repository: process.env.GITHUB_REPOSITORY, request: async (method, route, body) => {
+            const response = await fetch(`https://api.github.com${route}`, {
+              method,
+              headers: { authorization: `Bearer ${process.env.GH_TOKEN}`, accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10', 'content-type': 'application/json' },
+              ...(body ? { body: JSON.stringify(body) } : {}),
+              signal: AbortSignal.timeout(15000),
+            });
+            if (!response.ok) throw new Error(`Contribution policy API request failed (${response.status}).`);
+            return response.json();
+          }});
+          JS

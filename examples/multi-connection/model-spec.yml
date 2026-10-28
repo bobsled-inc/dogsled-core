@@ -1,0 +1,7 @@
+# Project config for multi-connection example.
+#
+# All directory names below are defaults — listed here so the file is a valid
+# Model Spec project. Remove any line to fall back to the default.
+sources_dir: sources
+models_dir: models
+integrations_dir: integrations

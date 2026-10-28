@@ -1,0 +1,69 @@
+type: resource
+name: quotes
+description: HubSpot CRM quotes representing formal sales proposals sent to prospects, containing pricing and terms for deals
+api:
+  endpoint: /crm/v3/objects/quotes
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    properties: ${{ input.properties }}
+input:
+  limit:
+    type: integer
+    description: Number of quote records to return per page (max 100)
+    default: 100
+  properties:
+    type: string
+    description: Comma-separated list of HubSpot quote properties to include in the response
+    default: hs_title,hs_expiration_date,hs_status,hs_quote_amount,hs_currency,hubspot_owner_id,createdate,hs_lastmodifieddate
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique HubSpot identifier for the quote record, returned as a numeric string
+  title:
+    type: string
+    path: $.properties.hs_title
+    description: Title of the quote as displayed to the prospect and in the HubSpot CRM
+  expiration_date:
+    type: timestamp
+    path: $.properties.hs_expiration_date
+    description: Date after which the quote is no longer valid, in ISO 8601 format
+  status:
+    type: string
+    path: $.properties.hs_status
+    description: Current status of the quote in its lifecycle (e.g. DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, SIGNED, PAID, EXPIRED)
+  amount:
+    type: string
+    path: $.properties.hs_quote_amount
+    description: Total monetary value of the quote including all line items, stored as a numeric string in the quote's currency
+  currency:
+    type: string
+    path: $.properties.hs_currency
+    description: ISO 4217 currency code used for the quote (e.g. USD, EUR, GBP)
+  owner_id:
+    type: string
+    path: $.properties.hubspot_owner_id
+    description: HubSpot owner ID of the sales rep who created or owns this quote, references the owners endpoint
+  created_at:
+    type: timestamp
+    path: $.properties.createdate
+    description: ISO 8601 timestamp of when the quote was first created in HubSpot
+  updated_at:
+    type: timestamp
+    path: $.properties.hs_lastmodifieddate
+    description: ISO 8601 timestamp of when any property on the quote record was last modified
+extract:
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.paging.next.after
+    cursor_param: after
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+incremental:
+  strategy: cursor
+  cursor_field: updated_at
+  cursor_param: filterGroups

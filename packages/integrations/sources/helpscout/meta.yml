@@ -1,0 +1,14 @@
+display_name: Help Scout
+category: support
+tags:
+  - support
+  - mailbox
+  - conversations
+docs_url: https://developer.helpscout.com/mailbox-api/
+auth_setup:
+  - env: HELPSCOUT_CLIENT_ID
+    description: Help Scout OAuth client ID
+  - env: HELPSCOUT_CLIENT_SECRET
+    description: Help Scout OAuth client secret
+  - env: HELPSCOUT_REFRESH_TOKEN
+    description: Help Scout OAuth refresh token

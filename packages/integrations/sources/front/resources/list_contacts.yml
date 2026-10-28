@@ -1,0 +1,106 @@
+type: resource
+name: list_contacts
+description: List contacts
+api:
+  endpoint: /contacts
+  method: GET
+  query_params:
+    q: ${{ input.q }}
+    limit: ${{ input.limit }}
+    page_token: ${{ input.page_token }}
+    sort_by: ${{ input.sort_by }}
+    sort_order: ${{ input.sort_order }}
+input:
+  q:
+    type: string
+    description:
+      '[Search query object](https://dev.frontapp.com/docs/query-object-q) with the optional
+      properties `updated_after` and `updated_before`, whose value should be a timestamp in seconds
+      with up to 3 decimal places.'
+  limit:
+    type: integer
+    description: Max number of results per [page](https://dev.frontapp.com/docs/pagination)
+    maximum: 100
+  page_token:
+    type: string
+    description: Token to use to request the [next page](https://dev.frontapp.com/docs/pagination)
+  sort_by:
+    type: string
+    description: Field used to sort the contacts. Either `created_at` or `updated_at`.
+  sort_order:
+    type: string
+    description: Order by which results should be sorted
+    enum:
+      - asc
+      - desc
+output:
+  links_self:
+    type: string
+    path: $._links.self
+    description: Link to resource
+  links_related:
+    type: object
+    path: $._links.related
+  id:
+    type: string
+    path: $.id
+    description: Unique identifier of the contact
+  name:
+    type: string
+    path: $.name
+    description: Contact name
+  description:
+    type: string
+    path: $.description
+    description: Contact description
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL of the contact's avatar
+  links:
+    type: array
+    path: $.links
+    description: List of all the links of the contact
+  groups:
+    type: array
+    path: $.groups
+    description: List of the groups the contact belongs to.
+  lists:
+    type: array
+    path: $.lists
+    description: List of the contact lists the contact belongs to.
+  handles:
+    type: array
+    path: $.handles
+    description: List of the handles and sources with which the contact is reachable.
+  custom_fields:
+    type: object
+    path: $.custom_fields
+    description: Custom fields for this contact.
+  is_private:
+    type: boolean
+    path: $.is_private
+    description: Whether or not the contact is individual
+extract:
+  record_path: $._results
+  paginated: false
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: Get contact
+  api:
+    endpoint: /contacts/${{ input.contact_id }}
+    method: GET
+  input:
+    contact_id:
+      type: string
+      required: true
+test:
+  fixtures:
+    - name: list_contacts_smoke
+      input:
+        limit: 25
+        page_token: example_page_token
+        sort_order: asc

@@ -1,0 +1,9 @@
+display_name: Notion
+category: productivity
+tags: [wiki, documents, databases]
+logo_url: https://www.notion.so/images/favicon.ico
+docs_url: https://developers.notion.com/reference
+auth_setup:
+  - env: NOTION_API_TOKEN
+    description: Notion internal integration token
+    docs_url: https://developers.notion.com/docs/authorization

@@ -1,0 +1,571 @@
+import { attemptReservation, deadlineTime } from './limits.js';
+import { AgenticStateError } from './state-errors.js';
+export { AgenticStateError, type AgenticStateErrorCode } from './state-errors.js';
+import type { AgenticCursorStore } from './cursor.js';
+import { CursorValuesSchema } from './cursor.js';
+import {
+  agenticDeadlineAt,
+  executionWindowsAfter,
+  isAgenticFailureBlocked,
+} from './execution-window.js';
+import { applyPublicationCheckpoint } from './publication-checkpoint.js';
+/** Versioned execution checkpoints. Stores apply commands atomically under exclusive ownership. */
+import { createHash } from 'node:crypto';
+import { canonicalize } from 'json-canonicalize';
+import { z } from 'zod';
+import {
+  AgenticPublicationIntentSchema,
+  AgenticPublicationReceiptSchema,
+  createAgenticPublicationIdentity,
+} from './publication.js';
+import { buildAgenticStepAssignments } from './plan-work.js';
+import { AgenticColumnsSchema } from './model.js';
+import { checkpointIsConsistent } from './checkpoint-consistency.js';
+import { isBoundedCheckpoint } from './checkpoint-json.js';
+import {
+  AgentAssignmentSchema,
+  AgentAssignmentOutcomeSchema,
+  parseAgentAssignmentOutcome,
+} from './assignment.js';
+import { AgenticJsonSchema, AGENTIC_MAX_ROWS } from './rows.js';
+
+const Identity = z.string().min(1).max(1024);
+const Tokens = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+export const AgenticRunKeySchema = z
+  .object({ scope: Identity, model: Identity, id: Identity })
+  .strict();
+export type AgenticRunKey = z.infer<typeof AgenticRunKeySchema>;
+export const AgenticAttemptStateSchema = z
+  .object({
+    id: Identity,
+    start_revision: z.number().int().nonnegative(),
+    finished_at: z.iso.datetime({ offset: true }).optional(),
+    finish_revision: z.number().int().nonnegative().optional(),
+    reservation: Tokens.nullable(),
+    charge: Tokens,
+    outcome: AgentAssignmentOutcomeSchema.optional(),
+    finish_digest: z.string().length(64).optional(),
+  })
+  .strict();
+export const AgenticWorkStateSchema = z
+  .object({
+    assignment: AgentAssignmentSchema,
+    attempts: z.array(AgenticAttemptStateSchema).max(10),
+    accepted: AgentAssignmentOutcomeSchema.optional(),
+  })
+  .strict();
+const PlanInputsSchema = z
+  .record(
+    Identity,
+    z
+      .object({
+        ref: Identity,
+        retrieved_at: z.iso.datetime({ offset: true }),
+        columns: AgenticColumnsSchema,
+        rows: z.array(AgenticJsonSchema).max(AGENTIC_MAX_ROWS),
+      })
+      .strict()
+  )
+  .refine((inputs) => Object.keys(inputs).length <= 256);
+const SnapshotObjectSchema = z
+  .object({
+    version: z.literal(2),
+    revision: z.number().int().nonnegative(),
+    key: AgenticRunKeySchema,
+    identity: z.string().length(64),
+    definition: AgenticJsonSchema,
+    started_at: z.iso.datetime({ offset: true }),
+    deadline_at: z.iso.datetime({ offset: true }).nullable(),
+    execution_windows: z
+      .array(
+        z
+          .object({
+            operation_id: Identity,
+            retry_failed: z.literal(true).optional(),
+            status: z.enum(['preparing', 'running', 'execution_complete']),
+            revision: z.number().int().nonnegative(),
+            started_at: z.iso.datetime({ offset: true }),
+            deadline_at: z.iso.datetime({ offset: true }).nullable(),
+          })
+          .strict()
+      )
+      .max(1000)
+      .optional(),
+    token_limit: Tokens.nullable(),
+    max_attempts: z.number().int().min(1).max(10),
+    charged: Tokens,
+    status: z.enum(['preparing', 'running', 'execution_complete']),
+    publication: z.enum(['pending', 'prepared', 'confirmed']),
+    publication_intent: z.lazy(() => AgenticPublicationIntentSchema).optional(),
+    publication_receipt: z.lazy(() => AgenticPublicationReceiptSchema).optional(),
+    plan_inputs: PlanInputsSchema.optional(),
+    cursor_values: z.lazy(() => CursorValuesSchema).optional(),
+    cursors_committed: z.literal(true).optional(),
+    superseded: z.literal(true).optional(),
+    sealed_steps: z
+      .array(z.object({ id: Identity, revision: z.number().int().positive() }).strict())
+      .max(256)
+      .optional(),
+    work: z.array(AgenticWorkStateSchema).max(AGENTIC_MAX_ROWS),
+  })
+  .strict()
+  .superRefine((run, ctx) => {
+    const invalid = (): void =>
+      ctx.addIssue({ code: 'custom', message: 'Invalid execution checkpoint' });
+    if (!checkpointIsConsistent(run)) invalid();
+    if (run.superseded && run.publication !== 'pending') invalid();
+    if (run.cursors_committed && (run.publication !== 'confirmed' || !run.cursor_values)) invalid();
+    if (run.publication === 'pending') {
+      if (run.publication_intent || run.publication_receipt) invalid();
+    } else {
+      if (run.status !== 'execution_complete' || !run.publication_intent) invalid();
+      else if (
+        digestAgenticState(run.publication_intent.identity) !==
+        digestAgenticState(createAgenticPublicationIdentity(run))
+      ) {
+        invalid();
+      }
+      if (run.publication === 'prepared' && run.publication_receipt) invalid();
+      if (
+        run.publication === 'confirmed' &&
+        (!run.publication_receipt ||
+          digestAgenticState(run.publication_receipt.intent) !==
+            digestAgenticState(run.publication_intent))
+      ) {
+        invalid();
+      }
+    }
+    if (run.status === 'preparing' && run.work.length) invalid();
+    if (digestAgenticState(run.definition) !== run.identity) invalid();
+    if (deadlineTime(run.deadline_at) <= Date.parse(run.started_at)) invalid();
+    if (
+      run.charged !==
+      run.work.reduce(
+        (total, work) => total + work.attempts.reduce((sum, attempt) => sum + attempt.charge, 0),
+        0
+      )
+    ) {
+      invalid();
+    }
+    const ids = new Set<string>();
+    for (const work of run.work) {
+      if (ids.has(work.assignment.shard_id)) invalid();
+      ids.add(work.assignment.shard_id);
+      if (
+        work.assignment.run_id !== run.key.id ||
+        work.assignment.model_name !== run.key.model ||
+        work.assignment.limits.deadline_at !== run.deadline_at ||
+        work.assignment.limits.started_at !== run.started_at ||
+        work.attempts.length > run.max_attempts
+      ) {
+        invalid();
+      }
+      for (const attempt of work.attempts) {
+        if (
+          (work.assignment.limits.tokens !== null &&
+            attempt.reservation !== work.assignment.limits.tokens) ||
+          (!attempt.outcome && attempt.charge < (attempt.reservation ?? 0))
+        ) {
+          invalid();
+        }
+        if (attempt.outcome) {
+          const minimum =
+            attempt.outcome.usage.status === 'measured'
+              ? attempt.outcome.usage.total_tokens
+              : (attempt.reservation ?? 0);
+          if (
+            attempt.charge < minimum ||
+            attempt.finish_revision === undefined ||
+            attempt.finish_digest !==
+              digestAgenticState({ outcome: attempt.outcome, charge: attempt.charge })
+          ) {
+            invalid();
+          }
+          try {
+            parseAgentAssignmentOutcome(
+              { ...work.assignment, attempt_id: attempt.id },
+              attempt.outcome
+            );
+          } catch {
+            invalid();
+          }
+        }
+      }
+      if (work.accepted) {
+        const attempt = work.attempts.at(-1);
+        if (
+          !attempt ||
+          work.accepted.status === 'failed' ||
+          digestAgenticState(work.accepted) !== digestAgenticState(attempt.outcome)
+        ) {
+          invalid();
+        }
+      }
+    }
+    if (run.status === 'execution_complete' && run.work.some((work) => !work.accepted)) invalid();
+  });
+export const AgenticRunSnapshotSchema = z
+  .custom<unknown>(isBoundedCheckpoint, 'Checkpoint exceeds bounded JSON limits')
+  .pipe(SnapshotObjectSchema);
+export type AgenticRunSnapshot = z.infer<typeof AgenticRunSnapshotSchema>;
+const CommandObjectSchema = z.discriminatedUnion('type', [
+  z
+    .object({
+      type: z.literal('supersede'),
+      operation_id: z.literal('supersede'),
+      expected_revision: z.number().int().nonnegative(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('begin_execution'),
+      retry_failed: z.literal(true).optional(),
+      operation_id: Identity,
+      expected_revision: z.number().int().nonnegative(),
+      started_at: z.iso.datetime({ offset: true }),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('prepare_publication'),
+      operation_id: Identity,
+      expected_revision: z.number().int().nonnegative(),
+      intent: z.lazy(() => AgenticPublicationIntentSchema),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('confirm_publication'),
+      operation_id: Identity,
+      expected_revision: z.number().int().nonnegative(),
+      receipt: z.lazy(() => AgenticPublicationReceiptSchema),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('confirm_cursors'),
+      operation_id: z.literal('confirm_cursors'),
+      expected_revision: z.number().int().nonnegative(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('seal_work'),
+      operation_id: z.literal('seal_work'),
+      expected_revision: z.number().int().nonnegative(),
+      assignments: z.array(AgentAssignmentSchema).max(AGENTIC_MAX_ROWS),
+      plan_inputs: PlanInputsSchema.optional(),
+      cursor_values: z.lazy(() => CursorValuesSchema).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('append_step'),
+      operation_id: Identity,
+      expected_revision: z.number().int().nonnegative(),
+      step_id: Identity,
+      assignments: z.array(AgentAssignmentSchema).max(AGENTIC_MAX_ROWS),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('start_attempt'),
+      operation_id: Identity,
+      expected_revision: z.number().int().nonnegative(),
+      work: z.number().int().nonnegative(),
+      attempt_id: Identity,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('finish_attempt'),
+      operation_id: Identity,
+      expected_revision: z.number().int().nonnegative(),
+      work: z.number().int().nonnegative(),
+      attempt_id: Identity,
+      outcome: AgentAssignmentOutcomeSchema,
+      charge: Tokens,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('complete'),
+      operation_id: Identity,
+      expected_revision: z.number().int().nonnegative(),
+    })
+    .strict(),
+]);
+export const AgenticCheckpointCommandSchema = z
+  .custom<unknown>(isBoundedCheckpoint, 'Command exceeds bounded JSON limits')
+  .pipe(CommandObjectSchema);
+export type AgenticCheckpointCommand = z.infer<typeof AgenticCheckpointCommandSchema>;
+/** The host must durably commit before resolving and fence every call after ownership is lost.
+ * read() returns null only for a missing run, never for a storage failure.
+ * create() is insert-only; checkpoint() applies applyAgenticCheckpoint atomically.
+ * Duplicate commands return current state with the original effect preserved.
+ * release() must not remove ownership acquired later by another coordinator.
+ */
+export interface AgenticStateSession {
+  /** Aborts when this session can no longer prove ownership. */
+  readonly ownershipLost?: AbortSignal;
+  read(): Promise<AgenticRunSnapshot | null>;
+  create(snapshot: AgenticRunSnapshot): Promise<AgenticRunSnapshot>;
+  checkpoint(command: AgenticCheckpointCommand): Promise<AgenticRunSnapshot>;
+  release(): Promise<void>;
+}
+export interface AgenticStateStore {
+  cursors?: AgenticCursorStore;
+  acquire(key: AgenticRunKey): Promise<AgenticStateSession>;
+}
+export function digestAgenticState(value: unknown): string {
+  return createHash('sha256')
+    .update(canonicalize(value) ?? 'null')
+    .digest('hex');
+}
+
+/** Shared store conformance function: one accepted attempt, conservative charges, bounded retries. */
+export function applyAgenticCheckpoint(
+  value: AgenticRunSnapshot,
+  input: AgenticCheckpointCommand,
+  now = Date.now()
+): AgenticRunSnapshot {
+  const state = AgenticRunSnapshotSchema.parse(value);
+  const command = AgenticCheckpointCommandSchema.parse(input);
+  const conflict = (): never => {
+    throw new AgenticStateError('conflict');
+  };
+  if (command.type === 'supersede') {
+    if (state.superseded) return state;
+    if (state.revision !== command.expected_revision || state.publication !== 'pending') {
+      conflict();
+    }
+    state.superseded = true;
+    state.revision++;
+    return AgenticRunSnapshotSchema.parse(state);
+  }
+  if (state.superseded) throw new AgenticStateError('superseded');
+  if (command.type === 'begin_execution') {
+    const windows = state.execution_windows ?? [];
+    const prior = windows.find((window) => window.operation_id === command.operation_id);
+    if (prior) {
+      if (
+        prior.revision !== command.expected_revision ||
+        prior.started_at !== command.started_at ||
+        prior.retry_failed !== command.retry_failed
+      ) {
+        conflict();
+      }
+      return state;
+    }
+    if (state.revision !== command.expected_revision || state.publication === 'confirmed') {
+      conflict();
+    }
+    if (windows.length >= 1000) throw new AgenticStateError('limit');
+    const started = Date.parse(command.started_at);
+    if (started > now || started < Date.parse(windows.at(-1)?.started_at ?? state.started_at)) {
+      conflict();
+    }
+    const duration = deadlineTime(state.deadline_at) - Date.parse(state.started_at);
+    state.execution_windows = [
+      ...windows,
+      {
+        operation_id: command.operation_id,
+        ...(command.retry_failed ? { retry_failed: true as const } : {}),
+        status: state.status,
+        revision: state.revision,
+        started_at: command.started_at,
+        deadline_at: Number.isFinite(duration) ? new Date(started + duration).toISOString() : null,
+      },
+    ];
+    state.revision++;
+    return AgenticRunSnapshotSchema.parse(state);
+  }
+  if (command.type === 'prepare_publication' || command.type === 'confirm_publication') {
+    return AgenticRunSnapshotSchema.parse(applyPublicationCheckpoint(state, command));
+  }
+  if (command.type === 'confirm_cursors') {
+    if (state.publication !== 'confirmed' || !state.cursor_values) conflict();
+    if (state.cursors_committed) return state;
+    if (command.expected_revision !== state.revision) conflict();
+    state.cursors_committed = true;
+    state.revision++;
+    return AgenticRunSnapshotSchema.parse(state);
+  }
+  if (command.type === 'seal_work') {
+    if (command.plan_inputs && command.assignments.length) {
+      conflict();
+    }
+    if (state.status !== 'preparing') {
+      const preparationRevision =
+        state.execution_windows?.filter((window) => window.status === 'preparing').length ?? 0;
+      if (command.expected_revision !== preparationRevision) conflict();
+      if (
+        digestAgenticState(state.plan_inputs) !== digestAgenticState(command.plan_inputs) ||
+        digestAgenticState(state.cursor_values) !== digestAgenticState(command.cursor_values) ||
+        (!command.plan_inputs &&
+          digestAgenticState(state.work.map((item) => item.assignment)) !==
+            digestAgenticState(command.assignments))
+      ) {
+        conflict();
+      }
+      return state;
+    }
+    if (command.expected_revision !== state.revision) conflict();
+    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
+    if (command.plan_inputs) {
+      state.plan_inputs = command.plan_inputs;
+      state.sealed_steps = [];
+    }
+    if (command.cursor_values) state.cursor_values = command.cursor_values;
+    state.work = command.assignments.map((assignment) => ({ assignment, attempts: [] }));
+    state.status = 'running';
+    state.revision++;
+    return AgenticRunSnapshotSchema.parse(state);
+  }
+  if (command.type === 'append_step') {
+    if (
+      !state.plan_inputs ||
+      !state.sealed_steps ||
+      command.operation_id !== `append_step:${command.step_id}`
+    ) {
+      conflict();
+    }
+    const prior = state.sealed_steps!.find((step) => step.id === command.step_id);
+    if (prior) {
+      if (
+        prior.revision !== command.expected_revision ||
+        digestAgenticState(
+          state.work
+            .filter((work) => work.assignment.step_id === command.step_id)
+            .map((work) => work.assignment)
+        ) !== digestAgenticState(command.assignments)
+      ) {
+        conflict();
+      }
+      return state;
+    }
+    if (state.status !== 'running' || command.expected_revision !== state.revision) conflict();
+    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
+    let expected;
+    try {
+      expected = buildAgenticStepAssignments(state, state.sealed_steps!.length);
+    } catch {
+      return conflict();
+    }
+    if (
+      expected.some((assignment) => assignment.step_id !== command.step_id) ||
+      digestAgenticState(expected) !== digestAgenticState(command.assignments)
+    ) {
+      conflict();
+    }
+    state.sealed_steps!.push({ id: command.step_id, revision: state.revision });
+    state.work.push(...command.assignments.map((assignment) => ({ assignment, attempts: [] })));
+    state.revision++;
+    return AgenticRunSnapshotSchema.parse(state);
+  }
+  const work = 'work' in command ? state.work[command.work] : undefined;
+  if (command.type === 'complete') {
+    if (command.operation_id !== 'complete') conflict();
+    if (state.status === 'execution_complete') {
+      const publications =
+        state.publication === 'confirmed' ? 2 : state.publication === 'prepared' ? 1 : 0;
+      if (
+        command.expected_revision !==
+        state.revision - 1 - publications - executionWindowsAfter(state, command.expected_revision)
+      ) {
+        conflict();
+      }
+      return state;
+    }
+  } else {
+    if (!work || command.operation_id !== `${command.type}:${command.attempt_id}`) conflict();
+    const prior = work!.attempts.find((attempt) => attempt.id === command.attempt_id);
+    if (command.type === 'start_attempt' && prior) {
+      if (command.expected_revision !== prior.start_revision) conflict();
+      return state;
+    }
+    if (command.type === 'finish_attempt' && prior?.finish_digest) {
+      if (command.expected_revision !== prior.finish_revision) conflict();
+      if (
+        prior.finish_digest !==
+        digestAgenticState({ outcome: command.outcome, charge: command.charge })
+      ) {
+        conflict();
+      }
+      return state;
+    }
+  }
+  if (command.expected_revision !== state.revision || state.status !== 'running') conflict();
+  if (command.type === 'complete') {
+    if (state.work.some((item) => !item.accepted)) conflict();
+    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
+    state.status = 'execution_complete';
+  } else if (command.type === 'start_attempt') {
+    if (work!.accepted) conflict();
+    const previous = work!.attempts.at(-1);
+    if (isAgenticFailureBlocked(state, previous)) conflict();
+    if (
+      state.work.some((item) =>
+        item.attempts.some(
+          (attempt) => attempt.reservation !== null && attempt.charge > attempt.reservation
+        )
+      )
+    ) {
+      throw new AgenticStateError('limit');
+    }
+    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
+    if (
+      work!.attempts.length >= state.max_attempts ||
+      (state.token_limit !== null &&
+        (state.charged >= state.token_limit ||
+          state.charged + (work!.assignment.limits.tokens ?? 0) > state.token_limit))
+    ) {
+      throw new AgenticStateError('limit');
+    }
+    if (
+      state.work.some((item) => item.attempts.some((attempt) => attempt.id === command.attempt_id))
+    ) {
+      conflict();
+    }
+    const tokens = attemptReservation(
+      work!.assignment.limits.tokens,
+      state.token_limit,
+      state.charged
+    );
+    work!.attempts.push({
+      id: command.attempt_id,
+      start_revision: command.expected_revision,
+      reservation: tokens,
+      charge: tokens ?? 0,
+    });
+    state.charged += tokens ?? 0;
+  } else {
+    const attempt = work!.attempts.at(-1);
+    if (!attempt || attempt.id !== command.attempt_id || work!.accepted) {
+      throw new AgenticStateError('conflict');
+    }
+    const outcome = parseAgentAssignmentOutcome(
+      { ...work!.assignment, attempt_id: attempt.id },
+      command.outcome
+    );
+    const minimum =
+      outcome.usage.status === 'measured' ? outcome.usage.total_tokens : (attempt.reservation ?? 0);
+    if (command.charge < minimum) conflict();
+    state.charged += command.charge - attempt.charge;
+    attempt.charge = command.charge;
+    attempt.finish_revision = command.expected_revision;
+    attempt.finished_at = new Date(now).toISOString();
+    attempt.outcome = outcome;
+    attempt.finish_digest = digestAgenticState({ outcome, charge: command.charge });
+    if (
+      outcome.status !== 'failed' &&
+      (attempt.reservation === null || command.charge <= attempt.reservation) &&
+      (state.token_limit === null || state.charged <= state.token_limit) &&
+      now < deadlineTime(agenticDeadlineAt(state, attempt.start_revision))
+    ) {
+      work!.accepted = outcome;
+    }
+  }
+  state.revision++;
+  return AgenticRunSnapshotSchema.parse(state);
+}

@@ -1,0 +1,116 @@
+type: resource
+name: list_usage_records
+description: List usage records for each Twilio account
+api:
+  endpoint: /2010-04-01/Accounts/${{ input.account_sid }}/Usage/Records.json
+  method: GET
+  query_params:
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+    Category: ${{ input.category }}
+    StartDate: ${{ input.start_date }}
+    EndDate: ${{ input.end_date }}
+    IncludeSubaccounts: ${{ input.include_subaccounts }}
+input:
+  account_sid:
+    type: string
+    description: Twilio account SID to list usage records from
+    required: true
+  page_size:
+    type: integer
+    description: Number of usage records to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+  category:
+    type: string
+    description: Optional usage record category filter
+  start_date:
+    type: timestamp
+    description: Optional start date for usage records
+  end_date:
+    type: timestamp
+    description: Optional end date for usage records
+  include_subaccounts:
+    type: boolean
+    description: Whether to include usage from subaccounts
+query:
+  filters:
+    category:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: category
+      compile:
+        eq:
+          mode: http_query
+          param: Category
+    start_date:
+      operators:
+        - gte
+      bind:
+        gte:
+          input: start_date
+      compile:
+        gte:
+          mode: http_query
+          param: StartDate
+    end_date:
+      operators:
+        - lte
+      bind:
+        lte:
+          input: end_date
+      compile:
+        lte:
+          mode: http_query
+          param: EndDate
+output:
+  account_sid:
+    type: string
+    path: $.account_sid
+    description: Parent Twilio account SID
+  category:
+    type: string
+    path: $.category
+    description: Usage record category
+  description:
+    type: string
+    path: $.description
+    description: Usage record description
+  start_date:
+    type: timestamp
+    path: $.start_date
+    description: Usage aggregation start date
+  end_date:
+    type: timestamp
+    path: $.end_date
+    description: Usage aggregation end date
+  usage:
+    type: string
+    path: $.usage
+    description: Usage quantity value
+  price:
+    type: string
+    path: $.price
+    description: Usage cost value
+extract:
+  record_path: $.usage_records
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  for_each:
+    resource: list_account
+    field: sid
+    input: account_sid
+  table:
+    primary_key:
+      - account_sid
+      - category
+      - start_date
+      - end_date
+    trust_tier: silver

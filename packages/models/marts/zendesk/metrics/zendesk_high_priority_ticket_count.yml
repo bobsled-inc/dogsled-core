@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: zendesk_high_priority_ticket_count
+description: Number of Zendesk tickets with high or urgent priority.
+model: zendesk__tickets
+expression: SUM(CASE WHEN {zendesk__tickets}.priority IN ('high', 'urgent') THEN 1 ELSE 0 END)
+synonyms: [high priority tickets, urgent priority tickets, high and urgent tickets]
+tags: [zendesk, support, tickets]

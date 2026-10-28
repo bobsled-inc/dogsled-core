@@ -1,0 +1,17 @@
+spec_version: '0.2'
+name: signups
+type: source
+# A live/lazy API source (model A). `integration`/`resource` name a bundled
+# @bobsled-inc/integrations catalog entry; replace with your real API source.
+# `connection: lake` is the DuckDB cache/engine the fetched rows land in.
+source_type: api_resource
+integration: example_api
+resource: signups
+connection: lake
+mode: lazy # live | lazy | extract
+max_age: 1h # lazy: serve cache if fresher than this, else refetch
+schema:
+  columns:
+    - { name: user_id, type: integer, primary_key: true }
+    - { name: account_id, type: integer }
+    - { name: signed_up_at, type: timestamp }

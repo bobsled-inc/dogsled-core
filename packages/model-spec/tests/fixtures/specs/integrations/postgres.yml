@@ -1,0 +1,12 @@
+spec_version: '1'
+auth_env_vars: [PGPASSWORD]
+type: integration
+name: postgres
+source_type: postgres
+connection:
+  host: db.example.com
+  database: analytics
+auth:
+  type: password
+  user: svc
+  password: ${{ env.PGPASSWORD }}

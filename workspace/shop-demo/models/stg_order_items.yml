@@ -1,0 +1,46 @@
+spec_version: '0.2'
+name: stg_order_items
+type: model
+description: Order line items with computed line totals.
+grain: order_item_id
+source:
+  ref: duckdb.raw_order_items
+joins:
+  - ref: stg_products
+    type: left
+    on: duckdb.raw_order_items.product_id = stg_products.product_id
+columns:
+  - name: order_item_id
+    expr: duckdb.raw_order_items.order_item_id
+    primary_key: true
+    semantic_role: entity_id
+  - name: order_id
+    expr: duckdb.raw_order_items.order_id
+    references: stg_orders.order_id
+    semantic_role: entity_id
+  - name: product_id
+    expr: duckdb.raw_order_items.product_id
+    references: stg_products.product_id
+    semantic_role: entity_id
+  - name: product_name
+    expr: stg_products.product_name
+    semantic_role: name
+  - name: category
+    expr: stg_products.category
+    semantic_role: categorical
+  - name: quantity
+    expr: duckdb.raw_order_items.quantity
+    semantic_role: measure
+  - name: unit_price
+    expr: duckdb.raw_order_items.unit_price
+    semantic_role: currency
+    unit: usd
+  - name: line_total
+    expr: duckdb.raw_order_items.quantity * duckdb.raw_order_items.unit_price
+    semantic_role: currency
+    unit: usd
+materialization:
+  type: view
+expect:
+  - kind: primary_key
+    columns: [order_item_id]

@@ -1,0 +1,22 @@
+type: resource
+name: list_status
+description: List SendGrid contact database worker status signals
+api:
+  endpoint: /v3/contactdb/status
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Status metric identifier
+  value:
+    type: string
+    path: $.value
+    description: Current metric value
+extract:
+  record_path: $.status
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

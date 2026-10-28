@@ -1,0 +1,70 @@
+type: resource
+name: comments_rest
+via: rest
+entity: comments
+description: List comments on a specific Notion page or block. Comments are threaded discussions attached to pages or inline within specific blocks. Each comment contains rich text content and is grouped by discussion_id for threaded replies.
+api:
+  endpoint: /v1/comments
+  method: GET
+  query_params:
+    block_id: ${{ input.block_id }}
+    page_size: '100'
+input:
+  block_id:
+    type: string
+    description: The UUID of the page or block whose comments to retrieve. Use a page ID to get all page-level comments, or a specific block ID to get inline comments on that block.
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique comment UUID. Identifies this specific comment within the Notion workspace.
+  object:
+    type: string
+    path: $.object
+    description: Always "comment" for this resource. Identifies the object type in the Notion API.
+  discussion_id:
+    type: string
+    path: $.discussion_id
+    description: UUID that groups related comments into a thread. All replies in the same discussion share this ID. The first comment in a thread creates the discussion, and subsequent replies reference the same discussion_id.
+  parent_type:
+    type: string
+    path: $.parent.type
+    description: "Type of the object this comment is attached to \u2014 \"page_id\" for page-level comments or \"block_id\" for inline comments on a specific block."
+  parent_page_id:
+    type: string
+    path: $.parent.page_id
+    description: UUID of the parent page, if this is a page-level comment. Null for block-level inline comments.
+  parent_block_id:
+    type: string
+    path: $.parent.block_id
+    description: UUID of the parent block, if this is an inline comment on a specific block. Null for page-level comments.
+  created_by_id:
+    type: string
+    path: $.created_by.id
+    description: UUID of the user or bot who authored this comment. Can be resolved to a full user object via the users resource.
+  rich_text_content:
+    type: string
+    path: $.rich_text[0].plain_text
+    description: Plain text content of the comment, extracted from the first element of the rich text array. For comments with complex formatting or mentions, the full rich_text array contains additional elements.
+  created_time:
+    type: timestamp
+    path: $.created_time
+    description: ISO 8601 timestamp when this comment was posted.
+  last_edited_time:
+    type: timestamp
+    path: $.last_edited_time
+    description: ISO 8601 timestamp when this comment was last edited. Matches created_time if the comment has never been modified.
+extract:
+  for_each:
+    resource: pages_rest
+    field: id
+    input: block_id
+  record_path: $.results
+  pagination:
+    type: cursor
+    cursor_path: $.next_cursor
+    cursor_param: start_cursor
+  table:
+    primary_key:
+      - id

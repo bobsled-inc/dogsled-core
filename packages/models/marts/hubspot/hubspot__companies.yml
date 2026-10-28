@@ -1,0 +1,60 @@
+spec_version: '0.2'
+name: hubspot__companies
+type: model
+description: HubSpot company records enriched with owner metadata.
+grain: company_id
+source:
+  ref: stg_hubspot__companies
+joins:
+  - ref: stg_hubspot__owners
+    type: left
+    on: stg_hubspot__companies.owner_id = stg_hubspot__owners.owner_id
+columns:
+  - name: company_id
+    expr: stg_hubspot__companies.company_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique HubSpot company identifier.
+  - name: name
+    expr: stg_hubspot__companies.name
+    semantic_role: categorical
+    description: Display name of the company.
+  - name: domain
+    expr: stg_hubspot__companies.domain
+    semantic_role: categorical
+    description: Primary company domain.
+  - name: industry
+    expr: stg_hubspot__companies.industry
+    semantic_role: categorical
+    description: Industry classification for the company.
+  - name: annual_revenue
+    expr: stg_hubspot__companies.annual_revenue
+    semantic_role: measure
+    tags:
+      - financial
+    description: Reported annual revenue for the company.
+  - name: number_of_employees
+    expr: stg_hubspot__companies.number_of_employees
+    semantic_role: measure
+    description: Employee count captured on the company record.
+  - name: lifecycle_stage
+    expr: stg_hubspot__companies.lifecycle_stage
+    semantic_role: categorical
+    description: Current company lifecycle stage.
+  - name: owner_id
+    expr: stg_hubspot__companies.owner_id
+    semantic_role: entity_id
+    references: stg_hubspot__owners.owner_id
+    description: Assigned HubSpot owner identifier.
+  - name: owner_email
+    expr: stg_hubspot__owners.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the assigned owner.
+tags:
+  - hubspot
+  - companies
+trust_tier: gold
+materialization:
+  type: table

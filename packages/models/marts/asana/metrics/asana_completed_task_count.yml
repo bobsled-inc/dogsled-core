@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: asana_completed_task_count
+description: Number of Asana tasks marked as completed.
+model: asana__tasks
+expression: SUM(CASE WHEN {asana__tasks}.completed THEN 1 ELSE 0 END)
+synonyms: [completed tasks, finished tasks, tasks completed]
+tags: [asana, productivity, delivery]

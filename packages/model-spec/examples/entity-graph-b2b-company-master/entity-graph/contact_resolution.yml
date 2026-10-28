@@ -1,0 +1,63 @@
+spec_version: '0.2'
+name: contact_resolution
+type: resolution
+description: Resolve Salesforce contact records into contact entities.
+
+inputs:
+  - ref: revops.salesforce_contacts
+    role: internal
+    trust_tier: silver
+    id_fields: [salesforce_contact_id]
+
+standardize:
+  - field: contact_name
+    transforms: [lowercase, collapse_whitespace]
+  - field: email
+    transforms: [lowercase, trim]
+  - field: email_domain
+    transforms: [lowercase, strip_www, strip_protocol]
+
+blocking:
+  rules:
+    - name: exact_email
+      key: standardized_email
+    - name: name_domain
+      key: "standardized_contact_name || '|' || standardized_email_domain"
+
+deterministic_rules:
+  - name: email_match
+    conditions:
+      - field: standardized_email
+        operator: exact
+        both_not_null: true
+    action: auto_merge
+    confidence: 1.0
+
+scoring:
+  method: weighted_features
+  features:
+    - field: standardized_email
+      algorithm: exact
+      weight: 0.8
+    - field: standardized_email_domain
+      algorithm: exact
+      weight: 0.1
+    - field: standardized_contact_name
+      algorithm: jaro_winkler
+      weight: 0.1
+
+thresholds:
+  auto_merge: 0.95
+  review: 0.6
+  auto_reject: 0.4
+
+profile:
+  display_name:
+    field: contact_name
+  attributes:
+    - field: email
+    - field: email_domain
+    - field: title
+
+outputs:
+  target_schema: ENTITY_GRAPH

@@ -1,0 +1,111 @@
+spec_version: '0.2'
+name: stripe__invoice_details
+type: model
+description: Invoice facts with customer and subscription enrichment.
+grain: invoice_id
+source:
+  ref: stg_stripe__invoices
+joins:
+  - ref: stg_stripe__customers
+    type: left
+    on: stg_stripe__invoices.customer_id = stg_stripe__customers.customer_id
+  - ref: stg_stripe__subscriptions
+    type: left
+    on: stg_stripe__invoices.subscription_id = stg_stripe__subscriptions.subscription_id
+columns:
+  - name: invoice_id
+    expr: stg_stripe__invoices.invoice_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Stripe invoice identifier.
+  - name: invoice_number
+    expr: stg_stripe__invoices.number
+    semantic_role: categorical
+    description: Human-readable invoice number.
+  - name: customer_id
+    expr: stg_stripe__invoices.customer_id
+    semantic_role: entity_id
+    references: stg_stripe__customers.customer_id
+    description: Customer billed on the invoice.
+  - name: customer_email
+    expr: stg_stripe__customers.email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Email address of the invoiced customer.
+  - name: subscription_id
+    expr: stg_stripe__invoices.subscription_id
+    semantic_role: entity_id
+    references: stg_stripe__subscriptions.subscription_id
+    description: Subscription that generated the invoice when present.
+  - name: subscription_status
+    expr: stg_stripe__subscriptions.status
+    semantic_role: categorical
+    description: Current subscription status at the time of analysis.
+  - name: status
+    expr: stg_stripe__invoices.status
+    semantic_role: categorical
+    description: Invoice state such as draft, open, paid, or void.
+  - name: amount_due
+    expr: stg_stripe__invoices.amount_due
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total invoice amount due.
+  - name: amount_paid
+    expr: stg_stripe__invoices.amount_paid
+    semantic_role: measure
+    tags:
+      - financial
+    description: Amount already paid toward the invoice.
+  - name: amount_remaining
+    expr: stg_stripe__invoices.amount_remaining
+    semantic_role: measure
+    tags:
+      - financial
+    description: Remaining balance outstanding on the invoice.
+  - name: total
+    expr: stg_stripe__invoices.total
+    semantic_role: measure
+    tags:
+      - financial
+    description: Total invoice amount including tax.
+  - name: subtotal
+    expr: stg_stripe__invoices.subtotal
+    semantic_role: measure
+    tags:
+      - financial
+    description: Invoice subtotal before tax.
+  - name: tax
+    expr: stg_stripe__invoices.tax
+    semantic_role: measure
+    tags:
+      - financial
+    description: Tax amount applied to the invoice.
+  - name: currency
+    expr: stg_stripe__invoices.currency
+    semantic_role: categorical
+    description: Invoice currency code.
+  - name: due_date
+    expr: stg_stripe__invoices.due_date
+    semantic_role: time_dimension
+    description: Timestamp when payment for the invoice is due.
+  - name: period_start
+    expr: stg_stripe__invoices.period_start
+    semantic_role: time_dimension
+    description: Start of the billing period covered by the invoice.
+  - name: period_end
+    expr: stg_stripe__invoices.period_end
+    semantic_role: time_dimension
+    description: End of the billing period covered by the invoice.
+  - name: created_at
+    expr: stg_stripe__invoices.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the invoice was created.
+tags:
+  - stripe
+  - billing
+  - invoices
+trust_tier: gold
+materialization:
+  type: table

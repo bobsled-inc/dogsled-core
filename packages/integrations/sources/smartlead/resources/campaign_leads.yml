@@ -1,0 +1,92 @@
+type: resource
+name: campaign_leads
+description: Leads enrolled in a campaign with status, category, and engagement data
+api:
+  endpoint: /api/v1/campaigns/${{ input.campaign_id }}/leads
+  method: GET
+  query_params:
+    limit: ${{ input.limit }}
+    offset: ${{ input.offset }}
+input:
+  campaign_id:
+    type: integer
+    description: Campaign ID to retrieve leads from
+    required: true
+  limit:
+    type: integer
+    description: Number of leads per page (max 100)
+    default: 100
+  offset:
+    type: integer
+    description: Pagination offset
+    default: 0
+output:
+  campaign_lead_map_id:
+    type: integer
+    path: $.campaign_lead_map_id
+    description: Lead-campaign mapping identifier
+  status:
+    type: string
+    path: $.status
+    description: Lead status in campaign (STARTED, INPROGRESS, COMPLETED, PAUSED, STOPPED)
+  lead_category_id:
+    type: integer
+    path: $.lead_category_id
+    description: Lead category ID
+  lead_id:
+    type: integer
+    path: $.lead.id
+    description: Unique lead identifier
+  email:
+    type: string
+    path: $.lead.email
+    description: Lead email address
+  first_name:
+    type: string
+    path: $.lead.first_name
+    description: Lead first name
+  last_name:
+    type: string
+    path: $.lead.last_name
+    description: Lead last name
+  phone_number:
+    type: string
+    path: $.lead.phone_number
+    description: Lead phone number
+  company_name:
+    type: string
+    path: $.lead.company_name
+    description: Lead company name
+  website:
+    type: string
+    path: $.lead.website
+    description: Lead company website
+  location:
+    type: string
+    path: $.lead.location
+    description: Lead geographic location
+  linkedin_profile:
+    type: string
+    path: $.lead.linkedin_profile
+    description: Lead LinkedIn profile URL
+  is_unsubscribed:
+    type: boolean
+    path: $.lead.is_unsubscribed
+    description: Whether the lead has globally unsubscribed
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the lead was added to the campaign
+extract:
+  record_path: $.data
+  pagination:
+    type: offset
+    offset_param: offset
+    limit_param: limit
+  for_each:
+    resource: campaigns
+    field: id
+    input: campaign_id
+  table:
+    primary_key:
+      - campaign_lead_map_id

@@ -1,0 +1,119 @@
+type: resource
+name: list_call
+description: List calls made from or to a Twilio account
+api:
+  endpoint: /2010-04-01/Accounts/${{ input.account_sid }}/Calls.json
+  method: GET
+  query_params:
+    PageSize: ${{ input.page_size }}
+    Page: ${{ input.page }}
+    Status: ${{ input.status }}
+    StartTime: ${{ input.start_time }}
+input:
+  account_sid:
+    type: string
+    description: Twilio account SID to read calls from
+    required: true
+  page_size:
+    type: integer
+    description: Number of calls to return per page
+    default: 100
+  page:
+    type: integer
+    description: Twilio page index
+    default: 0
+  status:
+    type: string
+    description: Optional call status filter
+    enum:
+      - queued
+      - ringing
+      - in-progress
+      - completed
+      - busy
+      - failed
+      - no-answer
+      - canceled
+  start_time:
+    type: timestamp
+    description: Only return calls on or after this date
+query:
+  filters:
+    start_time:
+      operators:
+        - gte
+      description: Only return calls on or after this date
+      bind:
+        gte:
+          input: start_time
+      compile:
+        gte:
+          mode: http_query
+          param: StartTime
+    status:
+      operators:
+        - eq
+      enum:
+        - queued
+        - ringing
+        - in-progress
+        - completed
+        - busy
+        - failed
+        - no-answer
+        - canceled
+      description: Optional call status filter
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: Status
+output:
+  sid:
+    type: string
+    path: $.sid
+    description: Twilio call SID
+  account_sid:
+    type: string
+    path: $.account_sid
+    description: Parent account SID
+  from:
+    type: string
+    path: $.from
+    description: Calling number or identifier
+  to:
+    type: string
+    path: $.to
+    description: Receiving number or identifier
+  status:
+    type: string
+    path: $.status
+    description: Current call status
+  direction:
+    type: string
+    path: $.direction
+    description: Direction of the call
+  start_time:
+    type: timestamp
+    path: $.start_time
+    description: Call start timestamp
+  end_time:
+    type: timestamp
+    path: $.end_time
+    description: Call end timestamp
+extract:
+  record_path: $.calls
+  pagination:
+    type: page_number
+    page_param: Page
+    per_page_param: PageSize
+  for_each:
+    resource: list_account
+    field: sid
+    input: account_sid
+  table:
+    primary_key:
+      - sid
+    trust_tier: silver

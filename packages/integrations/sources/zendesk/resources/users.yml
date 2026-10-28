@@ -1,0 +1,56 @@
+type: resource
+name: users
+description: List Zendesk users
+api:
+  endpoint: /users
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of users to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk user identifier
+  name:
+    type: string
+    path: $.name
+    description: User display name
+  email:
+    type: string
+    path: $.email
+    description: User email address
+  role:
+    type: string
+    path: $.role
+    description: Zendesk role assigned to the user
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the user is active
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: User creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: User last update timestamp
+extract:
+  record_path: $.users
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

@@ -1,0 +1,39 @@
+{
+  "table": "raw.profiler_customers",
+  "rows": [
+    {
+      "customer_id": "cust_001",
+      "company_id": "co_001",
+      "email": "founder@acme.com.example.com",
+      "company_name": "Acme Inc."
+    },
+    {
+      "customer_id": "cust_002",
+      "company_id": "co_001",
+      "email": "ops@acme.com.example.com",
+      "company_name": "Acme Incorporated"
+    },
+    {
+      "customer_id": "cust_003",
+      "company_id": "co_002",
+      "email": "hello@example.com",
+      "company_name": "Example LLC"
+    }
+  ],
+  "foreignKeyTargets": [
+    {
+      "table": "companies",
+      "column": "id",
+      "values": ["co_001", "co_002"]
+    }
+  ],
+  "expected": {
+    "primaryKey": ["customer_id"],
+    "foreignKey": {
+      "from": "company_id",
+      "toTable": "companies",
+      "toColumn": "id"
+    },
+    "cleaningColumn": "company_name"
+  }
+}

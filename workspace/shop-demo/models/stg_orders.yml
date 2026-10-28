@@ -1,0 +1,27 @@
+spec_version: '0.2'
+name: stg_orders
+type: model
+description: Typed order headers.
+grain: order_id
+source:
+  ref: duckdb.raw_orders
+columns:
+  - name: order_id
+    expr: order_id
+    primary_key: true
+    semantic_role: entity_id
+  - name: customer_id
+    expr: customer_id
+    references: stg_customers.customer_id
+    semantic_role: entity_id
+  - name: ordered_at
+    expr: ordered_at
+    semantic_role: event_timestamp
+  - name: status
+    expr: lower(trim(status))
+    semantic_role: categorical
+materialization:
+  type: view
+expect:
+  - kind: primary_key
+    columns: [order_id]

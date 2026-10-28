@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ideas and feature proposals
+    url: https://github.com/bobsled-inc/dogsled-core/discussions
+    about: Discuss a proposal before implementation; maintainers and agents build accepted ideas
+  - name: Connector request
+    url: https://github.com/bobsled-inc/dogsled-core/discussions/new?category=connector-requests
+    about: Describe the API, authentication, objects and synthetic response shape
+  - name: Security vulnerability
+    url: https://github.com/bobsled-inc/dogsled-core/security/advisories/new
+    about: Report privately using the contact and instructions in SECURITY.md

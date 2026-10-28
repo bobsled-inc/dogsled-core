@@ -1,0 +1,64 @@
+spec_version: '0.2'
+name: freshdesk__companies
+type: model
+description: Freshdesk companies enriched with contact counts.
+grain: company_id
+source:
+  ref: stg_freshdesk__companies
+joins:
+  - ref: stg_freshdesk__contacts
+    type: left
+    on: stg_freshdesk__companies.company_id = stg_freshdesk__contacts.company_id
+    pre_aggregate:
+      group_by:
+        - company_id
+      columns:
+        - name: contact_count
+          expr: COUNT(*)
+        - name: active_contact_count
+          expr: countif(active = TRUE)
+columns:
+  - name: company_id
+    expr: stg_freshdesk__companies.company_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Freshdesk company identifier.
+  - name: company_name
+    expr: stg_freshdesk__companies.name
+    semantic_role: categorical
+    description: Company name.
+  - name: description
+    expr: stg_freshdesk__companies.description
+    semantic_role: categorical
+    description: Company description.
+  - name: note
+    expr: stg_freshdesk__companies.note
+    semantic_role: categorical
+    description: Internal note stored on the company.
+  - name: domains
+    expr: stg_freshdesk__companies.domains
+    semantic_role: categorical
+    description: Domains associated with the company.
+  - name: contact_count
+    expr: COALESCE(stg_freshdesk__contacts.contact_count, 0)
+    semantic_role: measure
+    description: Number of contacts linked to the company.
+  - name: active_contact_count
+    expr: COALESCE(stg_freshdesk__contacts.active_contact_count, 0)
+    semantic_role: measure
+    description: Number of active contacts linked to the company.
+  - name: created_at
+    expr: stg_freshdesk__companies.created_at
+    semantic_role: event_timestamp
+    description: Timestamp when the company was created.
+  - name: updated_at
+    expr: stg_freshdesk__companies.updated_at
+    semantic_role: event_timestamp
+    description: Timestamp when the company was last updated.
+tags:
+  - freshdesk
+  - companies
+  - support
+trust_tier: gold
+materialization:
+  type: table

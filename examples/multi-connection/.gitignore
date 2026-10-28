@@ -1,0 +1,4 @@
+secrets.yml
+target/
+.dogsled/model-spec/
+*.log

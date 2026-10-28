@@ -1,0 +1,59 @@
+type: resource
+name: users
+description: Users in the Zoom account.
+api:
+  endpoint: /users
+  method: GET
+  query_params:
+    page_size: ${{ input.page_size }}
+    status: ${{ input.status }}
+input:
+  page_size:
+    type: integer
+    default: 300
+  status:
+    type: string
+    default: active
+query:
+  filters:
+    status:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: status
+      compile:
+        eq:
+          mode: http_query
+          param: status
+output:
+  id:
+    type: string
+    path: $.id
+  email:
+    type: string
+    path: $.email
+  first_name:
+    type: string
+    path: $.first_name
+  last_name:
+    type: string
+    path: $.last_name
+  type:
+    type: integer
+    path: $.type
+  status:
+    type: string
+    path: $.status
+  created_at:
+    type: timestamp
+    path: $.created_at
+extract:
+  record_path: $.users
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.next_page_token
+    cursor_param: next_page_token

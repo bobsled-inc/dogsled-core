@@ -1,0 +1,24 @@
+spec_version: '0.2'
+name: fct_order_summary
+type: model
+description: Order summary by customer — pre-materialized for fast reads.
+grain: customer_id
+source:
+  ref: stg_orders
+columns:
+  - name: customer_id
+    expr: stg_orders.customer_id
+    primary_key: true
+  - name: order_count
+    expr: COUNT(stg_orders.order_id)
+  - name: total_spent
+    expr: SUM(stg_orders.total_amount)
+  - name: first_order
+    expr: MIN(stg_orders.created_at)
+  - name: last_order
+    expr: MAX(stg_orders.created_at)
+  - name: avg_order_value
+    expr: AVG(stg_orders.total_amount)
+materialization:
+  type: table
+group_by: [customer_id]

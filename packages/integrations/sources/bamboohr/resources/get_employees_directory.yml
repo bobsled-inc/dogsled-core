@@ -1,0 +1,34 @@
+type: resource
+name: get_employees_directory
+description: Get Employee Directory
+api:
+  endpoint: /api/v1/employees/directory
+  method: GET
+  query_params:
+    onlyCurrent: ${{ input.only_current }}
+input:
+  only_current:
+    type: boolean
+    description:
+      When true (the default), only current employees are returned. Set to false to future
+      employees that have a hire date or employment status effective date in the future.
+    default: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Field identifier used as the key in employee records.
+  type:
+    type: string
+    path: $.type
+    description: Field data type.
+  name:
+    type: string
+    path: $.name
+    description: Field display name.
+extract:
+  record_path: $.fields
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

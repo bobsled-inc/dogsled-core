@@ -1,0 +1,117 @@
+type: resource
+name: messages
+description: Messages posted in Slack channels including text content, author, reactions,
+  attachments metadata, and threading information
+api:
+  endpoint: /conversations.history
+  method: GET
+  query_params:
+    channel: ${{ input.channel }}
+    limit: ${{ input.limit }}
+    oldest: ${{ input.oldest }}
+    latest: ${{ input.latest }}
+    inclusive: ${{ input.inclusive }}
+input:
+  channel:
+    type: string
+    description: Channel ID to fetch messages from (e.g. C01ABC23DEF)
+  limit:
+    type: integer
+    description: Number of messages to return per page (max 999)
+    default: 200
+  oldest:
+    type: string
+    description: Unix timestamp — only messages after this time are returned
+  latest:
+    type: string
+    description: Unix timestamp — only messages before this time are returned
+  inclusive:
+    type: string
+    description: Include messages with oldest or latest timestamps when set to true
+    default: 'false'
+output:
+  ts:
+    type: string
+    path: $.ts
+    description: Message timestamp serving as the unique identifier within the channel (e.g. 1234567890.123456)
+  channel_id:
+    type: string
+    path: $.__channel_id
+    description: Channel ID this message belongs to, injected from the request context
+  type:
+    type: string
+    path: $.type
+    description: Event type, typically "message" for standard messages
+  subtype:
+    type: string
+    path: $.subtype
+    description:
+      Message subtype indicating special messages like channel_join, bot_message, file_share,
+      or null for regular user messages
+  text:
+    type: string
+    path: $.text
+    description: Full message text content with Slack mrkdwn formatting, user mentions as <@U123>,
+      channel references as <#C123>, and links as <url|label>
+  user:
+    type: string
+    path: $.user
+    description: User ID of the message author (e.g. U01ABC23DEF), null for bot messages which use
+      bot_id instead
+  bot_id:
+    type: string
+    path: $.bot_id
+    description: Bot ID if the message was sent by a bot integration, null for regular user messages
+  app_id:
+    type: string
+    path: $.app_id
+    description: App ID if the message was sent by a Slack app, useful for filtering automated messages
+  thread_ts:
+    type: string
+    path: $.thread_ts
+    description:
+      Timestamp of the parent message if this message is part of a thread, null for top-level
+      messages
+  reply_count:
+    type: integer
+    path: $.reply_count
+    description: Number of replies in the thread if this is a parent message, null for non-threaded messages
+  reply_users_count:
+    type: integer
+    path: $.reply_users_count
+    description: Number of unique users who replied in the thread
+  latest_reply:
+    type: string
+    path: $.latest_reply
+    description: Timestamp of the most recent reply in the thread
+  reactions_count:
+    type: integer
+    path: $.reactions.length()
+    description: Number of distinct emoji reactions on this message
+  attachments_count:
+    type: integer
+    path: $.attachments.length()
+    description: Number of rich attachments (link previews, bot cards, legacy attachments) on the message
+  files_count:
+    type: integer
+    path: $.files.length()
+    description: Number of files uploaded with this message
+  edited_ts:
+    type: string
+    path: $.edited.ts
+    description: Timestamp when the message was last edited, null if never edited
+  edited_by:
+    type: string
+    path: $.edited.user
+    description: User ID of who last edited the message
+extract:
+  record_path: $.messages
+  pagination:
+    type: cursor
+    cursor_path: $.response_metadata.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key:
+      - ts
+      - channel_id
+    trust_tier: silver

@@ -1,0 +1,30 @@
+type: resource
+name: accounts
+description: List Recurly accounts
+api:
+  endpoint: /accounts
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Account identifier
+  code:
+    type: string
+    path: $.code
+    description: Account code
+  state:
+    type: string
+    path: $.state
+    description: Account state
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Account creation timestamp
+extract:
+  record_path: $
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

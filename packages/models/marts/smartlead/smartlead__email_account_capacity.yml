@@ -1,0 +1,39 @@
+spec_version: '0.2'
+name: smartlead__email_account_capacity
+type: model
+description: Sender capacity summary grouped by account type and warmup status.
+grain:
+  - type
+  - warmup_status
+source:
+  ref: stg_smartlead__email_accounts
+columns:
+  - name: type
+    expr: stg_smartlead__email_accounts.type
+    semantic_role: categorical
+    description: Account provider type.
+  - name: warmup_status
+    expr: stg_smartlead__email_accounts.warmup_status
+    semantic_role: categorical
+    description: Warmup status grouping.
+  - name: account_count
+    expr: COUNT(*)
+    semantic_role: measure
+    description: Number of email accounts in the bucket.
+  - name: total_daily_capacity
+    expr: SUM(stg_smartlead__email_accounts.message_per_day)
+    semantic_role: measure
+    description: Total configured daily send capacity in the bucket.
+  - name: total_daily_sent
+    expr: SUM(stg_smartlead__email_accounts.daily_sent_count)
+    semantic_role: measure
+    description: Total emails already sent today in the bucket.
+group_by:
+  - type
+  - warmup_status
+tags:
+  - smartlead
+  - capacity
+trust_tier: gold
+materialization:
+  type: table

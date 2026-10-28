@@ -1,0 +1,52 @@
+type: resource
+name: macros
+description: List Zendesk macros
+api:
+  endpoint: /macros
+  method: GET
+  query_params:
+    page[size]: ${{ input.page_size }}
+    page[after]: ${{ input.cursor }}
+input:
+  page_size:
+    type: integer
+    description: Number of macros to return per page
+    default: 100
+  cursor:
+    type: string
+    description: Cursor token returned by the previous page
+output:
+  id:
+    type: integer
+    path: $.id
+    description: Zendesk macro identifier
+  title:
+    type: string
+    path: $.title
+    description: Macro title
+  active:
+    type: boolean
+    path: $.active
+    description: Whether the macro is active
+  description:
+    type: string
+    path: $.description
+    description: Macro description
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Macro creation timestamp
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Macro last update timestamp
+extract:
+  record_path: $.macros
+  pagination:
+    type: cursor
+    cursor_path: $.meta.after_cursor
+    cursor_param: page[after]
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

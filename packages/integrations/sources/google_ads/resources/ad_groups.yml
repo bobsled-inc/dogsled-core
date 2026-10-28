@@ -1,0 +1,37 @@
+type: resource
+name: ad_groups
+description: Ad group entities returned by a Google Ads search query.
+api:
+  endpoint: /customers/${{ input.customer_id }}/googleAds:search
+  method: POST
+  request_body:
+    query: SELECT ad_group.id, ad_group.name, ad_group.status, campaign.id FROM ad_group ORDER BY
+      ad_group.id
+    pageSize: 1000
+input:
+  customer_id:
+    type: string
+    required: true
+    default: '1234567890'
+output:
+  ad_group_id:
+    type: string
+    path: $.adGroup.id
+  name:
+    type: string
+    path: $.adGroup.name
+  status:
+    type: string
+    path: $.adGroup.status
+  campaign_id:
+    type: string
+    path: $.campaign.id
+extract:
+  record_path: $.results
+  table:
+    primary_key:
+      - ad_group_id
+  pagination:
+    type: cursor
+    cursor_path: $.nextPageToken
+    cursor_param: pageToken

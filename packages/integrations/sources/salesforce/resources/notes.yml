@@ -1,0 +1,43 @@
+type: resource
+name: notes
+description: Notes from Salesforce.
+api:
+  endpoint: /query
+  method: GET
+  query_params:
+    q: SELECT Id,Title,Body,ParentId,OwnerId,IsPrivate,CreatedDate,LastModifiedDate FROM Note
+input: {}
+output:
+  id:
+    type: string
+    path: $.Id
+  title:
+    type: string
+    path: $.Title
+  body:
+    type: string
+    path: $.Body
+  parent_id:
+    type: string
+    path: $.ParentId
+  owner_id:
+    type: string
+    path: $.OwnerId
+  is_private:
+    type: boolean
+    path: $.IsPrivate
+  created_at:
+    type: timestamp
+    path: $.CreatedDate
+  updated_at:
+    type: timestamp
+    path: $.LastModifiedDate
+extract:
+  record_path: $.records
+  pagination:
+    type: next_url
+    next_url_path: $.nextRecordsUrl
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

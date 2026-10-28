@@ -1,0 +1,10 @@
+{
+  "_v": 1,
+  "type": "RECORD",
+  "stream": "items",
+  "record": {
+    "id": 1,
+    "name": "alpha"
+  },
+  "time_extracted": "2026-04-15T16:00:00.000Z"
+}

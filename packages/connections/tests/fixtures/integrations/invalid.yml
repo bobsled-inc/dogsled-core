@@ -1,0 +1,5 @@
+spec_version: '1'
+type: integration
+name: invalid
+source_type: snowflake
+# missing connection + auth

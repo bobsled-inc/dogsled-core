@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: vq
+name: revenue_by_month
+nlq: What is revenue by month?
+sql: |
+  SELECT DATE_TRUNC('month', ordered_at) AS month, SUM(order_total) AS revenue
+  FROM {fct_orders}
+  GROUP BY month
+  ORDER BY month
+tags:
+  - shop-demo
+  - revenue

@@ -1,0 +1,70 @@
+spec_version: '0.2'
+name: smartlead__email_account_performance
+type: model
+description: Email account performance with warmup health and sending capacity.
+grain: email_account_id
+source:
+  ref: stg_smartlead__email_accounts
+columns:
+  - name: email_account_id
+    expr: stg_smartlead__email_accounts.email_account_id
+    primary_key: true
+    semantic_role: entity_id
+    description: Unique Smartlead email account identifier.
+  - name: from_email
+    expr: stg_smartlead__email_accounts.from_email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Sender email address.
+  - name: type
+    expr: stg_smartlead__email_accounts.type
+    semantic_role: categorical
+    description: Account provider type (GMAIL, OUTLOOK, SMTP).
+  - name: message_per_day
+    expr: stg_smartlead__email_accounts.message_per_day
+    semantic_role: measure
+    description: Configured daily sending limit.
+  - name: daily_sent_count
+    expr: stg_smartlead__email_accounts.daily_sent_count
+    semantic_role: measure
+    description: Emails sent today.
+  - name: campaign_count
+    expr: stg_smartlead__email_accounts.campaign_count
+    semantic_role: measure
+    description: Number of campaigns using this account.
+  - name: is_smtp_success
+    expr: stg_smartlead__email_accounts.is_smtp_success
+    semantic_role: categorical
+    description: Whether SMTP connection is successful.
+  - name: is_imap_success
+    expr: stg_smartlead__email_accounts.is_imap_success
+    semantic_role: categorical
+    description: Whether IMAP connection is successful.
+  - name: warmup_status
+    expr: stg_smartlead__email_accounts.warmup_status
+    semantic_role: categorical
+    description: Email warmup status (ACTIVE, INACTIVE).
+  - name: warmup_reputation
+    expr: stg_smartlead__email_accounts.warmup_reputation
+    semantic_role: categorical
+    description: Warmup reputation score.
+  - name: warmup_total_sent
+    expr: stg_smartlead__email_accounts.warmup_total_sent
+    semantic_role: measure
+    description: Total warmup emails sent.
+  - name: warmup_spam_count
+    expr: stg_smartlead__email_accounts.warmup_spam_count
+    semantic_role: measure
+    description: Total warmup emails marked as spam.
+  - name: created_at
+    expr: stg_smartlead__email_accounts.created_at
+    semantic_role: event_timestamp
+    description: When the account was created.
+tags:
+  - smartlead
+  - email-accounts
+  - performance
+trust_tier: gold
+materialization:
+  type: table

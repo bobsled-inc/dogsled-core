@@ -1,0 +1,63 @@
+spec_version: '0.2'
+name: github__commits
+type: model
+description: Commit-level detail for code churn and contributor analysis.
+grain: sha
+source:
+  ref: stg_github__commits
+columns:
+  - name: sha
+    expr: stg_github__commits.sha
+    primary_key: true
+    semantic_role: entity_id
+    description: Full 40-character SHA identifying the commit.
+  - name: message
+    expr: stg_github__commits.message
+    semantic_role: categorical
+    description: Full commit message.
+  - name: author_name
+    expr: stg_github__commits.author_name
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Git author display name.
+  - name: author_email
+    expr: stg_github__commits.author_email
+    semantic_role: categorical
+    tags:
+      - pii
+    description: Git author email address.
+  - name: author_date
+    expr: stg_github__commits.author_date
+    semantic_role: event_timestamp
+    description: Timestamp when the commit was originally authored.
+  - name: author_login
+    expr: stg_github__commits.author_login
+    semantic_role: categorical
+    description: GitHub username of the commit author.
+  - name: committer_name
+    expr: stg_github__commits.committer_name
+    semantic_role: categorical
+    description: Git committer display name.
+  - name: committer_date
+    expr: stg_github__commits.committer_date
+    semantic_role: event_timestamp
+    description: Timestamp when the commit was applied.
+  - name: verified
+    expr: stg_github__commits.verified
+    semantic_role: categorical
+    description: Whether the commit signature has been verified.
+  - name: parent_count
+    expr: stg_github__commits.parent_count
+    semantic_role: measure
+    description: Number of parent commits (2+ indicates a merge).
+  - name: comment_count
+    expr: stg_github__commits.comment_count
+    semantic_role: measure
+    description: Number of comments on this commit.
+tags:
+  - github
+  - commits
+trust_tier: gold
+materialization:
+  type: table

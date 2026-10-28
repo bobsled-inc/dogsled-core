@@ -1,0 +1,41 @@
+type: resource
+name: users
+description: Internal team members (agents) who manage issues and accounts
+api:
+  endpoint: /users
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: Unique user identifier
+  name:
+    type: string
+    path: $.name
+    description: User display name
+  email:
+    type: string
+    path: $.email
+    description: User email address
+  role:
+    type: string
+    path: $.role
+    description: User role in the organization
+  avatar_url:
+    type: string
+    path: $.avatar_url
+    description: URL of the user avatar
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: When the user was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: When the user was last updated
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id

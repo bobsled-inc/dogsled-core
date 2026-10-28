@@ -1,0 +1,7 @@
+name: stripe
+display_name: Stripe
+description: Billing and payment analytics models for Stripe customers, charges, invoices, and subscriptions.
+tags:
+  - stripe
+  - billing
+  - finance

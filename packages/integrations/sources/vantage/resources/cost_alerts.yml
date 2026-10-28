@@ -1,0 +1,81 @@
+type: resource
+name: cost_alerts
+description: Cost change alerts with threshold configuration
+api:
+  endpoint: /cost_alerts
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+    limit: ${{ input.limit }}
+input:
+  page:
+    type: integer
+    description: The page of results to return.
+  limit:
+    type: integer
+    description: The amount of results to return. The maximum is 1000.
+    default: 1000
+output:
+  token:
+    type: string
+    path: $.token
+    description: Unique token identifier for the cost alert.
+  title:
+    type: string
+    path: $.title
+    description: The title of the cost alert.
+  email_recipients:
+    type: array
+    path: $.email_recipients
+    description: The email addresses that will receive the alert.
+  slack_channels:
+    type: array
+    path: $.slack_channels
+    description: The Slack channels that will receive the alert.
+  interval:
+    type: string
+    path: $.interval
+    description: The period of time used to compare costs.
+  threshold:
+    type: number
+    path: $.threshold
+    description: The cost change threshold to alert on.
+  unit_type:
+    type: string
+    path: $.unit_type
+    description: The unit type used to compare costs.
+  report_tokens:
+    type: array
+    path: $.report_tokens
+    description: The tokens of the reports to alert on.
+  workspace_token:
+    type: string
+    path: $.workspace_token
+    description: The ID of the organization that owns the CostAlert.
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: The date and time, in UTC, for when the alert was created.
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: The date and time, in UTC, for when the alert was last updated.
+extract:
+  record_path: $.cost_alerts
+  pagination:
+    type: page_number
+    page_param: page
+    per_page_param: limit
+  table:
+    primary_key:
+      - token
+    trust_tier: silver
+lookup:
+  description: Get cost alert by token
+  api:
+    endpoint: /cost_alerts/${{ input.cost_alert_token }}
+    method: GET
+  input:
+    cost_alert_token:
+      type: string
+      required: true

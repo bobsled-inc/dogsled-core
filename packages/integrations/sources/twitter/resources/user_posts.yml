@@ -1,0 +1,50 @@
+type: resource
+name: user_posts
+description: Recent posts from the authenticated X user timeline.
+api:
+  endpoint: /2/users/${{ input.id }}/tweets
+  method: GET
+  query_params:
+    max_results: ${{ input.max_results }}
+    pagination_token: ${{ input.pagination_token }}
+input:
+  id:
+    type: string
+    default: '2244994945'
+  max_results:
+    type: integer
+    default: 100
+  pagination_token:
+    type: string
+output:
+  id:
+    type: string
+    path: $.id
+  author_id:
+    type: string
+    path: $.author_id
+  text:
+    type: string
+    path: $.text
+  created_at:
+    type: timestamp
+    path: $.created_at
+  conversation_id:
+    type: string
+    path: $.conversation_id
+  like_count:
+    type: integer
+    path: $.public_metrics.like_count
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: cursor
+    cursor_path: $.meta.next_token
+    cursor_param: pagination_token
+  for_each:
+    resource: users_me
+    field: id
+    input: id

@@ -1,0 +1,180 @@
+type: resource
+name: sandbox_session_details
+description: Detailed lifecycle and final measurements for one Vercel sandbox session.
+api:
+  endpoint: /v2/sandboxes/sessions/${{ input.session_id }}
+  method: GET
+  query_params:
+    teamId: ${{ input.team_id }}
+    slug: ${{ input.team_slug }}
+input:
+  session_id:
+    type: string
+    required: true
+    description: Vercel sandbox session identifier.
+  team_id:
+    type: string
+    description: Vercel team identifier.
+  team_slug:
+    type: string
+    description: Vercel team slug.
+output:
+  id:
+    type: string
+    path: $.session.id
+    semantic_role: entity_id
+    description: Stable sandbox session identifier.
+  source_sandbox_name:
+    type: string
+    path: $.session.sourceSandboxName
+    semantic_role: entity_id
+    description: Sandbox name that created the session.
+  project_id:
+    type: string
+    path: $.session.projectId
+    semantic_role: entity_id
+    description: Vercel project identifier.
+  team_id:
+    type: string
+    path: $.__input__.team_id
+    semantic_role: entity_id
+    description: Vercel team identifier supplied for this request.
+  team_slug:
+    type: string
+    path: $.__input__.team_slug
+    semantic_role: categorical
+    description: Vercel team slug supplied for this request.
+  region:
+    type: string
+    path: $.session.region
+    semantic_role: categorical
+    description: Session region.
+  status:
+    type: string
+    path: $.session.status
+    semantic_role: categorical
+    description: Session lifecycle status.
+  runtime:
+    type: string
+    path: $.session.runtime
+    semantic_role: categorical
+    description: Session runtime.
+  timeout:
+    type: number
+    path: $.session.timeout
+    semantic_role: measure
+    unit: milliseconds
+    description: Session timeout configuration.
+  cwd:
+    type: string
+    path: $.session.cwd
+    semantic_role: categorical
+    description: Session working directory.
+  memory:
+    type: number
+    path: $.session.memory
+    semantic_role: measure
+    unit: megabytes
+    description: Allocated session memory.
+  vcpus:
+    type: number
+    path: $.session.vcpus
+    semantic_role: measure
+    unit: vcpu
+    description: Allocated session virtual CPUs.
+  requested_at:
+    type: integer
+    path: $.session.requestedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session request time.
+  started_at:
+    type: integer
+    path: $.session.startedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session start time.
+  requested_stop_at:
+    type: integer
+    path: $.session.requestedStopAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Requested stop time when available.
+  stopped_at:
+    type: integer
+    path: $.session.stoppedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Successful stop time.
+  aborted_at:
+    type: integer
+    path: $.session.abortedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Abort time when available.
+  snapshotted_at:
+    type: integer
+    path: $.session.snapshottedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Time at which a snapshot was requested.
+  duration:
+    type: number
+    path: $.session.duration
+    semantic_role: measure
+    unit: milliseconds
+    description: Session duration.
+  active_cpu_duration_ms:
+    type: number
+    path: $.session.activeCpuDurationMs
+    semantic_role: measure
+    unit: milliseconds
+    description: Final active CPU duration when measured. Null is not zero.
+  network_transfer:
+    type: object
+    path: $.session.networkTransfer
+    description: Final network transfer measurements when available.
+  network_policy:
+    type: object
+    path: $.session.networkPolicy
+    description: Session network policy.
+  source_snapshot_id:
+    type: string
+    path: $.session.sourceSnapshotId
+    semantic_role: entity_id
+    description: Snapshot from which the session was created.
+  created_at:
+    type: integer
+    path: $.session.createdAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session creation time.
+  updated_at:
+    type: integer
+    path: $.session.updatedAt
+    semantic_role: event_timestamp
+    unit: unix_milliseconds
+    description: Session update time.
+  routes:
+    type: array
+    path: $.routes
+    description: Public sandbox routes returned with the session detail response.
+extract:
+  record_path: $
+  paginated: false
+  for_each:
+    resource: sandbox_sessions
+    bindings:
+      - field: id
+        input: session_id
+      - field: team_id
+        input: team_id
+      - field: team_slug
+        input: team_slug
+  pagination:
+    type: none
+  table:
+    primary_key:
+      - id
+    load_strategy: merge
+    trust_tier: silver

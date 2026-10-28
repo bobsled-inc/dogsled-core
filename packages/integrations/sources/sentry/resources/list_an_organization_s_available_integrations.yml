@@ -1,0 +1,124 @@
+type: resource
+name: list_an_organization_s_available_integrations
+description: Lists all the available Integrations for an Organization.
+api:
+  endpoint: /api/0/organizations/${{ input.organization_id_or_slug }}/integrations/
+  method: GET
+  query_params:
+    providerKey: ${{ input.provider_key }}
+    features: ${{ input.features }}
+    includeConfig: ${{ input.include_config }}
+    cursor: ${{ input.cursor }}
+input:
+  organization_id_or_slug:
+    type: string
+    required: true
+    description: The ID or slug of the organization the resource belongs to.
+  provider_key:
+    type: string
+    description: Specific integration provider to filter by such as `slack`. See our [Integrations
+      Documentation](/product/integrations/) for an updated list of providers.
+  features:
+    type: array
+    description: "Integration features to filter by. See our [Integrations
+      Documentation](/product/integrations/) for an updated list of features. Current available ones
+      are:
+
+      - `alert-rule`
+
+      - `chat-unfurl`
+
+      - `codeowners`
+
+      - `commits`
+
+      - `data-forwarding`
+
+      - `deployment`
+
+      - `enterprise-alert-rule`
+
+      - `enterprise-incident-management`
+
+      - `incident-management`
+
+      - `issue-basic`
+
+      - `issue-sync`
+
+      - `mobile`
+
+      - `serverless`
+
+      - `session-replay`
+
+      - `stacktrace-link`
+
+      - `ticket-rules`
+
+      \    "
+  include_config:
+    type: boolean
+    description:
+      Specify `True` to fetch third-party integration configurations. Note that this can add
+      several seconds to the response time.
+  cursor:
+    type: string
+    description:
+      A pointer to the last object fetched and its sort order; used to retrieve the next or
+      previous results.
+    minLength: 1
+output:
+  id:
+    type: string
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  icon:
+    type: string
+    path: $.icon
+  domain_name:
+    type: string
+    path: $.domainName
+  account_type:
+    type: string
+    path: $.accountType
+  scopes:
+    type: array
+    path: $.scopes
+  status:
+    type: string
+    path: $.status
+  provider:
+    type: string
+    path: $.provider
+  config_organization:
+    type: string
+    path: $.configOrganization
+  config_data:
+    type: string
+    path: $.configData
+  external_id:
+    type: string
+    path: $.externalId
+  organization_id:
+    type: integer
+    path: $.organizationId
+  organization_integration_status:
+    type: string
+    path: $.organizationIntegrationStatus
+  grace_period_end:
+    type: string
+    path: $.gracePeriodEnd
+extract:
+  record_path: $
+  pagination:
+    type: link_header
+  for_each:
+    resource: list_your_organizations
+    field: slug
+    input: organization_id_or_slug
+  table:
+    primary_key:
+      - id

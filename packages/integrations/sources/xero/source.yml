@@ -1,0 +1,41 @@
+spec_version: '2'
+type: source
+name: xero
+description: Xero accounting API for contacts, invoices, payments, and ledger configuration.
+transports:
+  - id: default
+    base_url: https://api.xero.com/api.xro/2.0
+    auth:
+      type: oauth2
+      grant_type: authorization_code
+      token_url: https://identity.xero.com/connect/token
+      client_id: ${{ env.XERO_CLIENT_ID }}
+      client_secret: ${{ env.XERO_CLIENT_SECRET }}
+      refresh_token: ${{ env.XERO_REFRESH_TOKEN }}
+      scopes:
+        - openid
+        - profile
+        - email
+        - accounting.contacts.read
+        - accounting.settings.read
+        - accounting.transactions.read
+        - accounting.journals.read
+        - accounting.reports.read
+    timeout_ms: 30000
+    retry:
+      retry_on:
+        - 429
+        - 500
+        - 502
+        - 503
+      max_retries: 3
+      backoff: exponential
+      retry_after_header: true
+    rate_limit:
+      requests_per_second: 1
+      burst: 2
+    headers:
+      Accept: application/json
+      User-Agent: dogsled-extractor
+      Xero-Tenant-Id: ${{ env.XERO_TENANT_ID }}
+default_transport: default

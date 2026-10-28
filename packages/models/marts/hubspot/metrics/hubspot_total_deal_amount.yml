@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: hubspot_total_deal_amount
+description: Total amount across HubSpot deals. Use only when the portal stores deal amounts in a common currency.
+model: hubspot__deals
+expression: SUM({hubspot__deals}.amount)
+synonyms: [pipeline value, deal value, total deal amount]
+tags: [hubspot, crm, finance]

@@ -1,0 +1,9 @@
+spec_version: '0.2'
+type: metric
+name: total_revenue
+description: Total paid order value.
+expression: SUM(order_total)
+model: fct_orders
+synonyms:
+  - revenue
+  - sales

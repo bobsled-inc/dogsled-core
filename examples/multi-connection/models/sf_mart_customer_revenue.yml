@@ -1,0 +1,32 @@
+spec_version: '0.2'
+name: sf_mart_customer_revenue
+type: model
+description: Snowflake mart — lifetime revenue per customer. Demonstrates target_database + target_schema override (lands in DOGSLED_MULTI_CONN_DB_OVERRIDE.MART).
+grain: customer_id
+
+source:
+  ref: sf_fct_orders
+
+columns:
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+    primary_key: true
+  - name: CUSTOMER_NAME
+    expr: CUSTOMER_NAME
+  - name: COUNTRY
+    expr: COUNTRY
+  - name: ORDER_COUNT
+    expr: 'raw_sql(COUNT(DISTINCT ORDER_ID))'
+  - name: TOTAL_REVENUE
+    expr: 'raw_sql(SUM(TOTAL))'
+
+group_by:
+  - CUSTOMER_ID
+  - CUSTOMER_NAME
+  - COUNTRY
+
+target_database: DOGSLED_MULTI_CONN_DB_OVERRIDE
+target_schema: MART
+
+materialization:
+  type: view

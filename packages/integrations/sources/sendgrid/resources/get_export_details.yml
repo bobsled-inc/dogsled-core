@@ -1,0 +1,46 @@
+type: resource
+name: get_export_details
+description: Retrieve detailed metadata for each SendGrid contact export job
+api:
+  endpoint: /v3/contactdb/exports/${{ input.export_id }}
+  method: GET
+input:
+  export_id:
+    type: string
+    description: SendGrid export job identifier
+    required: true
+output:
+  id:
+    type: string
+    path: $.id
+    description: Export job identifier
+  status:
+    type: string
+    path: $.status
+    description: Current export job status
+  recipient_count:
+    type: integer
+    path: $.recipient_count
+    description: Number of recipients included in the export
+  created_at:
+    type: timestamp
+    path: $.created_at
+    description: Timestamp when the export job was created
+  updated_at:
+    type: timestamp
+    path: $.updated_at
+    description: Timestamp when the export job was last updated
+  completed_at:
+    type: timestamp
+    path: $.completed_at
+    description: Timestamp when the export job completed
+extract:
+  record_path: $
+  for_each:
+    resource: list_exports
+    field: id
+    input: export_id
+  table:
+    primary_key:
+      - id
+    trust_tier: silver

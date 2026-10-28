@@ -1,0 +1,19 @@
+spec_version: '0.2'
+name: raw_customers
+type: source
+source_type: warehouse_table
+connection: duckdb
+table: raw.raw_customers
+description: Loaded seed table for customers.
+trust_tier: bronze
+schema:
+  columns:
+    - { name: customer_id, type: STRING }
+    - { name: full_name, type: STRING }
+    - { name: email, type: STRING }
+    - { name: company_name, type: STRING }
+    - { name: phone, type: STRING }
+    - { name: website, type: STRING }
+    - { name: state, type: STRING }
+    - { name: status, type: STRING }
+    - { name: created_at, type: TIMESTAMP }

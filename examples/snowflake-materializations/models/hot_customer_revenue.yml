@@ -1,0 +1,29 @@
+spec_version: '0.2'
+name: hot_customer_revenue
+type: model
+description: Dynamic Table for a hot downstream customer revenue consumer.
+grain:
+  - customer_id
+source:
+  ref: fct_orders_incremental
+columns:
+  - name: CUSTOMER_ID
+    expr: CUSTOMER_ID
+    description: Customer identifier.
+  - name: PAID_ORDER_COUNT
+    expr: raw_sql(SUM(CASE WHEN ORDER_STATUS = 'paid' THEN 1 ELSE 0 END))
+    description: Count of paid orders.
+  - name: PAID_REVENUE
+    expr: raw_sql(SUM(CASE WHEN ORDER_STATUS = 'paid' THEN ORDER_TOTAL ELSE 0 END))
+    description: Revenue from paid orders.
+  - name: LAST_ORDER_AT
+    expr: raw_sql(MAX(UPDATED_AT))
+    description: Most recent paid or unpaid order update timestamp.
+group_by:
+  - CUSTOMER_ID
+target_schema: ANALYTICS
+tags: [snowflake, dynamic-table]
+owner: data-platform
+trust_tier: gold
+materialization:
+  type: dynamic_table

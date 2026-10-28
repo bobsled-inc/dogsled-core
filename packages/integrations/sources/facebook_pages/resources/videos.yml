@@ -1,0 +1,50 @@
+type: resource
+name: videos
+description: Videos published on a Facebook Page.
+api:
+  endpoint: /${{ input.page_id }}/videos
+  method: GET
+  query_params:
+    fields: ${{ input.fields }}
+    limit: ${{ input.limit }}
+input:
+  page_id:
+    type: string
+    default: '123'
+  fields:
+    type: string
+    default: id,title,description,created_time,permalink_url,length
+  limit:
+    type: integer
+    default: 100
+output:
+  id:
+    type: string
+    path: $.id
+  title:
+    type: string
+    path: $.title
+  description:
+    type: string
+    path: $.description
+  created_time:
+    type: timestamp
+    path: $.created_time
+  permalink_url:
+    type: string
+    path: $.permalink_url
+  length:
+    type: number
+    path: $.length
+extract:
+  record_path: $.data
+  table:
+    primary_key:
+      - id
+  pagination:
+    type: next_url
+    next_url_path: $.paging.next
+  for_each:
+    resource: pages
+    field: id
+    input: page_id

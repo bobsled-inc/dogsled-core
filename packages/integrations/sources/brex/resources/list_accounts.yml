@@ -1,0 +1,59 @@
+type: resource
+name: list_accounts
+description: List Brex cash accounts
+api:
+  endpoint: /v2/accounts/cash
+  method: GET
+input: {}
+output:
+  id:
+    type: string
+    path: $.id
+    description: ID of the cash account
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  current_balance_amount:
+    type: integer
+    path: $.current_balance.amount
+    description: The amount of money, in the smallest denomination of the currency indicated by currency.
+  current_balance_currency:
+    type: string
+    path: $.current_balance.currency
+    description: The type of currency, in ISO 4217 format.
+  available_balance_amount:
+    type: integer
+    path: $.available_balance.amount
+    description: The amount of money, in the smallest denomination of the currency indicated by currency.
+  available_balance_currency:
+    type: string
+    path: $.available_balance.currency
+    description: The type of currency, in ISO 4217 format.
+  account_number:
+    type: string
+    path: $.account_number
+  routing_number:
+    type: string
+    path: $.routing_number
+  primary:
+    type: boolean
+    path: $.primary
+    description: Whether or not this account is the primary account.
+extract:
+  record_path: $.items
+  table:
+    primary_key:
+      - id
+    trust_tier: silver
+lookup:
+  description: ''
+  api:
+    endpoint: /v2/accounts/cash/${{ input.id }}
+    method: GET
+  input:
+    id:
+      type: string
+      required: true

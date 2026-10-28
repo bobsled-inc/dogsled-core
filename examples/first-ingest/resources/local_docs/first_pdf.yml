@@ -1,0 +1,28 @@
+spec_version: '1'
+type: resource
+name: first_pdf
+integration: local_docs
+description: Parse and chunk the local onboarding PDF
+source:
+  path: docs/*.pdf
+  format: document
+  parse:
+    formats: [pdf]
+    on_error: record
+  chunk:
+    max_tokens: 200
+    overlap_tokens: 20
+  ingest:
+    mode: extract
+  permissions:
+    capture: true
+    enforcement:
+      enabled: false
+replication:
+  method: full_refresh
+extract:
+  table:
+    load_strategy: full_refresh
+output:
+  document_id:
+    type: string
