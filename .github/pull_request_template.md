@@ -14,6 +14,8 @@ Explain how a reviewer can establish the complete behavior by reading this patch
 
 ## Contribution checklist
 
+Maintainers can skip the first two items; the rest apply to everyone.
+
 - [ ] This is a small, concrete fix with a useful outcome.
 - [ ] I understand that maintainers decide whether it fits the contribution policy.
 - [ ] Every commit has my DCO sign-off.
