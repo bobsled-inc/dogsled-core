@@ -63,7 +63,7 @@ export function renderGraph(graph: ProjectLineage | undefined): string {
   const nodes = graph.nodes
     .map((node) => {
       const p = positions.get(node.id)!;
-      const content = `<title>${e(node.label)} — ${e(node.description)}${node.available ? '' : ' (definition missing)'}</title><rect x="${p.x}" y="${p.y}" width="240" height="132" rx="8"/><text x="${p.x + 12}" y="${p.y + 44}">${e(node.label.length > 25 ? node.label.slice(0, 24) + '…' : node.label)}</text><text class="dag-kind" x="${p.x + 12}" y="${p.y + 68}">${e(node.available ? node.kind : 'definition missing')}</text><text class="dag-meta" x="${p.x + 12}" y="${p.y + 108}">${node.available ? 'Inspect definition' : 'Definition unavailable'}</text>`;
+      const content = `<title>${e(node.label)} — ${e(node.description)}${node.available ? '' : ' (definition missing)'}</title><rect x="${p.x}" y="${p.y}" width="240" height="132"/><text x="${p.x + 12}" y="${p.y + 44}">${e(node.label.length > 25 ? node.label.slice(0, 24) + '…' : node.label)}</text><text class="dag-kind" x="${p.x + 12}" y="${p.y + 68}">${e(node.available ? node.kind : 'definition missing')}</text><text class="dag-meta" x="${p.x + 12}" y="${p.y + 108}">${node.available ? 'Inspect definition' : 'Definition unavailable'}</text>`;
       return node.available
         ? `<a href="#files" data-file="${e(node.id)}" aria-label="Inspect ${e(node.label)}">${content}</a>`
         : `<g class="dag-missing">${content}</g>`;

@@ -11,7 +11,11 @@ Brand icons share one SVG paint definition (210° transform, blue at 0%, purple
 at 94%); selection indicators use the same
 CSS gradient as the UI primitives. Dark mode uses blue icons and indicators with a solid blue primary fill, as an
 artifact-specific theme choice. Positive icon and border colours use their own semantic tokens,
-separate from positive text. This is an
+separate from positive text. Chapter badges and navigation share semantic state tones:
+reviewed is positive, running and ready to review are info, input and stale checks
+are warning, failures are danger, and not started is neutral. Graph definitions
+use square shells and elbow connectors; an unavailable definition uses warning
+colour and a dashed border, without implying an execution failure. This is an
 artifact-specific HTML renderer, not a second public React component library.
 
 `fonts.css` contains the Latin variable fonts Inter 5.3.0 and Roboto Mono 5.3.0,

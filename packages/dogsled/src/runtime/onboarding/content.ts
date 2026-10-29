@@ -48,6 +48,24 @@ export function chapterStatus(chapter: Chapter, reviewed: readonly StepId[]): st
     stale: 'Check again',
   }[chapter.status];
 }
+/** Check completion and learner review are separate states. */
+export function chapterTone(
+  chapter: Chapter,
+  reviewed: readonly StepId[]
+): 'neutral' | 'info' | 'positive' | 'warning' | 'danger' {
+  if (chapter.status === 'complete') {
+    return reviewed.includes(chapter.id) ? 'positive' : 'info';
+  }
+  return (
+    {
+      not_started: 'neutral',
+      running: 'info',
+      needs_input: 'warning',
+      failed: 'danger',
+      stale: 'warning',
+    } as const
+  )[chapter.status];
+}
 export function agentRequest(chapter: Chapter, review = false): string {
   if (review && chapter.status === 'complete' && chapter.evidence) {
     return `I have reviewed the saved result for “${chapterTitle(chapter)}”. Run dogsled onboarding review ${chapter.id} --checkpoint ${checkpointId(chapter.evidence)}, then dogsled onboarding render. If the saved results have changed, refresh the page and let me review them first. Do not rerun checks or paid work. Pause before starting the next chapter.`;

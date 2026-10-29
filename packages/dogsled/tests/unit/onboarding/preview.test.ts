@@ -40,6 +40,30 @@ it('renders all synthetic review states through the canonical snapshot contract'
   ).toBe(true);
   expect(scenarios.find((s) => s.id === 'graph')!.snapshot.lineage!.nodes).toHaveLength(40);
 });
+it('keeps chapter status labels and semantic tones aligned in badges and navigation', () => {
+  const scenarios = previewScenarios();
+  const cases = [
+    ['start', 'connect', 'Not started', 'neutral'],
+    ['populated', 'load', 'Ready to review', 'info'],
+    ['reviewed', 'load', 'Reviewed', 'positive'],
+    ['failed', 'federate', 'Check failed', 'danger'],
+    ['attention', 'load', 'Running', 'info'],
+    ['attention', 'query', 'Needs your input', 'warning'],
+    ['attention', 'transform', 'Check again', 'warning'],
+  ] as const;
+  for (const [scenario, chapter, label, tone] of cases) {
+    const snapshot = scenarios.find((item) => item.id === scenario)!.snapshot;
+    const dom = new JSDOM(renderOnboardingHtml(snapshot));
+    windows.push(dom);
+    const document = dom.window.document;
+    const badge = document.querySelector(`#${chapter} .badge`)!;
+    const link = document.querySelector(`[data-chapter-link="${chapter}"]`)!;
+    expect(badge.textContent).toBe(label);
+    expect(badge.getAttribute('data-tone')).toBe(tone);
+    expect(link.getAttribute('data-tone')).toBe(tone);
+    expect(link.querySelector('.sr-only')!.textContent).toBe(label);
+  }
+});
 it('switches scenario, theme and iframe width using only known local review pages', () => {
   const errors: Error[] = [];
   const console = new VirtualConsole();
