@@ -114,19 +114,23 @@ export const teaching: Record<
   transform: {
     code: [
       [
+        'models/assessment_inputs.yml',
+        'Inspect where: select one show per run, starting with the pilot. Each completed run saves its result before the next show starts.',
+      ],
+      [
         'models/article_inputs.yml',
         'Inspect the input keys, source revision and selected text: these define exactly what the model can read.',
       ],
       [
         'models/show_notes.yml',
-        'Inspect sources, instructions, output columns and limits: these configure the agentic transformation.',
+        'Inspect the preference instructions, fit, explanation and passage_ids. The executor attaches exact text; start with one show before the remaining IDs.',
       ],
       [
         'models/recommendations.yml',
         'Inspect the joins: these combine the finalists with structured assessments and evidence.',
       ],
     ],
-    now: 'You can query structured assessments backed by source passages, compare unknowns, and explain a recommendation. An exact quote still needs interpretation and review.',
+    now: 'You can query structured assessments backed by source passages, compare unknowns, and explain a recommendation. Valid passage references still need interpretation and review. Unknown is a valid assessment, not an execution failure.',
     next: 'The core tutorial ends with this chapter. Dogsled also supports entity resolution: linking records from different sources that refer to the same thing, even when names differ. In the optional chapter, configure matching rules and review uncertain watchlist-to-catalog matches before excluding watched shows.',
     questions: [
       'Compare all finalists against my preference and show the supporting evidence.',
@@ -157,7 +161,7 @@ const planned: Record<StepId, string> = {
   federate:
     'Combine local DuckDB records with Wikipedia data in one query, then inspect the source and cache receipts.',
   transform:
-    'Turn article passages into structured assessments for all finalists, then compare their evidence.',
+    'Turn article passages into structured assessments. Inspect one pilot before assessing the remaining finalists. Unknown is a valid assessment, not an execution failure. A provider or format error needs an execution fix; invalid passage IDs need an evidence-link fix; weak reasoning needs review even when its IDs pass.',
   resolve: 'Match records across sources and keep uncertain matches for review.',
 };
 export function teachingPanel(step: StepId, complete = false): string {

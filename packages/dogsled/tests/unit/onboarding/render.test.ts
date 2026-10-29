@@ -178,3 +178,26 @@ it('labels completed results as timestamped snapshots rather than live database 
   expect(html).toContain('Later file or database changes do not reset completed chapters');
   expect(html).not.toContain('Inputs changed');
 });
+
+it('teaches a pilot before the batch and keeps passage text collapsed', () => {
+  const html = renderOnboardingHtml({
+    ...snapshot,
+    state: {
+      ...snapshot.state,
+      steps: [{ id: 'transform', label: 'Build an agentic transformation', status: 'not_started' }],
+    },
+    tables: [
+      {
+        name: 'Notes',
+        columns: ['input_passages'],
+        rows: [{ input_passages: 'Spoiler passage' }],
+        totalRows: 1,
+      },
+    ],
+  });
+  expect(html).toContain('Run one pilot');
+  expect(html).toContain('models/assessment_inputs.yml');
+  expect(html).toContain('valid assessment, not an execution failure');
+  expect(html).not.toContain('<td>Spoiler passage</td>');
+  expect(html).toContain('Show passage (may contain spoilers)');
+});

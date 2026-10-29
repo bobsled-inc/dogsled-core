@@ -206,3 +206,68 @@ it('uses the same probe input scope for attempts and successful checks', async (
     'failed'
   );
 });
+
+const passageNote = {
+  show_id: 1,
+  in_shortlist: true,
+  revision_id: 20,
+  article_text: 'A story about identity.',
+  _dogsled_run_id: 'tv-test',
+  fit: 'supported',
+  explanation: 'The passage supports the criterion.',
+  passage_ids: ['p1'],
+  input_passages: [{ id: 'p1', text: 'A story about identity.' }],
+  support_excerpt: 'A story about identity.',
+};
+it('checks selected passage IDs against the saved input without requiring legacy fields', async () => {
+  const root = await project();
+  await expect(
+    verifyOnboarding(root, 'transform', async () => ({ rows: [passageNote] }))
+  ).resolves.toBeDefined();
+  for (const change of [
+    { passage_ids: ['p2'] },
+    { passage_ids: ['p1', 'p1'] },
+    { support_excerpt: 'Changed wording' },
+    { input_passages: [{ id: 'p1', text: 'Invented passage' }] },
+    { passage_ids: [] },
+    { fit: 'unknown' },
+    { revision_id: 21, input_passages: null },
+  ]) {
+    await expect(
+      verifyOnboarding(root, 'transform', async () => ({ rows: [{ ...passageNote, ...change }] }))
+    ).rejects.toThrow(/evidence/);
+  }
+  await expect(
+    verifyOnboarding(root, 'transform', async () => ({
+      rows: [{ ...passageNote, fit: 'unknown', passage_ids: [], support_excerpt: '' }],
+    }))
+  ).resolves.toBeDefined();
+});
+it('checks one pilot without completing or resetting the chapter', async () => {
+  const root = await project();
+  const read: CliReader = async (_root, sql) => {
+    expect(sql).toMatch(/WHERE (n.show_id|id) = 1 LIMIT/);
+    return {
+      rows: sql.includes('FROM analytics.recommendations')
+        ? [{ id: 1, fit: 'supported', reason: 'Evidence reviewed.' }]
+        : [{ ...passageNote, finalist_count: 5 }],
+    };
+  };
+  const result = await verifyRaw(root, 'transform', read, { showId: 1 });
+  expect(result.receipts[0]).toContain('Pilot check only');
+  expect((await inspectOnboarding(root)).steps.find((s) => s.id === 'transform')?.status).toBe(
+    'not_started'
+  );
+  await expect(
+    verifyRaw(root, 'transform', async () => ({ rows: [] }), { showId: 1 })
+  ).rejects.toThrow(/empty/);
+  expect((await inspectOnboarding(root)).steps.find((s) => s.id === 'transform')?.status).toBe(
+    'not_started'
+  );
+  for (const showId of [0, -1, NaN, 1.5]) {
+    await expect(verifyRaw(root, 'transform', read, { showId })).rejects.toThrow(
+      /positive integer/
+    );
+  }
+  await expect(verifyRaw(root, 'load', read, { showId: 1 })).rejects.toThrow(/transform/);
+});

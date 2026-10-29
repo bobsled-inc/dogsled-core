@@ -263,35 +263,56 @@ Verify `federate` and render. **Inspect:** select Shows with article context, fi
 
 ## Chapter 6 of 6: build an agentic transformation
 
-Dogsled supports agentic models: models that use an AI model and your instructions to turn input data into structured output. You define their inputs, instructions and output fields. In this chapter, we’ll build one that reads article passages and produces assessments with supporting quotes.
+Dogsled supports agentic models: models that use AI and your instructions to turn input data into structured output. Here, each show gets a judgment against the learner’s preference, a short explanation, and references to supporting passages. Explain this purpose before fetching text or discussing provider calls. For a preference such as “sci-fi sagas with politics and intrigue,” explain which parts the evidence supports and which remain unknown.
 
-Explain the planned model chain before discussing fetching or paid calls: the `article_inputs` model prepares source text; the `show_notes` agentic model turns it into structured assessments; the `recommendations` model combines those assessments with catalog facts. Show the configuration files for their inputs, instructions, output schema and execution limits. Use the provider choice made during setup; do not assume or introduce unexplained historical problems.
+Show the model chain and files: `article_inputs` stores prepared evidence for every finalist; `assessment_inputs` selects the IDs approved for this attempt; `show_notes` makes the AI assessment; `recommendations` joins it to catalog facts. A passage reference lets the learner inspect why the model made a claim. It is not a test of the AI’s ability to copy a quote. The AI selects passage IDs; the executor looks up the original text and adds evidence metadata itself.
 
-First inspect summary lengths and content. Wikipedia's TextExtracts `exchars` stops at 1,200; asking for 6,000 does not deliver 6,000. Multiple full extracts are not supported in one request. Use the `full_article` reference to fetch one full plain-text article per accepted finalist, with no `exchars`, `exintro` or `exsentences`. Use a bounded title input matrix of at most five titles. Save full articles and revision IDs locally; do not put whole articles in the HTML file explorer.
+### Prepare the evidence without AI calls
 
-Select relevant sections for the user's criterion, not blindly the first paragraph. Prepare at most 6,000 characters per finalist, with exact contiguous source passages. Keep a record of the section/source offsets if combining passages. Missing sections and unequal evidence coverage stay visible. Keep spoilers collapsed. If a request fails or a passage is inadequate, explain the next fetch or the remaining gap before spending on AI.
+Inspect the introductions first. If they lack useful detail, fetch one full Wikipedia article per accepted finalist using the `full_article` resource. Do not use `exchars`, `exintro` or `exsentences` for full text. Save full articles and revisions locally. Select relevant sections for the agreed preference rather than blindly taking the first paragraph. Keep article scope visible, including an article that covers several versions of a show.
 
-Build `article_inputs`: one row per finalist, with required non-null `show_id` and `revision_id`, exact `article_text`, `source_url` (the Wikipedia page/revision URL), and attribution. Show row count, character counts and source revisions. Validate keys before any paid run. Fetching articles, preparing inputs, and executing AI are three separate actions; say explicitly which have happened.
+Build `article_inputs` with one row per finalist: required `show_id`, `revision_id`, bounded `article_text`, `passages`, `article_scope`, `source_url`, and attribution. Keep article_text at most 6,000 characters. `passages` is JSON text containing 1–12 objects with unique IDs `p1`, `p2`, etc. and exact contiguous text from that row’s article_text. Each passage is at most 1,200 characters; their combined text is at most 6,000. Preserve passage IDs and revision together; do not reuse old assessments after replacing their evidence.
 
-With the learner, define the same assessment for every finalist in `show_notes`. Use the original preference, not an unexplained substitute label. Keep supported/contradicted/mixed/unknown preference fit, a short explanation, and exact evidence separate from factual metadata. The reference also includes theme and ending fields; they are illustrative and must not silently change the user's question. Missing evidence means unknown, not a bad show. If one quote cannot support all claims, leave unsupported claims unknown or author separate claim/evidence columns and adapt checks honestly.
+Construct this JSON with code or SQL, copying text directly from the saved source. For example, after selecting and checking section offsets, use `json_object('id', 'p1', 'text', substring(article_text, start_offset, passage_length))` inside a JSON array. Do not ask an LLM to rewrite these passages. Show one ID and its text before execution. If the source lacks evidence, keep that gap visible; do not invent a passage.
 
-Create the working `executor.mjs` from `executor.mjs.txt` under the `templatesPath` returned by `dogsled onboarding guide`. This is shared execution scaffolding, not a completed model. Configure `platform.models.show_review` in `.dogsled/config.yml` using the provider settings chosen at setup; keep the existing default destination. Do not hardcode a provider or key in the executor.
+### Define a small assessment
 
-Recap the startup choice, approved call count, any chosen dollar cap, token bounds and timeout. Reuse consent for this agreed batch; do not ask again unless its scope changes. Use the supported provider role; no provider-specific executor rewrite. The template defaults to observe when no dollar cap is configured, switches to enforce when `cost_budget_usd` is set, disables retries, and prints safe errors. Unknown pricing blocks a requested dollar cap; it does not block an approved observe-mode run. Report unknown cost honestly. The reference token limits are examples, not measured usage; adjust them transparently for the full approved batch.
+Use the same preference for every finalist. The AI returns `show_id`, `revision_id`, `fit`, `explanation`, and `passage_ids` (an array of up to six selected IDs). The executor adds `support_excerpt` and Dogsled evidence metadata from the saved input. Do not add unrelated theme/ending fields or duplicate quote fields. Use `supported` for direct evidence, `mixed` for partial support, `contradicted` only for explicit contrary evidence, and `unknown` for insufficient evidence. An unknown assessment is a valid result, with an empty passage list. A technically valid response still needs a review of its reasoning.
+
+Create `executor.mjs` from the package teaching template. Use the provider profile chosen at setup. The executor requests structured output with a configurable `maxOutputTokens` allowance, default 4,096. Change that local setting only after explaining its effect and checking the approved token/cost scope. It never silently shrinks output to fit an assignment. Its preflight input estimate is conservative, not measured usage. Neither a parse error nor unknown usage proves that output tokens ran out. Do not patch Dogsled or guess a provider-specific executor route.
+
+### Run one show, inspect it, then run the rest
+
+Count the pilot within the original approved batch: one call first, then at most four remaining calls. Keep any dollar cap and the original call limit. A provider credential probe is a separate disclosed call. Before changing provider/model, verify supported structured output and the executor’s provider route from the installed capabilities; model availability alone does not prove executor compatibility. Do not claim a new key is required without checking the configured route.
+
+Create `assessment_inputs` as a view over the complete `article_inputs`, with `where: show_id IN (...)` listing only the real pilot ID. Keep `show_notes` materialized with `replace_processed_keys` on `show_id`, so later attempts preserve successful rows. Never filter or overwrite the full article_inputs or shortlist tables to run a pilot.
+
+Validate the files and confirm the scope query returns exactly one approved show. Run:
 
 ```sh
 dogsled model validate --integration warehouse
-dogsled model run article_inputs --integration warehouse
-dogsled model run show_notes --integration warehouse --agent-executor ./executor.mjs --agent-run-id tv-first
+dogsled model run article_inputs assessment_inputs --integration warehouse
+dogsled query "SELECT show_id, revision_id FROM analytics.assessment_inputs" --db-path .dogsled/dogsled.duckdb
+dogsled model run show_notes --integration warehouse --agent-executor ./executor.mjs --agent-run-id tv-pilot
+dogsled model run recommendations --integration warehouse
 ```
 
-Validate one current note per finalist, all input revisions, exact excerpts and allowed values. A matching quote does not prove the interpretation; review it. Do not mark a partial batch complete. On failure show the actual safe error, which shows completed, whether usage is measured or unknown, and the next corrective action. Preserve earlier valid notes. Never auto-retry a no-retry batch or silently increase allowances. Explicit new attempts use a new run ID after reviewing the remaining approval scope.
+Then run `dogsled onboarding verify transform --show-id <actual-pilot-id>`. This checks that show’s saved output without completing or resetting the chapter and without making an AI call. Explain the output fields and inspect whether the selected passages support the judgment. Pause for the learner’s inspection. If the pilot fails, stop the batch and diagnose that one show first.
 
-**Inspect:** compare all finalists in Supported show notes, then expand a quote for one supported assessment and inspect one unknown. Show the old and new values when a longer passage changes the result. If inputs changed but AI has not rerun, say “new input ready; notes still from the old input” and explain which input the saved notes describe. Keep the completed chapter and inspection recorded.
+Once inspected, process the remaining approved shows one at a time. Update only `assessment_inputs.where` to the next single show ID. Run `dogsled model run assessment_inputs --integration warehouse` to rebuild that view, then repeat the scope query and confirm it returns exactly that one show before running `show_notes` under a new run ID. Rebuild `recommendations` and check that show with `onboarding verify transform --show-id <id>`. Repeat for the other approved shows, stopping on a failure. Dogsled publishes a run only after all its assignments succeed: one show per run keeps each successful result saved even if a later show fails. These runs remain within the originally approved batch of calls; no extra call is needed. Editing YAML alone does not update an existing database view. Do not run the successful pilot again. After changing instructions or provider, test one affected show before expanding. Extra attempts need approval outside the original call allowance. Retry only failed or explicitly rejected show IDs; preserve successful notes and their original run IDs. Do not auto-retry or use resume as a way to bypass the no-retry policy.
 
-Create `recommendations` by joining `watch_next` to reviewed notes. Keep the evidence-free candidate model separate to avoid a circular dependency. Save `queries/recommendation.sql`, run it, and explain the recommendation and trade-offs from the comparison. More article coverage is not a higher quality score. Do not claim “best of the catalog” from five finalists or invent numerical similarity scores. If evidence remains insufficient, give a qualified candidate and explain what is missing.
+### Explain results and failures clearly
 
-Run the final model and checkpoint only after its definition is ready:
+Distinguish these outcomes in both the recap and HTML:
+
+- **Execution or response-format failure:** the provider call failed or its output could not be parsed. Show the safe error and available usage; do not judge assessment quality or guess truncation without evidence.
+- **Invalid evidence link:** a passage ID is missing, belongs to another input, or the saved excerpt/revision does not match. Fix the preparation or output for that show. Exact text is attached by code, not rewritten by AI.
+- **Judgment needs review:** the references are valid but do not support the interpretation. Explain the mismatch. Correct the instructions or gather better evidence before proposing a targeted retry.
+- **Unknown from the evidence:** valid structured output that openly states a gap. This does not fail the chapter or prove a show is unsuitable.
+
+Show which shows passed, failed or remain unknown. Do not describe a five-show result as wholly failed because one row needs repair. Full chapter verification still requires one valid current assessment and recommendation for every finalist; a pilot never completes it.
+
+Run the final comparison only when the remaining results are ready:
 
 ```sh
 dogsled model run recommendations --integration warehouse
@@ -300,9 +321,9 @@ dogsled onboarding verify transform
 dogsled onboarding render
 ```
 
-Verify `query` again only if its candidate rules changed. Record the learner's inspection. Explain all six capabilities learned and where the project files and rerun commands live. The main tutorial is complete without the optional extension.
+**Inspect:** explain the model definitions first, then compare one supported assessment and one unknown. Follow a selected passage ID to its saved text and discuss whether it supports the reason. The reference check proves traceability, not truth or recommendation quality. Keep spoilers collapsed. If inputs change without a new AI run, identify the old notes as saved results rather than silently rerunning them. Do not claim the best show in the catalog from a five-show comparison.
 
-When offering the extension, explain the capability first: “Dogsled also supports entity resolution: linking records from different sources that refer to the same real-world thing, even when names differ. You configure matching rules and review uncertain matches. In this optional chapter, we’ll link your watchlist to TVmaze catalog records, then use accepted matches to exclude shows you’ve already watched.” Ask whether the learner wants to try this optional capability before requesting their watchlist. Do not reduce the invitation to adding watched shows.
+After all finalists pass and the learner inspects the comparison, record the chapter review. Recap the six capabilities and the files that configure them. The optional next chapter teaches entity resolution: linking records across sources that refer to the same show. Introduce that concept before asking for a watchlist.
 
 ## Optional extension: learn entity resolution
 

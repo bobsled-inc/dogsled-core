@@ -4303,8 +4303,9 @@ Usage: dogsled onboarding verify [options] <step>
 Run bounded data checks and save evidence for a step
 
 Options:
-  --yaml      Emit YAML output
-  -h, --help  display help for command
+  --yaml          Emit YAML output
+  --show-id <id>  Check one transformation result without completing the chapter
+  -h, --help      display help for command
 ```
 
 #### `dogsled onboarding review`

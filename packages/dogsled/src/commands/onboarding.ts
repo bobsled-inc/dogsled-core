@@ -18,7 +18,7 @@ export function registerOnboardingCommand(program: Command): void {
     .command('onboarding')
     .description('Inspect TV Night progress and render its local data explorer');
   for (const action of ['guide', 'status', 'render', 'verify <step>', 'review <step>']) {
-    group
+    const subcommand = group
       .command(action)
       .description(
         action.startsWith('review')
@@ -31,56 +31,71 @@ export function registerOnboardingCommand(program: Command): void {
                 ? 'Write the local HTML explorer'
                 : 'Show saved chapter progress and check results'
       )
-      .option('--yaml', 'Emit YAML output')
-      .action(async (...args: unknown[]) => {
-        const command = args[args.length - 1] as Command;
-        const options = command.optsWithGlobals<GlobalOptions & { yaml?: boolean }>();
-        const output = fmt.toOutputOptions(options);
-        try {
-          const root = resolve(options.projectRoot ?? process.cwd());
-          let result: unknown;
-          if (action === 'guide') {
-            result = {
-              ...getSkill('dogsled-get-started'),
-              templatesPath: join(getExamplesDir(), 'tv-night', 'reference'),
-            };
-          } else if (action.startsWith('review')) {
-            result = await reviewChapter(root, StepId.parse(args[0]));
-          } else if (action.startsWith('verify')) {
-            const step = StepId.safeParse(args[0]);
-            if (!step.success) {
-              throw new CommandError(
-                'Choose connect, load, model, query, federate, transform, or resolve.',
-                2
-              );
-            }
-            result = await verifyOnboarding(root, step.data);
-          } else if (action === 'status') result = await inspectOnboarding(root);
-          else {
-            const snapshot = await buildOnboardingSnapshot(root);
-            result = {
-              path: await writeArtifact(root, renderOnboardingHtml(snapshot)),
-              renderedAt: snapshot.renderedAt,
-            };
-          }
-          if (options.yaml) {
-            fmt.output(YAML.stringify(result).trimEnd(), { ...output, json: false });
-          } else fmt.output(output.json ? result : JSON.stringify(result, null, 2), output);
-        } catch (error) {
-          const exitCode = error instanceof CommandError ? error.exitCode : 2;
-          // Parser and filesystem errors can include input text. Keep serialized failures bounded and safe.
-          const message =
-            error instanceof CommandError
-              ? error.message
-              : 'Could not read the TV Night project. Check that this folder contains a valid TV Night project.';
-          if (options.yaml) {
-            fmt.output(
-              YAML.stringify({ ok: false, error: message, exit_code: exitCode }).trimEnd(),
-              { ...output, json: false }
+      .option('--yaml', 'Emit YAML output');
+    if (action.startsWith('verify')) {
+      subcommand.option(
+        '--show-id <id>',
+        'Check one transformation result without completing the chapter'
+      );
+    }
+    subcommand.action(async (...args: unknown[]) => {
+      const command = args[args.length - 1] as Command;
+      const options = command.optsWithGlobals<
+        GlobalOptions & { yaml?: boolean; showId?: string }
+      >();
+      const output = fmt.toOutputOptions(options);
+      try {
+        const root = resolve(options.projectRoot ?? process.cwd());
+        let result: unknown;
+        if (action === 'guide') {
+          result = {
+            ...getSkill('dogsled-get-started'),
+            templatesPath: join(getExamplesDir(), 'tv-night', 'reference'),
+          };
+        } else if (action.startsWith('review')) {
+          result = await reviewChapter(root, StepId.parse(args[0]));
+        } else if (action.startsWith('verify')) {
+          const step = StepId.safeParse(args[0]);
+          if (!step.success) {
+            throw new CommandError(
+              'Choose connect, load, model, query, federate, transform, or resolve.',
+              2
             );
-          } else fmt.error(message, output);
-          process.exitCode = exitCode;
+          }
+          result = await verifyOnboarding(
+            root,
+            step.data,
+            undefined,
+            options.showId === undefined
+              ? {}
+              : { showId: /^\d+$/.test(options.showId) ? Number(options.showId) : NaN }
+          );
+        } else if (action === 'status') result = await inspectOnboarding(root);
+        else {
+          const snapshot = await buildOnboardingSnapshot(root);
+          result = {
+            path: await writeArtifact(root, renderOnboardingHtml(snapshot)),
+            renderedAt: snapshot.renderedAt,
+          };
         }
-      });
+        if (options.yaml) {
+          fmt.output(YAML.stringify(result).trimEnd(), { ...output, json: false });
+        } else fmt.output(output.json ? result : JSON.stringify(result, null, 2), output);
+      } catch (error) {
+        const exitCode = error instanceof CommandError ? error.exitCode : 2;
+        // Parser and filesystem errors can include input text. Keep serialized failures bounded and safe.
+        const message =
+          error instanceof CommandError
+            ? error.message
+            : 'Could not read the TV Night project. Check that this folder contains a valid TV Night project.';
+        if (options.yaml) {
+          fmt.output(YAML.stringify({ ok: false, error: message, exit_code: exitCode }).trimEnd(), {
+            ...output,
+            json: false,
+          });
+        } else fmt.error(message, output);
+        process.exitCode = exitCode;
+      }
+    });
   }
 }

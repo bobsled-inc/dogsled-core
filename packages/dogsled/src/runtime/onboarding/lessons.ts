@@ -63,12 +63,17 @@ export const lessons: Record<
   },
   transform: {
     learn:
-      'Dogsled supports agentic models: models that use an AI model and your instructions to turn input data into structured output. You define their inputs, instructions and output fields. Here, you will build one that reads article passages and produces assessments with supporting quotes.',
-    files: ['models/article_inputs.yml', 'models/show_notes.yml', 'models/recommendations.yml'],
+      'Dogsled supports agentic models: models that use an AI model and your instructions to turn input data into structured output. You define their inputs, instructions and output fields. Here, you will build one that reads article passages and produces assessments with references to saved passages. Code attaches the exact source text.',
+    files: [
+      'models/article_inputs.yml',
+      'models/assessment_inputs.yml',
+      'models/show_notes.yml',
+      'models/recommendations.yml',
+    ],
     choice:
-      'Choose the same preference to assess for every finalist. Review the approved API usage and any chosen dollar cap, or skip AI.',
+      'Choose the same preference to assess for every finalist. Inspect one pilot before the remaining shows, within the approved API usage and any chosen dollar cap, or skip AI.',
     inspect:
-      'Compare the evidence for all finalists, inspect an exact excerpt and an unknown, then query recommendations. Explain why your answer changed.',
+      'Inspect the pilot’s judgment and selected passage IDs first. Then compare all finalists and any unknowns. Explain why your answer changed.',
   },
   resolve: {
     learn:

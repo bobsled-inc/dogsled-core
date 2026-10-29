@@ -10,7 +10,7 @@ const escape = (value: unknown): string =>
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!
   );
 const renderCell = (key: string, value: unknown): string =>
-  ['article_text', 'support_excerpt'].includes(key)
+  ['article_text', 'support_excerpt', 'input_passages', 'passages'].includes(key)
     ? `<details><summary>Show passage (may contain spoilers)</summary><p>${escape(value)}</p></details>`
     : escape(value);
 const status = (value: string): string =>
@@ -48,7 +48,7 @@ const prompts = {
   federate:
     'Link selected shows to Wikidata and Wikipedia. Configure a bounded Wikipedia API source and join its articles to the local shows. Verify federate and refresh this page.',
   transform:
-    'Help me fetch full articles and prepare bounded passages for every finalist. Assess the same preference for each within the API usage approved at setup and any chosen dollar cap. Validate excerpts, build recommendations, verify transform, and refresh this page.',
+    'Help me fetch full articles and prepare bounded passages for every finalist. Assess the same preference for each within the API usage approved at setup and any chosen dollar cap. Have AI select passage IDs and code attach the exact text. Run one pilot, verify transform --show-id for that ID, and pause for inspection before the remaining shows. Retry only failed IDs within the approved allowance. Build recommendations and run the full transform check only when every finalist is ready.',
   resolve:
     'Use my watchlist and TVmaze search candidates for a real entity-resolution pipeline. Review ambiguous pairs, preserve unresolved records, and exclude accepted watched shows from recommendations.',
 };

@@ -1,3 +1,4 @@
+import { checkAssessment } from './assessment.js';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, readFileSync } from 'node:fs';
@@ -41,7 +42,7 @@ const queries: Record<StepId, { name: string; sql: string }[]> = {
   transform: [
     {
       name: 'Supported show notes',
-      sql: 'SELECT n.*, i.article_text, w.id IS NOT NULL AS in_shortlist, (SELECT count(*) FROM analytics.watch_next) AS finalist_count, count(*) OVER () AS _total_rows FROM analytics.show_notes n LEFT JOIN analytics.article_inputs i ON n.show_id = i.show_id AND n.revision_id = i.revision_id LEFT JOIN analytics.watch_next w ON n.show_id = w.id LIMIT 6',
+      sql: "SELECT n.*, json_extract_string(to_json(n), '$.passage_ids') AS _passage_ids_json, i.article_text, json_extract_string(to_json(i), '$.passages') AS input_passages, w.id IS NOT NULL AS in_shortlist, (SELECT count(*) FROM analytics.watch_next) AS finalist_count, count(*) OVER () AS _total_rows FROM analytics.show_notes n LEFT JOIN analytics.article_inputs i ON n.show_id = i.show_id AND n.revision_id = i.revision_id LEFT JOIN analytics.watch_next w ON n.show_id = w.id LIMIT 6",
     },
     {
       name: 'Recommendations',
@@ -100,24 +101,45 @@ const Result = z.object({
 export async function verifyOnboarding(
   root: string,
   step: StepId,
-  read: CliReader = readWithCli
+  read: CliReader = readWithCli,
+  options: { showId?: number } = {}
 ): Promise<Evidence> {
+  const pilot = options.showId !== undefined;
+  if (
+    pilot &&
+    (step !== 'transform' || !Number.isSafeInteger(options.showId) || options.showId! < 1)
+  ) {
+    throw new CommandError('Use --show-id with transform and a positive integer TVmaze ID.', 2);
+  }
   const before = await inputHash(root, step);
-  await saveAttempt(root, step, 'running', before);
+  if (!pilot) await saveAttempt(root, step, 'running', before);
   try {
     const tables: z.infer<typeof PreviewTable>[] = [];
-    const receipts: string[] = [];
+    const receipts: string[] = pilot
+      ? [
+          'Pilot check only: inspect this show before running the remaining finalists. Chapter progress is unchanged.',
+        ]
+      : [];
     for (const query of queries[step]) {
-      const result = Result.parse(
-        await read(root, query.sql, step === 'federate' || step === 'connect')
-      );
+      const sql = pilot
+        ? query.sql.replace(
+            / LIMIT (\d+)$/,
+            ` WHERE ${query.name === 'Recommendations' ? 'id' : 'n.show_id'} = ${options.showId} LIMIT $1`
+          )
+        : query.sql;
+      const result = Result.parse(await read(root, sql, step === 'federate' || step === 'connect'));
       const totalRows = Number(result.rows[0]?.['_total_rows'] ?? result.rows.length);
       const rows = result.rows.map((row) =>
         Object.fromEntries(
           Object.entries(row)
-            .filter(([key]) => key !== '_total_rows')
+            .filter(
+              ([key, value]) =>
+                key !== '_total_rows' &&
+                (key !== '_passage_ids_json' || value !== null) &&
+                (key !== 'passage_ids' || row['_passage_ids_json'] == null)
+            )
             .map(([key, value]) => [
-              key,
+              key === '_passage_ids_json' ? 'passage_ids' : key,
               typeof value === 'bigint'
                 ? String(value)
                 : value !== null && typeof value === 'object'
@@ -136,7 +158,7 @@ export async function verifyOnboarding(
           totalRows,
         })
       );
-      receipts.push(query.sql, ...(result.receipts ?? []));
+      receipts.push(sql, ...(result.receipts ?? []));
     }
     if (
       (step === 'load' ||
@@ -160,7 +182,7 @@ export async function verifyOnboarding(
     }
     if (step === 'federate' || step === 'transform') {
       const rows = tables[0]?.rows ?? [];
-      const expected = Number(rows[0]?.['finalist_count'] ?? rows.length);
+      const expected = pilot ? 1 : Number(rows[0]?.['finalist_count'] ?? rows.length);
       const ids = new Set(rows.map((r) => r[step === 'federate' ? 'id' : 'show_id']));
       if (expected > 5 || ids.size !== expected || rows.length !== expected) {
         throw new CommandError(
@@ -204,31 +226,10 @@ export async function verifyOnboarding(
           throw new CommandError('Keep one note and revision per shortlisted show.', 2);
         }
         seen.add(row['show_id']);
-        const category = row['theme'];
-        const excerpt = row['support_excerpt'];
-        const text = row['article_text'];
-        if (
-          !['identity', 'mystery', 'workplace', 'family', 'other', 'unknown'].includes(
-            String(category)
-          ) ||
-          typeof excerpt !== 'string' ||
-          typeof text !== 'string' ||
-          !text.includes(excerpt) ||
-          ((category !== 'unknown' ||
-            row['ending'] !== 'unknown' ||
-            (row['fit'] !== undefined && row['fit'] !== 'unknown')) &&
-            !excerpt.trim()) ||
-          (row['fit'] !== undefined &&
-            !['supported', 'contradicted', 'mixed', 'unknown'].includes(String(row['fit']))) ||
-          !row['_dogsled_run_id'] ||
-          !row['revision_id'] ||
-          !['concluded', 'unresolved', 'unknown'].includes(String(row['ending']))
-        ) {
-          throw new CommandError(
-            'Transformation evidence must use an allowed theme and ending, a source revision, a run ID, and a verbatim article excerpt.',
-            2
-          );
+        if (pilot && String(row['show_id']) !== String(options.showId)) {
+          throw new CommandError('Pilot evidence must belong to the requested show.', 2);
         }
+        checkAssessment(row);
       }
     }
     if (
@@ -257,11 +258,11 @@ export async function verifyOnboarding(
       tables,
       receipts,
     });
-    await saveCheckpoint(root, step, evidence);
-    await saveAttempt(root, step, 'complete', before);
+    if (!pilot) await saveCheckpoint(root, step, evidence);
+    if (!pilot) await saveAttempt(root, step, 'complete', before);
     return evidence;
   } catch (error) {
-    await saveAttempt(root, step, 'failed', before);
+    if (!pilot) await saveAttempt(root, step, 'failed', before);
     throw error;
   }
 }

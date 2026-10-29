@@ -40,7 +40,14 @@ it('validates inactive API, source and model references against real schemas', (
   for (const name of ['shows', 'episodes', 'cast', 'tvmaze_probe', 'wikipedia_articles']) {
     SourceSpecSchema.parse(read(`reference/sources/${name}.yml.txt`));
   }
-  for (const name of ['shows', 'episodes', 'watch_next', 'show_notes', 'recommendations']) {
+  for (const name of [
+    'shows',
+    'episodes',
+    'watch_next',
+    'assessment_inputs',
+    'show_notes',
+    'recommendations',
+  ]) {
     ModelSpecSchema.parse(read(`reference/models/${name}.yml.txt`));
   }
 });

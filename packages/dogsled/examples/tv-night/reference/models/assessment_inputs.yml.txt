@@ -1,0 +1,16 @@
+spec_version: '0.2'
+type: model
+name: assessment_inputs
+description: Select one approved show per run so a later failure cannot block saving earlier results. Preserve the full article_inputs table.
+source: {ref: article_inputs}
+grain: [show_id]
+columns:
+  - {name: show_id, expr: show_id, type: integer, not_null: true}
+  - {name: revision_id, expr: revision_id, type: integer, not_null: true}
+  - {name: article_text, expr: article_text, type: string, not_null: true}
+  - {name: passages, expr: passages, type: string, not_null: true}
+  - {name: article_scope, expr: article_scope, type: string, not_null: true}
+# Replace 0 with the real pilot ID, then each remaining approved ID in turn.
+where: show_id IN (0)
+target_schema: analytics
+materialization: {type: view}

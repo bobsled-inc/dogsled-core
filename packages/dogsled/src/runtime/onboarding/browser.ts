@@ -9,7 +9,7 @@ let page = 0;
 function cell(tag, value) { const el = document.createElement(tag); el.textContent = value == null ? 'Unknown' : String(value); return el; }
 function valueCell(tag, key, value) {
  const el = cell(tag, value);
- if (key === 'article_text' || key === 'support_excerpt') {
+ if (['article_text', 'support_excerpt', 'input_passages', 'passages'].includes(key)) {
   const details = document.createElement('details');
   details.append(cell('summary', 'Show passage (may contain spoilers)'), cell('p', value));
   el.replaceChildren(details);
