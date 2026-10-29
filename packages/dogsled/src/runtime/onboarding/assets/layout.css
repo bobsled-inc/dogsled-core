@@ -654,7 +654,6 @@ th[aria-sort='descending'] button:after {
   content: ' ↓';
 }
 td.numeric {
-  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 tbody tr:last-child td {
