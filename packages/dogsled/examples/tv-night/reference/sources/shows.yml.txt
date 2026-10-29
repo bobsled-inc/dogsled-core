@@ -1,0 +1,52 @@
+spec_version: "0.2"
+type: source
+name: shows
+description: One row per fetched TVmaze series. Covers only the catalog pages selected for this project.
+ai_context:
+  synonyms: [series, TV programme]
+  rules:
+    - Ended is production status, not proof of narrative closure.
+source_type: warehouse_table
+connection: warehouse
+table: raw.shows
+schema:
+  columns:
+    - name: id
+      type: INTEGER
+      description: Stable TVmaze series identifier. Join episodes.show_id to this field, not to the title.
+    - name: name
+      type: VARCHAR
+      description: TVmaze display title. Different series may have the same title.
+    - name: status
+      type: VARCHAR
+      description: TVmaze production status. Ended may mean cancelled; it does not prove story completion.
+    - name: language
+      type: VARCHAR
+      description: Series language reported by TVmaze. Missing means unknown.
+    - name: premiered
+      type: VARCHAR
+      description: First premiere date reported by TVmaze, stored as date text. Missing means unknown.
+    - name: ended
+      type: VARCHAR
+      description: End date reported by TVmaze, stored as date text. Missing does not prove a show is ongoing.
+    - name: average_runtime
+      type: INTEGER
+      description: Average episode runtime in minutes, not a maximum. Missing means unknown.
+    - name: imdb_id
+      type: VARCHAR
+      description: IMDb identifier when supplied by TVmaze, retained for linking across sources.
+    - name: source_url
+      type: VARCHAR
+      description: TVmaze page URL for attribution and inspecting the source record.
+    - name: primary_genre
+      type: VARCHAR
+      description: First genre in the source list. It does not represent every genre of the show.
+    - name: genres
+      type: VARCHAR
+      description: Complete TVmaze genre list stored as JSON text. Test membership; tags do not prove themes.
+    - name: genres_text
+      type: VARCHAR
+      description: Text form of all source genres for simple searches. Use genres for exact membership.
+    - name: country
+      type: VARCHAR
+      description: Network country reported by TVmaze when available, not necessarily production country.

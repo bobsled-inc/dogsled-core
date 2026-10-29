@@ -1,0 +1,25 @@
+spec_version: '0.2'
+type: model
+name: recommendations
+description: Evidence comparison for every finalist. Unknown evidence is not a negative review.
+grain: [id]
+source: {ref: watch_next}
+joins:
+  - ref: show_notes
+    type: left
+    on: watch_next.id = show_notes.show_id
+  - ref: article_inputs
+    type: left
+    on: watch_next.id = article_inputs.show_id AND show_notes.revision_id = article_inputs.revision_id
+columns:
+  - {name: id, expr: watch_next.id, primary_key: true, description: Finalist TVmaze ID}
+  - {name: name, expr: watch_next.name, description: Finalist display title}
+  - {name: fit, expr: show_notes.fit, description: Evidence for the chosen preference, not a quality score}
+  - {name: reason, expr: show_notes.explanation, description: Evidence-backed trade-offs and gaps}
+  - {name: passage_ids, expr: show_notes.passage_ids, description: IDs of passages selected as evidence}
+  - {name: support_excerpt, expr: show_notes.support_excerpt, description: Exact passage; may contain spoilers}
+  - {name: revision_id, expr: show_notes.revision_id, description: Wikipedia revision used for this assessment}
+  - {name: source_url, expr: article_inputs.source_url, description: Wikipedia evidence page or revision URL}
+  - {name: tvmaze_url, expr: watch_next.source_url, description: TVmaze catalog URL}
+target_schema: analytics
+materialization: {type: view}

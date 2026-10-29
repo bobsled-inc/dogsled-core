@@ -1,0 +1,36 @@
+spec_version: '0.2'
+type: resolution
+name: watchlist_resolution
+description: Match a real user watchlist to live catalog candidates. Fuzzy scores require review.
+inputs:
+  - ref: warehouse.watchlist
+    id_fields: [watch_id]
+  - ref: warehouse.watchlist_candidates
+    id_fields: [candidate_id]
+standardize:
+  - field: title
+    transforms: [lowercase, trim]
+blocking:
+  rules:
+    - name: same_imdb_id
+      key: imdb_id
+    - name: same_title
+      key: standardized_title
+scoring:
+  method: weighted_features
+  features:
+    - { field: standardized_title, algorithm: exact, weight: 0.5 }
+    - { field: year, algorithm: exact, weight: 0.25 }
+    - { field: country, algorithm: exact, weight: 0.25 }
+deterministic_rules:
+  - name: shared_imdb_id
+    conditions:
+      - { field: imdb_id, operator: exact, both_not_null: true }
+    action: auto_merge
+    confidence: 1.0
+thresholds:
+  auto_merge: null
+  review: 0.5
+  auto_reject: 0.3
+outputs:
+  target_schema: resolution

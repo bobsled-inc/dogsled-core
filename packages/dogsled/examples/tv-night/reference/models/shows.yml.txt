@@ -1,0 +1,58 @@
+spec_version: "0.2"
+type: model
+name: shows
+description: One row per TV series; ended status does not prove story completion.
+grain:
+  - id
+source:
+  ref: warehouse.shows
+columns:
+  - name: id
+    expr: id
+    primary_key: true
+    description: Stable TVmaze show identifier; never join by title alone.
+  - name: name
+    expr: name
+    description: TVmaze display title. Different series can share this name.
+  - name: status
+    expr: status
+    description: TVmaze production status. Ended may mean cancelled.
+  - name: language
+    expr: language
+    description: Source language; preserve missing values.
+  - name: premiered
+    expr: premiered
+    description: First premiere date reported by TVmaze.
+  - name: ended
+    expr: ended
+    description: Source ended; preserve missing values.
+  - name: average_runtime
+    expr: average_runtime
+    description: Typical episode length in minutes. Not a maximum; missing remains unknown.
+  - name: imdb_id
+    expr: imdb_id
+    description: Shared external identifier when available. Preserve it for linking.
+  - name: source_url
+    expr: source_url
+    description: Source source url; preserve missing values.
+  - name: primary_genre
+    expr: primary_genre
+    description: Source primary genre; preserve missing values.
+  - name: genres
+    expr: genres
+    description: Complete source genre list; use membership rather than only the
+      first genre.
+  - name: country
+    expr: country
+    description: Network country when supplied; missing is unknown.
+materialization:
+  type: table
+ai_context:
+  synonyms:
+    - series
+    - TV programme
+  rules:
+    - Ended is production status, not proof of narrative closure.
+    - Genre tags are candidate filters, not evidence of story complexity.
+
+target_schema: analytics

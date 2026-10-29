@@ -1,0 +1,44 @@
+spec_version: '1'
+type: resource
+name: cast
+integration: tvmaze
+description: Selected TV series cast
+input:
+  show_id:
+    type: integer
+    minimum: 1
+    required: true
+api:
+  endpoint: /shows/${{ input.show_id }}/cast
+  method: GET
+output:
+  show_id:
+    type: integer
+    from:
+      resource: shows
+      path: $.id
+  person_id:
+    type: integer
+    path: $.person.id
+  person_name:
+    type: string
+    path: $.person.name
+  character_id:
+    type: integer
+    path: $.character.id
+  character_name:
+    type: string
+    path: $.character.name
+extract:
+  record_path: $
+  incremental:
+    strategy: full_refresh
+  table:
+    primary_key:
+    - show_id
+    - person_id
+    - character_id
+  for_each:
+    resource: shows
+    field: id
+    input: show_id

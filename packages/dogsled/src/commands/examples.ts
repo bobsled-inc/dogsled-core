@@ -4,12 +4,11 @@ import { fileURLToPath } from 'node:url';
 
 import type { Command } from 'commander';
 
-function getExamplesDir(): string {
+export function getExamplesDir(): string {
   const thisFile = fileURLToPath(import.meta.url);
-  // tsup bundles to dist/index.js, so go up one level to package root.
-  // Works both in dev (packages/dogsled/dist/index.js → packages/dogsled/examples/)
-  // and in the zip (dogsled/dist/index.js → dogsled/examples/)
-  const packageRoot = resolve(dirname(thisFile), '..');
+  // Bundled CLI: dist/index.js. Source tests/dev: src/commands/examples.ts.
+  const roots = [resolve(dirname(thisFile), '..'), resolve(dirname(thisFile), '../..')];
+  const packageRoot = roots.find((root) => existsSync(join(root, 'examples'))) ?? roots[0]!;
   return join(packageRoot, 'examples');
 }
 
@@ -22,7 +21,7 @@ function listAvailableExamples(): string[] {
     .sort();
 }
 
-function copyExample(name: string, targetDir: string): void {
+export function copyExample(name: string, targetDir: string): void {
   const examplesDir = getExamplesDir();
   const sourceDir = join(examplesDir, name);
 
@@ -33,7 +32,11 @@ function copyExample(name: string, targetDir: string): void {
   }
 
   mkdirSync(targetDir, { recursive: true });
-  cpSync(sourceDir, targetDir, { recursive: true });
+  cpSync(sourceDir, targetDir, {
+    recursive: true,
+    // Keep teaching templates in the package, not in the learner's working project.
+    filter: (source) => name !== 'tv-night' || source !== join(sourceDir, 'reference'),
+  });
   makeScriptsExecutable(targetDir);
 }
 
