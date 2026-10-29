@@ -1,4 +1,5 @@
 import type { ProjectFile } from './workspace.js';
+import { icon } from './controls.js';
 import { escapeHtml as e } from './html.js';
 interface Folder {
   folders: Map<string, Folder>;
@@ -19,13 +20,13 @@ export function renderFileTree(files: ProjectFile[]): string {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(
         ([name, child]) =>
-          `<li><details open><summary><span aria-hidden="true">▱</span> ${e(name)}</summary>${render(child)}</details></li>`
+          `<li><details open><summary>${icon('Folder')} ${e(name)}</summary>${render(child)}</details></li>`
       )
       .join('')}${folder.files
       .sort((a, b) => a.path.localeCompare(b.path))
       .map(
         (file) =>
-          `<li><button type="button" data-tree-file="true" data-file="${e(file.path)}" title="${e(file.path)}"><span aria-hidden="true">▤</span> ${e(file.path.split('/').at(-1))}</button></li>`
+          `<li><button type="button" data-tree-file="true" data-file="${e(file.path)}" title="${e(file.path)}">${icon('CodeSnippet')} ${e(file.path.split('/').at(-1))}</button></li>`
       )
       .join('')}</ul>`;
   }

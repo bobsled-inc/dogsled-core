@@ -55,12 +55,25 @@ export async function recordHistory(root: string, record: Checkpoint): Promise<v
   journal.history = journal.history.slice(-30);
   await writeLocal(root, '.dogsled/onboarding/journal.json', JSON.stringify(journal));
 }
-export async function reviewChapter(root: string, step: StepId): Promise<z.infer<typeof Journal>> {
+export async function reviewChapter(
+  root: string,
+  step: StepId,
+  expectedCheckpoint?: string
+): Promise<z.infer<typeof Journal>> {
   const current = (await inspectOnboarding(root)).steps.find((s) => s.id === step);
   if (current?.status !== 'complete' || !current.evidence) {
     throw new CommandError(
       'Run a successful check for this chapter before marking it inspected.',
       2
+    );
+  }
+  if (expectedCheckpoint !== undefined && !/^[a-f0-9]{64}$/.test(expectedCheckpoint)) {
+    throw new CommandError('Choose a valid saved checkpoint fingerprint.', 2);
+  }
+  if (expectedCheckpoint !== undefined && expectedCheckpoint !== checkpointId(current.evidence)) {
+    throw new CommandError(
+      'The saved results have changed. Render the page and review the current evidence before marking it reviewed.',
+      3
     );
   }
   const journal = await readJournal(root);

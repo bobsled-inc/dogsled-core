@@ -104,7 +104,8 @@ it('offers chapter orientation, safe files and dependency links', () => {
     progress: { current: 'load', reviewed: [], history: [] },
   });
   expect(html).toContain('Where you are');
-  expect(html).toContain('Waiting for your inspection');
+  expect(html).toContain('Not started');
+  expect(html).toContain('Share this with your agent');
   expect(html).toContain('Working files');
   expect(html).not.toContain('Examples and solutions');
   expect(html).not.toContain('reference/');
@@ -200,4 +201,13 @@ it('teaches a pilot before the batch and keeps passage text collapsed', () => {
   expect(html).toContain('valid assessment, not an execution failure');
   expect(html).not.toContain('<td>Spoiler passage</td>');
   expect(html).toContain('Show passage (may contain spoilers)');
+});
+
+it('ships the offline theme and licenses with a restrictive resource policy', () => {
+  const html = renderOnboardingHtml(snapshot);
+  expect(html).toContain("connect-src 'none'");
+  expect(html).toContain('font-src data:');
+  expect(html).toContain('SIL OPEN FONT LICENSE');
+  expect(html).toContain('data:font/woff2;base64,');
+  expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)="https?:/);
 });

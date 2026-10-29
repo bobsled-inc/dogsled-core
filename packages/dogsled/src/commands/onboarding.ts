@@ -32,6 +32,9 @@ export function registerOnboardingCommand(program: Command): void {
                 : 'Show saved chapter progress and check results'
       )
       .option('--yaml', 'Emit YAML output');
+    if (action.startsWith('review')) {
+      subcommand.option('--checkpoint <sha256>', 'Only review the evidence shown in a saved page');
+    }
     if (action.startsWith('verify')) {
       subcommand.option(
         '--show-id <id>',
@@ -41,7 +44,7 @@ export function registerOnboardingCommand(program: Command): void {
     subcommand.action(async (...args: unknown[]) => {
       const command = args[args.length - 1] as Command;
       const options = command.optsWithGlobals<
-        GlobalOptions & { yaml?: boolean; showId?: string }
+        GlobalOptions & { yaml?: boolean; showId?: string; checkpoint?: string }
       >();
       const output = fmt.toOutputOptions(options);
       try {
@@ -53,7 +56,7 @@ export function registerOnboardingCommand(program: Command): void {
             templatesPath: join(getExamplesDir(), 'tv-night', 'reference'),
           };
         } else if (action.startsWith('review')) {
-          result = await reviewChapter(root, StepId.parse(args[0]));
+          result = await reviewChapter(root, StepId.parse(args[0]), options.checkpoint);
         } else if (action.startsWith('verify')) {
           const step = StepId.safeParse(args[0]);
           if (!step.success) {

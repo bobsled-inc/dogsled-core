@@ -4316,6 +4316,7 @@ Usage: dogsled onboarding review [options] <step>
 Record that the learner inspected current chapter evidence
 
 Options:
-  --yaml      Emit YAML output
-  -h, --help  display help for command
+  --yaml                 Emit YAML output
+  --checkpoint <sha256>  Only review the evidence shown in a saved page
+  -h, --help             display help for command
 ```

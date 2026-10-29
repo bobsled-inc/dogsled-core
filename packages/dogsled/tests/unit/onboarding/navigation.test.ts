@@ -43,6 +43,14 @@ it('renders one directed graph with escaped clickable nodes and real edges', () 
   expect(html).toContain('&lt;source&gt;');
   expect(html).toContain('data-file="models/b.yml"');
   expect(html).not.toContain('<article');
+  expect(html).not.toMatch(/ C\d/);
+  expect(html).toContain('M1 1 L7 5 L1 9');
+  expect(renderGraph({ ...graph, edges: [{ from: 'missing', to: 'models/b.yml' }] })).toContain(
+    'unknown dependency'
+  );
+  expect(renderGraph({ ...graph, nodes: [...graph.nodes, graph.nodes[0]!] })).toContain(
+    'unknown dependency'
+  );
   expect(
     renderGraph({
       ...graph,
