@@ -27,6 +27,7 @@ import { compareCursors, resolveCursorKind, maxCursor } from './cursor.js';
 import { createWarehouseClient } from './warehouse-client.js';
 import type { WarehouseClient } from './warehouse-client.js';
 import { BigQueryWarehouseClient } from './bigquery-client.js';
+import { resolveBqCastExpr } from './bigquery-cursor-cast.js';
 import { buildExtractionQuery } from './warehouse-query-builder.js';
 import type { Dialect, QueryBuilderConfig } from './warehouse-query-builder.js';
 import { normalizeJsonObject, normalizeJsonValue } from './json-normalization.js';
@@ -709,12 +710,7 @@ interface BuildQueryConfigOptions {
   fullRefresh: boolean;
   /** Pre-resolved TVF for lakehouse formats (iceberg/delta). */
   tvf?: string;
-  /**
-   * Pre-computed BigQuery cursor cast expression from table metadata (e.g.
-   * `'CAST(? AS INT64)'`). Set by the extractor when no `cursor_type` is
-   * declared and the column type was resolved at runtime. Takes precedence
-   * over `bigqueryCursorCast(cursorKind)` in the query builder.
-   */
+  /** BigQuery cast expression from metadata lookup (e.g. `'CAST(? AS INT64)'`). */
   bigQueryCastExpr?: string;
 }
 
@@ -731,15 +727,6 @@ function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
 
   const method = fullRefresh ? ('full_refresh' as const) : replication.method;
   const cursorValue = fullRefresh ? undefined : bookmark?.cursor_value;
-  // For SQL type binding, only use a cursor type that was explicitly declared
-  // in the resource spec. Value-based inference (inferCursorKind) is unsafe:
-  // a BigQuery STRING column whose stored value happens to look like a number
-  // (e.g. "00999") would produce CAST(? AS INT64) and fail with a type-mismatch
-  // at runtime. The bookmark's cursor_type is also omitted because it may itself
-  // have been value-inferred in a previous run.
-  // Dynamically-discovered schema column types are not available at query-build
-  // time for warehouse resources; declare cursor_type explicitly when the column
-  // is numeric and BigQuery coercion of a STRING param would not apply.
   const cursorKind = fullRefresh ? undefined : replication.cursor_type;
 
   return {
@@ -1076,43 +1063,18 @@ export async function extractWarehouseResource(
       }
     }
 
-    // 4. Resolve BigQuery cursor column type from table metadata when no
-    //    cursor_type is declared. This handles the common case where a user has
-    //    an INT64 `id` cursor without declaring cursor_type: integer — binding
-    //    a STRING parameter against INT64 fails at runtime in BigQuery because
-    //    BigQuery does not coerce STRING to numeric types automatically.
-    //    The lookup is a metadata read: no query, no cost. On failure the
-    //    extractor falls back to a plain ? and logs a warning.
-    let bigQueryCastExpr: string | undefined;
-    if (
-      dialect === 'bigquery' &&
-      !fullRefresh &&
-      !resource.source.sql &&
-      resource.replication.cursor_field &&
+    const cf = !fullRefresh && !resource.source.sql ? resource.replication.cursor_field : undefined;
+    const needsBqCast =
+      !!cf &&
       !resource.replication.cursor_type &&
-      bookmark?.cursor_value &&
-      client instanceof BigQueryWarehouseClient
-    ) {
-      const resolvedProject = getIntegrationDefault(integration, 'project');
-      const resolvedDataset =
-        resource.source.dataset ?? getIntegrationDefault(integration, 'dataset');
-      const resolvedTable = resource.source.table;
-      if (resolvedTable && resolvedDataset) {
-        const expr = await client.resolveColumnCastExpr(
-          resolvedProject,
-          resolvedDataset,
-          resolvedTable,
-          resource.replication.cursor_field
-        );
-        if (expr === undefined) {
-          await logger.warn(
-            `BigQuery: could not determine the type of cursor column "${resource.replication.cursor_field}" ` +
-              `for table "${resolvedDataset}.${resolvedTable}". Declare cursor_type explicitly in the ` +
-              `resource spec to ensure correct type binding (e.g. cursor_type: integer for INT64 columns).`
-          );
-        }
-        bigQueryCastExpr = expr ?? '?';
-      }
+      !!bookmark?.cursor_value &&
+      dialect === 'bigquery';
+    let bigQueryCastExpr: string | undefined;
+    if (needsBqCast && client instanceof BigQueryWarehouseClient) {
+      const p = getIntegrationDefault(integration, 'project');
+      const d = resource.source.dataset ?? getIntegrationDefault(integration, 'dataset');
+      const t = resource.source.table;
+      if (d && t && cf) bigQueryCastExpr = await resolveBqCastExpr(client, p, d, t, cf, logger);
     }
 
     // 5. Build extraction query
