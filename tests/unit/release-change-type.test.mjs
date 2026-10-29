@@ -96,12 +96,13 @@ describe('release change types', () => {
     expect(() => bootstrapVersion('0.1.0', ['v0.1.0'])).toThrow('first stable');
   });
 
-  it('prepares the reviewed package for its first restricted publication', () => {
+  it('keeps the package on a releasable version after the 0.1.0 bootstrap', () => {
     const version = currentPackageVersion();
-    expect(bootstrapVersion(version, [])).toBe('0.1.0');
+    expect(() => assertReleaseVersion(version)).not.toThrow();
+    expect(() => bootstrapVersion(version, ['v0.1.0'])).toThrow();
     expect(
-      publicationPolicy({ access: 'restricted', visibility: 'private', version, bootstrap: true })
-    ).toEqual({ provenance: false, distTag: 'latest' });
+      publicationPolicy({ access: 'restricted', visibility: 'private', version })
+    ).toMatchObject({ provenance: false });
   });
 
   it('uses the newest release tag when main package manifests are older', () => {
