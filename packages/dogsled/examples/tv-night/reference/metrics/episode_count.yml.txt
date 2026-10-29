@@ -1,0 +1,11 @@
+spec_version: "0.2"
+type: metric
+name: episode_count
+description: Number of fetched episodes, not a promise that all seasons are present.
+expression: COUNT({episodes}.id)
+model: episodes
+synonyms:
+  - regular episode count
+  - number of fetched episodes
+ai_context: Counts the fetched regular episode records, not a guarantee of
+  catalog completeness.

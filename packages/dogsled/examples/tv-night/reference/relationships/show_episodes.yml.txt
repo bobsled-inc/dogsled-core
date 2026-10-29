@@ -1,0 +1,10 @@
+spec_version: '0.2'
+type: relationship
+name: show_episodes
+left_model: shows
+right_model: episodes
+relationship_type: one_to_many
+join_type: left
+join_columns:
+- left: id
+  right: show_id

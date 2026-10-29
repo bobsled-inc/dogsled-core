@@ -1,0 +1,32 @@
+spec_version: '0.2'
+type: source
+name: tvmaze_probe
+source_type: api_resource
+integration: tvmaze
+resource: probe
+connection: warehouse
+mode: lazy
+max_age: 1h
+schema:
+  columns:
+  - name: id
+    type: INTEGER
+  - name: name
+    type: VARCHAR
+  - name: status
+    type: VARCHAR
+  - name: language
+    type: VARCHAR
+  - name: premiered
+    type: VARCHAR
+  - name: ended
+    type: VARCHAR
+  - name: average_runtime
+    type: INTEGER
+  - name: imdb_id
+    type: VARCHAR
+  - name: source_url
+    type: VARCHAR
+filter:
+  id:
+    eq: 2790

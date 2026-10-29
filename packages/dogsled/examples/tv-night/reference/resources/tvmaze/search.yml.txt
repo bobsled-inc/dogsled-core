@@ -1,0 +1,26 @@
+spec_version: '1'
+type: resource
+name: search
+integration: tvmaze
+description: Candidate shows for one watchlist title. Search rank is not a match decision.
+input:
+  title: {type: string}
+api:
+  endpoint: /search/shows
+  method: GET
+  query_params:
+    q: ${{ input.title }}
+output:
+  id: {type: integer, path: $.show.id}
+  title: {type: string, path: $.show.name}
+  premiered: {type: string, path: $.show.premiered}
+  country: {type: string, path: $.show.network.country.code}
+  imdb_id: {type: string, path: $.show.externals.imdb}
+  source_url: {type: string, path: $.show.url}
+  input_title:
+    type: string
+    from: {input: title}
+extract:
+  record_path: $
+  table:
+    primary_key: [id]

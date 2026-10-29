@@ -1,0 +1,37 @@
+spec_version: "0.2"
+type: model
+name: episodes
+description: One row per episode. Missing or invalid runtimes stay unknown.
+grain:
+  - id
+source:
+  ref: warehouse.episodes
+columns:
+  - name: id
+    expr: id
+    primary_key: true
+    description: Stable TVmaze episode identifier.
+  - name: show_id
+    expr: show_id
+    description: TVmaze series identifier joining to shows.id.
+  - name: name
+    expr: name
+    description: Source episode name; coverage is limited to fetched records.
+  - name: season
+    expr: season
+    description: Source episode season; coverage is limited to fetched records.
+  - name: number
+    expr: number
+    description: Source episode number; coverage is limited to fetched records.
+  - name: runtime
+    expr: CASE WHEN runtime > 0 THEN runtime ELSE NULL END
+    description: Episode minutes; missing or non-positive source values stay unknown.
+  - name: airdate
+    expr: airdate
+    description: Source episode airdate; coverage is limited to fetched records.
+materialization:
+  type: table
+ai_context:
+  scope: Fetched regular episodes only; specials require an explicit upstream change.
+
+target_schema: analytics

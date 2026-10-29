@@ -1,0 +1,52 @@
+spec_version: "1"
+type: resource
+name: full_article
+integration: wikipedia
+description: One complete plain-text article per request. Use at most five
+  accepted finalist titles and select bounded passages before AI.
+input:
+  titles:
+    type: string
+    default: The Good Place
+api:
+  endpoint: /w/api.php
+  method: GET
+  query_params:
+    action: query
+    format: json
+    formatversion: "2"
+    prop: extracts|revisions
+    explaintext: "1"
+    exlimit: "1"
+    rvprop: ids
+    titles: ${{ input.titles }}
+output:
+  page_id:
+    type: integer
+    path: $.pageid
+  title:
+    type: string
+    path: $.title
+  revision_id:
+    type: integer
+    path: $.revisions[0].revid
+  article_text:
+    type: string
+    path: $.extract
+  requested_titles:
+    type: string
+    from:
+      input: titles
+extract:
+  record_path: $.query.pages
+  table:
+    primary_key:
+      - page_id
+query:
+  filters:
+    requested_titles:
+      operators:
+        - eq
+      bind:
+        eq:
+          input: titles

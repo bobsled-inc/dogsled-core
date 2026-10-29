@@ -1,0 +1,35 @@
+spec_version: "0.2"
+type: model
+name: watch_next
+description: Example candidate rules only. Author preferences with the learner,
+  then retain at most five finalists for equal evidence gathering. This example
+  is not a quality ranking.
+grain:
+  - id
+source:
+  ref: shows
+columns:
+  - name: id
+    expr: id
+  - name: name
+    expr: name
+  - name: status
+    expr: status
+  - name: average_runtime
+    expr: average_runtime
+  - name: source_url
+    expr: source_url
+where: status = 'Ended' AND average_runtime > 0 AND average_runtime <= 35
+materialization:
+  type: table
+ai_context:
+  scope: Select and explain 3–5 finalists before enrichment. Do not apply
+    ended/runtime filters without the user choosing them.
+
+# This ordering is reproducible, not a recommendation quality score.
+order_by:
+  - column: id
+    direction: asc
+limit: 5
+
+target_schema: analytics

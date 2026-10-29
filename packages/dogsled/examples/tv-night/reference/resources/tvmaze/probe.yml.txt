@@ -1,0 +1,56 @@
+spec_version: '1'
+type: resource
+name: probe
+integration: tvmaze
+description: One show to check the API connection.
+input:
+  show_id:
+    type: integer
+    default: 2790
+    minimum: 1
+api:
+  endpoint: /shows/${{ input.show_id }}
+  method: GET
+output:
+  id:
+    type: integer
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  language:
+    type: string
+    path: $.language
+  premiered:
+    type: string
+    path: $.premiered
+  ended:
+    type: string
+    path: $.ended
+  average_runtime:
+    type: integer
+    path: $.averageRuntime
+  imdb_id:
+    type: string
+    path: $.externals.imdb
+  source_url:
+    type: string
+    path: $.url
+extract:
+  record_path: $
+  incremental:
+    strategy: full_refresh
+  table:
+    primary_key:
+    - id
+query:
+  filters:
+    id:
+      operators:
+      - eq
+      bind:
+        eq:
+          input: show_id

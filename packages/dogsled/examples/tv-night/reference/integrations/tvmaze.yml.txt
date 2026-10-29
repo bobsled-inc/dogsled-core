@@ -1,0 +1,21 @@
+spec_version: '1'
+type: integration
+name: tvmaze
+transport:
+  type: http
+  base_url: https://api.tvmaze.com
+  auth:
+    type: none
+  timeout_ms: 30000
+  rate_limit:
+    requests_per_second: 2
+    burst: 1
+  retry:
+    max_retries: 2
+    backoff: exponential
+    retry_on:
+    - 429
+    - 500
+    - 502
+    - 503
+    retry_after_header: true

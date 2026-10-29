@@ -1,0 +1,23 @@
+{
+  "version": "tv-night-1",
+  "sources": [
+    {
+      "name": "TVmaze",
+      "license": "CC BY-SA; credit TVmaze and follow share-alike terms for reused data.",
+      "url": "https://www.tvmaze.com/api",
+      "rows": 0
+    },
+    {
+      "name": "Wikipedia",
+      "license": "CC BY-SA 4.0 for article text; retain attribution, revisions and license.",
+      "url": "https://en.wikipedia.org",
+      "rows": 0
+    },
+    {
+      "name": "Wikidata",
+      "license": "CC0 for structured data.",
+      "url": "https://www.wikidata.org",
+      "rows": 0
+    }
+  ]
+}

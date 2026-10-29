@@ -1,0 +1,18 @@
+spec_version: '0.2'
+type: source
+name: cast
+source_type: warehouse_table
+connection: warehouse
+table: raw.cast
+schema:
+  columns:
+  - name: show_id
+    type: INTEGER
+  - name: person_id
+    type: INTEGER
+  - name: person_name
+    type: VARCHAR
+  - name: character_id
+    type: INTEGER
+  - name: character_name
+    type: VARCHAR
