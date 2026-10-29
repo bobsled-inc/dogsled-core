@@ -13,7 +13,8 @@ how data moves and changes, alongside descriptions, business metrics, relationsh
 and example queries that explain what it means. Developers and coding agents can
 read, review, validate and run that project from a repository.
 
-[Get started](#getting-started) · [Concepts](docs/concepts.md) ·
+[Get started](#getting-started) · [Guided tutorial](#learn-with-your-coding-agent) ·
+[Concepts](docs/concepts.md) ·
 [Documentation](docs/README.md) · [Examples](examples/README.md)
 
 ## When to use Dogsled Core
@@ -70,6 +71,30 @@ Installing Dogsled into each project keeps its version and warehouse drivers wit
 that project. Other destinations can require optional drivers and credentials.
 See [Load data](docs/guides/load-data.md#install-a-warehouse-driver).
 The [installation guide](docs/getting-started.md#install-dogsled) also covers global installation.
+
+### Learn with your coding agent
+
+The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
+“What should I watch next?” Connect to a public API, build an ETL pipeline and
+semantic models, query across sources, and try an agentic transformation. An
+optional chapter teaches entity resolution.
+
+After installing Dogsled, open Claude Code or Codex in your project folder and ask:
+
+> Run `npx dogsled onboarding guide` and follow the TV Night tutorial in a new
+> tutorial folder. Guide me one chapter at a time.
+
+The agent creates and opens a local HTML page with chapter progress, working files,
+model lineage and data previews. It explains each capability and pauses for your
+choices and inspection. No separate plugin or tutorial server is needed. Public
+data reads need no API key; the optional AI chapter uses your own provider account
+and asks for consent before making calls.
+
+To test the tutorial from a source checkout, [build the repository](CONTRIBUTING.md#develop-and-verify-a-small-fix)
+and have your agent use `node packages/dogsled/bin/cli.mjs onboarding guide` from
+the repository root instead of `npx`, so it reads the checkout’s version.
+See the [full walkthrough](packages/dogsled/examples/tv-night/README.md) for the
+chapter instructions.
 
 ## How a project works
 
