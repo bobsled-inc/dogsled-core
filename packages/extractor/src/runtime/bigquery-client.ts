@@ -179,7 +179,7 @@ export class BigQueryWarehouseClient implements WarehouseClient {
       maximumBytesBilled: MAXIMUM_BYTES_BILLED,
       timeoutMs: DEFAULT_TIMEOUT_MS,
       useLegacySql: false,
-      ...(params && params.length > 0 ? { params } : {}),
+      ...(params && params.length > 0 ? { params, parameterMode: 'positional' } : {}),
     };
 
     const [job] = await client.createQueryJob(queryOptions);

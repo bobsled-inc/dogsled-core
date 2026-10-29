@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+BigQuery incremental extracts that have a saved cursor value now succeed on their second and subsequent runs. The query builder previously emitted named placeholders (`@p0`) for BigQuery while the client passed parameters as a positional array; BigQuery rejected the mismatch with "Named parameters are not supported". The placeholder for BigQuery is now `?` (positional), consistent with how the SDK resolves an array `params` argument, and `parameterMode: 'positional'` is set explicitly on the job options.
+
 ## 0.1.0
 
 All integration kinds, pipeline destinations, and webhook actions now require `auth_env_vars` for environment references, including legacy `*_env` fields. Bundled `<name>/source.yml` files also accept their `meta.yml` `auth_setup` declarations. AI model connections require declarations for custom API-key names. Undeclared names fail before lookup with a configuration hint.

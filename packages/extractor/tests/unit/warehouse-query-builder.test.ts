@@ -196,9 +196,9 @@ describe('buildWhereClause', () => {
     );
   });
 
-  it('builds bigquery parameterized WHERE with @pN placeholders', () => {
+  it('builds bigquery parameterized WHERE with positional ? placeholder', () => {
     expect(buildWhereClause('bigquery', 'updated_at', 1)).toBe(
-      'WHERE `updated_at` > @p1 ORDER BY `updated_at`'
+      'WHERE `updated_at` > ? ORDER BY `updated_at`'
     );
   });
 
@@ -398,7 +398,7 @@ describe('buildExtractionQuery — incremental_append', () => {
       cursorValue: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM `proj.ds.orders` WHERE `updated_at` > @p1 ORDER BY `updated_at`'
+      'SELECT * FROM `proj.ds.orders` WHERE `updated_at` > ? ORDER BY `updated_at`'
     );
     expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
   });
@@ -623,7 +623,7 @@ describe('buildExtractionQuery — change_tracking (BigQuery)', () => {
       lastSyncTimestamp: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM APPENDS(TABLE `proj.ds.events`, @p1, CURRENT_TIMESTAMP())'
+      'SELECT * FROM APPENDS(TABLE `proj.ds.events`, ?, CURRENT_TIMESTAMP())'
     );
     expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
   });
@@ -639,7 +639,7 @@ describe('buildExtractionQuery — change_tracking (BigQuery)', () => {
       lastSyncTimestamp: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM CHANGES(TABLE `proj.ds.events`, @p1, CURRENT_TIMESTAMP())'
+      'SELECT * FROM CHANGES(TABLE `proj.ds.events`, ?, CURRENT_TIMESTAMP())'
     );
   });
 
@@ -862,5 +862,45 @@ describe('BigQuery backtick rejection', () => {
   it('rejects embedded backticks for BigQuery and keeps doubling for MySQL', () => {
     expect(() => quoteIdentifier('bigquery', 'a`b')).toThrow('backticks are not allowed');
     expect(quoteIdentifier('mysql', 'a`b')).toBe('`a``b`');
+  });
+});
+
+// ── BigQuery positional parameter regression ──
+
+describe('BigQuery incremental query — positional parameters', () => {
+  it('uses ? placeholder (not @pN) so the SDK positional array mode matches the SQL', () => {
+    // The bug: buildParamPlaceholder emitted @p1 (named) while bigquery-client
+    // passed params as an array (positional). BigQuery rejected the mismatch with
+    // "Named parameters are not supported". Verify the placeholder is now ? so
+    // the SQL and the array params stay consistent.
+    const result = buildExtractionQuery({
+      dialect: 'bigquery',
+      table: 'events',
+      project: 'my-project',
+      dataset: 'analytics',
+      method: 'incremental_append',
+      cursorField: 'id',
+      cursorValue: '999',
+    });
+    expect(result.sql).not.toMatch(/@p\d+/);
+    expect(result.sql).toBe(
+      'SELECT * FROM `my-project.analytics.events` WHERE `id` > ? ORDER BY `id`'
+    );
+    expect(result.params).toEqual(['999']);
+  });
+
+  it('uses ? placeholder for BigQuery change_tracking (APPENDS)', () => {
+    const result = buildExtractionQuery({
+      dialect: 'bigquery',
+      table: 'events',
+      project: 'my-project',
+      dataset: 'analytics',
+      method: 'change_tracking',
+      changeTracking: { type: 'appends' },
+      lastSyncTimestamp: '2026-01-01T00:00:00Z',
+    });
+    expect(result.sql).not.toMatch(/@p\d+/);
+    expect(result.sql).toContain('?');
+    expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
   });
 });

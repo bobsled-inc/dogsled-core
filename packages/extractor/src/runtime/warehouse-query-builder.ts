@@ -173,7 +173,7 @@ function buildParamPlaceholder(dialect: Dialect, index: number): string {
     case 'snowflake':
       return `:${index}`;
     case 'bigquery':
-      return `@p${index}`;
+      return '?';
     case 'postgres':
     case 'redshift':
     case 'iceberg':
