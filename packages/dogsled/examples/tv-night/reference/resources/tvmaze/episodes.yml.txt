@@ -1,0 +1,49 @@
+spec_version: '1'
+type: resource
+name: episodes
+integration: tvmaze
+description: Selected TV series episodes
+input:
+  show_id:
+    type: integer
+    minimum: 1
+    required: true
+api:
+  endpoint: /shows/${{ input.show_id }}/episodes
+  method: GET
+output:
+  id:
+    type: integer
+    path: $.id
+  show_id:
+    type: integer
+    from:
+      resource: shows
+      path: $.id
+  name:
+    type: string
+    path: $.name
+  season:
+    type: integer
+    path: $.season
+  number:
+    type: integer
+    path: $.number
+  runtime:
+    type: integer
+    path: $.runtime
+  airdate:
+    type: string
+    path: $.airdate
+extract:
+  record_path: $
+  incremental:
+    strategy: full_refresh
+  table:
+    primary_key:
+    - show_id
+    - id
+  for_each:
+    resource: shows
+    field: id
+    input: show_id

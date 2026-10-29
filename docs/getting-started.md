@@ -5,6 +5,8 @@ small CSV file into a local DuckDB database, build a model on top of it, and the
 add a second source from a public API. It takes about ten minutes and needs no
 account, API key, or warehouse.
 
+For a guided experience with your coding agent and a local data explorer, try [TV Night](guides/tv-night.md). Connect to TVmaze, build your ETL and models, then improve your TV recommendations together.
+
 You need Node.js 24 or later and npm.
 
 ## Install Dogsled

@@ -1,0 +1,24 @@
+spec_version: '0.2'
+type: source
+name: wikipedia_articles
+source_type: api_resource
+integration: wikipedia
+resource: articles
+connection: warehouse
+mode: lazy
+max_age: 1h
+schema:
+  columns:
+  - name: page_id
+    type: INTEGER
+  - name: title
+    type: VARCHAR
+  - name: revision_id
+    type: INTEGER
+  - name: article_text
+    type: VARCHAR
+  - name: requested_titles
+    type: VARCHAR
+filter:
+  requested_titles:
+    eq: The Good Place

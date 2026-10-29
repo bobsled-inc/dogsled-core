@@ -59,6 +59,8 @@ Commands:
   examples                         List or scaffold bundled example projects
   learn [options]                  Interactive CLI tutorial — learn Dogsled step
                                    by step
+  onboarding                       Inspect TV Night progress and render its
+                                   local data explorer
   help [command]                   display help for command
 ```
 
@@ -4235,4 +4237,84 @@ Options:
   --auto            Auto-advance on success (1.5s delay)
   --cli <cmd>       Override CLI binary (default: DOGSLED_CLI env or "dogsled")
   -h, --help        display help for command
+```
+
+### `dogsled onboarding`
+
+```text
+Usage: dogsled onboarding [options] [command]
+
+Inspect TV Night progress and render its local data explorer
+
+Options:
+  -h, --help               display help for command
+
+Commands:
+  guide [options]          Read the bundled agent walkthrough
+  status [options]         Show saved chapter progress and check results
+  render [options]         Write the local HTML explorer
+  verify [options] <step>  Run bounded data checks and save evidence for a step
+  review [options] <step>  Record that the learner inspected current chapter
+                           evidence
+  help [command]           display help for command
+```
+
+#### `dogsled onboarding guide`
+
+```text
+Usage: dogsled onboarding guide [options]
+
+Read the bundled agent walkthrough
+
+Options:
+  --yaml      Emit YAML output
+  -h, --help  display help for command
+```
+
+#### `dogsled onboarding status`
+
+```text
+Usage: dogsled onboarding status [options]
+
+Show saved chapter progress and check results
+
+Options:
+  --yaml      Emit YAML output
+  -h, --help  display help for command
+```
+
+#### `dogsled onboarding render`
+
+```text
+Usage: dogsled onboarding render [options]
+
+Write the local HTML explorer
+
+Options:
+  --yaml      Emit YAML output
+  -h, --help  display help for command
+```
+
+#### `dogsled onboarding verify`
+
+```text
+Usage: dogsled onboarding verify [options] <step>
+
+Run bounded data checks and save evidence for a step
+
+Options:
+  --yaml      Emit YAML output
+  -h, --help  display help for command
+```
+
+#### `dogsled onboarding review`
+
+```text
+Usage: dogsled onboarding review [options] <step>
+
+Record that the learner inspected current chapter evidence
+
+Options:
+  --yaml      Emit YAML output
+  -h, --help  display help for command
 ```

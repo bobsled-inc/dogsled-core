@@ -4,7 +4,12 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { exampleNextSteps, makeScriptsExecutable } from '../../../src/commands/examples.js';
+import {
+  copyExample,
+  getExamplesDir,
+  exampleNextSteps,
+  makeScriptsExecutable,
+} from '../../../src/commands/examples.js';
 
 const directories: string[] = [];
 
@@ -63,4 +68,16 @@ describe('dogsled examples', () => {
       'See README.md for the full walkthrough.',
     ]);
   });
+});
+
+it('scaffolds TV Night without copying its teaching references', () => {
+  const target = project({});
+  copyExample('tv-night', target);
+  expect(fs.existsSync(path.join(target, 'reference'))).toBe(false);
+  expect(fs.existsSync(path.join(target, 'data/tv-night/manifest.json'))).toBe(true);
+  expect(fs.existsSync(path.join(target, 'README.md'))).toBe(true);
+  expect(fs.existsSync(path.join(target, 'models'))).toBe(false);
+  expect(fs.existsSync(path.join(getExamplesDir(), 'tv-night/reference/executor.mjs.txt'))).toBe(
+    true
+  );
 });

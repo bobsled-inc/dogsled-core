@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
 import { registerExamplesCommand } from './commands/examples.js';
+import { registerOnboardingCommand } from './commands/onboarding.js';
 import { registerLearnCommand } from './commands/learn.js';
 import { registerPipelineCommand } from './commands/pipeline.js';
 import { registerSdkCommand } from '@bobsled-inc/sdk-codegen';
@@ -123,6 +124,7 @@ export function buildProgram(): Command {
   program.addCommand(createRunnerGroup());
   registerExamplesCommand(program);
   registerLearnCommand(program);
+  registerOnboardingCommand(program);
 
   return program;
 }

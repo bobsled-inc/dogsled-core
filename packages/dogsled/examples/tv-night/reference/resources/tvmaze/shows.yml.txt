@@ -1,0 +1,66 @@
+spec_version: "1"
+type: resource
+name: shows
+integration: tvmaze
+description: One TVmaze index page, at most 250 shows. No automatic pagination.
+input:
+  page:
+    type: integer
+    default: 0
+    minimum: 0
+    maximum: 1000
+api:
+  endpoint: /shows
+  method: GET
+  query_params:
+    page: ${{ input.page }}
+output:
+  id:
+    type: integer
+    path: $.id
+  name:
+    type: string
+    path: $.name
+  status:
+    type: string
+    path: $.status
+  language:
+    type: string
+    path: $.language
+  premiered:
+    type: string
+    path: $.premiered
+  ended:
+    type: string
+    path: $.ended
+  average_runtime:
+    type: integer
+    path: $.averageRuntime
+  imdb_id:
+    type: string
+    path: $.externals.imdb
+  source_url:
+    type: string
+    path: $.url
+  primary_genre:
+    type: string
+    path: $.genres[0]
+  genres:
+    type: array
+    items:
+      type: string
+      path: $
+    path: $.genres
+  genres_text:
+    type: string
+    path: $.genres
+  country:
+    type: string
+    path: $.network.country.code
+extract:
+  record_path: $
+  incremental:
+    strategy: full_refresh
+  table:
+    primary_key:
+      - id

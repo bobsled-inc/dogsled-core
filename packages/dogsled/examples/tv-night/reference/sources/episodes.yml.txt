@@ -1,0 +1,34 @@
+spec_version: '0.2'
+type: source
+name: episodes
+description: One row per fetched TVmaze episode for selected shows. Coverage depends on the fetch settings, including specials.
+ai_context:
+  synonyms: [installment, TV episode]
+  rules:
+    - Counts describe fetched episodes, not guaranteed complete series coverage.
+source_type: warehouse_table
+connection: warehouse
+table: raw.episodes
+schema:
+  columns:
+  - name: id
+    type: INTEGER
+    description: Stable TVmaze episode identifier; one episode belongs to one show.
+  - name: show_id
+    type: INTEGER
+    description: TVmaze series identifier. Joins to shows.id, not to an episode identifier.
+  - name: name
+    type: VARCHAR
+    description: Episode title reported by TVmaze. Titles need not be unique.
+  - name: season
+    type: INTEGER
+    description: Season number reported by TVmaze. Preserve missing values.
+  - name: number
+    type: INTEGER
+    description: Episode number within its season. Missing can occur for specials; it is not an identifier.
+  - name: runtime
+    type: INTEGER
+    description: Episode runtime in minutes. Missing means unknown, not zero.
+  - name: airdate
+    type: VARCHAR
+    description: Air date reported by TVmaze, stored as date text. Preserve missing values.

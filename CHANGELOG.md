@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Add the TV Night guided tutorial. Build an API connection, ETL pipeline, source and derived semantic models, cross-source queries, and agentic transformations with an agent. A local HTML page shows chapter progress, files, model lineage, and saved results.
+
 ## 0.1.0
 
 All integration kinds, pipeline destinations, and webhook actions now require `auth_env_vars` for environment references, including legacy `*_env` fields. Bundled `<name>/source.yml` files also accept their `meta.yml` `auth_setup` declarations. AI model connections require declarations for custom API-key names. Undeclared names fail before lookup with a configuration hint.
