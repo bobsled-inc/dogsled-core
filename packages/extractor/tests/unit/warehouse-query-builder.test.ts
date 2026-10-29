@@ -623,7 +623,7 @@ describe('buildExtractionQuery — change_tracking (BigQuery)', () => {
       lastSyncTimestamp: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM APPENDS(TABLE `proj.ds.events`, ?, CURRENT_TIMESTAMP())'
+      'SELECT * FROM APPENDS(TABLE `proj.ds.events`, CAST(? AS TIMESTAMP), CURRENT_TIMESTAMP())'
     );
     expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
   });
@@ -639,7 +639,7 @@ describe('buildExtractionQuery — change_tracking (BigQuery)', () => {
       lastSyncTimestamp: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM CHANGES(TABLE `proj.ds.events`, ?, CURRENT_TIMESTAMP())'
+      'SELECT * FROM CHANGES(TABLE `proj.ds.events`, CAST(? AS TIMESTAMP), CURRENT_TIMESTAMP())'
     );
   });
 
@@ -889,7 +889,7 @@ describe('BigQuery incremental query — positional parameters', () => {
     expect(result.params).toEqual(['999']);
   });
 
-  it('uses ? placeholder for BigQuery change_tracking (APPENDS)', () => {
+  it('uses CAST(? AS TIMESTAMP) for BigQuery change_tracking (APPENDS)', () => {
     const result = buildExtractionQuery({
       dialect: 'bigquery',
       table: 'events',
@@ -900,7 +900,90 @@ describe('BigQuery incremental query — positional parameters', () => {
       lastSyncTimestamp: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).not.toMatch(/@p\d+/);
-    expect(result.sql).toContain('?');
+    expect(result.sql).toContain('CAST(? AS TIMESTAMP)');
     expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
+  });
+});
+
+// ── BigQuery cursor kind type mapping ──
+
+describe('BigQuery incremental query — cursor kind type casting', () => {
+  const base = {
+    dialect: 'bigquery' as const,
+    table: 'orders',
+    project: 'proj',
+    dataset: 'ds',
+    method: 'incremental_append' as const,
+    cursorField: 'id',
+    cursorValue: '8',
+  };
+
+  it('integer cursor emits CAST(? AS INT64) so an INT64 column comparison succeeds', () => {
+    const result = buildExtractionQuery({ ...base, cursorKind: 'integer' });
+    expect(result.sql).toBe(
+      'SELECT * FROM `proj.ds.orders` WHERE `id` > CAST(? AS INT64) ORDER BY `id`'
+    );
+    // Value is preserved as a string — no precision loss for large INT64s.
+    expect(result.params).toEqual(['8']);
+  });
+
+  it('timestamp cursor emits CAST(? AS TIMESTAMP)', () => {
+    const result = buildExtractionQuery({
+      ...base,
+      cursorField: 'created_at',
+      cursorValue: '2026-01-01T00:00:00Z',
+      cursorKind: 'timestamp',
+    });
+    expect(result.sql).toBe(
+      'SELECT * FROM `proj.ds.orders` WHERE `created_at` > CAST(? AS TIMESTAMP) ORDER BY `created_at`'
+    );
+    expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
+  });
+
+  it('number cursor emits CAST(? AS FLOAT64)', () => {
+    const result = buildExtractionQuery({ ...base, cursorValue: '3.14', cursorKind: 'number' });
+    expect(result.sql).toContain('CAST(? AS FLOAT64)');
+    expect(result.params).toEqual(['3.14']);
+  });
+
+  it('string cursor emits plain ? (STRING binding)', () => {
+    const result = buildExtractionQuery({ ...base, cursorValue: 'zz', cursorKind: 'string' });
+    expect(result.sql).toBe('SELECT * FROM `proj.ds.orders` WHERE `id` > ? ORDER BY `id`');
+    expect(result.params).toEqual(['zz']);
+  });
+
+  it('absent cursorKind falls back to plain ? (current behaviour for unknown kinds)', () => {
+    const result = buildExtractionQuery({ ...base });
+    expect(result.sql).toBe('SELECT * FROM `proj.ds.orders` WHERE `id` > ? ORDER BY `id`');
+    expect(result.params).toEqual(['8']);
+  });
+
+  it('Snowflake uses :N placeholder regardless of cursorKind (other dialects unchanged)', () => {
+    const result = buildExtractionQuery({
+      dialect: 'snowflake',
+      table: 'ORDERS',
+      database: 'DB',
+      schema: 'SCHEMA',
+      method: 'incremental_append',
+      cursorField: 'ID',
+      cursorValue: '8',
+      cursorKind: 'integer',
+    });
+    expect(result.sql).toBe('SELECT * FROM "DB"."SCHEMA"."ORDERS" WHERE "ID" > :1 ORDER BY "ID"');
+    expect(result.params).toEqual(['8']);
+  });
+
+  it('PostgreSQL uses $N placeholder regardless of cursorKind (other dialects unchanged)', () => {
+    const result = buildExtractionQuery({
+      dialect: 'postgres',
+      table: 'orders',
+      schema: 'public',
+      method: 'incremental_append',
+      cursorField: 'id',
+      cursorValue: '8',
+      cursorKind: 'integer',
+    });
+    expect(result.sql).toBe('SELECT * FROM "public"."orders" WHERE "id" > $1 ORDER BY "id"');
+    expect(result.params).toEqual(['8']);
   });
 });

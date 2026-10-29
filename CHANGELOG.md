@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-BigQuery incremental extracts that have a saved cursor value now succeed on their second and subsequent runs. The query builder previously emitted named placeholders (`@p0`) for BigQuery while the client passed parameters as a positional array; BigQuery rejected the mismatch with "Named parameters are not supported". The placeholder for BigQuery is now `?` (positional), consistent with how the SDK resolves an array `params` argument, and `parameterMode: 'positional'` is set explicitly on the job options.
+BigQuery incremental extracts now succeed on runs after the first: the saved cursor is bound as a correctly typed query parameter. Previously the query used named placeholders (`@p0`) while the client passed an array, causing BigQuery to reject the query with "Named parameters are not supported"; and even with that fixed, integer and timestamp cursors stored as strings would have failed with a type mismatch on the column comparison. Both issues are fixed together.
 
 ## 0.1.0
 

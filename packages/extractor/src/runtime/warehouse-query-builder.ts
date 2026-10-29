@@ -9,6 +9,7 @@
 
 import { assertBacktickIdentifier, assertBigQueryQuotedIdentifier } from '@bobsled-inc/protocol';
 import { escapeSqlString } from './sql-escape.js';
+import type { CursorKind } from './cursor.js';
 
 export type Dialect =
   | 'snowflake'
@@ -59,6 +60,14 @@ export interface QueryBuilderConfig {
   changeTracking?: ChangeTrackingConfig;
   /** Last sync timestamp for CDC window. */
   lastSyncTimestamp?: string;
+  /**
+   * Resolved cursor data kind (integer, number, timestamp, string, lsn).
+   * Used by the BigQuery dialect to emit a correctly-typed CAST expression so
+   * that cursor values stored as strings bind to the right BigQuery column type.
+   * Absent or unknown kinds fall back to a plain `?` (STRING binding).
+   * Has no effect for other dialects.
+   */
+  cursorKind?: CursorKind;
 }
 
 export interface BuildResult {
@@ -186,6 +195,33 @@ function buildParamPlaceholder(dialect: Dialect, index: number): string {
   }
 }
 
+// ── BigQuery cursor type casting ──
+
+/**
+ * Return a BigQuery-typed CAST expression for the positional placeholder so
+ * that cursor values stored as strings bind to the correct column type.
+ *
+ * BigQuery does not coerce parameter types automatically; an INT64 column
+ * compared with a STRING parameter fails at runtime.
+ *
+ * - integer  → CAST(? AS INT64)
+ * - number   → CAST(? AS FLOAT64)
+ * - timestamp → CAST(? AS TIMESTAMP)
+ * - string / lsn / undefined → `?` (passed as STRING, the SDK default)
+ */
+function bigqueryCursorCast(kind?: CursorKind): string {
+  switch (kind) {
+    case 'integer':
+      return 'CAST(? AS INT64)';
+    case 'number':
+      return 'CAST(? AS FLOAT64)';
+    case 'timestamp':
+      return 'CAST(? AS TIMESTAMP)';
+    default:
+      return '?';
+  }
+}
+
 // ── Lakehouse inline helpers ──
 
 /** Inline a cursor value into SQL for dialects that don't support bind parameters. */
@@ -205,19 +241,27 @@ function requiresInlinedParams(dialect: Dialect): boolean {
  *
  * For lakehouse dialects (iceberg, delta) that don't support bind parameters,
  * pass `cursorValue` to inline the value directly into the SQL string.
+ *
+ * For the BigQuery dialect, pass `cursorKind` so the placeholder is wrapped in
+ * a typed CAST expression (e.g. `CAST(? AS INT64)`) that matches the column
+ * type. Omitting `cursorKind` falls back to a plain `?` (STRING binding).
  */
 export function buildWhereClause(
   dialect: Dialect,
   cursorField: string,
   paramIndex: number,
-  cursorValue?: string
+  cursorValue?: string,
+  cursorKind?: CursorKind
 ): string {
   const quoted = quoteIdentifier(dialect, cursorField);
   if (cursorValue !== undefined && requiresInlinedParams(dialect)) {
     const inlined = inlineCursorValue(cursorValue);
     return `WHERE ${quoted} > ${inlined} ORDER BY ${quoted}`;
   }
-  const param = buildParamPlaceholder(dialect, paramIndex);
+  const param =
+    dialect === 'bigquery'
+      ? bigqueryCursorCast(cursorKind)
+      : buildParamPlaceholder(dialect, paramIndex);
   return `WHERE ${quoted} > ${param} ORDER BY ${quoted}`;
 }
 
@@ -239,7 +283,10 @@ function buildIncrementalQuery(config: QueryBuilderConfig): BuildResult {
 
   if (config.sql) {
     // Custom SQL with cursor: wrap as subquery
-    const param = buildParamPlaceholder(config.dialect, 1);
+    const param =
+      config.dialect === 'bigquery'
+        ? bigqueryCursorCast(config.cursorKind)
+        : buildParamPlaceholder(config.dialect, 1);
     const quoted = quoteIdentifier(config.dialect, config.cursorField);
 
     if (config.cursorValue) {
@@ -273,7 +320,13 @@ function buildIncrementalQuery(config: QueryBuilderConfig): BuildResult {
         params: [],
       };
     }
-    const where = buildWhereClause(config.dialect, config.cursorField, 1);
+    const where = buildWhereClause(
+      config.dialect,
+      config.cursorField,
+      1,
+      undefined,
+      config.cursorKind
+    );
     return {
       sql: `SELECT * FROM ${fqn} ${where}`,
       params: [config.cursorValue],
@@ -323,7 +376,9 @@ function buildBigQueryChangeTrackingQuery(config: QueryBuilderConfig): BuildResu
 
   const fqn = buildFullyQualifiedTable('bigquery', config);
   const tvf = cdcType === 'appends' ? 'APPENDS' : 'CHANGES';
-  const param = buildParamPlaceholder('bigquery', 1);
+  // lastSyncTimestamp is always an ISO 8601 string; cast explicitly so BigQuery
+  // does not reject a STRING parameter where a TIMESTAMP expression is required.
+  const param = 'CAST(? AS TIMESTAMP)';
 
   return {
     sql: `SELECT * FROM ${tvf}(TABLE ${fqn}, ${param}, CURRENT_TIMESTAMP())`,

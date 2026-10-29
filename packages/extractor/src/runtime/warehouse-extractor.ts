@@ -723,6 +723,12 @@ function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
 
   const method = fullRefresh ? ('full_refresh' as const) : replication.method;
   const cursorValue = fullRefresh ? undefined : bookmark?.cursor_value;
+  const cursorKind = fullRefresh
+    ? undefined
+    : resolveCursorKind({
+        specCursorType: replication.cursor_type ?? bookmark?.cursor_type,
+        hintValue: bookmark?.cursor_value,
+      });
 
   return {
     dialect,
@@ -736,6 +742,7 @@ function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
     method,
     cursorField: replication.cursor_field,
     cursorValue,
+    cursorKind,
     changeTracking: replication.change_tracking as QueryBuilderConfig['changeTracking'],
     lastSyncTimestamp: fullRefresh ? undefined : bookmark?.last_run_at,
   };
