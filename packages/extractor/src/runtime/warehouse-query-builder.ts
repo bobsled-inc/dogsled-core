@@ -9,6 +9,7 @@
 
 import { assertBacktickIdentifier, assertBigQueryQuotedIdentifier } from '@bobsled-inc/protocol';
 import { escapeSqlString } from './sql-escape.js';
+import type { CursorKind } from './cursor.js';
 
 export type Dialect =
   | 'snowflake'
@@ -59,6 +60,22 @@ export interface QueryBuilderConfig {
   changeTracking?: ChangeTrackingConfig;
   /** Last sync timestamp for CDC window. */
   lastSyncTimestamp?: string;
+  /**
+   * Resolved cursor data kind (integer, number, timestamp, string, lsn).
+   * Used by the BigQuery dialect to emit a correctly-typed CAST expression so
+   * that cursor values stored as strings bind to the right BigQuery column type.
+   * Absent or unknown kinds fall back to a plain `?` (STRING binding).
+   * Has no effect for other dialects.
+   */
+  cursorKind?: CursorKind;
+  /**
+   * Pre-computed BigQuery cast expression derived from live table metadata
+   * (e.g. `'CAST(? AS INT64)'` or `'?'`). When set, takes precedence over
+   * `bigqueryCursorCast(cursorKind)` for all BigQuery placeholder sites.
+   * Populated by the extractor when no `cursor_type` is declared and the
+   * column type can be resolved at runtime. Ignored for non-BigQuery dialects.
+   */
+  bigQueryCastExpr?: string;
 }
 
 export interface BuildResult {
@@ -173,7 +190,7 @@ function buildParamPlaceholder(dialect: Dialect, index: number): string {
     case 'snowflake':
       return `:${index}`;
     case 'bigquery':
-      return `@p${index}`;
+      return '?';
     case 'postgres':
     case 'redshift':
     case 'iceberg':
@@ -183,6 +200,40 @@ function buildParamPlaceholder(dialect: Dialect, index: number): string {
       return '?';
     case 'clickhouse':
       return `{p${index}:String}`;
+  }
+}
+
+// ── BigQuery cursor type casting ──
+
+/**
+ * Return a BigQuery-typed CAST expression for the positional placeholder so
+ * that cursor values stored as strings bind to the correct column type.
+ *
+ * Only numeric kinds need an explicit CAST; BigQuery does not coerce STRING
+ * parameters to INT64 or FLOAT64 automatically. Temporal kinds (timestamp,
+ * covering DATE / DATETIME / TIMESTAMP columns) are intentionally left as a
+ * plain `?`: GoogleSQL coerces a STRING query parameter to whichever temporal
+ * type the column expects, so binding `CAST(? AS TIMESTAMP)` against a
+ * DATETIME column would fail. Unknown and string kinds also use plain `?`.
+ *
+ * - integer  → CAST(? AS INT64)
+ * - number   → CAST(? AS FLOAT64)
+ * - timestamp / string / lsn / undefined → `?` (STRING, coerced by BigQuery)
+ *
+ * Note: the BigQuery change-tracking TVF window parameter is hardcoded to
+ * CAST(? AS TIMESTAMP) in buildBigQueryChangeTrackingQuery because that
+ * argument is always an ISO 8601 timestamp and the TVF requires TIMESTAMP.
+ */
+function bigqueryCursorCast(kind?: CursorKind): string {
+  switch (kind) {
+    case 'integer':
+      return 'CAST(? AS INT64)';
+    case 'number':
+      return 'CAST(? AS FLOAT64)';
+    default:
+      // timestamp, string, lsn, undefined → plain STRING param; BigQuery
+      // coerces to DATE / DATETIME / TIMESTAMP automatically.
+      return '?';
   }
 }
 
@@ -205,19 +256,28 @@ function requiresInlinedParams(dialect: Dialect): boolean {
  *
  * For lakehouse dialects (iceberg, delta) that don't support bind parameters,
  * pass `cursorValue` to inline the value directly into the SQL string.
+ *
+ * For the BigQuery dialect, pass `cursorKind` so the placeholder is wrapped in
+ * a typed CAST expression (e.g. `CAST(? AS INT64)`) that matches the column
+ * type. Omitting `cursorKind` falls back to a plain `?` (STRING binding).
  */
 export function buildWhereClause(
   dialect: Dialect,
   cursorField: string,
   paramIndex: number,
-  cursorValue?: string
+  cursorValue?: string,
+  cursorKind?: CursorKind,
+  bigQueryCastExpr?: string
 ): string {
   const quoted = quoteIdentifier(dialect, cursorField);
   if (cursorValue !== undefined && requiresInlinedParams(dialect)) {
     const inlined = inlineCursorValue(cursorValue);
     return `WHERE ${quoted} > ${inlined} ORDER BY ${quoted}`;
   }
-  const param = buildParamPlaceholder(dialect, paramIndex);
+  const param =
+    dialect === 'bigquery'
+      ? (bigQueryCastExpr ?? bigqueryCursorCast(cursorKind))
+      : buildParamPlaceholder(dialect, paramIndex);
   return `WHERE ${quoted} > ${param} ORDER BY ${quoted}`;
 }
 
@@ -239,7 +299,10 @@ function buildIncrementalQuery(config: QueryBuilderConfig): BuildResult {
 
   if (config.sql) {
     // Custom SQL with cursor: wrap as subquery
-    const param = buildParamPlaceholder(config.dialect, 1);
+    const param =
+      config.dialect === 'bigquery'
+        ? (config.bigQueryCastExpr ?? bigqueryCursorCast(config.cursorKind))
+        : buildParamPlaceholder(config.dialect, 1);
     const quoted = quoteIdentifier(config.dialect, config.cursorField);
 
     if (config.cursorValue) {
@@ -273,7 +336,14 @@ function buildIncrementalQuery(config: QueryBuilderConfig): BuildResult {
         params: [],
       };
     }
-    const where = buildWhereClause(config.dialect, config.cursorField, 1);
+    const where = buildWhereClause(
+      config.dialect,
+      config.cursorField,
+      1,
+      undefined,
+      config.cursorKind,
+      config.bigQueryCastExpr
+    );
     return {
       sql: `SELECT * FROM ${fqn} ${where}`,
       params: [config.cursorValue],
@@ -323,7 +393,9 @@ function buildBigQueryChangeTrackingQuery(config: QueryBuilderConfig): BuildResu
 
   const fqn = buildFullyQualifiedTable('bigquery', config);
   const tvf = cdcType === 'appends' ? 'APPENDS' : 'CHANGES';
-  const param = buildParamPlaceholder('bigquery', 1);
+  // lastSyncTimestamp is always an ISO 8601 string; cast explicitly so BigQuery
+  // does not reject a STRING parameter where a TIMESTAMP expression is required.
+  const param = 'CAST(? AS TIMESTAMP)';
 
   return {
     sql: `SELECT * FROM ${tvf}(TABLE ${fqn}, ${param}, CURRENT_TIMESTAMP())`,

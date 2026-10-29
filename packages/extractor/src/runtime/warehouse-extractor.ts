@@ -26,6 +26,8 @@ import { getStreamBookmark, mergeDurableBookmark } from './state.js';
 import { compareCursors, resolveCursorKind, maxCursor } from './cursor.js';
 import { createWarehouseClient } from './warehouse-client.js';
 import type { WarehouseClient } from './warehouse-client.js';
+import { BigQueryWarehouseClient } from './bigquery-client.js';
+import { resolveBqCastExpr } from './bigquery-cursor-cast.js';
 import { buildExtractionQuery } from './warehouse-query-builder.js';
 import type { Dialect, QueryBuilderConfig } from './warehouse-query-builder.js';
 import { normalizeJsonObject, normalizeJsonValue } from './json-normalization.js';
@@ -708,10 +710,12 @@ interface BuildQueryConfigOptions {
   fullRefresh: boolean;
   /** Pre-resolved TVF for lakehouse formats (iceberg/delta). */
   tvf?: string;
+  /** BigQuery cast expression from metadata lookup (e.g. `'CAST(? AS INT64)'`). */
+  bigQueryCastExpr?: string;
 }
 
 function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
-  const { dialect, resource, integration, bookmark, fullRefresh, tvf } = opts;
+  const { dialect, resource, integration, bookmark, fullRefresh, tvf, bigQueryCastExpr } = opts;
   const source: SourceConfig = resource.source;
   const replication: ReplicationConfig = resource.replication;
 
@@ -723,6 +727,7 @@ function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
 
   const method = fullRefresh ? ('full_refresh' as const) : replication.method;
   const cursorValue = fullRefresh ? undefined : bookmark?.cursor_value;
+  const cursorKind = fullRefresh ? undefined : replication.cursor_type;
 
   return {
     dialect,
@@ -736,6 +741,8 @@ function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
     method,
     cursorField: replication.cursor_field,
     cursorValue,
+    cursorKind,
+    bigQueryCastExpr,
     changeTracking: replication.change_tracking as QueryBuilderConfig['changeTracking'],
     lastSyncTimestamp: fullRefresh ? undefined : bookmark?.last_run_at,
   };
@@ -1056,7 +1063,21 @@ export async function extractWarehouseResource(
       }
     }
 
-    // 4. Build extraction query
+    const cf = !fullRefresh && !resource.source.sql ? resource.replication.cursor_field : undefined;
+    const needsBqCast =
+      !!cf &&
+      !resource.replication.cursor_type &&
+      !!bookmark?.cursor_value &&
+      dialect === 'bigquery';
+    let bigQueryCastExpr: string | undefined;
+    if (needsBqCast && client instanceof BigQueryWarehouseClient) {
+      const p = getIntegrationDefault(integration, 'project');
+      const d = resource.source.dataset ?? getIntegrationDefault(integration, 'dataset');
+      const t = resource.source.table;
+      if (d && t && cf) bigQueryCastExpr = await resolveBqCastExpr(client, p, d, t, cf, logger);
+    }
+
+    // 5. Build extraction query
     const queryConfig = buildQueryConfig({
       dialect,
       resource,
@@ -1064,14 +1085,15 @@ export async function extractWarehouseResource(
       bookmark,
       fullRefresh,
       tvf,
+      bigQueryCastExpr,
     });
     const { sql, params } = buildExtractionQuery(queryConfig);
     await logger.info(`Executing query: ${sql.slice(0, 200)}${sql.length > 200 ? '...' : ''}`);
 
-    // 5. Emit SCHEMA message
+    // 6. Emit SCHEMA message
     await emitter.emitSchema(buildEmitSchemaArg(resource));
 
-    // 6. Execute query and emit records
+    // 7. Execute query and emit records
     const isCdc = resource.replication.method === 'change_tracking';
     const cursorField = resource.replication.cursor_field;
     const resolvedCursorKind = resolveCursorKind({
@@ -1124,7 +1146,7 @@ export async function extractWarehouseResource(
 
     await logger.info(`Extracted ${recordCount} records from ${resource.name}`);
 
-    // 6. Emit STATE message
+    // 8. Emit STATE message
     const runAt = new Date().toISOString();
     const bookmarkData: StreamBookmark = {
       cursor_field: cursorField,
@@ -1135,7 +1157,7 @@ export async function extractWarehouseResource(
     };
     await emitter.emitState(resource.name, bookmarkData);
 
-    // 7. Persist durable bookmark
+    // 9. Persist durable bookmark
     let durableBookmark: StreamBookmark | undefined;
     const hasIncremental = resource.replication.method !== 'full_refresh';
     const shouldAdvanceState = advanceState ?? limit == null;

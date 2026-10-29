@@ -110,6 +110,24 @@ const BATCH_SIZE = 10_000;
 /** Minimal structural type for the BigQuery SDK client. */
 interface BigQuerySdk {
   createQueryJob(options: Record<string, unknown>): Promise<[BigQueryJob]>;
+  dataset(datasetId: string, options?: Record<string, unknown>): BigQueryDatasetHandle;
+}
+
+/** Minimal interface for a BigQuery Dataset handle (used for metadata lookup). */
+interface BigQueryDatasetHandle {
+  table(tableId: string): BigQueryTableHandle;
+}
+
+/** Minimal interface for a BigQuery Table handle (used for metadata lookup). */
+interface BigQueryTableHandle {
+  getMetadata(): Promise<[BigQueryTableMeta, unknown]>;
+}
+
+/** Table metadata returned by BigQuery getMetadata(). */
+interface BigQueryTableMeta {
+  schema?: {
+    fields?: BigQueryField[];
+  };
 }
 
 /** Minimal structural type for a BigQuery Job. */
@@ -150,6 +168,43 @@ function validateBigQueryIdentifier(value: string, label: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Type mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Map a BigQuery column type string to a SQL cast expression for the positional
+ * placeholder. Numeric types need an explicit CAST because BigQuery does not
+ * coerce STRING parameters to INT64, FLOAT64, NUMERIC, or BIGNUMERIC. Temporal
+ * and string types use a plain `?` — BigQuery coerces STRING parameters to
+ * DATE, DATETIME, and TIMESTAMP automatically.
+ */
+function bigQueryTypeToCastExpr(bqType: string): string {
+  switch (bqType.toUpperCase()) {
+    case 'INT64':
+    case 'INTEGER':
+    case 'INT':
+    case 'SMALLINT':
+    case 'BIGINT':
+    case 'TINYINT':
+    case 'BYTEINT':
+      return 'CAST(? AS INT64)';
+    case 'NUMERIC':
+    case 'DECIMAL':
+      return 'CAST(? AS NUMERIC)';
+    case 'BIGNUMERIC':
+    case 'BIGDECIMAL':
+      return 'CAST(? AS BIGNUMERIC)';
+    case 'FLOAT64':
+    case 'FLOAT':
+      return 'CAST(? AS FLOAT64)';
+    default:
+      // STRING, DATE, DATETIME, TIMESTAMP, TIME, BOOL, BYTES, STRUCT, ARRAY, JSON
+      // BigQuery coerces STRING parameters to temporal types automatically.
+      return '?';
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Client implementation
 // ---------------------------------------------------------------------------
 
@@ -179,7 +234,7 @@ export class BigQueryWarehouseClient implements WarehouseClient {
       maximumBytesBilled: MAXIMUM_BYTES_BILLED,
       timeoutMs: DEFAULT_TIMEOUT_MS,
       useLegacySql: false,
-      ...(params && params.length > 0 ? { params } : {}),
+      ...(params && params.length > 0 ? { params, parameterMode: 'positional' } : {}),
     };
 
     const [job] = await client.createQueryJob(queryOptions);
@@ -298,6 +353,50 @@ export class BigQueryWarehouseClient implements WarehouseClient {
 
   async close(): Promise<void> {
     // BigQuery SDK client is stateless — nothing to close
+  }
+
+  // -----------------------------------------------------------------------
+  // resolveColumnCastExpr — cursor column type from table metadata
+  // -----------------------------------------------------------------------
+
+  /**
+   * Resolve the SQL cast expression for a cursor column by reading the table's
+   * schema metadata. Returns the appropriate `CAST(? AS <type>)` expression for
+   * numeric column types, or `'?'` for string and temporal types (which BigQuery
+   * coerces automatically from STRING parameters). Returns `undefined` if the
+   * lookup fails for any reason — the caller should log a warning and fall back
+   * to a plain `?`.
+   *
+   * This lookup is a metadata read only; it does not scan any data and has no
+   * query cost. It uses the same SDK client and auth path as execute().
+   *
+   * Auth compatibility: works with ADC, WIF, service_account, and access_token
+   * auth because getMetadata() goes through the same google-auth-library client
+   * as createQueryJob(). Pre-minted static tokens may expire during long extracts
+   * but the token_command refreshable path handles that automatically.
+   */
+  async resolveColumnCastExpr(
+    project: string | undefined,
+    dataset: string | undefined,
+    table: string,
+    cursorField: string
+  ): Promise<string | undefined> {
+    try {
+      const sdk = await this.getClient();
+      const datasetOpts: Record<string, unknown> | undefined = project
+        ? { projectId: project }
+        : undefined;
+      const datasetHandle = sdk.dataset(dataset ?? '', datasetOpts);
+      const [meta] = await datasetHandle.table(table).getMetadata();
+      const fields = meta?.schema?.fields ?? [];
+      const field = fields.find((f) => f.name === cursorField);
+      if (!field?.type) {
+        return undefined;
+      }
+      return bigQueryTypeToCastExpr(field.type);
+    } catch {
+      return undefined;
+    }
   }
 
   // -----------------------------------------------------------------------

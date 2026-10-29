@@ -196,9 +196,9 @@ describe('buildWhereClause', () => {
     );
   });
 
-  it('builds bigquery parameterized WHERE with @pN placeholders', () => {
+  it('builds bigquery parameterized WHERE with positional ? placeholder', () => {
     expect(buildWhereClause('bigquery', 'updated_at', 1)).toBe(
-      'WHERE `updated_at` > @p1 ORDER BY `updated_at`'
+      'WHERE `updated_at` > ? ORDER BY `updated_at`'
     );
   });
 
@@ -398,7 +398,7 @@ describe('buildExtractionQuery — incremental_append', () => {
       cursorValue: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM `proj.ds.orders` WHERE `updated_at` > @p1 ORDER BY `updated_at`'
+      'SELECT * FROM `proj.ds.orders` WHERE `updated_at` > ? ORDER BY `updated_at`'
     );
     expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
   });
@@ -623,7 +623,7 @@ describe('buildExtractionQuery — change_tracking (BigQuery)', () => {
       lastSyncTimestamp: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM APPENDS(TABLE `proj.ds.events`, @p1, CURRENT_TIMESTAMP())'
+      'SELECT * FROM APPENDS(TABLE `proj.ds.events`, CAST(? AS TIMESTAMP), CURRENT_TIMESTAMP())'
     );
     expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
   });
@@ -639,7 +639,7 @@ describe('buildExtractionQuery — change_tracking (BigQuery)', () => {
       lastSyncTimestamp: '2026-01-01T00:00:00Z',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM CHANGES(TABLE `proj.ds.events`, @p1, CURRENT_TIMESTAMP())'
+      'SELECT * FROM CHANGES(TABLE `proj.ds.events`, CAST(? AS TIMESTAMP), CURRENT_TIMESTAMP())'
     );
   });
 
@@ -862,5 +862,169 @@ describe('BigQuery backtick rejection', () => {
   it('rejects embedded backticks for BigQuery and keeps doubling for MySQL', () => {
     expect(() => quoteIdentifier('bigquery', 'a`b')).toThrow('backticks are not allowed');
     expect(quoteIdentifier('mysql', 'a`b')).toBe('`a``b`');
+  });
+});
+
+// ── BigQuery positional parameter regression ──
+
+describe('BigQuery incremental query — positional parameters', () => {
+  it('uses ? placeholder (not @pN) so the SDK positional array mode matches the SQL', () => {
+    // The bug: buildParamPlaceholder emitted @p1 (named) while bigquery-client
+    // passed params as an array (positional). BigQuery rejected the mismatch with
+    // "Named parameters are not supported". Verify the placeholder is now ? so
+    // the SQL and the array params stay consistent.
+    const result = buildExtractionQuery({
+      dialect: 'bigquery',
+      table: 'events',
+      project: 'my-project',
+      dataset: 'analytics',
+      method: 'incremental_append',
+      cursorField: 'id',
+      cursorValue: '999',
+    });
+    expect(result.sql).not.toMatch(/@p\d+/);
+    expect(result.sql).toBe(
+      'SELECT * FROM `my-project.analytics.events` WHERE `id` > ? ORDER BY `id`'
+    );
+    expect(result.params).toEqual(['999']);
+  });
+
+  it('regression P2-1: numeric-looking STRING cursor never gets CAST(? AS INT64)', () => {
+    // Scenario: a BigQuery STRING column holds values like "00999". Run 1 saves
+    // the bookmark with no declared cursor_type. Run 2 passes cursorKind: undefined
+    // because buildQueryConfig only uses replication.cursor_type (not value-inferred
+    // bookmark.cursor_type). Without this fix, resolveCursorKind would infer
+    // 'integer' from "00999" and produce CAST(? AS INT64), failing with
+    // "No matching signature for operator > for argument types: STRING, INT64".
+    const result = buildExtractionQuery({
+      dialect: 'bigquery',
+      table: 'events',
+      project: 'my-project',
+      dataset: 'analytics',
+      method: 'incremental_append',
+      cursorField: 'id',
+      cursorValue: '00999',
+      // cursorKind intentionally absent — no replication.cursor_type declared
+    });
+    expect(result.sql).not.toContain('CAST');
+    expect(result.sql).toBe(
+      'SELECT * FROM `my-project.analytics.events` WHERE `id` > ? ORDER BY `id`'
+    );
+    expect(result.params).toEqual(['00999']);
+  });
+
+  it('uses CAST(? AS TIMESTAMP) for BigQuery change_tracking (APPENDS)', () => {
+    const result = buildExtractionQuery({
+      dialect: 'bigquery',
+      table: 'events',
+      project: 'my-project',
+      dataset: 'analytics',
+      method: 'change_tracking',
+      changeTracking: { type: 'appends' },
+      lastSyncTimestamp: '2026-01-01T00:00:00Z',
+    });
+    expect(result.sql).not.toMatch(/@p\d+/);
+    expect(result.sql).toContain('CAST(? AS TIMESTAMP)');
+    expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
+  });
+});
+
+// ── BigQuery cursor kind type mapping ──
+
+describe('BigQuery incremental query — cursor kind type casting', () => {
+  const base = {
+    dialect: 'bigquery' as const,
+    table: 'orders',
+    project: 'proj',
+    dataset: 'ds',
+    method: 'incremental_append' as const,
+    cursorField: 'id',
+    cursorValue: '8',
+  };
+
+  it('integer cursor emits CAST(? AS INT64) so an INT64 column comparison succeeds', () => {
+    const result = buildExtractionQuery({ ...base, cursorKind: 'integer' });
+    expect(result.sql).toBe(
+      'SELECT * FROM `proj.ds.orders` WHERE `id` > CAST(? AS INT64) ORDER BY `id`'
+    );
+    // Value is preserved as a string — no precision loss for large INT64s.
+    expect(result.params).toEqual(['8']);
+  });
+
+  it('timestamp cursor emits plain ? (STRING coerced by BigQuery to DATE/DATETIME/TIMESTAMP)', () => {
+    // GoogleSQL coerces STRING query parameters to DATE, DATETIME, and TIMESTAMP
+    // automatically. Emitting CAST(? AS TIMESTAMP) against a DATETIME column
+    // would fail because DATETIME != TIMESTAMP in BigQuery.
+    const result = buildExtractionQuery({
+      ...base,
+      cursorField: 'created_at',
+      cursorValue: '2026-01-01T00:00:00Z',
+      cursorKind: 'timestamp',
+    });
+    expect(result.sql).toBe(
+      'SELECT * FROM `proj.ds.orders` WHERE `created_at` > ? ORDER BY `created_at`'
+    );
+    expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
+  });
+
+  it('timestamp cursorKind covers DATE and DATETIME columns (all map to timestamp kind)', () => {
+    // BigQuery DATE and DATETIME columns are both mapped to the timestamp
+    // CursorKind by mapColumnType. Plain ? is used for all of them so a
+    // DATETIME column does not receive CAST(? AS TIMESTAMP) which BigQuery rejects.
+    const result = buildExtractionQuery({
+      ...base,
+      cursorField: 'updated_date',
+      cursorValue: '2026-01-01',
+      cursorKind: 'timestamp',
+    });
+    expect(result.sql).toContain('> ?');
+    expect(result.sql).not.toContain('CAST');
+  });
+
+  it('number cursor emits CAST(? AS FLOAT64)', () => {
+    const result = buildExtractionQuery({ ...base, cursorValue: '3.14', cursorKind: 'number' });
+    expect(result.sql).toContain('CAST(? AS FLOAT64)');
+    expect(result.params).toEqual(['3.14']);
+  });
+
+  it('string cursor emits plain ? (STRING binding)', () => {
+    const result = buildExtractionQuery({ ...base, cursorValue: 'zz', cursorKind: 'string' });
+    expect(result.sql).toBe('SELECT * FROM `proj.ds.orders` WHERE `id` > ? ORDER BY `id`');
+    expect(result.params).toEqual(['zz']);
+  });
+
+  it('absent cursorKind falls back to plain ? (current behaviour for unknown kinds)', () => {
+    const result = buildExtractionQuery({ ...base });
+    expect(result.sql).toBe('SELECT * FROM `proj.ds.orders` WHERE `id` > ? ORDER BY `id`');
+    expect(result.params).toEqual(['8']);
+  });
+
+  it('Snowflake uses :N placeholder regardless of cursorKind (other dialects unchanged)', () => {
+    const result = buildExtractionQuery({
+      dialect: 'snowflake',
+      table: 'ORDERS',
+      database: 'DB',
+      schema: 'SCHEMA',
+      method: 'incremental_append',
+      cursorField: 'ID',
+      cursorValue: '8',
+      cursorKind: 'integer',
+    });
+    expect(result.sql).toBe('SELECT * FROM "DB"."SCHEMA"."ORDERS" WHERE "ID" > :1 ORDER BY "ID"');
+    expect(result.params).toEqual(['8']);
+  });
+
+  it('PostgreSQL uses $N placeholder regardless of cursorKind (other dialects unchanged)', () => {
+    const result = buildExtractionQuery({
+      dialect: 'postgres',
+      table: 'orders',
+      schema: 'public',
+      method: 'incremental_append',
+      cursorField: 'id',
+      cursorValue: '8',
+      cursorKind: 'integer',
+    });
+    expect(result.sql).toBe('SELECT * FROM "public"."orders" WHERE "id" > $1 ORDER BY "id"');
+    expect(result.params).toEqual(['8']);
   });
 });
