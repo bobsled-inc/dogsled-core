@@ -353,10 +353,10 @@ describe('publish hygiene', () => {
         'restricted',
         'Review package access and this assertion together before changing publication policy.'
       );
-      deepStrictEqual(
+      match(
         manifest.version,
-        '0.1.0',
-        'The first restricted release bootstraps exactly 0.1.0; review the version and this assertion together.'
+        /^0\.(?:[1-9]\d*)\.(?:0|[1-9]\d*)(?:-preview\.(?:0|[1-9]\d*))?$/,
+        'Releases follow the bootstrapped 0.1.0: a stable 0.x.y at or above 0.1.0, or a 0.x.y-preview.N.'
       );
       deepStrictEqual(
         manifest.publishConfig,
