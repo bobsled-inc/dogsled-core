@@ -16,6 +16,9 @@
     var(--branded-gradient-blue) 0%,
     var(--branded-gradient-purple) 94%
   );
+  --brand-icon-fill: url(#dogsled-gradient-brand);
+  --brand-indicator: var(--gradient-brand);
+  --primary-fill: var(--gradient-brand);
   --icon-secondary: #b2b1b8;
   --icon-positive: #449b7c;
   --border-positive: #449b7c;
@@ -37,8 +40,10 @@
     --muted: #c8c7cd;
     --tertiary: #87868e;
     --rule: #353539;
-    --accent: #8fadff;
-    --branded-gradient-purple: #7857ff;
+    --accent: #5987ff;
+    --brand-icon-fill: #5987ff;
+    --brand-indicator: #5987ff;
+    --primary-fill: #1261fd;
     --icon-secondary: #87868e;
     --icon-positive: #56b894;
     --border-positive: #56b894;
@@ -57,8 +62,10 @@
   --muted: #c8c7cd;
   --tertiary: #87868e;
   --rule: #353539;
-  --accent: #8fadff;
-  --branded-gradient-purple: #7857ff;
+  --accent: #5987ff;
+  --brand-icon-fill: #5987ff;
+  --brand-indicator: #5987ff;
+  --primary-fill: #1261fd;
   --icon-secondary: #87868e;
   --icon-positive: #56b894;
   --border-positive: #56b894;
@@ -135,7 +142,7 @@ button:disabled {
   cursor: default;
 }
 button.primary {
-  background: var(--gradient-brand);
+  background: var(--primary-fill);
   border-color: transparent;
   color: #fff;
 }
@@ -292,9 +299,21 @@ main {
 }
 .more-menu > summary {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
   list-style: none;
-  padding: 6px;
+  padding: 8px;
   color: var(--tertiary);
+  border-radius: 4px;
+}
+.more-menu > summary:hover {
+  background: var(--soft);
+}
+.more-menu > summary::after {
+  display: none;
 }
 summary::-webkit-details-marker {
   display: none;
@@ -302,25 +321,48 @@ summary::-webkit-details-marker {
 .menu-content {
   position: absolute;
   right: 0;
-  top: 34px;
-  width: 240px;
+  top: calc(100% + 8px);
+  width: min(288px, calc(100vw - 32px));
   display: grid;
-  gap: 12px;
+  gap: 16px;
   padding: 16px;
   background: var(--surface);
   border: 1px solid var(--rule);
+  border-radius: 8px;
   box-shadow: 0 4px 16px #0002;
 }
-.menu-content label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.theme-setting {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px;
 }
-.menu-content select {
-  padding: 6px;
+.theme-setting > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.theme-setting select {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 8px 12px;
   background: var(--canvas);
   border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.menu-actions {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+.menu-actions > button {
+  justify-content: flex-start;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 4px;
+  text-align: left;
 }
 .workspace-content {
   --inset: max(32px, calc((100% - 1156px) / 2));
@@ -969,7 +1011,7 @@ footer {
 .journey-rail nav a[aria-current='step'] .current-icon path,
 .result-tabs button[aria-selected='true'] .icon path,
 .file-tree button[aria-current='true'] .icon path {
-  fill: url(#dogsled-gradient-brand);
+  fill: var(--brand-icon-fill);
 }
 .journey-rail nav a,
 .result-tabs button,
@@ -984,7 +1026,7 @@ footer {
   bottom: 0;
   right: 0;
   width: 2px;
-  background: var(--gradient-brand);
+  background: var(--brand-indicator);
 }
 .result-tabs button[aria-selected='true']::after {
   content: '';
@@ -993,7 +1035,7 @@ footer {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--gradient-brand);
+  background: var(--brand-indicator);
 }
 
 .context-body {

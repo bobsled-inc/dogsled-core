@@ -70,7 +70,9 @@ document.addEventListener('click',event=>{const button=event.target.closest('[da
 document.getElementById('copy-file')?.addEventListener('click',event=>{if(selectedFile)copyText(selectedFile.content,event.currentTarget,document.getElementById('file-content'));});
 document.querySelector('[data-context]').addEventListener('click',()=>{document.getElementById('question').open=true;document.getElementById('question').scrollIntoView({block:'start'});document.querySelector('.more-menu').open=false;});
 document.getElementById('theme').addEventListener('change',event=>{if(event.target.value==='system')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=event.target.value;});
-document.addEventListener('keydown',event=>{if(event.key==='Escape')document.querySelector('.more-menu').open=false;});
+const moreMenu=document.querySelector('.more-menu');
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&moreMenu.open){event.preventDefault();moreMenu.open=false;moreMenu.querySelector('summary').focus();}});
+document.addEventListener('click',event=>{if(moreMenu.open&&!moreMenu.contains(event.target))moreMenu.open=false;});
 window.addEventListener('hashchange',followHash);
 function sizeActions(){const height=document.querySelector('.checkout-actions').getBoundingClientRect().height;document.documentElement.style.setProperty('--actions-height',height+'px');}
 window.addEventListener('resize',sizeActions);

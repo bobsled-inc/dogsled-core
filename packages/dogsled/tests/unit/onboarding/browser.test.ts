@@ -168,9 +168,12 @@ it('keeps canonical brand paint and current chapter icons aligned during navigat
   const currentIcon = document.querySelector('[data-chapter-link="load"] .current-icon')!;
   const reviewedIcon = document.querySelector('[data-chapter-link="connect"] .status-icon')!;
   expect(dom.window.getComputedStyle(currentIcon).display).toBe('inline-block');
-  expect(dom.window.getComputedStyle(currentIcon.querySelector('path')!).fill).toBe(
-    'url(#dogsled-gradient-brand)'
-  );
+  expect(
+    dom.window
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue('--brand-icon-fill')
+      .trim()
+  ).toBe('url(#dogsled-gradient-brand)');
   expect(dom.window.getComputedStyle(reviewedIcon).display).not.toBe('none');
   expect(
     dom.window.getComputedStyle(document.documentElement).getPropertyValue('--icon-positive').trim()
@@ -197,4 +200,41 @@ it('gives result columns room inside their own scrolling region', () => {
     'nowrap'
   );
   expect(dom.window.getComputedStyle(table.querySelector('td')!).whiteSpace).toBe('nowrap');
+});
+
+it('gives the theme control its own row and dismisses More without trapping focus', () => {
+  const { document, dom, click } = open();
+  const menu = document.querySelector('.more-menu') as HTMLDetailsElement;
+  const trigger = menu.querySelector('summary')!;
+  trigger.click();
+  expect(menu.open).toBe(true);
+  const theme = document.querySelector('#theme') as HTMLSelectElement;
+  expect(theme.closest('label')?.classList.contains('theme-setting')).toBe(true);
+  expect(dom.window.getComputedStyle(theme).width).toBe('100%');
+  theme.focus();
+  theme.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  expect(menu.open).toBe(false);
+  expect(document.activeElement).toBe(trigger);
+  trigger.click();
+  click('#load h1');
+  expect(menu.open).toBe(false);
+});
+
+it('uses blue brand accents in dark mode and restores the light gradient', () => {
+  const { document, dom } = open();
+  const theme = document.querySelector('#theme') as HTMLSelectElement;
+  theme.value = 'dark';
+  theme.dispatchEvent(new dom.window.Event('change'));
+  const dark = dom.window.getComputedStyle(document.documentElement);
+  expect(dark.getPropertyValue('--brand-icon-fill').trim()).toBe('#5987ff');
+  expect(dark.getPropertyValue('--brand-indicator').trim()).toBe('#5987ff');
+  expect(dark.getPropertyValue('--primary-fill').trim()).toBe('#1261fd');
+  theme.value = 'light';
+  theme.dispatchEvent(new dom.window.Event('change'));
+  expect(
+    dom.window
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue('--brand-icon-fill')
+      .trim()
+  ).toBe('url(#dogsled-gradient-brand)');
 });

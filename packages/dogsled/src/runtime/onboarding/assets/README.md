@@ -9,7 +9,8 @@ The composition follows the TV Night UI prototype. Icons retain the Dogsled icon
 names; colours and typography map to its light and dark semantic tokens.
 Brand icons share one SVG paint definition (210° transform, blue at 0%, purple
 at 94%); selection indicators use the same
-CSS gradient as the UI primitives. Positive icon and border colours use their own semantic tokens,
+CSS gradient as the UI primitives. Dark mode uses blue icons and indicators with a solid blue primary fill, as an
+artifact-specific theme choice. Positive icon and border colours use their own semantic tokens,
 separate from positive text. This is an
 artifact-specific HTML renderer, not a second public React component library.
 

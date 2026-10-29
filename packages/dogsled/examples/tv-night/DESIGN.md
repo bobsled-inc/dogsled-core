@@ -47,7 +47,10 @@ watcher or tutorial server is involved.
 Use Inter for prose and Roboto Mono for code with system fallbacks. Body text is
 14 px, main headings 34 px, section headings 24 px and handoff titles 20 px. Use
 quiet primary backgrounds, subtle dividers, branded selection and visible focus.
-The More menu offers system, light and dark themes.
+The More menu offers system, light and dark themes. Keep the theme selector on
+its own full-width row, separated from the other menu actions. Dark mode uses blue
+brand icons, indicators and primary buttons; positive states retain their semantic
+green. Light mode uses the canonical brand gradient.
 
 Keep tab arrow keys, Home and End working. Search Escape restores focus to its
 trigger; closing a record restores focus to its row action. Status labels explain
