@@ -201,13 +201,20 @@ function buildParamPlaceholder(dialect: Dialect, index: number): string {
  * Return a BigQuery-typed CAST expression for the positional placeholder so
  * that cursor values stored as strings bind to the correct column type.
  *
- * BigQuery does not coerce parameter types automatically; an INT64 column
- * compared with a STRING parameter fails at runtime.
+ * Only numeric kinds need an explicit CAST; BigQuery does not coerce STRING
+ * parameters to INT64 or FLOAT64 automatically. Temporal kinds (timestamp,
+ * covering DATE / DATETIME / TIMESTAMP columns) are intentionally left as a
+ * plain `?`: GoogleSQL coerces a STRING query parameter to whichever temporal
+ * type the column expects, so binding `CAST(? AS TIMESTAMP)` against a
+ * DATETIME column would fail. Unknown and string kinds also use plain `?`.
  *
  * - integer  → CAST(? AS INT64)
  * - number   → CAST(? AS FLOAT64)
- * - timestamp → CAST(? AS TIMESTAMP)
- * - string / lsn / undefined → `?` (passed as STRING, the SDK default)
+ * - timestamp / string / lsn / undefined → `?` (STRING, coerced by BigQuery)
+ *
+ * Note: the BigQuery change-tracking TVF window parameter is hardcoded to
+ * CAST(? AS TIMESTAMP) in buildBigQueryChangeTrackingQuery because that
+ * argument is always an ISO 8601 timestamp and the TVF requires TIMESTAMP.
  */
 function bigqueryCursorCast(kind?: CursorKind): string {
   switch (kind) {
@@ -215,9 +222,9 @@ function bigqueryCursorCast(kind?: CursorKind): string {
       return 'CAST(? AS INT64)';
     case 'number':
       return 'CAST(? AS FLOAT64)';
-    case 'timestamp':
-      return 'CAST(? AS TIMESTAMP)';
     default:
+      // timestamp, string, lsn, undefined → plain STRING param; BigQuery
+      // coerces to DATE / DATETIME / TIMESTAMP automatically.
       return '?';
   }
 }

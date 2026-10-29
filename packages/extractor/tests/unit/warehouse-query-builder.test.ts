@@ -889,6 +889,30 @@ describe('BigQuery incremental query — positional parameters', () => {
     expect(result.params).toEqual(['999']);
   });
 
+  it('regression P2-1: numeric-looking STRING cursor never gets CAST(? AS INT64)', () => {
+    // Scenario: a BigQuery STRING column holds values like "00999". Run 1 saves
+    // the bookmark with no declared cursor_type. Run 2 passes cursorKind: undefined
+    // because buildQueryConfig only uses replication.cursor_type (not value-inferred
+    // bookmark.cursor_type). Without this fix, resolveCursorKind would infer
+    // 'integer' from "00999" and produce CAST(? AS INT64), failing with
+    // "No matching signature for operator > for argument types: STRING, INT64".
+    const result = buildExtractionQuery({
+      dialect: 'bigquery',
+      table: 'events',
+      project: 'my-project',
+      dataset: 'analytics',
+      method: 'incremental_append',
+      cursorField: 'id',
+      cursorValue: '00999',
+      // cursorKind intentionally absent — no replication.cursor_type declared
+    });
+    expect(result.sql).not.toContain('CAST');
+    expect(result.sql).toBe(
+      'SELECT * FROM `my-project.analytics.events` WHERE `id` > ? ORDER BY `id`'
+    );
+    expect(result.params).toEqual(['00999']);
+  });
+
   it('uses CAST(? AS TIMESTAMP) for BigQuery change_tracking (APPENDS)', () => {
     const result = buildExtractionQuery({
       dialect: 'bigquery',
@@ -927,7 +951,10 @@ describe('BigQuery incremental query — cursor kind type casting', () => {
     expect(result.params).toEqual(['8']);
   });
 
-  it('timestamp cursor emits CAST(? AS TIMESTAMP)', () => {
+  it('timestamp cursor emits plain ? (STRING coerced by BigQuery to DATE/DATETIME/TIMESTAMP)', () => {
+    // GoogleSQL coerces STRING query parameters to DATE, DATETIME, and TIMESTAMP
+    // automatically. Emitting CAST(? AS TIMESTAMP) against a DATETIME column
+    // would fail because DATETIME != TIMESTAMP in BigQuery.
     const result = buildExtractionQuery({
       ...base,
       cursorField: 'created_at',
@@ -935,9 +962,23 @@ describe('BigQuery incremental query — cursor kind type casting', () => {
       cursorKind: 'timestamp',
     });
     expect(result.sql).toBe(
-      'SELECT * FROM `proj.ds.orders` WHERE `created_at` > CAST(? AS TIMESTAMP) ORDER BY `created_at`'
+      'SELECT * FROM `proj.ds.orders` WHERE `created_at` > ? ORDER BY `created_at`'
     );
     expect(result.params).toEqual(['2026-01-01T00:00:00Z']);
+  });
+
+  it('timestamp cursorKind covers DATE and DATETIME columns (all map to timestamp kind)', () => {
+    // BigQuery DATE and DATETIME columns are both mapped to the timestamp
+    // CursorKind by mapColumnType. Plain ? is used for all of them so a
+    // DATETIME column does not receive CAST(? AS TIMESTAMP) which BigQuery rejects.
+    const result = buildExtractionQuery({
+      ...base,
+      cursorField: 'updated_date',
+      cursorValue: '2026-01-01',
+      cursorKind: 'timestamp',
+    });
+    expect(result.sql).toContain('> ?');
+    expect(result.sql).not.toContain('CAST');
   });
 
   it('number cursor emits CAST(? AS FLOAT64)', () => {

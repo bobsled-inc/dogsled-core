@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-BigQuery incremental extracts now succeed on runs after the first: the saved cursor is bound as a correctly typed query parameter. Previously the query used named placeholders (`@p0`) while the client passed an array, causing BigQuery to reject the query with "Named parameters are not supported"; and even with that fixed, integer and timestamp cursors stored as strings would have failed with a type mismatch on the column comparison. Both issues are fixed together.
+BigQuery incremental extracts now succeed on runs after the first. Three issues are fixed: the query used named placeholders (`@p0`) while the client passed a positional array; integer cursors stored as strings were not cast to INT64 (BigQuery does not coerce types automatically); and only an explicitly declared `cursor_type` is now used for SQL type binding, so a STRING cursor whose value happens to look like a number is no longer miscast. Temporal cursors (DATE, DATETIME, TIMESTAMP) use a plain string parameter and rely on BigQuery's automatic coercion, avoiding a DATETIME vs TIMESTAMP type mismatch.
 
 ## 0.1.0
 

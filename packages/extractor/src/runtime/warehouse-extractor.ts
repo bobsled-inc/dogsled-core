@@ -723,12 +723,16 @@ function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
 
   const method = fullRefresh ? ('full_refresh' as const) : replication.method;
   const cursorValue = fullRefresh ? undefined : bookmark?.cursor_value;
-  const cursorKind = fullRefresh
-    ? undefined
-    : resolveCursorKind({
-        specCursorType: replication.cursor_type ?? bookmark?.cursor_type,
-        hintValue: bookmark?.cursor_value,
-      });
+  // For SQL type binding, only use a cursor type that was explicitly declared
+  // in the resource spec. Value-based inference (inferCursorKind) is unsafe:
+  // a BigQuery STRING column whose stored value happens to look like a number
+  // (e.g. "00999") would produce CAST(? AS INT64) and fail with a type-mismatch
+  // at runtime. The bookmark's cursor_type is also omitted because it may itself
+  // have been value-inferred in a previous run.
+  // Dynamically-discovered schema column types are not available at query-build
+  // time for warehouse resources; declare cursor_type explicitly when the column
+  // is numeric and BigQuery coercion of a STRING param would not apply.
+  const cursorKind = fullRefresh ? undefined : replication.cursor_type;
 
   return {
     dialect,
