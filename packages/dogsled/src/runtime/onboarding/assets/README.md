@@ -6,7 +6,11 @@ no design-system checkout, package registry, CDN or browser fetch at runtime or 
 time.
 
 The composition follows the TV Night UI prototype. Icons retain the Dogsled icon
-names; colours and typography map to its light and dark semantic tokens. This is an
+names; colours and typography map to its light and dark semantic tokens.
+Brand icons share one SVG paint definition (210° transform, blue at 0%, purple
+at 94%); selection indicators use the same
+CSS gradient as the UI primitives. Positive icon and border colours use their own semantic tokens,
+separate from positive text. This is an
 artifact-specific HTML renderer, not a second public React component library.
 
 `fonts.css` contains the Latin variable fonts Inter 5.3.0 and Roboto Mono 5.3.0,

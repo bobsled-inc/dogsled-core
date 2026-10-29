@@ -9,7 +9,16 @@
   --tertiary: #888399;
   --rule: #e4e4e8;
   --accent: #1261fd;
-  --brand: #6450f9;
+  --branded-gradient-blue: #1261fd;
+  --branded-gradient-purple: #6450f9;
+  --gradient-brand: linear-gradient(
+    210deg,
+    var(--branded-gradient-blue) 0%,
+    var(--branded-gradient-purple) 94%
+  );
+  --icon-secondary: #b2b1b8;
+  --icon-positive: #449b7c;
+  --border-positive: #449b7c;
   --positive: #2e7a5c;
   --positive-soft: #edfaf4;
   --danger: #b53d2f;
@@ -29,7 +38,10 @@
     --tertiary: #87868e;
     --rule: #353539;
     --accent: #8fadff;
-    --brand: #a594ff;
+    --branded-gradient-purple: #7857ff;
+    --icon-secondary: #87868e;
+    --icon-positive: #56b894;
+    --border-positive: #56b894;
     --positive: #56b894;
     --positive-soft: #142b22;
     --danger: #ef6b5b;
@@ -46,7 +58,10 @@
   --tertiary: #87868e;
   --rule: #353539;
   --accent: #8fadff;
-  --brand: #a594ff;
+  --branded-gradient-purple: #7857ff;
+  --icon-secondary: #87868e;
+  --icon-positive: #56b894;
+  --border-positive: #56b894;
   --positive: #56b894;
   --positive-soft: #142b22;
   --danger: #ef6b5b;
@@ -120,7 +135,7 @@ button:disabled {
   cursor: default;
 }
 button.primary {
-  background: linear-gradient(100deg, #6450f9, #1261fd);
+  background: var(--gradient-brand);
   border-color: transparent;
   color: #fff;
 }
@@ -226,20 +241,17 @@ pre {
 }
 .chapter-icon {
   display: flex;
-  color: var(--tertiary);
+  color: var(--icon-secondary);
 }
 .journey-rail nav a:hover {
   background: var(--soft);
 }
 .journey-rail nav a[aria-current='step'] {
   background: var(--selected);
-  border-right-color: var(--brand);
 }
-.journey-rail nav a[aria-current='step'] .chapter-icon {
-  color: var(--brand);
-}
+
 .journey-rail nav a[data-reviewed='true']:not([aria-current]) .chapter-icon {
-  color: var(--positive);
+  color: var(--icon-positive);
 }
 main {
   min-width: 0;
@@ -264,7 +276,6 @@ main {
   font-size: 16px;
 }
 .workspace-header > strong .icon {
-  color: var(--brand);
   width: 24px;
   height: 24px;
 }
@@ -349,10 +360,10 @@ summary::-webkit-details-marker {
 }
 .badge.positive {
   background: var(--positive-soft);
-  border-color: var(--positive);
+  border-color: var(--border-positive);
 }
 .badge.positive:before {
-  background: var(--positive);
+  background: var(--icon-positive);
 }
 .chapter-summary {
   font-size: 16px;
@@ -465,17 +476,13 @@ details details {
 .result-tabs button {
   white-space: nowrap;
   border: 0;
-  border-bottom: 2px solid transparent;
   background: transparent;
   padding: 12px;
 }
 .result-tabs button[aria-selected='true'] {
-  border-bottom-color: var(--brand);
   font-weight: 600;
 }
-.result-tabs button[aria-selected='true'] .icon {
-  color: var(--brand);
-}
+
 .result-actions {
   display: flex;
   align-items: center;
@@ -513,6 +520,7 @@ details details {
   max-height: 600px;
 }
 table {
+  table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
   text-align: left;
@@ -521,10 +529,11 @@ th,
 td {
   padding: 8px 12px;
   border-bottom: 1px solid var(--rule);
-  min-width: 110px;
-  max-width: 320px;
+  min-width: 112px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   vertical-align: top;
-  overflow-wrap: anywhere;
 }
 th {
   position: sticky;
@@ -558,7 +567,7 @@ tbody tr:hover {
   background: var(--soft);
 }
 .details-column {
-  min-width: 64px;
+  min-width: 96px;
   text-align: right;
 }
 .details-column .icon-button {
@@ -753,7 +762,7 @@ footer {
 }
 .file-tree button[aria-current='true'] {
   background: var(--selected);
-  box-shadow: inset -2px 0 var(--brand);
+
   color: var(--accent);
 }
 .file-pane {
@@ -939,4 +948,58 @@ footer {
   .flow-section {
     scroll-margin-top: 310px;
   }
+}
+
+/* Brand paint, indicator direction and status colours follow the canonical UI tokens. */
+.brand-paint {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+.chapter-icon .current-icon {
+  display: none;
+}
+.journey-rail nav a[aria-current='step'] .current-icon {
+  display: inline-block;
+}
+.journey-rail nav a[aria-current='step'] .status-icon {
+  display: none;
+}
+.workspace-header > strong .icon path,
+.journey-rail nav a[aria-current='step'] .current-icon path,
+.result-tabs button[aria-selected='true'] .icon path,
+.file-tree button[aria-current='true'] .icon path {
+  fill: url(#dogsled-gradient-brand);
+}
+.journey-rail nav a,
+.result-tabs button,
+.file-tree button[aria-current='true'] {
+  position: relative;
+}
+.journey-rail nav a[aria-current='step']::after,
+.file-tree button[aria-current='true']::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 2px;
+  background: var(--gradient-brand);
+}
+.result-tabs button[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-brand);
+}
+
+.context-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+td details[open] {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

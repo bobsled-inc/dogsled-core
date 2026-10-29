@@ -156,3 +156,45 @@ it('keeps untrusted snapshot text inert after interaction and supports legacy pa
   expect(document.querySelectorAll('img')).toHaveLength(1);
   expect((dom.window as unknown as Record<string, unknown>).injected).toBeUndefined();
 });
+
+it('keeps canonical brand paint and current chapter icons aligned during navigation', () => {
+  const snapshot = renderFixture();
+  snapshot.progress!.reviewed = ['connect'];
+  const { document, dom, click } = open(snapshot);
+  expect(document.querySelectorAll('#dogsled-gradient-brand')).toHaveLength(1);
+  expect(document.querySelector('#dogsled-gradient-brand')?.getAttribute('gradientTransform')).toBe(
+    'rotate(210, 0.5, 0.5)'
+  );
+  const currentIcon = document.querySelector('[data-chapter-link="load"] .current-icon')!;
+  const reviewedIcon = document.querySelector('[data-chapter-link="connect"] .status-icon')!;
+  expect(dom.window.getComputedStyle(currentIcon).display).toBe('inline-block');
+  expect(dom.window.getComputedStyle(currentIcon.querySelector('path')!).fill).toBe(
+    'url(#dogsled-gradient-brand)'
+  );
+  expect(dom.window.getComputedStyle(reviewedIcon).display).not.toBe('none');
+  expect(
+    dom.window.getComputedStyle(document.documentElement).getPropertyValue('--icon-positive').trim()
+  ).toBe('#449b7c');
+  click('#next-chapter');
+  expect(dom.window.getComputedStyle(currentIcon).display).toBe('none');
+  expect(
+    dom.window.getComputedStyle(
+      document.querySelector('[data-chapter-link="model"] .current-icon')!
+    ).display
+  ).toBe('inline-block');
+});
+
+it('gives result columns room inside their own scrolling region', () => {
+  const { document, dom } = open();
+  const table = document.querySelector('[data-results="load"] table') as HTMLTableElement;
+  const columns = Array.from(table.querySelectorAll('col'));
+  const widths = columns.map((column) => Number.parseInt((column as HTMLElement).style.width));
+  expect(widths[1]).toBeGreaterThanOrEqual(240);
+  expect(widths.at(-1)).toBeGreaterThanOrEqual(96);
+  expect(Number.parseInt(table.style.minWidth)).toBeGreaterThan(1000);
+  expect(dom.window.getComputedStyle(table.parentElement!).overflow).toBe('auto');
+  expect(dom.window.getComputedStyle(table.querySelector('.details-column')!).whiteSpace).toBe(
+    'nowrap'
+  );
+  expect(dom.window.getComputedStyle(table.querySelector('td')!).whiteSpace).toBe('nowrap');
+});

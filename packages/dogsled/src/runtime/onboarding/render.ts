@@ -6,7 +6,7 @@ import { lessons } from './lessons.js';
 import { browserScript } from './browser.js';
 import { resultsBrowser } from './results-browser.js';
 import { escapeHtml as e } from './html.js';
-import { codeBlock, icon } from './controls.js';
+import { brandPaint, codeBlock, icon } from './controls.js';
 import { chapterTitle, chapterStatus, descriptions, agentRequest } from './content.js';
 import { renderResults, resultTables } from './results.js';
 import { renderWorkspace } from './workspace-panel.js';
@@ -31,7 +31,7 @@ export function renderOnboardingHtml(input: OnboardingSnapshot): string {
   const nav = s.state.steps
     .map(
       (chapter, index) =>
-        `<a href="#${chapter.id}" data-chapter-link="${chapter.id}"${chapter.id === current?.id ? ' aria-current="step"' : ''}><span class="chapter-icon">${icon(chapter.id === current?.id ? 'RadioSelected' : reviewed.includes(chapter.id) ? 'SuccessKnockout' : chapter.status === 'failed' ? 'FailKnockout' : 'LoadingSpinnerHold')}</span><span class="chapter-label">${labels[chapter.id]}</span>${chapter.id === 'resolve' ? '' : `<span class="chapter-number">${String(index + 1).padStart(2, '0')}</span>`}<span class="sr-only">${e(chapterStatus(chapter, reviewed))}</span></a>`
+        `<a href="#${chapter.id}" data-chapter-link="${chapter.id}" data-reviewed="${reviewed.includes(chapter.id)}"${chapter.id === current?.id ? ' aria-current="step"' : ''}><span class="chapter-icon">${icon('RadioSelected', 'current-icon')}${icon(reviewed.includes(chapter.id) ? 'SuccessKnockout' : chapter.status === 'failed' ? 'FailKnockout' : 'LoadingSpinnerHold', 'status-icon')}</span><span class="chapter-label">${labels[chapter.id]}</span>${chapter.id === 'resolve' ? '' : `<span class="chapter-number">${String(index + 1).padStart(2, '0')}</span>`}<span class="sr-only">${e(chapterStatus(chapter, reviewed))}</span></a>`
     )
     .join('');
   const sections = s.state.steps
@@ -54,5 +54,5 @@ export function renderOnboardingHtml(input: OnboardingSnapshot): string {
       .replace('T', ' ')
       .replace(/:\d\d\.\d{3}Z$/, ' UTC')
   )}</time><details class="more-menu"><summary aria-label="More options" title="More options">${icon('MoreVert')}</summary><div class="menu-content"><label>Theme<select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button type="button" data-context>Question &amp; project context</button><button type="button" data-copy="Refresh my TV Night page with dogsled onboarding render. Show saved check snapshots; do not rerun checks or paid AI calls.">Copy refresh request</button></div></details></header><div class="workspace-content">${sections || '<section class="flow-section"><h1>Learn Dogsled with TV Night</h1><p>No chapters available.</p></section>'}${contextPanel(s)}<footer>Saved locally · No tracking or remote assets · Refresh after your agent saves a checkpoint.</footer></div><nav class="checkout-actions" aria-label="Chapter actions"><button type="button" id="previous-chapter" hidden>${icon('ArrowLeft')}Previous</button><div class="action-buttons"><button type="button" id="review-chapter" disabled>Mark as reviewed</button><button type="button" class="primary" id="next-chapter" hidden>Next step${icon('ArrowRight')}</button></div></nav><div id="copy-status" class="sr-only" role="status" aria-live="polite"></div><noscript><p class="flow-section">JavaScript is disabled. Chapters and the first 20 saved rows remain readable. Enable it for navigation, search and copy controls.</p></noscript></main></div>`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>TV Night · Dogsled</title><style>${fontFaces}${style}</style></head><body class="tv-night">${shell}<script id="snapshot" type="application/json">${rawJson}</script><script>${browserScript}${resultsBrowser}</script></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>TV Night · Dogsled</title><style>${fontFaces}${style}</style></head><body class="tv-night">${brandPaint}${shell}<script id="snapshot" type="application/json">${rawJson}</script><script>${browserScript}${resultsBrowser}</script></body></html>`;
 }
