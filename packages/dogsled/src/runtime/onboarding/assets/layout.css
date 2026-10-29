@@ -218,6 +218,14 @@ pre {
   height: 64px;
   padding: 16px 20px;
 }
+#chapters-toggle,
+[data-chapters-close],
+.saved-narrow {
+  display: none;
+}
+[data-chapters-close] {
+  margin-left: auto;
+}
 .brand img {
   object-fit: contain;
 }
@@ -895,10 +903,42 @@ footer {
     display: block;
   }
   .journey-rail {
-    height: 240px;
+    height: auto;
+    position: static;
     border-right: 0;
     border-bottom: 1px solid var(--rule);
+  }
+  .js .journey-rail {
+    display: none;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(320px, calc(100vw - 32px));
+    height: 100dvh;
+    z-index: 60;
+    border-right: 1px solid var(--rule);
+    box-shadow: 8px 0 24px #0003;
+  }
+  .js.chapters-open .journey-rail {
+    display: block;
+  }
+  .js #chapters-toggle,
+  .js [data-chapters-close] {
+    display: inline-flex;
+  }
+  .chapters-open body {
+    overflow: hidden;
+  }
+  .chapters-backdrop {
+    position: fixed;
+    inset: 0;
     z-index: 50;
+    background: #0008;
+  }
+  .saved-wide {
+    display: none;
+  }
+  .saved-narrow {
+    display: inline;
   }
   .brand {
     height: 48px;
@@ -908,8 +948,9 @@ footer {
     padding-top: 8px;
   }
   .workspace-header {
-    top: 240px;
-    flex-wrap: wrap;
+    top: 0;
+    gap: 8px;
+    padding-inline: 16px;
   }
   .workspace-header time {
     margin-left: auto;
@@ -949,7 +990,7 @@ footer {
   }
   .record-inspection,
   .definition-disclosure {
-    scroll-margin-top: 310px;
+    scroll-margin-top: 80px;
   }
 }
 @media print {
@@ -991,7 +1032,7 @@ footer {
 @media (max-width: 699px) {
   .chapter,
   .flow-section {
-    scroll-margin-top: 310px;
+    scroll-margin-top: 80px;
   }
 }
 

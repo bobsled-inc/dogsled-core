@@ -175,3 +175,6 @@ PR_DESCRIPTION.md
 
 # Showcase runtime artifacts
 test-results/
+
+# Generated offline tutorial review scenarios.
+**/.dogsled/ui-review/

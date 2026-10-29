@@ -7,16 +7,24 @@ const windows: JSDOM[] = [];
 afterEach(() => {
   for (const dom of windows.splice(0)) dom.window.close();
 });
-function open(snapshot = renderFixture(), clipboard = true, hash = '') {
+function open(snapshot = renderFixture(), clipboard = true, hash = '', narrow = false) {
   const errors: Error[] = [];
   const copied: string[] = [];
   const console = new VirtualConsole();
   console.on('jsdomError', (error: Error) => errors.push(error));
+  let mediaChanged = () => {};
+  const media = {
+    matches: narrow,
+    addEventListener: (_event: string, listener: () => void) => {
+      mediaChanged = listener;
+    },
+  };
   const dom = new JSDOM(renderOnboardingHtml(snapshot), {
     url: `https://example.com/tutorial${hash}`,
     runScripts: 'dangerously',
     virtualConsole: console,
     beforeParse(window) {
+      Object.defineProperty(window, 'matchMedia', { value: () => media });
       window.scrollTo = vi.fn();
       window.HTMLElement.prototype.scrollIntoView = vi.fn();
       if (clipboard) {
@@ -38,7 +46,16 @@ function open(snapshot = renderFixture(), clipboard = true, hash = '') {
     expect(button, selector).toBeTruthy();
     (button as HTMLElement).click();
   };
-  return { dom, document, click, copied };
+  return {
+    dom,
+    document,
+    click,
+    copied,
+    resize: (small: boolean) => {
+      media.matches = small;
+      mediaChanged();
+    },
+  };
 }
 it('browses chapters without completing or reviewing them and retains deep links', () => {
   const { document, click } = open();
@@ -237,4 +254,43 @@ it('uses blue brand accents in dark mode and restores the light gradient', () =>
       .getPropertyValue('--brand-icon-fill')
       .trim()
   ).toBe('url(#dogsled-gradient-brand)');
+});
+
+it('keeps narrow chapter navigation hidden until opened and dismisses it after choosing a chapter', () => {
+  const { document, click } = open(renderFixture(), true, '', true);
+  const drawer = document.querySelector('#chapter-menu') as HTMLElement;
+  const main = document.querySelector('main') as HTMLElement;
+  expect(drawer.getAttribute('aria-hidden')).toBe('true');
+  expect(drawer.inert).toBe(true);
+  click('#chapters-toggle');
+  expect(drawer.getAttribute('role')).toBe('dialog');
+  expect(main.inert).toBe(true);
+  expect(document.querySelector('#chapters-toggle')?.getAttribute('aria-expanded')).toBe('true');
+  click('[data-chapter-link="model"]');
+  expect(main.inert).toBe(false);
+  expect(drawer.getAttribute('aria-hidden')).toBe('true');
+  expect(document.activeElement).toBe(document.querySelector('#model h1'));
+});
+it('traps focus in the narrow drawer and restores focus on Escape, backdrop and resize', () => {
+  const { document, dom, click, resize } = open(renderFixture(), true, '', true);
+  click('#chapters-toggle');
+  const links = document.querySelectorAll('[data-chapter-link]');
+  (links[links.length - 1] as HTMLElement).focus();
+  links[links.length - 1]!.dispatchEvent(
+    new dom.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true })
+  );
+  expect(document.activeElement).toBe(document.querySelector('[data-chapters-close]'));
+  document.activeElement?.dispatchEvent(
+    new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+  );
+  expect(document.activeElement).toBe(document.querySelector('#chapters-toggle'));
+  click('#chapters-toggle');
+  click('[data-chapters-backdrop]');
+  expect(document.querySelector('#chapters-toggle')?.getAttribute('aria-expanded')).toBe('false');
+  click('#chapters-toggle');
+  resize(false);
+  expect(document.querySelector('#chapter-menu')?.hasAttribute('aria-hidden')).toBe(false);
+  expect((document.querySelector('main') as HTMLElement).inert).toBe(false);
+  resize(true);
+  expect(document.querySelector('#chapter-menu')?.getAttribute('aria-hidden')).toBe('true');
 });

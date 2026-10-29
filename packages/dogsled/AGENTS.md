@@ -103,6 +103,8 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 - Onboarding HTML stays self-contained. Edit the inputs under
   `src/runtime/onboarding/assets/`, then run `node scripts/onboarding-assets.mjs`;
   never hand-edit `assets.generated.ts`. The package build checks asset drift.
+- Keep visual-review scenarios and their selectors in the separate
+  `scripts/onboarding-preview*.ts` generator, outside the production artifact.
 - **tsup** bundles into `dist/index.js` (ESM, ~400KB)
 - `__CLI_VERSION__` injected at build time via tsup `define`
 - `scripts/pack.sh` creates distributable zip with standalone binary + `install.sh`

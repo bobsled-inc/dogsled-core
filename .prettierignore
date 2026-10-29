@@ -25,3 +25,6 @@ packages/dogsled/THIRD_PARTY_NOTICES.md
 packages/dogsled/src/runtime/onboarding/assets.generated.ts
 packages/dogsled/src/runtime/onboarding/assets/fonts.css
 packages/dogsled/src/runtime/onboarding/assets/*-OFL.txt
+
+# Generated offline tutorial review scenarios.
+**/.dogsled/ui-review/

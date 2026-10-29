@@ -31,7 +31,7 @@ function followHash(){
 }
 document.querySelectorAll('[data-chapter-link]').forEach(link=>{
  const chapter=chapters.find(x=>x.id===link.dataset.chapterLink);link.dataset.reviewed=chapter?.dataset.reviewed||'false';
- link.addEventListener('click',()=>selectChapter(link.dataset.chapterLink,true));
+ link.addEventListener('click',()=>{closeChapters(false);selectChapter(link.dataset.chapterLink,true);});
 });
 previousChapter.addEventListener('click',()=>{const index=chapters.findIndex(x=>x.id===selectedId);if(index>0){selectChapter(chapters[index-1].id,true);location.hash=selectedId;}});
 nextChapter.addEventListener('click',()=>{const index=chapters.findIndex(x=>x.id===selectedId);if(index<chapters.length-1){selectChapter(chapters[index+1].id,true);location.hash=selectedId;}});

@@ -7,8 +7,10 @@ the regeneration command are documented in `assets/README.md` beside the rendere
 
 ## Layout and controls
 
-- Keep the chapter journey visible in a sticky sidebar. At narrow widths it becomes
-  a labelled, scrollable outline above the content, without a collapsed rail.
+- Keep the chapter journey visible in a sticky sidebar on desktop. Below 700 px,
+  hide it behind the header's chapter-menu button. The drawer traps focus and closes
+  on selection, Escape, its close button or the backdrop. Returning to desktop
+  restores the persistent sidebar.
 - Show one chapter at a time, with a compact introduction followed by understanding,
   saved results, working definitions and agent handoff. Use 32 px above each section
   and 40 px below, with dividers spanning the content area.
@@ -68,3 +70,39 @@ For visual review, generate the page from the same saved project before and afte
 the change. Inspect light, dark and system themes at desktop, 750 px and 390 px.
 Check table and graph overflow, sticky actions and keyboard focus. No external
 design repository is required to build or inspect the page.
+
+## Review scenarios
+
+From a repository checkout, generate the separate visual-review page:
+
+```bash
+pnpm --filter @bobsled-inc/dogsled exec tsx scripts/onboarding-preview.ts
+```
+
+Open `packages/dogsled/.dogsled/ui-review/index.html`, or pass a dedicated output
+folder as the final argument. The generated folder is local and ignored by Git.
+The tool uses the production renderer and canonical snapshot schema with synthetic
+fixtures. It does not call services or create real tutorial checkpoints.
+
+Use the scenario, theme and width controls to inspect not-started, populated,
+empty, reviewed, failed, needs-input/stale, long-content and larger-graph states.
+Every chapter has saved examples in the populated scenario. Width presets are
+1280, 750, 390 and 320 px, plus the available panel width. Theme/scenario changes
+reset the embedded view to that scenario's initial chapter. The link opens the
+selected state by itself for comments or full-window inspection.
+
+Review checklist:
+
+- At 390 and 320 px, the closed chapter menu takes no space above the content.
+  Open it, select a chapter, close it with Escape, and resize back to desktop.
+- Switch themes and chapters. Check the header, action bar, focus, selected marker
+  and review statuses.
+- Search, sort and page results. Inspect a row, unknown values and a passage.
+  Tables should scroll inside their panel and retain readable column widths.
+- Open working files and nested definitions. Follow a graph node to its file.
+  In the larger-graph state, verify both scrolling directions and the missing node.
+- Check the agent-request copy control and its manual-copy fallback.
+
+DOM tests cover interactions and the generator. A real-browser screenshot/layout
+pass remains a separate visual check; generating these fixtures does not establish
+pixel-level verification.
