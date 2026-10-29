@@ -1,0 +1,640 @@
+{
+  "state": {
+    "version": 2,
+    "inputHash": "b78422ddaa3c5abe2bfe0f30ea684c238df39805921d26e0f979c05ba9ed10c1",
+    "datasetVersion": "DUMMY FIXTURE v1",
+    "steps": [
+      {
+        "id": "connect",
+        "label": "Connect to an API",
+        "status": "complete",
+        "evidence": {
+          "version": 2,
+          "step": "connect",
+          "mode": "offline",
+          "inputHash": "b78422ddaa3c5abe2bfe0f30ea684c238df39805921d26e0f979c05ba9ed10c1",
+          "at": "2026-10-29T12:27:09.813Z",
+          "tables": [
+            {
+              "name": "Dummy API response",
+              "rows": [
+                {
+                  "id": 1001,
+                  "name": "Orbital Assembly",
+                  "source": "Local fixture; no HTTP request"
+                }
+              ],
+              "columns": ["id", "name", "source"],
+              "totalRows": 1
+            }
+          ],
+          "receipts": [
+            "Simulated connection check. Read fixtures/catalog.json locally; no API request."
+          ]
+        }
+      },
+      {
+        "id": "load",
+        "label": "Build an ETL pipeline",
+        "status": "complete",
+        "evidence": {
+          "version": 2,
+          "step": "load",
+          "mode": "offline",
+          "inputHash": "b78422ddaa3c5abe2bfe0f30ea684c238df39805921d26e0f979c05ba9ed10c1",
+          "at": "2026-10-29T12:27:09.813Z",
+          "tables": [
+            {
+              "name": "Shows",
+              "rows": [
+                {
+                  "id": 1001,
+                  "name": "Orbital Assembly",
+                  "status": "Running",
+                  "runtime": 48,
+                  "genres": "Science-Fiction, Drama",
+                  "episode_count": 3
+                },
+                {
+                  "id": 1002,
+                  "name": "The Last Signal",
+                  "status": "Ended",
+                  "runtime": 42,
+                  "genres": "Science-Fiction, Mystery",
+                  "episode_count": 3
+                },
+                {
+                  "id": 1003,
+                  "name": "Harbour Files",
+                  "status": "Running",
+                  "runtime": 55,
+                  "genres": "Crime, Drama",
+                  "episode_count": 3
+                },
+                {
+                  "id": 1004,
+                  "name": "Copper Vale",
+                  "status": "Ended",
+                  "runtime": 28,
+                  "genres": "Comedy, Drama",
+                  "episode_count": 3
+                },
+                {
+                  "id": 1005,
+                  "name": "Paper Satellites",
+                  "status": "Running",
+                  "runtime": 32,
+                  "genres": "Science-Fiction, Comedy",
+                  "episode_count": 3
+                },
+                {
+                  "id": 1006,
+                  "name": "The Quiet Index",
+                  "status": "Ended",
+                  "runtime": null,
+                  "genres": "Mystery, Drama",
+                  "episode_count": 3
+                }
+              ],
+              "columns": [
+                "id",
+                "name",
+                "status",
+                "runtime",
+                "genres",
+                "episode_count"
+              ],
+              "totalRows": 6
+            },
+            {
+              "name": "Episodes",
+              "rows": [
+                {
+                  "id": 10011,
+                  "show_id": 1001,
+                  "show": "Orbital Assembly",
+                  "season": 1,
+                  "number": 1,
+                  "name": "A Small Orbit",
+                  "runtime": 48
+                },
+                {
+                  "id": 10012,
+                  "show_id": 1001,
+                  "show": "Orbital Assembly",
+                  "season": 1,
+                  "number": 2,
+                  "name": "The Delegation",
+                  "runtime": 48
+                },
+                {
+                  "id": 10013,
+                  "show_id": 1001,
+                  "show": "Orbital Assembly",
+                  "season": 1,
+                  "number": 3,
+                  "name": "Unanimous",
+                  "runtime": 48
+                },
+                {
+                  "id": 10021,
+                  "show_id": 1002,
+                  "show": "The Last Signal",
+                  "season": 1,
+                  "number": 1,
+                  "name": "Static",
+                  "runtime": 42
+                },
+                {
+                  "id": 10022,
+                  "show_id": 1002,
+                  "show": "The Last Signal",
+                  "season": 1,
+                  "number": 2,
+                  "name": "Relay",
+                  "runtime": 42
+                },
+                {
+                  "id": 10023,
+                  "show_id": 1002,
+                  "show": "The Last Signal",
+                  "season": 1,
+                  "number": 3,
+                  "name": "An Answer",
+                  "runtime": 42
+                },
+                {
+                  "id": 10031,
+                  "show_id": 1003,
+                  "show": "Harbour Files",
+                  "season": 1,
+                  "number": 1,
+                  "name": "Low Tide",
+                  "runtime": 55
+                },
+                {
+                  "id": 10032,
+                  "show_id": 1003,
+                  "show": "Harbour Files",
+                  "season": 1,
+                  "number": 2,
+                  "name": "Missing Cargo",
+                  "runtime": 55
+                },
+                {
+                  "id": 10033,
+                  "show_id": 1003,
+                  "show": "Harbour Files",
+                  "season": 1,
+                  "number": 3,
+                  "name": "The Crossing",
+                  "runtime": 55
+                },
+                {
+                  "id": 10041,
+                  "show_id": 1004,
+                  "show": "Copper Vale",
+                  "season": 1,
+                  "number": 1,
+                  "name": "New Keys",
+                  "runtime": 28
+                },
+                {
+                  "id": 10042,
+                  "show_id": 1004,
+                  "show": "Copper Vale",
+                  "season": 1,
+                  "number": 2,
+                  "name": "The Meeting",
+                  "runtime": 28
+                },
+                {
+                  "id": 10043,
+                  "show_id": 1004,
+                  "show": "Copper Vale",
+                  "season": 1,
+                  "number": 3,
+                  "name": "Moving Day",
+                  "runtime": 28
+                },
+                {
+                  "id": 10051,
+                  "show_id": 1005,
+                  "show": "Paper Satellites",
+                  "season": 1,
+                  "number": 1,
+                  "name": "Launch Window",
+                  "runtime": 32
+                },
+                {
+                  "id": 10052,
+                  "show_id": 1005,
+                  "show": "Paper Satellites",
+                  "season": 1,
+                  "number": 2,
+                  "name": "Minor Repairs",
+                  "runtime": 32
+                },
+                {
+                  "id": 10053,
+                  "show_id": 1005,
+                  "show": "Paper Satellites",
+                  "season": 1,
+                  "number": 3,
+                  "name": "Ground Control",
+                  "runtime": 32
+                },
+                {
+                  "id": 10061,
+                  "show_id": 1006,
+                  "show": "The Quiet Index",
+                  "season": 1,
+                  "number": 1,
+                  "name": "Entry One",
+                  "runtime": null
+                },
+                {
+                  "id": 10062,
+                  "show_id": 1006,
+                  "show": "The Quiet Index",
+                  "season": 1,
+                  "number": 2,
+                  "name": "The Archive",
+                  "runtime": null
+                },
+                {
+                  "id": 10063,
+                  "show_id": 1006,
+                  "show": "The Quiet Index",
+                  "season": 1,
+                  "number": 3,
+                  "name": "Unlisted",
+                  "runtime": null
+                }
+              ],
+              "columns": [
+                "id",
+                "show_id",
+                "show",
+                "season",
+                "number",
+                "name",
+                "runtime"
+              ],
+              "totalRows": 18
+            }
+          ],
+          "receipts": [
+            "Synthetic checkpoint for UI testing. Flattened 6 fixture shows and 18 fixture episodes in JavaScript. No DuckDB or Dogsled pipeline was executed."
+          ]
+        }
+      },
+      {
+        "id": "model",
+        "label": "Build semantic models",
+        "status": "not_started"
+      },
+      {
+        "id": "query",
+        "label": "Query your data",
+        "status": "not_started"
+      },
+      {
+        "id": "federate",
+        "label": "Query across sources",
+        "status": "not_started"
+      },
+      {
+        "id": "transform",
+        "label": "Build an agentic transformation",
+        "status": "not_started"
+      },
+      {
+        "id": "resolve",
+        "label": "Optional: entity resolution",
+        "status": "not_started"
+      }
+    ]
+  },
+  "progress": {
+    "current": "load",
+    "reviewed": ["connect"],
+    "history": []
+  },
+  "question": "What should I watch next?",
+  "preferences": "Demo preference: science fiction and mystery. This is synthetic test input.",
+  "renderedAt": "2026-10-29T12:27:09.813Z",
+  "sources": [
+    {
+      "name": "Dummy TV catalog",
+      "license": "Synthetic test data; all titles and records are fictional.",
+      "url": "https://example.com",
+      "rows": 24
+    }
+  ],
+  "tables": [
+    {
+      "name": "Shows",
+      "rows": [
+        {
+          "id": 1001,
+          "name": "Orbital Assembly",
+          "status": "Running",
+          "runtime": 48,
+          "genres": "Science-Fiction, Drama",
+          "episode_count": 3
+        },
+        {
+          "id": 1002,
+          "name": "The Last Signal",
+          "status": "Ended",
+          "runtime": 42,
+          "genres": "Science-Fiction, Mystery",
+          "episode_count": 3
+        },
+        {
+          "id": 1003,
+          "name": "Harbour Files",
+          "status": "Running",
+          "runtime": 55,
+          "genres": "Crime, Drama",
+          "episode_count": 3
+        },
+        {
+          "id": 1004,
+          "name": "Copper Vale",
+          "status": "Ended",
+          "runtime": 28,
+          "genres": "Comedy, Drama",
+          "episode_count": 3
+        },
+        {
+          "id": 1005,
+          "name": "Paper Satellites",
+          "status": "Running",
+          "runtime": 32,
+          "genres": "Science-Fiction, Comedy",
+          "episode_count": 3
+        },
+        {
+          "id": 1006,
+          "name": "The Quiet Index",
+          "status": "Ended",
+          "runtime": null,
+          "genres": "Mystery, Drama",
+          "episode_count": 3
+        }
+      ],
+      "columns": ["id", "name", "status", "runtime", "genres", "episode_count"],
+      "totalRows": 6
+    },
+    {
+      "name": "Episodes",
+      "rows": [
+        {
+          "id": 10011,
+          "show_id": 1001,
+          "show": "Orbital Assembly",
+          "season": 1,
+          "number": 1,
+          "name": "A Small Orbit",
+          "runtime": 48
+        },
+        {
+          "id": 10012,
+          "show_id": 1001,
+          "show": "Orbital Assembly",
+          "season": 1,
+          "number": 2,
+          "name": "The Delegation",
+          "runtime": 48
+        },
+        {
+          "id": 10013,
+          "show_id": 1001,
+          "show": "Orbital Assembly",
+          "season": 1,
+          "number": 3,
+          "name": "Unanimous",
+          "runtime": 48
+        },
+        {
+          "id": 10021,
+          "show_id": 1002,
+          "show": "The Last Signal",
+          "season": 1,
+          "number": 1,
+          "name": "Static",
+          "runtime": 42
+        },
+        {
+          "id": 10022,
+          "show_id": 1002,
+          "show": "The Last Signal",
+          "season": 1,
+          "number": 2,
+          "name": "Relay",
+          "runtime": 42
+        },
+        {
+          "id": 10023,
+          "show_id": 1002,
+          "show": "The Last Signal",
+          "season": 1,
+          "number": 3,
+          "name": "An Answer",
+          "runtime": 42
+        },
+        {
+          "id": 10031,
+          "show_id": 1003,
+          "show": "Harbour Files",
+          "season": 1,
+          "number": 1,
+          "name": "Low Tide",
+          "runtime": 55
+        },
+        {
+          "id": 10032,
+          "show_id": 1003,
+          "show": "Harbour Files",
+          "season": 1,
+          "number": 2,
+          "name": "Missing Cargo",
+          "runtime": 55
+        },
+        {
+          "id": 10033,
+          "show_id": 1003,
+          "show": "Harbour Files",
+          "season": 1,
+          "number": 3,
+          "name": "The Crossing",
+          "runtime": 55
+        },
+        {
+          "id": 10041,
+          "show_id": 1004,
+          "show": "Copper Vale",
+          "season": 1,
+          "number": 1,
+          "name": "New Keys",
+          "runtime": 28
+        },
+        {
+          "id": 10042,
+          "show_id": 1004,
+          "show": "Copper Vale",
+          "season": 1,
+          "number": 2,
+          "name": "The Meeting",
+          "runtime": 28
+        },
+        {
+          "id": 10043,
+          "show_id": 1004,
+          "show": "Copper Vale",
+          "season": 1,
+          "number": 3,
+          "name": "Moving Day",
+          "runtime": 28
+        },
+        {
+          "id": 10051,
+          "show_id": 1005,
+          "show": "Paper Satellites",
+          "season": 1,
+          "number": 1,
+          "name": "Launch Window",
+          "runtime": 32
+        },
+        {
+          "id": 10052,
+          "show_id": 1005,
+          "show": "Paper Satellites",
+          "season": 1,
+          "number": 2,
+          "name": "Minor Repairs",
+          "runtime": 32
+        },
+        {
+          "id": 10053,
+          "show_id": 1005,
+          "show": "Paper Satellites",
+          "season": 1,
+          "number": 3,
+          "name": "Ground Control",
+          "runtime": 32
+        },
+        {
+          "id": 10061,
+          "show_id": 1006,
+          "show": "The Quiet Index",
+          "season": 1,
+          "number": 1,
+          "name": "Entry One",
+          "runtime": null
+        },
+        {
+          "id": 10062,
+          "show_id": 1006,
+          "show": "The Quiet Index",
+          "season": 1,
+          "number": 2,
+          "name": "The Archive",
+          "runtime": null
+        },
+        {
+          "id": 10063,
+          "show_id": 1006,
+          "show": "The Quiet Index",
+          "season": 1,
+          "number": 3,
+          "name": "Unlisted",
+          "runtime": null
+        }
+      ],
+      "columns": [
+        "id",
+        "show_id",
+        "show",
+        "season",
+        "number",
+        "name",
+        "runtime"
+      ],
+      "totalRows": 18
+    }
+  ],
+  "files": [
+    {
+      "path": "integrations/dummy-catalog.yml",
+      "language": "yaml",
+      "content": "# UI fixture example only. This configuration is not executed.\nname: dummy_catalog\ntype: api\ndescription: Fictional TV catalog supplied by fixtures/catalog.json\n"
+    },
+    {
+      "path": "pipelines/tv-night.yml",
+      "language": "yaml",
+      "content": "# UI fixture example only. No network or database operation.\nname: tv_night\nsource: dummy_catalog\ntables:\n  - shows\n  - episodes\n"
+    },
+    {
+      "path": "sources/shows.yml",
+      "language": "yaml",
+      "content": "# UI fixture example only.\nname: shows\ntype: source\ndescription: One row per fictional TV series.\nschema:\n  columns:\n    id: { type: integer, description: Synthetic show identifier }\n    name: { type: string, description: Fictional show title }\n    runtime: { type: integer, description: Minutes; null means unknown }\n"
+    },
+    {
+      "path": "sources/episodes.yml",
+      "language": "yaml",
+      "content": "# UI fixture example only.\nname: episodes\ntype: source\ndescription: One row per fictional episode.\nschema:\n  columns:\n    show_id: { type: integer, description: Links to the fictional show id }\n    name: { type: string, description: Fictional episode title }\n"
+    }
+  ],
+  "definitions": [
+    {
+      "kind": "source (fixture)",
+      "name": "shows",
+      "description": "Fictional catalog records used to test the page.",
+      "fields": ["id: synthetic identifier", "runtime: minutes, nullable"]
+    },
+    {
+      "kind": "source (fixture)",
+      "name": "episodes",
+      "description": "Three fictional episodes for each show.",
+      "fields": ["show_id: points to shows.id", "number: episode order"]
+    }
+  ],
+  "lineage": {
+    "nodes": [
+      {
+        "id": "integrations/dummy-catalog.yml",
+        "label": "Dummy catalog",
+        "kind": "fixture source",
+        "description": "Local synthetic input, not an API connection.",
+        "available": true
+      },
+      {
+        "id": "sources/shows.yml",
+        "label": "Shows",
+        "kind": "fixture definition",
+        "description": "6 fictional shows.",
+        "available": true
+      },
+      {
+        "id": "sources/episodes.yml",
+        "label": "Episodes",
+        "kind": "fixture definition",
+        "description": "18 fictional episodes.",
+        "available": true
+      }
+    ],
+    "edges": [
+      {
+        "from": "integrations/dummy-catalog.yml",
+        "to": "sources/shows.yml"
+      },
+      {
+        "from": "integrations/dummy-catalog.yml",
+        "to": "sources/episodes.yml"
+      }
+    ]
+  }
+}

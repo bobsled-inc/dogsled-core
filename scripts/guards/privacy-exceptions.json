@@ -53,6 +53,21 @@
       ],
       "values": ["support@github.com"],
       "reason": "Public GitHub Dependabot DCO sign-off identity, accepted only for its canonical API account and exact noreply commit author; regression fixtures cover rejection of other identities."
+    },
+    {
+      "rule": "email-address",
+      "files": ["examples/tv-night-ui-preview/LICENSES/runtime.txt"],
+      "values": ["luke.edwards05@gmail.com"],
+      "reason": "Required public upstream MIT copyright attribution for the exact bundled clsx package."
+    },
+    {
+      "rule": "email-address",
+      "files": [
+        "examples/tv-night-ui-preview/LICENSES/react-remove-scroll-bar.txt",
+        "examples/tv-night-ui-preview/LICENSES/runtime.txt"
+      ],
+      "values": ["thekashey@gmail.com"],
+      "reason": "Required public upstream MIT copyright attribution for the exact bundled react-remove-scroll-bar package."
     }
   ]
 }

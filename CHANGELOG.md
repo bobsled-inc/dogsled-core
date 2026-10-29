@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+Add a standalone, offline TV Night tutorial UI prototype with synthetic results, chapter navigation, file and lineage previews, and agent handoff prompts for design review. The CLI tutorial renderer is unchanged.
+
 Add the TV Night guided tutorial. Build an API connection, ETL pipeline, source and derived semantic models, cross-source queries, and agentic transformations with an agent. A local HTML page shows chapter progress, files, model lineage, and saved results. Agentic assessments select passage IDs so the executor attaches exact evidence, with a one-show check before the remaining batch and targeted retries.
 
 ## 0.1.0

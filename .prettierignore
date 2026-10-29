@@ -20,3 +20,9 @@ packages/skills/src/generated-data.ts
 
 # Generated license text must remain byte-stable; use the notices generator.
 packages/dogsled/THIRD_PARTY_NOTICES.md
+
+# Generated offline tutorial UI snapshots and byte-stable license notices.
+examples/tv-night-ui-preview/**/*.html
+examples/tv-night-ui-preview/LICENSES/
+examples/tv-night-ui-preview/.build/
+examples/tv-night-ui-preview/tsconfig.json

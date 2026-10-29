@@ -1,0 +1,693 @@
+{
+  "name": "dogsled-tutorial-artifact-prototype",
+  "version": "0.7.1",
+  "distribution": "local-prototype",
+  "generatedAt": "2026-10-29T14:45:49.587Z",
+  "sourcePackage": "@dogsled/ui",
+  "sourcePackagePrivate": true,
+  "sourceRevision": "2c82744d64f7c1fe23e0684adf358254cf979626",
+  "snapshotContract": "Dogsled onboarding saved snapshot",
+  "imports": [
+    "@dogsled/ui/ActionIcon",
+    "@dogsled/ui/Button",
+    "@dogsled/ui/CodeBlock",
+    "@dogsled/ui/Collapsible",
+    "@dogsled/ui/CopyButton",
+    "@dogsled/ui/DropdownMenu",
+    "@dogsled/ui/EmptyState",
+    "@dogsled/ui/GraphNode",
+    "@dogsled/ui/Input",
+    "@dogsled/ui/PageHeader",
+    "@dogsled/ui/ResultsTable",
+    "@dogsled/ui/SectionToolbar",
+    "@dogsled/ui/Sidebar",
+    "@dogsled/ui/Tabs",
+    "@dogsled/ui/Tag",
+    "@dogsled/ui/Toolbar",
+    "@dogsled/ui/Tooltip",
+    "@dogsled/ui/TreeView",
+    "@dogsled/ui/icons/ArrowLeft",
+    "@dogsled/ui/icons/ArrowRight",
+    "@dogsled/ui/icons/Clear",
+    "@dogsled/ui/icons/CodeSnippet",
+    "@dogsled/ui/icons/Database",
+    "@dogsled/ui/icons/Dogsled",
+    "@dogsled/ui/icons/ExpandAlt",
+    "@dogsled/ui/icons/FailKnockout",
+    "@dogsled/ui/icons/Folder",
+    "@dogsled/ui/icons/LoadingSpinnerHold",
+    "@dogsled/ui/icons/MoreVert",
+    "@dogsled/ui/icons/Pipeline",
+    "@dogsled/ui/icons/RadioSelected",
+    "@dogsled/ui/icons/Row",
+    "@dogsled/ui/icons/Search",
+    "@dogsled/ui/icons/SuccessKnockout",
+    "@dogsled/ui/icons/Table",
+    "@dogsled/ui/icons/ThemeMoon",
+    "@dogsled/ui/icons/ThemeSun",
+    "@dogsled/ui/icons/Tick"
+  ],
+  "assets": {
+    "css": {
+      "file": "theme.css",
+      "bytes": 202515,
+      "sha256": "6ace9b7fa45d887eaf1de5ef11cb84979e2b9bc0aa9c762413dd7c4f5e8194f1"
+    },
+    "javascript": {
+      "file": "runtime.js",
+      "bytes": 471786,
+      "sha256": "aa61ddf0a46e176fd6e8799b4b449cb0dc50e575d14b701ae1e9817dff3fd969"
+    }
+  },
+  "htmlBytes": 786104,
+  "externalRuntimeResources": 0,
+  "graphPresentation": "GraphNode components with rounded elbow SVG connectors and open arrowheads; no canvas engine",
+  "previousLayoutBytes": 777566,
+  "brandAssets": [
+    {
+      "path": "src/assets/brand/dogsled-mark.svg",
+      "bytes": 2148,
+      "sha256": "189e5cf66c6a0c84e3019da52e2f87f41a53863f20d84b35eda1c0dbd9aca2c4"
+    },
+    {
+      "path": "src/assets/brand/dogsled-wordmark.svg",
+      "bytes": 7950,
+      "sha256": "a25fc33ec2a226eb4eb3fee705443c1f4f0fd838f56588f473396126eb1d87db"
+    },
+    {
+      "path": "src/assets/brand/dogsled-labs-wordmark.svg",
+      "bytes": 12567,
+      "sha256": "15f398b8b30e1a350b6738a34747ee3958e0e75ffe947ba5f2cd2332cab06d51"
+    }
+  ],
+  "bundledPackages": [
+    {
+      "name": "@floating-ui/core",
+      "version": "1.8.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@floating-ui/dom",
+      "version": "1.8.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@floating-ui/react-dom",
+      "version": "2.1.9",
+      "license": "MIT"
+    },
+    {
+      "name": "@floating-ui/utils",
+      "version": "0.2.12",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/primitive",
+      "version": "1.1.7",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-arrow",
+      "version": "1.1.15",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-collapsible",
+      "version": "1.1.20",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-collection",
+      "version": "1.1.15",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-compose-refs",
+      "version": "1.1.5",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-context",
+      "version": "1.2.2",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-dialog",
+      "version": "1.1.23",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-direction",
+      "version": "1.1.4",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-dismissable-layer",
+      "version": "1.1.19",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-dropdown-menu",
+      "version": "2.1.24",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-focus-guards",
+      "version": "1.1.6",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-focus-scope",
+      "version": "1.1.16",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-id",
+      "version": "1.1.4",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-menu",
+      "version": "2.1.24",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-popper",
+      "version": "1.3.7",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-portal",
+      "version": "1.1.17",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-presence",
+      "version": "1.1.10",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-primitive",
+      "version": "2.1.10",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-roving-focus",
+      "version": "1.1.19",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-slot",
+      "version": "1.3.3",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-tabs",
+      "version": "1.1.21",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-tooltip",
+      "version": "1.2.16",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-use-callback-ref",
+      "version": "1.1.4",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-use-controllable-state",
+      "version": "1.2.6",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-use-effect-event",
+      "version": "0.0.5",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-use-is-hydrated",
+      "version": "0.1.3",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-use-layout-effect",
+      "version": "1.1.4",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-use-size",
+      "version": "1.1.4",
+      "license": "MIT"
+    },
+    {
+      "name": "@radix-ui/react-visually-hidden",
+      "version": "1.2.11",
+      "license": "MIT"
+    },
+    {
+      "name": "aria-hidden",
+      "version": "1.2.6",
+      "license": "MIT"
+    },
+    {
+      "name": "class-variance-authority",
+      "version": "0.7.1",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "clsx",
+      "version": "2.1.1",
+      "license": "MIT"
+    },
+    {
+      "name": "dogsled",
+      "version": "0.1.0",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "get-nonce",
+      "version": "1.0.1",
+      "license": "MIT"
+    },
+    {
+      "name": "react",
+      "version": "19.2.8",
+      "license": "MIT"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.2.8",
+      "license": "MIT"
+    },
+    {
+      "name": "react-remove-scroll",
+      "version": "2.7.2",
+      "license": "MIT"
+    },
+    {
+      "name": "react-remove-scroll-bar",
+      "version": "2.3.8",
+      "license": "MIT"
+    },
+    {
+      "name": "react-style-singleton",
+      "version": "2.2.3",
+      "license": "MIT"
+    },
+    {
+      "name": "scheduler",
+      "version": "0.27.0",
+      "license": "MIT"
+    },
+    {
+      "name": "tailwind-merge",
+      "version": "3.7.0",
+      "license": "MIT"
+    },
+    {
+      "name": "tslib",
+      "version": "2.8.1",
+      "license": "0BSD"
+    },
+    {
+      "name": "use-callback-ref",
+      "version": "1.3.3",
+      "license": "MIT"
+    },
+    {
+      "name": "use-sidecar",
+      "version": "1.1.3",
+      "license": "MIT"
+    }
+  ],
+  "licenseFiles": [
+    "LICENSES/Inter-OFL.txt",
+    "LICENSES/Roboto-Mono-OFL.txt",
+    "LICENSES/runtime.txt",
+    "LICENSES/react-remove-scroll-bar.txt"
+  ],
+  "sourceFingerprints": [
+    {
+      "path": "src/icons/_utils/brand-gradient.tsx",
+      "sha256": "d39baf4a9b65d5ff09f9848ae73e54766e5807ef7e2b4bf08774b0dee8e61443"
+    },
+    {
+      "path": "src/icons/_utils/IconBase.tsx",
+      "sha256": "c73384de1c29e61b025621133381a3b2b41b07d004ea9a5b23ab7f717bbe0a5a"
+    },
+    {
+      "path": "src/icons/LoadingSpinnerIndicator.tsx",
+      "sha256": "4570c5969aa8b369a822fb3fa6d083bc08dc35832ec0addf9ab97cd9988fd6e5"
+    },
+    {
+      "path": "src/lib/prepare-icon.ts",
+      "sha256": "811c2defeb4d31eb07aed031cfa9c596f83a14b15cc4233ba1194be43da5cce9"
+    },
+    {
+      "path": "src/icons/ArrowDown.tsx",
+      "sha256": "e926bf823410db8e90399fd3f6880e80099de13d3db0bc3bc1920f9dbaff4633"
+    },
+    {
+      "path": "src/icons/ArrowLeft.tsx",
+      "sha256": "8ed181c17e1c2678c7866dc7fdb0cad86508c7c696f1f698f26d5e8a36ca2fc7"
+    },
+    {
+      "path": "src/icons/ArrowRight.tsx",
+      "sha256": "0146e4686defea6ebe93824628772336b8d933adfd6ce11ccb058f8c324a586a"
+    },
+    {
+      "path": "src/icons/ArrowUp.tsx",
+      "sha256": "af11dd961858540e6538cacd17aba680e0ed73a20ff4eaf576250f45eac6e061"
+    },
+    {
+      "path": "src/icons/Backspace.tsx",
+      "sha256": "a3bfa51238d3311e750d7f20f11cd94c8a04022fe502bc9760a9b14421029657"
+    },
+    {
+      "path": "src/icons/Command.tsx",
+      "sha256": "4cba631ff7311bc32ca3ee24c25fb2b7277836a9c3dbe897f39a1383d04bd70d"
+    },
+    {
+      "path": "src/icons/Control.tsx",
+      "sha256": "e5b763bb16bd4dd66723629f233690dc3693decab6abe05664887da43c476269"
+    },
+    {
+      "path": "src/icons/Option.tsx",
+      "sha256": "36f0f06ad0f1006ee3d3019792ff0519c932fa6ef3faed084721c51e96ff7458"
+    },
+    {
+      "path": "src/icons/Return.tsx",
+      "sha256": "01221bbd14b1c047f482747f66597b5ff4454e4e95afb52391542f053e3dce7c"
+    },
+    {
+      "path": "src/icons/Shift.tsx",
+      "sha256": "da7af253f1fbf47e8e85d8635d1be7a7ab4c5ab769e92ba8f4926f60a6000431"
+    },
+    {
+      "path": "src/components/ui/kbd/kbd.tsx",
+      "sha256": "a43bf3c7f13982397a332dcd8d6ff2e6fda8aa26bb6beef44280c6148259c6b0"
+    },
+    {
+      "path": "src/components/ui/kbd/shortcut.tsx",
+      "sha256": "b01a63bead3e219fefadf063ed162a6476651623c2cdb17150950411e5c87634"
+    },
+    {
+      "path": "src/atoms/Tooltip/Tooltip.tsx",
+      "sha256": "918edbecbb446c0140e71322a9bcfc4bee1413c56959fafbd7ff7af7c8861c43"
+    },
+    {
+      "path": "src/atoms/ActionIcon/ActionIcon.tsx",
+      "sha256": "77e413e5eee7be44c07276a646d857d6208188b42e177a775f1cf7bd7537af0f"
+    },
+    {
+      "path": "src/lib/component-props.ts",
+      "sha256": "f9108b30a84a50a7e5d97ea0fd1ed63202b8f9b942cb6643f1c069a02626bf96"
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "sha256": "2c93228f23cb0dae27fcb8850f4e85921f402881fe8fed32258b9a97e86c4eae"
+    },
+    {
+      "path": "src/icons/Copy.tsx",
+      "sha256": "d499146ee691c17be9789109be1e765fd638294be42f74eebc597754df85fb33"
+    },
+    {
+      "path": "src/icons/Tick.tsx",
+      "sha256": "84f4b6d15a55a6e6db587d98d51ebe411c78d7d6e4f42b4d2b70a0b341732b59"
+    },
+    {
+      "path": "src/lib/expected-failure.ts",
+      "sha256": "df27c8fa65b955e893ec8cdd3e24a3382781674f303720aa062fe523f8b1eb07"
+    },
+    {
+      "path": "src/lib/error-diagnostic.ts",
+      "sha256": "bd01566a747d457cfc50a03ca565ed9a95c68fe208c5766cd6bf8d4ca2919244"
+    },
+    {
+      "path": "src/atoms/CopyButton/CopyButton.tsx",
+      "sha256": "9f08bb78d8983ac6d489d63d95e531329e8adfb27ae67e5942c37033dac9868e"
+    },
+    {
+      "path": "src/lib/use-scroll-edges.ts",
+      "sha256": "80420a42255c9617f8e4307bf3102dd46e63e6083f93bdefc5ea9e8f749a1edf"
+    },
+    {
+      "path": "src/atoms/ScrollView/ScrollView.tsx",
+      "sha256": "f6c8d60605f889fc3cdd64ef362171f7636af202e99a38c78c82b37cf2eda6bc"
+    },
+    {
+      "path": "src/icons/ArrowOut.tsx",
+      "sha256": "b39dee3b950cfeca195b332339be0fefaaff3d5eeb00571a852cb4fa906f74d3"
+    },
+    {
+      "path": "src/icons/ChevronDown.tsx",
+      "sha256": "c85ce98cb9f47239eb0a3a60ff1d21a35b791b8a50ea89bc5dd5d220624176d3"
+    },
+    {
+      "path": "src/icons/ChevronUp.tsx",
+      "sha256": "6d33b096f6b3bcbbabbc89d680985ff14140ebc88f1be0350ed4f137baeea181"
+    },
+    {
+      "path": "src/organisms/CodeBlock/CodeBlock.tsx",
+      "sha256": "faa15e09ecac9d462f4a318ecfa3f36fb028de450e82730a590fd2f1d0e333ff"
+    },
+    {
+      "path": "src/icons/ChevronRight.tsx",
+      "sha256": "3d03bc76f7fe3bd797eb083bbb282ba449f8d217b9b8549361a243492501c8ae"
+    },
+    {
+      "path": "src/lib/use-controllable-state.ts",
+      "sha256": "e1f4712ad61e504055877a56f91309cd2407783c8c6a42943dd5de533e3a2439"
+    },
+    {
+      "path": "src/atoms/Collapsible/Collapsible.tsx",
+      "sha256": "50d11c6350dfbc34732e19b13677e57863073d4d9743173057d628e9e35bf02d"
+    },
+    {
+      "path": "src/icons/Checkbox.tsx",
+      "sha256": "51b2fbfff0fe1e5712fe2eccba918bbf4076e6e637c2a0fa847a0d1ccecc5250"
+    },
+    {
+      "path": "src/icons/CheckboxPartial.tsx",
+      "sha256": "fb5e93a370279cc403dfabe3519aa3cfb23c581e842a54856018a5895d34a237"
+    },
+    {
+      "path": "src/icons/CheckboxSelected.tsx",
+      "sha256": "7b82c7611e6b2acefda525effb47849d0a166e4130dcc2c0e4d9201447e33dce"
+    },
+    {
+      "path": "src/icons/Radio.tsx",
+      "sha256": "f98b2f64e8252de4289c85874c261dd8ff9aa55d77a7d613ec09a3b2e04dfe5e"
+    },
+    {
+      "path": "src/icons/RadioSelected.tsx",
+      "sha256": "b70ec05d1b339e11253d24c15d6f9fd65ca465dec5ddf69441b3f354ac067c8c"
+    },
+    {
+      "path": "src/utils/IconSwap/IconSwap.tsx",
+      "sha256": "9675efae95a7b58aa106b34983168b1057f2e645be6c044b560f9d26aee7172b"
+    },
+    {
+      "path": "src/organisms/DropdownMenu/DropdownMenu.tsx",
+      "sha256": "ac9ac0d4a209a14c6650d54dde288816e96dde880d1775cc4319898a78080b2f"
+    },
+    {
+      "path": "src/organisms/EmptyState/EmptyState.tsx",
+      "sha256": "2201b21c19f000e46a78c8deffc7bb296478e95292f3136f5bced2a665c2aaec"
+    },
+    {
+      "path": "src/lib/form-shell.tsx",
+      "sha256": "6d66c9aefe28caf360e09b40385756cfdb83cf32bf97db1431de4b22754fee49"
+    },
+    {
+      "path": "src/components/ui/input.tsx",
+      "sha256": "f12aa2088df1f09c47df14812464b7fe8b358ebdb800d1468d367ce8a538433a"
+    },
+    {
+      "path": "src/organisms/PageHeader/PageHeader.tsx",
+      "sha256": "637b8c9b7d5c3b4aae4d67c1b6c9fe45c2c04aefad3797c3f45c1b9f05042ac1"
+    },
+    {
+      "path": "src/icons/LoadingSpinnerHold.tsx",
+      "sha256": "be12cfffe6e58553eb0df6630fa16aa2ee58ea2fda605013c1d00a77d19ab095"
+    },
+    {
+      "path": "src/atoms/Loading/Loading.tsx",
+      "sha256": "e53658012029d175534192d2da0d2f310a97ec350c886becd71143efd4eb17c8"
+    },
+    {
+      "path": "src/atoms/Skeleton/Skeleton.tsx",
+      "sha256": "c9dd723fe749d241ce3ee03f8bf544191387fa232eeb0fb665a00422a1fd4ee0"
+    },
+    {
+      "path": "src/lib/loading-states.tsx",
+      "sha256": "8e6ddd5c321d87acb49d0055ce4cf777931c16fd259353fdba7a85e49f1b3357"
+    },
+    {
+      "path": "src/lib/use-is-truncated.ts",
+      "sha256": "53a764c924bee05ac6cbdc085ba498487e8d51647a2d36eaf4fbc4d390a27426"
+    },
+    {
+      "path": "src/organisms/_internal/table/TableCell.tsx",
+      "sha256": "58ecc9b0bb29099a95c2f2d9bd6f431dc15f64941cf5fcd2f896344ac2eaa78b"
+    },
+    {
+      "path": "src/icons/Sort.tsx",
+      "sha256": "67009f70d0fea88acda4330fac4a567290bc7d779b11ce5e6afb111268511ac5"
+    },
+    {
+      "path": "src/organisms/_internal/table/TableHeaderCell.tsx",
+      "sha256": "1467a5c6da8dbbdb17d0a58092777e0d44317fbbd6225bff47877c1c4ce9d4be"
+    },
+    {
+      "path": "src/organisms/_internal/table/types.ts",
+      "sha256": "aa6c7285039ecdd517d162232167553246da8601934b36ce09c060c4d8bdc9b8"
+    },
+    {
+      "path": "src/organisms/ResultsTable/ResultsTable.tsx",
+      "sha256": "61132324bfdc02c43ff5569998d88b32335f3e3a2ca3143bb5f5f7dc8570a7d8"
+    },
+    {
+      "path": "src/icons/Clear.tsx",
+      "sha256": "88011e3bca099882b85a0c7b72d7b015e59c32a520a9bfe670ba92210bbc1e2d"
+    },
+    {
+      "path": "src/icons/Filter.tsx",
+      "sha256": "fa2fa137ac1a3345244825cb863045348d7394396a8582a6ad1933540e0c6179"
+    },
+    {
+      "path": "src/icons/Info.tsx",
+      "sha256": "4e32bdce0ff4bf97289b6299f1f44937e991cd1ae93006bcd403f99f6879e6c5"
+    },
+    {
+      "path": "src/icons/Search.tsx",
+      "sha256": "c1f853b642483963d26612923349dc9eb6fe0c0f696d11b07a142fe1c4846710"
+    },
+    {
+      "path": "src/organisms/SectionToolbar/SectionToolbar.tsx",
+      "sha256": "ce62ab4bd8991e092fe0756545236b1241939d04112f2f65e3ee627c4eeab995"
+    },
+    {
+      "path": "src/icons/Globe.tsx",
+      "sha256": "f0e507427539a9a410c26808a2d6c3554b5ec599a430775994ff7c054a07db41"
+    },
+    {
+      "path": "src/icons/User.tsx",
+      "sha256": "1b7cd5a1ba294ed9cd8ff52bbfb5538a7db0ba0cfbff0dd4472e97d989864b4d"
+    },
+    {
+      "path": "src/lib/categorical-color.ts",
+      "sha256": "41aed795c4ab4e72201398717c4b7ba070ec39b0d657920082a01333f0b717f2"
+    },
+    {
+      "path": "src/atoms/Avatar/Avatar.tsx",
+      "sha256": "12807825dd5c379103f88a63ebb9a85b0ce19cd9da81d7dfba3a7acdab5159c1"
+    },
+    {
+      "path": "src/atoms/Badge/Badge.tsx",
+      "sha256": "e2b99baa5654cb8cb324bbdee2f79dcf5572e94a4126dd6d0f7df0d3140a6a64"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "sha256": "02a523d3492e97440de9c080a59f3aa9366ca92bb6914078a75ae8a6f3e90a7f"
+    },
+    {
+      "path": "src/atoms/StatusIndicator/StatusIndicator.tsx",
+      "sha256": "4a016d161d0a6855f5137ec2d4249327764fe1b7d22cd82f70f21583db4c71dd"
+    },
+    {
+      "path": "src/atoms/ItemRow/ItemRow.tsx",
+      "sha256": "419047950e9fa7464157de23dfc76e171e85283390e6d03581368be287489f87"
+    },
+    {
+      "path": "src/icons/ArrowCollapseRight.tsx",
+      "sha256": "00de4775511e2c94b05bf1f5a8d16a06cf7a061a7e68cc745ae1001eefb3d6e4"
+    },
+    {
+      "path": "src/organisms/Sidebar/Sidebar.tsx",
+      "sha256": "19df5b2ff6f958377b929a32cd73a747c565704c560f6caadc3b8a1ad38eb584"
+    },
+    {
+      "path": "src/atoms/Tag/Tag.tsx",
+      "sha256": "06c05878e334f9afa3cd758663b2667915a87f07df08a042c269ee7fd4e006e8"
+    },
+    {
+      "path": "src/organisms/Tabs/Tabs.tsx",
+      "sha256": "276f65441a7b4307a853c17616c09f443b2667358f414c4ced92a50297ecd98c"
+    },
+    {
+      "path": "src/organisms/Toolbar/Toolbar.tsx",
+      "sha256": "097030624de37869ad8d15f3bf22b694f13e16c03c37c5278996597e30bff46f"
+    },
+    {
+      "path": "src/organisms/TreeView/TreeView.tsx",
+      "sha256": "290383f1aa4a041d4c10b9da3c479246c16150a87fe236a854b51d5dc8b771d8"
+    },
+    {
+      "path": "src/assets/brand/dogsled.ts",
+      "sha256": "4f827a56a84779085f48d03dcc4ecbd2bab28bb514b47cf895f41866bbf9b960"
+    },
+    {
+      "path": "src/icons/Dogsled.tsx",
+      "sha256": "2814f50f41a42b582a5212e651d55002788dd3e75086b5f4176076068178ef24"
+    },
+    {
+      "path": "src/icons/CodeSnippet.tsx",
+      "sha256": "1eb1b937c489252e1c76d59523a6417ac324b5fb589ef50facc60adf655ac192"
+    },
+    {
+      "path": "src/icons/FailKnockout.tsx",
+      "sha256": "f324b6d8022a91ccfc570f2d7bb1f7659f6228aaed61c234ee63b09773ce7bdc"
+    },
+    {
+      "path": "src/icons/ExpandAlt.tsx",
+      "sha256": "5407e16a4ac8df86f31db17dede5935adf9d5ac4cd6fede719c01cc62dd38287"
+    },
+    {
+      "path": "src/icons/Folder.tsx",
+      "sha256": "64e6d710dbc2891098bf890fdf250fcc3ba3273c2b540f910db4c4c21d4459aa"
+    },
+    {
+      "path": "src/icons/MoreVert.tsx",
+      "sha256": "246fe163de55ef2859d97e749e3c3c74191a1f4641da2a534a1f74c480e8694c"
+    },
+    {
+      "path": "src/icons/Pipeline.tsx",
+      "sha256": "4213eb058d8c00ee11ba65a1e415895be6818b337d691abb34cb000bf2532df0"
+    },
+    {
+      "path": "src/icons/Row.tsx",
+      "sha256": "20ca43fa62b557673ecad5ff77f820ab6f5f0fe17dd54cfce4ddb2428fd53632"
+    },
+    {
+      "path": "src/icons/SuccessKnockout.tsx",
+      "sha256": "4f31600b6d1c0782ccc20b0eadbcd7c9eacdf55d1087963af50ad93b7ab06fc3"
+    },
+    {
+      "path": "src/icons/Table.tsx",
+      "sha256": "3b3ebfe36d9c1898d63133084f322072db2024270d355347d0d6394a0601c111"
+    },
+    {
+      "path": "src/icons/ThemeMoon.tsx",
+      "sha256": "173fb0115a58b62020881dae96a0438767b7b321e44631aedbfc7f16f2ddd755"
+    },
+    {
+      "path": "src/icons/ThemeSun.tsx",
+      "sha256": "951b05945e1b43e873f0f422943f86d880aa3be679f18178ec839f172118a2ae"
+    },
+    {
+      "path": "src/icons/Clock.tsx",
+      "sha256": "777c60cf5f8c199e3c629e3151074e9861a1623f5b0ed36a2c211236c2d61c73"
+    },
+    {
+      "path": "src/organisms/GraphNode/GraphNode.tsx",
+      "sha256": "af86fe20b685e16306887dfbde6f4e19ec902ef29138a64ba895e1f3a28a96ed"
+    },
+    {
+      "path": "src/icons/Database.tsx",
+      "sha256": "0a2caf6df9b1c218817020dc6c90698d508a783a481de0aa5862a65276108717"
+    }
+  ]
+}

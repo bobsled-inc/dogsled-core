@@ -1,0 +1,53 @@
+{
+  "source": "Synthetic TV catalog for local UI testing",
+  "shows": [
+    {
+      "id": 1001,
+      "name": "Orbital Assembly",
+      "genres": ["Science-Fiction", "Drama"],
+      "status": "Running",
+      "runtime": 48,
+      "episodes": ["A Small Orbit", "The Delegation", "Unanimous"]
+    },
+    {
+      "id": 1002,
+      "name": "The Last Signal",
+      "genres": ["Science-Fiction", "Mystery"],
+      "status": "Ended",
+      "runtime": 42,
+      "episodes": ["Static", "Relay", "An Answer"]
+    },
+    {
+      "id": 1003,
+      "name": "Harbour Files",
+      "genres": ["Crime", "Drama"],
+      "status": "Running",
+      "runtime": 55,
+      "episodes": ["Low Tide", "Missing Cargo", "The Crossing"]
+    },
+    {
+      "id": 1004,
+      "name": "Copper Vale",
+      "genres": ["Comedy", "Drama"],
+      "status": "Ended",
+      "runtime": 28,
+      "episodes": ["New Keys", "The Meeting", "Moving Day"]
+    },
+    {
+      "id": 1005,
+      "name": "Paper Satellites",
+      "genres": ["Science-Fiction", "Comedy"],
+      "status": "Running",
+      "runtime": 32,
+      "episodes": ["Launch Window", "Minor Repairs", "Ground Control"]
+    },
+    {
+      "id": 1006,
+      "name": "The Quiet Index",
+      "genres": ["Mystery", "Drama"],
+      "status": "Ended",
+      "runtime": null,
+      "episodes": ["Entry One", "The Archive", "Unlisted"]
+    }
+  ]
+}

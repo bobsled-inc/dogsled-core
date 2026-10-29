@@ -1,0 +1,4 @@
+*.html linguist-generated=true -whitespace
+comparisons/*.html linguist-generated=true -whitespace
+manifest.json linguist-generated=true
+LICENSES/* linguist-vendored=true -whitespace
