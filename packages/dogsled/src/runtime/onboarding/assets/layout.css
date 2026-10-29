@@ -454,6 +454,13 @@ summary::-webkit-details-marker {
   display: grid;
   gap: 8px;
 }
+.definitions-stack {
+  min-width: 0;
+}
+.definitions-stack > .definition-disclosure:not(:first-child),
+.definitions-stack #workspace > .definition-disclosure {
+  border-top: 1px solid var(--rule);
+}
 .definition-disclosure {
   min-width: 0;
   scroll-margin-top: 70px;
