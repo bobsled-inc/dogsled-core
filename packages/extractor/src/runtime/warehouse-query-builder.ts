@@ -68,6 +68,14 @@ export interface QueryBuilderConfig {
    * Has no effect for other dialects.
    */
   cursorKind?: CursorKind;
+  /**
+   * Pre-computed BigQuery cast expression derived from live table metadata
+   * (e.g. `'CAST(? AS INT64)'` or `'?'`). When set, takes precedence over
+   * `bigqueryCursorCast(cursorKind)` for all BigQuery placeholder sites.
+   * Populated by the extractor when no `cursor_type` is declared and the
+   * column type can be resolved at runtime. Ignored for non-BigQuery dialects.
+   */
+  bigQueryCastExpr?: string;
 }
 
 export interface BuildResult {
@@ -258,7 +266,8 @@ export function buildWhereClause(
   cursorField: string,
   paramIndex: number,
   cursorValue?: string,
-  cursorKind?: CursorKind
+  cursorKind?: CursorKind,
+  bigQueryCastExpr?: string
 ): string {
   const quoted = quoteIdentifier(dialect, cursorField);
   if (cursorValue !== undefined && requiresInlinedParams(dialect)) {
@@ -267,7 +276,7 @@ export function buildWhereClause(
   }
   const param =
     dialect === 'bigquery'
-      ? bigqueryCursorCast(cursorKind)
+      ? (bigQueryCastExpr ?? bigqueryCursorCast(cursorKind))
       : buildParamPlaceholder(dialect, paramIndex);
   return `WHERE ${quoted} > ${param} ORDER BY ${quoted}`;
 }
@@ -292,7 +301,7 @@ function buildIncrementalQuery(config: QueryBuilderConfig): BuildResult {
     // Custom SQL with cursor: wrap as subquery
     const param =
       config.dialect === 'bigquery'
-        ? bigqueryCursorCast(config.cursorKind)
+        ? (config.bigQueryCastExpr ?? bigqueryCursorCast(config.cursorKind))
         : buildParamPlaceholder(config.dialect, 1);
     const quoted = quoteIdentifier(config.dialect, config.cursorField);
 
@@ -332,7 +341,8 @@ function buildIncrementalQuery(config: QueryBuilderConfig): BuildResult {
       config.cursorField,
       1,
       undefined,
-      config.cursorKind
+      config.cursorKind,
+      config.bigQueryCastExpr
     );
     return {
       sql: `SELECT * FROM ${fqn} ${where}`,

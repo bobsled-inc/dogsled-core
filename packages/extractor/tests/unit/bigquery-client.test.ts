@@ -150,3 +150,145 @@ describe('BigQueryWarehouseClient.execute — parameter binding', () => {
     expect(opts['parameterMode']).toBe('positional');
   });
 });
+
+// ── BigQueryWarehouseClient.resolveColumnCastExpr — table metadata ──
+
+/**
+ * Build a client whose SDK mock also implements the dataset/table/getMetadata
+ * path used by resolveColumnCastExpr.
+ */
+function makeClientWithMetadataMock(
+  getMetadata: () => Promise<
+    [{ schema?: { fields?: Array<{ name?: string; type?: string }> } }, unknown]
+  >
+): BigQueryWarehouseClient {
+  const client = new BigQueryWarehouseClient({ projectId: 'test-project' });
+  const mockDataset = {
+    table: (_tableId: string) => ({ getMetadata }),
+  };
+  (client as unknown as { sdkClient: unknown }).sdkClient = {
+    createQueryJob: async () => {
+      throw new Error('not needed');
+    },
+    dataset: (_datasetId: string, _opts?: unknown) => mockDataset,
+  };
+  return client;
+}
+
+describe('BigQueryWarehouseClient.resolveColumnCastExpr — table metadata', () => {
+  it('INT64 column → CAST(? AS INT64)', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      {
+        schema: {
+          fields: [
+            { name: 'id', type: 'INT64' },
+            { name: 'name', type: 'STRING' },
+          ],
+        },
+      },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'id')).toBe(
+      'CAST(? AS INT64)'
+    );
+  });
+
+  it('INTEGER alias → CAST(? AS INT64)', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'id', type: 'INTEGER' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'id')).toBe(
+      'CAST(? AS INT64)'
+    );
+  });
+
+  it('FLOAT64 column → CAST(? AS FLOAT64)', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'score', type: 'FLOAT64' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'score')).toBe(
+      'CAST(? AS FLOAT64)'
+    );
+  });
+
+  it('NUMERIC column → CAST(? AS NUMERIC)', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'amount', type: 'NUMERIC' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'amount')).toBe(
+      'CAST(? AS NUMERIC)'
+    );
+  });
+
+  it('BIGNUMERIC column → CAST(? AS BIGNUMERIC)', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'total', type: 'BIGNUMERIC' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'total')).toBe(
+      'CAST(? AS BIGNUMERIC)'
+    );
+  });
+
+  it('STRING column → ? (no cast; STRING binding)', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'category', type: 'STRING' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'category')).toBe('?');
+  });
+
+  it('DATETIME column → ? (BigQuery coerces STRING params to DATETIME)', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'created_at', type: 'DATETIME' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'created_at')).toBe('?');
+  });
+
+  it('DATE column → ?', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'updated_date', type: 'DATE' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'updated_date')).toBe('?');
+  });
+
+  it('TIMESTAMP column → ?', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'ts', type: 'TIMESTAMP' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'ts')).toBe('?');
+  });
+
+  it('metadata error → undefined (caller should log warning and fall back)', async () => {
+    const client = makeClientWithMetadataMock(async () => {
+      throw new Error('403 Forbidden');
+    });
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'id')).toBeUndefined();
+  });
+
+  it('cursor field absent from schema → undefined', async () => {
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'other_col', type: 'STRING' }] } },
+      {},
+    ]);
+    expect(await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'id')).toBeUndefined();
+  });
+
+  it('STRING cursor value "00999" with no declared type → ? (no unsafe cast)', async () => {
+    // Regression: a STRING column whose values look like numbers must not produce
+    // CAST(? AS INT64). The metadata returns STRING → plain ?.
+    const client = makeClientWithMetadataMock(async () => [
+      { schema: { fields: [{ name: 'code', type: 'STRING' }] } },
+      {},
+    ]);
+    const expr = await client.resolveColumnCastExpr(undefined, 'ds', 'orders', 'code');
+    expect(expr).toBe('?');
+    expect(expr).not.toContain('INT64');
+  });
+});

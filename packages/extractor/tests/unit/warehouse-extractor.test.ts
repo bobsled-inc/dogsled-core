@@ -16,6 +16,7 @@ import {
 import { Emitter } from '../../src/runtime/emitter.js';
 import { ControlLogger } from '../../src/runtime/control.js';
 import { createWarehouseClient } from '../../src/runtime/warehouse-client.js';
+import { BigQueryWarehouseClient } from '../../src/runtime/bigquery-client.js';
 import { FakeWritable } from '../helpers/fixtures.js';
 
 import type { Writable } from 'node:stream';
@@ -1265,5 +1266,124 @@ describe('extractWarehouseResource', () => {
 
     const messages = stdoutStream.chunks.map((chunk) => JSON.parse(chunk));
     expect(messages.some((m: Record<string, unknown>) => m.type === 'STATE')).toBe(true);
+  });
+});
+
+// ── BigQuery two-run orchestrator regression ──
+
+describe('BigQuery incremental — two-run orchestrator regression (INT64 cursor, no declared type)', () => {
+  it('run 2 resolves INT64 column type from metadata and uses CAST(? AS INT64) in the WHERE clause', async () => {
+    // Scenario: a user has an INT64 `id` cursor column but has not declared
+    // cursor_type in the resource spec. On run 1 no WHERE clause is emitted
+    // (no cursor value yet). On run 2 the extractor resolves the column type
+    // from BigQuery table metadata and emits CAST(? AS INT64) so the parameter
+    // matches the column type. Without this fix the extractor would bind the
+    // STRING "8" against INT64, which BigQuery rejects.
+    const capturedOpts: Record<string, unknown>[] = [];
+
+    const mockJob = {
+      getQueryResults: async () =>
+        [[{ id: 42, name: 'alice' }], undefined, {}] as [
+          Record<string, unknown>[],
+          unknown,
+          object,
+        ],
+    };
+
+    const mockSdk = {
+      createQueryJob: async (opts: Record<string, unknown>) => {
+        capturedOpts.push(opts);
+        return [mockJob];
+      },
+      dataset: (_datasetId: string, _opts?: unknown) => ({
+        table: (_tableId: string) => ({
+          getMetadata: async () => [
+            {
+              schema: {
+                fields: [
+                  { name: 'id', type: 'INT64' },
+                  { name: 'name', type: 'STRING' },
+                ],
+              },
+            },
+            {},
+          ],
+        }),
+      }),
+    };
+
+    const bqClient = new BigQueryWarehouseClient({ projectId: 'proj' });
+    (bqClient as unknown as { sdkClient: unknown }).sdkClient = mockSdk;
+    mockClient = bqClient;
+
+    const integration = {
+      auth_env_vars: [],
+      spec_version: '1',
+      type: 'integration',
+      name: 'bq_source',
+      source_type: 'bigquery',
+      connection: { projectId: 'proj', dataset: 'ds' },
+    } as unknown as IntegrationSpec;
+
+    const resource = {
+      spec_version: '1',
+      type: 'resource',
+      name: 'orders',
+      integration: 'bq_source',
+      source: { table: 'orders', dataset: 'ds' },
+      replication: {
+        method: 'incremental_append',
+        cursor_field: 'id',
+        // cursor_type intentionally absent — the common real-world case
+      },
+      output: {
+        id: { type: 'integer' },
+        name: { type: 'string' },
+      },
+    } as unknown as WarehouseResourceSpec;
+
+    // Run 2: state already has a bookmark with cursor_value "8"
+    const state: ExtractorState = {
+      streams: {
+        'bq_source/orders': {
+          cursor_field: 'id',
+          cursor_value: '8',
+          last_run_at: '2026-01-01T00:00:00Z',
+          record_count: 1,
+        },
+      },
+    };
+
+    const stateStore = createMockStateStore(state);
+
+    const stdoutStream = new FakeWritable();
+    const stderrStream = new FakeWritable();
+    const testEmitter = new Emitter('stdout', 'output', {
+      stdoutStream: stdoutStream as unknown as Writable,
+    });
+    const testLogger = new ControlLogger({
+      logFormat: 'json',
+      quiet: true,
+      stream: stderrStream as unknown as Writable,
+    });
+
+    await extractWarehouseResource({
+      integration,
+      resource,
+      integrationName: 'bq_source',
+      emitter: testEmitter,
+      logger: testLogger,
+      state,
+      stateStore,
+    });
+
+    expect(capturedOpts).toHaveLength(1);
+    const query = String(capturedOpts[0]!['query']);
+    // The WHERE clause must use CAST(? AS INT64), not a plain ?
+    expect(query).toContain('CAST(? AS INT64)');
+    expect(query).not.toMatch(/WHERE `id` > \?/);
+    // The cursor value must be bound as a positional parameter
+    expect(capturedOpts[0]!['params']).toEqual(['8']);
+    expect(capturedOpts[0]!['parameterMode']).toBe('positional');
   });
 });

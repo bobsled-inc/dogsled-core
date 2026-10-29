@@ -26,6 +26,7 @@ import { getStreamBookmark, mergeDurableBookmark } from './state.js';
 import { compareCursors, resolveCursorKind, maxCursor } from './cursor.js';
 import { createWarehouseClient } from './warehouse-client.js';
 import type { WarehouseClient } from './warehouse-client.js';
+import { BigQueryWarehouseClient } from './bigquery-client.js';
 import { buildExtractionQuery } from './warehouse-query-builder.js';
 import type { Dialect, QueryBuilderConfig } from './warehouse-query-builder.js';
 import { normalizeJsonObject, normalizeJsonValue } from './json-normalization.js';
@@ -708,10 +709,17 @@ interface BuildQueryConfigOptions {
   fullRefresh: boolean;
   /** Pre-resolved TVF for lakehouse formats (iceberg/delta). */
   tvf?: string;
+  /**
+   * Pre-computed BigQuery cursor cast expression from table metadata (e.g.
+   * `'CAST(? AS INT64)'`). Set by the extractor when no `cursor_type` is
+   * declared and the column type was resolved at runtime. Takes precedence
+   * over `bigqueryCursorCast(cursorKind)` in the query builder.
+   */
+  bigQueryCastExpr?: string;
 }
 
 function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
-  const { dialect, resource, integration, bookmark, fullRefresh, tvf } = opts;
+  const { dialect, resource, integration, bookmark, fullRefresh, tvf, bigQueryCastExpr } = opts;
   const source: SourceConfig = resource.source;
   const replication: ReplicationConfig = resource.replication;
 
@@ -747,6 +755,7 @@ function buildQueryConfig(opts: BuildQueryConfigOptions): QueryBuilderConfig {
     cursorField: replication.cursor_field,
     cursorValue,
     cursorKind,
+    bigQueryCastExpr,
     changeTracking: replication.change_tracking as QueryBuilderConfig['changeTracking'],
     lastSyncTimestamp: fullRefresh ? undefined : bookmark?.last_run_at,
   };
@@ -1067,7 +1076,46 @@ export async function extractWarehouseResource(
       }
     }
 
-    // 4. Build extraction query
+    // 4. Resolve BigQuery cursor column type from table metadata when no
+    //    cursor_type is declared. This handles the common case where a user has
+    //    an INT64 `id` cursor without declaring cursor_type: integer — binding
+    //    a STRING parameter against INT64 fails at runtime in BigQuery because
+    //    BigQuery does not coerce STRING to numeric types automatically.
+    //    The lookup is a metadata read: no query, no cost. On failure the
+    //    extractor falls back to a plain ? and logs a warning.
+    let bigQueryCastExpr: string | undefined;
+    if (
+      dialect === 'bigquery' &&
+      !fullRefresh &&
+      !resource.source.sql &&
+      resource.replication.cursor_field &&
+      !resource.replication.cursor_type &&
+      bookmark?.cursor_value &&
+      client instanceof BigQueryWarehouseClient
+    ) {
+      const resolvedProject = getIntegrationDefault(integration, 'project');
+      const resolvedDataset =
+        resource.source.dataset ?? getIntegrationDefault(integration, 'dataset');
+      const resolvedTable = resource.source.table;
+      if (resolvedTable && resolvedDataset) {
+        const expr = await client.resolveColumnCastExpr(
+          resolvedProject,
+          resolvedDataset,
+          resolvedTable,
+          resource.replication.cursor_field
+        );
+        if (expr === undefined) {
+          await logger.warn(
+            `BigQuery: could not determine the type of cursor column "${resource.replication.cursor_field}" ` +
+              `for table "${resolvedDataset}.${resolvedTable}". Declare cursor_type explicitly in the ` +
+              `resource spec to ensure correct type binding (e.g. cursor_type: integer for INT64 columns).`
+          );
+        }
+        bigQueryCastExpr = expr ?? '?';
+      }
+    }
+
+    // 5. Build extraction query
     const queryConfig = buildQueryConfig({
       dialect,
       resource,
@@ -1075,14 +1123,15 @@ export async function extractWarehouseResource(
       bookmark,
       fullRefresh,
       tvf,
+      bigQueryCastExpr,
     });
     const { sql, params } = buildExtractionQuery(queryConfig);
     await logger.info(`Executing query: ${sql.slice(0, 200)}${sql.length > 200 ? '...' : ''}`);
 
-    // 5. Emit SCHEMA message
+    // 6. Emit SCHEMA message
     await emitter.emitSchema(buildEmitSchemaArg(resource));
 
-    // 6. Execute query and emit records
+    // 7. Execute query and emit records
     const isCdc = resource.replication.method === 'change_tracking';
     const cursorField = resource.replication.cursor_field;
     const resolvedCursorKind = resolveCursorKind({
@@ -1135,7 +1184,7 @@ export async function extractWarehouseResource(
 
     await logger.info(`Extracted ${recordCount} records from ${resource.name}`);
 
-    // 6. Emit STATE message
+    // 8. Emit STATE message
     const runAt = new Date().toISOString();
     const bookmarkData: StreamBookmark = {
       cursor_field: cursorField,
@@ -1146,7 +1195,7 @@ export async function extractWarehouseResource(
     };
     await emitter.emitState(resource.name, bookmarkData);
 
-    // 7. Persist durable bookmark
+    // 9. Persist durable bookmark
     let durableBookmark: StreamBookmark | undefined;
     const hasIncremental = resource.replication.method !== 'full_refresh';
     const shouldAdvanceState = advanceState ?? limit == null;
