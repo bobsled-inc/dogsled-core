@@ -79,10 +79,18 @@ The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
 semantic models, query across sources, and try an agentic transformation. An
 optional chapter teaches entity resolution.
 
-After installing Dogsled, open Claude Code or Codex in your project folder and ask:
+After installing Dogsled, open Claude Code or Codex in your project folder and
+invoke the **`dogsled-get-started`** skill, or ask:
 
-> Run `npx dogsled onboarding guide` and follow the TV Night tutorial in a new
-> tutorial folder. Guide me one chapter at a time.
+> Use the dogsled-get-started skill.
+
+The skill already includes the chapter order, setup, choices and inspection pauses.
+You do not need to repeat those instructions. If the skill is not available in your
+agent, use this fallback:
+
+> Read `npx dogsled onboarding guide` and follow its instructions.
+
+This command exposes the bundled guide without a separate skill installation.
 
 The agent creates and opens a local HTML page with chapter progress, working files,
 model lineage and data previews. It explains each capability and pauses for your
@@ -90,7 +98,7 @@ choices and inspection. No separate plugin or tutorial server is needed. Public
 data reads need no API key; the optional AI chapter uses your own provider account
 and asks for consent before making calls.
 
-To test the tutorial from a source checkout, [build the repository](CONTRIBUTING.md#develop-and-verify-a-small-fix)
+For the CLI fallback in a source checkout, [build the repository](CONTRIBUTING.md#develop-and-verify-a-small-fix)
 and have your agent use `node packages/dogsled/bin/cli.mjs onboarding guide` from
 the repository root instead of `npx`, so it reads the checkout’s version.
 See the [full walkthrough](packages/dogsled/examples/tv-night/README.md) for the

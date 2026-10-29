@@ -2,7 +2,15 @@
 
 **What should I watch next?** Connect to TVmaze and build a small ETL pipeline with your coding agent. Then build the models, add Wikipedia context, and explain why a series fits your taste and time.
 
-Install Dogsled using the [getting-started guide](../getting-started.md#install-dogsled). Ask Claude Code or Codex to run `npx dogsled onboarding guide`. No separate plugin or local server is needed.
+Install Dogsled using the [getting-started guide](../getting-started.md#install-dogsled). In Claude Code or Codex, invoke the **`dogsled-get-started`** skill, or ask:
+
+> Use the dogsled-get-started skill.
+
+The skill handles the welcome, setup, chapter order and pauses for inspection. No extra tutorial instructions are needed.
+
+If your agent does not have the skill available, ask it to read `npx dogsled onboarding guide` and follow its instructions. This is a fallback for reading the bundled guide; installing the npm package alone does not register a skill with your agent. No separate plugin or local server is needed.
+
+The agent handles these setup commands as part of the tutorial; you do not need to run them before invoking the skill:
 
 ```sh
 npx dogsled examples init tv-night
