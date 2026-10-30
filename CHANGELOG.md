@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+Clarify TV Night’s AI model setup, optional bounded recovery, and assessment quality review. Chapter 6 returns to explaining the model definitions after recovery, with a file-focused recap and inspection pause.
+
 Warehouse agentic checkpoints batch payload chunks into bounded, parameterized INSERTs. Large snapshots need fewer warehouse requests while retaining the existing checkpoint format, durable attempt reservations, ownership fencing, and resume behavior.
 
 Add the TV Night guided tutorial. Build an API connection, ETL pipeline, source and derived semantic models, cross-source queries, and agentic transformations with an agent. A local HTML page shows chapter progress, files, model lineage, and saved results. Agentic assessments select passage IDs so the executor attaches exact evidence, with a one-show check before the remaining batch and targeted retries.

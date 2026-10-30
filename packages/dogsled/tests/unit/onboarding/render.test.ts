@@ -201,3 +201,25 @@ it('teaches a pilot before the batch and keeps passage text collapsed', () => {
   expect(html).not.toContain('<td>Spoiler passage</td>');
   expect(html).toContain('Show passage (may contain spoilers)');
 });
+
+it.each(['not_started', 'complete'] as const)(
+  'keeps model teaching and quality review visible when the AI chapter is %s',
+  (status) => {
+    const html = renderOnboardingHtml({
+      ...snapshot,
+      state: {
+        ...snapshot.state,
+        steps: [{ id: 'transform', label: 'Build an agentic transformation', status }],
+      },
+    });
+    const panel = html.match(/<div class="callout" data-agentic-review>([\s\S]*?)<\/div>/)?.[1];
+    expect(panel).toBeDefined();
+    expect(panel).not.toContain('<details');
+    expect(panel).toContain('data-file="models/show_notes.yml"');
+    expect(panel).toContain('replace_processed_keys');
+    expect(panel).toContain('Querying saved recommendations makes no new AI call');
+    expect(panel).toContain('needs review');
+    expect(panel).toContain('after any recovery');
+    expect(html).toContain('data-file="executor.mjs"');
+  }
+);
