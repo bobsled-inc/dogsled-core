@@ -78,7 +78,9 @@ export async function verifyOnboarding(
     const receipts = [...plan.receipts];
     for (const query of plan.queries) {
       const sql = query.sql;
-      const result = Result.parse(await read(root, sql, plan.remote, tutorial.databasePath));
+      const result = Result.parse(
+        await read(root, sql, query.remote ?? plan.remote, tutorial.databasePath)
+      );
       const totalRows = Number(result.rows[0]?.['_total_rows'] ?? result.rows.length);
       const rows = result.rows.map((row) =>
         Object.fromEntries(
@@ -111,7 +113,7 @@ export async function verifyOnboarding(
       throw new CommandError('Inputs changed during the check. Verify again.', 3);
     }
     const evidence = Evidence.parse({
-      mode: plan.remote ? 'live' : 'offline',
+      mode: plan.queries.some((query) => query.remote ?? plan.remote) ? 'live' : 'offline',
       tables,
       receipts,
     });

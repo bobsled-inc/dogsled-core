@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: model
+name: returns_by_line
+description: Refund totals and returned units by original order line.
+grain: [order_line_id]
+source: { ref: warehouse.returns }
+columns:
+  - { name: order_line_id, expr: order_line_id, primary_key: true }
+  - { name: returned_units, expr: SUM(quantity) }
+  - { name: refund_amount, expr: SUM(refund_amount) }
+materialization: { type: table }
+group_by: [order_line_id]

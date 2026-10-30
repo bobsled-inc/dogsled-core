@@ -1,0 +1,35 @@
+# Retail guided tutorial
+
+Ask your agent to **start the retail tutorial**, or ask to **get started with
+Dogsled** and choose Retail. Existing projects resume their saved tutorial.
+TV Night remains available through the same entry point.
+
+Retail teaches six capabilities with synthetic home-goods data: source access,
+ETL, semantic modeling, product queries, API/warehouse federation and agentic
+support classification. It uses the same local HTML explorer, evidence checks
+and guarded reviews as TV Night.
+
+```sh
+dogsled examples init retail --dir retail-project
+cd retail-project
+dogsled onboarding guide --tutorial retail
+dogsled onboarding render
+```
+
+Follow the bundled README and your agent one chapter at a time. The starter has
+source fixtures but no completed database or models. Node.js 24+, Dogsled and
+OpenSSL are required. Chapters 1–5 use only local data and a local HTTPS API.
+
+The optional AI chapter follows TV Night's consent controls: a chosen provider
+and model, a bounded batch, one inspected pilot, explicit cost settings and no
+unapproved retries. A pilot uses `dogsled onboarding verify transform --ticket-id
+case-0001` and leaves chapter progress unchanged. Offline fixtures never count as
+real AI completion. Skipping AI leaves that chapter incomplete.
+
+The scenario asks which products need attention. Preserve business meaning:
+exclude cancelled orders, subtract refunds, count distinct product-days with
+stock, join by `product_id`, and leave ambiguous support product identity null.
+Findings are analytical advice, not automatic customer or inventory actions.
+
+For full setup, local certificate instructions and chapter commands, see the
+[bundled walkthrough](../../packages/dogsled/examples/retail/README.md).

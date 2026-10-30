@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: total_net_sales
+description: Completed-order sales after line discounts and recorded refunds, excluding cancelled orders.
+ai_context: Use for net product revenue. Amount is order-line value after discounts and refunds; it excludes cancelled orders, tax and shipping.
+expression: SUM(net_sales)
+model: product_performance
+synonyms: [net revenue, product sales]

@@ -1,0 +1,17 @@
+spec_version: '0.2'
+type: source
+name: support_tickets
+source_type: warehouse_table
+connection: warehouse
+table: main.support_tickets
+schema:
+  columns:
+    - { name: ticket_id, type: STRING, primary_key: true }
+    - { name: created_at, type: TIMESTAMP }
+    - { name: order_id, type: STRING }
+    - { name: order_line_id, type: STRING }
+    - { name: customer_id, type: STRING }
+    - { name: subject, type: STRING }
+    - { name: message, type: STRING }
+    - { name: agent_reply, type: STRING }
+    - { name: status, type: STRING }

@@ -77,3 +77,25 @@ it('returns equivalent JSON and YAML progress and rejects a mismatched selection
     await rm(root, { recursive: true, force: true });
   }
 });
+
+it('offers a ticket pilot separately from the existing show pilot', () => {
+  const program = new Command();
+  registerOnboardingCommand(program);
+  const verify = program.commands
+    .find((command) => command.name() === 'onboarding')!
+    .commands.find((command) => command.name() === 'verify')!;
+  expect(verify.options.some((option) => option.long === '--ticket-id')).toBe(true);
+  expect(verify.options.some((option) => option.long === '--show-id')).toBe(true);
+});
+
+it('returns the retail guide and its own read-only templates', async () => {
+  output.mockClear();
+  const program = new Command();
+  registerOnboardingCommand(program);
+  await program.parseAsync(['node', 'dogsled', 'onboarding', 'guide', '--tutorial', 'retail']);
+  const guide = output.mock.calls[0]?.[0];
+  expect(guide.name).toBe('dogsled-retail');
+  expect(guide.content).toContain('one pilot');
+  expect(guide.templatesPath).toContain('examples/retail/reference');
+  expect(existsSync(join(guide.templatesPath, 'model-backed-executor.mjs.txt'))).toBe(true);
+});

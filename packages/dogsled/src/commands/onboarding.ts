@@ -39,6 +39,10 @@ export function registerOnboardingCommand(program: Command): void {
     }
     if (action.startsWith('verify')) {
       subcommand.option(
+        '--ticket-id <id>',
+        'Check one retail transformation result without completing the chapter'
+      );
+      subcommand.option(
         '--show-id <id>',
         'Check one transformation result without completing the chapter'
       );
@@ -46,7 +50,13 @@ export function registerOnboardingCommand(program: Command): void {
     subcommand.action(async (...args: unknown[]) => {
       const command = args[args.length - 1] as Command;
       const options = command.optsWithGlobals<
-        GlobalOptions & { yaml?: boolean; tutorial?: string; showId?: string; checkpoint?: string }
+        GlobalOptions & {
+          yaml?: boolean;
+          tutorial?: string;
+          showId?: string;
+          ticketId?: string;
+          checkpoint?: string;
+        }
       >();
       const output = fmt.toOutputOptions(options);
       try {
@@ -77,9 +87,12 @@ export function registerOnboardingCommand(program: Command): void {
             root,
             step.data,
             undefined,
-            options.showId === undefined
-              ? {}
-              : { showId: /^\d+$/.test(options.showId) ? Number(options.showId) : NaN },
+            {
+              ...(options.showId === undefined
+                ? {}
+                : { showId: /^\d+$/.test(options.showId) ? Number(options.showId) : NaN }),
+              ...(options.ticketId === undefined ? {} : { ticketId: options.ticketId }),
+            },
             tutorial
           );
         } else if (action === 'status') result = await inspectOnboarding(root, tutorial);

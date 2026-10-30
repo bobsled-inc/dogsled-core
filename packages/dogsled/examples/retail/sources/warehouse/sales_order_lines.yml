@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: source
+name: sales_order_lines
+source_type: warehouse_table
+connection: warehouse
+table: main.sales_order_lines
+schema:
+  columns:
+    - { name: order_line_id, type: STRING, primary_key: true }
+    - { name: order_id, type: STRING }
+    - { name: product_id, type: STRING }
+    - { name: quantity, type: INTEGER }
+    - { name: unit_price, type: DOUBLE }
+    - { name: discount_amount, type: DOUBLE }

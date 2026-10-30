@@ -1,0 +1,25 @@
+product_id,product_name,category,supplier_id,list_price,unit_cost,active_from,active
+lmp-009,Arc Task Lamp,Lighting,sup-101,89.00,34.00,2025-01-01,true
+stl-012,Harbor Storage Bench,Furniture,sup-103,349.00,172.00,2025-01-01,true
+chr-003,Morrow Dining Chair,Furniture,sup-103,179.00,82.00,2025-01-01,true
+kit-018,Stoneware Prep Bowl Set,Kitchenware,sup-102,42.00,14.50,2025-01-01,true
+lmp-002,Globe Pendant Light,Lighting,sup-104,219.00,101.00,2025-01-01,true
+tbl-014,Elm Side Table,Furniture,sup-103,159.00,68.00,2025-01-01,true
+kit-006,Ridge Cast-Iron Skillet,Kitchenware,sup-102,74.00,31.00,2025-01-01,true
+lmp-021,Paper Shade Floor Lamp,Lighting,sup-101,139.00,55.00,2025-01-01,true
+chr-016,Wren Counter Stool,Furniture,sup-103,149.00,69.00,2025-01-01,true
+kit-011,Everyday Linen Apron,Kitchenware,sup-102,38.00,12.00,2025-01-01,true
+tbl-005,Round Oak Coffee Table,Furniture,sup-103,329.00,171.00,2025-01-01,true
+kit-020,Mason Glass Storage Set,Kitchenware,sup-102,56.00,19.00,2025-01-01,true
+lmp-015,Silo Desk Lamp,Lighting,sup-101,119.00,46.00,2025-01-01,true
+chr-008,Alder Lounge Chair,Furniture,sup-103,499.00,258.00,2025-01-01,true
+kit-004,Speckled Mug Pair,Kitchenware,sup-102,28.00,8.00,2025-01-01,true
+tbl-019,Nesting Tray Tables,Furniture,sup-104,189.00,79.00,2025-01-01,true
+lmp-006,Opal Globe Sconce,Lighting,sup-101,99.00,37.00,2025-01-01,true
+kit-023,Maple Cutting Board,Kitchenware,sup-102,64.00,22.00,2025-01-01,true
+chr-011,Sutton Upholstered Bench,Furniture,sup-103,389.00,195.00,2025-01-01,true
+kit-009,Pour-Over Coffee Set,Kitchenware,sup-102,52.00,18.00,2025-01-01,true
+lmp-024,Brass Reading Light,Lighting,sup-104,159.00,61.00,2025-01-01,true
+tbl-002,Narrow Entry Console,Furniture,sup-103,279.00,139.00,2025-01-01,true
+kit-015,Cotton Tea Towel Trio,Kitchenware,sup-102,32.00,10.00,2025-01-01,true
+chr-022,Stackable Bistro Chair,Furniture,sup-104,129.00,54.00,2025-01-01,true

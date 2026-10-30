@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a guided Retail tutorial alongside TV Night, with shared progress and evidence review, local warehouse/API data, and an optional consent-based AI support-classification lesson.
+
 - Run TV Night on a shared tutorial engine so additional tutorials can supply their own chapters, checks and content while keeping the same offline explorer and saved progress.
 
 - Replace the TV Night tutorial page with a chapter-focused offline explorer, saved-result tabs, file and lineage inspection, and guarded review requests for the agent.

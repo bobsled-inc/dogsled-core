@@ -3,9 +3,10 @@ import { z } from 'zod';
 import { StepId } from './schema.js';
 import { readBounded } from './files.js';
 import type { TutorialDefinition } from './tutorial.js';
+import { retail } from './tutorials/retail/index.js';
 import { tvNight } from './tutorials/tv-night/index.js';
 
-export const tutorials: readonly TutorialDefinition[] = [tvNight];
+export const tutorials: readonly TutorialDefinition[] = [tvNight, retail];
 export function getTutorial(id = 'tv-night'): TutorialDefinition {
   const tutorial = tutorials.find((t) => t.id === id);
   if (!tutorial) throw new CommandError('Unknown tutorial. Choose a bundled tutorial.', 2);

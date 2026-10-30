@@ -1,0 +1,5 @@
+supplier_id,supplier_name,country,lead_time_days
+sup-101,Northstar Lighting Works,US,12
+sup-102,Juniper Housewares Co.,US,9
+sup-103,Cedar & Loom Furnishings,CA,18
+sup-104,Brightline Imports,MX,21

@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: source
+name: reviews
+source_type: warehouse_table
+connection: warehouse
+table: main.reviews
+schema:
+  columns:
+    - { name: review_id, type: STRING, primary_key: true }
+    - { name: product_id, type: STRING }
+    - { name: rating, type: INTEGER }
+    - { name: review_text, type: STRING }
+    - { name: reviewed_at, type: TIMESTAMP }
+    - { name: verified_purchase, type: BOOLEAN }

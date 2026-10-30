@@ -1,0 +1,19 @@
+spec_version: '1'
+type: resource
+name: inventory_daily
+description: Opening-of-day sellable inventory units by product and location.
+integration: local_files
+source:
+  path: inventory_daily.csv
+  format: csv
+  options: { header: true }
+output:
+  snapshot_date: { type: string }
+  product_id: { type: string }
+  location_id: { type: string }
+  available_units: { type: integer }
+extract:
+  table:
+    primary_key: [snapshot_date, product_id, location_id]
+    load_strategy: full_refresh
+replication: { method: full_refresh }

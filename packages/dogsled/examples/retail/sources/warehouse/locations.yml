@@ -1,0 +1,11 @@
+spec_version: '0.2'
+type: source
+name: locations
+source_type: warehouse_table
+connection: warehouse
+table: main.locations
+schema:
+  columns:
+    - { name: location_id, type: STRING, primary_key: true }
+    - { name: location_name, type: STRING }
+    - { name: location_type, type: STRING }

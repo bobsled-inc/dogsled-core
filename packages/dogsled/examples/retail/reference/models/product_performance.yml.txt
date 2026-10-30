@@ -1,0 +1,61 @@
+spec_version: '0.2'
+type: model
+name: product_performance
+description: Product sales, returns, supplier cost and sellable-stock coverage for the complete catalog.
+ai_context: >-
+  This is one row per catalog product. Use it for product comparisons and join it
+  to external reviews or support on product_id. net_sales_per_in_stock_day divides
+  net_sales over the fixture window by distinct product in-stock days across the
+  whole location network. Treat this as observed sales rate, not inferred lost
+  demand. supplier unit_cost is reference cost, not fully burdened margin.
+grain: [product_id]
+source: { ref: warehouse.products }
+joins:
+  - { ref: product_sales_summary, type: left, on: warehouse.products.product_id = product_sales_summary.product_id }
+  - { ref: product_in_stock_days, type: left, on: warehouse.products.product_id = product_in_stock_days.product_id }
+  - { ref: warehouse.suppliers, type: left, on: warehouse.products.supplier_id = warehouse.suppliers.supplier_id }
+columns:
+  - { name: product_id, expr: warehouse.products.product_id, primary_key: true, semantic_role: entity_id }
+  - { name: product_name, expr: warehouse.products.product_name, semantic_role: name }
+  - { name: category, expr: warehouse.products.category, semantic_role: categorical }
+  - { name: supplier_name, expr: warehouse.suppliers.supplier_name, semantic_role: name }
+  - { name: list_price, expr: warehouse.products.list_price, semantic_role: currency, unit: usd }
+  - { name: unit_cost, expr: warehouse.products.unit_cost, semantic_role: currency, unit: usd }
+  - name: sold_units
+    expr: "COALESCE(product_sales_summary.sold_units, 0)"
+    semantic_role: measure
+    unit: items
+  - name: returned_units
+    expr: "COALESCE(product_sales_summary.returned_units, 0)"
+    semantic_role: measure
+    unit: items
+  - name: gross_sales
+    expr: "COALESCE(product_sales_summary.gross_sales, 0)"
+    semantic_role: currency
+    unit: usd
+  - name: refunds
+    expr: "COALESCE(product_sales_summary.refunds, 0)"
+    semantic_role: currency
+    unit: usd
+  - name: net_sales
+    expr: "COALESCE(product_sales_summary.net_sales, 0)"
+    semantic_role: currency
+    unit: usd
+  - name: net_units
+    expr: "COALESCE(product_sales_summary.net_units, 0)"
+    semantic_role: measure
+    unit: items
+  - name: in_stock_days
+    expr: "COALESCE(product_in_stock_days.in_stock_days, 0)"
+    semantic_role: measure
+    unit: days
+  - name: tracked_days
+    expr: "COALESCE(product_in_stock_days.tracked_days, 0)"
+    semantic_role: measure
+    unit: days
+  - name: net_sales_per_in_stock_day
+    expr: CASE WHEN COALESCE(product_in_stock_days.in_stock_days, 0) = 0 THEN NULL ELSE COALESCE(product_sales_summary.net_sales, 0) / product_in_stock_days.in_stock_days END
+    semantic_role: currency
+    unit: usd
+    ai_context: Net sales divided by distinct product-days with sellable stock at one or more locations. This is an observed demand proxy, not a lost-sales estimate.
+materialization: { type: table }

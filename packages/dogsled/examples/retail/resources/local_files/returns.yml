@@ -1,0 +1,21 @@
+spec_version: '1'
+type: resource
+name: returns
+description: Return and refund events linked to their original order lines.
+integration: local_files
+source:
+  path: returns.csv
+  format: csv
+  options: { header: true }
+output:
+  return_id: { type: string }
+  order_line_id: { type: string }
+  returned_at: { type: timestamp }
+  quantity: { type: integer }
+  refund_amount: { type: number }
+  reason: { type: string }
+extract:
+  table:
+    primary_key: [return_id]
+    load_strategy: full_refresh
+replication: { method: full_refresh }

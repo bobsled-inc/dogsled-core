@@ -8,7 +8,7 @@ import type {
 
 export type CheckOptions = Record<string, unknown>;
 export interface CheckPlan {
-  queries: { name: string; sql: string }[];
+  queries: { name: string; sql: string; remote?: boolean }[];
   remote: boolean;
   persist: boolean;
   receipts: string[];

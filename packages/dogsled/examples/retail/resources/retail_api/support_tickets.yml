@@ -1,0 +1,30 @@
+spec_version: '1'
+type: resource
+name: support_tickets
+description: Paginated support conversations with order references from the external retail API.
+integration: retail_api
+api:
+  endpoint: /support-tickets
+  method: GET
+  query_params:
+    page_size: '17'
+input: {}
+output:
+  ticket_id: { type: string, path: $.ticket_id }
+  created_at: { type: timestamp, path: $.created_at }
+  order_id: { type: string, path: $.order_id }
+  order_line_id: { type: string, path: $.order_line_id, default: null }
+  customer_id: { type: string, path: $.customer_id }
+  subject: { type: string, path: $.subject }
+  message: { type: string, path: $.message }
+  agent_reply: { type: string, path: $.agent_reply }
+  status: { type: string, path: $.status }
+extract:
+  record_path: $.data
+  pagination:
+    type: cursor
+    cursor_path: $.meta.next_cursor
+    cursor_param: cursor
+  table:
+    primary_key: [ticket_id]
+    load_strategy: full_refresh

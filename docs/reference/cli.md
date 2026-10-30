@@ -4306,11 +4306,13 @@ Usage: dogsled onboarding verify [options] <step>
 Run bounded data checks and save evidence for a step
 
 Options:
-  --yaml           Emit YAML output
-  --tutorial <id>  Choose a bundled tutorial
-  --show-id <id>   Check one transformation result without completing the
-                   chapter
-  -h, --help       display help for command
+  --yaml            Emit YAML output
+  --tutorial <id>   Choose a bundled tutorial
+  --ticket-id <id>  Check one retail transformation result without completing
+                    the chapter
+  --show-id <id>    Check one transformation result without completing the
+                    chapter
+  -h, --help        display help for command
 ```
 
 #### `dogsled onboarding review`

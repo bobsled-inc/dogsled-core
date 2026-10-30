@@ -142,6 +142,9 @@ export function validate(step: StepId, tables: Evidence['tables'], options: Chec
 }
 
 export function prepareCheck(step: StepId, options: CheckOptions): CheckPlan {
+  if (options.ticketId !== undefined) {
+    throw new CommandError('Use --show-id for a TV Night pilot.', 2);
+  }
   const pilot = options.showId !== undefined;
   if (
     pilot &&

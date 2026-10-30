@@ -1,0 +1,38 @@
+spec_version: '0.2'
+type: model
+name: product_sales_summary
+description: Completed-order sales and refunds grouped consistently by product.
+ai_context: >-
+  Use product_id as the catalog identity. Include only completed orders. gross_sales
+  subtracts line discounts; refunds come from returns joined by order_line_id;
+  net_sales is gross_sales minus refunds. Do not count cancelled orders or join raw
+  returns directly to raw order lines before aggregating returns by line, because
+  multiple return rows can multiply sold quantities.
+grain: [product_id]
+source: { ref: warehouse.sales_order_lines }
+joins:
+  - { ref: warehouse.sales_orders, type: inner, on: warehouse.sales_order_lines.order_id = warehouse.sales_orders.order_id }
+  - { ref: returns_by_line, type: left, on: warehouse.sales_order_lines.order_line_id = returns_by_line.order_line_id }
+  - { ref: warehouse.products, type: inner, on: warehouse.sales_order_lines.product_id = warehouse.products.product_id }
+where: warehouse.sales_orders.status = 'completed'
+columns:
+  - { name: product_id, expr: warehouse.sales_order_lines.product_id, primary_key: true }
+  - { name: product_name, expr: warehouse.products.product_name }
+  - { name: category, expr: warehouse.products.category }
+  - { name: supplier_id, expr: warehouse.products.supplier_id }
+  - { name: list_price, expr: warehouse.products.list_price }
+  - { name: unit_cost, expr: warehouse.products.unit_cost }
+  - { name: sold_units, expr: SUM(warehouse.sales_order_lines.quantity) }
+  - name: returned_units
+    expr: "SUM(COALESCE(returns_by_line.returned_units, 0))"
+  - name: gross_sales
+    expr: SUM(warehouse.sales_order_lines.quantity * warehouse.sales_order_lines.unit_price - warehouse.sales_order_lines.discount_amount)
+  - name: refunds
+    expr: "SUM(COALESCE(returns_by_line.refund_amount, 0))"
+  - name: net_sales
+    expr: SUM(warehouse.sales_order_lines.quantity * warehouse.sales_order_lines.unit_price - warehouse.sales_order_lines.discount_amount - COALESCE(returns_by_line.refund_amount, 0))
+    ai_context: Completed-order line value after discount and linked refunds; cancelled orders are excluded.
+  - name: net_units
+    expr: "SUM(warehouse.sales_order_lines.quantity - COALESCE(returns_by_line.returned_units, 0))"
+materialization: { type: table }
+group_by: [warehouse.sales_order_lines.product_id, warehouse.products.product_name, warehouse.products.category, warehouse.products.supplier_id, warehouse.products.list_price, warehouse.products.unit_cost]
