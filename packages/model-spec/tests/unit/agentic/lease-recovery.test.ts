@@ -42,6 +42,7 @@ describe('checkpoint lease recovery', () => {
         projectDirectory: '/unused',
         stateStore: store,
         run: { id: 'recover', mode: 'start' },
+        accounting: 'reservation' as const,
       });
       expect(result.status).toBe('execution_complete');
       expect(acquisitions).toBe(2);
@@ -82,6 +83,7 @@ describe('checkpoint lease recovery', () => {
       projectDirectory: '/unused',
       stateStore: store,
       run: { id: 'heartbeat', mode: 'start' },
+      accounting: 'reservation' as const,
     });
     expect(acquisitions).toBe(2);
     expect(result.chargedTokens).toBe(102);
@@ -117,6 +119,7 @@ describe('checkpoint lease recovery', () => {
         projectDirectory: '/unused',
         stateStore: store,
         run: { id: 'deadline', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toMatchObject({ code: 'expired' });
     expect(acquisitions).toBe(2);
@@ -140,6 +143,7 @@ describe('checkpoint lease recovery', () => {
         projectDirectory: '/unused',
         stateStore: { acquire },
         run: { id: 'taken-over', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toMatchObject({ code: 'conflict' });
     expect(acquire).toHaveBeenCalledTimes(2);
@@ -162,6 +166,7 @@ describe('checkpoint lease recovery', () => {
         projectDirectory: '/unused',
         stateStore: { acquire },
         run: { id: 'bounded', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toMatchObject({ code: 'lease_lost' });
     expect(acquire).toHaveBeenCalledTimes(3);
@@ -179,6 +184,7 @@ describe('checkpoint lease recovery', () => {
           projectDirectory: '/unused',
           stateStore: { acquire },
           run: { id: code, mode: 'start' },
+          accounting: 'reservation' as const,
         })
       ).rejects.toMatchObject({ code });
       expect(acquire).toHaveBeenCalledOnce();

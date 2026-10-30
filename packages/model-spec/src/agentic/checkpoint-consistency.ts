@@ -40,6 +40,7 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
   if (!parsed.success) return false;
   const definition = parsed.data;
   const model = definition.resolved.model;
+  const spendCap = run.accounting === 'spend_cap';
   const step = model.plan.steps[0];
   if (
     !step ||
@@ -270,7 +271,12 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
           replacement_keys: model.materialization.keys,
         },
         limits: {
-          ...assignmentLimits(model, step, definition.tokensPerAssignment),
+          ...assignmentLimits(
+            model,
+            step,
+            definition.tokensPerAssignment,
+            run.accounting ?? 'reservation'
+          ),
           started_at: run.started_at,
           deadline_at: run.deadline_at,
         },
@@ -288,18 +294,25 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
     let priorFinish = sealRevision;
     for (const [attemptIndex, attempt] of work.attempts.entries()) {
       const previous = work.attempts[attemptIndex - 1];
+      // Spend-cap attempts hold no reservation; the snapshot schema requires null.
       if (
+        !spendCap &&
         attempt.reservation !==
-        attemptReservation(
-          assignment.limits.tokens,
-          run.token_limit,
-          chargesBefore.get(attempt.start_revision)!
-        )
+          attemptReservation(
+            assignment.limits.tokens,
+            run.token_limit,
+            chargesBefore.get(attempt.start_revision)!
+          )
       ) {
         return false;
       }
       if (isAgenticFailureBlocked(run, previous, attempt.start_revision)) return false;
-      if (previous && previous.reservation !== null && previous.charge > previous.reservation) {
+      if (
+        !spendCap &&
+        previous &&
+        previous.reservation !== null &&
+        previous.charge > previous.reservation
+      ) {
         return false;
       }
       if (
@@ -329,8 +342,9 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
         priorFinish = attempt.finish_revision;
         const eligible =
           attempt.outcome.status !== 'failed' &&
-          (attempt.reservation === null || attempt.charge <= attempt.reservation) &&
-          finished < deadlineTime(agenticDeadlineAt(run, attempt.start_revision));
+          (spendCap ||
+            ((attempt.reservation === null || attempt.charge <= attempt.reservation) &&
+              finished < deadlineTime(agenticDeadlineAt(run, attempt.start_revision))));
         if (eligible && (!work.accepted || work.accepted.attempt_id !== attempt.id)) return false;
         if (!eligible && work.accepted?.attempt_id === attempt.id) return false;
       } else {
@@ -338,7 +352,7 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
           attempt.finish_revision !== undefined ||
           attempt.finish_digest !== undefined ||
           attempt.finished_at !== undefined ||
-          attempt.charge !== (attempt.reservation ?? 0)
+          (!spendCap && attempt.charge !== (attempt.reservation ?? 0))
         ) {
           return false;
         }

@@ -259,3 +259,26 @@ test('named reduce inputs stay separate and evidence uses the matching host date
   assert.equal(result.status, 'succeeded');
   assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, timestamp);
 });
+
+test('a rejected key is an auth failure that is not billed or retried', async () => {
+  const result = await createExecutor(async () => ({
+    ok: false,
+    error: 'provider_error',
+    message: 'invalid x-api-key',
+    attempts: 1,
+    status: 403,
+  }))(request());
+  assert.deepEqual(result.error, { kind: 'auth', code: 'auth_failed', retryable: false });
+  assert.equal(result.usage.total_tokens, 0);
+});
+
+test('a rate limit is a retryable provider failure', async () => {
+  const result = await createExecutor(async () => ({
+    ok: false,
+    error: 'provider_error',
+    message: 'slow down',
+    attempts: 1,
+    status: 429,
+  }))(request());
+  assert.deepEqual(result.error, { kind: 'provider', code: 'rate_limited', retryable: true });
+});

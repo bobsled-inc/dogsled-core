@@ -24,6 +24,7 @@ function fixture(count = 2) {
     stateStore,
     projectDirectory: '/not-used',
     run: { id: 'plan', mode: 'start' as const },
+    accounting: 'reservation' as const,
   };
   const context = () => ({ ...f.context(), resolved: resolveAgenticModel(f.model, f.host) });
   return {
@@ -102,7 +103,7 @@ describe('authored agentic plans', { timeout: 60_000 }, () => {
     f.host.prepare = async () => {
       throw new Error('secret connection detail');
     };
-    await expect(f.run()).rejects.toThrow('Agentic host operation failed');
+    await expect(f.run()).rejects.toThrow('Agentic input preparation failed');
   });
 
   it('reduces groups with several replacement keys without flattening inputs', async () => {
@@ -215,6 +216,7 @@ describe('authored agentic plans', { timeout: 60_000 }, () => {
     const resumed = await executeAgenticRun(f.host, f.context(), {
       ...f.options,
       run: { id: 'plan', mode: 'resume' },
+      accounting: 'reservation' as const,
     });
     expect(calls).toEqual(['names', 'phones', 'combine', 'combine']);
     expect(resumed.chargedTokens).toBe(106);
@@ -225,6 +227,7 @@ describe('authored agentic plans', { timeout: 60_000 }, () => {
         await executeAgenticRun(f.host, f.context(), {
           ...f.options,
           run: { id: 'plan', mode: 'resume' },
+          accounting: 'reservation' as const,
         })
       ).reusedCompletion
     ).toBe(true);

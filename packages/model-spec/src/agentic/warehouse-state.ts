@@ -55,7 +55,11 @@ export function createWarehouseCheckpointStore(
     leaseMs < 10_000 ||
     leaseMs > 600_000
   ) {
-    throw new AgenticStateError('limit');
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_store_config',
+      message:
+        'The checkpoint_store setting is invalid: schema must be one non-empty name and lease_seconds must be 10 to 600.',
+    });
   }
   const q = (name: string) => quoteIdentifier(caseName(name, dialect), dialect);
   const catalog =
@@ -241,7 +245,13 @@ export function createWarehouseCheckpointStore(
             throw new AgenticStateError('conflict');
           }
           const bytes = Buffer.from(JSON.stringify(value));
-          if (bytes.byteLength > maxBytes) throw new AgenticStateError('limit');
+          if (bytes.byteLength > maxBytes) {
+            throw new AgenticStateError('limit', {
+              reason: 'snapshot_too_large',
+              message: `The agentic run checkpoint is larger than ${Math.floor(maxBytes / 1048576)} MiB.`,
+              hint: 'Process fewer or smaller input rows per run.',
+            });
+          }
           const digest = digestAgenticState(value);
           if (previous && digest === digestAgenticState(previous)) return value;
           const id = `${randomUUID()}_${digest}`;
@@ -260,7 +270,12 @@ export function createWarehouseCheckpointStore(
             retainedSize < 0 ||
             retainedSize > 64 * 1024 * 1024
           ) {
-            throw new AgenticStateError('limit');
+            throw new AgenticStateError('limit', {
+              reason: 'payload_retention',
+              message:
+                'The warehouse checkpoint store holds more than 64 MiB of payload for this run.',
+              hint: 'Stop all writers, then remove orphaned payload chunks for this run.',
+            });
           }
           const encoded = bytes.toString('base64');
           for (let start = 0; start < encoded.length; start += chunkSize * chunksPerInsert) {

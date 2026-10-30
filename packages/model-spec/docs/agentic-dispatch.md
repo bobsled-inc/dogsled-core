@@ -60,8 +60,8 @@ It supplies:
 
 The coordinator validates the selected model definitions and host capabilities
 before execution. It processes one prepared row per group, calls the executor
-within the host concurrency limit, validates each outcome, and checks shared token
-limits and cancellation. The default concurrency is one.
+within the host concurrency limit, validates each outcome, and checks spend
+caps and cancellation. The default concurrency is one.
 The host must honor the supplied bounds and signal during preparation and
 publication. A callback interface does not make arbitrary host code safe.
 
@@ -158,19 +158,20 @@ These settings do not alter assignment data. A caller can change them on resume.
 Token charges and assignment attempt limits remain unchanged. An explicit retry
 opens a fresh execution window; automatic lease recovery does not extend that window.
 
-The coordinator saves a full token reservation before each executor call. Active
-reservations share the model's total token limit. If active calls hold the available
-capacity, the coordinator waits for their outcomes before starting more calls.
-Measured usage releases unused capacity. Unknown or interrupted usage retains the
-full reservation. If no active call can free enough capacity, the run fails without
-publication. An over-reservation usage report also fails the run.
+Before each executor call the coordinator saves the attempt with its input
+estimate as a charge. It starts a call only while the run is under its spend caps.
+At a cap it starts nothing new, lets active calls finish, saves their answers and
+then fails with `spend_cap_reached`. Measured usage replaces the estimate; unknown
+or interrupted usage keeps it. See
+[optional execution limits](agentic-contracts.md#optional-execution-limits). Runs
+saved with the older reservation accounting keep its rules on resume.
 
 Calls may finish in any order. One coordinator saves each returned result and its
 usage before that work is complete. It serializes checkpoint changes so parallel
 calls do not overwrite each other's state. Final results follow prepared input
 order. Required failure stops new calls and cancels active calls. Executors must
 honor cancellation: Dogsled waits for them to settle before releasing the store.
-Outputs returned after cancellation are not accepted; their reservations remain
+Outputs returned after cancellation are not accepted; their attempts remain
 charged. Each execution window includes preparation, dispatch waits, and assignment
 retries. A later explicit retry starts a new window.
 
@@ -226,4 +227,4 @@ Both this executor and any supplied local module are trusted host code. Dogsled
 does not provide an OS sandbox for an untrusted module. Retrieved text cannot add
 capabilities to the reference loop.
 
-Token reservations and deadlines can be disabled. See [optional execution limits](agentic-contracts.md#optional-execution-limits) for YAML inheritance, unlimited usage accounting, and executor migration.
+Spend caps and deadlines are optional. See [optional execution limits](agentic-contracts.md#optional-execution-limits).

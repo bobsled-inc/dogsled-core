@@ -1,4 +1,4 @@
-import { assignmentLimits, deadlineTime } from './limits.js';
+import { assignmentLimits, deadlineTime, type AgenticAccounting } from './limits.js';
 import { beginAgenticCursor } from './begin-cursor.js';
 import { planInputColumns } from './plan-work.js';
 import { beginAgenticExecution } from './resume-window.js';
@@ -12,6 +12,9 @@ import { validateAgenticReceipt } from './checkpoint-receipt.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
+import { AgenticHostError } from './errors.js';
+import { assertAgenticPricing } from './spend.js';
+import { agenticDeadlinePassed } from './state-errors.js';
 import { scheduleAgenticAssignments } from './schedule.js';
 import {
   AGENTIC_MAX_BYTES,
@@ -44,6 +47,13 @@ export interface AgenticRunOptions {
   publisher?: AgenticPublisher;
   /** Whole-assignment attempts, including interrupted attempts. Default: 3; maximum: 10. */
   maxAttempts?: number;
+  /** Overrides `limits.max_cost_usd` for this invocation; `null` removes the cost cap. */
+  maxCostUsd?: number | null;
+  /**
+   * @deprecated Creates new runs with the older per-attempt reservation accounting.
+   * Saved runs always keep the accounting they started with.
+   */
+  accounting?: AgenticAccounting;
 }
 export interface AgenticExecutionResult {
   runId: string;
@@ -53,15 +63,21 @@ export interface AgenticExecutionResult {
   rows: JsonValue[];
   processedKeys: JsonValue[];
   chargedTokens: number;
+  /** Priced spend in US dollars; null for runs saved with reservation accounting. */
+  chargedUsd: number | null;
   /** True when execution was already complete when this coordinator opened the run. */
   reusedCompletion: boolean;
 }
-async function boundary<T>(signal: AbortSignal, operation: () => Promise<T>): Promise<T> {
+async function boundary<T>(
+  signal: AbortSignal,
+  description: string,
+  operation: () => Promise<T>
+): Promise<T> {
   try {
     return await runCancellable(signal, operation);
   } catch (error) {
     if (isCancellationError(error, signal)) throw error;
-    throw new Error('Agentic host operation failed', { cause: error });
+    throw new AgenticHostError(description, { cause: error });
   }
 }
 async function storage<T>(operation: () => Promise<T>): Promise<T> {
@@ -69,8 +85,9 @@ async function storage<T>(operation: () => Promise<T>): Promise<T> {
     return await operation();
   } catch (error) {
     if (isCancellationError(error)) throw error;
-    if (error instanceof AgenticStateError) throw new AgenticStateError(error.code);
-    throw new AgenticStateError('unavailable');
+    // State errors carry only safe text; other store errors are attached, never printed.
+    if (error instanceof AgenticStateError) throw error;
+    throw new AgenticStateError('unavailable', {}, { cause: error });
   }
 }
 
@@ -119,21 +136,30 @@ async function executeOwnedAgenticRun(
   const maxAttempts = options.maxAttempts ?? 3;
   const concurrency = host.concurrency ?? 1;
   const minDispatchIntervalMs = host.minDispatchIntervalMs ?? 0;
+  const invalidOption = (message: string): never => {
+    throw new AgenticStateError('limit', { reason: 'invalid_option', message });
+  };
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 64) {
+    invalidOption('Agent concurrency must be an integer from 1 to 64.');
+  }
   if (
-    !Number.isInteger(concurrency) ||
-    concurrency < 1 ||
-    concurrency > 64 ||
     !Number.isInteger(minDispatchIntervalMs) ||
     minDispatchIntervalMs < 0 ||
-    minDispatchIntervalMs > 60_000 ||
-    (host.tokensPerAssignment !== undefined &&
-      (!Number.isSafeInteger(host.tokensPerAssignment) || host.tokensPerAssignment <= 0)) ||
-    !Number.isInteger(maxAttempts) ||
-    maxAttempts < 1 ||
-    maxAttempts > 10 ||
-    (model.limits.timeout_seconds ?? 0) * 1000 > 2_147_483_647
+    minDispatchIntervalMs > 60_000
   ) {
-    throw new AgenticStateError('limit');
+    invalidOption('The minimum dispatch interval must be an integer from 0 to 60000 ms.');
+  }
+  if (
+    host.tokensPerAssignment !== undefined &&
+    (!Number.isSafeInteger(host.tokensPerAssignment) || host.tokensPerAssignment <= 0)
+  ) {
+    invalidOption('tokensPerAssignment must be a positive integer.');
+  }
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 10) {
+    invalidOption('maxAttempts must be an integer from 1 to 10.');
+  }
+  if ((model.limits.timeout_seconds ?? 0) * 1000 > 2_147_483_647) {
+    invalidOption('limits.timeout_seconds must be at most 2147483.');
   }
   const resolved = context.resolved.steps[0]!;
   const step = resolved?.step;
@@ -157,6 +183,16 @@ async function executeOwnedAgenticRun(
     )
   );
   const identity = digestAgenticState(definition);
+  const comparable = digestAgenticState(comparableDefinition(definition));
+  const costCapUsd =
+    options.maxCostUsd !== undefined ? options.maxCostUsd : (model.limits.max_cost_usd ?? null);
+  if (costCapUsd !== null && !(Number.isFinite(costCapUsd) && costCapUsd > 0)) {
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_option',
+      message: 'The cost cap must be a positive number of US dollars.',
+    });
+  }
+  const costCapMicrousd = costCapUsd === null ? null : Math.round(costCapUsd * 1_000_000);
   const store = options.stateStore ?? createLocalAgenticStateStore(options.projectDirectory);
   const incremental = Object.values(model.sources).some((source) => source.incremental);
   const cursorStore =
@@ -178,21 +214,47 @@ async function executeOwnedAgenticRun(
         )?.type,
       ])
   );
+  // Check pricing before anything is saved, so a misconfigured cap leaves no run behind.
+  if (costCapMicrousd !== null && (options.accounting ?? 'spend_cap') === 'spend_cap') {
+    assertAgenticPricing(context.resolved, host.priceUsage);
+  }
   const session = await storage(async () => store.acquire(key));
   let snapshot: AgenticRunSnapshot;
   try {
     const saved = await storage(async () => session.read());
     if (saved) {
-      snapshot = await storage(async () => AgenticRunSnapshotSchema.parse(saved));
+      snapshot = await storage(async () => {
+        const parsed = AgenticRunSnapshotSchema.safeParse(saved);
+        if (!parsed.success) {
+          throw new AgenticStateError('corrupt', {
+            reason: 'invalid_checkpoint',
+            message: `The saved checkpoint for run "${key.id}" failed validation. It may be damaged or written by a different Dogsled version.`,
+          });
+        }
+        return parsed.data;
+      });
       if (snapshot.superseded) throw new AgenticStateError('superseded');
       if (
         digestAgenticState(snapshot.key) !== digestAgenticState(key) ||
-        snapshot.identity !== identity
+        // Legacy runs keep their saved budget, so a changed cap must not pass silently.
+        (snapshot.accounting === 'spend_cap'
+          ? digestAgenticState(comparableDefinition(snapshot.definition)) !== comparable
+          : snapshot.identity !== identity)
       ) {
-        throw new AgenticStateError('conflict');
+        throw new AgenticStateError('conflict', {
+          reason: 'definition_changed',
+          message: `Run "${key.id}" was started with a different model definition, LLM profile, target, input schema, tool selection or attempt setting.`,
+          hint: 'Restore the original definition to resume it, or start a new run ID.',
+        });
       }
     } else {
-      if (options.run.mode === 'resume') throw new AgenticStateError('missing');
+      if (options.run.mode === 'resume') {
+        throw new AgenticStateError('missing', {
+          reason: 'run_not_found',
+          message: `No saved run "${key.id}" exists for model "${key.model}" in scope "${key.scope}".`,
+          hint: 'Check the run ID, or start a new run without --agent-resume.',
+        });
+      }
       execution.reset = false;
       const started = new Date();
       const deadline =
@@ -208,6 +270,9 @@ async function executeOwnedAgenticRun(
         started_at: started.toISOString(),
         deadline_at: deadline,
         token_limit: model.limits.tokens ?? null,
+        ...((options.accounting ?? 'spend_cap') === 'spend_cap'
+          ? { accounting: 'spend_cap', cost_limit_microusd: costCapMicrousd, charged_microusd: 0 }
+          : {}),
         max_attempts: maxAttempts,
         charged: 0,
         status: 'preparing',
@@ -225,7 +290,21 @@ async function executeOwnedAgenticRun(
       snapshot.publication !== 'confirmed' &&
       (snapshot.status !== 'execution_complete' || options.publisher)
     ) {
-      snapshot = await storage(async () => beginAgenticExecution(session, snapshot, execution));
+      snapshot = await storage(async () =>
+        beginAgenticExecution(session, snapshot, {
+          ...execution,
+          ...(snapshot.accounting === 'spend_cap'
+            ? { caps: { tokens: model.limits.tokens ?? null, microusd: costCapMicrousd } }
+            : {}),
+        })
+      );
+    }
+    if (snapshot.accounting !== 'spend_cap' && costCapMicrousd !== null) {
+      throw new AgenticStateError('limit', {
+        reason: 'invalid_option',
+        message: `Run "${key.id}" was saved with older token-reservation accounting, which has no cost cap.`,
+        hint: 'Resume it without --agent-max-cost, or start a new run ID to use a cost cap.',
+      });
     }
     const reportProgress = async () => {
       if (!options.onProgress) return;
@@ -258,7 +337,7 @@ async function executeOwnedAgenticRun(
     const reusedCompletion = snapshot.status === 'execution_complete';
     const remaining = deadlineTime(agenticDeadlineAt(snapshot)) - Date.now();
     if (remaining <= 0 && !reusedCompletion) {
-      throw new AgenticStateError('expired');
+      throw agenticDeadlinePassed('before this invocation started');
     }
     const timeout = Number.isFinite(remaining)
       ? AbortSignal.timeout(Math.max(1, Math.min(remaining, 2_147_483_647)))
@@ -313,7 +392,11 @@ async function executeOwnedAgenticRun(
         maxRows: AGENTIC_MAX_ROWS,
         maxBytes: AGENTIC_MAX_BYTES,
       };
-      const raw = await boundary(runSignal, async () => host.prepare(access));
+      const raw = await boundary(
+        runSignal,
+        `Agentic input preparation failed for "${context.inputRef}".`,
+        async () => host.prepare(access)
+      );
       const retrievedAt = new Date().toISOString();
       throwIfCancelled(runSignal);
       const data = AgenticJsonSchema.parse(raw);
@@ -373,7 +456,12 @@ async function executeOwnedAgenticRun(
               replacement_keys: model.materialization.keys,
             },
             limits: {
-              ...assignmentLimits(model, step, host.tokensPerAssignment),
+              ...assignmentLimits(
+                model,
+                step,
+                host.tokensPerAssignment,
+                snapshot.accounting ?? 'reservation'
+              ),
               started_at: started.toISOString(),
               deadline_at: deadline,
             },
@@ -415,7 +503,13 @@ async function executeOwnedAgenticRun(
         grain.add(identity);
         findings.push({ ...row, _dogsled_run_id: key.id });
       }
-      if (findings.length > AGENTIC_MAX_ROWS) throw new AgenticStateError('limit');
+      if (findings.length > AGENTIC_MAX_ROWS) {
+        throw new AgenticStateError('limit', {
+          reason: 'output_too_large',
+          message: `The model produced more than ${AGENTIC_MAX_ROWS} output rows in total.`,
+          hint: 'Process fewer input rows per run, for example with an incremental source.',
+        });
+      }
       AgenticJsonSchema.parse(findings);
     }
     if (snapshot.status !== 'execution_complete') {
@@ -458,6 +552,8 @@ async function executeOwnedAgenticRun(
       rows: findings,
       processedKeys,
       chargedTokens: snapshot.charged,
+      chargedUsd:
+        snapshot.accounting === 'spend_cap' ? (snapshot.charged_microusd ?? 0) / 1_000_000 : null,
       reusedCompletion,
     };
   } catch (error) {
@@ -468,4 +564,29 @@ async function executeOwnedAgenticRun(
   } finally {
     await storage(async () => session.release());
   }
+}
+
+/**
+ * Spend caps and the deprecated per-assignment limits may change between invocations of
+ * one run. Everything else, including the timeout, must match the saved definition.
+ */
+function comparableDefinition(definition: unknown): unknown {
+  const copy = structuredClone(definition) as {
+    tokensPerAssignment?: unknown;
+    resolved?: {
+      model?: { limits?: Record<string, unknown>; plan?: { steps?: { limits?: unknown }[] } };
+      steps?: { step?: { limits?: unknown } }[];
+    };
+  };
+  delete copy.tokensPerAssignment;
+  const model = copy.resolved?.model;
+  if (model?.limits) {
+    model.limits =
+      model.limits['timeout_seconds'] == null
+        ? {}
+        : { timeout_seconds: model.limits['timeout_seconds'] };
+  }
+  for (const step of model?.plan?.steps ?? []) delete step.limits;
+  for (const resolved of copy.resolved?.steps ?? []) delete resolved.step?.limits;
+  return copy;
 }

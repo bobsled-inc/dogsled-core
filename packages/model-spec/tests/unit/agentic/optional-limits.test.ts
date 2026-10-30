@@ -91,6 +91,7 @@ describe('optional agentic limits', () => {
       projectDirectory: '/unused',
       stateStore: store,
       run: { id: 'unlimited', mode: 'start' as const },
+      accounting: 'reservation' as const,
     };
     expect((await executeAgenticRun(f.host, f.context(), options)).chargedTokens).toBe(1200);
     expect(
@@ -98,6 +99,7 @@ describe('optional agentic limits', () => {
         await executeAgenticRun(f.host, f.context(), {
           ...options,
           run: { ...options.run, mode: 'resume' },
+          accounting: 'reservation' as const,
         })
       ).reusedCompletion
     ).toBe(true);
@@ -126,6 +128,7 @@ describe('optional agentic limits', () => {
       projectDirectory: '/unused',
       stateStore: new MemoryStateStore(),
       run: { id: 'shared', mode: 'start' },
+      accounting: 'reservation' as const,
     });
     expect(allowances).toEqual([1500, 900]);
     expect(result.chargedTokens).toBe(1200);
@@ -141,6 +144,7 @@ it('resumes an unlimited run from local files', async () => {
     const result = await executeAgenticRun(f.host, f.context(), {
       projectDirectory: directory,
       run: { id: 'local', mode: 'start' },
+      accounting: 'reservation' as const,
     });
     f.host.executeAgent = async () => {
       throw new Error('Must reuse accepted work');
@@ -148,6 +152,7 @@ it('resumes an unlimited run from local files', async () => {
     const resumed = await executeAgenticRun(f.host, f.context(), {
       projectDirectory: directory,
       run: { id: 'local', mode: 'resume' },
+      accounting: 'reservation' as const,
     });
     expect(resumed.chargedTokens).toBe(result.chargedTokens);
     expect(resumed.deadlineAt).toBeNull();
@@ -198,6 +203,7 @@ it('binds different limits to separate plan steps and persists them on resume', 
     projectDirectory: '/unused',
     stateStore: new MemoryStateStore(),
     run: { id: 'steps', mode: 'start' as const },
+    accounting: 'reservation' as const,
   };
   expect((await executeAgenticRun(f.host, f.context(), options)).chargedTokens).toBe(4);
   expect(seen).toMatchObject([
@@ -207,6 +213,7 @@ it('binds different limits to separate plan steps and persists them on resume', 
   await executeAgenticRun(f.host, f.context(), {
     ...options,
     run: { id: 'steps', mode: 'resume' },
+    accounting: 'reservation' as const,
   });
   expect(seen).toHaveLength(2);
 });
@@ -228,6 +235,7 @@ it('enforces an assignment token cap without a model token cap', async () => {
       projectDirectory: '/unused',
       stateStore,
       run: { id: 'overrun', mode: 'start' },
+      accounting: 'reservation' as const,
     })
   ).rejects.toThrow('limit');
   const saved = [...stateStore.runs.values()][0]!;
@@ -251,6 +259,7 @@ it('preserves unknown usage without inventing an unlimited reservation amount', 
     projectDirectory: '/unused',
     stateStore,
     run: { id: 'unknown', mode: 'start' },
+    accounting: 'reservation' as const,
   });
   const saved = [...stateStore.runs.values()][0]!;
   expect(saved.work[0]!.accepted?.usage.status).toBe('unknown');

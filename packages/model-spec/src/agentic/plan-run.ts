@@ -11,6 +11,7 @@ import {
   validateAgenticPlanInputs,
 } from './plan-work.js';
 import type { PreparedPlanInput } from './plan-work.js';
+import { AgenticHostError } from './errors.js';
 
 export async function executeAgenticPlan(
   host: Omit<ExperimentalAgenticProbe, 'publish'>,
@@ -67,7 +68,9 @@ export async function executeAgenticPlan(
         })
       ).catch((error: unknown) => {
         if (isCancellationError(error, options.signal)) throw error;
-        throw new Error('Agentic host operation failed', { cause: error });
+        throw new AgenticHostError(`Agentic input preparation failed for source "${ref}".`, {
+          cause: error,
+        });
       });
       throwIfCancelled(options.signal);
       const rows = AgenticJsonSchema.parse(raw);

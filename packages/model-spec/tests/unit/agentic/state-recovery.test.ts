@@ -106,6 +106,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
       const options = {
         projectDirectory: dir,
         run: { id: 'run', mode: 'start' as const },
+        accounting: 'reservation' as const,
         ...(stateStore ? { stateStore } : {}),
       };
       const result = await executeAgenticRun(f.host, f.context(), options);
@@ -120,6 +121,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
       const resumed = await executeAgenticRun(f.host, f.context(), {
         ...options,
         run: { id: 'run', mode: 'resume' },
+        accounting: 'reservation' as const,
       });
       expect(resumed.reusedCompletion).toBe(true);
       expect(resumed.chargedTokens).toBe(4);
@@ -135,6 +137,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
       projectDirectory: '/does/not/exist/agentic',
       stateStore: new MemoryStateStore(),
       run: { id: 'run', mode: 'start' },
+      accounting: 'reservation' as const,
     });
     expect(result.processedKeys).toEqual([]);
   });
@@ -146,9 +149,13 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
     f.host.executeAgent = async () => {
       throw new Error('provider secret: not retained');
     };
-    const options = { projectDirectory: dir, run: { id: 'run', mode: 'start' as const } };
+    const options = {
+      projectDirectory: dir,
+      run: { id: 'run', mode: 'start' as const },
+      accounting: 'reservation' as const,
+    };
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow(
-      'Agentic host operation failed'
+      'Agentic executor failed'
     );
     f.host.executeAgent = vi.fn();
     await expect(
@@ -167,7 +174,11 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
     f.host.executeAgent = async () => {
       throw new Error('interrupted');
     };
-    const options = { projectDirectory: dir, run: { id: 'run', mode: 'start' as const } };
+    const options = {
+      projectDirectory: dir,
+      run: { id: 'run', mode: 'start' as const },
+      accounting: 'reservation' as const,
+    };
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow();
     await expect(
       executeAgenticRun(
@@ -176,6 +187,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
         {
           ...options,
           run: { id: 'run', mode: 'resume' },
+          accounting: 'reservation' as const,
         }
       )
     ).rejects.toThrow('conflict');
@@ -195,7 +207,8 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
     const dir = root();
     const store = createLocalAgenticStateStore(dir);
     const session = await store.acquire(key);
-    await expect(store.acquire(key)).rejects.toThrow('unavailable');
+    // A live owner is a busy run (a documented conflict), not a storage failure.
+    await expect(store.acquire(key)).rejects.toThrow(/conflict \(run_in_progress\).*still active/);
     await session.release();
     const next = await store.acquire(key);
     await expect(session.read()).rejects.toThrow('conflict');
@@ -216,6 +229,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
     await executeAgenticRun(f.host, f.context(), {
       projectDirectory: dir,
       run: { id: 'run', mode: 'start' },
+      accounting: 'reservation' as const,
     });
     const state = loadState(dir);
     expect(state.models).toEqual({
@@ -236,7 +250,11 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
   it('rejects missing, corrupt and escaping artifact references', async () => {
     const dir = root();
     const f = runFixture(0);
-    const options = { projectDirectory: dir, run: { id: 'run', mode: 'resume' as const } };
+    const options = {
+      projectDirectory: dir,
+      run: { id: 'run', mode: 'resume' as const },
+      accounting: 'reservation' as const,
+    };
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow('missing');
     await executeAgenticRun(f.host, f.context(), { ...options, run: { id: 'run', mode: 'start' } });
     const file = join(dir, '.dogsled/model-spec/run-state.json');
@@ -278,6 +296,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
       executeAgenticRun(f.host, f.context(), {
         projectDirectory: root(),
         run: { id: 'run', mode: 'start' },
+        accounting: 'reservation' as const,
         stateStore: {
           async acquire() {
             throw new Error('SECRET');
@@ -301,6 +320,7 @@ describe('store transaction contract', () => {
         projectDirectory: root(),
         stateStore: store,
         run: { id: 'run', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toThrow();
     const original = [...store.runs.values()][0]!;
@@ -375,6 +395,7 @@ describe('store transaction contract', () => {
       projectDirectory: root(),
       stateStore,
       run: { id: 'run', mode: 'start' },
+      accounting: 'reservation' as const,
     });
     expect(result.chargedTokens).toBe(2);
     expect([...base.runs.values()][0]?.work[0]?.attempts).toHaveLength(1);
@@ -392,6 +413,7 @@ it('saves the deadline before preparation and keeps it after an interrupted prep
     projectDirectory: dir,
     stateStore: store,
     run: { id: 'run', mode: 'start' as const },
+    accounting: 'reservation' as const,
   };
   await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow();
   const before = structuredClone([...store.runs.values()][0]!);
@@ -416,6 +438,7 @@ it('stops before writing when orphan files exhaust the local artifact budget', a
     executeAgenticRun(f.host, f.context(), {
       projectDirectory: dir,
       run: { id: 'run', mode: 'start' },
+      accounting: 'reservation' as const,
     })
   ).rejects.toThrow('limit');
   expect(f.host.prepare).not.toHaveBeenCalled();
@@ -495,12 +518,15 @@ it('does not reset exhausted retry counts when the host resumes', async () => {
     projectDirectory: dir,
     maxAttempts: 2,
     run: { id: 'run', mode: 'start' as const },
+    accounting: 'reservation' as const,
   };
-  await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow('limit');
+  await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow(
+    /assignment \d+ failed/
+  );
   expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
   await expect(
     executeAgenticRun(f.host, f.context(), { ...options, run: { id: 'run', mode: 'resume' } })
-  ).rejects.toThrow('limit');
+  ).rejects.toThrow(/assignment \d+ failed/);
   expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
 });
 
@@ -536,6 +562,7 @@ it.each(['create', 'checkpoint', 'readback'] as const)(
         projectDirectory: root(),
         stateStore,
         run: { id: 'run', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toThrow('Agentic state');
     expect(f.host.executeAgent).not.toHaveBeenCalled();
@@ -558,6 +585,7 @@ it.each([
     projectDirectory: root(),
     stateStore,
     run: { id: 'run', mode: 'start' as const },
+    accounting: 'reservation' as const,
   };
   await executeAgenticRun(f.host, f.context(), options);
   const snapshot = [...stateStore.runs.values()][0]!;
@@ -593,6 +621,7 @@ it.each(['terminal', 'overcharge'] as const)(
         projectDirectory: root(),
         stateStore: base,
         run: { id: 'run', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toThrow();
     const before = [...base.runs.values()][0]!;
@@ -652,6 +681,7 @@ it.each(['tests', 'expect'] as const)(
         projectDirectory: root(),
         stateStore,
         run: { id: 'run', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toThrow('does not support authored tests or expectations');
     expect(acquire).not.toHaveBeenCalled();

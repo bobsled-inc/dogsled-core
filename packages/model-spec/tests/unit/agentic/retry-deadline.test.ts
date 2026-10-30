@@ -26,6 +26,7 @@ describe('retry execution windows', () => {
         projectDirectory: '/unused',
         stateStore: store,
         run: { id: 'retry', mode: 'start' as const },
+        accounting: 'reservation' as const,
       };
       await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow();
       const before = structuredClone([...store.runs.values()][0]!);
@@ -34,6 +35,7 @@ describe('retry execution windows', () => {
       const result = await executeAgenticRun(f.host, f.context(), {
         ...options,
         run: { id: 'retry', mode },
+        accounting: 'reservation' as const,
       });
       expect(Date.parse(result.deadlineAt)).toBe(restartedAt + 1000);
       expect(calls).toHaveBeenCalledTimes(3);
@@ -55,6 +57,7 @@ describe('retry execution windows', () => {
       projectDirectory: '/unused',
       stateStore: store,
       run: { id: 'prepare', mode: 'start' as const },
+      accounting: 'reservation' as const,
     };
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow();
     vi.setSystemTime(Date.now() + 2000);
@@ -63,6 +66,7 @@ describe('retry execution windows', () => {
         await executeAgenticRun(f.host, f.context(), {
           ...options,
           run: { id: 'prepare', mode: 'resume' },
+          accounting: 'reservation' as const,
         })
       ).status
     ).toBe('execution_complete');
@@ -75,6 +79,7 @@ describe('retry execution windows', () => {
       projectDirectory: '/unused',
       stateStore: store,
       run: { id: 'windows', mode: 'start' },
+      accounting: 'reservation' as const,
     });
     const saved = [...store.runs.values()][0]!;
     const command = {
@@ -114,6 +119,7 @@ describe('retry execution windows', () => {
         projectDirectory: '/unused',
         stateStore: store,
         run: { id: 'late', mode: 'start' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toThrow();
     const saved = [...store.runs.values()][0]!;
@@ -153,6 +159,7 @@ describe('retry execution windows', () => {
       projectDirectory: '/unused',
       stateStore: memory,
       run: { id: 'uncertain-window', mode: 'start' as const },
+      accounting: 'reservation' as const,
     };
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow();
     vi.setSystemTime(Date.now() + 2000);
@@ -185,6 +192,7 @@ describe('retry execution windows', () => {
       ...options,
       stateStore: store,
       run: { id: 'uncertain-window', mode: 'resume' },
+      accounting: 'reservation' as const,
     });
     expect(acquisitions).toBe(2);
     expect(Date.parse(result.deadlineAt)).toBe(started + 1000);

@@ -1,3 +1,4 @@
+import { agenticDeadlinePassed } from './state-errors.js';
 import { deadlineTime } from './limits.js';
 import { agenticDeadlineAt } from './execution-window.js';
 import { runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
@@ -26,13 +27,13 @@ export async function preflightAgenticPublication(
   signal: AbortSignal
 ): Promise<void> {
   if (Date.now() >= deadlineTime(agenticDeadlineAt(snapshot))) {
-    throw new AgenticStateError('expired');
+    throw agenticDeadlinePassed('before publication');
   }
   validateAgenticReceipt(await session.read(), snapshot);
   await runCancellable(signal, () => publisher.preflight(context, signal));
   validateAgenticReceipt(await session.read(), snapshot);
   if (Date.now() >= deadlineTime(agenticDeadlineAt(snapshot))) {
-    throw new AgenticStateError('expired');
+    throw agenticDeadlinePassed('before publication');
   }
   throwIfCancelled(signal);
 }
@@ -57,7 +58,7 @@ export async function publishAgenticRun(
   let receipt = intent ? await publisher.inspect(intent, signal) : null;
   if (!receipt) {
     if (Date.now() >= deadlineTime(agenticDeadlineAt(snapshot))) {
-      throw new AgenticStateError('expired');
+      throw agenticDeadlinePassed('before publication');
     }
     throwIfCancelled(runSignal);
     if (needsPreflight) {
@@ -86,7 +87,7 @@ export async function publishAgenticRun(
     }
     await assertOwner();
     if (Date.now() >= deadlineTime(agenticDeadlineAt(snapshot))) {
-      throw new AgenticStateError('expired');
+      throw agenticDeadlinePassed('before publication');
     }
     throwIfCancelled(runSignal);
     try {

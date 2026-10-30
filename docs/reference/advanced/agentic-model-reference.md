@@ -18,7 +18,7 @@ Definitions live in the project's models directory, usually `models/`.
 | `grain`                            | Yes      | Columns that uniquely identify an output row                                  |
 | `sources`                          | Yes      | One to 256 aliases, each with a `ref` and optional `incremental.cursor_field` |
 | `llm.profile`                      | Yes      | Default role name under `platform.models` in `dogsled.yml`                    |
-| `limits`                           | No       | Run limits and default assignment limits; see below                           |
+| `limits`                           | No       | Run spend caps and timeout; see below                                         |
 | `plan.steps`                       | Yes      | One to 256 steps in dependency order                                          |
 | `output.from`                      | Yes      | ID of the step whose rows are published                                       |
 | `materialization.type`             | Yes      | `table`                                                                       |
@@ -55,7 +55,7 @@ and has a different purpose.
 | `execution.tools`            | No          | Extra host tool names for an agent loop                                                |
 | `context_sources`            | No          | Source aliases available for extra reads during an agent loop                          |
 | `llm.profile`                | No          | Override the model's default profile for this step                                     |
-| `limits`                     | No          | Override per-assignment limits                                                         |
+| `limits`                     | No          | Deprecated per-assignment limits; ignored by new runs                                  |
 | `instructions`               | Yes         | Nonempty instructions, up to 65,536 characters                                         |
 | `columns`                    | Yes         | One to 256 output business columns                                                     |
 | `classification.choices`     | No          | Two to 255 named choices for supported classification executors                        |
@@ -87,56 +87,73 @@ host changes its defaults.
 
 ```yaml
 limits:
-  tokens: 100000
-  timeout_seconds: 600
-  tokens_per_assignment: 16000
-  tool_calls_per_assignment: 8
-  model_calls_per_assignment: 12
+  max_cost_usd: 25
+  tokens: 2000000
+  timeout_seconds: 3600
 ```
 
-All values are optional positive integers or `null`. `null` means no limit at
-model level. The timeout maximum is 2,147,483 seconds; token and call counts must
-be safe JavaScript integers.
+All fields are optional. `null` or omission means no limit.
 
-| Field                        | Scope                                                                |
-| ---------------------------- | -------------------------------------------------------------------- |
-| `tokens`                     | Total tokens across steps and attempts in this run                   |
-| `timeout_seconds`            | Execution window, including preparation, dispatch waits, and retries |
-| `tokens_per_assignment`      | Token allowance for one assignment attempt                           |
-| `tool_calls_per_assignment`  | Tool-call allowance for one assignment attempt                       |
-| `model_calls_per_assignment` | Model-call allowance for one assignment attempt                      |
+| Field             | Meaning                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| `max_cost_usd`    | Spend cap for the run in US dollars, priced from measured token usage |
+| `tokens`          | Spend cap for the run in tokens, across all steps and attempts        |
+| `timeout_seconds` | Execution window, including preparation, dispatch waits, and retries  |
 
-A step may override only the three per-assignment fields. Omission inherits the
-model value. Explicit `null` removes that inherited cap:
+### How the caps work
 
-```yaml
-# Within a step:
-limits:
-  tokens_per_assignment: null
-  tool_calls_per_assignment: 4
+A cap stops new work; it does not cut off work that is already running.
+
+1. Before each assignment starts, Dogsled compares what the run has spent so
+   far with the cap.
+2. Under the cap, the assignment starts.
+3. At or over the cap, no new assignment starts. Assignments that are already
+   running finish, and their answers are saved.
+4. The run then stops with `Agentic state limit (spend_cap_reached)`. The
+   message gives the amount spent, the cap, and how many assignments are done.
+
+Raise the cap and resume the run to continue. The resumed run keeps all saved
+answers and does not repeat them:
+
+```bash
+dogsled model run +pair_assessments --agent-executor ./executor.mjs \
+  --agent-run-id <id> --agent-resume --agent-max-cost 50
 ```
 
-The run's total token limit still applies. If only that total is set, one
-assignment reserves all remaining capacity and other assignments wait for it to
-settle. Set a per-assignment token allowance to share a finite total across
-concurrent assignments. Each retry gets fresh call limits, but all token charges
-count toward the same run total.
+You can raise a cap in YAML or with `--agent-max-cost`, which overrides
+`limits.max_cost_usd` for one invocation. Changing a cap does not count as a
+changed definition.
 
-The legacy CLI `--agent-tokens-per-assignment` and host `tokensPerAssignment`
-options are fallbacks only when neither YAML level specifies the field. There is
-no implicit 8,192-token CLI cap. YAML takes precedence, including explicit `null`.
+**Overshoot.** A run can go over its cap by about the cost of the work that is in
+flight when it reaches the cap, roughly `--agent-concurrency` times the cost of
+one assignment.
 
-Usage remains recorded without limits. Unknown usage consumes a finite
-reservation; without one, the charged total is only a lower bound. An explicit
-retry opens a fresh time window but keeps the original token charges and attempt
-counts. Cancellation, permission checks, retry counts, and storage limits remain
-active even when all YAML limits are omitted. Executors must enforce call limits
-across their internal calls. Provider and host limits may be stricter.
+**Up-front check.** Before the first model call of a run, Dogsled estimates the
+input size of the first step at about four bytes per token. If that estimate
+alone is above the cap, the run stops before any model call with
+`estimate_exceeds_cap`. The estimate counts input only, so the real cost is
+higher.
 
-These controls do not enforce a dollar ceiling. The reference executors use the AI
-client's observe mode; `platform.budget` and profile dollar budgets are not a
-substitute for an agentic execution budget. A custom executor must document its
-own cost policy.
+**Unreported usage.** When a provider does not report usage for an attempt,
+Dogsled charges that attempt's input estimate. An interrupted attempt keeps the
+estimate it was charged when it started.
+
+**Pricing.** `max_cost_usd` needs a known price for every model profile the plan
+uses. The CLI uses Dogsled's built-in price table. If a model has no price, the
+run stops before any model call with `pricing_unknown`; use `tokens` as the cap
+for that model instead. Library hosts supply prices through
+`AgenticHost.priceUsage`.
+
+### Deprecated per-assignment limits
+
+`tokens_per_assignment`, `tool_calls_per_assignment` and
+`model_calls_per_assignment`, at model or step level, are still accepted but are
+ignored by new runs. So are the CLI `--agent-tokens-per-assignment` option and the
+host `tokensPerAssignment` option. Executors bound their own loops; the reference
+loop executor stops after 16 turns.
+
+Runs saved by an earlier Dogsled version keep the per-attempt reservation rules
+they started with when you resume them.
 
 ## Output types and metadata
 

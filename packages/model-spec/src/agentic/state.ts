@@ -1,10 +1,12 @@
 import { attemptReservation, deadlineTime } from './limits.js';
-import { AgenticStateError } from './state-errors.js';
+import { AgenticStateError, agenticDeadlinePassed } from './state-errors.js';
 export { AgenticStateError, type AgenticStateErrorCode } from './state-errors.js';
 import type { AgenticCursorStore } from './cursor.js';
 import { CursorValuesSchema } from './cursor.js';
 import {
   agenticDeadlineAt,
+  agenticSpendCapError,
+  agenticSpendCapReached,
   executionWindowsAfter,
   isAgenticFailureBlocked,
 } from './execution-window.js';
@@ -43,6 +45,8 @@ export const AgenticAttemptStateSchema = z
     finish_revision: z.number().int().nonnegative().optional(),
     reservation: Tokens.nullable(),
     charge: Tokens,
+    /** Spend-cap runs only: priced charge in millionths of a US dollar. */
+    charge_microusd: Tokens.optional(),
     outcome: AgentAssignmentOutcomeSchema.optional(),
     finish_digest: z.string().length(64).optional(),
   })
@@ -86,12 +90,19 @@ const SnapshotObjectSchema = z
             revision: z.number().int().nonnegative(),
             started_at: z.iso.datetime({ offset: true }),
             deadline_at: z.iso.datetime({ offset: true }).nullable(),
+            // Spend-cap runs record the caps each invocation used, so a resume can raise them.
+            token_limit: Tokens.nullable().optional(),
+            cost_limit_microusd: Tokens.nullable().optional(),
           })
           .strict()
       )
       .max(1000)
       .optional(),
+    /** Absent for runs saved with per-attempt reservation accounting. */
+    accounting: z.literal('spend_cap').optional(),
     token_limit: Tokens.nullable(),
+    cost_limit_microusd: Tokens.nullable().optional(),
+    charged_microusd: Tokens.optional(),
     max_attempts: z.number().int().min(1).max(10),
     charged: Tokens,
     status: z.enum(['preparing', 'running', 'execution_complete']),
@@ -147,6 +158,26 @@ const SnapshotObjectSchema = z
     ) {
       invalid();
     }
+    const attempts = run.work.flatMap((work) => work.attempts);
+    if (run.accounting === 'spend_cap') {
+      if (
+        run.charged_microusd !==
+          attempts.reduce((sum, attempt) => sum + (attempt.charge_microusd ?? 0), 0) ||
+        attempts.some((attempt) => attempt.reservation !== null) ||
+        run.execution_windows?.some((window) => window.token_limit === undefined)
+      ) {
+        invalid();
+      }
+    } else if (
+      run.charged_microusd !== undefined ||
+      run.cost_limit_microusd !== undefined ||
+      attempts.some((attempt) => attempt.charge_microusd !== undefined) ||
+      run.execution_windows?.some(
+        (window) => window.token_limit !== undefined || window.cost_limit_microusd !== undefined
+      )
+    ) {
+      invalid();
+    }
     const ids = new Set<string>();
     for (const work of run.work) {
       if (ids.has(work.assignment.shard_id)) invalid();
@@ -177,7 +208,7 @@ const SnapshotObjectSchema = z
             attempt.charge < minimum ||
             attempt.finish_revision === undefined ||
             attempt.finish_digest !==
-              digestAgenticState({ outcome: attempt.outcome, charge: attempt.charge })
+              finishDigest(attempt.outcome, attempt.charge, attempt.charge_microusd)
           ) {
             invalid();
           }
@@ -223,6 +254,8 @@ const CommandObjectSchema = z.discriminatedUnion('type', [
       operation_id: Identity,
       expected_revision: z.number().int().nonnegative(),
       started_at: z.iso.datetime({ offset: true }),
+      token_limit: Tokens.nullable().optional(),
+      cost_limit_microusd: Tokens.nullable().optional(),
     })
     .strict(),
   z
@@ -274,6 +307,9 @@ const CommandObjectSchema = z.discriminatedUnion('type', [
       expected_revision: z.number().int().nonnegative(),
       work: z.number().int().nonnegative(),
       attempt_id: Identity,
+      /** Spend-cap runs: estimated charge kept if the attempt never reports usage. */
+      charge: Tokens.optional(),
+      charge_microusd: Tokens.optional(),
     })
     .strict(),
   z
@@ -285,6 +321,7 @@ const CommandObjectSchema = z.discriminatedUnion('type', [
       attempt_id: Identity,
       outcome: AgentAssignmentOutcomeSchema,
       charge: Tokens,
+      charge_microusd: Tokens.optional(),
     })
     .strict(),
   z
@@ -316,6 +353,18 @@ export interface AgenticStateSession {
 export interface AgenticStateStore {
   cursors?: AgenticCursorStore;
   acquire(key: AgenticRunKey): Promise<AgenticStateSession>;
+}
+/** Legacy finishes digest only outcome and charge; spend-cap finishes add their price. */
+export function finishDigest(
+  outcome: unknown,
+  charge: number,
+  chargeMicrousd: number | undefined
+): string {
+  return digestAgenticState(
+    chargeMicrousd === undefined
+      ? { outcome, charge }
+      : { outcome, charge, charge_microusd: chargeMicrousd }
+  );
 }
 export function digestAgenticState(value: unknown): string {
   return createHash('sha256')
@@ -351,16 +400,25 @@ export function applyAgenticCheckpoint(
       if (
         prior.revision !== command.expected_revision ||
         prior.started_at !== command.started_at ||
-        prior.retry_failed !== command.retry_failed
+        prior.retry_failed !== command.retry_failed ||
+        prior.token_limit !== command.token_limit ||
+        prior.cost_limit_microusd !== command.cost_limit_microusd
       ) {
         conflict();
       }
       return state;
     }
+    if ((state.accounting === 'spend_cap') !== (command.token_limit !== undefined)) conflict();
     if (state.revision !== command.expected_revision || state.publication === 'confirmed') {
       conflict();
     }
-    if (windows.length >= 1000) throw new AgenticStateError('limit');
+    if (windows.length >= 1000) {
+      throw new AgenticStateError('limit', {
+        reason: 'too_many_resumes',
+        message: 'This run has been resumed 1,000 times.',
+        hint: 'Start a new run ID.',
+      });
+    }
     const started = Date.parse(command.started_at);
     if (started > now || started < Date.parse(windows.at(-1)?.started_at ?? state.started_at)) {
       conflict();
@@ -375,6 +433,12 @@ export function applyAgenticCheckpoint(
         revision: state.revision,
         started_at: command.started_at,
         deadline_at: Number.isFinite(duration) ? new Date(started + duration).toISOString() : null,
+        ...(command.token_limit !== undefined
+          ? {
+              token_limit: command.token_limit,
+              cost_limit_microusd: command.cost_limit_microusd ?? null,
+            }
+          : {}),
       },
     ];
     state.revision++;
@@ -411,7 +475,9 @@ export function applyAgenticCheckpoint(
       return state;
     }
     if (command.expected_revision !== state.revision) conflict();
-    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
+    if (now >= deadlineTime(agenticDeadlineAt(state))) {
+      throw agenticDeadlinePassed('before the input batch was sealed');
+    }
     if (command.plan_inputs) {
       state.plan_inputs = command.plan_inputs;
       state.sealed_steps = [];
@@ -445,7 +511,9 @@ export function applyAgenticCheckpoint(
       return state;
     }
     if (state.status !== 'running' || command.expected_revision !== state.revision) conflict();
-    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
+    if (now >= deadlineTime(agenticDeadlineAt(state))) {
+      throw agenticDeadlinePassed('before the next plan step');
+    }
     let expected;
     try {
       expected = buildAgenticStepAssignments(state, state.sealed_steps!.length);
@@ -488,7 +556,7 @@ export function applyAgenticCheckpoint(
       if (command.expected_revision !== prior.finish_revision) conflict();
       if (
         prior.finish_digest !==
-        digestAgenticState({ outcome: command.outcome, charge: command.charge })
+        finishDigest(command.outcome, command.charge, command.charge_microusd)
       ) {
         conflict();
       }
@@ -498,52 +566,92 @@ export function applyAgenticCheckpoint(
   if (command.expected_revision !== state.revision || state.status !== 'running') conflict();
   if (command.type === 'complete') {
     if (state.work.some((item) => !item.accepted)) conflict();
-    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
+    if (now >= deadlineTime(agenticDeadlineAt(state))) {
+      throw agenticDeadlinePassed('before the run completed');
+    }
     state.status = 'execution_complete';
   } else if (command.type === 'start_attempt') {
     if (work!.accepted) conflict();
     const previous = work!.attempts.at(-1);
     if (isAgenticFailureBlocked(state, previous)) conflict();
+    const spendCap = state.accounting === 'spend_cap';
+    if ((command.charge !== undefined || command.charge_microusd !== undefined) && !spendCap) {
+      conflict();
+    }
     if (
+      !spendCap &&
       state.work.some((item) =>
         item.attempts.some(
           (attempt) => attempt.reservation !== null && attempt.charge > attempt.reservation
         )
       )
     ) {
-      throw new AgenticStateError('limit');
+      throw new AgenticStateError('limit', {
+        reason: 'assignment_overcharged',
+        message: 'An earlier attempt reported more token usage than it reserved.',
+        hint: 'This run uses the older reservation accounting and cannot continue. Start a new run ID.',
+      });
     }
-    if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
-    if (
-      work!.attempts.length >= state.max_attempts ||
-      (state.token_limit !== null &&
-        (state.charged >= state.token_limit ||
-          state.charged + (work!.assignment.limits.tokens ?? 0) > state.token_limit))
+    if (now >= deadlineTime(agenticDeadlineAt(state))) {
+      throw agenticDeadlinePassed('before the next assignment started');
+    }
+    if (work!.attempts.length >= state.max_attempts) {
+      throw new AgenticStateError('limit', {
+        reason: 'attempts_exhausted',
+        message: `Assignment ${work!.assignment.shard_id} of step "${work!.assignment.step_id}" has used all ${state.max_attempts} attempts.`,
+      });
+    }
+    if (spendCap) {
+      if (agenticSpendCapReached(state)) throw agenticSpendCapError(state);
+    } else if (
+      state.token_limit !== null &&
+      (state.charged >= state.token_limit ||
+        state.charged + (work!.assignment.limits.tokens ?? 0) > state.token_limit)
     ) {
-      throw new AgenticStateError('limit');
+      throw new AgenticStateError('limit', {
+        reason: 'token_budget_exhausted',
+        message: `The run token budget (limits.tokens: ${state.token_limit}) has no room for another attempt; ${state.charged} tokens are charged.`,
+      });
     }
     if (
       state.work.some((item) => item.attempts.some((attempt) => attempt.id === command.attempt_id))
     ) {
       conflict();
     }
-    const tokens = attemptReservation(
-      work!.assignment.limits.tokens,
-      state.token_limit,
-      state.charged
-    );
-    work!.attempts.push({
-      id: command.attempt_id,
-      start_revision: command.expected_revision,
-      reservation: tokens,
-      charge: tokens ?? 0,
-    });
-    state.charged += tokens ?? 0;
+    if (spendCap) {
+      // Charge an estimate now so an interrupted attempt still counts toward the cap.
+      const charge = command.charge ?? 0;
+      const microusd = command.charge_microusd ?? 0;
+      work!.attempts.push({
+        id: command.attempt_id,
+        start_revision: command.expected_revision,
+        reservation: null,
+        charge,
+        charge_microusd: microusd,
+      });
+      state.charged += charge;
+      state.charged_microusd = (state.charged_microusd ?? 0) + microusd;
+    } else {
+      const tokens = attemptReservation(
+        work!.assignment.limits.tokens,
+        state.token_limit,
+        state.charged
+      );
+      work!.attempts.push({
+        id: command.attempt_id,
+        start_revision: command.expected_revision,
+        reservation: tokens,
+        charge: tokens ?? 0,
+      });
+      state.charged += tokens ?? 0;
+    }
   } else {
     const attempt = work!.attempts.at(-1);
     if (!attempt || attempt.id !== command.attempt_id || work!.accepted) {
       throw new AgenticStateError('conflict');
     }
+    const spendCap = state.accounting === 'spend_cap';
+    if (spendCap !== (command.charge_microusd !== undefined)) conflict();
     const outcome = parseAgentAssignmentOutcome(
       { ...work!.assignment, attempt_id: attempt.id },
       command.outcome
@@ -553,15 +661,22 @@ export function applyAgenticCheckpoint(
     if (command.charge < minimum) conflict();
     state.charged += command.charge - attempt.charge;
     attempt.charge = command.charge;
+    if (spendCap) {
+      state.charged_microusd =
+        (state.charged_microusd ?? 0) + command.charge_microusd! - (attempt.charge_microusd ?? 0);
+      attempt.charge_microusd = command.charge_microusd!;
+    }
     attempt.finish_revision = command.expected_revision;
     attempt.finished_at = new Date(now).toISOString();
     attempt.outcome = outcome;
-    attempt.finish_digest = digestAgenticState({ outcome, charge: command.charge });
+    attempt.finish_digest = finishDigest(outcome, command.charge, command.charge_microusd);
+    // Spend-cap runs keep every valid answer that was paid for; caps only stop new dispatch.
     if (
       outcome.status !== 'failed' &&
-      (attempt.reservation === null || command.charge <= attempt.reservation) &&
-      (state.token_limit === null || state.charged <= state.token_limit) &&
-      now < deadlineTime(agenticDeadlineAt(state, attempt.start_revision))
+      (spendCap ||
+        ((attempt.reservation === null || command.charge <= attempt.reservation) &&
+          (state.token_limit === null || state.charged <= state.token_limit) &&
+          now < deadlineTime(agenticDeadlineAt(state, attempt.start_revision))))
     ) {
       work!.accepted = outcome;
     }

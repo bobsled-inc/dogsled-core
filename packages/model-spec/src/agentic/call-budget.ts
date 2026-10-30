@@ -13,6 +13,7 @@ export function createAssignmentBudget(assignment: AgentAssignment, signal: Abor
   >();
   let open = true;
   let invalid = false;
+  let failure: string | undefined;
   const charged = () => [...receipts.values()].reduce((sum, receipt) => sum + receipt.charge, 0);
   const guard = () => {
     throwIfCancelled(signal);
@@ -29,6 +30,15 @@ export function createAssignmentBudget(assignment: AgentAssignment, signal: Abor
         (assignment.limits.model_calls != null && receipts.size >= assignment.limits.model_calls)
       ) {
         invalid = true;
+        failure ??=
+          tokens !== null && (!Number.isSafeInteger(tokens) || tokens <= 0)
+            ? 'it reserved an invalid token amount'
+            : assignment.mode === 'llm_call' && receipts.size > 0
+              ? 'a direct llm_call made more than one model call'
+              : assignment.limits.model_calls != null &&
+                  receipts.size >= assignment.limits.model_calls
+                ? `it exceeded ${assignment.limits.model_calls} model calls`
+                : `it reserved more than the ${assignment.limits.tokens} tokens left for this assignment`;
         throw new Error('Assignment token limit exceeded');
       }
       const reservation = { id: randomUUID(), attempt_id: assignment.attempt_id, tokens };
@@ -55,12 +65,19 @@ export function createAssignmentBudget(assignment: AgentAssignment, signal: Abor
         }
         entry.settled = fingerprint;
         entry.charge = agenticChargeableTokens(entry.reservation, report);
-        // Keep the overcharge for durable accounting even if it exceeds the limit.
-        if (entry.reservation.tokens !== null && entry.charge > entry.reservation.tokens) {
+        // Keep the overcharge for durable accounting even if it exceeds the limit. Without
+        // an assignment cap an executor's own estimate may be low; usage is still charged.
+        if (
+          assignment.limits.tokens !== null &&
+          entry.reservation.tokens !== null &&
+          entry.charge > entry.reservation.tokens
+        ) {
           invalid = true;
+          failure ??= `a call used ${entry.charge} tokens but reserved ${entry.reservation.tokens}`;
         }
       } catch {
         invalid = true;
+        failure ??= 'it settled an unknown, foreign or conflicting token receipt';
         throw new Error('Invalid token receipt');
       }
     },
@@ -69,6 +86,7 @@ export function createAssignmentBudget(assignment: AgentAssignment, signal: Abor
     budget,
     charged,
     valid: () => !invalid,
+    failure: () => failure,
     close: () => {
       open = false;
     },

@@ -54,9 +54,9 @@ Once preparation is sealed, the saved assignments contain the frozen input rows.
 rows and does not query the input source again. Input source changes after sealing
 do not change this run. There is no reuse between different run IDs.
 
-Before an executor call, Dogsled saves the attempt and its full token reservation.
-It saves verified usage and an accepted result together. An interrupted call
-retains its full reservation. A retry starts the whole assignment with a new
+Before an executor call, Dogsled saves the attempt with its input estimate as a
+charge. It saves verified usage and an accepted result together. An interrupted
+call keeps its estimated charge. A retry starts the whole assignment with a new
 attempt ID. It does not reconnect a remote session. Accepted assignments never
 run again. Failed outcomes retry automatically only when `error.retryable` is true. A thrown
 executor error stops the current invocation; a later resume can retry it.
@@ -122,11 +122,11 @@ not a durable event subscription. Reopening a run reports its current counts;
 hosts can use the run ID, model name, and revision to ignore repeated reports.
 
 The default is three attempts per assignment, including interrupted attempts.
-The host can set one through ten attempts. All retries share the original
-token limit and assignment attempt limit. An explicit retry gets a fresh execution
-deadline. Assignment retries and automatic lease recovery within that invocation
-share its deadline; they cannot extend it. Usage above a reservation remains
-recorded and stops further work.
+The host can set one through ten attempts. All retries count toward the run's
+spend caps and the assignment attempt limit. An explicit retry gets a fresh
+execution deadline. Assignment retries and automatic lease recovery within that
+invocation share its deadline; they cannot extend it. Each invocation records the
+caps it applied, so a resume can raise them.
 
 Checkpoints retain the original `started_at`, `deadline_at`, assignment templates,
 and input retrieval times. The optional `execution_windows` history records each
@@ -302,8 +302,8 @@ If the warehouse session loses ownership, Dogsled cancels active assignments and
 closes that session. It can make up to two recovery attempts. Each attempt must
 acquire exclusive ownership and reload the saved checkpoint before doing more work.
 Dogsled reuses saved results and reconciles saved publication receipts. Work without
-a saved result can run again; its previous token reservation remains charged.
-Automatic lease recovery does not reset the current execution deadline, token budget,
+a saved result can run again; its previous attempt remains charged.
+Automatic lease recovery does not reset the current execution deadline, spend,
 or assignment attempt limit. A later explicit retry can open a new execution window.
 If another worker owns the run, or the warehouse still cannot grant ownership,
 Dogsled stops. It does not steal an active lease or report success for unfinished work.
@@ -361,4 +361,4 @@ register the saved table. Dry runs, failed publication, and experimental probes
 do not create this entry. Agentic checkpoints and incremental cursors remain in
 the agentic state store.
 
-Token reservations and deadlines can be disabled. See [optional execution limits](agentic-contracts.md#optional-execution-limits) for YAML inheritance, unlimited usage accounting, and executor migration.
+Spend caps and deadlines are optional. See [optional execution limits](agentic-contracts.md#optional-execution-limits).

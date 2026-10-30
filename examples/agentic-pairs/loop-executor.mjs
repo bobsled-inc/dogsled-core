@@ -21,6 +21,8 @@ const SYSTEM = [
 ].join('\n');
 const MAX_CONTEXT_BYTES = 32768;
 const MAX_SOURCE_BYTES = 65536;
+// Bounds a runaway loop when the run sets no per-assignment call limit.
+const DEFAULT_MAX_TURNS = 16;
 
 /** This is trusted host code, not an OS sandbox. Inject the provider only in tests. */
 export function createLoopExecutor(call = generateStructured, { maxTurns } = {}) {
@@ -28,7 +30,7 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
     throw new Error('maxTurns must be a positive safe integer');
   return async function executeAgent(request) {
     const assignment = AgentAssignmentSchema.parse(request.assignment);
-    const turns = assignment.limits.model_calls ?? maxTurns ?? Infinity;
+    const turns = assignment.limits.model_calls ?? maxTurns ?? DEFAULT_MAX_TURNS;
     if (assignment.mode !== 'agent_loop' || typeof request.sources !== 'function')
       throw new Error('This executor requires agent_loop mode and scoped sources');
     request.signal.throwIfAborted();
@@ -146,6 +148,16 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
           !signal.aborted
         );
       }
+      // A rejected key or permission is not billed and does not fix itself on retry.
+      if (!result.ok && (result.status === 401 || result.status === 403)) {
+        await request.budget.settle(receipt, {
+          status: 'measured',
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: 0,
+        });
+        return failure('auth_failed', 'auth');
+      }
       const parsedUsage = AgenticUsageSchema.safeParse(
         result.usage
           ? {
@@ -162,7 +174,15 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
       await request.budget.settle(receipt, usage);
       if (usage.status === 'unknown') {
         total = usage;
-        return failure('unknown_usage', 'provider');
+        // Provider errors and missing usage are usually transient; let Dogsled retry.
+        if (!result.ok && result.error === 'schema_violation')
+          return failure('invalid_output', 'validation', true);
+        const code = result.ok
+          ? 'unknown_usage'
+          : result.status === 429
+            ? 'rate_limited'
+            : 'call_failed';
+        return failure(code, 'provider', true);
       }
       total = {
         status: 'measured',
@@ -171,9 +191,11 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
         total_tokens: total.total_tokens + usage.total_tokens,
       };
       if (signal.aborted) return failure('loop_cancelled', 'cancellation');
+      // Only a per-assignment cap makes this executor's own byte estimate binding.
       if (
-        (receipt.tokens !== null && usage.total_tokens > receipt.tokens) ||
-        (assignment.limits.tokens !== null && total.total_tokens > assignment.limits.tokens)
+        assignment.limits.tokens !== null &&
+        ((receipt.tokens !== null && usage.total_tokens > receipt.tokens) ||
+          total.total_tokens > assignment.limits.tokens)
       )
         return failure('token_limit');
       if (!result.ok)

@@ -4,6 +4,15 @@ export * from './rows.js';
 export * from './resolve.js';
 export * from './assignment.js';
 export * from './executor.js';
+export {
+  AgenticAssignmentError,
+  AgenticHostError,
+  formatAgenticError,
+  type AgenticAssignmentFailure,
+} from './errors.js';
+export type { AgenticPriceUsage } from './spend.js';
+export type { AgenticAccounting } from './limits.js';
+export type { AgenticErrorDetail } from './state-errors.js';
 export type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
 
 export * from './state.js';

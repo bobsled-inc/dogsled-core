@@ -25,6 +25,7 @@ import {
   selectIntegrationContexts,
 } from '@bobsled-inc/model-spec/project';
 import { CommandError } from '@bobsled-inc/protocol';
+import { knownModelCostUsd } from '@bobsled-inc/ai';
 import { normalizeAgenticInputValue } from './agentic-input.js';
 export { normalizeAgenticInputValue } from './agentic-input.js';
 import { createAgenticSources, type AgenticResourceSpecLoader } from './agentic-sources.js';
@@ -49,7 +50,16 @@ export interface AgenticHostOptions {
   concurrency?: number;
   minDispatchIntervalMs?: number;
   allowBillableSources?: string[];
+  /** Overrides the built-in price table used for spend tracking and cost caps. */
+  priceUsage?: AgenticHost['priceUsage'];
 }
+
+/** Built-in prices from @bobsled-inc/ai. Unknown models return null, never $0. */
+export const defaultAgenticPriceUsage: NonNullable<AgenticHost['priceUsage']> = (profile, usage) =>
+  knownModelCostUsd(profile.connection as Parameters<typeof knownModelCostUsd>[0], {
+    inputTokens: usage.input_tokens,
+    outputTokens: usage.output_tokens,
+  });
 
 export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
   const { project, executeAgent } = options;
@@ -85,6 +95,7 @@ export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
   }
   return {
     executeAgent,
+    priceUsage: options.priceUsage ?? defaultAgenticPriceUsage,
     supportedTools: options.supportedTools,
     sources: createAgenticSources({
       project,

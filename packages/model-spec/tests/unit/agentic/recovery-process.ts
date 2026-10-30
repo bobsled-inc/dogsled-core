@@ -16,4 +16,5 @@ fixture.host.executeAgent = async (request) => {
 await executeAgenticRun(fixture.host, fixture.context(), {
   projectDirectory: directory!,
   run: { id: 'recovery', mode: mode as 'start' | 'resume' },
+  accounting: 'reservation' as const,
 });
