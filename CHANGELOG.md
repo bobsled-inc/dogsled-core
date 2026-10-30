@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+Clarify TV Night’s AI model setup, optional bounded recovery, and assessment quality review. Chapter 6 returns to explaining the model definitions after recovery, with a file-focused recap and inspection pause.
+
 Add the TV Night guided tutorial. Build an API connection, ETL pipeline, source and derived semantic models, cross-source queries, and agentic transformations with an agent. A local HTML page shows chapter progress, files, model lineage, and saved results. Agentic assessments select passage IDs so the executor attaches exact evidence, with a one-show check before the remaining batch and targeted retries.
 
 BigQuery incremental extracts now succeed on all runs. The fix resolves three issues: named placeholders (`@p0`) in the generated SQL did not match the positional array the client sent; numeric cursor columns (INT64, FLOAT64, NUMERIC, BIGNUMERIC) are now cast correctly by reading the column type from BigQuery table metadata before each incremental run, so binding a STRING value against an INT64 column no longer fails; and value-based type inference is removed from the SQL-binding path so a STRING column whose value happens to look like a number is never miscast. Temporal cursors (DATE, DATETIME, TIMESTAMP) use a plain string parameter and rely on BigQuery's automatic coercion. Declare `cursor_type` explicitly in the resource spec to skip the metadata lookup.

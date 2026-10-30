@@ -65,9 +65,13 @@ it('teaches capabilities, code inspection, natural-language exploration and cont
 
 it('does not claim results before a chapter completes', () => {
   expect(teachingPanel('federate')).not.toContain('Article text is now available');
-  expect(teachingPanel('transform')).not.toContain('You can query structured assessments');
+  expect(teachingPanel('transform')).not.toContain(
+    'You can define an agentic transformation and query its saved output'
+  );
   expect(teachingPanel('transform')).toContain('What you will build');
-  expect(teachingPanel('transform', true)).toContain('You can query structured assessments');
+  expect(teachingPanel('transform', true)).toContain(
+    'You can define an agentic transformation and query its saved output'
+  );
   expect(teachingPanel('transform', true)).toContain('At the end of this chapter');
   expect(teachingPanel('transform', true)).not.toContain('You have completed the core tutorial');
 });
