@@ -163,16 +163,19 @@ export function buildAgenticStepAssignments(
     };
     for (const row of data.rows) add(row as Row, true);
     // Markers cannot invent grouping fields introduced only by an output row.
+    let outputKeys: Set<string> | undefined;
     for (const marker of data.markers) {
       if (grouping.group_by.every((name) => marker[name] !== undefined)) add(marker, false);
-      else if (
-        !data.rows.some(
-          (row) =>
-            digestAgenticState(fields(row as Row, keys)) ===
-            digestAgenticState(fields(marker, keys))
-        )
-      ) {
+      else if (!data.rows.length) {
         throw new Error('Empty work cannot supply the requested grouping keys');
+      } else {
+        // add() already extracted every row's keys; hash them once, not once per marker.
+        outputKeys ??= new Set(
+          data.rows.map((row) => digestAgenticState(fields(row as Row, keys)))
+        );
+        if (!outputKeys.has(digestAgenticState(fields(marker, keys)))) {
+          throw new Error('Empty work cannot supply the requested grouping keys');
+        }
       }
     }
     const seenKeys = new Map<string, string>();
