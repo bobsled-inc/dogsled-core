@@ -17,10 +17,16 @@ import {
   AgenticRunKeySchema,
   AgenticRunSnapshotSchema,
   AgenticStateError,
-  applyAgenticCheckpoint,
   digestAgenticState,
+  transitionAgenticCheckpoint,
 } from './state.js';
 import type { AgenticStateStore, AgenticRunSnapshot } from './state.js';
+
+interface Confirmed {
+  id: string;
+  json: string;
+  digest: string;
+}
 
 export type WarehouseCheckpointOptions = ResolveRunnerOptions & {
   schema: string;
@@ -106,9 +112,15 @@ export function createWarehouseCheckpointStore(
       const owner = randomUUID();
       let closed = false;
       let lost = false;
+      // The last snapshot this session committed or verified, keyed by its unique pointer ID,
+      // as JSON text. It is reused only while the fenced pointer still names it.
+      let confirmed: Confirmed | undefined;
+      // Local time at which the last successful lease extension was requested.
+      let extendedAt = 0;
       const ownership = new AbortController();
       const loseOwnership = () => {
         lost = true;
+        confirmed = undefined;
         ownership.abort();
         return new AgenticStateError('lease_lost');
       };
@@ -157,18 +169,22 @@ export function createWarehouseCheckpointStore(
             }
           }
         }
+        const acquiredAt = Date.now();
         await mutate(
           `${q('owner')} = ${lit(owner)}, ${q('expires')} = ${clock} + ${leaseMs}`,
           `${q('expires')} <= ${clock}`
         );
+        extendedAt = acquiredAt;
         const renew = async () => {
           guard();
+          const started = Date.now();
           try {
             await mutate(`${q('expires')} = ${clock} + ${leaseMs}`, predicate);
           } catch {
             throwIfCancelled(options.signal);
             throw loseOwnership();
           }
+          extendedAt = started;
         };
         let renewalPending = false;
         timer = setInterval(
@@ -187,7 +203,7 @@ export function createWarehouseCheckpointStore(
         );
         timer.unref();
         let pointer = '';
-        const read = async (): Promise<AgenticRunSnapshot | null> => {
+        const current = async (): Promise<Confirmed | null> => {
           guard();
           const rows = await db.query(
             `SELECT SUBSTR(${q('snapshot')}, 1, 102) AS ${q('snapshot')} FROM ${control} WHERE ${predicate} LIMIT 2`
@@ -201,6 +217,12 @@ export function createWarehouseCheckpointStore(
           }
           if (typeof id !== 'string' || !/^[a-f0-9-]{36}_[a-f0-9]{64}$/.test(id)) {
             throw new AgenticStateError('corrupt');
+          }
+          // Every save writes a new random ID. Another coordinator can change the pointer only
+          // after this session's predicate stops matching, so an unchanged ID names the same rows.
+          if (confirmed?.id === id) {
+            pointer = id;
+            return confirmed;
           }
           const chunks = await db.query(
             `SELECT ${q('ordinal')}, SUBSTR(${q('data')}, 1, ${chunkSize + 1}) AS ${q('data')} FROM ${payloads} WHERE ${q('snapshot')} = ${db.p(1)} ORDER BY ${q('ordinal')} LIMIT 343`,
@@ -236,15 +258,26 @@ export function createWarehouseCheckpointStore(
             throw new AgenticStateError('corrupt');
           }
           pointer = id;
-          return snapshot;
+          confirmed = { id, json: JSON.stringify(snapshot), digest: id.slice(37) };
+          return confirmed;
         };
-        const save = async (snapshot: AgenticRunSnapshot, previous: AgenticRunSnapshot | null) => {
+        // Each caller receives its own copy of the confirmed state.
+        const read = async (): Promise<AgenticRunSnapshot | null> => {
+          const state = await current();
+          return state && JSON.parse(state.json);
+        };
+        const save = async (
+          snapshot: AgenticRunSnapshot,
+          previous: Confirmed | null,
+          validated = false
+        ) => {
           guard();
-          const value = AgenticRunSnapshotSchema.parse(snapshot);
+          const value = validated ? snapshot : AgenticRunSnapshotSchema.parse(snapshot);
           if (digestAgenticState(value.key) !== digestAgenticState(key)) {
             throw new AgenticStateError('conflict');
           }
-          const bytes = Buffer.from(JSON.stringify(value));
+          const json = JSON.stringify(value);
+          const bytes = Buffer.from(json);
           if (bytes.byteLength > maxBytes) {
             throw new AgenticStateError('limit', {
               reason: 'snapshot_too_large',
@@ -253,13 +286,9 @@ export function createWarehouseCheckpointStore(
             });
           }
           const digest = digestAgenticState(value);
-          if (previous && digest === digestAgenticState(previous)) return value;
+          if (previous && digest === previous.digest) return value;
           const id = `${randomUUID()}_${digest}`;
           const oldId = pointer;
-          // Count all work since renewal, including the retained-size query and
-          // time spent awaiting the renewal response itself.
-          let renewedAt = Date.now();
-          await renew();
           const retained = await db.query(
             `SELECT COALESCE(SUM(LENGTH(${q('data')})), 0) AS retained FROM ${payloads}`
           );
@@ -280,10 +309,9 @@ export function createWarehouseCheckpointStore(
           const encoded = bytes.toString('base64');
           for (let start = 0; start < encoded.length; start += chunkSize * chunksPerInsert) {
             guard();
-            if (Date.now() - renewedAt >= leaseMs / 3) {
-              renewedAt = Date.now();
-              await renew();
-            }
+            // Renew only when a third of the lease has elapsed since the last extension
+            // started, counting response delays and the retained-size read.
+            if (Date.now() - extendedAt >= leaseMs / 3) await renew();
             const params: (string | number)[] = [];
             const rows: string[] = [];
             const end = Math.min(encoded.length, start + chunkSize * chunksPerInsert);
@@ -299,14 +327,19 @@ export function createWarehouseCheckpointStore(
           }
           // The queued heartbeat cannot run during save. Leave a fresh lease
           // for the pointer transaction after a slow final staging request.
-          if (Date.now() - renewedAt >= leaseMs / 3) await renew();
+          if (Date.now() - extendedAt >= leaseMs / 3) await renew();
           guard();
+          const committing = Date.now();
           await mutate(
             `${q('snapshot')} = ${lit(id)}, ${q('expires')} = ${clock} + ${leaseMs}`,
             `${predicate} AND ${q('snapshot')} = ${lit(oldId)}`,
             [`DELETE FROM ${payloads} WHERE ${q('snapshot')} <> ${lit(id)}`]
           );
+          extendedAt = committing;
           pointer = id;
+          // Only a confirmed commit replaces the reusable state. After an uncertain commit,
+          // the next read finds the new ID and verifies its payload.
+          confirmed = { id, json, digest };
           return value;
         };
         return {
@@ -314,19 +347,23 @@ export function createWarehouseCheckpointStore(
           read: () => serial(read),
           create: (snapshot) =>
             serial(async () => {
-              const previous = await read();
+              const previous = await current();
               if (previous) throw new AgenticStateError('conflict');
               return save(snapshot, null);
             }),
           checkpoint: (command) =>
             serial(async () => {
-              const previous = await read();
+              const previous = await current();
               if (!previous) throw new AgenticStateError('missing');
-              return save(applyAgenticCheckpoint(previous, command), previous);
+              // Transition a copy of the validated state, then validate only the result.
+              const next: AgenticRunSnapshot = JSON.parse(previous.json);
+              if (!transitionAgenticCheckpoint(next, command, Date.now())) return next;
+              return save(AgenticRunSnapshotSchema.parse(next), previous, true);
             }),
           release: () =>
             serial(async () => {
               if (closed) return;
+              confirmed = undefined;
               if (timer) clearInterval(timer);
               try {
                 // Release is cleanup. It must work after execution cancellation.

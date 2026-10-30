@@ -7,13 +7,14 @@ import {
 } from './state.js';
 import { createAgenticPublicationIdentity } from './publication.js';
 
+/** Applies a publication command to a parsed state in place. Returns whether it changed. */
 export function applyPublicationCheckpoint(
   state: AgenticRunSnapshot,
   command: Extract<
     AgenticCheckpointCommand,
     { type: 'prepare_publication' | 'confirm_publication' }
   >
-): AgenticRunSnapshot {
+): boolean {
   const conflict = (): never => {
     throw new AgenticStateError('conflict');
   };
@@ -39,7 +40,7 @@ export function applyPublicationCheckpoint(
     ) {
       conflict();
     }
-    return state;
+    return false;
   }
   if (command.expected_revision !== state.revision) conflict();
   if (command.type === 'prepare_publication') {
@@ -57,5 +58,5 @@ export function applyPublicationCheckpoint(
     state.publication = 'confirmed';
   }
   state.revision++;
-  return state;
+  return true;
 }

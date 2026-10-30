@@ -87,6 +87,32 @@ function judgmentSchema(evidenceSources?: readonly string[]) {
 }
 export const AgenticJudgmentSchema = judgmentSchema();
 
+// Field schemas are immutable. Checkpoint validation builds row schemas for every
+// assignment, so share the fields and construct only each row object.
+const json = z.json();
+const fields = (schemas: Record<string, z.ZodType>) =>
+  Object.fromEntries(
+    Object.entries(schemas).map(([name, schema]) => [
+      name,
+      { required: schema, nullable: schema.nullable() },
+    ])
+  );
+const scalarFields = fields({
+  string: z.string(),
+  integer: z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
+  number: z.number(),
+  boolean: z.boolean(),
+  timestamp: z.iso.datetime({ offset: true }),
+  date: z.iso.date(),
+  array: z.array(json),
+  object: z.record(z.string(), json),
+} satisfies Record<AgenticColumn['type'], z.ZodType>);
+const metadataFields = fields(AgenticJudgmentSchema.shape);
+const BoundedRowSchema = z.unknown().refine((value): boolean => isBoundedAgenticJson(value), {
+  message: 'Expected bounded JSON data',
+  abort: true,
+});
+
 /** Business columns are inferred from references; unknown fields are never stripped. */
 export function createAgenticRowSchema(
   columns: readonly AgenticColumn[],
@@ -94,31 +120,21 @@ export function createAgenticRowSchema(
   evidenceSources?: readonly string[]
 ) {
   const parsed = AgenticColumnsSchema.parse(columns);
-  const scalar = {
-    string: z.string(),
-    integer: z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
-    number: z.number(),
-    boolean: z.boolean(),
-    timestamp: z.iso.datetime({ offset: true }),
-    date: z.iso.date(),
-    array: z.array(z.json()),
-    object: z.record(z.string(), z.json()),
-  };
   const shape: Record<string, z.ZodType> = {};
   for (const column of parsed) {
     // Metadata read from an earlier model must keep its fixed structure.
-    const metadata = Object.hasOwn(AgenticJudgmentSchema.shape, column.name)
-      ? AgenticJudgmentSchema.shape[column.name as keyof typeof AgenticJudgmentSchema.shape]
-      : undefined;
-    const schema = metadata ?? scalar[column.type];
-    shape[column.name] = column.nullable ? schema.nullable() : schema;
+    const field = Object.hasOwn(metadataFields, column.name)
+      ? metadataFields[column.name]!
+      : scalarFields[column.type]!;
+    shape[column.name] = column.nullable ? field.nullable : field.required;
   }
-  if (findings) Object.assign(shape, judgmentSchema(evidenceSources).shape);
-  return z
-    .unknown()
-    .refine((value): boolean => isBoundedAgenticJson(value), {
-      message: 'Expected bounded JSON data',
-      abort: true,
-    })
-    .pipe(z.object(shape).strict());
+  if (findings) {
+    Object.assign(
+      shape,
+      evidenceSources === undefined
+        ? AgenticJudgmentSchema.shape
+        : judgmentSchema(evidenceSources).shape
+    );
+  }
+  return BoundedRowSchema.pipe(z.object(shape).strict());
 }

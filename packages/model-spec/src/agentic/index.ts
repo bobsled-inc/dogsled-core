@@ -2,7 +2,17 @@
 export * from './model.js';
 export * from './rows.js';
 export * from './resolve.js';
-export * from './assignment.js';
+export {
+  AgenticUsageSchema,
+  AgentAssignmentSchema,
+  AgentAssignmentOutcomeSchema,
+  createAgentAssignmentRowSchema,
+  createAgentAssignmentOutputSchema,
+  parseAgentAssignmentOutcome,
+  type AgenticUsage,
+  type AgentAssignment,
+  type AgentAssignmentOutcome,
+} from './assignment.js';
 export * from './executor.js';
 export {
   AgenticAssignmentError,
@@ -15,7 +25,23 @@ export type { AgenticAccounting } from './limits.js';
 export type { AgenticErrorDetail } from './state-errors.js';
 export type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
 
-export * from './state.js';
+export {
+  AgenticStateError,
+  AgenticRunKeySchema,
+  AgenticAttemptStateSchema,
+  AgenticWorkStateSchema,
+  AgenticRunSnapshotSchema,
+  AgenticCheckpointCommandSchema,
+  digestAgenticState,
+  finishDigest,
+  applyAgenticCheckpoint,
+  type AgenticStateErrorCode,
+  type AgenticRunKey,
+  type AgenticRunSnapshot,
+  type AgenticCheckpointCommand,
+  type AgenticStateSession,
+  type AgenticStateStore,
+} from './state.js';
 export * from './local-state.js';
 export * from './run.js';
 export type { AgenticAssignmentCounts, AgenticRunProgress } from './progress.js';
