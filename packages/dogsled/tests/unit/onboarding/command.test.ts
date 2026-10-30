@@ -28,3 +28,19 @@ it('does not expose a tutorial SQL UI launcher', () => {
   const group = program.commands.find((command) => command.name() === 'onboarding');
   expect(group?.commands.map((command) => command.name())).not.toContain('explore');
 });
+
+it('offers a checkpoint guard only on the review command', () => {
+  const program = new Command();
+  registerOnboardingCommand(program);
+  const group = program.commands.find((command) => command.name() === 'onboarding')!;
+  expect(
+    group.commands
+      .find((command) => command.name() === 'review')
+      ?.options.some((option) => option.long === '--checkpoint')
+  ).toBe(true);
+  expect(
+    group.commands
+      .find((command) => command.name() === 'verify')
+      ?.options.some((option) => option.long === '--checkpoint')
+  ).toBe(false);
+});

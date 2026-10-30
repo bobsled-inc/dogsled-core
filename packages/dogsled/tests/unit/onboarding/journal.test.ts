@@ -4,7 +4,11 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { buildOnboardingSnapshot } from '../../../src/runtime/onboarding/snapshot.js';
 import { saveCheckpoint } from '../../../src/runtime/onboarding/state.js';
-import { readJournal, reviewChapter } from '../../../src/runtime/onboarding/journal.js';
+import {
+  checkpointId,
+  readJournal,
+  reviewChapter,
+} from '../../../src/runtime/onboarding/journal.js';
 it('keeps reviewed evidence separate from new runs and records answer history', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tv-journal-'));
   try {
@@ -17,7 +21,15 @@ it('keeps reviewed evidence separate from new runs and records answer history', 
     };
     await saveCheckpoint(root, 'query', evidence);
     expect((await readJournal(root)).reviews.query).toBeUndefined();
-    await reviewChapter(root, 'query');
+    const saved = (await buildOnboardingSnapshot(root)).state.steps.find(
+      (step) => step.id === 'query'
+    )!.evidence!;
+    await expect(reviewChapter(root, 'query', 'invalid')).rejects.toMatchObject({ exitCode: 2 });
+    await expect(reviewChapter(root, 'query', '0'.repeat(64))).rejects.toMatchObject({
+      exitCode: 3,
+    });
+    expect((await readJournal(root)).reviews.query).toBeUndefined();
+    await reviewChapter(root, 'query', checkpointId(saved));
     const journal = await readJournal(root);
     expect(journal.reviews.query).toBeTruthy();
     expect((await buildOnboardingSnapshot(root)).progress?.reviewed).toContain('query');
@@ -33,6 +45,13 @@ it('keeps reviewed evidence separate from new runs and records answer history', 
     });
     expect((await readJournal(root)).history).toHaveLength(2);
     expect((await buildOnboardingSnapshot(root)).progress?.reviewed).not.toContain('query');
+    await expect(reviewChapter(root, 'query', checkpointId(saved))).rejects.toMatchObject({
+      exitCode: 3,
+    });
+    expect((await readJournal(root)).reviews.query).toBe(journal.reviews.query);
+    // The existing unguarded command remains compatible for agent-led reviews.
+    await reviewChapter(root, 'query');
+    expect((await buildOnboardingSnapshot(root)).progress?.reviewed).toContain('query');
   } finally {
     await rm(root, { recursive: true, force: true });
   }

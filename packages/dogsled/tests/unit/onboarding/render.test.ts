@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { JSDOM } from 'jsdom';
 import { renderOnboardingHtml } from '../../../src/runtime/onboarding/render.js';
 import type { OnboardingSnapshot } from '../../../src/runtime/onboarding/schema.js';
 const snapshot: OnboardingSnapshot = {
@@ -104,7 +105,8 @@ it('offers chapter orientation, safe files and dependency links', () => {
     progress: { current: 'load', reviewed: [], history: [] },
   });
   expect(html).toContain('Where you are');
-  expect(html).toContain('Waiting for your inspection');
+  expect(html).toContain('Not started');
+  expect(html).toContain('Share this with your agent');
   expect(html).toContain('Working files');
   expect(html).not.toContain('Examples and solutions');
   expect(html).not.toContain('reference/');
@@ -202,6 +204,15 @@ it('teaches a pilot before the batch and keeps passage text collapsed', () => {
   expect(html).toContain('Show passage (may contain spoilers)');
 });
 
+it('ships the offline theme and licenses with a restrictive resource policy', () => {
+  const html = renderOnboardingHtml(snapshot);
+  expect(html).toContain("connect-src 'none'");
+  expect(html).toContain('font-src data:');
+  expect(html).toContain('SIL OPEN FONT LICENSE');
+  expect(html).toContain('data:font/woff2;base64,');
+  expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)="https?:/);
+});
+
 it.each(['not_started', 'complete'] as const)(
   'keeps model teaching and quality review visible when the AI chapter is %s',
   (status) => {
@@ -214,6 +225,11 @@ it.each(['not_started', 'complete'] as const)(
     });
     const panel = html.match(/<div class="callout" data-agentic-review>([\s\S]*?)<\/div>/)?.[1];
     expect(panel).toBeDefined();
+    const document = new JSDOM(html).window.document;
+    expect(document.querySelector('[data-agentic-review]')?.closest('details')).toBeNull();
+    expect(document.querySelector('[id="request-transform"]')?.textContent).toContain(
+      'Use only explicitly approved recovery attempts'
+    );
     expect(panel).not.toContain('<details');
     expect(panel).toContain('data-file="models/show_notes.yml"');
     expect(panel).toContain('replace_processed_keys');

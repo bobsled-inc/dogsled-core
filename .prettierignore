@@ -20,3 +20,11 @@ packages/skills/src/generated-data.ts
 
 # Generated license text must remain byte-stable; use the notices generator.
 packages/dogsled/THIRD_PARTY_NOTICES.md
+
+# Portable artifact assets are byte-stable; regenerate with onboarding-assets.mjs.
+packages/dogsled/src/runtime/onboarding/assets.generated.ts
+packages/dogsled/src/runtime/onboarding/assets/fonts.css
+packages/dogsled/src/runtime/onboarding/assets/*-OFL.txt
+
+# Generated offline tutorial review scenarios.
+**/.dogsled/ui-review/
