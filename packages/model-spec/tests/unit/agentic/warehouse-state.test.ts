@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SqlCancelledError, type IntegrationFile } from '@bobsled-inc/connections';
+import { SqlCancelledError } from '@bobsled-inc/connections';
 import { createWarehouseCheckpointStore } from '../../../src/agentic/warehouse-state.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import { runFixture } from './state-fixture.js';
+import { checkpointIntegrations } from '../../support/checkpoint-transport.js';
 
 const resolve = vi.hoisted(() => vi.fn());
 vi.mock('@bobsled-inc/connections', async (original) => ({
@@ -13,25 +14,7 @@ afterEach(() => {
   resolve.mockReset();
   vi.useRealTimers();
 });
-const postgres: IntegrationFile = {
-  spec_version: '1',
-  type: 'integration',
-  name: 'warehouse',
-  source_type: 'postgres',
-  connection: { host: 'localhost', database: 'test', port: 5432 },
-  auth: { type: 'password', user: 'test', password: 'test-only' },
-};
-
-const snowflake: IntegrationFile = {
-  spec_version: '1',
-  type: 'integration',
-  name: 'warehouse',
-  source_type: 'snowflake',
-  connection: { account_identifier: 'test', database: 'test', warehouse: 'test', user: 'test' },
-  auth: { type: 'pat', token: 'test-only' },
-};
-
-describe.each([postgres, snowflake])(
+describe.each(checkpointIntegrations)(
   'warehouse checkpoint boundary: $source_type',
   (integration) => {
     it.each([false, true])('resumes through a new session (unlimited: %s)', async (unlimited) => {
@@ -40,21 +23,24 @@ describe.each([postgres, snowflake])(
       const payloads = new Map<string, { ordinal: number; data: string }[]>();
       const run = vi.fn(async (sql: string) => {
         // Model only the transport boundary. The real store applies and serializes commands.
-        if (/SET "snapshot"/i.test(sql)) {
+        if (/SET ["`]snapshot["`]/i.test(sql)) {
           pointer = sql.match(/[a-f0-9-]{36}_[a-f0-9]{64}/)![0];
         }
         return {};
       });
       const query = vi.fn(async (sql: string, params?: readonly unknown[]) => {
-        if (/AS "snapshot"/i.test(sql)) return [{ SNAPSHOT: pointer }];
+        if (/AS ["`]snapshot["`]/i.test(sql)) return [{ SNAPSHOT: pointer }];
+        if (/DESCRIBE DETAIL/.test(sql)) return [{ tablefeatures: ['catalogManaged'] }];
         if (/AS retained/i.test(sql)) return [{ RETAINED: 0 }];
         if (/^INSERT INTO/.test(sql)) {
-          const [id, ordinal, data] = params as [string, number, string];
-          payloads.set(id, [...(payloads.get(id) ?? []), { ordinal, data }]);
+          for (let i = 0; i < params!.length; i += 3) {
+            const [id, ordinal, data] = params!.slice(i, i + 3) as [string, number, string];
+            payloads.set(id, [...(payloads.get(id) ?? []), { ordinal, data }]);
+          }
           return [];
         }
         if (/ORDER BY/.test(sql)) return payloads.get(String(params![0]))!;
-        return [{ valid: 1 }];
+        return [{ valid: 1, tablefeatures: ['catalogManaged'] }];
       });
       resolve.mockImplementation(async () => ({
         run,
@@ -63,6 +49,11 @@ describe.each([postgres, snowflake])(
         close: vi.fn(),
       }));
       const f = runFixture(2);
+      f.host.inputs.undecided_pairs!.push({ name: 'evidence', type: 'string', nullable: false });
+      f.host.prepare = async () => [
+        { pair_id: 'p0', evidence: 'x'.repeat(240000) },
+        { pair_id: 'p1', evidence: 'y'.repeat(240000) },
+      ];
       f.model.limits.timeout_seconds = 1;
       if (unlimited) {
         f.model.limits = {};
@@ -112,13 +103,18 @@ describe.each([postgres, snowflake])(
       expect(persisted.execution_windows).toHaveLength(1);
       expect(persisted.execution_windows[0].deadline_at).toBe(result.deadlineAt);
       expect(resolve).toHaveBeenCalledTimes(2);
+      expect(
+        query.mock.calls.some(([sql, params]) => sql.startsWith('INSERT') && params!.length === 21)
+      ).toBe(true);
       if (integration.source_type === 'snowflake') {
         expect(run.mock.calls.some(([sql]) => sql.startsWith('EXECUTE IMMEDIATE'))).toBe(true);
       }
     });
 
     it('fences an expired session and lets a new session acquire ownership', async () => {
-      const query = vi.fn(async () => [{ valid: 1, snapshot: '' }]);
+      const query = vi.fn(async () => [
+        { valid: 1, snapshot: '', tablefeatures: ['catalogManaged'] },
+      ]);
       const run = vi.fn(async () => ({}));
       const close = vi.fn(async () => {});
       resolve.mockResolvedValue({ run, query, supportsBindings: true, close });
@@ -143,7 +139,7 @@ describe.each([postgres, snowflake])(
       const run = vi.fn(async (_sql: string) => ({}));
       resolve.mockResolvedValue({
         run,
-        query: vi.fn(async () => [{ valid: 1 }]),
+        query: vi.fn(async () => [{ valid: 1, tablefeatures: ['catalogManaged'] }]),
         supportsBindings: true,
         close: vi.fn(),
       });
@@ -152,12 +148,14 @@ describe.each([postgres, snowflake])(
       run.mockClear();
       await session.release();
       expect(run).toHaveBeenCalledTimes(1);
-      expect(run.mock.calls[0]?.[0]).toMatch(/WHERE "owner" = '[a-f0-9-]+'$/i);
+      expect(run.mock.calls[0]?.[0]).toMatch(/WHERE ["`]owner["`] = '[a-f0-9-]+'$/i);
     });
 
     it('signals ownership loss when a heartbeat cannot renew', async () => {
       vi.useFakeTimers();
-      const query = vi.fn(async () => [{ valid: 1, snapshot: '' }]);
+      const query = vi.fn(async () => [
+        { valid: 1, snapshot: '', tablefeatures: ['catalogManaged'] },
+      ]);
       const run = vi.fn(async () => ({}));
       resolve.mockResolvedValue({ run, query, supportsBindings: true, close: vi.fn() });
       const store = createWarehouseCheckpointStore(integration, {
@@ -210,7 +208,9 @@ describe.each([postgres, snowflake])(
       const controller = new AbortController();
       const close = vi.fn(async () => {});
       const run = vi.fn(async () => ({}));
-      const query = vi.fn(async () => [{ valid: 1, snapshot: '' }]);
+      const query = vi.fn(async () => [
+        { valid: 1, snapshot: '', tablefeatures: ['catalogManaged'] },
+      ]);
       resolve.mockResolvedValue({ run, query, supportsBindings: true, close });
       const store = createWarehouseCheckpointStore(integration, {
         schema: 'checkpoints',
@@ -218,7 +218,7 @@ describe.each([postgres, snowflake])(
       });
       const session = await store.acquire({ scope: 'test', model: 'model', id: 'run' });
       expect(run).toHaveBeenCalledWith(expect.any(String), { signal: controller.signal });
-      query.mockResolvedValueOnce([{ valid: 1, snapshot: '' }]);
+      query.mockResolvedValueOnce([{ valid: 1, snapshot: '', tablefeatures: ['catalogManaged'] }]);
       await session.read();
       expect(query).toHaveBeenCalledWith(expect.any(String), undefined, {
         signal: controller.signal,
@@ -265,7 +265,9 @@ describe.each([postgres, snowflake])(
     });
     it('does not treat a failed warehouse read as a missing checkpoint', async () => {
       const close = vi.fn(async () => {});
-      const query = vi.fn(async () => [{ valid: 1, snapshot: '' }]);
+      const query = vi.fn(async () => [
+        { valid: 1, snapshot: '', tablefeatures: ['catalogManaged'] },
+      ]);
       resolve.mockResolvedValue({
         run: vi.fn(async () => ({})),
         query,
