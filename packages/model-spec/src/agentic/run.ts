@@ -214,10 +214,18 @@ async function executeOwnedAgenticRun(
         )?.type,
       ])
   );
-  // Check pricing before anything is saved, so a misconfigured cap leaves no run behind.
-  if (costCapMicrousd !== null && (options.accounting ?? 'spend_cap') === 'spend_cap') {
+  // Validate the effective accounting before creating a run or starting a new window.
+  const checkCostCap = (accounting: AgenticAccounting) => {
+    if (costCapMicrousd === null) return;
+    if (accounting !== 'spend_cap') {
+      throw new AgenticStateError('limit', {
+        reason: 'invalid_option',
+        message: `Run "${key.id}" was saved with older token-reservation accounting, which has no cost cap.`,
+        hint: 'Resume it without --agent-max-cost, or start a new run ID to use a cost cap.',
+      });
+    }
     assertAgenticPricing(context.resolved, host.priceUsage);
-  }
+  };
   const session = await storage(async () => store.acquire(key));
   let snapshot: AgenticRunSnapshot;
   try {
@@ -247,6 +255,8 @@ async function executeOwnedAgenticRun(
           hint: 'Restore the original definition to resume it, or start a new run ID.',
         });
       }
+      // The saved accounting decides, not the caller's option; check before a new window.
+      checkCostCap(snapshot.accounting ?? 'reservation');
     } else {
       if (options.run.mode === 'resume') {
         throw new AgenticStateError('missing', {
@@ -255,6 +265,7 @@ async function executeOwnedAgenticRun(
           hint: 'Check the run ID, or start a new run without --agent-resume.',
         });
       }
+      checkCostCap(options.accounting ?? 'spend_cap');
       execution.reset = false;
       const started = new Date();
       const deadline =
@@ -298,13 +309,6 @@ async function executeOwnedAgenticRun(
             : {}),
         })
       );
-    }
-    if (snapshot.accounting !== 'spend_cap' && costCapMicrousd !== null) {
-      throw new AgenticStateError('limit', {
-        reason: 'invalid_option',
-        message: `Run "${key.id}" was saved with older token-reservation accounting, which has no cost cap.`,
-        hint: 'Resume it without --agent-max-cost, or start a new run ID to use a cost cap.',
-      });
     }
     const reportProgress = async () => {
       if (!options.onProgress) return;

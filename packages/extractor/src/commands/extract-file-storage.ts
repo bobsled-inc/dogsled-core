@@ -46,6 +46,7 @@ export async function runFileStorageResourceExtraction({
 }): Promise<FileStorageCommandResult> {
   const controller = new AbortController();
   const abortForSignal = (signal: NodeJS.Signals): void => {
+    if (controller.signal.aborted) return;
     const reason = new Error(`Received ${signal}; cancelling file extraction`);
     reason.name = 'AbortError';
     controller.abort(reason);
@@ -55,9 +56,10 @@ export async function runFileStorageResourceExtraction({
 
   // File extraction owns a native DuckDB stream and a staged file. Handle
   // process cancellation only for this scoped operation so both can unwind
-  // before the command reports a failed resource.
-  process.once('SIGINT', onSigint);
-  process.once('SIGTERM', onSigterm);
+  // before the command reports a failed resource. Keep handlers installed during
+  // cleanup: terminal signals can also be forwarded by the parent process.
+  process.on('SIGINT', onSigint);
+  process.on('SIGTERM', onSigterm);
   try {
     const result = await extractFileStorageResource({
       integration,

@@ -83,3 +83,105 @@ describe('runFileStorageResourceExtraction cancellation', () => {
     expect(process.listenerCount('SIGTERM')).toBe(sigtermListenersBefore);
   });
 });
+
+it.skipIf(process.platform === 'win32')(
+  'finishes file cleanup after one group interrupt through the launcher and delegate',
+  async () => {
+    const { spawn } = await import('node:child_process');
+    const { mkdtemp, mkdir, copyFile, writeFile, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { createRequire } = await import('node:module');
+    const require = createRequire(import.meta.url);
+    const tsx = require.resolve('tsx');
+    const root = await mkdtemp(join(tmpdir(), 'dogsled-interrupt-'));
+    await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module' }));
+    await mkdir(join(root, 'bin'));
+    await mkdir(join(root, 'dist'));
+    await copyFile(
+      new URL('../../../../dogsled/bin/cli.mjs', import.meta.url),
+      join(root, 'bin/cli.mjs')
+    );
+    const command = new URL('../../../src/commands/extract-file-storage.ts', import.meta.url).href;
+    const runtime = new URL('../../../../dogsled/src/runtime/process.ts', import.meta.url).href;
+    const extractStub = `export async function extractFileStorageResource({signal}) {
+    await new Promise((resolve, reject) => {
+      const keepAlive = setInterval(() => {}, 1000);
+      signal.addEventListener('abort', () => setTimeout(() => {
+        clearInterval(keepAlive); process.stdout.write('cleanup done\\n'); reject(signal.reason);
+      }, 150), {once:true});
+      process.stdout.write('ready\\n');
+    });
+  }`;
+    await writeFile(
+      join(root, 'dist/index.js'),
+      `
+    const {spawn} = await import('node:child_process');
+    const {forwardSignals, waitForProcess} = await import(${JSON.stringify(runtime)});
+    const child = spawn(process.execPath, ['--import', ${JSON.stringify(tsx)}, ${JSON.stringify(join(root, 'delegate.mjs'))}], {stdio:'inherit'});
+    // Delay forwarding so the group signal and forwarded copy cannot coalesce.
+    process.on('SIGINT', () => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50));
+    const stop = forwardSignals(child);
+    process.exitCode = (await waitForProcess(child, 'extract')).exitCode;
+    stop();
+  `
+    );
+    await writeFile(
+      join(root, 'delegate.mjs'),
+      `
+    import {registerHooks} from 'node:module';
+    registerHooks({ resolve(specifier, context, next) {
+      if (specifier.endsWith('/file-storage-extractor.js')) return {url: ${JSON.stringify('data:text/javascript,' + encodeURIComponent(extractStub))}, shortCircuit:true};
+      return next(specifier, context);
+    }});
+    const {runFileStorageResourceExtraction} = await import(${JSON.stringify(command)});
+    const result = await runFileStorageResourceExtraction({
+      integration: {}, resource: {name:'customers'}, integrationName:'local_exports',
+      emitter:{}, logger:{info:async()=>{},error:async()=>{},progress:async()=>{}},
+      state:{streams:{}},stateStore:{},advanceState:false,startedAt:Date.now(),
+      circuitBreaker:{recordSuccess(){},recordFailure(){}}
+    });
+    process.stdout.write(JSON.stringify(result));
+  `
+    );
+    const child = spawn(process.execPath, ['--import', tsx, join(root, 'bin/cli.mjs')], {
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, NODE_OPTIONS: `--import=${tsx}` },
+    });
+    const timeout = setTimeout(() => {
+      try {
+        process.kill(-child.pid!, 'SIGKILL');
+      } catch {
+        /* Already exited. */
+      }
+    }, 10_000);
+    let output = '';
+    let errors = '';
+    child.stderr.on('data', (chunk) => {
+      errors += chunk;
+    });
+    const exited = new Promise<number | null>((resolve) => child.once('close', resolve));
+    try {
+      await new Promise<void>((resolve, reject) => {
+        child.once('close', () => reject(new Error(errors || output)));
+        child.stdout.on('data', (chunk) => {
+          output += chunk;
+          if (output.includes('ready\n')) resolve();
+        });
+      });
+      process.kill(-child.pid!, 'SIGINT');
+      expect(await exited, errors).toBe(0);
+      expect(output).toContain('cleanup done');
+      expect(output).toContain('"failed":true');
+    } finally {
+      clearTimeout(timeout);
+      try {
+        process.kill(-child.pid!, 'SIGKILL');
+      } catch {
+        /* Already exited. */
+      }
+      await rm(root, { recursive: true, force: true });
+    }
+  }
+);
