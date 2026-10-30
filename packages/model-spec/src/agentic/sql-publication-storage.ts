@@ -111,12 +111,19 @@ function compatibleType(
   };
   return aliases[column.type].includes(type);
 }
+// Accepted aliases whose comparisons differ from the type a publication stage uses.
+const stageDifferences: Partial<Record<PublicationDialect, readonly string[]>> = {
+  postgres: ['JSON'],
+  databricks: ['FLOAT', 'TIMESTAMP_NTZ'],
+};
+/** Returns false for a missing target. `stageTypes` is true when final checks on the target
+ * compare values exactly as they would on a stage built from its rows. */
 export async function assertSqlSchema(
   db: PublicationDb,
   names: PublicationNames,
   context: AgenticPublicationContext,
   dialect: PublicationDialect
-) {
+): Promise<false | { stageTypes: boolean }> {
   const q = (name: string) => quoteIdentifier(name, dialect);
   const info =
     dialect === 'bigquery'
@@ -157,7 +164,12 @@ export async function assertSqlSchema(
       'Existing agentic target schema differs; explicitly rebuild the target before publishing'
     );
   }
-  return true;
+  const different = stageDifferences[dialect] ?? [];
+  return {
+    stageTypes: columns.every(
+      (column) => !different.includes(String(column.data_type).toUpperCase())
+    ),
+  };
 }
 export async function insertPublicationRows(
   db: PublicationDb,

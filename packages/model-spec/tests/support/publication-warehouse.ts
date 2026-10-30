@@ -33,6 +33,8 @@ export function publicationWarehouse(
     invalidRegex = false,
     schemaMismatch = false,
     catalogEnabled = true;
+  let reportType = (column: AgenticPublicationContext['resolved']['output_columns'][number]) =>
+    publicationType(column.type, dialect);
   const row = (pair_id: string, assessment = 'old'): Row => ({
     pair_id,
     assessment,
@@ -162,7 +164,7 @@ export function publicationWarehouse(
       if (schemaMismatch) return [];
       return context.resolved.output_columns.map((column) => ({
         column_name: dialect === 'snowflake' ? column.name.toUpperCase() : column.name,
-        data_type: publicationType(column.type, dialect),
+        data_type: reportType(column),
         is_nullable: column.nullable ? 'YES' : 'NO',
       }));
     }
@@ -243,6 +245,10 @@ export function publicationWarehouse(
     },
     schemaMismatch: () => {
       schemaMismatch = true;
+    },
+    /** Reports another accepted spelling for some existing target columns. */
+    reportTypes: (report: typeof reportType) => {
+      reportType = report;
     },
     disableCatalog: () => {
       catalogEnabled = false;
