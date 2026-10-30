@@ -77,7 +77,7 @@ it.skipIf(!warehouseEnabled('duckdb'))(
         },
       };
       await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow(
-        'assignment failed'
+        /Agentic step "assess" assignment \S+ failed/
       );
       const originalCalls = [...calls];
       expect(originalCalls).toHaveLength(2);

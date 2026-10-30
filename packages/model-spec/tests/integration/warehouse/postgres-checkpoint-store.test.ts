@@ -94,6 +94,8 @@ describe.skipIf(
   async function snapshotFixture(directory: string) {
     const memory = new MemoryStateStore();
     const f = runFixture(8);
+    // A deliberately large snapshot; a token cap would reject its input before any write.
+    f.model.limits = {};
     f.model.plan.steps[0]!.instructions = 'Synthetic checkpoint data. '.repeat(2200);
     await executeAgenticRun(f.host, f.context(), {
       projectDirectory: directory,
