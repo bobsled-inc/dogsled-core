@@ -36,7 +36,8 @@ describe.skipIf(!integrationPath && !schema)('cloud checkpoint store', () => {
       throw new Error('Use a cloud test integration');
     }
     const directory = await mkdtemp(join(tmpdir(), 'checkpoint-cloud-'));
-    const f = runFixture(2);
+    const f = runFixture(8);
+    f.model.plan.steps[0]!.instructions = 'Synthetic checkpoint data. '.repeat(2200);
     const id = randomUUID();
     const scope = 'checkpoint-integration-test';
     const key = { scope, model: f.context().resolved.model.name, id };
@@ -54,7 +55,7 @@ describe.skipIf(!integrationPath && !schema)('cloud checkpoint store', () => {
         stateStore: store,
         run: { id, scope, mode: 'start' },
       });
-      expect(calls).toHaveBeenCalledTimes(2);
+      expect(calls).toHaveBeenCalledTimes(8);
       calls.mockClear();
       await executeAgenticRun(f.host, f.context(), {
         projectDirectory: directory,

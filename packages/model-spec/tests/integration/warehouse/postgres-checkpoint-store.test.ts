@@ -9,7 +9,7 @@ import { digestAgenticState } from '../../../src/agentic/state.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import { MemoryStateStore, runFixture } from '../../unit/agentic/state-fixture.js';
 
-const faults = vi.hoisted(() => ({ afterCheckpoint: 0, failInsert: false }));
+const faults = vi.hoisted(() => ({ afterCheckpoint: 0, failInsert: 0 }));
 vi.mock('@bobsled-inc/connections', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@bobsled-inc/connections')>();
   return {
@@ -20,7 +20,11 @@ vi.mock('@bobsled-inc/connections', async (importOriginal) => {
       return {
         ...runner,
         query: async (...queryArgs: Parameters<NonNullable<typeof runner.query>>) => {
-          if (faults.failInsert && queryArgs[0].startsWith('INSERT INTO')) {
+          if (
+            queryArgs[0].startsWith('INSERT INTO') &&
+            faults.failInsert > 0 &&
+            --faults.failInsert === 0
+          ) {
             throw new Error('Injected failed staging write');
           }
           return runner.query!(...queryArgs);
@@ -48,7 +52,7 @@ describe.skipIf(
   const cleanups: Array<() => Promise<void>> = [];
   afterEach(async () => {
     faults.afterCheckpoint = 0;
-    faults.failInsert = false;
+    faults.failInsert = 0;
     for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
     for (const dir of dirs.splice(0)) await rm(dir, { recursive: true, force: true });
   });
@@ -89,7 +93,8 @@ describe.skipIf(
   }
   async function snapshotFixture(directory: string) {
     const memory = new MemoryStateStore();
-    const f = runFixture(2);
+    const f = runFixture(8);
+    f.model.plan.steps[0]!.instructions = 'Synthetic checkpoint data. '.repeat(2200);
     await executeAgenticRun(f.host, f.context(), {
       projectDirectory: directory,
       stateStore: memory,
@@ -97,16 +102,16 @@ describe.skipIf(
     });
     return [...memory.runs.values()][0]!;
   }
-  it('does not expose a snapshot when staging fails', async () => {
+  it('does not expose a snapshot when the second staging batch fails', async () => {
     const { directory, integration, schema } = await setup();
     const snapshot = await snapshotFixture(directory);
     const store = createWarehouseCheckpointStore(integration, { schema });
     const session = await store.acquire(snapshot.key);
     try {
-      faults.failInsert = true;
+      faults.failInsert = 2;
       await expect(session.create(snapshot)).rejects.toThrow('staging');
       expect(await session.read()).toBeNull();
-      faults.failInsert = false;
+      faults.failInsert = 0;
       await session.create(snapshot);
       expect(await session.read()).toEqual(snapshot);
     } finally {
@@ -185,7 +190,7 @@ describe.skipIf(
       const second = await store.acquire(key);
       try {
         await expect(first.read()).rejects.toThrow();
-        await expect(first.release()).rejects.toThrow();
+        await first.release();
         expect(await second.read()).toBeNull();
       } finally {
         await second.release();

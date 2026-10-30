@@ -30,6 +30,11 @@ export type WarehouseCheckpointOptions = ResolveRunnerOptions & {
 
 const maxBytes = 16 * 1024 * 1024;
 const chunkSize = 64 * 1024;
+// Seven full chunks (448 KiB), 21 bindings, and at most 64 KiB of SQL leave
+// ample headroom below Snowflake's 1 MB recommendation including bound values.
+// Base64, snapshot IDs and ordinals are ASCII with no JSON escaping expansion.
+const chunksPerInsert = 7;
+const maxInsertSqlBytes = 64 * 1024;
 
 export function createWarehouseCheckpointStore(
   integration: IntegrationFile,
@@ -255,17 +260,26 @@ export function createWarehouseCheckpointStore(
           }
           const encoded = bytes.toString('base64');
           let renewedAt = Date.now();
-          for (let start = 0; start < encoded.length; start += chunkSize) {
+          for (let start = 0; start < encoded.length; start += chunkSize * chunksPerInsert) {
             guard();
             if (Date.now() - renewedAt >= leaseMs / 3) {
               await renew();
               renewedAt = Date.now();
             }
-            await db.query(
-              `INSERT INTO ${payloads} (${q('snapshot')}, ${q('ordinal')}, ${q('data')}) VALUES (${db.p(1)}, ${db.p(2)}, ${db.p(3)})`,
-              [id, start / chunkSize, encoded.slice(start, start + chunkSize)]
-            );
+            const params: (string | number)[] = [];
+            const rows: string[] = [];
+            const end = Math.min(encoded.length, start + chunkSize * chunksPerInsert);
+            for (let offset = start; offset < end; offset += chunkSize) {
+              params.push(id, offset / chunkSize, encoded.slice(offset, offset + chunkSize));
+              rows.push(
+                `(${db.p(params.length - 2)}, ${db.p(params.length - 1)}, ${db.p(params.length)})`
+              );
+            }
+            const sql = `INSERT INTO ${payloads} (${q('snapshot')}, ${q('ordinal')}, ${q('data')}) VALUES ${rows.join(', ')}`;
+            if (Buffer.byteLength(sql) > maxInsertSqlBytes) throw new AgenticStateError('limit');
+            await db.query(sql, params);
           }
+          guard();
           await mutate(
             `${q('snapshot')} = ${lit(id)}, ${q('expires')} = ${clock} + ${leaseMs}`,
             `${predicate} AND ${q('snapshot')} = ${lit(oldId)}`,
