@@ -30,8 +30,9 @@ export type WarehouseCheckpointOptions = ResolveRunnerOptions & {
 
 const maxBytes = 16 * 1024 * 1024;
 const chunkSize = 64 * 1024;
-// Seven full chunks (448 KiB), 21 bindings, and at most 64 KiB of SQL leave
-// ample headroom below Snowflake's 1 MB recommendation including bound values.
+// Seven full chunks (448 KiB) and 21 bindings leave ample headroom below
+// Snowflake's 1 MB recommendation including bound values. SQL contains only
+// names and placeholders; its separate ceiling defensively bounds namespace text.
 // Base64, snapshot IDs and ordinals are ASCII with no JSON escaping expansion.
 const chunksPerInsert = 7;
 const maxInsertSqlBytes = 64 * 1024;
@@ -245,6 +246,9 @@ export function createWarehouseCheckpointStore(
           if (previous && digest === digestAgenticState(previous)) return value;
           const id = `${randomUUID()}_${digest}`;
           const oldId = pointer;
+          // Count all work since renewal, including the retained-size query and
+          // time spent awaiting the renewal response itself.
+          let renewedAt = Date.now();
           await renew();
           const retained = await db.query(
             `SELECT COALESCE(SUM(LENGTH(${q('data')})), 0) AS retained FROM ${payloads}`
@@ -259,12 +263,11 @@ export function createWarehouseCheckpointStore(
             throw new AgenticStateError('limit');
           }
           const encoded = bytes.toString('base64');
-          let renewedAt = Date.now();
           for (let start = 0; start < encoded.length; start += chunkSize * chunksPerInsert) {
             guard();
             if (Date.now() - renewedAt >= leaseMs / 3) {
-              await renew();
               renewedAt = Date.now();
+              await renew();
             }
             const params: (string | number)[] = [];
             const rows: string[] = [];
@@ -279,6 +282,9 @@ export function createWarehouseCheckpointStore(
             if (Buffer.byteLength(sql) > maxInsertSqlBytes) throw new AgenticStateError('limit');
             await db.query(sql, params);
           }
+          // The queued heartbeat cannot run during save. Leave a fresh lease
+          // for the pointer transaction after a slow final staging request.
+          if (Date.now() - renewedAt >= leaseMs / 3) await renew();
           guard();
           await mutate(
             `${q('snapshot')} = ${lit(id)}, ${q('expires')} = ${clock} + ${leaseMs}`,

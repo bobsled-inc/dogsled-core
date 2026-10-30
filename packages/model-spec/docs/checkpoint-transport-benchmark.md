@@ -2,9 +2,12 @@
 
 Warehouse checkpoint saves retain the existing version 2 snapshot and 64 KiB
 base64 chunks. Each INSERT carries at most seven chunks (448 KiB of encoded
-payload), 21 bound values, and 64 KiB of SQL. Snapshot IDs and ordinals add less
-than 1 KiB per batch. Base64 and IDs need no JSON escaping; the remaining space
-below 1 MB accommodates driver parameter metadata and transport framing.
+payload) and 21 bound values. SQL contains only quoted names and placeholders
+and is normally a few KiB. The separate 64 KiB SQL guard is a defensive ceiling
+for unexpectedly large namespace text; chunk count controls normal request size.
+Snapshot IDs and ordinals add less than 1 KiB per batch. Base64 and IDs need no
+JSON escaping; the remaining space below 1 MB accommodates driver parameter
+metadata and transport framing.
 
 The same parameterized multi-row `VALUES` syntax works through the existing
 PostgreSQL, Snowflake, BigQuery, and Databricks runners. PostgreSQL placeholders
@@ -23,8 +26,11 @@ maximize a provider's request limit:
 The authoritative snapshot pointer and cleanup remain in the existing fenced
 transaction after every batch succeeds. The store checks cancellation before each
 batch and before committing the pointer, and retains lease renewal opportunities
-between batches. It does not retry ambiguous writes or cache previously read
-snapshots. Table layout, chunk ordinals, digests, public APIs, and stored snapshots
+between batches and before the final pointer transaction when renewal is due.
+The renewal window includes retained-size reads and response delays. A single
+request that outlasts the lease still fails under the existing ownership fence;
+short leases need enough margin for individual warehouse requests. It does not
+retry ambiguous writes or cache previously read snapshots. Table layout, chunk ordinals, digests, public APIs, and stored snapshots
 are unchanged.
 
 ## Reproduce
@@ -104,6 +110,13 @@ A separate matched five-assignment run with **50 ms simulated request latency** 
 At 1 ms simulated latency, CPU and transport-double work dominate the larger plans; elapsed-time differences are small relative to total execution time and run-to-run variability. The higher-latency case shows the benefit of fewer serialized requests under simulated transport latency. Neither measurement establishes a real-provider or production speedup. Compare versions within a row: padding differs across plan sizes.
 
 Measured on Node.js 25.9.0 with pnpm 10.30.2 on macOS arm64. These are single observations without statistical significance claims. The initial 300-assignment run exceeded the old five-minute benchmark harness timeout; the completed result used the documented fifteen-minute harness limit with unchanged workload and production settings.
+
+After tightening renewal around slow warehouse requests, a five-assignment
+50 ms simulated-latency rerun retained 13 payload INSERTs, 83 total runner
+requests, and 1,599,452 payload bytes (4.139 s checkpoint elapsed; 4.672 s executor
+elapsed). The tables above capture the initial batching measurements. The
+follow-up changes when renewals become due; the frozen-date benchmark keeps
+its fast-path request counts unchanged.
 
 ## Remaining work
 

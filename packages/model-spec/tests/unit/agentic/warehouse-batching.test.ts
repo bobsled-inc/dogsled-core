@@ -208,6 +208,93 @@ describe.each(checkpointIntegrations)('checkpoint batches: $source_type', (integ
     }
   });
 
+  it.each([
+    {
+      name: 'slow final batch',
+      retainedMs: 0,
+      stagingMs: 6000,
+      responseMs: 0,
+      pointerMs: 5000,
+      expires: false,
+    },
+    {
+      name: 'slow retained-size read',
+      retainedMs: 8000,
+      stagingMs: 3000,
+      responseMs: 0,
+      pointerMs: 0,
+      expires: false,
+    },
+    {
+      name: 'slow renewal response',
+      retainedMs: 0,
+      stagingMs: 3000,
+      responseMs: 4000,
+      pointerMs: 5000,
+      expires: false,
+    },
+    {
+      name: 'expired staging request',
+      retainedMs: 0,
+      stagingMs: 11000,
+      responseMs: 0,
+      pointerMs: 0,
+      expires: true,
+    },
+  ])(
+    'preserves lease fencing after $name',
+    async ({ retainedMs, stagingMs, responseMs, pointerMs, expires }) => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      const transport = checkpointTransport();
+      const value = snapshot(1);
+      let expiresAt = Date.now() + 10000;
+      const advance = (ms: number) => vi.setSystemTime(Date.now() + ms);
+      const run = transport.runner.run;
+      transport.runner.run = async (...args) => {
+        const sql = args[0];
+        const renewal = /SET ["`]expires["`]/i.test(sql);
+        const publication = /SET ["`]snapshot["`]/i.test(sql);
+        if (publication) advance(pointerMs);
+        if ((renewal || publication) && Date.now() >= expiresAt) {
+          throw new Error('Expired warehouse owner');
+        }
+        const result = await run(...args);
+        if (renewal) {
+          // The database starts the lease before the response reaches the caller.
+          expiresAt = Date.now() + 10000;
+          advance(responseMs);
+        }
+        return result;
+      };
+      const query = transport.runner.query!;
+      transport.runner.query = async (...args) => {
+        const result = await query(...args);
+        if (/AS retained/i.test(args[0])) advance(retainedMs);
+        return result;
+      };
+      transport.afterInsert = () => advance(stagingMs);
+      resolve.mockResolvedValue(transport.runner);
+      const session = await createWarehouseCheckpointStore(integration, {
+        schema: 'checkpoints',
+        leaseMs: 10000,
+      }).acquire(value.key);
+      try {
+        if (expires) {
+          await expect(session.create(value)).rejects.toMatchObject({ code: 'lease_lost' });
+          expect(session.ownershipLost?.aborted).toBe(true);
+          expect(transport.pointer).toBe('');
+          expect(transport.operations.pointer ?? 0).toBe(0);
+        } else {
+          await session.create(value);
+          expect(await session.read()).toEqual(value);
+          expect(Date.now()).toBeLessThan(expiresAt);
+        }
+      } finally {
+        await session.release();
+      }
+    }
+  );
+
   it('renews inside long staging sequences before sending another batch', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     const transport = checkpointTransport();
