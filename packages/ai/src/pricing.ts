@@ -108,6 +108,20 @@ export class UnknownModelPricingError extends Error {
   }
 }
 
+/**
+ * The AI Gateway passes calls through at the provider's list price, so a gateway
+ * model named `openai/gpt-4o-mini` uses the `openai:gpt-4o-mini` entry.
+ */
+function lookupPricing(connection: ModelConnection) {
+  const direct = MODEL_PRICING.get(`${connection.provider}:${connection.model}`);
+  if (direct || connection.provider !== 'ai-gateway') return direct;
+  const slash = connection.model.indexOf('/');
+  if (slash <= 0) return undefined;
+  return MODEL_PRICING.get(
+    `${connection.model.slice(0, slash)}:${connection.model.slice(slash + 1)}`
+  );
+}
+
 export function estimateCostUsd(
   connection: ModelConnection,
   usage: TokenUsage,
@@ -117,7 +131,7 @@ export function estimateCostUsd(
     return 0;
   }
 
-  const pricing = MODEL_PRICING.get(`${connection.provider}:${connection.model}`);
+  const pricing = lookupPricing(connection);
   if (!pricing) {
     const error = new UnknownModelPricingError(connection);
     const requireKnownPricing =
@@ -187,4 +201,14 @@ export function extractTokenUsage(usage: unknown): Required<TokenUsage> {
 
 function numberValue(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+/** Price usage with the built-in table. Returns null, never $0, for an unknown model. */
+export function knownModelCostUsd(connection: ModelConnection, usage: TokenUsage): number | null {
+  try {
+    return estimateCostUsd(connection, usage, { requireKnownPricing: true });
+  } catch (error) {
+    if (error instanceof UnknownModelPricingError) return null;
+    throw error;
+  }
 }

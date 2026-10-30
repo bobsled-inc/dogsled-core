@@ -1,6 +1,11 @@
 import { embedMany as sdkEmbedMany } from 'ai';
 
-import { finalizeBudgetReservation, isBudgetError, reserveBudget } from './budget.js';
+import {
+  finalizeBudgetReservation,
+  isBudgetError,
+  reserveBudget,
+  settleFailedBudgetReservation,
+} from './budget.js';
 import {
   estimateCostUsd,
   estimatePreflightUsage,
@@ -79,11 +84,17 @@ export async function* embedMany(
         ledger: options.ledger,
       });
 
-      const result = await sdkEmbedMany({
-        model: providerModels.embeddingModel as SdkEmbedModel,
-        values: batch.map((input) => input.text),
-        maxRetries: 2,
-      });
+      let result: Awaited<ReturnType<typeof sdkEmbedMany>>;
+      try {
+        result = await sdkEmbedMany({
+          model: providerModels.embeddingModel as SdkEmbedModel,
+          values: batch.map((input) => input.text),
+          maxRetries: 2,
+        });
+      } catch (error) {
+        await settleFailedBudgetReservation(reservation);
+        throw error;
+      }
       const usage = extractTokenUsage(result.usage);
       const costUsd = estimateCostUsd(connection, usage, { requireKnownPricing: false });
       await finalizeBudgetReservation(reservation, costUsd);

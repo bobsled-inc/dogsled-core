@@ -1,6 +1,11 @@
 import { generateObject } from 'ai';
 
-import { finalizeBudgetReservation, isBudgetError, reserveBudget } from './budget.js';
+import {
+  finalizeBudgetReservation,
+  isBudgetError,
+  reserveBudget,
+  settleFailedBudgetReservation,
+} from './budget.js';
 import {
   estimateCostUsd,
   estimatePreflightUsage,
@@ -60,6 +65,25 @@ function validCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
+/** AI SDK errors carry the HTTP status on the error or its cause; gateway errors by name. */
+function errorStatus(error: unknown): number | undefined {
+  for (let current = error, depth = 0; current && depth < 4; depth++) {
+    if (typeof current !== 'object') return undefined;
+    const record = current as Record<string, unknown>;
+    for (const value of [record['statusCode'], record['status']]) {
+      if (typeof value === 'number' && Number.isInteger(value) && value >= 100 && value < 600) {
+        return value;
+      }
+    }
+    // Gateway errors arrive as plain errors that keep only their class name.
+    const name = typeof record['name'] === 'string' ? record['name'] : '';
+    if (/Authentication(Error)?$|LoadAPIKeyError$/.test(name)) return 401;
+    if (/RateLimit(Error)?$/.test(name)) return 429;
+    current = record['cause'];
+  }
+  return undefined;
+}
+
 function errorUsage(error: unknown): StructuredTokenUsage | undefined {
   return typeof error === 'object' && error !== null
     ? measuredUsage((error as Record<string, unknown>)['usage'])
@@ -72,6 +96,7 @@ export async function generateStructured<T>(
   runOptions: GenerateOptions = {}
 ): Promise<GenerateStructuredResult<T>> {
   let reportedUsage: StructuredTokenUsage | undefined;
+  let reservation: Awaited<ReturnType<typeof reserveBudget>> | undefined;
   try {
     if (
       opts.maxOutputTokens !== undefined &&
@@ -109,7 +134,7 @@ export async function generateStructured<T>(
         onWarning,
       }
     );
-    const reservation = observeCost
+    reservation = observeCost
       ? undefined
       : await reserveBudget({
           connection,
@@ -136,7 +161,9 @@ export async function generateStructured<T>(
       requireKnownPricing: false,
       onWarning,
     });
-    if (reservation) await finalizeBudgetReservation(reservation, costUsd);
+    const settled = reservation;
+    reservation = undefined;
+    if (settled) await finalizeBudgetReservation(settled, costUsd);
 
     return {
       ok: true,
@@ -148,6 +175,19 @@ export async function generateStructured<T>(
     };
   } catch (error) {
     reportedUsage ??= errorUsage(error);
+    if (reservation) {
+      // Charge what the failed call reported, or nothing, and free the rest.
+      await settleFailedBudgetReservation(
+        reservation,
+        reportedUsage
+          ? estimateCostUsd(
+              connection,
+              { inputTokens: reportedUsage.inputTokens, outputTokens: reportedUsage.outputTokens },
+              { requireKnownPricing: false, onWarning: () => undefined }
+            )
+          : 0
+      );
+    }
     const message = error instanceof Error ? error.message : String(error);
     if (isSchemaViolation(error)) {
       return {
@@ -159,12 +199,14 @@ export async function generateStructured<T>(
         attempts: 1,
       };
     }
+    const status = errorStatus(error);
     return {
       ok: false,
       ...(reportedUsage ? { usage: reportedUsage } : {}),
       error: isBudgetError(error) ? 'budget_exceeded' : 'provider_error',
       message,
       attempts: 1,
+      ...(status === undefined ? {} : { status }),
     };
   }
 }
