@@ -83,6 +83,9 @@ export async function createSqlAgenticPublisher(
     return count;
   }
   let closed = false;
+  // Control tables this publisher created or confirmed. Any failed operation forgets them,
+  // so the next operation initializes again.
+  const initialized = new Set<string>();
   async function operation<T>(
     fn: (db: PublicationDb, runner: SqlRunnerModule) => Promise<T>,
     signal?: AbortSignal
@@ -92,9 +95,17 @@ export async function createSqlAgenticPublisher(
     const runner = await resolveRunner(integration, options);
     try {
       return await fn(sqlPublicationDb(runner, dialect, signal), runner);
+    } catch (error) {
+      initialized.clear();
+      throw error;
     } finally {
       await runner.close?.();
     }
+  }
+  async function initialize(db: PublicationDb, names: PublicationNames) {
+    if (initialized.has(names.control)) return;
+    await initPublication(db, names, dialect);
+    initialized.add(names.control);
   }
   async function checks(
     db: PublicationDb,
@@ -149,7 +160,7 @@ export async function createSqlAgenticPublisher(
       AgenticColumnsSchema.parse(context.resolved.output_columns);
       const names = publicationNames(context.target, dialect, options.systemSchema);
       await operation(async (db, runner) => {
-        await initPublication(db, names, dialect);
+        await initialize(db, names);
         const exists = await assertSqlSchema(db, names, context, dialect);
         await catalogCommits(db, names.control);
         await catalogCommits(db, names.receipts);
@@ -197,7 +208,7 @@ export async function createSqlAgenticPublisher(
     async claim(target, signal) {
       const names = publicationNames(target, dialect, options.systemSchema);
       return operation(async (db) => {
-        await initPublication(db, names, dialect);
+        await initialize(db, names);
         const fence = randomUUID();
         await db.query(`UPDATE ${names.control} SET fence = ${db.p(1)} WHERE TRUE`, [fence]);
         const rows = await db.query(`SELECT revision, fence FROM ${names.control} LIMIT 2`);
@@ -281,35 +292,47 @@ export async function createSqlAgenticPublisher(
           );
         }
         const exists = await assertSqlSchema(db, names, context, dialect);
-        const stage = names.stage(identity.operation_id),
-          processed = names.stage(identity.operation_id, '_k');
-        // These names belong only to this uncommitted operation. An interrupted build can be rebuilt.
-        await db.run(`DROP TABLE IF EXISTS ${stage}`);
-        await db.run(`DROP TABLE IF EXISTS ${processed}`);
-        await createPublicationTable(db, processed, keyColumns, dialect);
-        await insertPublicationRows(db, processed, keyColumns, processedKeys, dialect, signal);
-        const oldSql = exists
-          ? generateUnprocessedRowsSql({
+        const stage = names.stage(identity.operation_id);
+        if (exists && !processedKeys.length) {
+          // No processed keys means the published target is the current target. Count and
+          // check it in place instead of copying it. Commit stays fenced by the claimed version.
+          const count = await db.query(`SELECT COUNT(*) AS count FROM ${names.target}`);
+          if (countValue(count[0]?.count) > maxRows) {
+            throw new Error('Publication replacement exceeds stage row limit');
+          }
+          await checks(db, context, intent.stage, names.target);
+        } else {
+          // These names belong only to this uncommitted operation. An interrupted build can be rebuilt.
+          await db.run(`DROP TABLE IF EXISTS ${stage}`);
+          let oldSql: string | undefined;
+          if (exists) {
+            // Retained rows are needed only when a target exists.
+            const processed = names.stage(identity.operation_id, '_k');
+            await db.run(`DROP TABLE IF EXISTS ${processed}`);
+            await createPublicationTable(db, processed, keyColumns, dialect);
+            await insertPublicationRows(db, processed, keyColumns, processedKeys, dialect, signal);
+            oldSql = generateUnprocessedRowsSql({
               target: names.target,
               processedKeys: processed,
               columns: columns.map((column) => column.name),
               keys,
               dialect,
-            })
-          : undefined;
-        const kept = oldSql
-          ? await db.query(`SELECT COUNT(*) AS count FROM (${oldSql}) kept`)
-          : [{ count: 0 }];
-        if (
-          !Number.isSafeInteger(countValue(kept[0]?.count)) ||
-          countValue(kept[0]?.count) + rows.length > maxRows
-        ) {
-          throw new Error('Publication replacement exceeds stage row limit');
+            });
+          }
+          const kept = oldSql
+            ? await db.query(`SELECT COUNT(*) AS count FROM (${oldSql}) kept`)
+            : [{ count: 0 }];
+          if (
+            !Number.isSafeInteger(countValue(kept[0]?.count)) ||
+            countValue(kept[0]?.count) + rows.length > maxRows
+          ) {
+            throw new Error('Publication replacement exceeds stage row limit');
+          }
+          await createPublicationTable(db, stage, columns, dialect);
+          if (oldSql) await db.run(`INSERT INTO ${stage} ${oldSql}`);
+          await insertPublicationRows(db, stage, columns, rows, dialect, signal);
+          await checks(db, context, intent.stage, stage);
         }
-        await createPublicationTable(db, stage, columns, dialect);
-        if (oldSql) await db.run(`INSERT INTO ${stage} ${oldSql}`);
-        await insertPublicationRows(db, stage, columns, rows, dialect, signal);
-        await checks(db, context, intent.stage, stage);
         await db.query(
           `UPDATE ${names.manifests} SET validated = TRUE WHERE operation_id = ${db.p(1)}`,
           [identity.operation_id]
@@ -321,7 +344,7 @@ export async function createSqlAgenticPublisher(
       AgenticPublicationIntentSchema.parse(intent);
       const names = publicationNames(intent.identity.target, dialect, options.systemSchema);
       return operation(async (db) => {
-        await initPublication(db, names, dialect);
+        await initialize(db, names);
         return readSqlReceipt(db, names, intent);
       }, signal);
     },
