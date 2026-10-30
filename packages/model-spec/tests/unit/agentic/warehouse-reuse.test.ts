@@ -59,7 +59,7 @@ describe.each(checkpointIntegrations)('warehouse snapshot reuse: $source_type', 
     return store.acquire(initial().key);
   };
 
-  it('reads payload rows only for snapshots this session did not commit', async () => {
+  it('applies commands to its committed snapshot but verifies payloads on every read', async () => {
     const transport = checkpointTransport();
     const value = initial();
     const writer = await open(transport);
@@ -67,20 +67,39 @@ describe.each(checkpointIntegrations)('warehouse snapshot reuse: $source_type', 
     try {
       expected = await writer.create(value);
       expected = await writer.checkpoint(window('one', 0));
-      expect(await writer.read()).toEqual(expected);
       expect(transport.operations.read_payload).toBeUndefined();
+      expect(await writer.read()).toEqual(expected);
+      expect(transport.operations.read_payload).toBe(1);
     } finally {
       await writer.release();
     }
     const resumed = await open(transport);
     try {
-      // A new session has no prior state: it reads and validates the durable snapshot once.
-      expect(await resumed.read()).toEqual(expected);
+      // A new session has no prior state: its first command reads and validates the payload.
       expect(await resumed.checkpoint(window('two', 1))).toMatchObject({ revision: 2 });
-      expect(await resumed.read()).toMatchObject({ revision: 2 });
-      expect(transport.operations.read_payload).toBe(1);
+      expect(transport.operations.read_payload).toBe(2);
+      expect(await resumed.checkpoint(window('three', 2))).toMatchObject({ revision: 3 });
+      expect(transport.operations.read_payload).toBe(2);
+      expect(await resumed.read()).toMatchObject({ revision: 3 });
+      expect(transport.operations.read_payload).toBe(3);
     } finally {
       await resumed.release();
+    }
+  });
+
+  it('reports damaged payload rows on read and replaces them with the next commit', async () => {
+    const transport = checkpointTransport();
+    const session = await open(transport);
+    try {
+      const created = await session.create(initial());
+      for (const chunk of transport.payloads.get(transport.pointer)!) chunk.data = 'invalid-base64';
+      await expect(session.read()).rejects.toMatchObject({ code: 'corrupt' });
+      // The command applies to the snapshot this session committed under the same pointer.
+      const command = window('one', 0);
+      expect(await session.checkpoint(command)).toEqual(applyAgenticCheckpoint(created, command));
+      expect(await session.read()).toMatchObject({ revision: 1 });
+    } finally {
+      await session.release();
     }
   });
 
@@ -118,7 +137,7 @@ describe.each(checkpointIntegrations)('warehouse snapshot reuse: $source_type', 
       expect(next).toEqual(applyAgenticCheckpoint(committed, command));
       next.revision = 99;
       expect(await session.read()).toMatchObject({ revision: 1, status: 'preparing' });
-      expect(transport.operations.read_payload).toBeUndefined();
+      expect(await session.checkpoint(window('two', 1))).toMatchObject({ revision: 2 });
     } finally {
       await session.release();
     }
@@ -134,9 +153,10 @@ describe.each(checkpointIntegrations)('warehouse snapshot reuse: $source_type', 
       await expect(session.checkpoint(command)).rejects.toThrow('Lost commit response');
       expect(await session.read()).toEqual(applyAgenticCheckpoint(created, command));
       expect(transport.operations.read_payload).toBe(1);
+      // The verified state is reused by the next command.
       await session.checkpoint(window('after', 1));
-      expect(await session.read()).toMatchObject({ revision: 2 });
       expect(transport.operations.read_payload).toBe(1);
+      expect(await session.read()).toMatchObject({ revision: 2 });
     } finally {
       await session.release();
     }
