@@ -151,6 +151,75 @@ describe('spend-cap accounting', { timeout: 60_000 }, () => {
     expect(f.options.stateStore.runs.size).toBe(0);
   });
 
+  it('checks a saved spend-cap run even when the caller asks for reservation accounting', async () => {
+    const f = setup(2);
+    f.host.executeAgent = vi.fn(async (request: AgentExecutorRequest) => answer(request));
+    await f.run();
+    const before = structuredClone(f.state());
+    const error = await f
+      .resume({ accounting: 'reservation', maxCostUsd: 0.01 })
+      .catch((caught: unknown) => caught as AgenticStateError);
+    expect(error.reason).toBe('pricing_unknown');
+    expect(f.state()).toEqual(before);
+    expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
+  });
+
+  it('checks saved legacy accounting before checking prices on resume', async () => {
+    const f = setup(1);
+    await executeAgenticRun(f.host, f.context(), { ...f.options, accounting: 'reservation' });
+    const before = structuredClone(f.state());
+    const error = await f
+      .resume({ maxCostUsd: 0.01 })
+      .catch((caught: unknown) => caught as AgenticStateError);
+    expect(error.reason).toBe('invalid_option');
+    expect(f.state()).toEqual(before);
+  });
+
+  it('saves answers that finish while failure cleanup writes a checkpoint', async () => {
+    const f = setup(3);
+    f.host.concurrency = 3;
+    const entered = Array.from({ length: 3 }, deferred);
+    const gates = Array.from({ length: 3 }, deferred);
+    f.host.executeAgent = vi.fn(async (request: AgentExecutorRequest) => {
+      const index = Number(request.assignment.shard_id);
+      entered[index]!.resolve();
+      await gates[index]!.promise;
+      if (index === 0) {
+        return {
+          contract_version: 2,
+          attempt_id: request.assignment.attempt_id,
+          status: 'failed',
+          usage: measured,
+          error: { kind: 'internal', code: 'FAILED', retryable: false },
+        };
+      }
+      return answer(request);
+    });
+    const acquire = f.options.stateStore.acquire.bind(f.options.stateStore);
+    f.options.stateStore.acquire = async (key) => {
+      const session = await acquire(key);
+      return {
+        ...session,
+        checkpoint: async (command) => {
+          if (command.type === 'finish_attempt' && command.work < 2) {
+            gates[command.work + 1]!.resolve();
+            // Let the next answer reach the scheduler while this write is pending.
+            await new Promise<void>((resolve) => setImmediate(resolve));
+          }
+          return session.checkpoint(command);
+        },
+      };
+    };
+    const run = f.run();
+    const rejected = expect(run).rejects.toThrow(AgenticAssignmentError);
+    await Promise.all(entered.map((item) => item.promise));
+    gates[0]!.resolve();
+    await rejected;
+    expect(f.state().work.map((work) => Boolean(work.accepted))).toEqual([false, true, true]);
+    expect(f.state().work.map((work) => work.attempts[0]!.charge)).toEqual([1000, 1000, 1000]);
+    expect(f.state().charged).toBe(3000);
+  });
+
   it('refuses a batch whose input estimate alone exceeds the cap', async () => {
     const f = setup(5);
     f.model.limits.tokens = 50;

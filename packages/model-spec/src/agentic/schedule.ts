@@ -289,15 +289,21 @@ export async function scheduleAgenticAssignments(
     }
   } catch (error) {
     // Save answers that already finished; spend-cap runs keep every answer they paid for.
-    if (spendCap) {
-      for (const completed of ready.splice(0)) {
+    // Keep draining: another answer can arrive while a checkpoint write is awaited.
+    const drainFinished = async () => {
+      if (!spendCap) return;
+      while (ready.length) {
+        const completed = ready.shift()!;
         if (!completed.result) continue;
         await saveFinish(completed as Finished).catch(() => undefined);
       }
-    }
+    };
+    await drainFinished();
     // Stop active calls before releasing the store. Unfinished attempts keep their charge.
     options.abort();
     await Promise.all(active.values());
+    // A successful invocation can settle while cancellation is unwinding.
+    await drainFinished();
     throw error;
   }
 }

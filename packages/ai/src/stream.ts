@@ -32,6 +32,7 @@ export async function* generateStream(
   connection: ModelConnection,
   opts: GenerateStreamOptions
 ): AsyncIterable<DeltaEvent> {
+  let result: ReturnType<typeof streamText> | undefined;
   let reservation: Awaited<ReturnType<typeof reserveBudget>> | undefined;
   try {
     const providerModels = opts.modelOverride
@@ -62,7 +63,7 @@ export async function* generateStream(
       ledger: opts.ledger,
     });
 
-    const result = streamText({
+    result = streamText({
       model: providerModels.languageModel as SdkStreamModel,
       prompt: opts.prompt,
       system: opts.system,
@@ -84,7 +85,29 @@ export async function* generateStream(
       message: error instanceof Error ? error.message : String(error),
     };
   } finally {
-    // Also covers a consumer that stops iterating early; finished streams cleared it.
-    await settleFailedBudgetReservation(reservation);
+    if (reservation && result) {
+      // Usage may never resolve after an interrupted stream. Give an available report
+      // one event-loop turn, then keep the estimate rather than refunding unknown work.
+      const reported = await Promise.race([
+        Promise.resolve(result.usage).catch(() => undefined),
+        new Promise<undefined>((resolve) => setImmediate(() => resolve(undefined))),
+      ]);
+      if (
+        reported &&
+        typeof reported.inputTokens === 'number' &&
+        Number.isFinite(reported.inputTokens) &&
+        reported.inputTokens >= 0 &&
+        typeof reported.outputTokens === 'number' &&
+        Number.isFinite(reported.outputTokens) &&
+        reported.outputTokens >= 0
+      ) {
+        await settleFailedBudgetReservation(
+          reservation,
+          estimateCostUsd(connection, extractTokenUsage(reported), { requireKnownPricing: false })
+        );
+      }
+    } else {
+      await settleFailedBudgetReservation(reservation);
+    }
   }
 }
