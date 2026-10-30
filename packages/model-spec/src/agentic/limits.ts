@@ -44,3 +44,21 @@ export function attemptReservation(
 ): number | null {
   return tokens ?? (total === null ? null : Math.max(0, total - charged));
 }
+
+const DEPRECATED_ASSIGNMENT_LIMITS = [
+  'tokens_per_assignment',
+  'tool_calls_per_assignment',
+  'model_calls_per_assignment',
+] as const;
+
+/** YAML paths of per-assignment limits that spend-cap runs ignore, for a deprecation warning. */
+export function deprecatedAssignmentLimitFields(model: AgenticModelSpec): string[] {
+  const set = (limits: Record<string, unknown> | undefined) =>
+    DEPRECATED_ASSIGNMENT_LIMITS.filter((key) => limits?.[key] != null);
+  return [
+    ...set(model.limits).map((key) => `limits.${key}`),
+    ...model.plan.steps.flatMap((step) =>
+      set(step.limits).map((key) => `plan.steps.${step.id}.limits.${key}`)
+    ),
+  ];
+}

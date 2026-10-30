@@ -291,6 +291,23 @@ describe('review fixes', { timeout: 60_000 }, () => {
   });
 });
 
+describe('assignment failure hints', () => {
+  it('explain a loop that ran out of turns and how to raise the limit', () => {
+    const error = new AgenticAssignmentError({
+      step_id: 'research',
+      shard_id: 'research:0',
+      attempts: 1,
+      max_attempts: 3,
+      kind: 'validation',
+      code: 'turn_limit',
+      retryable: false,
+    });
+    expect(error.message).toContain('used all its turns without finishing');
+    expect(error.message).toContain('maxTurns');
+    expect(error.message).toContain('--agent-retry-failed');
+  });
+});
+
 describe('formatAgenticError', () => {
   it('prints safe causes and hides provider text behind its type and status', () => {
     const provider = Object.assign(new Error('401 for key sk-live-secret'), {

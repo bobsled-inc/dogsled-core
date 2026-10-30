@@ -670,6 +670,17 @@ describe('mixed agentic dispatch probe', () => {
     expect((await runProject(f.root, f.options)).ok).toBe(true);
     expect(f.host.publish).not.toHaveBeenCalled();
   });
+  it('warns that deprecated per-assignment limits are ignored by new runs', async () => {
+    const f = fixture();
+    f.model.limits.tokens_per_assignment = 500;
+    f.model.plan.steps[0]!.limits = { model_calls_per_assignment: 2 };
+    writeFileSync(join(f.root, 'models/agentic.yml'), stringify(f.model));
+    const result = await runProject(f.root, f.options);
+    const warning = result.warnings.find((text) => text.includes('deprecated'));
+    expect(warning).toContain('limits.tokens_per_assignment');
+    expect(warning).toContain('plan.steps.assess.limits.model_calls_per_assignment');
+    expect(warning).toContain('new runs ignore them');
+  });
   it('stops before the next assignment when the token cap is reached', async () => {
     const f = fixture();
     f.model.limits.tokens = 2000;

@@ -1,5 +1,6 @@
 import { withHostModelDeclarations } from '../agentic/host-declarations.js';
 import { validateAgenticTools } from '../agentic/tool-access.js';
+import { deprecatedAssignmentLimitFields } from '../agentic/limits.js';
 import { validatePublicationChecks } from '../agentic/duckdb-checks.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -161,6 +162,20 @@ export async function runAgenticProject(
     warnings: [...project.warnings],
     skipped: [],
   };
+  // Deprecated limits still validate, so say plainly that new runs ignore them.
+  for (const [name, model] of resolved) {
+    const fields = deprecatedAssignmentLimitFields(model.model);
+    if (fields.length) {
+      result.warnings.push(
+        `Agentic model "${name}" sets ${fields.join(', ')}. These per-assignment limits are deprecated and new runs ignore them (runs saved by an earlier Dogsled still apply them). Use limits.tokens or limits.max_cost_usd to cap a run.`
+      );
+    }
+  }
+  if (options.agentic?.host?.tokensPerAssignment !== undefined) {
+    result.warnings.push(
+      'The tokensPerAssignment option (--agent-tokens-per-assignment) is deprecated and new runs ignore it. Use limits.tokens or limits.max_cost_usd to cap a run.'
+    );
+  }
   const failed = new Set<string>();
   const ephemeral = new Map<string, string>();
   for (const node of nodes) {

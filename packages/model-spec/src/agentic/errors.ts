@@ -22,13 +22,15 @@ export class AgenticAssignmentError extends Error {
       failure.kind && failure.code ? ` with ${failure.kind} error "${failure.code}"` : '';
     const attempts = `${failure.attempts} of ${failure.max_attempts} attempt${failure.max_attempts === 1 ? '' : 's'}`;
     const hint =
-      failure.kind === 'auth'
-        ? 'The provider rejected the credentials for this model profile. Check the API key named in platform.models, then resume with --agent-resume --agent-retry-failed.'
-        : failure.attempts >= failure.max_attempts
-          ? failure.code === 'rate_limited'
-            ? 'The provider kept rate-limiting the calls. Lower --agent-concurrency or raise --agent-min-dispatch-interval-ms, then start a new run ID.'
-            : 'All attempts are used up. Fix the cause, then start a new run ID.'
-          : 'The executor marked this failure as not retryable. Fix the cause, then resume with --agent-resume --agent-retry-failed.';
+      failure.code === 'turn_limit'
+        ? 'The agent loop used all its turns without finishing. Raise the loop executor turn limit (the reference loop executor allows 16 through its maxTurns option) or narrow the step instructions, then resume with --agent-resume --agent-retry-failed.'
+        : failure.kind === 'auth'
+          ? 'The provider rejected the credentials for this model profile. Check the API key named in platform.models, then resume with --agent-resume --agent-retry-failed.'
+          : failure.attempts >= failure.max_attempts
+            ? failure.code === 'rate_limited'
+              ? 'The provider kept rate-limiting the calls. Lower --agent-concurrency or raise --agent-min-dispatch-interval-ms, then start a new run ID.'
+              : 'All attempts are used up. Fix the cause, then start a new run ID.'
+            : 'The executor marked this failure as not retryable. Fix the cause, then resume with --agent-resume --agent-retry-failed.';
     const detail = failure.detail ? ` Last result: ${failure.detail}.` : '';
     super(
       `Agentic step "${failure.step_id}" assignment ${failure.shard_id} failed${cause} after ${attempts}.${detail} ${hint}`

@@ -150,7 +150,8 @@ for that model instead. Library hosts supply prices through
 `model_calls_per_assignment`, at model or step level, are still accepted but are
 ignored by new runs. So are the CLI `--agent-tokens-per-assignment` option and the
 host `tokensPerAssignment` option. Executors bound their own loops; the reference
-loop executor stops after 16 turns.
+loop executor stops after 16 turns. `dogsled model run` prints a warning naming each ignored field.
+If a loop runs out of turns, the failure explains how to raise the limit.
 
 Runs saved by an earlier Dogsled version keep the per-attempt reservation rules
 they started with when you resume them.
