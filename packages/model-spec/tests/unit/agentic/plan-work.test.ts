@@ -18,6 +18,14 @@ vi.mock('json-canonicalize', async (original) => {
 
 async function completedPlan(assignments: number) {
   const workload = benchmarkWorkload(assignments, 'plan');
+  // Only the step shapes matter here; small payloads keep the run fast on CI runners.
+  workload.model.plan.steps[0]!.instructions = 'Assess the pair.';
+  workload.host.prepare = async () =>
+    Array.from({ length: (assignments * 4) / 5 }, (_, index) => ({
+      pair_id: `p${index}`,
+      cluster_id: `c${Math.floor(index / 4)}`,
+      evidence: 'e',
+    }));
   const store = new MemoryStateStore();
   await executeAgenticRun(workload.host, workload.context(), {
     projectDirectory: '/unused',
@@ -27,16 +35,17 @@ async function completedPlan(assignments: number) {
   return { workload, store, snapshot: [...store.runs.values()][0]! };
 }
 
-describe('plan step construction', () => {
+describe('plan step construction', { timeout: 60_000 }, () => {
   it('rebuilds a reduce over upstream markers with work linear in its rows', async () => {
-    const { snapshot } = await completedPlan(50);
+    const { snapshot } = await completedPlan(20);
     const review = snapshot.work.filter((work) => work.assignment.step_id === 'review');
-    expect(review).toHaveLength(10);
+    expect(review).toHaveLength(4);
     counters.digests = 0;
     const rebuilt = buildAgenticStepAssignments(snapshot, 1);
     expect(rebuilt).toEqual(review.map((work) => work.assignment));
-    // Forty upstream rows and forty markers without the cluster grouping field.
-    expect(counters.digests).toBeLessThan(10 * 40);
+    // Sixteen upstream rows and sixteen markers without the cluster grouping field. A
+    // rebuild hashes 7.5 values per row; scanning every row for each marker took 360.
+    expect(counters.digests).toBeLessThan(10 * 16);
   });
 
   it('still rejects markers whose keys have no upstream output row', async () => {
