@@ -65,7 +65,24 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
     const target = `${schema}.pair_assessments`;
     const context = () => ({ ...fixture.context(), target });
     const names = publicationNames(target, 'postgres');
-    return { ...fixture, context, names, target, integration, publisher, directory, inspect };
+    // Operation stages are retained after commit; probe and key tables have suffixes.
+    const stages = async () =>
+      (
+        await inspect(
+          `SELECT table_name FROM information_schema.tables WHERE table_schema = '${schema}'`
+        )
+      ).filter((row) => /^_dogsled_pub_[a-f0-9]{48}$/.test(String(row.table_name))).length;
+    return {
+      ...fixture,
+      context,
+      names,
+      target,
+      integration,
+      publisher,
+      directory,
+      inspect,
+      stages,
+    };
   }
   it('replaces explicit keys and keeps untouched rows and provenance across reopen', async () => {
     const f = await setup();
@@ -203,6 +220,7 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
     await run('populate');
     const rows = await f.inspect(`SELECT * FROM ${f.target} ORDER BY pair_id`);
     expect(rows).toHaveLength(2);
+    const staged = await f.stages();
     f.host.prepare = async () => [];
     f.model.tests = [{ type: 'unique', column: 'pair_id' }];
     f.model.expect = [{ kind: 'row_count_between', min: 2, max: 2 }];
@@ -211,6 +229,40 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
     f.model.expect = [{ kind: 'row_count_between', max: 1 }];
     await expect(run('failing')).rejects.toThrow('final check failed');
     expect(await f.inspect(`SELECT * FROM ${f.target} ORDER BY pair_id`)).toEqual(rows);
+    // Neither empty run built a stage: both checked the target in place.
+    expect(await f.stages()).toBe(staged);
+  });
+
+  it('stages an empty-input check when a target column uses a nondeterministic collation', async () => {
+    const f = await setup();
+    const collation = `"${f.names.schema}".case_insensitive`;
+    await f.inspect(
+      `CREATE COLLATION ${collation} (provider = icu, locale = 'und-u-ks-level2', deterministic = false)`
+    );
+    const columns = f
+      .context()
+      .resolved.output_columns.map(
+        (column) =>
+          `"${column.name}" ${publicationType(column.type, 'postgres')}${column.name === 'assessment' ? ` COLLATE ${collation}` : ''}${column.nullable ? '' : ' NOT NULL'}`
+      );
+    await f.inspect(`CREATE TABLE ${f.target} (${columns.join(', ')})`);
+    await f.inspect(
+      `INSERT INTO ${f.target} (pair_id, assessment, _dogsled_run_id) VALUES ('p0', 'Valid finding', 'earlier')`
+    );
+    f.host.prepare = async () => [];
+    // PostgreSQL rejects regular expressions on nondeterministic collations; a stage copy
+    // uses the database default collation, as publications did before in-place checks.
+    f.model.expect = [{ kind: 'regex', column: 'assessment', pattern: '^Valid' }];
+    const result = await executeAgenticRun(f.host, f.context(), {
+      run: { id: 'collated', mode: 'start' },
+      projectDirectory: f.directory,
+      publisher: f.publisher,
+    });
+    expect(result.publication).toBe('confirmed');
+    expect(await f.inspect(`SELECT pair_id, assessment FROM ${f.target}`)).toEqual([
+      { pair_id: 'p0', assessment: 'Valid finding' },
+    ]);
+    expect(await f.stages()).toBe(1);
   });
 
   it('stages an empty-input check when the target uses json instead of jsonb', async () => {

@@ -111,19 +111,21 @@ function compatibleType(
   };
   return aliases[column.type].includes(type);
 }
-// Accepted aliases whose comparisons differ from the type a publication stage uses.
-const stageDifferences: Partial<Record<PublicationDialect, readonly string[]>> = {
-  postgres: ['JSON'],
-  databricks: ['FLOAT', 'TIMESTAMP_NTZ'],
-};
-/** Returns false for a missing target. `stageTypes` is true when final checks on the target
- * compare values exactly as they would on a stage built from its rows. */
+/** The column properties that decide how final checks compare values. */
+export interface ColumnComparison {
+  type: string;
+  collation: string | null;
+}
+/** Asserts an existing target's schema; returns false for a missing target. Where the
+ * information schema reports collations (not Databricks), also returns how each target
+ * column compares values and, if the same information schema lists `probe`, its columns. */
 export async function assertSqlSchema(
   db: PublicationDb,
   names: PublicationNames,
   context: AgenticPublicationContext,
-  dialect: PublicationDialect
-): Promise<false | { stageTypes: boolean }> {
+  dialect: PublicationDialect,
+  probe?: { schema: string; table: string }
+): Promise<false | { columns?: ColumnComparison[]; probe?: ColumnComparison[] }> {
   const q = (name: string) => quoteIdentifier(name, dialect);
   const info =
     dialect === 'bigquery'
@@ -141,10 +143,20 @@ export async function assertSqlSchema(
   if (tables.length !== 1 || !['BASE TABLE', 'MANAGED'].includes(String(tables[0]!.table_type))) {
     throw new Error('Publication requires a base table');
   }
-  const columns = await db.query(
-    `SELECT column_name, data_type, is_nullable${dialect === 'snowflake' ? ', numeric_scale' : ''} FROM ${info}.COLUMNS WHERE ${condition} ORDER BY ordinal_position LIMIT 258`,
-    params
+  const collations = dialect !== 'databricks';
+  // A probe shares this request: the same query reads both tables' columns.
+  const rows = await db.query(
+    `SELECT table_schema, table_name, column_name, data_type, is_nullable${dialect === 'snowflake' ? ', numeric_scale' : ''}${collations ? ', collation_name' : ''} FROM ${info}.COLUMNS WHERE ${probe ? `(${condition}) OR (table_schema = ${db.p(3)} AND table_name = ${db.p(4)})` : condition} ORDER BY ${probe ? 'table_schema, table_name, ' : ''}ordinal_position LIMIT ${probe ? 516 : 258}`,
+    probe ? [...params, probe.schema, probe.table] : params
   );
+  // The probe's reserved, random name cannot match the target, whatever the name case.
+  const of = (schema: string, table: string) =>
+    rows.filter(
+      (row) =>
+        String(row.table_schema).toLowerCase() === schema.toLowerCase() &&
+        String(row.table_name).toLowerCase() === table.toLowerCase()
+    );
+  const columns = probe ? of(names.schema, names.table) : rows;
   const expected = context.resolved.output_columns;
   if (
     columns.length !== expected.length ||
@@ -164,12 +176,32 @@ export async function assertSqlSchema(
       'Existing agentic target schema differs; explicitly rebuild the target before publishing'
     );
   }
-  const different = stageDifferences[dialect] ?? [];
-  return {
-    stageTypes: columns.every(
-      (column) => !different.includes(String(column.data_type).toUpperCase())
-    ),
-  };
+  if (!collations) return {};
+  const compare = (list: typeof rows): ColumnComparison[] =>
+    list.map((column) => ({
+      type: String(column.data_type).toUpperCase(),
+      collation:
+        column.collation_name == null || column.collation_name === ''
+          ? null
+          : String(column.collation_name),
+    }));
+  const probed = probe ? of(probe.schema, probe.table) : [];
+  return { columns: compare(columns), ...(probed.length ? { probe: compare(probed) } : {}) };
+}
+/** True only when both lists are present and compare every column's values alike. */
+export function sameComparison(
+  target: readonly ColumnComparison[] | undefined,
+  stage: readonly ColumnComparison[] | undefined
+): boolean {
+  return (
+    !!target &&
+    !!stage &&
+    target.length === stage.length &&
+    target.every(
+      (column, index) =>
+        column.type === stage[index]!.type && column.collation === stage[index]!.collation
+    )
+  );
 }
 export async function insertPublicationRows(
   db: PublicationDb,

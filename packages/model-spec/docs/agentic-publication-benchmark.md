@@ -14,12 +14,21 @@ A publication with no processed keys leaves the target unchanged, and its commit
 never reads a stage. `prepare()` previously still dropped and rebuilt a
 processed-key table and a stage, counted the retained rows, copied every existing
 target row into the stage and checked the copy. It now counts and checks an
-existing target in place when every column compares like the stage's type. The
-schema assertion, row limit, all final checks, the manifest, the fenced version
-bump and the receipt are unchanged, and another publication between prepare and
-commit still invalidates the claimed version. Targets that use PostgreSQL `json`
-or Databricks `FLOAT` or `TIMESTAMP_NTZ` columns are staged as before. In-place
-checks use the target's column collation, as the published rows do.
+existing target in place when its columns compare values exactly like a stage's.
+The schema assertion, row limit, all final checks, the manifest, the fenced
+version bump and the receipt are unchanged, and another publication between
+prepare and commit still invalidates the claimed version.
+
+Each run's preflight already creates a probe stage with the output schema. It now
+creates the probe before asserting the target's schema, so the same information
+schema query also returns the probe's column types and collations at no extra
+request. A no-op checks in place only when every target column has the same type
+and collation as the probe column; otherwise it stages the target as before. This
+covers accepted type aliases such as PostgreSQL `json`, column collations such as
+a nondeterministic ICU collation, and schema or account default collations that a
+new stage would take. Databricks does not report collations in its information
+schema, and a probe in a different BigQuery dataset is not listed with the target,
+so those no-ops are staged.
 
 A publication to a missing target no longer builds the processed-key table, which
 is read only to retain rows from an existing target. Preflight and inspection

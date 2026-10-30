@@ -36,9 +36,11 @@ import {
   initPublication,
   readSqlReceipt,
   assertSqlSchema,
+  sameComparison,
   insertPublicationRows,
   atomicPublication,
   createPublicationTable,
+  type ColumnComparison,
   type PublicationDb,
   type PublicationNames,
 } from './sql-publication-storage.js';
@@ -86,6 +88,9 @@ export async function createSqlAgenticPublisher(
   // Control tables initialized by this publisher. Preflight and inspection always initialize;
   // claim reuses an earlier initialization. Any failed operation forgets them.
   const initialized = new Set<string>();
+  // How the columns of the probe stage created by the latest preflight compared values, by
+  // target. A no-op checks its target in place only when every target column matches.
+  const stageColumns = new Map<string, ColumnComparison[]>();
   async function operation<T>(
     fn: (db: PublicationDb, runner: SqlRunnerModule) => Promise<T>,
     signal?: AbortSignal
@@ -97,6 +102,7 @@ export async function createSqlAgenticPublisher(
       return await fn(sqlPublicationDb(runner, dialect, signal), runner);
     } catch (error) {
       initialized.clear();
+      stageColumns.clear();
       throw error;
     } finally {
       await runner.close?.();
@@ -161,44 +167,55 @@ export async function createSqlAgenticPublisher(
       const names = publicationNames(context.target, dialect, options.systemSchema);
       await operation(async (db, runner) => {
         await initialize(db, names, true);
-        const exists = await assertSqlSchema(db, names, context, dialect);
-        await catalogCommits(db, names.control);
-        await catalogCommits(db, names.receipts);
-        if (exists) await catalogCommits(db, names.target);
-        // Exercise a multi-table transaction before any assignment starts.
-        await atomicPublication(
-          db,
-          runner,
-          dialect,
-          [
-            `UPDATE ${names.control} SET revision = revision WHERE 1 = 0`,
-            `DELETE FROM ${names.receipts} WHERE 1 = 0`,
-          ],
-          `(SELECT COUNT(*) FROM ${names.control}) = 1`,
-          signal
-        );
-        for (const expectation of context.resolved.model.expect) {
-          if (expectation.kind !== 'regex') continue;
-          const pattern = db.p(1);
-          const predicate =
-            dialect === 'postgres'
-              ? `'probe' ~ ${pattern}`
-              : dialect === 'bigquery'
-                ? `REGEXP_CONTAINS('probe', ${pattern})`
-                : dialect === 'databricks'
-                  ? `'probe' RLIKE ${pattern}`
-                  : `REGEXP_LIKE('probe', ${pattern})`;
-          const probe = await db.query(
-            `SELECT CASE WHEN ${predicate} THEN 1 ELSE 0 END AS matched`,
-            [expectation.pattern]
-          );
-          if (probe.length !== 1 || ![0, 1].includes(countValue(probe[0]?.matched))) {
-            throw new Error('Invalid warehouse regex capability result');
-          }
-        }
-        const stage = names.stage(randomUUID().replaceAll('-', ''), '_p');
+        // Create the probe stage first, so the target's column query also reports how a
+        // stage built in this storage schema compares values.
+        const probe = randomUUID().replaceAll('-', '');
+        const stage = names.stage(probe, '_p');
         await createPublicationTable(db, stage, context.resolved.output_columns, dialect);
         try {
+          const exists = await assertSqlSchema(
+            db,
+            names,
+            context,
+            dialect,
+            names.stageTable(probe, '_p')
+          );
+          stageColumns.delete(names.target);
+          if (exists && exists.probe) stageColumns.set(names.target, exists.probe);
+          await catalogCommits(db, names.control);
+          await catalogCommits(db, names.receipts);
+          if (exists) await catalogCommits(db, names.target);
+          // Exercise a multi-table transaction before any assignment starts.
+          await atomicPublication(
+            db,
+            runner,
+            dialect,
+            [
+              `UPDATE ${names.control} SET revision = revision WHERE 1 = 0`,
+              `DELETE FROM ${names.receipts} WHERE 1 = 0`,
+            ],
+            `(SELECT COUNT(*) FROM ${names.control}) = 1`,
+            signal
+          );
+          for (const expectation of context.resolved.model.expect) {
+            if (expectation.kind !== 'regex') continue;
+            const pattern = db.p(1);
+            const predicate =
+              dialect === 'postgres'
+                ? `'probe' ~ ${pattern}`
+                : dialect === 'bigquery'
+                  ? `REGEXP_CONTAINS('probe', ${pattern})`
+                  : dialect === 'databricks'
+                    ? `'probe' RLIKE ${pattern}`
+                    : `REGEXP_LIKE('probe', ${pattern})`;
+            const matched = await db.query(
+              `SELECT CASE WHEN ${predicate} THEN 1 ELSE 0 END AS matched`,
+              [expectation.pattern]
+            );
+            if (matched.length !== 1 || ![0, 1].includes(countValue(matched[0]?.matched))) {
+              throw new Error('Invalid warehouse regex capability result');
+            }
+          }
           await checks(db, context, 'preflight', stage, true);
         } finally {
           await runner.run(`DROP TABLE ${stage}`);
@@ -293,10 +310,14 @@ export async function createSqlAgenticPublisher(
         }
         const exists = await assertSqlSchema(db, names, context, dialect);
         const stage = names.stage(identity.operation_id);
-        if (exists && exists.stageTypes && !processedKeys.length) {
-          // No processed keys means the published target is the current target. Count and
-          // check it in place instead of copying it. Commit stays fenced by the claimed version.
-          // Checks use the target's own collation, as the published rows do.
+        if (
+          exists &&
+          !processedKeys.length &&
+          sameComparison(exists.columns, stageColumns.get(names.target))
+        ) {
+          // No processed keys means the published target is the current target. Its columns
+          // compare values exactly like this run's probe stage, so count and check it in
+          // place instead of copying it. Commit stays fenced by the claimed version.
           const count = await db.query(`SELECT COUNT(*) AS count FROM ${names.target}`);
           if (countValue(count[0]?.count) > maxRows) {
             throw new Error('Publication replacement exceeds stage row limit');

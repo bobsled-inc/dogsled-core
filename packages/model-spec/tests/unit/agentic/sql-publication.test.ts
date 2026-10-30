@@ -376,8 +376,15 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
       expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
       expect(f.db.receipts()).toHaveLength(1);
     });
-    it('checks an unchanged target in place for an empty-input no-op', async () => {
+    // Databricks does not report column collations in its information schema.
+    const comparesInPlace = dialect !== 'databricks';
+    const staged = (events: readonly string[]) =>
+      events.some((sql) => sql.startsWith('insert into') && sql.includes('where not exists'));
+    async function noOp(setup: (f: Awaited<ReturnType<typeof prepared>>) => void = () => {}) {
       const f = await prepared([], []);
+      setup(f);
+      // The probe stage of this run's preflight records how a stage compares values.
+      await f.publisher.preflight(f.db.context);
       const start = f.db.events.length;
       f.db.runner.query.mockClear();
       const intent = await f.publisher.prepare(
@@ -387,22 +394,57 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
         f.keys,
         f.claim
       );
-      // No stage or processed-key table, and no copy of the existing target.
-      expect(f.db.events.slice(start)).toEqual([]);
-      const queries = f.db.runner.query.mock.calls.map(([sql]) =>
-        sql.replaceAll('"', '').replaceAll('`', '')
+      return { ...f, intent, events: f.db.events.slice(start) };
+    }
+    it(
+      comparesInPlace
+        ? 'checks an unchanged target in place for an empty-input no-op'
+        : 'stages an empty-input no-op because column collations are not reported',
+      async () => {
+        const f = await noOp();
+        expect(staged(f.events)).toBe(!comparesInPlace);
+        if (comparesInPlace) {
+          // No stage or processed-key table, and no copy of the existing target.
+          expect(f.events).toEqual([]);
+          const queries = f.db.runner.query.mock.calls.map(([sql]) =>
+            sql.replaceAll('"', '').replaceAll('`', '')
+          );
+          const target = f.db.names.target.replaceAll('"', '').replaceAll('`', '');
+          expect(queries).toContain(`SELECT COUNT(*) AS count FROM ${target}`);
+          const checks = queries.filter((sql) => sql.startsWith('SELECT violation_count'));
+          expect(checks.length).toBeGreaterThan(0);
+          expect(
+            checks.every((sql) => sql.includes(target) && !sql.includes('_dogsled_pub_'))
+          ).toBe(true);
+        }
+        expect(f.db.manifests()[0]).toMatchObject({ no_op: true, validated: true });
+        await f.publisher.commit(f.intent, f.claim);
+        expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
+        expect(f.db.receipts()).toHaveLength(1);
+      }
+    );
+    it('stages a no-op when a target column has its own collation', async () => {
+      const f = await noOp((f) =>
+        f.db.reportCollations((column) =>
+          column.name === 'assessment' ? 'case_insensitive' : null
+        )
       );
-      const target = f.db.names.target.replaceAll('"', '').replaceAll('`', '');
-      expect(queries).toContain(`SELECT COUNT(*) AS count FROM ${target}`);
-      const checks = queries.filter((sql) => sql.startsWith('SELECT violation_count'));
-      expect(checks.length).toBeGreaterThan(0);
-      expect(checks.every((sql) => sql.includes(target) && !sql.includes('_dogsled_pub_'))).toBe(
-        true
-      );
-      expect(f.db.manifests()[0]).toMatchObject({ no_op: true, validated: true });
-      await f.publisher.commit(intent, f.claim);
+      expect(staged(f.events)).toBe(true);
+      await f.publisher.commit(f.intent, f.claim);
       expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
-      expect(f.db.receipts()).toHaveLength(1);
+    });
+    it('stages a no-op when a new stage would take a schema default collation', async () => {
+      const f = await noOp((f) =>
+        f.db.stageCollations((column) => (column.type === 'string' ? 'en-ci' : null))
+      );
+      expect(staged(f.events)).toBe(true);
+    });
+    it('stages a no-op when this publisher has not observed a probe stage', async () => {
+      const f = await prepared([], []);
+      const fresh = await createSqlAgenticPublisher(configs[dialect]);
+      const start = f.db.events.length;
+      await fresh.prepare(f.db.context, f.identity, f.accepted, f.keys, f.claim);
+      expect(staged(f.db.events.slice(start))).toBe(true);
     });
     it('keeps the row limit and final checks for an empty-input no-op', async () => {
       const f = await prepared([], []);

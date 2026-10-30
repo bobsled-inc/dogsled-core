@@ -33,8 +33,10 @@ export function publicationWarehouse(
     invalidRegex = false,
     schemaMismatch = false,
     catalogEnabled = true;
-  let reportType = (column: AgenticPublicationContext['resolved']['output_columns'][number]) =>
-    publicationType(column.type, dialect);
+  type Column = AgenticPublicationContext['resolved']['output_columns'][number];
+  let reportType = (column: Column) => publicationType(column.type, dialect);
+  let targetCollation = (_column: Column): string | null => null;
+  let stageCollation = (_column: Column): string | null => null;
   const row = (pair_id: string, assessment = 'old'): Row => ({
     pair_id,
     assessment,
@@ -161,12 +163,25 @@ export function publicationWarehouse(
       return tables.has(target) ? [{ table_type: 'BASE TABLE' }] : [];
     }
     if (sql.includes('information_schema.columns')) {
-      if (schemaMismatch) return [];
-      return context.resolved.output_columns.map((column) => ({
-        column_name: dialect === 'snowflake' ? column.name.toUpperCase() : column.name,
-        data_type: reportType(column),
-        is_nullable: column.nullable ? 'YES' : 'NO',
-      }));
+      // Parameters name the target and optionally a probe table: [schema, table, ...].
+      const rows: Row[] = [];
+      for (let index = 0; index < params.length; index += 2) {
+        const [schema, table] = [String(params[index]), String(params[index + 1])];
+        const name = normalize(`${schema}.${table}`);
+        const isTarget = name === target;
+        if (!tables.has(name) || (isTarget && schemaMismatch)) continue;
+        for (const column of context.resolved.output_columns) {
+          rows.push({
+            table_schema: schema,
+            table_name: table,
+            column_name: dialect === 'snowflake' ? column.name.toUpperCase() : column.name,
+            data_type: isTarget ? reportType(column) : publicationType(column.type, dialect),
+            is_nullable: column.nullable ? 'YES' : 'NO',
+            collation_name: isTarget ? targetCollation(column) : stageCollation(column),
+          });
+        }
+      }
+      return rows;
     }
     if (sql.startsWith('describe detail')) {
       return [{ tableFeatures: catalogEnabled ? ['catalogManaged'] : [] }];
@@ -249,6 +264,14 @@ export function publicationWarehouse(
     /** Reports another accepted spelling for some existing target columns. */
     reportTypes: (report: typeof reportType) => {
       reportType = report;
+    },
+    /** Reports collations for existing target columns. */
+    reportCollations: (report: typeof targetCollation) => {
+      targetCollation = report;
+    },
+    /** Applies a default collation to columns of stages created later, as a schema can. */
+    stageCollations: (report: typeof stageCollation) => {
+      stageCollation = report;
     },
     disableCatalog: () => {
       catalogEnabled = false;

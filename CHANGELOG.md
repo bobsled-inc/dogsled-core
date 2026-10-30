@@ -18,7 +18,7 @@ Warehouse agentic checkpoints batch payload chunks into bounded, parameterized I
 
 Agentic checkpoints spend far less CPU per transition. Validation shares row field schemas and reuses already parsed assignments, and a warehouse checkpoint session applies commands to the snapshot it committed instead of reading the payload back. In a synthetic 300-assignment plan, executor time fell by about 90% at no simulated latency. Stored checkpoints, receipts, ownership fencing and recovery are unchanged.
 
-Agentic publications with no processed keys check an unchanged target in place instead of copying it into a staging table, and the claim reuses the publication tables preflight initialized. Empty incremental runs make fewer warehouse requests. Schema checks, row limits, final checks, fenced commits and receipts are unchanged.
+Agentic publications with no processed keys check an unchanged target in place instead of copying it into a staging table, when its columns compare values exactly like a new stage, and the claim reuses the publication tables preflight initialized. Empty incremental runs make fewer warehouse requests. Schema checks, row limits, final checks, fenced commits and receipts are unchanged.
 
 Add the TV Night guided tutorial. Build an API connection, ETL pipeline, source and derived semantic models, cross-source queries, and agentic transformations with an agent. A local HTML page shows chapter progress, files, model lineage, and saved results. Agentic assessments select passage IDs so the executor attaches exact evidence, with a one-show check before the remaining batch and targeted retries.
 
