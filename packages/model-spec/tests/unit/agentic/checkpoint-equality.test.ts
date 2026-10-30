@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { jsonEqual } from '../../../src/agentic/json-equal.js';
 import { digestAgenticState } from '../../../src/agentic/state.js';
 import {
@@ -8,9 +9,11 @@ import {
 } from '../../../src/agentic/assignment.js';
 import {
   AGENTIC_MAX_BYTES,
+  AgenticJudgmentSchema,
   createAgenticRowSchema,
   isBoundedAgenticJson,
 } from '../../../src/agentic/rows.js';
+import { AgenticColumnsSchema, type AgenticColumn } from '../../../src/agentic/model.js';
 import { assignment } from './fixtures.js';
 
 const result = (run: () => unknown) => {
@@ -53,6 +56,7 @@ describe('canonical JSON equality', () => {
     [{ x: shared }, { x: { rows: [{ id: 'a', values: [1, 2, 3] }] } }],
     [[], {}],
     [Object.create(null), {}],
+    [{ a: 1, b: 2 }, Object.defineProperty({ a: 1, c: 3 }, 'b', { value: 2, enumerable: false })],
   ];
   it.each(pairs.map((pair, index) => [index, ...pair]))(
     'agrees with digest comparison (case %s)',
@@ -118,7 +122,52 @@ describe('attempt outcome validation for a parsed assignment', () => {
   });
 });
 
+/** Row schema construction before shared fields, kept to compare exported JSON Schema. */
+function previousRowSchema(columns: readonly AgenticColumn[], findings: boolean) {
+  const scalar: Record<AgenticColumn['type'], z.ZodType> = {
+    string: z.string(),
+    integer: z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
+    number: z.number(),
+    boolean: z.boolean(),
+    timestamp: z.iso.datetime({ offset: true }),
+    date: z.iso.date(),
+    array: z.array(z.json()),
+    object: z.record(z.string(), z.json()),
+  };
+  const metadata: Record<string, z.ZodType> = AgenticJudgmentSchema.shape;
+  const shape: Record<string, z.ZodType> = {};
+  for (const column of AgenticColumnsSchema.parse(columns)) {
+    const schema = Object.hasOwn(metadata, column.name)
+      ? metadata[column.name]!
+      : scalar[column.type];
+    shape[column.name] = column.nullable ? schema.nullable() : schema;
+  }
+  if (findings) Object.assign(shape, AgenticJudgmentSchema.shape);
+  return z
+    .unknown()
+    .refine((value): boolean => isBoundedAgenticJson(value), {
+      message: 'Expected bounded JSON data',
+      abort: true,
+    })
+    .pipe(z.object(shape).strict());
+}
+
 describe('shared row field schemas', () => {
+  it('exports the same JSON Schema as rows built with their own fields', () => {
+    const columns: AgenticColumn[] = [
+      { name: 'id', type: 'string', nullable: false },
+      { name: 'tags', type: 'array', nullable: false },
+      { name: 'extra', type: 'array', nullable: true },
+      { name: 'attributes', type: 'object', nullable: true },
+      { name: 'score', type: 'number', nullable: true },
+      { name: '_dogsled_reason', type: 'object', nullable: true },
+    ];
+    for (const findings of [false, true]) {
+      expect(JSON.stringify(createAgenticRowSchema(columns, findings).toJSONSchema())).toBe(
+        JSON.stringify(previousRowSchema(columns, findings).toJSONSchema())
+      );
+    }
+  });
   const columns = [
     { name: 'id', type: 'string' as const, nullable: false },
     { name: 'count', type: 'integer' as const, nullable: true },

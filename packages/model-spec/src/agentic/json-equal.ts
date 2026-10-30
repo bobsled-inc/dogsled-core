@@ -31,7 +31,10 @@ function sameJson(left: unknown, right: unknown): boolean {
   const other = right as Record<string, unknown>;
   return (
     own.length === fields(right).length &&
-    own.every(([key, item]) => Object.hasOwn(other, key) && sameJson(item, other[key]))
+    own.every(
+      ([key, item]) =>
+        Object.prototype.propertyIsEnumerable.call(other, key) && sameJson(item, other[key])
+    )
   );
 }
 
