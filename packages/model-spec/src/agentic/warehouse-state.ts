@@ -203,7 +203,8 @@ export function createWarehouseCheckpointStore(
         );
         timer.unref();
         let pointer = '';
-        const current = async (): Promise<Confirmed | null> => {
+        // Commands may reuse this session's committed snapshot; reads always verify the payload.
+        const current = async (reuse: boolean): Promise<Confirmed | null> => {
           guard();
           const rows = await db.query(
             `SELECT SUBSTR(${q('snapshot')}, 1, 102) AS ${q('snapshot')} FROM ${control} WHERE ${predicate} LIMIT 2`
@@ -218,9 +219,10 @@ export function createWarehouseCheckpointStore(
           if (typeof id !== 'string' || !/^[a-f0-9-]{36}_[a-f0-9]{64}$/.test(id)) {
             throw new AgenticStateError('corrupt');
           }
-          // Every save writes a new random ID. Another coordinator can change the pointer only
-          // after this session's predicate stops matching, so an unchanged ID names the same rows.
-          if (confirmed?.id === id) {
+          // Every save writes a new random ID, and another coordinator can change the pointer
+          // only after this session's predicate stops matching. The fenced pointer commit of the
+          // next save replaces these rows.
+          if (reuse && confirmed?.id === id) {
             pointer = id;
             return confirmed;
           }
@@ -245,9 +247,15 @@ export function createWarehouseCheckpointStore(
           if (bytes.byteLength > maxBytes || bytes.toString('base64') !== encoded) {
             throw new AgenticStateError('corrupt');
           }
+          const text = bytes.toString('utf8');
+          // Bytes identical to the JSON this session committed need no second validation.
+          if (confirmed?.id === id && text === confirmed.json) {
+            pointer = id;
+            return confirmed;
+          }
           let snapshot: AgenticRunSnapshot;
           try {
-            snapshot = AgenticRunSnapshotSchema.parse(JSON.parse(bytes.toString('utf8')));
+            snapshot = AgenticRunSnapshotSchema.parse(JSON.parse(text));
           } catch {
             throw new AgenticStateError('corrupt');
           }
@@ -263,7 +271,7 @@ export function createWarehouseCheckpointStore(
         };
         // Each caller receives its own copy of the confirmed state.
         const read = async (): Promise<AgenticRunSnapshot | null> => {
-          const state = await current();
+          const state = await current(false);
           return state && JSON.parse(state.json);
         };
         const save = async (
@@ -347,13 +355,13 @@ export function createWarehouseCheckpointStore(
           read: () => serial(read),
           create: (snapshot) =>
             serial(async () => {
-              const previous = await current();
+              const previous = await current(false);
               if (previous) throw new AgenticStateError('conflict');
               return save(snapshot, null);
             }),
           checkpoint: (command) =>
             serial(async () => {
-              const previous = await current();
+              const previous = await current(true);
               if (!previous) throw new AgenticStateError('missing');
               // Transition a copy of the validated state, then validate only the result.
               const next: AgenticRunSnapshot = JSON.parse(previous.json);
