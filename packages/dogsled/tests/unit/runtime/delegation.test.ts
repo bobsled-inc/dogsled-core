@@ -253,6 +253,24 @@ describe('maybeRunDelegatedCommand', () => {
       expect(result).toEqual({ handled: true, exitCode: 0 });
     });
 
+    it('forwards stop signals to the model run child until it exits', async () => {
+      const child = createMockChild();
+      Object.assign(child, { exitCode: null, signalCode: null });
+      const deps = {
+        metaUrl: 'file:///dogsled/tests/mock.ts',
+        spawn: vi.fn().mockReturnValue(child) as Mock,
+        resolveDogsledModelRunInvocation: vi.fn(() => ({ command: 'model-run', args: [] })),
+      };
+      const before = process.listenerCount('SIGTERM');
+      const pending = maybeRunDelegatedCommand(['model', 'run'], deps);
+      await new Promise((resolve) => setImmediate(resolve));
+      process.emit('SIGTERM');
+      expect(child.kill).toHaveBeenCalledWith('SIGTERM');
+      child.emit('close', 1);
+      expect(await pending).toEqual({ handled: true, exitCode: 1 });
+      expect(process.listenerCount('SIGTERM')).toBe(before);
+    });
+
     it('delegates model run to the Dogsled-owned child entrypoint', async () => {
       const deps = {
         ...makeDeps(0),

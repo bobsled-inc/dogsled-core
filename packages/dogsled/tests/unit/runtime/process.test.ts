@@ -86,3 +86,27 @@ describe('waitForProcess', () => {
     await expect(promise).rejects.toThrow('spawn ENOENT');
   });
 });
+
+describe('forwardSignals', () => {
+  it('passes a stop signal to the child so it can exit through its own handler', async () => {
+    const { spawn } = await import('node:child_process');
+    const { forwardSignals, waitForProcess } = await import('../../../src/runtime/process.js');
+    const child = spawn(
+      process.execPath,
+      [
+        '-e',
+        "process.on('SIGTERM', () => { process.exitCode = 7; process.stdout.write('stopping'); clearInterval(t); }); const t = setInterval(() => {}, 1000); process.stdout.write('ready');",
+      ],
+      { stdio: ['ignore', 'pipe', 'inherit'] }
+    );
+    await new Promise<void>((resolve) => child.stdout!.once('data', () => resolve()));
+    const before = process.listenerCount('SIGTERM');
+    const stop = forwardSignals(child);
+    expect(process.listenerCount('SIGTERM')).toBe(before + 1);
+    process.emit('SIGTERM');
+    const result = await waitForProcess(child, 'test child');
+    stop();
+    expect(result.exitCode).toBe(7);
+    expect(process.listenerCount('SIGTERM')).toBe(before);
+  });
+});
