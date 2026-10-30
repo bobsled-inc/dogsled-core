@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { loadState, updateLocalState } from '../compiler/state.js';
 import {
   acquireFileOwnership,
+  FileOwnershipError,
   ensureStateDirectory,
   readBoundedFile,
   writeDurableFile,
@@ -42,8 +43,18 @@ export function createLocalAgenticStateStore(project: string): AgenticStateStore
       try {
         directory = ensureStateDirectory(project);
         ownership = acquireFileOwnership(path.join(directory, `agentic-${hash}.lock`));
-      } catch {
-        throw new AgenticStateError('unavailable');
+      } catch (error) {
+        if (error instanceof AgenticStateError) throw error;
+        if (error instanceof FileOwnershipError) throw lockError(error, key.id);
+        throw new AgenticStateError(
+          'unavailable',
+          {
+            reason: 'state_directory',
+            message: 'Cannot open or lock the local agentic state directory (.dogsled/model-spec).',
+            hint: 'Check that the directory is writable and that no other run holds the lock.',
+          },
+          { cause: error }
+        );
       }
       let closed = false;
       const guard = (): void => {
@@ -61,8 +72,15 @@ export function createLocalAgenticStateStore(project: string): AgenticStateStore
           // Confirm the directory before treating any reference as a durable receipt.
           try {
             syncDirectory(directory);
-          } catch {
-            throw new AgenticStateError('unavailable');
+          } catch (error) {
+            throw new AgenticStateError(
+              'unavailable',
+              {
+                reason: 'state_sync',
+                message: 'Cannot sync the local agentic state directory to disk.',
+              },
+              { cause: error }
+            );
           }
           const state = loadState(project);
           const index = IndexSchema.parse(state.agentic ?? { version: 2, runs: {} });
@@ -114,7 +132,11 @@ export function createLocalAgenticStateStore(project: string): AgenticStateStore
           });
         } catch (error) {
           if (error instanceof AgenticStateError) throw error;
-          throw new AgenticStateError('unavailable');
+          throw new AgenticStateError(
+            'unavailable',
+            { reason: 'state_write', message: 'Cannot save the local agentic checkpoint.' },
+            { cause: error }
+          );
         }
         // A crash before this cleanup leaves an unreferenced snapshot. Never remove the current one.
         if (previous && previous !== ref) {
@@ -158,6 +180,37 @@ export function createLocalAgenticStateStore(project: string): AgenticStateStore
   };
 }
 
+/** A held lock is a busy run, not a disk problem; say which. */
+function lockError(error: FileOwnershipError, runId: string): AgenticStateError {
+  if (error.reason === 'busy') {
+    return new AgenticStateError('conflict', {
+      reason: 'run_in_progress',
+      message: `Run "${runId}" is still active in another Dogsled process${error.ownerPid ? ` (pid ${error.ownerPid})` : ''}.`,
+      hint: 'Wait for that process to finish or stop it, then resume.',
+    });
+  }
+  if (error.reason === 'recovery') {
+    return new AgenticStateError('unavailable', {
+      reason: 'lock_recovery_pending',
+      message: `A crash interrupted lock recovery for run "${runId}".`,
+      hint: 'Confirm that no Dogsled process is using this project, then delete the agentic-*.lock.recovery file in .dogsled/model-spec.',
+    });
+  }
+  return new AgenticStateError('unavailable', {
+    reason: 'lock_foreign_host',
+    message: `Run "${runId}" is locked by a Dogsled process on another host or in an unknown format.`,
+    hint: 'Local checkpoints support one host. Use a warehouse checkpoint_store for multiple hosts.',
+  });
+}
+
+function stateDirectoryFull(amount: string): AgenticStateError {
+  return new AgenticStateError('limit', {
+    reason: 'state_directory_full',
+    message: `The local agentic state directory (.dogsled/model-spec) holds ${amount}.`,
+    hint: 'Stop all runs, back up the directory, then remove snapshot files that run-state.json no longer references.',
+  });
+}
+
 /** Bound enumeration and disk use even after repeated interrupted writes. */
 function assertArtifactCapacity(directory: string, incoming: number): void {
   const dir = fs.opendirSync(directory);
@@ -165,9 +218,9 @@ function assertArtifactCapacity(directory: string, incoming: number): void {
   let bytes = incoming + 1024 * 1024; // Include room for the shared index replacement.
   try {
     for (let entry = dir.readSync(); entry; entry = dir.readSync()) {
-      if (++entries > 2000) throw new AgenticStateError('limit');
+      if (++entries > 2000) throw stateDirectoryFull('more than 2,000 files');
       bytes += fs.lstatSync(path.join(directory, entry.name)).size;
-      if (bytes > 256 * 1024 * 1024) throw new AgenticStateError('limit');
+      if (bytes > 256 * 1024 * 1024) throw stateDirectoryFull('more than 256 MiB');
     }
   } finally {
     dir.closeSync();

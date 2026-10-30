@@ -27,6 +27,7 @@ export {
 } from './model-families.js';
 export type { ModelFamilyId } from './model-families.js';
 export { resolveModelConnection } from './resolve.js';
+export { knownModelCostUsd } from './pricing.js';
 export type {
   BudgetLedger,
   BudgetUsage,

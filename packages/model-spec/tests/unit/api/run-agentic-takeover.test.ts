@@ -44,7 +44,7 @@ it('starts fresh after failure when the caller omits run IDs', async () => {
     );
     const f = runFixture(1);
     f.model.sources.pairs = { ref: 'lake.pairs', incremental: { cursor_field: 'updated_at' } };
-    f.model.limits.tokens = 150;
+    f.model.limits.tokens = 100_000;
     f.host.inputs = { 'lake.pairs': [...columns] };
     f.host.prepare = async () => [{ pair_id: 'one', updated_at: 1 }];
     f.host.executeAgent = vi.fn(f.host.executeAgent).mockRejectedValueOnce(new Error('offline'));
@@ -80,7 +80,9 @@ it('starts fresh after failure when the caller omits run IDs', async () => {
     expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
     const runs = [...stateStore.runs.values()];
     expect(new Set(runs.map((run) => run.key.id)).size).toBe(3);
-    expect(runs[0]).toMatchObject({ superseded: true, charged: 100 });
+    // The superseded run keeps the estimate charged for its interrupted attempt.
+    expect(runs[0]).toMatchObject({ superseded: true });
+    expect(runs[0]!.charged).toBeGreaterThan(0);
     expect(runs[1]).toMatchObject({ publication: 'confirmed', cursor_values: { pairs: 1 } });
   } finally {
     rmSync(root, { recursive: true, force: true });

@@ -22,6 +22,7 @@ function setup(field: 'context_sources' | 'sources' = 'context_sources') {
     projectDirectory: '/not-used',
     stateStore,
     run: { id: 'loop', mode: 'start' as const },
+    accounting: 'reservation' as const,
   };
   return {
     ...f,
@@ -76,6 +77,7 @@ describe('agent loop execution', { timeout: 60_000 }, () => {
       await executeAgenticRun(f.host, f.context(), {
         ...f.options,
         run: { id: 'loop', mode: 'resume' },
+        accounting: 'reservation' as const,
       });
       expect(f.host.executeAgent).toHaveBeenCalledTimes(1);
     }
@@ -244,6 +246,7 @@ it('cancels an active source read and restarts the whole unfinished loop on resu
       await executeAgenticRun(f.host, f.context(), {
         ...f.options,
         run: { id: 'loop', mode: 'resume' },
+        accounting: 'reservation' as const,
       })
     ).chargedTokens
   ).toBe(110);

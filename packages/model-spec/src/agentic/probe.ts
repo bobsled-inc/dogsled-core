@@ -1,3 +1,4 @@
+import type { AgenticPriceUsage } from './spend.js';
 import { deadlineTime } from './limits.js';
 /** Bounded, serial dispatch probe. This is not a durable publication adapter. */
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
@@ -46,6 +47,11 @@ export interface ExperimentalAgenticProbe {
   concurrency?: number;
   /** Minimum delay between assignment starts. Defaults to 0; range 0–60000 ms. */
   minDispatchIntervalMs?: number;
+  /**
+   * Prices usage for spend tracking and `limits.max_cost_usd`. Without it, spend is
+   * tracked in tokens only and a cost cap fails before any model call.
+   */
+  priceUsage?: AgenticPriceUsage;
   /** Approved tools this executor provides by default. Omitted means no extra tools. */
   supportedTools?: readonly string[];
   executeAgent: ExecuteAgent;

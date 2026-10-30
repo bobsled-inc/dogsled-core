@@ -68,6 +68,7 @@ describe.each(checkpointIntegrations)(
         projectDirectory: '/unused',
         stateStore: createWarehouseCheckpointStore(integration, { schema: 'checkpoints' }),
         run: { id: 'retry', mode: 'start' as const },
+        accounting: 'reservation' as const,
       };
       await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow();
       vi.setSystemTime(Date.now() + 2000);
@@ -76,6 +77,7 @@ describe.each(checkpointIntegrations)(
         ...options,
         stateStore: createWarehouseCheckpointStore(integration, { schema: 'checkpoints' }),
         run: { id: 'retry', mode: 'resume' },
+        accounting: 'reservation' as const,
       });
       expect(result.deadlineAt).toBe(unlimited ? null : new Date(restartedAt + 1000).toISOString());
       expect(result.chargedTokens).toBe(unlimited ? 4 : 104);
@@ -190,6 +192,7 @@ describe.each(checkpointIntegrations)(
           projectDirectory: '/unused-checkpoint-test',
           stateStore: createWarehouseCheckpointStore(integration, { schema: 'checkpoints' }),
           run: { id: 'cancelled', mode: 'start' },
+          accounting: 'reservation' as const,
         })
       ).rejects.toMatchObject({ cancelled: true });
       expect(close).toHaveBeenCalledOnce();

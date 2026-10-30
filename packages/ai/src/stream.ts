@@ -1,6 +1,11 @@
 import { streamText } from 'ai';
 
-import { finalizeBudgetReservation, isBudgetError, reserveBudget } from './budget.js';
+import {
+  finalizeBudgetReservation,
+  isBudgetError,
+  reserveBudget,
+  settleFailedBudgetReservation,
+} from './budget.js';
 import {
   estimateCostUsd,
   estimatePreflightUsage,
@@ -27,6 +32,7 @@ export async function* generateStream(
   connection: ModelConnection,
   opts: GenerateStreamOptions
 ): AsyncIterable<DeltaEvent> {
+  let reservation: Awaited<ReturnType<typeof reserveBudget>> | undefined;
   try {
     const providerModels = opts.modelOverride
       ? { languageModel: opts.modelOverride }
@@ -47,7 +53,7 @@ export async function* generateStream(
         requireKnownPricing: hasCostBudget(connection, opts.platform, opts.costBudgetUsd),
       }
     );
-    const reservation = await reserveBudget({
+    reservation = await reserveBudget({
       connection,
       platform: opts.platform,
       projectKey: opts.projectKey,
@@ -65,8 +71,10 @@ export async function* generateStream(
       yield { type: 'delta', text };
     }
     const usage = extractTokenUsage(await result.usage);
+    const settled = reservation;
+    reservation = undefined;
     await finalizeBudgetReservation(
-      reservation,
+      settled,
       estimateCostUsd(connection, usage, { requireKnownPricing: false })
     );
   } catch (error) {
@@ -75,5 +83,8 @@ export async function* generateStream(
       error: isBudgetError(error) ? 'budget_exceeded' : 'provider_error',
       message: error instanceof Error ? error.message : String(error),
     };
+  } finally {
+    // Also covers a consumer that stops iterating early; finished streams cleared it.
+    await settleFailedBudgetReservation(reservation);
   }
 }

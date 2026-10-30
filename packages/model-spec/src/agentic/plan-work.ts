@@ -245,7 +245,12 @@ export function buildAgenticStepAssignments(
       processed_keys: group.keys,
       output: { columns: step.columns, grain, replacement_keys: keys },
       limits: {
-        ...assignmentLimits(definition.resolved.model, step, definition.tokensPerAssignment),
+        ...assignmentLimits(
+          definition.resolved.model,
+          step,
+          definition.tokensPerAssignment,
+          run.accounting ?? 'reservation'
+        ),
         started_at: run.started_at,
         deadline_at: run.deadline_at,
       },

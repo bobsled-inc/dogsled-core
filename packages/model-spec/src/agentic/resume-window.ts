@@ -5,7 +5,13 @@ import type { AgenticCheckpointCommand, AgenticRunSnapshot, AgenticStateSession 
 export async function beginAgenticExecution(
   session: AgenticStateSession,
   snapshot: AgenticRunSnapshot,
-  execution: { id: string; startedAt: string; retryFailed?: boolean }
+  execution: {
+    id: string;
+    startedAt: string;
+    retryFailed?: boolean;
+    /** Spend-cap runs only: the caps this invocation applies. */
+    caps?: { tokens: number | null; microusd: number | null };
+  }
 ): Promise<AgenticRunSnapshot> {
   if (snapshot.execution_windows?.some((window) => window.operation_id === execution.id)) {
     return snapshot;
@@ -16,6 +22,9 @@ export async function beginAgenticExecution(
     operation_id: execution.id,
     expected_revision: snapshot.revision,
     started_at: execution.startedAt,
+    ...(execution.caps
+      ? { token_limit: execution.caps.tokens, cost_limit_microusd: execution.caps.microusd }
+      : {}),
   };
   const requestedAt = Date.now();
   try {

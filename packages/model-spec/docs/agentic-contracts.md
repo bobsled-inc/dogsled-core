@@ -196,30 +196,68 @@ no-op in the runner. That is distinct from one completed assignment with zero ro
 
 ## Usage and cancellation rules
 
-Reserve token capacity before each provider call. A reservation belongs to the
-attempt. The runner saves its full assignment reservation before dispatch.
-Internal call receipts spend from that allowance in memory. A crash retains the
-full unfinished reservation; accepted completion saves the final charge.
-A direct-call attempt makes one
-call; hidden SDK retries must be disabled. Agent loops reserve for every internal
-call. Outcomes report totals across all calls within that attempt.
+Executors report measured usage for every provider call. A direct-call attempt
+makes one call; hidden SDK retries must be disabled. Outcomes report totals across
+all calls within that attempt.
 
 Measured usage contains input, output and total tokens. Total equals input plus
-output, including any provider reasoning tokens in output. Unknown usage is explicit,
-with an unavailable or interrupted reason. `agenticChargeableTokens` charges the
-full finite reservation for unknown usage. With no reservation, unknown usage
-remains unknown; the charged total is a lower bound. It never clamps a measured overrun. An overrun must stop further dispatch and fail the run
-if the shared limit is exhausted. Outcome totals must not be charged a second time
-in addition to already settled calls.
+output, including any provider reasoning tokens in output. Unknown usage is
+explicit, with an unavailable or interrupted reason.
+
+New runs use spend-cap accounting:
+
+- When an attempt starts, Dogsled saves a charge equal to its input estimate (about
+  four bytes per token). An interrupted attempt keeps that charge.
+- When it finishes, measured usage replaces the estimate. Unknown usage keeps the
+  estimate. Hosts that supply `priceUsage` also get a charge in US dollars.
+- `budget.reserve` and `budget.settle` remain for compatibility. `reserve` always
+  succeeds for spend-cap runs and `settle` records usage. Executors may keep calling
+  them; an executor that reserves less than it uses is no longer stopped.
+- Every valid answer that finishes is accepted, even when it pushed the run over
+  its cap or finished after the deadline. Caps and deadlines stop new dispatch only.
+  Answers that finished before another assignment failed for good are saved too.
+- A cost cap cannot be applied to a run saved with the older accounting; Dogsled
+  refuses `maxCostUsd` for such a run instead of ignoring it.
+
+Runs saved before this change have no `accounting` marker. They keep the original
+rules on resume: a full token reservation is charged before each call, unknown
+usage charges the whole reservation, and a measured overrun stops the run.
+`AgenticRunOptions.accounting: 'reservation'` still creates such runs; it is
+deprecated.
 
 Start the elapsed clock before preparing the run and persist the deadline.
 An explicit retry opens a new execution window with the model's configured timeout.
 Assignment retries and automatic lease recovery share that window and cannot extend
-it. The original token budget and assignment attempt limits remain in force. The later coordinator must stop dispatch at cancellation or exhaustion,
-forward the signal to active provider/source operations, and await settlement.
-A promise timeout alone is not cancellation. After a required failure exhausts
-retries, cancel remaining work and await settlement before reporting failure.
-The bounded runner persists retry counts and the original limits in execution state.
+it. The coordinator stops dispatch at cancellation, forwards the signal to active
+provider/source operations, and awaits settlement. A promise timeout alone is not
+cancellation. After a required failure exhausts retries, it cancels remaining work
+and awaits settlement before reporting failure.
+
+## Errors
+
+Every agentic failure message is safe to print and save. Provider text, row data
+and credentials never appear in it.
+
+| Error                    | Raised when                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| `AgenticStateError`      | Run state, limits, deadlines, storage. Has `code`, and `reason` and `hint` when known |
+| `AgenticAssignmentError` | An assignment failed for good. Has the step, shard, attempts and executor error       |
+| `AgenticHostError`       | A host callback failed: preparation, executor or source access                        |
+
+State error messages start with `Agentic state <code>` and, when known, the
+reason, for example `Agentic state limit (spend_cap_reached): ...`. Reasons include
+`spend_cap_reached`, `estimate_exceeds_cap`, `pricing_unknown`, `deadline_passed`,
+`definition_changed`, `run_not_found`, `invalid_checkpoint`, `invalid_option`,
+`snapshot_too_large`, `state_directory_full` and `usage_overflow`.
+
+An executor result that fails validation is saved as a retryable failed attempt
+with code `invalid_executor_output`; it is never accepted. If the assignment then
+fails for good, the message lists the invalid fields, by name only.
+
+`formatAgenticError(error)` renders an error and its safe causes. A cause that is
+not a Dogsled error is shown only by its type, a system code such as `ENOSPC`, and
+a numeric HTTP status, for example `caused by: APICallError (status 429)`. The CLI
+and `runProject` results use it.
 
 ## Reserved metadata
 
@@ -258,48 +296,34 @@ For one-row choice classification with TypeSafe, see [Jev classification](./jev-
 
 ## Optional execution limits
 
-Set model limits as defaults. A step can override the three per-assignment limits:
+Set spend caps and a timeout at model level:
 
 ```yaml
 limits:
+  max_cost_usd: 25
   tokens: 3000000
   timeout_seconds: 3600
-  tokens_per_assignment: 256000
-  tool_calls_per_assignment: 16
-  model_calls_per_assignment: 32
-plan:
-  steps:
-    - id: research
-      # Other step fields omitted here.
-      limits:
-        tokens_per_assignment: null
-        tool_calls_per_assignment: 4
 ```
 
-An omitted model limit is unlimited. An omitted step field inherits the model
-value. A step value of `null` disables that inherited per-assignment limit.
-The total token budget and execution timeout belong to the model; steps cannot
-turn them off. Each assignment attempt gets fresh call limits. Token use from
-all attempts counts toward the model total.
+All fields are optional; omission or `null` means no limit. Before each assignment
+starts, the coordinator compares spend so far with the caps. At a cap it stops
+dispatch, lets running assignments finish, saves their answers and fails with
+`spend_cap_reached`. Raise the cap and resume to continue; caps are not part of the
+saved definition. `AgenticRunOptions.maxCostUsd` overrides `max_cost_usd` for one
+invocation, and the CLI exposes it as `--agent-max-cost`.
 
-Omit the entire `limits` block to disable all these limits. Cancellation, source
-permissions, output validation, retry counts, and storage size bounds still apply.
-Providers and hosting platforms can impose their own limits.
+`max_cost_usd` needs `AgenticHost.priceUsage` and a known price for every profile
+in the plan, or the run fails with `pricing_unknown` before any call. Before the
+first call of a run, the coordinator refuses a first step whose input estimate
+alone is above a cap (`estimate_exceeds_cap`).
 
-The legacy library `tokensPerAssignment` option remains an explicit fallback
-when neither YAML level supplies a value. The CLI no longer supplies a default
-of 8192. Prefer YAML for new projects. Existing numeric YAML limits keep their
-meaning. Changing limits changes checkpoint identity; start a new run.
+`tokens_per_assignment`, `tool_calls_per_assignment` and
+`model_calls_per_assignment`, at model or step level, and the legacy
+`tokensPerAssignment` host option are deprecated and ignored by new runs.
+Executors receive `null` for the assignment token limit and no call limits; they
+must bound their own loops. The reference loop executor stops after 16 turns.
 
-When only a model token budget is set, one assignment reserves the remaining
-budget. Other assignments wait for it to settle. Configure a per-assignment
-allowance to share a finite budget across concurrent work. Executors receive
-`null` for unlimited tokens or deadlines, and optional `tool_calls` and
-`model_calls`. Executors must enforce call limits across all their internal calls.
-A direct `llm_call` still means one model call.
-
-Usage is recorded even without a cap. Unknown usage remains marked `unknown`.
-With a finite reservation, unknown usage charges that reservation. Without one,
-no amount can be estimated: the charged total includes only known charges and
-is not proof of zero cost. JSON checkpoints use `null`, never numeric infinity.
-The same checkpoint contract applies to local files and all warehouse stores.
+Cancellation, source permissions, output validation, retry counts, and storage
+size bounds always apply. Providers and hosting platforms can impose their own
+limits. JSON checkpoints use `null`, never numeric infinity. The same checkpoint
+contract applies to local files and all warehouse stores.

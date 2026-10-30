@@ -18,6 +18,7 @@ function setup(count = 5, concurrency = 3) {
     projectDirectory: '/not-used',
     stateStore,
     run: { id: 'concurrent', mode: 'start' as const },
+    accounting: 'reservation' as const,
   };
   const state = () => [...stateStore.runs.values()][0]!;
   return {
@@ -171,6 +172,7 @@ describe('concurrent agentic assignments', { timeout: 60_000 }, () => {
     const recovered = await executeAgenticRun(f.host, f.context(), {
       ...f.options,
       run: { id: 'concurrent', mode: 'resume' },
+      accounting: 'reservation' as const,
     });
     expect(recovered.chargedTokens).toBe(310);
     expect(f.host.executeAgent).toHaveBeenCalledTimes(5);
@@ -207,9 +209,7 @@ describe('concurrent agentic assignments', { timeout: 60_000 }, () => {
         return result;
       };
       const run = f.run();
-      const rejected = expect(run).rejects.toThrow(
-        retryable ? 'limit' : 'Agentic assignment failed'
-      );
+      const rejected = expect(run).rejects.toThrow(/assignment \d+ failed/);
       await Promise.all(entered.map((gate) => gate.promise));
       expect(requests).toHaveLength(2);
       gate.resolve();
@@ -222,8 +222,9 @@ describe('concurrent agentic assignments', { timeout: 60_000 }, () => {
         executeAgenticRun(f.host, f.context(), {
           ...f.options,
           run: { id: 'concurrent', mode: 'resume' },
+          accounting: 'reservation' as const,
         })
-      ).rejects.toThrow(retryable ? 'limit' : 'Agentic assignment failed');
+      ).rejects.toThrow(/assignment \d+ failed/);
       expect(f.host.executeAgent).not.toHaveBeenCalled();
     }
   );
@@ -260,6 +261,7 @@ describe('concurrent agentic assignments', { timeout: 60_000 }, () => {
       executeAgenticRun(f.host, f.context(), {
         ...f.options,
         run: { id: 'concurrent', mode: 'resume' },
+        accounting: 'reservation' as const,
       })
     ).rejects.toThrow('limit');
     expect(f.host.executeAgent).not.toHaveBeenCalled();
@@ -279,6 +281,7 @@ describe('concurrent agentic assignments', { timeout: 60_000 }, () => {
       executeAgenticRun(f.host, f.context(), {
         ...f.options,
         run: { id: 'concurrent', mode: 'resume' },
+        accounting: 'reservation' as const,
       })
     ).resolves.toMatchObject({ status: 'execution_complete' });
     expect(f.host.executeAgent).toHaveBeenCalledTimes(2);

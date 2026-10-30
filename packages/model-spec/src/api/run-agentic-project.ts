@@ -1,5 +1,6 @@
 import { withHostModelDeclarations } from '../agentic/host-declarations.js';
 import { validateAgenticTools } from '../agentic/tool-access.js';
+import { deprecatedAssignmentLimitFields } from '../agentic/limits.js';
 import { validatePublicationChecks } from '../agentic/duckdb-checks.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -12,7 +13,7 @@ import {
 import { buildSecretResolver } from '../integrations.js';
 import { createWarehouseCheckpointStore } from '../agentic/warehouse-state.js';
 import { createSqlAgenticPublisher } from '../agentic/sql-publisher.js';
-import { executeAgenticRun, resolveAgenticModel } from '../agentic/index.js';
+import { executeAgenticRun, formatAgenticError, resolveAgenticModel } from '../agentic/index.js';
 import { executeAgenticProbe } from '../agentic/probe.js';
 import type { ResolvedAgenticModel } from '../agentic/index.js';
 import {
@@ -161,6 +162,20 @@ export async function runAgenticProject(
     warnings: [...project.warnings],
     skipped: [],
   };
+  // Deprecated limits still validate, so say plainly that new runs ignore them.
+  for (const [name, model] of resolved) {
+    const fields = deprecatedAssignmentLimitFields(model.model);
+    if (fields.length) {
+      result.warnings.push(
+        `Agentic model "${name}" sets ${fields.join(', ')}. These per-assignment limits are deprecated and new runs ignore them (runs saved by an earlier Dogsled still apply them). Use limits.tokens or limits.max_cost_usd to cap a run.`
+      );
+    }
+  }
+  if (options.agentic?.host?.tokensPerAssignment !== undefined) {
+    result.warnings.push(
+      'The tokensPerAssignment option (--agent-tokens-per-assignment) is deprecated and new runs ignore it. Use limits.tokens or limits.max_cost_usd to cap a run.'
+    );
+  }
   const failed = new Set<string>();
   const ephemeral = new Map<string, string>();
   for (const node of nodes) {
@@ -325,7 +340,9 @@ export async function runAgenticProject(
           ...(options.signal ? { signal: options.signal } : {}),
         });
         if (execution.publication !== 'confirmed') {
-          throw new Error('Agentic publication is not confirmed');
+          throw new Error(
+            `Agentic output for model "${node.name}" was saved but its publication is not confirmed. Resume the run with --agent-resume to finish publication.`
+          );
         }
         throwIfCancelled(options.signal);
         result.state.models[stateKey(context.integration.handle, node.name)] = {
@@ -352,7 +369,8 @@ export async function runAgenticProject(
       failed.add(node.name);
       const cancelled = isCancellationError(error, options.signal);
       result.cancelled ||= cancelled;
-      const message = error instanceof Error ? error.message : String(error);
+      // Includes safe causes; provider and storage text stays hidden.
+      const message = formatAgenticError(error);
       group.error = message;
       group.executionResults!.push(
         Object.defineProperty(

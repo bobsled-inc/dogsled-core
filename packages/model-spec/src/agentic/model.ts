@@ -85,8 +85,10 @@ export const AgenticAssignmentLimitsSchema = z
     model_calls_per_assignment: OptionalLimit,
   })
   .strict();
+/** Run spend caps stop new dispatch once reached; in-flight work still finishes. */
 export const AgenticRunLimitsSchema = AgenticAssignmentLimitsSchema.extend({
   tokens: OptionalLimit,
+  max_cost_usd: z.number().positive().max(1_000_000_000).nullable().optional(),
   timeout_seconds: z.number().int().positive().max(2_147_483).nullable().optional(),
 }).strict();
 

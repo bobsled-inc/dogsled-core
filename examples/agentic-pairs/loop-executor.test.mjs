@@ -347,7 +347,7 @@ test('transient provider and malformed response failures permit a whole-assignme
   }
 });
 
-test('unknown usage, limits, source denial, and cancellation do not permit a retry', async () => {
+test('limits, source denial, and cancellation do not permit a retry; unknown usage does', async () => {
   const unknown = await createLoopExecutor(async () => ({ ok: true, value: { decision: finish } }))(
     request()
   );
@@ -360,8 +360,9 @@ test('unknown usage, limits, source denial, and cancellation do not permit a ret
     req.controller.abort();
     throw new Error('stop');
   })(req);
-  for (const result of [unknown, denied, limit, cancelled])
-    assert.equal(result.error.retryable, false);
+  // Unknown usage is usually transient; spend caps and attempt limits bound the retry.
+  assert.equal(unknown.error.retryable, true);
+  for (const result of [denied, limit, cancelled]) assert.equal(result.error.retryable, false);
 });
 
 test('provider schema uses supported anyOf and rejects invalid actions', async () => {
@@ -426,4 +427,41 @@ test('named reduce inputs stay separate and evidence uses the matching host date
   const result = await execute(req);
   assert.equal(result.status, 'succeeded');
   assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, timestamp);
+});
+
+test('a provider error without usage is a retryable call failure', async () => {
+  const result = await createLoopExecutor(async () => ({
+    ok: false,
+    error: 'provider_error',
+    message: 'rate limited',
+    attempts: 1,
+  }))(request());
+  assert.equal(result.status, 'failed');
+  assert.deepEqual(result.error, { kind: 'provider', code: 'call_failed', retryable: true });
+});
+
+test('loops stop at the default turn limit when the run sets no call limit', async () => {
+  const req = request();
+  delete req.assignment.limits.model_calls;
+  let calls = 0;
+  const result = await createLoopExecutor(async () => {
+    calls++;
+    return reply(read);
+  })(req);
+  assert.equal(result.error.code, 'turn_limit');
+  assert.equal(calls, 16);
+});
+
+test('a rejected key is an auth failure that is not billed or retried', async () => {
+  const req = request();
+  const result = await createLoopExecutor(async () => ({
+    ok: false,
+    error: 'provider_error',
+    message: 'invalid x-api-key',
+    attempts: 1,
+    status: 401,
+  }))(req);
+  assert.deepEqual(result.error, { kind: 'auth', code: 'auth_failed', retryable: false });
+  assert.equal(result.usage.status, 'measured');
+  assert.equal(result.usage.total_tokens, 0);
 });

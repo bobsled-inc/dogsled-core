@@ -62,7 +62,9 @@ materialization:
 - `columns` is the contract: rows that do not match are rejected.
 - `output.from` picks the step to publish. Each published row also carries
   evidence, a confidence value, a reason and the run identity.
-- `limits` caps tokens and time for the run.
+- `limits` caps what the run may spend (`max_cost_usd` or `tokens`) and how
+  long it may take. At the cap, Dogsled stops starting new work, keeps every
+  answer it already paid for, and tells you how to continue.
 
 ## Executors
 
@@ -97,7 +99,7 @@ The executor stops the process on purpose after ten assignments when
 ```bash
 SHOWCASE_CRASH=1 dogsled model run +pair_assessments --integration local \
   --agent-executor ./mock-executor.mjs --agent-run-id first-run \
-  --agent-tokens-per-assignment 8192 || echo "stopped with exit code $?"
+  || echo "stopped with exit code $?"
 ```
 
 ```text
@@ -111,8 +113,7 @@ other ten assignments:
 
 ```bash
 dogsled model run +pair_assessments --integration local \
-  --agent-executor ./mock-executor.mjs --agent-run-id first-run \
-  --agent-tokens-per-assignment 8192 --agent-resume
+  --agent-executor ./mock-executor.mjs --agent-run-id first-run --agent-resume
 dogsled query "SELECT COUNT(*) AS assignments FROM pair_assessments" --db-path data.duckdb
 ```
 

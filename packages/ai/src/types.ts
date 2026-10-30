@@ -66,6 +66,8 @@ export type GenerateStructuredResult<T> =
       message: string;
       attempts: number;
       usage?: StructuredTokenUsage;
+      /** HTTP status from the provider when known, such as 401 or 429. */
+      status?: number;
     };
 
 export type DeltaEvent =

@@ -24,6 +24,7 @@ vi.mock('../../../src/runtime/cross-warehouse.js', () => ({
   publishCrossWarehouse: vi.fn(),
 }));
 
+import { AgenticHostError } from '@bobsled-inc/model-spec/agentic';
 import { runProject } from '@bobsled-inc/model-spec/project';
 import { createCliAgenticHost } from '../../../src/runtime/cli-agentic-host.js';
 import { runDogsledModelRunCommand } from '../../../src/commands/model-run.js';
@@ -245,5 +246,107 @@ describe('agent paid source options', () => {
       await runDogsledModelRunCommand(['--agent-allow-billable-source', 'web.search', '--json'])
     ).toBe(2);
     expect(createCliAgenticHost).not.toHaveBeenCalled();
+  });
+});
+
+describe('agent spend and retry options', () => {
+  const base = ['--agent-executor', './executor.mjs', '--quiet'];
+  it('forwards a cost cap and an explicit failed-assignment retry', async () => {
+    const exit = await runDogsledModelRunCommand([
+      ...base,
+      '--agent-run-id',
+      'run-1',
+      '--agent-resume',
+      '--agent-retry-failed',
+      '--agent-max-cost',
+      '12.5',
+    ]);
+    expect(exit).toBe(0);
+    expect(runProject).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        agentic: expect.objectContaining({ maxCostUsd: 12.5, retryFailedAssignments: true }),
+      })
+    );
+  });
+  it.each([['0'], ['-1'], ['abc'], ['1e3']])('rejects --agent-max-cost %s', async (value) => {
+    expect(await runDogsledModelRunCommand([...base, '--agent-max-cost', value, '--json'])).toBe(2);
+    expect(runProject).not.toHaveBeenCalled();
+  });
+  it('requires --agent-resume for --agent-retry-failed', async () => {
+    expect(await runDogsledModelRunCommand([...base, '--agent-retry-failed', '--json'])).toBe(2);
+    expect(runProject).not.toHaveBeenCalled();
+  });
+});
+
+describe('agentic fatal errors', () => {
+  it('print safe causes without provider text', async () => {
+    const provider = Object.assign(new Error('denied for key sk-live-secret'), {
+      name: 'APICallError',
+      statusCode: 429,
+    });
+    vi.mocked(runProject).mockRejectedValue(
+      new AgenticHostError('Agentic executor failed for step "assess" assignment 0.', {
+        cause: provider,
+      })
+    );
+    const writes: string[] = [];
+    const spy = vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+      writes.push(String(chunk));
+      return true;
+    });
+    try {
+      expect(
+        await runDogsledModelRunCommand(['--agent-executor', './executor.mjs', '--json'])
+      ).toBe(1);
+    } finally {
+      spy.mockRestore();
+    }
+    const output = writes.join('');
+    expect(output).toContain('Agentic executor failed for step');
+    expect(output).toContain('caused by: APICallError (status 429)');
+    expect(output).not.toContain('sk-live-secret');
+  });
+});
+
+describe('cancelled agentic runs', () => {
+  it('say what was kept and how to resume instead of listing cancelled statements', async () => {
+    vi.mocked(runProject).mockResolvedValue({
+      ...okResult,
+      ok: false,
+      cancelled: true,
+      byIntegration: [
+        {
+          handle: 'local',
+          dialect: 'duckdb',
+          statements: [],
+          models: [],
+          executionResults: [],
+          error: 'SQL execution cancelled before the statement started.',
+        },
+      ],
+    } as unknown as RunProjectResult);
+    const writes: string[] = [];
+    const out = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const err = vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+      writes.push(String(chunk));
+      return true;
+    });
+    try {
+      await runDogsledModelRunCommand([
+        '--agent-executor',
+        './executor.mjs',
+        '--agent-run-id',
+        'run-7',
+        '--yaml',
+      ]);
+    } finally {
+      out.mockRestore();
+      err.mockRestore();
+    }
+    const text = writes.join('');
+    expect(text).toContain('Cancelled. Agentic answers saved before the stop are kept');
+    expect(text).toContain('run the same command again with --agent-run-id run-7');
+    expect(text).not.toContain('SQL execution cancelled');
   });
 });

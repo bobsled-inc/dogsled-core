@@ -670,20 +670,32 @@ describe('mixed agentic dispatch probe', () => {
     expect((await runProject(f.root, f.options)).ok).toBe(true);
     expect(f.host.publish).not.toHaveBeenCalled();
   });
-  it('charges unknown usage and stops before the next assignment when tokens run out', async () => {
+  it('warns that deprecated per-assignment limits are ignored by new runs', async () => {
     const f = fixture();
-    f.model.limits.tokens = 100;
+    f.model.limits.tokens_per_assignment = 500;
+    f.model.plan.steps[0]!.limits = { model_calls_per_assignment: 2 };
+    writeFileSync(join(f.root, 'models/agentic.yml'), stringify(f.model));
+    const result = await runProject(f.root, f.options);
+    const warning = result.warnings.find((text) => text.includes('deprecated'));
+    expect(warning).toContain('limits.tokens_per_assignment');
+    expect(warning).toContain('plan.steps.assess.limits.model_calls_per_assignment');
+    expect(warning).toContain('new runs ignore them');
+  });
+  it('stops before the next assignment when the token cap is reached', async () => {
+    const f = fixture();
+    f.model.limits.tokens = 2000;
     writeFileSync(join(f.root, 'models/agentic.yml'), stringify(f.model));
     f.host.prepare = vi.fn(async () => [{ pair_id: 'p1' }, { pair_id: 'p2' }]);
     f.host.executeAgent = vi.fn(async ({ assignment }) => ({
       contract_version: 2,
       attempt_id: assignment.attempt_id,
       status: 'succeeded',
-      usage: { status: 'unknown', reason: 'unavailable' },
+      usage: { status: 'measured', input_tokens: 3000, output_tokens: 2000, total_tokens: 5000 },
       rows: [],
     }));
     const result = await runProject(f.root, f.options);
     expect(result.ok).toBe(false);
+    expect(result.byIntegration[0]!.error).toContain('spend_cap_reached');
     expect(f.host.executeAgent).toHaveBeenCalledTimes(1);
     expect(f.host.publish).not.toHaveBeenCalled();
     expect(f.events).not.toContain('downstream');

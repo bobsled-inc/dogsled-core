@@ -7,6 +7,7 @@ import YAML from 'yaml';
 
 import { runProject, type RunProjectResult } from '@bobsled-inc/model-spec/project';
 import { CommandError } from '@bobsled-inc/protocol';
+import { formatAgenticError } from '@bobsled-inc/model-spec/agentic';
 
 import * as fmt from '../lib/output/formatter.js';
 import type { OutputOptions } from '../types/index.js';
@@ -22,6 +23,8 @@ interface ParsedModelRunArgs {
   agentTokensPerAssignment?: number;
   agentConcurrency?: number;
   agentMinDispatchIntervalMs?: number;
+  agentMaxCostUsd?: number;
+  agentRetryFailed?: boolean;
   integration?: string;
   fullRefresh?: boolean;
   dryRun?: boolean;
@@ -59,6 +62,7 @@ function buildJsonPayload(result: RunProjectResult) {
   return {
     command: 'model.run',
     ok: result.ok,
+    cancelled: result.cancelled === true,
     dry_run: result.dryRun,
     totals: {
       integrations: result.byIntegration.length,
@@ -99,7 +103,16 @@ function buildJsonPayload(result: RunProjectResult) {
   };
 }
 
-function summarizeFailures(result: RunProjectResult): string {
+function summarizeFailures(result: RunProjectResult, agentRunId?: string): string {
+  // A cancelled run is not a failure to debug; say what was kept and how to continue.
+  if (result.cancelled) {
+    // Starting again with the same ID reopens a saved run and also works when the
+    // stop came before the agentic step created one; --agent-resume would fail then.
+    const again = agentRunId
+      ? ` To continue, run the same command again with --agent-run-id ${agentRunId}.`
+      : ' Run the command again to continue.';
+    return `Cancelled. Agentic answers saved before the stop are kept and will be reused.${again}`;
+  }
   const failures = result.byIntegration
     .filter((group) => group.error)
     .map((group) => ({ handle: group.handle, message: group.error ?? 'unknown failure' }));
@@ -186,6 +199,17 @@ function parseArgs(args: string[]): ParsedModelRunArgs {
       case '--agent-resume':
         parsed.agentResume = true;
         break;
+      case '--agent-retry-failed':
+        parsed.agentRetryFailed = true;
+        break;
+      case '--agent-max-cost': {
+        const value = requireValue(args, i++, arg);
+        parsed.agentMaxCostUsd = Number(value);
+        if (!/^\d+(\.\d+)?$/.test(value) || !(parsed.agentMaxCostUsd > 0)) {
+          throw new CommandError('--agent-max-cost must be a positive number of US dollars', 2);
+        }
+        break;
+      }
       case '--agent-concurrency':
         parsed.agentConcurrency = Number(requireValue(args, i++, arg));
         if (
@@ -265,11 +289,16 @@ function parseArgs(args: string[]): ParsedModelRunArgs {
   if (parsed.agentResume && !parsed.agentRunId) {
     throw new CommandError('--agent-resume requires --agent-run-id', 2);
   }
+  if (parsed.agentRetryFailed && !parsed.agentResume) {
+    throw new CommandError('--agent-retry-failed requires --agent-resume', 2);
+  }
   if (
     !parsed.agentExecutor &&
     (parsed.agentAllowBillableSources ||
       parsed.agentRunId ||
       parsed.agentResume ||
+      parsed.agentRetryFailed ||
+      parsed.agentMaxCostUsd !== undefined ||
       parsed.agentTokensPerAssignment ||
       parsed.agentConcurrency !== undefined ||
       parsed.agentMinDispatchIntervalMs !== undefined)
@@ -302,7 +331,8 @@ function emitFatalError(
   error: unknown,
   options: { json?: boolean; yaml?: boolean; agentRunId?: string }
 ): number {
-  const message = error instanceof Error ? error.message : String(error);
+  // Safe causes are printed; provider and storage text stays hidden.
+  const message = formatAgenticError(error);
   const exitCode = error instanceof CommandError ? error.exitCode : 1;
   if (options.json || options.yaml) {
     // Mirror the success-path envelope shape for machine consumers so a hard
@@ -333,6 +363,7 @@ export async function runDogsledModelRunCommand(args: string[]): Promise<number>
     '--agent-allow-billable-source',
     '--agent-executor',
     '--agent-run-id',
+    '--agent-max-cost',
     '--agent-tokens-per-assignment',
     '--agent-concurrency',
     '--agent-min-dispatch-interval-ms',
@@ -352,7 +383,9 @@ Run models in dependency order.
   --agent-executor <path|typesafe>  Local executor module or built-in Jev classification
   --agent-run-id <id>               Run identity (default: new UUID)
   --agent-resume                    Resume the explicit run ID
-  --agent-tokens-per-assignment <n>  Legacy token allowance per attempt (default: YAML limits)
+  --agent-retry-failed              With --agent-resume, retry assignments saved as not retryable
+  --agent-max-cost <usd>            Cost cap for this invocation (overrides limits.max_cost_usd)
+  --agent-tokens-per-assignment <n>  Deprecated; ignored by new runs
   --agent-concurrency <n>           Active assignments, 1–64 (default: 1)
   --agent-min-dispatch-interval-ms <n>  Delay between starts, 0–60000 ms (default: 0)
   --json / --yaml                   Structured result output
@@ -399,10 +432,16 @@ Run models in dependency order.
   // Report identity before loading or execution so failures can be resumed.
   if (agentRunId) process.stderr.write(`Agentic run ID: ${agentRunId}\n`);
   const controller = new AbortController();
-  const cancel = () => controller.abort();
+  // Launchers forward signals and terminals signal every process, so one Ctrl-C
+  // can arrive twice. Cancel once and keep waiting for active calls to settle.
+  const cancel = () => {
+    if (controller.signal.aborted) return;
+    process.stderr.write('Cancelling: stopping new work and waiting for active calls to finish.\n');
+    controller.abort();
+  };
   if (agentRunId) {
-    process.once('SIGINT', cancel);
-    process.once('SIGTERM', cancel);
+    process.on('SIGINT', cancel);
+    process.on('SIGTERM', cancel);
   }
   try {
     const agentic = options.agentExecutor
@@ -411,6 +450,8 @@ Run models in dependency order.
             id: agentRunId!,
             mode: options.agentResume ? ('resume' as const) : ('start' as const),
           },
+          ...(options.agentMaxCostUsd !== undefined ? { maxCostUsd: options.agentMaxCostUsd } : {}),
+          ...(options.agentRetryFailed ? { retryFailedAssignments: true } : {}),
           host: await (
             await import('../runtime/cli-agentic-host.js')
           ).createCliAgenticHost({
@@ -496,7 +537,7 @@ Run models in dependency order.
       if (!result.ok) {
         // Failure summary on stderr (machine consumers parse the JSON payload
         // for full detail; stderr is operator chrome only).
-        process.stderr.write(`${summarizeFailures(result)}\n`);
+        process.stderr.write(`${summarizeFailures(result, agentRunId)}\n`);
         return resultExitCode(result);
       }
       return 0;
@@ -507,7 +548,7 @@ Run models in dependency order.
         `${YAML.stringify({ ...buildJsonPayload(result), ...(agentRunId ? { agent_run_id: agentRunId } : {}) })}\n`
       );
       if (!result.ok) {
-        process.stderr.write(`${summarizeFailures(result)}\n`);
+        process.stderr.write(`${summarizeFailures(result, agentRunId)}\n`);
         return resultExitCode(result);
       }
       return 0;
@@ -522,7 +563,7 @@ Run models in dependency order.
 
     const exitCode = writeHumanSummary(result, outputOptions);
     if (!result.ok) {
-      fmt.error(summarizeFailures(result), outputOptions);
+      fmt.error(summarizeFailures(result, agentRunId), outputOptions);
       return exitCode;
     }
 

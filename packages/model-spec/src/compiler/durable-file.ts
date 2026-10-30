@@ -71,6 +71,18 @@ export function writeDurableFile(file: string, value: string): void {
   }
 }
 
+/** Why a lock could not be taken. Messages stay as before for existing callers. */
+export class FileOwnershipError extends Error {
+  constructor(
+    message: string,
+    readonly reason: 'busy' | 'recovery' | 'foreign_host',
+    readonly ownerPid?: number
+  ) {
+    super(message);
+    this.name = 'FileOwnershipError';
+  }
+}
+
 /** A lock is an atomic symlink with no partially written owner record. */
 export function acquireFileOwnership(file: string): { assert(): void; release(): void } {
   const token = `${hostname()}:${process.pid}:${randomUUID()}`;
@@ -93,7 +105,9 @@ export function acquireFileOwnership(file: string): { assert(): void; release():
   const release = (): void => {
     if (exists(file) && fs.readlinkSync(file) === token) fs.unlinkSync(file);
   };
-  if (exists(recovery)) throw new Error('State lock recovery requires operator attention');
+  if (exists(recovery)) {
+    throw new FileOwnershipError('State lock recovery requires operator attention', 'recovery');
+  }
   try {
     claim(file);
   } catch (error) {
@@ -109,28 +123,31 @@ export function acquireFileOwnership(file: string): { assert(): void; release():
       try {
         claim(file);
       } catch {
-        throw new Error('State is owned by another writer');
+        throw new FileOwnershipError('State is owned by another writer', 'busy');
       }
     } else {
       const prior = previous.split(':');
       if (prior.length !== 3 || prior[0] !== hostname() || !/^\d+$/.test(prior[1]!)) {
-        throw new Error('State lock belongs to an unsupported host');
+        throw new FileOwnershipError('State lock belongs to an unsupported host', 'foreign_host');
       }
       // Do not install a recovery marker over a live owner: that marker would
       // needlessly fence its in-flight transaction.
+      const ownerPid = Number(prior[1]);
       try {
-        process.kill(Number(prior[1]), 0);
-        throw new Error('State is owned by another writer');
+        process.kill(ownerPid, 0);
+        throw new FileOwnershipError('State is owned by another writer', 'busy', ownerPid);
       } catch (failure) {
         if ((failure as NodeJS.ErrnoException).code !== 'ESRCH') throw failure;
       }
       try {
         claim(recovery);
       } catch {
-        throw new Error('State is owned by another writer');
+        throw new FileOwnershipError('State is owned by another writer', 'busy');
       }
       try {
-        if (fs.readlinkSync(file) !== previous) throw new Error('State is owned by another writer');
+        if (fs.readlinkSync(file) !== previous) {
+          throw new FileOwnershipError('State is owned by another writer', 'busy');
+        }
         fs.unlinkSync(file);
         claim(file);
       } finally {

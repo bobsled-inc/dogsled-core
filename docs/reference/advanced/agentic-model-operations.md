@@ -15,7 +15,9 @@ Run these options through `dogsled model run` or `dogsled model run`:
 | `--agent-executor <path\|typesafe>`    | Trusted local module exporting `executeAgent`, or built-in Jev executor       |
 | `--agent-run-id <id>`                  | Explicit run identity; a new UUID is generated when omitted                   |
 | `--agent-resume`                       | Resume the explicit run ID; requires `--agent-run-id`                         |
-| `--agent-tokens-per-assignment <n>`    | Legacy fallback when YAML does not specify an assignment token limit          |
+| `--agent-retry-failed`                 | With `--agent-resume`, retry assignments saved as not retryable               |
+| `--agent-max-cost <usd>`               | Cost cap for this invocation; overrides `limits.max_cost_usd`                 |
+| `--agent-tokens-per-assignment <n>`    | Deprecated; ignored by new runs                                               |
 | `--agent-concurrency <n>`              | One to 64 active assignments; default 1                                       |
 | `--agent-min-dispatch-interval-ms <n>` | Zero to 60,000 ms between assignment starts; default 0                        |
 | `--agent-allow-billable-source <ref>`  | Allow paid source queries for this actual source ref; repeat for more sources |
@@ -27,7 +29,13 @@ models; it is not the execution command for them.
 
 Concurrency and spacing apply within one model run in one process. Spacing
 includes retries, but does not rate-limit the internal calls of an agent loop or
-other processes. Concurrency does not increase the shared token budget.
+other processes. Concurrency does not raise the run's spend cap, but it does
+raise how far a run can go over the cap: work already in flight when the cap is
+reached still finishes. See [limits](agentic-model-reference.md#limits).
+
+Stopping a run with Ctrl-C, `kill`, a CI cancel, or a container stop cancels it
+cleanly: no new work starts, active calls are stopped, and saved answers are kept.
+The CLI prints the command to resume.
 
 ## Start, resume, or start fresh
 
@@ -52,12 +60,16 @@ restore the loop's conversation or remote session. Calls that ran before a crash
 but did not save their result may run and be billed again. Upstream and downstream
 SQL still follow the regular model runner's rules.
 
-An explicit retry gets a fresh execution timeout window. Token charges and attempt
+An explicit retry gets a fresh execution timeout window. Spend and attempt
 counts are preserved. The default is three attempts per assignment; library hosts
 can set one to ten. Failed outcomes retry automatically only when marked retryable.
-Automatic retries and lease recovery do not extend the current time window.
+Automatic retries and lease recovery do not extend the current time window. To
+retry an assignment that the executor marked as not retryable, fix the cause and
+add `--agent-retry-failed` to the resume.
 
-Changed model definitions, resolved profiles, limits, targets, input contracts, or
+Spend caps may change between invocations: raise `limits.max_cost_usd` or
+`limits.tokens`, or pass `--agent-max-cost`, and resume. Changed model
+definitions, resolved profiles, timeouts, targets, input contracts, or
 effective tool declarations conflict with a saved run. Start a new ID for changed
 work. Reusing an ID does not start a new batch. Concurrency and dispatch spacing
 can change on resume because they do not change assignment data.
@@ -200,8 +212,12 @@ for the storage-specific rules.
 | Agentic host required                              | Supply `--agent-executor`, or `agentic.host` in the library API                             |
 | Model profile missing                              | Match `llm.profile` to a role under `platform.models`                                       |
 | Input or output limit exceeded                     | Reduce the selected workload upstream; do not truncate a group or advance past omitted rows |
-| Token allowance too small                          | Check prompt/schema size and YAML step overrides; a CLI fallback cannot override YAML       |
-| Budget exhausted after resume                      | Old attempts remain charged; inspect usage before choosing a new run                        |
+| `spend_cap_reached`                                | Raise the cap and resume; saved answers are kept and not repeated                           |
+| `estimate_exceeds_cap`                             | The first step's input alone is over the cap; raise it or select fewer rows                 |
+| `pricing_unknown`                                  | No built-in price for the model; use `limits.tokens` as the cap instead                     |
+| Assignment failed after N attempts                 | Read the error kind and code in the message; fix the cause, then follow the printed hint    |
+| `auth` error `auth_failed`                         | Fix the profile's API key, then resume with `--agent-resume --agent-retry-failed`           |
+| `run_in_progress`                                  | Another process still runs this ID; wait for it or stop it, then resume                     |
 | Checkpoint conflict                                | Restore the matching definition/settings, or start a new run for the new definition         |
 | Cursor busy or active owner                        | Wait for the owner or resume its run; a fresh start cannot take a live lease                |
 | Old run must resume                                | Reconcile its prepared/confirmed publication before another batch starts                    |

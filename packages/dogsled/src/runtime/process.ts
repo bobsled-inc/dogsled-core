@@ -72,3 +72,23 @@ export async function waitForProcess(child: ChildProcess, label: string): Promis
     ac.abort();
   }
 }
+
+const FORWARDED_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const;
+
+/**
+ * Pass stop signals to a delegated child so it can cancel cleanly and save its work.
+ * Without this, a signal sent only to the parent (kill, CI cancel, container stop)
+ * kills the parent and leaves the child running. Returns a function that stops forwarding.
+ */
+export function forwardSignals(child: ChildProcess): () => void {
+  const handlers = FORWARDED_SIGNALS.map((signal) => {
+    const handler = () => {
+      if (child.exitCode === null && child.signalCode === null) child.kill(signal);
+    };
+    process.on(signal, handler);
+    return [signal, handler] as const;
+  });
+  return () => {
+    for (const [signal, handler] of handlers) process.removeListener(signal, handler);
+  };
+}

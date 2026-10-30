@@ -987,7 +987,9 @@ Run models in dependency order.
   --agent-executor <path|typesafe>  Local executor module or built-in Jev classification
   --agent-run-id <id>               Run identity (default: new UUID)
   --agent-resume                    Resume the explicit run ID
-  --agent-tokens-per-assignment <n>  Legacy token allowance per attempt (default: YAML limits)
+  --agent-retry-failed              With --agent-resume, retry assignments saved as not retryable
+  --agent-max-cost <usd>            Cost cap for this invocation (overrides limits.max_cost_usd)
+  --agent-tokens-per-assignment <n>  Deprecated; ignored by new runs
   --agent-concurrency <n>           Active assignments, 1–64 (default: 1)
   --agent-min-dispatch-interval-ms <n>  Delay between starts, 0–60000 ms (default: 0)
   --json / --yaml                   Structured result output

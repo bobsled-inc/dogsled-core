@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { estimateCostUsd, UnknownModelPricingError } from '../src/pricing.js';
+import { estimateCostUsd, knownModelCostUsd, UnknownModelPricingError } from '../src/pricing.js';
 import type { ModelConnection } from '../src/index.js';
 
 describe('model pricing', () => {
@@ -125,5 +125,37 @@ describe('model pricing', () => {
     };
 
     expect(() => estimateCostUsd(connection, { inputTokens: 1 })).toThrow(UnknownModelPricingError);
+  });
+});
+
+describe('knownModelCostUsd', () => {
+  it('prices known models and returns null for unknown ones instead of zero', () => {
+    expect(
+      knownModelCostUsd({ provider: 'openai', model: 'gpt-4o-mini' }, { inputTokens: 1_000_000 })
+    ).toBeGreaterThan(0);
+    expect(
+      knownModelCostUsd({ provider: 'openai', model: 'no-such-model' }, { inputTokens: 10 })
+    ).toBeNull();
+  });
+});
+
+describe('AI Gateway pricing', () => {
+  it('uses the underlying provider price for a gateway model', () => {
+    const direct = estimateCostUsd(
+      { provider: 'openai', model: 'gpt-4o-mini' },
+      { inputTokens: 1_000_000, outputTokens: 1_000_000 }
+    );
+    expect(
+      knownModelCostUsd(
+        { provider: 'ai-gateway', model: 'openai/gpt-4o-mini' },
+        { inputTokens: 1_000_000, outputTokens: 1_000_000 }
+      )
+    ).toBe(direct);
+    expect(
+      knownModelCostUsd(
+        { provider: 'ai-gateway', model: 'openai/no-such-model' },
+        { inputTokens: 1 }
+      )
+    ).toBeNull();
   });
 });

@@ -218,3 +218,19 @@ export async function finalizeBudgetReservation(
     throw new DailyBudgetExceeded(0, usage.costUsd, reservation.dailyBudgetUsd);
   }
 }
+
+/**
+ * Settle the reservation of a call that failed. Without this the reserved amount stays
+ * counted for the rest of the day and later calls fail the daily budget. A failure here
+ * must not hide the original error, so ledger errors are ignored.
+ */
+export async function settleFailedBudgetReservation(
+  reservationResult: BudgetReservationResult | undefined,
+  actualCostUsd = 0
+): Promise<void> {
+  try {
+    await finalizeBudgetReservation(reservationResult, actualCostUsd);
+  } catch {
+    // The original call error is more useful to the caller than a ledger error.
+  }
+}

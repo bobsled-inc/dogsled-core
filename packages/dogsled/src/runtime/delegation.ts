@@ -4,7 +4,7 @@ import { createExtractGroup, EXTRACT_SUBCOMMANDS } from '../groups/extract.js';
 import { createLoadGroup, LOAD_SUBCOMMANDS } from '../groups/load.js';
 import { MCP_SUBCOMMANDS } from '../groups/mcp.js';
 import { createModelGroup, MODEL_SUBCOMMANDS } from '../groups/model.js';
-import { spawnCommand, waitForProcess } from './process.js';
+import { forwardSignals, spawnCommand, waitForProcess } from './process.js';
 import { resolveCliInvocation, resolveDogsledModelRunInvocation } from './workspace.js';
 
 import type { Command } from 'commander';
@@ -59,8 +59,13 @@ export async function runDelegatedCli(
   }
 
   const child = spawnCommand(invocation, spawnOptions, dependencies);
-  const result = await waitForProcess(child, `${target} CLI`);
-  return result.exitCode;
+  const stopForwarding = forwardSignals(child);
+  try {
+    const result = await waitForProcess(child, `${target} CLI`);
+    return result.exitCode;
+  } finally {
+    stopForwarding();
+  }
 }
 
 export function createGroup(target: CliTarget): Command {
@@ -151,10 +156,15 @@ export async function maybeRunDelegatedCommand(
       },
       dependencies
     );
-    return {
-      handled: true,
-      exitCode: (await waitForProcess(child, 'model run CLI')).exitCode,
-    };
+    const stopForwarding = forwardSignals(child);
+    try {
+      return {
+        handled: true,
+        exitCode: (await waitForProcess(child, 'model run CLI')).exitCode,
+      };
+    } finally {
+      stopForwarding();
+    }
   }
 
   const delegatedArgs = group === 'mcp' ? ['mcp', ...argv.slice(1)] : argv.slice(1);

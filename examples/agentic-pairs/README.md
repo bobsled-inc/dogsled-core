@@ -42,13 +42,13 @@ three paid calls on a successful fresh run. Model output can differ between runs
 npx @bobsled-inc/dogsled model run +pair_decisions --integration local \
   --agent-executor ./executor.mjs \
   --agent-run-id proof-1 \
-  --agent-tokens-per-assignment 8192 \
   --json
 ```
 
 The `+` selector includes upstream models. Dogsled runs them before the final model. The model has
-a 30,000-token limit and a 180-second timeout. Each assignment reserves up to
-8,192 tokens before its call. These token limits are not a dollar budget.
+a 30,000-token cap and a 180-second timeout. When the run reaches the cap, Dogsled
+stops starting new assignments, keeps the answers it already has, and prints how
+to continue. Add `--agent-max-cost <usd>` for a dollar cap as well.
 
 ## Resume a failed run
 
@@ -58,7 +58,6 @@ Use the same run ID and add `--agent-resume`.
 npx @bobsled-inc/dogsled model run +pair_decisions --integration local \
   --agent-executor ./executor.mjs \
   --agent-run-id proof-1 \
-  --agent-tokens-per-assignment 8192 \
   --agent-resume --json
 ```
 
@@ -148,20 +147,19 @@ SDK tools. Source access goes through `request.sources`. The model cannot supply
 SQL, a URL, a file path, or a shell command. Source text stays in the data history,
 even when that text contains instructions.
 
-Each LLM call reserves tokens before it starts and settles usage after it stops.
-The calls share one assignment allowance and deadline. There are no hidden
-provider retries. Each call has a 1,024 output-token cap. The executor rejects a
-prompt and schema above its 32 KiB allowance. It rejects source responses above
-64 KiB or 100 rows. It fails when a limit is reached. It does not publish a
-partial answer. A provider response without usage stops the loop and keeps the
-reservation charged. Provider errors and invalid output permit a whole-assignment
-retry under Dogsled's shared retry limit. A thrown provider call keeps unknown usage
-charged. Cancellation, source denial, and exhausted limits do not permit a retry.
+Each LLM call reports its usage to Dogsled after it stops. The calls share one
+assignment deadline. There are no hidden provider retries. Each call has a 1,024
+output-token cap, and a loop stops after 16 turns. The executor rejects a prompt
+and schema above its 32 KiB allowance. It rejects source responses above 64 KiB or
+100 rows. It fails when a limit is reached. It does not publish a partial answer.
+Provider errors, responses without usage, and invalid output permit a
+whole-assignment retry under Dogsled's shared retry limit. Cancellation, source
+denial, and exhausted limits do not permit a retry.
 
 Resume reuses accepted assignments. It restarts an unfinished loop from its
 prepared input; it does not resume at an internal decision. Reads and LLM calls
-from that unfinished attempt can run again. The saved reservation keeps the
-interrupted attempt charged even when the process stops before it reports usage.
+from that unfinished attempt can run again. An interrupted attempt stays charged
+at its input estimate even when the process stops before it reports usage.
 
 Evidence includes an `observation` number in the provider response. Zero means
 prepared input. One means the first source response, and so on. The executor

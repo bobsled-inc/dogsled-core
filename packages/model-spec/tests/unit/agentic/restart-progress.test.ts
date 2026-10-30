@@ -38,12 +38,12 @@ describe('explicit failed assignment restart', () => {
       run: { id: 'run', mode: 'start' as const },
     };
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow(
-      'assignment failed'
+      /assignment \d+ failed/
     );
     repaired = true;
     const resume = { ...options, run: { id: 'run', mode: 'resume' as const } };
     await expect(executeAgenticRun(f.host, f.context(), resume)).rejects.toThrow(
-      'assignment failed'
+      /assignment \d+ failed/
     );
     expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
     const result = await executeAgenticRun(f.host, f.context(), {
@@ -78,12 +78,14 @@ it('does not loop on a new terminal failure or reset attempt limits after explic
     stateStore: new MemoryStateStore(),
     maxAttempts: 2,
     run: { id: 'run', mode: 'start' as const },
+    // Checks reservation charges; spend-cap charges are covered in spend-cap.test.ts.
+    accounting: 'reservation' as const,
     onProgress: (value: AgenticRunProgress) => {
       progress.push(value);
     },
   };
   await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow(
-    'assignment failed'
+    /assignment \d+ failed/
   );
   expect(progress.at(-1)).toMatchObject({ failed: 1, accepted: 0, running: 0 });
   const resume = {
@@ -91,9 +93,13 @@ it('does not loop on a new terminal failure or reset attempt limits after explic
     run: { id: 'run', mode: 'resume' as const },
     retryFailedAssignments: true,
   };
-  await expect(executeAgenticRun(f.host, f.context(), resume)).rejects.toThrow('assignment failed');
+  await expect(executeAgenticRun(f.host, f.context(), resume)).rejects.toThrow(
+    /assignment \d+ failed/
+  );
   expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
-  await expect(executeAgenticRun(f.host, f.context(), resume)).rejects.toThrow('limit');
+  await expect(executeAgenticRun(f.host, f.context(), resume)).rejects.toThrow(
+    /assignment \d+ failed/
+  );
   expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
   expect([...options.stateStore.runs.values()][0]!.charged).toBe(200);
 });

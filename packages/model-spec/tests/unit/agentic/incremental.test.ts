@@ -48,6 +48,7 @@ function fixture() {
   const run = (id: string, mode: 'start' | 'resume' = 'start') =>
     executeAgenticRun(f.host, f.context(), {
       run: { id, mode },
+      accounting: 'reservation' as const,
       stateStore,
       cursorStore,
       publisher,

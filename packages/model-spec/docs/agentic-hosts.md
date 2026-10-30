@@ -114,16 +114,22 @@ Use the [direct executor](../../../examples/agentic-pairs/executor.mjs) and
 [loop executor](../../../examples/agentic-pairs/loop-executor.mjs) as working
 examples. They use Dogsled's public AI helper, disable hidden provider retries, and
 validate the complete result. Their prompt/response size limits are example-specific controls in addition
-to the model's limits. The loop uses the assignment model-call limit or an
-explicit `maxTurns` factory fallback; it has no fixed default decision cap.
+to the model's limits. The loop uses the assignment model-call limit when a saved
+older run supplies one, then the `maxTurns` factory option, and otherwise stops
+after 16 turns.
 
-For each provider call, reserve tokens first, pass the attempt signal, and settle
-usage on success or failure. A direct call makes one model call. A loop must also
-enforce the assignment's model/tool call limits across all its internal calls.
-Handle `null` tokens and deadlines as unlimited; never serialize numeric infinity.
-Do not invent measured zero usage when usage is missing. Report `unknown` with an
-`unavailable` or `interrupted` reason. With a finite reservation, that amount stays
-charged. Without one, accounting remains incomplete rather than proving zero cost.
+For each provider call, pass the attempt signal and report usage on success or
+failure. `budget.reserve` and `budget.settle` remain available and are safe to keep
+calling. A direct call makes one model call. A loop must bound its own turns; new
+runs send no call limits. Handle `null` tokens and deadlines as unlimited; never
+serialize numeric infinity. Do not invent measured zero usage when usage is
+missing. Report `unknown` with an `unavailable` or `interrupted` reason; Dogsled
+then charges the attempt's input estimate. Mark provider errors and missing usage
+as retryable so one transient failure does not stop the run. `generateStructured`
+failures carry the provider's HTTP `status` when known. Report 401 and 403 as kind
+`auth`, not retryable, with measured zero usage: providers do not bill a rejected
+request, and retrying cannot fix a bad key. Report 429 as a retryable provider
+failure with code `rate_limited`.
 
 Return one of the contract's explicit outcomes:
 
@@ -173,9 +179,10 @@ starts the assignment again. Design external work for replay and keep writes out
 of read-only source callbacks. Do not report partial work as a successful empty
 result after cancellation, timeout, malformed output, or a denied capability.
 
-The reference executors use `costBudgetMode: 'observe'`; agentic token limits do
-not enforce profile or daily dollar ceilings. A custom provider integration must
-state its own cost controls. Provider credentials and raw errors must stay out of
+The reference executors use `costBudgetMode: 'observe'`, so profile and daily
+dollar budgets do not apply to them. Use `limits.max_cost_usd` for an agentic
+dollar cap. `createAgenticHost` prices usage with Dogsled's built-in price table;
+pass `priceUsage` to supply your own prices. Provider credentials and raw errors must stay out of
 prompts, results, and checkpoints. See the
 [full assignment contract](agentic-contracts.md) for schemas and wire bounds.
 

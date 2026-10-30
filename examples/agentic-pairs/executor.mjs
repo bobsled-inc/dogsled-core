@@ -100,6 +100,12 @@ export function createExecutor(call = generateStructured) {
         !signal.aborted
       );
     }
+    // A rejected key or permission is not billed and does not fix itself on retry.
+    if (!result.ok && (result.status === 401 || result.status === 403)) {
+      const usage = { status: 'measured', input_tokens: 0, output_tokens: 0, total_tokens: 0 };
+      await request.budget.settle(receipt, usage);
+      return failure(assignment, usage, 'auth', 'auth_failed', false);
+    }
     const usage = result.usage
       ? {
           status: 'measured',
@@ -115,7 +121,11 @@ export function createExecutor(call = generateStructured) {
         assignment,
         usage,
         result.error === 'schema_violation' ? 'validation' : 'provider',
-        result.error === 'schema_violation' ? 'invalid_output' : 'call_failed',
+        result.error === 'schema_violation'
+          ? 'invalid_output'
+          : result.status === 429
+            ? 'rate_limited'
+            : 'call_failed',
         true
       );
     }

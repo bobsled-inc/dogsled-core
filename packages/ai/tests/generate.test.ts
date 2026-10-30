@@ -2,6 +2,7 @@ import { generateObject } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
+import { MemoryBudgetLedger } from '../src/budget.js';
 import { generateStructured } from '../src/generate.js';
 import type { ModelConnection } from '../src/types.js';
 
@@ -136,5 +137,43 @@ describe('bounded structured generation', () => {
       })
     ).toMatchObject({ ok: true, usage });
     expect(generateObject).toHaveBeenCalledTimes(1);
+  });
+
+  it('frees the daily budget reservation when the provider call fails', async () => {
+    const ledger = new MemoryBudgetLedger();
+    const run = { platform: { budget: { ai_cost_daily_usd: 1 } }, projectKey: 'acme', ledger };
+    vi.mocked(generateObject).mockRejectedValue(new Error('rate limited'));
+    for (let call = 0; call < 3; call++) {
+      expect(await generateStructured(connection, options, run)).toMatchObject({
+        ok: false,
+        error: 'provider_error',
+      });
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    // A zero reservation reports the current day's usage without changing it.
+    expect((await ledger.tryReserveCost('acme', today, 0, 1)).usage.costUsd).toBe(0);
+  });
+});
+
+describe('provider failure status', () => {
+  it('returns the HTTP status from the provider error or its cause', async () => {
+    vi.mocked(generateObject).mockRejectedValueOnce(
+      Object.assign(new Error('invalid x-api-key'), { statusCode: 401 })
+    );
+    expect(await generateStructured(connection, options)).toMatchObject({
+      ok: false,
+      error: 'provider_error',
+      status: 401,
+    });
+    vi.mocked(generateObject).mockRejectedValueOnce(
+      new Error('wrapped', { cause: Object.assign(new Error('slow down'), { statusCode: 429 }) })
+    );
+    expect(await generateStructured(connection, options)).toMatchObject({ status: 429 });
+    vi.mocked(generateObject).mockRejectedValueOnce(
+      Object.assign(new Error('Unauthenticated request to AI Gateway.'), {
+        name: 'GatewayAuthenticationError',
+      })
+    );
+    expect(await generateStructured(connection, options)).toMatchObject({ status: 401 });
   });
 });
