@@ -144,65 +144,62 @@ attributes CPU time.
 
 ## Results: checkpoint processing
 
-Before is the batching change at its review head (`a2e87f5`). The merged `main`
-(`454dc83`) produces identical counts for every workload up to 100 assignments:
-its final pre-commit renewal never triggers under the benchmark's frozen clock.
-After is this change, measured at `82f8449`; its later commits also produce
-identical counts up to 100 assignments. Both ran the same benchmark files in
-separate worktrees. Timings are
-medians of the listed samples; the 300-assignment baselines are single samples
-because each takes 8 to 13 minutes. Measured on one Apple M3 Max laptop with
-Node.js 25.9.0 while other jobs ran, so timings are indicative. Counts are
-deterministic, except that long runs can include an extra heartbeat renewal.
+Before is `main` at `8592f76`, which includes the batching, spend-cap and
+recovery changes. After is this change at `7c89138`. Both ran the same benchmark
+files in separate worktrees. Timings are medians of the listed samples; the
+300-assignment baselines are single samples because each takes several minutes.
+Measured on one Apple M3 Max laptop with Node.js 25.9.0 while other jobs ran, so
+timings are indicative. Counts are deterministic, except that long runs can
+include an extra heartbeat renewal.
 
 **0 ms simulated request latency** (before → after):
 
 | Shape | Assignments | Samples |    Executor s |  Checkpoint s |      Requests | Payload reads | Snapshot validations |      Canonical digests |
 | ----- | ----------: | :-----: | ------------: | ------------: | ------------: | ------------: | -------------------: | ---------------------: |
-| map   |           0 |  3 / 3  | 0.007 → 0.004 | 0.003 → 0.001 |       23 → 18 |         2 → 0 |               17 → 7 |               145 → 21 |
-| map   |           5 |  3 / 3  |  0.31 → 0.043 |  0.18 → 0.021 |       83 → 58 |        12 → 0 |              87 → 27 |            2,130 → 141 |
-| map   |         100 |  3 / 3  |   55.6 → 5.71 |   31.9 → 2.98 | 1,425 → 1,020 |       202 → 0 |          1,417 → 407 |       505,345 → 21,421 |
-| map   |         300 |  1 / 3  |  470.1 → 47.1 |  270.0 → 25.0 | 5,363 → 4,158 |       602 → 0 |        4,217 → 1,207 |    4,455,745 → 184,221 |
-| plan  |           0 |  3 / 3  | 0.017 → 0.007 | 0.009 → 0.003 |       35 → 26 |         4 → 0 |              31 → 11 |               497 → 43 |
-| plan  |           5 |  3 / 3  |  0.39 → 0.069 |  0.22 → 0.033 |       95 → 66 |        14 → 0 |             101 → 31 |          6,768 → 1,545 |
-| plan  |         100 |  3 / 3  |   78.4 → 9.27 |   44.9 → 4.77 | 1,480 → 1,071 |       204 → 0 |          1,431 → 411 |    3,293,977 → 368,283 |
-| plan  |         300 |  1 / 3  |  752.3 → 70.4 |  430.4 → 36.7 | 5,444 → 4,235 |       604 → 0 |        4,231 → 1,211 | 61,608,137 → 3,240,763 |
+| map   |           0 |  3 / 3  | 0.008 → 0.004 | 0.004 → 0.001 |       23 → 18 |         2 → 0 |               17 → 7 |               146 → 22 |
+| map   |           5 |  3 / 3  |  0.24 → 0.043 |  0.13 → 0.021 |       83 → 58 |        12 → 0 |              87 → 27 |            2,131 → 142 |
+| map   |         100 |  3 / 3  |   52.3 → 5.80 |   30.0 → 3.05 | 1,425 → 1,020 |       202 → 0 |          1,417 → 407 |       505,346 → 21,422 |
+| map   |         300 |  1 / 3  |  464.3 → 47.8 |  266.2 → 25.3 | 5,371 → 4,166 |       602 → 0 |        4,217 → 1,207 |    4,455,746 → 184,222 |
+| plan  |           0 |  3 / 3  | 0.016 → 0.007 | 0.009 → 0.003 |       35 → 26 |         4 → 0 |              31 → 11 |               498 → 44 |
+| plan  |           5 |  3 / 3  |  0.36 → 0.061 |  0.20 → 0.030 |       95 → 66 |        14 → 0 |             101 → 31 |          6,769 → 1,546 |
+| plan  |         100 |  3 / 3  |   78.7 → 8.56 |   45.1 → 4.46 | 1,480 → 1,071 |       204 → 0 |          1,431 → 411 |    3,293,978 → 368,284 |
+| plan  |         300 |  1 / 3  |  716.7 → 70.9 |  410.6 → 36.9 | 5,449 → 4,240 |       604 → 0 |        4,231 → 1,211 | 61,608,138 → 3,240,764 |
 
 **50 ms simulated request latency** (before → after):
 
 | Shape | Assignments | Samples |   Executor s | Checkpoint s |      Requests | Payload reads | Snapshot validations |   Canonical digests |
 | ----- | ----------: | :-----: | -----------: | -----------: | ------------: | ------------: | -------------------: | ------------------: |
-| map   |           5 |  1 / 1  |  4.98 → 3.04 |  4.33 → 2.69 |       83 → 58 |        12 → 0 |              87 → 27 |         2,130 → 141 |
-| map   |         100 |  1 / 1  | 129.2 → 58.2 | 103.9 → 54.9 | 1,428 → 1,021 |       202 → 0 |          1,417 → 407 |    505,345 → 21,421 |
-| plan  |           5 |  1 / 1  |  5.60 → 3.45 |  4.97 → 3.10 |       95 → 66 |        14 → 0 |             101 → 31 |       6,768 → 1,545 |
-| plan  |         100 |  1 / 1  | 158.9 → 63.6 | 122.3 → 59.1 | 1,483 → 1,072 |       204 → 0 |          1,431 → 411 | 3,293,977 → 368,283 |
+| map   |           5 |  1 / 1  |  4.67 → 3.04 |  4.22 → 2.69 |       83 → 58 |        12 → 0 |              87 → 27 |         2,131 → 142 |
+| map   |         100 |  1 / 1  | 127.4 → 58.3 | 103.7 → 55.1 | 1,428 → 1,021 |       202 → 0 |          1,417 → 407 |    505,346 → 21,422 |
+| plan  |           5 |  1 / 1  |  5.85 → 3.46 |  5.09 → 3.10 |       95 → 66 |        14 → 0 |             101 → 31 |       6,769 → 1,546 |
+| plan  |         100 |  1 / 1  | 157.0 → 63.7 | 121.9 → 59.0 | 1,483 → 1,072 |       204 → 0 |          1,431 → 411 | 3,293,978 → 368,284 |
 
 Payload bytes and heap at 0 ms (before → after). Written bytes are identical:
 
 | Shape | Assignments | Final snapshot bytes | Payload bytes written | Payload bytes read | Peak heap MiB | Retained heap MiB |
 | ----- | ----------: | -------------------: | --------------------: | -----------------: | ------------: | ----------------: |
-| map   |           0 |               53,500 |               213,980 |        142,644 → 0 |    15.3 → 6.5 |         0.2 → 0.2 |
-| map   |           5 |              107,151 |             1,668,272 |      1,525,404 → 0 |   71.9 → 30.1 |         0.4 → 0.2 |
-| map   |         100 |              620,286 |           139,960,244 |    139,133,196 → 0 |   289 → 290.2 |         1.5 → 1.3 |
-| map   |         300 |            1,474,411 |           940,261,988 |    938,296,104 → 0 | 322.2 → 320.8 |         4.3 → 1.3 |
-| plan  |           0 |               55,609 |               370,096 |        295,948 → 0 |   36.1 → 12.9 |         0.1 → 0.1 |
-| plan  |           5 |              114,177 |             1,827,460 |      1,675,224 → 0 |   96.7 → 59.1 |         0.3 → 0.2 |
-| plan  |         100 |              813,678 |           140,440,812 |    139,355,908 → 0 | 300.7 → 315.1 |         0.8 → 0.6 |
-| plan  |         300 |            2,090,303 |           964,140,416 |    961,353,344 → 0 | 342.6 → 364.6 |         1.8 → 3.5 |
+| map   |           0 |               53,573 |               214,268 |        142,836 → 0 |    15.5 → 6.8 |         0.1 → 0.2 |
+| map   |           5 |              107,334 |             1,670,612 |      1,527,500 → 0 |   72.3 → 30.4 |         0.5 → 0.3 |
+| map   |         100 |              622,559 |           140,292,672 |    139,462,592 → 0 | 275.5 → 304.8 |         1.5 → 1.3 |
+| map   |         300 |            1,481,084 |           943,098,352 |    941,123,572 → 0 | 294.9 → 332.8 |           4.4 → 1 |
+| plan  |           0 |               55,682 |               370,584 |        296,340 → 0 |   36.6 → 13.2 |         0.1 → 0.1 |
+| plan  |           5 |              114,360 |             1,830,092 |      1,677,612 → 0 |     99.4 → 59 |         0.3 → 0.2 |
+| plan  |         100 |              815,951 |           140,771,516 |    139,683,580 → 0 | 302.9 → 299.2 |         0.9 → 0.7 |
+| plan  |         300 |            2,096,976 |           966,945,744 |    964,149,776 → 0 | 318.8 → 348.5 |         1.9 → 1.5 |
 
 CPU attribution for one profiled 100-assignment run at 0 ms, inclusive seconds (before → after). Categories overlap:
 
 | Category                   |        map |       plan |
 | -------------------------- | ---------: | ---------: |
-| Sampled total              | 58.9 → 5.6 | 81.9 → 9.6 |
-| Zod validation             | 51.4 → 4.2 | 72.3 → 7.6 |
-| Row schema construction    | 26.4 → 1.0 | 38.1 → 1.7 |
-| Attempt outcome validation | 19.5 → 0.8 | 19.5 → 0.9 |
-| Consistency checks         |  4.4 → 0.2 | 27.8 → 3.1 |
-| Receipt validation         | 22.9 → 2.3 | 31.9 → 4.1 |
-| Canonical digests          |  7.4 → 0.5 |  9.6 → 0.9 |
-| Bounded JSON scans         |  5.4 → 1.3 |  7.1 → 2.2 |
-| Garbage collection         |  4.2 → 0.4 |  6.2 → 0.7 |
+| Sampled total              | 53.7 → 5.6 | 79.8 → 8.5 |
+| Zod validation             | 46.9 → 4.1 | 70.5 → 6.7 |
+| Row schema construction    | 24.2 → 1.0 | 37.0 → 1.5 |
+| Attempt outcome validation | 17.6 → 0.8 | 18.9 → 0.8 |
+| Consistency checks         |  4.2 → 0.2 | 27.2 → 2.7 |
+| Receipt validation         | 20.9 → 2.3 | 31.1 → 3.6 |
+| Canonical digests          |  6.9 → 0.5 |  9.5 → 0.9 |
+| Bounded JSON scans         |  4.8 → 1.3 |  7.1 → 1.9 |
+| Garbage collection         |  3.8 → 0.3 |  5.9 → 0.6 |
 
 Payload bytes written do not change: every save still writes the whole snapshot.
 Peak heap is sampled after state calls and includes uncollected garbage. A session

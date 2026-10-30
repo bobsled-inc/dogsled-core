@@ -66,34 +66,35 @@ commit, as described in `checkpoint-transport-benchmark.md`.
 ## Results
 
 Measured on one Apple M3 Max laptop (Node.js 25.9.0, macOS) while other benchmark
-jobs ran, so timings are indicative. Before is the checkpoint-processing change
-(`e351fa1`); after adds this change. Request counts are deterministic. The double does not model
-login, query planning or scan cost: a skipped copy of a large target saves far more
-on a real warehouse than one request suggests.
+jobs ran, so timings are indicative. Before is `main` at `8592f76`; after is this
+change at `7c89138`, which also includes the checkpoint processing work, so
+checkpoint requests are shown separately. Request counts are deterministic. The
+double does not model login, query planning or scan cost: a skipped copy of a
+large target saves far more on a real warehouse than one request suggests.
 
 **0 ms simulated request latency** (before → after; medians of three samples):
 
-| Scenario                         |  Run ms | Publisher ms |  Requests | Publication requests | Publication DDL | Target copies | Checks | Runners |
-| -------------------------------- | ------: | -----------: | --------: | -------------------: | --------------: | ------------: | -----: | ------: |
-| Missing target, empty input      |  9 → 15 |        0 → 0 |   94 → 88 |              34 → 29 |          12 → 7 |         0 → 0 |  8 → 8 |   7 → 7 |
-| Populated target, no new rows    |   7 → 6 |        0 → 0 |   98 → 89 |              38 → 30 |          12 → 5 |         1 → 0 |  8 → 8 |   7 → 7 |
-| Second equivalent empty run      |   6 → 5 |        0 → 0 |   98 → 89 |              38 → 30 |          12 → 5 |         1 → 0 |  8 → 8 |   7 → 7 |
-| Five changed rows                | 54 → 52 |        1 → 1 | 141 → 137 |              41 → 38 |         13 → 10 |         1 → 1 |  8 → 8 |   7 → 7 |
-| Processed key without rows       | 54 → 55 |        1 → 1 | 141 → 137 |              41 → 38 |         13 → 10 |         1 → 1 |  8 → 8 |   7 → 7 |
-| One new row advances the cursor  | 14 → 14 |        1 → 1 | 109 → 105 |              41 → 38 |         13 → 10 |         1 → 1 |  8 → 8 |   7 → 7 |
-| Resume after an uncertain commit | 17 → 18 |        0 → 0 |   35 → 35 |                4 → 4 |           3 → 3 |         0 → 0 |  0 → 0 |   4 → 4 |
+| Scenario                         |   Run ms | Publisher ms |  Requests | Checkpoint requests | Publication requests | Publication DDL | Target copies |
+| -------------------------------- | -------: | -----------: | --------: | ------------------: | -------------------: | --------------: | ------------: |
+| Missing target, empty input      |   18 → 9 |        0 → 0 |  107 → 88 |             60 → 47 |              34 → 29 |          12 → 7 |         0 → 0 |
+| Populated target, no new rows    |   15 → 7 |        0 → 0 |  111 → 89 |             60 → 47 |              38 → 30 |          12 → 5 |         1 → 0 |
+| Second equivalent empty run      |   12 → 5 |        0 → 0 |  111 → 89 |             60 → 47 |              38 → 30 |          12 → 5 |         1 → 0 |
+| Five changed rows                | 376 → 58 |        2 → 1 | 174 → 137 |            120 → 87 |              41 → 38 |         13 → 10 |         1 → 1 |
+| Processed key without rows       | 373 → 53 |        2 → 1 | 174 → 137 |            120 → 87 |              41 → 38 |         13 → 10 |         1 → 1 |
+| One new row advances the cursor  |  61 → 14 |        2 → 0 | 126 → 105 |             72 → 55 |              41 → 38 |         13 → 10 |         1 → 1 |
+| Resume after an uncertain commit |  99 → 19 |        0 → 0 |   41 → 35 |             26 → 20 |                4 → 4 |           3 → 3 |         0 → 0 |
 
 **50 ms simulated request latency** (before → after; medians of three samples):
 
-| Scenario                         |        Run ms |  Publisher ms |  Requests | Publication requests | Publication DDL | Target copies | Checks | Runners |
-| -------------------------------- | ------------: | ------------: | --------: | -------------------: | --------------: | ------------: | -----: | ------: |
-| Missing target, empty input      | 4,824 → 4,512 | 1,842 → 1,535 |   94 → 88 |              34 → 29 |          12 → 7 |         0 → 0 |  8 → 8 |   7 → 7 |
-| Populated target, no new rows    | 5,010 → 4,559 | 2,042 → 1,584 |   98 → 89 |              38 → 30 |          12 → 5 |         1 → 0 |  8 → 8 |   7 → 7 |
-| Second equivalent empty run      | 5,011 → 4,557 | 2,041 → 1,585 |   98 → 89 |              38 → 30 |          12 → 5 |         1 → 0 |  8 → 8 |   7 → 7 |
-| Five changed rows                | 7,286 → 7,066 | 2,197 → 1,994 | 141 → 137 |              41 → 38 |         13 → 10 |         1 → 1 |  8 → 8 |   7 → 7 |
-| Processed key without rows       | 7,266 → 7,068 | 2,199 → 1,994 | 141 → 137 |              41 → 38 |         13 → 10 |         1 → 1 |  8 → 8 |   7 → 7 |
-| One new row advances the cursor  | 5,593 → 5,386 | 2,197 → 1,994 | 109 → 105 |              41 → 38 |         13 → 10 |         1 → 1 |  8 → 8 |   7 → 7 |
-| Resume after an uncertain commit | 1,807 → 1,807 |     255 → 256 |   35 → 35 |                4 → 4 |           3 → 3 |         0 → 0 |  0 → 0 |   4 → 4 |
+| Scenario                         |        Run ms |  Publisher ms |  Requests | Checkpoint requests | Publication requests | Publication DDL | Target copies |
+| -------------------------------- | ------------: | ------------: | --------: | ------------------: | -------------------: | --------------: | ------------: |
+| Missing target, empty input      | 5,563 → 4,601 | 1,846 → 1,564 |  107 → 88 |             60 → 47 |              34 → 29 |          12 → 7 |         0 → 0 |
+| Populated target, no new rows    | 5,792 → 4,647 | 2,072 → 1,616 |  111 → 89 |             60 → 47 |              38 → 30 |          12 → 5 |         1 → 0 |
+| Second equivalent empty run      | 5,783 → 4,638 | 2,077 → 1,614 |  111 → 89 |             60 → 47 |              38 → 30 |          12 → 5 |         1 → 0 |
+| Five changed rows                | 9,430 → 7,194 | 2,239 → 2,032 | 174 → 137 |            120 → 87 |              41 → 38 |         13 → 10 |         1 → 1 |
+| Processed key without rows       | 9,436 → 7,198 | 2,241 → 2,030 | 174 → 137 |            120 → 87 |              41 → 38 |         13 → 10 |         1 → 1 |
+| One new row advances the cursor  | 6,631 → 5,486 | 2,242 → 2,032 | 126 → 105 |             72 → 55 |              41 → 38 |         13 → 10 |         1 → 1 |
+| Resume after an uncertain commit | 2,229 → 1,840 |     261 → 259 |   41 → 35 |             26 → 20 |                4 → 4 |           3 → 3 |         0 → 0 |
 
 An empty run still makes 89 requests: 47 checkpoint requests for eight durable
 transitions and the ownership reads between publication steps, 8 cursor requests,
