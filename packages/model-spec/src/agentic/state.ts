@@ -21,11 +21,12 @@ import {
 import { buildAgenticStepAssignments } from './plan-work.js';
 import { AgenticColumnsSchema } from './model.js';
 import { checkpointIsConsistent } from './checkpoint-consistency.js';
+import { jsonEqual } from './json-equal.js';
 import { isBoundedCheckpoint } from './checkpoint-json.js';
 import {
   AgentAssignmentSchema,
   AgentAssignmentOutcomeSchema,
-  parseAgentAssignmentOutcome,
+  parseAttemptOutcome,
 } from './assignment.js';
 import { AgenticJsonSchema, AGENTIC_MAX_ROWS } from './rows.js';
 
@@ -182,10 +183,8 @@ const SnapshotObjectSchema = z
             invalid();
           }
           try {
-            parseAgentAssignmentOutcome(
-              { ...work.assignment, attempt_id: attempt.id },
-              attempt.outcome
-            );
+            // Refinements run only after every field parsed, so this assignment is parsed.
+            parseAttemptOutcome(work.assignment, attempt.id, attempt.outcome);
           } catch {
             invalid();
           }
@@ -196,7 +195,7 @@ const SnapshotObjectSchema = z
         if (
           !attempt ||
           work.accepted.status === 'failed' ||
-          digestAgenticState(work.accepted) !== digestAgenticState(attempt.outcome)
+          !jsonEqual(work.accepted, attempt.outcome)
         ) {
           invalid();
         }
@@ -330,18 +329,30 @@ export function applyAgenticCheckpoint(
   now = Date.now()
 ): AgenticRunSnapshot {
   const state = AgenticRunSnapshotSchema.parse(value);
+  return transitionAgenticCheckpoint(state, input, now)
+    ? AgenticRunSnapshotSchema.parse(state)
+    : state;
+}
+
+/** Applies a command to `state` in place and reports whether it changed. `state` must be an
+ * unshared copy of AgenticRunSnapshotSchema output. A changed state is not yet validated. */
+export function transitionAgenticCheckpoint(
+  state: AgenticRunSnapshot,
+  input: AgenticCheckpointCommand,
+  now: number
+): boolean {
   const command = AgenticCheckpointCommandSchema.parse(input);
   const conflict = (): never => {
     throw new AgenticStateError('conflict');
   };
   if (command.type === 'supersede') {
-    if (state.superseded) return state;
+    if (state.superseded) return false;
     if (state.revision !== command.expected_revision || state.publication !== 'pending') {
       conflict();
     }
     state.superseded = true;
     state.revision++;
-    return AgenticRunSnapshotSchema.parse(state);
+    return true;
   }
   if (state.superseded) throw new AgenticStateError('superseded');
   if (command.type === 'begin_execution') {
@@ -355,7 +366,7 @@ export function applyAgenticCheckpoint(
       ) {
         conflict();
       }
-      return state;
+      return false;
     }
     if (state.revision !== command.expected_revision || state.publication === 'confirmed') {
       conflict();
@@ -378,18 +389,18 @@ export function applyAgenticCheckpoint(
       },
     ];
     state.revision++;
-    return AgenticRunSnapshotSchema.parse(state);
+    return true;
   }
   if (command.type === 'prepare_publication' || command.type === 'confirm_publication') {
-    return AgenticRunSnapshotSchema.parse(applyPublicationCheckpoint(state, command));
+    return applyPublicationCheckpoint(state, command);
   }
   if (command.type === 'confirm_cursors') {
     if (state.publication !== 'confirmed' || !state.cursor_values) conflict();
-    if (state.cursors_committed) return state;
+    if (state.cursors_committed) return false;
     if (command.expected_revision !== state.revision) conflict();
     state.cursors_committed = true;
     state.revision++;
-    return AgenticRunSnapshotSchema.parse(state);
+    return true;
   }
   if (command.type === 'seal_work') {
     if (command.plan_inputs && command.assignments.length) {
@@ -408,7 +419,7 @@ export function applyAgenticCheckpoint(
       ) {
         conflict();
       }
-      return state;
+      return false;
     }
     if (command.expected_revision !== state.revision) conflict();
     if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
@@ -420,7 +431,7 @@ export function applyAgenticCheckpoint(
     state.work = command.assignments.map((assignment) => ({ assignment, attempts: [] }));
     state.status = 'running';
     state.revision++;
-    return AgenticRunSnapshotSchema.parse(state);
+    return true;
   }
   if (command.type === 'append_step') {
     if (
@@ -442,7 +453,7 @@ export function applyAgenticCheckpoint(
       ) {
         conflict();
       }
-      return state;
+      return false;
     }
     if (state.status !== 'running' || command.expected_revision !== state.revision) conflict();
     if (now >= deadlineTime(agenticDeadlineAt(state))) throw new AgenticStateError('expired');
@@ -461,7 +472,7 @@ export function applyAgenticCheckpoint(
     state.sealed_steps!.push({ id: command.step_id, revision: state.revision });
     state.work.push(...command.assignments.map((assignment) => ({ assignment, attempts: [] })));
     state.revision++;
-    return AgenticRunSnapshotSchema.parse(state);
+    return true;
   }
   const work = 'work' in command ? state.work[command.work] : undefined;
   if (command.type === 'complete') {
@@ -475,14 +486,14 @@ export function applyAgenticCheckpoint(
       ) {
         conflict();
       }
-      return state;
+      return false;
     }
   } else {
     if (!work || command.operation_id !== `${command.type}:${command.attempt_id}`) conflict();
     const prior = work!.attempts.find((attempt) => attempt.id === command.attempt_id);
     if (command.type === 'start_attempt' && prior) {
       if (command.expected_revision !== prior.start_revision) conflict();
-      return state;
+      return false;
     }
     if (command.type === 'finish_attempt' && prior?.finish_digest) {
       if (command.expected_revision !== prior.finish_revision) conflict();
@@ -492,7 +503,7 @@ export function applyAgenticCheckpoint(
       ) {
         conflict();
       }
-      return state;
+      return false;
     }
   }
   if (command.expected_revision !== state.revision || state.status !== 'running') conflict();
@@ -544,10 +555,7 @@ export function applyAgenticCheckpoint(
     if (!attempt || attempt.id !== command.attempt_id || work!.accepted) {
       throw new AgenticStateError('conflict');
     }
-    const outcome = parseAgentAssignmentOutcome(
-      { ...work!.assignment, attempt_id: attempt.id },
-      command.outcome
-    );
+    const outcome = parseAttemptOutcome(work!.assignment, attempt.id, command.outcome);
     const minimum =
       outcome.usage.status === 'measured' ? outcome.usage.total_tokens : (attempt.reservation ?? 0);
     if (command.charge < minimum) conflict();
@@ -567,5 +575,5 @@ export function applyAgenticCheckpoint(
     }
   }
   state.revision++;
-  return AgenticRunSnapshotSchema.parse(state);
+  return true;
 }

@@ -15,6 +15,7 @@ import {
   AgenticJudgmentSchema,
   AgenticReasonSchema,
   createAgenticRowSchema,
+  isBoundedAgenticJson,
 } from './rows.js';
 
 const IdentitySchema = z.string().trim().min(1).max(1024);
@@ -28,6 +29,10 @@ const KeysSchema = z
     (keys) => new Set(keys.map((key) => key.toLowerCase())).size === keys.length,
     'Key names must be unique'
   );
+// Validation builds row schemas for each assignment. Compiling a schema's fast parser
+// costs more than checking a few values without it.
+const parseOptions = (values: number) => (values <= 4 ? { jitless: true } : undefined);
+
 export const AgenticUsageSchema = z.discriminatedUnion('status', [
   z
     .object({
@@ -168,9 +173,13 @@ const AssignmentObjectSchema = z
       issue('Replacement keys must name output columns');
       return;
     }
+    const keySchema = createAgenticRowSchema(keyColumns);
+    const keyOptions = parseOptions(
+      work.processed_keys.length * (1 + (work.inputs ? Object.keys(work.inputs).length : 0))
+    );
     const keys = new Set<string>();
     for (const key of work.processed_keys) {
-      if (!createAgenticRowSchema(keyColumns).safeParse(key).success) {
+      if (!keySchema.safeParse(key, keyOptions).success) {
         issue('Processed keys must match replacement key columns');
       }
       const identity = keyIdentity(key, work.output.replacement_keys);
@@ -203,9 +212,7 @@ const AssignmentObjectSchema = z
           completed.size !== input.processed_keys.length ||
           completed.size !== keys.size ||
           [...keys].some((key) => !completed.has(key)) ||
-          input.processed_keys.some(
-            (key) => !createAgenticRowSchema(keyColumns).safeParse(key).success
-          )
+          input.processed_keys.some((key) => !keySchema.safeParse(key, keyOptions).success)
         ) {
           issue('Named input must complete the assignment processed key set');
         }
@@ -215,7 +222,7 @@ const AssignmentObjectSchema = z
       const groupColumns = input.columns.filter((column) => keyNames.includes(column.name));
       if (
         !groupColumns.length ||
-        !createAgenticRowSchema(groupColumns).safeParse(work.group_key).success
+        !createAgenticRowSchema(groupColumns).safeParse(work.group_key, parseOptions(1)).success
       ) {
         issue('Group key must match input columns');
       }
@@ -227,8 +234,9 @@ const AssignmentObjectSchema = z
         }
       }
       const inputRow = createAgenticRowSchema(input.columns);
+      const rowOptions = parseOptions(input.rows.length);
       for (const row of input.rows) {
-        const parsed = inputRow.safeParse(row);
+        const parsed = inputRow.safeParse(row, rowOptions);
         if (!parsed.success) {
           issue('Input row does not match its inferred schema');
           continue;
@@ -365,7 +373,28 @@ export function parseAgentAssignmentOutcome(
   assignment: AgentAssignment,
   value: unknown
 ): AgentAssignmentOutcome {
-  const work = AgentAssignmentSchema.parse(assignment);
+  return parseOutcome(AgentAssignmentSchema.parse(assignment), value);
+}
+
+/** Validates an attempt's outcome against `work`, which must be AgentAssignmentSchema output.
+ * Equivalent to parseAgentAssignmentOutcome({ ...work, attempt_id }, value): only the
+ * attempt ID and the bounded total differ, so only they are checked again. */
+export function parseAttemptOutcome(
+  work: AgentAssignment,
+  attemptId: string,
+  value: unknown
+): AgentAssignmentOutcome {
+  const raw = { ...work, attempt_id: attemptId };
+  const id = IdentitySchema.safeParse(attemptId);
+  return parseOutcome(
+    id.success && isBoundedAgenticJson(raw)
+      ? { ...work, attempt_id: id.data }
+      : AgentAssignmentSchema.parse(raw),
+    value
+  );
+}
+
+function parseOutcome(work: AgentAssignment, value: unknown): AgentAssignmentOutcome {
   const schema = AgentAssignmentOutcomeSchema.superRefine((outcome, ctx) => {
     const issue = (message: string): void => ctx.addIssue({ code: 'custom', message });
     if (outcome.attempt_id !== work.attempt_id) issue('Outcome belongs to a different attempt');
@@ -374,6 +403,7 @@ export function parseAgentAssignmentOutcome(
       issue('Classification must return exactly one successful row');
     }
     const rowSchema = createAgenticRowSchema(work.output.columns, true);
+    const rowOptions = parseOptions(outcome.rows.length);
     const allowed = new Set(
       work.processed_keys.map((key) => keyIdentity(key, work.output.replacement_keys))
     );
@@ -381,7 +411,7 @@ export function parseAgentAssignmentOutcome(
     const inputs = work.inputs ? Object.values(work.inputs) : [work.input];
     const sources = assignmentEvidenceSources(work);
     for (const row of outcome.rows) {
-      const parsed = rowSchema.safeParse(row);
+      const parsed = rowSchema.safeParse(row, rowOptions);
       if (!parsed.success) {
         issue('Output row does not match columns and reserved metadata');
         continue;

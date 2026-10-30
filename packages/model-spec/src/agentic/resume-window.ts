@@ -5,7 +5,8 @@ import type { AgenticCheckpointCommand, AgenticRunSnapshot, AgenticStateSession 
 export async function beginAgenticExecution(
   session: AgenticStateSession,
   snapshot: AgenticRunSnapshot,
-  execution: { id: string; startedAt: string; retryFailed?: boolean }
+  execution: { id: string; startedAt: string; retryFailed?: boolean },
+  validate = validateAgenticReceipt
 ): Promise<AgenticRunSnapshot> {
   if (snapshot.execution_windows?.some((window) => window.operation_id === execution.id)) {
     return snapshot;
@@ -19,13 +20,8 @@ export async function beginAgenticExecution(
   };
   const requestedAt = Date.now();
   try {
-    return validateAgenticReceipt(
-      await session.checkpoint(command),
-      snapshot,
-      command,
-      requestedAt
-    );
+    return validate(await session.checkpoint(command), snapshot, command, requestedAt);
   } catch {
-    return validateAgenticReceipt(await session.read(), snapshot, command, requestedAt);
+    return validate(await session.read(), snapshot, command, requestedAt);
   }
 }

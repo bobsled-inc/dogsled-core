@@ -2,11 +2,36 @@
 export * from './model.js';
 export * from './rows.js';
 export * from './resolve.js';
-export * from './assignment.js';
+export {
+  AgenticUsageSchema,
+  AgentAssignmentSchema,
+  AgentAssignmentOutcomeSchema,
+  createAgentAssignmentRowSchema,
+  createAgentAssignmentOutputSchema,
+  parseAgentAssignmentOutcome,
+  type AgenticUsage,
+  type AgentAssignment,
+  type AgentAssignmentOutcome,
+} from './assignment.js';
 export * from './executor.js';
 export type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
 
-export * from './state.js';
+export {
+  AgenticStateError,
+  AgenticRunKeySchema,
+  AgenticAttemptStateSchema,
+  AgenticWorkStateSchema,
+  AgenticRunSnapshotSchema,
+  AgenticCheckpointCommandSchema,
+  digestAgenticState,
+  applyAgenticCheckpoint,
+  type AgenticStateErrorCode,
+  type AgenticRunKey,
+  type AgenticRunSnapshot,
+  type AgenticCheckpointCommand,
+  type AgenticStateSession,
+  type AgenticStateStore,
+} from './state.js';
 export * from './local-state.js';
 export * from './run.js';
 export type { AgenticAssignmentCounts, AgenticRunProgress } from './progress.js';

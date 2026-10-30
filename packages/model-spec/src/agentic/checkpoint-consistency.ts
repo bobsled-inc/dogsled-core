@@ -10,7 +10,7 @@ import {
   AGENTIC_METADATA_COLUMNS,
 } from './model.js';
 import { AgenticProfileSchema } from './resolve.js';
-import { digestAgenticState } from './state.js';
+import { jsonEqual } from './json-equal.js';
 import type { AgenticRunSnapshot } from './state.js';
 
 const DefinitionSchema = z.object({
@@ -63,8 +63,7 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
   if (definition.resolved.steps.length !== model.plan.steps.length) return false;
   const output = model.plan.steps.find((step) => step.id === model.output.from)!;
   if (
-    digestAgenticState(definition.resolved.output_columns) !==
-    digestAgenticState([...output.columns, ...AGENTIC_METADATA_COLUMNS])
+    !jsonEqual(definition.resolved.output_columns, [...output.columns, ...AGENTIC_METADATA_COLUMNS])
   ) {
     return false;
   }
@@ -74,10 +73,7 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
       authored.execution.mode === 'llm_call'
         ? []
         : (getAgenticContextSources(authored) ?? Object.keys(model.sources));
-    if (
-      digestAgenticState(resolved.step) !== digestAgenticState(authored) ||
-      digestAgenticState(resolved.allowed_sources) !== digestAgenticState(allowed)
-    ) {
+    if (!jsonEqual(resolved.step, authored) || !jsonEqual(resolved.allowed_sources, allowed)) {
       return false;
     }
   }
@@ -141,10 +137,7 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
             ? [resolved.input_columns]
             : [];
       });
-      if (
-        !schemas.length ||
-        schemas.some((columns) => digestAgenticState(columns) !== digestAgenticState(input.columns))
-      ) {
+      if (!schemas.length || schemas.some((columns) => !jsonEqual(columns, input.columns))) {
         return false;
       }
       const rowSchema = createAgenticRowSchema(input.columns);
@@ -192,7 +185,10 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
       }
     }
     if (
-      digestAgenticState(expected) !== digestAgenticState(run.work.map((work) => work.assignment))
+      !jsonEqual(
+        expected,
+        run.work.map((work) => work.assignment)
+      )
     ) {
       return false;
     }
@@ -281,7 +277,7 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
                 (alias) => model.sources[alias]!.ref
               ),
       };
-      if (digestAgenticState(assignment) !== digestAgenticState(expected)) return false;
+      if (!jsonEqual(assignment, expected)) return false;
     }
     const sealRevision =
       run.sealed_steps?.find((sealed) => sealed.id === assignment.step_id)?.revision ?? 0;
