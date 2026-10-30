@@ -88,26 +88,23 @@ function judgmentSchema(evidenceSources?: readonly string[]) {
 export const AgenticJudgmentSchema = judgmentSchema();
 
 // Field schemas are immutable. Checkpoint validation builds row schemas for every
-// assignment, so share the fields and construct only each row object.
-const json = z.json();
-const fields = (schemas: Record<string, z.ZodType>) =>
-  Object.fromEntries(
-    Object.entries(schemas).map(([name, schema]) => [
-      name,
-      { required: schema, nullable: schema.nullable() },
-    ])
-  );
-const scalarFields = fields({
-  string: z.string(),
-  integer: z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
-  number: z.number(),
-  boolean: z.boolean(),
-  timestamp: z.iso.datetime({ offset: true }),
-  date: z.iso.date(),
-  array: z.array(json),
-  object: z.record(z.string(), json),
-} satisfies Record<AgenticColumn['type'], z.ZodType>);
-const metadataFields = fields(AgenticJudgmentSchema.shape);
+// assignment, so share scalar fields and construct only each row object.
+interface Field {
+  required: z.ZodType;
+  nullable: z.ZodType;
+}
+const field = (schema: z.ZodType): Field => ({ required: schema, nullable: schema.nullable() });
+const scalarFields: Record<Exclude<AgenticColumn['type'], 'array' | 'object'>, Field> = {
+  string: field(z.string()),
+  integer: field(z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER)),
+  number: field(z.number()),
+  boolean: field(z.boolean()),
+  timestamp: field(z.iso.datetime({ offset: true })),
+  date: field(z.iso.date()),
+};
+const metadataFields = new Map(
+  Object.entries(AgenticJudgmentSchema.shape).map(([name, schema]) => [name, field(schema)])
+);
 const BoundedRowSchema = z.unknown().refine((value): boolean => isBoundedAgenticJson(value), {
   message: 'Expected bounded JSON data',
   abort: true,
@@ -120,13 +117,21 @@ export function createAgenticRowSchema(
   evidenceSources?: readonly string[]
 ) {
   const parsed = AgenticColumnsSchema.parse(columns);
+  // JSON Schema export names recursive definitions by instance, so each row schema keeps
+  // its own JSON value schemas, as it always has.
+  let json: Record<'array' | 'object', Field> | undefined;
   const shape: Record<string, z.ZodType> = {};
   for (const column of parsed) {
     // Metadata read from an earlier model must keep its fixed structure.
-    const field = Object.hasOwn(metadataFields, column.name)
-      ? metadataFields[column.name]!
-      : scalarFields[column.type]!;
-    shape[column.name] = column.nullable ? field.nullable : field.required;
+    const columnField =
+      metadataFields.get(column.name) ??
+      (column.type === 'array' || column.type === 'object'
+        ? (json ??= {
+            array: field(z.array(z.json())),
+            object: field(z.record(z.string(), z.json())),
+          })[column.type]
+        : scalarFields[column.type]);
+    shape[column.name] = column.nullable ? columnField.nullable : columnField.required;
   }
   if (findings) {
     Object.assign(
