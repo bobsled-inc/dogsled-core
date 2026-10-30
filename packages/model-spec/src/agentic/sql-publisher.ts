@@ -83,8 +83,8 @@ export async function createSqlAgenticPublisher(
     return count;
   }
   let closed = false;
-  // Control tables this publisher created or confirmed. Any failed operation forgets them,
-  // so the next operation initializes again.
+  // Control tables initialized by this publisher. Preflight and inspection always initialize;
+  // claim reuses an earlier initialization. Any failed operation forgets them.
   const initialized = new Set<string>();
   async function operation<T>(
     fn: (db: PublicationDb, runner: SqlRunnerModule) => Promise<T>,
@@ -102,8 +102,8 @@ export async function createSqlAgenticPublisher(
       await runner.close?.();
     }
   }
-  async function initialize(db: PublicationDb, names: PublicationNames) {
-    if (initialized.has(names.control)) return;
+  async function initialize(db: PublicationDb, names: PublicationNames, always = false) {
+    if (!always && initialized.has(names.control)) return;
     await initPublication(db, names, dialect);
     initialized.add(names.control);
   }
@@ -160,7 +160,7 @@ export async function createSqlAgenticPublisher(
       AgenticColumnsSchema.parse(context.resolved.output_columns);
       const names = publicationNames(context.target, dialect, options.systemSchema);
       await operation(async (db, runner) => {
-        await initialize(db, names);
+        await initialize(db, names, true);
         const exists = await assertSqlSchema(db, names, context, dialect);
         await catalogCommits(db, names.control);
         await catalogCommits(db, names.receipts);
@@ -293,9 +293,10 @@ export async function createSqlAgenticPublisher(
         }
         const exists = await assertSqlSchema(db, names, context, dialect);
         const stage = names.stage(identity.operation_id);
-        if (exists && !processedKeys.length) {
+        if (exists && exists.stageTypes && !processedKeys.length) {
           // No processed keys means the published target is the current target. Count and
           // check it in place instead of copying it. Commit stays fenced by the claimed version.
+          // Checks use the target's own collation, as the published rows do.
           const count = await db.query(`SELECT COUNT(*) AS count FROM ${names.target}`);
           if (countValue(count[0]?.count) > maxRows) {
             throw new Error('Publication replacement exceeds stage row limit');
@@ -344,7 +345,7 @@ export async function createSqlAgenticPublisher(
       AgenticPublicationIntentSchema.parse(intent);
       const names = publicationNames(intent.identity.target, dialect, options.systemSchema);
       return operation(async (db) => {
-        await initialize(db, names);
+        await initialize(db, names, true);
         return readSqlReceipt(db, names, intent);
       }, signal);
     },

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveRunner, type PostgresIntegration } from '@bobsled-inc/connections';
 import { createLocalAgenticStateStore, executeAgenticRun } from '../../../src/agentic/index.js';
 import { createSqlAgenticPublisher } from '../../../src/agentic/sql-publisher.js';
-import { publicationNames } from '../../../src/agentic/sql-publication-dialect.js';
+import { publicationNames, publicationType } from '../../../src/agentic/sql-publication-dialect.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 
 // Run against a dedicated database with DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres.
@@ -175,6 +175,68 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
       })
     ).rejects.toThrow('warning severity');
     expect(f.host.executeAgent).not.toHaveBeenCalled();
+  });
+
+  it('checks an unchanged target in place for empty input', async () => {
+    const f = await setup();
+    f.host.executeAgent = async ({ assignment }) => ({
+      contract_version: 2,
+      attempt_id: assignment.attempt_id,
+      status: 'succeeded',
+      usage: { status: 'unknown', reason: 'unavailable' },
+      rows: [
+        {
+          pair_id: assignment.input.rows[0]!.pair_id,
+          assessment: 'existing finding',
+          _dogsled_evidence: null,
+          _dogsled_confidence: null,
+          _dogsled_reason: null,
+        },
+      ],
+    });
+    const run = (id: string) =>
+      executeAgenticRun(f.host, f.context(), {
+        run: { id, mode: 'start' },
+        projectDirectory: f.directory,
+        publisher: f.publisher,
+      });
+    await run('populate');
+    const rows = await f.inspect(`SELECT * FROM ${f.target} ORDER BY pair_id`);
+    expect(rows).toHaveLength(2);
+    f.host.prepare = async () => [];
+    f.model.tests = [{ type: 'unique', column: 'pair_id' }];
+    f.model.expect = [{ kind: 'row_count_between', min: 2, max: 2 }];
+    expect((await run('empty')).publication).toBe('confirmed');
+    // The second check fails only because the existing target has two rows.
+    f.model.expect = [{ kind: 'row_count_between', max: 1 }];
+    await expect(run('failing')).rejects.toThrow('final check failed');
+    expect(await f.inspect(`SELECT * FROM ${f.target} ORDER BY pair_id`)).toEqual(rows);
+  });
+
+  it('stages an empty-input check when the target uses json instead of jsonb', async () => {
+    const f = await setup();
+    const columns = f
+      .context()
+      .resolved.output_columns.map(
+        (column) =>
+          `"${column.name}" ${publicationType(column.type, 'postgres').replace('JSONB', 'JSON')}${column.nullable ? '' : ' NOT NULL'}`
+      );
+    await f.inspect(`CREATE TABLE ${f.target} (${columns.join(', ')})`);
+    await f.inspect(
+      `INSERT INTO ${f.target} (pair_id, assessment, _dogsled_run_id, _dogsled_reason) VALUES ('p0', 'kept', 'earlier', '{"summary": "a"}'::json)`
+    );
+    f.host.prepare = async () => [];
+    // PostgreSQL json has no equality operator; the staged jsonb copy does.
+    f.model.tests = [{ type: 'unique', column: '_dogsled_reason' }];
+    const result = await executeAgenticRun(f.host, f.context(), {
+      run: { id: 'json', mode: 'start' },
+      projectDirectory: f.directory,
+      publisher: f.publisher,
+    });
+    expect(result.publication).toBe('confirmed');
+    expect(await f.inspect(`SELECT pair_id, assessment FROM ${f.target}`)).toEqual([
+      { pair_id: 'p0', assessment: 'kept' },
+    ]);
   });
 
   it('rejects failed final checks without creating the target', async () => {

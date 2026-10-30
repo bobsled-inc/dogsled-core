@@ -61,7 +61,7 @@ export function publicationCheckSql(
       dialect
     ).map(
       (generated) =>
-        `SELECT COUNT(*) AS violation_count FROM (${generated.sql.replace(buildFqName(PUBLICATION_SCHEMA, stage, dialect), relation).replace(/;\s*$/, '')}) AS failures`
+        `SELECT COUNT(*) AS violation_count FROM (${generated.sql.replace(buildFqName(PUBLICATION_SCHEMA, stage, dialect), () => relation).replace(/;\s*$/, '')}) AS failures`
     )
   );
   const expectations = generateExpectationSql({

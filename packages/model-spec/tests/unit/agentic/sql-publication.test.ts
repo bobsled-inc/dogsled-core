@@ -6,12 +6,14 @@ import { AgenticPublicationIdentitySchema } from '../../../src/agentic/publicati
 import {
   publicationNames,
   publicationTransactionSql,
+  publicationType,
   type PublicationDialect,
 } from '../../../src/agentic/sql-publication-dialect.js';
 import { digestAgenticState } from '../../../src/agentic/state.js';
 import { runFixture, MemoryStateStore } from './state-fixture.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import { publicationWarehouse } from '../../support/publication-warehouse.js';
+import { publicationCheckSql } from '../../../src/agentic/duckdb-checks.js';
 
 const resolve = vi.hoisted(() => vi.fn());
 vi.mock('@bobsled-inc/connections', async (original) => ({
@@ -416,7 +418,7 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
       expect(f.db.receipts()).toHaveLength(0);
       expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
     });
-    it('initializes publication tables once per publisher until an operation fails', async () => {
+    it('reuses initialization for a claim until an operation fails', async () => {
       const db = database(dialect);
       const publisher = await createSqlAgenticPublisher(configs[dialect]);
       const inits = () =>
@@ -424,7 +426,12 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
           (sql) => sql.startsWith('create table if not exists') && sql.includes('_control')
         ).length;
       await publisher.preflight(db.context);
-      const claim = await publisher.claim(db.context.target);
+      let claim = await publisher.claim(db.context.target);
+      expect(inits()).toBe(1);
+      // Each run's preflight and every inspection initialize again.
+      await publisher.preflight(db.context);
+      claim = await publisher.claim(db.context.target);
+      expect(inits()).toBe(2);
       await publisher.inspect({
         identity: AgenticPublicationIdentitySchema.parse({
           operation_id: 'e'.repeat(64),
@@ -438,7 +445,7 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
         expected_version: claim.version,
         stage: `stage_${'e'.repeat(64)}`,
       });
-      expect(inits()).toBe(1);
+      expect(inits()).toBe(3);
       // A missing stage fails the commit; the next operation initializes again.
       await expect(
         publisher.commit(
@@ -458,9 +465,36 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
           claim
         )
       ).rejects.toThrow();
-      expect(inits()).toBe(1);
+      expect(inits()).toBe(3);
       await publisher.claim(db.context.target);
-      expect(inits()).toBe(2);
+      expect(inits()).toBe(4);
+    });
+    it('stages a no-op when an existing column type compares differently', async () => {
+      const aliases: Partial<Record<PublicationDialect, Partial<Record<string, string>>>> = {
+        postgres: { object: 'json', array: 'json' },
+        databricks: { number: 'FLOAT' },
+      };
+      const alias = aliases[dialect];
+      const f = await prepared([], []);
+      if (alias) {
+        f.db.reportTypes((column) => alias[column.type] ?? publicationType(column.type, dialect));
+      }
+      const start = f.db.events.length;
+      const intent = await f.publisher.prepare(
+        f.db.context,
+        f.identity,
+        f.accepted,
+        f.keys,
+        f.claim
+      );
+      // Without an alias the target is checked in place; otherwise its rows are staged.
+      const copied = f.db.events
+        .slice(start)
+        .some((sql) => sql.startsWith('insert into') && sql.includes('where not exists'));
+      expect(copied).toBe(alias !== undefined);
+      await f.publisher.commit(intent, f.claim);
+      expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
+      expect(f.db.receipts()).toHaveLength(1);
     });
     it('rolls back stale ownership without changing target rows or saving a receipt', async () => {
       const f = await prepared();
@@ -511,6 +545,18 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
     });
   });
 }
+
+it('substitutes relation names with dollar signs literally in final checks', () => {
+  const context = runFixture().context();
+  context.resolved.model.tests = [
+    { type: 'not_null', column: 'pair_id' },
+    { type: 'unique', column: 'pair_id' },
+  ];
+  const relation = '"ANALYTICS"."ORDERS$$2024$&"';
+  const checks = publicationCheckSql(context, `stage_${'a'.repeat(64)}`, 'snowflake', relation);
+  expect(checks.length).toBeGreaterThan(2);
+  for (const sql of checks) expect(sql).toContain(relation);
+});
 
 for (const dialect of Object.keys(configs) as PublicationDialect[]) {
   it(`${dialect} quotes the system schema without changing the target address`, () => {
