@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IntegrationFile, SqlRunnerModule } from '@bobsled-inc/connections';
+import type { IntegrationFile } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { createSqlAgenticPublisher } from '../../../src/agentic/sql-publisher.js';
 import { AgenticPublicationIdentitySchema } from '../../../src/agentic/publication.js';
 import {
   publicationNames,
   publicationTransactionSql,
-  publicationType,
   type PublicationDialect,
 } from '../../../src/agentic/sql-publication-dialect.js';
 import { digestAgenticState } from '../../../src/agentic/state.js';
 import { runFixture, MemoryStateStore } from './state-fixture.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
+import { publicationWarehouse } from '../../support/publication-warehouse.js';
 
 const resolve = vi.hoisted(() => vi.fn());
 vi.mock('@bobsled-inc/connections', async (original) => ({
@@ -47,8 +47,6 @@ it('rejects ClickHouse before opening a runner', async () => {
   expect(resolve).not.toHaveBeenCalled();
 });
 
-type Row = Record<string, unknown>;
-const normalize = (sql: string) => sql.replaceAll('"', '').replaceAll('`', '').toLowerCase();
 const configs: Record<PublicationDialect, IntegrationFile> = {
   postgres: {
     spec_version: '1',
@@ -89,257 +87,10 @@ const configs: Record<PublicationDialect, IntegrationFile> = {
   },
 };
 
-/** A small transactional warehouse double. It keeps row data across runner instances.
- * It exercises publisher decisions and recovery, not vendor SQL syntax acceptance. */
 function database(dialect: PublicationDialect, systemSchema?: string) {
-  const context = runFixture().context();
-  const names = publicationNames(context.target, dialect, systemSchema);
-  const target = normalize(names.target),
-    control = normalize(names.control),
-    manifests = normalize(names.manifests),
-    receipts = normalize(names.receipts);
-  let tables = new Map<string, Row[]>();
-  let snapshot: Map<string, Row[]> | undefined;
-  const columns = new Map<string, string[]>();
-  const events: string[] = [];
-  let failChecks = false,
-    loseResponse = false,
-    invalidRegex = false,
-    schemaMismatch = false,
-    catalogEnabled = true;
-  const row = (pair_id: string, assessment = 'old'): Row => ({
-    pair_id,
-    assessment,
-    _dogsled_run_id: 'saved',
-    _dogsled_evidence: null,
-    _dogsled_confidence: null,
-    _dogsled_reason: null,
-  });
-  tables.set(target, [row('a'), row('b'), row('c')]);
-  const read = (name: string) => tables.get(name) ?? [];
-  const controlRow = () => read(control)[0]!;
-  function predicate(sql: string): boolean {
-    const revision = /where revision = (\d+)/.exec(sql)?.[1];
-    const fence = /fence = '([^']+)'/.exec(sql)?.[1];
-    const token = /commit_token = '([^']+)'/.exec(sql)?.[1];
-    return (
-      read(control).length === 1 &&
-      (revision === undefined || controlRow().revision === Number(revision)) &&
-      (fence === undefined || controlRow().fence === fence) &&
-      (token === undefined || controlRow().commit_token === token)
-    );
-  }
-  function apply(raw: string) {
-    const sql = normalize(raw).trim();
-    events.push(sql);
-    const created = /^create table (?:if not exists )?([^\s(]+)/.exec(sql)?.[1];
-    if (created) {
-      if (!tables.has(created)) {
-        tables.set(
-          created,
-          created === control ? [{ revision: 0, fence: '', commit_token: '' }] : []
-        );
-      }
-      const shape = /^create table (?:if not exists )?[^\s(]+ \((.*)\)/.exec(sql)?.[1];
-      if (shape) {
-        columns.set(
-          created,
-          shape.split(', ').map((part) => part.split(' ')[0]!)
-        );
-      }
-      return;
-    }
-    const dropped = /^drop table (?:if exists )?([^\s;]+)/.exec(sql)?.[1];
-    if (dropped) {
-      tables.delete(dropped);
-      return;
-    }
-    if (sql.startsWith(`update ${control} set revision = revision + 1`)) {
-      if (predicate(sql.slice(sql.indexOf('where')))) {
-        controlRow().revision = Number(controlRow().revision) + 1;
-        const token = /commit_token = '([^']+)'/.exec(sql)?.[1];
-        if (token) controlRow().commit_token = token;
-      }
-      return;
-    }
-    const deleted = /^delete from ([^\s;]+)/.exec(sql)?.[1];
-    if (deleted) {
-      if (!sql.includes('where 1 = 0')) tables.set(deleted, []);
-      return;
-    }
-    const inserted = /^insert into ([^\s(]+)/.exec(sql)?.[1];
-    if (inserted) {
-      if (inserted === receipts) {
-        const op = /operation_id = '([^']+)'/.exec(sql)![1];
-        read(receipts).push(
-          ...read(manifests)
-            .filter((entry) => entry.operation_id === op)
-            .map((entry) => ({ operation_id: op, receipt: entry.receipt }))
-        );
-      } else if (sql.includes('where not exists')) {
-        const processed = /select 1 from ([^\s]+)/.exec(sql)![1];
-        const keys = new Set(read(processed).map((entry) => entry.pair_id));
-        read(inserted).push(
-          ...structuredClone(read(target).filter((entry) => !keys.has(entry.pair_id)))
-        );
-      } else {
-        const source = / from ([^\s;]+)$/.exec(sql)![1];
-        read(inserted).push(...structuredClone(read(source)));
-      }
-    }
-  }
-  async function run(raw: string) {
-    let sql = raw;
-    if (sql.startsWith('EXECUTE IMMEDIATE ')) {
-      sql = sql.slice(19, -1).replaceAll("''", "'").replaceAll("\\'", "'").replaceAll('\\n', '\n');
-    }
-    if (/^(BEGIN TRANSACTION;|BEGIN ATOMIC|DECLARE stale)/.test(sql)) {
-      const before = structuredClone(tables);
-      try {
-        for (const statement of sql.split(';').map((part) => part.trim())) {
-          const dml = /(?:^|\n)((?:UPDATE|DELETE|INSERT) [\s\S]*)/.exec(statement)?.[1];
-          if (dml) apply(dml);
-        }
-        if (!predicate(normalize(sql.slice(sql.indexOf('SELECT COUNT(*)'))))) {
-          throw new Error('Stale publication owner or target version');
-        }
-      } catch (error) {
-        tables = before;
-        throw error;
-      }
-      if (loseResponse && read(receipts).length) {
-        loseResponse = false;
-        throw new Error('response lost after commit');
-      }
-      return { rowCount: 0 };
-    }
-    if (sql === 'BEGIN') snapshot = structuredClone(tables);
-    else if (sql === 'ROLLBACK') {
-      if (snapshot) tables = snapshot;
-      snapshot = undefined;
-    } else if (sql === 'COMMIT') {
-      snapshot = undefined;
-      if (loseResponse && read(receipts).length) {
-        loseResponse = false;
-        throw new Error('response lost after commit');
-      }
-    } else apply(sql);
-    return { rowCount: 0 };
-  }
-  const query: NonNullable<SqlRunnerModule['query']> = async (raw, args) => {
-    const sql = normalize(raw),
-      params = Array.isArray(args) ? args : [];
-    if (sql.includes('information_schema.tables')) {
-      return tables.has(target) ? [{ table_type: 'BASE TABLE' }] : [];
-    }
-    if (sql.includes('information_schema.columns')) {
-      if (schemaMismatch) return [];
-      return context.resolved.output_columns.map((column) => ({
-        column_name: dialect === 'snowflake' ? column.name.toUpperCase() : column.name,
-        data_type: publicationType(column.type, dialect),
-        is_nullable: column.nullable ? 'YES' : 'NO',
-      }));
-    }
-    if (sql.startsWith('describe detail')) {
-      return [{ tableFeatures: catalogEnabled ? ['catalogManaged'] : [] }];
-    }
-    if (sql.startsWith('select violation_count')) return [{ violation_count: failChecks ? 1 : 0 }];
-    if (sql.endsWith('as matched')) {
-      if (invalidRegex) throw new Error('warehouse regex syntax error');
-      return [{ matched: 0 }];
-    }
-    if (sql.startsWith('select case when')) return [{ valid: predicate(sql) ? 1 : 0 }];
-    if (sql.startsWith(`update ${control} set fence`)) {
-      controlRow().fence = params[0];
-      return [];
-    }
-    if (sql.startsWith(`select revision, fence from ${control}`)) {
-      return structuredClone(read(control));
-    }
-    if (sql.startsWith(`select revision from ${control}`)) {
-      return controlRow().fence === params[0] && controlRow().revision === params[1]
-        ? [{ revision: params[1] }]
-        : [];
-    }
-    if (sql.startsWith(`select receipt from ${receipts}`)) {
-      return read(receipts).filter((entry) => entry.operation_id === params[0]);
-    }
-    if (sql.includes(` from ${manifests}`)) {
-      return sql.startsWith('select count')
-        ? [{ count: read(manifests).length }]
-        : read(manifests).filter((entry) => entry.operation_id === params[0]);
-    }
-    if (sql.startsWith('select count(*) as count from (')) {
-      const processed = /select 1 from ([^\s]+)/.exec(sql)![1];
-      const keys = new Set(read(processed).map((entry) => entry.pair_id));
-      return [{ count: read(target).filter((entry) => !keys.has(entry.pair_id)).length }];
-    }
-    const inserted = /^insert into ([^\s(]+)/.exec(sql)?.[1];
-    if (inserted) {
-      if (inserted === manifests) {
-        const shape = columns.get(manifests)!;
-        read(manifests).push(
-          Object.fromEntries(shape.map((name, index) => [name, params[index] ?? false]))
-        );
-      } else {
-        const shape = /^insert into [^\s(]+ \(([^)]+)\)/.exec(sql)![1].split(', ');
-        let position = 0;
-        for (const select of sql.slice(sql.indexOf('select ')).split(' union all ')) {
-          const expressions = select.slice(7).split(', ');
-          read(inserted).push(
-            Object.fromEntries(
-              shape.map((name, index) => [
-                name,
-                expressions[index]!.includes('null') ? null : params[position++],
-              ])
-            )
-          );
-        }
-      }
-      return [];
-    }
-    if (sql.startsWith(`update ${manifests} set validated`)) {
-      read(manifests).find((entry) => entry.operation_id === params[0])!.validated = true;
-      return [];
-    }
-    throw new Error(`Unexpected mock query: ${raw}`);
-  };
-  const close = vi.fn(async () => {});
-  const runner = { run: vi.fn(run), query: vi.fn(query), close, supportsBindings: true };
-  resolve.mockImplementation(async () => runner);
-  return {
-    context,
-    runner,
-    invalidRegex: () => {
-      invalidRegex = true;
-    },
-    schemaMismatch: () => {
-      schemaMismatch = true;
-    },
-    disableCatalog: () => {
-      catalogEnabled = false;
-    },
-    manifests: () => read(manifests),
-    names,
-    row,
-    events,
-    close,
-    target: () => structuredClone(read(target)),
-    receipts: () => read(receipts),
-    failChecks: () => {
-      failChecks = true;
-    },
-    loseResponse: () => {
-      loseResponse = true;
-    },
-    stale: () => {
-      controlRow().fence = 'new-owner';
-    },
-    absent: () => {
-      tables.delete(target);
-    },
-    exists: () => tables.has(target),
-  };
+  const db = publicationWarehouse(dialect, { systemSchema });
+  resolve.mockImplementation(async () => db.runner);
+  return db;
 }
 
 for (const dialect of Object.keys(configs) as PublicationDialect[]) {
@@ -452,6 +203,25 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
       await f.publisher.commit(intent, f.claim);
       expect(f.db.exists()).toBe(false);
       expect(f.db.receipts()).toHaveLength(1);
+      // Without a target there are no retained rows, so no processed-key table is built.
+      expect(f.db.events.some((sql) => /^create table .*_k \(/.test(sql))).toBe(false);
+      expect(f.db.events.some((sql) => /^create table .*_dogsled_pub_a{48} \(/.test(sql))).toBe(
+        true
+      );
+    });
+    it('publishes to a missing target without staging processed keys', async () => {
+      const f = await prepared();
+      f.db.absent();
+      const intent = await f.publisher.prepare(
+        f.db.context,
+        f.identity,
+        f.accepted,
+        f.keys,
+        f.claim
+      );
+      await f.publisher.commit(intent, f.claim);
+      expect(f.db.target().map((row) => [row.pair_id, row.assessment])).toEqual([['a', 'new']]);
+      expect(f.db.events.some((sql) => /^(create|drop) table .*_k\b/.test(sql))).toBe(false);
     });
     it('refuses stale preparation before deleting or building staging tables', async () => {
       const f = await prepared();
@@ -603,6 +373,94 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
       await f.publisher.commit(intent, f.claim);
       expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
       expect(f.db.receipts()).toHaveLength(1);
+    });
+    it('checks an unchanged target in place for an empty-input no-op', async () => {
+      const f = await prepared([], []);
+      const start = f.db.events.length;
+      f.db.runner.query.mockClear();
+      const intent = await f.publisher.prepare(
+        f.db.context,
+        f.identity,
+        f.accepted,
+        f.keys,
+        f.claim
+      );
+      // No stage or processed-key table, and no copy of the existing target.
+      expect(f.db.events.slice(start)).toEqual([]);
+      const queries = f.db.runner.query.mock.calls.map(([sql]) =>
+        sql.replaceAll('"', '').replaceAll('`', '')
+      );
+      const target = f.db.names.target.replaceAll('"', '').replaceAll('`', '');
+      expect(queries).toContain(`SELECT COUNT(*) AS count FROM ${target}`);
+      const checks = queries.filter((sql) => sql.startsWith('SELECT violation_count'));
+      expect(checks.length).toBeGreaterThan(0);
+      expect(checks.every((sql) => sql.includes(target) && !sql.includes('_dogsled_pub_'))).toBe(
+        true
+      );
+      expect(f.db.manifests()[0]).toMatchObject({ no_op: true, validated: true });
+      await f.publisher.commit(intent, f.claim);
+      expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
+      expect(f.db.receipts()).toHaveLength(1);
+    });
+    it('keeps the row limit and final checks for an empty-input no-op', async () => {
+      const f = await prepared([], []);
+      const bounded = await createSqlAgenticPublisher(configs[dialect], { maxStageRows: 2 });
+      await expect(
+        bounded.prepare(f.db.context, f.identity, f.accepted, f.keys, f.claim)
+      ).rejects.toThrow('stage row limit');
+      f.db.failChecks();
+      await expect(
+        f.publisher.prepare(f.db.context, f.identity, f.accepted, f.keys, f.claim)
+      ).rejects.toThrow('final check');
+      expect(f.db.manifests()[0]).toMatchObject({ no_op: true, validated: false });
+      expect(f.db.receipts()).toHaveLength(0);
+      expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
+    });
+    it('initializes publication tables once per publisher until an operation fails', async () => {
+      const db = database(dialect);
+      const publisher = await createSqlAgenticPublisher(configs[dialect]);
+      const inits = () =>
+        db.events.filter(
+          (sql) => sql.startsWith('create table if not exists') && sql.includes('_control')
+        ).length;
+      await publisher.preflight(db.context);
+      const claim = await publisher.claim(db.context.target);
+      await publisher.inspect({
+        identity: AgenticPublicationIdentitySchema.parse({
+          operation_id: 'e'.repeat(64),
+          run: { scope: 'test', model: 'test', id: 'run' },
+          definition_digest: 'b'.repeat(64),
+          target: db.context.target,
+          schema_digest: 'c'.repeat(64),
+          results_digest: 'd'.repeat(64),
+          processed_keys_digest: 'e'.repeat(64),
+        }),
+        expected_version: claim.version,
+        stage: `stage_${'e'.repeat(64)}`,
+      });
+      expect(inits()).toBe(1);
+      // A missing stage fails the commit; the next operation initializes again.
+      await expect(
+        publisher.commit(
+          {
+            identity: AgenticPublicationIdentitySchema.parse({
+              operation_id: 'f'.repeat(64),
+              run: { scope: 'test', model: 'test', id: 'run' },
+              definition_digest: 'b'.repeat(64),
+              target: db.context.target,
+              schema_digest: 'c'.repeat(64),
+              results_digest: 'd'.repeat(64),
+              processed_keys_digest: 'e'.repeat(64),
+            }),
+            expected_version: claim.version,
+            stage: `stage_${'f'.repeat(64)}`,
+          },
+          claim
+        )
+      ).rejects.toThrow();
+      expect(inits()).toBe(1);
+      await publisher.claim(db.context.target);
+      expect(inits()).toBe(2);
     });
     it('rolls back stale ownership without changing target rows or saving a receipt', async () => {
       const f = await prepared();
