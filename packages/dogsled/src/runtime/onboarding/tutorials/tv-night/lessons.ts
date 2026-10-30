@@ -1,4 +1,4 @@
-import type { StepId } from './schema.js';
+import type { StepId } from '../../schema.js';
 
 /** Teaching prompts are examples, never execution evidence or completion checks. */
 export const lessons: Record<

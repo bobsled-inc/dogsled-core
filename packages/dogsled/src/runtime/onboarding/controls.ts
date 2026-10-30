@@ -1,3 +1,4 @@
+import type { TableDisplay } from './tutorial.js';
 import { iconPaths } from './assets.generated.js';
 import { escapeHtml as e } from './html.js';
 
@@ -15,11 +16,10 @@ export function iconButton(name: Icon, label: string, attributes = ''): string {
 export function emptyState(title: string, description: string, action = ''): string {
   return `<div class="empty-state">${icon('Table')}<h3>${e(title)}</h3><p>${e(description)}</p>${action}</div>`;
 }
-export const passageColumns = ['article_text', 'support_excerpt', 'input_passages', 'passages'];
-export function renderValue(key: string, value: unknown): string {
+export function renderValue(key: string, value: unknown, display: TableDisplay): string {
   const text = e(value == null ? 'Unknown' : String(value));
-  return passageColumns.includes(key)
-    ? `<details><summary>Show passage (may contain spoilers)</summary><p>${text}</p></details>`
+  return display.passageColumns.includes(key)
+    ? `<details><summary>${e(display.passageLabel)}</summary><p>${text}</p></details>`
     : text;
 }
 export function codeBlock(text: string, id: string): string {

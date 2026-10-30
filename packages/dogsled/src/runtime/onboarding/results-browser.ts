@@ -4,8 +4,8 @@ export const resultsBrowser = String.raw`
 function textElement(tag,text){const element=document.createElement(tag);element.textContent=text;return element;}
 function appendValue(element,key,value){
  const text=value==null?'Unknown':String(value);
- if(['article_text','support_excerpt','input_passages','passages'].includes(key)){
-  const details=document.createElement('details');details.append(textElement('summary','Show passage (may contain spoilers)'),textElement('p',text));element.append(details);
+ if(snapshot.display.passageColumns.includes(key)){
+  const details=document.createElement('details');details.append(textElement('summary',snapshot.display.passageLabel),textElement('p',text));element.append(details);
  }else element.textContent=text;
 }
 document.querySelectorAll('[data-results]').forEach(root=>{

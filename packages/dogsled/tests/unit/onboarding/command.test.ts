@@ -44,3 +44,36 @@ it('offers a checkpoint guard only on the review command', () => {
       ?.options.some((option) => option.long === '--checkpoint')
   ).toBe(false);
 });
+
+it('returns equivalent JSON and YAML progress and rejects a mismatched selection', async () => {
+  const { mkdtemp, mkdir, writeFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const YAML = await import('yaml');
+  const root = await mkdtemp(join(tmpdir(), 'tutorial-command-'));
+  try {
+    await mkdir(join(root, 'data/tv-night'), { recursive: true });
+    await writeFile(
+      join(root, 'data/tv-night/manifest.json'),
+      '{"tutorial":"tv-night","version":"1","sources":[]}'
+    );
+    const run = async (...args: string[]) => {
+      output.mockClear();
+      const program = new Command().option('--project-root <path>');
+      registerOnboardingCommand(program);
+      await program.parseAsync(['node', 'dogsled', '--project-root', root, 'onboarding', ...args]);
+      return output.mock.calls[0]?.[0];
+    };
+    const json = await run('status', '--tutorial', 'tv-night');
+    expect(json.tutorial).toBe('tv-night');
+    expect(YAML.parse(await run('status', '--yaml'))).toEqual(json);
+    expect(YAML.parse(await run('status', '--tutorial', 'other', '--yaml'))).toMatchObject({
+      ok: false,
+      exit_code: 2,
+    });
+    expect(process.exitCode).toBe(2);
+    process.exitCode = 0;
+  } finally {
+    process.exitCode = 0;
+    await rm(root, { recursive: true, force: true });
+  }
+});

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Run TV Night on a shared tutorial engine so additional tutorials can supply their own chapters, checks and content while keeping the same offline explorer and saved progress.
+
 - Replace the TV Night tutorial page with a chapter-focused offline explorer, saved-result tabs, file and lineage inspection, and guarded review requests for the agent.
 
 Clarify TV Night’s AI model setup, optional bounded recovery, and assessment quality review. Chapter 6 returns to explaining the model definitions after recovery, with a file-focused recap and inspection pause.

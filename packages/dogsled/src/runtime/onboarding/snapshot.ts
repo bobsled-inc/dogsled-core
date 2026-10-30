@@ -1,3 +1,5 @@
+import type { TutorialDefinition } from './tutorial.js';
+import { resolveTutorial } from './tutorials.js';
 import YAML from 'yaml';
 import { readJournal, checkpointId } from './journal.js';
 import { projectWorkspace } from './workspace.js';
@@ -12,20 +14,24 @@ const SemanticColumn = z.object({
   ai_context: z.unknown().optional(),
 });
 const Manifest = z.object({ sources: Snapshot.shape.sources });
-export async function buildOnboardingSnapshot(root: string): Promise<OnboardingSnapshot> {
+export async function buildOnboardingSnapshot(
+  root: string,
+  tutorial?: TutorialDefinition
+): Promise<OnboardingSnapshot> {
+  tutorial ??= await resolveTutorial(root);
   let question: string | undefined;
   let preferences: string | undefined;
   try {
     const saved = Question.parse(
-      JSON.parse(await readBounded(root, 'data/tv-night/question.json'))
+      JSON.parse(await readBounded(root, `${tutorial.dataDirectory}/question.json`))
     );
     question = saved.original;
     preferences = saved.preferences;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
-  const state = await inspectOnboarding(root);
-  const journal = await readJournal(root);
+  const state = await inspectOnboarding(root, tutorial);
+  const journal = await readJournal(root, tutorial);
   const reviewed = state.steps
     .filter(
       (s) =>
@@ -34,19 +40,20 @@ export async function buildOnboardingSnapshot(root: string): Promise<OnboardingS
     .map((s) => s.id);
   const progress = {
     current:
-      state.steps.find((s) => s.id !== 'resolve' && !reviewed.includes(s.id))?.id ?? 'transform',
+      state.steps.find((s) => !tutorial.optionalSteps.includes(s.id) && !reviewed.includes(s.id))
+        ?.id ?? tutorial.steps.filter((s) => !tutorial.optionalSteps.includes(s.id)).at(-1)!.id,
     reviewed,
     history: journal.history,
   };
   const manifest = Manifest.parse(
-    JSON.parse(await readBounded(root, 'data/tv-night/manifest.json'))
+    JSON.parse(await readBounded(root, `${tutorial.dataDirectory}/manifest.json`))
   );
   const tables = state.steps.flatMap((s) =>
     s.status === 'complete' ? (s.evidence?.tables ?? []) : []
   );
   const definitions = [];
-  const workspace = await projectWorkspace(root);
-  for (const file of await inputFiles(root)) {
+  const workspace = await projectWorkspace(root, tutorial.dataDirectory);
+  for (const file of await inputFiles(root, tutorial.dataDirectory)) {
     if (
       !/^(sources|models|metrics|relationships)\/.*\.ya?ml$/.test(file) ||
       !workspace.files.some((f) => f.path === file)
@@ -111,15 +118,7 @@ export async function buildOnboardingSnapshot(root: string): Promise<OnboardingS
     state,
     sources: manifest.sources.map((source) => ({
       ...source,
-      rows:
-        source.name === 'TVmaze'
-          ? (state.steps
-              .find((s) => s.id === 'load' && s.status === 'complete')
-              ?.evidence?.tables.reduce((sum, table) => sum + table.totalRows, 0) ?? 0)
-          : source.name === 'Wikipedia'
-            ? (state.steps.find((s) => s.id === 'federate' && s.status === 'complete')?.evidence
-                ?.tables[0]?.totalRows ?? 0)
-            : source.rows,
+      rows: tutorial.sourceRows(source, state),
     })),
     tables: tables.slice(0, 12),
     renderedAt: new Date().toISOString(),
