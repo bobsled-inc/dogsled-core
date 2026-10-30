@@ -123,17 +123,27 @@ export const teaching: Record<
       ],
       [
         'models/show_notes.yml',
-        'Inspect the preference instructions, fit, explanation and passage_ids. The executor attaches exact text; start with one show before the remaining IDs.',
+        'Inspect model_kind, llm.profile, instructions, output columns and replace_processed_keys. Explain how one show becomes a saved assessment while earlier rows remain.',
       ],
       [
         'models/recommendations.yml',
         'Inspect the joins: these combine the finalists with structured assessments and evidence.',
       ],
+      [
+        'executor.mjs',
+        'Inspect how the executor calls the configured AI model and attaches original text for passage IDs. It is separate from the model definition.',
+      ],
+      [
+        'dogsled.yml',
+        'Inspect platform.models.show_review: the agentic model names this provider profile through llm.profile.',
+      ],
     ],
-    now: 'You can query structured assessments backed by source passages, compare unknowns, and explain a recommendation. Valid passage references still need interpretation and review. Unknown is a valid assessment, not an execution failure.',
+    now: 'You can define an agentic transformation and query its saved output. Reading recommendations does not call AI; executing show_notes can make new paid calls. Valid references still need a reasoning review. Unknown is a valid assessment, not an execution failure.',
     next: 'The core tutorial ends with this chapter. Dogsled also supports entity resolution: linking records from different sources that refer to the same thing, even when names differ. In the optional chapter, configure matching rules and review uncertain watchlist-to-catalog matches before excluding watched shows.',
     questions: [
-      'Compare all finalists against my preference and show the supporting evidence.',
+      'How do the instructions and output columns in my agentic model produce an assessment?',
+      'Which operation queries saved results, and which can make another AI call?',
+      'Compare the reviewed assessments and identify any reasoning that still needs review.',
       'Which assessments remain unknown, and why?',
     ],
   },
@@ -164,8 +174,12 @@ const planned: Record<StepId, string> = {
     'Turn article passages into structured assessments. Inspect one pilot before assessing the remaining finalists. Unknown is a valid assessment, not an execution failure. A provider or format error needs an execution fix; invalid passage IDs need an evidence-link fix; weak reasoning needs review even when its IDs pass.',
   resolve: 'Match records across sources and keep uncertain matches for review.',
 };
+function agenticReviewPanel(): string {
+  return `<div class="callout" data-agentic-review><h3>Explain the build before choosing a show</h3><p>Prepare → pilot → inspect → finish approved runs → review quality → explain the build → pause. Return to this sequence after any recovery.</p><p>Follow your actual model chain: <code>article_inputs → assessment_inputs → show_notes → recommendations</code>. Inspect each definition’s input, rule and output table or view.</p><p>Open <button type="button" data-file="models/show_notes.yml">models/show_notes.yml</button>. Find <code>model_kind: agentic</code>, <code>llm.profile</code>, the instructions, output columns and <code>replace_processed_keys</code>. Which definition would you change to assess a different preference?</p><p>Querying saved recommendations makes no new AI call. Running the agentic model can. The executor attaches source text; the model defines the assessment.</p><p><strong>Quality review:</strong> technical checks verify the saved references. An explanation must say which requested qualities are supported, which remain unknown, and why its overall fit follows. Mark weak reasoning <strong>needs review</strong> and keep it out of the recommendation. A valid unknown is not a failure.</p><p>Review the model definitions and any quality gaps before marking the chapter inspected. Recovery attempts require prior approval; a no-cap choice is not unlimited permission to retry.</p></div>`;
+}
 export function teachingPanel(step: StepId, complete = false): string {
   const lesson = teaching[step];
-  return `<div class="code-inspection"><h3>Code to inspect and understand</h3><ul>${lesson.code.map(([file, why]) => `<li><button type="button" data-file="${e(file)}">${e(file)}</button><p>${e(why)}</p></li>`).join('')}</ul></div><h3>${complete ? 'At the end of this chapter' : 'What you will build'}</h3><p>${e(complete ? lesson.now : planned[step])}</p><h3>Questions to try</h3><p>Ask in your agent conversation. Start with the question in plain English; inspect the SQL underneath its answer. Adapt these examples to the fields you have built.</p><ul>${lesson.questions.map((q) => `<li><button type="button" data-copy="${e(q)}">${e(q)}</button></li>`).join('')}</ul><p><strong>Why the next step follows:</strong> ${e(!complete && step === 'federate' ? 'Once article text is available, the next chapter turns passages into structured evidence.' : lesson.next)}</p>`;
+  const review = step === 'transform' ? agenticReviewPanel() : '';
+  return `${review}<div class="code-inspection"><h3>Code to inspect and understand</h3><ul>${lesson.code.map(([file, why]) => `<li><button type="button" data-file="${e(file)}">${e(file)}</button><p>${e(why)}</p></li>`).join('')}</ul></div><h3>${complete ? 'At the end of this chapter' : 'What you will build'}</h3><p>${e(complete ? lesson.now : planned[step])}</p><h3>Questions to try</h3><p>Ask in your agent conversation. Start with the question in plain English; inspect the SQL underneath its answer. Adapt these examples to the fields you have built.</p><ul>${lesson.questions.map((q) => `<li><button type="button" data-copy="${e(q)}">${e(q)}</button></li>`).join('')}</ul><p><strong>Why the next step follows:</strong> ${e(!complete && step === 'federate' ? 'Once article text is available, the next chapter turns passages into structured evidence.' : lesson.next)}</p>`;
 }
 export const tutorialOverview = `<section class="stage" id="tutorial-overview"><h2>You’re starting the Dogsled tutorial</h2><p>Build a data project to help answer “What should I watch next?” Bring in TV show data, organize it into models you can ask questions about, and add Wikipedia context to compare your options. Your agent will explain the files and queries and pause after each chapter so you can explore the results.</p><p>The data you load will be stored locally in a DuckDB database, by default <code>.dogsled/dogsled.duckdb</code> inside your project. You can query it directly with SQL or start DuckDB UI yourself if you want. Both are optional; the conversation and this page’s previews are enough to follow the tutorial.</p><ul><li>1. Connect to an API</li><li>2. Build an ETL pipeline</li><li>3. Build semantic models</li><li>4. Query your data</li><li>5. Query across sources</li><li>6. Build an agentic transformation</li><li>Optional: learn entity resolution using your watchlist</li></ul></section>`;

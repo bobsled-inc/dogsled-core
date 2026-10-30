@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { JSDOM } from 'jsdom';
 import { renderOnboardingHtml } from '../../../src/runtime/onboarding/render.js';
 import type { OnboardingSnapshot } from '../../../src/runtime/onboarding/schema.js';
 const snapshot: OnboardingSnapshot = {
@@ -211,3 +212,30 @@ it('ships the offline theme and licenses with a restrictive resource policy', ()
   expect(html).toContain('data:font/woff2;base64,');
   expect(html).not.toMatch(/<(?:script|link)[^>]+(?:src|href)="https?:/);
 });
+
+it.each(['not_started', 'complete'] as const)(
+  'keeps model teaching and quality review visible when the AI chapter is %s',
+  (status) => {
+    const html = renderOnboardingHtml({
+      ...snapshot,
+      state: {
+        ...snapshot.state,
+        steps: [{ id: 'transform', label: 'Build an agentic transformation', status }],
+      },
+    });
+    const panel = html.match(/<div class="callout" data-agentic-review>([\s\S]*?)<\/div>/)?.[1];
+    expect(panel).toBeDefined();
+    const document = new JSDOM(html).window.document;
+    expect(document.querySelector('[data-agentic-review]')?.closest('details')).toBeNull();
+    expect(document.querySelector('[id="request-transform"]')?.textContent).toContain(
+      'Use only explicitly approved recovery attempts'
+    );
+    expect(panel).not.toContain('<details');
+    expect(panel).toContain('data-file="models/show_notes.yml"');
+    expect(panel).toContain('replace_processed_keys');
+    expect(panel).toContain('Querying saved recommendations makes no new AI call');
+    expect(panel).toContain('needs review');
+    expect(panel).toContain('after any recovery');
+    expect(html).toContain('data-file="executor.mjs"');
+  }
+);

@@ -32,7 +32,10 @@ plan:
         agreed preference before execution. Use supported for direct evidence,
         mixed for partial support, contradicted only for explicit contrary evidence,
         and unknown when the supplied passages are insufficient. Missing evidence
-        is not contradiction. Explain supported criteria and gaps in at most 80 words.
+        is not contradiction. In at most 80 words, explain which requested qualities the passages support,
+        which are unsupported or unknown, and why the overall fit follows.
+        A fit label alone is not an explanation. Missing evidence is not proof
+        that a show lacks a quality.
         Select passage_ids from the supplied passage list to support the explanation.
         Do not copy quotes or generate evidence metadata; the executor attaches
         the selected source text. Use an empty list for unknown. Never infer

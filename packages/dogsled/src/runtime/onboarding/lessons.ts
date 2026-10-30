@@ -73,7 +73,7 @@ export const lessons: Record<
     choice:
       'Choose the same preference to assess for every finalist. Inspect one pilot before the remaining shows, within the approved API usage and any chosen dollar cap, or skip AI.',
     inspect:
-      'Inspect the pilot’s judgment and selected passage IDs first. Then compare all finalists and any unknowns. Explain why your answer changed.',
+      'Inspect the pilot’s reasoning and passage IDs. After the remaining runs, open show_notes.yml: explain its instructions, output columns and replacement strategy. Review quality gaps, then compare results briefly and pause.',
   },
   resolve: {
     learn:
