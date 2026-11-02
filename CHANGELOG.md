@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Loading into an existing BigQuery table that lacks a loader metadata column no longer fails with "Add field with default value to an existing table schema is not supported". The loader now adds `_dogsled_loaded_at` without a default, since every load sets it explicitly; new tables keep the default.
+
 - Add a guided Retail tutorial alongside TV Night, with shared progress and evidence review, local warehouse/API data, and an optional consent-based AI support-classification lesson.
 
 - Run TV Night on a shared tutorial engine so additional tutorials can supply their own chapters, checks and content while keeping the same offline explorer and saved progress.

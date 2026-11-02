@@ -1811,6 +1811,72 @@ describe('BigQueryDestination', () => {
   });
 });
 
+describe('BigQueryDestination — system column DDL', () => {
+  // BigQuery rejects `ALTER TABLE ... ADD COLUMN ... DEFAULT ...` on an existing
+  // table ("Add field with default value to an existing table schema is not supported").
+  const ADD_COLUMN_WITH_DEFAULT = /ADD COLUMN[^,]*\bDEFAULT\b/i;
+
+  async function runEnsureTable(
+    fields: Array<{ name: string; type: string }> | undefined,
+    options?: { keyProperties: string[] }
+  ): Promise<{ queries: string[]; table: BigQueryTableLike }> {
+    const table = createMockTable({
+      exists: fields !== undefined,
+      metadata: { schema: { fields: fields ?? [] } },
+    });
+    const client = createMockClient(
+      createMockDataset({ exists: true, tables: new Map([['issues', table]]) })
+    );
+    const dest = new BigQueryDestination({ datasetId: 'test_ds', client, stagingFormat: 'jsonl' });
+    await dest.ensureTable('test_ds', 'issues', issueColumns, options);
+    const queries = vi.mocked(client.createQueryJob).mock.calls.map((c) => c[0].query);
+    for (const query of queries) expect(query).not.toMatch(ADD_COLUMN_WITH_DEFAULT);
+    return { queries, table };
+  }
+
+  it('creates a new table with the loaded-at default inline in CREATE TABLE', async () => {
+    const { queries } = await runEnsureTable(undefined);
+
+    expect(queries).toEqual([
+      'CREATE TABLE IF NOT EXISTS `test_ds`.`issues` (`id` INT64, `title` STRING, ' +
+        '`_time_extracted` TIMESTAMP, `_dogsled_loaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP()) ' +
+        'PARTITION BY DATE(`_time_extracted`)',
+    ]);
+  });
+
+  it('adds a missing loaded-at column to an existing table without a DEFAULT', async () => {
+    const { queries } = await runEnsureTable([
+      { name: 'id', type: 'INT64' },
+      { name: 'title', type: 'STRING' },
+      { name: '_time_extracted', type: 'TIMESTAMP' },
+    ]);
+
+    expect(queries).toEqual([
+      'ALTER TABLE `test_ds`.`issues` ADD COLUMN `_dogsled_loaded_at` TIMESTAMP',
+    ]);
+  });
+
+  it('adds both missing system columns to an existing table without a DEFAULT', async () => {
+    const { queries, table } = await runEnsureTable(
+      [
+        { name: 'id', type: 'INT64' },
+        { name: 'title', type: 'STRING' },
+      ],
+      { keyProperties: ['id'] }
+    );
+
+    expect(queries).toEqual([
+      'ALTER TABLE `test_ds`.`issues` ADD COLUMN `_time_extracted` TIMESTAMP, ' +
+        'ADD COLUMN `_dogsled_loaded_at` TIMESTAMP',
+    ]);
+    // The ALTER invalidates the table etag, so clustering must use fresh metadata.
+    expect(table.getMetadata).toHaveBeenCalledTimes(2);
+    expect(table.setMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ clustering: { fields: ['id'] } })
+    );
+  });
+});
+
 describe('BigQueryDestination — refreshable token provider', () => {
   const nowSec = Math.floor(Date.now() / 1000);
 

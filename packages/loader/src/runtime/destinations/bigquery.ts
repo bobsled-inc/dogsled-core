@@ -708,9 +708,9 @@ export class BigQueryDestination implements DatabaseDestination {
       newColumnDefs.push(`${quoteBqIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)} TIMESTAMP`);
     }
     if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
-      newColumnDefs.push(
-        `${quoteBqIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP DEFAULT CURRENT_TIMESTAMP()`
-      );
+      // BigQuery rejects ADD COLUMN with a DEFAULT on an existing table. Every
+      // write path sets this column explicitly, so it needs no default.
+      newColumnDefs.push(`${quoteBqIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP`);
     }
 
     // Batch all new columns into a single ALTER TABLE statement
@@ -766,7 +766,7 @@ export class BigQueryDestination implements DatabaseDestination {
     ) {
       // Re-fetch metadata if schema was altered — ALTER TABLE invalidates the etag,
       // causing setMetadata to fail with 412 Precondition Failed
-      const schemaChanged = columnsToAdd.length > 0 || columnsToWiden.length > 0;
+      const schemaChanged = newColumnDefs.length > 0 || columnsToWiden.length > 0;
       const baseMetadata = schemaChanged
         ? (await this.bqRetry(() => table.getMetadata()))[0]
         : metadata;
