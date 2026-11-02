@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Snowflake checkpoint stores can select an explicit `database` separately from `schema`, using the existing integration authentication. Checkpoint and cursor storage use that database; output publication metadata remains in the output catalog. Omitted database settings keep their existing behavior.
+
 - Loading into an existing BigQuery table that lacks a loader metadata column no longer fails with "Add field with default value to an existing table schema is not supported". The loader now adds `_dogsled_loaded_at` without a default, since every load sets it explicitly; new tables keep the default.
 
 - Add a guided Retail tutorial alongside TV Night, with shared progress and evidence review, local warehouse/API data, and an optional consent-based AI support-classification lesson.

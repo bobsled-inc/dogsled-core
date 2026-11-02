@@ -13,6 +13,7 @@ import {
 } from '../../../src/api/index.js';
 import type { AgenticPublisher, ExperimentalAgenticProbe } from '../../../src/agentic/index.js';
 
+import { checkpointIntegrations } from '../../support/checkpoint-transport.js';
 import { MemoryStateStore } from '../agentic/state-fixture.js';
 const warehouseFactory = vi.hoisted(() => vi.fn());
 vi.mock('../../../src/agentic/warehouse-state.js', () => ({
@@ -461,6 +462,62 @@ describe('mixed agentic dispatch probe', () => {
       expect(f.host.executeAgent).toHaveBeenCalled();
     }
   );
+
+  it('forwards the selected Snowflake checkpoint database without changing publication', async () => {
+    const f = fixture();
+    const integration = checkpointIntegrations.find((item) => item.source_type === 'snowflake')!;
+    writeFileSync(
+      join(f.root, 'integrations/checkpoints.yml'),
+      stringify({
+        ...integration,
+        name: 'checkpoints',
+        connection: { ...integration.connection, role: 'test' },
+      })
+    );
+    writeFileSync(
+      join(f.root, 'model-spec.yml'),
+      stringify({
+        checkpoint_store: {
+          integration: 'checkpoints',
+          database: 'writable',
+          schema: 'system_store',
+        },
+      })
+    );
+    warehouseFactory.mockReturnValue(new MemoryStateStore());
+    const result = await runProject(f.root, f.options);
+    expect(result.ok).toBe(true);
+    expect(warehouseFactory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source_type: 'snowflake',
+        connection: expect.objectContaining(integration.connection),
+      }),
+      expect.objectContaining({ database: 'writable', schema: 'system_store' })
+    );
+    expect(f.host.prepare).toHaveBeenCalledWith(
+      expect.objectContaining({
+        publicationSchema: 'system_store',
+        integration: 'lake',
+      })
+    );
+  });
+
+  it('rejects a checkpoint database on an unsupported integration before preparation', async () => {
+    const f = fixture();
+    writeFileSync(
+      join(f.root, 'model-spec.yml'),
+      stringify({
+        checkpoint_store: { integration: 'lake', database: 'writable', schema: 'checkpoints' },
+      })
+    );
+    await expect(validateProject(f.root)).rejects.toMatchObject({
+      cause: { message: 'Checkpoint database is only supported for Snowflake' },
+    });
+    await expect(runProject(f.root, f.options)).rejects.toThrow('only supported for Snowflake');
+    expect(f.host.prepare).not.toHaveBeenCalled();
+    expect(f.run).not.toHaveBeenCalled();
+    expect(warehouseFactory).not.toHaveBeenCalled();
+  });
 
   it('rejects an unknown checkpoint integration during validation', async () => {
     const f = fixture();

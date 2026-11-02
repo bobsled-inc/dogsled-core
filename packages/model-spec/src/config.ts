@@ -59,6 +59,7 @@ export const CheckpointStoreConfigSchema = z
   .object({
     integration: z.string().trim().min(1).max(1024),
     schema: z.string().trim().min(1).max(1024),
+    database: z.string().trim().min(1).max(1024).optional(),
     lease_seconds: z.number().int().min(10).max(600).optional(),
   })
   .strict();

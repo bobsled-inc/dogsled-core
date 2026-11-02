@@ -264,11 +264,23 @@ Configure a warehouse checkpoint store in the project `model-spec.yml`:
 checkpoint_store:
   integration: analytics_warehouse
   schema: track_checkpoints
+  database: writable_database # Optional. Snowflake only; defaults to the integration database.
   lease_seconds: 300 # Optional. Default: 120. Range: 10–600 whole seconds.
 ```
 
-The integration supplies the database or catalog and authentication. `schema` is
-one schema name, not a SQL expression or a qualified path. For BigQuery, set one
+The integration supplies the database or catalog and authentication. For Snowflake,
+`database` can explicitly select a different database using the same authenticated
+connection. Other warehouse types reject this field. Omitting it preserves the
+integration database. `database` and `schema` are separate identifiers; a dot in
+`schema` remains part of that schema name and never selects another database.
+The selected database/schema contains checkpoint control and payload tables and
+the shared incremental cursor table. Existing checkpoints are not moved. A run
+must resume against its original checkpoint target.
+
+Publication staging tables and receipts still use the output target's catalog and
+the configured checkpoint schema, so output changes and receipts commit atomically.
+A checkpoint database override does not redirect output or publication metadata.
+For BigQuery, set one
 `connection.project_id` on the integration. Keep credentials in the existing
 integration secret mechanism.
 
@@ -296,7 +308,12 @@ The default lease is two minutes. Set `checkpoint_store.lease_seconds` to an int
 from 10 to 600 to allow more time for warehouse queueing. The store attempts renewal
 every one-third of the lease period. A longer lease also delays takeover after a
 worker crashes. Library callers can set `leaseMs` from 10,000 to 600,000 on the store
-factory. This setting does not change the model execution deadline.
+factory. The lease setting does not change the model execution deadline.
+
+Library hosts can resolve the logical catalog/schema with
+`resolveWarehouseCheckpointTarget(integration, { database, schema })` from
+`@bobsled-inc/dogsled/model-spec/agentic`; the runtime uses the same resolver for checkpoint
+and cursor storage.
 
 If the warehouse session loses ownership, Dogsled cancels active assignments and
 closes that session. It can make up to two recovery attempts. Each attempt must

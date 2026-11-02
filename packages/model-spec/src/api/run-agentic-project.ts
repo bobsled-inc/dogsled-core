@@ -290,6 +290,9 @@ export async function runAgenticProject(
           options.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
         stateStore = createWarehouseCheckpointStore(integration, {
           schema: checkpointConfig.schema,
+          ...(checkpointConfig.database === undefined
+            ? {}
+            : { database: checkpointConfig.database }),
           ...(checkpointConfig.lease_seconds === undefined
             ? {}
             : { leaseMs: checkpointConfig.lease_seconds * 1000 }),

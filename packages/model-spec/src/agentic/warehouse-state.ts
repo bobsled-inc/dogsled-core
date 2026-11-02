@@ -1,3 +1,4 @@
+import { resolveWarehouseCheckpointTarget } from './warehouse-checkpoint-target.js';
 import { createWarehouseAgenticCursorStore } from './warehouse-cursors.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -30,6 +31,7 @@ interface Confirmed {
 
 export type WarehouseCheckpointOptions = ResolveRunnerOptions & {
   schema: string;
+  database?: string;
   leaseMs?: number;
   signal?: AbortSignal;
 };
@@ -68,18 +70,8 @@ export function createWarehouseCheckpointStore(
     });
   }
   const q = (name: string) => quoteIdentifier(caseName(name, dialect), dialect);
-  const catalog =
-    integration.source_type === 'snowflake'
-      ? integration.connection?.database
-      : integration.source_type === 'databricks'
-        ? integration.connection?.catalog
-        : integration.source_type === 'bigquery'
-          ? integration.connection.project_id
-          : undefined;
-  if (dialect === 'bigquery' && !catalog) {
-    throw new Error('Checkpoint store requires a single BigQuery project_id');
-  }
-  const namespace = [...(catalog ? [catalog] : []), schema].map(q).join('.');
+  const target = resolveWarehouseCheckpointTarget(integration, options);
+  const namespace = [...(target.catalog ? [target.catalog] : []), target.schema].map(q).join('.');
   const textType = publicationType('string', sqlDialect);
   const intType = publicationType('integer', sqlDialect);
   const suffix = publicationTableSuffix(sqlDialect);

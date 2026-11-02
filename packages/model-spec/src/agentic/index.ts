@@ -64,3 +64,8 @@ export { AgenticCursorConflict } from './cursor.js';
 export { assignmentLimits as resolveAgenticAssignmentLimits } from './limits.js';
 
 export { withHostModelDeclarations } from './host-declarations.js';
+
+export {
+  resolveWarehouseCheckpointTarget,
+  type WarehouseCheckpointTargetOptions,
+} from './warehouse-checkpoint-target.js';
