@@ -297,6 +297,12 @@ export function createWarehouseCheckpointStore(
           if (previous && digest === previous.digest) return value;
           const id = `${randomUUID()}_${digest}`;
           const oldId = pointer;
+          // The heartbeat waits behind this save. Renew a lease that is already due before
+          // any request of the save, so that request cannot use up its remaining lifetime.
+          const renewIfDue = async () => {
+            if (Date.now() - extendedAt >= leaseMs / 3) await renew();
+          };
+          await renewIfDue();
           const retained = await db.query(
             `SELECT COALESCE(SUM(LENGTH(${q('data')})), 0) AS retained FROM ${payloads}`
           );
@@ -317,9 +323,7 @@ export function createWarehouseCheckpointStore(
           const encoded = bytes.toString('base64');
           for (let start = 0; start < encoded.length; start += chunkSize * chunksPerInsert) {
             guard();
-            // Renew only when a third of the lease has elapsed since the last extension
-            // started, counting response delays and the retained-size read.
-            if (Date.now() - extendedAt >= leaseMs / 3) await renew();
+            await renewIfDue();
             const params: (string | number)[] = [];
             const rows: string[] = [];
             const end = Math.min(encoded.length, start + chunkSize * chunksPerInsert);
@@ -335,7 +339,7 @@ export function createWarehouseCheckpointStore(
           }
           // The queued heartbeat cannot run during save. Leave a fresh lease
           // for the pointer transaction after a slow final staging request.
-          if (Date.now() - extendedAt >= leaseMs / 3) await renew();
+          await renewIfDue();
           guard();
           const committing = Date.now();
           await mutate(
