@@ -74,8 +74,9 @@ This change keeps the stored format and validation rules and removes repeated wo
   command is replayed on a copy and compared with the fully validated response.
   Any difference falls back to the complete check, which reports the original
   error.
-- The store renews before staging and before the pointer transaction only when a
-  third of the lease has elapsed since the last successful extension started.
+- The store renews before the retained-size query, each staging batch and the
+  pointer transaction only when a third of the lease has elapsed since the last
+  successful extension started.
   Acquisition and every fenced pointer commit extend the lease, so back-to-back
   saves no longer renew first; the commit remains fenced.
 - Rebuilding a reduce step hashes upstream output keys once instead of once per
@@ -145,7 +146,8 @@ attributes CPU time.
 ## Results: checkpoint processing
 
 Before is `main` at `8592f76`, which includes the batching, spend-cap and
-recovery changes. After is this change at `7c89138`. Both ran the same benchmark
+recovery changes. After is this change at `7c89138`; its later commits produce identical counts for
+every workload up to 100 assignments. Both ran the same benchmark
 files in separate worktrees. Timings are medians of the listed samples; the
 300-assignment baselines are single samples because each takes several minutes.
 Measured on one Apple M3 Max laptop with Node.js 25.9.0 while other jobs ran, so
@@ -253,9 +255,8 @@ its fast-path request counts unchanged.
 Every transition still validates the whole new state twice (store and coordinator)
 and writes the whole snapshot, so total work grows with the square of plan size.
 Each save still issues a pointer read, a retained-size scan, its payload INSERTs and
-the fenced pointer commit. Reducing written bytes needs a new persistence format,
-such as an append-only command log with periodic compaction, and a staged rollout
-because older readers cannot read it. Batching and reuse do not change billable
+the fenced pointer commit. Reducing written bytes would need a new persistence format,
+which is outside this change. Batching and reuse do not change billable
 dispatch reservations, result acceptance, usage accounting, cursor or publication
 semantics. Measure representative applications on real providers before drawing
 conclusions about end-to-end production speedups.
