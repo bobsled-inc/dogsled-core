@@ -1,15 +1,37 @@
 ---
 name: dogsled-get-started
-description: Learn Dogsled through TV Night. Build and inspect a pipeline, semantic models, cross-source queries, and evidence-backed recommendations for every finalist.
+description: Choose a guided Dogsled tutorial with TV Night or Retail. Build and inspect a pipeline, semantic models, cross-source queries, and evidence-backed recommendations for every finalist.
 exposed: true
 triggers:
   - get started with dogsled
   - tv night
   - guided dogsled quickstart
   - resume dogsled onboarding
+  - choose dogsled tutorial
 ---
 
 # Get started with Dogsled
+
+## Choose or resume a tutorial
+
+This is the common entry point for guided tutorials. Resolve the tutorial before
+using the TV Night lessons below.
+
+- If the user names Retail or the retail demo, read `dogsled onboarding guide
+--tutorial retail` and follow that guide. Do not give the TV Night opening.
+- If they name TV Night or ask what to watch next, continue with TV Night below.
+- If a project exists, run `dogsled onboarding status --json` in its folder. Use
+  its `tutorial` ID to resume; legacy TV Night projects resolve to `tv-night`.
+  Read saved progress and the journal rather than asking them to choose again.
+  If the project has invalid or conflicting tutorial manifests, explain the
+  error and preserve its files; do not silently switch tutorials.
+- For a new generic request, offer **TV Night — what should I watch next?** and
+  **Retail — which products need attention?** Ask the learner to choose, end the
+  turn and wait. Do not scaffold or start a lesson before their choice.
+
+Both tutorials use the same `onboarding` commands, local HTML page, checkpoint
+checks and guarded review controls. The Retail guide owns only its scenario,
+source setup and chapter lessons. Users can also invoke `dogsled-retail` directly.
 
 Lead a beginner through Dogsled. The learner should not have to design ingestion, ask where to inspect results, diagnose missing article text, or challenge a weak matching example. The example question is “What should I watch next?” A recommendation must come from the project's data and reviewed evidence, not your prior knowledge.
 

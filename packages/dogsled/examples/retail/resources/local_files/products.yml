@@ -1,0 +1,23 @@
+spec_version: '1'
+type: resource
+name: products
+description: Retail product catalog and supplier costs.
+integration: local_files
+source:
+  path: products.csv
+  format: csv
+  options: { header: true }
+output:
+  product_id: { type: string }
+  product_name: { type: string }
+  category: { type: string }
+  supplier_id: { type: string }
+  list_price: { type: number }
+  unit_cost: { type: number }
+  active_from: { type: string }
+  active: { type: boolean }
+extract:
+  table:
+    primary_key: [product_id]
+    load_strategy: full_refresh
+replication: { method: full_refresh }

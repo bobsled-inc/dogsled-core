@@ -1,0 +1,21 @@
+spec_version: '1'
+type: resource
+name: sales_orders
+description: Retail order headers with status, channel and location.
+integration: local_files
+source:
+  path: sales_orders.csv
+  format: csv
+  options: { header: true }
+output:
+  order_id: { type: string }
+  ordered_at: { type: timestamp }
+  status: { type: string }
+  channel: { type: string }
+  location_id: { type: string }
+  customer_id: { type: string }
+extract:
+  table:
+    primary_key: [order_id]
+    load_strategy: full_refresh
+replication: { method: full_refresh }

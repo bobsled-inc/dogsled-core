@@ -1,0 +1,13 @@
+spec_version: '1'
+type: integration
+name: retail_api
+description: Local mock reviews and support API for the retailer demo.
+auth_env_vars: [RETAIL_DEMO_API_TOKEN]
+transport:
+  type: http
+  base_url: https://127.0.0.1:8787
+  auth:
+    type: bearer
+    token: ${{ env.RETAIL_DEMO_API_TOKEN }}
+  headers:
+    Accept: application/json

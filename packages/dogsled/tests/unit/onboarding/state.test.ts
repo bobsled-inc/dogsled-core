@@ -142,7 +142,7 @@ it('preserves the probe snapshot when preferences, sources and later chapter fil
 
 it('preserves all legacy chapter snapshots and inspections after normal project growth', async () => {
   const root = await project();
-  const { steps } = await import('../../../src/runtime/onboarding/schema.js');
+  const { steps } = await import('../../../src/runtime/onboarding/tutorials/tv-night/steps.js');
   const { reviewChapter } = await import('../../../src/runtime/onboarding/journal.js');
   const { buildOnboardingSnapshot } = await import('../../../src/runtime/onboarding/snapshot.js');
   for (const step of steps) {

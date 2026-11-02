@@ -1,7 +1,7 @@
-import { lessons } from '../src/runtime/onboarding/lessons.js';
+import { steps } from '../src/runtime/onboarding/tutorials/tv-night/steps.js';
+import { lessons } from '../src/runtime/onboarding/tutorials/tv-night/lessons.js';
 import {
   Snapshot,
-  steps,
   type OnboardingSnapshot,
   type StepId,
 } from '../src/runtime/onboarding/schema.js';

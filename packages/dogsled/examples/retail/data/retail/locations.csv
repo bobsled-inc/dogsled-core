@@ -1,0 +1,5 @@
+location_id,location_name,location_type
+WEB,Online Fulfillment,web
+ST-SEA,Seattle Store,store
+ST-PDX,Portland Store,store
+ST-AUS,Austin Store,store

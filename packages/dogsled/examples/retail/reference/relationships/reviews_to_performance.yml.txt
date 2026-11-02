@@ -1,0 +1,10 @@
+spec_version: '0.2'
+type: relationship
+name: reviews_to_performance
+description: Review aggregates align one-to-one with reviewed products in the product performance mart.
+left_model: product_review_summary
+right_model: product_performance
+join_columns:
+  - { left: product_id, right: product_id }
+relationship_type: one_to_one
+ai_context: Reviews are external API evidence. Use the shared product_id key; product names are labels and can change.

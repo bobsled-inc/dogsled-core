@@ -38,12 +38,13 @@ function clean(value: unknown, key = ''): unknown {
     .replace(/([?&](?:key|token|secret|password)=)[^\s&#]+/gi, '$1[REDACTED]');
 }
 export async function projectWorkspace(
-  root: string
+  root: string,
+  dataDirectory?: string
 ): Promise<{ files: ProjectFile[]; lineage: ProjectLineage }> {
   const files: ProjectFile[] = [];
   const records: { path: string; value: Record<string, unknown> }[] = [];
   let bytes = 0;
-  for (const path of await inputFiles(root)) {
+  for (const path of await inputFiles(root, dataDirectory)) {
     // Only authored definitions and SQL. Data, runtime config, executors and environment files stay private.
     if (
       !/^(models|sources|metrics|relationships|integrations|resources|queries|entity-graph)\/[^\n]+\.(ya?ml|sql)$/.test(

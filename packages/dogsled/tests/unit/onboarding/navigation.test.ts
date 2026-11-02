@@ -3,9 +3,12 @@ import { renderFileTree } from '../../../src/runtime/onboarding/file-tree.js';
 import { renderGraph } from '../../../src/runtime/onboarding/graph.js';
 import {
   teaching,
-  teachingPanel,
   tutorialOverview,
-} from '../../../src/runtime/onboarding/teaching.js';
+} from '../../../src/runtime/onboarding/tutorials/tv-night/teaching.js';
+import { teachingPanel as renderTeaching } from '../../../src/runtime/onboarding/teaching.js';
+import { tvNight } from '../../../src/runtime/onboarding/tutorials/tv-night/index.js';
+const teachingPanel = (step: Parameters<typeof renderTeaching>[0], complete = false) =>
+  renderTeaching(step, complete, tvNight);
 it('renders nested folders with filenames, not flattened path buttons', () => {
   const html = renderFileTree([
     { path: 'resources/tvmaze/shows.yml', content: '', language: 'yaml' },

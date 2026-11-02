@@ -27,3 +27,29 @@ The HTML shows your original question, chapter progress, answer history, working
 For optional SQL exploration, you can start [DuckDB UI](https://duckdb.org/docs/stable/core_extensions/ui.html) yourself with `duckdb -ui .dogsled/dogsled.duckdb` from your tutorial project folder after loading data. The tutorial does not launch or manage it. Close that database session before ETL or model writes to avoid locks. The HTML table previews and agent-run queries are enough to complete the guide.
 
 The API-backed Wikipedia query joins remote article rows to local tables and shows cache receipts. The earlier TVmaze ETL is ingestion, not the federation demonstration. Read the example's source licenses before sharing fetched data or adapted text.
+
+## Shared tutorial engine
+
+TV Night uses the shared `onboarding` engine for progress, saved checks, inspection
+history and the offline chapter explorer. Its lessons, SQL checks, passage
+validation and display content live under
+`packages/dogsled/src/runtime/onboarding/tutorials/tv-night/`.
+
+New projects identify themselves with `"tutorial": "tv-night"` in
+`data/tv-night/manifest.json`. Existing manifests without that field, version 2
+checkpoints and version 1 journals still work. Reading them does not reset or
+rewrite progress. New progress includes the tutorial ID, and progress from another
+tutorial is rejected.
+
+Existing commands are unchanged, including `verify transform --show-id` and
+`review --checkpoint`. `dogsled onboarding guide --tutorial tv-night` selects the
+guide explicitly. Other commands find the tutorial from its manifest; an explicit
+ID must match the project.
+
+To add a built-in tutorial, implement `TutorialDefinition` and register it in
+`runtime/onboarding/tutorials.ts`. Supply chapter order, teaching content, bounded
+check queries, validation, answer history and display settings. Reuse the shared
+renderer, browser controls, journal, safe file preview and CLI reader. Chapter
+IDs use lowercase letters, digits and hyphens, start with a letter and have at
+most 64 characters. Project manifests select registered definitions; they cannot
+load executable tutorial code.

@@ -1,3 +1,4 @@
+import { tutorials } from '../runtime/onboarding/tutorials.js';
 import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +36,9 @@ export function copyExample(name: string, targetDir: string): void {
   cpSync(sourceDir, targetDir, {
     recursive: true,
     // Keep teaching templates in the package, not in the learner's working project.
-    filter: (source) => name !== 'tv-night' || source !== join(sourceDir, 'reference'),
+    filter: (source) =>
+      !tutorials.some((tutorial) => tutorial.example === name) ||
+      source !== join(sourceDir, 'reference'),
   });
   makeScriptsExecutable(targetDir);
 }

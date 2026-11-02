@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: source
+name: sales_orders
+source_type: warehouse_table
+connection: warehouse
+table: main.sales_orders
+schema:
+  columns:
+    - { name: order_id, type: STRING, primary_key: true }
+    - { name: ordered_at, type: TIMESTAMP }
+    - { name: status, type: STRING }
+    - { name: channel, type: STRING }
+    - { name: location_id, type: STRING }
+    - { name: customer_id, type: STRING }

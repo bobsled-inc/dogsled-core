@@ -1,0 +1,18 @@
+spec_version: '1'
+type: resource
+name: locations
+description: Online fulfillment and physical store locations.
+integration: local_files
+source:
+  path: locations.csv
+  format: csv
+  options: { header: true }
+output:
+  location_id: { type: string }
+  location_name: { type: string }
+  location_type: { type: string }
+extract:
+  table:
+    primary_key: [location_id]
+    load_strategy: full_refresh
+replication: { method: full_refresh }

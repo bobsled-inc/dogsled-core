@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: source
+name: inventory_daily
+source_type: warehouse_table
+connection: warehouse
+table: main.inventory_daily
+schema:
+  columns:
+    - { name: snapshot_date, type: DATE }
+    - { name: product_id, type: STRING }
+    - { name: location_id, type: STRING }
+    - { name: available_units, type: INTEGER }

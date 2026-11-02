@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add a guided Retail tutorial alongside TV Night, with shared progress and evidence review, local warehouse/API data, and an optional consent-based AI support-classification lesson.
+
+- Run TV Night on a shared tutorial engine so additional tutorials can supply their own chapters, checks and content while keeping the same offline explorer and saved progress.
+
 - Replace the TV Night tutorial page with a chapter-focused offline explorer, saved-result tabs, file and lineage inspection, and guarded review requests for the agent.
 
 Agentic models have simpler spend limits. Set `limits.max_cost_usd`, `limits.tokens`, or both. When a run reaches a cap, Dogsled stops starting new assignments, lets running ones finish, keeps every answer it already paid for, and says how much was spent. Raise the cap in YAML or with the new `--agent-max-cost` option and resume to continue. Before the first model call, a run whose input estimate alone exceeds the cap stops without spending. A dollar cap needs a known model price and otherwise fails before any call. Unknown usage now charges the attempt's input estimate rather than the whole remaining budget, and an attempt that used more than it reserved no longer makes a run impossible to resume. `tokens_per_assignment`, `tool_calls_per_assignment`, `model_calls_per_assignment`, `--agent-tokens-per-assignment`, and `tokensPerAssignment` are deprecated and ignored by new runs, and a run that sets them prints a warning naming each field. Runs saved earlier keep their original accounting when resumed. Library hosts supply prices through `AgenticHost.priceUsage`; `createAgenticHost` uses the built-in price table.

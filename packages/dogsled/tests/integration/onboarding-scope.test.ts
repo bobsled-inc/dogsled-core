@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
@@ -7,6 +7,8 @@ import { verifyOnboarding } from '../../src/runtime/onboarding/verify.js';
 
 it('only accepts article context for an accepted link in the current shortlist', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tv-scope-'));
+  await mkdir(join(root, 'data/tv-night'), { recursive: true });
+  await writeFile(join(root, 'data/tv-night/manifest.json'), '{"version":"1","sources":[]}');
   const runner = await buildDuckDbRunner({
     spec_version: '1',
     type: 'integration',
@@ -44,6 +46,8 @@ it('only accepts article context for an accepted link in the current shortlist',
 
 it('checks every finalist and real watchlist decisions against DuckDB tables', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tv-finalists-'));
+  await mkdir(join(root, 'data/tv-night'), { recursive: true });
+  await writeFile(join(root, 'data/tv-night/manifest.json'), '{"version":"1","sources":[]}');
   const runner = await buildDuckDbRunner({
     spec_version: '1',
     type: 'integration',
@@ -73,6 +77,8 @@ it('checks every finalist and real watchlist decisions against DuckDB tables', a
 
 it('checks a passage-ID pilot, preserves chapter state, and verifies the remaining results', async () => {
   const root = await mkdtemp(join(tmpdir(), 'tv-passage-pilot-'));
+  await mkdir(join(root, 'data/tv-night'), { recursive: true });
+  await writeFile(join(root, 'data/tv-night/manifest.json'), '{"version":"1","sources":[]}');
   const runner = await buildDuckDbRunner({
     spec_version: '1',
     type: 'integration',

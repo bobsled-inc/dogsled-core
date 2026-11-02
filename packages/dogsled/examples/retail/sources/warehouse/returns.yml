@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: source
+name: returns
+source_type: warehouse_table
+connection: warehouse
+table: main.returns
+schema:
+  columns:
+    - { name: return_id, type: STRING, primary_key: true }
+    - { name: order_line_id, type: STRING }
+    - { name: returned_at, type: TIMESTAMP }
+    - { name: quantity, type: INTEGER }
+    - { name: refund_amount, type: DOUBLE }
+    - { name: reason, type: STRING }

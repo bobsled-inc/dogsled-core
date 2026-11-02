@@ -1,14 +1,7 @@
 import { z } from 'zod';
 
-export const StepId = z.enum([
-  'connect',
-  'load',
-  'model',
-  'query',
-  'federate',
-  'transform',
-  'resolve',
-]);
+// Chapter IDs become filenames and HTML anchors, so keep them short and path-safe.
+export const StepId = z.string().regex(/^[a-z][a-z0-9-]{0,63}$/);
 export type StepId = z.infer<typeof StepId>;
 export const Cell = z.union([z.string().max(20_000), z.number().finite(), z.boolean(), z.null()]);
 export const PreviewTable = z.object({
@@ -25,6 +18,7 @@ export const Evidence = z.object({
 export type Evidence = z.infer<typeof Evidence>;
 export const Checkpoint = Evidence.extend({
   version: z.literal(2),
+  tutorial: z.string().max(80).optional(),
   step: StepId,
   databaseFingerprint: z.string().optional(),
   probeInputHash: z
@@ -37,6 +31,7 @@ export const Checkpoint = Evidence.extend({
 export type Checkpoint = z.infer<typeof Checkpoint>;
 export const State = z.object({
   version: z.literal(2),
+  tutorial: z.string().max(80).optional(),
   inputHash: z.string(),
   datasetVersion: z.string(),
   steps: z.array(
@@ -109,12 +104,3 @@ export const Snapshot = z.object({
   tables: z.array(PreviewTable).max(12),
 });
 export type OnboardingSnapshot = z.infer<typeof Snapshot>;
-export const steps: { id: StepId; label: string }[] = [
-  { id: 'connect', label: 'Connect to an API' },
-  { id: 'load', label: 'Build an ETL pipeline' },
-  { id: 'model', label: 'Build semantic models' },
-  { id: 'query', label: 'Query your data' },
-  { id: 'federate', label: 'Query across sources' },
-  { id: 'transform', label: 'Build an agentic transformation' },
-  { id: 'resolve', label: 'Optional: entity resolution' },
-];

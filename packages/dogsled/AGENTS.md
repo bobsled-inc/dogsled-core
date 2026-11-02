@@ -165,3 +165,11 @@ pnpm --filter @bobsled-inc/dogsled test:unit
 - Command, transport, sync, and runner tests cover full CLI behavior
 
 Jev classification uses the built-in `typesafe` executor or exported `createJevExecutor`. Keep provider credentials outside serialized assignments, and resolve keys only through the caller's required `secretResolver`; never add an environment fallback. The model-spec classification contract owns choice and row validation; the executor owns HTTP and usage mapping.
+
+## Guided tutorials
+
+Keep tutorial-specific lessons, checks and display settings under
+`src/runtime/onboarding/tutorials/<id>/`. Reuse the shared engine and offline
+explorer. Only built-in definitions may supply code; project manifests select IDs.
+Preserve legacy TV Night progress, guarded review fingerprints and pilot checks
+that leave chapter progress unchanged.
