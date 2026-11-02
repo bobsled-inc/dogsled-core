@@ -27,6 +27,21 @@ describe('release package entry policy', () => {
     }
   });
 
+  it('allows only the root AGENTS.md of an example Project', () => {
+    equal(isForbiddenPackageEntry('package/examples/retail/AGENTS.md'), false);
+    for (const entry of [
+      'package/dist/AGENTS.md',
+      'package/examples/AGENTS.md',
+      'package/examples/retail/nested/AGENTS.md',
+      'package/examples/retail/CLAUDE.md',
+      'package/examples/retail/.security-review/report.json',
+      'package/examples/AGENTS.md/CLAUDE.md',
+      'other/examples/retail/AGENTS.md',
+    ]) {
+      equal(isForbiddenPackageEntry(entry), true, entry);
+    }
+  });
+
   it('allows intentional public APIs whose filenames contain test-like words', () => {
     for (const entry of [
       'package/dist/test-stubs.js',
