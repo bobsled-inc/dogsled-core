@@ -18,6 +18,18 @@ describe('config', () => {
   });
 
   describe('loadProjectConfig', () => {
+    it('preserves an explicit checkpoint database separately from the schema', () => {
+      fs.writeFileSync(
+        path.join(tmpDir, 'model-spec.yml'),
+        'checkpoint_store: {integration: warehouse, database: writable, schema: checkpoints}'
+      );
+      expect(resolveConfig({}, loadProjectConfig(tmpDir).config).checkpointStore).toEqual({
+        integration: 'warehouse',
+        database: 'writable',
+        schema: 'checkpoints',
+      });
+    });
+
     it.each([10, 120, 600])('preserves a checkpoint lease of %i seconds', (seconds) => {
       fs.writeFileSync(
         path.join(tmpDir, 'model-spec.yml'),
@@ -54,6 +66,8 @@ describe('config', () => {
       'checkpoint_store: {integration: warehouse}',
       'checkpoint_store: {integration: "", schema: checkpoints}',
       'checkpoint_store: {integration: warehouse, schema: " "}',
+      'checkpoint_store: {integration: warehouse, schema: checkpoints, database: " "}',
+      'checkpoint_store: {integration: warehouse, schema: checkpoints, database: 42}',
       'checkpoint_store: {integration: warehouse, schema: checkpoints, password: secret}',
       'checkpoint_store: {integration: warehouse, schema: checkpoints, fallback: local}',
     ])('rejects invalid checkpoint configuration: %s', (yaml) => {

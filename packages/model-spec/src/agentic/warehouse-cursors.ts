@@ -1,3 +1,4 @@
+import { resolveWarehouseCheckpointTarget } from './warehouse-checkpoint-target.js';
 import { randomUUID } from 'node:crypto';
 import { resolveRunner, throwIfCancelled, type IntegrationFile } from '@bobsled-inc/connections';
 import { caseName, quoteIdentifier } from '../compiler/dialect.js';
@@ -21,23 +22,9 @@ export function createWarehouseAgenticCursorStore(
   if (dialect === 'duckdb' || dialect === 'clickhouse') {
     throw new Error('Use local cursor storage for DuckDB');
   }
-  const catalog =
-    dialect === 'snowflake'
-      ? integration.connection?.database
-      : dialect === 'databricks'
-        ? integration.connection?.catalog
-        : dialect === 'bigquery'
-          ? integration.connection.project_id
-          : undefined;
-  if (
-    !options.schema.trim() ||
-    options.schema.length > 1024 ||
-    (dialect === 'bigquery' && !catalog)
-  ) {
-    throw new AgenticStateError('conflict');
-  }
+  const { catalog, schema } = resolveWarehouseCheckpointTarget(integration, options);
   const q = (name: string) => quoteIdentifier(caseName(name, dialect), dialect);
-  const namespace = [...(catalog ? [catalog] : []), options.schema].map(q).join('.');
+  const namespace = [...(catalog ? [catalog] : []), schema].map(q).join('.');
   const table = `${namespace}.${q('__dogsled_cursors')}`;
   const lit = (value: string) => publicationLiteral(value, dialect);
   const mutateOnce = async (
