@@ -1,0 +1,17 @@
+spec_version: '0.2'
+type: source
+name: external_reviews
+source_type: api_resource
+integration: retail_api
+resource: reviews
+connection: warehouse
+mode: lazy
+max_age: 1h
+schema:
+  columns:
+    - { name: review_id, type: STRING }
+    - { name: product_id, type: STRING }
+    - { name: rating, type: INTEGER }
+    - { name: review_text, type: STRING }
+    - { name: reviewed_at, type: TIMESTAMP }
+    - { name: verified_purchase, type: BOOLEAN }

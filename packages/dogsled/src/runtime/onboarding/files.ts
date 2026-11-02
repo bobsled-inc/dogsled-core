@@ -61,7 +61,7 @@ export async function writeLocal(root: string, name: string, content: string): P
   }
   return target;
 }
-export async function inputFiles(root: string): Promise<string[]> {
+export async function inputFiles(root: string, dataDirectory = 'data'): Promise<string[]> {
   const found: string[] = [];
   async function walk(name: string, depth: number): Promise<void> {
     if (depth > 6 || found.length > 500) {
@@ -82,7 +82,7 @@ export async function inputFiles(root: string): Promise<string[]> {
     }
   }
   for (const dir of [
-    'data/tv-night',
+    dataDirectory,
     'models',
     'sources',
     'integrations',
@@ -114,8 +114,11 @@ export async function inputFiles(root: string): Promise<string[]> {
   return found.sort();
 }
 
-export async function databaseFingerprint(root: string): Promise<string> {
-  const path = await containedPath(root, '.dogsled/dogsled.duckdb');
+export async function databaseFingerprint(
+  root: string,
+  databasePath = '.dogsled/dogsled.duckdb'
+): Promise<string> {
+  const path = await containedPath(root, databasePath);
   const stat = await lstat(path).catch((e: NodeJS.ErrnoException) => {
     if (e.code !== 'ENOENT') throw e;
     return undefined;

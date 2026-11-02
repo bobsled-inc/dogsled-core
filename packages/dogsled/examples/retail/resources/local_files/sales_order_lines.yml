@@ -1,0 +1,21 @@
+spec_version: '1'
+type: resource
+name: sales_order_lines
+description: Product, quantity, price and discount for each order line.
+integration: local_files
+source:
+  path: sales_order_lines.csv
+  format: csv
+  options: { header: true }
+output:
+  order_line_id: { type: string }
+  order_id: { type: string }
+  product_id: { type: string }
+  quantity: { type: integer }
+  unit_price: { type: number }
+  discount_amount: { type: number }
+extract:
+  table:
+    primary_key: [order_line_id]
+    load_strategy: full_refresh
+replication: { method: full_refresh }

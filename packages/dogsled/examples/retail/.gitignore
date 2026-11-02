@@ -1,0 +1,9 @@
+.local/
+*.duckdb
+*.duckdb.wal
+.extractor/
+output/
+.dogsled/onboarding/
+.dogsled/model-spec/
+.env*
+node_modules/

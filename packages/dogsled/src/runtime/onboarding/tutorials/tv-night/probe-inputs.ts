@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto';
 import YAML from 'yaml';
-import { inputFiles, readBounded } from './files.js';
+import { inputFiles, readBounded } from '../../files.js';
 
 /** Match the source queried by verify connect, including its API and cache connection. */
 export async function probeInputHash(root: string): Promise<string> {
   const records: { path: string; text: string; value: Record<string, unknown> }[] = [];
   const hash = createHash('sha256').update('tvmaze-probe-v1');
   let bytes = 0;
-  for (const path of await inputFiles(root)) {
+  for (const path of await inputFiles(root, 'data/tv-night')) {
     if (
       !/^(sources|integrations|resources)\/.*\.ya?ml$/.test(path) &&
       path !== '.dogsled/config.yml'

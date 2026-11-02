@@ -1,0 +1,13 @@
+spec_version: '0.2'
+type: model
+name: support_batch
+description: The learner-approved support batch. Start with one pilot and add only approved cases.
+grain: [ticket_id]
+source: { ref: prepared_support_cases }
+columns:
+  - { name: ticket_id, expr: ticket_id, type: string, primary_key: true }
+  - { name: product_id, expr: product_id, type: string, nullable: true }
+  - { name: conversation, expr: conversation, type: string }
+# Use one pilot first. Expand to at most five approved tickets after inspecting it.
+where: ticket_id IN ('case-0001')
+materialization: { type: table }

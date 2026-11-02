@@ -1,0 +1,10 @@
+spec_version: '0.2'
+type: relationship
+name: sales_summary_to_performance
+description: Product-level sales aggregates align one-to-one with the product performance mart.
+left_model: product_sales_summary
+right_model: product_performance
+join_columns:
+  - { left: product_id, right: product_id }
+relationship_type: one_to_one
+ai_context: These datasets have the same product grain and use the canonical catalog product_id.

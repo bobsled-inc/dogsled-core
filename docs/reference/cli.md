@@ -59,7 +59,7 @@ Commands:
   examples                         List or scaffold bundled example projects
   learn [options]                  Interactive CLI tutorial — learn Dogsled step
                                    by step
-  onboarding                       Inspect TV Night progress and render its
+  onboarding                       Inspect tutorial progress and render its
                                    local data explorer
   help [command]                   display help for command
 ```
@@ -4246,7 +4246,7 @@ Options:
 ```text
 Usage: dogsled onboarding [options] [command]
 
-Inspect TV Night progress and render its local data explorer
+Inspect tutorial progress and render its local data explorer
 
 Options:
   -h, --help               display help for command
@@ -4269,8 +4269,9 @@ Usage: dogsled onboarding guide [options]
 Read the bundled agent walkthrough
 
 Options:
-  --yaml      Emit YAML output
-  -h, --help  display help for command
+  --yaml           Emit YAML output
+  --tutorial <id>  Choose a bundled tutorial
+  -h, --help       display help for command
 ```
 
 #### `dogsled onboarding status`
@@ -4281,8 +4282,9 @@ Usage: dogsled onboarding status [options]
 Show saved chapter progress and check results
 
 Options:
-  --yaml      Emit YAML output
-  -h, --help  display help for command
+  --yaml           Emit YAML output
+  --tutorial <id>  Choose a bundled tutorial
+  -h, --help       display help for command
 ```
 
 #### `dogsled onboarding render`
@@ -4293,8 +4295,9 @@ Usage: dogsled onboarding render [options]
 Write the local HTML explorer
 
 Options:
-  --yaml      Emit YAML output
-  -h, --help  display help for command
+  --yaml           Emit YAML output
+  --tutorial <id>  Choose a bundled tutorial
+  -h, --help       display help for command
 ```
 
 #### `dogsled onboarding verify`
@@ -4305,9 +4308,13 @@ Usage: dogsled onboarding verify [options] <step>
 Run bounded data checks and save evidence for a step
 
 Options:
-  --yaml          Emit YAML output
-  --show-id <id>  Check one transformation result without completing the chapter
-  -h, --help      display help for command
+  --yaml            Emit YAML output
+  --tutorial <id>   Choose a bundled tutorial
+  --ticket-id <id>  Check one retail transformation result without completing
+                    the chapter
+  --show-id <id>    Check one transformation result without completing the
+                    chapter
+  -h, --help        display help for command
 ```
 
 #### `dogsled onboarding review`
@@ -4319,6 +4326,7 @@ Record that the learner inspected current chapter evidence
 
 Options:
   --yaml                 Emit YAML output
+  --tutorial <id>        Choose a bundled tutorial
   --checkpoint <sha256>  Only review the evidence shown in a saved page
   -h, --help             display help for command
 ```

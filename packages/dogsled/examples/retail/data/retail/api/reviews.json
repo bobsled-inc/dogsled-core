@@ -1,0 +1,770 @@
+[
+  {
+    "review_id": "REV-0001",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-10-04T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0002",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-10-12T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0003",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-09-29T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0004",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-08-26T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0005",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-08-28T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0006",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-09-01T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0007",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-09-22T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0008",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-08-29T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0009",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-08-21T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0010",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-09-27T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0011",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-10-09T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0012",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-08-29T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0013",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-09-01T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0014",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-09-26T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0015",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-09-17T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0016",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-09-20T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0017",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-08-22T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0018",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-08-22T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0019",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-08-26T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0020",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-09-09T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0021",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-09-12T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0022",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "We wanted the bench in both bedrooms but it was out of stock again.",
+    "reviewed_at": "2026-08-25T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0023",
+    "product_id": "stl-012",
+    "rating": 5,
+    "review_text": "Great storage and sturdy build. I would buy a second one if it were available.",
+    "reviewed_at": "2026-10-07T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0024",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "We wanted the bench in both bedrooms but it was out of stock again.",
+    "reviewed_at": "2026-09-17T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0025",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "I signed up for a restock email after seeing it sell out.",
+    "reviewed_at": "2026-09-27T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0026",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "I signed up for a restock email after seeing it sell out.",
+    "reviewed_at": "2026-09-01T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0027",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "I signed up for a restock email after seeing it sell out.",
+    "reviewed_at": "2026-09-15T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0028",
+    "product_id": "stl-012",
+    "rating": 5,
+    "review_text": "Great storage and sturdy build. I would buy a second one if it were available.",
+    "reviewed_at": "2026-09-16T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0029",
+    "product_id": "stl-012",
+    "rating": 5,
+    "review_text": "Great storage and sturdy build. I would buy a second one if it were available.",
+    "reviewed_at": "2026-09-05T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0030",
+    "product_id": "stl-012",
+    "rating": 5,
+    "review_text": "Great storage and sturdy build. I would buy a second one if it were available.",
+    "reviewed_at": "2026-09-30T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0031",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "We wanted the bench in both bedrooms but it was out of stock again.",
+    "reviewed_at": "2026-09-04T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0032",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "We wanted the bench in both bedrooms but it was out of stock again.",
+    "reviewed_at": "2026-08-26T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0033",
+    "product_id": "stl-012",
+    "rating": 5,
+    "review_text": "Great storage and sturdy build. I would buy a second one if it were available.",
+    "reviewed_at": "2026-10-14T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0034",
+    "product_id": "stl-012",
+    "rating": 5,
+    "review_text": "Great storage and sturdy build. I would buy a second one if it were available.",
+    "reviewed_at": "2026-08-30T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0035",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "We wanted the bench in both bedrooms but it was out of stock again.",
+    "reviewed_at": "2026-09-22T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0036",
+    "product_id": "stl-012",
+    "rating": 5,
+    "review_text": "Great storage and sturdy build. I would buy a second one if it were available.",
+    "reviewed_at": "2026-09-11T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0037",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "I signed up for a restock email after seeing it sell out.",
+    "reviewed_at": "2026-10-09T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0038",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Good everyday chair for our kitchen.",
+    "reviewed_at": "2026-09-29T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0039",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Good everyday chair for our kitchen.",
+    "reviewed_at": "2026-09-15T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0040",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Good everyday chair for our kitchen.",
+    "reviewed_at": "2026-10-01T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0041",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Comfortable chair and the finish matches the table.",
+    "reviewed_at": "2026-09-28T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0042",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Good everyday chair for our kitchen.",
+    "reviewed_at": "2026-08-29T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0043",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Comfortable chair and the finish matches the table.",
+    "reviewed_at": "2026-09-14T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0044",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Easy to assemble and feels solid after a month.",
+    "reviewed_at": "2026-10-12T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0045",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Good everyday chair for our kitchen.",
+    "reviewed_at": "2026-09-29T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0046",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Easy to assemble and feels solid after a month.",
+    "reviewed_at": "2026-09-15T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0047",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Good everyday chair for our kitchen.",
+    "reviewed_at": "2026-08-30T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0048",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Comfortable chair and the finish matches the table.",
+    "reviewed_at": "2026-09-28T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0049",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Comfortable chair and the finish matches the table.",
+    "reviewed_at": "2026-10-04T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0050",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Good everyday chair for our kitchen.",
+    "reviewed_at": "2026-08-31T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0051",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Easy to assemble and feels solid after a month.",
+    "reviewed_at": "2026-10-07T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0052",
+    "product_id": "kit-018",
+    "rating": 3,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-08-30T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0053",
+    "product_id": "lmp-024",
+    "rating": 3,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-09-26T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0054",
+    "product_id": "chr-011",
+    "rating": 5,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-09-12T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0055",
+    "product_id": "lmp-021",
+    "rating": 4,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-08-26T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0056",
+    "product_id": "lmp-006",
+    "rating": 4,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-13T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0057",
+    "product_id": "lmp-021",
+    "rating": 5,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-09-01T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0058",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-09-06T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0059",
+    "product_id": "chr-003",
+    "rating": 5,
+    "review_text": "Easy to assemble and feels solid after a month.",
+    "reviewed_at": "2026-10-10T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0060",
+    "product_id": "lmp-024",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-08-27T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0061",
+    "product_id": "kit-004",
+    "rating": 4,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-30T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0062",
+    "product_id": "chr-016",
+    "rating": 3,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-10-09T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0063",
+    "product_id": "kit-015",
+    "rating": 3,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-07T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0064",
+    "product_id": "tbl-005",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-08-30T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0065",
+    "product_id": "lmp-021",
+    "rating": 3,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-05T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0066",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-09-05T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0067",
+    "product_id": "kit-009",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-30T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0068",
+    "product_id": "kit-009",
+    "rating": 5,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-10-04T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0069",
+    "product_id": "chr-016",
+    "rating": 4,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-08-25T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0070",
+    "product_id": "kit-006",
+    "rating": 4,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-09-22T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0071",
+    "product_id": "tbl-019",
+    "rating": 4,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-09-12T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0072",
+    "product_id": "kit-004",
+    "rating": 3,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-10-03T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0073",
+    "product_id": "kit-011",
+    "rating": 4,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-17T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0074",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "Beautiful light, but the shade was cracked when I opened the box.",
+    "reviewed_at": "2026-10-11T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0075",
+    "product_id": "tbl-014",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-08T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0076",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "We wanted the bench in both bedrooms but it was out of stock again.",
+    "reviewed_at": "2026-08-21T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0077",
+    "product_id": "chr-011",
+    "rating": 4,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-09-05T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0078",
+    "product_id": "lmp-009",
+    "rating": 1,
+    "review_text": "The glass shade arrived in pieces. Support sent a replacement quickly.",
+    "reviewed_at": "2026-09-23T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0079",
+    "product_id": "tbl-019",
+    "rating": 3,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-09-10T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0080",
+    "product_id": "lmp-006",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-10-09T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0081",
+    "product_id": "kit-011",
+    "rating": 3,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-09-18T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0082",
+    "product_id": "lmp-006",
+    "rating": 5,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-09-29T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0083",
+    "product_id": "tbl-002",
+    "rating": 5,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-09-02T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0084",
+    "product_id": "lmp-021",
+    "rating": 3,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-22T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0085",
+    "product_id": "kit-006",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-10-14T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0086",
+    "product_id": "chr-011",
+    "rating": 3,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-10-05T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0087",
+    "product_id": "chr-022",
+    "rating": 5,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-09-21T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0088",
+    "product_id": "kit-011",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-10-06T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0089",
+    "product_id": "kit-006",
+    "rating": 4,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-09-06T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0090",
+    "product_id": "stl-012",
+    "rating": 4,
+    "review_text": "I signed up for a restock email after seeing it sell out.",
+    "reviewed_at": "2026-09-08T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0091",
+    "product_id": "lmp-009",
+    "rating": 4,
+    "review_text": "Love the warm light. Packaging could protect the glass better.",
+    "reviewed_at": "2026-09-17T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0092",
+    "product_id": "lmp-006",
+    "rating": 4,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-20T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0093",
+    "product_id": "kit-020",
+    "rating": 4,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-09-28T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0094",
+    "product_id": "kit-018",
+    "rating": 5,
+    "review_text": "The item arrived on time and matched the photos.",
+    "reviewed_at": "2026-08-27T12:00:00Z",
+    "verified_purchase": true
+  },
+  {
+    "review_id": "REV-0095",
+    "product_id": "kit-006",
+    "rating": 4,
+    "review_text": "Looks good in our home and works as expected.",
+    "reviewed_at": "2026-10-07T12:00:00Z",
+    "verified_purchase": false
+  },
+  {
+    "review_id": "REV-0096",
+    "product_id": "kit-011",
+    "rating": 5,
+    "review_text": "Nice quality for the price.",
+    "reviewed_at": "2026-09-30T12:00:00Z",
+    "verified_purchase": true
+  }
+]

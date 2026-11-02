@@ -1,0 +1,28 @@
+spec_version: '0.2'
+type: model
+name: prepared_support_cases
+description: Support conversations paired with order-line evidence; product is null when the order has multiple possible products and no line was identified.
+ai_context: >-
+  The support API is external to the warehouse and has been extracted into
+  warehouse.support_tickets. Resolve a product only from an explicit order_line_id or when
+  the referenced order contains exactly one distinct product. A null product_id
+  is intentional ambiguity; never infer it from message wording alone.
+grain: [ticket_id]
+source: { ref: warehouse.support_tickets }
+joins:
+  - { ref: warehouse.sales_order_lines, type: left, on: warehouse.support_tickets.order_id = warehouse.sales_order_lines.order_id }
+columns:
+  - { name: ticket_id, expr: warehouse.support_tickets.ticket_id, type: string, not_null: true, primary_key: true }
+  - name: product_id
+    expr: CASE WHEN warehouse.support_tickets.order_line_id IS NOT NULL THEN MAX(CASE WHEN warehouse.sales_order_lines.order_line_id = warehouse.support_tickets.order_line_id THEN warehouse.sales_order_lines.product_id ELSE NULL END) WHEN COUNT(DISTINCT warehouse.sales_order_lines.product_id) = 1 THEN MAX(warehouse.sales_order_lines.product_id) ELSE NULL END
+    type: string
+    nullable: true
+  - { name: customer_message, expr: warehouse.support_tickets.message, type: string }
+  - { name: agent_reply, expr: warehouse.support_tickets.agent_reply, type: string }
+  - name: conversation
+    expr: "warehouse.support_tickets.message || ' Agent response: ' || warehouse.support_tickets.agent_reply"
+    type: string
+  - { name: ticket_status, expr: warehouse.support_tickets.status, type: string }
+  - { name: order_id, expr: warehouse.support_tickets.order_id, type: string }
+materialization: { type: table }
+group_by: [warehouse.support_tickets.ticket_id, warehouse.support_tickets.order_line_id, warehouse.support_tickets.message, warehouse.support_tickets.agent_reply, warehouse.support_tickets.status, warehouse.support_tickets.order_id]

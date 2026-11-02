@@ -1,0 +1,12 @@
+spec_version: '0.2'
+type: source
+name: suppliers
+source_type: warehouse_table
+connection: warehouse
+table: main.suppliers
+schema:
+  columns:
+    - { name: supplier_id, type: STRING, primary_key: true }
+    - { name: supplier_name, type: STRING }
+    - { name: country, type: STRING }
+    - { name: lead_time_days, type: INTEGER }

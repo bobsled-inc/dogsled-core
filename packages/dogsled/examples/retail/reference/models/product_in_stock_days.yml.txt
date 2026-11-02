@@ -1,0 +1,18 @@
+spec_version: '0.2'
+type: model
+name: product_in_stock_days
+description: Number of distinct daily snapshots with sellable stock at any location.
+ai_context: >-
+  Inventory rows are opening-of-day sellable stock per product and location. Count
+  a product-date once if any location has available_units greater than zero; do
+  not count locations as separate availability days. Returns remain quarantined.
+grain: [product_id]
+source: { ref: warehouse.inventory_daily }
+columns:
+  - { name: product_id, expr: product_id, primary_key: true }
+  - name: in_stock_days
+    expr: COUNT(DISTINCT CASE WHEN available_units > 0 THEN snapshot_date ELSE NULL END)
+    ai_context: Product calendar dates with positive opening units at one or more locations; one date counts once.
+  - { name: tracked_days, expr: COUNT(DISTINCT snapshot_date) }
+materialization: { type: table }
+group_by: [product_id]

@@ -1,0 +1,8 @@
+spec_version: '0.2'
+type: metric
+name: sales_per_in_stock_day
+description: Net sales divided by distinct product-days with sellable stock at one or more locations; an observed demand proxy, not an estimate of lost sales.
+ai_context: Divide net sales by product calendar dates with opening stock at any location. Do not sum location-days. This is observed sales velocity, not lost-sales or unconstrained demand.
+expression: SUM(net_sales) / NULLIF(SUM(in_stock_days), 0)
+model: product_performance
+synonyms: [sales velocity, in-stock sales rate]

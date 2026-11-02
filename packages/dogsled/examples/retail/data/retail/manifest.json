@@ -1,0 +1,18 @@
+{
+  "tutorial": "retail",
+  "version": "retail-1",
+  "sources": [
+    {
+      "name": "Warehouse exports",
+      "license": "Synthetic tutorial data under Apache-2.0.",
+      "url": "https://example.com/retail/warehouse",
+      "rows": 0
+    },
+    {
+      "name": "Retail API",
+      "license": "Synthetic local API fixtures under Apache-2.0.",
+      "url": "https://127.0.0.1:8787",
+      "rows": 0
+    }
+  ]
+}

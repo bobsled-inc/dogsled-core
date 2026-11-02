@@ -1,0 +1,5 @@
+# Lazy API sources and warehouse models share this local DuckDB file.
+default_destination:
+  dest: duckdb
+  dbPath: data.duckdb
+  targetSchema: bronze

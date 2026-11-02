@@ -1,0 +1,19 @@
+spec_version: '1'
+type: resource
+name: suppliers
+description: Product suppliers and typical lead times.
+integration: local_files
+source:
+  path: suppliers.csv
+  format: csv
+  options: { header: true }
+output:
+  supplier_id: { type: string }
+  supplier_name: { type: string }
+  country: { type: string }
+  lead_time_days: { type: integer }
+extract:
+  table:
+    primary_key: [supplier_id]
+    load_strategy: full_refresh
+replication: { method: full_refresh }

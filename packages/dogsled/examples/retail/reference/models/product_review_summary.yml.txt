@@ -1,0 +1,18 @@
+spec_version: '0.2'
+type: model
+name: product_review_summary
+description: External product reviews joined to the warehouse product catalog through the stable product key.
+ai_context: Rating aggregates use only external review records. Preserve review_text when quoting evidence and use product_id, not product_name, for the warehouse join.
+grain: [product_id]
+source: { ref: warehouse.reviews }
+joins:
+  - { ref: warehouse.products, type: inner, on: warehouse.reviews.product_id = warehouse.products.product_id }
+columns:
+  - { name: product_id, expr: warehouse.reviews.product_id, primary_key: true }
+  - { name: product_name, expr: warehouse.products.product_name }
+  - { name: category, expr: warehouse.products.category }
+  - { name: review_count, expr: COUNT(warehouse.reviews.review_id) }
+  - { name: average_rating, expr: AVG(warehouse.reviews.rating) }
+  - { name: one_and_two_star_reviews, expr: SUM(CASE WHEN warehouse.reviews.rating <= 2 THEN 1 ELSE 0 END) }
+materialization: { type: table }
+group_by: [warehouse.reviews.product_id, warehouse.products.product_name, warehouse.products.category]

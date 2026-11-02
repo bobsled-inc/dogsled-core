@@ -1,4 +1,5 @@
-import { steps, type OnboardingSnapshot } from '../../../src/runtime/onboarding/schema.js';
+import type { OnboardingSnapshot } from '../../../src/runtime/onboarding/schema.js';
+import { steps } from '../../../src/runtime/onboarding/tutorials/tv-night/steps.js';
 
 export function renderFixture(): OnboardingSnapshot {
   const tables = [
