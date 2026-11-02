@@ -95,6 +95,11 @@ and to `runProject`. Input/source reads, checkpoints, and publication must use
 compatible connections and credentials. For custom input preparation, apply
 `context.incremental.after` before the row limit, honor `maxRows`, `maxBytes`, and
 `signal`, and reject unsupported type conversions. Never truncate an input to fit.
+A host that sets `incrementalBatches: true` receives `context.incremental.batch` and
+must then return incremental rows ordered by the cursor field, including at least one
+row past the row or byte limit when more rows exist; Dogsled keeps the ordered prefix
+that fits. Source adapters show the executor a `CommandError` message; keep those
+messages free of credentials and row data.
 
 ## Implement an executor
 

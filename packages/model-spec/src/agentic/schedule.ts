@@ -7,7 +7,7 @@ import {
   isAgenticFailureBlocked,
 } from './execution-window.js';
 import { randomUUID } from 'node:crypto';
-import { setTimeout as delay } from 'node:timers/promises';
+import { setImmediate as yieldToEventLoop, setTimeout as delay } from 'node:timers/promises';
 import { throwIfCancelled } from '@bobsled-inc/connections';
 import { AgenticStateError } from './state.js';
 import { AgenticAssignmentError } from './errors.js';
@@ -213,6 +213,9 @@ export async function scheduleAgenticAssignments(
   }
   try {
     while (snapshot.work.some((work) => !work.accepted) || active.size) {
+      // Fast executors and synchronous stores can otherwise keep this loop in microtasks,
+      // so signals (Ctrl-C, SIGTERM) and timers would never be delivered.
+      await yieldToEventLoop();
       throwIfCancelled(runSignal);
       const completed = ready.shift();
       if (completed) {

@@ -1,3 +1,4 @@
+import { CommandError } from '@bobsled-inc/protocol';
 import { describe, expect, it, vi } from 'vitest';
 import {
   executeAgenticRun,
@@ -93,10 +94,6 @@ describe('agent loop execution', { timeout: 60_000 }, () => {
       name: 'write operation',
       call: { source: 'research.web', operation: 'write', arguments: {} },
     },
-    {
-      name: 'oversized arguments',
-      call: { source: 'research.web', operation: 'search', arguments: 'x'.repeat(1048577) },
-    },
   ])('denies $name before dispatch, including swallowed denials', async ({ call }) => {
     const f = setup();
     f.host.executeAgent = async (request) => {
@@ -108,26 +105,83 @@ describe('agent loop execution', { timeout: 60_000 }, () => {
     expect(f.state().work[0]!.accepted).toBeUndefined();
   });
 
-  it('strips private host causes before returning source failures to the executor', async () => {
+  it('rejects an oversized request without dispatch and lets the executor recover', async () => {
+    const f = setup();
+    let failure: unknown;
+    f.host.executeAgent = async (request) => {
+      failure = await request.sources!({
+        source: 'research.web',
+        operation: 'search',
+        arguments: 'x'.repeat(1048577),
+      }).catch((error: unknown) => error);
+      return result(request);
+    };
+    await f.run();
+    expect((failure as Error).message).toMatch(/invalid shape or was too large/);
+    expect(f.sources).not.toHaveBeenCalled();
+    expect(f.state().work[0]!.accepted?.status).toBe('succeeded');
+  });
+
+  it('gives the executor a safe reason for a host failure and lets the run continue', async () => {
     const f = setup();
     const privateCause = new Error('private-credential and private-row');
     f.sources.mockRejectedValueOnce(new Error('Host source failed', { cause: privateCause }));
+    let failure: unknown;
     f.host.executeAgent = async (request) => {
-      const failure = await request.sources!({
+      failure = await request.sources!({
         source: 'research.web',
         operation: 'read',
         arguments: {},
       }).catch((error: unknown) => error);
-      expect(failure).toBeInstanceOf(Error);
-      expect((failure as Error).message).toBe('Agentic source request failed');
-      expect((failure as Error).cause).toBeUndefined();
-      expect((failure as Error).stack).not.toContain('private-');
       return result(request);
     };
-    await expect(f.run()).rejects.toThrow();
+    await f.run();
+    // Checked after the run so a failed assertion cannot pass as a rejected run.
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toBe(
+      'Agentic source request failed: source "research.web" failed in the source host'
+    );
+    expect((failure as Error).cause).toBeUndefined();
+    expect((failure as Error).stack).not.toContain('private-');
     expect(f.sources).toHaveBeenCalledOnce();
-    expect(f.state().work[0]!.accepted).toBeUndefined();
+    expect(f.state().work[0]!.accepted?.status).toBe('succeeded');
     expect(JSON.stringify(f.state())).not.toContain('private-');
+  });
+
+  it('passes host policy messages through so the executor can correct its request', async () => {
+    const f = setup();
+    f.sources.mockRejectedValueOnce(new CommandError('Agent source column is not declared', 2));
+    let failure: unknown;
+    f.host.executeAgent = async (request) => {
+      failure = await request.sources!({
+        source: 'research.web',
+        operation: 'read',
+        arguments: {},
+      }).catch((error: unknown) => error);
+      return result(request);
+    };
+    await f.run();
+    expect((failure as Error).message).toBe(
+      'Agentic source request failed: source "research.web": Agent source column is not declared'
+    );
+  });
+
+  it('fails only the assignment for a policy violation and names the reason', async () => {
+    const f = setup();
+    f.host.executeAgent = async (request) => {
+      await request.sources!({
+        source: 'warehouse.secret',
+        operation: 'read',
+        arguments: {},
+      }).catch(() => undefined);
+      return result(request);
+    };
+    const error = await f.run().catch((caught: unknown) => caught as Error);
+    expect(error.message).toContain('validation error "source_access_denied"');
+    expect(error.message).toContain('named a source this step does not declare');
+    const attempts = f.state().work[0]!.attempts;
+    expect(attempts.every((attempt) => attempt.outcome?.status === 'failed')).toBe(true);
+    expect(f.sources).not.toHaveBeenCalled();
   });
 
   it('rejects missing source access before preparation or state acquisition', async () => {

@@ -27,7 +27,11 @@ vi.mock('../../../src/runtime/cross-warehouse.js', () => ({
 import { AgenticHostError } from '@bobsled-inc/model-spec/agentic';
 import { runProject } from '@bobsled-inc/model-spec/project';
 import { createCliAgenticHost } from '../../../src/runtime/cli-agentic-host.js';
-import { runDogsledModelRunCommand } from '../../../src/commands/model-run.js';
+import {
+  createProgressPrinter,
+  formatAgenticProgress,
+  runDogsledModelRunCommand,
+} from '../../../src/commands/model-run.js';
 import { loadApiResourceEntries } from '../../../src/runtime/source-materializer/load-specs.js';
 import { runProjectWithLazySources } from '../../../src/runtime/source-materializer/run-project-with-lazy-sources.js';
 
@@ -348,5 +352,67 @@ describe('cancelled agentic runs', () => {
     expect(text).toContain('Cancelled. Agentic answers saved before the stop are kept');
     expect(text).toContain('run the same command again with --agent-run-id run-7');
     expect(text).not.toContain('SQL execution cancelled');
+  });
+});
+
+describe('agentic progress lines', () => {
+  const base = {
+    runId: 'r1',
+    modelName: 'pair_assessments',
+    revision: 4,
+    status: 'running' as const,
+    publication: 'pending' as const,
+    totalIsFinal: true,
+    steps: [],
+    total: 900,
+    accepted: 312,
+    running: 2,
+    pending: 586,
+    failed: 0,
+    remainingInputTokens: 0,
+  };
+  it('show assignments and spend against the dollar cap', () => {
+    expect(
+      formatAgenticProgress({
+        ...base,
+        spend: { tokens: 241_000, usd: 1.24, tokenCap: null, usdCap: 40 },
+      })
+    ).toBe(
+      'pair_assessments: 312 of 900 assignments done (2 running, 0 failed) · 241,000 tokens · $1.24 of $40.00 cap'
+    );
+  });
+  it('show the input waiting before work starts and an open total', () => {
+    expect(
+      formatAgenticProgress({
+        ...base,
+        accepted: 0,
+        running: 0,
+        totalIsFinal: false,
+        remainingInputTokens: 3291,
+        spend: { tokens: 0, usd: 0, tokenCap: 10_000, usdCap: null },
+      })
+    ).toBe(
+      'pair_assessments: 0 of at least 900 assignments done · 0 of 10,000 tokens · about 3,291 input tokens to process'
+    );
+  });
+  it('skip reports before work is known and always show the first estimate', () => {
+    const lines: string[] = [];
+    let clock = 0;
+    const print = createProgressPrinter(
+      (line) => lines.push(line),
+      () => clock
+    );
+    print({ ...base, total: 0, accepted: 0, running: 0, totalIsFinal: false });
+    clock = 100;
+    print({ ...base, accepted: 0, running: 0, remainingInputTokens: 1407 });
+    clock = 200;
+    print({ ...base, accepted: 1 });
+    clock = 300;
+    print({ ...base, accepted: 900, running: 0, status: 'execution_complete' });
+    // The mid-run report is throttled; the estimate and the completed state are not.
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain('about 1,407 input tokens to process');
+    expect(lines.at(-1)).toContain('900 of 900 assignments done');
+    expect(lines.some((line) => line.includes('0 of at least 0'))).toBe(false);
   });
 });

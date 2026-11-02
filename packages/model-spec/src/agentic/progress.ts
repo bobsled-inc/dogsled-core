@@ -1,5 +1,6 @@
 import type { AgenticRunSnapshot } from './state.js';
-import { isAgenticFailureBlocked } from './execution-window.js';
+import { agenticSpendCaps, isAgenticFailureBlocked } from './execution-window.js';
+import { estimateAssignmentTokens } from './spend.js';
 
 export interface AgenticAssignmentCounts {
   total: number;
@@ -19,6 +20,10 @@ export interface AgenticRunProgress extends AgenticAssignmentCounts {
   /** False until preparation has fixed the work for every step. */
   totalIsFinal: boolean;
   steps: (AgenticAssignmentCounts & { stepId: string; sealed: boolean })[];
+  /** Spend so far and the caps in force. Absent for runs saved with reservation accounting. */
+  spend?: { tokens: number; usd: number; tokenCap: number | null; usdCap: number | null };
+  /** Rough input tokens of assignments not yet started: a lower bound on what remains. */
+  remainingInputTokens: number;
 }
 
 export function createAgenticProgress(
@@ -40,6 +45,7 @@ export function createAgenticProgress(
       : snapshot.status !== 'preparing',
   }));
   const counts = empty();
+  let remainingInputTokens = 0;
   const windowRevision = snapshot.execution_windows?.at(-1)?.revision ?? -1;
   for (const work of snapshot.work) {
     const last = work.attempts.at(-1);
@@ -54,6 +60,9 @@ export function createAgenticProgress(
           : 'pending';
     counts.total++;
     counts[state]++;
+    if (!work.accepted && work.attempts.length === 0) {
+      remainingInputTokens += estimateAssignmentTokens(work.assignment);
+    }
     const step = steps.find((step) => step.stepId === work.assignment.step_id)!;
     step.total++;
     step[state]++;
@@ -67,5 +76,19 @@ export function createAgenticProgress(
     publication: snapshot.publication,
     totalIsFinal: steps.every((step) => step.sealed),
     steps,
+    remainingInputTokens,
+    ...(snapshot.accounting === 'spend_cap'
+      ? {
+          spend: (() => {
+            const caps = agenticSpendCaps(snapshot);
+            return {
+              tokens: snapshot.charged,
+              usd: (snapshot.charged_microusd ?? 0) / 1_000_000,
+              tokenCap: caps.tokens,
+              usdCap: caps.microusd === null ? null : caps.microusd / 1_000_000,
+            };
+          })(),
+        }
+      : {}),
   };
 }

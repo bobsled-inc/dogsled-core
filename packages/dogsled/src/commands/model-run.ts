@@ -7,7 +7,7 @@ import YAML from 'yaml';
 
 import { runProject, type RunProjectResult } from '@bobsled-inc/model-spec/project';
 import { CommandError } from '@bobsled-inc/protocol';
-import { formatAgenticError } from '@bobsled-inc/model-spec/agentic';
+import { formatAgenticError, type AgenticRunProgress } from '@bobsled-inc/model-spec/agentic';
 
 import * as fmt from '../lib/output/formatter.js';
 import type { OutputOptions } from '../types/index.js';
@@ -179,6 +179,62 @@ function writeHumanSummary(result: RunProjectResult, options: OutputOptions): nu
   const skippedSuffix = skippedCount > 0 ? `, ${skippedCount} skipped` : '';
   fmt.success(`Executed ${succeededCount} model operation(s)${skippedSuffix}.`, options);
   return resultExitCode(result);
+}
+
+const formatCount = (value: number) => value.toLocaleString('en-US');
+const formatUsd = (value: number) => `$${value.toFixed(value < 1 ? 4 : 2)}`;
+
+/** One line of agentic progress: assignments, then spend against any cap. */
+export function formatAgenticProgress(progress: AgenticRunProgress): string {
+  const total = progress.totalIsFinal
+    ? formatCount(progress.total)
+    : `at least ${formatCount(progress.total)}`;
+  const parts = [
+    `${progress.modelName}: ${formatCount(progress.accepted)} of ${total} assignments done` +
+      (progress.running || progress.failed
+        ? ` (${formatCount(progress.running)} running, ${formatCount(progress.failed)} failed)`
+        : ''),
+  ];
+  const spend = progress.spend;
+  if (spend) {
+    parts.push(
+      spend.tokenCap === null
+        ? `${formatCount(spend.tokens)} tokens`
+        : `${formatCount(spend.tokens)} of ${formatCount(spend.tokenCap)} tokens`
+    );
+    if (spend.usdCap !== null) {
+      parts.push(`${formatUsd(spend.usd)} of ${formatUsd(spend.usdCap)} cap`);
+    } else if (spend.usd > 0) {
+      parts.push(formatUsd(spend.usd));
+    }
+  }
+  // Before work starts, show how much input is waiting; the real cost is higher.
+  if (progress.accepted === 0 && progress.running === 0 && progress.remainingInputTokens > 0) {
+    parts.push(`about ${formatCount(progress.remainingInputTokens)} input tokens to process`);
+  }
+  return parts.join(' · ');
+}
+
+/**
+ * Print the first report that knows its work (it carries the input estimate), then at
+ * most every two seconds, and always the completed state.
+ */
+export function createProgressPrinter(
+  write: (line: string) => void = (line) => process.stderr.write(line),
+  now = Date.now
+) {
+  let last = '';
+  let lastAt = 0;
+  return (progress: AgenticRunProgress) => {
+    // Before preparation seals any work there is nothing useful to show.
+    if (progress.total === 0 && !progress.totalIsFinal) return;
+    const line = formatAgenticProgress(progress);
+    const done = progress.status === 'execution_complete';
+    if (line === last || (!done && last && now() - lastAt < 2000)) return;
+    last = line;
+    lastAt = now();
+    write(`${line}\n`);
+  };
 }
 
 function parseArgs(args: string[]): ParsedModelRunArgs {
@@ -452,6 +508,9 @@ Run models in dependency order.
           },
           ...(options.agentMaxCostUsd !== undefined ? { maxCostUsd: options.agentMaxCostUsd } : {}),
           ...(options.agentRetryFailed ? { retryFailedAssignments: true } : {}),
+          ...(options.quiet || options.json || options.yaml
+            ? {}
+            : { onProgress: createProgressPrinter() }),
           host: await (
             await import('../runtime/cli-agentic-host.js')
           ).createCliAgenticHost({

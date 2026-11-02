@@ -62,3 +62,29 @@ export function deprecatedAssignmentLimitFields(model: AgenticModelSpec): string
     ),
   ];
 }
+
+/**
+ * Settings the schema accepts but agentic runs do not support yet, as user-facing
+ * messages. Validation reports them as errors so authors learn before a run starts.
+ */
+export function unsupportedAgenticFeatures(model: AgenticModelSpec): string[] {
+  const problems: string[] = [];
+  for (const step of model.plan.steps) {
+    if (step.skills?.length) {
+      problems.push(
+        `Step "${step.id}" sets skills, which agentic runs do not support yet. Remove skills from the step.`
+      );
+    }
+  }
+  if (model.execution) {
+    problems.push(
+      'execution is not supported for agentic models yet. The model runs on the warehouse of its prepared inputs; remove execution.'
+    );
+  }
+  if (model.publish) {
+    problems.push(
+      'publish is not supported for agentic models yet. Remove publish; output is written to the model target.'
+    );
+  }
+  return problems;
+}

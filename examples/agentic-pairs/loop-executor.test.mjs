@@ -136,7 +136,6 @@ test('search forwards only structured search arguments', async () => {
 });
 
 for (const [name, decision, code] of [
-  ['undeclared source', { ...read, source: 'secrets' }, 'source_denied'],
   ['unknown tool', { action: 'shell', command: 'cat .env' }, 'invalid_output'],
   ['raw SQL arguments', { ...read, arguments: { sql: 'SELECT * FROM secrets' } }, 'invalid_output'],
   ['foreign key', { action: 'finish', rows: [{ ...row, pair_id: 'b' }] }, 'invalid_output'],
@@ -208,14 +207,49 @@ test('cancellation during source access prevents another provider call', async (
   assert.equal(calls, 1);
 });
 
-test('a source response cannot exceed the bounded context', async () => {
+// Replies with each decision in turn and records every prompt the model was sent.
+function scripted(...decisions) {
+  const prompts = [];
+  const call = async (_connection, options) => {
+    prompts.push(options.prompt);
+    return reply(decisions[Math.min(prompts.length - 1, decisions.length - 1)]);
+  };
+  return { call, prompts };
+}
+
+test('an oversized source response is reported to the model, which can still finish', async () => {
   const req = request();
   req.sources = async () => ({
     rows: [{ text: 'x'.repeat(70000) }],
     retrieved_at: '2026-09-14T10:00:00Z',
   });
-  const result = await createLoopExecutor(async () => reply(read))(req);
-  assert.equal(result.error.code, 'source_size_limit');
+  const model = scripted(read, finish);
+  const result = await createLoopExecutor(model.call)(req);
+  assert.equal(result.status, 'succeeded');
+  assert.match(model.prompts[1], /too large/);
+  assert.doesNotMatch(model.prompts[1], /x{1000}/);
+});
+
+test('an undeclared source is refused without a source call and the model can recover', async () => {
+  const req = request();
+  req.sources = async () => assert.fail('No source call allowed');
+  const model = scripted({ ...read, source: 'secrets' }, finish);
+  const result = await createLoopExecutor(model.call)(req);
+  assert.equal(result.status, 'succeeded');
+  assert.match(model.prompts[1], /not permitted for this step/);
+});
+
+test('a failed source call is reported to the model instead of ending the assignment', async () => {
+  const req = request();
+  req.sources = async () => {
+    throw new Error(
+      'Agentic source request failed: source "research.web" failed in the source host'
+    );
+  };
+  const model = scripted(read, finish);
+  const result = await createLoopExecutor(model.call)(req);
+  assert.equal(result.status, 'succeeded');
+  assert.match(model.prompts[1], /failed in the source host/);
 });
 
 test('direct assignments cannot receive loop tools', async () => {

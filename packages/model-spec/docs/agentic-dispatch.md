@@ -175,9 +175,10 @@ Outputs returned after cancellation are not accepted; their attempts remain
 charged. Each execution window includes preparation, dispatch waits, and assignment
 retries. A later explicit retry starts a new window.
 
-The existing preparation bounds still apply: at most 1,000 rows and the contract's
-serialized byte limit. Built-in preparation requests one extra row and rejects
-overflow rather than truncating. DuckDB publication inserts up to 128 rows and
+The existing preparation bounds still apply: at most 1,000 rows and 1 MiB per input,
+with the per-value limit applied to each row. Built-in preparation requests one extra
+row. It rejects overflow rather than truncating, except for incremental inputs, which
+are processed in ordered batches; see [incremental agentic inputs](../README.md#incremental-agentic-inputs). DuckDB publication inserts up to 128 rows and
 4,096 bindings per batch inside the existing transaction. Other built-in SQL
 publishers retain their existing bounded batches. Acceptance checkpoints remain
 per attempt, so batching publication does not delay saving completed work.
@@ -217,7 +218,11 @@ query interface and retain source filters. Paid API sources require explicit
 
 The host gateway rejects undeclared sources, write operations, invalid JSON,
 oversized responses, and calls after assignment completion. The CLI adapter also
-checks source-specific arguments and limits reads to 100 rows and 64 KiB.
+checks source-specific arguments and limits reads to 100 rows and 64 KiB. A source
+with a pinned filter supports read but not search, because the query layer cannot
+combine a filter with free-text search. Each rejection reaches the executor as a
+safe reason, such as which argument to fix, and the reference loop reports it to the
+model, which can try again. Only policy violations fail the assignment.
 These are bounded reads, not a claim of exhaustive source coverage.
 
 The reference loop is in `examples/agentic-pairs/loop-executor.mjs`. It uses

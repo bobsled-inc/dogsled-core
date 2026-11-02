@@ -182,9 +182,12 @@ Retrieval times come from actual observations. Shape validation does not prove
 that a citation supports a claim. Dogsled does not invent evidence or average
 confidence values.
 
-Assignments and outcomes use inline JSON with a 1 MiB limit, at most 1,000 rows,
-16 levels, and 16,384 JSON nodes. Split oversized work upstream; Dogsled rejects
-overflow instead of silently truncating it. See the [executor contract](../../../packages/model-spec/docs/agentic-contracts.md)
+Each prepared input and the model's final output hold at most 1,000 rows and
+1 MiB. Each row, and each assignment and outcome sent to an executor, holds at most
+16,384 JSON values, 16 levels, and 1 MiB. When a limit is exceeded, the error names
+the input, the limit, and the row. Dogsled never truncates silently: split oversized
+work upstream, or use an incremental input to process a large table in batches.
+The whole run checkpoint is limited to 16 MiB. See the [executor contract](../../../packages/model-spec/docs/agentic-contracts.md)
 for the exact wire format.
 
 ## Final checks

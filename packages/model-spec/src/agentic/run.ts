@@ -18,6 +18,7 @@ import { agenticDeadlinePassed } from './state-errors.js';
 import { scheduleAgenticAssignments } from './schedule.js';
 import {
   AGENTIC_MAX_BYTES,
+  boundedAgenticRows,
   AGENTIC_MAX_ROWS,
   AgenticJsonSchema,
   createAgenticRowSchema,
@@ -63,6 +64,8 @@ export interface AgenticExecutionResult {
   rows: JsonValue[];
   processedKeys: JsonValue[];
   chargedTokens: number;
+  /** Incremental inputs with rows left for the next run; empty when the batch was complete. */
+  remainingInput: string[];
   /** Priced spend in US dollars; null for runs saved with reservation accounting. */
   chargedUsd: number | null;
   /** True when execution was already complete when this coordinator opened the run. */
@@ -375,8 +378,9 @@ async function executeOwnedAgenticRun(
       return snapshot;
     };
     const planExecution = incremental || context.resolved.steps.length > 1 || !('map' in step);
+    let remainingInput: string[] = [];
     if (planExecution) {
-      await executeAgenticPlan(host, context, {
+      ({ remainingInput } = await executeAgenticPlan(host, context, {
         snapshot,
         ...(cursorValues ? { cursorValues } : {}),
         checkpoint,
@@ -384,7 +388,7 @@ async function executeOwnedAgenticRun(
         abort: () => coordinator.abort(),
         concurrency,
         minDispatchIntervalMs,
-      });
+      }));
     } else if (snapshot.status === 'preparing') {
       const started = new Date(snapshot.started_at);
       const deadline = snapshot.deadline_at;
@@ -402,10 +406,7 @@ async function executeOwnedAgenticRun(
       );
       const retrievedAt = new Date().toISOString();
       throwIfCancelled(runSignal);
-      const data = AgenticJsonSchema.parse(raw);
-      if (!Array.isArray(data) || data.length > AGENTIC_MAX_ROWS) {
-        throw new Error('Agentic preparation exceeds the bounded row limit');
-      }
+      const data = boundedAgenticRows(raw, `Agentic input "${context.inputRef}"`);
       const resolved = context.resolved.steps[0]!;
       const step = resolved.step;
       if (!('map' in step)) throw new Error('Agentic probe requires one map step');
@@ -506,15 +507,8 @@ async function executeOwnedAgenticRun(
         grain.add(identity);
         findings.push({ ...row, _dogsled_run_id: key.id });
       }
-      if (findings.length > AGENTIC_MAX_ROWS) {
-        throw new AgenticStateError('limit', {
-          reason: 'output_too_large',
-          message: `The model produced more than ${AGENTIC_MAX_ROWS} output rows in total.`,
-          hint: 'Process fewer input rows per run, for example with an incremental source.',
-        });
-      }
-      AgenticJsonSchema.parse(findings);
     }
+    boundedAgenticRows(findings, `The output of agentic model "${model.name}"`);
     if (snapshot.status !== 'execution_complete') {
       await checkpoint({
         type: 'complete',
@@ -555,6 +549,7 @@ async function executeOwnedAgenticRun(
       rows: findings,
       processedKeys,
       chargedTokens: snapshot.charged,
+      remainingInput,
       chargedUsd:
         snapshot.accounting === 'spend_cap' ? (snapshot.charged_microusd ?? 0) / 1_000_000 : null,
       reusedCompletion,

@@ -48,6 +48,38 @@ const apiArgs = z
   })
   .strict();
 
+/** This adapter's own fixed policy messages, safe to show the agent. */
+class SourcePolicyError extends CommandError {
+  constructor(message: string) {
+    super(message, 2);
+    this.name = 'SourcePolicyError';
+  }
+}
+
+/** Argument errors name fields, never values, so the agent can fix its request. */
+function parseArgs<T extends z.ZodType>(schema: T, value: unknown): z.infer<T> {
+  const parsed = schema.safeParse(value);
+  if (parsed.success) return parsed.data;
+  const plain = (part: PropertyKey) => /^[A-Za-z0-9_]{1,64}$/.test(String(part));
+  const fields = new Set<string>();
+  const unknown = new Set<string>();
+  for (const issue of parsed.error.issues) {
+    if (issue.code === 'unrecognized_keys') {
+      for (const key of issue.keys) if (plain(key)) unknown.add(key);
+    } else {
+      const path = issue.path.filter(plain).join('.');
+      if (path) fields.add(path);
+    }
+  }
+  const parts = [
+    ...(unknown.size ? [`remove unknown ${[...unknown].slice(0, 5).join(', ')}`] : []),
+    ...(fields.size ? [`check ${[...fields].slice(0, 5).join(', ')}`] : []),
+  ];
+  throw new SourcePolicyError(
+    `Agent source arguments are invalid${parts.length ? `: ${parts.join('; ')}` : ''}`
+  );
+}
+
 /** The host owns source mapping and credentials. The agent can only request bounded data. */
 export function createAgenticSources(options: {
   inputs: Record<string, unknown>;
@@ -62,27 +94,34 @@ export function createAgenticSources(options: {
   return async (request, context) => {
     throwIfCancelled(context.signal);
     if (!context.assignment.allowed_sources.includes(request.source)) {
-      throw new CommandError('Agent source is not allowed', 2);
+      throw new SourcePolicyError('Agent source is not allowed');
     }
     if (!['read', 'search'].includes(request.operation)) {
-      throw new CommandError('Agent source operation is not allowed', 2);
+      throw new SourcePolicyError('Agent source operation is not allowed');
     }
     if (Buffer.byteLength(JSON.stringify(request.arguments)) > limits.maxBytes) {
-      throw new CommandError('Agent source arguments exceed byte limit', 2);
+      throw new SourcePolicyError('Agent source arguments exceed byte limit');
     }
     const entry = getSourceEntry(options.project.sourceEntries, request.source);
     try {
       let rows: unknown[];
       if (entry?.kind === 'api_resource') {
-        const args = apiArgs.parse(request.arguments);
+        const args = parseArgs(apiArgs, request.arguments);
         if (request.operation === 'search' && !args.search) {
-          throw new CommandError('Source search requires search text', 2);
+          throw new SourcePolicyError('Source search requires search text');
+        }
+        // A pinned filter scopes which rows this source may return. The query layer
+        // cannot combine a filter with free-text search, so refuse instead of widening.
+        if (args.search !== undefined && entry.filter) {
+          throw new SourcePolicyError(
+            'This source has a pinned filter, so it supports read but not search'
+          );
         }
         const loadSpecs = options.integrationSpecLoader ?? loadQueryableResourceSpecs;
         const loaded = loadSpecs(entry.integration, entry.resource, {
           includeBillable: true,
         });
-        if (!loaded) throw new CommandError('Agent source has no query interface', 2);
+        if (!loaded) throw new SourcePolicyError('Agent source has no query interface');
         const apiSecretResolver = {
           declaredSecretNames: options.secretResolver.declaredSecretNames,
           resolve(name: string) {
@@ -108,19 +147,19 @@ export function createAgenticSources(options: {
           authorizeBillable: () => options.allowBillableSources?.includes(request.source) === true,
           onMappedRecord(record) {
             count += 1;
-            if (count > args.limit) throw new CommandError('Agent source row limit exceeded', 2);
+            if (count > args.limit) throw new SourcePolicyError('Agent source row limit exceeded');
             bytes += Buffer.byteLength(JSON.stringify(record)) + 1;
             if (bytes > limits.maxBytes) {
-              throw new CommandError('Agent source result exceeds byte limit', 2);
+              throw new SourcePolicyError('Agent source result exceeds byte limit');
             }
           },
         });
         rows = result.records;
       } else {
         if (request.operation !== 'read') {
-          throw new CommandError('Table sources support read only', 2);
+          throw new SourcePolicyError('Table sources support read only');
         }
-        const args = readArgs.parse(request.arguments);
+        const args = parseArgs(readArgs, request.arguments);
         const owner =
           entry?.connection ??
           options.project.models.find(
@@ -130,16 +169,16 @@ export function createAgenticSources(options: {
           (candidate) => candidate.integration.handle === owner
         );
         if (candidates.length !== 1) {
-          throw new CommandError('Agent source table is missing or ambiguous', 2);
+          throw new SourcePolicyError('Agent source table is missing or ambiguous');
         }
         const integration = candidates[0]!;
         const relation = resolveRef(request.source, integration.registry, integration.modelReg);
-        if (!relation.ok) throw new CommandError('Agent source table was not found', 2);
+        if (!relation.ok) throw new SourcePolicyError('Agent source table was not found');
         const declared = AgenticColumnsSchema.parse(options.inputs[request.source]);
         const columns = args.columns
           ? args.columns.map((name) => {
               const column = declared.find((candidate) => candidate.name === name);
-              if (!column) throw new CommandError('Agent source column is not declared', 2);
+              if (!column) throw new SourcePolicyError('Agent source column is not declared');
               return column;
             })
           : declared;
@@ -157,7 +196,9 @@ export function createAgenticSources(options: {
         });
         try {
           throwIfCancelled(context.signal);
-          if (!runner.query) throw new CommandError('Agent source runner must support queries', 2);
+          if (!runner.query) {
+            throw new SourcePolicyError('Agent source runner must support queries');
+          }
           const missingSelf =
             request.source === context.assignment.model_name &&
             !(await agenticSelfTableExists(
@@ -194,16 +235,19 @@ export function createAgenticSources(options: {
       throwIfCancelled(context.signal);
       const text = JSON.stringify({ rows, retrieved_at: new Date().toISOString() });
       if (rows.length > limits.maxRows || Buffer.byteLength(text) > limits.maxBytes) {
-        throw new CommandError('Agent source result exceeds limits', 2);
+        throw new SourcePolicyError('Agent source result exceeds limits');
       }
       return JSON.parse(text);
     } catch (cause) {
       throwIfCancelled(context.signal);
       // Keep the cause for host diagnostics, never in the agent-facing message or payload.
-      // Like native Error.cause, it must not be included by JSON serialization.
+      // Like native Error.cause, it must not be included by JSON serialization. Only this
+      // adapter's own fixed policy messages reach the agent, so it can correct the request.
       const error = new CommandError(
-        'Agent source request failed or was rejected by source policy',
-        1
+        cause instanceof SourcePolicyError
+          ? cause.message
+          : 'Agent source request failed or was rejected by source policy',
+        cause instanceof SourcePolicyError ? 2 : 1
       );
       Object.defineProperty(error, 'cause', { value: cause, configurable: true, writable: true });
       throw error;

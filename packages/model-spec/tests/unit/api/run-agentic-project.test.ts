@@ -12,6 +12,7 @@ import {
   validateProject,
 } from '../../../src/api/index.js';
 import type { AgenticPublisher, ExperimentalAgenticProbe } from '../../../src/agentic/index.js';
+import { validateProject } from '../../../src/api/validate-project.js';
 
 import { MemoryStateStore } from '../agentic/state-fixture.js';
 const warehouseFactory = vi.hoisted(() => vi.fn());
@@ -239,7 +240,9 @@ describe('mixed agentic dispatch probe', () => {
       f.model.output.from = 'later';
       writeFileSync(join(f.root, 'models/agentic.yml'), stringify(f.model));
       await expect(runProject(f.root, f.options)).rejects.toThrow(
-        capability === 'skills' ? 'authored skills' : 'scoped source host'
+        capability === 'skills'
+          ? 'sets skills, which agentic runs do not support yet'
+          : 'scoped source host'
       );
       expect(f.host.prepare).not.toHaveBeenCalled();
       expect(f.run).not.toHaveBeenCalled();
@@ -669,6 +672,24 @@ describe('mixed agentic dispatch probe', () => {
     f.host.prepare = vi.fn(async () => []);
     expect((await runProject(f.root, f.options)).ok).toBe(true);
     expect(f.host.publish).not.toHaveBeenCalled();
+  });
+  it('reports unsupported agentic settings at validate time, before any run', async () => {
+    const f = fixture();
+    f.model.plan.steps[0]!.skills = ['triage'];
+    f.model.limits.tokens_per_assignment = 500;
+    writeFileSync(join(f.root, 'models/agentic.yml'), stringify(f.model));
+    const result = await validateProject(f.root);
+    const agentic = result.byIntegration
+      .flatMap((group) => group.results)
+      .find((entry) => entry.name === f.model.name)!;
+    expect(result.ok).toBe(false);
+    expect(agentic.errors).toContainEqual(expect.stringContaining('sets skills'));
+    expect(agentic.warnings).toContainEqual(
+      expect.stringContaining('limits.tokens_per_assignment is deprecated')
+    );
+    // The run reports the same problem in the same words.
+    const run = await runProject(f.root, f.options).catch((error: unknown) => error as Error);
+    expect(String((run as Error).message ?? run)).toContain('sets skills');
   });
   it('warns that deprecated per-assignment limits are ignored by new runs', async () => {
     const f = fixture();

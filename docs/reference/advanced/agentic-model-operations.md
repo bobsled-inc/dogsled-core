@@ -207,25 +207,29 @@ for the storage-specific rules.
 
 ## Troubleshooting
 
-| Symptom                                            | Check and next step                                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Agentic host required                              | Supply `--agent-executor`, or `agentic.host` in the library API                             |
-| Model profile missing                              | Match `llm.profile` to a role under `platform.models`                                       |
-| Input or output limit exceeded                     | Reduce the selected workload upstream; do not truncate a group or advance past omitted rows |
-| `spend_cap_reached`                                | Raise the cap and resume; saved answers are kept and not repeated                           |
-| `estimate_exceeds_cap`                             | The first step's input alone is over the cap; raise it or select fewer rows                 |
-| `pricing_unknown`                                  | No built-in price for the model; use `limits.tokens` as the cap instead                     |
-| Assignment failed after N attempts                 | Read the error kind and code in the message; fix the cause, then follow the printed hint    |
-| `auth` error `auth_failed`                         | Fix the profile's API key, then resume with `--agent-resume --agent-retry-failed`           |
-| `run_in_progress`                                  | Another process still runs this ID; wait for it or stop it, then resume                     |
-| Checkpoint conflict                                | Restore the matching definition/settings, or start a new run for the new definition         |
-| Cursor busy or active owner                        | Wait for the owner or resume its run; a fresh start cannot take a live lease                |
-| Old run must resume                                | Reconcile its prepared/confirmed publication before another batch starts                    |
-| Source or tool denied                              | Check aliases, `context_sources`, host `supportedTools`, and paid-source approval           |
-| Target schema mismatch                             | Plan an explicit target migration/rebuild and a fresh run                                   |
-| Final check fails                                  | Inspect retained stage findings and the authored check; the old target remains intact       |
-| Supplied regular state requires a checkpoint store | Configure `checkpoint_store` or supply `agentic.stateStore`                                 |
-| Skills or cross-warehouse settings rejected        | These schema fields are not implemented by the current mixed runner                         |
+| Symptom                                             | Check and next step                                                                                 |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Agentic host required                               | Supply `--agent-executor`, or `agentic.host` in the library API                                     |
+| Model profile missing                               | Match `llm.profile` to a role under `platform.models`                                               |
+| Input or output limit exceeded                      | Reduce the selected workload upstream; do not truncate a group or advance past omitted rows         |
+| `spend_cap_reached`                                 | Raise the cap and resume; saved answers are kept and not repeated                                   |
+| `estimate_exceeds_cap`                              | The first step's input alone is over the cap; raise it or select fewer rows                         |
+| `pricing_unknown`                                   | No built-in price for the model; use `limits.tokens` as the cap instead                             |
+| Assignment failed after N attempts                  | Read the error kind and code in the message; fix the cause, then follow the printed hint            |
+| `auth` error `auth_failed`                          | Fix the profile's API key, then resume with `--agent-resume --agent-retry-failed`                   |
+| `run_in_progress`                                   | Another process still runs this ID; wait for it or stop it, then resume                             |
+| `source_access_denied`                              | The executor kept requesting a source or operation the step does not allow; check `context_sources` |
+| `too_many_rows`, `row_too_large`, `batch_too_large` | The message names the input and limit; select fewer rows, or use an incremental input               |
+| `cursor_tie_too_large`                              | Use a cursor field with more distinct values, such as a higher-precision timestamp or an ID         |
+| "More rows are waiting"                             | An incremental run processed one batch; run the model again for the next one                        |
+| Checkpoint conflict                                 | Restore the matching definition/settings, or start a new run for the new definition                 |
+| Cursor busy or active owner                         | Wait for the owner or resume its run; a fresh start cannot take a live lease                        |
+| Old run must resume                                 | Reconcile its prepared/confirmed publication before another batch starts                            |
+| Source or tool denied                               | Check aliases, `context_sources`, host `supportedTools`, and paid-source approval                   |
+| Target schema mismatch                              | Plan an explicit target migration/rebuild and a fresh run                                           |
+| Final check fails                                   | Inspect retained stage findings and the authored check; the old target remains intact               |
+| Supplied regular state requires a checkpoint store  | Configure `checkpoint_store` or supply `agentic.stateStore`                                         |
+| Skills or cross-warehouse settings rejected         | These schema fields are not implemented by the current mixed runner                                 |
 
 Keep raw provider errors and source responses out of public logs. For custom hosts,
 trusted diagnostic causes may contain private data; remove sensitive details before

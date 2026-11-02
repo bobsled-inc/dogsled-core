@@ -24,8 +24,12 @@ export interface AgenticProbeContext {
   inputSqlByRef?: Record<string, string>;
   /** Schema for the specific input requested by a plan step. */
   inputColumns?: AgenticColumn[];
-  /** Apply this input filter before the row limit. The coordinator validates it again. */
-  incremental?: { cursor_field: string; after?: string | number };
+  /**
+   * Apply this input filter before the row limit. The coordinator validates it again.
+   * `batch` is set only for hosts with `incrementalBatches`: order rows by the cursor
+   * field and return at least one row past the limits when more rows exist.
+   */
+  incremental?: { cursor_field: string; after?: string | number; batch?: true };
   signal: AbortSignal;
   maxRows: number;
   maxBytes: number;
@@ -52,6 +56,11 @@ export interface ExperimentalAgenticProbe {
    * tracked in tokens only and a cost cap fails before any model call.
    */
   priceUsage?: AgenticPriceUsage;
+  /**
+   * The host returns incremental input ordered by cursor and may return more rows than
+   * fit. Dogsled then processes a large backlog in batches instead of failing.
+   */
+  incrementalBatches?: boolean;
   /** Approved tools this executor provides by default. Omitted means no extra tools. */
   supportedTools?: readonly string[];
   executeAgent: ExecuteAgent;

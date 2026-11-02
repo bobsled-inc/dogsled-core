@@ -138,14 +138,24 @@ A step cannot grant an undeclared source.
 
 References are opaque host identifiers, not paths or URLs to open automatically.
 The host owns their resolution, retention, access controls and immutable identity.
-This slice supports inline JSON only: at most 1 MiB per assignment or outcome,
-1,000 rows, 16 levels and 16,384 JSON nodes. Larger work must be split or rejected;
-it must not be truncated. Handles and streaming transports require a later contract.
+This slice supports inline JSON only: at most 1 MiB, 16 levels and 16,384 JSON
+values per assignment or outcome, and 1,000 rows. Batches of rows (prepared inputs,
+final output and publication) apply the value limit to each row and allow 1,000 rows
+and 1 MiB in total. Larger work must be split or rejected; it must not be truncated. Handles and streaming transports require a later contract.
 
 `AgentExecutorRequestSchema` wraps the payload with an `AbortSignal` and host-owned
 `budget.reserve` and `budget.settle` functions. Only an `agent_loop` request contains
 `sources`, a callable source gateway. Extra fields fail validation, including a source
 callback on `llm_call`. Functions and signals never belong in persisted payloads.
+
+A rejected or failed source request rejects only that call, with an error whose
+message is a safe reason the executor can show the model, for example
+`Agentic source request failed: source "x": Agent source column is not declared`.
+The executor can carry on. A policy violation (an undeclared source, an operation
+other than read or search, a call after the assignment finished or over its call
+limit) also fails the assignment as a retryable `source_access_denied` attempt, whose
+output is not accepted. A host's `CommandError` message is shown to the executor;
+any other host error is reported only as a failure in that source.
 
 The source callback accepts `{ source, operation, arguments }`. `source` is the
 actual declared reference, such as `research.web_search`, not its model alias.
