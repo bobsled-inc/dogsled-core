@@ -28,7 +28,9 @@ export interface AgenticRunProgress extends AgenticAssignmentCounts {
 
 export function createAgenticProgress(
   snapshot: AgenticRunSnapshot,
-  stepIds: readonly string[]
+  stepIds: readonly string[],
+  /** Optional per-run cache of input token estimates, keyed by step and shard. */
+  tokenEstimates?: Map<string, number>
 ): AgenticRunProgress {
   const empty = (): AgenticAssignmentCounts => ({
     total: 0,
@@ -61,7 +63,13 @@ export function createAgenticProgress(
     counts.total++;
     counts[state]++;
     if (!work.accepted && work.attempts.length === 0) {
-      remainingInputTokens += estimateAssignmentTokens(work.assignment);
+      const key = `${work.assignment.step_id}\0${work.assignment.shard_id}`;
+      let estimate = tokenEstimates?.get(key);
+      if (estimate === undefined) {
+        estimate = estimateAssignmentTokens(work.assignment);
+        tokenEstimates?.set(key, estimate);
+      }
+      remainingInputTokens += estimate;
     }
     const step = steps.find((step) => step.stepId === work.assignment.step_id)!;
     step.total++;

@@ -11,6 +11,8 @@ import type {
   AgenticRunProgress,
   AgenticUsage,
 } from '../../../src/agentic/index.js';
+import { createAgenticProgress } from '../../../src/agentic/progress.js';
+import type { AgenticRunSnapshot } from '../../../src/agentic/state.js';
 import { MemoryStateStore, runFixture } from './state-fixture.js';
 
 const measured = {
@@ -399,6 +401,28 @@ describe('progress reports', { timeout: 60_000 }, () => {
     const last = reports.at(-1)!;
     expect(last.remainingInputTokens).toBe(0);
     expect(last.spend).toEqual({ tokens: 3000, usd: 0.03, tokenCap: 100000, usdCap: 1 });
+  });
+
+  it('estimate each assignment once and reuse it on later reports', async () => {
+    const f = setup(3);
+    let saved: AgenticRunSnapshot | undefined;
+    f.host.executeAgent = vi.fn(async (request: AgentExecutorRequest) => {
+      saved ??= structuredClone(f.state());
+      return answer(request);
+    });
+    await f.run();
+    const steps = [...new Set(saved!.work.map((work) => work.assignment.step_id))];
+    const cache = new Map<string, number>();
+    const fresh = createAgenticProgress(saved!, steps, cache);
+    const unstarted = saved!.work.filter((work) => !work.attempts.length).length;
+    expect(unstarted).toBeGreaterThan(0);
+    expect(cache.size).toBe(unstarted);
+    expect(createAgenticProgress(saved!, steps).remainingInputTokens).toBe(
+      fresh.remainingInputTokens
+    );
+    // A later report reads the cached values instead of measuring again.
+    for (const key of cache.keys()) cache.set(key, 7);
+    expect(createAgenticProgress(saved!, steps, cache).remainingInputTokens).toBe(7 * unstarted);
   });
 });
 

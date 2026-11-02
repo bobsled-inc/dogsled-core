@@ -27,9 +27,7 @@ export async function executeAgenticPlan(
     concurrency: number;
     minDispatchIntervalMs: number;
   }
-): Promise<{ remainingInput: string[] }> {
-  // Inputs with rows left for a later batch. Known only to the invocation that prepares.
-  const remainingInput: string[] = [];
+): Promise<void> {
   let snapshot = options.snapshot;
   const checkpoint = async (command: AgenticCheckpointCommand) => {
     snapshot = await options.checkpoint(command);
@@ -81,6 +79,7 @@ export async function executeAgenticPlan(
       throwIfCancelled(options.signal);
       const label = `Agentic input "${ref}"`;
       let rows: JsonValue[];
+      let more = false;
       if (batch) {
         const taken = takeIncrementalBatch(raw, {
           label,
@@ -90,7 +89,7 @@ export async function executeAgenticPlan(
           maxBytes: AGENTIC_MAX_BYTES,
         });
         rows = taken.rows;
-        if (taken.more) remainingInput.push(ref);
+        more = taken.more;
       } else {
         rows = boundedAgenticRows(raw, label);
       }
@@ -112,7 +111,14 @@ export async function executeAgenticPlan(
             return true;
           })
         : rows;
-      inputs[alias] = { ref, columns, rows: selected, retrieved_at: new Date().toISOString() };
+      inputs[alias] = {
+        ref,
+        columns,
+        rows: selected,
+        retrieved_at: new Date().toISOString(),
+        // Saved with the batch so a resumed run still reports the waiting rows.
+        ...(more ? { more: true as const } : {}),
+      };
     }
     validateAgenticPlanInputs(context.resolved, inputs);
     await checkpoint({
@@ -139,5 +145,4 @@ export async function executeAgenticPlan(
     }
     await scheduleAgenticAssignments(host, { ...options, snapshot, checkpoint, dispatchClock });
   }
-  return { remainingInput };
 }

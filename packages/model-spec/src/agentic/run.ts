@@ -317,13 +317,16 @@ async function executeOwnedAgenticRun(
         )
       );
     }
+    // Assignments never change once saved, so each estimate is computed once per run.
+    const tokenEstimates = new Map<string, number>();
     const reportProgress = async () => {
       if (!options.onProgress) return;
       try {
         await options.onProgress(
           createAgenticProgress(
             snapshot,
-            context.resolved.steps.map(({ step }) => step.id)
+            context.resolved.steps.map(({ step }) => step.id),
+            tokenEstimates
           )
         );
       } catch {
@@ -378,9 +381,8 @@ async function executeOwnedAgenticRun(
       return snapshot;
     };
     const planExecution = incremental || context.resolved.steps.length > 1 || !('map' in step);
-    let remainingInput: string[] = [];
     if (planExecution) {
-      ({ remainingInput } = await executeAgenticPlan(host, context, {
+      await executeAgenticPlan(host, context, {
         snapshot,
         ...(cursorValues ? { cursorValues } : {}),
         checkpoint,
@@ -388,7 +390,7 @@ async function executeOwnedAgenticRun(
         abort: () => coordinator.abort(),
         concurrency,
         minDispatchIntervalMs,
-      }));
+      });
     } else if (snapshot.status === 'preparing') {
       const started = new Date(snapshot.started_at);
       const deadline = snapshot.deadline_at;
@@ -549,7 +551,10 @@ async function executeOwnedAgenticRun(
       rows: findings,
       processedKeys,
       chargedTokens: snapshot.charged,
-      remainingInput,
+      // Read from the saved batch, so a resumed or already finished run reports it too.
+      remainingInput: Object.values(snapshot.plan_inputs ?? {})
+        .filter((input) => input.more)
+        .map((input) => input.ref),
       chargedUsd:
         snapshot.accounting === 'spend_cap' ? (snapshot.charged_microusd ?? 0) / 1_000_000 : null,
       reusedCompletion,

@@ -15,6 +15,8 @@ export interface PreparedPlanInput {
   retrieved_at: string;
   columns: AgenticColumn[];
   rows: JsonValue[];
+  /** The source had rows past this batch. */
+  more?: true;
 }
 export interface PlanDefinition {
   resolved: ResolvedAgenticModel;

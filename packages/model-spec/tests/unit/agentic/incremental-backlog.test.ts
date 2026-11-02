@@ -58,15 +58,16 @@ function fixture() {
   };
   const stateStore = new MemoryStateStore();
   const cursorStore = createLocalAgenticCursorStore(dir);
-  const run = (id: string) =>
+  const run = (id: string, mode: 'start' | 'resume' = 'start', signal?: AbortSignal) =>
     executeAgenticRun(f.host, f.context(), {
-      run: { id, mode: 'start' },
+      run: { id, mode },
       stateStore,
       cursorStore,
       publisher,
       projectDirectory: dir,
+      ...(signal ? { signal } : {}),
     });
-  return { ...f, contexts, run };
+  return { ...f, contexts, publisher, run };
 }
 
 // Plan steps order assignments by group digest, so compare the set of keys.
@@ -85,6 +86,32 @@ describe('incremental backlog batches', { timeout: 60_000 }, () => {
     expect(ids(second.processedKeys)).toEqual(['p4', 'p5']);
     expect(second.remainingInput).toEqual([]);
     expect(f.host.executeAgent).toHaveBeenCalledTimes(5);
+  });
+
+  it('still reports waiting rows when an interrupted run resumes', async () => {
+    const f = fixture();
+    const execute = f.host.executeAgent;
+    const controller = new AbortController();
+    f.host.executeAgent = vi.fn(async () => {
+      controller.abort();
+      throw new Error('interrupted');
+    });
+    await expect(f.run('batch-1', 'start', controller.signal)).rejects.toThrow();
+    f.host.executeAgent = execute;
+    const resumed = await f.run('batch-1', 'resume');
+    // The resume uses the saved batch and does not read the source again.
+    expect(f.host.prepare).toHaveBeenCalledTimes(1);
+    expect(ids(resumed.processedKeys)).toEqual(['p1', 'p2', 'p3']);
+    expect(resumed.remainingInput).toEqual(['undecided_pairs']);
+  });
+
+  it('still reports waiting rows when only publication is retried', async () => {
+    const f = fixture();
+    vi.mocked(f.publisher.commit).mockRejectedValueOnce(new Error('connection reset'));
+    await expect(f.run('batch-1')).rejects.toThrow();
+    const resumed = await f.run('batch-1', 'resume');
+    expect(resumed.reusedCompletion).toBe(true);
+    expect(resumed.remainingInput).toEqual(['undecided_pairs']);
   });
 
   it('keeps failing clearly for hosts that do not return ordered batches', async () => {

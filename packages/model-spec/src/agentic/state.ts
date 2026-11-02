@@ -68,6 +68,8 @@ const PlanInputsSchema = z
         retrieved_at: z.iso.datetime({ offset: true }),
         columns: AgenticColumnsSchema,
         rows: z.array(AgenticJsonSchema).max(AGENTIC_MAX_ROWS),
+        // Set when the source had rows past this batch; a later run processes them.
+        more: z.literal(true).optional(),
       })
       .strict()
   )
