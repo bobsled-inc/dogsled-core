@@ -116,9 +116,8 @@ export interface ColumnComparison {
   type: string;
   collation: string | null;
 }
-/** Asserts an existing target's schema; returns false for a missing target. Where the
- * information schema reports collations (not Databricks), also returns how each target
- * column compares values and, if the same information schema lists `probe`, its columns. */
+/** Asserts an existing target's schema; returns false for a missing target. For PostgreSQL
+ * it also returns how each target column compares values and, if listed, `probe`'s columns. */
 export async function assertSqlSchema(
   db: PublicationDb,
   names: PublicationNames,
@@ -143,11 +142,16 @@ export async function assertSqlSchema(
   if (tables.length !== 1 || !['BASE TABLE', 'MANAGED'].includes(String(tables[0]!.table_type))) {
     throw new Error('Publication requires a base table');
   }
-  const collations = dialect !== 'databricks';
+  // Only PostgreSQL documents COLUMNS.COLLATION_NAME as each column's effective collation.
+  // Snowflake documents it as not applicable, BigQuery does not say whether inherited table
+  // and dataset defaults are reported, and Databricks does not report it. Without equal
+  // metadata, a publication cannot know that a check compares values alike in place.
+  const collations = dialect === 'postgres';
+  const listed = collations ? probe : undefined;
   // A probe shares this request: the same query reads both tables' columns.
   const rows = await db.query(
-    `SELECT table_schema, table_name, column_name, data_type, is_nullable${dialect === 'snowflake' ? ', numeric_scale' : ''}${collations ? ', collation_name' : ''} FROM ${info}.COLUMNS WHERE ${probe ? `(${condition}) OR (table_schema = ${db.p(3)} AND table_name = ${db.p(4)})` : condition} ORDER BY ${probe ? 'table_schema, table_name, ' : ''}ordinal_position LIMIT ${probe ? 516 : 258}`,
-    probe ? [...params, probe.schema, probe.table] : params
+    `SELECT ${listed ? 'table_schema, table_name, ' : ''}column_name, data_type, is_nullable${dialect === 'snowflake' ? ', numeric_scale' : ''}${collations ? ', collation_name' : ''} FROM ${info}.COLUMNS WHERE ${listed ? `(${condition}) OR (table_schema = ${db.p(3)} AND table_name = ${db.p(4)})` : condition} ORDER BY ${listed ? 'table_schema, table_name, ' : ''}ordinal_position LIMIT ${listed ? 516 : 258}`,
+    listed ? [...params, listed.schema, listed.table] : params
   );
   // The probe's reserved, random name cannot match the target, whatever the name case.
   const of = (schema: string, table: string) =>
@@ -156,7 +160,7 @@ export async function assertSqlSchema(
         String(row.table_schema).toLowerCase() === schema.toLowerCase() &&
         String(row.table_name).toLowerCase() === table.toLowerCase()
     );
-  const columns = probe ? of(names.schema, names.table) : rows;
+  const columns = listed ? of(names.schema, names.table) : rows;
   const expected = context.resolved.output_columns;
   if (
     columns.length !== expected.length ||
@@ -185,7 +189,7 @@ export async function assertSqlSchema(
           ? null
           : String(column.collation_name),
     }));
-  const probed = probe ? of(probe.schema, probe.table) : [];
+  const probed = listed ? of(listed.schema, listed.table) : [];
   return { columns: compare(columns), ...(probed.length ? { probe: compare(probed) } : {}) };
 }
 /** True only when both lists are present and compare every column's values alike. */

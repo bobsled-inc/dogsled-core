@@ -376,8 +376,8 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
       expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
       expect(f.db.receipts()).toHaveLength(1);
     });
-    // Databricks does not report column collations in its information schema.
-    const comparesInPlace = dialect !== 'databricks';
+    // Only PostgreSQL establishes column collations through its information schema.
+    const comparesInPlace = dialect === 'postgres';
     const staged = (events: readonly string[]) =>
       events.some((sql) => sql.startsWith('insert into') && sql.includes('where not exists'));
     async function noOp(setup: (f: Awaited<ReturnType<typeof prepared>>) => void = () => {}) {
@@ -399,7 +399,7 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
     it(
       comparesInPlace
         ? 'checks an unchanged target in place for an empty-input no-op'
-        : 'stages an empty-input no-op because column collations are not reported',
+        : 'stages an empty-input no-op because column collations are not established',
       async () => {
         const f = await noOp();
         expect(staged(f.events)).toBe(!comparesInPlace);
@@ -511,33 +511,32 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
       await publisher.claim(db.context.target);
       expect(inits()).toBe(4);
     });
-    it('stages a no-op when an existing column type compares differently', async () => {
-      const aliases: Partial<Record<PublicationDialect, Partial<Record<string, string>>>> = {
+    // Accepted aliases that compare values unlike the stage's types.
+    const alias = (
+      {
         postgres: { object: 'json', array: 'json' },
         databricks: { number: 'FLOAT' },
-      };
-      const alias = aliases[dialect];
-      const f = await prepared([], []);
-      if (alias) {
-        f.db.reportTypes((column) => alias[column.type] ?? publicationType(column.type, dialect));
+      } as Partial<Record<PublicationDialect, Partial<Record<string, string>>>>
+    )[dialect];
+    it.runIf(alias)(
+      'stages a no-op when an existing column type compares differently',
+      async () => {
+        const f = await prepared([], []);
+        f.db.reportTypes((column) => alias![column.type] ?? publicationType(column.type, dialect));
+        const start = f.db.events.length;
+        const intent = await f.publisher.prepare(
+          f.db.context,
+          f.identity,
+          f.accepted,
+          f.keys,
+          f.claim
+        );
+        expect(staged(f.db.events.slice(start))).toBe(true);
+        await f.publisher.commit(intent, f.claim);
+        expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
+        expect(f.db.receipts()).toHaveLength(1);
       }
-      const start = f.db.events.length;
-      const intent = await f.publisher.prepare(
-        f.db.context,
-        f.identity,
-        f.accepted,
-        f.keys,
-        f.claim
-      );
-      // Without an alias the target is checked in place; otherwise its rows are staged.
-      const copied = f.db.events
-        .slice(start)
-        .some((sql) => sql.startsWith('insert into') && sql.includes('where not exists'));
-      expect(copied).toBe(alias !== undefined);
-      await f.publisher.commit(intent, f.claim);
-      expect(f.db.target().map((row) => row.pair_id)).toEqual(['a', 'b', 'c']);
-      expect(f.db.receipts()).toHaveLength(1);
-    });
+    );
     it('rolls back stale ownership without changing target rows or saving a receipt', async () => {
       const f = await prepared();
       const intent = await f.publisher.prepare(

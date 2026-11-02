@@ -177,7 +177,13 @@ export function publicationWarehouse(
             column_name: dialect === 'snowflake' ? column.name.toUpperCase() : column.name,
             data_type: isTarget ? reportType(column) : publicationType(column.type, dialect),
             is_nullable: column.nullable ? 'YES' : 'NO',
-            collation_name: isTarget ? targetCollation(column) : stageCollation(column),
+            // Snowflake documents COLUMNS.COLLATION_NAME as not applicable.
+            collation_name:
+              dialect === 'snowflake'
+                ? null
+                : isTarget
+                  ? targetCollation(column)
+                  : stageCollation(column),
           });
         }
       }
