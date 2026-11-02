@@ -2,8 +2,14 @@ const FORBIDDEN_PACKAGE_SEGMENTS = new Set(['.security-review', 'AGENTS.md', 'CL
 
 export function isForbiddenPackageEntry(entry) {
   const segments = entry.replaceAll('\\', '/').split('/');
+  const isExampleProjectGuide =
+    segments.length === 4 &&
+    segments[0] === 'package' &&
+    segments[1] === 'examples' &&
+    segments[3] === 'AGENTS.md';
+  const checkedSegments = isExampleProjectGuide ? segments.slice(0, -1) : segments;
   if (
-    segments.some(
+    checkedSegments.some(
       (segment) =>
         FORBIDDEN_PACKAGE_SEGMENTS.has(segment) || segment === '.env' || segment.startsWith('.env.')
     )
