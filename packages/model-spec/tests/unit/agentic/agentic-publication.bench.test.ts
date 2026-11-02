@@ -19,7 +19,10 @@ vi.mock('@bobsled-inc/connections', async (original) => ({
 const env = process.env;
 const latencyMs = Number(env.PUBLICATION_BENCHMARK_LATENCY_MS ?? 0);
 const samples = Number(env.PUBLICATION_BENCHMARK_SAMPLES ?? 3);
-const integration = checkpointIntegrations[1]!;
+// PostgreSQL checks unchanged targets in place; Snowflake stages them. Both are supported.
+const dialect = (env.PUBLICATION_BENCHMARK_DIALECT ?? 'postgres') as 'postgres' | 'snowflake';
+if (!['postgres', 'snowflake'].includes(dialect)) throw new Error('Unsupported benchmark dialect');
+const integration = checkpointIntegrations[dialect === 'postgres' ? 0 : 1]!;
 const populated = 100;
 type Row = { pair_id: string; updated_at: number; evidence: string };
 const rows = (count: number, changed: number[] = []): Row[] =>
@@ -81,7 +84,7 @@ function workload() {
     };
   };
   const context = f.context();
-  const warehouse = agenticWarehouse(context);
+  const warehouse = agenticWarehouse(context, dialect);
   warehouse.publication.absent();
   resolve.mockImplementation(async () => warehouse.acquire());
   const run = async (id: string, mode: 'start' | 'resume' = 'start', timer?: PhaseTimer) => {
@@ -230,6 +233,7 @@ describe.skipIf(env.PUBLICATION_BENCHMARK !== '1')('agentic publication benchmar
       process.stdout.write(
         `${JSON.stringify({
           scenario: name,
+          dialect,
           latencyMs,
           samples,
           elapsedMs: median(runs.map((run) => run.elapsedMs)),

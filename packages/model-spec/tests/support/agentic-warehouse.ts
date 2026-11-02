@@ -4,17 +4,21 @@ import { checkpointTransport } from './checkpoint-transport.js';
 import { publicationWarehouse } from './publication-warehouse.js';
 
 const escapes: Record<string, string> = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f' };
-/** Reverses Snowflake literal escaping: doubled quotes and backslash sequences. */
-const unescape = (text: string) =>
-  text.replace(/''|\\(.)/g, (match, next?: string) =>
-    match === "''" ? "'" : (escapes[next!] ?? next!)
-  );
+type Dialect = 'snowflake' | 'postgres';
+/** Reverses literal escaping: doubled quotes, plus backslash sequences except in PostgreSQL. */
+const unescape = (text: string, dialect: Dialect) =>
+  dialect === 'postgres'
+    ? text.replaceAll("''", "'")
+    : text.replace(/''|\\(.)/g, (match, next?: string) =>
+        match === "''" ? "'" : (escapes[next!] ?? next!)
+      );
 
 /** Stateful double for the shared cursor table. One writer; no SQL engine. */
-function cursorTable() {
+function cursorTable(dialect: Dialect) {
   const rows = new Map<string, { record: string; token: string }>();
+  const literal = dialect === 'postgres' ? /'((?:[^']|'')*)'/g : /'((?:[^'\\]|''|\\.)*)'/g;
   const literals = (sql: string) =>
-    [...sql.matchAll(/'((?:[^'\\]|''|\\.)*)'/g)].map((match) => unescape(match[1]!));
+    [...sql.matchAll(literal)].map((match) => unescape(match[1]!, dialect));
   const statement = (sql: string) => {
     const insert = /INSERT INTO [^(]+\([^)]*\) VALUES \((.*)\)\s*$/is.exec(sql)?.[1];
     if (insert) {
@@ -28,13 +32,15 @@ function cursorTable() {
       rows.get('')!.token = token!;
     }
   };
-  return {
-    run(raw: string) {
+  // Statements apply immediately: benchmark transactions on this table never roll back.
+  const runner: SqlRunnerModule = {
+    supportsBindings: true,
+    async run(raw: string) {
       let sql = raw;
-      if (sql.startsWith('EXECUTE IMMEDIATE ')) sql = unescape(sql.slice(19, -1));
+      if (sql.startsWith('EXECUTE IMMEDIATE ')) sql = unescape(sql.slice(19, -1), dialect);
       if (/^CREATE TABLE/i.test(sql)) {
         if (!rows.has('')) rows.set('', { record: '', token: '' });
-      } else if (!/^(CREATE SCHEMA|BEGIN|COMMIT|ROLLBACK)$/i.test(sql.split(' ')[0]!)) {
+      } else if (!/^(BEGIN|COMMIT|ROLLBACK)$/i.test(sql)) {
         for (const part of sql.split(/;\s*\n/)) {
           const dml = /(?:^|\n)\s*((?:UPDATE|DELETE|INSERT) [\s\S]*)/.exec(part)?.[1];
           if (dml) statement(dml);
@@ -42,7 +48,7 @@ function cursorTable() {
       }
       return {};
     },
-    query(sql: string, params: readonly unknown[] = []) {
+    async query(sql: string, params: readonly unknown[] = []) {
       if (/^DESCRIBE/i.test(sql)) return [{ tablefeatures: ['catalogManaged'] }];
       if (/SELECT ["`]?token["`]? FROM/i.test(sql)) return [{ token: rows.get('')!.token }];
       if (/SELECT ["`]?record["`]? FROM/i.test(sql)) {
@@ -51,8 +57,8 @@ function cursorTable() {
       }
       return [{ valid: 1 }];
     },
-    rows,
   };
+  return { runner, rows };
 }
 
 function category(sql: string): string {
@@ -90,12 +96,18 @@ function category(sql: string): string {
 }
 
 /**
- * One in-memory Snowflake-dialect warehouse for a complete agentic run: checkpoint, cursor
- * and publication tables keep state across runner instances. Each transaction is one script
- * request, routed by the tables it names. Every request is counted by area and kind and waits
- * `latencyMs`. It models protocol decisions, not provider SQL acceptance or performance.
+ * One in-memory warehouse for a complete agentic run: checkpoint, cursor and publication
+ * tables keep state across runner instances. Requests are routed by the tables they name.
+ * Snowflake sends each transaction as one script. PostgreSQL sends BEGIN, statements and
+ * COMMIT separately on one connection, so each connection forwards BEGIN with its first
+ * statement and keeps that target until COMMIT or ROLLBACK. Every request is counted by area
+ * and kind and waits `latencyMs`. It models protocol decisions, not provider SQL acceptance
+ * or performance.
  */
-export function agenticWarehouse(context: AgenticPublicationContext) {
+export function agenticWarehouse(
+  context: AgenticPublicationContext,
+  dialect: Dialect = 'snowflake'
+) {
   // One checkpoint transport per run: each run key has its own control and payload tables.
   const checkpoints = new Map<string, ReturnType<typeof checkpointTransport>>();
   const checkpoint = (sql: string) => {
@@ -103,55 +115,93 @@ export function agenticWarehouse(context: AgenticPublicationContext) {
     if (!checkpoints.has(table)) checkpoints.set(table, checkpointTransport(0, false));
     return checkpoints.get(table)!.runner;
   };
-  const cursors = cursorTable();
-  const publication = publicationWarehouse('snowflake', { context });
+  const cursors = cursorTable(dialect);
+  const publication = publicationWarehouse(dialect, { context });
+  const schemas: SqlRunnerModule = { supportsBindings: true, run: async () => ({}) };
   const operations: Record<string, number> = {};
   const faults: { pattern: RegExp; skip: number; after: boolean }[] = [];
   let runners = 0;
   let latencyMs = 0;
-  const route = async (sql: string) => {
-    const name = category(sql);
+  const count = async (name: string) => {
     operations[name] = (operations[name] ?? 0) + 1;
     if (latencyMs) await new Promise((resolve) => setTimeout(resolve, latencyMs));
-    const fault = faults.find((item) => !item.after && item.pattern.test(sql));
-    if (fault && fault.skip-- === 0) {
-      faults.splice(faults.indexOf(fault), 1);
-      throw new Error('Synthetic warehouse request failure');
-    }
-    return name.split(':')[0];
   };
-  /** Applies a request, then loses its response when an armed fault matches. */
-  const deliver = async <T>(sql: string, result: T): Promise<T> => {
-    const fault = faults.find((item) => item.after && item.pattern.test(sql));
-    if (fault) {
-      faults.splice(faults.indexOf(fault), 1);
-      throw new Error('Synthetic lost response');
-    }
-    return result;
-  };
-  const runner: SqlRunnerModule = {
-    supportsBindings: true,
-    async run(sql) {
-      const area = await route(sql);
-      if (/^(BEGIN|COMMIT|ROLLBACK)$/.test(sql)) throw new Error('Expected one-request scripts');
-      if (area === 'schema') return {};
-      if (area === 'checkpoint') return deliver(sql, await checkpoint(sql).run(sql));
-      if (area === 'cursor') return deliver(sql, cursors.run(sql));
-      return deliver(sql, await publication.runner.run(sql));
-    },
-    async query(sql, params) {
-      const area = await route(sql);
-      if (area === 'checkpoint') return checkpoint(sql).query!(sql, params);
-      if (area === 'cursor') return cursors.query(sql, params);
-      return publication.runner.query!(sql, params);
-    },
-    async close() {},
+  const target = (area: string, sql: string): SqlRunnerModule =>
+    area === 'schema'
+      ? schemas
+      : area === 'checkpoint'
+        ? checkpoint(sql)
+        : area === 'cursor'
+          ? cursors.runner
+          : publication.runner;
+  /** A connection: one SQL session with its own transaction state. */
+  const connection = (): SqlRunnerModule => {
+    let begin = false;
+    let open: { area: string; runner: SqlRunnerModule; lost: boolean } | undefined;
+    const route = async (sql: string) => {
+      const name = category(sql);
+      const area = open?.area ?? name.split(':')[0]!;
+      await count(`${area}:${name.split(':')[1]}`);
+      const fault = faults.find((item) => !item.after && item.pattern.test(sql));
+      if (fault && fault.skip-- === 0) {
+        faults.splice(faults.indexOf(fault), 1);
+        throw new Error('Synthetic warehouse request failure');
+      }
+      const runner = open?.runner ?? target(area, sql);
+      if (begin) {
+        // BEGIN names no table. Forward it to the first statement's area.
+        begin = false;
+        open = { area, runner, lost: false };
+        operations[`${area}:transaction`] = (operations[`${area}:transaction`] ?? 0) + 1;
+        await runner.run('BEGIN');
+      }
+      return runner;
+    };
+    /** Applies a request, then loses its response when an armed fault matches. Inside an
+     * open transaction the COMMIT response is lost instead, after it applies. */
+    const deliver = <T>(sql: string, result: T): T => {
+      const fault = faults.find((item) => item.after && item.pattern.test(sql));
+      if (fault) {
+        faults.splice(faults.indexOf(fault), 1);
+        if (open) open.lost = true;
+        else throw new Error('Synthetic lost response');
+      }
+      return result;
+    };
+    return {
+      supportsBindings: true,
+      async run(sql) {
+        if (sql === 'BEGIN') {
+          // Counted when its area is known; the round trip happens now.
+          if (latencyMs) await new Promise((resolve) => setTimeout(resolve, latencyMs));
+          begin = true;
+          return {};
+        }
+        if (sql === 'COMMIT' || sql === 'ROLLBACK') {
+          const current = open;
+          open = undefined;
+          begin = false;
+          await count(`${current?.area ?? 'publication'}:transaction`);
+          // A ROLLBACK after a COMMIT is a no-op, as on PostgreSQL.
+          const result = current ? await current.runner.run(sql) : {};
+          if (sql === 'COMMIT' && current?.lost) throw new Error('Synthetic lost response');
+          return result;
+        }
+        const runner = await route(sql);
+        return deliver(sql, await runner.run(sql));
+      },
+      async query(sql, params) {
+        const runner = await route(sql);
+        return deliver(sql, await runner.query!(sql, params));
+      },
+      async close() {},
+    };
   };
   return {
-    /** Counts runner acquisitions, each a separate connection on a real warehouse. */
+    /** Opens a connection; each is a separate login on a real warehouse. */
     acquire() {
       runners++;
-      return runner;
+      return connection();
     },
     get runners() {
       return runners;

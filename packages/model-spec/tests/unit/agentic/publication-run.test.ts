@@ -14,11 +14,16 @@ vi.mock('@bobsled-inc/connections', async (original) => ({
 }));
 afterEach(() => resolve.mockReset());
 
-const integration = checkpointIntegrations[1]!;
+// PostgreSQL checks an unchanged target in place; Snowflake cannot establish collations, so it stages.
+const dialects = [
+  { dialect: 'postgres' as const, integration: checkpointIntegrations[0]!, inPlace: true },
+  { dialect: 'snowflake' as const, integration: checkpointIntegrations[1]!, inPlace: false },
+];
+type Dialect = (typeof dialects)[number];
 type Row = { pair_id: string; updated_at: number };
 
 /** Incremental runs through the real stores and SQL publisher on one warehouse double. */
-function incremental() {
+function incremental({ dialect, integration }: Dialect) {
   const f = runFixture(0);
   f.model.sources.pairs!.incremental = { cursor_field: 'updated_at' };
   f.host.inputs = {
@@ -46,7 +51,7 @@ function incremental() {
         })),
     };
   });
-  const warehouse = agenticWarehouse(f.context());
+  const warehouse = agenticWarehouse(f.context(), dialect);
   warehouse.publication.absent();
   resolve.mockImplementation(async () => warehouse.acquire());
   const prepares = vi.fn();
@@ -94,9 +99,9 @@ function incremental() {
 const rows = (...values: [string, number][]) =>
   values.map(([pair_id, updated_at]) => ({ pair_id, updated_at }));
 
-describe('incremental publication runs', { timeout: 60_000 }, () => {
-  it('publishes a second equivalent empty run without staging or changing the target', async () => {
-    const t = incremental();
+describe.each(dialects)('incremental publication runs: $dialect', { timeout: 60_000 }, (setup) => {
+  it('publishes a second equivalent empty run without changing the target', async () => {
+    const t = incremental(setup);
     t.input(rows(['a', 1], ['b', 2], ['c', 3]));
     await t.run('populate');
     const populated = t.target();
@@ -107,9 +112,9 @@ describe('incremental publication runs', { timeout: 60_000 }, () => {
       expect(result).toMatchObject({ publication: 'confirmed', rows: [], processedKeys: [] });
       expect(t.target()).toEqual(populated);
       expect(t.cursor()).toMatchObject({ values: { pairs: 3 }, activeRun: null });
-      // Checks still run; nothing copies the target or builds a replacement stage.
+      // Checks still run. Only a target checked in place skips the copy into a stage.
       expect(t.warehouse.operations['publication:checks']).toBeGreaterThan(0);
-      expect(t.warehouse.operations['publication:copy']).toBeUndefined();
+      expect(t.warehouse.operations['publication:copy']).toBe(setup.inPlace ? undefined : 1);
       expect(t.warehouse.operations['publication:introspection']).toBeGreaterThan(0);
     }
     expect(t.warehouse.publication.receipts()).toHaveLength(3);
@@ -117,7 +122,7 @@ describe('incremental publication runs', { timeout: 60_000 }, () => {
   });
 
   it('records an empty first run without creating the missing target', async () => {
-    const t = incremental();
+    const t = incremental(setup);
     const result = await t.run('first');
     expect(result.publication).toBe('confirmed');
     expect(t.target()).toBeNull();
@@ -129,7 +134,7 @@ describe('incremental publication runs', { timeout: 60_000 }, () => {
   });
 
   it('removes prior output for a processed key that returns no rows', async () => {
-    const t = incremental();
+    const t = incremental(setup);
     t.input(rows(['a', 1], ['b', 2], ['c', 3]));
     await t.run('populate');
     t.input(rows(['a', 1], ['b', 4], ['c', 5]));
@@ -147,7 +152,7 @@ describe('incremental publication runs', { timeout: 60_000 }, () => {
   });
 
   it('advances the cursor only after resuming an uncertain commit', async () => {
-    const t = incremental();
+    const t = incremental(setup);
     t.input(rows(['a', 1], ['b', 2]));
     await t.run('populate');
     t.input(rows(['a', 1], ['b', 2], ['c', 3]));
