@@ -241,9 +241,19 @@ describe.each(checkpointIntegrations)('checkpoint batches: $source_type', (integ
       pointerMs: 0,
       expires: true,
     },
+    {
+      // The lease is valid when acquisition returns, but already due for renewal.
+      name: 'delayed acquisition response and retained-size read',
+      acquireMs: 8000,
+      retainedMs: 3000,
+      stagingMs: 0,
+      responseMs: 0,
+      pointerMs: 0,
+      expires: false,
+    },
   ])(
     'preserves lease fencing after $name',
-    async ({ retainedMs, stagingMs, responseMs, pointerMs, expires }) => {
+    async ({ acquireMs = 0, retainedMs, stagingMs, responseMs, pointerMs, expires }) => {
       vi.useFakeTimers({ toFake: ['Date'] });
       const transport = checkpointTransport();
       const value = snapshot(1);
@@ -252,6 +262,7 @@ describe.each(checkpointIntegrations)('checkpoint batches: $source_type', (integ
       const run = transport.runner.run;
       transport.runner.run = async (...args) => {
         const sql = args[0];
+        const acquisition = /SET ["`]owner["`] = '{1,2}[a-f0-9-]{36}/i.test(sql);
         const renewal = /SET ["`]expires["`]/i.test(sql);
         const publication = /SET ["`]snapshot["`]/i.test(sql);
         if (publication) advance(pointerMs);
@@ -259,6 +270,7 @@ describe.each(checkpointIntegrations)('checkpoint batches: $source_type', (integ
           throw new Error('Expired warehouse owner');
         }
         const result = await run(...args);
+        if (acquisition) advance(acquireMs);
         if (renewal) {
           // The database starts the lease before the response reaches the caller.
           expiresAt = Date.now() + 10000;

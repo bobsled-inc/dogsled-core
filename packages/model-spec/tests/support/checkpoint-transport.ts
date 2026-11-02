@@ -51,6 +51,7 @@ export function checkpointTransport(latencyMs = 0, captureInserts = true) {
   const operations: Record<string, number> = {};
   const inserts: { sql: string; params: readonly unknown[] }[] = [];
   let bytes = 0;
+  let readBytes = 0;
   const count = async (operation: string) => {
     operations[operation] = (operations[operation] ?? 0) + 1;
     if (latencyMs) await new Promise((resolve) => setTimeout(resolve, latencyMs));
@@ -64,6 +65,19 @@ export function checkpointTransport(latencyMs = 0, captureInserts = true) {
     },
     get bytes() {
       return bytes;
+    },
+    get readBytes() {
+      return readBytes;
+    },
+    /** Commits a snapshot as another writer would, bypassing this session's state. */
+    publish(id: string, json: string) {
+      const encoded = Buffer.from(json).toString('base64');
+      const chunks = [];
+      for (let ordinal = 0; ordinal * 65536 < encoded.length; ordinal++) {
+        chunks.push({ ordinal, data: encoded.slice(ordinal * 65536, (ordinal + 1) * 65536) });
+      }
+      payloads.set(id, chunks);
+      pointer = id;
     },
     afterInsert: undefined as undefined | (() => void | Promise<void>),
     failCommit: false,
@@ -132,7 +146,9 @@ export function checkpointTransport(latencyMs = 0, captureInserts = true) {
       }
       if (/ORDER BY ordinal/i.test(clean)) {
         await count('read_payload');
-        return payloads.get(String((params as unknown[])[0])) ?? [];
+        const chunks = payloads.get(String((params as unknown[])[0])) ?? [];
+        for (const chunk of chunks) readBytes += chunk.data.length;
+        return chunks;
       }
       if (/DESCRIBE DETAIL/.test(sql)) {
         await count('describe');

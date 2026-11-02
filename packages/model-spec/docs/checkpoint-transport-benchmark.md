@@ -1,4 +1,11 @@
-# Warehouse checkpoint transport benchmark
+# Warehouse checkpoint benchmark
+
+This opt-in benchmark measures agentic checkpoint work with the real executor,
+scheduler, checkpoint commands, receipts and warehouse checkpoint store. Only the SQL
+transport is a deterministic double. Two changes are measured: batching payload
+INSERTs (transport) and reducing repeated snapshot processing (CPU and payload reads).
+
+## Transport batching
 
 Warehouse checkpoint saves retain the existing version 2 snapshot and 64 KiB
 base64 chunks. Each INSERT carries at most seven chunks (448 KiB of encoded
@@ -30,8 +37,66 @@ between batches and before the final pointer transaction when renewal is due.
 The renewal window includes retained-size reads and response delays. A single
 request that outlasts the lease still fails under the existing ownership fence;
 short leases need enough margin for individual warehouse requests. It does not
-retry ambiguous writes or cache previously read snapshots. Table layout, chunk ordinals, digests, public APIs, and stored snapshots
-are unchanged.
+retry ambiguous writes. Table layout, chunk ordinals, digests, public APIs, and
+stored snapshots are unchanged.
+
+## Checkpoint processing
+
+The second benchmark measures state processing rather than transport batching.
+Every transition used to validate the whole snapshot about seven times: the store
+read and parsed the prior snapshot, `applyAgenticCheckpoint` parsed its input and
+result, the store parsed the result again before saving, and the coordinator parsed
+the response and applied the command again with two more parses. Each validation
+rebuilt Zod row schemas for every assignment and attempt outcome. A CPU profile of
+the 100-assignment transport benchmark at 0 ms latency attributed 48% of samples to
+row-schema construction and 84% to schema validation overall. Canonical hashing was
+11%.
+
+This change keeps the stored format and validation rules and removes repeated work:
+
+- Scalar and metadata row field schemas are built once; array and object columns
+  keep their own recursive schemas, so exported JSON Schemas are unchanged.
+  Assignment validation builds the key schema once per assignment instead of once
+  per processed key, and one-shot schemas that check a handful of values skip Zod's
+  compiled fast path.
+- Snapshot validation checks each attempt outcome against the already parsed
+  assignment instead of parsing the assignment again.
+- Structurally equal JSON is compared without hashing; any difference falls back
+  to digest comparison, so results are unchanged.
+- A warehouse session keeps the JSON text of the snapshot whose fenced pointer
+  commit it confirmed or whose payload it verified. A command applies to that state
+  only while the pointer, read under the owner and expiry predicate, still names
+  it. The store transitions a private copy and validates the result once.
+  `read()` always fetches and verifies the payload; bytes identical to the
+  session's own commit skip only the second parse and hash.
+- The coordinator's receipt validator remembers the last state it validated. When
+  the coordinator still holds that object and it serializes to the same JSON, the
+  command is replayed on a copy and compared with the fully validated response.
+  Any difference falls back to the complete check, which reports the original
+  error.
+- The store renews before the retained-size query, each staging batch and the
+  pointer transaction only when a third of the lease has elapsed since the last
+  successful extension started.
+  Acquisition and every fenced pointer commit extend the lease, so back-to-back
+  saves no longer renew first; the commit remains fenced.
+- Rebuilding a reduce step hashes upstream output keys once instead of once per
+  marker.
+
+### Workloads
+
+`map` is one map step. `plan` maps four fifths of the rows and then reduces groups
+of four in a second step, for the same assignment count. Every assignment returns
+accepted rows with evidence, a confidence and a reason. Instructions and input
+padding scale with the square root of plan size as in the transport benchmark, so
+larger plans cross INSERT batch boundaries. Dates are frozen, limits are unlimited,
+and both versions write byte-identical payloads.
+
+The benchmark reports median executor and checkpoint time over repeated samples,
+requests by operation, payload bytes written and read, complete snapshot
+validations, canonical digests, and heap. Peak heap is sampled after each state
+call and includes uncollected garbage. Set `CHECKPOINT_BENCHMARK_PROFILE` to a
+directory to write a V8 CPU profile of one extra run and print inclusive time by
+category.
 
 ## Reproduce
 
@@ -42,46 +107,113 @@ CHECKPOINT_BENCHMARK=1 pnpm --filter @bobsled-inc/model-spec exec vitest run \
   tests/unit/agentic/warehouse-checkpoint.bench.test.ts
 ```
 
-To measure the original store with precisely the same fixture and transport:
+Settings: `CHECKPOINT_BENCHMARK_SIZES` (default `0,5,100,300`),
+`CHECKPOINT_BENCHMARK_SHAPES` (`map,plan`), `CHECKPOINT_BENCHMARK_LATENCY_MS`
+(simulated latency per runner request, default `0`), `CHECKPOINT_BENCHMARK_SAMPLES`
+(default `3`) and `CHECKPOINT_BENCHMARK_PROFILE` (a directory for CPU profiles). Allow
+up to an hour for the largest baseline cases.
+
+To compare with an earlier commit, run the same benchmark files there:
 
 ```sh
-git show a7736698bb39619ff9d8be749cf5f6d7955d591a:packages/model-spec/src/agentic/warehouse-state.ts \
-  > packages/model-spec/src/agentic/warehouse-state.baseline.ts
-trap 'rm -f packages/model-spec/src/agentic/warehouse-state.baseline.ts' EXIT
-CHECKPOINT_BENCHMARK=1 CHECKPOINT_BENCHMARK_BASELINE=1 \
-  pnpm --filter @bobsled-inc/model-spec exec vitest run \
-  tests/unit/agentic/warehouse-checkpoint.bench.test.ts
+git worktree add /tmp/dogsled-baseline <baseline-commit>
+cp packages/model-spec/tests/unit/agentic/warehouse-checkpoint.bench.test.ts \
+  /tmp/dogsled-baseline/packages/model-spec/tests/unit/agentic/
+cp packages/model-spec/tests/support/{agentic-benchmark,checkpoint-transport,snapshot-validations}.ts \
+  /tmp/dogsled-baseline/packages/model-spec/tests/support/
+(cd /tmp/dogsled-baseline && pnpm install --frozen-lockfile && pnpm build)
+(cd /tmp/dogsled-baseline/packages/model-spec && CHECKPOINT_BENCHMARK=1 \
+  npx vitest run tests/unit/agentic/warehouse-checkpoint.bench.test.ts)
 ```
 
-The baseline file is temporary. Remove it before other checks or commits. The
-benchmark is skipped in normal unit runs and never requires warehouse credentials
-or an inference service. Allow up to fifteen minutes per case on slower machines.
+The benchmark is skipped in normal unit runs and never requires warehouse
+credentials or an inference service.
 
-The benchmark runs the real `executeAgenticRun`, scheduling, checkpoint commands,
-validation, serialization, reads, and warehouse state store. A deterministic
-executor settles two measured tokens per assignment and returns no output rows.
-Plans contain 1, 5, 100, or 300 assignments with synthetic instructions and input
-evidence. Padding scales with the square root of plan size to keep the workload
-bounded while crossing chunk and batch boundaries. Both versions use identical
-inputs, a frozen wall date, and unlimited execution limits.
+## Method
 
-Only the SQL transport is mocked. It stores chunk rows and models pointer
-visibility, and does not implement a provider SQL engine. It adds **simulated
-1 ms latency per runner request**, configurable with
-`CHECKPOINT_BENCHMARK_LATENCY_MS` (set `0` to remove artificial delays). Counts describe
-runner calls; a real driver may submit, poll, or fetch through several network
-requests. Times use the real monotonic clock. Checkpoint elapsed time sums awaited
-`create` and `checkpoint` calls; executor elapsed time includes the full run.
-Payload bytes count base64 data written across every checkpoint, excluding SQL,
-IDs, and driver framing. Request output groups DDL, ownership, pointer reads,
-payload reads, retained-size reads, payload INSERTs, and pointer commits. Snowflake
-transaction scripts include cleanup in the pointer request. Real heartbeat timers
-remain active, so ownership and total request counts can include an extra renewal
-when a case crosses a heartbeat interval. Payload INSERT counts and byte totals
-are independent of those timer ticks. Elapsed times include CPU processing,
-transport-double work, and simulated waits; they do not isolate CPU time.
+The SQL transport stores chunk rows and models pointer visibility; it does not
+implement a provider SQL engine. Counts describe runner calls; a real driver may
+submit, poll, or fetch through several network requests. Times use the real
+monotonic clock. Checkpoint time sums awaited `create` and `checkpoint` calls;
+executor time includes the full run. Payload bytes count base64 data, excluding
+SQL, IDs and driver framing. Snowflake transaction scripts include cleanup in the
+pointer request. Real heartbeat timers remain active, so long cases can include an
+extra renewal. Snapshot validations count complete `AgenticRunSnapshotSchema`
+parses; canonical digests count `json-canonicalize` calls. Elapsed times include
+CPU processing, transport-double work and simulated waits; the optional profile
+attributes CPU time.
 
-## Results
+## Results: checkpoint processing
+
+Before is `main` at `8592f76`, which includes the batching, spend-cap and
+recovery changes. After is this change at `7c89138`; its later commits produce identical counts for
+every workload up to 100 assignments. Both ran the same benchmark
+files in separate worktrees. Timings are medians of the listed samples; the
+300-assignment baselines are single samples because each takes several minutes.
+Measured on one Apple M3 Max laptop with Node.js 25.9.0 while other jobs ran, so
+timings are indicative. Counts are deterministic, except that long runs can
+include an extra heartbeat renewal.
+
+**0 ms simulated request latency** (before → after):
+
+| Shape | Assignments | Samples |    Executor s |  Checkpoint s |      Requests | Payload reads | Snapshot validations |      Canonical digests |
+| ----- | ----------: | :-----: | ------------: | ------------: | ------------: | ------------: | -------------------: | ---------------------: |
+| map   |           0 |  3 / 3  | 0.008 → 0.004 | 0.004 → 0.001 |       23 → 18 |         2 → 0 |               17 → 7 |               146 → 22 |
+| map   |           5 |  3 / 3  |  0.24 → 0.043 |  0.13 → 0.021 |       83 → 58 |        12 → 0 |              87 → 27 |            2,131 → 142 |
+| map   |         100 |  3 / 3  |   52.3 → 5.80 |   30.0 → 3.05 | 1,425 → 1,020 |       202 → 0 |          1,417 → 407 |       505,346 → 21,422 |
+| map   |         300 |  1 / 3  |  464.3 → 47.8 |  266.2 → 25.3 | 5,371 → 4,166 |       602 → 0 |        4,217 → 1,207 |    4,455,746 → 184,222 |
+| plan  |           0 |  3 / 3  | 0.016 → 0.007 | 0.009 → 0.003 |       35 → 26 |         4 → 0 |              31 → 11 |               498 → 44 |
+| plan  |           5 |  3 / 3  |  0.36 → 0.061 |  0.20 → 0.030 |       95 → 66 |        14 → 0 |             101 → 31 |          6,769 → 1,546 |
+| plan  |         100 |  3 / 3  |   78.7 → 8.56 |   45.1 → 4.46 | 1,480 → 1,071 |       204 → 0 |          1,431 → 411 |    3,293,978 → 368,284 |
+| plan  |         300 |  1 / 3  |  716.7 → 70.9 |  410.6 → 36.9 | 5,449 → 4,240 |       604 → 0 |        4,231 → 1,211 | 61,608,138 → 3,240,764 |
+
+**50 ms simulated request latency** (before → after):
+
+| Shape | Assignments | Samples |   Executor s | Checkpoint s |      Requests | Payload reads | Snapshot validations |   Canonical digests |
+| ----- | ----------: | :-----: | -----------: | -----------: | ------------: | ------------: | -------------------: | ------------------: |
+| map   |           5 |  1 / 1  |  4.67 → 3.04 |  4.22 → 2.69 |       83 → 58 |        12 → 0 |              87 → 27 |         2,131 → 142 |
+| map   |         100 |  1 / 1  | 127.4 → 58.3 | 103.7 → 55.1 | 1,428 → 1,021 |       202 → 0 |          1,417 → 407 |    505,346 → 21,422 |
+| plan  |           5 |  1 / 1  |  5.85 → 3.46 |  5.09 → 3.10 |       95 → 66 |        14 → 0 |             101 → 31 |       6,769 → 1,546 |
+| plan  |         100 |  1 / 1  | 157.0 → 63.7 | 121.9 → 59.0 | 1,483 → 1,072 |       204 → 0 |          1,431 → 411 | 3,293,978 → 368,284 |
+
+Payload bytes and heap at 0 ms (before → after). Written bytes are identical:
+
+| Shape | Assignments | Final snapshot bytes | Payload bytes written | Payload bytes read | Peak heap MiB | Retained heap MiB |
+| ----- | ----------: | -------------------: | --------------------: | -----------------: | ------------: | ----------------: |
+| map   |           0 |               53,573 |               214,268 |        142,836 → 0 |    15.5 → 6.8 |         0.1 → 0.2 |
+| map   |           5 |              107,334 |             1,670,612 |      1,527,500 → 0 |   72.3 → 30.4 |         0.5 → 0.3 |
+| map   |         100 |              622,559 |           140,292,672 |    139,462,592 → 0 | 275.5 → 304.8 |         1.5 → 1.3 |
+| map   |         300 |            1,481,084 |           943,098,352 |    941,123,572 → 0 | 294.9 → 332.8 |           4.4 → 1 |
+| plan  |           0 |               55,682 |               370,584 |        296,340 → 0 |   36.6 → 13.2 |         0.1 → 0.1 |
+| plan  |           5 |              114,360 |             1,830,092 |      1,677,612 → 0 |     99.4 → 59 |         0.3 → 0.2 |
+| plan  |         100 |              815,951 |           140,771,516 |    139,683,580 → 0 | 302.9 → 299.2 |         0.9 → 0.7 |
+| plan  |         300 |            2,096,976 |           966,945,744 |    964,149,776 → 0 | 318.8 → 348.5 |         1.9 → 1.5 |
+
+CPU attribution for one profiled 100-assignment run at 0 ms, inclusive seconds (before → after). Categories overlap:
+
+| Category                   |        map |       plan |
+| -------------------------- | ---------: | ---------: |
+| Sampled total              | 53.7 → 5.6 | 79.8 → 8.5 |
+| Zod validation             | 46.9 → 4.1 | 70.5 → 6.7 |
+| Row schema construction    | 24.2 → 1.0 | 37.0 → 1.5 |
+| Attempt outcome validation | 17.6 → 0.8 | 18.9 → 0.8 |
+| Consistency checks         |  4.2 → 0.2 | 27.2 → 2.7 |
+| Receipt validation         | 20.9 → 2.3 | 31.1 → 3.6 |
+| Canonical digests          |  6.9 → 0.5 |  9.5 → 0.9 |
+| Bounded JSON scans         |  4.8 → 1.3 |  7.1 → 1.9 |
+| Garbage collection         |  3.8 → 0.3 |  5.9 → 0.6 |
+
+Payload bytes written do not change: every save still writes the whole snapshot.
+Peak heap is sampled after state calls and includes uncollected garbage. A session
+now retains the JSON text of its last committed snapshot, and the coordinator the
+last validated state and its JSON, for the session's lifetime.
+
+## Results: transport batching
+
+Measured for the batching change with the earlier version of this benchmark: an
+executor that returned no output rows, 1, 5, 100 and 300 assignments, 1 ms
+simulated latency and single samples. These rows are not comparable with the
+processing results above.
 
 Results are single local observations with the simulated latency above, not
 production throughput predictions. Deterministic query-count assertions in
@@ -120,11 +252,11 @@ its fast-path request counts unchanged.
 
 ## Remaining work
 
-Full-snapshot byte amplification, prior-snapshot reads, retained-size scans,
-validation, hashing, and serialized durable transitions remain. Large plans can
-still spend substantial CPU time in snapshot processing. Batching does not change
-billable dispatch reservations, result acceptance, usage accounting, cursor or
-publication semantics. Measure representative applications on real providers
-before drawing conclusions about end-to-end production speedups. Provider-specific
-queueing, job polling, transaction behavior, and billing are outside the simulated
-benchmark.
+Every transition still validates the whole new state twice (store and coordinator)
+and writes the whole snapshot, so total work grows with the square of plan size.
+Each save still issues a pointer read, a retained-size scan, its payload INSERTs and
+the fenced pointer commit. Reducing written bytes would need a new persistence format,
+which is outside this change. Batching and reuse do not change billable
+dispatch reservations, result acceptance, usage accounting, cursor or publication
+semantics. Measure representative applications on real providers before drawing
+conclusions about end-to-end production speedups.

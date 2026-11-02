@@ -8,7 +8,7 @@ import { bindAgenticTools, validateAgenticTools } from './tool-access.js';
 import { executeAgenticPlan } from './plan-run.js';
 import { preflightAgenticPublication, publishAgenticRun } from './publish-run.js';
 import type { AgenticPublisher, AgenticHost } from './publication.js';
-import { validateAgenticReceipt } from './checkpoint-receipt.js';
+import { createAgenticReceiptValidator } from './checkpoint-receipt.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
@@ -227,6 +227,7 @@ async function executeOwnedAgenticRun(
     assertAgenticPricing(context.resolved, host.priceUsage);
   };
   const session = await storage(async () => store.acquire(key));
+  const receipt = createAgenticReceiptValidator();
   let snapshot: AgenticRunSnapshot;
   try {
     const saved = await storage(async () => session.read());
@@ -291,9 +292,7 @@ async function executeOwnedAgenticRun(
         work: [],
       });
       const initial = snapshot;
-      snapshot = await storage(async () =>
-        validateAgenticReceipt(await session.create(initial), initial)
-      );
+      snapshot = await storage(async () => receipt(await session.create(initial), initial));
     }
     if (
       saved &&
@@ -302,12 +301,17 @@ async function executeOwnedAgenticRun(
       (snapshot.status !== 'execution_complete' || options.publisher)
     ) {
       snapshot = await storage(async () =>
-        beginAgenticExecution(session, snapshot, {
-          ...execution,
-          ...(snapshot.accounting === 'spend_cap'
-            ? { caps: { tokens: model.limits.tokens ?? null, microusd: costCapMicrousd } }
-            : {}),
-        })
+        beginAgenticExecution(
+          session,
+          snapshot,
+          {
+            ...execution,
+            ...(snapshot.accounting === 'spend_cap'
+              ? { caps: { tokens: model.limits.tokens ?? null, microusd: costCapMicrousd } }
+              : {}),
+          },
+          receipt
+        )
       );
     }
     const reportProgress = async () => {
@@ -360,17 +364,12 @@ async function executeOwnedAgenticRun(
       const before = snapshot;
       const requestedAt = Date.now();
       try {
-        snapshot = validateAgenticReceipt(
-          await session.checkpoint(command),
-          before,
-          command,
-          requestedAt
-        );
+        snapshot = receipt(await session.checkpoint(command), before, command, requestedAt);
       } catch {
         // Confirm the complete effect after an uncertain response. Presence alone is not a receipt.
         const observed = await storage(async () => session.read());
         if (!observed) throw new AgenticStateError('missing');
-        snapshot = validateAgenticReceipt(observed, before, command, requestedAt);
+        snapshot = receipt(observed, before, command, requestedAt);
       }
       await reportProgress();
       return snapshot;

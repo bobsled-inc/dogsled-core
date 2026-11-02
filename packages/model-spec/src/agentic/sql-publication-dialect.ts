@@ -53,6 +53,11 @@ export function publicationNames(
     receipts: ref(`${prefix}_receipts`),
     // PostgreSQL identifiers are limited to 63 bytes. Keep 192 bits of the digest.
     stage: (id: string, suffix = '') => ref(`_dogsled_pub_${id.slice(0, 48)}${suffix}`),
+    /** Schema and table names of a stage as the information schema lists them. */
+    stageTable: (id: string, suffix = '') => ({
+      schema: systemSchema === undefined ? normalized.at(-2)! : caseName(systemSchema, dialect),
+      table: caseName(`_dogsled_pub_${id.slice(0, 48)}${suffix}`, dialect),
+    }),
   };
 }
 export function publicationType(type: AgenticColumn['type'], dialect: PublicationDialect): string {

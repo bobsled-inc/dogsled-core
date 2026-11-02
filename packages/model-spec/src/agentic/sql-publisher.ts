@@ -36,9 +36,11 @@ import {
   initPublication,
   readSqlReceipt,
   assertSqlSchema,
+  sameComparison,
   insertPublicationRows,
   atomicPublication,
   createPublicationTable,
+  type ColumnComparison,
   type PublicationDb,
   type PublicationNames,
 } from './sql-publication-storage.js';
@@ -83,6 +85,12 @@ export async function createSqlAgenticPublisher(
     return count;
   }
   let closed = false;
+  // Control tables initialized by this publisher. Preflight and inspection always initialize;
+  // claim reuses an earlier initialization. Any failed operation forgets them.
+  const initialized = new Set<string>();
+  // How the columns of the probe stage created by the latest preflight compared values, by
+  // target. A no-op checks its target in place only when every target column matches.
+  const stageColumns = new Map<string, ColumnComparison[]>();
   async function operation<T>(
     fn: (db: PublicationDb, runner: SqlRunnerModule) => Promise<T>,
     signal?: AbortSignal
@@ -92,9 +100,18 @@ export async function createSqlAgenticPublisher(
     const runner = await resolveRunner(integration, options);
     try {
       return await fn(sqlPublicationDb(runner, dialect, signal), runner);
+    } catch (error) {
+      initialized.clear();
+      stageColumns.clear();
+      throw error;
     } finally {
       await runner.close?.();
     }
+  }
+  async function initialize(db: PublicationDb, names: PublicationNames, always = false) {
+    if (!always && initialized.has(names.control)) return;
+    await initPublication(db, names, dialect);
+    initialized.add(names.control);
   }
   async function checks(
     db: PublicationDb,
@@ -149,45 +166,56 @@ export async function createSqlAgenticPublisher(
       AgenticColumnsSchema.parse(context.resolved.output_columns);
       const names = publicationNames(context.target, dialect, options.systemSchema);
       await operation(async (db, runner) => {
-        await initPublication(db, names, dialect);
-        const exists = await assertSqlSchema(db, names, context, dialect);
-        await catalogCommits(db, names.control);
-        await catalogCommits(db, names.receipts);
-        if (exists) await catalogCommits(db, names.target);
-        // Exercise a multi-table transaction before any assignment starts.
-        await atomicPublication(
-          db,
-          runner,
-          dialect,
-          [
-            `UPDATE ${names.control} SET revision = revision WHERE 1 = 0`,
-            `DELETE FROM ${names.receipts} WHERE 1 = 0`,
-          ],
-          `(SELECT COUNT(*) FROM ${names.control}) = 1`,
-          signal
-        );
-        for (const expectation of context.resolved.model.expect) {
-          if (expectation.kind !== 'regex') continue;
-          const pattern = db.p(1);
-          const predicate =
-            dialect === 'postgres'
-              ? `'probe' ~ ${pattern}`
-              : dialect === 'bigquery'
-                ? `REGEXP_CONTAINS('probe', ${pattern})`
-                : dialect === 'databricks'
-                  ? `'probe' RLIKE ${pattern}`
-                  : `REGEXP_LIKE('probe', ${pattern})`;
-          const probe = await db.query(
-            `SELECT CASE WHEN ${predicate} THEN 1 ELSE 0 END AS matched`,
-            [expectation.pattern]
-          );
-          if (probe.length !== 1 || ![0, 1].includes(countValue(probe[0]?.matched))) {
-            throw new Error('Invalid warehouse regex capability result');
-          }
-        }
-        const stage = names.stage(randomUUID().replaceAll('-', ''), '_p');
+        await initialize(db, names, true);
+        // Create the probe stage first, so the target's column query also reports how a
+        // stage built in this storage schema compares values.
+        const probe = randomUUID().replaceAll('-', '');
+        const stage = names.stage(probe, '_p');
         await createPublicationTable(db, stage, context.resolved.output_columns, dialect);
         try {
+          const exists = await assertSqlSchema(
+            db,
+            names,
+            context,
+            dialect,
+            names.stageTable(probe, '_p')
+          );
+          stageColumns.delete(names.target);
+          if (exists && exists.probe) stageColumns.set(names.target, exists.probe);
+          await catalogCommits(db, names.control);
+          await catalogCommits(db, names.receipts);
+          if (exists) await catalogCommits(db, names.target);
+          // Exercise a multi-table transaction before any assignment starts.
+          await atomicPublication(
+            db,
+            runner,
+            dialect,
+            [
+              `UPDATE ${names.control} SET revision = revision WHERE 1 = 0`,
+              `DELETE FROM ${names.receipts} WHERE 1 = 0`,
+            ],
+            `(SELECT COUNT(*) FROM ${names.control}) = 1`,
+            signal
+          );
+          for (const expectation of context.resolved.model.expect) {
+            if (expectation.kind !== 'regex') continue;
+            const pattern = db.p(1);
+            const predicate =
+              dialect === 'postgres'
+                ? `'probe' ~ ${pattern}`
+                : dialect === 'bigquery'
+                  ? `REGEXP_CONTAINS('probe', ${pattern})`
+                  : dialect === 'databricks'
+                    ? `'probe' RLIKE ${pattern}`
+                    : `REGEXP_LIKE('probe', ${pattern})`;
+            const matched = await db.query(
+              `SELECT CASE WHEN ${predicate} THEN 1 ELSE 0 END AS matched`,
+              [expectation.pattern]
+            );
+            if (matched.length !== 1 || ![0, 1].includes(countValue(matched[0]?.matched))) {
+              throw new Error('Invalid warehouse regex capability result');
+            }
+          }
           await checks(db, context, 'preflight', stage, true);
         } finally {
           await runner.run(`DROP TABLE ${stage}`);
@@ -197,7 +225,7 @@ export async function createSqlAgenticPublisher(
     async claim(target, signal) {
       const names = publicationNames(target, dialect, options.systemSchema);
       return operation(async (db) => {
-        await initPublication(db, names, dialect);
+        await initialize(db, names);
         const fence = randomUUID();
         await db.query(`UPDATE ${names.control} SET fence = ${db.p(1)} WHERE TRUE`, [fence]);
         const rows = await db.query(`SELECT revision, fence FROM ${names.control} LIMIT 2`);
@@ -281,35 +309,52 @@ export async function createSqlAgenticPublisher(
           );
         }
         const exists = await assertSqlSchema(db, names, context, dialect);
-        const stage = names.stage(identity.operation_id),
-          processed = names.stage(identity.operation_id, '_k');
-        // These names belong only to this uncommitted operation. An interrupted build can be rebuilt.
-        await db.run(`DROP TABLE IF EXISTS ${stage}`);
-        await db.run(`DROP TABLE IF EXISTS ${processed}`);
-        await createPublicationTable(db, processed, keyColumns, dialect);
-        await insertPublicationRows(db, processed, keyColumns, processedKeys, dialect, signal);
-        const oldSql = exists
-          ? generateUnprocessedRowsSql({
+        const stage = names.stage(identity.operation_id);
+        if (
+          exists &&
+          !processedKeys.length &&
+          sameComparison(exists.columns, stageColumns.get(names.target))
+        ) {
+          // No processed keys means the published target is the current target. Its columns
+          // compare values exactly like this run's probe stage, so count and check it in
+          // place instead of copying it. Commit stays fenced by the claimed version.
+          const count = await db.query(`SELECT COUNT(*) AS count FROM ${names.target}`);
+          if (countValue(count[0]?.count) > maxRows) {
+            throw new Error('Publication replacement exceeds stage row limit');
+          }
+          await checks(db, context, intent.stage, names.target);
+        } else {
+          // These names belong only to this uncommitted operation. An interrupted build can be rebuilt.
+          await db.run(`DROP TABLE IF EXISTS ${stage}`);
+          let oldSql: string | undefined;
+          if (exists) {
+            // Retained rows are needed only when a target exists.
+            const processed = names.stage(identity.operation_id, '_k');
+            await db.run(`DROP TABLE IF EXISTS ${processed}`);
+            await createPublicationTable(db, processed, keyColumns, dialect);
+            await insertPublicationRows(db, processed, keyColumns, processedKeys, dialect, signal);
+            oldSql = generateUnprocessedRowsSql({
               target: names.target,
               processedKeys: processed,
               columns: columns.map((column) => column.name),
               keys,
               dialect,
-            })
-          : undefined;
-        const kept = oldSql
-          ? await db.query(`SELECT COUNT(*) AS count FROM (${oldSql}) kept`)
-          : [{ count: 0 }];
-        if (
-          !Number.isSafeInteger(countValue(kept[0]?.count)) ||
-          countValue(kept[0]?.count) + rows.length > maxRows
-        ) {
-          throw new Error('Publication replacement exceeds stage row limit');
+            });
+          }
+          const kept = oldSql
+            ? await db.query(`SELECT COUNT(*) AS count FROM (${oldSql}) kept`)
+            : [{ count: 0 }];
+          if (
+            !Number.isSafeInteger(countValue(kept[0]?.count)) ||
+            countValue(kept[0]?.count) + rows.length > maxRows
+          ) {
+            throw new Error('Publication replacement exceeds stage row limit');
+          }
+          await createPublicationTable(db, stage, columns, dialect);
+          if (oldSql) await db.run(`INSERT INTO ${stage} ${oldSql}`);
+          await insertPublicationRows(db, stage, columns, rows, dialect, signal);
+          await checks(db, context, intent.stage, stage);
         }
-        await createPublicationTable(db, stage, columns, dialect);
-        if (oldSql) await db.run(`INSERT INTO ${stage} ${oldSql}`);
-        await insertPublicationRows(db, stage, columns, rows, dialect, signal);
-        await checks(db, context, intent.stage, stage);
         await db.query(
           `UPDATE ${names.manifests} SET validated = TRUE WHERE operation_id = ${db.p(1)}`,
           [identity.operation_id]
@@ -321,7 +366,7 @@ export async function createSqlAgenticPublisher(
       AgenticPublicationIntentSchema.parse(intent);
       const names = publicationNames(intent.identity.target, dialect, options.systemSchema);
       return operation(async (db) => {
-        await initPublication(db, names, dialect);
+        await initialize(db, names, true);
         return readSqlReceipt(db, names, intent);
       }, signal);
     },

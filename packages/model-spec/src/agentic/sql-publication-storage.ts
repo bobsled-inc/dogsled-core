@@ -111,12 +111,20 @@ function compatibleType(
   };
   return aliases[column.type].includes(type);
 }
+/** The column properties that decide how final checks compare values. */
+export interface ColumnComparison {
+  type: string;
+  collation: string | null;
+}
+/** Asserts an existing target's schema; returns false for a missing target. For PostgreSQL
+ * it also returns how each target column compares values and, if listed, `probe`'s columns. */
 export async function assertSqlSchema(
   db: PublicationDb,
   names: PublicationNames,
   context: AgenticPublicationContext,
-  dialect: PublicationDialect
-) {
+  dialect: PublicationDialect,
+  probe?: { schema: string; table: string }
+): Promise<false | { columns?: ColumnComparison[]; probe?: ColumnComparison[] }> {
   const q = (name: string) => quoteIdentifier(name, dialect);
   const info =
     dialect === 'bigquery'
@@ -134,10 +142,25 @@ export async function assertSqlSchema(
   if (tables.length !== 1 || !['BASE TABLE', 'MANAGED'].includes(String(tables[0]!.table_type))) {
     throw new Error('Publication requires a base table');
   }
-  const columns = await db.query(
-    `SELECT column_name, data_type, is_nullable${dialect === 'snowflake' ? ', numeric_scale' : ''} FROM ${info}.COLUMNS WHERE ${condition} ORDER BY ordinal_position LIMIT 258`,
-    params
+  // Only PostgreSQL documents COLUMNS.COLLATION_NAME as each column's effective collation.
+  // Snowflake documents it as not applicable, BigQuery does not say whether inherited table
+  // and dataset defaults are reported, and Databricks does not report it. Without equal
+  // metadata, a publication cannot know that a check compares values alike in place.
+  const collations = dialect === 'postgres';
+  const listed = collations ? probe : undefined;
+  // A probe shares this request: the same query reads both tables' columns.
+  const rows = await db.query(
+    `SELECT ${listed ? 'table_schema, table_name, ' : ''}column_name, data_type, is_nullable${dialect === 'snowflake' ? ', numeric_scale' : ''}${collations ? ', collation_name' : ''} FROM ${info}.COLUMNS WHERE ${listed ? `(${condition}) OR (table_schema = ${db.p(3)} AND table_name = ${db.p(4)})` : condition} ORDER BY ${listed ? 'table_schema, table_name, ' : ''}ordinal_position LIMIT ${listed ? 516 : 258}`,
+    listed ? [...params, listed.schema, listed.table] : params
   );
+  // The probe's reserved, random name cannot match the target, whatever the name case.
+  const of = (schema: string, table: string) =>
+    rows.filter(
+      (row) =>
+        String(row.table_schema).toLowerCase() === schema.toLowerCase() &&
+        String(row.table_name).toLowerCase() === table.toLowerCase()
+    );
+  const columns = listed ? of(names.schema, names.table) : rows;
   const expected = context.resolved.output_columns;
   if (
     columns.length !== expected.length ||
@@ -157,7 +180,32 @@ export async function assertSqlSchema(
       'Existing agentic target schema differs; explicitly rebuild the target before publishing'
     );
   }
-  return true;
+  if (!collations) return {};
+  const compare = (list: typeof rows): ColumnComparison[] =>
+    list.map((column) => ({
+      type: String(column.data_type).toUpperCase(),
+      collation:
+        column.collation_name == null || column.collation_name === ''
+          ? null
+          : String(column.collation_name),
+    }));
+  const probed = listed ? of(listed.schema, listed.table) : [];
+  return { columns: compare(columns), ...(probed.length ? { probe: compare(probed) } : {}) };
+}
+/** True only when both lists are present and compare every column's values alike. */
+export function sameComparison(
+  target: readonly ColumnComparison[] | undefined,
+  stage: readonly ColumnComparison[] | undefined
+): boolean {
+  return (
+    !!target &&
+    !!stage &&
+    target.length === stage.length &&
+    target.every(
+      (column, index) =>
+        column.type === stage[index]!.type && column.collation === stage[index]!.collation
+    )
+  );
 }
 export async function insertPublicationRows(
   db: PublicationDb,
