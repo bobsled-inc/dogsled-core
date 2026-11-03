@@ -57,6 +57,7 @@ class CursorTransport {
   cohort = 0;
   opened = 0;
   closed = 0;
+  startedAt: number[] = [];
   committed = 0;
   rolledBack = 0;
   alwaysStale = false;
@@ -84,6 +85,7 @@ class CursorTransport {
 
   runner(name: string) {
     this.opened += 1;
+    this.startedAt.push(clock);
     const attempt = this.attempts.get(name) ?? 0;
     this.attempts.set(name, attempt + 1);
     return {
@@ -174,7 +176,91 @@ class CursorTransport {
   }
 }
 
+class OperationClock {
+  events: { at: number; resolve: () => void }[] = [];
+
+  wait(milliseconds: number) {
+    return new Promise<void>((resolve) => {
+      this.events.push({ at: clock + milliseconds, resolve });
+    });
+  }
+
+  async run<T>(operation: Promise<T>): Promise<T> {
+    let settled = false;
+    const result = operation.finally(() => {
+      settled = true;
+    });
+    void result.catch(() => undefined);
+    for (let turn = 0; !settled && turn < 10_000; turn++) {
+      for (let microtask = 0; microtask < 100; microtask++) await Promise.resolve();
+      if (settled) break;
+      assert.ok(this.events.length);
+      clock = Math.min(...this.events.map((event) => event.at));
+      const ready = this.events.filter((event) => event.at === clock);
+      this.events = this.events.filter((event) => event.at !== clock);
+      for (const event of ready) event.resolve();
+    }
+    expect(settled).toBe(true);
+    expect(this.events).toHaveLength(0);
+    return result;
+  }
+}
+
+class LatentCursorTransport extends CursorTransport {
+  constructor(readonly operationClock: OperationClock) {
+    super();
+  }
+
+  override runner(name: string) {
+    const runner = super.runner(name);
+    return {
+      ...runner,
+      query: async (sql: string, params?: readonly unknown[]) => {
+        await this.operationClock.wait(1_200);
+        return runner.query(sql, params);
+      },
+      run: async (sql: string) => {
+        await this.operationClock.wait(sql.startsWith('EXECUTE IMMEDIATE') ? 5_200 : 1_200);
+        return runner.run(sql);
+      },
+    };
+  }
+}
+
 describe('warehouse cursor contention', () => {
+  it.each([16, 32])(
+    'makes bounded progress for %i writers with simulated warehouse latency',
+    async (count) => {
+      const operationClock = new OperationClock();
+      const transport = new LatentCursorTransport(operationClock).use();
+      let random = 7;
+      vi.spyOn(Math, 'random').mockImplementation(() => {
+        random = (Math.imul(random, 1_664_525) + 1_013_904_223) >>> 0;
+        return random / 2 ** 32;
+      });
+      mocks.wait.mockImplementation((milliseconds: number) => operationClock.wait(milliseconds));
+      const names = Array.from({ length: count }, (_, index) => `model_${index}`);
+      const outcomes = await operationClock.run(
+        Promise.allSettled(
+          names.map((name) => transport.store(name).begin(key(name), signature, name))
+        )
+      );
+      expect(outcomes.filter((outcome) => outcome.status === 'fulfilled')).toHaveLength(count);
+      expect(transport.records.size).toBe(count);
+      expect(transport.committed).toBe(count);
+      expect(transport.rolledBack).toBe((count * (count - 1)) / 2);
+      expect(transport.closed).toBe(transport.opened);
+      expect(Math.max(...transport.attempts.values())).toBe(count);
+      expect(transport.startedAt.every((time) => time < 360_000)).toBe(true);
+      expect(clock).toBeGreaterThan(120_000);
+      expect(clock).toBeLessThan(360_000);
+      for (const rows of transport.records.values()) {
+        expect(rows).toHaveLength(1);
+        expect(JSON.parse(rows[0]!) as CursorRecord).toMatchObject({ signature, values: {} });
+      }
+    }
+  );
+
   it.each([9, 16])(
     'retries %i independent writers without losing rows or progress',
     async (count) => {
@@ -233,9 +319,47 @@ describe('warehouse cursor contention', () => {
       .begin(key('model'), signature, 'run')
       .catch((error: unknown) => error);
     expect(failure).toBe(transport.lastError);
-    expect(transport.opened).toBe(2);
-    expect(transport.closed).toBe(2);
-    expect(mocks.wait).toHaveBeenCalledTimes(1);
+    expect(transport.opened).toBe(6);
+    expect(transport.closed).toBe(6);
+    expect(transport.startedAt.every((time) => time < 360_000)).toBe(true);
+    expect(mocks.wait).toHaveBeenCalledTimes(5);
+  });
+
+  it('keeps a slow first failure in its bounded allowance when later attempts are fast', async () => {
+    const transport = new CursorTransport().use();
+    transport.alwaysStale = true;
+    const transaction = transport.transaction.bind(transport);
+    transport.transaction = (sql) => {
+      transport.elapsedPerTransaction = transport.opened === 1 ? 10_000 : 0;
+      transaction(sql);
+    };
+    mocks.wait.mockImplementation(async (milliseconds: number) => {
+      clock = clock < 120_000 ? 120_000 : clock + milliseconds;
+    });
+    const failure = await transport
+      .store('model')
+      .begin(key('model'), signature, 'run')
+      .catch((error: unknown) => error);
+    expect(failure).toBe(transport.lastError);
+    expect(transport.opened).toBe(32);
+    expect(transport.closed).toBe(32);
+    expect(clock).toBeGreaterThan(120_000);
+    expect(clock).toBeLessThan(351_000);
+  });
+
+  it('starts no retry after an in-flight operation exceeds the absolute ceiling', async () => {
+    const transport = new CursorTransport().use();
+    transport.alwaysStale = true;
+    transport.elapsedPerTransaction = 400_000;
+    const failure = await transport
+      .store('model')
+      .begin(key('model'), signature, 'run')
+      .catch((error: unknown) => error);
+    expect(failure).toBe(transport.lastError);
+    expect(transport.opened).toBe(1);
+    expect(transport.closed).toBe(1);
+    expect(clock).toBe(400_000);
+    expect(mocks.wait).not.toHaveBeenCalled();
   });
 
   it('starts no attempt when the delay consumes the remaining elapsed budget', async () => {
@@ -365,6 +489,27 @@ describe('warehouse cursor contention', () => {
       expect(mocks.wait).not.toHaveBeenCalled();
     }
   );
+
+  it.each([1, 3])('preserves the legacy budget after %i contention failures', async (count) => {
+    const transport = new CursorTransport().use();
+    transport.alwaysStale = true;
+    const transaction = transport.transaction.bind(transport);
+    const providerFailure = new Error('Transport unavailable');
+    let transactions = 0;
+    transport.transaction = (sql) => {
+      if (transactions++ >= count) throw providerFailure;
+      transaction(sql);
+    };
+    const failure = await transport
+      .store('model')
+      .begin(key('model'), signature, 'run')
+      .catch((error: unknown) => error);
+    expect(failure).toBe(providerFailure);
+    expect(transport.opened).toBe(4);
+    expect(transport.closed).toBe(4);
+    expect(transport.records.size).toBe(0);
+    expect(mocks.wait).toHaveBeenCalledTimes(count);
+  });
 
   it('does not retry corrupt sentinel state', async () => {
     const close = vi.fn();

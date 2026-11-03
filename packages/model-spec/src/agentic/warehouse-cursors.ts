@@ -149,10 +149,13 @@ export function createWarehouseAgenticCursorStore(
   const mutate: typeof mutateOnce = async (...args) => {
     const started = Date.now();
     let retryingContention = false;
+    let slowestAttemptMs = 0;
+    let retryBudgetMs = 120_000;
     let lastError: unknown;
     for (let attempt = 0; ; attempt++) {
       throwIfCancelled(options.signal);
-      if (retryingContention && Date.now() - started >= 120_000) throw lastError;
+      if (retryingContention && Date.now() - started >= retryBudgetMs) throw lastError;
+      const attemptStarted = Date.now();
       try {
         return await mutateOnce(...args);
       } catch (failure) {
@@ -163,7 +166,9 @@ export function createWarehouseAgenticCursorStore(
         if (error instanceof AgenticStateError || attempt >= (contended ? 31 : 3)) throw error;
         if (!contended) continue;
         retryingContention = true;
-        const remaining = 120_000 - (Date.now() - started);
+        slowestAttemptMs = Math.max(slowestAttemptMs, Math.max(0, Date.now() - attemptStarted));
+        retryBudgetMs = Math.min(360_000, Math.max(120_000, 32 * slowestAttemptMs + 31_000));
+        const remaining = retryBudgetMs - (Date.now() - started);
         if (remaining <= 0) throw error;
         const cap = Math.min(1_000, 50 * 2 ** Math.min(attempt, 5));
         const wait = Math.min(remaining, Math.floor(cap * (0.5 + Math.random() / 2)));
