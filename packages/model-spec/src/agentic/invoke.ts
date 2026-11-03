@@ -51,21 +51,35 @@ export async function invokeAgenticAssignment(
     await access?.close();
     let outcome: AgentAssignmentOutcome;
     let invalidOutput: string | undefined;
-    try {
-      outcome = parseAgentAssignmentOutcome(assignment, result);
-    } catch (error) {
-      // An invalid answer is a retryable failed attempt, never accepted and never fatal.
-      invalidOutput = describeZodIssues(error);
+    const reportedUsage = () => {
       const usage = AgenticUsageSchema.safeParse(
         result && typeof result === 'object' ? (result as { usage?: unknown }).usage : undefined
       );
-      outcome = parseAgentAssignmentOutcome(assignment, {
+      return usage.success
+        ? usage.data
+        : { status: 'unknown' as const, reason: 'unavailable' as const };
+    };
+    // Both are retryable failed attempts for this assignment: never accepted, never fatal.
+    const failedAttempt = (code: string) =>
+      parseAgentAssignmentOutcome(assignment, {
         contract_version: 2,
         attempt_id: assignment.attempt_id,
         status: 'failed',
-        error: { kind: 'validation', code: 'invalid_executor_output', retryable: true },
-        usage: usage.success ? usage.data : { status: 'unknown', reason: 'unavailable' },
+        error: { kind: 'validation', code, retryable: true },
+        usage: reportedUsage(),
       });
+    const denied = access?.denied();
+    if (denied) {
+      // The request was refused before it ran; output from a denied attempt is not trusted.
+      invalidOutput = `a source request was refused because ${denied}`;
+      outcome = failedAttempt('source_access_denied');
+    } else {
+      try {
+        outcome = parseAgentAssignmentOutcome(assignment, result);
+      } catch (error) {
+        invalidOutput = describeZodIssues(error);
+        outcome = failedAttempt('invalid_executor_output');
+      }
     }
     const charge = Math.max(
       limits.charged(),
@@ -74,12 +88,6 @@ export async function invokeAgenticAssignment(
         outcome.usage
       )
     );
-    if (access && !access.valid()) {
-      throw new AgenticHostError(
-        `Agentic ${label} stopped because a source request ${access.failure() ?? 'failed'}.`,
-        { cause: undefined }
-      );
-    }
     // A measured overcharge is returned so the coordinator saves it before failing.
     if (
       !limits.valid() &&

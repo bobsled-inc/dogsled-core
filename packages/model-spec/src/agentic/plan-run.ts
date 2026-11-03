@@ -1,6 +1,6 @@
 import { normalizeCursor, type AgenticCursorValues } from './cursor.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
-import { AgenticJsonSchema, AGENTIC_MAX_BYTES, AGENTIC_MAX_ROWS } from './rows.js';
+import { AGENTIC_MAX_BYTES, AGENTIC_MAX_ROWS, boundedAgenticRows } from './rows.js';
 import type { AgenticProbeContext, ExperimentalAgenticProbe } from './probe.js';
 import type { AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import { scheduleAgenticAssignments } from './schedule.js';
@@ -12,6 +12,8 @@ import {
 } from './plan-work.js';
 import type { PreparedPlanInput } from './plan-work.js';
 import { AgenticHostError } from './errors.js';
+import { takeIncrementalBatch } from './incremental-batch.js';
+import type { JsonValue } from '@bobsled-inc/protocol';
 
 export async function executeAgenticPlan(
   host: Omit<ExperimentalAgenticProbe, 'publish'>,
@@ -46,6 +48,7 @@ export async function executeAgenticPlan(
       const cursorField = incremental?.cursor_field;
       const cursorType = columns.find((column) => column.name === cursorField)?.type;
       const lower = cursorValues[alias];
+      const batch = cursorField !== undefined && host.incrementalBatches === true;
       const raw = await runCancellable(options.signal, () =>
         host.prepare({
           ...context,
@@ -56,6 +59,7 @@ export async function executeAgenticPlan(
                 incremental: {
                   cursor_field: cursorField,
                   ...(lower === undefined ? {} : { after: lower }),
+                  ...(batch ? { batch: true as const } : {}),
                 },
               }
             : {}),
@@ -73,9 +77,21 @@ export async function executeAgenticPlan(
         });
       });
       throwIfCancelled(options.signal);
-      const rows = AgenticJsonSchema.parse(raw);
-      if (!Array.isArray(rows) || rows.length > AGENTIC_MAX_ROWS) {
-        throw new Error('Agentic plan input exceeds row limit');
+      const label = `Agentic input "${ref}"`;
+      let rows: JsonValue[];
+      let more = false;
+      if (batch) {
+        const taken = takeIncrementalBatch(raw, {
+          label,
+          cursorField: cursorField!,
+          cursorType: cursorType!,
+          maxRows: AGENTIC_MAX_ROWS,
+          maxBytes: AGENTIC_MAX_BYTES,
+        });
+        rows = taken.rows;
+        more = taken.more;
+      } else {
+        rows = boundedAgenticRows(raw, label);
       }
       const selected = cursorField
         ? rows.filter((row) => {
@@ -95,7 +111,14 @@ export async function executeAgenticPlan(
             return true;
           })
         : rows;
-      inputs[alias] = { ref, columns, rows: selected, retrieved_at: new Date().toISOString() };
+      inputs[alias] = {
+        ref,
+        columns,
+        rows: selected,
+        retrieved_at: new Date().toISOString(),
+        // Saved with the batch so a resumed run still reports the waiting rows.
+        ...(more ? { more: true as const } : {}),
+      };
     }
     validateAgenticPlanInputs(context.resolved, inputs);
     await checkpoint({

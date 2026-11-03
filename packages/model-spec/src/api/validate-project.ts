@@ -7,6 +7,7 @@
  * silently ignored when the caller scopes validation to a subset.
  */
 
+import { deprecatedAssignmentLimitFields, unsupportedAgenticFeatures } from '../agentic/limits.js';
 import { resolveProjectIndex } from '@bobsled-inc/project-index';
 
 import { validateAll, type SupportedDialect, type ValidateModelResult } from '../compiler/index.js';
@@ -110,6 +111,18 @@ async function validateProjectUnchecked(
       semanticCheck: opts.semanticCheck,
       entryRegistry,
     });
+    // Agentic settings the schema accepts but runs reject, reported before any run.
+    for (const result of results) {
+      const node = project.models.find((model) => model.name === result.name);
+      if (node?.parsedSpec.model_kind !== 'agentic') continue;
+      result.errors.push(...unsupportedAgenticFeatures(node.parsedSpec));
+      const deprecated = deprecatedAssignmentLimitFields(node.parsedSpec);
+      if (deprecated.length) {
+        result.warnings.push(
+          `${deprecated.join(', ')} ${deprecated.length === 1 ? 'is' : 'are'} deprecated and ignored by new runs. Use limits.tokens or limits.max_cost_usd to cap a run.`
+        );
+      }
+    }
     if (results.some((r) => r.errors.length > 0)) ok = false;
     byIntegration.push({
       handle: integration.handle,

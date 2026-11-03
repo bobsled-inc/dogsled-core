@@ -1705,9 +1705,17 @@ fields conflicts with existing progress; migrate/reset that progress explicitly.
 `fullRefresh` does not reset agentic cursors and is rejected for incremental agentic
 models.
 
+Large backlogs are processed in batches. A run takes the oldest new rows that fit
+in one batch (1,000 rows and 1 MiB), in cursor order, and leaves the rest for the
+next run; the CLI then warns that more rows are waiting. The run saves this with
+the batch, so a resumed run warns too. Rows that share the cursor
+value at the cut are never split across batches. If more rows share one cursor value
+than fit in a batch, the run fails and asks for a cursor with more distinct values.
+
 Hosts receive `prepare(context).incremental` with `cursor_field` and optional
 `after`. Apply the filter **before** the input row limit. Dogsled checks returned
-rows again. Existing hosts remain valid for bounded inputs, but must implement
+rows again. Hosts that set `incrementalBatches` also receive `batch: true` and must
+order rows by the cursor; other hosts keep failing when the backlog does not fit. Existing hosts remain valid for bounded inputs, but must implement
 filter pushdown to process large upstream tables efficiently. Agentic input
 cursors require durable publication; the experimental publication callback is
 not supported.

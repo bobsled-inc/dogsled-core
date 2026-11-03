@@ -17,7 +17,7 @@ import {
   type DuckDbAgenticPublisherOptions,
 } from './duckdb-publisher.js';
 import { AgenticColumnsSchema } from './model.js';
-import { AGENTIC_MAX_ROWS, AgenticJsonSchema, createAgenticRowSchema } from './rows.js';
+import { boundedAgenticRows, createAgenticRowSchema } from './rows.js';
 import { digestAgenticState } from './state.js';
 import {
   AgenticPublicationIntentSchema,
@@ -252,11 +252,8 @@ export async function createSqlAgenticPublisher(
       ) {
         throw new Error('Publication payload identity mismatch');
       }
-      AgenticJsonSchema.parse(rows);
-      AgenticJsonSchema.parse(processedKeys);
-      if (rows.length > AGENTIC_MAX_ROWS || processedKeys.length > AGENTIC_MAX_ROWS) {
-        throw new Error('Publication input exceeds row limits');
-      }
+      boundedAgenticRows(rows, 'The rows to publish');
+      boundedAgenticRows(processedKeys, 'The processed keys to publish');
       const columns = context.resolved.output_columns;
       const keys = context.resolved.model.materialization.keys;
       const keyColumns = keys.map((key) => columns.find((column) => column.name === key)!);

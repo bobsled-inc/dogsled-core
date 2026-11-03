@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgenticColumnsSchema, type AgenticColumn } from './model.js';
+import { AgenticStateError } from './state-errors.js';
 
 export const AGENTIC_MAX_BYTES = 1_048_576;
 export const AGENTIC_MAX_ROWS = 1000;
@@ -55,8 +56,41 @@ export function isBoundedAgenticJson(value: unknown): value is JsonValue {
 }
 export const AgenticJsonSchema = z.custom<JsonValue>(
   isBoundedAgenticJson,
-  'Expected bounded JSON data'
+  'Value exceeds the agentic JSON limits: at most 16,384 values, 16 levels deep and 1 MiB'
 );
+
+/**
+ * Bound a batch of rows: each row like any agentic value, the batch by row count and
+ * total size. Applying the value limit per row keeps wide tables usable up to the row limit.
+ */
+export function boundedAgenticRows(value: unknown, label: string): JsonValue[] {
+  const fail = (reason: string, message: string): never => {
+    throw new AgenticStateError('limit', { reason, message: `${label} ${message}` });
+  };
+  if (!Array.isArray(value)) return fail('invalid_rows', 'is not a list of rows.');
+  if (value.length > AGENTIC_MAX_ROWS) {
+    fail(
+      'too_many_rows',
+      `has ${value.length.toLocaleString('en-US')} rows; the limit is ${AGENTIC_MAX_ROWS.toLocaleString('en-US')}.`
+    );
+  }
+  value.forEach((row, index) => {
+    if (!isBoundedAgenticJson(row)) {
+      fail(
+        'row_too_large',
+        `row ${index + 1} exceeds the per-row limits: at most 16,384 values, 16 levels deep and 1 MiB.`
+      );
+    }
+  });
+  const bytes = Buffer.byteLength(JSON.stringify(value), 'utf8');
+  if (bytes > AGENTIC_MAX_BYTES) {
+    fail(
+      'batch_too_large',
+      `is ${(bytes / 1048576).toFixed(2)} MiB; the limit is 1 MiB across its ${value.length} rows.`
+    );
+  }
+  return value as JsonValue[];
+}
 export const AgenticEvidenceSchema = z
   .object({
     source: z.string().min(1).max(1024),

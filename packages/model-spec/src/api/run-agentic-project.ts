@@ -1,6 +1,6 @@
 import { withHostModelDeclarations } from '../agentic/host-declarations.js';
 import { validateAgenticTools } from '../agentic/tool-access.js';
-import { deprecatedAssignmentLimitFields } from '../agentic/limits.js';
+import { deprecatedAssignmentLimitFields, unsupportedAgenticFeatures } from '../agentic/limits.js';
 import { validatePublicationChecks } from '../agentic/duckdb-checks.js';
 import { randomUUID } from 'node:crypto';
 import {
@@ -103,8 +103,9 @@ export async function runAgenticProject(
     if ((model.limits.timeout_seconds ?? 0) * 1000 > 2_147_483_647) {
       throw new CommandError('Agentic probe timeout exceeds the supported timer range', 2);
     }
-    if (model.plan.steps.some((step) => step.skills?.length)) {
-      throw new CommandError('Agentic probe does not support authored skills', 2);
+    const unsupported = unsupportedAgenticFeatures(model);
+    if (unsupported.length) {
+      throw new CommandError(`Agentic model "${node.name}": ${unsupported.join(' ')}`, 2);
     }
     for (const ref of node.refs) {
       if (!project.models.some((entry) => entry.name === ref)) {
@@ -342,6 +343,11 @@ export async function runAgenticProject(
           publisher: publisher ?? ownedPublisher!,
           ...(options.signal ? { signal: options.signal } : {}),
         });
+        if (execution.remainingInput.length) {
+          result.warnings.push(
+            `Agentic model "${node.name}" processed one batch of new rows from ${execution.remainingInput.map((ref) => `"${ref}"`).join(', ')}; more rows are waiting. Run the model again to process the next batch.`
+          );
+        }
         if (execution.publication !== 'confirmed') {
           throw new Error(
             `Agentic output for model "${node.name}" was saved but its publication is not confirmed. Resume the run with --agent-resume to finish publication.`

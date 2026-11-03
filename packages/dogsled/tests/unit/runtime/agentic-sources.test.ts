@@ -127,7 +127,11 @@ describe('scoped agent source adapter', () => {
       { source: 'people', operation: 'read', arguments: { filter: 'private-filter' } },
       context()
     ).catch((failure: unknown) => failure);
-    expect(error).toMatchObject({ cause: { name: 'ZodError' } });
+    // The agent learns which field to fix, never the value it sent.
+    expect(error).toMatchObject({
+      message: 'Agent source arguments are invalid: remove unknown filter',
+    });
+    expect(String(error)).not.toContain('private-filter');
     expect(JSON.stringify(error)).not.toContain('private-filter');
     expect(mocks.resolveRunner).not.toHaveBeenCalled();
   });
@@ -162,11 +166,21 @@ describe('scoped agent source adapter', () => {
     expect(mocks.query).not.toHaveBeenCalled();
     expect(mocks.queryResource).not.toHaveBeenCalled();
   });
+  it('refuses search on a source with a pinned filter instead of widening it', async () => {
+    const error = await fixture(['web.search'])(
+      { source: 'web.search', operation: 'search', arguments: { search: 'Acme' } },
+      context()
+    ).catch((failure: unknown) => failure);
+    expect(error).toMatchObject({
+      message: 'This source has a pinned filter, so it supports read but not search',
+    });
+    expect(mocks.queryResource).not.toHaveBeenCalled();
+  });
   it('requires explicit paid source authorization and forwards cancellation', async () => {
     const request = {
       source: 'web.search',
-      operation: 'search',
-      arguments: { search: 'Acme', limit: 3, filter: { tenant: 'other' } },
+      operation: 'read',
+      arguments: { limit: 3, filter: { tenant: 'other' } },
     };
     await expect(fixture()(request, context())).rejects.toThrow('source policy');
     const ctx = context();
@@ -174,7 +188,6 @@ describe('scoped agent source adapter', () => {
     expect(result).toMatchObject({ rows: [{ title: 'A' }] });
     expect(mocks.queryResource).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        search: 'Acme',
         limit: 3,
         signal: ctx.signal,
         filter: { tenant: 'owned' },
@@ -187,11 +200,8 @@ describe('scoped agent source adapter', () => {
       return { records: [] };
     });
     await expect(
-      fixture(['web.search'])(
-        { source: 'web.search', operation: 'search', arguments: { search: 'Acme' } },
-        context()
-      )
-    ).rejects.toThrow('source policy');
+      fixture(['web.search'])({ source: 'web.search', operation: 'read', arguments: {} }, context())
+    ).rejects.toThrow('Agent source result exceeds byte limit');
   });
   it('does not dispatch cancelled requests and redacts provider errors', async () => {
     await expect(

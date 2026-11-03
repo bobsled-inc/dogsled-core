@@ -61,6 +61,10 @@ export const defaultAgenticPriceUsage: NonNullable<AgenticHost['priceUsage']> = 
     outputTokens: usage.output_tokens,
   });
 
+function formatBytes(bytes: number): string {
+  return bytes >= 1048576 ? `${Math.floor(bytes / 1048576)} MiB` : `${bytes} bytes`;
+}
+
 export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
   const { project, executeAgent } = options;
   const secretResolver =
@@ -114,6 +118,7 @@ export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
     concurrency: options.concurrency ?? 1,
     minDispatchIntervalMs: options.minDispatchIntervalMs ?? 0,
     supportedDialects: ['duckdb', 'postgres', 'snowflake', 'bigquery', 'databricks'],
+    incrementalBatches: true,
     async prepare(context) {
       throwIfCancelled(context.signal);
       const integration = contexts.find(
@@ -128,11 +133,18 @@ export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
       const from = context.inputSql
         ? `(${context.inputSql}) AS ${quoteIdentifier('agent_input', integration.dialect)}`
         : relation.fqTableName;
+      const cursor = context.incremental
+        ? quoteIdentifier(context.incremental.cursor_field, integration.dialect)
+        : undefined;
       const filter =
         context.incremental?.after === undefined
           ? ''
-          : ` WHERE ${quoteIdentifier(context.incremental.cursor_field, integration.dialect)} > ${quoteLiteral(context.incremental.after, integration.dialect)}`;
-      const sql = `SELECT ${columns.map((column) => quoteIdentifier(column.name, integration.dialect)).join(', ')} FROM ${from}${filter} LIMIT ${context.maxRows + 1}`;
+          : ` WHERE ${cursor} > ${quoteLiteral(context.incremental.after, integration.dialect)}`;
+      // In batch mode Dogsled keeps the longest ordered prefix that fits and leaves the
+      // rest for the next run, so read in cursor order and one row past the limit.
+      const batch = context.incremental?.batch === true;
+      const order = batch ? ` ORDER BY ${cursor}` : '';
+      const sql = `SELECT ${columns.map((column) => quoteIdentifier(column.name, integration.dialect)).join(', ')} FROM ${from}${filter}${order} LIMIT ${context.maxRows + 1}`;
       const connection = await interpolateSecrets(
         integration.integration.integration,
         secretResolver
@@ -147,12 +159,16 @@ export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
         if (!runner.query) throw new CommandError('Agentic input runner must support queries', 2);
         const rows = await runner.query(sql, undefined, { signal: context.signal });
         throwIfCancelled(context.signal);
-        if (rows.length > context.maxRows) {
-          throw new CommandError('Agentic input row limit exceeded', 2);
+        if (rows.length > context.maxRows && !batch) {
+          throw new CommandError(
+            `Agentic input "${context.inputRef}" has more than ${context.maxRows} rows; use an incremental source to process it in batches`,
+            2
+          );
         }
         const schema = createAgenticRowSchema(columns);
         let bytes = 2;
-        return rows.map((row) => {
+        const normalizedRows: unknown[] = [];
+        for (const row of rows) {
           const normalized: Record<string, unknown> = Object.create(null);
           for (const column of columns) {
             const actual = Object.keys(row).find(
@@ -160,17 +176,26 @@ export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
             );
             const value = actual === undefined ? undefined : row[actual];
             if (typeof value === 'string' && Buffer.byteLength(value) > context.maxBytes) {
-              throw new CommandError('Agentic input byte limit exceeded', 2);
+              throw new CommandError(
+                `A value in column "${column.name}" of agentic input "${context.inputRef}" is larger than the ${formatBytes(context.maxBytes)} batch limit`,
+                2
+              );
             }
             normalized[column.name] = normalizeAgenticInputValue(value, column.type);
           }
           const parsed = schema.parse(normalized);
           bytes += Buffer.byteLength(JSON.stringify(parsed)) + 1;
+          normalizedRows.push(parsed);
+          // In batch mode one row past the byte limit tells Dogsled more rows remain.
           if (bytes > context.maxBytes) {
-            throw new CommandError('Agentic input byte limit exceeded', 2);
+            if (batch) break;
+            throw new CommandError(
+              `Agentic input "${context.inputRef}" is larger than ${formatBytes(context.maxBytes)}; use an incremental source to process it in batches`,
+              2
+            );
           }
-          return parsed;
-        });
+        }
+        return normalizedRows;
       } finally {
         await runner.close?.();
       }

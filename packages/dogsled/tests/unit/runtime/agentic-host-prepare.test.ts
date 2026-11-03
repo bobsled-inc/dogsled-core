@@ -125,13 +125,48 @@ describe('bounded agent input preparation', () => {
       { signal: expect.any(AbortSignal) }
     );
   });
+  it('reads incremental batches in cursor order and returns one row past the limit', async () => {
+    mocks.query.mockResolvedValue([{ pair_id: '1' }, { pair_id: '2' }, { pair_id: '3' }]);
+    const rows = await (
+      await host()
+    ).prepare(context({ incremental: { cursor_field: 'updated_at', after: 42, batch: true } }));
+    expect(mocks.query).toHaveBeenCalledWith(
+      'SELECT "pair_id" FROM "main"."prepared" WHERE "updated_at" > 42 ORDER BY "updated_at" LIMIT 3',
+      undefined,
+      { signal: expect.any(AbortSignal) }
+    );
+    // Dogsled keeps the ordered prefix that fits; the extra row signals more remain.
+    expect(rows).toHaveLength(3);
+  });
+  it('stops a batch one row past the byte limit instead of failing', async () => {
+    mocks.query.mockResolvedValue([
+      { pair_id: 'a'.repeat(40) },
+      { pair_id: 'b'.repeat(40) },
+      { pair_id: 'c'.repeat(40) },
+    ]);
+    const rows = await (
+      await host()
+    ).prepare(
+      context({
+        incremental: { cursor_field: 'updated_at', batch: true },
+        maxRows: 5,
+        maxBytes: 80,
+      })
+    );
+    expect(rows).toHaveLength(2);
+    expect(mocks.close).toHaveBeenCalledOnce();
+  });
   it('rejects a row overflow without truncating the input', async () => {
     mocks.query.mockResolvedValue([{ pair_id: '1' }, { pair_id: '2' }, { pair_id: '3' }]);
-    await expect((await host()).prepare(context())).rejects.toThrow('row limit');
+    await expect((await host()).prepare(context())).rejects.toThrow(
+      'Agentic input "prepared" has more than 2 rows; use an incremental source to process it in batches'
+    );
     expect(mocks.close).toHaveBeenCalledOnce();
   });
   it('rejects a byte overflow and releases the runner', async () => {
-    await expect((await host()).prepare(context({ maxBytes: 5 }))).rejects.toThrow('byte limit');
+    await expect((await host()).prepare(context({ maxBytes: 5 }))).rejects.toThrow(
+      'Agentic input "prepared" is larger than 5 bytes; use an incremental source'
+    );
     expect(mocks.close).toHaveBeenCalledOnce();
   });
   it('closes the runner when a query fails', async () => {

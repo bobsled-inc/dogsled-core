@@ -3,7 +3,7 @@ import { assignmentLimits } from './limits.js';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
 import type { AgentAssignment } from './assignment.js';
-import { createAgenticRowSchema, AgenticJsonSchema, AGENTIC_MAX_ROWS } from './rows.js';
+import { createAgenticRowSchema, boundedAgenticRows } from './rows.js';
 import type { AgenticColumn, AgenticStep } from './model.js';
 import type { ResolvedAgenticModel } from './resolve.js';
 import type { AgenticRunSnapshot } from './state.js';
@@ -15,6 +15,8 @@ export interface PreparedPlanInput {
   retrieved_at: string;
   columns: AgenticColumn[];
   rows: JsonValue[];
+  /** The source had rows past this batch. */
+  more?: true;
 }
 export interface PlanDefinition {
   resolved: ResolvedAgenticModel;
@@ -58,10 +60,9 @@ export function validateAgenticPlanInputs(
     ) {
       throw new Error('Plan input schema differs from declared input');
     }
-    if (input.rows.length > AGENTIC_MAX_ROWS) throw new Error('Plan input row limit exceeded');
+    boundedAgenticRows(input.rows, `Agentic input "${input.ref}"`);
     const schema = createAgenticRowSchema(columns);
     for (const row of input.rows) schema.parse(row);
-    AgenticJsonSchema.parse(input.rows);
     for (const { step } of resolved.steps) {
       if (!step.classification || !('map' in step) || step.source.ref !== alias) continue;
       const groups = input.rows.map((row) =>

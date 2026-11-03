@@ -235,16 +235,32 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
           return failure('invalid_output', 'validation', true);
         }
       }
-      if (!assignment.allowed_sources.includes(decision.source)) return failure('source_denied');
+      // A refused or failed request goes back to the model as an observation it can act on.
+      // The null observation keeps history positions aligned and cannot be cited as evidence.
+      const refuse = (error) => {
+        history.push({ request: decision, error });
+        observations.push(null);
+      };
+      if (!assignment.allowed_sources.includes(decision.source)) {
+        refuse('This source is not permitted for this step. Use only the listed sources.');
+        continue;
+      }
       // The last turn must finish. Do not start a read whose result cannot be used.
       if (turn === turns - 1) return failure('turn_limit');
       const args = Object.fromEntries(
         Object.entries(decision.arguments).filter(([, value]) => value !== null)
       );
-      if (decision.action === 'read' && args.search !== undefined)
-        return failure('invalid_arguments');
-      if (decision.action === 'search' && (args.search === undefined || args.columns !== undefined))
-        return failure('invalid_arguments');
+      if (decision.action === 'read' && args.search !== undefined) {
+        refuse('Invalid arguments: read takes no search text.');
+        continue;
+      }
+      if (
+        decision.action === 'search' &&
+        (args.search === undefined || args.columns !== undefined)
+      ) {
+        refuse('Invalid arguments: search needs search text and takes no columns.');
+        continue;
+      }
       try {
         signal.throwIfAborted();
         const response = await request.sources({
@@ -253,19 +269,25 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
           arguments: args,
         });
         signal.throwIfAborted();
-        if (Buffer.byteLength(JSON.stringify(response)) > MAX_SOURCE_BYTES)
-          return failure('source_size_limit');
+        if (Buffer.byteLength(JSON.stringify(response)) > MAX_SOURCE_BYTES) {
+          refuse('The source response was too large. Request fewer rows or columns.');
+          continue;
+        }
         if (
           !response ||
           !Array.isArray(response.rows) ||
           response.rows.length > 100 ||
           !z.iso.datetime({ offset: true }).safeParse(response.retrieved_at).success
-        )
-          return failure('invalid_source_response');
+        ) {
+          refuse('The source returned an invalid response.');
+          continue;
+        }
         observations.push({ source: decision.source, retrieved_at: response.retrieved_at });
         history.push({ request: decision, response });
-      } catch {
-        return failure('source_failed', signal.aborted ? 'cancellation' : 'validation');
+      } catch (error) {
+        if (signal.aborted) return failure('source_failed', 'cancellation');
+        // Dogsled's source gate sends only safe reasons, such as a bad argument name.
+        refuse(error instanceof Error ? error.message : 'The source request failed.');
       }
     }
     return failure('turn_limit');

@@ -6,7 +6,13 @@ import {
   executeAgenticRun,
   formatAgenticError,
 } from '../../../src/agentic/index.js';
-import type { AgentExecutorRequest, AgenticUsage } from '../../../src/agentic/index.js';
+import type {
+  AgentExecutorRequest,
+  AgenticRunProgress,
+  AgenticUsage,
+} from '../../../src/agentic/index.js';
+import { createAgenticProgress } from '../../../src/agentic/progress.js';
+import type { AgenticRunSnapshot } from '../../../src/agentic/state.js';
 import { MemoryStateStore, runFixture } from './state-fixture.js';
 
 const measured = {
@@ -377,6 +383,49 @@ describe('assignment failure hints', () => {
   });
 });
 
+describe('progress reports', { timeout: 60_000 }, () => {
+  it('include spend against the caps and the input still to process', async () => {
+    const f = setup(3);
+    f.host.priceUsage = price;
+    const reports: AgenticRunProgress[] = [];
+    f.host.executeAgent = vi.fn(async (request: AgentExecutorRequest) => answer(request));
+    await executeAgenticRun(f.host, f.context(), {
+      ...f.options,
+      maxCostUsd: 1,
+      onProgress: (progress) => {
+        reports.push(progress);
+      },
+    });
+    const first = reports.find((report) => report.total === 3 && report.accepted === 0)!;
+    expect(first.remainingInputTokens).toBeGreaterThan(0);
+    const last = reports.at(-1)!;
+    expect(last.remainingInputTokens).toBe(0);
+    expect(last.spend).toEqual({ tokens: 3000, usd: 0.03, tokenCap: 100000, usdCap: 1 });
+  });
+
+  it('estimate each assignment once and reuse it on later reports', async () => {
+    const f = setup(3);
+    let saved: AgenticRunSnapshot | undefined;
+    f.host.executeAgent = vi.fn(async (request: AgentExecutorRequest) => {
+      saved ??= structuredClone(f.state());
+      return answer(request);
+    });
+    await f.run();
+    const steps = [...new Set(saved!.work.map((work) => work.assignment.step_id))];
+    const cache = new Map<string, number>();
+    const fresh = createAgenticProgress(saved!, steps, cache);
+    const unstarted = saved!.work.filter((work) => !work.attempts.length).length;
+    expect(unstarted).toBeGreaterThan(0);
+    expect(cache.size).toBe(unstarted);
+    expect(createAgenticProgress(saved!, steps).remainingInputTokens).toBe(
+      fresh.remainingInputTokens
+    );
+    // A later report reads the cached values instead of measuring again.
+    for (const key of cache.keys()) cache.set(key, 7);
+    expect(createAgenticProgress(saved!, steps, cache).remainingInputTokens).toBe(7 * unstarted);
+  });
+});
+
 describe('formatAgenticError', () => {
   it('prints safe causes and hides provider text behind its type and status', () => {
     const provider = Object.assign(new Error('401 for key sk-live-secret'), {
@@ -448,5 +497,21 @@ describe('auth failures', () => {
     expect(error.message).toContain('Check the API key');
     expect(f.host.executeAgent).toHaveBeenCalledTimes(1);
     expect(f.state().charged).toBe(0);
+  });
+});
+
+describe('cancellation with an instant executor', { timeout: 60_000 }, () => {
+  it('still lets timers and signals run, so the run can be stopped', async () => {
+    const f = setup(300);
+    f.model.limits.tokens = null;
+    f.host.executeAgent = vi.fn(async (request: AgentExecutorRequest) => answer(request));
+    const controller = new AbortController();
+    // A timer can only fire if the scheduler gives way to the event loop.
+    setTimeout(() => controller.abort(), 20);
+    await expect(
+      executeAgenticRun(f.host, f.context(), { ...f.options, signal: controller.signal })
+    ).rejects.toThrow();
+    expect(controller.signal.aborted).toBe(true);
+    expect(f.state().work.filter((work) => work.accepted).length).toBeLessThan(300);
   });
 });

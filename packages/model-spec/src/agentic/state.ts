@@ -68,6 +68,8 @@ const PlanInputsSchema = z
         retrieved_at: z.iso.datetime({ offset: true }),
         columns: AgenticColumnsSchema,
         rows: z.array(AgenticJsonSchema).max(AGENTIC_MAX_ROWS),
+        // Set when the source had rows past this batch; a later run processes them.
+        more: z.literal(true).optional(),
       })
       .strict()
   )
@@ -235,7 +237,10 @@ const SnapshotObjectSchema = z
     if (run.status === 'execution_complete' && run.work.some((work) => !work.accepted)) invalid();
   });
 export const AgenticRunSnapshotSchema = z
-  .custom<unknown>(isBoundedCheckpoint, 'Checkpoint exceeds bounded JSON limits')
+  .custom<unknown>(
+    isBoundedCheckpoint,
+    'The run checkpoint exceeds its limits of 16 MiB and 262,144 values; process fewer or smaller rows per run'
+  )
   .pipe(SnapshotObjectSchema);
 export type AgenticRunSnapshot = z.infer<typeof AgenticRunSnapshotSchema>;
 const CommandObjectSchema = z.discriminatedUnion('type', [
