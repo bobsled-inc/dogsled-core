@@ -106,7 +106,7 @@ const base = {
 };
 
 describe('model target_database identifiers', () => {
-  it.each(['analytics-dev', 'my-project-123', 'prod_db', 'a-b_c-9'])(
+  it.each(['analytics-dev', 'analytics--dev', 'my-project-123', 'prod_db', 'a-b_c-9'])(
     'accepts %s in the model schema',
     (targetDatabase) => {
       expect(
@@ -127,7 +127,7 @@ describe('model target_database identifiers', () => {
     'proj:x',
     '-proj',
     'proj-',
-    'proj--x',
+    'proj--',
     '123proj',
   ])('rejects hostile or malformed value %j', (targetDatabase) => {
     expect(
@@ -141,18 +141,21 @@ describe('model target_database identifiers', () => {
     );
   });
 
-  it('validates and compiles a hyphenated BigQuery project to backtick-quoted SQL', async () => {
-    const projectDir = await writeProject('bigquery', 'analytics-dev');
-    const validation = await validateProject(projectDir, {
-      project: await loadProject(projectDir),
-    });
-    expect(validation.ok).toBe(true);
-    const compiled = await compileProject(projectDir);
-    expect(compiled.ok).toBe(true);
-    const sql = JSON.stringify(compiled.byIntegration[0]!.results);
-    expect(sql).toContain('`analytics-dev`.`analytics`.`post_counts`');
-    expect(sql).not.toMatch(/(?<!`)analytics-dev(?!`)/);
-  });
+  it.each(['analytics-dev', 'analytics--dev'])(
+    'validates and compiles BigQuery project %s to backtick-quoted SQL',
+    async (targetDatabase) => {
+      const projectDir = await writeProject('bigquery', targetDatabase);
+      const validation = await validateProject(projectDir, {
+        project: await loadProject(projectDir),
+      });
+      expect(validation.ok).toBe(true);
+      const compiled = await compileProject(projectDir);
+      expect(compiled.ok).toBe(true);
+      const sql = JSON.stringify(compiled.byIntegration[0]!.results);
+      expect(sql).toContain(`\`${targetDatabase}\`.\`analytics\`.\`post_counts\``);
+      expect(sql).not.toMatch(new RegExp(`(?<!\`)${targetDatabase}(?!\`)`));
+    }
+  );
 
   it('keeps hyphens rejected for other dialects at validation', async () => {
     const projectDir = await writeProject('snowflake', 'analytics-dev');
@@ -197,14 +200,17 @@ describe('publish.target_database identifiers', () => {
     expect(JSON.stringify(error)).not.toContain('DROP TABLE t; SELECT');
   });
 
-  it('compiles a hyphenated BigQuery publish project to backtick-quoted SQL', async () => {
-    const projectDir = await writeProject('bigquery', 'analytics-dev', 'publish');
-    const compiled = await compileProject(projectDir);
-    expect(compiled.ok).toBe(true);
-    expect(JSON.stringify(compiled.byIntegration[0]!.results)).toContain(
-      '`analytics-dev`.`analytics`.`post_counts`'
-    );
-  });
+  it.each(['analytics-dev', 'analytics--dev'])(
+    'compiles BigQuery publish project %s to backtick-quoted SQL',
+    async (targetDatabase) => {
+      const projectDir = await writeProject('bigquery', targetDatabase, 'publish');
+      const compiled = await compileProject(projectDir);
+      expect(compiled.ok).toBe(true);
+      const sql = JSON.stringify(compiled.byIntegration[0]!.results);
+      expect(sql).toContain(`\`${targetDatabase}\`.\`analytics\`.\`post_counts\``);
+      expect(sql).not.toMatch(new RegExp(`(?<!\`)${targetDatabase}(?!\`)`));
+    }
+  );
 
   it('rejects a hyphenated publish database for other dialects', async () => {
     const projectDir = await writeProject('snowflake', 'analytics-dev', 'publish');
