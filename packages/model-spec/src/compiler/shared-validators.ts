@@ -9,12 +9,14 @@ export const identifierSchema = z
   .regex(identifierRegex, identifierMsg);
 
 /**
- * Database names follow the identifier rule, plus single internal hyphens so
- * BigQuery project ids (for example `analytics-prod`) can be targeted. The
- * dialect check that limits hyphens to BigQuery runs when the integration is
- * known. Quotes, backticks, dots, semicolons, and whitespace stay rejected.
+ * Database names follow the identifier rule, plus internal hyphens so BigQuery
+ * project ids (for example `analytics-prod`, or `analytics--prod`, since GCP
+ * allows consecutive hyphens) can be targeted. A leading or trailing hyphen
+ * stays rejected. The dialect check that limits hyphens to BigQuery runs when
+ * the integration is known. Quotes, backticks, dots, semicolons, and whitespace
+ * stay rejected.
  */
-export const databaseIdentifierRegex = /^[a-zA-Z_]\w*(?:-[a-zA-Z0-9_]+)*$/;
+export const databaseIdentifierRegex = /^[a-zA-Z_]\w*(?:-+[a-zA-Z0-9_]+)*$/;
 export const databaseIdentifierMsg =
   'Must be a valid identifier (letters, digits, underscores; hyphens only in BigQuery project ids)';
 
