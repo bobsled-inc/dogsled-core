@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "dogsled",
+      "name": "dogsled-core",
       "source": {
         "source": "local",
-        "path": "./plugins/dogsled"
+        "path": "./plugins/dogsled-core"
       },
       "policy": {
         "installation": "AVAILABLE",

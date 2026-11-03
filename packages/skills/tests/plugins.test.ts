@@ -15,13 +15,13 @@ describe('installable Dogsled plugin', () => {
     for (const [path, content] of Object.entries(generated)) {
       expect(readFileSync(join(REPO_ROOT, path), 'utf8'), path).toBe(content);
     }
-    const actual = readdirSync(join(REPO_ROOT, 'plugins/dogsled/skills'), { recursive: true })
+    const actual = readdirSync(join(REPO_ROOT, 'plugins/dogsled-core/skills'), { recursive: true })
       .map(String)
       .filter((path) => path.endsWith('.md'))
       .sort();
     const expected = Object.keys(generated)
-      .filter((path) => path.startsWith('plugins/dogsled/skills/'))
-      .map((path) => path.slice('plugins/dogsled/skills/'.length))
+      .filter((path) => path.startsWith('plugins/dogsled-core/skills/'))
+      .map((path) => path.slice('plugins/dogsled-core/skills/'.length))
       .sort();
     expect(actual).toEqual(expected);
   });
@@ -29,14 +29,19 @@ describe('installable Dogsled plugin', () => {
   it('loads both catalogs and every exposed skill from an isolated plugin copy', () => {
     const temporary = mkdtempSync(join(tmpdir(), 'dogsled-plugin-'));
     try {
-      const plugin = join(temporary, 'dogsled');
-      cpSync(join(REPO_ROOT, 'plugins/dogsled'), plugin, { recursive: true });
+      const plugin = join(temporary, 'dogsled-core');
+      cpSync(join(REPO_ROOT, 'plugins/dogsled-core'), plugin, { recursive: true });
       const claudeCatalog = JSON.parse(generated['.claude-plugin/marketplace.json']!);
       const codexCatalog = JSON.parse(generated['.agents/plugins/marketplace.json']!);
       expect(claudeCatalog.plugins[0].source).toBe(codexCatalog.plugins[0].source.path);
       const claude = JSON.parse(readFileSync(join(plugin, '.claude-plugin/plugin.json'), 'utf8'));
       const codex = JSON.parse(readFileSync(join(plugin, 'plugin.json'), 'utf8'));
-      expect(claude.name).toBe(codex.name);
+      expect(claudeCatalog.name).toBe('dogsled');
+      expect(codexCatalog.name).toBe('dogsled');
+      expect(claudeCatalog.plugins[0].name).toBe('dogsled-core');
+      expect(codexCatalog.plugins[0].name).toBe('dogsled-core');
+      expect(claude.name).toBe('dogsled-core');
+      expect(codex.name).toBe(claude.name);
       expect(claude.version).toMatch(/^\d+\.\d+\.\d+$/);
       expect(codex.version).toBe(claude.version);
       expect(readdirSync(join(plugin, 'skills')).sort()).toEqual(

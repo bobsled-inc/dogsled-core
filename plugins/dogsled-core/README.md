@@ -1,4 +1,4 @@
-# Dogsled plugin for Claude Code and Codex
+# Dogsled Core plugin for Claude Code and Codex
 
 Install Dogsled's built-in skills together. Ask your agent to set up a project,
 build a pipeline, define data models, or diagnose a failed run.
@@ -13,11 +13,11 @@ Run these commands inside Claude Code:
 
 ```text
 /plugin marketplace add bobsled-inc/dogsled-core
-/plugin install dogsled@dogsled
+/plugin install dogsled-core@dogsled
 ```
 
-Then ask: "Use the Dogsled plugin to help me set up a data pipeline."
-For the guided tutorial, run `/dogsled:dogsled-get-started`.
+Then ask: "Use the Dogsled Core plugin to help me set up a data pipeline."
+For the guided tutorial, run `/dogsled-core:dogsled-get-started`.
 
 ## Install in Codex
 
@@ -25,12 +25,12 @@ Run these commands in your terminal with a current Codex CLI:
 
 ```bash
 codex plugin marketplace add bobsled-inc/dogsled-core
-codex plugin add dogsled@dogsled
+codex plugin add dogsled-core@dogsled
 ```
 
-Start a new Codex chat and ask: "Use the Dogsled plugin to help me set up a data
+Start a new Codex chat and ask: "Use the Dogsled Core plugin to help me set up a data
 pipeline." In the desktop app, you can also select the Dogsled marketplace in
-Plugins and install Dogsled there after adding the marketplace.
+Plugins and install Dogsled Core there after adding the marketplace.
 
 These GitHub commands work after the plugin files reach the repository's default
 branch. To test an unpublished checkout, use its absolute directory path instead
@@ -53,7 +53,7 @@ variables, never in skill files or committed configuration.
 ## Update
 
 In Claude Code, run `/plugin marketplace update dogsled` and
-`/plugin update dogsled@dogsled`. In Codex, use the plugin management UI to update
+`/plugin update dogsled-core@dogsled`. In Codex, use the plugin management UI to update
 the marketplace and plugin, or inspect `codex plugin marketplace --help` for the
 commands supported by your installed version. Start a new chat after updating.
 
@@ -68,7 +68,7 @@ From the repository root, run:
 ```bash
 pnpm --filter @bobsled-inc/skills generate:manifest
 pnpm --filter @bobsled-inc/skills test:unit
-claude plugin validate plugins/dogsled
+claude plugin validate plugins/dogsled-core
 claude plugin validate .claude-plugin/marketplace.json
 ```
 

@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "dogsled",
+  "name": "dogsled-core",
   "version": "0.1.0",
-  "description": "Set up Dogsled projects, build data pipelines and models, and diagnose failures.",
+  "description": "Set up local Dogsled Core projects, build data pipelines and models, and diagnose failures.",
   "author": {
     "name": "Dogsled maintainers"
   },
@@ -12,8 +12,8 @@
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Dogsled",
-        "shortDescription": "Build data pipelines and models with Dogsled",
+        "displayName": "Dogsled Core",
+        "shortDescription": "Build local data pipelines and models with Dogsled Core",
         "developerName": "Dogsled maintainers",
         "category": "Developer Tools"
       }
