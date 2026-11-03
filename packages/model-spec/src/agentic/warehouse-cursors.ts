@@ -1,5 +1,6 @@
 import { resolveWarehouseCheckpointTarget } from './warehouse-checkpoint-target.js';
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { resolveRunner, throwIfCancelled, type IntegrationFile } from '@bobsled-inc/connections';
 import { caseName, quoteIdentifier } from '../compiler/dialect.js';
 import { atomicPublication, sqlPublicationDb } from './sql-publication-storage.js';
@@ -12,6 +13,48 @@ import { AgenticCursorKeySchema, CursorRecordSchema, updateCursorRecord } from '
 import type { AgenticCursorStore, AgenticCursorKey, AgenticCursorValues } from './cursor.js';
 import type { WarehouseCheckpointOptions } from './warehouse-state.js';
 import { AgenticStateError, digestAgenticState } from './state.js';
+
+function isCursorContention(error: Error, dialect: string): boolean {
+  const seen = new Set<Error>();
+  let current: unknown = error;
+  for (let depth = 0; depth < 8 && current instanceof Error && !seen.has(current); depth++) {
+    seen.add(current);
+    const message = current.message.trim();
+    if (message === 'Stale publication owner or target version') return true;
+    if (
+      dialect === 'snowflake' &&
+      /^Uncaught exception of type 'STALE' on line \d+ at position \d+\s*: Stale publication owner or target version$/.test(
+        message
+      )
+    ) {
+      return true;
+    }
+    if (
+      dialect === 'bigquery' &&
+      /^(?:Query error: |Assertion failed: )Stale publication owner or target version(?: at \[\d+:\d+\])?$/.test(
+        message
+      )
+    ) {
+      return true;
+    }
+    if (
+      dialect === 'databricks' &&
+      /^\[USER_RAISED_EXCEPTION\] Stale publication owner or target version(?:\.? SQLSTATE: 45000)?$/.test(
+        message
+      )
+    ) {
+      return true;
+    }
+    current = current.cause;
+  }
+  return false;
+}
+
+class CursorContention extends Error {
+  constructor(readonly original: Error) {
+    super('Cursor contention', { cause: original });
+  }
+}
 
 /** One table for every model. The sentinel row serializes short cursor updates, not execution. */
 export function createWarehouseAgenticCursorStore(
@@ -79,30 +122,62 @@ export function createWarehouseAgenticCursorStore(
         raw === undefined
           ? `(SELECT COUNT(*) FROM ${table} WHERE ${q('key')} = ${lit(hash)}) = 0`
           : `(SELECT COUNT(*) FROM ${table} WHERE ${q('key')} = ${lit(hash)} AND ${q('record')} = ${lit(raw as string)}) = 1`;
-      await atomicPublication(
-        db,
-        runner,
-        dialect,
-        [
-          `UPDATE ${table} SET ${q('token')} = ${lit(token)} WHERE ${q('key')} = '' AND ${q('token')} = ${lit(guardToken)} AND (${expected})`,
-          `DELETE FROM ${table} WHERE ${q('key')} = ${lit(hash)}`,
-          `INSERT INTO ${table} (${q('key')}, ${q('record')}, ${q('token')}) VALUES (${lit(hash)}, ${lit(JSON.stringify(next))}, ${lit(token)})`,
-        ],
-        `(SELECT COUNT(*) FROM ${table} WHERE ${q('key')} = '' AND ${q('token')} = ${lit(token)}) = 1 AND (SELECT COUNT(*) FROM ${table} WHERE ${q('key')} = ${lit(hash)}) = 1`,
-        options.signal
-      );
+      try {
+        await atomicPublication(
+          db,
+          runner,
+          dialect,
+          [
+            `UPDATE ${table} SET ${q('token')} = ${lit(token)} WHERE ${q('key')} = '' AND ${q('token')} = ${lit(guardToken)} AND (${expected})`,
+            `DELETE FROM ${table} WHERE ${q('key')} = ${lit(hash)}`,
+            `INSERT INTO ${table} (${q('key')}, ${q('record')}, ${q('token')}) VALUES (${lit(hash)}, ${lit(JSON.stringify(next))}, ${lit(token)})`,
+          ],
+          `(SELECT COUNT(*) FROM ${table} WHERE ${q('key')} = '' AND ${q('token')} = ${lit(token)}) = 1 AND (SELECT COUNT(*) FROM ${table} WHERE ${q('key')} = ${lit(hash)}) = 1`,
+          options.signal
+        );
+      } catch (error) {
+        if (error instanceof Error && isCursorContention(error, dialect)) {
+          throw new CursorContention(error);
+        }
+        throw error;
+      }
       return next.values;
     } finally {
       await runner.close?.();
     }
   };
   const mutate: typeof mutateOnce = async (...args) => {
+    const started = Date.now();
+    let retryingContention = false;
+    let slowestAttemptMs = 0;
+    let retryBudgetMs = 120_000;
+    let lastError: unknown;
     for (let attempt = 0; ; attempt++) {
+      throwIfCancelled(options.signal);
+      if (retryingContention && Date.now() - started >= retryBudgetMs) throw lastError;
+      const attemptStarted = Date.now();
       try {
         return await mutateOnce(...args);
-      } catch (error) {
+      } catch (failure) {
         throwIfCancelled(options.signal);
-        if (error instanceof AgenticStateError || attempt >= 3) throw error;
+        const contended = failure instanceof CursorContention;
+        const error = contended ? failure.original : failure;
+        lastError = error;
+        if (error instanceof AgenticStateError || attempt >= (contended ? 31 : 3)) throw error;
+        if (!contended) continue;
+        retryingContention = true;
+        slowestAttemptMs = Math.max(slowestAttemptMs, Math.max(0, Date.now() - attemptStarted));
+        retryBudgetMs = Math.min(360_000, Math.max(120_000, 32 * slowestAttemptMs + 31_000));
+        const remaining = retryBudgetMs - (Date.now() - started);
+        if (remaining <= 0) throw error;
+        const cap = Math.min(1_000, 50 * 2 ** Math.min(attempt, 5));
+        const wait = Math.min(remaining, Math.floor(cap * (0.5 + Math.random() / 2)));
+        try {
+          await delay(wait, undefined, options.signal ? { signal: options.signal } : undefined);
+        } catch (waitingError) {
+          throwIfCancelled(options.signal);
+          throw waitingError;
+        }
       }
     }
   };
