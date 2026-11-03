@@ -156,7 +156,6 @@ minimumReleaseAge: 30240
 # version meets the release age above.
 minimumReleaseAgeExclude:
   - undici@8.12.2 || 7.30.1 || 6.29.1
-  - toml@5.0.1
   - next@15.5.28
   - body-parser@2.4.0
   - qs@6.16.1
