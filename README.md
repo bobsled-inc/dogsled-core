@@ -79,6 +79,9 @@ The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
 semantic models, query across sources, and try an agentic transformation. An
 optional chapter teaches entity resolution.
 
+Install the [Dogsled plugin for Claude Code or Codex](plugins/dogsled/README.md)
+to make the built-in skills available without copying files from this repository.
+
 After installing Dogsled, open Claude Code or Codex in your project folder and
 invoke the **`dogsled-get-started`** skill, or ask:
 

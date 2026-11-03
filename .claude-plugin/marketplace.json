@@ -1,0 +1,14 @@
+{
+  "name": "dogsled",
+  "description": "Set up Dogsled projects, build data pipelines and models, and diagnose failures.",
+  "owner": {
+    "name": "Dogsled maintainers"
+  },
+  "plugins": [
+    {
+      "name": "dogsled",
+      "source": "./plugins/dogsled",
+      "description": "Set up Dogsled projects, build data pipelines and models, and diagnose failures."
+    }
+  ]
+}

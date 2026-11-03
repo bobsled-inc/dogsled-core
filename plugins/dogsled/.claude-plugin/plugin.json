@@ -1,0 +1,11 @@
+{
+  "name": "dogsled",
+  "version": "0.1.0",
+  "description": "Set up Dogsled projects, build data pipelines and models, and diagnose failures.",
+  "author": {
+    "name": "Dogsled maintainers"
+  },
+  "homepage": "https://github.com/bobsled-inc/dogsled-core",
+  "repository": "https://github.com/bobsled-inc/dogsled-core",
+  "license": "Apache-2.0"
+}

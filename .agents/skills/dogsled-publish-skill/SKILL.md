@@ -13,7 +13,9 @@ workspace is embedded in that package.
 1. Edit the Skill, catalog, or canonical document.
 2. Run `pnpm --filter @bobsled-inc/skills generate:manifest`.
 3. Run `pnpm --filter @bobsled-inc/skills test:unit` and `pnpm docs:ci`.
-4. Commit the source and `packages/skills/src/generated-data.ts` together.
+4. Commit the source, `packages/skills/src/generated-data.ts`, and generated plugin
+   files together. The command also refreshes `plugins/dogsled/` and the Claude and
+   Codex marketplace catalogs.
 
 For a new exposed Skill, add `name`, `description`, `exposed: true`, and `triggers`
 to its front matter. Choose trigger phrases that describe the supported task.
