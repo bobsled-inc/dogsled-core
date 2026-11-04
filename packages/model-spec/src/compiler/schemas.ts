@@ -43,6 +43,7 @@ import {
   type PublishConfig,
 } from './publish-execution.js';
 import { dangerousExprRegex, dangerousExprMsg, TrustTierSchema } from './schemas-shared.js';
+export { isDangerousRawSql } from './schemas-shared.js';
 
 /**
  * Wraps `z.literal(expected)` with a fix-suggesting error message when the
@@ -84,15 +85,6 @@ const dottedIdentifierMsg = 'Must be a dotted identifier (e.g. schema.table_name
 /** Valid SQL type name pattern (with optional precision). */
 const sqlTypeRegex =
   /^[A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*(?:\s*\(\s*\d+\s*(?:,\s*\d+)?\s*\))?$/;
-
-/**
- * Validate that a raw SQL string does not contain dangerous DDL/DML keywords.
- * Applied to raw_sql() content and implicit raw_sql fallback to prevent
- * bypass of the Zod-level expression validation.
- */
-export function isDangerousRawSql(sql: string): boolean {
-  return dangerousExprRegex.test(sql);
-}
 
 /** Lighter regex for hooks — hooks need CALL/EXEC but still block destructive DDL and semicolons. */
 const dangerousHookRegex = /;|^\s*(DROP|ALTER|TRUNCATE|DELETE|GRANT|REVOKE)\b/i;

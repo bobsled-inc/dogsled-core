@@ -15,6 +15,7 @@
 
 import type { Token } from './tokenizer.js';
 import { tokenize } from './tokenizer.js';
+import { expressionSyntaxVariants } from '../sql-expression-syntax.js';
 import type {
   DogsledExpr,
   BinaryOp,
@@ -1092,11 +1093,27 @@ class ParseError extends Error {
  * `{ kind: 'raw_sql', sql: input }`.
  */
 export function parseExprField(input: string): DogsledExpr {
+  // Preserve native quoting and comments in a complete raw_sql() field. The DSL
+  // tokenizer deliberately does not recognize every warehouse's literal syntax.
+  const raw = /^\s*raw_sql\s*\(([\s\S]*)\)\s*$/i.exec(input);
+  if (raw && expressionSyntaxVariants(input).some(isCompleteRawSqlCall)) {
+    return { kind: 'raw_sql', sql: raw[1]!.trim(), explicit: true };
+  }
   const result = tryParseExpr(input);
   if (result.ok) {
     return result.expr;
   }
   return { kind: 'raw_sql', sql: input };
+}
+
+function isCompleteRawSqlCall(syntax: string): boolean {
+  const trimmed = syntax.trim();
+  let depth = 0;
+  for (let i = trimmed.indexOf('('); i < trimmed.length; i++) {
+    if (trimmed[i] === '(') depth++;
+    if (trimmed[i] === ')' && --depth === 0) return i === trimmed.length - 1;
+  }
+  return false;
 }
 
 /**

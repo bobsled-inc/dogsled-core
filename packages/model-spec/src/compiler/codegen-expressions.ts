@@ -9,6 +9,8 @@ import type { SupportedDialect } from './dialect.js';
 import { emitExpr, mapExpr, parseExprField, parseWindowFrameClause } from './expr/index.js';
 import type { DogsledExpr, WindowFrameSpec, WindowOrderByItem } from './expr/index.js';
 import type { ResolvedFlattenJson, ResolvedTransformSpec, SourceEntryRegistry } from './parser.js';
+import { dangerousExprRegex, dangerousExprMsg } from './schemas-shared.js';
+import { terminateSqlLineComment } from './sql-expression-syntax.js';
 
 // ---------------------------------------------------------------------------
 // Expression transpilation (0.1 Expression AST)
@@ -58,13 +60,16 @@ export function transpileOrEmit(
     modelName?: string;
   }
 ): string {
+  if (dangerousExprRegex.test(exprStr, sourceDialect)) throw new Error(dangerousExprMsg);
   const ast = parseExprField(exprStr);
   if (ast.kind === 'raw_sql') {
     if (options?.strict && !ast.explicit) {
       throw new Error(`Strict mode: expression could not be parsed: ${exprStr}`);
     }
     options?.warnings?.push(`Expression fell back to raw_sql (not transpiled): ${exprStr}`);
-    return transpileExpr(ast.sql, sourceDialect, targetDialect);
+    const sql = transpileExpr(ast.sql, sourceDialect, targetDialect);
+    if (dangerousExprRegex.test(sql, targetDialect)) throw new Error(dangerousExprMsg);
+    return terminateSqlLineComment(sql, targetDialect);
   }
   return emitExpr(prepareAstForEmit(ast, targetDialect, options), targetDialect);
 }
