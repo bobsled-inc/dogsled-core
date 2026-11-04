@@ -469,6 +469,7 @@ const STRING_T2_FUNCTIONS: FunctionDef[] = [
       snowflake: (args) => `CHARINDEX(${args[0]}, ${args[1]})`,
       bigquery: (args) => `STRPOS(${args[1]}, ${args[0]})`,
       postgres: (args) => `POSITION(${args[0]} IN ${args[1]})`,
+      duckdb: (args) => `POSITION(${args[0]} IN ${args[1]})`,
       databricks: (args) => `LOCATE(${args[0]}, ${args[1]})`,
       // CH: position(haystack, needle) — reversed from the canonical order, so
       // the verbatim name would silently search the wrong way round.

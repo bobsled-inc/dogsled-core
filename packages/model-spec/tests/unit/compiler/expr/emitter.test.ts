@@ -637,33 +637,97 @@ describe('Expression emitter', () => {
   });
 
   describe('timestamp_diff function', () => {
-    it('bigquery: TIMESTAMP_DIFF with reversed args and unquoted unit', () => {
-      const expr = parseExprField("timestamp_diff('second', start_ts, end_ts)");
-      expect(emitExpr(expr, 'bigquery')).toBe('TIMESTAMP_DIFF(end_ts, start_ts, SECOND)');
+    it.each([
+      ['snowflake', 'TIMESTAMPDIFF(MICROSECOND, START_TS, END_TS)'],
+      ['bigquery', 'TIMESTAMP_DIFF(end_ts, start_ts, MICROSECOND)'],
+      ['databricks', 'TIMESTAMPDIFF(MICROSECOND, start_ts, end_ts)'],
+    ] as const)('%s preserves native microsecond SQL and argument order', (dialect, sql) => {
+      expect(
+        emitExpr(parseExprField("timestamp_diff('microsecond', start_ts, end_ts)"), dialect)
+      ).toBe(sql);
     });
 
-    it('snowflake: TIMESTAMPDIFF with unquoted unit', () => {
-      const expr = parseExprField("timestamp_diff('second', start_ts, end_ts)");
-      expect(emitExpr(expr, 'snowflake')).toBe('TIMESTAMPDIFF(SECOND, START_TS, END_TS)');
+    const epoch = 'EXTRACT(EPOCH FROM (CAST(end_ts AS TIMESTAMP) - CAST(start_ts AS TIMESTAMP)))';
+    const age = 'age(CAST(end_ts AS TIMESTAMP), CAST(start_ts AS TIMESTAMP))';
+    const months = `(EXTRACT(YEAR FROM ${age}) * 12 + EXTRACT(MONTH FROM ${age}))`;
+    it.each([
+      ['microsecond', `${epoch} * 1000000`],
+      ['millisecond', `${epoch} * 1000`],
+      ['second', epoch],
+      ['minute', `${epoch} / 60`],
+      ['hour', `${epoch} / 3600`],
+      ['day', `${epoch} / 86400`],
+      ['week', `${epoch} / 604800`],
+      ['month', months],
+      ['quarter', `${months} / 3`],
+      ['year', `${months} / 12`],
+    ])('postgres: %s returns whole units as BIGINT', (unit, difference) => {
+      const expr = parseExprField(`timestamp_diff('${unit}', start_ts, end_ts)`);
+      expect(emitExpr(expr, 'postgres')).toBe(`CAST(TRUNC(${difference}) AS BIGINT)`);
     });
 
-    it('postgres: EXTRACT(EPOCH FROM ...)', () => {
-      const expr = parseExprField("timestamp_diff('second', start_ts, end_ts)");
-      expect(emitExpr(expr, 'postgres')).toBe(
-        'EXTRACT(EPOCH FROM (end_ts::timestamp - start_ts::timestamp))'
+    it.each(['century', 'not_a_unit'])('postgres: rejects unsupported unit %s', (unit) => {
+      expect(() =>
+        emitExpr(parseExprField(`timestamp_diff('${unit}', start_ts, end_ts)`), 'postgres')
+      ).toThrow(/Unsupported PostgreSQL timestamp_diff unit/);
+    });
+
+    it.each([
+      'microsecond',
+      'millisecond',
+      'second',
+      'minute',
+      'hour',
+      'day',
+      'week',
+      'month',
+      'quarter',
+      'year',
+    ])('duckdb: %s uses date_diff with a quoted lowercase unit', (unit) => {
+      const expr = parseExprField(`timestamp_diff('${unit.toUpperCase()}', start_ts, end_ts)`);
+      expect(emitExpr(expr, 'duckdb')).toBe(`date_diff('${unit}', start_ts, end_ts)`);
+    });
+
+    it.each([
+      ['microsecond', ' / 86400'],
+      ['millisecond', ' / 86400'],
+      ['second', ''],
+      ['minute', ' / 60'],
+      ['hour', ' / 3600'],
+      ['day', ' / 86400'],
+      ['week', ' / 604800'],
+      ['month', ' / 2592000'],
+      ['quarter', ' / 86400'],
+      ['year', ' / 31536000'],
+    ])('redshift: preserves existing %s emulation without PostgreSQL age()', (unit, operation) => {
+      const expr = parseExprField(`timestamp_diff('${unit}', start_ts, end_ts)`);
+      expect(emitExpr(expr, 'redshift')).toBe(
+        `EXTRACT(EPOCH FROM (end_ts::timestamp - start_ts::timestamp))${operation}`
       );
     });
 
-    it('postgres: minute unit divides by 60', () => {
-      const expr = parseExprField("timestamp_diff('minute', start_ts, end_ts)");
-      expect(emitExpr(expr, 'postgres')).toBe(
-        'EXTRACT(EPOCH FROM (end_ts::timestamp - start_ts::timestamp)) / 60'
-      );
+    it('pgvector inherits the corrected PostgreSQL microsecond emitter', () => {
+      const expr = parseExprField("timestamp_diff('microsecond', start_ts, end_ts)");
+      expect(emitExpr(expr, 'pgvector')).toBe(`CAST(TRUNC(${epoch} * 1000000) AS BIGINT)`);
     });
 
-    it('duckdb: TIMESTAMPDIFF with unit and arg order', () => {
-      const expr = parseExprField("timestamp_diff('second', start_ts, end_ts)");
-      expect(emitExpr(expr, 'duckdb')).toBe('TIMESTAMPDIFF(SECOND, start_ts, end_ts)');
+    it('postgres: casts complete timestamp expressions before subtracting', () => {
+      const expr = parseExprField("timestamp_diff('second', start_ts + INTERVAL 1 DAY, end_ts)");
+      expect(emitExpr(expr, 'postgres')).toBe(
+        "CAST(TRUNC(EXTRACT(EPOCH FROM (CAST(end_ts AS TIMESTAMP) - CAST(start_ts + INTERVAL '1 DAY' AS TIMESTAMP)))) AS BIGINT)"
+      );
+    });
+  });
+
+  describe('position function', () => {
+    it.each([
+      ['snowflake', "CHARINDEX('an', 'banana')"],
+      ['bigquery', "STRPOS('banana', 'an')"],
+      ['postgres', "POSITION('an' IN 'banana')"],
+      ['databricks', "LOCATE('an', 'banana')"],
+      ['duckdb', "POSITION('an' IN 'banana')"],
+    ] as const)('%s searches for the needle in the haystack', (dialect, sql) => {
+      expect(emitExpr(parseExprField("position('an', 'banana')"), dialect)).toBe(sql);
     });
   });
 

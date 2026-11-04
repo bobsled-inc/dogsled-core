@@ -432,23 +432,23 @@ const DATETIME_FUNCTIONS: FunctionDef[] = [
         const unit = stripQuotes(args[0]!);
         return `TIMESTAMP_DIFF(${args[2]}, ${args[1]}, ${unit.toUpperCase()})`;
       },
-      // PG: EXTRACT(EPOCH FROM (end - start)) / divisor
-      postgres: (args) => {
+      // PG: whole elapsed units, or calendar months from age(end, start).
+      postgres: emitPostgresTimestampDiff,
+      // Preserve Redshift's existing emulation; PostgreSQL age() is unsupported there.
+      redshift: (args) => {
         const unit = stripQuotes(args[0]!).toLowerCase();
-        if (unit === 'second') {
-          return `EXTRACT(EPOCH FROM (${args[2]}::timestamp - ${args[1]}::timestamp))`;
-        }
-        return `EXTRACT(EPOCH FROM (${args[2]}::timestamp - ${args[1]}::timestamp)) / ${pgIntervalDivisor(unit)}`;
+        const epoch = `EXTRACT(EPOCH FROM (${args[2]}::timestamp - ${args[1]}::timestamp))`;
+        return unit === 'second' ? epoch : `${epoch} / ${pgIntervalDivisor(unit)}`;
       },
       // DB: TIMESTAMPDIFF(UNIT, start, end)
       databricks: (args) => {
         const unit = stripQuotes(args[0]!);
         return `TIMESTAMPDIFF(${unit.toUpperCase()}, ${args[1]}, ${args[2]})`;
       },
-      // DuckDB: same syntax as Databricks
-      duckdb: (args) => {
-        const unit = stripQuotes(args[0]!);
-        return `TIMESTAMPDIFF(${unit.toUpperCase()}, ${args[1]}, ${args[2]})`;
+      // DuckDB counts unit boundaries, with a quoted lowercase unit.
+      duckdb: (args, dialect) => {
+        const unit = stripQuotes(args[0]!).toLowerCase();
+        return `date_diff(${quoteLiteral(unit, dialect)}, ${args[1]}, ${args[2]})`;
       },
     },
   },
@@ -956,6 +956,53 @@ function decodeToCaseEmitter(args: string[]): string {
   const elsePart = hasDefault ? ` ELSE ${args[i]}` : '';
 
   return `CASE ${pairs.join(' ')}${elsePart} END`;
+}
+
+/** PostgreSQL has no TIMESTAMPDIFF; truncate before casting to avoid rounding. */
+function emitPostgresTimestampDiff(args: string[]): string {
+  const unit = stripQuotes(args[0]!).toLowerCase();
+  const start = `CAST(${args[1]} AS TIMESTAMP)`;
+  const end = `CAST(${args[2]} AS TIMESTAMP)`;
+  const epoch = `EXTRACT(EPOCH FROM (${end} - ${start}))`;
+  let difference: string;
+
+  switch (unit) {
+    case 'microsecond':
+      difference = `${epoch} * 1000000`;
+      break;
+    case 'millisecond':
+      difference = `${epoch} * 1000`;
+      break;
+    case 'second':
+      difference = epoch;
+      break;
+    case 'minute':
+      difference = `${epoch} / 60`;
+      break;
+    case 'hour':
+      difference = `${epoch} / 3600`;
+      break;
+    case 'day':
+      difference = `${epoch} / 86400`;
+      break;
+    case 'week':
+      difference = `${epoch} / 604800`;
+      break;
+    case 'month':
+    case 'quarter':
+    case 'year': {
+      const age = `age(${end}, ${start})`;
+      const months = `(EXTRACT(YEAR FROM ${age}) * 12 + EXTRACT(MONTH FROM ${age}))`;
+      difference = unit === 'month' ? months : `${months} / ${unit === 'quarter' ? 3 : 12}`;
+      break;
+    }
+    default:
+      throw new Error(
+        `Unsupported PostgreSQL timestamp_diff unit "${unit}"; expected microsecond, millisecond, second, minute, hour, day, week, month, quarter, or year`
+      );
+  }
+
+  return `CAST(TRUNC(${difference}) AS BIGINT)`;
 }
 
 /**
