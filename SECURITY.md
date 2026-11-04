@@ -39,9 +39,13 @@ Treat integration and webhook YAML from others like code: credential references 
 ## Release security
 
 The [Release workflow](.github/workflows/release.yml) runs only in
-`bobsled-inc/dogsled-core`, through a maintainer dispatch from `main`. Merging a
-pull request does not publish a package. Maintainers choose a release version
-increment or retry an existing immutable tag.
+`bobsled-inc/dogsled-core`, from `main`. A maintainer dispatches it, or, when the
+`AUTO_RELEASE` variable is `on`, the [Release on merge workflow](.github/workflows/release-on-merge.yml)
+dispatches it in `auto` mode after a pull request merges. That trigger reads the
+merged pull request through the API with code from the merge commit on `main`,
+never checks out the pull request head and has no secrets. The increment comes
+from each merged pull request's Change Type, and maintainers can also choose one
+or retry an existing immutable tag.
 
 The workflow builds and checks one tarball containing 15 internal packages,
 checks bundled third-party notices, performs a clean install and a real
@@ -63,9 +67,12 @@ The workflow relies on required environment reviewers, publication limited to
 `main`, and `v*` tag creation limited to the release workflow with replacement
 and deletion blocked. npm's trusted publisher is bound to this repository,
 `release.yml` and `npm-release`. Preparation has read-only repository access.
-The install-free tag job requires `npm-release` approval before pushing the
-verified tag with Git hooks disabled. Follow [Cutting a release](docs/releases.md)
-for dispatch, approval, and verification steps.
+A maintainer approves the release in the `release-approval` environment before
+any tag is pushed; a rejection leaves no tag. The install-free tag job then runs
+in the `release-tag` environment, limited to `main` without reviewers, and
+pushes the verified tag with Git hooks disabled. Publication runs in `npm-release`.
+Follow [Cutting a release](docs/releases.md) for dispatch, approval, and
+verification steps.
 
 ## Dependency checks
 

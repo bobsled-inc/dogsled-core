@@ -1,5 +1,7 @@
 # Changelog
 
+Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/dogsled-core/releases).
+
 ## Unreleased
 
 - Library hosts can now use the hardened SFTP client directly, through the new `@bobsled-inc/dogsled/sftp` subpath, which exports `SftpFileStorageClient`, its types, `SFTP_ERROR_CODES` and the error classes. `ssh2` stays optional and loads only when a client connects, so install it alongside Dogsled to use this subpath. A download can pin the file with `expected: { size, mtimeSeconds }`: the FSTATs at open and after the last read must match, and every byte must be read, or it fails with the new non-retryable code `SFTP_FILE_CHANGED`. Passing the same `progress` object and target to a later attempt skips the chunks already written, so a download can continue on a new connection after `SFTP_CONNECTION_LOST` or `SFTP_TIMEOUT`. Downloads without `expected` behave as before.

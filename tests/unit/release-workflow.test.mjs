@@ -11,6 +11,13 @@ import { publicationPolicy } from '../../scripts/release/publication-policy.mjs'
 const workflow = parse(
   readFileSync(new URL('../../.github/workflows/release.yml', import.meta.url), 'utf8')
 );
+const onMergeSource = readFileSync(
+  new URL('../../.github/workflows/release-on-merge.yml', import.meta.url),
+  'utf8'
+);
+const onMerge = parse(onMergeSource);
+
+const ci = parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 
 describe('release workflow boundaries', () => {
   it('requires a manual dispatch in dogsled-core on every job', () => {
@@ -25,8 +32,11 @@ describe('release workflow boundaries', () => {
     expect(workflow.permissions).toEqual({ contents: 'read' });
     expect(workflow.jobs.publish.environment).toBe('npm-release');
     expect(workflow.jobs.publish.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
-    expect(workflow.jobs.prepare.permissions).toEqual({ contents: 'read' });
-    expect(workflow.jobs.tag.environment).toBe('npm-release');
+    expect(workflow.jobs.prepare.permissions).toEqual({
+      contents: 'read',
+      'pull-requests': 'read',
+    });
+    expect(workflow.jobs.tag.environment).toBe('release-tag');
     expect(workflow.jobs.tag.permissions).toEqual({ contents: 'write' });
     expect(
       workflow.jobs.tag.steps.every((step) => !/\b(?:pnpm|npm)\s|\binstall\s/.test(step.run ?? ''))
@@ -36,7 +46,7 @@ describe('release workflow boundaries', () => {
     expect(workflow.jobs.prepare.permissions['id-token']).toBeUndefined();
     expect(workflow.jobs.finalize.permissions['id-token']).toBeUndefined();
     for (const job of Object.values(workflow.jobs))
-      for (const step of job.steps) {
+      for (const step of job.steps ?? []) {
         if (step.uses) expect(step.uses).toMatch(/@[a-f0-9]{40}$/);
         if (step.uses?.startsWith('actions/checkout@'))
           expect(step.with['persist-credentials']).toBe(false);
@@ -45,9 +55,24 @@ describe('release workflow boundaries', () => {
       }
   });
 
+  it('disables package-manager caching in every release job', () => {
+    for (const [name, job] of Object.entries(workflow.jobs)) {
+      for (const step of job.steps ?? []) {
+        if (step.uses?.startsWith('actions/setup-node@')) {
+          expect(step.with?.cache ?? step.with?.['package-manager-cache']).toSatisfy(
+            (value) => value === false || value === 'false' || value === undefined,
+            `${name} must not cache packages`
+          );
+        }
+      }
+    }
+  });
+
   it('finalizes successful retries without continuing cancelled runs and verifies tags from trusted code', () => {
     expect(workflow.jobs.publish.if).toContain('!cancelled()');
     expect(workflow.jobs.publish.if).not.toContain('always()');
+    expect(workflow.jobs.publish.if).toContain("needs.approve.result == 'success'");
+    expect(workflow.jobs.publish.if).toContain("needs.release-checks-ok.result == 'success'");
     expect(workflow.jobs.finalize.if).toContain('!cancelled()');
     expect(workflow.jobs.finalize.if).toContain("needs.publish.result == 'success'");
     const tag = workflow.jobs.tag;
@@ -57,6 +82,7 @@ describe('release workflow boundaries', () => {
       push.run.indexOf('git -c core.hooksPath=/dev/null push')
     );
     expect(push.env.RELEASE_MODE).toBe('${{ inputs.mode }}');
+    expect(push.env.RELEASE_COMMIT).toBe('${{ needs.release-checks-ok.outputs.commit }}');
   });
 
   it('limits the short-lived bootstrap credential to the protected bootstrap step', () => {
@@ -131,10 +157,126 @@ describe('release workflow boundaries', () => {
       GH_TOKEN: '${{ github.token }}',
       GH_REPO: '${{ github.repository }}',
       RELEASE_TAG: '${{ needs.prepare.outputs.tag }}',
-      RELEASE_COMMIT: '${{ needs.prepare.outputs.commit }}',
+      RELEASE_COMMIT: '${{ needs.release-checks-ok.outputs.commit }}',
       RELEASE_PRERELEASE: '${{ needs.prepare.outputs.prerelease }}',
+      RELEASE_BREAKING: '${{ needs.prepare.outputs.breaking }}',
+      RELEASE_BREAKING_PRS: '${{ needs.prepare.outputs.breaking_prs }}',
     });
     expect(finalize.steps.every((step) => !step.env?.NPM_READ_TOKEN)).toBe(true);
+  });
+
+  it('plans auto releases from merged pull requests and gates parallel jobs on the release output', () => {
+    expect(workflow.on.workflow_dispatch.inputs.mode.options).toEqual([
+      'new',
+      'auto',
+      'preview',
+      'retry',
+      'bootstrap',
+    ]);
+    const steps = workflow.jobs.prepare.steps;
+    const plan = steps.findIndex((step) => step.id === 'plan');
+    expect(steps[plan].run).toContain('auto) node scripts/release/version.mjs prepare-auto ;;');
+    expect(steps[plan].env.GH_TOKEN).toBe('${{ github.token }}');
+    expect(workflow.jobs.prepare.outputs.release).toBe('${{ steps.plan.outputs.release }}');
+    for (const name of [
+      'release-checks',
+      'release-unit',
+      'release-packed-catalog',
+      'release-audit',
+    ]) {
+      expect(workflow.jobs[name].if).toContain("needs.prepare.outputs.release == 'true'");
+      expect(workflow.jobs[name].needs).toContain('prepare');
+    }
+    expect(workflow.jobs.approve.if).toContain("needs.prepare.outputs.release == 'true'");
+    expect(workflow.jobs.notify.if).toContain("needs.prepare.outputs.release == 'true'");
+    expect(workflow.jobs.tag.if).toContain("needs.prepare.outputs.release == 'true'");
+    expect(workflow.jobs.tag.if).toContain("github.ref == 'refs/heads/main'");
+    expect(workflow.jobs.publish.if).toContain("needs.prepare.outputs.release == 'true'");
+    expect(workflow.concurrency).toEqual({ group: 'npm-release', 'cancel-in-progress': false });
+  });
+
+  it('keeps one human approval, before the tag', () => {
+    expect(workflow.jobs.approve.environment).toBe('release-approval');
+    expect(workflow.jobs.tag.environment).toBe('release-tag');
+    expect(workflow.jobs.publish.environment).toBe('npm-release');
+    expect(workflow.jobs.prepare.environment).toBeUndefined();
+    expect(workflow.jobs.notify.environment).toBeUndefined();
+    expect(workflow.jobs['release-checks-ok'].environment).toBeUndefined();
+    expect(workflow.jobs.finalize.environment).toBeUndefined();
+    expect(workflow.jobs.approve.needs).toContain('release-checks-ok');
+    expect(workflow.jobs.tag.needs).toContain('approve');
+    expect(workflow.jobs.publish.needs).toContain('approve');
+  });
+
+  it('runs release checks in parallel and gates approval on a single pass', () => {
+    const gate = workflow.jobs['release-checks-ok'];
+    expect(gate.if).toContain('always()');
+    expect(gate.needs).toEqual(
+      expect.arrayContaining([
+        'prepare',
+        'release-checks',
+        'release-unit',
+        'release-packed-catalog',
+        'release-audit',
+      ])
+    );
+    expect(gate.outputs.commit).toBe('${{ needs.release-audit.outputs.commit }}');
+    const step = gate.steps[0];
+    expect(step.env.CHECKS).toBe('${{ needs.release-checks.result }}');
+    expect(step.env.UNIT).toBe('${{ needs.release-unit.result }}');
+    expect(step.env.PACKED).toBe('${{ needs.release-packed-catalog.result }}');
+    expect(step.env.AUDIT).toBe('${{ needs.release-audit.result }}');
+    expect(workflow.jobs.notify.needs).toContain('release-checks-ok');
+    expect(workflow.jobs.approve.needs).toContain('release-checks-ok');
+    expect(workflow.jobs.tag.needs).toContain('release-checks-ok');
+    expect(workflow.jobs.publish.needs).toContain('release-checks-ok');
+  });
+
+  it('mirrors ci.yml check steps and unit matrix without caching', () => {
+    const releaseChecks = workflow.jobs['release-checks'];
+    const releaseUnit = workflow.jobs['release-unit'];
+    expect(releaseChecks.steps.some((step) => step.run === 'pnpm security:fast')).toBe(true);
+    expect(releaseChecks.steps.some((step) => step.run === 'pnpm skills:check')).toBe(true);
+    expect(releaseChecks.steps.some((step) => step.run === 'pnpm build')).toBe(true);
+    expect(releaseChecks.steps.some((step) => step.run === 'pnpm check')).toBe(true);
+    expect(releaseChecks.steps.some((step) => step.run === 'pnpm test:structural')).toBe(true);
+    expect(
+      releaseChecks.steps.some((step) => step.run?.includes('third-party-notices.mjs --check'))
+    ).toBe(true);
+    expect(releaseUnit.strategy.matrix.leg).toEqual(ci.jobs.unit.strategy.matrix.leg);
+    expect(releaseUnit.strategy['fail-fast']).toBe(false);
+    const unitRun = releaseUnit.steps.find((step) => step.env?.UNIT_LEG);
+    expect(unitRun.run).toBe('pnpm "test:unit:ci:$UNIT_LEG"');
+  });
+
+  it('builds the tarball and tag in release-audit and uploads a verified artifact', () => {
+    const audit = workflow.jobs['release-audit'];
+    expect(audit.outputs.commit).toBe('${{ steps.candidate.outputs.commit }}');
+    expect(audit.steps.some((step) => step.run?.includes('stamp-version'))).toBe(true);
+    expect(audit.steps.some((step) => step.run?.includes('git tag -a "$RELEASE_TAG"'))).toBe(true);
+    expect(audit.steps.some((step) => step.run?.includes('pnpm security:release'))).toBe(true);
+    expect(audit.steps.some((step) => step.run?.includes('git bundle create'))).toBe(true);
+    const upload = audit.steps.find((step) => step.uses?.startsWith('actions/upload-artifact@'));
+    expect(upload).toBeDefined();
+    expect(upload.with['if-no-files-found']).toBe('error');
+  });
+
+  it('fails stalled registry installs fast instead of exhausting the job', () => {
+    expect(workflow.env).toMatchObject({
+      NPM_CONFIG_FETCH_TIMEOUT: '60000',
+      NPM_CONFIG_FETCH_RETRIES: '4',
+      NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: '60000',
+    });
+    expect(workflow.jobs.prepare['timeout-minutes']).toBe(15);
+    const auditSteps = workflow.jobs['release-audit'].steps;
+    const step = (steps, pattern) => steps.find((entry) => pattern.test(entry.run ?? ''));
+    expect(step(auditSteps, /@cyclonedx\/cdxgen/)['timeout-minutes']).toBe(5);
+    expect(step(auditSteps, /pnpm security:release/)['timeout-minutes']).toBe(15);
+    const packedSteps = workflow.jobs['release-packed-catalog'].steps;
+    const packed = step(packedSteps, /test:packed-catalog/);
+    expect(packed['timeout-minutes']).toBe(20);
+    expect(packed.run).toContain('for attempt in 1 2; do');
+    expect(packed.run).toContain('timeout 10m pnpm test:packed-catalog -- --skip-build');
   });
 
   it('keeps major change types below 1.0 while the package is 0.x', () => {
@@ -149,5 +291,72 @@ describe('release workflow boundaries', () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe('release on merge trigger', () => {
+  const job = onMerge.jobs.decide;
+  const steps = job.steps;
+
+  it('runs on push to main while auto release is enabled', () => {
+    expect(onMerge.on).toEqual({ push: { branches: ['main'] } });
+    expect(onMergeSource).not.toMatch(/pull_request_target|pull_request|workflow_run/);
+    expect(job.if).toContain("github.repository == 'bobsled-inc/dogsled-core'");
+    expect(job.if).toContain("(vars.AUTO_RELEASE == 'on' || vars.AUTO_RELEASE == 'dry-run')");
+  });
+
+  it('uses least privilege, no secrets and no pull request head code', () => {
+    expect(onMerge.permissions).toEqual({ contents: 'read' });
+    expect(job.permissions).toEqual({
+      contents: 'read',
+      'pull-requests': 'read',
+      actions: 'write',
+    });
+    expect(job.environment).toBeUndefined();
+    expect(onMergeSource).not.toMatch(/secrets\.|head\.ref|head\.sha|pnpm|npm install/);
+    const checkout = steps.find((step) => step.uses?.startsWith('actions/checkout@'));
+    expect(checkout.with).toEqual({
+      ref: '${{ github.sha }}',
+      'persist-credentials': false,
+    });
+    for (const step of steps) {
+      if (step.uses) expect(step.uses).toMatch(/@[a-f0-9]{40}$/);
+      expect(step.run ?? '').not.toContain('${{');
+    }
+  });
+
+  it('decides with trusted main code and dispatches only when the decision allows it', () => {
+    const decide = steps.find((step) => step.id === 'decide');
+    expect(decide.run).toBe('node scripts/release/version.mjs decide-merge');
+    expect(decide.env).toEqual({
+      GH_TOKEN: '${{ github.token }}',
+      AUTO_RELEASE: '${{ vars.AUTO_RELEASE }}',
+      MERGE_SHA: '${{ github.sha }}',
+    });
+    const dispatch = steps.find((step) => step.run?.includes('gh workflow run'));
+    expect(dispatch.if).toBe("steps.decide.outputs.dispatch == 'true'");
+    expect(dispatch.run).toBe('gh workflow run release.yml --ref main -f mode=auto');
+  });
+
+  it('sends a structured Slack notification with PR titles when a release awaits approval', () => {
+    const notify = workflow.jobs.notify;
+    expect(notify.needs).toContain('release-checks-ok');
+    expect(notify.if).toContain("needs.prepare.outputs.release == 'true'");
+    const step = notify.steps[0];
+    expect(step.env.SLACK_WEBHOOK).toBe('${{ secrets.SLACK_RELEASE_WEBHOOK_URL }}');
+    expect(step.env.NOTIFY_SUMMARY).toBe('${{ needs.prepare.outputs.notify_summary }}');
+    expect(step.run).toContain('exit 0');
+    expect(step.run).toContain('curl');
+    expect(step.run).toContain('Approve with the GitHub app');
+    expect(step.run).toContain('NOTIFY_SUMMARY');
+    expect(step.run).not.toContain('RUN_URL');
+    expect(workflow.jobs.prepare.outputs.notify_summary).toBe(
+      '${{ steps.plan.outputs.notify_summary }}'
+    );
+    const releaseSource = readFileSync(
+      new URL('../../.github/workflows/release.yml', import.meta.url),
+      'utf8'
+    );
+    expect(releaseSource).not.toMatch(/SLACK.*pull_request/);
   });
 });
