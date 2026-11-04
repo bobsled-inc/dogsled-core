@@ -282,8 +282,10 @@ fixed-length units toward zero as `BIGINT`; month, quarter, and year use calenda
 months from `age(end, start)`. Unsupported PostgreSQL units fail at compile time.
 DuckDB's `date_diff` returns `BIGINT` and counts boundaries, so `00:59:59` to
 `01:00:00` is one hour and January 31 to February 1 is one month. Results can
-therefore differ from PostgreSQL's elapsed units. Other dialects retain their
-native unit limits and boundary semantics.
+therefore differ from PostgreSQL's elapsed units. Snowflake, BigQuery, and
+Databricks retain their native unit limits and semantics. Redshift retains its
+previous epoch/divisor emulation: month/year use approximate durations, and
+microsecond, millisecond, and quarter use day scaling.
 
 ### String Functions
 

@@ -524,8 +524,10 @@ month, quarter, and year use completed calendar months from `age(end, start)`.
 Unsupported PostgreSQL units fail during compilation. DuckDB returns `BIGINT`
 from `date_diff`, which counts unit boundaries: crossing from `00:59:59` to
 `01:00:00` is one hour, and January 31 to February 1 is one month. These can differ
-from PostgreSQL's elapsed units. Other warehouses retain their native unit limits
-and boundary semantics.
+from PostgreSQL's elapsed units. Snowflake, BigQuery, and Databricks retain their
+native unit limits and semantics. Redshift retains its previous epoch/divisor
+emulation: month/year use approximate durations, and microsecond, millisecond,
+and quarter use day scaling.
 
 The whole window grammar is native: `PARTITION BY`, `ORDER BY` with `NULLS FIRST`/`NULLS LAST`, `ROWS`/`RANGE`/`GROUPS` frames including `INTERVAL` offsets, the frame `EXCLUDE` clause, and model-level named windows. Do not wrap a window expression in `raw_sql()` — that costs cross-dialect mapping and blanks the column's lineage. Constructs a target does not support are rejected at compile time with `[unsupported_feature:<capability>]`; see the [window support table](../../.agents/skills/dogsled-model-spec-expressions/references/model-spec.md#per-dialect-support).
 
