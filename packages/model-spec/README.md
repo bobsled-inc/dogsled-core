@@ -508,6 +508,27 @@ expr: "ROW_NUMBER() OVER (PARTITION BY CUSTOMER_ID ORDER BY CREATED_AT DESC NULL
 expr: "SUM(AMOUNT) OVER (PARTITION BY CUSTOMER_ID ORDER BY ORDER_DATE ROWS UNBOUNDED PRECEDING)"
 ```
 
+The canonical argument order stays the same across warehouses:
+
+| Function                             | Dialect mapping                                                                                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timestamp_diff('unit', start, end)` | SF/DB: `TIMESTAMPDIFF(UNIT, start, end)`; BQ: `TIMESTAMP_DIFF(end, start, UNIT)`; PG: integer interval arithmetic; DuckDB: `date_diff('unit', start, end)` |
+| `position(needle, haystack)`         | SF: `CHARINDEX(needle, haystack)`; BQ: `STRPOS(haystack, needle)`; PG/DuckDB: `POSITION(needle IN haystack)`; DB: `LOCATE(needle, haystack)`               |
+
+`position` returns the first character's 1-based index, or `0` when absent.
+For PostgreSQL and DuckDB, `timestamp_diff` supports `microsecond`, `millisecond`,
+`second`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, and `year`.
+Use typed timestamp inputs, for example `CAST('1970-01-01' AS TIMESTAMP)`.
+PostgreSQL truncates elapsed fixed-length units toward zero and returns `BIGINT`;
+month, quarter, and year use completed calendar months from `age(end, start)`.
+Unsupported PostgreSQL units fail during compilation. DuckDB returns `BIGINT`
+from `date_diff`, which counts unit boundaries: crossing from `00:59:59` to
+`01:00:00` is one hour, and January 31 to February 1 is one month. These can differ
+from PostgreSQL's elapsed units. Snowflake, BigQuery, and Databricks retain their
+native unit limits and semantics. Redshift retains its previous epoch/divisor
+emulation: month/year use approximate durations, and microsecond, millisecond,
+and quarter use day scaling.
+
 The whole window grammar is native: `PARTITION BY`, `ORDER BY` with `NULLS FIRST`/`NULLS LAST`, `ROWS`/`RANGE`/`GROUPS` frames including `INTERVAL` offsets, the frame `EXCLUDE` clause, and model-level named windows. Do not wrap a window expression in `raw_sql()` — that costs cross-dialect mapping and blanks the column's lineage. Constructs a target does not support are rejected at compile time with `[unsupported_feature:<capability>]`; see the [window support table](../../.agents/skills/dogsled-model-spec-expressions/references/model-spec.md#per-dialect-support).
 
 ```yaml

@@ -250,6 +250,7 @@ Functions are transpiled across dialects automatically. Unknown functions pass t
 | ------------------------------------ | ---- | --------------------------------------------------------------------- |
 | `date_trunc('unit', expr)`           | 2    | BQ reverses args, unquotes unit                                       |
 | `datediff('unit', start, end)`       | 3    | BQ: `DATE_DIFF(end, start, UNIT)`                                     |
+| `timestamp_diff('unit', start, end)` | 3    | SF/DB: `TIMESTAMPDIFF`; BQ: reversed; PG: math; DuckDB: `date_diff`   |
 | `dateadd('unit', amount, date)`      | 3    | BQ: `DATE_ADD(date, INTERVAL amount UNIT)`                            |
 | `date_part('unit', expr)`            | 2    | BQ/PG/DB: `EXTRACT(unit FROM expr)`                                   |
 | `year(expr)`                         | 1    | BQ/PG: `EXTRACT(YEAR FROM expr)`                                      |
@@ -273,6 +274,18 @@ Functions are transpiled across dialects automatically. Unknown functions pass t
 | `next_day(date, dow)`                | 2    |                                                                       |
 | `format_date(format, date)`          | 2    | SF: `TO_VARCHAR`, BQ: `FORMAT_DATE`, PG: `TO_CHAR`, DB: `DATE_FORMAT` |
 | `timestamp_seconds(epoch)`           | 1    | SF/PG: `TO_TIMESTAMP`, BQ: `TIMESTAMP_SECONDS`, DB: `FROM_UNIXTIME`   |
+
+`timestamp_diff` takes typed timestamp inputs in `(unit, start, end)` order.
+PostgreSQL and DuckDB support `microsecond`, `millisecond`, `second`, `minute`,
+`hour`, `day`, `week`, `month`, `quarter`, and `year`. PostgreSQL truncates elapsed
+fixed-length units toward zero as `BIGINT`; month, quarter, and year use calendar
+months from `age(end, start)`. Unsupported PostgreSQL units fail at compile time.
+DuckDB's `date_diff` returns `BIGINT` and counts boundaries, so `00:59:59` to
+`01:00:00` is one hour and January 31 to February 1 is one month. Results can
+therefore differ from PostgreSQL's elapsed units. Snowflake, BigQuery, and
+Databricks retain their native unit limits and semantics. Redshift retains its
+previous epoch/divisor emulation: month/year use approximate durations, and
+microsecond, millisecond, and quarter use day scaling.
 
 ### String Functions
 
@@ -305,12 +318,15 @@ Functions are transpiled across dialects automatically. Unknown functions pass t
 | `split(s, delim)`                      | 2    | PG: `STRING_TO_ARRAY`                                                     |
 | `translate(s, from, to)`               | 3    |                                                                           |
 | `editdistance(a, b)`                   | 2    | BQ: `EDIT_DISTANCE`, PG/DB: `LEVENSHTEIN`                                 |
-| `position(needle, haystack)`           | 2    | SF: `CHARINDEX`, BQ: `STRPOS`, PG: `POSITION`, DB: `LOCATE`               |
+| `position(needle, haystack)`           | 2    | SF: `CHARINDEX`, BQ: `STRPOS`, PG/DuckDB: `POSITION`, DB: `LOCATE`        |
 | `soundex(s)`                           | 1    |                                                                           |
 | `base64_encode(s)`                     | 1    | BQ: `TO_BASE64`, DB: `BASE64`                                             |
 | `base64_decode(s)`                     | 1    | SF: `BASE64_DECODE_STRING`, BQ: `FROM_BASE64`, DB: `UNBASE64`             |
 | `ascii(s)`                             | 1    | BQ: `TO_CODE_POINTS`                                                      |
 | `chr(n)`                               | 1    | BQ: `CODE_POINTS_TO_STRING`                                               |
+
+`position(needle, haystack)` returns a 1-based index or `0` when absent.
+PostgreSQL and DuckDB emit `POSITION(needle IN haystack)`.
 
 ### Numeric Functions
 
