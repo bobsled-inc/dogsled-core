@@ -1,9 +1,17 @@
+import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
 import { listWorkspacePackages, repoRoot } from '../ci/shared.mjs';
-import { parseChangeType, releaseBumpForChangeType } from './change-type.mjs';
+import {
+  autoReleaseSummary,
+  createGitHubReader,
+  decideMergedPullRequest,
+  mergeDecisionSummary,
+  notifySummary,
+  resolveAutoRelease,
+} from './auto-release.mjs';
 import { DOGSLED_PACKAGE_NAME } from './package-set.mjs';
 
 export function incrementVersion(version, bump) {
@@ -89,12 +97,40 @@ export function currentPackageVersion() {
   return publishablePackages()[0].packageJson.version;
 }
 
-function writeGithubOutput(values) {
+function writeStepSummary(markdown) {
+  if (process.env.GITHUB_STEP_SUMMARY)
+    writeFileSync(process.env.GITHUB_STEP_SUMMARY, markdown, { flag: 'a' });
+  process.stdout.write(markdown);
+}
+
+function releaseTags() {
+  return execFileSync('git', ['tag', '--list', 'v*'], { cwd: repoRoot, encoding: 'utf8' })
+    .split(/\r?\n/)
+    .filter(Boolean);
+}
+
+function githubReader() {
+  return createGitHubReader({
+    repository: process.env.GITHUB_REPOSITORY,
+    token: process.env.GH_TOKEN,
+  });
+}
+
+export function writeGithubOutput(values) {
   if (!process.env.GITHUB_OUTPUT) return;
-  const output = Object.entries(values)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('\n');
-  writeFileSync(process.env.GITHUB_OUTPUT, `${output}\n`, { flag: 'a' });
+  const lines = [];
+  for (const [key, value] of Object.entries(values)) {
+    const str = String(value);
+    if (str.includes('\n')) {
+      const delimiter = `ghadelimiter_${randomUUID()}`;
+      if (str.includes(delimiter))
+        throw new Error(`Output value for ${key} contains the generated delimiter.`);
+      lines.push(`${key}<<${delimiter}`, str, delimiter);
+    } else {
+      lines.push(`${key}=${str}`);
+    }
+  }
+  writeFileSync(process.env.GITHUB_OUTPUT, `${lines.join('\n')}\n`, { flag: 'a' });
 }
 
 /** Stamps `version` into the `package.json` at `packageJsonPath`, preserving all other fields. */
@@ -109,18 +145,11 @@ function updateVersions(version) {
   stampVersion(version, dogsledPackage.packageJsonPath);
 }
 
-function prepareRelease(bump, changeType) {
+function prepareRelease(bump, changeType, breakingPrs = [], notify = '') {
   if (!['patch', 'minor', 'major'].includes(bump)) {
     throw new Error(`Release bump must be patch, minor, or major; found "${bump}".`);
   }
-  const packageVersion = currentPackageVersion();
-  const tags = execFileSync('git', ['tag', '--list', 'v*'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
-    .split(/\r?\n/)
-    .filter(Boolean);
-  const previousVersion = releaseBaseVersion(packageVersion, tags);
+  const previousVersion = releaseBaseVersion(currentPackageVersion(), releaseTags());
   const version = incrementVersion(previousVersion, bump);
   updateVersions(version);
   writeGithubOutput({
@@ -131,8 +160,47 @@ function prepareRelease(bump, changeType) {
     version,
     tag: `v${version}`,
     prerelease: false,
+    breaking: bump === 'major',
+    breaking_prs: breakingPrs.join(','),
+    notify_summary: notify || `Release v${version}? (${bump}, ${changeType})`,
   });
   process.stdout.write(`Prepared ${bump} release v${version}.\n`);
+}
+
+async function prepareAutoRelease() {
+  const previousVersion = releaseBaseVersion(currentPackageVersion(), releaseTags());
+  const reader = githubReader();
+  const repoUrl = `https://github.com/${process.env.GITHUB_REPOSITORY || ''}`;
+  const plan = await resolveAutoRelease({
+    previousVersion,
+    git: gitAt(repoRoot),
+    listPullRequests: (sha) => reader(`/commits/${sha}/pulls?per_page=100`),
+  });
+  const version = plan.bump ? incrementVersion(previousVersion, plan.bump) : previousVersion;
+  writeStepSummary(autoReleaseSummary(plan, version));
+  if (!plan.bump) {
+    writeGithubOutput({ release: false, previous_version: previousVersion });
+    return;
+  }
+  const notify = notifySummary(plan, version, repoUrl);
+  prepareRelease(plan.bump, 'auto', plan.breaking, notify);
+}
+
+async function decideMerge() {
+  const autoRelease = process.env.AUTO_RELEASE;
+  if (autoRelease !== 'on' && autoRelease !== 'dry-run')
+    throw new Error('AUTO_RELEASE must be on or dry-run to decide a release.');
+  const mergeSha = process.env.MERGE_SHA;
+  if (!/^[a-f0-9]{40}$/.test(mergeSha ?? '')) throw new Error('MERGE_SHA must be a full commit.');
+  const pullRequests = await githubReader()(`/commits/${mergeSha}/pulls?per_page=100`);
+  const decision = decideMergedPullRequest(mergeSha, pullRequests);
+  writeStepSummary(mergeDecisionSummary(decision, autoRelease));
+  writeGithubOutput({
+    release: decision.bump !== null,
+    dispatch: decision.bump !== null && autoRelease === 'on',
+    change_type: decision.changeType,
+    bump: decision.bump ?? 'none',
+  });
 }
 
 function gitAt(root) {
@@ -166,7 +234,7 @@ export function verifyReleaseCandidate({ commit, base, mode }, root = repoRoot) 
     throw new Error('Release candidate requires exact commit identities.');
   if (mode === 'bootstrap') {
     if (commit !== base) throw new Error('Bootstrap tag must equal the dispatched commit.');
-  } else if (mode === 'new' || mode === 'preview') {
+  } else if (mode === 'new' || mode === 'auto' || mode === 'preview') {
     const git = gitAt(root);
     const parents = git(['rev-list', '--parents', '-n', '1', commit]).split(' ');
     if (parents.length !== 2 || parents[1] !== base)
@@ -174,7 +242,7 @@ export function verifyReleaseCandidate({ commit, base, mode }, root = repoRoot) 
     const version = verifyVersionOnlyCommit(commit, base, git);
     if ((mode === 'preview') !== isPreviewVersion(version))
       throw new Error('Release mode differs from the candidate version.');
-  } else throw new Error('Tag creation supports only new, preview or bootstrap mode.');
+  } else throw new Error('Tag creation supports only new, auto, preview or bootstrap mode.');
 }
 
 export function verifyRetryTag(version, root = repoRoot) {
@@ -209,24 +277,19 @@ function assertRetryVersion(version) {
   if (tagCommit !== head) throw new Error('Retry tag does not point at the checked-out commit.');
 }
 
-export function runVersionCommand(command) {
-  if (command === 'prepare') {
-    const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-    const changeType = parseChangeType(event.pull_request?.body ?? '');
-    const bump = releaseBumpForChangeType(changeType);
-    if (!bump) {
-      writeGithubOutput({ release: false, change_type: changeType });
-      process.stdout.write('Release skipped by PR change type.\n');
-    } else {
-      prepareRelease(bump, changeType);
-    }
+export async function runVersionCommand(command) {
+  if (command === 'prepare-auto') {
+    await prepareAutoRelease();
+  } else if (command === 'decide-merge') {
+    await decideMerge();
   } else if (command === 'prepare-manual') {
     prepareRelease(process.env.RELEASE_BUMP, 'manual');
   } else if (command === 'prepare-preview') {
-    const tags = execFileSync('git', ['tag', '--list', 'v*'], { cwd: repoRoot, encoding: 'utf8' })
-      .split(/\r?\n/)
-      .filter(Boolean);
-    const version = previewVersion(currentPackageVersion(), tags, process.env.RELEASE_VERSION);
+    const version = previewVersion(
+      currentPackageVersion(),
+      releaseTags(),
+      process.env.RELEASE_VERSION
+    );
     updateVersions(version);
     writeGithubOutput({ release: true, version, tag: `v${version}`, prerelease: true });
     process.stdout.write(`Prepared preview release v${version}.\n`);
@@ -236,10 +299,7 @@ export function runVersionCommand(command) {
     updateVersions(version);
     process.stdout.write(`Stamped version ${version} into package.json.\n`);
   } else if (command === 'prepare-bootstrap') {
-    const tags = execFileSync('git', ['tag', '--list', 'v*'], { cwd: repoRoot, encoding: 'utf8' })
-      .split(/\r?\n/)
-      .filter(Boolean);
-    const version = bootstrapVersion(currentPackageVersion(), tags);
+    const version = bootstrapVersion(currentPackageVersion(), releaseTags());
     writeGithubOutput({
       release: true,
       version,
@@ -268,11 +328,11 @@ export function runVersionCommand(command) {
     process.stdout.write(`Verified retry for v${version}.\n`);
   } else {
     throw new Error(
-      'Usage: node scripts/release/version.mjs <prepare|prepare-manual|prepare-preview|prepare-bootstrap|verify-retry>'
+      'Usage: node scripts/release/version.mjs <prepare-auto|decide-merge|prepare-manual|prepare-preview|prepare-bootstrap|verify-retry>'
     );
   }
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
-  runVersionCommand(process.argv[2]);
+  await runVersionCommand(process.argv[2]);
 }

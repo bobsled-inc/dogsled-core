@@ -32,6 +32,7 @@ describe('retry release ancestry', () => {
     const r = repository();
     for (const file of [
       'release/version.mjs',
+      'release/auto-release.mjs',
       'release/change-type.mjs',
       'release/package-set.mjs',
       'ci/shared.mjs',
