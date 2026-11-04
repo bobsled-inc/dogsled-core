@@ -4,6 +4,10 @@
 
 - Fix `timestamp_diff('unit', start, end)` on PostgreSQL to scale microseconds and milliseconds correctly, use calendar months for month/quarter/year, and return truncated `BIGINT` values. DuckDB now emits `date_diff('unit', start, end)` and `POSITION(needle IN haystack)` instead of invalid SQL. Document DuckDB's unit-boundary semantics.
 
+- Model Spec expressions accept semicolons and SQL keywords inside quoted literals, including CASE labels and LISTAGG separators. Expression and `raw_sql` validation share a lexical check that continues to reject statement separators, prohibited commands, and malformed quoting or comments.
+
+- Dependency inlining now includes every UNION branch. SELECT-only compilation with `inlineDeps` can query source-only SQL models before their derived tables or output schema exist; named dependency sets, branch projections, and filters retain their existing behavior.
+
 - A model's `target_database` and `publish.target_database` accept BigQuery project ids with consecutive hyphens, such as `acme-analytics--prod`, which GCP allows. A leading or trailing hyphen is still rejected.
 
 - Shared warehouse cursor updates retry temporary ownership contention with bounded, cancellable backoff. Their retry-start allowance adapts to observed warehouse latency from two to six minutes, with at most 32 attempts; an in-flight operation can finish later. Concurrent models keep their independent progress and existing cursor ownership checks, without a guarantee of progress under sustained contention.

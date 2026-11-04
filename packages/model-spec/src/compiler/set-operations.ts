@@ -222,7 +222,8 @@ export function appendSetOperations(
   dialect: SupportedDialect,
   entryRegistry: SourceEntryRegistry | undefined,
   transpile: TranspileFn,
-  formatApiResourceRef: FormatApiResourceRefFn
+  formatApiResourceRef: FormatApiResourceRefFn,
+  inlineFqToCte: ReadonlyMap<string, string>
 ): string {
   let result = rawSql;
   const canonicalBigQueryColumns = buildCanonicalBigQuerySetColumns(spec, dialect, entryRegistry);
@@ -237,7 +238,11 @@ export function appendSetOperations(
     const branchTable =
       branchEntry?.kind === 'api_resource'
         ? formatApiResourceRef(branchEntry.fqRef, branchAlias, dialect)
-        : formatTableRef(branch.fqTableName, branchAlias, dialect);
+        : formatTableRef(
+            inlineFqToCte.get(branch.fqTableName) ?? branch.fqTableName,
+            branchAlias,
+            dialect
+          );
 
     let branchCols: string;
     if (canonicalBigQueryColumns) {

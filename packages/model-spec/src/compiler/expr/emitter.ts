@@ -19,6 +19,7 @@ import {
 import type { SupportedDialect } from '../dialect.js';
 import { MODEL_SPEC_ERROR_CODES, modelSpecHint } from '../error-hints.js';
 import { isDangerousRawSql } from '../schemas.js';
+import { terminateSqlLineComment } from '../sql-expression-syntax.js';
 import { FUNCTION_CATALOG } from './functions.js';
 import type {
   DogsledExpr,
@@ -121,10 +122,10 @@ export function emitExpr(expr: DogsledExpr, dialect: SupportedDialect): string {
     }
 
     case 'raw_sql':
-      if (isDangerousRawSql(expr.sql)) {
+      if (isDangerousRawSql(expr.sql, dialect)) {
         throw new Error(`raw_sql contains dangerous SQL: ${expr.sql.slice(0, 80)}`);
       }
-      return expr.sql;
+      return terminateSqlLineComment(expr.sql, dialect);
 
     // ----- Operators --------------------------------------------------------
 
@@ -237,29 +238,29 @@ export function emitExpr(expr: DogsledExpr, dialect: SupportedDialect): string {
     // ----- Subquery ---------------------------------------------------------
 
     case 'subquery':
-      if (isDangerousRawSql(expr.sql)) {
+      if (isDangerousRawSql(expr.sql, dialect)) {
         throw new Error(`subquery contains dangerous SQL: ${expr.sql.slice(0, 80)}`);
       }
-      return `(${expr.sql})`;
+      return `(${terminateSqlLineComment(expr.sql, dialect)})`;
 
     // ----- IN subquery ------------------------------------------------------
 
     case 'in_subquery': {
-      if (isDangerousRawSql(expr.subquerySql)) {
+      if (isDangerousRawSql(expr.subquerySql, dialect)) {
         throw new Error(`IN subquery contains dangerous SQL: ${expr.subquerySql.slice(0, 80)}`);
       }
       const neg = expr.negated ? ' NOT' : '';
-      return `${emitExpr(expr.expr, dialect)}${neg} IN (${expr.subquerySql})`;
+      return `${emitExpr(expr.expr, dialect)}${neg} IN (${terminateSqlLineComment(expr.subquerySql, dialect)})`;
     }
 
     // ----- EXISTS -----------------------------------------------------------
 
     case 'exists': {
-      if (isDangerousRawSql(expr.subquerySql)) {
+      if (isDangerousRawSql(expr.subquerySql, dialect)) {
         throw new Error(`EXISTS subquery contains dangerous SQL: ${expr.subquerySql.slice(0, 80)}`);
       }
       const prefix = expr.negated ? 'NOT EXISTS' : 'EXISTS';
-      return `${prefix} (${expr.subquerySql})`;
+      return `${prefix} (${terminateSqlLineComment(expr.subquerySql, dialect)})`;
     }
 
     // ----- Window expression ------------------------------------------------
@@ -294,12 +295,12 @@ export function emitExpr(expr: DogsledExpr, dialect: SupportedDialect): string {
       }
       if (expr.frame) {
         if (expr.frame.kind === 'raw_sql') {
-          if (isDangerousRawSql(expr.frame.sql)) {
+          if (isDangerousRawSql(expr.frame.sql, dialect)) {
             throw new Error(
               `raw_sql window frame contains dangerous SQL: ${expr.frame.sql.slice(0, 80)}`
             );
           }
-          overParts.push(expr.frame.sql);
+          overParts.push(terminateSqlLineComment(expr.frame.sql, dialect));
         } else if (expr.frame.kind === 'window_frame') {
           overParts.push(emitWindowFrame(expr.frame, dialect));
         }
