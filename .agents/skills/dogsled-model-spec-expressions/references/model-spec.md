@@ -103,7 +103,7 @@ expr: "CAST(ID AS VARCHAR)"
 
 ## raw_sql() Escape Hatch
 
-Use `raw_sql()` when the Expression DSL cannot represent a construct. Content passes through verbatim — no parsing, no transpilation, and no per-dialect capability checks. **Use sparingly**: you lose cross-dialect portability, and the column's lineage entry drops to `isComplete: false`, so it no longer traces back to its upstream columns.
+Use `raw_sql()` when the Expression DSL cannot represent a construct. It bypasses DSL parsing and function mapping, but shared SQL safety checks still apply to its contents. Malformed quoting/comments, statement separators outside literals, and prohibited operations are rejected. Native SQL must also compile for the target dialect. **Use sparingly**: you lose cross-dialect portability, and the column's lineage entry drops to `isComplete: false`, so it no longer traces back to its upstream columns.
 
 ```yaml
 # A dialect-specific operator
@@ -691,12 +691,16 @@ expr: "datediff('day', CREATED_AT, CURRENT_DATE)"
 
 # Safe division
 expr: "div0(REVENUE, COST)"
+
+# Quoted semicolons are literal data
+expr: "listagg(t0.company_id, '; ')"
+expr: "case when t0.name is null then 'Name missing; review required' else null end"
 ```
 
 ### Incorrect
 
 ```yaml
-# Semicolons not allowed
+# Statement separator outside a quoted literal
 expr: "SELECT 1; DROP TABLE users"
 # ^ Rejected by validation
 
@@ -720,8 +724,9 @@ expr: "STATUS = \"active\""
 
 ## Expression Validation Rules
 
-1. **No semicolons** — expressions cannot contain `;`
-2. **No DDL keywords at start** — `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT`, `REVOKE` are rejected when they appear at the start
+1. **No statement separators** — `;` is allowed inside quoted literals, such as a LISTAGG separator or CASE label. A semicolon outside a literal is rejected.
+2. **No prohibited SQL operations** — command prefixes such as `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT`, and `REVOKE`, and unquoted `UNION`/`EXCEPT`/`INTERSECT SELECT` operations are rejected. Comments cannot hide those operations; quoted text such as `'UNION SELECT'` is literal data.
 3. **Identifiers** — must match `/^[a-zA-Z_]\w*$/`
-4. **Auto-fallback** — if the DSL parser fails, the expression falls back to `raw_sql` (pass-through). This means invalid DSL syntax won't crash compilation, but you lose transpilation.
-5. **Functions not in catalog** — pass through verbatim (forward-compatible with new SQL functions)
+4. **Quoting and comments** — unterminated strings, quoted identifiers, and comments are rejected. Nested block comments and executable comments are conservatively rejected. `expr` and explicit `raw_sql()` use the same safety boundary, checked against the actual compiler dialect during code generation.
+5. **Auto-fallback** — outside strict mode, SQL that the DSL parser cannot represent may fall back to native SQL. Safety and target SQL validation still apply, so malformed quoting/comments and invalid native SQL can fail compilation. `--strict` rejects implicit fallback; explicit `raw_sql()` still requires valid, permitted SQL.
+6. **Functions not in catalog** — pass through verbatim (forward-compatible with new SQL functions)

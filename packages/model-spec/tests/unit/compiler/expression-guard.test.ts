@@ -75,6 +75,22 @@ describe.each(['expr', 'raw_sql'] as const)('%s expression boundary', (path) => 
 });
 
 describe('shared SQL lexical boundary', () => {
+  it.each<[string, SupportedDialect]>([
+    ['CALL"procedure_name"()', 'snowflake'],
+    ['id UNION SELECT"id" FROM other_records', 'postgres'],
+    ["1 UNION SELECT'value'", 'postgres'],
+    ['id EXCEPT SELECT"id" FROM other_records', 'postgres'],
+    ['id INTERSECT SELECT"id" FROM other_records', 'postgres'],
+    ['CALL`procedure_name`()', 'mysql'],
+    ['id UNION SELECT`id` FROM other_records', 'mysql'],
+  ])('keeps keyword boundaries adjacent to quoted contents: %s (%s)', (sql, dialect) => {
+    for (const expr of [sql, `raw_sql(${sql})`]) {
+      expect(TransformSpecSchema.safeParse(modelInput(expr)).success).toBe(false);
+      expect(() => transpileOrEmit(expr, dialect, dialect)).toThrow();
+    }
+    expect(() => emitExpr({ kind: 'raw_sql', sql }, dialect)).toThrow();
+  });
+
   it.each([
     'DROP TABLE records',
     'ALTER TABLE records ADD COLUMN extra VARCHAR',

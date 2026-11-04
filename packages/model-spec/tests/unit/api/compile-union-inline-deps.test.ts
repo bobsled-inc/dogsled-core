@@ -145,6 +145,38 @@ describe('UNION dependency inlining', () => {
     expect(sql).toContain('FROM __CTE_NESTED_MENTIONS');
   });
 
+  describe.each(['snowflake', 'bigquery', 'postgres', 'duckdb', 'databricks', 'mysql'] as const)(
+    '%s nested UNION dependencies',
+    (dialect) => {
+      it.each([
+        "'open ('",
+        "'close )'",
+        ...(dialect === 'snowflake' ? [] : ["'It''s open ('"]),
+        "raw_sql('label' /* open ( */)",
+        "raw_sql('label' -- close )\n)",
+        "'plain'",
+        "'balanced ()'",
+      ])('preserves quoted and commented parentheses in %s', (expr) => {
+        const bottom = model('bottom', 'example.directory', {
+          columns: [{ name: 'id', expr, type: 'VARCHAR' }],
+        });
+        const prepared = model('prepared', bottom.name);
+        const result = model('combined_records', 'example.directory', {
+          union: [{ ref: prepared.name, columns: [{ name: 'id', expr: 'id' }] }],
+        });
+        const models = [result, prepared, bottom];
+        const sql = compile(models, { dialect }).toLowerCase();
+        expect(sql.match(/\bwith\b/g)).toHaveLength(1);
+        expect(sql.match(/__cte_bottom as \(/g)).toHaveLength(1);
+        expect(sql.match(/__cte_prepared as \(/g)).toHaveLength(1);
+        expect(sql).toContain('from __cte_prepared');
+        expect(sql).not.toContain('new_output_schema');
+        const physical = compile(models, { dialect, inlineDeps: false });
+        expect(physical.toLowerCase()).not.toContain('__cte_');
+      });
+    }
+  );
+
   it.each([true, false])('preserves branch star exclusions (inlineDeps=%s)', (inlineDeps) => {
     const columns = [
       { name: 'id', expr: 't0.id', type: 'VARCHAR' },

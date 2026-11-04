@@ -1,6 +1,6 @@
 /**
- * Extract syntax for the expression safety check, replacing quoted values and
- * identifiers with inert tokens and comments with whitespace. The expression
+ * Extract syntax for expression safety and CTE hoisting, replacing quoted values
+ * and identifiers with inert tokens and comments with whitespace. The expression
  * DSL lexer cannot do this: native SQL intentionally falls back from that parser.
  *
  * Schemas have no dialect yet. Codegen checks again with the actual dialect, so
@@ -61,6 +61,7 @@ const quoting: Record<SupportedDialect, Quoting[]> = {
   clickhouse: [clickhouse],
 };
 
+/** Syntax masks preserve input length and character offsets for structural scans. */
 export function expressionSyntaxVariants(sql: string, dialect?: SupportedDialect): string[] {
   const variants: string[] = [];
   const profiles = dialect
@@ -88,6 +89,7 @@ function expressionSyntax(
   let endsInLineComment = false;
   let i = 0;
   while (i < sql.length) {
+    const tokenStart = i;
     const ch = sql[i]!;
     const afterDash = sql.charCodeAt(i + 2);
     const dashComment =
@@ -101,7 +103,7 @@ function expressionSyntax(
     if (dashComment || hashComment || slashComment) {
       while (i < sql.length && sql[i] !== '\n' && sql[i] !== '\r') i++;
       endsInLineComment = i === sql.length;
-      parts.push(' ');
+      parts.push(' '.repeat(i - tokenStart));
       continue;
     }
     if (sql.startsWith('/*', i)) {
@@ -111,7 +113,7 @@ function expressionSyntax(
       const nested = sql.indexOf('/*', i + 2);
       if (sql[i + 2] === '!' || end < 0 || (nested >= 0 && nested < end)) return;
       i = end + 2;
-      parts.push(' ');
+      parts.push(' '.repeat(i - tokenStart));
       continue;
     }
     if (ch === '$') {
@@ -121,7 +123,7 @@ function expressionSyntax(
         const end = sql.indexOf(tag, i + tag.length);
         if (end < 0) return;
         i = end + tag.length;
-        parts.push(' 0 ');
+        parts.push('?'.padEnd(i - tokenStart, ' '));
         continue;
       }
     }
@@ -174,7 +176,7 @@ function expressionSyntax(
         }
       }
       if (!closed) return;
-      parts.push(' 0 ');
+      parts.push('?'.padEnd(i - tokenStart, ' '));
       continue;
     }
     parts.push(ch);

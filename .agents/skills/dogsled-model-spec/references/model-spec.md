@@ -830,8 +830,10 @@ Plain `materialization: { type: materialized_view }` works on Snowflake / Postgr
 
 ### Expression Safety
 
-- No semicolons allowed
-- No DDL keywords at start: `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT`, `REVOKE`
+- Quoted semicolons are allowed, for example `listagg(t0.company_id, '; ')` or a CASE label. Statement separators outside quoted literals are rejected.
+- Prohibited command prefixes, including `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT`, and `REVOKE`, and unquoted `UNION`/`EXCEPT`/`INTERSECT SELECT` operations are rejected. Comments cannot hide them; quoted keywords remain literal data.
+- Unterminated strings, quoted identifiers, and comments fail validation. Nested block comments and executable comments are conservatively rejected.
+- Ordinary expressions and explicit `raw_sql()` share these checks. Native SQL fallback still requires valid quoting/comments and valid SQL for the compiler dialect; it does not guarantee that every expression will compile.
 
 ## Examples
 
@@ -972,17 +974,17 @@ materialization:
 columns:
   - name: BAD
     expr: "ID; DROP TABLE users"
-# ^ Semicolons are rejected
+# ^ Statement separators outside quoted literals are rejected
 ```
 
 ## Troubleshooting
 
-| Error                                                      | Cause                       | Fix                            |
-| ---------------------------------------------------------- | --------------------------- | ------------------------------ |
-| `Must be a valid identifier`                               | Name contains invalid chars | Use only `[a-zA-Z_]\w*`        |
-| `Must be a dotted identifier`                              | Table missing schema prefix | Use `SCHEMA.TABLE` format      |
-| `unique_key is required for incremental strategy "merge"`  | Missing unique_key          | Add `unique_key` field         |
-| `incremental_filter is required for append strategy`       | Missing filter              | Add `incremental_filter`       |
-| `Expression must not contain semicolons or DDL statements` | Dangerous SQL detected      | Remove semicolons/DDL keywords |
-| `At least one column is required`                          | Empty columns array         | Add at least one column        |
-| `Description is required`                                  | Missing model description   | Add `description` field        |
+| Error                                                                                                                                               | Cause                                               | Fix                                                                                                                                       |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `Must be a valid identifier`                                                                                                                        | Name contains invalid chars                         | Use only `[a-zA-Z_]\w*`                                                                                                                   |
+| `Must be a dotted identifier`                                                                                                                       | Table missing schema prefix                         | Use `SCHEMA.TABLE` format                                                                                                                 |
+| `unique_key is required for incremental strategy "merge"`                                                                                           | Missing unique_key                                  | Add `unique_key` field                                                                                                                    |
+| `incremental_filter is required for append strategy`                                                                                                | Missing filter                                      | Add `incremental_filter`                                                                                                                  |
+| `Expression must have terminated SQL quoting/comments and must not contain statement separators, DDL/command statements, or UNION/EXCEPT/INTERSECT` | Malformed quoting/comments or prohibited SQL syntax | Close quoted contents and comments; remove statement separators and prohibited operations from SQL syntax. Quoted semicolons are allowed. |
+| `At least one column is required`                                                                                                                   | Empty columns array                                 | Add at least one column                                                                                                                   |
+| `Description is required`                                                                                                                           | Missing model description                           | Add `description` field                                                                                                                   |

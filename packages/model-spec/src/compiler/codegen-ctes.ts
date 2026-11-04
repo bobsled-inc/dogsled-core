@@ -2,6 +2,7 @@
 import { transpileOrEmit, type CodegenOptions } from './codegen-expressions.js';
 import { caseName, getOrThrow, type SupportedDialect } from './dialect.js';
 import type { ResolvedTransformSpec } from './parser.js';
+import { expressionSyntaxVariants } from './sql-expression-syntax.js';
 
 // ---------------------------------------------------------------------------
 // Helper: Nested CTE hoisting
@@ -15,9 +16,13 @@ import type { ResolvedTransformSpec } from './parser.js';
  * the inner CTE definitions and returns the bare SELECT body, allowing
  * the caller to hoist all CTEs to the top-level WITH clause.
  *
- * Handles arbitrarily nested parentheses within CTE bodies.
+ * Count only syntax parentheses; quoted contents and comments remain untouched
+ * in the extracted SQL bodies.
  */
-function hoistNestedCtes(sql: string): {
+function hoistNestedCtes(
+  sql: string,
+  dialect: SupportedDialect
+): {
   innerCteDefs: Array<{ cteName: string; sql: string }>;
   body: string;
   recursive: boolean;
@@ -26,6 +31,8 @@ function hoistNestedCtes(sql: string): {
   if (!trimmed.toUpperCase().startsWith('WITH ')) {
     return { innerCteDefs: [], body: sql, recursive: false };
   }
+  const syntax = expressionSyntaxVariants(trimmed, dialect)[0];
+  if (syntax === undefined) throw new Error('Cannot hoist CTE definitions from malformed SQL');
 
   const innerCteDefs: Array<{ cteName: string; sql: string }> = [];
   let pos = 5; // skip 'WITH '
@@ -37,56 +44,57 @@ function hoistNestedCtes(sql: string): {
   // Snowflake and BigQuery.
   let recursive = false;
   {
-    const afterWith = trimmed.slice(pos).trimStart();
+    const afterWith = syntax.slice(pos).trimStart();
     if (/^RECURSIVE\b/i.test(afterWith)) {
       recursive = true;
-      pos = trimmed.length - afterWith.length + 'RECURSIVE'.length;
+      pos = syntax.length - afterWith.length + 'RECURSIVE'.length;
     }
   }
 
   // Skip whitespace
-  while (pos < trimmed.length && /\s/.test(trimmed[pos]!)) pos++;
+  while (pos < syntax.length && /\s/.test(syntax[pos]!)) pos++;
 
   // Parse CTE definitions: name AS (...), name AS (...), ... SELECT
-  while (pos < trimmed.length) {
+  while (pos < syntax.length) {
     // Read CTE name
     const nameStart = pos;
-    while (pos < trimmed.length && /\w/.test(trimmed[pos]!)) pos++;
+    while (pos < syntax.length && /\w/.test(syntax[pos]!)) pos++;
     const cteName = trimmed.slice(nameStart, pos);
     if (!cteName) break;
 
     // Skip whitespace
-    while (pos < trimmed.length && /\s/.test(trimmed[pos]!)) pos++;
+    while (pos < syntax.length && /\s/.test(syntax[pos]!)) pos++;
 
     // Expect 'AS'
-    if (trimmed.slice(pos, pos + 2).toUpperCase() !== 'AS') break;
+    if (syntax.slice(pos, pos + 2).toUpperCase() !== 'AS') break;
     pos += 2;
 
     // Skip whitespace
-    while (pos < trimmed.length && /\s/.test(trimmed[pos]!)) pos++;
+    while (pos < syntax.length && /\s/.test(syntax[pos]!)) pos++;
 
     // Expect '(' — read balanced parens for the CTE body
-    if (trimmed[pos] !== '(') break;
+    if (syntax[pos] !== '(') break;
     pos++; // skip opening '('
     let depth = 1;
     const bodyStart = pos;
-    while (pos < trimmed.length && depth > 0) {
-      if (trimmed[pos] === '(') depth++;
-      else if (trimmed[pos] === ')') depth--;
+    while (pos < syntax.length && depth > 0) {
+      if (syntax[pos] === '(') depth++;
+      else if (syntax[pos] === ')') depth--;
       if (depth > 0) pos++;
     }
+    if (depth !== 0) throw new Error('Cannot hoist CTE definitions from malformed SQL');
     const cteBody = trimmed.slice(bodyStart, pos);
     pos++; // skip closing ')'
 
     innerCteDefs.push({ cteName, sql: cteBody });
 
     // Skip whitespace
-    while (pos < trimmed.length && /\s/.test(trimmed[pos]!)) pos++;
+    while (pos < syntax.length && /\s/.test(syntax[pos]!)) pos++;
 
     // If next char is ',', there are more CTEs
-    if (trimmed[pos] === ',') {
+    if (syntax[pos] === ',') {
       pos++;
-      while (pos < trimmed.length && /\s/.test(trimmed[pos]!)) pos++;
+      while (pos < syntax.length && /\s/.test(syntax[pos]!)) pos++;
       continue;
     }
 
@@ -141,7 +149,7 @@ export function buildCteDefinitions(
    * A hoisted recursive definition marks the whole assembled WITH as RECURSIVE.
    */
   function addCteWithHoisting(cteName: string, rawSql: string): void {
-    const hoisted = hoistNestedCtes(rawSql);
+    const hoisted = hoistNestedCtes(rawSql, dialect);
     const { innerCteDefs, body } = hoisted;
     if (hoisted.recursive) recursive = true;
     // Add inner (dependency) CTEs first

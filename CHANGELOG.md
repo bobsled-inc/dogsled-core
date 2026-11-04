@@ -6,7 +6,7 @@
 
 - Model Spec expressions accept semicolons and SQL keywords inside quoted literals, including CASE labels and LISTAGG separators. Expression and `raw_sql` validation share a lexical check that continues to reject statement separators, prohibited commands, and malformed quoting or comments.
 
-- Dependency inlining now includes every UNION branch. SELECT-only compilation with `inlineDeps` can query source-only SQL models before their derived tables or output schema exist; named dependency sets, branch projections, and filters retain their existing behavior.
+- Dependency inlining now includes every UNION branch. SELECT-only compilation with `inlineDeps` can query source-only SQL models before their derived tables or output schema exist; named dependency sets, branch projections, and filters retain their existing behavior. Hoisting nested dependencies preserves quoted contents and comments that contain parentheses.
 
 - A model's `target_database` and `publish.target_database` accept BigQuery project ids with consecutive hyphens, such as `acme-analytics--prod`, which GCP allows. A leading or trailing hyphen is still rejected.
 
