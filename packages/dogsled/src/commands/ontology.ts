@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { createInterface } from 'node:readline';
+import { boundedLines } from '../lib/bounded-lines.js';
 import { resolve } from 'node:path';
 import { stringify } from 'yaml';
 import {
@@ -58,13 +58,12 @@ export async function serveOntologyMcp(options: Options): Promise<void> {
     projectRoot: resolve(options.projectRoot ?? '.'),
     authorize: (mode) => mode === 'read' || options.allowWrite === true,
   });
-  const lines = createInterface({ input: process.stdin, terminal: false });
+  const lines = boundedLines(process.stdin, 1_000_000);
   const send = (value: unknown) => process.stdout.write(`${JSON.stringify(value)}\n`);
   try {
     for await (const line of lines) {
       let id: unknown = null;
       try {
-        if (Buffer.byteLength(line) > 1_000_000) throw new Error('MCP request exceeds 1 MB.');
         const request = JSON.parse(line) as {
           id?: string | number;
           method?: string;
@@ -99,8 +98,15 @@ export async function serveOntologyMcp(options: Options): Promise<void> {
         });
       }
     }
-  } finally {
-    lines.close();
+  } catch (error) {
+    send({
+      jsonrpc: '2.0',
+      id: null,
+      error: {
+        code: -32600,
+        message: error instanceof Error ? error.message : 'Invalid MCP input.',
+      },
+    });
   }
 }
 export function registerOntologyCommand(program: Command): void {

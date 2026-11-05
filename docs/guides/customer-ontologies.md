@@ -67,9 +67,15 @@ dogsled ontology validate --strict --json
 ```
 
 Validation checks document shapes, names, inheritance, relationship roles,
-identifiers, and mapping references. Direct `dataset.field` expressions have field
-reference checks. Other mapping expressions and rule expressions are preserved
-with `expression_not_verified` warnings. Strict validation fails on these warnings.
+identifiers, namespace IRIs, and mapping references. Direct `dataset.field`
+expressions have field reference checks. Rule checks cover concept and role names,
+inherited relationship navigation, role arguments, comparisons, `AND`, `OR`, `NOT`,
+and `EXISTS`. They check reference types and required role coverage, including
+recursive declarations, without computing results. Rules are limited to 1000 tokens
+and 64 nesting levels during checking. Other rule syntax and complex mapping
+expressions remain context with `expression_not_verified` warnings. Strict
+validation fails on these warnings. Static validation is not proof that a rule
+holds in the data.
 Dogsled does not execute rules or check warehouse rows during these operations.
 
 An unmapped ontology is valid. Missing ontology or model bindings make a mapping
@@ -90,9 +96,11 @@ dogsled ontology delete business/concepts.yml --yaml
 
 These commands preview changes. Add `--apply` to write. Create the parent folder
 first. Creation never overwrites a file. Patches preserve unrelated YAML comments.
-A rename is a patch to `name`; the preview lists affected mapping files. Update
+A rename is a patch to `name`; the preview lists affected mapping and relationship
+extraction files. Unresolved extraction references also appear in validation. Update
 those references in the same draft before deploying. Delete never deletes related
-files automatically. Edits can leave a draft with reported reference errors.
+files automatically. Edits can leave a draft with reported reference errors. A draft with schema errors
+can be repaired or deleted if its YAML and declared file type remain readable.
 
 ## Exchange Ossie documents
 

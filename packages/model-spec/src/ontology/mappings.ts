@@ -1,5 +1,5 @@
 import type { ProjectIndex } from '@bobsled-inc/project-index';
-import type { OntologyCatalogEntry, OntologyDiagnostic } from './catalog.js';
+import { BUILTIN_CONCEPTS, type OntologyCatalogEntry, type OntologyDiagnostic } from './catalog.js';
 import type { OntologyDocument, OntologyMappingDocument } from './schema.js';
 
 export function validateMapping(
@@ -101,7 +101,14 @@ export function validateMapping(
     const c = concepts.get(concept);
     if (typeof m['expression'] === 'string') {
       expression(m['expression'], `${path}/expression`);
-      if (!referent && c?.type === 'EntityType' && identifiers(concept).length !== 1) {
+      const ids = identifiers(concept);
+      const target =
+        ids.length === 1 ? relationship(concept, ids[0]!)?.roles?.[0]?.concept : undefined;
+      const simple =
+        target &&
+        (concepts.get(target)?.type === 'ValueType' ||
+          (BUILTIN_CONCEPTS.has(target) && target !== 'Any'));
+      if (c?.type === 'EntityType' && (referent || !simple)) {
         report(
           'compound_identifier',
           path,

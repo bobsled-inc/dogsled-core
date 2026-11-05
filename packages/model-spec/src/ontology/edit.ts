@@ -20,6 +20,7 @@ import { applyPatch, writeYamlDocument } from '../edit/yaml-document.js';
 import { assertBounded, parseOssieYaml } from '../interchange/common.js';
 import { readConversionText } from '../interchange/files.js';
 import { parseOntologyDocument } from './schema.js';
+import { extractionReferences } from './extraction-references.js';
 import { loadOntologyCatalog } from './catalog.js';
 
 export interface OntologyEditRequest {
@@ -70,8 +71,16 @@ export function editOntologyFile(root: string, request: OntologyEditRequest) {
   }
   const previous =
     request.content === undefined
-      ? parseOntologyDocument(parseOssieYaml(readConversionText(target), request.path))
+      ? (parseOssieYaml(readConversionText(target), request.path) as Record<string, unknown>)
       : undefined;
+  if (
+    request.content === undefined &&
+    (!previous ||
+      typeof previous !== 'object' ||
+      (previous['type'] !== 'ontology' && previous['type'] !== 'ontology_mapping'))
+  ) {
+    throw new CommandError('Only ontology and ontology_mapping files can be edited here.', 2);
+  }
   let content: string | undefined;
   if (!request.delete) {
     if (request.content !== undefined) content = request.content;
@@ -94,6 +103,12 @@ export function editOntologyFile(root: string, request: OntologyEditRequest) {
       );
     })
     .map((e) => e.path);
+  affectedPaths.push(
+    ...extractionReferences(index)
+      .filter((e) => previous?.['type'] === 'ontology' && e.ref['ontology'] === previous['name'])
+      .map((e) => e.path)
+      .filter((path) => !affectedPaths.includes(path))
+  );
   const next = indexProjectFiles([
     ...index.entries
       .filter((e) => e.path !== request.path)

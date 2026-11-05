@@ -1,3 +1,6 @@
+import { validateExtractionReferences } from './extraction-references.js';
+import { validateOntologyIris } from './iris.js';
+import { validateOntologyRules } from './rules.js';
 import { validateMapping } from './mappings.js';
 import { createHash } from 'node:crypto';
 import { assertCompleteProjectIndex, type ProjectIndex } from '@bobsled-inc/project-index';
@@ -197,6 +200,7 @@ export function loadOntologyCatalog(index: ProjectIndex): OntologyCatalog {
       });
     }
   }
+  validateExtractionReferences(index, catalog);
   return catalog;
 }
 
@@ -211,6 +215,7 @@ function validateDefinition(
     message: string,
     severity: 'error' | 'warning' = 'error'
   ) => diagnostics.push({ code, filePath: entry.path, fieldPath, severity, message });
+  validateOntologyIris(document, report);
   const concepts = new Map<string, OntologyConcept>();
   document.ontology.forEach((c, i) => {
     if (concepts.has(c.concept) || BUILTIN_CONCEPTS.has(c.concept)) {
@@ -240,16 +245,6 @@ function validateDefinition(
   };
   document.ontology.forEach((c, i) => {
     const base = `/ontology/${i}`;
-    const checkIri = (iri: string | undefined, fieldPath: string) => {
-      if (!iri) return;
-      if (/^[a-z][a-z0-9+.-]*:\/\//iu.test(iri) || /^(urn|mailto):/iu.test(iri)) return;
-      const prefix = iri.split(':')[0]!;
-      if (!iri.includes(':') || !document.prefixes?.[prefix]) {
-        report('unknown_prefix', fieldPath, `Undeclared IRI prefix ${prefix}`);
-      }
-    };
-    checkIri(c.iri, `${base}/iri`);
-    c.relationships?.forEach((r, j) => checkIri(r.iri, `${base}/relationships/${j}/iri`));
     (c.extends ?? []).forEach((parent, p) => {
       if (!kind(parent)) {
         report('unknown_concept', `${base}/extends/${p}`, `Unknown concept ${parent}`);
@@ -335,25 +330,5 @@ function validateDefinition(
       });
     });
   });
-  // Do not execute expressions or confuse a parsed string with a verified business rule.
-  const walk = (value: unknown, path: string): void => {
-    if (Array.isArray(value)) {
-      value.forEach((v, i) => walk(v, `${path}/${i}`));
-      return;
-    }
-    if (!value || typeof value !== 'object') return;
-    for (const [key, v] of Object.entries(value)) {
-      if ((key === 'requires' || key === 'derived_by') && Array.isArray(v)) {
-        v.forEach((_, i) =>
-          report(
-            'expression_not_verified',
-            `${path}/${key}/${i}`,
-            'Rule text is preserved as context. Its expression semantics have not been verified.',
-            'warning'
-          )
-        );
-      } else walk(v, `${path}/${key}`);
-    }
-  };
-  walk(document, '');
+  validateOntologyRules(document, report);
 }

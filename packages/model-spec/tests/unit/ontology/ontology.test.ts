@@ -59,7 +59,7 @@ describe('customer ontology catalog', () => {
       })
     );
   });
-  it('rejects inheritance cycles but preserves recursive derivations as labeled context', () => {
+  it('rejects inheritance cycles but validates recursive rule references without execution', () => {
     expect(
       catalog({
         ...definition,
@@ -70,10 +70,7 @@ describe('customer ontology catalog', () => {
       ...definition,
       ontology: [{ concept: 'Order', type: 'EntityType', derived_by: ['Order'] }],
     });
-    expect(recursive.diagnostics).toContainEqual(
-      expect.objectContaining({ code: 'expression_not_verified', severity: 'warning' })
-    );
-    expect(recursive.diagnostics.some((d) => d.severity === 'error')).toBe(false);
+    expect(recursive.diagnostics).toEqual([]);
   });
   it('rejects duplicate identities without choosing a definition', () => {
     const loaded = loadOntologyCatalog(
