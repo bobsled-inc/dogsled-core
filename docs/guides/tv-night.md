@@ -28,6 +28,20 @@ For optional SQL exploration, you can start [DuckDB UI](https://duckdb.org/docs/
 
 The API-backed Wikipedia query joins remote article rows to local tables and shows cache receipts. The earlier TVmaze ETL is ingestion, not the federation demonstration. Read the example's source licenses before sharing fetched data or adapted text.
 
+## Ontologies in Chapter 3
+
+The model chapter also introduces an ontology for `Episode → Show → ProductionStatus`.
+It explains why episode counts are not show counts, and why “Ended” does not prove
+that a story reaches a conclusion. Its mapping uses the existing warehouse source
+fields, including `episodes.show_id` and `shows.id`.
+
+The agent adapts the [ontology template](../../packages/dogsled/examples/tv-night/reference/context/tv-night.ontology.yml.txt)
+and [mapping template](../../packages/dogsled/examples/tv-night/reference/context/tv-night.mapping.yml.txt)
+with the learner at that chapter. They stay inactive in the starter. Inspect them
+with `dogsled ontology describe tv_night --concept Episode --yaml` and validate
+with `dogsled ontology validate --strict`. No database or provider call is needed
+for these definition checks.
+
 ## Shared tutorial engine
 
 TV Night uses the shared `onboarding` engine for progress, saved checks, inspection

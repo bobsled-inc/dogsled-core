@@ -1,3 +1,4 @@
+import { registerOntologyCommand } from './commands/ontology.js';
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -77,6 +78,7 @@ export function buildProgram(): Command {
   program.hook('preAction', applyJsonDefault);
 
   // First-run
+  registerOntologyCommand(program);
   registerInitCommand(program);
   registerDoctorCommand(program);
 

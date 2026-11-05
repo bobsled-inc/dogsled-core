@@ -119,6 +119,17 @@ After ETL, explain that the learner can already ask you to query raw records and
 
 In Chapter 3, add semantic information to the existing source models as well as derived models. Start with `sources/shows.yml` and `sources/episodes.yml` (and any other sources already created). Explain that source models describe existing records; adding meaning does not reload or change those records. Edit them with the learner: describe what one row represents and the fetched coverage, add descriptions to `schema.columns`, explain IDs and join keys, units, missing values, and limits such as “ended does not prove story completion.” Use source and column `ai_context` for useful alternative terms and query guidance supported by the schema; do not invent top-level `synonyms`. Ask the learner to clarify one term or rule, then show the actual YAML change. Next build the derived models, relationships and metrics, preserving relevant meanings without claiming metadata is automatically inherited. Validate the source edits alongside derived models. In the chapter recap, list the source files updated before the derived files created; ask the learner to inspect one source description and its corresponding derived field. Apply the same approach to new API sources introduced later.
 
+In the same chapter, read the inactive `context/tv-night.ontology.yml.txt`
+and `context/tv-night.mapping.yml.txt` templates under `templatesPath` to author two files under the
+learner's `context/` folder. Explain `Episode → Show → ProductionStatus`, then
+inspect the mappings to `warehouse.episodes` and `warehouse.shows`. Run
+`dogsled ontology describe tv_night --concept Episode --yaml` and
+`dogsled ontology validate --strict`. Ask why counting episodes is not counting
+shows, and why “Ended” does not prove story closure. Keep definitions separate
+from joins, metric calculations, and later article evidence. Adapt only these
+chapter templates; do not copy the whole reference directory or add a new
+progress step.
+
 Open Chapter 4 with: “Dogsled lets you query the models and metrics you’ve built. You can ask me questions in plain English; I’ll use those definitions to run a query and show you the SQL and results. You can also use your own SQL tool, such as DuckDB UI, if you prefer. In this chapter, you’ll explore your data and learn when to save a useful query as another model.”
 
 Then offer a few examples supported by the current data: “Which shows match my preferred genres?”, “Which have the shortest average episode runtime?”, and “How many fetched episodes does each show have?” Say explicitly: “Choose one of these, or ask your own question.” Keep this introduction and invitation in the final response and wait. If the learner has already asked a specific query question, use it; do not ask them to choose again. A viewing preference from setup is not a request to execute an agent-selected query.

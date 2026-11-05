@@ -349,6 +349,12 @@ const ossieManifest = await generateProjectManifest({ projectRoot: ossieRoot });
 assert(ossieManifest.pipelines[0]?.kind === 'models', 'Ossie model manifest was not generated');
 assert(ossieManifest.pipelines[0]?.nodes.length === 1, 'Ossie model node was not generated');
 
+const ontologyApi = await import('@bobsled-inc/dogsled/ontology');
+const nativeOntology = {spec_version: '0.2', type: 'ontology', name: 'sales', ontology: [{concept: 'Order', type: 'EntityType'}]};
+assert(ontologyApi.parseOntologyDocument(nativeOntology).name === 'sales', 'Packed ontology parser failed');
+const ontologyExport = ontologyApi.exportOntologyDocuments([{path: 'sales.yml', document: nativeOntology}], {ossieVersion: '0.2.0.dev0'});
+assert(ontologyExport.ok && ontologyApi.importOntologyDocuments(ontologyExport.files).ok, 'Packed ontology round trip failed');
+
 const { importOssieDocuments, exportOssieDocument } = await import('@bobsled-inc/dogsled/model-spec/interchange');
 const exchangeDocument = JSON.parse(JSON.stringify(ossieDocument));
 const converted = importOssieDocuments({

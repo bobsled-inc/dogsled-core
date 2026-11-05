@@ -1,0 +1,14 @@
+spec_version: '0.2'
+type: ontology_mapping
+name: warehouse_orders
+ontology_ref:
+  name: sales
+semantic_model_ref:
+  name: sales_data
+  bindings:
+    datasets:
+      orders: warehouse.orders
+concept_mappings:
+  - concept: Order
+    object_mappings:
+      - expression: orders.order_number

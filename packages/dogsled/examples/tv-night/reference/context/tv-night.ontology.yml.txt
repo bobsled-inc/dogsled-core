@@ -1,0 +1,42 @@
+spec_version: '0.2'
+type: ontology
+name: tv_night
+description: TV series and the episodes fetched for them. Definitions do not prove a recommendation fits the viewer.
+ontology:
+  - concept: ShowId
+    type: ValueType
+    extends: [Integer]
+  - concept: EpisodeId
+    type: ValueType
+    extends: [Integer]
+  - concept: ProductionStatus
+    type: ValueType
+    description: The source's production status. Ended may mean cancelled; it does not prove the story reaches a conclusion.
+    extends: [String]
+  - concept: Show
+    type: EntityType
+    description: A TV series, not a single episode. Different shows can share a title; identify them by TVmaze show ID.
+    identify_by: [id]
+    relationships:
+      - name: id
+        roles: [{ concept: ShowId }]
+        multiplicity: OneToOne
+        verbalizes: ['{Show} has TVmaze identifier {ShowId}']
+      - name: production_status
+        roles: [{ concept: ProductionStatus }]
+        multiplicity: ManyToOne
+        verbalizes: ['{Show} has production status {ProductionStatus}']
+  - concept: Episode
+    type: EntityType
+    description: One fetched episode. Season and episode numbers are not global identifiers. Counts cover only fetched records, not necessarily a whole series.
+    identify_by: [id]
+    relationships:
+      - name: id
+        roles: [{ concept: EpisodeId }]
+        multiplicity: OneToOne
+        verbalizes: ['{Episode} has TVmaze identifier {EpisodeId}']
+      - name: part_of
+        description: Each episode belongs to one show. A show can have many episodes.
+        roles: [{ concept: Show }]
+        multiplicity: ManyToOne
+        verbalizes: ['{Episode} is part of {Show}']

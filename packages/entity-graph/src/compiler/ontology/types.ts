@@ -1,3 +1,4 @@
+import type { OntologyCatalog } from '@bobsled-inc/model-spec/ontology';
 import type {
   RelationshipOntologyRelation,
   RelationshipOntologySpec,
@@ -7,6 +8,7 @@ export interface ParsedRelationshipOntologySpec {
   name: string;
   filePath: string;
   raw: RelationshipOntologySpec;
+  customerOntologyCatalog?: OntologyCatalog;
 }
 
 export interface ResolvedRelationshipOntology {

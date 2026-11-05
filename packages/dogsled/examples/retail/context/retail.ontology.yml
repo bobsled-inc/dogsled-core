@@ -1,0 +1,51 @@
+spec_version: '0.2'
+type: ontology
+name: retail
+description: Products, their suppliers, and the sales lines that record purchases.
+ontology:
+  - concept: ProductId
+    type: ValueType
+    extends: [String]
+  - concept: SupplierId
+    type: ValueType
+    extends: [String]
+  - concept: SalesLineId
+    type: ValueType
+    extends: [String]
+  - concept: Supplier
+    type: EntityType
+    description: A supplier in the product catalog, not a customer placing an order.
+    identify_by: [id]
+    relationships:
+      - name: id
+        roles: [{ concept: SupplierId }]
+        multiplicity: OneToOne
+        verbalizes: ['{Supplier} has identifier {SupplierId}']
+  - concept: Product
+    type: EntityType
+    description: A catalog item. Use product_id to connect sales, stock, and feedback.
+    identify_by: [id]
+    relationships:
+      - name: id
+        roles: [{ concept: ProductId }]
+        multiplicity: OneToOne
+        verbalizes: ['{Product} has identifier {ProductId}']
+      - name: supplied_by
+        description: Each product in this tutorial has one catalog supplier.
+        roles: [{ concept: Supplier }]
+        multiplicity: ManyToOne
+        verbalizes: ['{Product} is supplied by {Supplier}']
+  - concept: SalesLine
+    type: EntityType
+    description: One line in an order. Its quantity can exceed one, so line count is not units sold.
+    identify_by: [id]
+    relationships:
+      - name: id
+        roles: [{ concept: SalesLineId }]
+        multiplicity: OneToOne
+        verbalizes: ['{SalesLine} has identifier {SalesLineId}']
+      - name: product
+        description: The product recorded on this sales line. One product can appear on many lines.
+        roles: [{ concept: Product }]
+        multiplicity: ManyToOne
+        verbalizes: ['{SalesLine} records a purchase of {Product}']

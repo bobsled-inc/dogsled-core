@@ -28,8 +28,10 @@ export const lessons: TutorialDefinition['lessons'] = {
   },
   model: {
     learn:
-      'Business definitions make metrics useful. Exclude cancelled orders, subtract refunds, and count each product-day once across stores.',
+      'Use the ontology to follow sales lines to products and suppliers. A line is not a unit sold. Semantic models exclude cancelled orders, subtract refunds, and count each product-day once.',
     files: [
+      'context/retail.ontology.yml',
+      'context/retail.mapping.yml',
       'models/product_performance.yml',
       'models/product_in_stock_days.yml',
       'models/product_sales_summary.yml',
@@ -84,6 +86,8 @@ const commands: Record<string, [string, string][]> = {
     ],
   ],
   model: [
+    ['Read business relationships', 'dogsled ontology describe retail --concept SalesLine --yaml'],
+    ['Validate ontology mappings', 'dogsled ontology validate --strict --json'],
     ['Build product performance', 'dogsled model run +product_performance --integration warehouse'],
   ],
   query: [

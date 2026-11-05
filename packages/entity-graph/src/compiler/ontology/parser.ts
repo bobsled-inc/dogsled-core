@@ -1,3 +1,6 @@
+import { scanProject } from '@bobsled-inc/project-index';
+import { loadOntologyCatalog } from '@bobsled-inc/model-spec/ontology';
+import { resolveCustomerOntologyReference } from './customer-reference.js';
 import * as fs from 'node:fs';
 
 import YAML from 'yaml';
@@ -57,27 +60,51 @@ export function parseRelationshipOntologySpec(filePath: string): ParsedRelations
 }
 
 export function discoverRelationshipOntologySpecs(
-  mdmDir: string
+  mdmDir: string,
+  projectRoot: string = mdmDir
 ): ParsedRelationshipOntologySpec[] {
-  return discoverSpecsOfType(mdmDir, 'relationship_ontology', parseSpecFromRaw, {
+  const specs = discoverSpecsOfType(mdmDir, 'relationship_ontology', parseSpecFromRaw, {
     label: 'relationship ontology',
     makeError: (message) => new CommandError(message, 2),
   });
+  if (specs.some((spec) => spec.raw.relations.some((relation) => relation.ontology_ref))) {
+    const catalog = loadOntologyCatalog(scanProject(projectRoot));
+    for (const spec of specs) spec.customerOntologyCatalog = catalog;
+  }
+  return specs;
 }
 
 export function resolveRelationshipOntologySpec(
   parsed: ParsedRelationshipOntologySpec
 ): ResolvedRelationshipOntology {
+  const relations = parsed.raw.relations.map((relation) => {
+    if (!relation.ontology_ref) return relation;
+    if (!parsed.customerOntologyCatalog) {
+      throw new CommandError('Resolve customer ontology references with the project catalog.', 2);
+    }
+    const shared = resolveCustomerOntologyReference(
+      parsed.customerOntologyCatalog,
+      relation.ontology_ref,
+      relation.cardinality
+    );
+    if (relation.description && relation.description !== shared.description) {
+      throw new CommandError(
+        'Local relationship description conflicts with the customer ontology.',
+        2
+      );
+    }
+    return { ...relation, description: shared.description };
+  });
   const entityTypes = new Set<string>();
-  for (const relation of parsed.raw.relations) {
+  for (const relation of relations) {
     entityTypes.add(relation.left_entity);
     entityTypes.add(relation.right_entity);
   }
 
   return {
     name: parsed.raw.name,
-    ontologyVersion: `${parsed.raw.name}@${parsed.raw.spec_version}`,
-    relations: parsed.raw.relations,
+    ontologyVersion: `${parsed.raw.name}@${parsed.raw.spec_version}${parsed.customerOntologyCatalog ? `:${parsed.customerOntologyCatalog.version}` : ''}`,
+    relations,
     relationTypes: parsed.raw.relations.map((relation) => relation.relation_type),
     entityTypes: [...entityTypes].sort(),
   };

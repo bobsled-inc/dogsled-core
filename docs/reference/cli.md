@@ -26,6 +26,8 @@ Options:
   -h, --help                       display help for command
 
 Commands:
+  ontology                         Author, validate, and exchange customer
+                                   ontologies
   init [options] [project-name]    Initialize a new Dogsled project
   doctor [options]                 Check Dogsled project health
   extract [options]                Extractor commands
@@ -62,6 +64,169 @@ Commands:
   onboarding                       Inspect tutorial progress and render its
                                    local data explorer
   help [command]                   display help for command
+```
+
+### `dogsled ontology`
+
+```text
+Usage: dogsled ontology [options] [command]
+
+Author, validate, and exchange customer ontologies
+
+Options:
+  -h, --help                       display help for command
+
+Commands:
+  list [options]                   List ontology and mapping files
+  describe [options] [name]        Read exact ontology definitions
+  validate [options]               Validate definitions without querying data
+  create [options] <path> <input>  Preview creation from a native YAML file
+  edit [options] <path> <patch>    Preview a patch from a YAML or JSON file
+  delete [options] <path>          Preview deletion and affected references
+  import [options] <inputs...>     Preview native files from Ossie documents
+  export [options]                 Preview Ossie ontology documents
+  serve [options]                  Serve config-only ontology MCP tools over
+                                   local stdio
+  help [command]                   display help for command
+```
+
+#### `dogsled ontology list`
+
+```text
+Usage: dogsled ontology list [options]
+
+List ontology and mapping files
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  -h, --help             display help for command
+```
+
+#### `dogsled ontology describe`
+
+```text
+Usage: dogsled ontology describe [options] [name]
+
+Read exact ontology definitions
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  --concept <name>       Exact concept name
+  --limit <count>        Maximum concepts (default: "50")
+  -h, --help             display help for command
+```
+
+#### `dogsled ontology validate`
+
+```text
+Usage: dogsled ontology validate [options]
+
+Validate definitions without querying data
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  --strict               Fail on unverified checks
+  -h, --help             display help for command
+```
+
+#### `dogsled ontology create`
+
+```text
+Usage: dogsled ontology create [options] <path> <input>
+
+Preview creation from a native YAML file
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  --apply                Write the new file
+  -h, --help             display help for command
+```
+
+#### `dogsled ontology edit`
+
+```text
+Usage: dogsled ontology edit [options] <path> <patch>
+
+Preview a patch from a YAML or JSON file
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  --apply                Apply the patch
+  -h, --help             display help for command
+```
+
+#### `dogsled ontology delete`
+
+```text
+Usage: dogsled ontology delete [options] <path>
+
+Preview deletion and affected references
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  --apply                Delete the file
+  -h, --help             display help for command
+```
+
+#### `dogsled ontology import`
+
+```text
+Usage: dogsled ontology import [options] <inputs...>
+
+Preview native files from Ossie documents
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  --connection <name>    Explicit connection for imported sources
+  -h, --help             display help for command
+```
+
+#### `dogsled ontology export`
+
+```text
+Usage: dogsled ontology export [options]
+
+Preview Ossie ontology documents
+
+Options:
+  --project-root <path>      Project root
+  --json                     JSON output
+  --yaml                     YAML output
+  --ossie-version <version>  Required ontology target: 0.2.0.dev0 (default:
+                             "0.1.1")
+  --strict                   Reject lossy conversion
+  --out <directory>          Write into a new directory
+  -h, --help                 display help for command
+```
+
+#### `dogsled ontology serve`
+
+```text
+Usage: dogsled ontology serve [options]
+
+Serve config-only ontology MCP tools over local stdio
+
+Options:
+  --project-root <path>  Project root
+  --json                 JSON output
+  --yaml                 YAML output
+  --allow-write          Permit file changes through MCP; previews are always
+                         available
+  -h, --help             display help for command
 ```
 
 ### `dogsled init`

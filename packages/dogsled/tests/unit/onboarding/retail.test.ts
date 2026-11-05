@@ -1,3 +1,4 @@
+import { createOntologyTools } from '@bobsled-inc/model-spec/ontology';
 import { mkdtemp, readFile, rm, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -16,6 +17,25 @@ it('scaffolds retail without completed models and renders through the shared eng
   roots.push(root);
   copyExample('retail', root);
   expect((await resolveTutorial(root)).id).toBe('retail');
+  const ontology = createOntologyTools({ projectRoot: root, authorize: () => true });
+  expect(await ontology.call('ontology_validate', { strict: true })).toMatchObject({
+    ok: true,
+    diagnostics: [],
+  });
+  const context = await ontology.call('ontology_describe', {
+    ontology: 'retail',
+    concept: 'SalesLine',
+  });
+  expect(context).toMatchObject({
+    concepts: expect.arrayContaining([
+      expect.objectContaining({ concept: 'SalesLine' }),
+      expect.objectContaining({ concept: 'Product' }),
+      expect.objectContaining({ concept: 'Supplier' }),
+    ]),
+    mappings: [
+      expect.objectContaining({ document: expect.objectContaining({ name: 'retail_warehouse' }) }),
+    ],
+  });
   await expect(access(join(root, 'reference'))).rejects.toThrow();
   await expect(access(join(root, 'models/product_performance.yml'))).rejects.toThrow();
   await expect(access(join(root, 'data.duckdb'))).rejects.toThrow();

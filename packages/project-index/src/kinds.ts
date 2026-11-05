@@ -32,6 +32,8 @@ export const PROJECT_FILE_KINDS = [
   'vq',
   'resolution',
   'relationship_ontology',
+  'ontology',
+  'ontology_mapping',
   'mention_extraction',
   'relationship_extraction',
   'agent_task_profile',

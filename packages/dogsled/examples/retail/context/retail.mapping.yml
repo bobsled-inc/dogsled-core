@@ -1,0 +1,31 @@
+spec_version: '0.2'
+type: ontology_mapping
+name: retail_warehouse
+ontology_ref: { name: retail }
+semantic_model_ref:
+  name: retail_catalog_and_sales
+  bindings:
+    datasets:
+      products: warehouse.products
+      suppliers: warehouse.suppliers
+      sales_order_lines: warehouse.sales_order_lines
+concept_mappings:
+  - concept: Supplier
+    object_mappings:
+      - expression: suppliers.supplier_id
+  - concept: Product
+    object_mappings:
+      - expression: products.product_id
+    link_mappings:
+      - object_mapping: { expression: products.product_id }
+        children:
+          - relationship: supplied_by
+            object_mapping: { concept: Supplier, expression: products.supplier_id }
+  - concept: SalesLine
+    object_mappings:
+      - expression: sales_order_lines.order_line_id
+    link_mappings:
+      - object_mapping: { expression: sales_order_lines.order_line_id }
+        children:
+          - relationship: product
+            object_mapping: { concept: Product, expression: sales_order_lines.product_id }
