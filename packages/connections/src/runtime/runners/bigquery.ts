@@ -56,6 +56,7 @@ interface BigQueryClientLike {
   createQueryJob(options: {
     query: string;
     location?: string;
+    jobTimeoutMs?: number;
     params?: SqlParams;
     parameterMode?: 'positional' | 'named';
     dryRun?: boolean;
@@ -128,6 +129,8 @@ export interface BuildBigQueryRunnerOptions {
   now?: () => number;
   /** Override the proactive-refresh skew (tests). Seconds before expiry. */
   skewSeconds?: number;
+  /** Server-side limit for each job this runner submits. BigQuery has no session setting. */
+  statementTimeoutMs?: number | undefined;
   /**
    * Override the BigQuery client constructor (tests). Receives the refreshable
    * `authClient` the runner built from `tokenProvider`, so a test can observe
@@ -188,6 +191,11 @@ export async function buildBigQueryRunner(
     authClient = createRefreshableAuthClient({ tokenSource, OAuth2Client });
   }
 
+  const jobLimit =
+    options?.statementTimeoutMs === undefined
+      ? {}
+      : { jobTimeoutMs: Math.ceil(options.statementTimeoutMs) };
+
   const loadClient = options?.loadClient ?? loadBigQuery;
   const client =
     options?.client ??
@@ -232,7 +240,7 @@ export async function buildBigQueryRunner(
   const run = async (sql: string, options?: SqlExecOptions): Promise<SqlRunResult> => {
     const job = await runCancellable(options?.signal, async (register) => {
       const [created] = await authRetry(
-        () => client.createQueryJob({ query: sql, location }),
+        () => client.createQueryJob({ query: sql, location, ...jobLimit }),
         options?.signal
       );
       register(() => cancelBigQueryJob(created));
@@ -272,6 +280,7 @@ export async function buildBigQueryRunner(
           client.createQueryJob({
             query: sql,
             location,
+            ...jobLimit,
             ...(params
               ? { params, parameterMode: Array.isArray(params) ? 'positional' : 'named' }
               : {}),
@@ -308,7 +317,7 @@ export async function buildBigQueryRunner(
     // so a 401 while polling never re-runs the export.
     const job = await runCancellable(opts.signal, async (register) => {
       const [created] = await authRetry(
-        () => client.createQueryJob({ query: exportSql, location }),
+        () => client.createQueryJob({ query: exportSql, location, ...jobLimit }),
         opts.signal
       );
       register(() => cancelBigQueryJob(created));

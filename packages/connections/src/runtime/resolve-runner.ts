@@ -64,6 +64,13 @@ export interface ResolveRunnerOptions {
    * credentials and behave exactly as before.
    */
   tokenProvider?: BigQueryTokenProvider;
+
+  /**
+   * Server-side limit, in milliseconds, for each statement on the runner this
+   * call opens. It covers that runner only, so other runners for the same
+   * integration keep the warehouse default. Unset leaves the default in place.
+   */
+  statementTimeoutMs?: number;
 }
 
 /**
@@ -83,6 +90,7 @@ export async function resolveRunner(
       warehouse: options.warehouse,
       queryTag,
       tokenProvider: options.tokenProvider,
+      statementTimeoutMs: options.statementTimeoutMs,
     });
   }
 
@@ -93,6 +101,7 @@ export async function resolveRunner(
       warehouse: options.warehouse,
       queryTag,
       tokenProvider: options.tokenProvider,
+      statementTimeoutMs: options.statementTimeoutMs,
     });
   }
 

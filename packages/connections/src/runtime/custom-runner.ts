@@ -48,6 +48,12 @@ export interface RunnerFactoryContext {
    * here so they can share the SAME refresh machinery.
    */
   tokenProvider?: BigQueryTokenProvider;
+  /**
+   * Server-side limit, in milliseconds, for each statement on the runner this
+   * factory opens. A factory that shares one session between runners must not
+   * apply it to that session; callers keep their own client-side deadline.
+   */
+  statementTimeoutMs?: number;
 }
 
 /**

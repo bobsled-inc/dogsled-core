@@ -3,6 +3,7 @@ import { beginAgenticCursor } from './begin-cursor.js';
 import { planInputColumns } from './plan-work.js';
 import { beginAgenticExecution } from './resume-window.js';
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { agenticDeadlineAt } from './execution-window.js';
 import { bindAgenticTools, validateAgenticTools } from './tool-access.js';
 import { executeAgenticPlan } from './plan-run.js';
@@ -14,7 +15,7 @@ import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
 import { AgenticHostError } from './errors.js';
 import { assertAgenticPricing } from './spend.js';
-import { agenticDeadlinePassed } from './state-errors.js';
+import { agenticDeadlinePassed, statementTimeoutReason } from './state-errors.js';
 import { scheduleAgenticAssignments } from './schedule.js';
 import {
   AGENTIC_MAX_BYTES,
@@ -109,6 +110,7 @@ export async function executeAgenticRun(
     retryFailed: options.retryFailedAssignments,
   };
   // A new session must reload durable state; never reuse the expired coordinator.
+  let timedOut: AgenticStateError | undefined;
   for (let attempt = 0; ; attempt++) {
     throwIfCancelled(options.signal);
     try {
@@ -116,7 +118,22 @@ export async function executeAgenticRun(
     } catch (error) {
       throwIfCancelled(options.signal);
       if (!(error instanceof AgenticStateError) || error.code !== 'lease_lost' || attempt >= 2) {
-        throw error;
+        // A session that cannot reacquire ownership must not hide why the run stopped.
+        const unexplained =
+          error instanceof AgenticStateError && error.code === 'unavailable' && !error.reason;
+        throw timedOut && unexplained ? timedOut : error;
+      }
+      if (error.reason === statementTimeoutReason) timedOut = error;
+      // A timed-out session keeps its lease, so a new one can only acquire after it expires.
+      if (error.retryAfterMs) {
+        await delay(
+          error.retryAfterMs,
+          undefined,
+          options.signal && { signal: options.signal }
+        ).catch((waiting: unknown) => {
+          throwIfCancelled(options.signal);
+          throw waiting;
+        });
       }
     }
   }
@@ -561,7 +578,10 @@ async function executeOwnedAgenticRun(
     };
   } catch (error) {
     if (session.ownershipLost?.aborted && !options.signal?.aborted) {
-      throw new AgenticStateError('lease_lost');
+      const cause = (session.ownershipLost.reason as { cause?: unknown } | null)?.cause;
+      throw cause instanceof AgenticStateError && cause.code === 'lease_lost'
+        ? cause
+        : new AgenticStateError('lease_lost');
     }
     throw error;
   } finally {
