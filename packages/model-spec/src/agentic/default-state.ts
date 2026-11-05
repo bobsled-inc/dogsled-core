@@ -116,8 +116,9 @@ async function sweepExpiredRuns(
           const namespace = duckDbRowDialect.identifier('main');
           await prepareAgenticRowTables(db, duckDbRowDialect, namespace);
           const table = agenticRowTable(duckDbRowDialect, namespace, AGENTIC_RUNS_TABLE);
+          const q = duckDbRowDialect.identifier;
           const rows = await db.query(
-            `SELECT retain_until <= ${duckDbRowDialect.clock} AND reclaimable AS expired FROM ${table} LIMIT 2`
+            `SELECT ${q('retain_until')} <= ${duckDbRowDialect.clock} AND ${q('reclaimable')} AS ${q('expired')} FROM ${table} LIMIT 2`
           );
           expired = rows.length === 0 || (rows.length === 1 && rows[0]!.expired === true);
         } finally {
