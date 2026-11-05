@@ -220,6 +220,11 @@ Use `AgenticStateError` with a safe code: `conflict`, `missing`, `corrupt`,
 `unavailable`, `limit` or `expired`. Dogsled removes other storage error messages at
 the host boundary. Do not put credentials or raw provider responses in errors.
 
+A session that may still hold its lease when it reports `lease_lost` should set
+`retryAfterMs` in the error detail. Dogsled waits that many milliseconds before it
+acquires again, so the session's own lease does not refuse the recovery attempt.
+Without it, recovery starts at once.
+
 ## Local files, ownership and retention
 
 `.dogsled/model-spec/run-state.json` remains the state entry point. Its compatible `agentic`

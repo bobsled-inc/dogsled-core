@@ -40,7 +40,7 @@ function statementTimeout(
     {
       reason: statementTimeoutReason,
       message: `A checkpoint store statement was queued or running for ${statementMs / 1000} seconds without finishing, so this process stopped using its session.`,
-      hint: 'Resume the run once its lease has expired. For a slow warehouse, raise checkpoint_store.lease_seconds; the statement limit is half of it.',
+      hint: `${retryAfterMs === undefined ? 'Resume the run.' : 'Resume the run once its lease has expired.'} For a slow warehouse, raise checkpoint_store.lease_seconds; the statement limit is half of it.`,
       ...(retryAfterMs === undefined ? {} : { retryAfterMs }),
     },
     // The driver's text stays in the cause: formatters never print it.

@@ -160,6 +160,7 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
     expect(error).toBeInstanceOf(AgenticStateError);
     expect(error).toMatchObject({ ...timedOut, retryAfterMs: leaseMs });
     expect(String(error)).toContain('queued or running');
+    expect(String(error)).toContain('lease has expired');
     expect(Date.now() - hung.hungAt!).toBeGreaterThanOrEqual(deadlineMs);
     expect(Date.now() - hung.hungAt!).toBeLessThan(leaseMs);
     expect(session.ownershipLost?.aborted).toBe(true);
@@ -370,7 +371,7 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
     expect(close).toHaveBeenCalledOnce();
   });
 
-  it('fails a cursor update that never returns once, without retrying', async () => {
+  it('leaves retries to the run when a cursor update never returns', async () => {
     const hung = hangingRunner((sql) => /UPDATE/.test(sql));
     hung.runner.query = async (sql: string) => {
       if (sql.startsWith('DESCRIBE')) return [{ tablefeatures: ['catalogManaged'] }];
@@ -379,6 +380,10 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
     };
     const error = await settle(cursors().begin(cursorKey, signature, 'run'));
     expect(error).toMatchObject(timedOut);
+    // A cursor session holds no lease, so there is none to wait for.
+    expect((error as AgenticStateError).retryAfterMs).toBeUndefined();
+    expect(String(error)).toContain('Resume the run.');
+    expect(String(error)).not.toContain('lease has expired');
     expect(Date.now() - hung.hungAt!).toBe(Math.ceil(deadlineMs / 50) * 50);
     expect(resolve).toHaveBeenCalledOnce();
     expect(hung.close).toHaveBeenCalledOnce();
