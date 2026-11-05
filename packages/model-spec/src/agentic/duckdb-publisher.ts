@@ -6,8 +6,7 @@ import {
 import { preflightPublicationChecks } from './duckdb-preflight.js';
 /** File-backed DuckDB publication. Each operation owns one freshly opened runner. */
 import { randomUUID } from 'node:crypto';
-import { mkdir, realpath } from 'node:fs/promises';
-import { dirname, resolve, basename } from 'node:path';
+import { canonicalDuckDbPath, withDuckDbFile } from './duckdb-file.js';
 import {
   buildDuckDbRunner,
   throwIfCancelled,
@@ -63,7 +62,6 @@ export async function insertDuckDbPublicationRows(
   }
 }
 
-const guards = new Map<string, Promise<void>>();
 export interface DuckDbAgenticPublisherOptions {
   /** Retained stages per database. No automatic deletion. Default: 32. */
   maxRetainedStages?: number;
@@ -78,14 +76,7 @@ export async function createDuckDbAgenticPublisher(
   if (integration.auth.type !== 'file' || integration.auth.read_only) {
     throw new Error('Agentic publication requires writable file-backed DuckDB');
   }
-  const path = resolve(integration.auth.path);
-  await mkdir(dirname(path), { recursive: true });
-  let canonical: string;
-  try {
-    canonical = await realpath(path);
-  } catch {
-    canonical = resolve(await realpath(dirname(path)), basename(path));
-  }
+  const canonical = await canonicalDuckDbPath(integration.auth.path);
   const config = { ...integration, auth: { ...integration.auth, path: canonical } };
   const maxStages = options.maxRetainedStages ?? 32;
   const maxRows = options.maxStageRows ?? 1_000_000;
@@ -105,29 +96,19 @@ export async function createDuckDbAgenticPublisher(
     signal?: AbortSignal
   ): Promise<T> {
     if (closed) throw new Error('Publisher is closed');
-    const previous = guards.get(canonical) ?? Promise.resolve();
-    let release!: () => void;
-    const current = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    guards.set(canonical, current);
-    await previous;
-    let runner: SqlRunnerModule | undefined;
-    try {
-      throwIfCancelled(signal);
-      runner = await buildDuckDbRunner(config);
-      if (!runner.query || !runner.supportsBindings || !runner.close) {
-        throw new Error('DuckDB publication requires bindings, queries and close');
-      }
-      return await fn(dbFor(runner, signal), runner);
-    } finally {
+    return withDuckDbFile(canonical, async () => {
+      let runner: SqlRunnerModule | undefined;
       try {
-        await runner?.close?.();
+        throwIfCancelled(signal);
+        runner = await buildDuckDbRunner(config);
+        if (!runner.query || !runner.supportsBindings || !runner.close) {
+          throw new Error('DuckDB publication requires bindings, queries and close');
+        }
+        return await fn(dbFor(runner, signal), runner);
       } finally {
-        release();
-        if (guards.get(canonical) === current) guards.delete(canonical);
+        await runner?.close?.();
       }
-    }
+    });
   }
   return {
     cursors: createDuckDbCursorStore(operation),
