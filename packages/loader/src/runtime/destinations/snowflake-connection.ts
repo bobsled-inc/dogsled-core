@@ -12,6 +12,7 @@ interface SnowflakeSdkConnection {
   connect(callback: (err: Error | undefined) => void): unknown;
   execute(options: {
     sqlText: string;
+    binds?: string[];
     complete: (
       err: Error | undefined,
       stmt: SnowflakeSdkStatement,
@@ -243,10 +244,11 @@ export function createSnowflakeSdkConnection(
       new Promise((resolve, reject) => {
         raw.connect((err) => (err ? reject(sanitizeError(err)) : resolve()));
       }),
-    execute: ({ sqlText }) =>
+    execute: ({ sqlText, binds }) =>
       new Promise((resolve, reject) => {
         raw.execute({
           sqlText,
+          ...(binds === undefined ? {} : { binds }),
           complete: (
             err: Error | undefined,
             stmt: SnowflakeSdkStatement,

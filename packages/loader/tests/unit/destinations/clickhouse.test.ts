@@ -686,4 +686,87 @@ describe('ClickHouseDestination', () => {
       expect(dest.getTruncatedTables().size).toBe(0);
     });
   });
+
+  describe('deleteRows', () => {
+    const deleteCalls = (client: ReturnType<typeof createMockClient>) =>
+      client.exec.mock.calls
+        .map(([opts]) => opts as { query: string; query_params?: { values: string[] } })
+        .filter((opts) => opts.query.includes(' DELETE WHERE '));
+
+    it('runs a synchronous ALTER DELETE with bound array parameters', async () => {
+      const { dest, client } = await createDest(createMockClient({ sortingKey: 'id' }));
+      await dest.initialize();
+
+      await dest.deleteRows('test_schema', 'docs', 'document_id', ["a'b", 'c']);
+
+      expect(client.query).toHaveBeenCalledWith({
+        query: expect.stringContaining(
+          "FROM system.tables WHERE database = 'test_schema' AND name = 'docs'"
+        ),
+      });
+      expect(deleteCalls(client)).toEqual([
+        {
+          query:
+            'ALTER TABLE `test_schema`.`docs` DELETE WHERE has({values:Array(String)}, `document_id`) SETTINGS mutations_sync = 2',
+          query_params: { values: ["a'b", 'c'] },
+        },
+      ]);
+    });
+
+    it('batches values 500 per statement', async () => {
+      const { dest, client } = await createDest(createMockClient({ sortingKey: 'id' }));
+      await dest.initialize();
+
+      const values = Array.from({ length: 1001 }, (_, i) => `id-${i}`);
+      await dest.deleteRows('test_schema', 'docs', 'document_id', values);
+
+      const batches = deleteCalls(client).map((opts) => opts.query_params!.values);
+      expect(batches.map((b) => b.length)).toEqual([500, 500, 1]);
+      expect(batches.flat()).toEqual(values);
+    });
+
+    it('is a no-op when the table does not exist', async () => {
+      const { dest, client } = await createDest();
+      await dest.initialize();
+
+      await dest.deleteRows('test_schema', 'missing', 'document_id', ['a']);
+
+      expect(deleteCalls(client)).toEqual([]);
+    });
+
+    it('propagates delete errors', async () => {
+      const client = createMockClient({ sortingKey: 'id' });
+      client.exec.mockImplementation(async (opts: { query: string }) => {
+        if (opts.query.includes(' DELETE WHERE ')) throw new Error('ACCESS_DENIED');
+      });
+      const { dest } = await createDest(client);
+      await dest.initialize();
+
+      await expect(dest.deleteRows('test_schema', 'docs', 'document_id', ['a'])).rejects.toThrow(
+        'ACCESS_DENIED'
+      );
+    });
+
+    it('forwards query_params to the SDK command in the default adapter', async () => {
+      const command = vi.fn().mockResolvedValue(undefined);
+      const createClient = vi.fn(() => ({
+        query: vi.fn().mockResolvedValue({ json: async () => [{ '1': 1 }] }),
+        command,
+        insert: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      }));
+      vi.doMock('@clickhouse/client', () => ({ createClient }));
+      const { ClickHouseDestination } =
+        await import('../../../src/runtime/destinations/clickhouse.js');
+      const dest = new ClickHouseDestination({ host: 'ch.example.com', database: 'db' });
+      await dest.initialize();
+
+      await dest.deleteRows('db', 'docs', 'document_id', ['a']);
+
+      expect(command).toHaveBeenCalledWith(
+        expect.objectContaining({ query_params: { values: ['a'] } })
+      );
+      await dest.close();
+    });
+  });
 });

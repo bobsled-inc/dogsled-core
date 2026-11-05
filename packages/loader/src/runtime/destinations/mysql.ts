@@ -79,6 +79,8 @@ function mapMySqlType(type: ColumnType): string {
   }
 }
 
+const DELETE_BATCH_SIZE = 500;
+
 function quoteMySqlIdentifier(identifier: string): string {
   assertBacktickIdentifier(identifier, 'MySQL identifier');
   const escaped = identifier.replace(/`/g, '``');
@@ -483,6 +485,30 @@ export class MySqlDestination implements DatabaseDestination {
     }
 
     return { rowsAffected: 0 };
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const existing = await this.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+      [safeSchema, safeTable]
+    );
+    if (existing.length === 0) return;
+    const qualifiedTable = `${quoteMySqlIdentifier(safeSchema)}.${quoteMySqlIdentifier(safeTable)}`;
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      await this.query(
+        `DELETE FROM ${qualifiedTable} WHERE ${quoteMySqlIdentifier(column)} IN (${batch.map(() => '?').join(', ')})`,
+        batch
+      );
+    }
   }
 
   getTruncatedTables(): Set<string> {

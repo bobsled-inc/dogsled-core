@@ -68,6 +68,8 @@ function mapMsSqlType(type: ColumnType): string {
   }
 }
 
+const DELETE_BATCH_SIZE = 500;
+
 function quoteMsSqlIdentifier(identifier: string): string {
   const escaped = identifier.replace(/]/g, ']]');
   return `[${escaped}]`;
@@ -611,6 +613,37 @@ export class MsSqlDestination implements DatabaseDestination {
     }
 
     return { rowsAffected: rows.length };
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    // The tedious adapter binds params[i] as @p{i}.
+    const existing = await withRetry(() =>
+      this.query(
+        `SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = @p0 AND TABLE_NAME = @p1`,
+        [safeSchema, safeTable]
+      )
+    );
+    if (existing.length === 0) return;
+    const qualifiedTable = `${quoteMsSqlIdentifier(safeSchema)}.${quoteMsSqlIdentifier(safeTable)}`;
+    // 500 per statement stays well under SQL Server's 2100-parameter cap.
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      const placeholders = batch.map((_, k) => `@p${k}`).join(', ');
+      await withRetry(() =>
+        this.query(
+          `DELETE FROM ${qualifiedTable} WHERE ${quoteMsSqlIdentifier(column)} IN (${placeholders})`,
+          batch
+        )
+      );
+    }
   }
 
   getTruncatedTables(): Set<string> {

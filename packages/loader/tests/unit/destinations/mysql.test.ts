@@ -260,4 +260,67 @@ describe('MySqlDestination', () => {
 
     await expect(dest.initialize()).rejects.toThrow(/Failed to load mysql2/);
   });
+
+  describe('deleteRows()', () => {
+    function connectionWithTable(exists: boolean, deleteError?: Error) {
+      const execute = vi.fn().mockImplementation((sql: string) => {
+        if (sql.includes('INFORMATION_SCHEMA.TABLES')) {
+          return Promise.resolve([exists ? [{ 1: 1 }] : [], []]);
+        }
+        if (deleteError && sql.startsWith('DELETE')) return Promise.reject(deleteError);
+        return Promise.resolve([[], []]);
+      });
+      return { execute, release: vi.fn() };
+    }
+
+    it('deletes matching rows with bound IN-list placeholders', async () => {
+      const connection = connectionWithTable(true);
+      const { dest } = await createDestination(createMockPool(connection));
+
+      await dest.deleteRows('analytics', 'documents', 'document_id', ['a', "b'); DROP TABLE x;--"]);
+
+      expect(connection.execute).toHaveBeenCalledWith(
+        'SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+        ['analytics', 'documents']
+      );
+      expect(connection.execute).toHaveBeenCalledWith(
+        'DELETE FROM `analytics`.`documents` WHERE `document_id` IN (?, ?)',
+        ['a', "b'); DROP TABLE x;--"]
+      );
+    });
+
+    it('batches values over 500 per statement', async () => {
+      const connection = connectionWithTable(true);
+      const { dest } = await createDestination(createMockPool(connection));
+      const values = Array.from({ length: 1001 }, (_, i) => `doc-${i}`);
+
+      await dest.deleteRows('analytics', 'documents', 'document_id', values);
+
+      const deletes = connection.execute.mock.calls.filter(([sql]) =>
+        String(sql).startsWith('DELETE')
+      );
+      expect(deletes.map(([, params]) => (params as string[]).length)).toEqual([500, 500, 1]);
+      expect(deletes.flatMap(([, params]) => params as string[])).toEqual(values);
+    });
+
+    it('is a no-op when the table does not exist', async () => {
+      const connection = connectionWithTable(false);
+      const { dest } = await createDestination(createMockPool(connection));
+
+      await expect(
+        dest.deleteRows('analytics', 'documents', 'document_id', ['a'])
+      ).resolves.toBeUndefined();
+
+      expect(connection.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('propagates delete errors', async () => {
+      const connection = connectionWithTable(true, new Error('Access denied'));
+      const { dest } = await createDestination(createMockPool(connection));
+
+      await expect(dest.deleteRows('analytics', 'documents', 'document_id', ['a'])).rejects.toThrow(
+        'Access denied'
+      );
+    });
+  });
 });

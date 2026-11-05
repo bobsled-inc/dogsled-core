@@ -407,3 +407,63 @@ describe('TurbopufferDestination', () => {
     await expect(dest.close()).resolves.toBeUndefined();
   });
 });
+
+describe('TurbopufferDestination.deleteRows', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function existingNamespace() {
+    return createMockNamespace({
+      exists: vi.fn().mockResolvedValue(true),
+      schema: vi.fn().mockResolvedValue({ document_id: { type: 'string' } }),
+    });
+  }
+
+  it('deletes by an In filter on the column', async () => {
+    const ns = existingNamespace();
+    const client = createMockClient(ns);
+    const { dest } = await createDest(client, { namespacePrefix: 'dev_' });
+
+    await dest.deleteRows('default', 'docs', 'document_id', ['a', 'b']);
+
+    expect(client.namespace).toHaveBeenLastCalledWith('dev_docs');
+    expect(ns.write).toHaveBeenCalledExactlyOnceWith({
+      delete_by_filter: ['document_id', 'In', ['a', 'b']],
+    });
+  });
+
+  it('batches values over 500 per write', async () => {
+    const ns = existingNamespace();
+    const { dest } = await createDest(createMockClient(ns));
+    const values = Array.from({ length: 501 }, (_, i) => `v${i}`);
+
+    await dest.deleteRows('default', 'docs', 'document_id', values);
+
+    expect(ns.write).toHaveBeenCalledTimes(2);
+    expect(ns.write.mock.calls[0]![0].delete_by_filter[2]).toHaveLength(500);
+    expect(ns.write.mock.calls[1]![0].delete_by_filter[2]).toEqual(['v500']);
+  });
+
+  it('is a no-op when the namespace or attribute does not exist', async () => {
+    const missing = createMockNamespace();
+    const { dest } = await createDest(createMockClient(missing));
+    await dest.deleteRows('default', 'docs', 'document_id', ['a']);
+    expect(missing.write).not.toHaveBeenCalled();
+
+    const ns = existingNamespace();
+    const other = await createDest(createMockClient(ns));
+    await other.dest.deleteRows('default', 'docs', 'other_column', ['a']);
+    expect(ns.write).not.toHaveBeenCalled();
+  });
+
+  it('propagates write errors', async () => {
+    const ns = existingNamespace();
+    ns.write.mockRejectedValue(new Error('invalid filter'));
+    const { dest } = await createDest(createMockClient(ns));
+
+    await expect(dest.deleteRows('default', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      'invalid filter'
+    );
+  });
+});

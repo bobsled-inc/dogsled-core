@@ -423,3 +423,57 @@ describe('ChromaDestination', () => {
     ).rejects.toThrow(/not initialized/);
   });
 });
+
+describe('ChromaDestination.deleteRows', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it('deletes rows whose metadata column is in the values', async () => {
+    const collection = createMockCollection();
+    const { dest, client } = await createDest(createMockClient(collection));
+
+    await dest.deleteRows('default', 'docs', 'document_id', ["a'1", 'b']);
+
+    expect(client.getCollection).toHaveBeenCalledWith({ name: 'docs' });
+    expect(collection.delete).toHaveBeenCalledExactlyOnceWith({
+      where: { document_id: { $in: ["a'1", 'b'] } },
+    });
+  });
+
+  it('batches values over 500 per delete', async () => {
+    const collection = createMockCollection();
+    const { dest } = await createDest(createMockClient(collection));
+    const values = Array.from({ length: 501 }, (_, i) => `v${i}`);
+
+    await dest.deleteRows('default', 'docs', 'document_id', values);
+
+    expect(collection.delete).toHaveBeenCalledTimes(2);
+    expect(collection.delete.mock.calls[0]![0].where.document_id.$in).toHaveLength(500);
+    expect(collection.delete.mock.calls[1]![0].where.document_id.$in).toEqual(['v500']);
+  });
+
+  it('is a no-op when the collection does not exist', async () => {
+    const collection = createMockCollection();
+    const client = createMockClient(collection);
+    const notFound = Object.assign(new Error('The requested resource could not be found'), {
+      name: 'ChromaNotFoundError',
+    });
+    client.getCollection.mockRejectedValue(notFound);
+    const { dest } = await createDest(client);
+
+    await expect(dest.deleteRows('default', 'docs', 'document_id', ['a'])).resolves.toBeUndefined();
+    expect(collection.delete).not.toHaveBeenCalled();
+  });
+
+  it('propagates other errors', async () => {
+    const client = createMockClient();
+    client.getCollection.mockRejectedValue(new Error('permission denied'));
+    const { dest } = await createDest(client);
+
+    await expect(dest.deleteRows('default', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      'permission denied'
+    );
+  });
+});

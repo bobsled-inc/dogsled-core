@@ -41,6 +41,9 @@ export interface DuckDbDestinationOptions {
   databaseFactory?: (dbPath: string) => Promise<DuckDbDatabaseLike>;
 }
 
+/** Values per DELETE statement for REPLACE. */
+const DELETE_BATCH_SIZE = 500;
+
 function tempMainTableRef(tableName: string): string {
   return `temp.main.${quoteIdentifier(tableName)}`;
 }
@@ -470,6 +473,34 @@ export class DuckDbDestination implements DatabaseDestination {
     );
     const countResult = await allRows(conn, `SELECT COUNT(*) AS c FROM ${qualifiedTable}`);
     return { rowsAffected: Number(countResult[0]?.['c'] ?? 0) };
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const conn = this.getConn();
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const existing = await allRows(
+      conn,
+      `SELECT 1 FROM information_schema.tables WHERE table_catalog = '${escapeSqlString(this.getCatalogName())}' AND table_schema = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}'`
+    );
+    if (existing.length === 0) return;
+    const qualifiedTable = this.buildQualifiedTable(safeSchema, safeTable);
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const list = values
+        .slice(i, i + DELETE_BATCH_SIZE)
+        .map((value) => `'${escapeSqlString(value)}'`)
+        .join(', ');
+      await runStatement(
+        conn,
+        `DELETE FROM ${qualifiedTable} WHERE ${quoteIdentifier(column)} IN (${list})`
+      );
+    }
   }
 
   getTruncatedTables(): Set<string> {

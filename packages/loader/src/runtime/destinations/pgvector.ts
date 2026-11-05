@@ -154,6 +154,8 @@ export function serializeVectorValue(value: unknown): string | null {
   return scalar === null ? null : `[${scalar}]`;
 }
 
+const DELETE_BATCH_SIZE = 500;
+
 function quoteIdentifier(identifier: string): string {
   const escaped = identifier.replace(/"/g, '""');
   return `"${escaped}"`;
@@ -726,6 +728,36 @@ export class PgVectorDestination implements DatabaseDestination {
           error: dropErr instanceof Error ? dropErr.message : String(dropErr),
         });
       }
+      client.release();
+    }
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const qualifiedTable = `${quoteIdentifier(safeSchema)}.${quoteIdentifier(safeTable)}`;
+    const client = await this.getPool().connect();
+    try {
+      const existing = await withRetry(() =>
+        client.query('SELECT to_regclass($1) AS table_oid', [qualifiedTable])
+      );
+      if (existing.rows[0]?.['table_oid'] == null) return;
+      // Autocommit DELETE: committed (index entries included) before the next INSERT runs.
+      for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+        const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+        await withRetry(() =>
+          client.query(`DELETE FROM ${qualifiedTable} WHERE ${quoteIdentifier(column)} = ANY($1)`, [
+            batch,
+          ])
+        );
+      }
+    } finally {
       client.release();
     }
   }

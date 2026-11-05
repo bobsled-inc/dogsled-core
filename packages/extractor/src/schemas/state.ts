@@ -23,6 +23,8 @@ const StreamStateSchema = z
             last_modified: z.string().optional(),
             etag: z.string().optional(),
             size: z.number().optional(),
+            // Document Resources record the parsed version to skip unchanged content.
+            document_version_id: z.string().optional(),
           })
           .strict()
       )

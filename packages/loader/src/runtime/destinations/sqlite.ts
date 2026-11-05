@@ -129,6 +129,7 @@ function serializeValue(value: unknown, type: ColumnType): unknown {
 }
 
 const JSONL_BATCH_SIZE = 5000;
+const DELETE_BATCH_SIZE = 500;
 const JSONL_CHUNK_SIZE = 64 * 1024;
 
 /**
@@ -614,6 +615,31 @@ export class SqliteDestination implements DatabaseDestination {
         });
       }
     }
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const db = this.getDb();
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const existingCols = db
+      .prepare(`PRAGMA ${quoteIdentifier(safeSchema)}.table_info(${quoteIdentifier(safeTable)})`)
+      .all();
+    if (existingCols.length === 0) return;
+    const qualifiedTable = `${quoteIdentifier(safeSchema)}.${quoteIdentifier(safeTable)}`;
+    db.transaction(() => {
+      for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+        const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+        db.prepare(
+          `DELETE FROM ${qualifiedTable} WHERE ${quoteIdentifier(column)} IN (${batch.map(() => '?').join(', ')})`
+        ).run(...batch);
+      }
+    })();
   }
 
   getTruncatedTables(): Set<string> {

@@ -703,3 +703,72 @@ describe('PostgresDestination connection errors', () => {
     await expect(destination.initialize()).rejects.not.toThrow(/Install it/);
   });
 });
+
+describe('PostgresDestination deleteRows', () => {
+  function deleteClient(
+    tableOid: string | null,
+    deleteImpl?: () => Promise<PostgresQueryResultLike>
+  ) {
+    return createMockClient({
+      queryImpl: async (sql) => {
+        if (sql.startsWith('SELECT to_regclass')) {
+          return createMockQueryResult({ rows: [{ table_oid: tableOid }] });
+        }
+        if (sql.startsWith('DELETE') && deleteImpl) return deleteImpl();
+        return createMockQueryResult();
+      },
+    });
+  }
+
+  function deleteCalls(client: PostgresPoolClientLike) {
+    return vi
+      .mocked(client.query)
+      .mock.calls.filter((call) => String(call[0]).startsWith('DELETE'));
+  }
+
+  it('deletes matching rows with a bound array parameter', async () => {
+    const client = deleteClient('public.docs');
+    const { dest } = await createDest(createMockPool(client));
+    const values = ["abc'); DROP TABLE x; --", 'def'];
+
+    await dest.deleteRows('public', 'docs', 'document_id', values);
+
+    expect(vi.mocked(client.query)).toHaveBeenCalledWith('SELECT to_regclass($1) AS table_oid', [
+      '"public"."docs"',
+    ]);
+    expect(deleteCalls(client)).toEqual([
+      ['DELETE FROM "public"."docs" WHERE "document_id" = ANY($1)', [values]],
+    ]);
+  });
+
+  it('batches values over 500 per statement', async () => {
+    const client = deleteClient('public.docs');
+    const { dest } = await createDest(createMockPool(client));
+    const values = Array.from({ length: 1201 }, (_, i) => `id-${i}`);
+
+    await dest.deleteRows('public', 'docs', 'document_id', values);
+
+    const batches = deleteCalls(client).map((call) => (call[1] as string[][])[0]!);
+    expect(batches.map((batch) => batch.length)).toEqual([500, 500, 201]);
+    expect(batches.flat()).toEqual(values);
+  });
+
+  it('is a no-op when the table does not exist', async () => {
+    const client = deleteClient(null);
+    const { dest } = await createDest(createMockPool(client));
+
+    await expect(dest.deleteRows('public', 'docs', 'document_id', ['a'])).resolves.toBeUndefined();
+    expect(deleteCalls(client)).toHaveLength(0);
+  });
+
+  it('propagates delete errors', async () => {
+    const client = deleteClient('public.docs', () =>
+      Promise.reject(Object.assign(new Error('permission denied'), { code: '42501' }))
+    );
+    const { dest } = await createDest(createMockPool(client));
+
+    await expect(dest.deleteRows('public', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      'permission denied'
+    );
+  });
+});

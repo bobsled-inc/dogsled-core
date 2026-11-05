@@ -449,3 +449,76 @@ describe('PgVectorDestination', () => {
     expect(params).toContain(null);
   });
 });
+
+describe('PgVectorDestination deleteRows', () => {
+  function deleteClient(
+    tableOid: string | null,
+    deleteImpl?: () => Promise<PgVectorQueryResultLike>
+  ): PgVectorPoolClientLike {
+    const client = createMockClient();
+    vi.mocked(client.query).mockImplementation(async (sql: string) => {
+      if (sql.startsWith('SELECT to_regclass')) {
+        return createMockQueryResult({ rows: [{ table_oid: tableOid }] });
+      }
+      if (sql.startsWith('DELETE') && deleteImpl) return deleteImpl();
+      return createMockQueryResult();
+    });
+    return client;
+  }
+
+  function deleteCalls(client: PgVectorPoolClientLike) {
+    return vi
+      .mocked(client.query)
+      .mock.calls.filter((call) => String(call[0]).startsWith('DELETE'));
+  }
+
+  it('deletes matching rows with a bound array parameter', async () => {
+    const client = deleteClient('public.chunks');
+    const { dest } = await createDest(createMockPool(client));
+    const values = ["abc'); DROP TABLE x; --", 'def'];
+
+    await dest.deleteRows('public', 'chunks', 'document_id', values);
+
+    expect(vi.mocked(client.query)).toHaveBeenCalledWith('SELECT to_regclass($1) AS table_oid', [
+      '"public"."chunks"',
+    ]);
+    expect(deleteCalls(client)).toEqual([
+      ['DELETE FROM "public"."chunks" WHERE "document_id" = ANY($1)', [values]],
+    ]);
+    expect(client.release).toHaveBeenCalled();
+  });
+
+  it('batches values over 500 per statement', async () => {
+    const client = deleteClient('public.chunks');
+    const { dest } = await createDest(createMockPool(client));
+    const values = Array.from({ length: 1001 }, (_, i) => `id-${i}`);
+
+    await dest.deleteRows('public', 'chunks', 'document_id', values);
+
+    const batches = deleteCalls(client).map((call) => (call[1] as string[][])[0]!);
+    expect(batches.map((batch) => batch.length)).toEqual([500, 500, 1]);
+    expect(batches.flat()).toEqual(values);
+  });
+
+  it('is a no-op when the table does not exist', async () => {
+    const client = deleteClient(null);
+    const { dest } = await createDest(createMockPool(client));
+
+    await expect(
+      dest.deleteRows('public', 'chunks', 'document_id', ['a'])
+    ).resolves.toBeUndefined();
+    expect(deleteCalls(client)).toHaveLength(0);
+  });
+
+  it('propagates delete errors', async () => {
+    const client = deleteClient('public.chunks', () =>
+      Promise.reject(Object.assign(new Error('permission denied'), { code: '42501' }))
+    );
+    const { dest } = await createDest(createMockPool(client));
+
+    await expect(dest.deleteRows('public', 'chunks', 'document_id', ['a'])).rejects.toThrow(
+      'permission denied'
+    );
+    expect(client.release).toHaveBeenCalled();
+  });
+});

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Incremental document Resources replace each changed file's rows per file. The extractor sends a new `REPLACE` protocol message per changed file and stream, and table destinations delete the file's previous `__documents`, `__chunks`, `__parse_errors` and `__acl` rows before writing the new ones. A file that shrinks leaves no old chunks, and unchanged files keep their rows, including their ACL evidence. Before, every incremental run replaced the four tables with only the changed files. `__acl` rows now carry `document_id`; run one `--full-refresh` after upgrading if you capture permissions. Every table destination implements the new required `DatabaseDestination.deleteRows` method; custom destinations must add it. File destinations write each run as new files and ignore `REPLACE`. The second incremental document run also no longer fails to read its own state file.
+
 - Use `dogsled-get-started` to set up your own connections, sources, pipelines and models. Guided TV Night and Retail lessons now start with `dogsled-tutorials`; existing tutorial progress and onboarding commands still work.
 
 - Add customer ontology YAML discovery, validation, exact context, edit previews, Ossie conversion, and config-only CLI/MCP operations.

@@ -179,7 +179,7 @@ A document resource produces four tables, named after the resource:
 
 | Table                  | Contents                                                                                                                                              |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<name>__documents`    | One row per document version: `document_id`, `source_uri`, `format`, full `text`, `content_hash`, `parser_version`.                                   |
+| `<name>__documents`    | One row per document, at its latest version: `document_id`, `source_uri`, `format`, full `text`, `content_hash`, `parser_version`.                    |
 | `<name>__chunks`       | One row per chunk: `chunk_id`, `document_id`, `chunk_index`, `text`, `token_count`.                                                                   |
 | `<name>__parse_errors` | Files that could not be parsed, when `parse.on_error` is `record` (the default). `skip` ignores them and `fail` stops the run.                        |
 | `<name>__acl`          | Permission evidence (who could read the file) when the source exposes it and `permissions.capture` is on. Dogsled records it; it does not enforce it. |
@@ -197,6 +197,17 @@ A document resource with `replication.method: full_refresh` parses every file ag
 on every run, and with `embedding` set it embeds every chunk again, which costs
 provider calls each time. Use an incremental method to process only new or changed
 files.
+
+An incremental run replaces each new or changed file's rows in all four tables:
+the loader deletes the file's previous rows by `document_id`, then writes the new
+ones. A file that now has fewer chunks keeps no old chunks, and files that did not
+change keep their rows, including their `__acl` evidence. If the new version cannot
+be downloaded, the file keeps its last good rows and `__parse_errors` records the
+failure. A deleted file keeps its rows until a `--full-refresh` run. Table
+destinations apply this; file destinations write each run's rows as new files.
+
+`__acl` rows now carry `document_id`. ACL rows loaded before this change have none,
+so run one `--full-refresh` after upgrading if you capture permissions.
 
 ## Cloud storage
 

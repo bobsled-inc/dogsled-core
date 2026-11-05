@@ -30,7 +30,13 @@ import {
   validateOwnershipMarker,
 } from './bigquery-ownership.js';
 import { quoteBqIdentifier } from './bigquery-identifiers.js';
-import type { BatchEncoding, SchemaColumn, ColumnType } from '@bobsled-inc/protocol';
+import {
+  buildBigQuerySchemaField,
+  getExistingBigQueryType,
+  normalizeBqType,
+  mapBigQueryType,
+} from './bigquery-type-mapping.js';
+import type { BatchEncoding, SchemaColumn } from '@bobsled-inc/protocol';
 import type {
   DatabaseDestination,
   EnsureTableOptions,
@@ -47,6 +53,8 @@ import type {
   BigQueryLoadJobResponse,
 } from './bigquery-types.js';
 
+const DELETE_BATCH_SIZE = 500;
+
 export type {
   BigQueryClientLike,
   BigQueryDatasetLike,
@@ -55,65 +63,7 @@ export type {
   BigQueryLoadJobResponse,
   BigQueryTableLike,
 } from './bigquery-types.js';
-
-/** Normalize BigQuery type aliases to canonical forms for comparison. */
-function normalizeBqType(t: string): string {
-  switch (t.toUpperCase()) {
-    case 'INTEGER':
-      return 'INT64';
-    case 'FLOAT':
-      return 'FLOAT64';
-    case 'BOOLEAN':
-      return 'BOOL';
-    default:
-      return t.toUpperCase();
-  }
-}
-
-export function mapBigQueryType(column: ColumnType | SchemaColumn): string {
-  const type = typeof column === 'string' ? column : column.type;
-  switch (type) {
-    case 'integer':
-      return 'INT64';
-    case 'number':
-      return 'FLOAT64';
-    case 'boolean':
-      return 'BOOL';
-    case 'timestamp':
-      return 'TIMESTAMP';
-    case 'string':
-    case 'array':
-    case 'object':
-      return 'STRING';
-    case 'vector':
-      return 'ARRAY<FLOAT64>';
-    default: {
-      const _exhaustive: never = type;
-      throw new Error(`Unsupported column type: ${_exhaustive}`);
-    }
-  }
-}
-
-export function buildBigQuerySchemaField(column: SchemaColumn): {
-  name: string;
-  mode?: 'NULLABLE' | 'REPEATED';
-  type: string;
-} {
-  if (column.type === 'vector') {
-    return { name: column.name, type: 'FLOAT64', mode: 'REPEATED' };
-  }
-
-  return { name: column.name, type: mapBigQueryType(column), mode: 'NULLABLE' };
-}
-
-function getExistingBigQueryType(field: { mode?: string; type: string }): string {
-  const normalizedType = normalizeBqType(field.type);
-  if (field.mode?.toUpperCase() === 'REPEATED' && normalizedType === 'FLOAT64') {
-    return 'ARRAY<FLOAT64>';
-  }
-
-  return normalizedType;
-}
+export { buildBigQuerySchemaField, mapBigQueryType } from './bigquery-type-mapping.js';
 
 function throwOnLoadErrors(job: BigQueryLoadJobResponse, context: string): void {
   const errors = job.status?.errors;
@@ -1093,6 +1043,35 @@ export class BigQueryDestination implements DatabaseDestination {
           error: dropErr instanceof Error ? dropErr.message : String(dropErr),
         });
       }
+    }
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const client = await this.getClient();
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const [exists] = await this.bqRetry(() => client.dataset(safeSchema).table(safeTable).exists());
+    if (!exists) return;
+    await this.assertOwnedTable(safeSchema, safeTable);
+    const qualifiedTable = `${quoteBqIdentifier(safeSchema)}.${quoteBqIdentifier(safeTable)}`;
+    // Rows only arrive through load jobs and MERGE (never insertAll), so none sit in the
+    // streaming buffer where DML DELETE is rejected; a finished DML job is visible to later reads.
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      const [job] = await this.bqRetry(() =>
+        client.createQueryJob({
+          query: `DELETE FROM ${qualifiedTable} WHERE ${quoteBqIdentifier(column)} IN UNNEST(@values)`,
+          params: { values: batch },
+          location: this.location,
+        })
+      );
+      await this.waitForJob(job);
     }
   }
 

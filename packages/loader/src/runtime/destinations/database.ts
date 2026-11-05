@@ -96,6 +96,17 @@ export interface DatabaseDestination {
     options?: EnsureTableOptions
   ): Promise<LoadResult>;
   /**
+   * Delete the rows whose `column` equals one of `values`, for a REPLACE message. Bind
+   * or escape every value. A table or collection that does not exist has no rows to
+   * delete. The loader calls it at most once per load, before that load's rows.
+   */
+  deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void>;
+  /**
    * Cancel the active warehouse operation and wait until the driver has
    * acknowledged delivery. Implementations used by cooperative orchestration
    * must provide this; ordinary loader CLI calls may omit it.

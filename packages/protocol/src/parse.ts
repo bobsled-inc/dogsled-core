@@ -5,6 +5,7 @@ import {
   EMBEDDING_DISTANCE_METRIC_SET,
   PROGRESS_EVENT_SET,
   PROTOCOL_VERSION,
+  REPLACE_MAX_VALUES,
   SCHEMA_BEHAVIOR_SET,
   isColumnType,
   isEmbeddingDistanceMetric,
@@ -25,6 +26,7 @@ import type {
   MetricMessage,
   ProgressMessage,
   RecordMessage,
+  ReplaceMessage,
   SchemaColumn,
   SchemaMessage,
   StateMessage,
@@ -81,7 +83,7 @@ function validateIdentifier(
 
 function readStream(
   value: RawEnvelope,
-  messageType: 'SCHEMA' | 'RECORD' | 'STATE' | 'BATCH' | 'METRIC' | 'LINEAGE'
+  messageType: 'SCHEMA' | 'RECORD' | 'STATE' | 'BATCH' | 'METRIC' | 'LINEAGE' | 'REPLACE'
 ): string {
   if (typeof value['stream'] !== 'string') {
     failValidation(`${messageType} message must include a stream`);
@@ -424,6 +426,25 @@ function parseBatchMessage(value: RawEnvelope): BatchMessage {
     encoding,
     manifest: [...value['manifest']],
   };
+}
+
+function parseReplaceMessage(value: RawEnvelope): ReplaceMessage {
+  const stream = readStream(value, 'REPLACE');
+  const key = value['key'];
+  if (typeof key !== 'string') {
+    failValidation('REPLACE message must include a key');
+  }
+  validateIdentifier(key, 'key', 'REPLACE message');
+  const values = value['values'];
+  if (
+    !Array.isArray(values) ||
+    values.length === 0 ||
+    values.length > REPLACE_MAX_VALUES ||
+    !values.every((item) => typeof item === 'string')
+  ) {
+    failValidation(`REPLACE message values must be 1 to ${REPLACE_MAX_VALUES} strings`);
+  }
+  return { _v: PROTOCOL_VERSION, type: 'REPLACE', stream, key, values: [...values] };
 }
 
 function parseStateMessage(value: RawEnvelope): StateMessage {
@@ -778,6 +799,8 @@ function parseStdoutEnvelope(message: RawEnvelope): StdoutMessage | UnsupportedS
       return parseStateMessage(message);
     case 'LINEAGE':
       return parseLineageMessage(message);
+    case 'REPLACE':
+      return parseReplaceMessage(message);
     default:
       return {
         envelopeType: message['type'],

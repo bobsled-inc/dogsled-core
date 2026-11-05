@@ -79,6 +79,7 @@ export interface BigQueryClientLike {
     query: string;
     location?: string;
     labels?: Record<string, string>;
+    params?: Record<string, unknown>;
   }): Promise<[BigQueryJobLike, ...unknown[]]>;
 }
 
