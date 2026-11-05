@@ -14,7 +14,7 @@ import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
 import { AgenticHostError } from './errors.js';
 import { assertAgenticPricing } from './spend.js';
-import { agenticDeadlinePassed } from './state-errors.js';
+import { agenticDeadlinePassed, statementTimeoutReason } from './state-errors.js';
 import { scheduleAgenticAssignments } from './schedule.js';
 import {
   AGENTIC_MAX_BYTES,
@@ -115,7 +115,14 @@ export async function executeAgenticRun(
       return await executeOwnedAgenticRun(host, context, options, execution);
     } catch (error) {
       throwIfCancelled(options.signal);
-      if (!(error instanceof AgenticStateError) || error.code !== 'lease_lost' || attempt >= 2) {
+      // After a statement timeout the lease can still be held, so recovery could only fail
+      // and hide the cause. That error ends the invocation; a later resume continues the run.
+      if (
+        !(error instanceof AgenticStateError) ||
+        error.code !== 'lease_lost' ||
+        error.reason === statementTimeoutReason ||
+        attempt >= 2
+      ) {
         throw error;
       }
     }
@@ -561,7 +568,10 @@ async function executeOwnedAgenticRun(
     };
   } catch (error) {
     if (session.ownershipLost?.aborted && !options.signal?.aborted) {
-      throw new AgenticStateError('lease_lost');
+      const cause = (session.ownershipLost.reason as { cause?: unknown } | null)?.cause;
+      throw cause instanceof AgenticStateError && cause.code === 'lease_lost'
+        ? cause
+        : new AgenticStateError('lease_lost');
     }
     throw error;
   } finally {

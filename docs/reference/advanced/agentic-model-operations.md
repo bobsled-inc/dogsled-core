@@ -175,7 +175,10 @@ checkpoint_store:
 
 The integration must exist in the project. The default lease is 120 seconds; the
 allowed range is 10–600 seconds. A longer lease can tolerate warehouse queues but
-also delays recovery after a crash. It does not extend the model timeout. An
+also delays recovery after a crash. Each checkpoint statement can run for half the
+lease; a statement that takes longer stops the run with
+`lease_lost (statement_timeout)`, which you can resume after the lease expires.
+The lease does not extend the model timeout. An
 invalid configured store fails; Dogsled does not silently fall back to local files.
 
 The checkpoint schema needs schema/table creation, SELECT, INSERT, UPDATE, and

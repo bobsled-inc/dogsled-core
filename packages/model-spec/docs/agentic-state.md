@@ -310,13 +310,48 @@ every one-third of the lease period. A longer lease also delays takeover after a
 worker crashes. Library callers can set `leaseMs` from 10,000 to 600,000 on the store
 factory. The lease setting does not change the model execution deadline.
 
+Each checkpoint and cursor statement can run for at most half the lease: 60 seconds
+with the default lease, and 5 to 300 seconds across the allowed range. There is no
+separate setting. Raise `lease_seconds` to give a slow or queueing warehouse more time
+per statement. This includes the first statement of a run, so a warehouse that needs
+longer than the limit to start also needs a longer lease.
+
+The warehouse enforces the limit on sessions that Dogsled opens only for checkpoints
+and cursors. Model queries and publication keep the warehouse defaults.
+
+| Warehouse  | Server-side setting            |
+| ---------- | ------------------------------ |
+| PostgreSQL | `statement_timeout`            |
+| Snowflake  | `STATEMENT_TIMEOUT_IN_SECONDS` |
+| BigQuery   | `jobTimeoutMs` on each job     |
+| Databricks | `STATEMENT_TIMEOUT`            |
+
+Dogsled also keeps its own deadline in case a driver ignores that setting or a
+connection stops answering. It is the limit plus one twelfth of the lease, 70 seconds
+by default. Opening a connection has the same deadline, and closing one waits at most
+one twelfth of the lease. A custom runner factory receives the limit as
+`statementTimeoutMs`; if it ignores the value, this deadline still applies.
+
+When either limit is reached, the run stops with `lease_lost (statement_timeout)` and
+sends no more statements on that connection. A hung heartbeat is reported before the
+lease expires. The session keeps its lease, because the statement may still be running.
+A statement that lands late cannot overwrite a newer owner: writes check the owner and
+expiry, and cursor updates compare a token.
+
+This error is safe to retry. Dogsled does not recover automatically, because the
+session's own lease can still block a new one. Resume the run after the lease expires.
+Until then, a resume reports that the checkpoint store is unavailable. The statement
+may have committed before the limit was reached; a resume reads the saved state, so
+the change applies once.
+
 Library hosts can resolve the logical catalog/schema with
 `resolveWarehouseCheckpointTarget(integration, { database, schema })` from
 `@bobsled-inc/dogsled/model-spec/agentic`; the runtime uses the same resolver for checkpoint
 and cursor storage.
 
 If the warehouse session loses ownership, Dogsled cancels active assignments and
-closes that session. It can make up to two recovery attempts. Each attempt must
+closes that session. Unless a statement timed out, it can make up to two recovery
+attempts. Each attempt must
 acquire exclusive ownership and reload the saved checkpoint before doing more work.
 Dogsled reuses saved results and reconciles saved publication receipts. Work without
 a saved result can run again; its previous attempt remains charged.

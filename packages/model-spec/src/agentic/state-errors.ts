@@ -47,6 +47,9 @@ const DEFAULT_MESSAGES: Record<AgenticStateErrorCode, string> = {
   expired: 'The agentic run deadline (limits.timeout_seconds) has passed.',
 };
 
+/** A `lease_lost` reason: the session gave up while its own lease may still be held. */
+export const statementTimeoutReason = 'statement_timeout';
+
 export class AgenticStateError extends Error {
   readonly reason?: string;
   readonly hint?: string;
