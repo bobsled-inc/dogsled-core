@@ -334,7 +334,8 @@ with an fsync:
 Statements per assignment settle at four: two per model call, plus a fixed cost per run. Time per
 assignment still grows with the run, but no longer because of storage. The coordinator and the
 store each validate the whole snapshot on every checkpoint, and the run loop is deliberately
-unchanged. That is now the main cost, and it is why the row limits stay where they are.
+unchanged. That is now the main cost, and it is why the row limits stay where they are: a CPU
+profile puts 80% of a 1,000-assignment run on a run file inside schema validation, and 77% at 300.
 
 **Why the limits stay at 1,000 rows.** To see whether the store could hold more, one run lifted the
 ceilings temporarily, in a scratch change. At 2,000 assignments on a run file, statements stayed at

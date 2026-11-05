@@ -302,6 +302,29 @@ that is not finished. Superseding such a run releases it. A preparing run does e
 has no inputs, work or spend. If it held a cursor reservation, a later start replaces that
 reservation. Cursor rows never expire.
 
+### Why the row limits stay
+
+The row store could hold more than today's 1,000 rows, but the time a run spends outside model
+calls grows with the square of its size. These are DuckDB run files on the synthetic benchmark
+workload, so the overhead excludes any model time. The 2,000 row lifted the ceilings in a scratch
+change:
+
+| Assignments | Statements per assignment | Data sent | Overhead per assignment | Total overhead |
+| ----------: | ------------------------: | --------: | ----------------------: | -------------: |
+|         300 |                      4.05 |    2.1 MB |                  152 ms |           46 s |
+|       1,000 |                      4.02 |    6.4 MB |                  506 ms |        8.4 min |
+|       2,000 |                      4.01 |   12.3 MB |                1,003 ms |         33 min |
+
+Statements stay flat and data grows in step with the run. Memory holds up: peak heap stayed under
+900 MiB at all three sizes, although it includes uncollected garbage and varies between runs (570
+and 881 MiB at 1,000). Overhead per assignment doubles when the run doubles, so on this curve a
+run's total is about 3.5 hours at 5,000 and 14 hours at 10,000.
+
+That cost is validating the whole snapshot on every checkpoint, in the coordinator and in the
+store: a CPU profile puts 80% of a 1,000-assignment run inside schema validation. Raising the
+limits first needs validation of the change alone. See the
+[benchmark](checkpoint-transport-benchmark.md#row-layout) for the method.
+
 ### Local DuckDB files
 
 Each run has its own file, `.dogsled/model-spec/agentic-state/run-<hash>.duckdb`, which stays open
