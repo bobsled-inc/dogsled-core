@@ -2,9 +2,9 @@
 
 **What should I watch next?** Connect to TVmaze and build a small ETL pipeline with your coding agent. Then build the models, add Wikipedia context, and explain why a series fits your taste and time.
 
-Install Dogsled using the [getting-started guide](../getting-started.md#install-dogsled). In Claude Code or Codex, invoke the **`dogsled-get-started`** skill, or ask:
+Install Dogsled using the [getting-started guide](../getting-started.md#install-dogsled). In Claude Code or Codex, invoke the **`dogsled-tutorials`** skill, or ask:
 
-> Use the dogsled-get-started skill.
+> Use the dogsled-tutorials skill for TV Night.
 
 The skill handles the welcome, setup, chapter order and pauses for inspection. No extra tutorial instructions are needed.
 

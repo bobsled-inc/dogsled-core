@@ -49,7 +49,7 @@ describe('installable Dogsled plugin', () => {
           .manifest.skills.map((skill) => skill.name)
           .sort()
       );
-      expect(readFileSync(join(plugin, 'skills/dogsled-get-started/SKILL.md'), 'utf8')).toContain(
+      expect(readFileSync(join(plugin, 'skills/dogsled-tutorials/SKILL.md'), 'utf8')).toContain(
         'https://github.com/bobsled-inc/dogsled-core/blob/main/packages/dogsled/examples/tv-night/DESIGN.md'
       );
       const requiredReferences = {
