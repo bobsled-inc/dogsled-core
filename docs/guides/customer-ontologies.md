@@ -168,6 +168,10 @@ dogsled ontology validate --project-root packages/model-spec/tests/fixtures/cust
 
 ## Learn with existing projects
 
+- The [TV Night tutorial](tv-night.md) distinguishes episodes from shows and
+  production status from story closure. Chapter 3 maps those concepts to the
+  existing show and episode source fields.
+
 - The [Retail tutorial](retail.md) follows sales lines to products and suppliers,
   using real field mappings in its synthetic warehouse sources. Chapter 3 explains
   why counting sales lines differs from summing units sold.

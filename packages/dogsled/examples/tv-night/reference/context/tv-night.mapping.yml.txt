@@ -1,0 +1,27 @@
+spec_version: '0.2'
+type: ontology_mapping
+name: tv_night_warehouse
+ontology_ref: { name: tv_night }
+semantic_model_ref:
+  name: tv_night_catalog
+  bindings:
+    datasets:
+      shows: warehouse.shows
+      episodes: warehouse.episodes
+concept_mappings:
+  - concept: Show
+    object_mappings:
+      - expression: shows.id
+    link_mappings:
+      - object_mapping: { expression: shows.id }
+        children:
+          - relationship: production_status
+            object_mapping: { concept: ProductionStatus, expression: shows.status }
+  - concept: Episode
+    object_mappings:
+      - expression: episodes.id
+    link_mappings:
+      - object_mapping: { expression: episodes.id }
+        children:
+          - relationship: part_of
+            object_mapping: { concept: Show, expression: episodes.show_id }

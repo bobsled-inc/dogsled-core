@@ -43,6 +43,14 @@ export const teaching: Record<
   model: {
     code: [
       [
+        'context/tv-night.ontology.yml',
+        'Follow Episode to Show and read ProductionStatus. Ended describes production, not story closure.',
+      ],
+      [
+        'context/tv-night.mapping.yml',
+        'Inspect episodes.show_id and shows.id. These identify the show each episode belongs to.',
+      ],
+      [
         'sources/shows.yml',
         'Inspect description, schema.columns and ai_context: these explain one source row, field meanings, units and alternative terms without changing the data.',
       ],
@@ -65,7 +73,10 @@ export const teaching: Record<
     ],
     now: 'Your data has reusable models, relationships and named calculations. You can query these definitions or build further models from them.',
     next: 'Next, explore the modeled data through questions and see the SQL behind the answers.',
-    questions: ['What does our episode-count metric measure?'],
+    questions: [
+      'What does our episode-count metric measure?',
+      'Why does Ended not prove that the story reaches a conclusion?',
+    ],
   },
   query: {
     code: [

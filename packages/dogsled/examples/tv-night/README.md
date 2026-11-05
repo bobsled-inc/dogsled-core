@@ -2,7 +2,7 @@
 
 Build a small data project that answers your own question, such as “I liked The Expanse. What should I watch next with similar complexity and intrigue?” Your question stays visible while the answer gains evidence.
 
-You and your agent create the files together. There are no bundled records or active finished models. Teaching templates stay inside the Dogsled installation and are not copied into your project. Your project contains the working files you build in `integrations/`, `resources/`, `sources/`, `models/`, `metrics/`, `relationships/` and `queries/`.
+You and your agent create the files together. There are no bundled records or active finished models. Teaching templates stay inside the Dogsled installation and are not copied into your project. Your project contains the working files you build in `integrations/`, `resources/`, `sources/`, `models/`, `metrics/`, `relationships/`, `context/` and `queries/`.
 
 ## Welcome to the Dogsled tutorial
 
@@ -147,6 +147,31 @@ Dogsled lets you build semantic models: reusable definitions that explain what y
 Show the existing source files and the planned derived model, relationship and metric before editing or creating them. A source describes existing data; a model defines a reusable transformation, materialized as a table or view. A relationship describes a join; a metric names a calculation. SQL is a way to express transformations or ask a one-off question.
 
 First enrich the existing source models in `sources/shows.yml` and `sources/episodes.yml`, plus any other sources already created. Describe what one row represents and which records were fetched. Add descriptions to `schema.columns`: explain identifiers, the `episodes.show_id` join to `shows.id`, runtime units, missing values and source limits. Use supported `ai_context` fields for terms such as “series” and “TV programme” and guidance such as “ended does not prove story completion.” Ask the learner to clarify one term or rule and show the YAML change. These edits describe existing data; they do not reload or change rows. Add this information to later API sources too.
+
+Next, introduce an ontology: shared definitions of the things in the data and
+how they relate. Adapt `context/tv-night.ontology.yml.txt` and
+`context/tv-night.mapping.yml.txt` from `templatesPath` into the learner's
+`context/tv-night.ontology.yml` and `context/tv-night.mapping.yml`. Explain each
+file before creating it; keep this within the model chapter.
+
+The ontology says that an Episode is part of a Show. The mapping connects
+`episodes.show_id` to the Show identity represented by `shows.id`, using the
+existing warehouse sources. Never join the episode's own `id` to a show ID or
+match shows by title alone.
+
+```sh
+dogsled ontology describe tv_night --concept Episode --yaml
+dogsled ontology validate --strict --json
+```
+
+Inspect the `Episode → Show → ProductionStatus` path. If a query returns 20
+episode rows, that does not mean 20 shows to recommend. Also, `ProductionStatus`
+means what TVmaze reports about production. “Ended” does not mean the story has
+a satisfying conclusion; later article evidence is needed for that assessment.
+
+The ontology explains these distinctions. The semantic relationship below
+defines the join, and the metric calculates the fetched episode count. Reading
+or validating the ontology does not fetch shows, run a query, or assess a story.
 
 Then build the derived models. Build `shows` and `episodes` with the learner. Preserve IDs, all genres, and unknown values. Add model and field descriptions, carrying relevant source meanings into the derived definitions; do not assume automatic inheritance. Model/column `ai_context` can hold plain-language guidance and alternative terms; it is guidance, not an automatically executed rule. Metrics support `synonyms` directly. Do not invent top-level model `synonyms` fields.
 

@@ -1,3 +1,10 @@
+import { indexProjectFiles, scanProject } from '@bobsled-inc/project-index';
+import {
+  loadOntologyCatalog,
+  getOntologyContext,
+  importOntologyDocuments,
+} from '@bobsled-inc/model-spec/ontology';
+import { exportOssieDocuments } from '@bobsled-inc/model-spec/interchange';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -63,4 +70,48 @@ it('keeps source meaning and field descriptions in schema-validated teaching tem
     expect(source.ai_context).toBeDefined();
     expect(source.schema?.columns.every((column) => Boolean(column.description))).toBe(true);
   }
+});
+
+it('validates the TV ontology templates and round trips their source mappings offline', () => {
+  const paths = [
+    'context/tv-night.ontology.yml',
+    'context/tv-night.mapping.yml',
+    'sources/shows.yml',
+    'sources/episodes.yml',
+  ];
+  const files = paths.map((path) => ({
+    path,
+    content: readFileSync(new URL(`reference/${path}.txt`, base), 'utf8'),
+  }));
+  const index = indexProjectFiles(files);
+  const catalog = loadOntologyCatalog(index);
+  expect(catalog.entries).toHaveLength(2);
+  expect(catalog.diagnostics).toEqual([]);
+  const context = getOntologyContext(catalog, { ontology: 'tv_night', concept: 'Episode' });
+  expect(context.concepts).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ concept: 'Episode' }),
+      expect.objectContaining({ concept: 'Show' }),
+      expect.objectContaining({
+        concept: 'ProductionStatus',
+        description: expect.stringContaining('does not prove'),
+      }),
+    ])
+  );
+  const exported = exportOssieDocuments(index.entries, {
+    ossieVersion: '0.2.0.dev0',
+    strict: true,
+  });
+  expect(exported.ready, JSON.stringify(exported.diagnostics)).toBe(true);
+  const imported = importOntologyDocuments(exported.files);
+  expect(imported.ready, JSON.stringify(imported.diagnostics)).toBe(true);
+  const reloaded = loadOntologyCatalog(indexProjectFiles(imported.files));
+  expect(reloaded.diagnostics).toEqual([]);
+  expect(
+    getOntologyContext(reloaded, { ontology: 'tv_night', concept: 'Episode' }).concepts
+  ).toEqual(context.concepts);
+  expect(reloaded.entries.find((e) => e.document.type === 'ontology_mapping')?.document).toEqual(
+    catalog.entries.find((e) => e.document.type === 'ontology_mapping')?.document
+  );
+  expect(loadOntologyCatalog(scanProject(fileURLToPath(base))).entries).toEqual([]);
 });
