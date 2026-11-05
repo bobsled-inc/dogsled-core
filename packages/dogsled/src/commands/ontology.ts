@@ -78,13 +78,17 @@ export async function serveOntologyMcp(options: Options): Promise<void> {
             capabilities: { tools: {} },
             serverInfo: { name: 'dogsled-ontology', version: '1' },
           };
-        } else if (request.method === 'tools/list') result = { tools: server.tools };
+        } else if (request.method === 'ping') result = {};
+        else if (request.method === 'tools/list') result = { tools: server.tools };
         else if (request.method === 'tools/call') {
           const data = await server.call(
             request.params?.name ?? '',
             request.params?.arguments ?? {}
           );
-          result = { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          result = {
+            content: [{ type: 'text', text: JSON.stringify(data) }],
+            isError: !!(data && typeof data === 'object' && 'ok' in data && data.ok === false),
+          };
         } else throw new Error('Unknown MCP method.');
         send({ jsonrpc: '2.0', id, result });
       } catch (error) {
