@@ -83,7 +83,7 @@ async function within<T>(
  * once the lease has expired. After a timeout the connection may still be busy, so later
  * statements, such as a ROLLBACK that would queue behind the hung one, fail at once.
  */
-function limitRunner(
+export function limitRunner(
   runner: SqlRunnerModule,
   limits: Limits,
   handling: StatementTimeoutHandling

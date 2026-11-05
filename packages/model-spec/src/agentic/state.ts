@@ -359,6 +359,9 @@ export interface AgenticStateStore {
   cursors?: AgenticCursorStore;
   /** What this store can hold. Omitted: the default limits. */
   limits?: AgenticStoreLimits;
+  /** The store removes old runs, though never one with a publication, so a cursor reservation
+   * can outlive its run. Takeover may then replace it instead of reporting the run missing. */
+  expiresRuns?: boolean;
   acquire(key: AgenticRunKey): Promise<AgenticStateSession>;
 }
 /** Legacy finishes digest only outcome and charge; spend-cap finishes add their price. */

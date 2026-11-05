@@ -1,8 +1,28 @@
 import { AgenticCursorKeySchema, CursorRecordSchema, updateCursorRecord } from './cursor.js';
-import type { AgenticCursorStore, AgenticCursorKey, AgenticCursorValues } from './cursor.js';
+import type {
+  AgenticCursorStore,
+  AgenticCursorKey,
+  AgenticCursorValues,
+  CursorRecord,
+} from './cursor.js';
 import { digestAgenticState } from './state.js';
 import { q, PUBLICATION_SCHEMA, stageRef } from './duckdb-checks.js';
 import type { Db } from './duckdb-publication-storage.js';
+
+/** The progress a DuckDB target's publication tables hold for a key, if any. */
+export async function readDuckDbCursor(
+  db: Db,
+  key: AgenticCursorKey
+): Promise<CursorRecord | null> {
+  const found = await db.query(
+    'SELECT 1 AS found FROM information_schema.tables WHERE table_catalog = current_database() AND table_schema = ? AND table_name = ? LIMIT 1',
+    [PUBLICATION_SCHEMA, 'cursors']
+  );
+  if (!found.length) return null;
+  const hash = digestAgenticState(AgenticCursorKeySchema.parse(key));
+  const rows = await db.query(`SELECT record FROM ${stageRef('cursors')} WHERE key = ?`, [hash]);
+  return rows.length ? CursorRecordSchema.parse(JSON.parse(String(rows[0]!.record))) : null;
+}
 
 export function createDuckDbCursorStore(
   operation: <T>(fn: (db: Db) => Promise<T>) => Promise<T>
