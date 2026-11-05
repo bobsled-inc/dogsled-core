@@ -30,14 +30,21 @@ type Fault = (
 ) => 'lose_before' | 'lose_after' | undefined;
 
 /** A real DuckDB file behind a connection that can lose a statement or its reply. */
-function faultyBackend(
-  file: string,
-  faults: { next?: Fault; handling?: StatementTimeoutHandling }
-): AgenticRowBackend {
+interface Faults {
+  next?: Fault;
+  handling?: StatementTimeoutHandling;
+  statements: string[];
+}
+
+function faultyBackend(file: string, faults: Faults): AgenticRowBackend {
   const backend = duckDbOperationBackend(file, schema);
   const statements = (db: AgenticRowDb): AgenticRowDb => ({
-    run: (sql) => db.run(sql),
+    run: (sql) => {
+      faults.statements.push(sql);
+      return db.run(sql);
+    },
     query: async (sql, params) => {
+      faults.statements.push(sql);
       const fault = faults.next?.(sql, params);
       if (fault === 'lose_before') throw new Error('Synthetic failure before the statement');
       const rows = await db.query(sql, params);
@@ -72,7 +79,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
   let map: AgenticStoreScenario;
   let plan: AgenticStoreScenario;
   const directories: string[] = [];
-  const faults: { next?: Fault; handling?: StatementTimeoutHandling } = {};
+  const faults: Faults = { statements: [] };
   const file = () => join(directories.at(-1)!, 'state.duckdb');
   beforeAll(async () => {
     map = await mapScenario();
@@ -80,6 +87,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
   });
   afterEach(() => {
     delete faults.next;
+    faults.statements = [];
     for (const directory of directories.splice(0)) {
       rmSync(directory, { recursive: true, force: true });
     }
@@ -299,6 +307,18 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     });
     expect(session.ownershipLost?.aborted).toBe(true);
     await session.release();
+  });
+
+  it('creates its tables once, however often it acquires', async () => {
+    const { open } = await fixture();
+    const created = () => faults.statements.filter((sql) => /^CREATE /.test(sql)).length;
+    const first = await open(map.key);
+    const once = created();
+    expect(once).toBeGreaterThan(0);
+    await first.release();
+    const second = await open(map.key);
+    await second.release();
+    expect(created()).toBe(once);
   });
 
   it('dates a new header from the store clock alone', async () => {

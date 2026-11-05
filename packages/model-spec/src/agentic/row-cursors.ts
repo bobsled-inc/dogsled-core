@@ -15,7 +15,7 @@ import {
   AGENTIC_CURSORS_TABLE,
   agenticRowTable,
   agenticStatement,
-  prepareAgenticRowTables,
+  ensureAgenticRowTables,
   type AgenticRowBackend,
 } from './row-state-tables.js';
 import { AgenticStateError, digestAgenticState } from './state.js';
@@ -46,7 +46,7 @@ export async function readAgenticRowCursor(
   const { namespace } = connection;
   try {
     return await connection.use(async (db) => {
-      await prepareAgenticRowTables(db, dialect, namespace);
+      await ensureAgenticRowTables(db, backend, namespace);
       const table = agenticRowTable(dialect, namespace, AGENTIC_CURSORS_TABLE);
       const rows = await db.query(
         `SELECT ${dialect.identifier('record')} FROM ${table} WHERE ${dialect.identifier('key_hash')} = ${dialect.bind(1)} LIMIT 2`,
@@ -71,7 +71,6 @@ export function createAgenticRowCursorStore(options: {
   const { backend, legacy, carryLegacyOwner, signal } = options;
   const { dialect } = backend;
   const q = dialect.identifier;
-  let prepared = false;
   const withDb = async <T>(
     operation: (db: AgenticRowDb, table: string) => Promise<T>
   ): Promise<T> => {
@@ -79,8 +78,7 @@ export function createAgenticRowCursorStore(options: {
     const { namespace } = connection;
     try {
       return await connection.use(async (db) => {
-        if (!prepared) await prepareAgenticRowTables(db, dialect, namespace);
-        prepared = true;
+        await ensureAgenticRowTables(db, backend, namespace);
         return operation(db, agenticRowTable(dialect, namespace, AGENTIC_CURSORS_TABLE));
       });
     } finally {

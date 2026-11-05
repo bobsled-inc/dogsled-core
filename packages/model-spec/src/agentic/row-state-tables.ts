@@ -135,6 +135,20 @@ export async function prepareAgenticRowTables(
   }
 }
 
+const preparedBackends = new WeakSet<AgenticRowBackend>();
+
+/** Creates the tables once per backend. Recovery acquires again, and on a warehouse every
+ * setup statement can cost a second. */
+export async function ensureAgenticRowTables(
+  db: AgenticRowDb,
+  backend: AgenticRowBackend,
+  namespace: string
+): Promise<void> {
+  if (preparedBackends.has(backend)) return;
+  await prepareAgenticRowTables(db, backend.dialect, namespace);
+  preparedBackends.add(backend);
+}
+
 /** Parameters for one statement. Bind values in the order they appear in the SQL. */
 export function agenticStatement(dialect: AgenticRowDialect) {
   const params: SqlParamValue[] = [];

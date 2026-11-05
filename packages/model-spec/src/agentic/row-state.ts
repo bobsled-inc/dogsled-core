@@ -30,7 +30,7 @@ import {
   agenticNewRunHeader,
   agenticRowTable,
   agenticStatement,
-  prepareAgenticRowTables,
+  ensureAgenticRowTables,
   type AgenticRowBackend,
   type AgenticRowSessionOptions,
 } from './row-state-tables.js';
@@ -152,7 +152,7 @@ export async function openAgenticRowSession(
 
   const stored = (db: AgenticRowDb): AgenticRunRows => ({ db, dialect, table: rows, hash });
   const claim = async (db: AgenticRowDb): Promise<void> => {
-    await prepareAgenticRowTables(db, dialect, namespace);
+    await ensureAgenticRowTables(db, backend, namespace);
     if (lease) await purgeExpiredAgenticRuns(stored(db), runs);
     await dialect.insertIfAbsent(
       db,
