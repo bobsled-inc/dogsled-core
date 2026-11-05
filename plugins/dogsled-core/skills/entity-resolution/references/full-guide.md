@@ -23,7 +23,7 @@ A resolution spec does nothing on its own — the pipeline is what executes it.
 
 ## 1. The resolution spec — `entity-graph/<name>_resolution.yml`
 
-Use the resolution schema and examples in `docs/reference/advanced/entity-graph-authoring-guide.md`,
+Use the resolution schema and examples in [Entity graph authoring guide](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/entity-graph-authoring-guide.md),
 then validate with `dogsled entity-graph resolve validate <name>`.
 Do not hand-author the shape from memory. The file is **flat** under
 `entity-graph/` (never nested) and its discriminant is `type: resolution`.

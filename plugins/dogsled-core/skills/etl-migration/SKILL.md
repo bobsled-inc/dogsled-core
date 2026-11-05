@@ -17,13 +17,13 @@ for every extract pipeline produced by the migration.
 
 Read only what matches the task:
 
-- Agent guide: `docs/guides/run-pipelines.md`
-- Data quality contracts: `docs/reference/advanced/data-tests-and-contracts.md`
-- Local pipelines: `.agents/skills/pipeline/SKILL.md`
-- Scheduled runner: `docs/guides/run-pipelines.md` and `docs/reference/project-files.md`
-- Extraction specs: `packages/extractor/README.md`
-- Loading specs: `packages/loader/README.md`
-- Model validation and expectations: `packages/model-spec/README.md`
+- Agent guide: [Run pipelines](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/run-pipelines.md)
+- Data quality contracts: [Data tests and contracts](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/data-tests-and-contracts.md)
+- Local pipelines: use the `pipeline` skill
+- Scheduled runner: [Run pipelines](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/run-pipelines.md) and [Project files](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/project-files.md)
+- Extraction specs: [Extractor reference](https://github.com/bobsled-inc/dogsled-core/blob/main/packages/extractor/README.md)
+- Loading specs: [Loader reference](https://github.com/bobsled-inc/dogsled-core/blob/main/packages/loader/README.md)
+- Model validation and expectations: [Model Spec reference](https://github.com/bobsled-inc/dogsled-core/blob/main/packages/model-spec/README.md)
 - Pipeline repo operations: the Project guide and `dogsled-troubleshoot`
 
 ## Migration Workflow
@@ -49,7 +49,7 @@ Read only what matches the task:
    - destination config, schema/dataset/bucket prefix, `table_prefix`, and `load_strategy`
    - cursor field and primary key needed for durable incremental `merge`
    - the Dogsled validation layer for each old quality gate: extract validation, mock verify, scaffold-test, load check, model tests, model expectations, clean spec compilation, or strict runner validation
-   - data-test and contract mappings from `docs/reference/advanced/data-tests-and-contracts.md`, especially which checks remain SQL-only versus executable JSON gates
+   - data-test and contract mappings from [Data tests and contracts](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/data-tests-and-contracts.md), especially which checks remain SQL-only versus executable JSON gates
    - semantic context files only if the task includes model, query, or agent data understanding
 
 4. Protect the existing ETL:

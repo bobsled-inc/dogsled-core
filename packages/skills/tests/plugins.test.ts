@@ -52,6 +52,36 @@ describe('installable Dogsled plugin', () => {
       expect(readFileSync(join(plugin, 'skills/dogsled-get-started/SKILL.md'), 'utf8')).toContain(
         'https://github.com/bobsled-inc/dogsled-core/blob/main/packages/dogsled/examples/tv-night/DESIGN.md'
       );
+      const requiredReferences = {
+        'etl-migration/SKILL.md': [
+          'docs/guides/run-pipelines.md',
+          'docs/reference/advanced/data-tests-and-contracts.md',
+          'docs/reference/project-files.md',
+          'packages/extractor/README.md',
+          'packages/loader/README.md',
+          'packages/model-spec/README.md',
+        ],
+        'entity-resolution/SKILL.md': ['docs/reference/advanced/entity-graph-authoring-guide.md'],
+        'entity-resolution/references/full-guide.md': [
+          'docs/reference/advanced/entity-graph-authoring-guide.md',
+        ],
+      };
+      for (const [document, references] of Object.entries(requiredReferences)) {
+        const content = readFileSync(join(plugin, 'skills', document), 'utf8');
+        for (const reference of references) {
+          expect(content).toContain(
+            `](https://github.com/bobsled-inc/dogsled-core/blob/main/${reference})`
+          );
+          expect(content).not.toContain('`' + reference + '`');
+          expect(readFileSync(join(REPO_ROOT, reference), 'utf8').length).toBeGreaterThan(0);
+        }
+      }
+      const migration = readFileSync(join(plugin, 'skills/etl-migration/SKILL.md'), 'utf8');
+      expect(migration).not.toContain('.agents/skills/pipeline/SKILL.md');
+      expect(migration).toContain('Local pipelines: use the `pipeline` skill');
+      expect(readFileSync(join(plugin, 'skills/pipeline/SKILL.md'), 'utf8')).toContain(
+        'name: pipeline'
+      );
       for (const skill of buildManifest().manifest.skills) {
         const content = readFileSync(join(plugin, 'skills', skill.name, 'SKILL.md'), 'utf8');
         const metadata = parse(content.split('---\n')[1]!);
