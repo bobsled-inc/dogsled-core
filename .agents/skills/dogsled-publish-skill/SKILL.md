@@ -12,7 +12,7 @@ workspace is embedded in that package.
 
 1. Edit the Skill, catalog, or canonical document.
 2. Run `pnpm --filter @bobsled-inc/skills generate:manifest`.
-3. Run `pnpm --filter @bobsled-inc/skills test:unit` and `pnpm docs:ci`.
+3. Run `pnpm skills:check`, `pnpm --filter @bobsled-inc/skills test:unit`, and `pnpm docs:ci`.
 4. Commit the source, `packages/skills/src/generated-data.ts`, and generated plugin
    files together. The command also refreshes `plugins/dogsled-core/` and the Claude and
    Codex marketplace catalogs.

@@ -67,6 +67,7 @@ From the repository root, run:
 
 ```bash
 pnpm --filter @bobsled-inc/skills generate:manifest
+pnpm skills:check
 pnpm --filter @bobsled-inc/skills test:unit
 claude plugin validate plugins/dogsled-core
 claude plugin validate .claude-plugin/marketplace.json
@@ -77,6 +78,12 @@ Links to other repository documents point to their public GitHub pages.
 Commit the generated files with the source changes. Bump `PLUGIN_VERSION` in
 `packages/skills/scripts/build-plugins.ts` when publishing changes to the bundle. The unit tests check for stale or missing files
 and load skills from an isolated copy of the plugin.
+
+CI and `pnpm precommit` run `pnpm skills:check` before any build. This uncached,
+read-only check compares fresh generated output with the files in the checkout.
+It fails on changed, missing, or extra skill files, so a build cannot hide stale
+committed copies by rewriting them first. Publishing and plugin version bumps
+remain separate maintainer steps.
 
 Publishing this GitHub marketplace does not list Dogsled in either provider's
 official directory. Official listings require a separate submission.

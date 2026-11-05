@@ -44,7 +44,8 @@
     "lint": "eslint . --cache",
     "generate:manifest": "tsx scripts/build-manifest.ts && tsx scripts/build-plugins.ts",
     "test": "vitest run",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "check:generated": "tsx scripts/check-generated.ts"
   },
   "dependencies": {
     "@bobsled-inc/project-index": "workspace:*",

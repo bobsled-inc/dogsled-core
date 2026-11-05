@@ -19,7 +19,9 @@ Bundled Dogsled Skill generation plus Project Skill document schemas and bounded
   self-contained.
 
 After changing a skill, catalog, or transcluded document, regenerate and commit both
-the source and generated output.
+the source and generated output. `pnpm skills:check` must run before builds in CI
+and the root precommit gate; it checks fresh output without writing files or using
+the build cache.
 
 ## Project Document Contracts
 
