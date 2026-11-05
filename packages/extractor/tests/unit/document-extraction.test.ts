@@ -5,6 +5,9 @@ import * as path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+
+import { LocalFileStorageClient } from '../../src/runtime/clients/local-file-client.js';
 import { ControlLogger } from '../../src/runtime/control.js';
 import { Emitter } from '../../src/runtime/emitter.js';
 import { extractDocumentResource } from '../../src/runtime/document-extraction.js';
@@ -109,6 +112,27 @@ async function runExtraction(args: RunArgs = {}) {
 }
 
 describe('extractDocumentResource', () => {
+  it('fails the run on a connection-level download error instead of recording a parse error', async () => {
+    const lost = new DogsledRuntimeError({
+      kind: 'provider',
+      code: 'SFTP_CONNECTION_LOST',
+      operation: 'extractor.sftp.download',
+      retryable: true,
+    });
+    const download = vi
+      .spyOn(LocalFileStorageClient.prototype, 'download')
+      .mockRejectedValueOnce(lost);
+    try {
+      const state: ExtractorState = { streams: {} };
+      await expect(
+        runExtraction({ files: [{ name: 'a.md', content: '# A' }], prevState: state })
+      ).rejects.toBe(lost);
+      expect(state.streams).toEqual({});
+    } finally {
+      download.mockRestore();
+    }
+  });
+
   it('emits all SCHEMA messages before any RECORD (schema-before-record contract)', async () => {
     const { messages } = await runExtraction({
       files: [

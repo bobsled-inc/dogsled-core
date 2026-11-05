@@ -49,7 +49,6 @@ rules:
       exclude:
         - packages/extractor/src/runtime/clients/gcs-file-client.ts
         - packages/extractor/src/runtime/clients/s3-file-client.ts
-        - packages/extractor/src/runtime/clients/sftp-file-client.ts
 
   - id: dogsled-follow-http-redirects
     languages: [javascript, typescript]

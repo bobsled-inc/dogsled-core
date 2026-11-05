@@ -56,6 +56,8 @@ export {
   ExtractorDataError,
 } from './errors.js';
 export type { ExtractorError } from './errors.js';
+export { SFTP_ERROR_CODES } from './clients/sftp-errors.js';
+export type { SftpErrorCode } from './clients/sftp-errors.js';
 export { mapFields } from './activate/field-mapper.js';
 export { runActivateDispatcher } from './activate/dispatcher.js';
 export type {

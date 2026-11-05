@@ -1,5 +1,4 @@
-import { createReadStream } from 'node:fs';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
@@ -8,6 +7,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { GcsFileStorageClient } from '../../src/runtime/clients/gcs-file-client.js';
 import { S3FileStorageClient } from '../../src/runtime/clients/s3-file-client.js';
 import { SftpFileStorageClient } from '../../src/runtime/clients/sftp-file-client.js';
+
+import type { SFTPWrapper } from 'ssh2';
 
 import type { ListedFile } from '../../src/framework/core/index.js';
 
@@ -208,21 +209,26 @@ describe('file storage clients', () => {
 
   it('rejects unsafe provider-relative SFTP paths before opening a stream', async () => {
     const tempDir = await mkdtemp(path.join(tmpdir(), 'sftp-client-test-'));
-    const localFile = path.join(tempDir, 'source.txt');
-    await writeFile(localFile, 'ok\n');
     let openedPath: string | undefined;
     const client = await SftpFileStorageClient.create(
-      { host: 'example.com', username: 'agent', base_directory: '/exports' },
-      { type: 'password', password_env: 'UNUSED', host_fingerprint: 'abc' },
+      {
+        host: 'example.com',
+        username: 'agent',
+        base_directory: '/exports',
+        host_keys: [{ algorithm: 'ssh-ed25519', fingerprint: `SHA256:${'A'.repeat(43)}` }],
+        read_concurrency: 4,
+      },
+      { type: 'password', password_env: 'UNUSED' },
       {
         sftp: {
-          readdir: () => undefined,
-          createReadStream: (pathname: string) => {
+          realpath: (pathname: string) => {
             openedPath = pathname;
-            return createReadStream(localFile);
+          },
+          fastGet: (pathname: string) => {
+            openedPath = pathname;
           },
           end: () => undefined,
-        },
+        } as unknown as SFTPWrapper,
       },
       ['UNUSED']
     );

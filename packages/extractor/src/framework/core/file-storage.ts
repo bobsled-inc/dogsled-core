@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { z } from 'zod';
 
 export const FileStorageSourceTypeValues = ['s3', 'gcs', 'sftp', 'local', 'vercel_blob'] as const;
@@ -47,45 +49,137 @@ export const GcsFileStorageAuthSchema = z.union([
     .strict(),
 ]);
 
+export const SFTP_HOST_KEY_ALGORITHMS = [
+  'ssh-ed25519',
+  'ecdsa-sha2-nistp256',
+  'ecdsa-sha2-nistp384',
+  'ecdsa-sha2-nistp521',
+  'ssh-rsa',
+] as const;
+export type SftpHostKeyAlgorithm = (typeof SFTP_HOST_KEY_ALGORITHMS)[number];
+
+/** The key type named inside an SSH public key blob (uint32 BE length + name). */
+export function sshKeyBlobType(blob: Buffer): string | undefined {
+  if (blob.length < 4) return undefined;
+  const length = blob.readUInt32BE(0);
+  if (length === 0 || length > 64 || 4 + length > blob.length) return undefined;
+  return blob.subarray(4, 4 + length).toString('latin1');
+}
+
+/** OpenSSH SHA256 fingerprint body: unpadded base64 of sha256(key blob). */
+export function sshKeyFingerprint(blob: Buffer): string {
+  return createHash('sha256').update(blob).digest('base64').replace(/=+$/, '');
+}
+
+export function normalizeSshFingerprint(fingerprint: string): string {
+  return fingerprint.replace(/^SHA256:/, '').replace(/=+$/, '');
+}
+
+const SshFingerprintSchema = z.string().regex(/^SHA256:[A-Za-z0-9+/]{43}=?$/, {
+  message: 'fingerprint must be an OpenSSH SHA256 fingerprint (SHA256:<43 base64 chars>)',
+});
+
+const SshPublicKeySchema = z
+  .string()
+  .max(16_384)
+  .refine((value) => /^[A-Za-z0-9+/]+={0,2}$/.test(value) && decodePublicKey(value) !== undefined, {
+    message: 'public_key must be the base64 key blob from an authorized_keys or known_hosts line',
+  });
+
+function decodePublicKey(value: string): Buffer | undefined {
+  const blob = Buffer.from(value, 'base64');
+  // Buffer decoding is lenient; require the canonical encoding of a well-formed blob.
+  return blob.toString('base64') === value && sshKeyBlobType(blob) ? blob : undefined;
+}
+
+/** The fingerprint a pin identifies, from either field (schema guarantees they agree). */
+export function sftpHostKeyPinFingerprint(pin: {
+  fingerprint?: string;
+  public_key?: string;
+}): string {
+  if (pin.fingerprint) return normalizeSshFingerprint(pin.fingerprint);
+  return sshKeyFingerprint(Buffer.from(pin.public_key ?? '', 'base64'));
+}
+
+export const SftpHostKeyPinSchema = z
+  .object({
+    algorithm: z.enum(SFTP_HOST_KEY_ALGORITHMS),
+    fingerprint: SshFingerprintSchema.optional(),
+    public_key: SshPublicKeySchema.optional(),
+  })
+  .strict()
+  .superRefine((pin, ctx) => {
+    if (!pin.fingerprint && !pin.public_key) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'SFTP host key pin requires fingerprint or public_key',
+        path: ['fingerprint'],
+      });
+      return;
+    }
+    const blob = pin.public_key ? decodePublicKey(pin.public_key) : undefined;
+    if (!blob) return;
+    if (sshKeyBlobType(blob) !== pin.algorithm) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `public_key is a ${sshKeyBlobType(blob)} key, not ${pin.algorithm}`,
+        path: ['public_key'],
+      });
+    }
+    if (pin.fingerprint && normalizeSshFingerprint(pin.fingerprint) !== sshKeyFingerprint(blob)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'fingerprint does not match public_key',
+        path: ['fingerprint'],
+      });
+    }
+  });
+export type SftpHostKeyPin = z.infer<typeof SftpHostKeyPinSchema>;
+
 export const SftpFileStorageConnectionSchema = z
   .object({
     host: EnvStringSchema,
     port: z.number().int().positive().max(65535).default(22).optional(),
     username: EnvStringSchema,
     base_directory: z.string().min(1),
+    host_keys: z
+      .array(SftpHostKeyPinSchema)
+      .min(1)
+      .max(4)
+      .superRefine((pins, ctx) => {
+        const seen = new Set<string>();
+        pins.forEach((pin, index) => {
+          if (!pin.fingerprint && !pin.public_key) return;
+          const fingerprint = sftpHostKeyPinFingerprint(pin);
+          if (seen.has(fingerprint)) {
+            ctx.addIssue({ code: 'custom', message: 'duplicate host key pin', path: [index] });
+          }
+          seen.add(fingerprint);
+        });
+      })
+      .describe('Pinned SSH host keys in preference order. Only these key types are negotiated.'),
+    read_concurrency: z
+      .number()
+      .int()
+      .min(1)
+      .max(16)
+      .default(4)
+      .describe('Maximum SFTP READ requests in flight on the connection.'),
   })
   .strict();
+export type SftpFileStorageConnection = z.output<typeof SftpFileStorageConnectionSchema>;
 
-export const SftpFileStorageAuthSchema = z
-  .union([
-    z
-      .object({
-        type: z.literal('password'),
-        password_env: EnvVarNameSchema,
-        host_fingerprint: z.string().min(1).optional(),
-        known_hosts_path: z.string().min(1).optional(),
-      })
-      .strict(),
-    z
-      .object({
-        type: z.literal('private_key'),
-        private_key_path_env: EnvVarNameSchema,
-        passphrase_env: EnvVarNameSchema.optional(),
-        host_fingerprint: z.string().min(1).optional(),
-        known_hosts_path: z.string().min(1).optional(),
-      })
-      .strict(),
-  ])
-  .superRefine((value, ctx) => {
-    if (!value.host_fingerprint && !value.known_hosts_path) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          'SFTP auth requires host_fingerprint or known_hosts_path for host key verification',
-        path: ['host_fingerprint'],
-      });
-    }
-  });
+export const SftpFileStorageAuthSchema = z.union([
+  z.object({ type: z.literal('password'), password_env: EnvVarNameSchema }).strict(),
+  z
+    .object({
+      type: z.literal('private_key'),
+      private_key_path_env: EnvVarNameSchema,
+      passphrase_env: EnvVarNameSchema.optional(),
+    })
+    .strict(),
+]);
+export type SftpFileStorageAuth = z.infer<typeof SftpFileStorageAuthSchema>;
 
 export const LocalFileStorageConnectionSchema = z
   .object({
@@ -161,6 +255,7 @@ export interface DownloadedFile {
 export interface ListFilesOptions {
   path: string;
   maxFiles?: number;
+  signal?: AbortSignal;
 }
 
 export interface FileStorageClient {
