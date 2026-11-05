@@ -30,7 +30,7 @@ import type { Action } from '../action-registry.js';
 import type { ActionResult, ExecuteOptions } from '../action-executor.js';
 import { resolveActionProjectRoot } from '../action-paths.js';
 import { createReferenceCollector, describeActionRequest } from '../action-preview-request.js';
-import { classifyTransportError, safeTransportErrorMessage } from './shared.js';
+import { classifyTransportError, toActionResultError } from './shared.js';
 
 interface ApiClientLike {
   request(options: {
@@ -250,9 +250,10 @@ export async function executeApiAction(
   }
 
   let mapped: InterpolationMappedValues;
+  let integration: HttpApiActionIntegration | undefined;
   try {
     options?.signal?.throwIfAborted();
-    const integration = resolveHttpIntegration(action, options, deps);
+    integration = resolveHttpIntegration(action, options, deps);
     try {
       mapped = mapFields(action.spec.field_mapping, inputs);
     } catch (error) {
@@ -393,9 +394,7 @@ export async function executeApiAction(
       transport: action.transport,
       attempted_at: attemptedAt,
       duration_ms: Date.now() - startedAt,
-      error: options?.safeErrors
-        ? { ...normalized, message: safeTransportErrorMessage(normalized.code) }
-        : normalized,
+      error: toActionResultError(normalized, options, integration?.auth_env_vars),
     };
   }
 }

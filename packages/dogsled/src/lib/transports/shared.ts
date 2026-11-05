@@ -1,12 +1,20 @@
+import { readProviderResponseBody, sanitizeUrlForError } from '@bobsled-inc/extractor/core';
 import { DOGSLED_RUNTIME_ERROR_KINDS, type DogsledRuntimeErrorKind } from '@bobsled-inc/protocol';
 
-import type { ActionErrorCode } from '../action-executor.js';
+import { createPipelineRedactor } from '../../pipeline/redaction.js';
+import type { ActionErrorCode, ActionResult, ExecuteOptions } from '../action-executor.js';
 
 export interface TransportErrorClassification {
   code: ActionErrorCode;
   message: string;
   retryable: boolean;
+  /** HTTP status of the provider response that caused the failure. */
+  providerStatus?: number;
+  /** Redacted body of that provider response, never returned as is. */
+  providerBody?: string;
 }
+
+type ActionResultError = NonNullable<ActionResult['error']>;
 
 export interface TransportStatusClassification {
   code: ActionErrorCode;
@@ -32,6 +40,7 @@ const NETWORK_ERROR_CODES = new Set([
   'EPIPE',
 ]);
 const DOGSLED_RUNTIME_ERROR_KIND_SET: ReadonlySet<string> = new Set(DOGSLED_RUNTIME_ERROR_KINDS);
+const MAX_PROVIDER_MESSAGE_CHARS = 300;
 
 interface RuntimeFailure {
   kind: DogsledRuntimeErrorKind;
@@ -43,6 +52,8 @@ export function safeTransportErrorMessage(code: ActionErrorCode): string {
   switch (code) {
     case 'auth_error':
       return 'The external service rejected authentication.';
+    case 'permission_denied':
+      return 'The external service refused the Action.';
     case 'not_found':
       return 'The external target was not found.';
     case 'conflict':
@@ -119,11 +130,24 @@ function readRuntimeFailure(error: unknown): RuntimeFailure | undefined {
   };
 }
 
-function classifyRuntimeFailure(errorChain: unknown[]): TransportStatusClassification | undefined {
+function providerBodyField(error: unknown): { providerBody?: string } {
+  const providerBody = readProviderResponseBody(error);
+  return providerBody === undefined ? {} : { providerBody };
+}
+
+function classifyRuntimeFailure(
+  errorChain: unknown[]
+): Omit<TransportErrorClassification, 'message'> | undefined {
   for (const candidate of errorChain) {
     const failure = readRuntimeFailure(candidate);
     if (!failure) continue;
-    if (failure.providerStatus !== undefined) return mapStatusToError(failure.providerStatus);
+    if (failure.providerStatus !== undefined) {
+      return {
+        ...mapStatusToError(failure.providerStatus),
+        providerStatus: failure.providerStatus,
+        ...providerBodyField(candidate),
+      };
+    }
     switch (failure.kind) {
       case 'auth':
         return { code: 'auth_error', retryable: false };
@@ -146,8 +170,9 @@ function classifyRuntimeFailure(errorChain: unknown[]): TransportStatusClassific
 export function mapStatusToError(status: number): TransportStatusClassification {
   switch (status) {
     case 401:
-    case 403:
       return { code: 'auth_error', retryable: false };
+    case 403:
+      return { code: 'permission_denied', retryable: false };
     case 404:
       return { code: 'not_found', retryable: false };
     case 409:
@@ -190,6 +215,7 @@ export function classifyTransportError(
       return {
         ...mapStatusToError(status),
         message,
+        ...(isHttpStatus(status) ? { providerStatus: status, ...providerBodyField(error) } : {}),
       };
     }
   }
@@ -207,4 +233,130 @@ export function classifyTransportError(
   }
 
   return { code: 'unknown', message, retryable: false };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function secretRedactionVariants(value: string): string[] {
+  return [
+    value,
+    encodeURIComponent(value),
+    new URLSearchParams({ value }).toString().slice('value='.length),
+    JSON.stringify(value).slice(1, -1),
+  ];
+}
+
+/**
+ * Build a redactor for provider text from the credential values an Action could
+ * send, including their URL- and JSON-encoded forms.
+ */
+export function createActionSecretRedactor(
+  values: Iterable<string | undefined>
+): (value: string) => string {
+  const variants: string[] = [];
+  for (const value of values) {
+    if (value) variants.push(...secretRedactionVariants(value));
+  }
+  return createPipelineRedactor(variants);
+}
+
+function actionSecretValues(
+  options: ExecuteOptions | undefined,
+  authEnvVars: readonly string[] | undefined
+): string[] {
+  const source = options?.secrets ?? process.env;
+  const names = new Set([
+    ...(authEnvVars ?? []),
+    ...(options?.secrets === undefined ? [] : (options.declaredSecretNames ?? [])),
+  ]);
+  const values: string[] = [];
+  for (const name of names) {
+    const value = Object.hasOwn(source, name) ? source[name] : undefined;
+    if (value) values.push(value);
+  }
+  return values;
+}
+
+function boundProviderMessage(
+  value: string,
+  redact: (value: string) => string
+): string | undefined {
+  const condensed = redact(value)
+    .replace(/\p{Cf}+/gu, '')
+    .replace(/[\p{Cc}\s]+/gu, ' ')
+    .trim()
+    .replace(/https?:\/\/[^\s"'<>)\]]+/gi, (url) => sanitizeUrlForError(url));
+  if (!condensed) return undefined;
+  const characters = Array.from(condensed);
+  return characters.length > MAX_PROVIDER_MESSAGE_CHARS
+    ? `${characters.slice(0, MAX_PROVIDER_MESSAGE_CHARS - 1).join('')}…`
+    : condensed;
+}
+
+/**
+ * Extract the error prose from a JSON provider error body. Only well-known
+ * message fields are read; the raw body is never returned.
+ */
+export function providerMessageFromBody(
+  body: string,
+  redact: (value: string) => string
+): string | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body) as unknown;
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(parsed)) return undefined;
+
+  const { error, errors } = parsed;
+  const candidates = [
+    isRecord(error) ? error['message'] : undefined,
+    parsed['message'],
+    error,
+    parsed['detail'],
+    Array.isArray(errors) && isRecord(errors[0]) ? errors[0]['message'] : undefined,
+    parsed['error_description'],
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue;
+    const message = boundProviderMessage(candidate, redact);
+    if (message) return message;
+  }
+  return undefined;
+}
+
+function isClientErrorStatus(status: number | undefined): status is number {
+  return status !== undefined && status >= 400 && status <= 499;
+}
+
+/**
+ * Build the Action result error. Adds the provider status and, for a 4xx, a bounded
+ * provider message with the Action's declared credential values redacted.
+ */
+export function toActionResultError(
+  classification: TransportErrorClassification,
+  options: ExecuteOptions | undefined,
+  authEnvVars: readonly string[] | undefined,
+  requestSecretValues: readonly string[] = []
+): ActionResultError {
+  const { providerStatus, providerBody, ...normalized } = classification;
+  const providerMessage =
+    isClientErrorStatus(providerStatus) && providerBody !== undefined
+      ? providerMessageFromBody(
+          providerBody,
+          createActionSecretRedactor([
+            ...actionSecretValues(options, authEnvVars),
+            ...requestSecretValues,
+          ])
+        )
+      : undefined;
+  return {
+    ...normalized,
+    ...(options?.safeErrors ? { message: safeTransportErrorMessage(normalized.code) } : {}),
+    ...(providerStatus !== undefined ? { provider_status: providerStatus } : {}),
+    ...(providerMessage !== undefined ? { provider_message: providerMessage } : {}),
+  };
 }
