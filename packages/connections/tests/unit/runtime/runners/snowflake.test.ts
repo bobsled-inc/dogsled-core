@@ -501,6 +501,36 @@ describe('buildSnowflakeRunner — refreshable managed credentials', () => {
     await runner.close?.();
   });
 
+  it('applies the statement limit to every session, including after a reconnect', async () => {
+    let now = 0;
+    const tokenProvider = vi.fn(async () => ({ accessToken: 'token', expiresAt: now + 3_600 }));
+    const { sdk, execute } = trackingSdk();
+    const runner = await buildSnowflakeRunner(patIntegration(), {
+      sdk,
+      tokenProvider,
+      now: () => now,
+      skewSeconds: 300,
+      statementTimeoutMs: 60_000,
+    });
+    now = 3_400;
+    await runner.run('SELECT 1');
+    expect(execute.mock.calls.map(([options]) => (options as { sqlText: string }).sqlText)).toEqual(
+      [
+        'ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 60',
+        'ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 60',
+        'SELECT 1',
+      ]
+    );
+    await runner.close?.();
+  });
+
+  it('leaves the session settings alone without a statement limit', async () => {
+    const { sdk, execute } = trackingSdk();
+    const runner = await buildSnowflakeRunner(patIntegration(), { sdk });
+    expect(execute).not.toHaveBeenCalled();
+    await runner.close?.();
+  });
+
   it('reactively re-mints + reconnects + retries once on an auth-lapse error (read-only query)', async () => {
     // Reactive retry is gated to read-only statements (query/LIST) — side-effecting
     // run()/COPY INTO must NOT be re-executed after an auth lapse.

@@ -75,6 +75,18 @@ describe('resolveRunner — precedence: custom → built-in → fail', () => {
     expect(factory).toHaveBeenCalledWith(duckDbMemory, expect.objectContaining({}));
   });
 
+  it('passes the statement limit to the runner factory', async () => {
+    const factory = vi.fn(async (): Promise<SqlRunnerModule> => ({ run: vi.fn() }));
+    const customRunners = new CustomRunnerRegistry();
+    customRunners.register('duckdb', 'memory', factory);
+
+    await resolveRunner(duckDbMemory, { customRunners, statementTimeoutMs: 60_000 });
+    expect(factory).toHaveBeenCalledWith(
+      duckDbMemory,
+      expect.objectContaining({ statementTimeoutMs: 60_000 })
+    );
+  });
+
   it('custom factory satisfies (snowflake, sledhouse_oidc) that built-ins never implement', async () => {
     const customModule: SqlRunnerModule = { run: vi.fn(async () => ({ rowCount: 0 })) };
     const factory = vi.fn(async () => customModule);

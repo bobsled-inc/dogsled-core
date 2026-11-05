@@ -445,6 +445,8 @@ export interface BuildSnowflakeRunnerOptions {
   now?: () => number;
   /** Override the proactive-refresh skew (tests). Seconds before expiry. */
   skewSeconds?: number;
+  /** Server-side limit for each statement in this session, including after a reconnect. */
+  statementTimeoutMs?: number | undefined;
 }
 
 export interface SnowflakeRunnerModule extends SqlRunnerModule {
@@ -556,12 +558,22 @@ export async function buildSnowflakeRunner(
       : { ...base, authenticator: 'OAUTH', token: accessToken };
   }
 
+  // Session settings do not survive a reconnect, so every new session applies the limit.
+  // The limit covers queueing, lock waits and execution.
+  const statementTimeoutMs = options?.statementTimeoutMs;
+  async function openSession(connection: SnowflakeSdkConnection): Promise<void> {
+    await connectAsync(connection);
+    if (statementTimeoutMs === undefined) return;
+    const seconds = Math.ceil(statementTimeoutMs / 1000);
+    await executeAsync(connection, `ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = ${seconds}`);
+  }
+
   let raw: SnowflakeSdkConnection;
   if (tokenSource) {
     currentToken = await tokenSource.getAccessToken();
   }
   raw = sdk.createConnection(buildConfig(currentToken?.accessToken));
-  await connectAsync(raw);
+  await openSession(raw);
 
   // Re-mint a fresh token and swap in a new connection, destroying the old one.
   // The access token authenticates the session at connect time, so a refresh
@@ -569,7 +581,7 @@ export async function buildSnowflakeRunner(
   async function reconnect(fresh: BigQueryAccessToken): Promise<void> {
     const previous = raw;
     const next = sdk.createConnection(buildConfig(fresh.accessToken));
-    await connectAsync(next);
+    await openSession(next);
     raw = next;
     currentToken = fresh;
     try {

@@ -86,6 +86,29 @@ describe('buildBigQueryRunner — adc auth', () => {
     }
   });
 
+  it('sets a job timeout only when the caller asks for a limit', async () => {
+    const { client } = mockBigQueryClient();
+    const limited = await buildBigQueryRunner(adcIntegration(), {
+      client,
+      statementTimeoutMs: 60_000,
+    });
+    await limited.run('UPDATE t SET a = 1 WHERE TRUE');
+    await limited.query!('SELECT ?', [1]);
+    await limited.dryRun!('SELECT 1');
+    expect(client.createQueryJob.mock.calls.map(([job]: unknown[]) => job)).toEqual([
+      expect.objectContaining({ query: 'UPDATE t SET a = 1 WHERE TRUE', jobTimeoutMs: 60_000 }),
+      expect.objectContaining({ query: 'SELECT ?', jobTimeoutMs: 60_000 }),
+      expect.not.objectContaining({ jobTimeoutMs: expect.anything() }),
+    ]);
+
+    client.createQueryJob.mockClear();
+    const unlimited = await buildBigQueryRunner(adcIntegration(), { client });
+    await unlimited.run('SELECT 1');
+    expect(client.createQueryJob.mock.calls[0]).toEqual([
+      expect.not.objectContaining({ jobTimeoutMs: expect.anything() }),
+    ]);
+  });
+
   it('query() returns rows', async () => {
     const { client } = mockBigQueryClient();
     const runner = await buildBigQueryRunner(adcIntegration(), { client });

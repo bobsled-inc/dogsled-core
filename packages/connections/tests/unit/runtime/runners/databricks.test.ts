@@ -73,6 +73,22 @@ afterEach(() => {
 });
 
 describe('buildDatabricksRunner — pat auth', () => {
+  it('sets STATEMENT_TIMEOUT only when the caller asks for a limit', async () => {
+    const limited = mockDatabricksConnection();
+    await buildDatabricksRunner(patIntegration(), {
+      connection: limited.connection,
+      statementTimeoutMs: 60_000,
+    });
+    expect(limited.executeStatementFn).toHaveBeenCalledWith('SET STATEMENT_TIMEOUT = 60');
+    expect(limited.operationCloseFn).toHaveBeenCalled();
+
+    const unlimited = mockDatabricksConnection();
+    await buildDatabricksRunner(patIntegration(), { connection: unlimited.connection });
+    expect(unlimited.executeStatementFn).not.toHaveBeenCalledWith(
+      expect.stringContaining('STATEMENT_TIMEOUT')
+    );
+  });
+
   it('never enables the SDK proxy/PAC path in the default adapter', async () => {
     const { connection } = mockDatabricksConnection();
     const connect = vi.fn().mockResolvedValue(connection);
