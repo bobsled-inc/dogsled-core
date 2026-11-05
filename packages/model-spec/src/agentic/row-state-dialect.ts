@@ -30,7 +30,7 @@ export interface AgenticRowDialect {
   insertIfAbsent(
     db: AgenticRowDb,
     table: string,
-    values: Readonly<Record<string, string | number | boolean>>,
+    values: Readonly<Record<string, string | number | bigint | boolean>>,
     key: string
   ): Promise<void>;
   /** Inserts `rows` rows of `columns`. Repeating identical rows must be harmless. */

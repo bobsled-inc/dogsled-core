@@ -64,7 +64,8 @@ export async function openAgenticRowSession(
   const { dialect } = backend;
   const { ownership, limits, signal } = options;
   const lease = ownership.mode === 'lease' ? ownership : undefined;
-  const retentionMs = options.retentionMs ?? AGENTIC_ROW_RETENTION_MS;
+  // Thirty days in milliseconds is past 32 bits, where a driver can wrap a plain number.
+  const retentionMs = BigInt(options.retentionMs ?? AGENTIC_ROW_RETENTION_MS);
   const q = dialect.identifier;
   const owner = randomUUID();
   const controller = new AbortController();
@@ -167,7 +168,7 @@ export async function openAgenticRowSession(
         token: '',
         head: '',
         summary: '',
-        retain_until: Date.now() + retentionMs,
+        retain_until: BigInt(Date.now()) + retentionMs,
         reclaimable: true,
       },
       'run_hash'
