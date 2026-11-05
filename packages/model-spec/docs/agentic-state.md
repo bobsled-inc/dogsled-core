@@ -191,7 +191,8 @@ so a run has one owner either way:
 
 - Installing DuckDB moves nothing. Runs already in the file store resume from it, and new runs
   use DuckDB. Each key's incremental cursor is read from the file store once, when the new store
-  first sees that key, so progress carries over.
+  first sees that key, so progress carries over. That move is one-way: an older release reads the
+  old value and would process those rows again, so do not downgrade after that first run.
 - Removing DuckDB stops runs and cursors saved in DuckDB files with `unavailable`
   (`duckdb_required`) rather than starting them again from older state. Install the package to
   resume them. A DuckDB file cannot be read without the driver. Other new runs use the file store.
@@ -290,11 +291,14 @@ No table relies on a unique key, which three of the warehouses this layout targe
 enforce. The row layout supports DuckDB today.
 
 Rows expire: each header write sets `retain_until`, 30 days ahead by default. A later acquisition
-deletes unowned runs past that time. A run still owed recovery does not expire: one with a
-prepared publication, one with confirmed publication and uncommitted cursors, or a sealed
-incremental batch that is not finished. Superseding such a run releases it. A preparing run does
-expire, because it has no inputs, work or spend. If it held a cursor reservation, a later start
-replaces that reservation. Cursor rows never expire.
+deletes unowned runs past that time.
+
+This covers failed runs too: a run without incremental sources that is resumed after that time
+starts again and pays again. A run still owed recovery does not expire: one with a prepared
+publication, one with confirmed publication and uncommitted cursors, or a sealed incremental batch
+that is not finished. Superseding such a run releases it. A preparing run does expire, because it
+has no inputs, work or spend. If it held a cursor reservation, a later start replaces that
+reservation. Cursor rows never expire.
 
 ### Local DuckDB files
 
