@@ -54,6 +54,21 @@ function buildUnsupportedVectorError(): CommandError {
   );
 }
 
+/** Index prefix for TEXT key columns; longer key values are rejected before loading. */
+const MYSQL_STRING_KEY_LENGTH = 255;
+
+function buildKeyTooLongError(column: string): CommandError {
+  return new CommandError(
+    JSON.stringify({
+      code: 'KEY_VALUE_TOO_LONG',
+      message: `MySQL destination supports string key values up to ${MYSQL_STRING_KEY_LENGTH} characters`,
+      destination: 'mysql',
+      column,
+    }),
+    EXIT_VALIDATION
+  );
+}
+
 function mapMySqlType(type: ColumnType): string {
   switch (type) {
     case 'integer':
@@ -236,7 +251,7 @@ export class MySqlDestination implements DatabaseDestination {
       }
 
       if (options?.keyProperties && options.keyProperties.length > 0) {
-        await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties);
+        await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties, columns);
       }
 
       return;
@@ -266,7 +281,7 @@ export class MySqlDestination implements DatabaseDestination {
       this.columnCache.set(cacheKey, columnMap);
 
       if (options?.keyProperties && options.keyProperties.length > 0) {
-        await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties);
+        await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties, columns);
       }
 
       return;
@@ -364,17 +379,27 @@ export class MySqlDestination implements DatabaseDestination {
     this.columnCache.set(cacheKey, columnMap);
 
     if (options?.keyProperties && options.keyProperties.length > 0) {
-      await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties);
+      await this.ensureUniqueIndex(qualifiedTable, safeTable, options.keyProperties, columns);
     }
   }
 
   private async ensureUniqueIndex(
     qualifiedTable: string,
     tableName: string,
-    keyProperties: string[]
+    keyProperties: string[],
+    columns: SchemaColumn[]
   ): Promise<void> {
     if (keyProperties.length === 0) return;
-    const keyColList = keyProperties.map(quoteMySqlIdentifier).join(', ');
+    // MySQL cannot index a whole TEXT column; loadAndFinalize rejects longer key values,
+    // so the prefix covers the full key and two keys never share one index entry.
+    const stringKeys = new Set(columns.filter((c) => c.type === 'string').map((c) => c.name));
+    const keyColList = keyProperties
+      .map((k) =>
+        stringKeys.has(k)
+          ? `${quoteMySqlIdentifier(k)}(${MYSQL_STRING_KEY_LENGTH})`
+          : quoteMySqlIdentifier(k)
+      )
+      .join(', ');
     const indexName = quoteMySqlIdentifier(`_dogsled_uq_${tableName}`);
     await this.query(`CREATE UNIQUE INDEX ${indexName} ON ${qualifiedTable} (${keyColList})`).catch(
       (err: unknown) => {
@@ -411,6 +436,14 @@ export class MySqlDestination implements DatabaseDestination {
       for (let ci = 0; ci < columns.length; ci++) {
         const col = columns[ci]!;
         const val = record[col.name];
+        if (
+          col.type === 'string' &&
+          keyColumns.includes(col.name) &&
+          typeof val === 'string' &&
+          [...val].length > MYSQL_STRING_KEY_LENGTH
+        ) {
+          throw buildKeyTooLongError(col.name);
+        }
         if (val === null || val === undefined) {
           rowParams.push(null);
         } else if (col.type === 'array' || col.type === 'object') {

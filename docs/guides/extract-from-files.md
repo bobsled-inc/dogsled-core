@@ -181,7 +181,7 @@ A document resource produces four tables, named after the resource:
 
 | Table                  | Contents                                                                                                                                              |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<name>__documents`    | One row per document version: `document_id`, `source_uri`, `format`, full `text`, `content_hash`, `parser_version`.                                   |
+| `<name>__documents`    | One row per document, at its latest version: `document_id`, `source_uri`, `format`, full `text`, `content_hash`, `parser_version`.                    |
 | `<name>__chunks`       | One row per chunk: `chunk_id`, `document_id`, `chunk_index`, `text`, `token_count`.                                                                   |
 | `<name>__parse_errors` | Files that could not be parsed, when `parse.on_error` is `record` (the default). `skip` ignores them and `fail` stops the run.                        |
 | `<name>__acl`          | Permission evidence (who could read the file) when the source exposes it and `permissions.capture` is on. Dogsled records it; it does not enforce it. |
@@ -199,6 +199,13 @@ A document resource with `replication.method: full_refresh` parses every file ag
 on every run, and with `embedding` set it embeds every chunk again, which costs
 provider calls each time. Use an incremental method to process only new or changed
 files.
+
+On an incremental run, `__documents` and `__chunks` are merged by file: documents
+by `document_id`, chunks by `document_id` and `chunk_index`. A changed file
+overwrites its own rows and other files keep theirs. Two limits apply. A file that
+now has fewer chunks keeps its old trailing chunks, which still carry the previous
+`document_version_id`, so join chunks to `__documents` on `document_version_id` to
+read only current text. A deleted file keeps its rows until a `--full-refresh` run.
 
 ## Cloud storage
 

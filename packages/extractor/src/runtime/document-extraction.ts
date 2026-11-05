@@ -195,8 +195,20 @@ export async function extractDocumentResource(
 
   async function ensureSchemasEmitted(): Promise<void> {
     if (schemaEmitted) return;
-    await emitter.emitSchema({ name: documentsStream, output: DOCUMENTS_OUTPUT });
-    await emitter.emitSchema({ name: chunksStream, output: CHUNKS_OUTPUT });
+    // An incremental run emits only new or changed files, so documents and chunks upsert by
+    // file; a full read replaces the tables. shortcut: a file that shrinks keeps its old tail
+    // chunks (old document_version_id), until the loader can replace rows per file.
+    const strategy = readAllFiles ? 'full_refresh' : 'merge';
+    await emitter.emitSchema({
+      name: documentsStream,
+      output: DOCUMENTS_OUTPUT,
+      extract: { table: { primary_key: ['document_id'], load_strategy: strategy } },
+    });
+    await emitter.emitSchema({
+      name: chunksStream,
+      output: CHUNKS_OUTPUT,
+      extract: { table: { primary_key: ['document_id', 'chunk_index'], load_strategy: strategy } },
+    });
     await emitter.emitSchema({ name: parseErrorsStream, output: PARSE_ERRORS_OUTPUT });
     if (capturePermissions) {
       await emitter.emitSchema({ name: aclStream, output: ACL_OUTPUT });

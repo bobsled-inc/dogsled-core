@@ -228,6 +228,45 @@ describe('MySqlDestination', () => {
     expect(result.rowsAffected).toBe(1);
   });
 
+  it('ensureTable() indexes string keys by prefix so MySQL accepts the TEXT column', async () => {
+    const connection = createMockConnection();
+    const { dest } = await createDestination(createMockPool(connection));
+    await dest.initialize();
+    const chunkColumns: SchemaColumn[] = [
+      { name: 'document_id', type: 'string', primary_key: true },
+      { name: 'chunk_index', type: 'integer', primary_key: true },
+      { name: 'text', type: 'string' },
+    ];
+
+    await dest.ensureTable('analytics', 'docs__chunks', chunkColumns, {
+      keyProperties: ['document_id', 'chunk_index'],
+    });
+
+    const index = connection.execute.mock.calls
+      .map(([sql]) => sql as string)
+      .find((sql) => sql.startsWith('CREATE UNIQUE INDEX'));
+    expect(index).toContain('(`document_id`(255), `chunk_index`)');
+  });
+
+  it('loadAndFinalize() rejects string key values longer than the indexed prefix', async () => {
+    const connection = createMockConnection();
+    const { dest } = await createDestination(createMockPool(connection));
+    const columns: SchemaColumn[] = [
+      { name: 'document_id', type: 'string', primary_key: true },
+      { name: 'text', type: 'string' },
+    ];
+    mockFileContent([{ document_id: 'x'.repeat(256), text: 'a', _time_extracted: null }]);
+
+    await expect(
+      dest.loadAndFinalize('analytics', 'docs', '/tmp/docs.jsonl', columns, 'merge', [
+        'document_id',
+      ])
+    ).rejects.toThrow('KEY_VALUE_TOO_LONG');
+    expect(
+      connection.execute.mock.calls.some(([sql]) => String(sql).includes('ON DUPLICATE KEY'))
+    ).toBe(false);
+  });
+
   it('loadAndFinalize(\"merge\") requires key columns', async () => {
     const { dest } = await createDestination();
     mockFileContent([{ id: 1, title: 'Bug', _time_extracted: '2026-01-01T00:00:00Z' }]);
