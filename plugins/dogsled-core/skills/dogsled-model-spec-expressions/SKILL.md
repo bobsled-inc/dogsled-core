@@ -110,7 +110,7 @@ expr: "CAST(ID AS VARCHAR)"
 
 ## raw_sql() Escape Hatch
 
-Use `raw_sql()` when the Expression DSL cannot represent a construct. Content passes through verbatim — no parsing, no transpilation, and no per-dialect capability checks. **Use sparingly**: you lose cross-dialect portability, and the column's lineage entry drops to `isComplete: false`, so it no longer traces back to its upstream columns.
+Use `raw_sql()` when the Expression DSL cannot represent a construct. It bypasses DSL parsing and function mapping, but shared SQL safety checks still apply to its contents. Malformed quoting/comments, statement separators outside literals, and prohibited operations are rejected. Native SQL must also compile for the target dialect. **Use sparingly**: you lose cross-dialect portability, and the column's lineage entry drops to `isComplete: false`, so it no longer traces back to its upstream columns.
 
 ```yaml
 # A dialect-specific operator
@@ -257,6 +257,7 @@ Functions are transpiled across dialects automatically. Unknown functions pass t
 | ------------------------------------ | ---- | --------------------------------------------------------------------- |
 | `date_trunc('unit', expr)`           | 2    | BQ reverses args, unquotes unit                                       |
 | `datediff('unit', start, end)`       | 3    | BQ: `DATE_DIFF(end, start, UNIT)`                                     |
+| `timestamp_diff('unit', start, end)` | 3    | SF/DB: `TIMESTAMPDIFF`; BQ: reversed; PG: math; DuckDB: `date_diff`   |
 | `dateadd('unit', amount, date)`      | 3    | BQ: `DATE_ADD(date, INTERVAL amount UNIT)`                            |
 | `date_part('unit', expr)`            | 2    | BQ/PG/DB: `EXTRACT(unit FROM expr)`                                   |
 | `year(expr)`                         | 1    | BQ/PG: `EXTRACT(YEAR FROM expr)`                                      |
@@ -280,6 +281,18 @@ Functions are transpiled across dialects automatically. Unknown functions pass t
 | `next_day(date, dow)`                | 2    |                                                                       |
 | `format_date(format, date)`          | 2    | SF: `TO_VARCHAR`, BQ: `FORMAT_DATE`, PG: `TO_CHAR`, DB: `DATE_FORMAT` |
 | `timestamp_seconds(epoch)`           | 1    | SF/PG: `TO_TIMESTAMP`, BQ: `TIMESTAMP_SECONDS`, DB: `FROM_UNIXTIME`   |
+
+`timestamp_diff` takes typed timestamp inputs in `(unit, start, end)` order.
+PostgreSQL and DuckDB support `microsecond`, `millisecond`, `second`, `minute`,
+`hour`, `day`, `week`, `month`, `quarter`, and `year`. PostgreSQL truncates elapsed
+fixed-length units toward zero as `BIGINT`; month, quarter, and year use calendar
+months from `age(end, start)`. Unsupported PostgreSQL units fail at compile time.
+DuckDB's `date_diff` returns `BIGINT` and counts boundaries, so `00:59:59` to
+`01:00:00` is one hour and January 31 to February 1 is one month. Results can
+therefore differ from PostgreSQL's elapsed units. Snowflake, BigQuery, and
+Databricks retain their native unit limits and semantics. Redshift retains its
+previous epoch/divisor emulation: month/year use approximate durations, and
+microsecond, millisecond, and quarter use day scaling.
 
 ### String Functions
 
@@ -312,12 +325,15 @@ Functions are transpiled across dialects automatically. Unknown functions pass t
 | `split(s, delim)`                      | 2    | PG: `STRING_TO_ARRAY`                                                     |
 | `translate(s, from, to)`               | 3    |                                                                           |
 | `editdistance(a, b)`                   | 2    | BQ: `EDIT_DISTANCE`, PG/DB: `LEVENSHTEIN`                                 |
-| `position(needle, haystack)`           | 2    | SF: `CHARINDEX`, BQ: `STRPOS`, PG: `POSITION`, DB: `LOCATE`               |
+| `position(needle, haystack)`           | 2    | SF: `CHARINDEX`, BQ: `STRPOS`, PG/DuckDB: `POSITION`, DB: `LOCATE`        |
 | `soundex(s)`                           | 1    |                                                                           |
 | `base64_encode(s)`                     | 1    | BQ: `TO_BASE64`, DB: `BASE64`                                             |
 | `base64_decode(s)`                     | 1    | SF: `BASE64_DECODE_STRING`, BQ: `FROM_BASE64`, DB: `UNBASE64`             |
 | `ascii(s)`                             | 1    | BQ: `TO_CODE_POINTS`                                                      |
 | `chr(n)`                               | 1    | BQ: `CODE_POINTS_TO_STRING`                                               |
+
+`position(needle, haystack)` returns a 1-based index or `0` when absent.
+PostgreSQL and DuckDB emit `POSITION(needle IN haystack)`.
 
 ### Numeric Functions
 
@@ -682,12 +698,16 @@ expr: "datediff('day', CREATED_AT, CURRENT_DATE)"
 
 # Safe division
 expr: "div0(REVENUE, COST)"
+
+# Quoted semicolons are literal data
+expr: "listagg(t0.company_id, '; ')"
+expr: "case when t0.name is null then 'Name missing; review required' else null end"
 ```
 
 ### Incorrect
 
 ```yaml
-# Semicolons not allowed
+# Statement separator outside a quoted literal
 expr: "SELECT 1; DROP TABLE users"
 # ^ Rejected by validation
 
@@ -711,8 +731,9 @@ expr: "STATUS = \"active\""
 
 ## Expression Validation Rules
 
-1. **No semicolons** — expressions cannot contain `;`
-2. **No DDL keywords at start** — `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT`, `REVOKE` are rejected when they appear at the start
+1. **No statement separators** — `;` is allowed inside quoted literals, such as a LISTAGG separator or CASE label. A semicolon outside a literal is rejected.
+2. **No prohibited SQL operations** — command prefixes such as `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `GRANT`, and `REVOKE`, and unquoted `UNION`/`EXCEPT`/`INTERSECT SELECT` operations are rejected. Comments cannot hide those operations; quoted text such as `'UNION SELECT'` is literal data.
 3. **Identifiers** — must match `/^[a-zA-Z_]\w*$/`
-4. **Auto-fallback** — if the DSL parser fails, the expression falls back to `raw_sql` (pass-through). This means invalid DSL syntax won't crash compilation, but you lose transpilation.
-5. **Functions not in catalog** — pass through verbatim (forward-compatible with new SQL functions)
+4. **Quoting and comments** — unterminated strings, quoted identifiers, and comments are rejected. Nested block comments and executable comments are conservatively rejected. `expr` and explicit `raw_sql()` use the same safety boundary, checked against the actual compiler dialect during code generation.
+5. **Auto-fallback** — outside strict mode, SQL that the DSL parser cannot represent may fall back to native SQL. Safety and target SQL validation still apply, so malformed quoting/comments and invalid native SQL can fail compilation. `--strict` rejects implicit fallback; explicit `raw_sql()` still requires valid, permitted SQL.
+6. **Functions not in catalog** — pass through verbatim (forward-compatible with new SQL functions)
