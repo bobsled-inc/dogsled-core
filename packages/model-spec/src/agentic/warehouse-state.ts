@@ -106,7 +106,11 @@ export function createWarehouseCheckpointStore(
         ownership.abort(new DOMException(lost.message, { name: 'AbortError', cause: lost }));
         return lost;
       };
-      const runner = await openLimitedRunner(integration, options, loseOwnership);
+      const runner = await openLimitedRunner(integration, options, {
+        // A renewal that landed late can extend the lease, so wait a whole lease from here.
+        retryAfterMs: leaseMs,
+        onTimeout: loseOwnership,
+      });
       let db: ReturnType<typeof sqlPublicationDb>;
       try {
         throwIfCancelled(options.signal);

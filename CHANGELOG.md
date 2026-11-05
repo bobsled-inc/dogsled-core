@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Agentic checkpoint and cursor statements no longer hang a run when the warehouse stops answering. Each statement is limited to half of `checkpoint_store.lease_seconds` (60 seconds by default), enforced by the warehouse on dedicated sessions and backed by a client-side deadline. Model queries and publication are not affected. A statement that reaches the limit stops the run with `lease_lost (statement_timeout)`; resume it after the lease expires. A warehouse that needs longer than the limit to start also needs a longer lease.
+- Agentic checkpoint and cursor statements no longer hang a run when the warehouse stops answering. Each statement is limited to half of `checkpoint_store.lease_seconds` (60 seconds by default), enforced by the warehouse on dedicated sessions and backed by a client-side deadline. Model queries and publication are not affected. After a statement reaches the limit, the run waits out its lease and recovers in the same process, up to twice, then stops with `lease_lost (statement_timeout)`. Time spent queued counts toward the limit. A connection that does not open within five minutes stops the run with `unavailable (connect_timeout)`. Hosts with custom runner factories should apply the new `statementTimeoutMs` value to the session they open; otherwise only the client deadline applies and the statement keeps running on the warehouse.
 
 - Fix `timestamp_diff('unit', start, end)` on PostgreSQL to scale microseconds and milliseconds correctly, use calendar months for month/quarter/year, and return truncated `BIGINT` values. DuckDB now emits `date_diff('unit', start, end)` and `POSITION(needle IN haystack)` instead of invalid SQL. Document DuckDB's unit-boundary semantics.
 

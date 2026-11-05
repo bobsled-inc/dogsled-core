@@ -23,6 +23,8 @@ export interface AgenticErrorDetail {
   message?: string;
   /** What the user can do next. Appended to the message. */
   hint?: string;
+  /** How long a new session must wait before it can acquire ownership. */
+  retryAfterMs?: number;
 }
 
 const DEFAULT_MESSAGES: Record<AgenticStateErrorCode, string> = {
@@ -47,12 +49,13 @@ const DEFAULT_MESSAGES: Record<AgenticStateErrorCode, string> = {
   expired: 'The agentic run deadline (limits.timeout_seconds) has passed.',
 };
 
-/** A `lease_lost` reason: the session gave up while its own lease may still be held. */
+/** A `lease_lost` reason: a statement used its whole limit, so the session gave up. */
 export const statementTimeoutReason = 'statement_timeout';
 
 export class AgenticStateError extends Error {
   readonly reason?: string;
   readonly hint?: string;
+  readonly retryAfterMs?: number;
   /** `cause` may hold storage or driver text; formatters show only its type and code. */
   constructor(
     readonly code: AgenticStateErrorCode,
@@ -66,6 +69,7 @@ export class AgenticStateError extends Error {
     this.name = 'AgenticStateError';
     if (detail.reason !== undefined) this.reason = detail.reason;
     if (detail.hint !== undefined) this.hint = detail.hint;
+    if (detail.retryAfterMs !== undefined) this.retryAfterMs = detail.retryAfterMs;
   }
 }
 

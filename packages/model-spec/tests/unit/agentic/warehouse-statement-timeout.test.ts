@@ -14,9 +14,21 @@ vi.mock('@bobsled-inc/connections', async (original) => ({
   ...(await original<typeof import('@bobsled-inc/connections')>()),
   resolveRunner: resolve,
 }));
+// Fake timers do not reach node:timers/promises, which the recovery wait uses.
+vi.mock('node:timers/promises', async (original) => ({
+  ...(await original<typeof import('node:timers/promises')>()),
+  setTimeout: (ms: number, value: unknown, options?: { signal?: AbortSignal }) =>
+    new Promise((done, fail) => {
+      const timer = setTimeout(() => done(value), ms);
+      options?.signal?.addEventListener('abort', () => {
+        clearTimeout(timer);
+        fail(new Error('Wait aborted'));
+      });
+    }),
+}));
 
 const leaseMs = 12_000;
-const { statementMs, backstopMs } = warehouseStatementLimits(leaseMs);
+const { statementMs, backstopMs, openMs } = warehouseStatementLimits(leaseMs);
 const deadlineMs = statementMs + backstopMs;
 const key = { scope: 'test', model: 'model', id: 'run' };
 const cursorKey = { scope: 'test', model: 'model', target: 'models.pairs' };
@@ -36,7 +48,7 @@ afterEach(() => {
 });
 
 /** Records every statement and leaves the first one that `hangs` matches unanswered. */
-function hangingRunner(hangs: (sql: string) => boolean) {
+function hangingRunner(hangs: (sql: string) => boolean, { always = false } = {}) {
   const transport = checkpointTransport();
   const run = transport.runner.run;
   const statements: string[] = [];
@@ -50,8 +62,8 @@ function hangingRunner(hangs: (sql: string) => boolean) {
   transport.runner.close = state.close;
   transport.runner.run = (...args) => {
     statements.push(args[0]);
-    if (state.hungAt === undefined && hangs(args[0])) {
-      state.hungAt = Date.now();
+    if ((always || state.hungAt === undefined) && hangs(args[0])) {
+      state.hungAt ??= Date.now();
       return never();
     }
     return run(...args);
@@ -83,7 +95,11 @@ function fixture() {
 
 describe('warehouseStatementLimits', () => {
   it('defaults to a minute with a ten second backstop for the two minute lease', () => {
-    expect(warehouseStatementLimits()).toEqual({ statementMs: 60_000, backstopMs: 10_000 });
+    expect(warehouseStatementLimits()).toEqual({
+      statementMs: 60_000,
+      backstopMs: 10_000,
+      openMs: 300_000,
+    });
   });
 
   it.each([10_000, 10_001, 120_000, 333_333, 600_000])(
@@ -130,29 +146,112 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
   });
 
   it('fails a pointer update that never returns at the deadline, without more writes', async () => {
+    const memory = new MemoryStateStore();
+    const f = fixture();
+    await executeAgenticRun(f.host, f.context(), {
+      projectDirectory: '/unused',
+      stateStore: memory,
+      run: { id: key.id, mode: 'start' },
+    });
+    const snapshot = [...memory.runs.values()][0]!;
     const hung = hangingRunner((sql) => pointerUpdate.test(sql));
-    const stateStore = store();
-    const acquire = stateStore.acquire.bind(stateStore);
-    let session: Awaited<ReturnType<typeof acquire>> | undefined;
-    stateStore.acquire = async (runKey) => (session = await acquire(runKey));
+    const session = await store().acquire(snapshot.key);
+    const error = await settle(session.create(snapshot));
+    expect(error).toBeInstanceOf(AgenticStateError);
+    expect(error).toMatchObject({ ...timedOut, retryAfterMs: leaseMs });
+    expect(String(error)).toContain('queued or running');
+    expect(Date.now() - hung.hungAt!).toBeGreaterThanOrEqual(deadlineMs);
+    expect(Date.now() - hung.hungAt!).toBeLessThan(leaseMs);
+    expect(session.ownershipLost?.aborted).toBe(true);
+    // Nothing follows the hung statement: no ROLLBACK behind it and no release of the lease.
+    expect(pointerUpdate.test(hung.statements.at(-1)!)).toBe(true);
+    await session.release();
+    expect(pointerUpdate.test(hung.statements.at(-1)!)).toBe(true);
+    expect(hung.close).toHaveBeenCalledOnce();
+  });
+
+  it('recovers in process only after a whole lease has passed', async () => {
+    const hung = hangingRunner((sql) => pointerUpdate.test(sql));
+    const opened: number[] = [];
+    resolve.mockImplementation(async () => {
+      opened.push(Date.now());
+      return hung.runner;
+    });
+    const f = fixture();
+    const result = await settle(
+      executeAgenticRun(f.host, f.context(), {
+        projectDirectory: '/unused',
+        stateStore: store(),
+        run: { id: key.id, mode: 'start' },
+      })
+    );
+    expect(result).toMatchObject({ status: 'execution_complete' });
+    expect(opened).toHaveLength(2);
+    expect(opened[1]! - hung.hungAt!).toBeGreaterThanOrEqual(deadlineMs + leaseMs);
+  });
+
+  it('stops in bounded time when every attempt hangs', async () => {
+    const hung = hangingRunner((sql) => pointerUpdate.test(sql), { always: true });
     const f = fixture();
     const error = await settle(
       executeAgenticRun(f.host, f.context(), {
         projectDirectory: '/unused',
-        stateStore,
+        stateStore: store(),
         run: { id: key.id, mode: 'start' },
       })
     );
-    expect(error).toBeInstanceOf(AgenticStateError);
     expect(error).toMatchObject(timedOut);
-    expect(String(error)).toContain('did not finish within');
-    expect(Date.now() - hung.hungAt!).toBeGreaterThanOrEqual(deadlineMs);
-    expect(Date.now() - hung.hungAt!).toBeLessThan(leaseMs);
-    expect(session?.ownershipLost?.aborted).toBe(true);
+    expect(resolve).toHaveBeenCalledTimes(3);
+    expect(Date.now() - hung.hungAt!).toBeLessThan(3 * deadlineMs + 2 * leaseMs + 3 * backstopMs);
+    expect(hung.statements).not.toContain('ROLLBACK');
+  });
+
+  it('reports the timeout when the lease is still held after the wait', async () => {
+    const hung = hangingRunner((sql) => pointerUpdate.test(sql));
+    const f = fixture();
+    let refused = false;
+    resolve.mockImplementation(async () => {
+      if (hung.hungAt === undefined) return hung.runner;
+      refused = true;
+      return {
+        ...hung.runner,
+        // The fencing predicate matched no row, as it does while another lease is live.
+        run: async (sql: string) => {
+          if (/SET ["`]owner["`]/i.test(sql)) {
+            throw new Error('Stale publication owner or target version');
+          }
+          return {};
+        },
+      };
+    });
+    const error = await settle(
+      executeAgenticRun(f.host, f.context(), {
+        projectDirectory: '/unused',
+        stateStore: store(),
+        run: { id: key.id, mode: 'start' },
+      })
+    );
+    expect(refused).toBe(true);
+    expect(error).toMatchObject(timedOut);
+  });
+
+  it('stops waiting for the lease when the run is cancelled', async () => {
+    hangingRunner((sql) => pointerUpdate.test(sql));
+    const controller = new AbortController();
+    const f = fixture();
+    const running = executeAgenticRun(f.host, f.context(), {
+      projectDirectory: '/unused',
+      stateStore: store(),
+      run: { id: key.id, mode: 'start' },
+      signal: controller.signal,
+    });
+    const outcome = running.catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(deadlineMs + backstopMs + 50);
     expect(resolve).toHaveBeenCalledOnce();
-    // Nothing follows the hung statement: no ROLLBACK behind it and no release of the lease.
-    expect(pointerUpdate.test(hung.statements.at(-1)!)).toBe(true);
-    expect(hung.close).toHaveBeenCalledOnce();
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(0);
+    await expect(outcome).resolves.toMatchObject({ cancelled: true });
+    expect(resolve).toHaveBeenCalledOnce();
   });
 
   it('frees the serial queue when a heartbeat never returns', async () => {
@@ -196,8 +295,8 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
     expect(error).toMatchObject(timedOut);
     // Executors keep seeing an ordinary abort.
     expect(aborted).toMatchObject({ name: 'AbortError' });
-    // The session's own lease can still be held, so no recovery session is opened.
-    expect(resolve).toHaveBeenCalledOnce();
+    // The first attempt and two bounded recoveries, each of which hangs again.
+    expect(resolve).toHaveBeenCalledTimes(3);
   });
 
   it('treats a timeout reported by the warehouse like the client deadline', async () => {
@@ -207,8 +306,11 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
       await new Promise((done) => setTimeout(done, statementMs));
       throw new Error('Statement reached its timeout and was canceled');
     };
-    const read = session.read();
-    await expect(settle(read)).resolves.toMatchObject(timedOut);
+    const error = (await settle(session.read())) as AgenticStateError;
+    expect(error).toMatchObject(timedOut);
+    // The driver's error stays available as the cause, out of the printed message.
+    expect(error.cause).toMatchObject({ message: expect.stringContaining('its timeout') });
+    expect(error.message).not.toContain('its timeout');
     expect(session.ownershipLost?.aborted).toBe(true);
     await session.release();
   });
@@ -251,7 +353,17 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
     let connected!: (runner: SqlRunnerModule) => void;
     resolve.mockReturnValue(new Promise((done) => (connected = done)));
     const acquiring = store().acquire(key);
-    await expect(settle(acquiring)).resolves.toMatchObject(timedOut);
+    const outcome = acquiring.catch((error: unknown) => error);
+    let settled = false;
+    void outcome.then(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(openMs - 1);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(outcome).resolves.toMatchObject({
+      code: 'unavailable',
+      reason: 'connect_timeout',
+    });
+    expect(String(await outcome)).toContain('stopped or still starting');
     const close = vi.fn(async () => {});
     connected({ run: vi.fn(), close });
     await vi.advanceTimersByTimeAsync(0);
@@ -303,7 +415,9 @@ describe.each(checkpointIntegrations)('statement timeout: $source_type', (integr
       })
     );
     expect(error).toMatchObject(timedOut);
-    expect(Date.now() - started).toBeLessThan(leaseMs);
+    // A cursor store holds no lease, so its attempts need no wait between them.
+    expect(Date.now() - started).toBeLessThan(3 * (deadlineMs + backstopMs));
+    expect(resolve).toHaveBeenCalledTimes(3);
     expect(f.host.prepare).not.toHaveBeenCalled();
   });
 });

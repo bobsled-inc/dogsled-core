@@ -3,6 +3,7 @@ import { beginAgenticCursor } from './begin-cursor.js';
 import { planInputColumns } from './plan-work.js';
 import { beginAgenticExecution } from './resume-window.js';
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { agenticDeadlineAt } from './execution-window.js';
 import { bindAgenticTools, validateAgenticTools } from './tool-access.js';
 import { executeAgenticPlan } from './plan-run.js';
@@ -109,21 +110,30 @@ export async function executeAgenticRun(
     retryFailed: options.retryFailedAssignments,
   };
   // A new session must reload durable state; never reuse the expired coordinator.
+  let timedOut: AgenticStateError | undefined;
   for (let attempt = 0; ; attempt++) {
     throwIfCancelled(options.signal);
     try {
       return await executeOwnedAgenticRun(host, context, options, execution);
     } catch (error) {
       throwIfCancelled(options.signal);
-      // After a statement timeout the lease can still be held, so recovery could only fail
-      // and hide the cause. That error ends the invocation; a later resume continues the run.
-      if (
-        !(error instanceof AgenticStateError) ||
-        error.code !== 'lease_lost' ||
-        error.reason === statementTimeoutReason ||
-        attempt >= 2
-      ) {
-        throw error;
+      if (!(error instanceof AgenticStateError) || error.code !== 'lease_lost' || attempt >= 2) {
+        // A session that cannot reacquire ownership must not hide why the run stopped.
+        const unexplained =
+          error instanceof AgenticStateError && error.code === 'unavailable' && !error.reason;
+        throw timedOut && unexplained ? timedOut : error;
+      }
+      if (error.reason === statementTimeoutReason) timedOut = error;
+      // A timed-out session keeps its lease, so a new one can only acquire after it expires.
+      if (error.retryAfterMs) {
+        await delay(
+          error.retryAfterMs,
+          undefined,
+          options.signal && { signal: options.signal }
+        ).catch((waiting: unknown) => {
+          throwIfCancelled(options.signal);
+          throw waiting;
+        });
       }
     }
   }

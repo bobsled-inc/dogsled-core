@@ -313,8 +313,8 @@ factory. The lease setting does not change the model execution deadline.
 Each checkpoint and cursor statement can run for at most half the lease: 60 seconds
 with the default lease, and 5 to 300 seconds across the allowed range. There is no
 separate setting. Raise `lease_seconds` to give a slow or queueing warehouse more time
-per statement. This includes the first statement of a run, so a warehouse that needs
-longer than the limit to start also needs a longer lease.
+per statement. Time spent queued counts, so a statement that used to wait longer than
+the limit and then succeed now fails.
 
 The warehouse enforces the limit on sessions that Dogsled opens only for checkpoints
 and cursors. Model queries and publication keep the warehouse defaults.
@@ -328,21 +328,36 @@ and cursors. Model queries and publication keep the warehouse defaults.
 
 Dogsled also keeps its own deadline in case a driver ignores that setting or a
 connection stops answering. It is the limit plus one twelfth of the lease, 70 seconds
-by default. Opening a connection has the same deadline, and closing one waits at most
-one twelfth of the lease. A custom runner factory receives the limit as
-`statementTimeoutMs`; if it ignores the value, this deadline still applies.
+by default. Closing a connection waits at most one twelfth of the lease.
 
-When either limit is reached, the run stops with `lease_lost (statement_timeout)` and
+A custom runner factory receives the limit as `statementTimeoutMs`. Apply it to the
+session the factory opens. A factory that ignores it keeps the client deadline, but the
+statement keeps running on the warehouse. A factory that shares one session between
+runners must not apply it to that session.
+
+Behind a transaction-mode PostgreSQL pooler, `SET statement_timeout` does not reliably
+stay on the session. The client deadline still applies, but the setting can persist on
+the pooled server connection and affect other clients of that pooler.
+
+Opening a connection holds no lease, so it has its own limit of five minutes, or the
+client deadline if that is longer. This gives a stopped warehouse time to start while
+the session is set up. A connection that does not open stops the run with
+`unavailable (connect_timeout)`; check the warehouse, then resume.
+
+When either limit is reached, the session reports `lease_lost (statement_timeout)` and
 sends no more statements on that connection. A hung heartbeat is reported before the
 lease expires. The session keeps its lease, because the statement may still be running.
 A statement that lands late cannot overwrite a newer owner: writes check the owner and
-expiry, and cursor updates compare a token.
+expiry, and cursor updates compare a token. The driver's error, if there was one, stays
+available as the error's `cause` and is not printed.
 
-This error is safe to retry. Dogsled does not recover automatically, because the
-session's own lease can still block a new one. Resume the run after the lease expires.
-Until then, a resume reports that the checkpoint store is unavailable. The statement
-may have committed before the limit was reached; a resume reads the saved state, so
-the change applies once.
+Dogsled then recovers in the same process. It waits one full lease, because a renewal
+that landed late can extend the lease, then acquires ownership and reloads the saved
+state. It makes up to two such attempts, sharing the run's execution deadline. The
+statement may have committed before the limit was reached; the reload finds it, so the
+change applies once. If the attempts fail, the run stops with
+`lease_lost (statement_timeout)` and a later resume continues it. With the default
+lease, a warehouse that hangs on every attempt stops the run in about eight minutes.
 
 Library hosts can resolve the logical catalog/schema with
 `resolveWarehouseCheckpointTarget(integration, { database, schema })` from
@@ -350,8 +365,7 @@ Library hosts can resolve the logical catalog/schema with
 and cursor storage.
 
 If the warehouse session loses ownership, Dogsled cancels active assignments and
-closes that session. Unless a statement timed out, it can make up to two recovery
-attempts. Each attempt must
+closes that session. It can make up to two recovery attempts. Each attempt must
 acquire exclusive ownership and reload the saved checkpoint before doing more work.
 Dogsled reuses saved results and reconciles saved publication receipts. Work without
 a saved result can run again; its previous attempt remains charged.
