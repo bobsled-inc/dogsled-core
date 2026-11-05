@@ -59,19 +59,28 @@ export const AgenticJsonSchema = z.custom<JsonValue>(
   'Value exceeds the agentic JSON limits: at most 16,384 values, 16 levels deep and 1 MiB'
 );
 
+const formatMiB = (bytes: number): string => String(Math.round((bytes / 1048576) * 100) / 100);
+
 /**
  * Bound a batch of rows: each row like any agentic value, the batch by row count and
  * total size. Applying the value limit per row keeps wide tables usable up to the row limit.
  */
-export function boundedAgenticRows(value: unknown, label: string): JsonValue[] {
+export function boundedAgenticRows(
+  value: unknown,
+  label: string,
+  limits: { maxRows: number; maxBatchBytes: number } = {
+    maxRows: AGENTIC_MAX_ROWS,
+    maxBatchBytes: AGENTIC_MAX_BYTES,
+  }
+): JsonValue[] {
   const fail = (reason: string, message: string): never => {
     throw new AgenticStateError('limit', { reason, message: `${label} ${message}` });
   };
   if (!Array.isArray(value)) return fail('invalid_rows', 'is not a list of rows.');
-  if (value.length > AGENTIC_MAX_ROWS) {
+  if (value.length > limits.maxRows) {
     fail(
       'too_many_rows',
-      `has ${value.length.toLocaleString('en-US')} rows; the limit is ${AGENTIC_MAX_ROWS.toLocaleString('en-US')}.`
+      `has ${value.length.toLocaleString('en-US')} rows; the limit is ${limits.maxRows.toLocaleString('en-US')}.`
     );
   }
   value.forEach((row, index) => {
@@ -83,10 +92,10 @@ export function boundedAgenticRows(value: unknown, label: string): JsonValue[] {
     }
   });
   const bytes = Buffer.byteLength(JSON.stringify(value), 'utf8');
-  if (bytes > AGENTIC_MAX_BYTES) {
+  if (bytes > limits.maxBatchBytes) {
     fail(
       'batch_too_large',
-      `is ${(bytes / 1048576).toFixed(2)} MiB; the limit is 1 MiB across its ${value.length} rows.`
+      `is ${(bytes / 1048576).toFixed(2)} MiB; the limit is ${formatMiB(limits.maxBatchBytes)} MiB across its ${value.length} rows.`
     );
   }
   return value as JsonValue[];

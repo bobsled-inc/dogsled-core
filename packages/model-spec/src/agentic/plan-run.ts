@@ -1,6 +1,7 @@
 import { normalizeCursor, type AgenticCursorValues } from './cursor.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
-import { AGENTIC_MAX_BYTES, AGENTIC_MAX_ROWS, boundedAgenticRows } from './rows.js';
+import { boundedAgenticRows } from './rows.js';
+import type { AgenticStoreLimits } from './store-limits.js';
 import type { AgenticProbeContext, ExperimentalAgenticProbe } from './probe.js';
 import type { AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import { scheduleAgenticAssignments } from './schedule.js';
@@ -26,8 +27,10 @@ export async function executeAgenticPlan(
     abort: () => void;
     concurrency: number;
     minDispatchIntervalMs: number;
+    limits: AgenticStoreLimits;
   }
 ): Promise<void> {
+  const { limits, ...scheduling } = options;
   let snapshot = options.snapshot;
   const checkpoint = async (command: AgenticCheckpointCommand) => {
     snapshot = await options.checkpoint(command);
@@ -67,8 +70,8 @@ export async function executeAgenticPlan(
             context.inputSqlByRef?.[ref] ??
             (ref === context.inputRef ? context.inputSql : undefined),
           signal: options.signal,
-          maxRows: AGENTIC_MAX_ROWS,
-          maxBytes: AGENTIC_MAX_BYTES,
+          maxRows: limits.maxRows,
+          maxBytes: limits.maxBatchBytes,
         })
       ).catch((error: unknown) => {
         if (isCancellationError(error, options.signal)) throw error;
@@ -85,13 +88,13 @@ export async function executeAgenticPlan(
           label,
           cursorField: cursorField!,
           cursorType: cursorType!,
-          maxRows: AGENTIC_MAX_ROWS,
-          maxBytes: AGENTIC_MAX_BYTES,
+          maxRows: limits.maxRows,
+          maxBytes: limits.maxBatchBytes,
         });
         rows = taken.rows;
         more = taken.more;
       } else {
-        rows = boundedAgenticRows(raw, label);
+        rows = boundedAgenticRows(raw, label, limits);
       }
       const selected = cursorField
         ? rows.filter((row) => {
@@ -143,6 +146,6 @@ export async function executeAgenticPlan(
         assignments: buildAgenticStepAssignments(snapshot, index),
       });
     }
-    await scheduleAgenticAssignments(host, { ...options, snapshot, checkpoint, dispatchClock });
+    await scheduleAgenticAssignments(host, { ...scheduling, snapshot, checkpoint, dispatchClock });
   }
 }

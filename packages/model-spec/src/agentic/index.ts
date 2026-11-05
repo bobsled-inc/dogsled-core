@@ -43,6 +43,7 @@ export {
   type AgenticStateStore,
 } from './state.js';
 export * from './local-state.js';
+export type { AgenticStoreLimits } from './store-limits.js';
 export * from './run.js';
 export type { AgenticAssignmentCounts, AgenticRunProgress } from './progress.js';
 

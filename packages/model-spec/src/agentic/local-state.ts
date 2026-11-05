@@ -18,6 +18,7 @@ import {
   applyAgenticCheckpoint,
   digestAgenticState,
 } from './state.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS } from './store-limits.js';
 import type { AgenticRunSnapshot, AgenticStateStore, AgenticStateSession } from './state.js';
 
 const IndexSchema = z
@@ -35,6 +36,7 @@ const IndexSchema = z
 export function createLocalAgenticStateStore(project: string): AgenticStateStore {
   return {
     cursors: createLocalAgenticCursorStore(project),
+    limits: AGENTIC_DEFAULT_STORE_LIMITS,
     async acquire(rawKey): Promise<AgenticStateSession> {
       const key = AgenticRunKeySchema.parse(rawKey);
       const hash = digestAgenticState(key);

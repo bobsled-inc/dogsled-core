@@ -22,7 +22,12 @@ export function takeIncrementalBatch(
   }
 ): { rows: JsonValue[]; more: boolean } {
   const { label, cursorField, cursorType, maxRows, maxBytes } = options;
-  if (!Array.isArray(raw)) return { rows: boundedAgenticRows(raw, label), more: false };
+  if (!Array.isArray(raw)) {
+    return {
+      rows: boundedAgenticRows(raw, label, { maxRows, maxBatchBytes: maxBytes }),
+      more: false,
+    };
+  }
   const cursor = (row: unknown, index: number) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
       throw new AgenticStateError('limit', {
@@ -57,7 +62,7 @@ export function takeIncrementalBatch(
     boundedAgenticRows([raw[0]], label);
     throw new AgenticStateError('limit', {
       reason: 'batch_too_large',
-      message: `${label} row 1 is larger than the 1 MiB batch limit.`,
+      message: `${label} row 1 is larger than the ${Math.round((maxBytes / 1048576) * 100) / 100} MiB batch limit.`,
     });
   }
   const boundary = cursor(raw[fit], fit);
