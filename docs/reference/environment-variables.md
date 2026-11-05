@@ -52,7 +52,7 @@ CLI integration placeholders and `*_env` fields resolve only names declared in `
 
 Custom S3 endpoints, including MinIO and R2, require `static_env` credentials and declared names, including `session_token_env`. `default_chain` works only without a custom endpoint. Direct loader CLI flags still allow explicitly requested environment references.
 
-Embedding hosts can pass `{ secrets, declaredSecretNames: Object.keys(secrets) }` to request APIs for `${{ secrets.NAME }}` templates. This option does not authorize `${{ env.NAME }}` or process environment fallback. Reserved API/MCP names stay blocked.
+Embedding hosts can pass `{ secrets, declaredSecretNames: Object.keys(secrets) }` to request APIs for `${{ secrets.NAME }}` templates. This option does not authorize `${{ env.NAME }}` or process environment fallback. A reserved API/MCP name resolves here only when it is both in the injected `secrets` map and listed in `declaredSecretNames`; a reserved name available only as an ambient credential stays blocked.
 
 Pipeline SDK hosts can pass `declaredEnvNames` with `options.env` to `runProjectPipeline`. Each declared name must exist in that supplied map. These declarations cover source credentials and destination references without changing project YAML.
 
