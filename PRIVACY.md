@@ -61,12 +61,15 @@ have their own network behavior; review them before loading them. A local execut
 module is trusted application code and is not sandboxed by Dogsled.
 
 Agentic checkpoints retain frozen inputs, model definitions, accepted and
-intermediate results, evidence, and usage under `.dogsled/model-spec/` or the configured warehouse
+intermediate results, evidence, and usage under `.dogsled/model-spec/` or the configured
 checkpoint store. Warehouse payload encoding is not encryption. Published findings,
 publication stages, receipts, and shared input cursors can remain in the output
 database. These records can contain source data and personal information.
 
-There is no automatic expiry for retained agentic runs or publication stages.
+Runs saved in DuckDB expire: Dogsled removes a run 30 days after its last write, or after
+`retention_days` for a DuckDB `checkpoint_store`, unless it is still owed publication or cursor
+recovery. This is storage housekeeping, not secure erasure. Nothing else expires automatically,
+including runs in the file store, warehouse checkpoints and publication stages.
 Apply storage access controls and a retention policy that preserves pending work
 and receipts needed for recovery. Removing required state prevents resume. See
 [agentic operations](docs/reference/advanced/agentic-model-operations.md#retention-and-cleanup)

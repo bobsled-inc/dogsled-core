@@ -198,14 +198,19 @@ a supplied store must provide cursor support or the host must supply a cursor st
 
 ## Retention and cleanup
 
-Local storage permits 100 retained runs, 16 MiB per file, 2,000 directory entries,
+The file store permits 100 retained runs, 16 MiB per file, 2,000 directory entries,
 and a 256 MiB directory budget. Warehouse snapshots are also bounded. Publication
 retains stages after success and failure; defaults allow 32 retained manifests
 (per database for DuckDB, per target for other publishers) and 1,000,000 rows in
 a full stage, including untouched rows. Host APIs can set bounded overrides.
 
-There is no automatic expiry or broad cleanup command. Stop writers, back up state
-and database storage, and retain pending runs, referenced snapshots, receipts, and
+Runs saved in DuckDB expire: Dogsled removes a run 30 days after its last write unless it is
+still owed publication or cursor recovery. That includes failed runs, so one resumed after that
+starts again. A DuckDB `checkpoint_store` can change the period with `retention_days`. See
+[the row layout](../../../packages/model-spec/docs/agentic-state.md#row-layout).
+
+Nothing else expires automatically, and there is no broad cleanup command. Stop writers, back up
+state and database storage, and retain pending runs, referenced snapshots, receipts, and
 control tables for your recovery period. Remove only artifacts proven unnecessary.
 See [checkpoint cleanup](../../../packages/model-spec/docs/agentic-state.md#local-files-ownership-and-retention)
 and [publication retention](../../../packages/model-spec/docs/agentic-publication.md#retention-and-limits)
