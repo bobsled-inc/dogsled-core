@@ -155,7 +155,6 @@ minimumReleaseAge: 30240
 # its removal date in docs/dependency-security.md. Remove an entry once that
 # version meets the release age above.
 minimumReleaseAgeExclude:
-  - undici@8.12.2
   - body-parser@2.4.0
   - fast-uri@3.1.9
   - follow-redirects@1.16.2
