@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { buildDuckDbRunner, type DuckDbIntegration } from '@bobsled-inc/connections';
 import {
-  createLocalAgenticStateStore,
+  createDefaultAgenticStateStore,
   createDuckDbAgenticPublisher,
   createAgentAssignmentOutputSchema,
   executeAgenticRun,
@@ -200,7 +200,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
 
   it('recovers after target commit before state confirmation with both stores reopened', async () => {
     const f = await setup();
-    const local = createLocalAgenticStateStore(f.directory);
+    const local = createDefaultAgenticStateStore(f.directory);
     const brokenStore = {
       async acquire(key: Parameters<typeof local.acquire>[0]) {
         const session = await local.acquire(key);
@@ -255,7 +255,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         publisher: stopBeforeCommit,
       })
     ).rejects.toThrow('before commit');
-    const local = createLocalAgenticStateStore(f.directory);
+    const local = createDefaultAgenticStateStore(f.directory);
     const session = await local.acquire({ scope: 'lake', model: f.model.name, id: 'old' });
     const snapshot = await session.read();
     await session.release();
@@ -408,7 +408,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         signal: abort.signal,
       })
     ).rejects.toThrow();
-    const local = createLocalAgenticStateStore(f.directory);
+    const local = createDefaultAgenticStateStore(f.directory);
     const session = await local.acquire({ scope: 'lake', model: f.model.name, id: 'cancel' });
     expect((await session.read())!.publication).toBe('confirmed');
     await session.release();

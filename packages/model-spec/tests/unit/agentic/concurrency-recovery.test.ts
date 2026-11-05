@@ -4,7 +4,7 @@ import { mkdtempSync, openSync, closeSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { createLocalAgenticStateStore } from '../../../src/agentic/index.js';
+import { createDefaultAgenticStateStore } from '../../../src/agentic/index.js';
 
 it('recovers three in-flight reservations after process death without repeating the saved success', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'agentic-concurrent-recovery-'));
@@ -40,7 +40,7 @@ it('recovers three in-flight reservations after process death without repeating 
     expect(second.errors).toBe('');
     expect(second.status).toBe(0);
     expect(second.calls).toEqual(['1', '2', '3', '4', '5']);
-    const session = await createLocalAgenticStateStore(directory).acquire({
+    const session = await createDefaultAgenticStateStore(directory).acquire({
       scope: 'lake',
       model: 'pair_assessments',
       id: 'recovery',

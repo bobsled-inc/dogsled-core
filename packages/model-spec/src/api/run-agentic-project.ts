@@ -26,7 +26,11 @@ import {
   saveState,
 } from '../compiler/index.js';
 import { CommandError } from '../errors.js';
-import { checkpointIntegration as resolveCheckpointIntegration } from './checkpoint-config.js';
+import {
+  assertCheckpointFile,
+  checkpointIntegration as resolveCheckpointIntegration,
+  configuredDuckDbStore,
+} from './checkpoint-config.js';
 import type { IntegrationCompileContext } from './integration-context.js';
 import type { LoadedProject } from './load-project.js';
 import type { RunProjectOptions, RunProjectResult } from './run-project.js';
@@ -40,6 +44,12 @@ export async function runAgenticProject(
 ): Promise<RunProjectResult> {
   const checkpointConfig = project.config.checkpointStore;
   const checkpointIntegration = resolveCheckpointIntegration(project);
+  if (checkpointIntegration && !options.agentic?.stateStore) {
+    assertCheckpointFile(
+      checkpointIntegration.integration,
+      contexts.map((context) => context.integration.integration)
+    );
+  }
   if (options.state !== undefined && !options.agentic?.stateStore && !checkpointConfig) {
     throw new CommandError('Supplied regular state requires an agentic checkpoint store', 2);
   }
@@ -289,25 +299,34 @@ export async function runAgenticProject(
         );
         const credentialsTokenCommand =
           options.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
-        stateStore = createWarehouseCheckpointStore(integration, {
-          schema: checkpointConfig.schema,
-          ...(checkpointConfig.database === undefined
-            ? {}
-            : { database: checkpointConfig.database }),
-          ...(checkpointConfig.lease_seconds === undefined
-            ? {}
-            : { leaseMs: checkpointConfig.lease_seconds * 1000 }),
-          ...(options.signal ? { signal: options.signal } : {}),
-          secretResolver,
-          customRunners: options.customRunners,
-          warehouse: options.warehouse,
-          queryTag: validateQueryTag(options.queryTag),
-          tokenProvider:
-            options.tokenProvider ??
-            (credentialsTokenCommand
-              ? createTokenCommandProvider(credentialsTokenCommand)
-              : undefined),
-        });
+        stateStore =
+          integration.source_type === 'duckdb'
+            ? configuredDuckDbStore(
+                project.cwd,
+                checkpointConfig,
+                integration,
+                await interpolateSecrets(context.integration.integration, secretResolver),
+                options.signal
+              )
+            : createWarehouseCheckpointStore(integration, {
+                schema: checkpointConfig.schema,
+                ...(checkpointConfig.database === undefined
+                  ? {}
+                  : { database: checkpointConfig.database }),
+                ...(checkpointConfig.lease_seconds === undefined
+                  ? {}
+                  : { leaseMs: checkpointConfig.lease_seconds * 1000 }),
+                ...(options.signal ? { signal: options.signal } : {}),
+                secretResolver,
+                customRunners: options.customRunners,
+                warehouse: options.warehouse,
+                queryTag: validateQueryTag(options.queryTag),
+                tokenProvider:
+                  options.tokenProvider ??
+                  (credentialsTokenCommand
+                    ? createTokenCommandProvider(credentialsTokenCommand)
+                    : undefined),
+              });
       }
       const persistence = {
         ...options.agentic,

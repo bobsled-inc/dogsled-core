@@ -61,6 +61,7 @@ export const CheckpointStoreConfigSchema = z
     schema: z.string().trim().min(1).max(1024),
     database: z.string().trim().min(1).max(1024).optional(),
     lease_seconds: z.number().int().min(10).max(600).optional(),
+    retention_days: z.number().int().min(1).max(3650).optional(),
   })
   .strict();
 export type CheckpointStoreConfig = z.infer<typeof CheckpointStoreConfigSchema>;

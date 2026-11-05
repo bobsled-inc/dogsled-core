@@ -19,7 +19,12 @@ import {
   digestAgenticState,
 } from './state.js';
 import { AGENTIC_DEFAULT_STORE_LIMITS } from './store-limits.js';
-import type { AgenticRunSnapshot, AgenticStateStore, AgenticStateSession } from './state.js';
+import type {
+  AgenticRunKey,
+  AgenticRunSnapshot,
+  AgenticStateStore,
+  AgenticStateSession,
+} from './state.js';
 
 const IndexSchema = z
   .object({
@@ -32,32 +37,59 @@ const IndexSchema = z
   .passthrough()
   .refine((index) => Object.keys(index.runs).length <= 100, 'Too many retained runs');
 
+export interface LocalAgenticOwnership {
+  directory: string;
+  ownership: ReturnType<typeof acquireFileOwnership>;
+}
+
+/** Takes the run's lock. Every local store uses this lock, so a run has one owner whichever
+ * store holds it. */
+export function acquireLocalRunOwnership(
+  project: string,
+  key: AgenticRunKey
+): LocalAgenticOwnership {
+  try {
+    const directory = ensureStateDirectory(project);
+    const name = `agentic-${digestAgenticState(key)}.lock`;
+    return { directory, ownership: acquireFileOwnership(path.join(directory, name)) };
+  } catch (error) {
+    if (error instanceof AgenticStateError) throw error;
+    if (error instanceof FileOwnershipError) throw lockError(error, key.id);
+    throw new AgenticStateError(
+      'unavailable',
+      {
+        reason: 'state_directory',
+        message: 'Cannot open or lock the local agentic state directory (.dogsled/model-spec).',
+        hint: 'Check that the directory is writable and that no other run holds the lock.',
+      },
+      { cause: error }
+    );
+  }
+}
+
+/** Whether the file store holds this run. */
+export function localAgenticRunExists(project: string, key: AgenticRunKey): boolean {
+  const index = IndexSchema.parse(loadState(project).agentic ?? { version: 2, runs: {} });
+  return index.runs[digestAgenticState(key)] !== undefined;
+}
+
 /** Retains up to 100 runs. Each snapshot is at most 16 MiB. No cross-run reuse or expiry. */
 export function createLocalAgenticStateStore(project: string): AgenticStateStore {
+  return localAgenticStateStore(project);
+}
+
+/** `held` is a lock the caller already took for the one run it will acquire. */
+export function localAgenticStateStore(
+  project: string,
+  held?: LocalAgenticOwnership
+): AgenticStateStore {
   return {
     cursors: createLocalAgenticCursorStore(project),
     limits: AGENTIC_DEFAULT_STORE_LIMITS,
     async acquire(rawKey): Promise<AgenticStateSession> {
       const key = AgenticRunKeySchema.parse(rawKey);
       const hash = digestAgenticState(key);
-      let directory: string;
-      let ownership: ReturnType<typeof acquireFileOwnership>;
-      try {
-        directory = ensureStateDirectory(project);
-        ownership = acquireFileOwnership(path.join(directory, `agentic-${hash}.lock`));
-      } catch (error) {
-        if (error instanceof AgenticStateError) throw error;
-        if (error instanceof FileOwnershipError) throw lockError(error, key.id);
-        throw new AgenticStateError(
-          'unavailable',
-          {
-            reason: 'state_directory',
-            message: 'Cannot open or lock the local agentic state directory (.dogsled/model-spec).',
-            hint: 'Check that the directory is writable and that no other run holds the lock.',
-          },
-          { cause: error }
-        );
-      }
+      const { directory, ownership } = held ?? acquireLocalRunOwnership(project, key);
       let closed = false;
       const guard = (): void => {
         if (closed) throw new AgenticStateError('conflict');

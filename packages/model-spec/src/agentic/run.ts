@@ -26,7 +26,7 @@ import {
   digestAgenticState,
 } from './state.js';
 import type { AgenticStateStore, AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
-import { createLocalAgenticStateStore } from './local-state.js';
+import { createDefaultAgenticStateStore } from './default-state.js';
 import type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
 import { createAgenticProgress, type AgenticRunProgress } from './progress.js';
 
@@ -208,7 +208,12 @@ async function executeOwnedAgenticRun(
     });
   }
   const costCapMicrousd = costCapUsd === null ? null : Math.round(costCapUsd * 1_000_000);
-  const store = options.stateStore ?? createLocalAgenticStateStore(options.projectDirectory);
+  const store =
+    options.stateStore ??
+    createDefaultAgenticStateStore(
+      options.projectDirectory,
+      options.signal ? { signal: options.signal } : {}
+    );
   const limits = resolveAgenticStoreLimits(store);
   const incremental = Object.values(model.sources).some((source) => source.incremental);
   const cursorStore =
