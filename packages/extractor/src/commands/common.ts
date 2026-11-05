@@ -329,15 +329,41 @@ export function integrationSpecWarningMessages(
   return messages;
 }
 
+/** The shipped `source.yml` that `filePath` really is, if it is one. */
+function bundledSourcePath(filePath: string, name: string): string | undefined {
+  const bundledDir = process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'];
+  if (!bundledDir || path.basename(filePath) !== 'source.yml') return undefined;
+  const expected = path.join(bundledDir, name, 'source.yml');
+  return fs.existsSync(expected) && fs.realpathSync(filePath) === fs.realpathSync(expected)
+    ? expected
+    : undefined;
+}
+
+/**
+ * Reserved credential names a local run may read for a shipped source: its own
+ * declarations, and only when the integration and every selected resource are
+ * the shipped files. A Project copy or a Project resource gets nothing, because
+ * Project files could otherwise point these credentials anywhere.
+ */
+export function shippedSourceCredentialNames(
+  integrationFile: string,
+  integration: IntegrationSpec,
+  resourceFiles: readonly string[]
+): string[] {
+  const source = bundledSourcePath(integrationFile, integration.name);
+  if (!source) return [];
+  const resourcesDir = path.join(fs.realpathSync(path.dirname(source)), 'resources');
+  const shipped = resourceFiles.every((filePath) =>
+    fs.realpathSync(filePath).startsWith(resourcesDir + path.sep)
+  );
+  return shipped ? (integration.auth_env_vars ?? []) : [];
+}
+
 export function loadIntegrationSpecWithWarnings(filePath: string): LoadSpecResult<IntegrationSpec> {
   const result = loadSpecCore(filePath, IntegrationSpecSchema, 'integration spec', 'integration');
   if (!('transport' in result.spec) && !('transports' in result.spec)) return result;
-  const bundledDir = process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'];
-  if (!bundledDir || path.basename(filePath) !== 'source.yml') return result;
-  const expected = path.join(bundledDir, result.spec.name, 'source.yml');
-  if (!fs.existsSync(expected) || fs.realpathSync(filePath) !== fs.realpathSync(expected)) {
-    return result;
-  }
+  const expected = bundledSourcePath(filePath, result.spec.name);
+  if (!expected) return result;
   const metaPath = ['meta.yml']
     .map((name) => path.join(path.dirname(expected), name))
     .find((candidate) => fs.existsSync(candidate));

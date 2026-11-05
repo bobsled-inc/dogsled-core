@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { interpolateValue } from '../src/api-request-interpolation.js';
+import { InterpolationError, interpolateValue } from '../src/api-request-interpolation.js';
 afterEach(() => vi.unstubAllEnvs());
 describe('environment interpolation boundary', () => {
   it.each(['AWS_SECRET_ACCESS_KEY', 'GITHUB_TOKEN', 'OPENAI_API_KEY'])(
@@ -91,5 +91,64 @@ describe('host secret declarations', () => {
         declaredSecretNames: ['GITHUB_TOKEN'],
       })
     ).toThrow();
+  });
+});
+
+describe('trusted credential names', () => {
+  const trusted = new Set(['SLACK_BOT_TOKEN']);
+  const declaredEnvVars = new Set(['SLACK_BOT_TOKEN', 'GITHUB_TOKEN']);
+
+  it.each(['env', 'secrets'])('resolves a trusted reserved %s name from its map', (source) => {
+    expect(
+      interpolateValue('${{ ' + source + '.SLACK_BOT_TOKEN }}', {
+        [source]: { SLACK_BOT_TOKEN: 'synthetic' },
+        declaredEnvVars,
+        trustedCredentialNames: trusted,
+      })
+    ).toBe('synthetic');
+  });
+
+  it('never reads a trusted reserved name through the process.env fallback', () => {
+    vi.stubEnv('SLACK_BOT_TOKEN', 'ambient');
+    expect(() =>
+      interpolateValue('${{ env.SLACK_BOT_TOKEN }}', {
+        declaredEnvVars,
+        trustedCredentialNames: trusted,
+      })
+    ).toThrow('Missing env.SLACK_BOT_TOKEN');
+  });
+
+  it('still requires a declaration for a trusted name', () => {
+    expect(() =>
+      interpolateValue('${{ env.SLACK_BOT_TOKEN }}', {
+        env: { SLACK_BOT_TOKEN: 'synthetic' },
+        trustedCredentialNames: trusted,
+      })
+    ).toThrow('Undeclared');
+  });
+
+  it.each(['env', 'secrets'])('explains a blocked %s name without its value', (source) => {
+    let error: unknown;
+    try {
+      interpolateValue(
+        '${{ ' + source + '.GITHUB_TOKEN }}',
+        {
+          [source]: { GITHUB_TOKEN: 'must-not-appear' },
+          declaredEnvVars,
+          trustedCredentialNames: trusted,
+        },
+        'auth.token'
+      );
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(InterpolationError);
+    expect(error).toMatchObject({ name: 'InterpolationError', source, key: 'GITHUB_TOKEN' });
+    const { message } = error as Error;
+    expect(message).toContain(`Reserved credential name ${source}.GITHUB_TOKEN`);
+    expect(message).toContain('auth.token');
+    expect(message).toContain('declaredEnvNames');
+    expect(message).not.toContain('Missing');
+    expect(message).not.toContain('must-not-appear');
   });
 });

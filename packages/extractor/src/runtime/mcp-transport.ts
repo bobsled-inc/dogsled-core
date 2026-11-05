@@ -1,4 +1,3 @@
-import type { InterpolationContext } from '../framework/runtime/interpolate.js';
 /**
  * MCP transport creation — stdio and HTTP with security hardening.
  */
@@ -17,7 +16,7 @@ import { interpolateValue } from '../framework/runtime/index.js';
 
 import type { ApiIntegrationSpec } from '../types/index.js';
 
-import { fetchOAuth2Token } from './mcp-oauth2.js';
+import { fetchOAuth2Token, type HostCredentialContext } from './mcp-oauth2.js';
 
 type McpHttpTransportConfig = Extract<ApiIntegrationSpec['transport'], { type: 'mcp_http' }>;
 type McpStdioTransportConfig = Extract<ApiIntegrationSpec['transport'], { type: 'mcp_stdio' }>;
@@ -98,7 +97,7 @@ export async function createStreamableHttpTransport(
   beforeNetworkRequest?: (signal: AbortSignal) => Promise<void>,
   onResolvedSecret?: (value: string) => void,
   declaredEnvVars: ReadonlySet<string> = new Set(),
-  hostSecrets: Pick<InterpolationContext, 'secrets' | 'declaredSecretNames'> = {}
+  hostSecrets: HostCredentialContext = {}
 ): Promise<StreamableHTTPClientTransport> {
   signal?.throwIfAborted();
   const url = new URL(transport.url);
@@ -193,7 +192,7 @@ async function applyMcpAuth(
   beforeNetworkRequest?: (signal: AbortSignal) => Promise<void>,
   onResolvedSecret?: (value: string) => void,
   declaredEnvVars: ReadonlySet<string> = new Set(),
-  hostSecrets: Pick<InterpolationContext, 'secrets' | 'declaredSecretNames'> = {}
+  hostSecrets: HostCredentialContext = {}
 ): Promise<void> {
   switch (auth.type) {
     case 'none':
@@ -262,7 +261,7 @@ export function resolveStdioEnv(
   transport: McpStdioTransportConfig,
   env: Record<string, string | undefined>,
   declaredEnvVars: ReadonlySet<string> = new Set(),
-  hostSecrets: Pick<InterpolationContext, 'secrets' | 'declaredSecretNames'> = {}
+  hostSecrets: HostCredentialContext = {}
 ): Record<string, string> {
   validateStdioCommandShape(transport.command, transport.args ?? []);
 
@@ -311,7 +310,7 @@ export function createStdioTransport(
   resolvedEnv: Record<string, string> | undefined,
   interpolationEnv: Record<string, string | undefined> = resolvedEnv ?? {},
   declaredEnvVars: ReadonlySet<string> = new Set(),
-  hostSecrets: Pick<InterpolationContext, 'secrets' | 'declaredSecretNames'> = {}
+  hostSecrets: HostCredentialContext = {}
 ): StdioClientTransport {
   const command = transport.command;
   if (command.includes('/') || command.includes('\\')) {
@@ -343,7 +342,7 @@ function resolveApprovedStdioArgs(
   args: readonly string[],
   env: Record<string, string | undefined>,
   declaredEnvVars: ReadonlySet<string>,
-  hostSecrets: Pick<InterpolationContext, 'secrets' | 'declaredSecretNames'>
+  hostSecrets: HostCredentialContext
 ): string[] {
   const resolvedArgs = [...args];
   if (command !== 'npx') {
@@ -372,7 +371,7 @@ function resolveWholeEnvTemplate(
   option: '--project' | '--location',
   env: Record<string, string | undefined>,
   declaredEnvVars: ReadonlySet<string>,
-  hostSecrets: Pick<InterpolationContext, 'secrets' | 'declaredSecretNames'>
+  hostSecrets: HostCredentialContext
 ): string {
   const match = value.match(ENV_TEMPLATE_RE);
   if (!match) {

@@ -42,6 +42,8 @@ export interface ClientOptions {
   secrets?: Record<string, string | undefined>;
   declaredSecretNames?: readonly string[];
   env?: Record<string, string | undefined>;
+  /** Reserved names trusted for this run, in addition to host-declared secrets. */
+  trustedCredentialNames?: readonly string[];
   stateDir?: string;
   /** @internal Shared by bounded graph execution to preserve integration-wide rate limits. */
   rateLimiter?: RateLimiter;
@@ -87,6 +89,7 @@ export class ExtractorClient {
   private readonly cliInputs: Record<string, unknown>;
   private readonly secrets: Record<string, string | undefined>;
   private readonly declaredSecretNames: readonly string[];
+  private readonly trustedCredentialNames: ReadonlySet<string>;
   private readonly env: Record<string, string | undefined>;
   private readonly stateDir?: string;
   private readonly rateLimiter: RateLimiter;
@@ -108,6 +111,10 @@ export class ExtractorClient {
     this.secrets = options.secrets ?? process.env;
     this.declaredSecretNames =
       options.secrets === undefined ? [] : (options.declaredSecretNames ?? []);
+    this.trustedCredentialNames = new Set([
+      ...(options.trustedCredentialNames ?? []),
+      ...this.declaredSecretNames,
+    ]);
     this.env = options.env ?? process.env;
     this.stateDir = options.stateDir;
     this.beforeRequestAttempt = options.beforeRequestAttempt;
@@ -141,6 +148,7 @@ export class ExtractorClient {
         declaredEnvVars: new Set(this.integration.auth_env_vars),
         secrets: this.secrets,
         declaredSecretNames: this.declaredSecretNames,
+        trustedCredentialNames: this.trustedCredentialNames,
       },
       'transport.base_url'
     );
@@ -190,6 +198,7 @@ export class ExtractorClient {
           declaredSecretNames: this.declaredSecretNames,
           env: this.env,
           declaredEnvVars: new Set(this.integration.auth_env_vars),
+          trustedCredentialNames: this.trustedCredentialNames,
           integration: { base_url: resolvedBaseUrl },
         },
       });

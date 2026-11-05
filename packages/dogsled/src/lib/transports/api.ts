@@ -289,6 +289,9 @@ export async function executeApiAction(
           declaredEnvVars: new Set(integration.auth_env_vars),
           secrets: requestSecrets,
           declaredSecretNames: options?.secrets === undefined ? [] : options.declaredSecretNames,
+          trustedCredentialNames: new Set(
+            options?.secrets === undefined ? [] : options.declaredSecretNames
+          ),
           onReference: collector.onReference,
         },
         skipDnsValidation: true,

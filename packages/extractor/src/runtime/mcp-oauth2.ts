@@ -15,6 +15,12 @@ import { StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamable
 import { interpolateValue } from '../framework/runtime/index.js';
 import { ExtractorTransientError } from './errors.js';
 
+/** The credential context a client hands to each MCP transport interpolation. */
+export type HostCredentialContext = Pick<
+  InterpolationContext,
+  'secrets' | 'declaredSecretNames' | 'trustedCredentialNames'
+>;
+
 import type { ApiIntegrationSpec } from '../types/index.js';
 
 type McpHttpTransportConfig = Extract<ApiIntegrationSpec['transport'], { type: 'mcp_http' }>;
@@ -57,7 +63,7 @@ export async function fetchOAuth2Token(
   beforeRequestAttempt?: () => void,
   beforeNetworkRequest?: (signal: AbortSignal) => Promise<void>,
   declaredEnvVars: ReadonlySet<string> = new Set(),
-  hostSecrets: Pick<InterpolationContext, 'secrets' | 'declaredSecretNames'> = {}
+  hostSecrets: HostCredentialContext = {}
 ): Promise<string> {
   signal?.throwIfAborted();
   const tokenUrl = String(

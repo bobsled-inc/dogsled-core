@@ -33,6 +33,7 @@ import {
   integrationSpecWarningMessages,
   loadIntegrationSpecWithWarnings,
   loadResourceSpecWithWarnings,
+  shippedSourceCredentialNames,
   parseGlobalFlags,
   parsePositiveInt,
   validateOutputMode,
@@ -285,9 +286,12 @@ export function registerExtractCommand(program: Command): void {
         });
 
         for (const integrationName of integrationNames) {
-          const integrationResult = loadIntegrationSpecWithWarnings(
-            findIntegrationFile(ctx.project, integrationName, ctx.bundledIntegrationsDir)
+          const integrationFile = findIntegrationFile(
+            ctx.project,
+            integrationName,
+            ctx.bundledIntegrationsDir
           );
+          const integrationResult = loadIntegrationSpecWithWarnings(integrationFile);
           for (const warning of integrationSpecWarningMessages(
             integrationName,
             integrationResult.warnings
@@ -295,6 +299,7 @@ export function registerExtractCommand(program: Command): void {
             await logger.warn(warning);
           }
           const integration = applyDefaultViaOverride(integrationResult.spec, opts.defaultVia);
+          let hostEnvNames: string[] | undefined;
           if (opts.hostEnvNamesJson !== undefined) {
             let names: unknown;
             try {
@@ -302,8 +307,8 @@ export function registerExtractCommand(program: Command): void {
             } catch {
               throw new CommandError('Invalid host environment declaration payload.', 2);
             }
-            const declared = declaredHostEnvironmentNames(names as string[], process.env);
-            integration.auth_env_vars = [...(integration.auth_env_vars ?? []), ...declared];
+            hostEnvNames = declaredHostEnvironmentNames(names as string[], process.env);
+            integration.auth_env_vars = [...(integration.auth_env_vars ?? []), ...hostEnvNames];
           }
           if (opts.warehouse !== undefined && !isSnowflakeWarehouseSource(integration)) {
             throw new CommandError(
@@ -317,6 +322,18 @@ export function registerExtractCommand(program: Command): void {
           validateResourceViaOverride(integration, opts.resourceVia);
           const resourceViaMap = opts.resourceVia;
           const resourceInputsMap = opts.resourceInputs;
+          const allResourceEntries = findResourceFiles(ctx, integrationName).map((filePath) => {
+            const result = loadResourceSpecWithWarnings(filePath);
+            // Per-resource `--resource-via` override wins over the bundled
+            // resource's own `via:` AND over the integration's
+            // default_transport (already mutated by applyDefaultViaOverride).
+            const viaShadow = resourceViaMap?.[result.spec.name];
+            const spec = viaShadow ? { ...result.spec, via: viaShadow } : result.spec;
+            return { spec, warnings: result.warnings, filePath };
+          });
+          const resources = allResourceEntries.filter(
+            ({ spec }) => resourceNames.length === 0 || resourceNames.includes(spec.name)
+          );
           // The pool is shared by every resource on this integration, so it is
           // seeded with the pipeline-wide `--input` values ONLY. Per-resource
           // overrides travel with each request instead (`inputOverrides` →
@@ -330,23 +347,19 @@ export function registerExtractCommand(program: Command): void {
                   integration,
                   cliInputs,
                   stateDir: path.join(ctx.cwd, ctx.config.state_dir),
+                  // A host run trusts exactly what the host supplied. Only a
+                  // run with no host may use a shipped source's own names.
+                  trustedCredentialNames:
+                    hostEnvNames ??
+                    shippedSourceCredentialNames(
+                      integrationFile,
+                      integration,
+                      resources.map(({ filePath }) => filePath)
+                    ),
                 })
               : undefined;
           const circuitBreaker = new ResourceCircuitBreaker(maxConsecutiveFailures);
           try {
-            const allResourceEntries = findResourceFiles(ctx, integrationName).map((filePath) => {
-              const result = loadResourceSpecWithWarnings(filePath);
-              // Per-resource `--resource-via` override wins over the bundled
-              // resource's own `via:` AND over the integration's
-              // default_transport (already mutated by applyDefaultViaOverride).
-              const viaShadow = resourceViaMap?.[result.spec.name];
-              const spec = viaShadow ? { ...result.spec, via: viaShadow } : result.spec;
-              return { spec, warnings: result.warnings, filePath };
-            });
-            const resources = allResourceEntries.filter(
-              ({ spec }) => resourceNames.length === 0 || resourceNames.includes(spec.name)
-            );
-
             for (const { spec } of resources) {
               if (isLookupOnlyApiResource(spec)) {
                 throw new CommandError(

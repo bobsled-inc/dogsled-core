@@ -53,6 +53,12 @@ export interface ApiRequestInterpolationContext {
   declaredSecretNames?: readonly string[];
   env?: Record<string, string | undefined>;
   declaredEnvVars?: ReadonlySet<string>;
+  /**
+   * Reserved credential names this run may read. Only trusted code sets this,
+   * from names the host supplied for the run or a shipped source's own names.
+   * Never derive it from `auth_env_vars`, which Project files can author.
+   */
+  trustedCredentialNames?: ReadonlySet<string>;
   /** Probe mode supplies an explicit environment map and must not consult process.env. */
   allowProcessEnvFallback?: boolean;
   integration?: {
