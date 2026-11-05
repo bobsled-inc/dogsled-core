@@ -137,8 +137,11 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   (SQL login), so Tedious never constructs an Azure credential. Re-reviewed on 2026-11-05: these authentication paths are unchanged.
   Azure Identity 4.14.1 now uses fixed MSAL Node ^7.1.0. It was published on
   2026-10-29 and meets the 21-day release-age rule on 2026-11-19T22:16:07.100Z.
-  The owner requested extending the existing exceptions to 2026-11-20 while
-  waiting for that update. The package versions and allowed paths stay the same.
+  The owner requested extending the existing exceptions to 2026-11-24 while
+  waiting for that update, which leaves working days to land it. Remove them by
+  upgrading: the upgrade is possible from 2026-11-19T22:16:07Z and must land before
+  2026-11-24T00:00:00Z. Do not extend them again. The package versions and allowed
+  paths stay the same.
 
 The `tedious > sprintf-js` advisory is moderate. Tedious uses literal format
 strings, so remote values cannot set precision specifiers. It requires no
