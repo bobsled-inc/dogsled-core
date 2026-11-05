@@ -39,12 +39,13 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "tsx scripts/build-manifest.ts && tsup",
+    "build": "pnpm generate:manifest && tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --cache",
-    "generate:manifest": "tsx scripts/build-manifest.ts",
+    "generate:manifest": "tsx scripts/build-manifest.ts && tsx scripts/build-plugins.ts",
     "test": "vitest run",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "check:generated": "tsx scripts/check-generated.ts"
   },
   "dependencies": {
     "@bobsled-inc/project-index": "workspace:*",

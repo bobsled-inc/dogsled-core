@@ -49,6 +49,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Check committed skill and plugin output before builds
+        run: pnpm skills:check
       - name: Dependency vulnerability audit
         if: >-
           ${{ github.event_name == 'schedule' ||

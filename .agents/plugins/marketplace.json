@@ -1,0 +1,20 @@
+{
+  "name": "dogsled",
+  "interface": {
+    "displayName": "Dogsled"
+  },
+  "plugins": [
+    {
+      "name": "dogsled-core",
+      "source": {
+        "source": "local",
+        "path": "./plugins/dogsled-core"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

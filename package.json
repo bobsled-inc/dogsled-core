@@ -32,7 +32,7 @@
     "security:packet": "node ./scripts/security/packet.mjs",
     "security:release": "node ./scripts/security/release.mjs",
     "check": "pnpm typecheck:ci && pnpm lint:ci && pnpm docs:ci && pnpm file-size:ci && pnpm format:check",
-    "precommit": "pnpm build && pnpm check && pnpm test:unit && pnpm test:structural",
+    "precommit": "pnpm skills:check && pnpm build && pnpm check && pnpm test:unit && pnpm test:structural",
     "format": "prettier --write --cache .",
     "format:check": "prettier --check .",
     "prepare": "husky",
@@ -56,7 +56,8 @@
     "test:unit:ci:model": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/model-spec'",
     "test:unit:ci:graph": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/entity-graph' --filter='@bobsled-inc/extractor' --filter='@bobsled-inc/sdk-codegen' --filter='@bobsled-inc/explorer'",
     "test:unit:ci:dogsled": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/dogsled'",
-    "test:unit:ci:rest": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='!@bobsled-inc/model-spec' --filter='!@bobsled-inc/entity-graph' --filter='!@bobsled-inc/extractor' --filter='!@bobsled-inc/sdk-codegen' --filter='!@bobsled-inc/explorer' --filter='!@bobsled-inc/dogsled'"
+    "test:unit:ci:rest": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='!@bobsled-inc/model-spec' --filter='!@bobsled-inc/entity-graph' --filter='!@bobsled-inc/extractor' --filter='!@bobsled-inc/sdk-codegen' --filter='!@bobsled-inc/explorer' --filter='!@bobsled-inc/dogsled'",
+    "skills:check": "pnpm --filter @bobsled-inc/skills check:generated"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

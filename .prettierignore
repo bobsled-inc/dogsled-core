@@ -28,3 +28,6 @@ packages/dogsled/src/runtime/onboarding/assets/*-OFL.txt
 
 # Generated offline tutorial review scenarios.
 **/.dogsled/ui-review/
+
+# Generated agent skill bundles retain canonical source formatting.
+plugins/dogsled-core/skills/

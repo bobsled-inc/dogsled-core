@@ -24,6 +24,11 @@ transclusions, and writes a typed constant to `src/generated-data.ts`
 which is bundled into the JS output. There is zero filesystem I/O at
 runtime when using the package root or `/dogsled` subpath.
 
+The same generation command also writes the installable Claude Code and Codex
+plugin under `plugins/dogsled-core/`, with host-specific marketplace catalogs. See the
+[plugin installation guide](../../plugins/dogsled-core/README.md). Plugin skill copies
+are generated from the authored sources and include expanded document references.
+
 ## Internal Dogsled catalog API
 
 ```ts

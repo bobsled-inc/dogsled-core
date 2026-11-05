@@ -230,7 +230,11 @@ function resolveInsideRepo(repoRoot: string, repoRelativePath: string): string {
   return absReal;
 }
 
-export function resolveTransclusions(body: string, repoRoot: string = REPO_ROOT): string {
+export function resolveTransclusions(
+  body: string,
+  repoRoot: string = REPO_ROOT,
+  transformDocument: (content: string, path: string) => string = (content) => content
+): string {
   let current = body;
   for (let depth = 0; depth <= MAX_TRANSCLUSION_DEPTH; depth++) {
     let changed = false;
@@ -238,13 +242,13 @@ export function resolveTransclusions(body: string, repoRoot: string = REPO_ROOT)
     // mis-matched by the bare include regex.
     current = current.replace(INCLUDE_SECTION_RE, (_, path: string, section: string) => {
       const abs = resolveInsideRepo(repoRoot, path);
-      const content = readFileSync(abs, 'utf-8');
+      const content = transformDocument(readFileSync(abs, 'utf-8'), abs);
       changed = true;
       return extractSection(content, section);
     });
     current = current.replace(INCLUDE_RE, (_, path: string) => {
       const abs = resolveInsideRepo(repoRoot, path);
-      const content = readFileSync(abs, 'utf-8');
+      const content = transformDocument(readFileSync(abs, 'utf-8'), abs);
       changed = true;
       return content.replace(/\n+$/, '');
     });
