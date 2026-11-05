@@ -63,6 +63,52 @@ describe('buildDuckDbRunner — in-memory', () => {
     }
   });
 
+  it.each([
+    2147483647,
+    2147483648,
+    -2147483648,
+    -2147483649,
+    2592000000,
+    1793881483024,
+    Number.MAX_SAFE_INTEGER,
+    Number.MIN_SAFE_INTEGER,
+  ])('stores the whole number %d exactly', async (value) => {
+    const runner = await buildDuckDbRunner(memoryIntegration());
+    try {
+      await runner.run('CREATE TABLE t (exact BIGINT, approximate DOUBLE)');
+      await runner.query!('INSERT INTO t VALUES (?, ?)', [value, value]);
+      const rows = await runner.query!<{ exact: bigint; approximate: number }>('SELECT * FROM t');
+      expect(rows).toEqual([{ exact: BigInt(value), approximate: value }]);
+    } finally {
+      await runner.close?.();
+    }
+  });
+
+  it('keeps whole numbers beyond the safe range as doubles', async () => {
+    const runner = await buildDuckDbRunner(memoryIntegration());
+    try {
+      await runner.run('CREATE TABLE t (value DOUBLE)');
+      await runner.query!('INSERT INTO t VALUES (?), (?), (?)', [1e300, -1e300, Infinity]);
+      const rows = await runner.query!<{ value: number }>('SELECT value FROM t');
+      expect(rows.map((row) => row.value)).toEqual([1e300, -1e300, Infinity]);
+    } finally {
+      await runner.close?.();
+    }
+  });
+
+  it('uses large numbers in expressions without wrapping them', async () => {
+    const runner = await buildDuckDbRunner(memoryIntegration());
+    try {
+      const rows = await runner.query!<{ total: bigint }>(
+        'SELECT CAST(1000 AS BIGINT) + ? AS total',
+        [2592000000]
+      );
+      expect(rows[0]!.total).toBe(2592001000n);
+    } finally {
+      await runner.close?.();
+    }
+  });
+
   it('exposes close() as a no-throw cleanup', async () => {
     const runner = await buildDuckDbRunner(memoryIntegration());
     await runner.run('CREATE TABLE t (id INTEGER)');
