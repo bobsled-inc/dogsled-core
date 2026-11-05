@@ -27,6 +27,13 @@ BigQuery env:
 
 BigQuery uses Application Default Credentials, so CI should configure `GOOGLE_APPLICATION_CREDENTIALS` through Workload Identity Federation before the tests run.
 
+## Agentic store conformance
+
+`postgres-store-conformance.test.ts` runs the store conformance suite on the PostgreSQL
+warehouse store and on the row layout, using the settings below. The same suite runs on the
+file store and both DuckDB stores in every test run, in
+`../agentic-store-conformance.test.ts`. A new store or dialect adds an adapter there.
+
 ## Agentic publication
 
 The PostgreSQL suite uses `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres`. Set
