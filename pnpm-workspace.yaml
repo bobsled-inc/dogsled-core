@@ -155,16 +155,6 @@ minimumReleaseAge: 30240
 # its removal date in docs/dependency-security.md. Remove an entry once that
 # version meets the release age above.
 minimumReleaseAgeExclude:
-  - undici@8.12.2
   - body-parser@2.4.0
   - fast-uri@3.1.9
   - follow-redirects@1.16.2
-  - vitest@4.1.12
-  - '@vitest/coverage-v8@4.1.12'
-  - '@vitest/pretty-format@4.1.12'
-  - '@vitest/mocker@4.1.12'
-  - '@vitest/snapshot@4.1.12'
-  - '@vitest/spy@4.1.12'
-  - '@vitest/runner@4.1.12'
-  - '@vitest/expect@4.1.12'
-  - '@vitest/utils@4.1.12'

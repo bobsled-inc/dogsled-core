@@ -378,13 +378,13 @@ describe('reviewed transitive advisory consumer exceptions', () => {
       ...msal,
       version: '6.0.1',
       chain: [['snowflake-sdk', '3.4.0'], identity],
-      deadline: '2026-11-20T00:00:00Z',
+      deadline: '2026-11-24T00:00:00Z',
     },
     {
       ...msal,
       version: '6.0.1',
       chain: [['tedious', '20.3.4'], identity],
-      deadline: '2026-11-20T00:00:00Z',
+      deadline: '2026-11-24T00:00:00Z',
     },
   ];
   it.each(cases.map((entry) => [`${entry.id} ${entry.chain.map(([n]) => n).join('>')}`, entry]))(
