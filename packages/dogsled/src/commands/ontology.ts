@@ -174,7 +174,7 @@ export function registerOntologyCommand(program: Command): void {
         'ontology_import',
         {
           documents: inputs.map((path) => ({ path, document: readConversionInput(path) })),
-          defaultConnection: opts.connection,
+          ...(opts.connection ? { defaultConnection: opts.connection } : {}),
         },
         opts
       )

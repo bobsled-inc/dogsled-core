@@ -50,3 +50,29 @@ it('honors a project root passed before the command group', async () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+it('previews imports without requiring a connection option', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'ontology-import-'));
+  const output = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+  try {
+    const input = join(root, 'ontology.yml');
+    writeFileSync(
+      input,
+      'version: 0.2.0.dev0\nname: sales\nontology: [{concept: Order, type: EntityType}]\n'
+    );
+    const program = new Command();
+    registerOntologyCommand(program);
+    await program.parseAsync(['node', 'dogsled', 'ontology', 'import', input, '--json']);
+    expect(JSON.parse(output.mock.calls.map((c) => String(c[0])).join(''))).toMatchObject({
+      ok: true,
+      files: [
+        expect.objectContaining({
+          document: expect.objectContaining({ type: 'ontology', name: 'sales' }),
+        }),
+      ],
+    });
+  } finally {
+    output.mockRestore();
+    rmSync(root, { recursive: true, force: true });
+  }
+});

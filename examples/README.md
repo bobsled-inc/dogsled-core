@@ -28,7 +28,7 @@ server for the examples that need one.
 | [models-full](models-full/)                       | Seeds, model dependencies, views, tables, incremental models, expectations and two databases |
 | [semantic-layer-vq](semantic-layer-vq/)           | Metrics, relationships and verified queries over an API                                      |
 | [doctor-skills](doctor-skills/)                   | Project Skills, the Project guide and `doctor`                                               |
-| [osi-roundtrip](osi-roundtrip/)                   | Apache Ossie export and import with equivalent models                                        |
+| [osi-roundtrip](osi-roundtrip/)                   | Apache Ossie round trips for semantic models and customer ontologies                         |
 | [postgres-pipeline](postgres-pipeline/)           | Loading into PostgreSQL, timestamps, models and expectations                                 |
 | [agentic-mock](agentic-mock/)                     | An agentic model with a test executor, budgets, a crash and a resumed run                    |
 | [explorer-smoke](explorer-smoke/)                 | Explorer pages and pipeline-builder export in a browser                                      |

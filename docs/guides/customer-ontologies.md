@@ -165,3 +165,12 @@ Validate that example without a warehouse connection:
 ```bash
 dogsled ontology validate --project-root packages/model-spec/tests/fixtures/customer-ontology --strict
 ```
+
+## Learn with existing projects
+
+- The [Retail tutorial](retail.md) follows sales lines to products and suppliers,
+  using real field mappings in its synthetic warehouse sources. Chapter 3 explains
+  why counting sales lines differs from summing units sold.
+- The [Ossie round-trip example](../../examples/osi-roundtrip/README.md) distinguishes
+  an individual Order from a status summary. Its automated check exports and imports
+  the ontology and validates the resulting mappings without a database connection.

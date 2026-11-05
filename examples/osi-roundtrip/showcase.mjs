@@ -1,3 +1,4 @@
+import { checkOntologyRoundtrip } from './ontology-check.mjs';
 import assert from 'node:assert/strict';
 import { cp } from 'node:fs/promises';
 import path from 'node:path';
@@ -16,6 +17,7 @@ export const limitations = [
 ];
 export async function run(ctx) {
   await copyProject(ctx, new URL('./', import.meta.url));
+  await checkOntologyRoundtrip(ctx);
   const api = await publicApi('model-spec/project');
   const original = await api.loadProject(ctx.project);
   const before = await api.compileProject(ctx.project);
