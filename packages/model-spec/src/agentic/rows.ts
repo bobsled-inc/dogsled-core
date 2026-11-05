@@ -4,6 +4,7 @@ import { AgenticColumnsSchema, type AgenticColumn } from './model.js';
 import { AgenticStateError } from './state-errors.js';
 
 export const AGENTIC_MAX_BYTES = 1_048_576;
+/** Raising this also raises `maxStoredWrites` in row-state-rows.ts, which is derived from it. */
 export const AGENTIC_MAX_ROWS = 1000;
 
 /** Check depth and size before recursive schema validation or serialization. */

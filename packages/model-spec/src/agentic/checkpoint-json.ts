@@ -1,4 +1,5 @@
-/** The most any store can declare for one run's snapshot. */
+/** The most any store can declare for one run's snapshot. Raising this also raises
+ * `maxStoredChars` in row-state-rows.ts, which is derived from it. */
 export const AGENTIC_MAX_CHECKPOINT_BYTES = 16 * 1024 * 1024;
 
 /** Bound a whole checkpoint before recursive schema parsing or serialization. */

@@ -1,6 +1,7 @@
 /** Reading and writing a run's immutable rows. Knows nothing of ownership. */
 import { randomUUID } from 'node:crypto';
 import type { SqlParamValue } from '@bobsled-inc/connections';
+import { AGENTIC_MAX_CHECKPOINT_BYTES } from './checkpoint-json.js';
 import type { AgenticRowDb, AgenticRowDialect } from './row-state-dialect.js';
 import {
   agenticStoredRows,
@@ -10,13 +11,15 @@ import {
   type AgenticRowWrite,
   type AgenticStoredRow,
 } from './row-state-layout.js';
+import { AGENTIC_MAX_ROWS } from './rows.js';
 import { agenticRowColumns, agenticStatement } from './row-state-tables.js';
 import { AgenticStateError } from './state.js';
 
-// Bounds on what one load reads. A snapshot is at most 16 MiB; its rows hold it about once,
-// plus the start rows of finished attempts.
-const maxStoredChars = 64 * 1024 * 1024;
-const maxStoredWrites = 65_536;
+// Bounds on what one load reads, derived from the caps so that they rise together. A snapshot's
+// rows hold it about once, plus the start rows of finished attempts. An assignment has up to two
+// writes per attempt, and orphans come on top.
+const maxStoredChars = 4 * AGENTIC_MAX_CHECKPOINT_BYTES;
+const maxStoredWrites = 64 * AGENTIC_MAX_ROWS + 1024;
 /** Expired runs removed per acquisition, so a backlog cannot delay a run. */
 const maxPurgedRuns = 64;
 const insertColumns = agenticRowColumns.map((column) => column.name);
