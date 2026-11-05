@@ -10,7 +10,7 @@
   "scripts": {
     "setup": "pnpm install && pnpm run setup:sqlite && pnpm build",
     "agent:context": "node ./scripts/agent/context.mjs",
-    "setup:sqlite": "for d in node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3; do echo \"Installing native binary for $d\" && (cd \"$d\" && ./node_modules/.bin/prebuild-install); done",
+    "setup:sqlite": "for d in node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3; do echo \"Installing native binary for $d\"; (cd \"$d\" || exit 1; for attempt in 1 2 3; do ./node_modules/.bin/prebuild-install && exit 0; if [ \"$attempt\" -lt 3 ]; then echo \"SQLite download failed; retrying ($attempt/3)\" >&2; sleep 2; fi; done; exit 1) || exit 1; done",
     "build": "pnpm_config_verify_deps_before_run=false turbo run build",
     "typecheck": "pnpm_config_verify_deps_before_run=false turbo run typecheck",
     "typecheck:ci": "node ./scripts/ci/run-typecheck-with-guidance.mjs",
