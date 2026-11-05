@@ -37,7 +37,17 @@ export type OntologyRelationType = z.infer<typeof OntologyRelationTypeSchema>;
 export const RelationshipOntologyRelationSchema = z
   .object({
     relation_type: OntologyRelationTypeSchema,
-    description: z.string().trim().min(1, 'Relation description is required'),
+    description: z.string().trim().default(''),
+    ontology_ref: z
+      .object({
+        ontology: z.string().min(1),
+        concept: z.string().min(1),
+        relationship: z.string().min(1),
+        left_concept: z.string().min(1),
+        right_concept: z.string().min(1),
+      })
+      .strict()
+      .optional(),
     left_entity: entityRefSchema,
     right_entity: entityRefSchema,
     direction: RelationshipDirectionSchema,
@@ -66,6 +76,13 @@ export const RelationshipOntologySpecSchema = z
     const aliases = new Map<string, string>();
 
     value.relations.forEach((relation, relationIndex) => {
+      if (!relation.description && !relation.ontology_ref) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['relations', relationIndex, 'description'],
+          message: 'Relation description is required without ontology_ref.',
+        });
+      }
       if (relationTypes.has(relation.relation_type)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

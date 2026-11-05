@@ -131,3 +131,5 @@ for the full rules.
 
 A project can also carry an `AGENTS.md` file that explains the data, and skills
 that teach agents specific tasks. See [Project guide and skills](project-skills.md).
+
+See the [customer ontology guide](customer-ontologies.md) for business concepts and mappings.

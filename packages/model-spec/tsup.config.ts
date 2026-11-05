@@ -8,6 +8,7 @@ export default defineConfig([
       'compiler/schemas': 'src/compiler/schemas.ts',
       'agentic/index': 'src/agentic/index.ts',
       'api/index': 'src/api/index.ts',
+      'ontology/index': 'src/ontology/index.ts',
       'ossie/index': 'src/ossie/index.ts',
       'interchange/index': 'src/interchange/index.ts',
       'edit/index': 'src/edit/index.ts',

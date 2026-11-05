@@ -52,6 +52,7 @@ import { createRequire as __createRequire } from 'node:module'; const require = 
       'compat/integrations': 'src/compat/integrations.ts',
       'compat/integrations-catalog': 'src/compat/integrations-catalog.ts',
       'compat/model-spec': 'src/compat/model-spec.ts',
+      'compat/ontology': 'src/compat/ontology.ts',
       'compat/model-spec-interchange': 'src/compat/model-spec-interchange.ts',
       'compat/model-spec-project': 'src/compat/model-spec-project.ts',
       'compat/model-spec-schemas': 'src/compat/model-spec-schemas.ts',

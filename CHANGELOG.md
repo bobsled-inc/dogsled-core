@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add customer ontology YAML discovery, validation, exact context, edit previews, Ossie conversion, and config-only CLI/MCP operations.
+
 - Fix `timestamp_diff('unit', start, end)` on PostgreSQL to scale microseconds and milliseconds correctly, use calendar months for month/quarter/year, and return truncated `BIGINT` values. DuckDB now emits `date_diff('unit', start, end)` and `POSITION(needle IN haystack)` instead of invalid SQL. Document DuckDB's unit-boundary semantics.
 
 - Model Spec expressions accept semicolons and SQL keywords inside quoted literals, including CASE labels and LISTAGG separators. Expression and `raw_sql` validation share a lexical check that continues to reject statement separators, prohibited commands, and malformed quoting or comments.

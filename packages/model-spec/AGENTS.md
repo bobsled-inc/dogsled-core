@@ -10,7 +10,7 @@ Entity Graph no longer lives in this package. Use `dogsled entity-graph` for the
 
 ## Package Boundaries
 
-- The `/ossie` and `/interchange` entrypoints serve config-only discovery, validation and conversion. Keep its runtime import graph free of `connections` and database SDKs; the packed-install test checks this boundary with those packages removed.
+- The `/ossie`, `/interchange`, and `/ontology` entrypoints serve config-only discovery, validation and conversion. Keep its runtime import graph free of `connections` and database SDKs; the packed-install test checks this boundary with those packages removed.
 - `packages/model-spec/` owns modeling, profiler, and seed functionality only.
 - `packages/entity-graph/` owns the Entity Graph CLI plus identity-resolution-specific compiler code.
 - `packages/model-spec/src/shared.ts` is the only supported shared CLI-helper surface for `@bobsled-inc/entity-graph`.

@@ -119,7 +119,7 @@ async function discoverProjectExclusivityPairs(
   } catch {
     return [];
   }
-  const specs = discoverRelationshipOntologySpecs(mdmDir);
+  const specs = discoverRelationshipOntologySpecs(mdmDir, cwd);
   if (specs.length === 0) return [];
   const pairs: RelationshipExclusivityPair[] = [];
   for (const spec of specs) {
