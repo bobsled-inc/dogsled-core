@@ -609,3 +609,24 @@ it.each(['secrets', 'env'])(
     expect(fetch).toHaveBeenCalledTimes(namespace === 'secrets' ? 1 : 0);
   }
 );
+
+it.each([
+  ['a declared host name', ['GITHUB_TOKEN'], 'success', 1],
+  ['an undeclared name', [], 'failed', 0],
+])('resolves a reserved webhook secret only for %s', async (_case, names, status, sent) => {
+  const action = makeWebhookAction();
+  if (action.spec.transport !== 'webhook') throw new Error('Expected webhook action');
+  action.spec.auth_env_vars = ['GITHUB_TOKEN'];
+  action.spec.webhook.url = 'https://hooks.example.com/notify';
+  action.spec.webhook.headers = { Authorization: '${{ secrets.GITHUB_TOKEN }}' };
+  const fetch = vi.fn(async () => new Response('{}'));
+  const result = await executeWebhookAction(
+    action,
+    { entity_id: 'test' },
+    { secrets: { GITHUB_TOKEN: 'host-canary' }, declaredSecretNames: names },
+    { fetch, resolveHost: async () => undefined, checkHost: () => false }
+  );
+  expect(result.status).toBe(status);
+  expect(fetch).toHaveBeenCalledTimes(sent);
+  expect(JSON.stringify(result)).not.toContain('host-canary');
+});

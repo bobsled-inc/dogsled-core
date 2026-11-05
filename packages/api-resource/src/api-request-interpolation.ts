@@ -20,7 +20,10 @@ export interface InterpolateValueOptions {
 
 type InterpolationSource = ApiRequestInterpolationSource;
 
-/** Environment variables that must never be resolved via ${{ env.X }} fallback. */
+/**
+ * Reserved credential names. They resolve from an explicit map only when
+ * `trustedCredentialNames` lists them, and never from the process.env fallback.
+ */
 const BLOCKED_ENV_KEYS = new Set([
   'AWS_SECRET_ACCESS_KEY',
   'AWS_SESSION_TOKEN',
@@ -50,8 +53,18 @@ export class InterpolationError extends Error {
   readonly key?: string;
   readonly path: string;
 
-  constructor(source: InterpolationSource, key: string | undefined, path: string) {
-    super(`Missing ${source}${key ? `.${key}` : ''} referenced in ${path}`);
+  constructor(
+    source: InterpolationSource,
+    key: string | undefined,
+    path: string,
+    reason: 'missing' | 'reserved' = 'missing'
+  ) {
+    const reference = `${source}${key ? `.${key}` : ''}`;
+    super(
+      reason === 'reserved'
+        ? `Reserved credential name ${reference} referenced in ${path}. Project files cannot read reserved names, even through auth_env_vars. Have the host supply it for this run with declaredEnvNames, or list a different name in auth_env_vars.`
+        : `Missing ${reference} referenced in ${path}`
+    );
     this.name = 'InterpolationError';
     this.source = source;
     this.key = key;
@@ -62,10 +75,14 @@ export class InterpolationError extends Error {
 export function assertApiCredentialName(
   key: string | undefined,
   source: 'env' | 'secrets' = 'env',
-  path = 'credential'
+  path = 'credential',
+  trustedCredentialNames?: ReadonlySet<string>
 ): asserts key is string {
-  if (!key || BLOCKED_ENV_KEYS.has(key)) {
+  if (!key) {
     throw new InterpolationError(source, key, path);
+  }
+  if (BLOCKED_ENV_KEYS.has(key) && !trustedCredentialNames?.has(key)) {
+    throw new InterpolationError(source, key, path, 'reserved');
   }
 }
 
@@ -93,16 +110,13 @@ function resolveNamedValue(
   path: string,
   allowProcessEnvFallback: boolean,
   declaredEnvVars: ReadonlySet<string> | undefined,
+  trustedCredentialNames: ReadonlySet<string> | undefined,
   declaredSecretNames: readonly string[] = []
 ): string {
-  if (
-    key &&
-    !declaredEnvVars?.has(key) &&
-    !(source === 'secrets' && declaredSecretNames.includes(key))
-  ) {
+  assertApiCredentialName(key, source, path, trustedCredentialNames);
+  if (!declaredEnvVars?.has(key) && !(source === 'secrets' && declaredSecretNames.includes(key))) {
     throw new Error(`Undeclared environment variable: ${key}. Add ${key} to auth_env_vars.`);
   }
-  assertApiCredentialName(key, source, path);
 
   const explicit = values && Object.hasOwn(values, key) ? values[key] : undefined;
   const value =
@@ -159,6 +173,7 @@ function resolveTokenValue(
         path,
         false,
         context.declaredEnvVars,
+        context.trustedCredentialNames,
         context.declaredSecretNames
       );
     case 'env':
@@ -168,7 +183,8 @@ function resolveTokenValue(
         context.env,
         path,
         context.allowProcessEnvFallback !== false,
-        context.declaredEnvVars
+        context.declaredEnvVars,
+        context.trustedCredentialNames
       );
     case 'integration':
       return resolveIntegrationValue(key, context, path);

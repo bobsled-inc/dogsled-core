@@ -211,6 +211,31 @@ afterEach(() => {
 });
 
 describe('runProjectPipeline', () => {
+  it('marks a host run for the extractor even when no name reaches it', () => {
+    const args = (declaredEnvNames?: string[]) =>
+      buildPipelineExtractArgs(
+        ['items'],
+        { integration: 'custom', ...(declaredEnvNames ? { declaredEnvNames } : {}) },
+        undefined,
+        false,
+        {}
+      );
+
+    expect(args()).not.toContain('--host-env-names-json');
+    expect(args(['DESTINATION_ONLY'])).toEqual(
+      expect.arrayContaining(['--host-env-names-json', '[]'])
+    );
+  });
+
+  it.each(['--host-env-names-json', '--host-env-names-json=["GITHUB_TOKEN"]', '-x'])(
+    'refuses to pass %s as a resource name',
+    (name) => {
+      expect(() =>
+        buildPipelineExtractArgs([name], { integration: 'custom' }, undefined, false, {})
+      ).toThrow(`Invalid resource name "${name}"`);
+    }
+  );
+
   it('serializes deterministic per-resource input matrices for the extractor', () => {
     const args = buildPipelineExtractArgs(
       ['historical_outrights'],

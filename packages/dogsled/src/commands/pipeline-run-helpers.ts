@@ -174,7 +174,8 @@ export function applyHostEnvironmentDeclarations(
   }));
   return {
     ...options,
-    declaredEnvNames,
+    // Stays unset for a CLI run: only a host run carries a declaration list.
+    ...(options.declaredEnvNames === undefined ? {} : { declaredEnvNames }),
     ...(destinations ? { destinations } : {}),
     ...(options.embedConfigJson && declaredEnvNames.length
       ? {

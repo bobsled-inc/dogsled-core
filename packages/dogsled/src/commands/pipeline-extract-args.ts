@@ -1,3 +1,4 @@
+import { CommandError } from '@bobsled-inc/protocol';
 import type { PipelineOptions } from './pipeline.js';
 
 /**
@@ -23,10 +24,21 @@ export function buildPipelineExtractArgs(
   deferStateWrite: boolean,
   extractorEnv: NodeJS.ProcessEnv
 ): string[] {
+  // Resource names come from Project configuration and land in argv as
+  // positionals, so one must never parse as a flag: `--host-env-names-json`
+  // decides which reserved credentials the extractor may read.
+  const flagLikeName = resourceNames.find((name) => name.startsWith('-'));
+  if (flagLikeName !== undefined) {
+    throw new CommandError(`Invalid resource name "${flagLikeName}".`, 2);
+  }
   const args = ['run', ...resourceNames, '--integration', options.integration];
-  const declaredEnvNames = extractorDeclaredEnvNames(options.declaredEnvNames, extractorEnv);
-  if (declaredEnvNames.length) {
-    args.push('--host-env-names-json', JSON.stringify(declaredEnvNames));
+  // Sent even when empty: the flag also tells the extractor a host owns this
+  // run, so its ambient environment grants no reserved credentials.
+  if (options.declaredEnvNames !== undefined) {
+    args.push(
+      '--host-env-names-json',
+      JSON.stringify(extractorDeclaredEnvNames(options.declaredEnvNames, extractorEnv))
+    );
   }
 
   if (options.fullRefresh || options.startDate || options.endDate) {

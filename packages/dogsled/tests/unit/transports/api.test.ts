@@ -67,6 +67,40 @@ function makeApiAction(): Action {
   };
 }
 
+describe('executeApiAction reserved credentials', () => {
+  it.each([
+    ['a declared host name', ['GITHUB_TOKEN'], 'skipped'],
+    ['an undeclared name', undefined, 'failed'],
+  ])('previews a reserved auth name only for %s', async (_case, names, status) => {
+    const result = await executeApiAction(
+      makeApiAction(),
+      { email: 'alice@example.com', last_name: 'Doe' },
+      {
+        dryRun: true,
+        secrets: { GITHUB_TOKEN: 'host-canary' },
+        declaredSecretNames: names,
+      },
+      {
+        loadIntegration: () =>
+          ({
+            spec_version: '1',
+            type: 'integration',
+            name: 'salesforce',
+            auth_env_vars: ['GITHUB_TOKEN'],
+            transport: {
+              type: 'http',
+              base_url: 'https://api.example.com',
+              auth: { type: 'bearer', token: '${{ env.GITHUB_TOKEN }}' },
+            },
+          }) as never,
+      }
+    );
+
+    expect(result.status).toBe(status);
+    expect(JSON.stringify(result)).not.toContain('host-canary');
+  });
+});
+
 describe('executeApiAction', () => {
   const originalCwd = process.cwd();
 

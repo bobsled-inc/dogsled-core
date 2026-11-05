@@ -20,6 +20,7 @@ export interface TransportClientPoolOptions {
   integration: IntegrationSpec;
   cliInputs?: Record<string, unknown>;
   stateDir: string;
+  trustedCredentialNames?: readonly string[];
 }
 
 export interface ResolvedTransportClient {
@@ -33,6 +34,7 @@ export class TransportClientPool {
   private readonly integration: IntegrationSpec;
   private readonly cliInputs: Record<string, unknown>;
   private readonly stateDir: string;
+  private readonly trustedCredentialNames: readonly string[];
   private readonly clients = new Map<string, ExtractRuntimeClient>();
   private readonly pendingClients = new Map<string, Promise<ExtractRuntimeClient>>();
 
@@ -40,6 +42,7 @@ export class TransportClientPool {
     this.integration = options.integration;
     this.cliInputs = options.cliInputs ?? {};
     this.stateDir = options.stateDir;
+    this.trustedCredentialNames = options.trustedCredentialNames ?? [];
   }
 
   async getForResource(resource: ApiResourceSpec): Promise<ResolvedTransportClient> {
@@ -120,10 +123,12 @@ export class TransportClientPool {
             integration: resolved.integration,
             cliInputs: this.cliInputs,
             stateDir: scopedStateDir,
+            trustedCredentialNames: this.trustedCredentialNames,
           })
         : new McpExtractorClient({
             integration: resolved.integration,
             cliInputs: this.cliInputs,
+            trustedCredentialNames: this.trustedCredentialNames,
           });
 
     try {

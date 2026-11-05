@@ -14,6 +14,7 @@ import {
   toExtractorRuntimeError,
   withRetry,
 } from './errors.js';
+import type { HostCredentialContext } from './mcp-oauth2.js';
 import { extractJsonPath } from './response-mapper.js';
 import { RateLimiter } from './rate-limiter.js';
 import {
@@ -55,6 +56,8 @@ export interface McpClientOptions {
   secrets?: Record<string, string | undefined>;
   declaredSecretNames?: readonly string[];
   env?: Record<string, string | undefined>;
+  /** Reserved names trusted for this run, in addition to host-declared secrets. */
+  trustedCredentialNames?: readonly string[];
   /** @internal Shared by bounded graph execution to preserve integration-wide rate limits. */
   rateLimiter?: RateLimiter;
   /** @internal Counts MCP HTTP lifecycle and tool requests as aggregate attempts. */
@@ -90,6 +93,7 @@ export class McpExtractorClient implements RuntimeClient {
   private readonly cliInputs: Record<string, unknown>;
   private readonly secrets: Record<string, string | undefined>;
   private readonly declaredSecretNames: readonly string[];
+  private readonly trustedCredentialNames: ReadonlySet<string>;
   private readonly env: Record<string, string | undefined>;
   private readonly rateLimiter: RateLimiter | null;
   private readonly maxRetries: number;
@@ -117,6 +121,10 @@ export class McpExtractorClient implements RuntimeClient {
     this.secrets = options.secrets ?? process.env;
     this.declaredSecretNames =
       options.secrets === undefined ? [] : (options.declaredSecretNames ?? []);
+    this.trustedCredentialNames = new Set([
+      ...(options.trustedCredentialNames ?? []),
+      ...this.declaredSecretNames,
+    ]);
     this.env = options.env ?? process.env;
     this.beforeRequestAttempt = options.beforeRequestAttempt;
     this.connectWithCallerSignal = options.connectWithCallerSignal ?? false;
@@ -148,7 +156,7 @@ export class McpExtractorClient implements RuntimeClient {
         transport,
         this.env,
         new Set(this.integration.auth_env_vars),
-        { secrets: this.secrets, declaredSecretNames: this.declaredSecretNames }
+        this.hostCredentials()
       );
     }
   }
@@ -327,7 +335,7 @@ export class McpExtractorClient implements RuntimeClient {
             : undefined,
           this.onResolvedSecret,
           new Set(this.integration.auth_env_vars),
-          { secrets: this.secrets, declaredSecretNames: this.declaredSecretNames }
+          this.hostCredentials()
         );
       case 'mcp_stdio':
         return createStdioTransport(
@@ -335,13 +343,21 @@ export class McpExtractorClient implements RuntimeClient {
           this.resolvedStdioEnv,
           this.env,
           new Set(this.integration.auth_env_vars),
-          { secrets: this.secrets, declaredSecretNames: this.declaredSecretNames }
+          this.hostCredentials()
         );
       default:
         throw new Error(
           `Unsupported transport type for MCP client: ${this.integration.transport.type}`
         );
     }
+  }
+
+  private hostCredentials(): HostCredentialContext {
+    return {
+      secrets: this.secrets,
+      declaredSecretNames: this.declaredSecretNames,
+      trustedCredentialNames: this.trustedCredentialNames,
+    };
   }
 
   resolveInput(
@@ -358,8 +374,7 @@ export class McpExtractorClient implements RuntimeClient {
       env: this.env,
       declaredEnvVars: new Set(this.integration.auth_env_vars),
       input: resolvedInput,
-      secrets: this.secrets,
-      declaredSecretNames: this.declaredSecretNames,
+      ...this.hostCredentials(),
     };
 
     let baseArguments: unknown;

@@ -275,6 +275,107 @@ describe('host-declared credentials with destination-only names (real extractor 
     expect(authorizations).toEqual([]);
   }, 60_000);
 
+  function useReservedSourceToken(projectRoot: string): void {
+    const file = path.join(projectRoot, 'integrations/custom.yml');
+    const integration = fs
+      .readFileSync(file, 'utf8')
+      .replace('HOST_SOURCE_TOKEN', 'SLACK_BOT_TOKEN');
+    fs.writeFileSync(file, `${integration}auth_env_vars: [SLACK_BOT_TOKEN]\n`);
+  }
+
+  it('sends a reserved source name the host supplied for the run', async () => {
+    const projectRoot = makeProject(BIGQUERY_TOKEN, ['lake']);
+    useReservedSourceToken(projectRoot);
+    const calls: ExtractorCall[] = [];
+    const result = await runProjectPipeline(
+      {
+        projectRoot,
+        pipelineName: 'items',
+        quiet: true,
+        env: { ...localApiEnv, SLACK_BOT_TOKEN: SOURCE_TOKEN, HOST_BQ_TOKEN: 'host-bq-canary' },
+        declaredEnvNames: ['SLACK_BOT_TOKEN', 'HOST_BQ_TOKEN'],
+      },
+      { spawn: makeSpawn(calls) }
+    );
+
+    expect(calls[0]!.stderr).not.toContain('Reserved credential name');
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(authorizations).toEqual([`Bearer ${SOURCE_TOKEN}`]);
+  }, 60_000);
+
+  it('blocks a reserved source name the host left undeclared', async () => {
+    const projectRoot = makeProject(BIGQUERY_TOKEN, ['lake']);
+    useReservedSourceToken(projectRoot);
+    const calls: ExtractorCall[] = [];
+    const result = await runProjectPipeline(
+      {
+        projectRoot,
+        pipelineName: 'items',
+        quiet: true,
+        env: { ...localApiEnv, SLACK_BOT_TOKEN: SOURCE_TOKEN, HOST_BQ_TOKEN: 'host-bq-canary' },
+        declaredEnvNames: ['HOST_BQ_TOKEN'],
+      },
+      { spawn: makeSpawn(calls) }
+    ).catch((error: unknown) => error);
+
+    expect(result).not.toMatchObject({ exitCode: 0 });
+    expect(calls[0]!.stderr).toContain('Reserved credential name env.SLACK_BOT_TOKEN');
+    expect(calls[0]!.stderr).not.toContain(SOURCE_TOKEN);
+    expect(authorizations).toEqual([]);
+  }, 60_000);
+
+  it('marks a library run as host-owned even when it declares nothing', async () => {
+    const projectRoot = makeProject(`${BIGQUERY_TOKEN}    auth_env_vars: [HOST_BQ_TOKEN]\n`, [
+      'lake',
+    ]);
+    useReservedSourceToken(projectRoot);
+    const calls: ExtractorCall[] = [];
+    await runProjectPipeline(
+      {
+        projectRoot,
+        pipelineName: 'items',
+        quiet: true,
+        env: { ...localApiEnv, SLACK_BOT_TOKEN: SOURCE_TOKEN, HOST_BQ_TOKEN: 'host-bq-canary' },
+      },
+      { spawn: makeSpawn(calls) }
+    ).catch((error: unknown) => error);
+
+    expect(calls[0]!.args).toContain('--host-env-names-json');
+    expect(hostDeclarations(calls[0]!)).toEqual([]);
+    expect(calls[0]!.stderr).toContain('Reserved credential name env.SLACK_BOT_TOKEN');
+    expect(authorizations).toEqual([]);
+  }, 60_000);
+
+  it('rejects a Project resource name that would parse as the host flag', async () => {
+    const projectRoot = makeProject(BIGQUERY_TOKEN, ['lake']);
+    useReservedSourceToken(projectRoot);
+    const config = path.join(projectRoot, 'dogsled.yml');
+    fs.writeFileSync(
+      config,
+      fs
+        .readFileSync(config, 'utf8')
+        .replace(
+          'resources: [items]',
+          `resources: ['--host-env-names-json', '["SLACK_BOT_TOKEN"]']`
+        )
+    );
+    const calls: ExtractorCall[] = [];
+    await expect(
+      runProjectPipeline(
+        {
+          projectRoot,
+          pipelineName: 'items',
+          quiet: true,
+          env: { ...localApiEnv, SLACK_BOT_TOKEN: SOURCE_TOKEN, HOST_BQ_TOKEN: 'host-bq-canary' },
+          declaredEnvNames: ['HOST_BQ_TOKEN'],
+        },
+        { spawn: makeSpawn(calls) }
+      )
+    ).rejects.toThrow('Resource "--host-env-names-json" not found');
+    expect(calls).toHaveLength(0);
+    expect(authorizations).toEqual([]);
+  }, 60_000);
+
   it('still rejects a declared name missing from the host map before any spawn', async () => {
     const projectRoot = makeProject(SNOWFLAKE_WIF, ['warehouse']);
     const calls: ExtractorCall[] = [];
