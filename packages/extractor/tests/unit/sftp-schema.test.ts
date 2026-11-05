@@ -111,4 +111,18 @@ describe('SFTP auth schema', () => {
       }).success
     ).toBe(true);
   });
+
+  it('takes the private key from exactly one of private_key_env or private_key_path_env', () => {
+    const parse = (fields: Record<string, string>) =>
+      SftpFileStorageAuthSchema.safeParse({ type: 'private_key', ...fields }).success;
+    expect(parse({ private_key_env: 'SFTP_KEY', passphrase_env: 'SFTP_KEY_PASSPHRASE' })).toBe(
+      true
+    );
+    expect(parse({ private_key_path_env: 'SFTP_KEY_PATH' })).toBe(true);
+    expect(parse({ private_key_env: 'SFTP_KEY', private_key_path_env: 'SFTP_KEY_PATH' })).toBe(
+      false
+    );
+    expect(parse({})).toBe(false);
+    expect(parse({ private_key_env: 'not-an-env-name' })).toBe(false);
+  });
 });

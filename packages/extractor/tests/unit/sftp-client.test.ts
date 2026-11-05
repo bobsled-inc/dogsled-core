@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, open, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
 import { connect as tcpConnect, createServer } from 'node:net';
@@ -80,6 +81,7 @@ async function connect(
   options: {
     password?: string;
     privateKeyPath?: string;
+    privateKeyText?: string;
     readConcurrency?: number;
     idleMs?: number;
     baseDirectory?: string;
@@ -88,6 +90,7 @@ async function connect(
 ): Promise<SftpFileStorageClient> {
   process.env['SFTP_TEST_PASSWORD'] = options.password ?? 'secret';
   if (options.privateKeyPath) process.env['SFTP_TEST_KEY_PATH'] = options.privateKeyPath;
+  if (options.privateKeyText) process.env['SFTP_TEST_KEY'] = options.privateKeyText;
   const client = await withPrivateHostAllowlist(['127.0.0.1'], () =>
     SftpFileStorageClient.create(
       {
@@ -98,15 +101,17 @@ async function connect(
         host_keys: hostKeys,
         read_concurrency: options.readConcurrency ?? 4,
       },
-      options.privateKeyPath
-        ? {
-            type: 'private_key',
-            private_key_path_env: 'SFTP_TEST_KEY_PATH',
-            passphrase_env: options.passphraseEnv,
-          }
-        : { type: 'password', password_env: 'SFTP_TEST_PASSWORD' },
+      options.privateKeyText
+        ? { type: 'private_key', private_key_env: 'SFTP_TEST_KEY' }
+        : options.privateKeyPath
+          ? {
+              type: 'private_key',
+              private_key_path_env: 'SFTP_TEST_KEY_PATH',
+              passphrase_env: options.passphraseEnv,
+            }
+          : { type: 'password', password_env: 'SFTP_TEST_PASSWORD' },
       { timeouts: { idleMs: options.idleMs ?? 60_000, readyMs: 5_000 } },
-      ['SFTP_TEST_PASSWORD', 'SFTP_TEST_KEY_PATH']
+      ['SFTP_TEST_PASSWORD', 'SFTP_TEST_KEY_PATH', 'SFTP_TEST_KEY']
     )
   );
   clients.push(client);
@@ -199,6 +204,93 @@ describe('SFTP client against a real ssh2 server', () => {
     await writeFile(keyPath, clientEd25519.privateKey, { mode: 0o600 });
     const client = await connect(server.port, [pin(ed25519)], { privateKeyPath: keyPath });
     expect(await listAll(client)).toHaveLength(2);
+  });
+
+  it('authenticates with private key text from private_key_env', async () => {
+    const server = await serve({ clientKey: clientEd25519 });
+    const client = await connect(server.port, [pin(ed25519)], {
+      privateKeyText: clientEd25519.privateKey,
+    });
+    expect(await listAll(client)).toHaveLength(2);
+  });
+
+  it('lists a single named file, walks a named folder and rejects a missing path', async () => {
+    const server = await serve();
+    const client = await connect(server.port, [pin(ed25519)]);
+    const paths = async (pattern: string) => {
+      const out: ListedFile[] = [];
+      for await (const entry of client.list({ path: pattern })) out.push(entry);
+      return out;
+    };
+    const single = await paths('sub/b.csv');
+    expect(single.map((entry) => entry.path)).toEqual(['sub/b.csv']);
+    expect(single[0]).toMatchObject({ size: 5, uri: expect.stringMatching(/\/sub\/b\.csv$/) });
+    const downloaded = await client.download(single[0]!, path.join(workDir, 'single.out'));
+    expect(downloaded.bytes_downloaded).toBe(5);
+    expect((await paths('sub')).map((entry) => entry.path)).toEqual(['sub/b.csv']);
+    await expectSftpCode(paths('missing.csv'), 'SFTP_PATH_NOT_FOUND');
+    // A named link is listed, but its download still cannot leave base_directory.
+    const [link] = await paths('link.csv');
+    await expect(client.download(link!, path.join(workDir, 'link.out'))).rejects.toThrow(
+      'resolves outside base_directory'
+    );
+  });
+
+  it('lists a named link with its target metadata so incremental bookmarks see changes', async () => {
+    const server = await serve();
+    const client = await connect(server.port, [pin(ed25519)], { baseDirectory: '/linked' });
+    // Own folder outside exports/, so other listing tests keep their fixtures.
+    await mkdir(path.join(root, 'linked'), { recursive: true });
+    const target = path.join(root, 'linked/target.csv');
+    await writeFile(target, 'id\n1\n');
+    await symlink('target.csv', path.join(root, 'linked/named-link.csv'));
+    const sizeOf = async () => {
+      for await (const entry of client.list({ path: 'named-link.csv' })) return entry.size;
+      return undefined;
+    };
+    expect(await sizeOf()).toBe(5);
+    await writeFile(target, 'id\n1\n2\n3\n');
+    expect(await sizeOf()).toBe(9);
+  });
+
+  it('walks a named folder when the server omits mode, and still lists a named file', async () => {
+    const server = await serve({ omitMode: true });
+    const client = await connect(server.port, [pin(ed25519)]);
+    const paths = async (pattern: string) => {
+      const out: string[] = [];
+      for await (const entry of client.list({ path: pattern })) out.push(entry.path);
+      return out.sort();
+    };
+    expect(await paths('sub')).toContain('sub/b.csv');
+    expect(await paths('sub/b.csv')).toEqual(['sub/b.csv']);
+  });
+
+  it('keeps a refused folder probe a permission error when the server omits mode', async () => {
+    const server = await serve({ omitMode: true, denyOpendir: true });
+    const client = await connect(server.port, [pin(ed25519)]);
+    const listing = (async () => {
+      for await (const entry of client.list({ path: 'sub' })) void entry;
+    })();
+    await expectSftpCode(listing, 'SFTP_PERMISSION_DENIED');
+  });
+
+  it('still walks a named folder when the server refuses STAT', async () => {
+    const server = await serve({ denyStat: true });
+    const client = await connect(server.port, [pin(ed25519)]);
+    const out: string[] = [];
+    for await (const entry of client.list({ path: 'sub' })) out.push(entry.path);
+    expect(out).toContain('sub/b.csv');
+  });
+
+  it('refuses a named path that is a FIFO instead of opening it', async () => {
+    await mkdir(path.join(root, 'special'), { recursive: true });
+    execFileSync('mkfifo', [path.join(root, 'special/pipe.csv')]);
+    const server = await serve();
+    const client = await connect(server.port, [pin(ed25519)], { baseDirectory: '/special' });
+    const listing = (async () => {
+      for await (const entry of client.list({ path: 'pipe.csv' })) void entry;
+    })();
+    await expect(listing).rejects.toThrow('is not a regular file or folder');
   });
 
   it('reports SFTP_NOT_SSH when the peer is not an SSH server', async () => {

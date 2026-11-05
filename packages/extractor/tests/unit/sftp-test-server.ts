@@ -59,6 +59,12 @@ export interface TestSftpServerOptions {
   presentPublicKeyOf?: TestKey;
   /** Leave `size` out of every attrs reply, as some servers do. */
   omitSize?: boolean;
+  /** Leave `mode` out of every attrs reply, as some servers do. */
+  omitMode?: boolean;
+  /** Refuse every OPENDIR with permission denied. */
+  denyOpendir?: boolean;
+  /** Refuse every STAT with permission denied, like `sftp-server -P stat`. */
+  denyStat?: boolean;
 }
 
 export interface TestSftpServer {
@@ -67,9 +73,12 @@ export interface TestSftpServer {
   close(): Promise<void>;
 }
 
-function attrsOf(stats: import('node:fs').Stats, omitSize = false) {
+function attrsOf(
+  stats: import('node:fs').Stats,
+  { omitSize = false, omitMode = false }: { omitSize?: boolean; omitMode?: boolean } = {}
+) {
   return {
-    mode: stats.mode,
+    ...(omitMode ? {} : { mode: stats.mode }),
     uid: stats.uid,
     gid: stats.gid,
     ...(omitSize ? {} : { size: stats.size }),
@@ -134,7 +143,9 @@ function serveSftp(
     .on('OPENDIR', async (reqid, remote) => {
       try {
         const dir = local(remote);
+        if (options.denyOpendir) throw Object.assign(new Error(), { code: 'EACCES' });
         if (!(await fs.stat(dir)).isDirectory()) {
+          // OpenSSH maps ENOTDIR to NO_SUCH_FILE.
           throw Object.assign(new Error(), { code: 'ENOENT' });
         }
         const id = nextHandle++;
@@ -160,10 +171,7 @@ function serveSftp(
         names.map(async (filename) => ({
           filename,
           longname: filename,
-          attrs: attrsOf(
-            await fs.lstat(path.join(entry.dir!, filename)),
-            options.omitSize
-          ) as never,
+          attrs: attrsOf(await fs.lstat(path.join(entry.dir!, filename)), options) as never,
         }))
       );
       sftp.name(reqid, listing);
@@ -181,18 +189,19 @@ function serveSftp(
     .on('FSTAT', async (reqid, handle) => {
       const entry = handles.get(handle.readUInt32BE(0));
       if (!entry?.fd) return sftp.status(reqid, STATUS_CODE.FAILURE);
-      sftp.attrs(reqid, attrsOf(await entry.fd.stat(), options.omitSize) as never);
+      sftp.attrs(reqid, attrsOf(await entry.fd.stat(), options) as never);
     })
     .on('STAT', async (reqid, remote) => {
       try {
-        sftp.attrs(reqid, attrsOf(await fs.stat(local(remote)), options.omitSize) as never);
+        if (options.denyStat) throw Object.assign(new Error(), { code: 'EACCES' });
+        sftp.attrs(reqid, attrsOf(await fs.stat(local(remote)), options) as never);
       } catch (error) {
         fail(reqid, error);
       }
     })
     .on('LSTAT', async (reqid, remote) => {
       try {
-        sftp.attrs(reqid, attrsOf(await fs.lstat(local(remote)), options.omitSize) as never);
+        sftp.attrs(reqid, attrsOf(await fs.lstat(local(remote)), options) as never);
       } catch (error) {
         fail(reqid, error);
       }

@@ -42,7 +42,9 @@ const SFTP_STATUS_PERMISSION_DENIED = 3;
 
 type SftpTimeouts = { idleMs: number; readyMs: number; keepaliveIntervalMs: number };
 
-function readRequiredEnv(name: string, field: string): string {
+function readRequiredEnv(name: string | undefined, field: string): string {
+  // The schema guarantees the field; this guards callers that bypass it.
+  if (!name) throw new ExtractorConfigError(`SFTP auth ${field} is required`);
   const value = process.env[name];
   if (!value) {
     throw new ExtractorConfigError(`SFTP auth ${field} references missing env var ${name}`);
@@ -182,10 +184,12 @@ export class SftpFileStorageClient implements FileStorageClient {
       auth.type === 'password'
         ? { password: readRequiredEnv(auth.password_env, 'password_env') }
         : {
-            privateKey: await readFile(
-              readRequiredEnv(auth.private_key_path_env, 'private_key_path_env'),
-              'utf8'
-            ),
+            privateKey: auth.private_key_env
+              ? readRequiredEnv(auth.private_key_env, 'private_key_env')
+              : await readFile(
+                  readRequiredEnv(auth.private_key_path_env, 'private_key_path_env'),
+                  'utf8'
+                ),
             passphrase: auth.passphrase_env
               ? readRequiredEnv(auth.passphrase_env, 'passphrase_env')
               : undefined,
@@ -312,6 +316,14 @@ export class SftpFileStorageClient implements FileStorageClient {
     const matcher = literal === options.path ? undefined : globToRegExp(options.path, 'SFTP');
     const prefix = matcher ? literal.slice(0, literal.lastIndexOf('/') + 1) : literal;
     const root = remoteJoin(this.connection.base_directory, prefix);
+    if (!matcher && prefix !== '' && !prefix.endsWith('/')) {
+      // A path without a glob may name one file; a folder is walked as before.
+      const attrs = await this.statNamedFile(root, prefix, options.signal);
+      if (attrs) {
+        if (options.maxFiles !== 0) yield this.toListed(root, attrs);
+        return;
+      }
+    }
     let emitted = 0;
     for await (const file of this.walk(root, true, options.signal)) {
       if (options.maxFiles && emitted >= options.maxFiles) {
@@ -537,6 +549,58 @@ export class SftpFileStorageClient implements FileStorageClient {
     return new ExtractorDataError(`SFTP could not read ${filePath}${detail}`, cause);
   }
 
+  /**
+   * Returns the attrs when a glob-free path names one regular file, or undefined to walk it.
+   * stat follows a named link, so the bookmark tracks the file download() reads; download()
+   * still resolves realpath, so a named link cannot leave base_directory.
+   */
+  private async statNamedFile(
+    root: string,
+    prefix: string,
+    signal?: AbortSignal
+  ): Promise<Stats | undefined> {
+    let attrs: Stats;
+    try {
+      attrs = await this.run<Stats>('stat', (done) => this.sftp.stat(root, done), signal);
+    } catch (error) {
+      if (error instanceof DogsledRuntimeError) throw error;
+      if (sftpStatus(error) === SFTP_STATUS_NO_SUCH_FILE) throw this.rootError(error);
+      // Some servers refuse STAT but allow folder reads; the walk reports its own errors.
+      return undefined;
+    }
+    if (attrs.mode === undefined) {
+      return (await this.opensAsDirectory(root, signal)) ? undefined : attrs;
+    }
+    if (attrs.isDirectory()) return undefined;
+    if (!attrs.isFile()) {
+      // Opening a FIFO or device could block until the idle timeout.
+      throw new ExtractorDataError(`SFTP path ${prefix} is not a regular file or folder`);
+    }
+    return attrs;
+  }
+
+  /** Some servers omit `mode`; then only a path that opens as a folder is walked. */
+  private async opensAsDirectory(remotePath: string, signal?: AbortSignal): Promise<boolean> {
+    let handle: Buffer;
+    try {
+      handle = await this.run<Buffer>(
+        'opendir',
+        (done) => this.sftp.opendir(remotePath, done),
+        signal
+      );
+    } catch (error) {
+      // STAT already found the path, and OpenSSH answers ENOTDIR with NO_SUCH_FILE,
+      // so only a refusal is an error here.
+      if (sftpStatus(error) === SFTP_STATUS_PERMISSION_DENIED) throw this.rootError(error);
+      if (error instanceof DogsledRuntimeError) throw error;
+      return false;
+    }
+    await this.run<void>('close', (done) => this.sftp.close(handle, done), signal).catch(
+      () => undefined
+    );
+    return true;
+  }
+
   /** List one directory; each READDIR batch is its own request so the idle timer tracks progress. */
   private async readDirectory(
     remotePath: string,
@@ -590,23 +654,22 @@ export class SftpFileStorageClient implements FileStorageClient {
       // A server may omit `mode`; the type is then unknown, so keep the entry and let
       // download()'s realpath check hold it inside base_directory.
       if (entry.attrs.mode !== undefined && !entry.attrs.isFile()) continue;
-      const base = this.connection.base_directory.replace(/\/+$/, '') + '/';
-      const relative = fullPath.startsWith(base) ? fullPath.slice(base.length) : fullPath;
-      yield {
-        path: relative,
-        uri:
-          this.connection.port && this.connection.port !== 22
-            ? `sftp://${this.connection.host}:${this.connection.port}/${relative}`
-            : `sftp://${this.connection.host}/${relative}`,
-        last_modified: entry.attrs.mtime
-          ? new Date(entry.attrs.mtime * 1000).toISOString()
-          : undefined,
-        etag:
-          entry.attrs.mtime !== undefined
-            ? `${entry.attrs.mtime}-${entry.attrs.size ?? 0}`
-            : undefined,
-        size: entry.attrs.size,
-      };
+      yield this.toListed(fullPath, entry.attrs);
     }
+  }
+
+  private toListed(fullPath: string, attrs: { mtime?: number; size?: number }): ListedFile {
+    const base = this.connection.base_directory.replace(/\/+$/, '') + '/';
+    const relative = fullPath.startsWith(base) ? fullPath.slice(base.length) : fullPath;
+    return {
+      path: relative,
+      uri:
+        this.connection.port && this.connection.port !== 22
+          ? `sftp://${this.connection.host}:${this.connection.port}/${relative}`
+          : `sftp://${this.connection.host}/${relative}`,
+      last_modified: attrs.mtime ? new Date(attrs.mtime * 1000).toISOString() : undefined,
+      etag: attrs.mtime !== undefined ? `${attrs.mtime}-${attrs.size ?? 0}` : undefined,
+      size: attrs.size,
+    };
   }
 }

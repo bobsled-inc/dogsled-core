@@ -248,7 +248,7 @@ example the old and new key during a key rotation.
 
 ```yaml
 spec_version: '1'
-auth_env_vars: [SFTP_KEY_PATH]
+auth_env_vars: [SFTP_PRIVATE_KEY]
 type: integration
 name: partner_drop
 source_type: sftp
@@ -262,12 +262,20 @@ connection:
   read_concurrency: 4
 auth:
   type: private_key
-  private_key_path_env: SFTP_KEY_PATH
+  private_key_env: SFTP_PRIVATE_KEY
 ```
+
+`private_key` auth takes exactly one of `private_key_env` (an env var holding the
+OpenSSH private key text) or `private_key_path_env` (an env var holding the path
+to the key file). Add `passphrase_env` for an encrypted key.
 
 Get the values from the server operator, or with `ssh-keyscan -t ed25519 host`
 (the second and third fields of each line are `algorithm` and `public_key`) and
 `ssh-keygen -lf` for the fingerprint. Verify them out of band before you pin them.
+
+A Resource `path` without a glob may name one file, such as `exports/orders.csv`,
+or a folder, which is walked. A path that does not exist fails with
+`SFTP_PATH_NOT_FOUND`.
 
 The listing reads regular files below `base_directory` only. It skips symbolic
 links and special files, and a download that resolves outside `base_directory`

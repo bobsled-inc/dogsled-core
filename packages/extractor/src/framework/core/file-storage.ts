@@ -174,10 +174,23 @@ export const SftpFileStorageAuthSchema = z.union([
   z
     .object({
       type: z.literal('private_key'),
-      private_key_path_env: EnvVarNameSchema,
+      private_key_env: EnvVarNameSchema.optional().describe(
+        'Env var holding the OpenSSH private key text.'
+      ),
+      private_key_path_env: EnvVarNameSchema.optional().describe(
+        'Env var holding the path to the OpenSSH private key file.'
+      ),
       passphrase_env: EnvVarNameSchema.optional(),
     })
-    .strict(),
+    .strict()
+    .refine(
+      (auth) => (auth.private_key_env === undefined) !== (auth.private_key_path_env === undefined),
+      {
+        message:
+          'SFTP private_key auth needs exactly one of private_key_env or private_key_path_env',
+        path: ['private_key_env'],
+      }
+    ),
 ]);
 export type SftpFileStorageAuth = z.infer<typeof SftpFileStorageAuthSchema>;
 
