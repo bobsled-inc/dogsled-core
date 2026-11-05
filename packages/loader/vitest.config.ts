@@ -36,6 +36,7 @@ if (!hasDuckDb) {
     'tests/unit/destinations/bigquery-merge-replay.test.ts',
     'tests/unit/commands/check.test.ts',
     'tests/unit/commands/query.test.ts',
+    'tests/unit/commands/run-replace.test.ts',
     'tests/integration/pipe.test.ts'
   );
 }

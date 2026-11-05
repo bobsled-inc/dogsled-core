@@ -45,6 +45,15 @@ import {
   validateSnowflakeWorkloadIdentityToken,
 } from './snowflake-connection.js';
 import { copySnowflakeErrorLike, redactSnowflakeSecret } from './snowflake-errors.js';
+import {
+  mapSnowflakeColumnType,
+  mapSnowflakeType,
+  normalizeSnowflakeType,
+} from './snowflake-type-mapping.js';
+
+export { mapSnowflakeType, normalizeSnowflakeType } from './snowflake-type-mapping.js';
+
+const DELETE_BATCH_SIZE = 500;
 
 // ── Snowflake DI interfaces for testing ──
 
@@ -60,7 +69,7 @@ export interface SnowflakeStatementResult {
 
 export interface SnowflakeConnectionLike {
   connect(): Promise<void>;
-  execute(options: { sqlText: string }): Promise<SnowflakeStatementResult>;
+  execute(options: { sqlText: string; binds?: string[] }): Promise<SnowflakeStatementResult>;
   uploadFile(options: { srcPath: string; destLoc: string }): Promise<SnowflakeUploadResult>;
   isClosed(): boolean;
   destroy(): Promise<void>;
@@ -154,52 +163,6 @@ export interface SnowflakeDestinationOptions {
 interface SnowflakeTableMetadata {
   exists: boolean;
   comment?: string;
-}
-
-// ── Type mapping ──
-
-export function mapSnowflakeType(type: SchemaColumn['type']): string {
-  switch (type) {
-    case 'integer':
-      return 'NUMBER(38,0)';
-    case 'number':
-      return 'FLOAT';
-    case 'boolean':
-      return 'BOOLEAN';
-    case 'timestamp':
-      return 'TIMESTAMP_TZ';
-    case 'string':
-    case 'array':
-    case 'object':
-      return 'VARCHAR';
-    case 'vector':
-      throw new Error('Snowflake vector columns require a SchemaColumn with dimension');
-    default: {
-      const _exhaustive: never = type;
-      throw new Error(`Unsupported column type: ${_exhaustive}`);
-    }
-  }
-}
-
-function mapSnowflakeColumnType(column: SchemaColumn | SchemaColumn['type']): string {
-  if (typeof column !== 'string' && column.type === 'vector') {
-    return `VECTOR(FLOAT, ${column.dimension})`;
-  }
-
-  return mapSnowflakeType(typeof column === 'string' ? column : column.type);
-}
-
-/**
- * Normalize Snowflake types for comparison. INFORMATION_SCHEMA.COLUMNS returns
- * canonical forms (e.g. 'TEXT' for VARCHAR, 'NUMBER' without precision).
- */
-export function normalizeSnowflakeType(t: string): string {
-  const upper = t.toUpperCase();
-  const vectorMatch = upper.match(/^VECTOR\(\s*FLOAT\s*,\s*(\d+)\s*\)$/);
-  if (vectorMatch) return `VECTOR(FLOAT, ${vectorMatch[1]})`;
-  if (upper.startsWith('NUMBER')) return 'NUMBER';
-  if (upper === 'VARCHAR' || upper === 'TEXT') return 'TEXT';
-  return upper;
 }
 
 export function quoteSnowflakeIdentifier(identifier: string): string {
@@ -1132,6 +1095,48 @@ export class SnowflakeDestination implements DatabaseDestination {
       keyColumns,
       sourceEncoding
     );
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    await this.refreshConnectionIfNeeded();
+    const conn = this.getConn();
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const ownershipMarker = this.tableOwnershipMarkers.get(`${safeSchema}.${safeTable}`);
+    const metadataSchema = safeSchema.toUpperCase();
+    const metadataTable = ownershipMarker === undefined ? safeTable.toUpperCase() : safeTable;
+    const quoteTargetTable =
+      ownershipMarker === undefined
+        ? quoteSnowflakeIdentifier
+        : quoteSnowflakeIdentifierPreservingCase;
+    const qualifiedTable = `${quoteSnowflakeIdentifier(safeSchema)}.${quoteTargetTable(safeTable)}`;
+    const metadata = await this.readTableMetadata(conn, metadataSchema, metadataTable);
+    if (!metadata.exists) return;
+    // The session runs in autocommit, so each DELETE commits before the next load reads or writes.
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      await withRetry(async () => {
+        if (ownershipMarker !== undefined) {
+          await this.assertTableOwnership(
+            conn,
+            qualifiedTable,
+            metadataSchema,
+            metadataTable,
+            ownershipMarker
+          );
+        }
+        return conn.execute({
+          sqlText: `DELETE FROM ${qualifiedTable} WHERE ${quoteSnowflakeIdentifier(column)} IN (${batch.map(() => '?').join(', ')})`,
+          binds: batch,
+        });
+      }, this.retryOpts('delete_rows'));
+    }
   }
 
   async loadFromUri(

@@ -637,4 +637,57 @@ describe('Databricks untrusted record values', () => {
     expect(insert).toContain("'" + escaped + "'");
     await dest.close();
   });
+
+  describe('deleteRows', () => {
+    it('deletes with bound ordinal parameters, never inlined values', async () => {
+      const { session } = createMockSession({ tableExists: true });
+      const { dest } = await createDestination(createMockConnection(session));
+      await dest.initialize();
+      await dest.deleteRows('analytics', 'docs', 'document_id', ["a'b", 'c']);
+      const call = session.executeStatement.mock.calls.find(([sql]) =>
+        String(sql).startsWith('DELETE FROM')
+      );
+      expect(call?.[0]).toBe('DELETE FROM `analytics`.`docs` WHERE `document_id` IN (?, ?)');
+      expect(call?.[1]).toEqual({ ordinalParameters: ["a'b", 'c'] });
+    });
+
+    it('batches values 500 per statement', async () => {
+      const { session } = createMockSession({ tableExists: true });
+      const { dest } = await createDestination(createMockConnection(session));
+      await dest.initialize();
+      const values = Array.from({ length: 1001 }, (_, i) => `id-${i}`);
+      await dest.deleteRows('analytics', 'docs', 'document_id', values);
+      const params = session.executeStatement.mock.calls
+        .filter(([sql]) => String(sql).startsWith('DELETE FROM'))
+        .map(([, options]) => (options as { ordinalParameters: string[] }).ordinalParameters);
+      expect(params.map((p) => p.length)).toEqual([500, 500, 1]);
+      expect(params.flat()).toEqual(values);
+    });
+
+    it('is a no-op when the table does not exist', async () => {
+      const { session, operations } = createMockSession({ tableExists: false });
+      const { dest } = await createDestination(createMockConnection(session));
+      await dest.initialize();
+      await dest.deleteRows('analytics', 'docs', 'document_id', ['a']);
+      expect(operations.some(({ sql }) => sql.includes('system.information_schema.tables'))).toBe(
+        true
+      );
+      expect(operations.some(({ sql }) => sql.startsWith('DELETE'))).toBe(false);
+    });
+
+    it('propagates delete errors', async () => {
+      const { session } = createMockSession({ tableExists: true });
+      const base = session.executeStatement.getMockImplementation()!;
+      session.executeStatement.mockImplementation((sql: string, options?: unknown) =>
+        sql.startsWith('DELETE FROM')
+          ? Promise.reject(new Error('PERMISSION_DENIED'))
+          : base(sql, options)
+      );
+      const { dest } = await createDestination(createMockConnection(session));
+      await dest.initialize();
+      await expect(dest.deleteRows('analytics', 'docs', 'document_id', ['a'])).rejects.toThrow(
+        'PERMISSION_DENIED'
+      );
+    });
+  });
 });

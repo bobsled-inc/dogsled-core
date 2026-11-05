@@ -144,6 +144,7 @@ const PARSE_ERRORS_OUTPUT: FileResourceSpec['output'] = {
  * backends wired.
  */
 const ACL_OUTPUT: FileResourceSpec['output'] = {
+  document_id: { type: 'string' },
   row_id: { type: 'string' },
   row_type: { type: 'string' },
   principal_id: { type: 'string' },
@@ -193,27 +194,32 @@ export async function extractDocumentResource(
   const allowedFormats = source.parse?.formats;
   const allowedFormatSet = allowedFormats ? new Set<string>(allowedFormats) : null;
 
+  // A full read replaces every table. An incremental run appends and sends REPLACE per
+  // file, so a changed file's previous rows in every stream go before its new rows land.
+  const extract = {
+    table: { load_strategy: readAllFiles ? ('full_refresh' as const) : ('append' as const) },
+  };
+  const fileStreams = [documentsStream, chunksStream, parseErrorsStream];
+  if (capturePermissions) fileStreams.push(aclStream);
+
   async function ensureSchemasEmitted(): Promise<void> {
     if (schemaEmitted) return;
-    // An incremental run emits only new or changed files, so documents and chunks upsert by
-    // file; a full read replaces the tables. shortcut: a file that shrinks keeps its old tail
-    // chunks (old document_version_id), until the loader can replace rows per file.
-    const strategy = readAllFiles ? 'full_refresh' : 'merge';
-    await emitter.emitSchema({
-      name: documentsStream,
-      output: DOCUMENTS_OUTPUT,
-      extract: { table: { primary_key: ['document_id'], load_strategy: strategy } },
-    });
-    await emitter.emitSchema({
-      name: chunksStream,
-      output: CHUNKS_OUTPUT,
-      extract: { table: { primary_key: ['document_id', 'chunk_index'], load_strategy: strategy } },
-    });
-    await emitter.emitSchema({ name: parseErrorsStream, output: PARSE_ERRORS_OUTPUT });
+    await emitter.emitSchema({ name: documentsStream, output: DOCUMENTS_OUTPUT, extract });
+    await emitter.emitSchema({ name: chunksStream, output: CHUNKS_OUTPUT, extract });
+    await emitter.emitSchema({ name: parseErrorsStream, output: PARSE_ERRORS_OUTPUT, extract });
     if (capturePermissions) {
-      await emitter.emitSchema({ name: aclStream, output: ACL_OUTPUT });
+      await emitter.emitSchema({ name: aclStream, output: ACL_OUTPUT, extract });
     }
     schemaEmitted = true;
+  }
+
+  /** Replace this file's rows in the given streams; a full read already replaces all. */
+  async function replaceFileRows(docId: string, streams = fileStreams): Promise<void> {
+    await ensureSchemasEmitted();
+    if (readAllFiles) return;
+    for (const stream of streams) {
+      await emitter.emitReplace(stream, 'document_id', [docId]);
+    }
   }
 
   try {
@@ -223,9 +229,9 @@ export async function extractDocumentResource(
       // the __parse_errors data stream or any thrown error message in this loop.
       const safeUri = sanitizeUriForError(file.uri);
       if (file.size !== undefined && file.size > maxBytes) {
-        // Schema-before-record contract: parse-errors stream must declare its schema
-        // before the first RECORD even when the very first file fails the size check.
-        await ensureSchemasEmitted();
+        // The file was not read, so its last good rows stay; only the error is current.
+        // This also emits the schemas before the first RECORD.
+        await replaceFileRows(documentId(file.uri), [parseErrorsStream]);
         await emitParseError(emitter, parseErrorsStream, {
           document_id: documentId(file.uri),
           source_uri: safeUri,
@@ -255,7 +261,8 @@ export async function extractDocumentResource(
         // Connection-level failures (lost connection, timeout, cancel) fail the run;
         // only per-file problems become parse-error rows.
         if (err instanceof DogsledRuntimeError) throw err;
-        await ensureSchemasEmitted();
+        // The new version was not read, so its last good rows stay; only the error is current.
+        await replaceFileRows(documentId(file.uri), [parseErrorsStream]);
         const rawMessage = err instanceof Error ? err.message : String(err);
         // Storage clients may surface the pre-signed URL inside their own error
         // messages; scrub any occurrence before persisting or rethrowing.
@@ -313,7 +320,7 @@ export async function extractDocumentResource(
         });
       }
 
-      await ensureSchemasEmitted();
+      await replaceFileRows(docId);
 
       const extractedAt = new Date().toISOString();
       if (result.status === 'error') {
@@ -406,7 +413,7 @@ export async function extractDocumentResource(
             );
           }
           for (const row of aclRows) {
-            await emitter.emitRecord(aclStream, { ...row }, row.captured_at);
+            await emitter.emitRecord(aclStream, { ...row, document_id: docId }, row.captured_at);
           }
         }
       }

@@ -16,9 +16,10 @@ package instead of a connection runtime.
 | `RecordMessage`                                  | Emit one per extracted row                                                                         |
 | `StateMessage`                                   | Emit after flushing records — incremental bookmark for a stream                                    |
 | `BatchMessage`                                   | Reference extractor-created JSONL or Parquet files (skip JS-level parsing)                         |
+| `ReplaceMessage`                                 | Replace a slice of a stream's rows (`key` in `values`) before the slice's new rows are written     |
 | `LogMessage`                                     | Structured log entry (stderr only)                                                                 |
 | `MetricMessage`                                  | Extraction run metrics (stderr only)                                                               |
-| `StdoutMessage`                                  | Union of SCHEMA, RECORD, STATE, BATCH — data channel                                               |
+| `StdoutMessage`                                  | Union of SCHEMA, RECORD, STATE, BATCH, LINEAGE, REPLACE — data channel                             |
 | `StderrMessage`                                  | Union of LOG, METRIC — control channel                                                             |
 | `SchemaColumn`                                   | Column definition (name, type, optional `primary_key`; vector columns also require `dimension`)    |
 | `ColumnType`                                     | `'string' \| 'integer' \| 'number' \| 'boolean' \| 'timestamp' \| 'array' \| 'object' \| 'vector'` |
@@ -34,10 +35,11 @@ package instead of a connection runtime.
 
 ## Protocol Rules
 
-- **stdout = data**: SCHEMA, RECORD, STATE, BATCH messages
+- **stdout = data**: SCHEMA, RECORD, STATE, BATCH, LINEAGE, REPLACE messages
 - **stderr = control**: LOG, METRIC messages
 - Every message carries `_v: 1` version field
-- SCHEMA must be emitted before any RECORD for that stream
+- SCHEMA must be emitted before any RECORD or REPLACE for that stream
+- REPLACE for a value must come before every RECORD of that value in the run
 - STATE is emitted after flushing buffered records
 
 ## Key Conventions

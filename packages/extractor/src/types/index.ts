@@ -57,6 +57,7 @@ export type {
   BatchEncoding,
   BatchFormat,
   BatchMessage,
+  ReplaceMessage,
   LogMessage,
   MetricMessage,
   ProgressEventType,

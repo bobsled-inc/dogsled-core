@@ -1997,3 +1997,53 @@ describe('BigQueryDestination — refreshable token provider', () => {
     expect(provider.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('BigQueryDestination.deleteRows', () => {
+  function setup(exists: boolean) {
+    const table = createMockTable({ exists });
+    const dataset = createMockDataset({ exists: true, tables: new Map([['docs', table]]) });
+    const client = createMockClient(dataset);
+    const dest = new BigQueryDestination({ datasetId: 'test_ds', client, stagingFormat: 'jsonl' });
+    return { client, dataset, table, dest };
+  }
+
+  it('deletes with a bound array parameter instead of inlined values', async () => {
+    const { client, dataset, dest } = setup(true);
+    await dest.deleteRows('test_ds', 'docs', 'document_id', ["a'b", 'c']);
+
+    expect(dataset.table).toHaveBeenCalledWith('docs');
+    expect(client.createQueryJob).toHaveBeenCalledTimes(1);
+    const options = vi.mocked(client.createQueryJob).mock.calls[0]![0];
+    expect(options.query).toBe(
+      'DELETE FROM `test_ds`.`docs` WHERE `document_id` IN UNNEST(@values)'
+    );
+    expect(options.params).toEqual({ values: ["a'b", 'c'] });
+  });
+
+  it('splits more than 500 values into separate DELETE jobs', async () => {
+    const { client, dest } = setup(true);
+    const values = Array.from({ length: 1001 }, (_, i) => `id-${i}`);
+    await dest.deleteRows('test_ds', 'docs', 'document_id', values);
+
+    const batches = vi
+      .mocked(client.createQueryJob)
+      .mock.calls.map(([options]) => (options.params as { values: string[] }).values);
+    expect(batches.map((b) => b.length)).toEqual([500, 500, 1]);
+    expect(batches.flat()).toEqual(values);
+  });
+
+  it('is a no-op when the table does not exist', async () => {
+    const { client, table, dest } = setup(false);
+    await expect(dest.deleteRows('test_ds', 'docs', 'document_id', ['a'])).resolves.toBeUndefined();
+    expect(table.exists).toHaveBeenCalled();
+    expect(client.createQueryJob).not.toHaveBeenCalled();
+  });
+
+  it('propagates DELETE failures', async () => {
+    const { client, dest } = setup(true);
+    vi.mocked(client.createQueryJob).mockRejectedValue(new Error('Access Denied: Table docs'));
+    await expect(dest.deleteRows('test_ds', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      'Access Denied'
+    );
+  });
+});

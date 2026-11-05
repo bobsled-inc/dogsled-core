@@ -89,6 +89,13 @@ class FakeDuckDbConnection implements DuckDbConnectionLike {
   async all(sql: string): Promise<Record<string, unknown>[]> {
     this.allLog.push(sql);
 
+    if (sql.includes('FROM information_schema.tables')) {
+      const schemaMatch = sql.match(/table_schema = '([^']+)'/);
+      const tableMatch = sql.match(/table_name = '([^']+)'/);
+      const tableKey = `"${this.attachAlias}"."${schemaMatch?.[1] ?? 'main'}"."${tableMatch?.[1] ?? ''}"`;
+      return this.tableColumns.has(tableKey) ? [{ '1': 1 }] : [];
+    }
+
     if (sql.includes('FROM information_schema.columns')) {
       const schemaMatch = sql.match(/table_schema = '([^']+)'/);
       const tableMatch = sql.match(/table_name = '([^']+)'/);
@@ -452,5 +459,58 @@ describe('DuckLakeDestination', () => {
         sql.includes(`read_json('/tmp/path with spaces/issues.jsonl'`)
       )
     ).toBe(true);
+  });
+
+  describe('deleteRows', () => {
+    it('deletes escaped values from the attached-catalog table', async () => {
+      const { connection, destination } = createHarness({ attachAlias: 'warehouse' });
+      await destination.initialize();
+      await destination.ensureTable('main', 'issues', issueColumns);
+
+      await destination.deleteRows('main', 'issues', 'title', ["a'b", 'c']);
+
+      expect(
+        connection.allLog.some((sql) =>
+          sql.includes("FROM information_schema.tables WHERE table_catalog = 'warehouse'")
+        )
+      ).toBe(true);
+      expect(connection.runLog.filter((sql) => sql.startsWith('DELETE'))).toEqual([
+        `DELETE FROM "warehouse"."main"."issues" WHERE "title" IN ('a''b', 'c')`,
+      ]);
+    });
+
+    it('batches values 500 per statement', async () => {
+      const { connection, destination } = createHarness();
+      await destination.initialize();
+      await destination.ensureTable('main', 'issues', issueColumns);
+
+      const values = Array.from({ length: 1001 }, (_, i) => `id-${i}`);
+      await destination.deleteRows('main', 'issues', 'title', values);
+
+      const deletes = connection.runLog.filter((sql) => sql.startsWith('DELETE'));
+      expect(deletes.map((sql) => sql.split("', '").length)).toEqual([500, 500, 1]);
+    });
+
+    it('is a no-op when the table does not exist', async () => {
+      const { connection, destination } = createHarness();
+      await destination.initialize();
+
+      await destination.deleteRows('main', 'missing', 'title', ['a']);
+
+      expect(connection.allLog.some((sql) => sql.includes('information_schema.tables'))).toBe(true);
+      expect(connection.runLog.some((sql) => sql.startsWith('DELETE'))).toBe(false);
+    });
+
+    it('propagates delete errors', async () => {
+      const { destination } = createHarness({
+        failOnRun: (sql) => (sql.startsWith('DELETE') ? new Error('forced delete failure') : null),
+      });
+      await destination.initialize();
+      await destination.ensureTable('main', 'issues', issueColumns);
+
+      await expect(destination.deleteRows('main', 'issues', 'title', ['a'])).rejects.toThrow(
+        'forced delete failure'
+      );
+    });
   });
 });

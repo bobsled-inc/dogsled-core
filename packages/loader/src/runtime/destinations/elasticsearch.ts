@@ -450,6 +450,111 @@ export class ElasticsearchDestination implements DatabaseDestination {
     return { rowsAffected };
   }
 
+  async deleteRows(
+    _schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const client = this.getClient();
+    const indexName = sanitizeTableName(tableName);
+    // Bulk loads do not refresh; refresh so the search below sees every earlier write.
+    const refresh = await withRetry(() =>
+      client.request({ method: 'POST', url: `${this.baseUrl}/${indexName}/_refresh` })
+    );
+    if (refresh.status === 404) return;
+    if (!refresh.ok) {
+      const body = await refresh.json().catch(() => ({}));
+      throw new Error(`Failed to refresh index "${indexName}": ${JSON.stringify(body)}`);
+    }
+
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      // Each pass deletes the hits it found with refresh=true, so the next search sees the rest.
+      let previous = '';
+      for (;;) {
+        const ids = await this.searchExactIds(indexName, column, batch);
+        if (ids.length === 0) break;
+        // Hits that survive their own delete would repeat forever.
+        const key = ids.join('\n');
+        if (key === previous) {
+          throw new Error(`Bulk delete on index "${indexName}" did not remove matching documents`);
+        }
+        previous = key;
+        await this.bulkDelete(indexName, ids);
+      }
+    }
+  }
+
+  /**
+   * String columns are mapped as analyzed `text`, which cannot match a value exactly.
+   * A request-scoped keyword runtime field read from `_source` compares the stored value.
+   */
+  private async searchExactIds(
+    indexName: string,
+    column: string,
+    values: string[]
+  ): Promise<string[]> {
+    const client = this.getClient();
+    const response = await withRetry(() =>
+      client.request({
+        method: 'POST',
+        // Partial results would read as "nothing left to delete" and leave stale rows.
+        url: `${this.baseUrl}/${indexName}/_search?allow_partial_search_results=false`,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          size: DELETE_BATCH_SIZE,
+          _source: false,
+          track_total_hits: false,
+          runtime_mappings: {
+            [EXACT_MATCH_FIELD]: {
+              type: 'keyword',
+              script: { source: EXACT_MATCH_SCRIPT, params: { field: column } },
+            },
+          },
+          query: { terms: { [EXACT_MATCH_FIELD]: values } },
+        }),
+      })
+    );
+    const body = (await response.json().catch(() => ({}))) as {
+      timed_out?: boolean;
+      _shards?: { failed?: number };
+      hits?: { hits?: Array<{ _id?: string }> };
+    };
+    if (!response.ok || body.timed_out === true || (body._shards?.failed ?? 0) > 0) {
+      throw new Error(`Search on index "${indexName}" failed: ${JSON.stringify(body)}`);
+    }
+    return (body.hits?.hits ?? []).flatMap((hit) => (hit._id ? [hit._id] : []));
+  }
+
+  private async bulkDelete(indexName: string, ids: string[]): Promise<void> {
+    const client = this.getClient();
+    const bulkBody =
+      ids.map((id) => JSON.stringify({ delete: { _index: indexName, _id: id } })).join('\n') + '\n';
+    await withRetry(async () => {
+      const response = await client.request({
+        method: 'POST',
+        url: `${this.baseUrl}/_bulk?refresh=true`,
+        headers: { 'Content-Type': 'application/x-ndjson' },
+        body: bulkBody,
+      });
+      const body = (await response.json().catch(() => ({}))) as {
+        items?: Array<Record<string, { result?: string; error?: unknown }>>;
+      };
+      if (!response.ok) {
+        throw new Error(`Bulk delete failed: ${JSON.stringify(body)}`);
+      }
+      const results = (body.items ?? []).map((item) => Object.values(item)[0]);
+      const failures = results.filter((r) => r?.error !== undefined).map((r) => r?.error);
+      if (failures.length > 0) {
+        throw new Error(
+          `Bulk delete had ${failures.length} item-level error(s): ${JSON.stringify(failures.slice(0, 3))}`
+        );
+      }
+    });
+  }
+
   private async deleteIndex(indexName: string): Promise<void> {
     const client = this.getClient();
     try {
@@ -480,6 +585,11 @@ export class ElasticsearchDestination implements DatabaseDestination {
     this.client = undefined;
   }
 }
+
+const DELETE_BATCH_SIZE = 500;
+const EXACT_MATCH_FIELD = 'dogsled_replace_key';
+const EXACT_MATCH_SCRIPT =
+  "def v = params['_source'][params['field']]; if (v instanceof String) { emit(v); }";
 
 function mapElasticsearchType(
   type: ColumnType,

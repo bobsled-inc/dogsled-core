@@ -76,6 +76,26 @@ records:
 }
 ```
 
+`REPLACE` replaces a slice of a stream's rows. The loader deletes the rows whose
+`key` column equals one of `values`, then writes the rows that follow for them. It
+also deletes them when no rows follow. Incremental document Resources send one per
+changed file and stream, so a file that now has fewer chunks leaves none behind:
+
+```json
+{
+  "_v": 1,
+  "type": "REPLACE",
+  "stream": "handbook__chunks",
+  "key": "document_id",
+  "values": ["4b1c5e0f9a2d7c3b8e6f1a0d9c2b7e4f5a3c8d1e6b0f9a2c7d4e1b8f3a6c5d0e"]
+}
+```
+
+A REPLACE follows the stream's `SCHEMA` and comes before any `RECORD` of its
+values. `key` must be a column of the stream, and `values` holds 1 to 1,000
+strings. Table destinations apply it. File destinations write each run's rows as
+new files and ignore it.
+
 ## Control messages (standard error)
 
 `LOG` carries a level (`debug`, `info`, `warn`, `error`) and a message; `METRIC`

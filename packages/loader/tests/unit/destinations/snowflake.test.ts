@@ -2561,3 +2561,95 @@ describe('SnowflakeDestination', () => {
     expect(sql).toContain('"_DOGSLED_LOADED_AT" TIMESTAMP_TZ');
   });
 });
+
+describe('SnowflakeDestination.deleteRows', () => {
+  function deleteCalls(conn: SnowflakeConnectionLike) {
+    return vi
+      .mocked(conn.execute)
+      .mock.calls.map(([call]) => call)
+      .filter((call) => call.sqlText.startsWith('DELETE'));
+  }
+
+  it('deletes with bound placeholders instead of inlined values', async () => {
+    const conn = createMockConnection({ connected: true, tableExists: true });
+    const { dest } = await createDest(conn);
+    await dest.initialize();
+    await dest.deleteRows('test_schema', 'docs', 'document_id', ["a'b", 'c']);
+
+    const lookup = vi
+      .mocked(conn.execute)
+      .mock.calls.find(([call]) => call.sqlText.includes('INFORMATION_SCHEMA.TABLES'));
+    expect(lookup?.[0].sqlText).toContain("TABLE_SCHEMA = 'TEST_SCHEMA' AND TABLE_NAME = 'DOCS'");
+    expect(deleteCalls(conn)).toEqual([
+      {
+        sqlText: 'DELETE FROM "TEST_SCHEMA"."DOCS" WHERE "DOCUMENT_ID" IN (?, ?)',
+        binds: ["a'b", 'c'],
+      },
+    ]);
+  });
+
+  it('splits more than 500 values into separate DELETE statements', async () => {
+    const conn = createMockConnection({ connected: true, tableExists: true });
+    const { dest } = await createDest(conn);
+    await dest.initialize();
+    const values = Array.from({ length: 1001 }, (_, i) => `id-${i}`);
+    await dest.deleteRows('test_schema', 'docs', 'document_id', values);
+
+    const calls = deleteCalls(conn);
+    expect(calls.map((call) => call.binds?.length)).toEqual([500, 500, 1]);
+    expect(calls.flatMap((call) => call.binds)).toEqual(values);
+    expect(calls[2]!.sqlText).toMatch(/IN \(\?\)$/);
+  });
+
+  it('is a no-op when the table does not exist', async () => {
+    const conn = createMockConnection({ connected: true, tableExists: false });
+    const { dest } = await createDest(conn);
+    await dest.initialize();
+    await expect(
+      dest.deleteRows('test_schema', 'docs', 'document_id', ['a'])
+    ).resolves.toBeUndefined();
+    expect(deleteCalls(conn)).toEqual([]);
+  });
+
+  it('propagates DELETE failures', async () => {
+    const conn = createMockConnection({ connected: true, tableExists: true });
+    const base = vi.mocked(conn.execute).getMockImplementation()!;
+    vi.mocked(conn.execute).mockImplementation((options) =>
+      options.sqlText.startsWith('DELETE')
+        ? Promise.reject(new Error('Insufficient privileges to operate on table DOCS'))
+        : base(options)
+    );
+    const { dest } = await createDest(conn);
+    await dest.initialize();
+    await expect(dest.deleteRows('test_schema', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      'Insufficient privileges'
+    );
+  });
+
+  it('passes binds through the snowflake-sdk adapter', async () => {
+    const { createRequire } = await import('node:module');
+    const sdk = createRequire(import.meta.url)('snowflake-sdk') as {
+      createConnection: (...args: unknown[]) => unknown;
+    };
+    const raw = {
+      execute: vi.fn((options: { complete: (err: undefined, stmt: object) => void }) =>
+        options.complete(undefined, {})
+      ),
+    };
+    const spy = vi.spyOn(sdk, 'createConnection').mockReturnValue(raw);
+    try {
+      const { createSnowflakeSdkConnection } =
+        await import('../../../src/runtime/destinations/snowflake-connection.js');
+      const conn = createSnowflakeSdkConnection(
+        { account: 'example', username: 'test' },
+        (error) => (error instanceof Error ? error : new Error(String(error)))
+      );
+      await conn.execute({ sqlText: 'DELETE FROM T WHERE C IN (?)', binds: ['x'] });
+      expect(raw.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ sqlText: 'DELETE FROM T WHERE C IN (?)', binds: ['x'] })
+      );
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});

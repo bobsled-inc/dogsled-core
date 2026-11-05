@@ -433,4 +433,69 @@ describe.skipIf(!hasSqlite)('SqliteDestination', () => {
     );
     expect(tables).toEqual([]);
   });
+
+  describe('deleteRows()', () => {
+    const docColumns: SchemaColumn[] = [
+      { name: 'document_id', type: 'string' },
+      { name: 'chunk', type: 'string' },
+    ];
+
+    async function seed(dest: SqliteDestination, ids: string[]): Promise<void> {
+      await dest.ensureTable('main', 'documents', docColumns);
+      const file = path.join(tempDir, 'docs.jsonl');
+      await writeJsonl(
+        file,
+        ids.map((id, i) => ({ document_id: id, chunk: `c${i}` }))
+      );
+      await dest.loadAndFinalize('main', 'documents', file, docColumns, 'append', []);
+    }
+
+    it('deletes only rows whose column matches a bound value', async () => {
+      const dest = new SqliteDestination({ dbPath });
+      await dest.initialize();
+      const tricky = "b'); DROP TABLE documents;--";
+      await seed(dest, ['a', tricky, 'keep']);
+
+      await dest.deleteRows('main', 'documents', 'document_id', ['a', tricky]);
+      await dest.close();
+
+      const rows = queryDb(dbPath, 'SELECT document_id FROM documents');
+      expect(rows).toEqual([{ document_id: 'keep' }]);
+    });
+
+    it('batches values over 500 per statement', async () => {
+      const dest = new SqliteDestination({ dbPath });
+      await dest.initialize();
+      const ids = Array.from({ length: 1001 }, (_, i) => `doc-${i}`);
+      await seed(dest, [...ids, 'keep']);
+
+      await dest.deleteRows('main', 'documents', 'document_id', ids);
+      await dest.close();
+
+      expect(queryDb(dbPath, 'SELECT document_id FROM documents')).toEqual([
+        { document_id: 'keep' },
+      ]);
+    });
+
+    it('is a no-op when the table does not exist', async () => {
+      const dest = new SqliteDestination({ dbPath });
+      await dest.initialize();
+
+      await expect(
+        dest.deleteRows('main', 'documents', 'document_id', ['a'])
+      ).resolves.toBeUndefined();
+      await dest.close();
+    });
+
+    it('propagates errors such as an unknown column', async () => {
+      const dest = new SqliteDestination({ dbPath });
+      await dest.initialize();
+      await seed(dest, ['a']);
+
+      await expect(dest.deleteRows('main', 'documents', 'missing_col', ['a'])).rejects.toThrow(
+        /no such column/
+      );
+      await dest.close();
+    });
+  });
 });

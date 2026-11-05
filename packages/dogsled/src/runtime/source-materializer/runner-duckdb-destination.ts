@@ -81,6 +81,9 @@ export function createRunnerDuckDbDestination(
       }
       return { rowsAffected: await rowCount(runner, schemaName, tableName) };
     },
+    async deleteRows() {
+      throw new CommandError('runner-backed DuckDB destination only supports full_refresh', 2);
+    },
     async close() {
       // The owning query command closes the shared runner.
     },

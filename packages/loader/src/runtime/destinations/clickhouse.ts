@@ -33,8 +33,8 @@ export interface ClickHouseClientLike {
   query(options: { query: string; params?: unknown[] }): Promise<{
     json(): Promise<unknown[]>;
   }>;
-  command?(options: { query: string }): Promise<void>;
-  exec(options: { query: string }): Promise<void>;
+  command?(options: { query: string; query_params?: Record<string, unknown> }): Promise<void>;
+  exec(options: { query: string; query_params?: Record<string, unknown> }): Promise<void>;
   insert(options: {
     table: string;
     values: Array<Record<string, unknown>>;
@@ -56,11 +56,18 @@ export interface ClickHouseDestinationOptions {
   logger?: LoaderLogger;
 }
 
+/** Values per DELETE statement for REPLACE. */
+const DELETE_BATCH_SIZE = 500;
+
 async function executeLegacyClickHouseCommand(
   client: unknown,
-  options: { query: string }
+  options: { query: string; query_params?: Record<string, unknown> }
 ): Promise<void> {
-  const legacyExec = (client as { exec?: (options: { query: string }) => Promise<void> }).exec;
+  const legacyExec = (
+    client as {
+      exec?: (options: { query: string; query_params?: Record<string, unknown> }) => Promise<void>;
+    }
+  ).exec;
   if (typeof legacyExec !== 'function') {
     throw new Error('ClickHouse client does not provide command or exec');
   }
@@ -698,6 +705,33 @@ export class ClickHouseDestination implements DatabaseDestination {
           error: dropErr instanceof Error ? dropErr.message : String(dropErr),
         });
       }
+    }
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const client = this.getClient();
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const existing = await client.query({
+      query: `SELECT 1 FROM system.tables WHERE database = '${escapeStringLiteral(safeSchema)}' AND name = '${escapeStringLiteral(safeTable)}'`,
+    });
+    if ((await existing.json()).length === 0) return;
+    const qualifiedTable = `${quoteIdentifier(safeSchema)}.${quoteIdentifier(safeTable)}`;
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      // ALTER DELETE is async by default; mutations_sync = 2 waits on every replica (= 1 when unreplicated).
+      await withRetry(() =>
+        client.exec({
+          query: `ALTER TABLE ${qualifiedTable} DELETE WHERE has({values:Array(String)}, ${quoteIdentifier(column)}) SETTINGS mutations_sync = 2`,
+          query_params: { values: batch },
+        })
+      );
     }
   }
 

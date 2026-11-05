@@ -293,13 +293,31 @@ export interface LineageMessage {
   lineage: LineagePayload;
 }
 
+/** Most values one REPLACE message may carry. */
+export const REPLACE_MAX_VALUES = 1000;
+
+/**
+ * Replace a slice of a stream's rows. A consumer deletes the destination rows whose
+ * `key` column equals one of `values` before it writes this run's rows for those
+ * values. The producer emits it after the stream's SCHEMA and before any RECORD of
+ * those values, and also when no rows follow, so the slice ends up empty.
+ */
+export interface ReplaceMessage {
+  _v: ProtocolVersion;
+  type: 'REPLACE';
+  stream: string;
+  key: string;
+  values: string[];
+}
+
 /** Data messages emitted on stdout. */
 export type StdoutMessage =
   | SchemaMessage
   | RecordMessage
   | StateMessage
   | BatchMessage
-  | LineageMessage;
+  | LineageMessage
+  | ReplaceMessage;
 
 // ── Failure reasons ──
 

@@ -32,6 +32,9 @@ import type {
   SchemaComparisonResult,
 } from './database.js';
 
+/** Values per DELETE statement for REPLACE. */
+const DELETE_BATCH_SIZE = 500;
+
 const VALID_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 export interface DuckLakeDestinationOptions {
@@ -418,6 +421,35 @@ export class DuckLakeDestination implements DatabaseDestination {
           error: dropErr instanceof Error ? dropErr.message : String(dropErr),
         });
       }
+    }
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const conn = this.getConn();
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    const existing = await allRows(
+      conn,
+      `SELECT 1 FROM information_schema.tables WHERE table_catalog = '${escapeSqlString(this.attachAlias)}' AND table_schema = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}'`
+    );
+    if (existing.length === 0) return;
+    const qualifiedTable = this.buildQualifiedTable(safeSchema, safeTable);
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      // The duckdb-primitives connection wrapper has no parameter binding, so values are escaped.
+      const list = values
+        .slice(i, i + DELETE_BATCH_SIZE)
+        .map((value) => `'${escapeSqlString(value)}'`)
+        .join(', ');
+      await runStatement(
+        conn,
+        `DELETE FROM ${qualifiedTable} WHERE ${quoteIdentifier(column)} IN (${list})`
+      );
     }
   }
 

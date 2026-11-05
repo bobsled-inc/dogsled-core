@@ -375,3 +375,157 @@ describe('ElasticsearchDestination', () => {
     );
   });
 });
+
+describe('ElasticsearchDestination.deleteRows', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  function response(status: number, body: Record<string, unknown> = {}) {
+    return { ok: status < 300, status, json: async () => body };
+  }
+
+  /** Serves `hits` ids once per search page, then empty pages. */
+  function deleteClient(pages: string[][], refreshStatus = 200) {
+    const searches: Array<Record<string, unknown>> = [];
+    const bulks: string[] = [];
+    const request = vi.fn().mockImplementation(async (init) => {
+      const url: string = init.url ?? '';
+      if (url.endsWith('/_refresh')) return response(refreshStatus);
+      if (url.includes('/_search')) {
+        searches.push(JSON.parse(init.body));
+        const ids = pages.shift() ?? [];
+        return response(200, { hits: { hits: ids.map((_id) => ({ _id })) } });
+      }
+      if (url.includes('/_bulk')) {
+        bulks.push(init.body);
+        const items = (init.body as string)
+          .trim()
+          .split('\n')
+          .map(() => ({ delete: { result: 'deleted', status: 200 } }));
+        return response(200, { errors: false, items });
+      }
+      return response(200);
+    });
+    return { client: { request } as ElasticsearchClientLike, request, searches, bulks };
+  }
+
+  it('finds exact matches through a runtime keyword field and bulk-deletes them with refresh', async () => {
+    const { client, request, searches, bulks } = deleteClient([['id1', 'id2']]);
+    const { dest } = await createDest(client);
+
+    await dest.deleteRows('default', 'docs', 'document_id', ['a"1', 'b']);
+
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'POST', url: 'http://localhost:9200/docs/_refresh' })
+    );
+    expect(searches).toHaveLength(2);
+    expect(searches[0]).toMatchObject({
+      size: 500,
+      _source: false,
+      runtime_mappings: {
+        dogsled_replace_key: {
+          type: 'keyword',
+          script: { params: { field: 'document_id' } },
+        },
+      },
+      query: { terms: { dogsled_replace_key: ['a"1', 'b'] } },
+    });
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({ url: 'http://localhost:9200/_bulk?refresh=true' })
+    );
+    expect(bulks).toEqual([
+      '{"delete":{"_index":"docs","_id":"id1"}}\n{"delete":{"_index":"docs","_id":"id2"}}\n',
+    ]);
+  });
+
+  it('batches values over 500 per search', async () => {
+    const { client, searches } = deleteClient([]);
+    const { dest } = await createDest(client);
+    const values = Array.from({ length: 501 }, (_, i) => `v${i}`);
+
+    await dest.deleteRows('default', 'docs', 'document_id', values);
+
+    expect(searches).toHaveLength(2);
+    expect(
+      (searches[0]!.query as { terms: Record<string, string[]> }).terms.dogsled_replace_key
+    ).toHaveLength(500);
+    expect(searches[1]!.query).toEqual({ terms: { dogsled_replace_key: ['v500'] } });
+  });
+
+  it('is a no-op when the index does not exist', async () => {
+    const { client, searches, bulks } = deleteClient([['id1']], 404);
+    const { dest } = await createDest(client);
+
+    await expect(dest.deleteRows('default', 'docs', 'document_id', ['a'])).resolves.toBeUndefined();
+    expect(searches).toHaveLength(0);
+    expect(bulks).toHaveLength(0);
+  });
+
+  it('rejects partial or timed-out searches instead of finishing early', async () => {
+    for (const partial of [{ timed_out: true }, { _shards: { total: 2, failed: 1 } }]) {
+      const { client, request, searches } = deleteClient([]);
+      const base = request.getMockImplementation()!;
+      request.mockImplementation(async (init) =>
+        (init.url as string).includes('/_search')
+          ? response(200, { ...partial, hits: { hits: [] } })
+          : base(init)
+      );
+      const { dest } = await createDest(client);
+      await expect(dest.deleteRows('default', 'docs', 'document_id', ['a'])).rejects.toThrow(
+        /Search on index "docs" failed/
+      );
+      expect(searches).toHaveLength(0);
+    }
+    const { client, request } = deleteClient([]);
+    const { dest } = await createDest(client);
+    await dest.deleteRows('default', 'docs', 'document_id', ['a']);
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'http://localhost:9200/docs/_search?allow_partial_search_results=false',
+      })
+    );
+  });
+
+  it('treats not_found as deleted when a bulk delete is replayed', async () => {
+    const { client, request, bulks } = deleteClient([['id1']]);
+    const base = request.getMockImplementation()!;
+    request.mockImplementation(async (init) =>
+      (init.url as string).includes('/_bulk')
+        ? (bulks.push(init.body), response(200, { items: [{ delete: { result: 'not_found' } }] }))
+        : base(init)
+    );
+    const { dest } = await createDest(client);
+    await expect(dest.deleteRows('default', 'docs', 'document_id', ['a'])).resolves.toBeUndefined();
+    expect(bulks).toHaveLength(1);
+  });
+
+  it('fails instead of looping when the same hits survive their delete', async () => {
+    const { client } = deleteClient([['id1'], ['id1'], ['id1']]);
+    const { dest } = await createDest(client);
+    await expect(dest.deleteRows('default', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      /did not remove matching documents/
+    );
+  });
+
+  it('propagates refresh failures and item-level delete errors', async () => {
+    const failing = deleteClient([], 403);
+    const first = await createDest(failing.client);
+    await expect(first.dest.deleteRows('default', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      /Failed to refresh index "docs"/
+    );
+
+    const { client, request } = deleteClient([['id1']]);
+    const base = request.getMockImplementation()!;
+    request.mockImplementation(async (init) =>
+      (init.url as string).includes('/_bulk')
+        ? response(200, { errors: true, items: [{ delete: { error: { type: 'x' } } }] })
+        : base(init)
+    );
+    const second = await createDest(client);
+    await expect(second.dest.deleteRows('default', 'docs', 'document_id', ['a'])).rejects.toThrow(
+      /item-level error/
+    );
+  });
+});

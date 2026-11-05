@@ -29,7 +29,8 @@ export interface TurbopufferAttributeSchema {
 }
 
 export interface TurbopufferWriteParams {
-  upsert_rows: Array<Record<string, unknown>>;
+  upsert_rows?: Array<Record<string, unknown>>;
+  delete_by_filter?: unknown[];
   schema?: Record<string, TurbopufferAttributeSchema>;
   distance_metric?: TurbopufferDistanceMetric;
 }
@@ -316,6 +317,24 @@ export class TurbopufferDestination implements DatabaseDestination {
     }
     this.schemaCache.set(namespace, { ...(this.schemaCache.get(namespace) ?? {}), ...schema });
     return { rowsAffected };
+  }
+
+  async deleteRows(
+    _schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const ns = this.getClient().namespace(this.namespaceName(tableName));
+    const schema = await this.fetchSchema(ns);
+    // A missing namespace or attribute holds no rows to delete.
+    if (schema?.[column] === undefined) return;
+    for (let i = 0; i < values.length; i += WRITE_BATCH_SIZE) {
+      // Writes are visible to the next (strongly consistent, default) query once write() resolves.
+      // No withRetry here: the SDK already retries 429/409/5xx for write().
+      await ns.write({ delete_by_filter: [column, 'In', values.slice(i, i + WRITE_BATCH_SIZE)] });
+    }
   }
 
   private buildRow(

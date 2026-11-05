@@ -162,24 +162,20 @@ describe('extractDocumentResource', () => {
     expect(chunks.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('upserts documents and chunks by file on incremental runs and replaces them on full reads', async () => {
+  it('appends with per-file REPLACE on incremental runs and replaces whole tables on full reads', async () => {
     const files = [{ name: 'a.md', content: '# Title\n\nbody text here.\n' }];
-    const schemaOf = (messages: Array<Record<string, unknown>>, stream: string) =>
-      messages.find((m) => m.type === 'SCHEMA' && m.stream === stream) as
-        | { load_strategy: string; key_properties: string[] }
-        | undefined;
+    const strategies = (messages: Array<Record<string, unknown>>) =>
+      new Set(messages.filter((m) => m.type === 'SCHEMA').map((m) => m.load_strategy));
+    const replaces = (messages: Array<Record<string, unknown>>) =>
+      messages.filter((m) => m.type === 'REPLACE').map((m) => m.stream);
     const incremental = await runExtraction({
       files,
       resourceOpts: { replicationMethod: 'incremental_append' },
     });
-    expect(schemaOf(incremental.messages, 'docs__documents')).toMatchObject({
-      load_strategy: 'merge',
-      key_properties: ['document_id'],
-    });
-    expect(schemaOf(incremental.messages, 'docs__chunks')).toMatchObject({
-      load_strategy: 'merge',
-      key_properties: ['document_id', 'chunk_index'],
-    });
+    expect(strategies(incremental.messages)).toEqual(new Set(['append']));
+    expect(replaces(incremental.messages)).toEqual(
+      expect.arrayContaining(['docs__documents', 'docs__chunks', 'docs__parse_errors'])
+    );
     const forced = await runExtraction({
       files,
       resourceOpts: { replicationMethod: 'incremental_append' },
@@ -187,8 +183,8 @@ describe('extractDocumentResource', () => {
     });
     const configured = await runExtraction({ files });
     for (const { messages } of [forced, configured]) {
-      expect(schemaOf(messages, 'docs__documents')?.load_strategy).toBe('full_refresh');
-      expect(schemaOf(messages, 'docs__chunks')?.load_strategy).toBe('full_refresh');
+      expect(strategies(messages)).toEqual(new Set(['full_refresh']));
+      expect(replaces(messages)).toEqual([]);
     }
   });
 

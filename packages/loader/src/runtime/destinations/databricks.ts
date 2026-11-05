@@ -33,7 +33,10 @@ export interface DatabricksOperationLike {
 }
 
 export interface DatabricksSessionLike {
-  executeStatement(statement: string): Promise<DatabricksOperationLike>;
+  executeStatement(
+    statement: string,
+    options?: { ordinalParameters?: string[] }
+  ): Promise<DatabricksOperationLike>;
   close(): Promise<void>;
 }
 
@@ -58,6 +61,9 @@ export interface DatabricksDestinationOptions {
     accessToken: string
   ) => Promise<DatabricksConnectionLike>;
 }
+
+/** Values per DELETE statement for REPLACE. */
+const DELETE_BATCH_SIZE = 500;
 
 function mapDatabricksType(type: ColumnType): string {
   switch (type) {
@@ -265,12 +271,17 @@ export class DatabricksDestination implements DatabaseDestination {
     await this.query(`USE SCHEMA ${quoteDatabricksIdentifier(this.schema)}`);
   }
 
-  private async query(sql: string): Promise<Record<string, unknown>[]> {
+  private async query(
+    sql: string,
+    ordinalParameters?: string[]
+  ): Promise<Record<string, unknown>[]> {
     const session = await this.getSession();
     this.throwIfCancelled();
     const operation = await withRetry(() => {
       this.throwIfCancelled();
-      return session.executeStatement(sql);
+      return ordinalParameters
+        ? session.executeStatement(sql, { ordinalParameters })
+        : session.executeStatement(sql);
     });
     this.activeOperation = operation;
     let operationClosed = false;
@@ -845,6 +856,30 @@ export class DatabricksDestination implements DatabaseDestination {
       rowsAffected += readDatabricksRowCount(rows);
     }
     return { rowsAffected };
+  }
+
+  async deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const safeSchema = sanitizeSchemaName(schemaName);
+    const safeTable = sanitizeTableName(tableName);
+    if ((await this.readTableType(safeSchema, safeTable)) === undefined) return;
+    const qualifiedTable = `${quoteDatabricksIdentifier(safeSchema)}.${quoteDatabricksIdentifier(safeTable)}`;
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      // A Delta DELETE commits before the statement returns, so the next INSERT sees it.
+      await withRetry(async () => {
+        await this.assertOwnershipBeforeMutation(safeSchema, safeTable);
+        return this.query(
+          `DELETE FROM ${qualifiedTable} WHERE ${quoteDatabricksIdentifier(column)} IN (${batch.map(() => '?').join(', ')})`,
+          batch
+        );
+      });
+    }
   }
 
   getTruncatedTables(): Set<string> {

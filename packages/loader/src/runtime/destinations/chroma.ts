@@ -95,6 +95,14 @@ function resolveChromaUrl(host: string, port?: number): string {
   return `http://${host}:${p}`;
 }
 
+const DELETE_BATCH_SIZE = 500;
+
+// Chroma >= 1.0 answers 404 (ChromaNotFoundError); older servers raise InvalidCollection.
+function isMissingCollectionError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return error.name === 'ChromaNotFoundError' || /does not exist/i.test(error.message);
+}
+
 function isChromaModuleLoadError(error: unknown): error is ChromaModuleLoadError {
   return error instanceof ChromaModuleLoadError;
 }
@@ -259,6 +267,30 @@ export class ChromaDestination implements DatabaseDestination {
     }
 
     return { rowsAffected };
+  }
+
+  async deleteRows(
+    _schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void> {
+    if (values.length === 0) return;
+    const client = this.getClient();
+    const safeName = sanitizeTableName(tableName);
+    let collection: CollectionLike;
+    try {
+      collection = await withRetry(() => client.getCollection({ name: safeName }));
+    } catch (error) {
+      if (isMissingCollectionError(error)) return;
+      throw error;
+    }
+    // Scalar columns are stored verbatim as metadata, so `$in` is an exact match. Chroma acks a
+    // delete once its write-ahead log persists it, and reads include the log tail.
+    for (let i = 0; i < values.length; i += DELETE_BATCH_SIZE) {
+      const batch = values.slice(i, i + DELETE_BATCH_SIZE);
+      await withRetry(() => collection.delete({ where: { [column]: { $in: batch } } }));
+    }
   }
 
   private async readRecords(filePath: string): Promise<Record<string, unknown>[]> {

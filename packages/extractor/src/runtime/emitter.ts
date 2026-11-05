@@ -8,6 +8,7 @@ import type {
   BatchEncoding,
   BatchMessage,
   RecordMessage,
+  ReplaceMessage,
   SchemaBehavior,
   StateMessage,
   SchemaMessage,
@@ -78,6 +79,22 @@ export class Emitter {
   }
 
   /**
+   * Emit a REPLACE message: the loader deletes the stream's rows whose `key` equals one of
+   * `values` before it writes the rows that follow for them.
+   */
+  async emitReplace(stream: string, key: string, values: string[]): Promise<void> {
+    const message = {
+      _v: PROTOCOL_VERSION,
+      type: 'REPLACE',
+      stream,
+      key,
+      values,
+    } satisfies ReplaceMessage;
+
+    await this.writeMessage(stream, message);
+  }
+
+  /**
    * Emit a BATCH message referencing finalized batch files.
    */
   async emitBatch(stream: string, encoding: BatchEncoding, manifest: string[]): Promise<void> {
@@ -122,7 +139,7 @@ export class Emitter {
 
   private async writeMessage(
     stream: string,
-    message: SchemaMessage | RecordMessage | StateMessage | BatchMessage
+    message: SchemaMessage | RecordMessage | StateMessage | BatchMessage | ReplaceMessage
   ): Promise<void> {
     const line = JSON.stringify(message) + '\n';
 

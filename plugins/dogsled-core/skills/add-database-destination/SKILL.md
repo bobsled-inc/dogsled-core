@@ -93,6 +93,12 @@ export interface DatabaseDestination {
     strategy: LoadStrategy,
     keyColumns: string[]
   ): Promise<LoadResult>;
+  deleteRows(
+    schemaName: string,
+    tableName: string,
+    column: string,
+    values: string[]
+  ): Promise<void>;
   close(): Promise<void>;
   getTruncatedTables(): Set<string>;
   setTruncatedTables(tables: Set<string>): void;
@@ -293,6 +299,16 @@ The most complex path. Uses a staging table + MERGE statement with dedup and tim
 - If the database supports it, run a final flush/checkpoint (DuckDB runs `CHECKPOINT`)
 - Must be idempotent (safe to call multiple times)
 
+#### 3h2: `deleteRows()` — Replace slices for REPLACE
+
+The loader calls this before the next load of a stream that received a protocol `REPLACE`
+message. Delete every row whose `column` equals one of `values`:
+
+- Bind or escape every value; quote `column` with the dialect helper.
+- Return without error when the table does not exist yet.
+- Batch large value lists (existing destinations use 500 per statement).
+- The delete must be visible to the next load before the promise resolves.
+
 #### 3i: `getTruncatedTables()` / `setTruncatedTables()`
 
 Simple checkpoint support for full_refresh recovery:
@@ -479,9 +495,10 @@ Create `packages/loader/tests/unit/destinations/<name>.test.ts` following the Du
 13. `_dogsled_loaded_at` is populated for append and merge
 14. `_time_extracted` is populated correctly
 15. Merge: older timestamp does not overwrite newer data (time guard test)
-16. Merge: newer timestamp updates existing data
-17. Merge: equal timestamps allow update (idempotent)
-18. Merge: NULL key always inserts
+16. `deleteRows()` deletes matching rows with bound values, batches, and is a no-op for a missing table
+17. Merge: newer timestamp updates existing data
+18. Merge: equal timestamps allow update (idempotent)
+19. Merge: NULL key always inserts
 
 **Test setup pattern**:
 

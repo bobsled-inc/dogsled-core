@@ -200,12 +200,16 @@ on every run, and with `embedding` set it embeds every chunk again, which costs
 provider calls each time. Use an incremental method to process only new or changed
 files.
 
-On an incremental run, `__documents` and `__chunks` are merged by file: documents
-by `document_id`, chunks by `document_id` and `chunk_index`. A changed file
-overwrites its own rows and other files keep theirs. Two limits apply. A file that
-now has fewer chunks keeps its old trailing chunks, which still carry the previous
-`document_version_id`, so join chunks to `__documents` on `document_version_id` to
-read only current text. A deleted file keeps its rows until a `--full-refresh` run.
+An incremental run replaces each new or changed file's rows in all four tables:
+the loader deletes the file's previous rows by `document_id`, then writes the new
+ones. A file that now has fewer chunks keeps no old chunks, and files that did not
+change keep their rows, including their `__acl` evidence. If the new version cannot
+be downloaded or exceeds `max_file_size_mb`, the file keeps its last good rows and `__parse_errors` records the
+failure. A deleted file keeps its rows until a `--full-refresh` run. Table
+destinations apply this; file destinations write each run's rows as new files.
+
+`__acl` rows now carry `document_id`. ACL rows loaded before this change have none,
+so run one `--full-refresh` after upgrading if you capture permissions.
 
 ## Cloud storage
 
