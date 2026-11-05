@@ -136,10 +136,11 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   Identity plugin, and Dogsled registers none. Dogsled constructs no
   authorization-code or interactive credential. Tedious loads Azure Identity, but
   Dogsled's SQL Server destination hard-codes `authentication.type: 'default'`
-  (SQL login), so Tedious never constructs an Azure credential. MSAL Node 7.1.0
-  fixes it, but Azure Identity 4.14.0 (latest) and 4.15.0-beta.1 still require
-  `^6`, so no exemption can help yet: consumer trees need a new Azure Identity
-  release before these exceptions can go. They expire on 2026-11-05 for re-review.
+  (SQL login), so Tedious never constructs an Azure credential. Re-reviewed on 2026-11-05: these authentication paths are unchanged.
+  Azure Identity 4.14.1 now uses fixed MSAL Node ^7.1.0. It was published on
+  2026-10-29 and meets the 21-day release-age rule on 2026-11-19T22:16:07.100Z.
+  The owner requested extending the existing exceptions to 2026-11-20 while
+  waiting for that update. The package versions and allowed paths stay the same.
 
 The `tedious > sprintf-js` advisory is moderate. Tedious uses literal format
 strings, so remote values cannot set precision specifiers. It requires no
