@@ -45,7 +45,7 @@ const EXTERNAL_MODULES = [
   'pg-types',
   'pgpass',
   'snowflake-sdk',
-  'ssh2-sftp-client',
+  'ssh2',
   'tedious',
 ] as const;
 

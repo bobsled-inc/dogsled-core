@@ -412,12 +412,12 @@ Logs and metrics go to stderr. Data can go to stdout or `output/*.jsonl`.
 
 The extractor resolves a `load_strategy` for each stream and emits it in the SCHEMA message. The loader uses this to decide how to load each stream.
 
-| Priority | Source                                      | Example                                                      |
-| -------- | ------------------------------------------- | ------------------------------------------------------------ |
-| 1        | Explicit YAML `extract.table.load_strategy` | `load_strategy: append`                                      |
-| 2        | `--full-refresh` CLI flag                   | Always `full_refresh`                                        |
-| 3        | Inference from resource config              | incremental + PKs → `merge`, incremental + no PKs → `append` |
-| 4        | Default                                     | `full_refresh` (non-incremental resources)                   |
+| Priority | Source                                      | Example                                                                                            |
+| -------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 1        | Explicit YAML `extract.table.load_strategy` | `load_strategy: append`                                                                            |
+| 2        | `--full-refresh` CLI flag                   | Always `full_refresh`                                                                              |
+| 3        | Inference from resource config              | file `incremental_append` → `append`; incremental + PKs → `merge`, incremental + no PKs → `append` |
+| 4        | Default                                     | `full_refresh` (non-incremental resources)                                                         |
 
 Most resources need no explicit `load_strategy` — the correct one is inferred from `incremental` and `primary_key` config.
 

@@ -52,11 +52,16 @@ describe('file storage schemas', () => {
           host: '${{ env.SFTP_HOST }}',
           username: '${{ env.SFTP_USER }}',
           base_directory: '/exports',
+          host_keys: [
+            {
+              algorithm: 'ssh-rsa',
+              fingerprint: 'SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            },
+          ],
         },
         auth: {
           type: 'password',
           password_env: 'SFTP_PASS',
-          host_fingerprint: 'sha256:abc',
         },
       },
       {

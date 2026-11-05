@@ -57,7 +57,6 @@ replication:
 extract:
   table:
     primary_key: [event_id]
-    load_strategy: append
 output:
   event_id: { type: integer }
   kind: { type: string }
@@ -88,7 +87,8 @@ event_id	kind	_file_path
 
 `replication.method: incremental_append` with a `last_modified` cursor records each
 file it has read. With `--advance-state`, the next run skips files that have not
-changed since. Add a third day:
+changed since. The loader appends each run's rows, so earlier files stay in the
+table. Add a third day:
 
 Create `data/events/2026-01-03.csv`:
 
@@ -111,6 +111,8 @@ events
 ```
 
 Use `cursor: { field: etag }` to detect changes by content instead of by timestamp.
+A changed file is read again in full and its rows are appended again. To replace them
+instead, set `extract.table.load_strategy: merge` with a `primary_key`.
 `replication.method: full_refresh` reads every matching file on every run.
 
 ## File formats and options
@@ -179,7 +181,7 @@ A document resource produces four tables, named after the resource:
 
 | Table                  | Contents                                                                                                                                              |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `<name>__documents`    | One row per document version: `document_id`, `source_uri`, `format`, full `text`, `content_hash`, `parser_version`.                                   |
+| `<name>__documents`    | One row per document, at its latest version: `document_id`, `source_uri`, `format`, full `text`, `content_hash`, `parser_version`.                    |
 | `<name>__chunks`       | One row per chunk: `chunk_id`, `document_id`, `chunk_index`, `text`, `token_count`.                                                                   |
 | `<name>__parse_errors` | Files that could not be parsed, when `parse.on_error` is `record` (the default). `skip` ignores them and `fail` stops the run.                        |
 | `<name>__acl`          | Permission evidence (who could read the file) when the source exposes it and `permissions.capture` is on. Dogsled records it; it does not enforce it. |
@@ -197,6 +199,13 @@ A document resource with `replication.method: full_refresh` parses every file ag
 on every run, and with `embedding` set it embeds every chunk again, which costs
 provider calls each time. Use an incremental method to process only new or changed
 files.
+
+On an incremental run, `__documents` and `__chunks` are merged by file: documents
+by `document_id`, chunks by `document_id` and `chunk_index`. A changed file
+overwrites its own rows and other files keep theirs. Two limits apply. A file that
+now has fewer chunks keeps its old trailing chunks, which still carry the previous
+`document_version_id`, so join chunks to `__documents` on `document_version_id` to
+read only current text. A deleted file keeps its rows until a `--full-refresh` run.
 
 ## Cloud storage
 
@@ -235,12 +244,18 @@ auth:
   type: adc
 ```
 
-SFTP, with `password` or `private_key` auth. To pin the server's host key, add
-`host_fingerprint` or `known_hosts_path` to `auth`:
+SFTP, with `password` or `private_key` auth. `connection.host_keys` is required:
+it pins the server's host keys, in order of preference, and the client offers
+only those key types during the handshake. A server that also has other key
+types still connects with the pinned one. Each pin names its `algorithm`
+(`ssh-ed25519`, `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384`,
+`ecdsa-sha2-nistp521` or `ssh-rsa`) and either the OpenSSH `fingerprint`
+(`SHA256:...`), the base64 `public_key`, or both. Pin up to four keys, for
+example the old and new key during a key rotation.
 
 ```yaml
 spec_version: '1'
-auth_env_vars: [SFTP_KEY_PATH]
+auth_env_vars: [SFTP_PRIVATE_KEY]
 type: integration
 name: partner_drop
 source_type: sftp
@@ -248,10 +263,38 @@ connection:
   host: sftp.example.com
   username: dogsled
   base_directory: /outgoing
+  host_keys:
+    - algorithm: ssh-ed25519
+      public_key: AAAAC3NzaC1lZDI1NTE5AAAAIEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9g
+  read_concurrency: 4
 auth:
   type: private_key
-  private_key_path_env: SFTP_KEY_PATH
+  private_key_env: SFTP_PRIVATE_KEY
 ```
+
+`private_key` auth takes exactly one of `private_key_env` (an env var holding the
+OpenSSH private key text) or `private_key_path_env` (an env var holding the path
+to the key file). Add `passphrase_env` for an encrypted key.
+
+Get the values from the server operator, or with `ssh-keyscan -t ed25519 host`
+(the second and third fields of each line are `algorithm` and `public_key`) and
+`ssh-keygen -lf` for the fingerprint. Verify them out of band before you pin them.
+
+A Resource `path` without a glob may name one file, such as `exports/orders.csv`,
+or a folder, which is walked. A path that does not exist fails with
+`SFTP_PATH_NOT_FOUND`.
+
+The listing reads regular files below `base_directory` only. It skips symbolic
+links and special files, and a download that resolves outside `base_directory`
+is refused. `read_concurrency` (1 to 16, default 4) caps the read requests in
+flight on the connection. Raise it only when the server can handle it.
+
+A stalled server fails the run after 60 seconds without progress, and a dropped
+connection fails the run instead of skipping the remaining files. Connection
+failures carry a stable `code`, for example `SFTP_HOST_KEY_MISMATCH`,
+`SFTP_HOST_KEY_TYPE_UNAVAILABLE`, `SFTP_AUTH_FAILED`, `SFTP_TIMEOUT` or
+`SFTP_CONNECTION_LOST`. The full list is exported as `SFTP_ERROR_CODES` from
+`@bobsled-inc/extractor`.
 
 A private Vercel Blob object uses `source_type: vercel_blob` with
 `connection.blob_ref` and `auth: { type: signed_url_env, url_env, origin_env }`.

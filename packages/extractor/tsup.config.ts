@@ -32,7 +32,7 @@ import { defineConfig } from 'tsup';
  *       (`@aws-sdk/client-s3`, `@aws-sdk/credential-providers`)
  *   - packages/extractor/src/runtime/clients/gcs-file-client.ts
  *       (`@google-cloud/storage`, `google-auth-library`)
- *   - packages/extractor/src/runtime/clients/sftp-file-client.ts (`ssh2-sftp-client`)
+ *   - packages/extractor/src/runtime/clients/sftp-file-client.ts (`ssh2`)
  *   - packages/extractor/src/runtime/pg-base-client.ts (`@aws-sdk/rds-signer` for IAM)
  *
  * Adding a new dynamic-import call site? Add the module here too.
@@ -55,7 +55,7 @@ const RUNTIME_DYNAMIC_DEPS = [
   'pg-types',
   'pgpass',
   'snowflake-sdk',
-  'ssh2-sftp-client',
+  'ssh2',
   'tedious',
 ];
 

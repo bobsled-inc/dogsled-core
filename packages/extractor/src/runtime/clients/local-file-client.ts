@@ -33,7 +33,11 @@ function globToRegExp(pattern: string): RegExp {
   for (let i = 0; i < normalized.length; i += 1) {
     const char = normalized[i];
     const next = normalized[i + 1];
-    if (char === '*' && next === '*') {
+    if (char === '*' && next === '*' && normalized[i + 2] === '/') {
+      // `**/` also matches zero folders, so `**/*.csv` includes top-level files.
+      out += '(?:.*/)?';
+      i += 2;
+    } else if (char === '*' && next === '*') {
       out += '.*';
       i += 1;
     } else if (char === '*') {

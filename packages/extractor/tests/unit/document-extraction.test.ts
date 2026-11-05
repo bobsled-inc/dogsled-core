@@ -5,6 +5,9 @@ import * as path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+
+import { LocalFileStorageClient } from '../../src/runtime/clients/local-file-client.js';
 import { ControlLogger } from '../../src/runtime/control.js';
 import { Emitter } from '../../src/runtime/emitter.js';
 import { extractDocumentResource } from '../../src/runtime/document-extraction.js';
@@ -23,6 +26,7 @@ function createStateStore(state: ExtractorState): StateStore {
 }
 
 interface ResourceOpts {
+  replicationMethod?: 'full_refresh' | 'incremental_append';
   pathPattern?: string;
   onError?: 'record' | 'skip' | 'fail';
   formats?: ('pdf' | 'docx' | 'pptx' | 'html' | 'md' | 'txt' | 'eml')[];
@@ -51,7 +55,7 @@ function documentResource(opts: ResourceOpts = {}): FileResourceSpec {
       ingest: { mode: 'extract' },
       permissions: { capture: true, enforcement: { enabled: false } },
     },
-    replication: { method: 'full_refresh' },
+    replication: { method: opts.replicationMethod ?? 'full_refresh' },
     extract: {},
     output: {
       document_id: { type: 'string' },
@@ -109,6 +113,27 @@ async function runExtraction(args: RunArgs = {}) {
 }
 
 describe('extractDocumentResource', () => {
+  it('fails the run on a connection-level download error instead of recording a parse error', async () => {
+    const lost = new DogsledRuntimeError({
+      kind: 'provider',
+      code: 'SFTP_CONNECTION_LOST',
+      operation: 'extractor.sftp.download',
+      retryable: true,
+    });
+    const download = vi
+      .spyOn(LocalFileStorageClient.prototype, 'download')
+      .mockRejectedValueOnce(lost);
+    try {
+      const state: ExtractorState = { streams: {} };
+      await expect(
+        runExtraction({ files: [{ name: 'a.md', content: '# A' }], prevState: state })
+      ).rejects.toBe(lost);
+      expect(state.streams).toEqual({});
+    } finally {
+      download.mockRestore();
+    }
+  });
+
   it('emits all SCHEMA messages before any RECORD (schema-before-record contract)', async () => {
     const { messages } = await runExtraction({
       files: [
@@ -135,6 +160,36 @@ describe('extractDocumentResource', () => {
     const chunks = messages.filter((m) => m.type === 'RECORD' && m.stream === 'docs__chunks');
     expect(docs.length).toBe(1);
     expect(chunks.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('upserts documents and chunks by file on incremental runs and replaces them on full reads', async () => {
+    const files = [{ name: 'a.md', content: '# Title\n\nbody text here.\n' }];
+    const schemaOf = (messages: Array<Record<string, unknown>>, stream: string) =>
+      messages.find((m) => m.type === 'SCHEMA' && m.stream === stream) as
+        | { load_strategy: string; key_properties: string[] }
+        | undefined;
+    const incremental = await runExtraction({
+      files,
+      resourceOpts: { replicationMethod: 'incremental_append' },
+    });
+    expect(schemaOf(incremental.messages, 'docs__documents')).toMatchObject({
+      load_strategy: 'merge',
+      key_properties: ['document_id'],
+    });
+    expect(schemaOf(incremental.messages, 'docs__chunks')).toMatchObject({
+      load_strategy: 'merge',
+      key_properties: ['document_id', 'chunk_index'],
+    });
+    const forced = await runExtraction({
+      files,
+      resourceOpts: { replicationMethod: 'incremental_append' },
+      fullRefresh: true,
+    });
+    const configured = await runExtraction({ files });
+    for (const { messages } of [forced, configured]) {
+      expect(schemaOf(messages, 'docs__documents')?.load_strategy).toBe('full_refresh');
+      expect(schemaOf(messages, 'docs__chunks')?.load_strategy).toBe('full_refresh');
+    }
   });
 
   it('emits __acl schema when permission capture is enabled even without provider rows', async () => {

@@ -152,7 +152,8 @@ grace	95.75
 
 Each stream has a load strategy. The extractor sets it in the stream's `SCHEMA`
 message, from the resource's `extract.table.load_strategy`, or from its incremental
-settings and primary key:
+settings and primary key. A file Resource with `replication.method: incremental_append`
+uses `append`:
 
 | Strategy       | What it does                                                                             |
 | -------------- | ---------------------------------------------------------------------------------------- |

@@ -46,6 +46,27 @@ describe('state', () => {
     await expect(loadState(tmpDir)).resolves.toEqual(state);
   });
 
+  it('round-trips a document file bookmark so the next incremental run can load it', async () => {
+    const state = {
+      streams: {
+        'files/contracts': {
+          last_run_at: '2026-03-21T10:00:00Z',
+          record_count: 11,
+          files: {
+            'sftp://sftp.example.com/contract.pdf': {
+              last_modified: '2026-03-21T09:59:00.000Z',
+              etag: '1774087140-3596',
+              size: 3596,
+              document_version_id: 'a'.repeat(64),
+            },
+          },
+        },
+      },
+    };
+    await saveState(tmpDir, state);
+    await expect(loadState(tmpDir)).resolves.toEqual(state);
+  });
+
   it('throws on corrupted JSON file (fail closed)', async () => {
     fs.mkdirSync(tmpDir, { recursive: true });
     fs.writeFileSync(path.join(tmpDir, 'state.json'), 'not json', 'utf-8');

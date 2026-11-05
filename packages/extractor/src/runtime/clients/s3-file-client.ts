@@ -15,6 +15,7 @@ import {
   resolveAndValidateHost as validateRemoteHost,
 } from '../../framework/core/index.js';
 import { ExtractorConfigError, ExtractorDataError } from '../errors.js';
+import { globToRegExp } from './path-glob.js';
 
 async function importModule(specifier: string): Promise<Record<string, unknown>> {
   // The caller supplies only the literal optional dependency name below.
@@ -32,37 +33,6 @@ function readRequiredEnv(name: string | undefined, field: string): string {
     throw new ExtractorConfigError(`S3 auth ${field} references missing env var ${name}`);
   }
   return value;
-}
-
-function globToRegExp(pattern: string): RegExp {
-  if (pattern.length > 240) {
-    throw new ExtractorConfigError('S3 path glob exceeds 240 characters');
-  }
-  const wildcardRuns = pattern.match(/[*?]{4,}/g);
-  if (wildcardRuns) {
-    throw new ExtractorConfigError('S3 path glob contains too many consecutive wildcards');
-  }
-  const wildcardCount = [...pattern].filter((char) => char === '*' || char === '?').length;
-  if (wildcardCount > 40) {
-    throw new ExtractorConfigError('S3 path glob contains too many wildcards');
-  }
-  let out = '^';
-  for (let i = 0; i < pattern.length; i += 1) {
-    const char = pattern[i];
-    const next = pattern[i + 1];
-    if (char === '*' && next === '*') {
-      out += '.*';
-      i += 1;
-    } else if (char === '*') {
-      out += '[^/]*';
-    } else if (char === '?') {
-      out += '[^/]';
-    } else {
-      out += char ? char.replace(/[|\\{}()[\]^$+?.]/g, '\\$&') : '';
-    }
-  }
-  out += '$';
-  return new RegExp(out);
 }
 
 async function validateS3Endpoint(endpoint: string | undefined): Promise<void> {
@@ -183,7 +153,7 @@ export class S3FileStorageClient implements FileStorageClient {
     let continuationToken: string | undefined;
     let emitted = 0;
     const prefix = options.path.replace(/[*?].*$/, '');
-    const matcher = globToRegExp(options.path);
+    const matcher = globToRegExp(options.path, 'S3');
     do {
       const response = (await this.client.send(
         new this.constructors.ListObjectsV2Command({

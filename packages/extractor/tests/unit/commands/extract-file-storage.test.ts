@@ -1,3 +1,4 @@
+import { DogsledRuntimeError } from '@bobsled-inc/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -47,6 +48,7 @@ function commandArgs(state: ExtractorState) {
     logger: {
       info: vi.fn().mockResolvedValue(undefined),
       error: vi.fn().mockResolvedValue(undefined),
+      log: vi.fn().mockResolvedValue(undefined),
       progress: vi.fn().mockResolvedValue(undefined),
     } as never,
     state,
@@ -59,6 +61,45 @@ function commandArgs(state: ExtractorState) {
     } as never,
   };
 }
+
+describe('runFileStorageResourceExtraction runtime errors', () => {
+  it('reports the stable error code without raw provider text in public fields', async () => {
+    mocks.extract.mockRejectedValueOnce(
+      new DogsledRuntimeError({
+        kind: 'provider',
+        code: 'SFTP_CONNECTION_LOST',
+        operation: 'extractor.sftp.download',
+        retryable: true,
+        cause: new Error('read ECONNRESET sftp.internal.example.com'),
+      })
+    );
+    const args = commandArgs({ streams: {} });
+    const result = await runFileStorageResourceExtraction(args);
+
+    expect(result).toMatchObject({
+      failed: true,
+      resourceResult: {
+        status: 'error',
+        error: 'The provider could not complete the operation.',
+        error_code: 'SFTP_CONNECTION_LOST',
+        failure_reason: 'transient_error',
+      },
+    });
+    const logger = args.logger as unknown as Record<string, ReturnType<typeof vi.fn>>;
+    expect(logger.log).toHaveBeenCalledWith(
+      'error',
+      'Failed: local_exports/customers: The provider could not complete the operation.',
+      undefined,
+      { error_code: 'SFTP_CONNECTION_LOST' }
+    );
+    const [, , progress] = logger.progress!.mock.calls[0]!;
+    expect(progress).toMatchObject({
+      error: 'The provider could not complete the operation.',
+      error_code: 'SFTP_CONNECTION_LOST',
+    });
+    expect(JSON.stringify(result.resourceResult)).not.toContain('ECONNRESET');
+  });
+});
 
 describe('runFileStorageResourceExtraction cancellation', () => {
   it('passes a scoped signal, reports cancellation as a failed resource, and removes listeners', async () => {
@@ -137,7 +178,7 @@ it.skipIf(process.platform === 'win32')(
     const {runFileStorageResourceExtraction} = await import(${JSON.stringify(command)});
     const result = await runFileStorageResourceExtraction({
       integration: {}, resource: {name:'customers'}, integrationName:'local_exports',
-      emitter:{}, logger:{info:async()=>{},error:async()=>{},progress:async()=>{}},
+      emitter:{}, logger:{info:async()=>{},error:async()=>{},log:async()=>{},progress:async()=>{}},
       state:{streams:{}},stateStore:{},advanceState:false,startedAt:Date.now(),
       circuitBreaker:{recordSuccess(){},recordFailure(){}}
     });
