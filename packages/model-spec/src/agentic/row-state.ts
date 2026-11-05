@@ -27,6 +27,7 @@ import {
   AGENTIC_ROWS_TABLE,
   AGENTIC_ROW_RETENTION_MS,
   AGENTIC_RUNS_TABLE,
+  agenticNewRunHeader,
   agenticRowTable,
   agenticStatement,
   prepareAgenticRowTables,
@@ -156,21 +157,7 @@ export async function openAgenticRowSession(
     await dialect.insertIfAbsent(
       db,
       runs,
-      {
-        run_hash: hash,
-        scope: key.scope,
-        model: key.model,
-        run_id: key.id,
-        layout: LAYOUT_VERSION,
-        revision: -1,
-        lease_owner: '',
-        lease_expires: 0,
-        token: '',
-        head: '',
-        summary: '',
-        retain_until: BigInt(Date.now()) + retentionMs,
-        reclaimable: true,
-      },
+      agenticNewRunHeader(key, hash, LAYOUT_VERSION),
       'run_hash'
     );
     const statement = agenticStatement(dialect);
@@ -178,6 +165,7 @@ export async function openAgenticRowSession(
     const set = [
       `${q('lease_owner')} = ${statement.bind(owner)}`,
       `${q('token')} = ${statement.bind(next)}`,
+      `${q('retain_until')} = ${clock} + ${statement.bind(retentionMs)}`,
       ...(lease ? [`${q('lease_expires')} = ${clock} + ${statement.bind(lease.leaseMs)}`] : []),
     ].join(', ');
     const free = lease ? ` AND ${q('lease_expires')} <= ${clock}` : '';

@@ -76,6 +76,32 @@ export interface AgenticRowSessionOptions {
   signal?: AbortSignal;
 }
 
+/**
+ * A run's header before its first claim. The claim dates it from the store clock, so no client
+ * clock is involved, and until then nothing can expire it.
+ */
+export function agenticNewRunHeader(
+  key: { scope: string; model: string; id: string },
+  hash: string,
+  layout: number
+) {
+  return {
+    run_hash: hash,
+    scope: key.scope,
+    model: key.model,
+    run_id: key.id,
+    layout,
+    revision: -1,
+    lease_owner: '',
+    lease_expires: 0,
+    token: '',
+    head: '',
+    summary: '',
+    retain_until: BigInt(Number.MAX_SAFE_INTEGER),
+    reclaimable: true,
+  };
+}
+
 export function agenticRowTable(
   dialect: AgenticRowDialect,
   namespace: string,

@@ -301,6 +301,18 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     await session.release();
   });
 
+  it('dates a new header from the store clock alone', async () => {
+    const { open, sql } = await fixture();
+    const session = await open(map.key);
+    const [row] = await sql(
+      `SELECT retain_until - CAST(epoch(now()) * 1000 AS BIGINT) AS remaining FROM ${schema}.__dogsled_agentic_runs`
+    );
+    const days = Number(row!.remaining as bigint) / 86_400_000;
+    expect(days).toBeGreaterThan(29.9);
+    expect(days).toBeLessThanOrEqual(30);
+    await session.release();
+  });
+
   it('reports a statement timeout as the reason the session stopped', async () => {
     const { open } = await fixture();
     const session = await open(plan.key);

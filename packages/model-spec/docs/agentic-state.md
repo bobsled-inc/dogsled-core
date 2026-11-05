@@ -290,8 +290,8 @@ run. A session never trusts its memory after an uncertain write: it reloads from
 No table relies on a unique key, which three of the warehouses this layout targets do not
 enforce. The row layout supports DuckDB today.
 
-Rows expire: each header write sets `retain_until`, 30 days ahead by default. A later acquisition
-deletes unowned runs past that time.
+Rows expire: acquiring a run and each header write set `retain_until`, 30 days ahead by default,
+from the store's clock. A later acquisition deletes unowned runs past that time.
 
 This covers failed runs too: a run without incremental sources that is resumed after that time
 starts again and pays again. A run still owed recovery does not expire: one with a prepared
