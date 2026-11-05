@@ -2,7 +2,8 @@
 
 Dogsled saves agentic checkpoints under the project `.dogsled/model-spec` directory by default.
 A supplied `AgenticStateStore` replaces all local agentic storage. Execution state
-needs no warehouse or database service.
+needs no warehouse or database service. See [where state is stored](#where-state-is-stored)
+for how a run's store is chosen.
 
 The bounded execution API supports ordered map/reduce plans with `llm_call` or
 `agent_loop` steps and a supplied executor. Without a publisher it returns accepted output with `publication: 'pending'`.
@@ -172,6 +173,29 @@ this optional method continue to reject takeover. All coordinators sharing a sto
 must use the updated checkpoint schema and `applyAgenticCheckpoint` implementation
 before fresh-start takeover is enabled.
 
+## Where state is stored
+
+Dogsled uses the first of these that applies:
+
+1. A store supplied as `stateStore`, or `agentic.stateStore` for `runProject`.
+2. `checkpoint_store` in `model-spec.yml`, which can name a warehouse or a DuckDB integration.
+3. A DuckDB file for the run under `.dogsled/model-spec/agentic-state`, when `@duckdb/node-api`
+   can be loaded. It is an optional peer dependency that the `dogsled` CLI installs.
+4. The [file store](#local-files-ownership-and-retention).
+
+Steps 3 and 4 are the default store, `createDefaultAgenticStateStore(projectDirectory)`. Library
+hosts can pass `createLocalAgenticStateStore(projectDirectory)` as `stateStore` to keep using files.
+
+A run stays in the store that created it, and the two local stores share one lock file per run,
+so a run has one owner either way:
+
+- Installing DuckDB moves nothing. Runs already in the file store resume from it, and new runs
+  use DuckDB. Each key's incremental cursor is read from the file store once, when the new store
+  first sees that key, so progress carries over.
+- Removing DuckDB stops runs and cursors saved in DuckDB files with `unavailable`
+  (`duckdb_required`) rather than starting them again from older state. Install the package to
+  resume them. A DuckDB file cannot be read without the driver. Other new runs use the file store.
+
 ## Mixed model runs
 
 `runProject` accepts the same options in `agentic` alongside
@@ -213,8 +237,13 @@ Every saved record must be durable before the method resolves. After an uncertai
 checkpoint response, Dogsled reads the saved receipt before it dispatches more work.
 The host must retain snapshots and their contents for its declared recovery period.
 The current API uses bounded whole snapshots rather than unbounded record lists.
-The local implementation limits each file to 16 MiB; hosts should enforce the same
-bound. All input and outcome values also use the existing agentic contract bounds.
+A store that removes old runs sets `expiresRuns`, and must never remove one with a publication.
+Takeover then replaces a reservation whose run is gone; otherwise it reports the run `missing`.
+A store can declare `limits` with `maxRows`, `maxBatchBytes` and `maxCheckpointBytes`. Dogsled
+bounds each input batch by them and tells the host through `maxRows` and `maxBytes`; the store
+rejects a larger checkpoint. Without `limits`, a store gets 1,000 rows, 1 MiB per batch and
+16 MiB per checkpoint. These values are also the most a store can declare, because the snapshot
+schema enforces them. All input and outcome values also use the existing agentic contract bounds.
 
 Use `AgenticStateError` with a safe code: `conflict`, `missing`, `corrupt`,
 `unavailable`, `limit` or `expired`. Dogsled removes other storage error messages at
@@ -225,9 +254,94 @@ A session that may still hold its lease when it reports `lease_lost` should set
 acquires again, so the session's own lease does not refuse the recovery attempt.
 Without it, recovery starts at once.
 
+## Row layout
+
+The DuckDB stores save a run as rows, so what a checkpoint writes does not grow with the run. A
+session keeps the snapshot in memory while it owns the run, applies each command
+with `applyAgenticCheckpoint`'s transition, and writes only what changed. Opening a run rebuilds
+the snapshot from its rows. Commands, snapshots and the store interfaces are unchanged.
+
+| Table                       | One row per                  | Holds                                                             |
+| --------------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `__dogsled_agentic_runs`    | Run                          | Identity, revision, ownership, newest write, small fields as JSON |
+| `__dogsled_agentic_rows`    | Assignment or attempt update | Immutable content; the definition and input batch are stored once |
+| `__dogsled_agentic_cursors` | Cursor key                   | The cursor record and a version for compare-and-swap              |
+
+Writes in `__dogsled_agentic_rows` form a chain: each names its `parent`, and its `write_id` is a
+digest of its parent, revision, operation ID and content. The header's `head` names the newest
+committed write. A read walks back from `head`, verifies each digest, and ignores everything else.
+A long value spans several rows of one write.
+
+A command writes its rows, then commits them with one update of the header. That update is the
+only commit. It matches the session's owner, unexpired lease, token and revision, and its result
+must report one changed row. There is no multi-statement transaction. Starting and finishing a
+model call are four statements together, however large the run is. Commands that change no rows,
+such as `complete`, are only the header update.
+
+A crash between the two statements leaves rows that no header names. The header still describes
+the previous state, so the run resumes from there, and the unfinished model call is treated like
+any other interrupted attempt. A retry can write different content for the same operation ID,
+such as a `seal_work` after preparation runs again: its digest differs, so it is a separate write
+and the old rows stay unreachable. A worker that lost its lease can still insert rows, but its
+header update changes nothing. A new owner deletes unreachable rows the first time it loads the
+run. A session never trusts its memory after an uncertain write: it reloads from the rows first.
+
+No table relies on a unique key, which three of the warehouses this layout targets do not
+enforce. The row layout supports DuckDB today.
+
+Rows expire: each header write sets `retain_until`, 30 days ahead by default. A later acquisition
+deletes unowned runs past that time. A run still owed recovery does not expire: one with a
+prepared publication, one with confirmed publication and uncommitted cursors, or a sealed
+incremental batch that is not finished. Superseding such a run releases it. A preparing run does
+expire, because it has no inputs, work or spend. If it held a cursor reservation, a later start
+replaces that reservation. Cursor rows never expire.
+
+### Local DuckDB files
+
+Each run has its own file, `.dogsled/model-spec/agentic-state/run-<hash>.duckdb`, which stays open
+for the session. DuckDB allows one writing process per file, and a run file has one owner, so runs
+in different processes do not contend. Commits go to DuckDB's write-ahead log, and closing the file
+merges it. Incremental cursors use `agentic-state/cursors.duckdb`, which is opened for each
+operation. A process that finds it busy retries for up to 30 seconds.
+
+Ownership uses the same lock file as the file store, not DuckDB's own file lock. A process loses
+that lock without warning when it opens and closes the same file a second time, so do not open a
+run file from a process that may own the run. As with the file store, a crashed run can resume at
+once. The directory is private and run files use private permissions. Symlinks are rejected.
+
+An acquisition checks up to eight old run files and removes those that have expired. It skips any
+file with a live owner. An empty file left by a crash expires the same way. Keep
+`.dogsled/model-spec` on a local disk, as for the file store.
+
+### DuckDB checkpoint store
+
+`checkpoint_store` can name a writable, file-backed DuckDB integration:
+
+```yaml
+checkpoint_store:
+  integration: checkpoints_duckdb
+  schema: agentic_checkpoints
+  lease_seconds: 300 # Optional. Default: 120. Range: 10–600 whole seconds.
+  retention_days: 30 # Optional. Default: 30. DuckDB only. Range: 1–3650.
+```
+
+The three tables live in that schema, shared by every run, and ownership is the fenced lease
+described under [warehouse checkpoints](#warehouse-checkpoints). A worker that crashes holds its
+run until the lease expires. Statements have the client deadline described there, and a run that
+hits it stops with `lease_lost (statement_timeout)`; DuckDB has no server-side limit to set. The
+file is opened for each operation and never held between them. It must not be a model's output
+file, which fails validation: a host reads that file outside this store's guard, and overlapping
+instances of one file in a process can drop its lock.
+
+Existing runs are not moved, so finish them before adding this setting. The store takes over each
+cursor on first use of its key, from the DuckDB target or the default store. A key that an
+unfinished run still holds fails with `cursor_held_elsewhere`, and nothing is written: this store
+cannot open that run to take it over. Remove the setting, finish the run, then add it again.
+
 ## Local files, ownership and retention
 
-`.dogsled/model-spec/run-state.json` remains the state entry point. Its compatible `agentic`
+This section describes the file store. `.dogsled/model-spec/run-state.json` is its state entry
+point and also holds regular model state. Its compatible `agentic`
 extension maps hashed run keys to digest-named snapshot files in `.dogsled/model-spec`. Snapshots
 contain the frozen definition, input, attempts, usage, results and completion.
 Reads check the digest, schema and scoped identity. Missing or damaged files cause
@@ -297,8 +411,9 @@ falls back to local files.
 
 The warehouse store uses the SQL runners for PostgreSQL, Snowflake, BigQuery, and
 Databricks. Databricks requires catalog-managed tables and catalog commits, as
-publication does. DuckDB and ClickHouse are rejected by this store. Plain CLI
-execution without this setting retains the existing local checkpoint default.
+publication does. ClickHouse is rejected. A DuckDB integration uses the
+[row layout](#duckdb-checkpoint-store) instead. Plain CLI execution without this
+setting uses the [default store](#where-state-is-stored).
 
 Checkpoint data includes prepared input records, accepted results, and intermediate
 results. Each run uses two tables named from a hash of its scope, model, and run ID.

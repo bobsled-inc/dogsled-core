@@ -156,15 +156,18 @@ needs Unity Catalog managed tables with catalog commits enabled; preflight check
 transaction support before agent calls. See the [publication guide](../../../packages/model-spec/docs/agentic-publication.md)
 for connection and transaction requirements.
 
-By default, local execution checkpoints live under `.dogsled/model-spec/`. Keep that directory on
-persistent local storage across restarts. Local locking supports one host, not
+By default, local execution checkpoints live under `.dogsled/model-spec/`: one DuckDB file per run
+when `@duckdb/node-api` is installed, and JSON files otherwise. See
+[where state is stored](../../../packages/model-spec/docs/agentic-state.md#where-state-is-stored).
+Keep that directory on persistent local storage across restarts. Local locking supports one host, not
 network file systems or several hosts. For DuckDB, keep the database file as well:
 it contains output, receipts, and shared input cursors. Prevent independent live
 DuckDB instances and external writers from changing managed targets during
 publication.
 
 For workers that move between machines, configure warehouse checkpoints in
-`model-spec.yml`:
+`model-spec.yml`. `checkpoint_store` also accepts a
+[DuckDB integration](../../../packages/model-spec/docs/agentic-state.md#duckdb-checkpoint-store):
 
 ```yaml
 checkpoint_store:
