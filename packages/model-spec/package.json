@@ -59,6 +59,11 @@
       "types": "./dist/interchange/index.d.ts",
       "import": "./dist/interchange/index.js",
       "default": "./dist/interchange/index.js"
+    },
+    "./ontology": {
+      "types": "./dist/ontology/index.d.ts",
+      "import": "./dist/ontology/index.js",
+      "default": "./dist/ontology/index.js"
     }
   },
   "files": [

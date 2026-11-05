@@ -405,3 +405,5 @@ Import preserves unrecognized vendor extensions as inert foreign data and does n
 interpret them as native settings. Diagnostics identify metadata that needs
 review. Exports write native `DOGSLED` settings and can retain imported foreign
 entries as opaque metadata.
+
+See the [customer ontology guide](../../../docs/guides/customer-ontologies.md) for business concepts and mappings.

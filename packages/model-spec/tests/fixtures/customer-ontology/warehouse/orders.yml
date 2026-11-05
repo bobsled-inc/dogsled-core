@@ -1,0 +1,11 @@
+spec_version: '0.2'
+type: source
+source_type: warehouse_table
+name: orders
+connection: warehouse
+table: EXAMPLE.SALES.ORDERS
+schema:
+  columns:
+    - name: order_number
+      type: VARCHAR
+      primary_key: true

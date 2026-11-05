@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -38,10 +39,10 @@ export function serializeDocument(doc: Document.Parsed): string {
 
 export function writeYamlDocument(filePath: string, content: string): EditResult {
   const dir = path.dirname(filePath);
-  const tmpPath = path.join(dir, `.${path.basename(filePath)}.${process.pid}.tmp`);
+  const tmpPath = path.join(dir, `.${path.basename(filePath)}.${randomUUID()}.tmp`);
 
   try {
-    fs.writeFileSync(tmpPath, content, 'utf-8');
+    fs.writeFileSync(tmpPath, content, { encoding: 'utf-8', flag: 'wx', mode: 0o600 });
     fs.renameSync(tmpPath, filePath);
     return { ok: true, data: undefined };
   } catch (err) {

@@ -167,6 +167,7 @@ secrets.yml
 !packages/dogsled/tests/integration/fixtures/fake-server-key.pem
 
 # Local review artifacts
+docs/superpowers/
 .security-review/
 todos/
 tasks/

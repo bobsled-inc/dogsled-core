@@ -1,0 +1,26 @@
+spec_version: '0.2'
+type: ontology
+name: shop
+description: Individual orders and their recorded amount and status, before aggregation.
+ontology:
+  - concept: OrderId
+    type: ValueType
+    extends: [Integer]
+  - concept: Order
+    type: EntityType
+    description: One order. A status summary combines many orders and is not another order.
+    identify_by: [id]
+    relationships:
+      - name: id
+        roles: [{ concept: OrderId }]
+        multiplicity: OneToOne
+        verbalizes: ['{Order} has identifier {OrderId}']
+      - name: amount
+        description: The amount recorded on an order; revenue metrics decide which orders count.
+        roles: [{ concept: Decimal }]
+        multiplicity: ManyToOne
+        verbalizes: ['{Order} has recorded amount {Decimal}']
+      - name: status
+        roles: [{ concept: String }]
+        multiplicity: ManyToOne
+        verbalizes: ['{Order} has status {String}']

@@ -24,19 +24,21 @@ export const lessons: Record<
   },
   model: {
     learn:
-      'Dogsled lets you build semantic models: reusable definitions of your data and its meaning. You configure fields, descriptions, relationships and named calculations called metrics. Here, you will describe the source records first, then build derived models for shows and episodes.',
+      'Dogsled lets you build semantic models: reusable definitions of your data and its meaning. You configure fields, descriptions, relationships and named calculations called metrics. Here, you will describe the source records, define Show and Episode in an ontology, then build derived models.',
     files: [
       'sources/shows.yml',
       'sources/episodes.yml',
       'models/shows.yml',
       'models/episodes.yml',
+      'context/tv-night.ontology.yml',
+      'context/tv-night.mapping.yml',
       'relationships/show_episodes.yml',
       'metrics/episode_count.yml',
     ],
     choice:
       'Choose one rule to model: how to handle missing runtime, or whether an average episode length is enough.',
     inspect:
-      'Read a source field description and its corresponding derived field. Inspect their ai_context, one transformation expression, the show-to-episode join and the episode-count metric. Briefly compare the rows.',
+      'Follow Episode to Show in the ontology and find the mapped show_id. Explain why Ended does not prove story closure. Read a source field description and its corresponding derived field. Inspect their ai_context, one transformation expression, the show-to-episode join and the episode-count metric. Briefly compare the rows.',
   },
   query: {
     learn:

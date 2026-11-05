@@ -1,0 +1,15 @@
+spec_version: '0.2'
+type: ontology
+name: sales
+ontology:
+  - concept: OrderNumber
+    type: ValueType
+    extends: [String]
+  - concept: Order
+    type: EntityType
+    identify_by: [number]
+    relationships:
+      - name: number
+        roles: [{ concept: OrderNumber }]
+        multiplicity: OneToOne
+        verbalizes: ['{Order} has number {OrderNumber}']

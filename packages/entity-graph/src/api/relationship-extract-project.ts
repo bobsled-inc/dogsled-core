@@ -203,9 +203,12 @@ function entitySemanticsByType(specDir: string): Map<string, EntitySemanticConte
   return out;
 }
 
-function ontologyMap(specDir: string): Map<string, ResolvedRelationshipOntology> {
+function ontologyMap(
+  specDir: string,
+  projectRoot: string
+): Map<string, ResolvedRelationshipOntology> {
   return new Map(
-    discoverRelationshipOntologySpecs(specDir).map((spec) => [
+    discoverRelationshipOntologySpecs(specDir, projectRoot).map((spec) => [
       spec.name,
       resolveRelationshipOntologySpec(spec),
     ])
@@ -292,7 +295,7 @@ export async function extractRelationshipsProject(
   const specDir = options.specDir ? path.resolve(context.cwd, options.specDir) : context.mdmDir;
   const specs = matchingSpecs(specDir, options.entity);
   const specRefs = specs.map((spec) => ({ name: spec.name, path: spec.filePath }));
-  const ontologies = ontologyMap(specDir);
+  const ontologies = ontologyMap(specDir, context.cwd);
   const semanticsByType = entitySemanticsByType(specDir);
 
   if (specs.length === 0) {

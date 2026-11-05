@@ -1,3 +1,5 @@
+import { exportOntologyScopes } from '../ontology/export-scopes.js';
+import { exportOntologyDocuments } from '../ontology/conversion.js';
 import { z } from 'zod';
 
 import { AgenticModelSpecSchema, getModelOutputColumns } from '../agentic/model.js';
@@ -972,6 +974,31 @@ export function exportOssieDocuments(
   inputs: readonly NativeInterchangeInput[],
   options: ExportOssieOptions = {}
 ): ConversionResult {
+  const ontologyInputs = inputs.filter((input) =>
+    ['ontology', 'ontology_mapping'].includes(String(record(input.document)['type']))
+  );
+  if (ontologyInputs.length) {
+    const ontology = exportOntologyDocuments(ontologyInputs, {
+      ...options,
+      ossieVersion: options.ossieVersion ?? '0.1.1',
+    });
+    if (!ontology.ok) return ontology;
+    const semanticInputs = inputs.filter((input) => !ontologyInputs.includes(input));
+    if (!semanticInputs.length) return ontology;
+    const mappings = ontologyInputs.filter(
+      (input) => record(input.document)['type'] === 'ontology_mapping'
+    );
+    const semantic = mappings.length
+      ? exportOntologyScopes(mappings, semanticInputs, options, exportOssieDocument)
+      : exportOssieDocuments(semanticInputs, options);
+    if (!semantic.ok) return { ...semantic, files: [] };
+    return {
+      ok: true,
+      ready: semantic.ready,
+      files: [...ontology.files, ...semantic.files],
+      diagnostics: [...ontology.diagnostics, ...semantic.diagnostics],
+    };
+  }
   const sources: unknown[] = [];
   const models: unknown[] = [];
   const metrics: unknown[] = [];

@@ -73,6 +73,28 @@ in `bronze` are separate from these warehouse tables.
 
 ## 3. Build semantic models (`model`)
 
+Before calculating sales, read `context/retail.ontology.yml` and
+`context/retail.mapping.yml`. A sales line refers to one product; that product
+refers to its catalog supplier. One line can contain several units. Counting
+lines therefore does not answer “How many units of this product sold?”
+
+```sh
+dogsled ontology list --json
+dogsled ontology describe retail --concept SalesLine --yaml
+dogsled ontology validate --strict --json
+```
+
+Follow the path `SalesLine → Product → Supplier` in the result. The mapping
+connects it to `sales_order_lines.product_id` and `products.supplier_id`, using
+the existing warehouse source definitions. The ontology explains what the things
+are and how they relate. The semantic models below define the calculations,
+including which orders count and how refunds change sales. These ontology checks
+read definitions and need no database connection.
+
+Inspection: explain why three sales lines do not necessarily mean three units
+sold, and find the field that connects a product to its supplier. The files live
+in `context/` to show that ontologies need no special folder.
+
 Build and explain `returns_by_line`, `product_sales_summary`,
 `product_in_stock_days` and `product_performance`, using the current chapter's
 reference definitions as teaching material. Add the relevant metrics and

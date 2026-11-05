@@ -328,7 +328,7 @@ export async function inventoryEntityGraph(
   );
   applyRelationshipIndexes(entities, relationships);
 
-  const parsedOntologies = discoverRelationshipOntologySpecs(ctx.mdmDir);
+  const parsedOntologies = discoverRelationshipOntologySpecs(ctx.mdmDir, ctx.cwd);
   const ontologies = parsedOntologies.map((parsed) => resolveRelationshipOntologySpec(parsed));
   validateRelationshipOntologyEndpoints(ontologies, knownEntities);
   applyOntologyRelationshipIndexes(entities, ontologies);

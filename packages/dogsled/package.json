@@ -160,6 +160,11 @@
       "types": "./dist/compat/ai-test-stubs.d.ts",
       "import": "./dist/compat/ai-test-stubs.js",
       "default": "./dist/compat/ai-test-stubs.js"
+    },
+    "./ontology": {
+      "types": "./dist/compat/ontology.d.ts",
+      "import": "./dist/compat/ontology.js",
+      "default": "./dist/compat/ontology.js"
     }
   },
   "files": [

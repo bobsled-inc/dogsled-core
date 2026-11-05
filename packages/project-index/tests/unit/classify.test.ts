@@ -26,6 +26,8 @@ describe('classifyProjectFile — YAML types', () => {
     ['extract-intents', 'extract-intents'],
     ['resolution', 'resolution'],
     ['relationship_ontology', 'relationship_ontology'],
+    ['ontology', 'ontology'],
+    ['ontology_mapping', 'ontology_mapping'],
     ['mention_extraction', 'mention_extraction'],
     ['relationship_extraction', 'relationship_extraction'],
     ['agent_task_profile', 'agent_task_profile'],

@@ -1,0 +1,20 @@
+spec_version: '0.2'
+type: ontology_mapping
+name: shop_orders
+ontology_ref: { name: shop }
+semantic_model_ref:
+  name: shop_order_data
+  bindings:
+    datasets:
+      orders: local_duckdb.orders
+concept_mappings:
+  - concept: Order
+    object_mappings:
+      - expression: orders.id
+    link_mappings:
+      - object_mapping: { expression: orders.id }
+        children:
+          - relationship: amount
+            object_mapping: { concept: Decimal, expression: orders.amount }
+          - relationship: status
+            object_mapping: { concept: String, expression: orders.status }
