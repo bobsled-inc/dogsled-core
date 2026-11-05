@@ -1,9 +1,10 @@
 import { resolveWarehouseCheckpointTarget } from './warehouse-checkpoint-target.js';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-import { resolveRunner, throwIfCancelled, type IntegrationFile } from '@bobsled-inc/connections';
+import { throwIfCancelled, type IntegrationFile } from '@bobsled-inc/connections';
 import { caseName, quoteIdentifier } from '../compiler/dialect.js';
 import { atomicPublication, sqlPublicationDb } from './sql-publication-storage.js';
+import { openLimitedRunner } from './warehouse-statement-limit.js';
 import {
   publicationLiteral,
   publicationTableSuffix,
@@ -78,7 +79,7 @@ export function createWarehouseAgenticCursorStore(
     previousRunId?: string
   ) => {
     throwIfCancelled(options.signal);
-    const runner = await resolveRunner(integration, options);
+    const runner = await openLimitedRunner(integration, options);
     try {
       const db = sqlPublicationDb(runner, dialect, options.signal);
       const text = publicationType('string', dialect);

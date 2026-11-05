@@ -98,6 +98,8 @@ export interface BuildPostgresRunnerOptions {
    * Lets a test observe the `pg_cancel_backend` round-trip without a live server.
    */
   createSideClient?: (config: Record<string, unknown> | undefined) => PgClientLike;
+  /** Server-side limit for each statement on this connection. */
+  statementTimeoutMs?: number | undefined;
 }
 
 export async function buildPostgresRunner(
@@ -189,6 +191,10 @@ export async function buildPostgresRunner(
   }
 
   await client.connect();
+
+  if (options?.statementTimeoutMs !== undefined) {
+    await client.query(`SET statement_timeout = ${Math.ceil(options.statementTimeoutMs)}`);
+  }
 
   // Set search_path if a default schema is configured
   if (connection.schema) {

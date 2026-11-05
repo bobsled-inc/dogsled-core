@@ -104,6 +104,41 @@ describe.skipIf(
     });
     return [...memory.runs.values()][0]!;
   }
+  it('reports lost ownership when a lock keeps a statement from returning', async () => {
+    const { integration, schema } = await setup();
+    const store = createWarehouseCheckpointStore(integration, { schema, leaseMs: 10_000 });
+    const key = { scope: 'test', model: 'model', id: randomUUID() };
+    const session = await store.acquire(key);
+    const blocker = await resolveRunner(integration);
+    try {
+      const [control] = await blocker.query!(
+        `SELECT table_name FROM information_schema.tables WHERE table_schema = $1 AND table_name LIKE '%\\_c'`,
+        [schema]
+      );
+      await blocker.run('BEGIN');
+      await blocker.run(`LOCK TABLE "${schema}"."${String(control!.table_name)}"`);
+      const started = Date.now();
+      await expect(session.read()).rejects.toMatchObject({
+        code: 'lease_lost',
+        reason: 'statement_timeout',
+      });
+      // The warehouse ends the statement at its limit, before the client backstop.
+      expect(Date.now() - started).toBeGreaterThanOrEqual(5_000);
+      expect(Date.now() - started).toBeLessThan(5_833);
+      expect(session.ownershipLost?.aborted).toBe(true);
+      await blocker.run('ROLLBACK');
+    } finally {
+      await session.release();
+      await blocker.close?.();
+    }
+    // The abandoned lease excludes a second writer until it expires; then the run can resume.
+    await expect(store.acquire(key)).rejects.toThrow();
+    await vi.waitFor(async () => (await store.acquire(key)).release(), {
+      timeout: 12_000,
+      interval: 500,
+    });
+  }, 30_000);
+
   it('does not expose a snapshot when the second staging batch fails', async () => {
     const { directory, integration, schema } = await setup();
     const snapshot = await snapshotFixture(directory);

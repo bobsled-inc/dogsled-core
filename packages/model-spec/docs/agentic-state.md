@@ -220,6 +220,11 @@ Use `AgenticStateError` with a safe code: `conflict`, `missing`, `corrupt`,
 `unavailable`, `limit` or `expired`. Dogsled removes other storage error messages at
 the host boundary. Do not put credentials or raw provider responses in errors.
 
+A session that may still hold its lease when it reports `lease_lost` should set
+`retryAfterMs` in the error detail. Dogsled waits that many milliseconds before it
+acquires again, so the session's own lease does not refuse the recovery attempt.
+Without it, recovery starts at once.
+
 ## Local files, ownership and retention
 
 `.dogsled/model-spec/run-state.json` remains the state entry point. Its compatible `agentic`
@@ -309,6 +314,55 @@ from 10 to 600 to allow more time for warehouse queueing. The store attempts ren
 every one-third of the lease period. A longer lease also delays takeover after a
 worker crashes. Library callers can set `leaseMs` from 10,000 to 600,000 on the store
 factory. The lease setting does not change the model execution deadline.
+
+Each checkpoint and cursor statement can run for at most half the lease: 60 seconds
+with the default lease, and 5 to 300 seconds across the allowed range. There is no
+separate setting. Raise `lease_seconds` to give a slow or queueing warehouse more time
+per statement. Time spent queued counts, so a statement that used to wait longer than
+the limit and then succeed now fails.
+
+The warehouse enforces the limit on sessions that Dogsled opens only for checkpoints
+and cursors. Model queries and publication keep the warehouse defaults.
+
+| Warehouse  | Server-side setting            |
+| ---------- | ------------------------------ |
+| PostgreSQL | `statement_timeout`            |
+| Snowflake  | `STATEMENT_TIMEOUT_IN_SECONDS` |
+| BigQuery   | `jobTimeoutMs` on each job     |
+| Databricks | `STATEMENT_TIMEOUT`            |
+
+Dogsled also keeps its own deadline in case a driver ignores that setting or a
+connection stops answering. It is the limit plus one twelfth of the lease, 70 seconds
+by default. Closing a connection waits at most one twelfth of the lease.
+
+A custom runner factory receives the limit as `statementTimeoutMs`. Apply it to the
+session the factory opens. A factory that ignores it keeps the client deadline, but the
+statement keeps running on the warehouse. A factory that shares one session between
+runners must not apply it to that session.
+
+Behind a transaction-mode PostgreSQL pooler, `SET statement_timeout` does not reliably
+stay on the session. The client deadline still applies, but the setting can persist on
+the pooled server connection and affect other clients of that pooler.
+
+Opening a connection holds no lease, so it has its own limit of five minutes, or the
+client deadline if that is longer. This gives a stopped warehouse time to start while
+the session is set up. A connection that does not open stops the run with
+`unavailable (connect_timeout)`; check the warehouse, then resume.
+
+When either limit is reached, the session reports `lease_lost (statement_timeout)` and
+sends no more statements on that connection. A hung heartbeat is reported before the
+lease expires. The session keeps its lease, because the statement may still be running.
+A statement that lands late cannot overwrite a newer owner: writes check the owner and
+expiry, and cursor updates compare a token. The driver's error, if there was one, stays
+available as the error's `cause` and is not printed.
+
+Dogsled then recovers in the same process. It waits one full lease, because a renewal
+that landed late can extend the lease, then acquires ownership and reloads the saved
+state. It makes up to two such attempts, sharing the run's execution deadline. The
+statement may have committed before the limit was reached; the reload finds it, so the
+change applies once. If the attempts fail, the run stops with
+`lease_lost (statement_timeout)` and a later resume continues it. With the default
+lease, a warehouse that hangs on every attempt stops the run in about eight minutes.
 
 Library hosts can resolve the logical catalog/schema with
 `resolveWarehouseCheckpointTarget(integration, { database, schema })` from

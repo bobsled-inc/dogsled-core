@@ -51,6 +51,7 @@ BUILTIN_RUNNERS.set(runnerKey('snowflake', 'pat'), async (integration, context) 
     warehouse: context.warehouse,
     queryTag: context.queryTag,
     tokenProvider: context.tokenProvider,
+    statementTimeoutMs: context.statementTimeoutMs,
   });
 });
 BUILTIN_RUNNERS.set(runnerKey('snowflake', 'rsa_key'), async (integration, context) => {
@@ -60,6 +61,7 @@ BUILTIN_RUNNERS.set(runnerKey('snowflake', 'rsa_key'), async (integration, conte
     warehouse: context.warehouse,
     queryTag: context.queryTag,
     tokenProvider: context.tokenProvider,
+    statementTimeoutMs: context.statementTimeoutMs,
   });
 });
 BUILTIN_RUNNERS.set(runnerKey('snowflake', 'oauth'), async (integration, context) => {
@@ -69,6 +71,7 @@ BUILTIN_RUNNERS.set(runnerKey('snowflake', 'oauth'), async (integration, context
     warehouse: context.warehouse,
     queryTag: context.queryTag,
     tokenProvider: context.tokenProvider,
+    statementTimeoutMs: context.statementTimeoutMs,
   });
 });
 
@@ -76,29 +79,38 @@ BUILTIN_RUNNERS.set(runnerKey('snowflake', 'oauth'), async (integration, context
 BUILTIN_RUNNERS.set(runnerKey('bigquery', 'adc'), async (integration, context) => {
   if (integration.source_type !== 'bigquery') throw new Error('Expected BigQuery integration');
   const { buildBigQueryRunner } = await import('./bigquery.js');
-  return buildBigQueryRunner(integration, { tokenProvider: context.tokenProvider });
+  return buildBigQueryRunner(integration, {
+    tokenProvider: context.tokenProvider,
+    statementTimeoutMs: context.statementTimeoutMs,
+  });
 });
 BUILTIN_RUNNERS.set(runnerKey('bigquery', 'wif'), async (integration, context) => {
   if (integration.source_type !== 'bigquery') throw new Error('Expected BigQuery integration');
   const { buildBigQueryRunner } = await import('./bigquery.js');
-  return buildBigQueryRunner(integration, { tokenProvider: context.tokenProvider });
+  return buildBigQueryRunner(integration, {
+    tokenProvider: context.tokenProvider,
+    statementTimeoutMs: context.statementTimeoutMs,
+  });
 });
 BUILTIN_RUNNERS.set(runnerKey('bigquery', 'service_account'), async (integration, context) => {
   if (integration.source_type !== 'bigquery') throw new Error('Expected BigQuery integration');
   const { buildBigQueryRunner } = await import('./bigquery.js');
-  return buildBigQueryRunner(integration, { tokenProvider: context.tokenProvider });
+  return buildBigQueryRunner(integration, {
+    tokenProvider: context.tokenProvider,
+    statementTimeoutMs: context.statementTimeoutMs,
+  });
 });
 
 // Postgres — real runner (password, iam).
-BUILTIN_RUNNERS.set(runnerKey('postgres', 'password'), async (integration) => {
+BUILTIN_RUNNERS.set(runnerKey('postgres', 'password'), async (integration, context) => {
   if (integration.source_type !== 'postgres') throw new Error('Expected Postgres integration');
   const { buildPostgresRunner } = await import('./postgres.js');
-  return buildPostgresRunner(integration);
+  return buildPostgresRunner(integration, { statementTimeoutMs: context.statementTimeoutMs });
 });
-BUILTIN_RUNNERS.set(runnerKey('postgres', 'iam'), async (integration) => {
+BUILTIN_RUNNERS.set(runnerKey('postgres', 'iam'), async (integration, context) => {
   if (integration.source_type !== 'postgres') throw new Error('Expected Postgres integration');
   const { buildPostgresRunner } = await import('./postgres.js');
-  return buildPostgresRunner(integration);
+  return buildPostgresRunner(integration, { statementTimeoutMs: context.statementTimeoutMs });
 });
 
 // ClickHouse — real runner (password). Speaks the HTTP interface, so there is
@@ -110,15 +122,15 @@ BUILTIN_RUNNERS.set(runnerKey('clickhouse', 'password'), async (integration) => 
 });
 
 // Databricks — real runner (pat, oauth_m2m).
-BUILTIN_RUNNERS.set(runnerKey('databricks', 'pat'), async (integration) => {
+BUILTIN_RUNNERS.set(runnerKey('databricks', 'pat'), async (integration, context) => {
   if (integration.source_type !== 'databricks') throw new Error('Expected Databricks integration');
   const { buildDatabricksRunner } = await import('./databricks.js');
-  return buildDatabricksRunner(integration);
+  return buildDatabricksRunner(integration, { statementTimeoutMs: context.statementTimeoutMs });
 });
-BUILTIN_RUNNERS.set(runnerKey('databricks', 'oauth_m2m'), async (integration) => {
+BUILTIN_RUNNERS.set(runnerKey('databricks', 'oauth_m2m'), async (integration, context) => {
   if (integration.source_type !== 'databricks') throw new Error('Expected Databricks integration');
   const { buildDatabricksRunner } = await import('./databricks.js');
-  return buildDatabricksRunner(integration);
+  return buildDatabricksRunner(integration, { statementTimeoutMs: context.statementTimeoutMs });
 });
 
 /** Readonly handle on the registry — exported so `resolveRunner` can dispatch. */

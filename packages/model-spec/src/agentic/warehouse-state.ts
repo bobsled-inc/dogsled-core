@@ -2,13 +2,13 @@ import { resolveWarehouseCheckpointTarget } from './warehouse-checkpoint-target.
 import { createWarehouseAgenticCursorStore } from './warehouse-cursors.js';
 import { randomUUID } from 'node:crypto';
 import {
-  resolveRunner,
   throwIfCancelled,
   type IntegrationFile,
   type ResolveRunnerOptions,
 } from '@bobsled-inc/connections';
 import { caseName, quoteIdentifier } from '../compiler/dialect.js';
 import { atomicPublication, sqlPublicationDb } from './sql-publication-storage.js';
+import { openLimitedRunner } from './warehouse-statement-limit.js';
 import {
   publicationLiteral,
   publicationTableSuffix,
@@ -92,7 +92,25 @@ export function createWarehouseCheckpointStore(
       const hash = digestAgenticState(key).slice(0, 48);
       const control = `${namespace}.${q(`__dogsled_cp_${hash}_c`)}`;
       const payloads = `${namespace}.${q(`__dogsled_cp_${hash}_p`)}`;
-      const runner = await resolveRunner(integration, options);
+      let closed = false;
+      // Why this session lost ownership. The first cause stays the reported one.
+      let lost: AgenticStateError | undefined;
+      // The last snapshot this session committed or verified, keyed by its unique pointer ID,
+      // as JSON text. It is reused only while the fenced pointer still names it.
+      let confirmed: Confirmed | undefined;
+      const ownership = new AbortController();
+      const loseOwnership = (error = new AgenticStateError('lease_lost')) => {
+        lost ??= error;
+        confirmed = undefined;
+        // Still an AbortError for executors; the coordinator reads the cause.
+        ownership.abort(new DOMException(lost.message, { name: 'AbortError', cause: lost }));
+        return lost;
+      };
+      const runner = await openLimitedRunner(integration, options, {
+        // A renewal that landed late can extend the lease, so wait a whole lease from here.
+        retryAfterMs: leaseMs,
+        onTimeout: loseOwnership,
+      });
       let db: ReturnType<typeof sqlPublicationDb>;
       try {
         throwIfCancelled(options.signal);
@@ -102,20 +120,8 @@ export function createWarehouseCheckpointStore(
         throw error;
       }
       const owner = randomUUID();
-      let closed = false;
-      let lost = false;
-      // The last snapshot this session committed or verified, keyed by its unique pointer ID,
-      // as JSON text. It is reused only while the fenced pointer still names it.
-      let confirmed: Confirmed | undefined;
       // Local time at which the last successful lease extension was requested.
       let extendedAt = 0;
-      const ownership = new AbortController();
-      const loseOwnership = () => {
-        lost = true;
-        confirmed = undefined;
-        ownership.abort();
-        return new AgenticStateError('lease_lost');
-      };
       let queue: Promise<unknown> = Promise.resolve();
       const serial = <T>(fn: () => Promise<T>): Promise<T> => {
         const next = queue.then(fn);
@@ -124,7 +130,7 @@ export function createWarehouseCheckpointStore(
       };
       const guard = () => {
         throwIfCancelled(options.signal);
-        if (lost) throw new AgenticStateError('lease_lost');
+        if (lost) throw lost;
         if (closed) throw new AgenticStateError('conflict');
       };
       const predicate = `${q('owner')} = ${lit(owner)} AND ${q('expires')} > ${clock}`;

@@ -118,6 +118,19 @@ describe('buildPostgresRunner — password auth', () => {
     await buildPostgresRunner(integration, { client });
     expect(queryFn).toHaveBeenCalledWith('SET search_path TO "my_schema"');
   });
+
+  it('sets statement_timeout only when the caller asks for a limit', async () => {
+    const limited = mockPgClient();
+    await buildPostgresRunner(passwordIntegration(), {
+      client: limited.client,
+      statementTimeoutMs: 60_000,
+    });
+    expect(limited.queryFn).toHaveBeenCalledExactlyOnceWith('SET statement_timeout = 60000');
+
+    const unlimited = mockPgClient();
+    await buildPostgresRunner(passwordIntegration(), { client: unlimited.client });
+    expect(unlimited.queryFn).not.toHaveBeenCalled();
+  });
 });
 
 describe('buildPostgresRunner — cooperative cancellation', () => {

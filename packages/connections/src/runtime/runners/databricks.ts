@@ -224,6 +224,8 @@ export interface BuildDatabricksRunnerOptions {
   connection?: DatabricksConnectionLike;
   /** Override the OAuth token fetcher (for tests). */
   oauthTokenFetcher?: (host: string, clientId: string, clientSecret: string) => Promise<string>;
+  /** Server-side limit for each statement in this session. */
+  statementTimeoutMs?: number | undefined;
 }
 
 export interface DatabricksRunnerModule extends SqlRunnerModule {
@@ -337,6 +339,12 @@ export async function buildDatabricksRunner(
     const op = await session.executeStatement(
       `USE SCHEMA ${quoteWarehouseIdentifier(connConfig.schema, 'databricks')}`
     );
+    await op.close();
+  }
+
+  if (options?.statementTimeoutMs !== undefined) {
+    const seconds = Math.ceil(options.statementTimeoutMs / 1000);
+    const op = await session.executeStatement(`SET STATEMENT_TIMEOUT = ${seconds}`);
     await op.close();
   }
 
