@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Action provider messages now match percent-encoded credential values regardless of hexadecimal letter case, while preserving case-sensitive matching for literal characters.
+
 - DuckDB no longer wraps whole numbers outside the 32-bit range when they are bound as parameters: `3000000000` was stored as `-1294967296`, in `BIGINT` and `DOUBLE` columns alike, without an error. This affected agentic publication to DuckDB, so review published integer and number columns that can hold values above 2,147,483,647.
 
 - SFTP sources are hardened. Breaking for SFTP integrations: `connection.host_keys` (1 to 4 pins, each with `algorithm` plus `fingerprint` and/or `public_key`) replaces `auth.host_fingerprint` and `auth.known_hosts_path`. Dogsled asks the server only for the pinned key types, so a server that adds a new key type no longer looks like a changed host key. Connections use keepalive and a 60-second idle timeout per SFTP request, and honor cancellation. A dropped connection, timeout or full local disk now fails the run instead of skipping files, for both structured and document Resources. Downloads keep up to `connection.read_concurrency` reads in flight (default 4, max 16). Folder walks skip symlinks, and downloads refuse paths that resolve outside `base_directory`. Listings apply the Resource glob. Connection failures carry a stable code from `SFTP_ERROR_CODES`, which also appears as `error_code` in run and pipeline summaries. `ssh2` is now a declared optional peer dependency. `private_key` auth also accepts `private_key_env`, the key text in an env var, as an alternative to `private_key_path_env`. A Resource `path` without a glob can name a single SFTP file.
