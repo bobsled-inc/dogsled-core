@@ -181,18 +181,13 @@ async function readClientErrorBody(response: Response): Promise<string | undefin
   }
 }
 
-function interpolatedHeaderSecrets(
+function interpolatedHeaderValues(
   templates: Record<string, string>,
   headers: Record<string, string>
 ): string[] {
-  const values: string[] = [];
-  for (const [key, value] of Object.entries(headers)) {
-    if (templates[key] === undefined || templates[key] === value) continue;
-    values.push(value);
-    const credential = /^(?:Bearer|Basic)\s+(.+)$/i.exec(value)?.[1];
-    if (credential) values.push(credential);
-  }
-  return values;
+  return Object.entries(headers)
+    .filter(([key, value]) => templates[key] !== undefined && templates[key] !== value)
+    .map(([, value]) => value);
 }
 
 /** Executes a webhook-backed action with interpolation, timeout, and SSRF protections. */
@@ -340,7 +335,7 @@ export async function executeWebhookAction(
           },
           options,
           action.spec.auth_env_vars,
-          interpolatedHeaderSecrets(action.spec.webhook.headers, headers)
+          interpolatedHeaderValues(action.spec.webhook.headers, headers)
         ),
       };
     }

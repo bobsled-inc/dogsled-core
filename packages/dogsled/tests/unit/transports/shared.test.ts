@@ -2,10 +2,13 @@ import { DogsledRuntimeError, type DogsledRuntimeErrorOptions } from '@bobsled-i
 import { describe, expect, it } from 'vitest';
 
 import {
-  classifyTransportError,
   createActionSecretRedactor,
-  mapStatusToError,
   providerMessageFromBody,
+  requestCredentialValues,
+} from '../../../src/lib/transports/provider-message.js';
+import {
+  classifyTransportError,
+  mapStatusToError,
   safeTransportErrorMessage,
   toActionResultError,
 } from '../../../src/lib/transports/shared.js';
@@ -283,6 +286,80 @@ describe('providerMessageFromBody', () => {
     );
   });
 
+  it.each([
+    ['a formatting character', 'split-secret\u200b-value'],
+    ['a line break', 'split-secret-\r\nvalue'],
+    ['a control character', 'split-secret\u0000-value'],
+  ])('redacts a credential split by %s', (_label, echoed) => {
+    const message = providerMessageFromBody(
+      JSON.stringify({ message: `Refused ${echoed}.` }),
+      createActionSecretRedactor(['split-secret-value'])
+    );
+
+    expect(message).toBe('Refused [REDACTED].');
+  });
+
+  it('redacts a multi-line credential after its whitespace is collapsed', () => {
+    const secret = 'line-one\nline-two';
+    const message = providerMessageFromBody(
+      JSON.stringify({ message: 'Refused line-one\r\n\tline-two.' }),
+      createActionSecretRedactor([secret])
+    );
+
+    expect(message).toBe('Refused [REDACTED].');
+  });
+
+  it('redacts a credential that URL sanitizing rewrites into its plain form', () => {
+    const message = providerMessageFromBody(
+      JSON.stringify({
+        message:
+          'See https://SIGNED-HOST-VALUE.example.com/a?x=1 or https://%73igned-host-value.example.com/b',
+      }),
+      createActionSecretRedactor(['signed-host-value'])
+    );
+
+    expect(message).toBe(
+      'See https://[REDACTED].example.com/a?[redacted] or https://[REDACTED].example.com/b'
+    );
+  });
+
+  it('redacts overlapping credentials as one span', () => {
+    const message = providerMessageFromBody(
+      JSON.stringify({ message: 'Refused overlap-left-part-right now.' }),
+      createActionSecretRedactor(['overlap-left-part', 'left-part-right'])
+    );
+
+    expect(message).toBe('Refused [REDACTED] now.');
+  });
+
+  it('redacts every occurrence of a credential that starts with an astral character', () => {
+    const message = providerMessageFromBody(
+      JSON.stringify({ message: 'a \u{1F511}astral-key \u{1F511}astral-key b' }),
+      createActionSecretRedactor(['\u{1F511}astral-key'])
+    );
+
+    expect(message).toBe('a [REDACTED] [REDACTED] b');
+  });
+
+  it('redacts a credential that contains an unpaired surrogate', () => {
+    const message = providerMessageFromBody(
+      JSON.stringify({ message: 'a broken\ud800-value b' }),
+      createActionSecretRedactor(['broken\ud800-value'])
+    );
+
+    expect(message).toBe('a [REDACTED] b');
+  });
+
+  it('redacts lowercase percent-encoded and slash-escaped JSON forms', () => {
+    const secret = 'enc/oded+value';
+    const message = providerMessageFromBody(
+      JSON.stringify({ message: 'a enc%2foded%2bvalue b enc\\/oded+value c' }),
+      createActionSecretRedactor([secret])
+    );
+
+    expect(message).toBe('a [REDACTED] b [REDACTED] c');
+  });
+
   it('redacts before capping so a secret that crosses the cap leaves no prefix', () => {
     const secret = 'cap-boundary-secret-value';
     const message = providerMessageFromBody(
@@ -292,6 +369,41 @@ describe('providerMessageFromBody', () => {
 
     expect(message).not.toContain('cap-boundary');
     expect(message).toContain('[REDACTED]'.slice(0, 5));
+  });
+});
+
+describe('requestCredentialValues', () => {
+  it('adds each credential without its scheme and the decoded Basic credential', () => {
+    const payload = Buffer.from('acme-user:basic-pass-1').toString('base64');
+
+    expect(
+      requestCredentialValues([
+        'Bearer bearer-value-1',
+        `Basic ${payload}`,
+        'Token custom-value-1',
+        'application/json',
+      ])
+    ).toEqual([
+      'Bearer bearer-value-1',
+      'bearer-value-1',
+      `Basic ${payload}`,
+      payload,
+      'acme-user:basic-pass-1',
+      'basic-pass-1',
+      'Token custom-value-1',
+      'custom-value-1',
+      'application/json',
+    ]);
+  });
+
+  it('skips values and parts too short to be credentials', () => {
+    expect(requestCredentialValues(['abc', 'Key abc', 'Basic Og==', 'Basic not-base64!'])).toEqual([
+      'Key abc',
+      'Basic Og==',
+      'Og==',
+      'Basic not-base64!',
+      'not-base64!',
+    ]);
   });
 });
 

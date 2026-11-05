@@ -210,11 +210,12 @@ service that refused the Action (`permission_denied`, HTTP 403); neither is retr
 failure came from an HTTP response, `error.provider_status` holds its status. For a 4xx response
 with a JSON body, `error.provider_message` holds the provider's own reason from `error.message`,
 `message`, a string `error`, `detail`, `errors[0].message`, or `error_description`, in that order.
-Dogsled removes control characters, redacts declared credential values (including URL- and
-JSON-encoded forms), credential-shaped text, and URL query strings, and limits it to 300
-characters. It is present with `safeErrors`, which still replaces `error.message` with a stable
-text. Dogsled never returns the raw body, and omits the field for 5xx responses and for bodies
-without such a string.
+Dogsled removes control and formatting characters, sanitizes URLs, then redacts credential-shaped
+text, declared credential values, and the credentials sent with the request, including minted or
+refreshed OAuth and custom tokens, authentication header values, and decoded Basic credentials, in
+raw, URL-, form- and JSON-encoded forms. It then limits the message to 300 characters. It is
+present with `safeErrors`, which still replaces `error.message` with a stable text. Dogsled never
+returns the raw body, and omits the field for 5xx responses and for bodies without such a string.
 
 Use `@bobsled-inc/dogsled/pipeline` to run a named project pipeline with cancellation, bounded
 previews, incremental state handoff, ordered events, and structured per-resource metrics:

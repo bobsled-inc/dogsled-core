@@ -393,6 +393,7 @@ describe('executeApiAction', () => {
     expect(createClient).toHaveBeenCalledWith(resolvedIntegration, {
       secrets: { API_TOKEN: 'request-only-token' },
       env: { API_TOKEN: 'request-only-token' },
+      onResolvedSecret: expect.any(Function),
     });
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({ signal, responseBodyLimitBytes: 32 * 1024 })
@@ -551,7 +552,7 @@ describe('executeApiAction', () => {
         name: 'salesforce',
         transport: expect.objectContaining({ type: 'http', base_url: 'https://api.example.com' }),
       }),
-      undefined
+      { onResolvedSecret: expect.any(Function) }
     );
     expect(result.status).toBe('success');
   });

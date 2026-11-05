@@ -1,8 +1,12 @@
-import { readProviderResponseBody, sanitizeUrlForError } from '@bobsled-inc/extractor/core';
+import { readProviderResponseBody } from '@bobsled-inc/extractor/core';
 import { DOGSLED_RUNTIME_ERROR_KINDS, type DogsledRuntimeErrorKind } from '@bobsled-inc/protocol';
 
-import { createPipelineRedactor } from '../../pipeline/redaction.js';
 import type { ActionErrorCode, ActionResult, ExecuteOptions } from '../action-executor.js';
+import {
+  createActionSecretRedactor,
+  providerMessageFromBody,
+  requestCredentialValues,
+} from './provider-message.js';
 
 export interface TransportErrorClassification {
   code: ActionErrorCode;
@@ -40,7 +44,6 @@ const NETWORK_ERROR_CODES = new Set([
   'EPIPE',
 ]);
 const DOGSLED_RUNTIME_ERROR_KIND_SET: ReadonlySet<string> = new Set(DOGSLED_RUNTIME_ERROR_KINDS);
-const MAX_PROVIDER_MESSAGE_CHARS = 300;
 
 interface RuntimeFailure {
   kind: DogsledRuntimeErrorKind;
@@ -235,33 +238,6 @@ export function classifyTransportError(
   return { code: 'unknown', message, retryable: false };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function secretRedactionVariants(value: string): string[] {
-  return [
-    value,
-    encodeURIComponent(value),
-    new URLSearchParams({ value }).toString().slice('value='.length),
-    JSON.stringify(value).slice(1, -1),
-  ];
-}
-
-/**
- * Build a redactor for provider text from the credential values an Action could
- * send, including their URL- and JSON-encoded forms.
- */
-export function createActionSecretRedactor(
-  values: Iterable<string | undefined>
-): (value: string) => string {
-  const variants: string[] = [];
-  for (const value of values) {
-    if (value) variants.push(...secretRedactionVariants(value));
-  }
-  return createPipelineRedactor(variants);
-}
-
 function actionSecretValues(
   options: ExecuteOptions | undefined,
   authEnvVars: readonly string[] | undefined
@@ -279,68 +255,20 @@ function actionSecretValues(
   return values;
 }
 
-function boundProviderMessage(
-  value: string,
-  redact: (value: string) => string
-): string | undefined {
-  const condensed = redact(value)
-    .replace(/\p{Cf}+/gu, '')
-    .replace(/[\p{Cc}\s]+/gu, ' ')
-    .trim()
-    .replace(/https?:\/\/[^\s"'<>)\]]+/gi, (url) => sanitizeUrlForError(url));
-  if (!condensed) return undefined;
-  const characters = Array.from(condensed);
-  return characters.length > MAX_PROVIDER_MESSAGE_CHARS
-    ? `${characters.slice(0, MAX_PROVIDER_MESSAGE_CHARS - 1).join('')}…`
-    : condensed;
-}
-
-/**
- * Extract the error prose from a JSON provider error body. Only well-known
- * message fields are read; the raw body is never returned.
- */
-export function providerMessageFromBody(
-  body: string,
-  redact: (value: string) => string
-): string | undefined {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(body) as unknown;
-  } catch {
-    return undefined;
-  }
-  if (!isRecord(parsed)) return undefined;
-
-  const { error, errors } = parsed;
-  const candidates = [
-    isRecord(error) ? error['message'] : undefined,
-    parsed['message'],
-    error,
-    parsed['detail'],
-    Array.isArray(errors) && isRecord(errors[0]) ? errors[0]['message'] : undefined,
-    parsed['error_description'],
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate !== 'string') continue;
-    const message = boundProviderMessage(candidate, redact);
-    if (message) return message;
-  }
-  return undefined;
-}
-
 function isClientErrorStatus(status: number | undefined): status is number {
   return status !== undefined && status >= 400 && status <= 499;
 }
 
 /**
  * Build the Action result error. Adds the provider status and, for a 4xx, a bounded
- * provider message with the Action's declared credential values redacted.
+ * provider message with the Action's declared credential values and the values it
+ * sent with the request redacted.
  */
 export function toActionResultError(
   classification: TransportErrorClassification,
   options: ExecuteOptions | undefined,
   authEnvVars: readonly string[] | undefined,
-  requestSecretValues: readonly string[] = []
+  requestSecretValues: Iterable<string> = []
 ): ActionResultError {
   const { providerStatus, providerBody, ...normalized } = classification;
   const providerMessage =
@@ -349,7 +277,7 @@ export function toActionResultError(
           providerBody,
           createActionSecretRedactor([
             ...actionSecretValues(options, authEnvVars),
-            ...requestSecretValues,
+            ...requestCredentialValues(requestSecretValues),
           ])
         )
       : undefined;

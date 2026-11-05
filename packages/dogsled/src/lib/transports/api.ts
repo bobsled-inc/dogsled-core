@@ -85,6 +85,7 @@ export interface ApiTransportDeps {
       secrets?: Record<string, string | undefined>;
       declaredSecretNames?: readonly string[];
       env?: Record<string, string | undefined>;
+      onResolvedSecret?: (value: string) => void;
     }
   ) => ApiClientLike;
   loadIntegration?: (name: string) => HttpApiActionIntegration;
@@ -251,6 +252,7 @@ export async function executeApiAction(
 
   let mapped: InterpolationMappedValues;
   let integration: HttpApiActionIntegration | undefined;
+  const sentValues = new Set<string>();
   try {
     options?.signal?.throwIfAborted();
     integration = resolveHttpIntegration(action, options, deps);
@@ -336,15 +338,14 @@ export async function executeApiAction(
       deps?.createClient ??
       ((resolvedIntegration: ApiIntegrationSpec, clientOptions) =>
         new ExtractorClient({ integration: resolvedIntegration, ...clientOptions }));
-    const clientOptions =
-      options?.secrets !== undefined
-        ? {
-            secrets: options.secrets,
-            env: options.secrets,
-            declaredSecretNames: options.declaredSecretNames,
-          }
-        : undefined;
-    const client = createClient(integration, clientOptions);
+    const client = createClient(integration, {
+      ...(options?.secrets !== undefined && {
+        secrets: options.secrets,
+        env: options.secrets,
+        declaredSecretNames: options.declaredSecretNames,
+      }),
+      onResolvedSecret: (value) => sentValues.add(value),
+    });
     let response: Awaited<ReturnType<ApiClientLike['request']>>;
     try {
       const signal = actionRequestSignal(options);
@@ -394,7 +395,7 @@ export async function executeApiAction(
       transport: action.transport,
       attempted_at: attemptedAt,
       duration_ms: Date.now() - startedAt,
-      error: toActionResultError(normalized, options, integration?.auth_env_vars),
+      error: toActionResultError(normalized, options, integration?.auth_env_vars, sentValues),
     };
   }
 }
