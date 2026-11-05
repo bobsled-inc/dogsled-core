@@ -1,4 +1,5 @@
 /** Reading and writing a run's immutable rows. Knows nothing of ownership. */
+import { randomUUID } from 'node:crypto';
 import type { SqlParamValue } from '@bobsled-inc/connections';
 import type { AgenticRowDb, AgenticRowDialect } from './row-state-dialect.js';
 import {
@@ -16,6 +17,8 @@ import { AgenticStateError } from './state.js';
 // plus the start rows of finished attempts.
 const maxStoredChars = 64 * 1024 * 1024;
 const maxStoredWrites = 65_536;
+/** Expired runs removed per acquisition, so a backlog cannot delay a run. */
+const maxPurgedRuns = 64;
 const insertColumns = agenticRowColumns.map((column) => column.name);
 
 function insertBatches(rows: AgenticStoredRow[], dialect: AgenticRowDialect) {
@@ -60,24 +63,44 @@ export interface AgenticRunRows {
   hash: string;
 }
 
-/** Removes runs past their retention date, other than the one being opened. */
+/**
+ * Removes runs past their retention date, other than the one being opened. The purge takes
+ * each run as an owner would, so a resume cannot start while its rows are being deleted. If
+ * it stops partway, its lease ends, the header is still expired, and a later purge finishes.
+ * Everything is by run ID, so it touches only the runs it removes.
+ */
 export async function purgeExpiredAgenticRuns(
   { db, dialect, table, hash }: AgenticRunRows,
-  runs: string
+  runs: string,
+  leaseMs: number
 ): Promise<void> {
   const q = dialect.identifier;
   const { clock } = dialect;
-  const statement = agenticStatement(dialect);
-  const expired = `${q('retain_until')} <= ${clock} AND ${q('reclaimable')} AND ${q('lease_expires')} <= ${clock} AND ${q('run_hash')} <> ${statement.bind(hash)}`;
-  const due = await db.query(`SELECT 1 AS due FROM ${runs} WHERE ${expired} LIMIT 1`, [
-    ...statement.params,
-  ]);
-  if (!due.length) return;
-  // Remove the header first: rows without one are unreachable, so a crash here loses nothing.
-  await db.query(`DELETE FROM ${runs} WHERE ${expired}`, statement.params);
-  await db.run(
-    `DELETE FROM ${table} WHERE ${q('run_hash')} NOT IN (SELECT ${q('run_hash')} FROM ${runs})`
+  const id = q('run_hash');
+  const expired = (statement: ReturnType<typeof agenticStatement>): string =>
+    `${q('retain_until')} <= ${clock} AND ${q('reclaimable')} AND ${q('lease_expires')} <= ${clock} AND ${id} <> ${statement.bind(hash)}`;
+  const find = agenticStatement(dialect);
+  const due = await db.query(
+    `SELECT ${id} FROM ${runs} WHERE ${expired(find)} LIMIT ${maxPurgedRuns}`,
+    find.params
   );
+  if (!due.length) return;
+  const owner = randomUUID();
+  const claim = agenticStatement(dialect);
+  const set = `${q('lease_owner')} = ${claim.bind(owner)}, ${q('lease_expires')} = ${clock} + ${claim.bind(leaseMs)}`;
+  const candidates = due.map((row) => claim.bind(String(row.run_hash))).join(', ');
+  await dialect.changed(
+    db,
+    `UPDATE ${runs} SET ${set} WHERE ${id} IN (${candidates}) AND ${expired(claim)}`,
+    claim.params
+  );
+  const mine = `${q('lease_owner')} = ${dialect.bind(1)}`;
+  const claimed = await db.query(`SELECT ${id} FROM ${runs} WHERE ${mine}`, [owner]);
+  if (!claimed.length) return;
+  const remove = agenticStatement(dialect);
+  const ids = claimed.map((row) => remove.bind(String(row.run_hash))).join(', ');
+  await db.query(`DELETE FROM ${table} WHERE ${id} IN (${ids})`, remove.params);
+  await db.query(`DELETE FROM ${runs} WHERE ${mine}`, [owner]);
 }
 
 /** Inserts one write. `beforeBatch` runs before each statement, so a long write can stop or

@@ -32,6 +32,8 @@ type Fault = (
 /** A real DuckDB file behind a connection that can lose a statement or its reply. */
 interface Faults {
   next?: Fault;
+  /** Runs just before a statement, on the same connection. */
+  before?: (sql: string, db: AgenticRowDb) => Promise<void>;
   handling?: StatementTimeoutHandling;
   statements: string[];
 }
@@ -45,6 +47,7 @@ function faultyBackend(file: string, faults: Faults): AgenticRowBackend {
     },
     query: async (sql, params) => {
       faults.statements.push(sql);
+      await faults.before?.(sql, db);
       const fault = faults.next?.(sql, params);
       if (fault === 'lose_before') throw new Error('Synthetic failure before the statement');
       const rows = await db.query(sql, params);
@@ -87,6 +90,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
   });
   afterEach(() => {
     delete faults.next;
+    delete faults.before;
     faults.statements = [];
     for (const directory of directories.splice(0)) {
       rmSync(directory, { recursive: true, force: true });
@@ -97,10 +101,11 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     directories.push(directory);
     const file = join(directory, 'state.duckdb');
     const backend = faultyBackend(file, faults);
-    const open = (key: AgenticStoreScenario['key'], leaseMs = 10_000) =>
+    const open = (key: AgenticStoreScenario['key'], options: { retentionMs?: number } = {}) =>
       openAgenticRowSession(backend, key, {
-        ownership: { mode: 'lease', leaseMs },
+        ownership: { mode: 'lease', leaseMs: 10_000 },
         limits: AGENTIC_DEFAULT_STORE_LIMITS,
+        ...options,
       });
     const sql = async (statement: string) => {
       const runner = await buildDuckDbRunner(duckDbStateFile(file));
@@ -331,6 +336,62 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     expect(days).toBeGreaterThan(29.9);
     expect(days).toBeLessThanOrEqual(30);
     await session.release();
+  });
+
+  it('leaves a run alone when a resume claims it just before the purge does', async () => {
+    const { open, sql } = await fixture();
+    const elsewhere = { ...map.key, scope: 'elsewhere' };
+    const second = { ...map, key: elsewhere, initial: { ...map.initial, key: elsewhere } };
+    for (const scenario of [map, second]) {
+      const session = await open(scenario.key);
+      await replay(session, scenario, 2);
+      await session.release();
+    }
+    await sql(`UPDATE ${schema}.__dogsled_agentic_runs SET retain_until = 0`);
+    const rowsOf = async (scope: string) => {
+      const [row] = await sql(
+        `SELECT count(*) AS n FROM ${schema}.__dogsled_agentic_rows WHERE run_hash IN (SELECT run_hash FROM ${schema}.__dogsled_agentic_runs WHERE scope = '${scope}')`
+      );
+      return Number(row!.n as bigint);
+    };
+    const before = await rowsOf(map.key.scope);
+    expect(before).toBeGreaterThan(0);
+    // The purge has seen both runs as expired. A resume wins one before the purge's claim lands.
+    faults.before = async (statement, db) => {
+      if (!/^UPDATE .*__dogsled_agentic_runs.* SET "lease_owner"/.test(statement)) return;
+      delete faults.before;
+      await db.run(
+        `UPDATE ${schema}.__dogsled_agentic_runs SET lease_owner = 'resume', lease_expires = CAST(epoch(now()) * 1000 AS BIGINT) + 60000 WHERE scope = '${map.key.scope}'`
+      );
+    };
+    const other = await open({ ...map.key, id: 'other', scope: 'third' });
+    await other.release();
+    expect(faults.before).toBeUndefined();
+    expect(await rowsOf(map.key.scope)).toBe(before);
+    const headers = await sql(
+      `SELECT scope, lease_owner FROM ${schema}.__dogsled_agentic_runs ORDER BY scope`
+    );
+    // The resumed run stays, the other expired run is gone, and the new run has its header.
+    expect(headers).toEqual([
+      { scope: map.key.scope, lease_owner: 'resume' },
+      { scope: 'third', lease_owner: '' },
+    ]);
+  });
+
+  it('finishes a purge that stopped partway', async () => {
+    const { open, sql, expire } = await fixture();
+    const first = await open(map.key, { retentionMs: 1 });
+    await replay(first, map, 2);
+    await first.release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    faults.next = once(/^DELETE FROM .*__dogsled_agentic_runs/, 'lose_before');
+    await expect(open({ ...map.key, id: 'other' })).rejects.toThrow('Synthetic');
+    // The rows are gone and the header is still there, under the purge's own lease.
+    await expire();
+    const other = await open({ ...map.key, id: 'other' });
+    await other.release();
+    const headers = await sql(`SELECT run_id FROM ${schema}.__dogsled_agentic_runs`);
+    expect(headers.map((row) => row.run_id)).toEqual(['other']);
   });
 
   it('reports a statement timeout as the reason the session stopped', async () => {

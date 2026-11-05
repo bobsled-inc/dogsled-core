@@ -153,7 +153,7 @@ export async function openAgenticRowSession(
   const stored = (db: AgenticRowDb): AgenticRunRows => ({ db, dialect, table: rows, hash });
   const claim = async (db: AgenticRowDb): Promise<void> => {
     await ensureAgenticRowTables(db, backend, namespace);
-    if (lease) await purgeExpiredAgenticRuns(stored(db), runs);
+    if (lease) await purgeExpiredAgenticRuns(stored(db), runs, lease.leaseMs);
     await dialect.insertIfAbsent(
       db,
       runs,
