@@ -121,6 +121,7 @@
     "google-auth-library": "catalog:",
     "globals": "catalog:dev-packages",
     "openapi-types": "catalog:",
+    "ssh2": "catalog:",
     "tsup": "catalog:cli",
     "tsx": "catalog:dev-packages",
     "typescript": "catalog:dev-packages",
