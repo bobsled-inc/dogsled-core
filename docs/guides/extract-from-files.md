@@ -204,7 +204,7 @@ An incremental run replaces each new or changed file's rows in all four tables:
 the loader deletes the file's previous rows by `document_id`, then writes the new
 ones. A file that now has fewer chunks keeps no old chunks, and files that did not
 change keep their rows, including their `__acl` evidence. If the new version cannot
-be downloaded, the file keeps its last good rows and `__parse_errors` records the
+be downloaded or exceeds `max_file_size_mb`, the file keeps its last good rows and `__parse_errors` records the
 failure. A deleted file keeps its rows until a `--full-refresh` run. Table
 destinations apply this; file destinations write each run's rows as new files.
 

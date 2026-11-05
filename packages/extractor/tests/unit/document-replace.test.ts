@@ -22,7 +22,10 @@ type Message = {
   record?: Record<string, unknown>;
 };
 
-function resource(method: 'full_refresh' | 'incremental_append'): FileResourceSpec {
+function resource(
+  method: 'full_refresh' | 'incremental_append',
+  maxFileSizeMb?: number
+): FileResourceSpec {
   return {
     spec_version: '1',
     type: 'resource',
@@ -32,7 +35,11 @@ function resource(method: 'full_refresh' | 'incremental_append'): FileResourceSp
     source: {
       kind: 'document',
       path: '*.md',
-      parse: { formats: ['md'], on_error: 'record' },
+      parse: {
+        formats: ['md'],
+        on_error: 'record',
+        ...(maxFileSizeMb === undefined ? {} : { max_file_size_mb: maxFileSizeMb }),
+      },
       chunk: { max_tokens: 200, overlap_tokens: 20, tokenizer: 'cl100k_base' },
       ingest: { mode: 'extract' },
       permissions: { capture: true, enforcement: { enabled: false } },
@@ -46,7 +53,8 @@ function resource(method: 'full_refresh' | 'incremental_append'): FileResourceSp
 async function run(
   baseDir: string,
   state: ExtractorState,
-  method: 'full_refresh' | 'incremental_append' = 'incremental_append'
+  method: 'full_refresh' | 'incremental_append' = 'incremental_append',
+  maxFileSizeMb?: number
 ): Promise<Message[]> {
   const stdout = new FakeWritable();
   await extractDocumentResource({
@@ -58,7 +66,7 @@ async function run(
       connection: { base_directory: baseDir },
       auth: { type: 'none' },
     } as unknown as IntegrationSpec,
-    resource: resource(method),
+    resource: resource(method, maxFileSizeMb),
     integrationName: 'local_docs',
     emitter: new Emitter('stdout', 'output', { stdoutStream: stdout }),
     logger: new ControlLogger({ stream: new FakeWritable() }),
@@ -142,6 +150,15 @@ describe('document Resources replace a changed file per stream', () => {
       new Set(messages.filter((m) => m.type === 'SCHEMA').map((m) => m.load_strategy))
     ).toEqual(new Set(['full_refresh']));
     expect(replaced(messages)).toEqual([]);
+  });
+
+  it('keeps the last good rows of a file that exceeds a lowered size limit', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'doc-replace-'));
+    await writeFile(path.join(dir, 'a.md'), '# A\n\nfirst.');
+    const state: ExtractorState = { streams: {} };
+    await run(dir, state);
+    const messages = await run(dir, state, 'incremental_append', 0.000001);
+    expect(replaced(messages)).toEqual(['docs__parse_errors:document_id:1']);
   });
 
   it('keeps the last good rows when the new version cannot be downloaded', async () => {

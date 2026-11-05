@@ -229,9 +229,9 @@ export async function extractDocumentResource(
       // the __parse_errors data stream or any thrown error message in this loop.
       const safeUri = sanitizeUriForError(file.uri);
       if (file.size !== undefined && file.size > maxBytes) {
-        // Schema-before-record contract: parse-errors stream must declare its schema
-        // before the first RECORD even when the very first file fails the size check.
-        await replaceFileRows(documentId(file.uri));
+        // The file was not read, so its last good rows stay; only the error is current.
+        // This also emits the schemas before the first RECORD.
+        await replaceFileRows(documentId(file.uri), [parseErrorsStream]);
         await emitParseError(emitter, parseErrorsStream, {
           document_id: documentId(file.uri),
           source_uri: safeUri,
