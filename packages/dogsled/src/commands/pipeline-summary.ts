@@ -22,6 +22,7 @@ export interface StreamSummary {
   extract_ms: number;
   load_ms: number;
   error?: string;
+  error_code?: string;
   cause?: SerializedErrorCause;
   /** Set when the extractor emits a `resource_skip` PROGRESS event for this stream. */
   skipped?: boolean;
@@ -100,6 +101,8 @@ function parseStderrLine(summary: PipelineSummary, line: string, loaderRowRegex:
       if (match) {
         const stream = getOrCreateStream(summary, match[1]!);
         stream.error = mergeStreamError(stream.error, match[2]!);
+        const errorCode = message.attributes?.['error_code'];
+        if (typeof errorCode === 'string') stream.error_code ??= errorCode;
       }
     }
 
@@ -111,6 +114,8 @@ function parseStderrLine(summary: PipelineSummary, line: string, loaderRowRegex:
         const stream = getOrCreateStream(summary, resource);
         if (typeof error === 'string') stream.error = mergeStreamError(stream.error, error);
         if (isSerializedErrorCause(cause)) stream.cause = cause;
+        const errorCode = message.attributes?.['error_code'];
+        if (typeof errorCode === 'string') stream.error_code ??= errorCode;
       }
     }
 
@@ -190,6 +195,7 @@ export function mergeSummary(target: PipelineSummary, source: PipelineSummary): 
       existing.load_ms += stream.load_ms;
       existing.error = mergeStreamError(existing.error, stream.error);
       existing.cause = existing.cause ?? stream.cause;
+      existing.error_code = existing.error_code ?? stream.error_code;
       existing.skipped = existing.skipped || stream.skipped;
       existing.skipped_reason = existing.skipped_reason ?? stream.skipped_reason;
     } else {
@@ -251,6 +257,7 @@ export function buildPipelineSummaryMessage(
             load_ms: stream.load_ms,
             duration_ms: stream.extract_ms + stream.load_ms,
             ...(stream.error ? { error: stream.error } : {}),
+            ...(stream.error && stream.error_code ? { error_code: stream.error_code } : {}),
             ...(status === 'skipped' && stream.skipped_reason
               ? { skipped_reason: stream.skipped_reason }
               : {}),

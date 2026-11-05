@@ -2,7 +2,15 @@
 
 ## Unreleased
 
+- SFTP sources are hardened. Breaking for SFTP integrations: `connection.host_keys` (1 to 4 pins, each with `algorithm` plus `fingerprint` and/or `public_key`) replaces `auth.host_fingerprint` and `auth.known_hosts_path`. Dogsled asks the server only for the pinned key types, so a server that adds a new key type no longer looks like a changed host key. Connections use keepalive and a 60-second idle timeout per SFTP request, and honor cancellation. A dropped connection, timeout or full local disk now fails the run instead of skipping files, for both structured and document Resources. Downloads keep up to `connection.read_concurrency` reads in flight (default 4, max 16). Folder walks skip symlinks, and downloads refuse paths that resolve outside `base_directory`. Listings apply the Resource glob. Connection failures carry a stable code from `SFTP_ERROR_CODES`, which also appears as `error_code` in run and pipeline summaries. `ssh2` is now a declared optional peer dependency. `private_key` auth also accepts `private_key_env`, the key text in an env var, as an alternative to `private_key_path_env`. A Resource `path` without a glob can name a single SFTP file.
+
 - Incremental document Resources replace each changed file's rows per file. The extractor sends a new `REPLACE` protocol message per changed file and stream, and table destinations delete the file's previous `__documents`, `__chunks`, `__parse_errors` and `__acl` rows before writing the new ones. A file that shrinks leaves no old chunks, and unchanged files keep their rows, including their ACL evidence. Before, every incremental run replaced the four tables with only the changed files. `__acl` rows now carry `document_id`; run one `--full-refresh` after upgrading if you capture permissions. Every table destination implements the new required `DatabaseDestination.deleteRows` method; custom destinations must add it. File destinations write each run as new files and ignore `REPLACE`. The second incremental document run also no longer fails to read its own state file.
+
+- The MySQL destination now indexes string key columns by their first 255 characters, which MySQL requires for `TEXT` columns, and rejects longer key values with `KEY_VALUE_TOO_LONG`. String primary keys failed at table setup before.
+
+- In file Resource paths, `**/` now also matches zero folders, so `**/*.csv` includes top-level files for local, S3 and SFTP sources, as in common glob tools.
+
+- Structured file Resources (CSV, JSONL, Parquet) with `replication.method: incremental_append` now load with `append` by default instead of replacing the table with only the new files. An explicit `extract.table.load_strategy` and `--full-refresh` still take precedence.
 
 - Use `dogsled-get-started` to set up your own connections, sources, pipelines and models. Guided TV Night and Retail lessons now start with `dogsled-tutorials`; existing tutorial progress and onboarding commands still work.
 

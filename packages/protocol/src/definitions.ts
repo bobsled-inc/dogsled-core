@@ -432,6 +432,8 @@ export interface RunSummaryResourceEntry {
   api_calls: number;
   duration_ms: number;
   error?: string;
+  /** Stable `DogsledRuntimeError.code` (for example `SFTP_CONNECTION_LOST`) when one caused the failure. */
+  error_code?: string;
   failure_reason?: FailureReason;
   cursor_value?: string;
   field_coverage?: Record<string, FieldCoverage>;
@@ -467,6 +469,8 @@ export interface PipelineStreamSummary {
   load_ms: number;
   duration_ms: number;
   error?: string;
+  /** Stable `DogsledRuntimeError.code` reported by the extractor for this stream. */
+  error_code?: string;
   /** Present only when `status === 'skipped'`; the structured skip cause. */
   skipped_reason?: SkippedReason;
 }

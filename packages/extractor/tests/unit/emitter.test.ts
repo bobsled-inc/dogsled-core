@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Emitter } from '../../src/runtime/emitter.js';
+import { buildSchemaMessage } from '../../src/runtime/schema-message.js';
 import { FakeWritable } from '../helpers/fixtures.js';
 
 import type { Writable } from 'node:stream';
@@ -381,5 +382,37 @@ describe('Emitter', () => {
 
     expect(fileStream.chunks).toHaveLength(2);
     expect(fileStream.chunks.map((chunk) => JSON.parse(chunk).record.id)).toEqual([1, 2]);
+  });
+});
+
+describe('buildSchemaMessage for file Resources', () => {
+  const fileResource = {
+    name: 'events',
+    output: { id: { type: 'integer' as const } },
+    replication: { method: 'incremental_append' },
+  };
+
+  it('appends incremental_append file Resources instead of replacing the table', () => {
+    expect(buildSchemaMessage(fileResource).load_strategy).toBe('append');
+    expect(
+      buildSchemaMessage({ ...fileResource, extract: { table: { primary_key: ['id'] } } })
+        .load_strategy
+    ).toBe('append');
+  });
+
+  it('keeps explicit load_strategy and --full-refresh above the file default', () => {
+    expect(buildSchemaMessage(fileResource, { fullRefresh: true }).load_strategy).toBe(
+      'full_refresh'
+    );
+    expect(
+      buildSchemaMessage({ ...fileResource, extract: { table: { load_strategy: 'merge' } } })
+        .load_strategy
+    ).toBe('merge');
+  });
+
+  it('keeps full_refresh file Resources as full_refresh', () => {
+    expect(
+      buildSchemaMessage({ ...fileResource, replication: { method: 'full_refresh' } }).load_strategy
+    ).toBe('full_refresh');
   });
 });

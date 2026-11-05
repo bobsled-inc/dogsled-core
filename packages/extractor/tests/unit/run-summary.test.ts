@@ -129,6 +129,22 @@ describe('buildRunSummary', () => {
     vi.useRealTimers();
   });
 
+  it('carries the runtime error code into the resource entry', () => {
+    const summary = buildRunSummary('sftp', new Date(), [
+      {
+        resource: 'events',
+        status: 'error',
+        records_emitted: 0,
+        api_calls: 0,
+        duration_ms: 5,
+        error: 'The provider could not complete the operation.',
+        error_code: 'SFTP_CONNECTION_LOST',
+        failure_reason: 'transient_error',
+      },
+    ]);
+    expect(summary.resources.events).toMatchObject({ error_code: 'SFTP_CONNECTION_LOST' });
+  });
+
   it('omits field_coverage when none is reported', () => {
     const summary = buildRunSummary('github', new Date('2026-04-15T16:00:00.000Z'), [
       { resource: 'issues', status: 'success', records_emitted: 1, api_calls: 1, duration_ms: 10 },

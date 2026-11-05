@@ -81,12 +81,18 @@ describe('file storage declarations', () => {
   it.each([
     {
       source_type: 'sftp',
-      connection: { host: 'example.com', username: 'test', base_directory: '/' },
-      auth: {
-        type: 'password',
-        password_env: 'CANARY',
-        host_fingerprint: 'SHA256:abcdefghijklmnopqrstuvwx',
+      connection: {
+        host: 'example.com',
+        username: 'test',
+        base_directory: '/',
+        host_keys: [
+          {
+            algorithm: 'ssh-ed25519',
+            fingerprint: 'SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+          },
+        ],
       },
+      auth: { type: 'password', password_env: 'CANARY' },
     },
     {
       source_type: 'gcs',

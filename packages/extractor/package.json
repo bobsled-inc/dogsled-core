@@ -97,7 +97,8 @@
   "peerDependencies": {
     "@clickhouse/client": ">=1.0.0",
     "@google-cloud/bigquery": ">=8.1.1",
-    "google-auth-library": ">=9.0.0"
+    "google-auth-library": ">=9.0.0",
+    "ssh2": ">=1.17.0"
   },
   "peerDependenciesMeta": {
     "@clickhouse/client": {
@@ -107,6 +108,9 @@
       "optional": true
     },
     "google-auth-library": {
+      "optional": true
+    },
+    "ssh2": {
       "optional": true
     }
   },
@@ -125,7 +129,9 @@
     "tsx": "catalog:dev-packages",
     "typescript": "catalog:dev-packages",
     "@vitest/coverage-v8": "catalog:testing",
-    "vitest": "catalog:testing"
+    "vitest": "catalog:testing",
+    "@types/ssh2": "1.15.5",
+    "ssh2": "1.17.0"
   },
   "description": "YAML-driven API, warehouse, file, and MCP extraction runtime for Dogsled.",
   "keywords": [

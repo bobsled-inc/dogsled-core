@@ -1,3 +1,5 @@
+import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+
 import type { FileResourceSpec, ExtractorState, IntegrationSpec } from '../types/index.js';
 import type { ControlLogger } from '../runtime/control.js';
 import type { Emitter } from '../runtime/emitter.js';
@@ -97,32 +99,67 @@ export async function runFileStorageResourceExtraction({
       },
     };
   } catch (error) {
-    const duration = Date.now() - startedAt;
-    const message = getErrorMessage(error);
-    const failureReason = classifyFailureReason(error);
-    const cause = serializeExtractorErrorCause(error);
-    await logger.error(`Failed: ${integrationName}/${resource.name}: ${message}`);
-    circuitBreaker.recordFailure();
-    await logger.progress('resource_error', resource.name, {
-      error: message,
-      failure_reason: failureReason,
-      ...(cause ? { cause: { ...cause } } : {}),
+    return reportFileStorageFailure({
+      error,
+      integrationName,
+      resource,
+      logger,
+      startedAt,
+      circuitBreaker,
     });
-    return {
-      recordsEmitted: 0,
-      failed: true,
-      resourceResult: {
-        resource: resource.name,
-        status: 'error',
-        records_emitted: 0,
-        api_calls: 0,
-        duration_ms: duration,
-        error: message,
-        failure_reason: failureReason,
-      },
-    };
   } finally {
     process.removeListener('SIGINT', onSigint);
     process.removeListener('SIGTERM', onSigterm);
   }
+}
+
+/** Report a failed file Resource the same way for structured and document extraction. */
+export async function reportFileStorageFailure({
+  error,
+  integrationName,
+  resource,
+  logger,
+  startedAt,
+  circuitBreaker,
+}: {
+  error: unknown;
+  integrationName: string;
+  resource: FileResourceSpec;
+  logger: ControlLogger;
+  startedAt: number;
+  circuitBreaker: ResourceCircuitBreaker;
+}): Promise<FileStorageCommandResult> {
+  const duration = Date.now() - startedAt;
+  const message = getErrorMessage(error);
+  const failureReason = classifyFailureReason(error);
+  const cause = serializeExtractorErrorCause(error);
+  const errorCode = error instanceof DogsledRuntimeError ? error.code : undefined;
+  // The code rides as an attribute so it survives --quiet, which drops PROGRESS.
+  await logger.log(
+    'error',
+    `Failed: ${integrationName}/${resource.name}: ${message}`,
+    undefined,
+    errorCode ? { error_code: errorCode } : undefined
+  );
+  circuitBreaker.recordFailure();
+  await logger.progress('resource_error', resource.name, {
+    error: message,
+    failure_reason: failureReason,
+    ...(errorCode ? { error_code: errorCode } : {}),
+    ...(cause ? { cause: { ...cause } } : {}),
+  });
+  return {
+    recordsEmitted: 0,
+    failed: true,
+    resourceResult: {
+      resource: resource.name,
+      status: 'error',
+      records_emitted: 0,
+      api_calls: 0,
+      duration_ms: duration,
+      error: message,
+      ...(errorCode ? { error_code: errorCode } : {}),
+      failure_reason: failureReason,
+    },
+  };
 }

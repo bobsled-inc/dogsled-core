@@ -5,7 +5,10 @@ import {
   isFileStorageResource,
   isLookupOnlyApiResource,
 } from '../framework/extractor/index.js';
-import { runFileStorageResourceExtraction } from '../commands/extract-file-storage.js';
+import {
+  reportFileStorageFailure,
+  runFileStorageResourceExtraction,
+} from '../commands/extract-file-storage.js';
 import type { Emitter } from './emitter.js';
 import type { ControlLogger } from './control.js';
 import { extractDocumentResource } from './document-extraction.js';
@@ -125,19 +128,32 @@ export async function dispatchSourceKind(ctx: DispatchContext): Promise<Dispatch
           `Resource "${ctx.resource.name}" classified as file_storage_document but failed type narrowing.`
         );
       }
-      const result = await extractDocumentResource({
-        integration: ctx.integration,
-        resource: ctx.resource,
-        integrationName: ctx.integrationName,
-        emitter: ctx.emitter,
-        logger: ctx.logger,
-        state: ctx.state,
-        stateStore: ctx.stateStore,
-        advanceState: ctx.advanceState,
-        fullRefresh: ctx.fullRefresh,
-        limit: ctx.limit,
-        startedAt: ctx.startedAt,
-      });
+      let result: Awaited<ReturnType<typeof extractDocumentResource>>;
+      try {
+        result = await extractDocumentResource({
+          integration: ctx.integration,
+          resource: ctx.resource,
+          integrationName: ctx.integrationName,
+          emitter: ctx.emitter,
+          logger: ctx.logger,
+          state: ctx.state,
+          stateStore: ctx.stateStore,
+          advanceState: ctx.advanceState,
+          fullRefresh: ctx.fullRefresh,
+          limit: ctx.limit,
+          startedAt: ctx.startedAt,
+        });
+      } catch (error) {
+        const failure = await reportFileStorageFailure({
+          error,
+          integrationName: ctx.integrationName,
+          resource: ctx.resource,
+          logger: ctx.logger,
+          startedAt: ctx.startedAt,
+          circuitBreaker: ctx.circuitBreaker,
+        });
+        return { handled: true, ...failure };
+      }
       const duration = Date.now() - ctx.startedAt;
       const totalRecords =
         result.documentsEmitted + result.chunksEmitted + result.parseErrorsEmitted;

@@ -10,6 +10,7 @@ export interface ResourceResult {
   api_calls: number;
   duration_ms: number;
   error?: string;
+  error_code?: string;
   failure_reason?: FailureReason;
   cursor_value?: string;
   field_coverage?: Record<string, FieldCoverage>;
@@ -58,6 +59,7 @@ export function buildRunSummary(
           api_calls: r.api_calls,
           duration_ms: r.duration_ms,
           ...(r.error ? { error: r.error } : {}),
+          ...(r.error_code ? { error_code: r.error_code } : {}),
           ...(r.failure_reason ? { failure_reason: r.failure_reason } : {}),
           ...(r.cursor_value ? { cursor_value: r.cursor_value } : {}),
           ...(r.field_coverage ? { field_coverage: r.field_coverage } : {}),

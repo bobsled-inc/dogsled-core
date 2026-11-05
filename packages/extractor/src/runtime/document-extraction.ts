@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { DogsledRuntimeError } from '@bobsled-inc/protocol';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -257,6 +258,9 @@ export async function extractDocumentResource(
         await client.download(file, stagedPath);
         bytes = await readFile(stagedPath);
       } catch (err) {
+        // Connection-level failures (lost connection, timeout, cancel) fail the run;
+        // only per-file problems become parse-error rows.
+        if (err instanceof DogsledRuntimeError) throw err;
         // The new version was not read, so its last good rows stay; only the error is current.
         await replaceFileRows(documentId(file.uri), [parseErrorsStream]);
         const rawMessage = err instanceof Error ? err.message : String(err);

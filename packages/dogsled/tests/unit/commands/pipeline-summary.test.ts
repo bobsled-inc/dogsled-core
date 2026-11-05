@@ -168,6 +168,58 @@ describe('buildPipelineSummaryMessage', () => {
     );
   });
 
+  it('carries the extractor error code into the public summary message', () => {
+    const summary = createPipelineSummary();
+    const processor = createChunkProcessor(summary, 'sftp_');
+    processor.handle(
+      Buffer.from(
+        `${JSON.stringify({
+          _v: 1,
+          type: 'LOG',
+          level: 'error',
+          message: 'resource_error events',
+          time: '2026-08-19T00:00:00.000Z',
+          event: 'progress.resource_error',
+          attributes: {
+            progress_event: 'resource_error',
+            resource: 'events',
+            error: 'The provider could not complete the operation.',
+            error_code: 'SFTP_CONNECTION_LOST',
+          },
+        })}\n`
+      )
+    );
+    processor.flush();
+
+    expect(buildPipelineSummaryMessage(summary, 'sftp').streams.events).toMatchObject({
+      status: 'failure',
+      error: 'The provider could not complete the operation.',
+      error_code: 'SFTP_CONNECTION_LOST',
+    });
+  });
+
+  it('carries the error code from the quiet-mode failure log line', () => {
+    const summary = createPipelineSummary();
+    const processor = createChunkProcessor(summary, 'sftp_');
+    processor.handle(
+      Buffer.from(
+        `${JSON.stringify({
+          _v: 1,
+          type: 'LOG',
+          level: 'error',
+          message: 'Failed: sftp/events: The provider could not complete the operation.',
+          time: '2026-08-19T00:00:00.000Z',
+          attributes: { error_code: 'SFTP_TIMEOUT' },
+        })}\n`
+      )
+    );
+    processor.flush();
+
+    expect(buildPipelineSummaryMessage(summary, 'sftp').streams.events).toMatchObject({
+      error_code: 'SFTP_TIMEOUT',
+    });
+  });
+
   it('records a skipped resource as first-class from a resource_skip PROGRESS event', () => {
     const summary = createPipelineSummary();
     const processor = createChunkProcessor(summary, 'vantage_');

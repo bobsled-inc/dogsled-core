@@ -10,6 +10,8 @@ import type {
 
 export type SchemaResourceLike = Pick<ResourceSpec, 'name' | 'output'> & {
   extract?: ResourceSpec['extract'];
+  /** File Resources declare incrementality here instead of `extract.incremental`. */
+  replication?: { method: string };
   load?: {
     defaults?: {
       schema_behavior?: SchemaBehavior;
@@ -20,7 +22,8 @@ export type SchemaResourceLike = Pick<ResourceSpec, 'name' | 'output'> & {
 /**
  * Resolve load strategy from resource config and runtime options.
  *
- * Priority: explicit YAML override > --full-refresh flag > inference from incremental + PKs > full_refresh.
+ * Priority: explicit YAML override > --full-refresh flag > file `incremental_append` > inference
+ * from incremental + PKs > full_refresh.
  */
 function resolveLoadStrategy(
   resource: SchemaResourceLike,
@@ -32,6 +35,10 @@ function resolveLoadStrategy(
   }
   if (options?.fullRefresh) {
     return 'full_refresh';
+  }
+  // A file run emits only new or changed files, so replacing the table would drop earlier files.
+  if (resource.replication?.method === 'incremental_append') {
+    return 'append';
   }
   const extract = resource.extract;
   if (extract && 'incremental' in extract && extract.incremental) {

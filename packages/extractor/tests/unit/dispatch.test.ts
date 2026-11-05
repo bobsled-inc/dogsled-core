@@ -1,4 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../src/runtime/document-extraction.js', () => ({
+  extractDocumentResource: vi.fn(),
+}));
+
+import { ControlLogger } from '../../src/runtime/control.js';
+import { extractDocumentResource } from '../../src/runtime/document-extraction.js';
+import { FakeWritable } from '../helpers/fixtures.js';
 
 import type { IntegrationSpec, ResourceSpec } from '../../src/types/index.js';
 import {
@@ -99,6 +108,36 @@ describe('classifySourceKind', () => {
         resource: lookupOnlyResource,
       } as never)
     ).rejects.toThrow('only supports lookup and cannot be extracted');
+  });
+});
+
+describe('dispatchSourceKind document failures', () => {
+  it('reports a document connection failure as a failed resource with its code', async () => {
+    vi.mocked(extractDocumentResource).mockRejectedValueOnce(
+      new DogsledRuntimeError({
+        kind: 'provider',
+        code: 'SFTP_CONNECTION_LOST',
+        operation: 'extractor.sftp.download',
+        retryable: true,
+      })
+    );
+    const stderr = new FakeWritable();
+    const recordFailure = vi.fn();
+    const result = await dispatchSourceKind({
+      integration: fileIntegration,
+      resource: fileDocumentResource,
+      integrationName: 'docs_source',
+      logger: new ControlLogger({ stream: stderr }),
+      startedAt: Date.now(),
+      circuitBreaker: { recordFailure, recordSuccess: vi.fn() },
+    } as never);
+    expect(result).toMatchObject({
+      handled: true,
+      failed: true,
+      resourceResult: { status: 'error', error_code: 'SFTP_CONNECTION_LOST' },
+    });
+    expect(recordFailure).toHaveBeenCalledOnce();
+    expect(stderr.chunks.join('')).toContain('SFTP_CONNECTION_LOST');
   });
 });
 
