@@ -12,7 +12,7 @@ triggers:
 # Learn Dogsled with Retail
 
 Use the shared onboarding engine. Do not create a separate progress tracker,
-HTML application or review workflow. The general `dogsled-get-started` skill
+HTML application or review workflow. The general `dogsled-tutorials` skill
 routes learners here; explicit retail requests can start here directly.
 
 ## Welcome and teaching contract

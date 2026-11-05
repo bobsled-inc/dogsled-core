@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Use `dogsled-get-started` to set up your own connections, sources, pipelines and models. Guided TV Night and Retail lessons now start with `dogsled-tutorials`; existing tutorial progress and onboarding commands still work.
+
 - Add customer ontology YAML discovery, validation, exact context, edit previews, Ossie conversion, and config-only CLI/MCP operations.
 - Add an installable Dogsled Core skill plugin for Claude Code and Codex.
 

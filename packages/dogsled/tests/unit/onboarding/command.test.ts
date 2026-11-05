@@ -14,7 +14,7 @@ it('exposes the bundled agent guide without needing a project or plugin', async 
   registerOnboardingCommand(program);
   await program.parseAsync(['node', 'dogsled', 'onboarding', 'guide']);
   expect(output.mock.calls[0]?.[0]).toMatchObject({
-    name: 'dogsled-get-started',
+    name: 'dogsled-tutorials',
     content: expect.stringContaining('Teaching contract'),
   });
   expect(output.mock.calls[0]?.[0].content).toContain('end the turn and wait');

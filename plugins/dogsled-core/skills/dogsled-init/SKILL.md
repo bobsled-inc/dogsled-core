@@ -6,6 +6,10 @@ description: Set up a local Dogsled project or continue a Cowork-style repo
 
 # Dogsled Init — Local Project Setup
 
+Use `dogsled-get-started` for end-to-end setup of connections, sources and models.
+This skill owns local project creation and the setup bundle. For guided example
+lessons, use `dogsled-tutorials`.
+
 Guide the user through local Dogsled setup. Use Node.js 24+ and the single `dogsled` CLI. `dogsled init <name>` writes `dogsled.yml`, `.dogsled/config.yml`, a `README.md`, and empty `integrations/` and `sources/` folders; it does not write a separate metadata file. It defaults to DuckLake; `--duckdb` uses a single `.dogsled/dogsled.duckdb` file.
 
 1. Run `dogsled setup install` to install the local Cowork bundle.

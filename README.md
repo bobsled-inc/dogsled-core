@@ -72,6 +72,12 @@ that project. Other destinations can require optional drivers and credentials.
 See [Load data](docs/guides/load-data.md#install-a-warehouse-driver).
 The [installation guide](docs/getting-started.md#install-dogsled) also covers global installation.
 
+### Set up your own data with your coding agent
+
+Use **`dogsled-get-started`** to set up your Dogsled environment with your own
+connections, sources, pipelines and models. It can create a project or continue
+an existing one, then validate the setup and help you run a first useful query.
+
 ### Learn with your coding agent
 
 The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
@@ -83,9 +89,9 @@ Install the [Dogsled Core plugin for Claude Code or Codex](plugins/dogsled-core/
 to make the built-in skills available without copying files from this repository.
 
 After installing Dogsled, open Claude Code or Codex in your project folder and
-invoke the **`dogsled-get-started`** skill, or ask:
+invoke the **`dogsled-tutorials`** skill, or ask:
 
-> Use the dogsled-get-started skill.
+> Use the dogsled-tutorials skill for TV Night.
 
 The skill already includes the chapter order, setup, choices and inspection pauses.
 You do not need to repeat those instructions. If the skill is not available in your
