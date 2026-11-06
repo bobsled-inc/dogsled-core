@@ -55,10 +55,10 @@ Set `DOGSLED_MODEL_SPEC_CHECKPOINT_RUNNERS` to the absolute path of an ES module
 through it. The module runs as test code, so point it only at code you trust.
 
 `row-store-contention.bench.test.ts` measures statements per assignment, latency per statement
-and how header updates behave as runs share a header table. It runs with
+and how header updates behave as runs are added. It runs with
 `CHECKPOINT_BENCHMARK=1`, on PostgreSQL with the settings below, on Snowflake with the same two
 variables, or both. See the
-[benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-on-a-shared-header-table) for
+[benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-header-tables) for
 its settings.
 
 ## Agentic publication
