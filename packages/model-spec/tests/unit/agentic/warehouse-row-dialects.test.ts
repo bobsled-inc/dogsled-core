@@ -86,6 +86,12 @@ describe('Snowflake row dialect', () => {
     expect(statement.params).toEqual(['a', 2]);
   });
 
+  it('recognizes a table refused because a view holds its name', () => {
+    expect(dialect.nameTaken!(Object.assign(new Error('x'), { code: '001998' }))).toBe(true);
+    expect(dialect.nameTaken!(Object.assign(new Error('x'), { code: '003001' }))).toBe(false);
+    expect(dialect.nameTaken!(new Error('x'))).toBe(false);
+  });
+
   it('declares no key, because Snowflake would not enforce one', () => {
     const sql = dialect.createTable(table, [{ name: 'a', type: 'integer' }], ['a']);
     expect(sql).toBe(`CREATE TABLE IF NOT EXISTS ${table} ("A" BIGINT NOT NULL)`);

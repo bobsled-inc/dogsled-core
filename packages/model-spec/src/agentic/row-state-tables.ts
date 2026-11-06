@@ -129,6 +129,13 @@ export function agenticRowTable(
   return `${namespace}.${dialect.identifier(name)}`;
 }
 
+const tableReplaced = (): AgenticStateError =>
+  new AgenticStateError('corrupt', {
+    reason: 'state_table_replaced',
+    message: 'The agentic checkpoint store is not as Dogsled created it.',
+    hint: 'Stop all writers and inspect the store before resuming. It must hold nothing else.',
+  });
+
 async function createAgenticRowTables(
   db: AgenticRowDb,
   dialect: AgenticRowDialect,
@@ -144,6 +151,7 @@ async function createAgenticRowTables(
       for (const statement of dialect.setup?.(namespace) ?? []) await db.run(statement);
       return;
     } catch (error) {
+      if (dialect.nameTaken?.(error)) throw tableReplaced();
       // Concurrent first use can fail despite IF NOT EXISTS: PostgreSQL reports a duplicate
       // catalog row. The statements are idempotent, so repeat them.
       if (attempt >= 3 || isCancellationError(error)) throw error;
@@ -158,13 +166,7 @@ async function assertAgenticRowTables(
   dialect: AgenticRowDialect,
   namespace: string
 ): Promise<void> {
-  if (!(await dialect.hasBaseTables(db, namespace, agenticTables))) {
-    throw new AgenticStateError('corrupt', {
-      reason: 'state_table_replaced',
-      message: 'The agentic checkpoint store is not as Dogsled created it.',
-      hint: 'Stop all writers and inspect the store before resuming. It must hold nothing else.',
-    });
-  }
+  if (!(await dialect.hasBaseTables(db, namespace, agenticTables))) throw tableReplaced();
 }
 
 export async function prepareAgenticRowTables(

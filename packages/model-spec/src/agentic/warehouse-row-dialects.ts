@@ -163,6 +163,8 @@ export const snowflakeRowDialect: AgenticRowDialect = {
       boolean: 'BOOLEAN',
     });
   },
+  // Snowflake refuses a table where a view holds the name, rather than keeping the view.
+  nameTaken: (error) => String((error as { code?: unknown }).code).replace(/^0+/, '') === '1998',
   // A single atomic CTAS, so the guard is never empty.
   setup: (namespace) => [
     `CREATE TABLE IF NOT EXISTS ${guardTable(namespace)} AS SELECT CAST('' AS VARCHAR) AS ${sf('token')}`,

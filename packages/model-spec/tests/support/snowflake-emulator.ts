@@ -251,6 +251,20 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
       await Promise.all(held.map(release));
     }
   };
+  /** Snowflake refuses this, where DuckDB would keep the view and carry on. */
+  const refuseNameHeldByView = async (sql: string): Promise<void> => {
+    const name = /^CREATE TABLE IF NOT EXISTS (?:"[^"]+"\.)*"([^"]+)"/.exec(sql)?.[1];
+    if (!name) return;
+    const views = await exec(
+      `SELECT 1 FROM information_schema.tables WHERE table_name = '${name}' AND table_type = 'VIEW'`
+    );
+    if (views.length) {
+      throw Object.assign(
+        new Error(`SQL compilation error:\nObject '${name}' already exists as VIEW`),
+        { code: '001998', sqlState: '42710' }
+      );
+    }
+  };
   const execute = async (sql: string, params?: SqlParams): Promise<Row[]> => {
     if (emulator.crashBefore?.test(sql)) {
       delete emulator.crashBefore;
@@ -269,6 +283,7 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
       return [{ anonymous_block: null }];
     }
     assertSnowflakeSql(sql);
+    await refuseNameHeldByView(sql);
     const table = lockedTable(sql);
     const unlock = table ? await locks.acquire(table) : undefined;
     try {
