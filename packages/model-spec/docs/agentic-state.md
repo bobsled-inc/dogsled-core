@@ -432,11 +432,16 @@ same statement limit and client deadline. The role needs schema and table creati
 access policies.
 
 Runs in progress stay in the store that started them. A host that opts in must not resume them from
-this store, which would not find them. Each cursor key reads its value from `__dogsled_cursors` in
-that schema once, when the row store first sees the key, and never again. A key that an unfinished
-run still holds there fails with `cursor_held_elsewhere` and writes nothing: this store cannot open
-that run to take it over. Finish the run from the previous store first. If the old table cannot be
-read, or a record is damaged, the key stops rather than starting again from the beginning.
+this store, which would not find them. Each cursor key takes its value from `__dogsled_cursors` in
+that schema when the row store first sees the key, and never reads it again once the value has
+landed. A key that an unfinished run still holds there fails with `cursor_held_elsewhere` and writes
+nothing: this store cannot open that run to take it over. Finish the run from the previous store
+first. If the old table cannot be read, or a record is damaged, the key stops rather than starting
+again from the beginning.
+
+A carried value goes in as a bound update after the key's first row, never inside it. That first row
+has version -1 until the value lands. If a process stops in between, the next use of the key reads
+the old value again, so an empty row can never pass for a key with no progress.
 
 |                           | PostgreSQL                        | Snowflake                                                   |
 | ------------------------- | --------------------------------- | ----------------------------------------------------------- |

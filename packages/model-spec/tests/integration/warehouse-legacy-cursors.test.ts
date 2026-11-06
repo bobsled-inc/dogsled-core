@@ -35,10 +35,15 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
         `INSERT INTO ${namespace}."__DOGSLED_CURSORS" VALUES ('${digestAgenticState(key)}', '${record}', 't')`
       );
     };
-    const cursorRows = () =>
-      emulator.sql(`SELECT "RECORD" FROM ${namespace}."__DOGSLED_AGENTIC_CURSORS"`).catch(() => []);
+    const cursorRows = async () => {
+      const rows = await emulator
+        .sql(`SELECT "VERSION", "RECORD" FROM ${namespace}."__DOGSLED_AGENTIC_CURSORS"`)
+        .catch(() => []);
+      return rows.map((row) => ({ VERSION: Number(row.VERSION), RECORD: String(row.RECORD) }));
+    };
     return { emulator, store, legacy, cursorRows };
   }
+  const landing = /^UPDATE .*__DOGSLED_AGENTIC_CURSORS.* SET "RECORD" = \?, "VERSION" = 0/;
 
   it('reads the old value of a new key once', async () => {
     const { emulator, store, legacy } = await open();
@@ -50,6 +55,67 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
       `UPDATE ${namespace}."__DOGSLED_CURSORS" SET "RECORD" = '${legacyRecord(null).replace('5', '9')}'`
     );
     expect(await store().cursors!.begin(key, signature, 'run-2')).toEqual({ pairs: 7 });
+  });
+
+  it('sends a carried record as a bound value, never as a literal', async () => {
+    const { emulator, store, legacy, cursorRows } = await open();
+    const committedRun = 'easy-to-find-in-a-script';
+    await legacy(legacyRecord(null, committedRun));
+    await store().cursors!.begin(key, signature, 'run-1');
+    expect(emulator.statements.filter((sql) => sql.startsWith('EXECUTE IMMEDIATE'))).not.toEqual(
+      []
+    );
+    expect(emulator.statements.join('\n')).not.toContain(committedRun);
+    const [row] = await cursorRows();
+    expect(row!.RECORD).toContain(committedRun);
+  });
+
+  it('leads back to the old value after a crash before the record landed', async () => {
+    const { emulator, store, legacy, cursorRows } = await open();
+    await legacy(legacyRecord(null));
+    emulator.crashBefore = landing;
+    await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toThrow('connection');
+    expect(await cursorRows()).toEqual([{ VERSION: -1, RECORD: '' }]);
+    // A new process: the empty row must not read as a key with no progress.
+    expect(await store().cursors!.begin(key, signature, 'run-1')).toEqual({ pairs: 5 });
+  });
+
+  it('still refuses a key an old run holds after such a crash', async () => {
+    const { emulator, store, legacy, cursorRows } = await open();
+    await legacy(legacyRecord('run-1'));
+    emulator.crashBefore = landing;
+    await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toThrow('connection');
+    await emulator.sql(
+      `UPDATE ${namespace}."__DOGSLED_CURSORS" SET "RECORD" = '${legacyRecord('old-run')}'`
+    );
+    await expect(store().cursors!.begin(key, signature, 'run-2')).rejects.toMatchObject({
+      reason: 'cursor_held_elsewhere',
+    });
+    expect(await cursorRows()).toEqual([{ VERSION: -1, RECORD: '' }]);
+  });
+
+  it('starts empty if the old value is gone by the time a crash is recovered', async () => {
+    const { emulator, store, legacy, cursorRows } = await open();
+    await legacy(legacyRecord(null));
+    emulator.crashBefore = landing;
+    await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toThrow('connection');
+    await emulator.sql(`DELETE FROM ${namespace}."__DOGSLED_CURSORS"`);
+    expect(await store().cursors!.begin(key, signature, 'run-1')).toEqual({});
+    expect((await cursorRows())[0]!.VERSION).toBe(1);
+  });
+
+  it('carries the value once when runs race on a new key', async () => {
+    const { store, legacy, cursorRows } = await open();
+    await legacy(legacyRecord(null));
+    const runs = Array.from({ length: 6 }, (_, index) => `run-${index}`);
+    const results = await Promise.allSettled(
+      runs.map((run) => store().cursors!.begin(key, signature, run))
+    );
+    const winners = results.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : []
+    );
+    expect(winners).toEqual([{ pairs: 5 }]);
+    expect(await cursorRows()).toHaveLength(1);
   });
 
   it('starts empty when the old table was never created', async () => {

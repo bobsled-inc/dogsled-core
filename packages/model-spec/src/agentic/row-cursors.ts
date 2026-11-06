@@ -1,4 +1,8 @@
-/** One row per cursor key, updated by one compare-and-swap statement. */
+/**
+ * One row per cursor key, updated by one compare-and-swap statement. A key's first row holds no
+ * record, because a first row can be a script of literals on an engine without enforced keys. A
+ * value carried from a previous store follows as a bound update, and until then the row says so.
+ */
 import { setTimeout as delay } from 'node:timers/promises';
 import { throwIfCancelled } from '@bobsled-inc/connections';
 import {
@@ -20,10 +24,14 @@ import {
 } from './row-state-tables.js';
 import { AgenticStateError, digestAgenticState } from './state.js';
 
-/** Where a key's progress lived before this store. Read once, when its row is created. */
+/** Where a key's progress lived before this store. Read until its value is in the key's row,
+ * and never after that. */
 export type AgenticLegacyCursorReader = (key: AgenticCursorKey) => Promise<CursorRecord | null>;
 
 const maxAttempts = 32;
+/** The version of a first row whose carried record has not landed. Its empty record does not mean
+ * "no progress": a crash here must lead back to the previous store, not to starting over. */
+const awaitingRecord = -1;
 
 /** A stored cursor record. An empty one is a key with no progress yet. */
 export function parseAgenticCursorRecord(raw: unknown): CursorRecord | null {
@@ -87,12 +95,12 @@ export function createAgenticRowCursorStore(options: {
       await connection.close();
     }
   };
-  /** Compare and swap once. Returns undefined when the key has no row yet, or `false` when
-   * another writer changed the row first. */
+  /** Compare and swap once. Returns undefined when the key has no row yet, `awaitingRecord` when
+   * its row still needs a carried record, or `false` when another writer changed the row first. */
   const swap = (
     hash: string,
     change: (previous: CursorRecord | null) => CursorRecord
-  ): Promise<AgenticCursorValues | false | undefined> =>
+  ): Promise<AgenticCursorValues | false | undefined | typeof awaitingRecord> =>
     withDb(async (db, table) => {
       const rows = await db.query(
         `SELECT ${q('version')}, ${q('record')} FROM ${table} WHERE ${q('key_hash')} = ${dialect.bind(1)} LIMIT 2`,
@@ -100,6 +108,7 @@ export function createAgenticRowCursorStore(options: {
       );
       if (rows.length > 1) throw new AgenticStateError('corrupt');
       if (!rows.length) return undefined;
+      if (Number(rows[0]!.version) === awaitingRecord) return awaitingRecord;
       const raw = rows[0]!.record;
       const next = change(parseAgenticCursorRecord(raw));
       const json = JSON.stringify(next);
@@ -114,6 +123,18 @@ export function createAgenticRowCursorStore(options: {
       );
       return changed === 1 ? next.values : false;
     });
+  /** Ends the wait for a carried record. Writers can race here, and only one changes the row. */
+  const landRecord = async (
+    db: AgenticRowDb,
+    table: string,
+    hash: string,
+    carried: CursorRecord | null
+  ): Promise<void> => {
+    const statement = agenticStatement(dialect);
+    const set = `${q('record')} = ${statement.bind(carried ? JSON.stringify(carried) : '')}, ${q('version')} = 0`;
+    const where = `${q('key_hash')} = ${statement.bind(hash)} AND ${q('version')} = ${statement.bind(awaitingRecord)}`;
+    await dialect.changed(db, `UPDATE ${table} SET ${set} WHERE ${where}`, statement.params);
+  };
   const mutate = async (
     rawKey: AgenticCursorKey,
     signature: string,
@@ -128,7 +149,7 @@ export function createAgenticRowCursorStore(options: {
       const result = await swap(hash, (previous) =>
         updateCursorRecord(previous, signature, runId, values, previousRunId)
       );
-      if (result === undefined) {
+      if (result === undefined || result === awaitingRecord) {
         // Outside any database operation: the legacy store can be this same file.
         const carried = (await legacy?.(key)) ?? null;
         if (carried?.activeRun && carried.activeRun !== runId && !carryLegacyOwner) {
@@ -138,22 +159,25 @@ export function createAgenticRowCursorStore(options: {
             hint: 'Finish that run from the previous store before moving to this one.',
           });
         }
-        await withDb((db, table, namespace) =>
-          dialect.insertIfAbsent(
-            db,
-            table,
-            {
-              key_hash: hash,
-              scope: key.scope,
-              model: key.model,
-              target: key.target,
-              version: 0,
-              record: carried ? JSON.stringify(carried) : '',
-            },
-            'key_hash',
-            namespace
-          )
-        );
+        await withDb(async (db, table, namespace) => {
+          if (result === undefined) {
+            await dialect.insertIfAbsent(
+              db,
+              table,
+              {
+                key_hash: hash,
+                scope: key.scope,
+                model: key.model,
+                target: key.target,
+                version: carried ? awaitingRecord : 0,
+                record: '',
+              },
+              'key_hash',
+              namespace
+            );
+          }
+          if (carried || result === awaitingRecord) await landRecord(db, table, hash, carried);
+        });
       } else if (result === false) {
         const cap = Math.min(1_000, 10 * 2 ** Math.min(attempt, 7));
         const wait = Math.floor(cap * (0.5 + Math.random() / 2));

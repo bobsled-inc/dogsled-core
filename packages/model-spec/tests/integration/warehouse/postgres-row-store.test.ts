@@ -5,6 +5,7 @@ import { AgenticCursorConflict } from '../../../src/agentic/cursor.js';
 import { agenticRowDb } from '../../../src/agentic/row-state-dialect.js';
 import { createAgenticRowWrite } from '../../../src/agentic/row-state-layout.js';
 import { insertAgenticWrite } from '../../../src/agentic/row-state-rows.js';
+import { digestAgenticState } from '../../../src/agentic/state.js';
 import { createWarehouseAgenticCursorStore } from '../../../src/agentic/warehouse-cursors.js';
 import { postgresRowDialect } from '../../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../../src/agentic/warehouse-row-state.js';
@@ -49,6 +50,20 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     await old.begin(key, signature, 'old-run-2');
     await old.commit(key, signature, 'old-run-2', { pairs: 9 });
     expect(await cursors.begin(key, signature, 'next')).toEqual({ pairs: 7 });
+  });
+
+  it('leads back to the old value after a crash before the record landed', async () => {
+    const name = schema();
+    const old = createWarehouseAgenticCursorStore(integration(), { schema: name });
+    await old.begin(key, signature, 'old-run');
+    await old.commit(key, signature, 'old-run', { pairs: 5 });
+    const store = () => createWarehouseRowStore(integration(), { schema: name });
+    await store().cursors!.begin({ ...key, target: 'main.other' }, signature, 'other');
+    // The state a crash leaves between the first row and its record.
+    await sql(
+      `INSERT INTO "${name}"."__dogsled_agentic_cursors" VALUES ('${digestAgenticState(key)}', '${key.scope}', '${key.model}', '${key.target}', -1, '')`
+    );
+    expect(await store().cursors!.begin(key, signature, 'new-run')).toEqual({ pairs: 5 });
   });
 
   it('refuses a key that a run in the warehouse store still holds', async () => {

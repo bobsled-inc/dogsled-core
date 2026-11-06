@@ -129,6 +129,8 @@ export interface SnowflakeEmulator {
   lockHoldMs: number;
   /** How many statements a full lock queue has refused. */
   lockRefusals(): number;
+  /** Fails a statement this matches, as a crash before it would, and then stops matching. */
+  crashBefore?: RegExp;
   /** Runs SQL on the engine directly, with no emulation. */
   sql(statement: string): Promise<Row[]>;
   close(): Promise<void>;
@@ -236,6 +238,10 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
     }
   };
   const execute = async (sql: string, params?: SqlParams): Promise<Row[]> => {
+    if (emulator.crashBefore?.test(sql)) {
+      delete emulator.crashBefore;
+      throw new Error('The connection was lost');
+    }
     emulator.statements.push(sql);
     const bound = Array.isArray(params) ? params.map(String).join('') : '';
     if (Buffer.byteLength(sql) + Buffer.byteLength(bound) > statementLimitBytes) {
