@@ -202,9 +202,10 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
   /** The row store's first-row script, a statement at a time, as a script runs on Snowflake. */
   const runScript = async (script: string): Promise<void> => {
     const lines = script.split('\n');
-    const expected = ['DECLARE matches INTEGER;', 'BEGIN', 'BEGIN TRANSACTION;'];
+    const expected = ['BEGIN', 'BEGIN TRANSACTION;'];
     if (
-      expected.some((line, index) => lines[index] !== line) ||
+      !/^DECLARE no_guard EXCEPTION \(-20001, '.*'\); matches INTEGER;$/.test(lines[0]!) ||
+      expected.some((line, index) => lines[index + 1] !== line) ||
       lines.at(-1) !== 'END;' ||
       lines.at(-2) !== 'EXCEPTION WHEN OTHER THEN ROLLBACK; RAISE;' ||
       lines.at(-3) !== 'COMMIT;'
@@ -213,6 +214,7 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
     }
     const held: (() => void)[] = [];
     let matches = 0;
+    let rowCount = 0;
     let skipping = false;
     try {
       for (const line of lines.slice(3, -3)) {
@@ -221,6 +223,8 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
           skipping = false;
         } else if (skipping) {
           continue;
+        } else if (statement === 'IF (SQLROWCOUNT <> 1) THEN RAISE no_guard; END IF') {
+          if (rowCount !== 1) throw new Error('Uncaught exception of type NO_GUARD');
         } else if (statement === 'IF (matches = 0) THEN') {
           skipping = matches !== 0;
         } else if (statement.startsWith('matches := (')) {
@@ -229,7 +233,8 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
         } else {
           const table = lockedTable(statement);
           if (table) held.push(await locks.acquire(table));
-          await dml(statement);
+          const [result] = await dml(statement);
+          rowCount = Number(result?.['number of rows updated'] ?? 0);
         }
         await delay(statementGapMs);
       }

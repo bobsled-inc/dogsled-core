@@ -63,10 +63,11 @@ function insertOnceScript(
   const names = Object.keys(values);
   const tuple = names.map((name) => sfLiteral(values[name]!)).join(', ');
   return [
-    'DECLARE matches INTEGER;',
+    "DECLARE no_guard EXCEPTION (-20001, 'The row store guard table must hold one row'); matches INTEGER;",
     'BEGIN',
     'BEGIN TRANSACTION;',
     `UPDATE ${guardTable(namespace)} SET ${sf('token')} = ${sfLiteral(randomUUID())};`,
+    'IF (SQLROWCOUNT <> 1) THEN RAISE no_guard; END IF;',
     `matches := (SELECT COUNT(*) FROM ${table} WHERE ${sf(key)} = ${sfLiteral(values[key]!)});`,
     'IF (matches = 0) THEN',
     `INSERT INTO ${table} (${names.map(sf).join(', ')}) VALUES (${tuple});`,

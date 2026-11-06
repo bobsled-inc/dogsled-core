@@ -101,6 +101,23 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
       }
     });
 
+    it('stops at an empty guard table rather than insert without its lock', async () => {
+      const schema = testSchema();
+      const key = { scope: 'row-store-test', model: randomUUID(), target: 'guard-test' };
+      try {
+        const cursors = rows(schema).cursors!;
+        await cursors.begin({ ...key, target: 'other' }, 'a'.repeat(64), 'run-1');
+        await sql(`DELETE FROM ${qualified(schema)}.${q('__dogsled_agentic_guard')}`);
+        await expect(cursors.begin(key, 'a'.repeat(64), 'run-2')).rejects.toThrow();
+        const stored = await sql(
+          `SELECT 1 FROM ${qualified(schema)}.${q('__dogsled_agentic_cursors')} WHERE ${q('target')} = 'guard-test'`
+        );
+        expect(stored).toEqual([]);
+      } finally {
+        await dropSchema(schema);
+      }
+    });
+
     it('sends no CREATE SCHEMA for a schema that exists', async () => {
       const schema = testSchema();
       const sent: string[] = [];

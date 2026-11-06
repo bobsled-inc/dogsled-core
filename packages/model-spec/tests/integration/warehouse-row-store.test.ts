@@ -81,6 +81,16 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
       expect(await emulator.sql(`SELECT "RECORD" FROM ${table}`)).toEqual([{ RECORD: record }]);
     });
 
+    it('stops at an empty guard table rather than insert without its lock', async () => {
+      const { emulator, store } = await open();
+      await (await store().acquire((await mapScenario()).key)).release();
+      await emulator.sql(`DELETE FROM ${namespace}."__DOGSLED_AGENTIC_GUARD"`);
+      await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toThrow('NO_GUARD');
+      expect(await emulator.sql(`SELECT * FROM ${namespace}."__DOGSLED_AGENTIC_CURSORS"`)).toEqual(
+        []
+      );
+    });
+
     it('keeps one header when a run is opened concurrently from new', async () => {
       const { emulator, store } = await open();
       const { key: run } = await mapScenario();

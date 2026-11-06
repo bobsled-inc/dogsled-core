@@ -102,11 +102,13 @@ describe('Snowflake row dialect', () => {
     await dialect.insertIfAbsent(db, table, values, 'key_hash', '"DB"."S"');
     expect(db.run).toHaveBeenCalledTimes(1);
     const lines = script(db.run.mock.calls[0]![0]).split('\n');
-    expect(lines.slice(0, 3)).toEqual(['DECLARE matches INTEGER;', 'BEGIN', 'BEGIN TRANSACTION;']);
+    expect(lines[0]).toMatch(/^DECLARE no_guard EXCEPTION \(-20001, '.+'\); matches INTEGER;$/);
+    expect(lines.slice(1, 3)).toEqual(['BEGIN', 'BEGIN TRANSACTION;']);
     expect(lines[3]).toMatch(
       /^UPDATE "DB"\."S"\."__DOGSLED_AGENTIC_GUARD" SET "TOKEN" = '[-\w]+';$/
     );
     expect(lines.slice(4)).toEqual([
+      'IF (SQLROWCOUNT <> 1) THEN RAISE no_guard; END IF;',
       `matches := (SELECT COUNT(*) FROM ${table} WHERE "KEY_HASH" = 'hash');`,
       'IF (matches = 0) THEN',
       `INSERT INTO ${table} ("KEY_HASH", "RECORD", "VERSION", "ACTIVE") VALUES ('hash', 'it''s', 0, TRUE);`,
