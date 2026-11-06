@@ -25,7 +25,8 @@ export type AgenticLegacyCursorReader = (key: AgenticCursorKey) => Promise<Curso
 
 const maxAttempts = 32;
 
-function parseRecord(raw: unknown): CursorRecord | null {
+/** A stored cursor record. An empty one is a key with no progress yet. */
+export function parseAgenticCursorRecord(raw: unknown): CursorRecord | null {
   if (raw === '') return null;
   if (typeof raw !== 'string' || raw.length > 262144) throw new AgenticStateError('corrupt');
   try {
@@ -53,7 +54,7 @@ export async function readAgenticRowCursor(
         [hash]
       );
       if (rows.length > 1) throw new AgenticStateError('corrupt');
-      return rows.length ? parseRecord(rows[0]!.record) : null;
+      return rows.length ? parseAgenticCursorRecord(rows[0]!.record) : null;
     });
   } finally {
     await connection.close();
@@ -100,7 +101,7 @@ export function createAgenticRowCursorStore(options: {
       if (rows.length > 1) throw new AgenticStateError('corrupt');
       if (!rows.length) return undefined;
       const raw = rows[0]!.record;
-      const next = change(parseRecord(raw));
+      const next = change(parseAgenticCursorRecord(raw));
       const json = JSON.stringify(next);
       if (json === raw) return next.values;
       const statement = agenticStatement(dialect);
