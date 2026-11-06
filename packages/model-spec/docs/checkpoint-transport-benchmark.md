@@ -266,8 +266,7 @@ Settings: `CHECKPOINT_BENCHMARK_STORES` (`file`, `duckdb-run-file`, `duckdb-shar
 `postgres-warehouse`, `postgres-rows`), `CHECKPOINT_BENCHMARK_SIZES`,
 `CHECKPOINT_BENCHMARK_SHAPES`, `CHECKPOINT_BENCHMARK_SAMPLES` and
 `CHECKPOINT_BENCHMARK_LATENCY_MS`. The PostgreSQL stores use the settings in
-`tests/integration/warehouse/README.md`. `postgres-rows` uses the dialect in test support, which
-does not ship.
+`tests/integration/warehouse/README.md`. `postgres-rows` is `createWarehouseRowStore`.
 
 Measured on one Apple M3 Max laptop with Node.js 25.9.0, and PostgreSQL 17 in Docker on the same
 machine, while other jobs ran. Before and after ran in the same session on the same code, so compare
@@ -352,13 +351,50 @@ now takes seconds. See [why the row limits stay](agentic-state.md#why-the-row-li
 878 ms is a later run of the same benchmark, taken as the before figure for checkpoint cost. Both
 runs double from 1,000 to 2,000 assignments.
 
+## Row store on a shared header table
+
+The row store keeps one header row per run in one shared table, and every checkpoint ends with one
+fenced update of that row. So the question for a warehouse is what those updates do as runs are
+added. This benchmark starts that many real runs at once, each in its own process so that they
+contend at the database rather than for one event loop. Every statement is timed at the runner
+boundary. The model call is synthetic and returns at once, which is the worst case for the table:
+nothing spaces the updates out.
+
+```sh
+CHECKPOINT_BENCHMARK=1 pnpm --filter @bobsled-inc/model-spec exec vitest run \
+  tests/integration/warehouse/row-store-contention.bench.test.ts
+```
+
+It runs on PostgreSQL with `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres` and the settings in
+`tests/integration/warehouse/README.md`, and on Snowflake with
+`DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION` and `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA`. Settings:
+`CHECKPOINT_BENCHMARK_RUNS` (default `1,4,8,16`), `CHECKPOINT_BENCHMARK_ASSIGNMENTS` (per run,
+default `100`), `CHECKPOINT_BENCHMARK_SAMPLES` (default `3`), `CHECKPOINT_BENCHMARK_MODEL_MS`
+(default `0`) and `CHECKPOINT_BENCHMARK_OUTPUT` (a file for one JSON line per sample). On Snowflake,
+30 assignments and one sample are enough to start with: at 500 ms per statement that is about ten
+minutes at 16 runs.
+
+**PostgreSQL 17, real engine.** 100 assignments per run, the median of 3 samples of each measure, on
+one Apple M3 Max laptop with Node.js 25.9 and PostgreSQL in Docker, while other jobs ran:
+
+| Runs at once | Statements per assignment | Header updates per second | Header update p50 / p95 | Row insert p50 / p95 | Failures |
+| -----------: | ------------------------: | ------------------------: | ----------------------: | -------------------: | -------: |
+|            1 |                      4.14 |                        33 |            1.6 / 2.1 ms |         2.0 / 2.7 ms |        0 |
+|            4 |                      4.14 |                       129 |            1.3 / 2.2 ms |         1.8 / 3.2 ms |        0 |
+|            8 |                      4.14 |                       226 |            1.5 / 3.3 ms |         2.6 / 6.4 ms |        0 |
+|           16 |                      4.14 |                       241 |           2.9 / 13.4 ms |        6.2 / 27.2 ms |        0 |
+
+Header updates scale with the runs, because PostgreSQL locks rows and each run updates its own. At
+16 runs throughput stops rising and latency goes up, but the cause is the machine rather than the
+table: the row inserts, which contend for nothing, slow down at least as much as the header updates.
+
 ## Remaining work
 
 The warehouse store still validates the whole new state on every transition, so its
 total work grows with the square of plan size. It also writes the
 whole snapshot on each save, and issues a pointer read, a retained-size scan, its
-payload INSERTs and the fenced pointer commit; the row layout removes that once a
-warehouse dialect exists. Batching and reuse do not change billable dispatch
+payload INSERTs and the fenced pointer commit; the row layout removes that for a host
+that opts in. Batching and reuse do not change billable dispatch
 reservations, result acceptance, usage accounting, cursor or publication semantics.
 Measure representative applications on real providers before drawing conclusions
 about end-to-end production speedups.
