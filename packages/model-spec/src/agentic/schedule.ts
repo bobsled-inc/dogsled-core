@@ -262,7 +262,6 @@ export async function scheduleAgenticAssignments(
           // Process those completions before starting another external call.
           while (ready.length) await accept(ready.shift()!);
           throwIfCancelled(runSignal);
-          dispatchClock.nextAt = Date.now() + minDispatchIntervalMs;
           active.set(
             index,
             invoke(index, attemptId).then(
@@ -274,6 +273,9 @@ export async function scheduleAgenticAssignments(
               }
             )
           );
+          // The executor has started by now, so the interval holds between calls themselves,
+          // however long this one took to prepare and however quick the next checkpoint is.
+          dispatchClock.nextAt = Date.now() + minDispatchIntervalMs;
           continue;
         }
         if (!capacity && active.size === 0) {
