@@ -167,7 +167,10 @@ publication.
 
 For workers that move between machines, configure warehouse checkpoints in
 `model-spec.yml`. `checkpoint_store` also accepts a
-[DuckDB integration](../../../packages/model-spec/docs/agentic-state.md#duckdb-checkpoint-store):
+[DuckDB integration](../../../packages/model-spec/docs/agentic-state.md#duckdb-checkpoint-store),
+and a library host can supply the
+[warehouse row store](../../../packages/model-spec/docs/agentic-state.md#warehouse-row-store)
+instead of this setting:
 
 ```yaml
 checkpoint_store:
@@ -204,9 +207,11 @@ retains stages after success and failure; defaults allow 32 retained manifests
 (per database for DuckDB, per target for other publishers) and 1,000,000 rows in
 a full stage, including untouched rows. Host APIs can set bounded overrides.
 
-Runs saved in DuckDB expire: Dogsled removes a run 30 days after its last write unless it is
-still owed publication or cursor recovery. That includes failed runs, so one resumed after that
-starts again. A DuckDB `checkpoint_store` can change the period with `retention_days`. See
+Runs saved as rows expire, in DuckDB and in the opt-in
+[warehouse row store](../../../packages/model-spec/docs/agentic-state.md#warehouse-row-store):
+Dogsled removes a run 30 days after its last write unless it is still owed publication or cursor
+recovery. That includes failed runs, so one resumed after that starts again. A DuckDB
+`checkpoint_store` can change the period with `retention_days`. See
 [the row layout](../../../packages/model-spec/docs/agentic-state.md#row-layout).
 
 Nothing else expires automatically, and there is no broad cleanup command. Stop writers, back up

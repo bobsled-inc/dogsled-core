@@ -263,8 +263,9 @@ Without it, recovery starts at once.
 
 ## Row layout
 
-The DuckDB stores save a run as rows, so what a checkpoint writes does not grow with the run. A
-session keeps the snapshot in memory while it owns the run, applies each command
+The DuckDB stores and the [warehouse row store](#warehouse-row-store) save a run as rows, so what a
+checkpoint writes does not grow with the run. A session keeps the snapshot in memory while it owns
+the run, applies each command
 with `applyAgenticCheckpoint`'s transition, and writes only what changed. Opening a run rebuilds
 the snapshot from its rows. Commands, snapshots and the store interfaces are unchanged.
 
@@ -314,7 +315,7 @@ header update changes nothing. A new owner deletes unreachable rows the first ti
 run. A session never trusts its memory after an uncertain write: it reloads from the rows first.
 
 No table relies on a unique key, which three of the warehouses this layout targets do not
-enforce. The row layout supports DuckDB today.
+enforce. The row layout supports DuckDB, PostgreSQL and Snowflake.
 
 Rows expire: acquiring a run and each header write set `retain_until`, 30 days ahead by default,
 from the store's clock. A later acquisition removes unowned runs past that time. It claims each
@@ -399,6 +400,66 @@ Existing runs are not moved, so finish them before adding this setting. The stor
 cursor on first use of its key, from the DuckDB target or the default store. A key that an
 unfinished run still holds fails with `cursor_held_elsewhere`, and nothing is written: this store
 cannot open that run to take it over. Remove the setting, finish the run, then add it again.
+
+### Warehouse row store
+
+A warehouse `checkpoint_store` keeps using the [warehouse store](#warehouse-checkpoints), which
+rewrites the whole run as one document on every checkpoint. A library host opts a run into rows by
+supplying this store:
+
+```typescript
+import { createWarehouseRowStore } from '@bobsled-inc/model-spec/agentic';
+
+const stateStore = createWarehouseRowStore(integration, {
+  schema: 'track_checkpoints',
+  database: 'writable_database', // Optional. Snowflake only.
+  leaseMs: 300_000, // Optional. Default: 120,000. Range: 10,000–600,000.
+  retentionMs: 30 * 86_400_000, // Optional. Default: 30 days.
+});
+await runProject(projectDirectory, { agentic: { host, stateStore } });
+```
+
+`integration` is a PostgreSQL or Snowflake integration with its secrets resolved. The options also
+take what `createWarehouseCheckpointStore` takes, such as `customRunners`, `tokenProvider` and
+`signal`. A supplied store comes first in [the selection](#where-state-is-stored), so it also applies
+to a project that configures `checkpoint_store`. Other engines are rejected.
+
+The three tables live in the given schema, shared by every run, so the store creates no tables per
+run. Ownership is the same fenced lease, and each statement has the same
+[limits](#warehouse-checkpoints) as the warehouse store: it runs on a dedicated session through the
+same statement limit and client deadline. The role needs schema and table creation, `SELECT`,
+`INSERT`, `UPDATE` and `DELETE`. Rows hold the same data as the warehouse store, so apply the same
+access policies.
+
+Runs in progress stay in the store that started them. A host that opts in must not resume them from
+this store, which would not find them. Each cursor key reads its value from `__dogsled_cursors` in
+that schema once, when the row store first sees the key, and never again. A key that an unfinished
+run still holds there fails with `cursor_held_elsewhere` and writes nothing: this store cannot open
+that run to take it over. Finish the run from the previous store first. If the old table cannot be
+read, or a record is damaged, the key stops rather than starting again from the beginning.
+
+|                           | PostgreSQL                        | Snowflake                                                   |
+| ------------------------- | --------------------------------- | ----------------------------------------------------------- |
+| One row per key           | Primary key, `ON CONFLICT`        | One transaction behind the guard table                      |
+| Rows changed by an update | `RETURNING`                       | The count the update returns                                |
+| Store clock               | `clock_timestamp()`               | `SYSDATE()`, which the session time zone cannot move        |
+| Concurrent header updates | Row locks, so runs do not contend | Generally one at a time per table, so updates queue         |
+| Largest `INSERT` (`data`) | 4 Mi characters, 256 rows         | 256 Ki characters, 128 rows, under the 1 MB statement limit |
+
+Snowflake standard tables enforce no keys, so the first row for a run or cursor key goes through a
+single script. It updates the one row of `__DOGSLED_AGENTIC_GUARD`, which makes concurrent scripts
+take turns, then counts the key's rows and inserts only if there are none. This happens once per
+run and once per key. A statement that Snowflake refuses because too many others wait for the same
+table lock never ran, so the store repeats it, for about 15 seconds at most.
+
+The store relies on Snowflake's default `AUTOCOMMIT = TRUE`, because each statement is a write of its
+own. A custom Snowflake runner must return the driver's result row for an update. Without it the
+write fails as an uncertain one, rather than reading as a lost lease.
+
+The Snowflake dialect passes the conformance suite against an emulator in every test run, which
+proves its logic but not Snowflake's behavior. Run the [live suite](../tests/integration/warehouse/README.md#agentic-store-conformance)
+against your account first. How header updates behave as runs are added is in the
+[benchmark](checkpoint-transport-benchmark.md#row-store-on-a-shared-header-table).
 
 ## Local files, ownership and retention
 
