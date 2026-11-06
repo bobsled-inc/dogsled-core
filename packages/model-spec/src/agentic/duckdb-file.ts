@@ -1,4 +1,5 @@
 /** Rules for opening a DuckDB file safely from one process. */
+import { chmodSync } from 'node:fs';
 import { mkdir, realpath } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { basename, dirname, resolve } from 'node:path';
@@ -25,6 +26,18 @@ export async function canonicalDuckDbPath(path: string): Promise<string> {
     return await realpath(absolute);
   } catch {
     return resolve(await realpath(dirname(absolute)), basename(absolute));
+  }
+}
+
+/**
+ * DuckDB creates its files with the default permissions, and state holds frozen inputs and
+ * results. A file system without modes must not stop the run.
+ */
+export function keepDuckDbFilePrivate(file: string): void {
+  try {
+    chmodSync(file, 0o600);
+  } catch {
+    // Nothing more can be done here. The docs say to keep the directory private as well.
   }
 }
 

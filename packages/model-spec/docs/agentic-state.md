@@ -372,6 +372,13 @@ file is opened for each operation and never held between them. It must not be a 
 file, which fails validation: a host reads that file outside this store's guard, and overlapping
 instances of one file in a process can drop its lock.
 
+The file holds frozen inputs and results, so on a shared host put it in a directory that only its
+owner can read. Dogsled also sets the file to mode `600` when it connects, just after DuckDB
+creates the file and before anything is saved in it. A failure is ignored, as for a file owned by
+another user or on a file system without modes. DuckDB creates its write-ahead log, `<file>.wal`,
+with the default permissions, and Dogsled cannot change that first. The log exists while an
+operation writes, and after a crash until the file next opens.
+
 Existing runs are not moved, so finish them before adding this setting. The store takes over each
 cursor on first use of its key, from the DuckDB target or the default store. A key that an
 unfinished run still holds fails with `cursor_held_elsewhere`, and nothing is written: this store

@@ -5,7 +5,12 @@ import {
   type DuckDbIntegration,
   type SqlRunnerModule,
 } from '@bobsled-inc/connections';
-import { canonicalDuckDbPath, openDuckDbWithRetry, withDuckDbFile } from './duckdb-file.js';
+import {
+  canonicalDuckDbPath,
+  keepDuckDbFilePrivate,
+  openDuckDbWithRetry,
+  withDuckDbFile,
+} from './duckdb-file.js';
 import { dbFor } from './duckdb-publication-storage.js';
 import { readDuckDbCursor } from './duckdb-cursors.js';
 import type { AgenticLegacyCursorReader } from './row-cursors.js';
@@ -86,6 +91,8 @@ export function duckDbOperationBackend(
           await runner.close?.();
         }
       });
+      // The open above creates a new file. Nothing has been saved in it yet.
+      keepDuckDbFilePrivate(canonical);
       return {
         namespace,
         use: (operation, options) =>

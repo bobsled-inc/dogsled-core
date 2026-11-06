@@ -271,6 +271,22 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     expect(fs.existsSync(file)).toBe(true);
   });
 
+  it('makes a new checkpoint file private', async () => {
+    const file = join(directory(), 'checkpoints.duckdb');
+    const session = await checkpoints(file).acquire(map.key);
+    expect(fs.statSync(file).mode & 0o777).toBe(0o600);
+    await session.release();
+  });
+
+  it('makes an existing checkpoint file private', async () => {
+    const file = join(directory(), 'checkpoints.duckdb');
+    await sql(file, ['CREATE TABLE unrelated (id INTEGER)']);
+    fs.chmodSync(file, 0o644);
+    const session = await checkpoints(file).acquire(map.key);
+    await session.release();
+    expect(fs.statSync(file).mode & 0o777).toBe(0o600);
+  });
+
   it.each([
     ['opened per operation', (file: string) => duckDbOperationBackend(file, 'main')],
     ['held for a session', (file: string) => duckDbHeldBackend(file)],
