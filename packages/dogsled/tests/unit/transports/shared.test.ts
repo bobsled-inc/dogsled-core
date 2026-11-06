@@ -360,6 +360,18 @@ describe('providerMessageFromBody', () => {
     expect(message).toBe('a [REDACTED] b [REDACTED] c');
   });
 
+  it('matches mixed-case percent escapes while preserving literal character case', () => {
+    const secret = 'Case/ÿ+Token';
+    const message = providerMessageFromBody(
+      JSON.stringify({
+        message: 'Refused Case%2f%c3%bF%2BToken but case%2f%c3%bF%2BToken is different.',
+      }),
+      createActionSecretRedactor([secret])
+    );
+
+    expect(message).toBe('Refused [REDACTED] but case%2f%c3%bF%2BToken is different.');
+  });
+
   it('redacts before capping so a secret that crosses the cap leaves no prefix', () => {
     const secret = 'cap-boundary-secret-value';
     const message = providerMessageFromBody(

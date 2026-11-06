@@ -111,9 +111,14 @@ function makeIntegration(
 
 function encodedForms(value: string): string[] {
   const json = JSON.stringify(value).slice(1, -1);
+  let escapeIndex = 0;
+  const mixedEncoding = encodeURIComponent(value).replace(/%[0-9A-F]{2}/g, (escape) =>
+    escapeIndex++ % 2 === 0 ? escape.toLowerCase() : escape
+  );
   return [
     value,
     encodeURIComponent(value),
+    mixedEncoding,
     encodeURIComponent(value).replace(/%[0-9A-F]{2}/g, (escape) => escape.toLowerCase()),
     new URLSearchParams({ value }).toString().slice('value='.length),
     json,
@@ -263,7 +268,7 @@ describe('provider message redaction through executeAction', () => {
   });
 
   it('redacts the Basic payload, its decoded credential, and the password', async () => {
-    const password = 'basic/pass?word>1';
+    const password = 'basic/pass?word>1x';
     const decoded = `acme-user:${password}`;
     const payload = Buffer.from(decoded).toString('base64');
     vi.stubEnv('ACME_BASIC_PASSWORD', password);
@@ -396,6 +401,49 @@ describe('provider message redaction through executeAction', () => {
     expect(result.error?.provider_message).toMatch(/^Credential \[REDACTED\].* is read-only\.$/);
     expectReceiptExcludes(result, [payload, decoded, 'hook>pass?2']);
   });
+
+  it.each(['api', 'webhook'] as const)(
+    'matches mixed-case percent escapes in a declared %s credential',
+    async (transport) => {
+      const token = 'Acme/Token+Tail';
+      const reflected = 'Acme%2fToken%2BTail';
+      vi.stubEnv('WEBHOOK_TOKEN', token);
+      expect(decodeURIComponent(reflected)).toBe(token);
+      const fetchMock = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+        expect(String(url)).toBe(
+          transport === 'api'
+            ? 'https://api.example.com/contacts/42'
+            : 'https://hooks.example.com/notify'
+        );
+        expect(requestAuthorization(init)).toBe(`Bearer ${token}`);
+        return providerResponse(403, messageBody(`Refused ${reflected}.`));
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result =
+        transport === 'api'
+          ? await executeAction(makeApiAction(), inputs, {
+              resolvedIntegration: makeIntegration(
+                { auth: { type: 'bearer', token: '${{ env.WEBHOOK_TOKEN }}' } },
+                ['WEBHOOK_TOKEN']
+              ),
+              safeErrors: true,
+            })
+          : await executeAction(
+              makeWebhookAction({ Authorization: 'Bearer ${{ env.WEBHOOK_TOKEN }}' }),
+              { entity_id: 'ent_123' },
+              { safeErrors: true }
+            );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.error).toMatchObject({
+        code: 'permission_denied',
+        provider_status: 403,
+        provider_message: 'Refused [REDACTED].',
+      });
+      expectReceiptExcludes(result, [token]);
+    }
+  );
 
   it('previews a dry run without sending a request', async () => {
     const fetchMock = vi.fn();

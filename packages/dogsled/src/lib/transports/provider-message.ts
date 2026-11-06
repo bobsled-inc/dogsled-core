@@ -26,24 +26,26 @@ function compactCredentialText(value: string): string {
   return value.replace(/[\p{Cf}\p{Cc}\s]+/gu, '');
 }
 
-function lowercasePercentEncoding(value: string): string {
-  return value.replace(/%[0-9A-F]{2}/g, (escape) => escape.toLowerCase());
-}
-
 function secretRedactionVariants(value: string): string[] {
   const json = JSON.stringify(value).slice(1, -1);
-  const variants = [
+  return [
     value,
     encodeURIComponent(value.replace(/\p{Cs}/gu, '\uFFFD')),
     new URLSearchParams({ value }).toString().slice('value='.length),
     json,
     json.replaceAll('/', '\\/'),
   ];
-  return [...variants, ...variants.map(lowercasePercentEncoding)];
 }
 
 function credentialPattern(compactVariant: string): RegExp {
-  return new RegExp(Array.from(compactVariant, escapeRegExp).join(CREDENTIAL_GAP_PATTERN), 'gu');
+  const characters = [...compactVariant.matchAll(/%[0-9a-f]{2}|./giu)].flatMap(([part]) =>
+    Array.from(part, (character) =>
+      part.length === 3 && /[a-f]/i.test(character)
+        ? `[${character.toLowerCase()}${character.toUpperCase()}]`
+        : escapeRegExp(character)
+    )
+  );
+  return new RegExp(characters.join(CREDENTIAL_GAP_PATTERN), 'gu');
 }
 
 function credentialSpans(text: string, patterns: readonly RegExp[]): Array<[number, number]> {
