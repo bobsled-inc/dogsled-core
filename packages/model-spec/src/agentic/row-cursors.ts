@@ -72,14 +72,15 @@ export function createAgenticRowCursorStore(options: {
   const { dialect } = backend;
   const q = dialect.identifier;
   const withDb = async <T>(
-    operation: (db: AgenticRowDb, table: string) => Promise<T>
+    operation: (db: AgenticRowDb, table: string, namespace: string) => Promise<T>
   ): Promise<T> => {
     const connection = await backend.connect();
     const { namespace } = connection;
     try {
       return await connection.use(async (db) => {
         await ensureAgenticRowTables(db, backend, namespace);
-        return operation(db, agenticRowTable(dialect, namespace, AGENTIC_CURSORS_TABLE));
+        const table = agenticRowTable(dialect, namespace, AGENTIC_CURSORS_TABLE);
+        return operation(db, table, namespace);
       });
     } finally {
       await connection.close();
@@ -136,7 +137,7 @@ export function createAgenticRowCursorStore(options: {
             hint: 'Finish that run from the previous store before moving to this one.',
           });
         }
-        await withDb((db, table) =>
+        await withDb((db, table, namespace) =>
           dialect.insertIfAbsent(
             db,
             table,
@@ -148,7 +149,8 @@ export function createAgenticRowCursorStore(options: {
               version: 0,
               record: carried ? JSON.stringify(carried) : '',
             },
-            'key_hash'
+            'key_hash',
+            namespace
           )
         );
       } else if (result === false) {

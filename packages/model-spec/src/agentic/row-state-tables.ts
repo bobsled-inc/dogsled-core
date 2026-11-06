@@ -137,6 +137,7 @@ async function createAgenticRowTables(
       for (const { name, columns, key } of agenticTables) {
         await db.run(dialect.createTable(agenticRowTable(dialect, namespace, name), columns, key));
       }
+      for (const statement of dialect.setup?.(namespace) ?? []) await db.run(statement);
       return;
     } catch (error) {
       // Concurrent first use can fail despite IF NOT EXISTS: PostgreSQL reports a duplicate
