@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { resolveRunner, type IntegrationFile } from '@bobsled-inc/connections';
+import { snowflakeRowDialect } from '../../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../../src/agentic/warehouse-row-state.js';
 import { caseName, quoteIdentifier } from '../../../src/compiler/dialect.js';
 import type {
@@ -27,12 +28,14 @@ const settings = {
   assignments: number(env.CHECKPOINT_BENCHMARK_ASSIGNMENTS, 100),
   samples: number(env.CHECKPOINT_BENCHMARK_SAMPLES, 3),
   modelMs: number(env.CHECKPOINT_BENCHMARK_MODEL_MS, 0),
-  /** How many schemas the runs share out by a hash of the run. Each has its own header table,
-   * so this measures a fixed set of them without any change to the store. */
-  schemas: number(env.CHECKPOINT_BENCHMARK_SCHEMAS, 1),
+  /** Header tables on Snowflake, to compare numbers without changing the dialect. */
+  headerTables: number(env.CHECKPOINT_BENCHMARK_HEADER_TABLES, 0),
   store:
     env.CHECKPOINT_BENCHMARK_STORE === 'warehouse' ? ('warehouse' as const) : ('rows' as const),
 };
+if (settings.headerTables) {
+  Object.assign(snowflakeRowDialect, { headerTables: [settings.headerTables] });
+}
 const worker = fileURLToPath(
   new URL('../../support/row-store-contention-worker.ts', import.meta.url)
 );
@@ -65,38 +68,31 @@ async function measure(engine: (typeof engines)[number], runs: number) {
     quoteIdentifier(caseName(name, integration.source_type), integration.source_type);
   const database = integration.source_type === 'snowflake' ? integration.connection.database : null;
   const prefix = env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA ?? 'bench';
-  const schemas = Array.from(
-    { length: settings.schemas },
-    () => `${prefix}_contention_${randomUUID().replaceAll('-', '')}`
-  );
+  const schema = `${prefix}_contention_${randomUUID().replaceAll('-', '')}`;
   // PostgreSQL truncates a longer name, which could cut the random part off what gets dropped.
-  if (engine.engine === 'postgres' && Buffer.byteLength(schemas[0]!) > 63) {
+  if (engine.engine === 'postgres' && Buffer.byteLength(schema) > 63) {
     throw new Error('The schema prefix is too long for PostgreSQL');
   }
-  const namespace = (schema: string) => [...(database ? [database] : []), schema].map(q).join('.');
-  const schemaFor = (run: string) =>
-    schemas[createHash('sha256').update(run).digest().readUInt32BE(0) % schemas.length]!;
+  const namespace = [...(database ? [database] : []), schema].map(q).join('.');
   const directory = mkdtempSync(join(tmpdir(), 'row-contention-'));
   try {
     // Create the tables first, so that the runs measure work rather than setup.
-    for (const schema of schemas) {
-      const first = await createWarehouseRowStore(integration, { schema, ...runners }).acquire({
-        scope: 'bench',
-        model: 'setup',
-        id: 'setup',
-      });
-      await first.release();
-    }
+    const first = await createWarehouseRowStore(integration, { schema, ...runners }).acquire({
+      scope: 'bench',
+      model: 'setup',
+      id: 'setup',
+    });
+    await first.release();
     const startAt = Date.now() + 8_000;
     const outputs = Array.from({ length: runs }, (_, index) => join(directory, `${index}.json`));
     await Promise.all(
       outputs.map(async (output, index) => {
-        const run = `run-${index}`;
         const options: ContentionWorkerOptions = {
           engine: engine.engine,
           store: settings.store,
-          schema: schemaFor(run),
-          run,
+          schema,
+          ...(settings.headerTables ? { headerTables: settings.headerTables } : {}),
+          run: `run-${index}`,
           assignments: settings.assignments,
           startAt,
           output,
@@ -138,9 +134,7 @@ async function measure(engine: (typeof engines)[number], runs: number) {
     rmSync(directory, { recursive: true, force: true });
     const runner = await resolveRunner(integration, runners);
     try {
-      for (const schema of schemas) {
-        await runner.run(`DROP SCHEMA IF EXISTS ${namespace(schema)} CASCADE`);
-      }
+      await runner.run(`DROP SCHEMA IF EXISTS ${namespace} CASCADE`);
     } finally {
       await runner.close?.();
     }
