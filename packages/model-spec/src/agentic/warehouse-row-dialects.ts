@@ -141,10 +141,11 @@ function isLockQueueFull(error: unknown): boolean {
 }
 
 /**
- * Snowflake aborts a statement when too many others already wait for the same table lock: 20 in
- * the reports we know of, though the documentation does not mention it. Such a statement never
- * ran, so repeating it is safe, and without this a burst of header updates would read as
- * uncertain writes and lost leases.
+ * Snowflake aborts a statement when too many others already wait for the same table lock. Its
+ * documentation does not say so, but public reports do, at 20 waiters:
+ * https://community.streamsets.com/community-articles-and-got-a-question-7/jdbcqueryexecutor-can-t-execute-querynet-snowflake-client-jdbc-snowflakesqlexception-2177
+ * Such a statement never ran, so repeating it is safe, and without this a burst of header updates
+ * would read as uncertain writes and lost leases.
  */
 export function waitForSnowflakeLockQueue(db: AgenticRowDb, signal?: AbortSignal): AgenticRowDb {
   const retrying = async <T>(statement: () => Promise<T>): Promise<T> => {
