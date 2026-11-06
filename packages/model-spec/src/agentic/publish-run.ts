@@ -54,7 +54,8 @@ export async function publishAgenticRun(
     validateAgenticReceipt(await session.read(), snapshot);
   };
   const identity = createAgenticPublicationIdentity(snapshot);
-  let intent = snapshot.publication_intent;
+  // Saved state is frozen. A publisher receives data of its own.
+  let intent = structuredClone(snapshot.publication_intent);
   let receipt = intent ? await publisher.inspect(intent, signal) : null;
   if (!receipt) {
     if (Date.now() >= deadlineTime(agenticDeadlineAt(snapshot))) {

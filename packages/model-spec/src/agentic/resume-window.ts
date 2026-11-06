@@ -11,8 +11,7 @@ export async function beginAgenticExecution(
     retryFailed?: boolean;
     /** Spend-cap runs only: the caps this invocation applies. */
     caps?: { tokens: number | null; microusd: number | null };
-  },
-  validate = validateAgenticReceipt
+  }
 ): Promise<AgenticRunSnapshot> {
   if (snapshot.execution_windows?.some((window) => window.operation_id === execution.id)) {
     return snapshot;
@@ -29,8 +28,13 @@ export async function beginAgenticExecution(
   };
   const requestedAt = Date.now();
   try {
-    return validate(await session.checkpoint(command), snapshot, command, requestedAt);
+    return validateAgenticReceipt(
+      await session.checkpoint(command),
+      snapshot,
+      command,
+      requestedAt
+    );
   } catch {
-    return validate(await session.read(), snapshot, command, requestedAt);
+    return validateAgenticReceipt(await session.read(), snapshot, command, requestedAt);
   }
 }

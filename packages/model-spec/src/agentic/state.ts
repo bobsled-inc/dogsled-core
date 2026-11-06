@@ -26,6 +26,7 @@ import { AgenticColumnsSchema } from './model.js';
 import { checkpointIsConsistent } from './checkpoint-consistency.js';
 import { workMatchesRun } from './checkpoint-work.js';
 import { isBoundedCheckpoint } from './checkpoint-json.js';
+import { advanceVerifiedCheckpoint, verifiedCheckpoint } from './checkpoint-verified.js';
 import {
   AgentAssignmentSchema,
   AgentAssignmentOutcomeSchema,
@@ -35,6 +36,7 @@ import { AgenticJsonSchema, AGENTIC_MAX_ROWS } from './rows.js';
 
 const Identity = z.string().min(1).max(1024);
 const Tokens = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+export const AgenticTokensSchema = Tokens;
 export const AgenticRunKeySchema = z
   .object({ scope: Identity, model: Identity, id: Identity })
   .strict();
@@ -60,6 +62,8 @@ export const AgenticWorkStateSchema = z
     accepted: AgentAssignmentOutcomeSchema.optional(),
   })
   .strict();
+/** A work item's mutable part: everything an attempt can change. */
+export const AgenticWorkProgressSchema = AgenticWorkStateSchema.omit({ assignment: true });
 const PlanInputsSchema = z
   .record(
     Identity,
@@ -336,16 +340,22 @@ export function digestAgenticState(value: unknown): string {
     .digest('hex');
 }
 
-/** Shared store conformance function: one accepted attempt, conservative charges, bounded retries. */
+/**
+ * Shared store conformance function: one accepted attempt, conservative charges, bounded retries.
+ * The result is deeply frozen and holds none of the caller's objects. Pass it back to the next
+ * call and return it from `checkpoint`: a start or finish of an attempt then costs what it changed.
+ */
 export function applyAgenticCheckpoint(
   value: AgenticRunSnapshot,
   input: AgenticCheckpointCommand,
   now = Date.now()
 ): AgenticRunSnapshot {
+  const advanced = advanceVerifiedCheckpoint(value, input, now);
+  if (advanced) return advanced;
   const state = AgenticRunSnapshotSchema.parse(value);
-  return transitionAgenticCheckpoint(state, input, now)
-    ? AgenticRunSnapshotSchema.parse(state)
-    : state;
+  return verifiedCheckpoint(
+    transitionAgenticCheckpoint(state, input, now) ? AgenticRunSnapshotSchema.parse(state) : state
+  );
 }
 
 /** The two questions a transition asks about the whole run. */

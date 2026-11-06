@@ -594,7 +594,10 @@ it.each([
     accounting: 'reservation' as const,
   };
   await executeAgenticRun(f.host, f.context(), options);
-  const snapshot = [...stateStore.runs.values()][0]!;
+  // Saved state is frozen, so the damage goes into a copy that replaces it.
+  const [key, saved] = [...stateStore.runs.entries()][0]!;
+  const snapshot = structuredClone(saved);
+  stateStore.runs.set(key, snapshot);
   if (field === 'tokens') snapshot.token_limit *= 10;
   if (field === 'attempts') snapshot.max_attempts++;
   if (field === 'deadline') {
