@@ -38,6 +38,46 @@ function sameJson(left: unknown, right: unknown): boolean {
   );
 }
 
+/**
+ * True only when `value` is `expected`, which must be plain JSON, in every way a validator could
+ * notice: the same prototypes and the same own keys, including hidden and symbol keys. Anything
+ * else is false, however its values compare, so a caller can send it to a check that decides.
+ * `plain` skips that scrutiny for a value known to be plain JSON. Frozen objects the two share
+ * compare equal without being read, which is what keeps a shared response cheap.
+ */
+export function isExactJson(expected: unknown, value: unknown, plain = false): boolean {
+  if (expected === value) return true;
+  if (
+    typeof expected !== 'object' ||
+    typeof value !== 'object' ||
+    expected === null ||
+    value === null ||
+    Array.isArray(expected) !== Array.isArray(value) ||
+    (!plain && Object.getPrototypeOf(value) !== Object.getPrototypeOf(expected))
+  ) {
+    return false;
+  }
+  if (Array.isArray(expected)) {
+    const items = value as unknown[];
+    if (expected.length !== items.length) return false;
+    // An array's own keys are its indexes and `length`.
+    if (!plain && Reflect.ownKeys(items).length !== expected.length + 1) return false;
+    for (let index = 0; index < expected.length; index++) {
+      const item = items[index];
+      if (expected[index] !== item && !isExactJson(expected[index], item, plain)) return false;
+    }
+    return true;
+  }
+  const keys = Object.keys(expected);
+  const count = plain ? Object.keys(value).length : Reflect.ownKeys(value).length;
+  if (keys.length !== count) return false;
+  for (const key of keys) {
+    const item = (value as Record<string, unknown>)[key];
+    if (!isExactJson((expected as Record<string, unknown>)[key], item, plain)) return false;
+  }
+  return true;
+}
+
 /** Equivalent to comparing digestAgenticState results for JSON data. Structurally equal
  * values, including copies that share unchanged branches, are compared without hashing. */
 export function jsonEqual(left: unknown, right: unknown): boolean {

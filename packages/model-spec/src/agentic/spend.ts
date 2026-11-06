@@ -22,7 +22,8 @@ export function priceMicrousd(
   profile: AgenticProfile,
   usage: { input_tokens: number; output_tokens: number }
 ): number {
-  const usd = price?.(profile, usage);
+  // `profile` comes from saved state, which is frozen. A host receives data of its own.
+  const usd = price?.(structuredClone(profile), usage);
   if (typeof usd !== 'number' || !Number.isFinite(usd) || usd < 0) return 0;
   return Math.ceil(usd * 1_000_000);
 }

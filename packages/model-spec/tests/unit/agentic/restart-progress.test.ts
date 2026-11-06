@@ -6,6 +6,12 @@ import {
   applyAgenticCheckpoint,
   type AgenticRunProgress,
 } from '../../../src/agentic/index.js';
+import {
+  createAgenticProgress,
+  createAgenticProgressReporter,
+} from '../../../src/agentic/progress.js';
+import type { AgenticRunSnapshot, AgenticStateStore } from '../../../src/agentic/state.js';
+import { benchmarkWorkload } from '../../support/agentic-benchmark.js';
 import { MemoryStateStore, runFixture } from './state-fixture.js';
 
 describe('explicit failed assignment restart', () => {
@@ -187,4 +193,111 @@ it('reports durable assignment counts and restores accepted progress on resume',
   progress.length = 0;
   await executeAgenticRun(f.host, f.context(), { ...options, run: { id: 'run', mode: 'resume' } });
   expect(progress[0]).toMatchObject({ total: 2, accepted: 2, status: 'execution_complete' });
+});
+
+describe('progress reports', () => {
+  it.each(['map', 'plan'] as const)(
+    'match a recount of the saved run at every checkpoint: %s',
+    async (shape) => {
+      const w = benchmarkWorkload(10, shape, 1000);
+      w.host.concurrency = 2;
+      const succeed = w.host.executeAgent;
+      // A stopped run, a saved terminal failure, then retryable failures on the way to the end.
+      let calls = 0;
+      w.host.executeAgent = async (request) => {
+        const call = ++calls;
+        if (call === 2) throw new Error('The executor stopped.');
+        if (call === 5 || call % 4 === 0) {
+          return {
+            contract_version: 2 as const,
+            attempt_id: request.assignment.attempt_id,
+            status: 'failed' as const,
+            usage: { status: 'unknown' as const, reason: 'unavailable' as const },
+            error: { kind: 'validation' as const, code: 'FAILED', retryable: call !== 5 },
+          };
+        }
+        return succeed(request);
+      };
+      const memory = new MemoryStateStore();
+      let saved: AgenticRunSnapshot;
+      const store: AgenticStateStore = {
+        async acquire(key) {
+          const session = await memory.acquire(key);
+          const seen = async (value: Promise<AgenticRunSnapshot>) => (saved = await value);
+          return {
+            ...session,
+            create: (value) => seen(session.create(value)),
+            checkpoint: (command) => seen(session.checkpoint(command)),
+          };
+        },
+      };
+      const stepIds = w.model.plan.steps.map((step) => step.id);
+      const reports: [AgenticRunProgress, AgenticRunProgress][] = [];
+      const options = {
+        projectDirectory: '.',
+        stateStore: store,
+        onProgress: (value: AgenticRunProgress) => {
+          reports.push([value, createAgenticProgress(saved, stepIds)]);
+        },
+      };
+      const run = (mode: 'start' | 'resume', retryFailedAssignments = false) =>
+        executeAgenticRun(w.host, w.context(), {
+          ...options,
+          run: { id: 'counted', mode },
+          ...(retryFailedAssignments ? { retryFailedAssignments } : {}),
+        });
+      await expect(run('start')).rejects.toThrow();
+      await expect(run('resume')).rejects.toThrow();
+      await expect(run('resume', true)).resolves.toMatchObject({ status: 'execution_complete' });
+      expect(reports.length).toBeGreaterThan(20);
+      expect(reports.some(([report]) => report.running > 0)).toBe(true);
+      expect(reports.some(([report]) => report.failed > 0)).toBe(true);
+      for (const [report, recount] of reports) expect(report).toEqual(recount);
+    }
+  );
+
+  it('counts again from a state it did not report', async () => {
+    const f = runFixture(3);
+    const memory = new MemoryStateStore();
+    f.host.executeAgent = () => Promise.reject(new Error('Stop at the first call.'));
+    await executeAgenticRun(f.host, f.context(), {
+      projectDirectory: '.',
+      stateStore: memory,
+      run: { id: 'skipped', mode: 'start' },
+    }).catch(() => undefined);
+    const first = [...memory.runs.values()][0]!;
+    const start = (state: AgenticRunSnapshot, work: number) => ({
+      type: 'start_attempt' as const,
+      operation_id: `start_attempt:${work}`,
+      expected_revision: state.revision,
+      work,
+      attempt_id: String(work),
+      charge: 1,
+      charge_microusd: 1,
+    });
+    const second = applyAgenticCheckpoint(first, start(first, 1));
+    const third = applyAgenticCheckpoint(second, start(second, 2));
+    const report = createAgenticProgressReporter(['assess']);
+    report(first);
+    // A moved count would start from `first` and miss the attempt that `second` added.
+    expect(report(third, second, start(second, 2))).toEqual(
+      createAgenticProgress(third, ['assess'])
+    );
+  });
+
+  it('gives each callback a value of its own', async () => {
+    const f = runFixture(3);
+    const reports: AgenticRunProgress[] = [];
+    await executeAgenticRun(f.host, f.context(), {
+      projectDirectory: '.',
+      stateStore: new MemoryStateStore(),
+      run: { id: 'separate', mode: 'start' },
+      onProgress: (value) => {
+        reports.push(structuredClone(value));
+        value.accepted = 1000;
+        value.steps[0]!.accepted = 1000;
+      },
+    });
+    expect(reports.at(-1)).toMatchObject({ accepted: 3, steps: [{ accepted: 3 }] });
+  });
 });

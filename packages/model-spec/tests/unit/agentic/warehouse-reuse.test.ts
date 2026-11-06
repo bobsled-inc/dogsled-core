@@ -238,8 +238,9 @@ it('validates each durable transition at most twice and does not reread its own 
   const saves = transport.operations.pointer!;
   // create, seal, four starts, four finishes and completion.
   expect(saves).toBe(11);
-  // One store validation and one receipt validation per save, plus the initial snapshot.
-  expect(counters.validations).toBe(2 * saves + 1);
+  // One store validation per save, the initial snapshot, and one receipt validation each for
+  // create, seal and completion. The eight attempt receipts are proved without one.
+  expect(counters.validations).toBe(saves + 4);
   expect(transport.operations.read_payload).toBeUndefined();
   // Acquisition and release only: each pointer commit extends the lease.
   expect(transport.operations.ownership).toBe(2);

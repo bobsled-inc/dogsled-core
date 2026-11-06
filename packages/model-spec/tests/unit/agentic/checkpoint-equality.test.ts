@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { jsonEqual } from '../../../src/agentic/json-equal.js';
+import { isExactJson, jsonEqual } from '../../../src/agentic/json-equal.js';
 import { digestAgenticState } from '../../../src/agentic/state.js';
 import {
   AgentAssignmentSchema,
@@ -198,6 +198,69 @@ describe('shared row field schemas', () => {
     for (const value of rows) {
       const expected = first.safeParse(value);
       expect(second.safeParse(value, { jitless: true })).toEqual(expected);
+    }
+  });
+});
+
+describe('isExactJson', () => {
+  const shared = Object.freeze({ a: [1, { b: 2 }] });
+  // Scrutiny aside, both modes must tell different JSON apart.
+  it.each([false, true])('tells different JSON apart with plain %s', (plain) => {
+    const same: [unknown, unknown][] = [
+      [1, 1],
+      ['a', 'a'],
+      [null, null],
+      [{}, {}],
+      [[], []],
+      [
+        { a: 1, b: [2] },
+        { b: [2], a: 1 },
+      ],
+      [shared, shared],
+      [{ x: shared }, { x: shared }],
+    ];
+    for (const [left, right] of same) expect(isExactJson(left, right, plain)).toBe(true);
+    const different: [unknown, unknown][] = [
+      [1, 2],
+      [1, '1'],
+      [null, 0],
+      [null, {}],
+      [{}, null],
+      [{}, []],
+      [[], {}],
+      [{ 0: 1 }, [1]],
+      [[1], { 0: 1 }],
+      [[1], [1, 2]],
+      [[1, 2], [1]],
+      [
+        [1, 2],
+        [1, 3],
+      ],
+      [{ a: 1 }, { a: 1, b: 2 }],
+      [{ a: 1, b: 2 }, { a: 1 }],
+      [{ a: 1 }, { b: 1 }],
+      [{ a: { b: 1 } }, { a: { b: 2 } }],
+    ];
+    for (const [left, right] of different) expect(isExactJson(left, right, plain)).toBe(false);
+  });
+
+  it('refuses a value that is not plain JSON unless told it is', () => {
+    class Point {
+      x = 1;
+    }
+    class List extends Array {}
+    const hidden = Object.defineProperty({ x: 1 }, 'toJSON', { value: () => ({ x: 2 }) });
+    const symbol = { x: 1, [Symbol('extra')]: 2 };
+    const list = Object.assign([1], { extra: 2 });
+    for (const [expected, value] of [
+      [{ x: 1 }, new Point()],
+      [{ x: 1 }, Object.assign(Object.create(null), { x: 1 })],
+      [{ x: 1 }, hidden],
+      [{ x: 1 }, symbol],
+      [[1], List.from([1])],
+      [[1], list],
+    ] as const) {
+      expect(isExactJson(expected, value)).toBe(false);
     }
   });
 });

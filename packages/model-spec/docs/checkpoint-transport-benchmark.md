@@ -69,11 +69,10 @@ This change keeps the stored format and validation rules and removes repeated wo
   it. The store transitions a private copy and validates the result once.
   `read()` always fetches and verifies the payload; bytes identical to the
   session's own commit skip only the second parse and hash.
-- The coordinator's receipt validator remembers the last state it validated. When
-  the coordinator still holds that object and it serializes to the same JSON, the
-  command is replayed on a copy and compared with the fully validated response.
-  Any difference falls back to the complete check, which reports the original
-  error.
+- The coordinator does not validate a response twice over. A later change replaced
+  this step: see [Checkpoint cost](agentic-state.md#checkpoint-cost). A command applied
+  to verified state is compared with the response, and any difference takes the
+  complete check, which reports the original error.
 - The store renews before the retained-size query, each staging batch and the
   pointer transaction only when a third of the lease has elapsed since the last
   successful extension started.
@@ -331,24 +330,27 @@ with an fsync:
 | plan  |         100 |                      4.19 |        209 |                         61.1 |                 102.1 |
 | plan  |         300 |                      4.07 |        610 |                        131.6 |                 243.5 |
 
-Statements per assignment settle at four: two per model call, plus a fixed cost per run. Time per
-assignment still grows with the run, but no longer because of storage. The coordinator and the
-store each validate the whole snapshot on every checkpoint, and the run loop is deliberately
-unchanged. That is now the main cost, and it is why the row limits stay where they are: a CPU
-profile puts 80% of a 1,000-assignment run on a run file inside schema validation, and 77% at 300.
+Statements per assignment settle at four: two per model call, plus a fixed cost per run. In these
+figures time per assignment still grows with the run, but no longer because of storage. The
+coordinator and the store each validated the whole snapshot on every checkpoint: a CPU profile put
+80% of a 1,000-assignment run on a run file inside schema validation, and 77% at 300. A later change
+removed that cost. See [checkpoint cost](agentic-state.md#checkpoint-cost) for the figures since.
 
-**Why the limits stay at 1,000 rows.** To see whether the store could hold more, one run lifted the
-ceilings temporarily, in a scratch change. At 2,000 assignments on a run file, statements stayed at
+**What the limits looked like at 2,000 rows.** To see whether the store could hold more, one run
+lifted the ceilings temporarily, in a scratch change. At 2,000 assignments on a run file, statements stayed at
 4.01 per assignment, the run sent 12.3 MB, and peak heap was 623 MiB with 863 MiB resident, so storage
 and memory hold up. Time does not. Overhead reached 1,003 ms per assignment, double the
 1,000-assignment figure, so a run's total overhead grows with the square of its size: 33 minutes at
 2,000, and on the same curve about 3.5 hours at 5,000 and 14 hours at 10,000, before any model time.
-Raising the limits first needs checkpoint validation that does not read the whole snapshot.
+Checkpoint validation no longer reads the whole snapshot, so that curve is gone, and the same run
+now takes seconds. See [why the row limits stay](agentic-state.md#why-the-row-limits-stay), whose
+878 ms is a later run of the same benchmark, taken as the before figure for checkpoint cost. Both
+runs double from 1,000 to 2,000 assignments.
 
 ## Remaining work
 
-Every transition still validates the whole new state twice (store and coordinator),
-so total work grows with the square of plan size. The warehouse store also writes the
+The warehouse store still validates the whole new state on every transition, so its
+total work grows with the square of plan size. It also writes the
 whole snapshot on each save, and issues a pointer read, a retained-size scan, its
 payload INSERTs and the fenced pointer commit; the row layout removes that once a
 warehouse dialect exists. Batching and reuse do not change billable dispatch

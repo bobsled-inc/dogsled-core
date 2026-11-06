@@ -234,6 +234,12 @@ retry bounds and accepted results. Duplicate commands have one effect. Reusing
 an operation ID with a different payload causes a conflict. Reads return `null`
 only when the run does not exist. Storage failures must throw.
 
+`applyAgenticCheckpoint` returns a deeply frozen snapshot that holds none of your objects.
+Treat it as read-only. Keep that value, pass it to the next `applyAgenticCheckpoint` call,
+and return it from `checkpoint`. A start or finish of an attempt then costs the same however
+large the run is. A store that parses or copies its state stays correct and pays for that on
+every checkpoint. See [Checkpoint cost](#checkpoint-cost).
+
 Every saved record must be durable before the method resolves. After an uncertain
 checkpoint response, Dogsled reads the saved receipt before it dispatches more work.
 The host must retain snapshots and their contents for its declared recovery period.
@@ -304,25 +310,21 @@ reservation. Cursor rows never expire.
 
 ### Why the row limits stay
 
-The row store could hold more than today's 1,000 rows, but the time a run spends outside model
-calls grows with the square of its size. These are DuckDB run files on the synthetic benchmark
-workload, so the overhead excludes any model time. The 2,000 row lifted the ceilings in a scratch
-change:
+The row store could hold more than today's 1,000 rows, and time no longer stands in the way.
+Validating the whole snapshot on every checkpoint used to make a run's total overhead grow with
+the square of its size, and [checkpoint cost](#checkpoint-cost) no longer does. These are DuckDB
+run files on the synthetic benchmark workload, so they exclude any model time. The 2,000 row is
+above today's limit of 1,000, so it lifted the ceilings in a scratch change:
 
-| Assignments | Statements per assignment | Data sent | Overhead per assignment | Total overhead |
-| ----------: | ------------------------: | --------: | ----------------------: | -------------: |
-|         300 |                      4.05 |    2.1 MB |                  152 ms |           46 s |
-|       1,000 |                      4.02 |    6.4 MB |                  506 ms |        8.4 min |
-|       2,000 |                      4.01 |   12.3 MB |                1,003 ms |         33 min |
+| Assignments | Statements per assignment | Before |  After | Whole run, before | Whole run, after |
+| ----------: | ------------------------: | -----: | -----: | ----------------: | ---------------: |
+|         100 |                      4.13 |  78 ms | 4.4 ms |             7.8 s |            0.4 s |
+|       1,000 |                      4.02 | 445 ms | 4.0 ms |           7.4 min |            4.1 s |
+|       2,000 |                      4.01 | 878 ms | 3.6 ms |            29 min |            7.1 s |
 
-Statements stay flat and data grows in step with the run. Memory holds up: peak heap stayed under
-900 MiB at all three sizes, although it includes uncollected garbage and varies between runs (570
-and 881 MiB at 1,000). Overhead per assignment doubles when the run doubles, so on this curve a
-run's total is about 3.5 hours at 5,000 and 14 hours at 10,000.
-
-That cost is validating the whole snapshot on every checkpoint, in the coordinator and in the
-store: a CPU profile puts 80% of a 1,000-assignment run inside schema validation. Raising the
-limits first needs validation of the change alone. See the
+Statements stay flat and data grows in step with the run. The limits stay because nothing has been
+proved above them: the store conformance suite runs at today's limits. Raising one is a separate
+change, with a measurement on the row store at the new size. See the
 [benchmark](checkpoint-transport-benchmark.md#row-layout) for the method.
 
 ### Local DuckDB files
@@ -560,6 +562,106 @@ Cloud support needs live verification for each configured integration. The
 credentialed test is `tests/integration/warehouse/cloud-checkpoint-store.test.ts`.
 Local PostgreSQL tests cover saved work, ownership takeover, and a lost commit
 response. These tests do not replace live Snowflake, BigQuery, or Databricks proof.
+
+## Checkpoint cost
+
+Each model call saves two checkpoints, `start_attempt` and `finish_attempt`. With a store that
+keeps and returns what `applyAgenticCheckpoint` gave it, their cost does not depend on how many
+assignments the run has. A store that replies with a copy still grows with the run, as the last
+column shows. Overhead per assignment, with an in-memory store and a model call that returns at
+once:
+
+| Assignments |   Before |  After | After, store replies with a copy |
+| ----------: | -------: | -----: | -------------------------------: |
+|         100 |    75 ms | 1.6 ms |                           5.4 ms |
+|       1,000 |   730 ms | 1.3 ms |                            35 ms |
+|       2,000 | 1,411 ms | 1.3 ms |                            70 ms |
+
+The 2,000 row is above today's limit of 1,000, so it was measured with the limits raised in a
+scratch change: see [Reproduce](#reproduce). A run that size would spend 2.6 seconds on this
+instead of 47 minutes. A plan that maps then reduces went from 112 ms to 3.0 ms per assignment
+at 100, and from 1,056 ms to 2.7 ms at 1,000.
+
+`AgenticRunSnapshotSchema` reads a private copy of a snapshot, and that same copy is deeply
+frozen and remembered as verified, so what is kept is exactly what was checked. It cannot
+change, so it needs checking again only if the clock moves behind a time saved in it. A start
+or finish of an attempt on a verified snapshot copies only the work item it changes, and shares
+the rest with the state before it. Only that item is checked, by the same code the schema
+uses. Running totals stand in for what the schema learns by reading everything: the size
+limits, the attempt IDs, and whether any attempt was overcharged.
+
+The coordinator still validates every store response. It works out the state the command must
+produce and requires the response to be exactly that. Frozen objects shared with verified
+state compare equal without being read, which is why a store that returns its
+`applyAgenticCheckpoint` result is flat. A copy is read in full, so that cost still grows with
+the run, although the store has already paid more than that to make the copy. A response that
+differs anywhere stops the run as `corrupt`, as it always has. So does one that holds the right
+values but is not plain JSON, which takes the complete check.
+
+The row store does exactly this, so DuckDB run files are flat too: see
+[why the row limits stay](#why-the-row-limits-stay). The file and warehouse stores are not. They
+rewrite the run on every checkpoint, which grows with the run whatever the coordinator does, and
+they gain little from this.
+
+Only these two commands take this path. The others happen a fixed number of times per run and
+take the complete check. So does anything the path cannot prove: it can only accept, so the
+complete check decides every refusal and reports it in the same words. Reads, resumes and the
+ownership checks around publication are unchanged. The verified record lives in one loaded
+copy of this package. Across two bundled copies a store's result counts as a copy.
+
+### Why a proved command is valid
+
+A proof starts from a verified snapshot, so it needs to show only that the command broke
+nothing. For each thing the schema establishes:
+
+- **The shape of what was written.** The changed item's attempts and accepted answer pass the
+  schema's own field rules, and the totals pass the same bounds.
+- **The rules within a work item.** `workMatchesRun` and `attemptsAreConsistent` run on the
+  changed item. The schema runs the same two functions on every item.
+- **Everything outside the item.** A transition is given frozen objects for all of it, so a
+  write would throw. The few fields at the top of the run are compared, and only `revision`,
+  `charged`, `charged_microusd` and `work` may differ.
+- **Totals.** `charged` and `charged_microusd` must move by exactly what the item's attempts
+  moved. They matched every attempt before, so they still do.
+- **Revisions.** The new revision is one above a state whose revisions are all lower, so it
+  is unique, later than everything else, and matches the count of transitions.
+- **Attempt IDs.** The new ID must not be held in this state. An index of every ID ever seen
+  from one verified root answers that, and each hit is confirmed against the state itself.
+- **Reservations.** Everything charged so far is `charged`, so a new attempt's reservation is
+  checked against it, where the schema would rebuild that sum from the revision history.
+- **Overcharges.** A flag records any overcharged attempt. It is set from the same predicate
+  and kept across states.
+- **Assignments derived from inputs and earlier steps.** These are the same objects as before.
+  A step's assignments depend only on saved inputs and on accepted work from earlier steps,
+  and accepted work refuses both commands, so no proved command can alter what they were
+  built from.
+- **The size limits.** Totals of values, text and JSON bytes are moved by the change to the
+  item, measured by the same walk the schema uses. They stop at exactly the same size. Depth
+  needs no total: an answer is at most 16 levels deep, and its place in a snapshot adds five.
+- **Saved times.** A new time is checked against the clock as it is written, and the newest
+  saved time is kept. If the clock moves behind it, the state stops counting as verified, and
+  the complete check refuses it as it always has.
+
+`tests/unit/agentic/checkpoint-verified.test.ts` runs seeded walks that compare the two paths
+command by command, and `checkpoint-proof.test.ts` damages the transition to show that a proof
+does not depend on it being correct.
+
+### Reproduce
+
+`tests/unit/agentic/checkpoint-growth.bench.test.ts` runs in the unit suite and fails if the
+cost of a checkpoint grows between 100 assignments and the row cap. To print the table above:
+
+```sh
+CHECKPOINT_BENCHMARK=1 CHECKPOINT_BENCHMARK_SIZES=100,1000 \
+  pnpm --filter @bobsled-inc/model-spec exec vitest run \
+  tests/unit/agentic/checkpoint-growth.bench.test.ts
+```
+
+Set `CHECKPOINT_BENCHMARK_PROFILE` to a directory for a V8 CPU profile of each run. Above 1,000
+assignments, run on a scratch change that raises `AGENTIC_MAX_ROWS` and `AGENTIC_MAX_BYTES` in
+`rows.ts` and the limits in `checkpoint-json.ts`. These limits are unchanged; the 2,000 row
+above was measured that way, on both sides. The workload keeps each assignment the same size at
+every run size.
 
 ## Incremental input progress
 

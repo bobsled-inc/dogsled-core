@@ -9,7 +9,7 @@ import { bindAgenticTools, validateAgenticTools } from './tool-access.js';
 import { executeAgenticPlan } from './plan-run.js';
 import { preflightAgenticPublication, publishAgenticRun } from './publish-run.js';
 import type { AgenticPublisher, AgenticHost } from './publication.js';
-import { createAgenticReceiptValidator } from './checkpoint-receipt.js';
+import { validateAgenticReceipt } from './checkpoint-receipt.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
@@ -28,7 +28,7 @@ import {
 import type { AgenticStateStore, AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import { createDefaultAgenticStateStore } from './default-state.js';
 import type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
-import { createAgenticProgress, type AgenticRunProgress } from './progress.js';
+import { createAgenticProgressReporter, type AgenticRunProgress } from './progress.js';
 
 export interface AgenticRunOptions {
   /** Explicit resume only: retry saved terminal failures, retaining answers, charges and attempt counts. */
@@ -248,7 +248,6 @@ async function executeOwnedAgenticRun(
     assertAgenticPricing(context.resolved, host.priceUsage);
   };
   const session = await storage(async () => store.acquire(key));
-  const receipt = createAgenticReceiptValidator();
   let snapshot: AgenticRunSnapshot;
   try {
     const saved = await storage(async () => session.read());
@@ -313,7 +312,9 @@ async function executeOwnedAgenticRun(
         work: [],
       });
       const initial = snapshot;
-      snapshot = await storage(async () => receipt(await session.create(initial), initial));
+      snapshot = await storage(async () =>
+        validateAgenticReceipt(await session.create(initial), initial)
+      );
     }
     if (
       saved &&
@@ -322,31 +323,24 @@ async function executeOwnedAgenticRun(
       (snapshot.status !== 'execution_complete' || options.publisher)
     ) {
       snapshot = await storage(async () =>
-        beginAgenticExecution(
-          session,
-          snapshot,
-          {
-            ...execution,
-            ...(snapshot.accounting === 'spend_cap'
-              ? { caps: { tokens: model.limits.tokens ?? null, microusd: costCapMicrousd } }
-              : {}),
-          },
-          receipt
-        )
+        beginAgenticExecution(session, snapshot, {
+          ...execution,
+          ...(snapshot.accounting === 'spend_cap'
+            ? { caps: { tokens: model.limits.tokens ?? null, microusd: costCapMicrousd } }
+            : {}),
+        })
       );
     }
-    // Assignments never change once saved, so each estimate is computed once per run.
-    const tokenEstimates = new Map<string, number>();
-    const reportProgress = async () => {
+    const progress = createAgenticProgressReporter(
+      context.resolved.steps.map(({ step }) => step.id)
+    );
+    const reportProgress = async (
+      before?: AgenticRunSnapshot,
+      command?: AgenticCheckpointCommand
+    ) => {
       if (!options.onProgress) return;
       try {
-        await options.onProgress(
-          createAgenticProgress(
-            snapshot,
-            context.resolved.steps.map(({ step }) => step.id),
-            tokenEstimates
-          )
-        );
+        await options.onProgress(progress(snapshot, before, command));
       } catch {
         // Observability must not undo saved work or cause another model call.
       }
@@ -388,14 +382,19 @@ async function executeOwnedAgenticRun(
       const before = snapshot;
       const requestedAt = Date.now();
       try {
-        snapshot = receipt(await session.checkpoint(command), before, command, requestedAt);
+        snapshot = validateAgenticReceipt(
+          await session.checkpoint(command),
+          before,
+          command,
+          requestedAt
+        );
       } catch {
         // Confirm the complete effect after an uncertain response. Presence alone is not a receipt.
         const observed = await storage(async () => session.read());
         if (!observed) throw new AgenticStateError('missing');
-        snapshot = receipt(observed, before, command, requestedAt);
+        snapshot = validateAgenticReceipt(observed, before, command, requestedAt);
       }
-      await reportProgress();
+      await reportProgress(before, command);
       return snapshot;
     };
     const planExecution = incremental || context.resolved.steps.length > 1 || !('map' in step);
@@ -518,7 +517,8 @@ async function executeOwnedAgenticRun(
     )) {
       const accepted = work.accepted;
       if (!accepted || accepted.status === 'failed') throw new AgenticStateError('corrupt');
-      processedKeys.push(...work.assignment.processed_keys);
+      // Saved state is frozen. Hosts and publishers receive data of their own.
+      processedKeys.push(...structuredClone(work.assignment.processed_keys));
       for (const row of accepted.rows) {
         if (!row || typeof row !== 'object' || Array.isArray(row)) {
           throw new AgenticStateError('corrupt');
@@ -526,7 +526,7 @@ async function executeOwnedAgenticRun(
         const identity = JSON.stringify(model.grain.map((name) => row[name]));
         if (grain.has(identity)) throw new Error('Agentic output has duplicate final grain');
         grain.add(identity);
-        findings.push({ ...row, _dogsled_run_id: key.id });
+        findings.push({ ...structuredClone(row), _dogsled_run_id: key.id });
       }
     }
     boundedAgenticRows(findings, `The output of agentic model "${model.name}"`, limits);
@@ -553,7 +553,12 @@ async function executeOwnedAgenticRun(
     }
     if (incremental && snapshot.publication === 'confirmed' && !snapshot.cursors_committed) {
       await storage(() =>
-        cursorStore!.commit(cursorKey, cursorSignature, key.id, snapshot.cursor_values ?? {})
+        cursorStore!.commit(
+          cursorKey,
+          cursorSignature,
+          key.id,
+          structuredClone(snapshot.cursor_values ?? {})
+        )
       );
       await checkpoint({
         type: 'confirm_cursors',

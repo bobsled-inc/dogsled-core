@@ -4,7 +4,8 @@ import { performance } from 'node:perf_hooks';
 import { setFlagsFromString } from 'node:v8';
 import { runInNewContext } from 'node:vm';
 import { resolveAgenticModel } from '../../src/agentic/resolve.js';
-import type { AgenticStateStore } from '../../src/agentic/state.js';
+import { applyAgenticCheckpoint } from '../../src/agentic/state.js';
+import type { AgenticRunSnapshot, AgenticStateStore } from '../../src/agentic/state.js';
 import type { AgentExecutorRequest } from '../../src/agentic/index.js';
 import { runFixture } from '../unit/agentic/state-fixture.js';
 
@@ -14,13 +15,19 @@ export type BenchmarkShape = 'map' | 'plan';
 /**
  * `map` has one map step with `assignments` input rows. `plan` maps four fifths of that
  * many rows, then reduces groups of four in a second step, for the same assignment count.
- * Every assignment returns accepted rows with evidence, confidence and a reason.
+ * Every assignment returns accepted rows with evidence, confidence and a reason. Padding
+ * shrinks as `payloadSize` grows. Pass a constant to keep each assignment the same size
+ * at every run size, as a comparison of cost per assignment must.
  */
-export function benchmarkWorkload(assignments: number, shape: BenchmarkShape) {
+export function benchmarkWorkload(
+  assignments: number,
+  shape: BenchmarkShape,
+  payloadSize = assignments
+) {
   const groups = shape === 'plan' ? assignments / 5 : 0;
   if (!Number.isInteger(groups)) throw new Error('Plan workloads use multiples of five');
   const inputs = assignments - groups;
-  const scale = Math.sqrt(Math.max(assignments, 1));
+  const scale = Math.sqrt(Math.max(payloadSize, 1));
   const f = runFixture(inputs);
   f.model.limits = {};
   const first = f.model.plan.steps[0]!;
@@ -93,6 +100,24 @@ export function benchmarkWorkload(assignments: number, shape: BenchmarkShape) {
   };
   const context = () => ({ ...f.context(), resolved: resolveAgenticModel(f.model, f.host) });
   return { host: f.host, model: f.model, context };
+}
+
+/**
+ * The cheapest conforming store: nothing to save, and each reply is the value that
+ * applyAgenticCheckpoint returned, so storage takes no part in a measurement.
+ */
+export function sharedMemoryStore(): AgenticStateStore {
+  let saved: AgenticRunSnapshot | null = null;
+  return {
+    async acquire() {
+      return {
+        read: async () => saved,
+        create: async (snapshot) => (saved = snapshot),
+        checkpoint: async (command) => (saved = applyAgenticCheckpoint(saved!, command)),
+        release: async () => {},
+      };
+    },
+  };
 }
 
 export interface PhaseTimer {

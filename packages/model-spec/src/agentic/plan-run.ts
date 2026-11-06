@@ -143,7 +143,8 @@ export async function executeAgenticPlan(
         operation_id: `append_step:${step.id}`,
         expected_revision: snapshot.revision,
         step_id: step.id,
-        assignments: buildAgenticStepAssignments(snapshot, index),
+        // Built from frozen saved state; a supplied store receives data of its own.
+        assignments: structuredClone(buildAgenticStepAssignments(snapshot, index)),
       });
     }
     await scheduleAgenticAssignments(host, { ...scheduling, snapshot, checkpoint, dispatchClock });

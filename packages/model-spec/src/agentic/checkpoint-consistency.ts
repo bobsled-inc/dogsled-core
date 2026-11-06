@@ -1,5 +1,9 @@
-import { assignmentLimits, deadlineTime, attemptReservation } from './limits.js';
-import { agenticDeadlineAt, isAgenticFailureBlocked } from './execution-window.js';
+import { assignmentLimits, deadlineTime } from './limits.js';
+import {
+  attemptsAreConsistent,
+  preparationRevisionOf,
+  type AttemptChecks,
+} from './checkpoint-work.js';
 import { buildAgenticStepAssignments } from './plan-work.js';
 import { createAgenticRowSchema } from './rows.js';
 import { z } from 'zod';
@@ -40,7 +44,6 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
   if (!parsed.success) return false;
   const definition = parsed.data;
   const model = definition.resolved.model;
-  const spendCap = run.accounting === 'spend_cap';
   const step = model.plan.steps[0];
   if (
     !step ||
@@ -83,8 +86,7 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
   const windowIds = new Set<string>();
   const phases = ['preparing', 'running', 'execution_complete'];
   let priorPhase = 0;
-  const preparationRevision =
-    run.execution_windows?.filter((window) => window.status === 'preparing').length ?? 0;
+  const preparationRevision = preparationRevisionOf(run);
   let priorWindowRevision = -1;
   let priorWindowStart = Date.parse(run.started_at);
   for (const window of run.execution_windows ?? []) {
@@ -215,16 +217,21 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
     chargesBefore.set(event.revision, charged);
     charged += event.delta;
   }
-  const attemptIds = new Set<string>();
-  let transitions =
-    (run.status === 'preparing' ? 0 : 1) +
-    (run.sealed_steps?.length ?? 0) +
-    (run.execution_windows?.length ?? 0);
-  if (run.status === 'execution_complete') transitions++;
-  if (run.cursors_committed) transitions++;
-  if (run.superseded) transitions++;
-  if (run.publication === 'prepared') transitions++;
-  if (run.publication === 'confirmed') transitions += 2;
+  const checks: AttemptChecks = {
+    preparationRevision,
+    chargesBefore,
+    revisions,
+    attemptIds: new Set<string>(),
+    transitions:
+      (run.status === 'preparing' ? 0 : 1) +
+      (run.sealed_steps?.length ?? 0) +
+      (run.execution_windows?.length ?? 0),
+  };
+  if (run.status === 'execution_complete') checks.transitions++;
+  if (run.cursors_committed) checks.transitions++;
+  if (run.superseded) checks.transitions++;
+  if (run.publication === 'prepared') checks.transitions++;
+  if (run.publication === 'confirmed') checks.transitions += 2;
   for (const [index, work] of run.work.entries()) {
     const assignment = work.assignment;
     if (!run.plan_inputs && 'map' in step) {
@@ -285,78 +292,10 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
       };
       if (!jsonEqual(assignment, expected)) return false;
     }
-    const sealRevision =
-      run.sealed_steps?.find((sealed) => sealed.id === assignment.step_id)?.revision ?? 0;
-    let priorFinish = sealRevision;
-    for (const [attemptIndex, attempt] of work.attempts.entries()) {
-      const previous = work.attempts[attemptIndex - 1];
-      // Spend-cap attempts hold no reservation; the snapshot schema requires null.
-      if (
-        !spendCap &&
-        attempt.reservation !==
-          attemptReservation(
-            assignment.limits.tokens,
-            run.token_limit,
-            chargesBefore.get(attempt.start_revision)!
-          )
-      ) {
-        return false;
-      }
-      if (isAgenticFailureBlocked(run, previous, attempt.start_revision)) return false;
-      if (
-        !spendCap &&
-        previous &&
-        previous.reservation !== null &&
-        previous.charge > previous.reservation
-      ) {
-        return false;
-      }
-      if (
-        attemptIds.has(attempt.id) ||
-        attempt.start_revision <= preparationRevision ||
-        attempt.start_revision <= priorFinish ||
-        revisions.has(attempt.start_revision)
-      ) {
-        return false;
-      }
-      attemptIds.add(attempt.id);
-      revisions.add(attempt.start_revision);
-      transitions++;
-      if (attempt.outcome) {
-        if (
-          attempt.finish_revision === undefined ||
-          attempt.finish_revision <= attempt.start_revision ||
-          revisions.has(attempt.finish_revision) ||
-          !attempt.finished_at
-        ) {
-          return false;
-        }
-        const finished = Date.parse(attempt.finished_at);
-        if (finished < Date.parse(run.started_at) || finished > Date.now()) return false;
-        revisions.add(attempt.finish_revision);
-        transitions++;
-        priorFinish = attempt.finish_revision;
-        const eligible =
-          attempt.outcome.status !== 'failed' &&
-          (spendCap ||
-            ((attempt.reservation === null || attempt.charge <= attempt.reservation) &&
-              finished < deadlineTime(agenticDeadlineAt(run, attempt.start_revision))));
-        if (eligible && (!work.accepted || work.accepted.attempt_id !== attempt.id)) return false;
-        if (!eligible && work.accepted?.attempt_id === attempt.id) return false;
-      } else {
-        if (
-          attempt.finish_revision !== undefined ||
-          attempt.finish_digest !== undefined ||
-          attempt.finished_at !== undefined ||
-          (!spendCap && attempt.charge !== (attempt.reservation ?? 0))
-        ) {
-          return false;
-        }
-        priorFinish = attempt.start_revision;
-      }
-    }
+    if (!attemptsAreConsistent(run, work, checks)) return false;
   }
   return (
-    transitions === run.revision && [...revisions].every((revision) => revision < run.revision)
+    checks.transitions === run.revision &&
+    [...revisions].every((revision) => revision < run.revision)
   );
 }

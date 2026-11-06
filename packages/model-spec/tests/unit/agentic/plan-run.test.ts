@@ -98,6 +98,23 @@ describe('authored agentic plans', { timeout: 60_000 }, () => {
     expect(starts[2]! - starts[1]!).toBeGreaterThanOrEqual(150);
   });
 
+  it('measures the dispatch interval from the start of each call', async () => {
+    const f = fixture(1);
+    const starts: number[] = [];
+    f.host.minDispatchIntervalMs = 100;
+    f.host.executeAgent = async (request) => {
+      // A call that is slow to start must not eat into the interval before the next one.
+      const started = Date.now();
+      if (starts.length === 0) while (Date.now() < started + 60);
+      starts.push(Date.now());
+      return answer(request);
+    };
+    await f.run();
+    expect(starts).toHaveLength(3);
+    expect(starts[1]! - starts[0]!).toBeGreaterThanOrEqual(100);
+    expect(starts[2]! - starts[1]!).toBeGreaterThanOrEqual(100);
+  });
+
   it('does not expose preparation errors from the host', async () => {
     const f = fixture(1);
     f.host.prepare = async () => {
