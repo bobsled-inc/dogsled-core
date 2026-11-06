@@ -69,11 +69,10 @@ This change keeps the stored format and validation rules and removes repeated wo
   it. The store transitions a private copy and validates the result once.
   `read()` always fetches and verifies the payload; bytes identical to the
   session's own commit skip only the second parse and hash.
-- The coordinator's receipt validator remembers the last state it validated. When
-  the coordinator still holds that object and it serializes to the same JSON, the
-  command is replayed on a copy and compared with the fully validated response.
-  Any difference falls back to the complete check, which reports the original
-  error.
+- The coordinator does not validate a response twice over. A later change replaced
+  this step: see [Checkpoint cost](agentic-state.md#checkpoint-cost). A command applied
+  to verified state is compared with the response, and any difference takes the
+  complete check, which reports the original error.
 - The store renews before the retained-size query, each staging batch and the
   pointer transaction only when a third of the lease has elapsed since the last
   successful extension started.

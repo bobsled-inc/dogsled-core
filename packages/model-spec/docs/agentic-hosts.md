@@ -229,8 +229,10 @@ log it without removing sensitive content. The assignment boundary strips it.
 Use the built-in local store for one persistent host or configure a warehouse
 checkpoint store for workers that may restart elsewhere. A supplied store must
 hold exclusive ownership through execution and publication, fence obsolete owners,
-and atomically apply the exported `applyAgenticCheckpoint` transition. Reads return
-null only for missing state; storage failures must throw.
+and atomically apply the exported `applyAgenticCheckpoint` transition. Its result is
+deeply frozen, so save it as it is: a store that writes to it now throws. Reads return
+null only for missing state; storage failures must throw. See the
+[supplied store contract](agentic-state.md#supplied-store-contract).
 
 For incremental inputs, provide `agentic.cursorStore` or the state store's `cursors`
 capability. Dogsled never falls back to local cursors when a supplied store lacks
