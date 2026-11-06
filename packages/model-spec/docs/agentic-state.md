@@ -313,8 +313,8 @@ reservation. Cursor rows never expire.
 The row store could hold more than today's 1,000 rows, and time no longer stands in the way.
 Validating the whole snapshot on every checkpoint used to make a run's total overhead grow with
 the square of its size, and [checkpoint cost](#checkpoint-cost) no longer does. These are DuckDB
-run files on the synthetic benchmark workload, so they exclude any model time. The 2,000 row
-lifted the ceilings in a scratch change:
+run files on the synthetic benchmark workload, so they exclude any model time. The 2,000 row is
+above today's limit of 1,000, so it lifted the ceilings in a scratch change:
 
 | Assignments | Statements per assignment | Before |  After | Whole run, before | Whole run, after |
 | ----------: | ------------------------: | -----: | -----: | ----------------: | ---------------: |
@@ -565,9 +565,11 @@ response. These tests do not replace live Snowflake, BigQuery, or Databricks pro
 
 ## Checkpoint cost
 
-Each model call saves two checkpoints, `start_attempt` and `finish_attempt`. Their cost does
-not depend on how many assignments the run has. Overhead per assignment, with an in-memory
-store and a model call that returns at once:
+Each model call saves two checkpoints, `start_attempt` and `finish_attempt`. With a store that
+keeps and returns what `applyAgenticCheckpoint` gave it, their cost does not depend on how many
+assignments the run has. A store that replies with a copy still grows with the run, as the last
+column shows. Overhead per assignment, with an in-memory store and a model call that returns at
+once:
 
 | Assignments |   Before |  After | After, store replies with a copy |
 | ----------: | -------: | -----: | -------------------------------: |
@@ -575,9 +577,10 @@ store and a model call that returns at once:
 |       1,000 |   730 ms | 1.3 ms |                            35 ms |
 |       2,000 | 1,411 ms | 1.3 ms |                            70 ms |
 
-A run of 2,000 assignments spends 2.6 seconds on this instead of 47 minutes. A plan that maps
-then reduces went from 112 ms to 3.0 ms per assignment at 100, and from 1,056 ms to 2.7 ms at
-1,000.
+The 2,000 row is above today's limit of 1,000, so it was measured with the limits raised in a
+scratch change: see [Reproduce](#reproduce). A run that size would spend 2.6 seconds on this
+instead of 47 minutes. A plan that maps then reduces went from 112 ms to 3.0 ms per assignment
+at 100, and from 1,056 ms to 2.7 ms at 1,000.
 
 `AgenticRunSnapshotSchema` reads a private copy of a snapshot, and that same copy is deeply
 frozen and remembered as verified, so what is kept is exactly what was checked. It cannot

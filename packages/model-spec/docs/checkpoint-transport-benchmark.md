@@ -343,7 +343,9 @@ and memory hold up. Time does not. Overhead reached 1,003 ms per assignment, dou
 1,000-assignment figure, so a run's total overhead grows with the square of its size: 33 minutes at
 2,000, and on the same curve about 3.5 hours at 5,000 and 14 hours at 10,000, before any model time.
 Checkpoint validation no longer reads the whole snapshot, so that curve is gone, and the same run
-now takes seconds. See [why the row limits stay](agentic-state.md#why-the-row-limits-stay).
+now takes seconds. See [why the row limits stay](agentic-state.md#why-the-row-limits-stay), whose
+878 ms is a later run of the same benchmark, taken as the before figure for checkpoint cost. Both
+runs double from 1,000 to 2,000 assignments.
 
 ## Remaining work
 
