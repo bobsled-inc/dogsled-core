@@ -276,8 +276,10 @@ the snapshot from its rows. Commands, snapshots and the store interfaces are unc
 
 Writes in `__dogsled_agentic_rows` form a chain: each names its `parent`, and its `write_id` is a
 digest of its parent, revision, operation ID and content. The header's `head` names the newest
-committed write. A read walks back from `head`, verifies each digest, and ignores everything else.
-A long value spans several rows of one write.
+committed write. A read walks back from `head`, verifies each digest, and never fetches anything
+else. A long value spans several rows of one write. Before it reads any content, a load checks how
+much the run holds, and it stops with `stored_rows_exceeded` past that bound. A header value too
+long for a snapshot reads as `corrupt`.
 
 Setup confirms that all three are base tables with exactly the columns the store creates, because
 `CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses a file

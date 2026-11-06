@@ -30,7 +30,6 @@ const info = (write: AgenticRowWrite): AgenticWriteInfo => ({
   write_id: write.id,
   parent: write.parent,
   revision: write.revision,
-  chars: write.items.reduce((sum, item) => sum + item.data.length, 0),
 });
 const item = (data: string) => ({ kind: 'assignment' as const, data });
 
@@ -139,6 +138,15 @@ describe('agentic row layout', () => {
       const later = createAgenticRowWrite(first.id, 7, 'later', [item('later')]);
       const walked = walkAgenticWrites([first, later].map(info), later.id, 9);
       expect(walked.committed.size).toBe(2);
+    });
+
+    it.each([
+      ['before', [info(first), { ...info(second), parent: 'a'.repeat(64) }, info(second)]],
+      ['after', [info(first), info(second), { ...info(second), parent: 'a'.repeat(64) }]],
+    ])('rejects a write ID stored with two parents, the other one %s', (_, infos) => {
+      expect(() => walkAgenticWrites(infos, second.id, 1)).toThrow(
+        expect.objectContaining({ code: 'corrupt' })
+      );
     });
 
     it.each([

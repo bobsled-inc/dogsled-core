@@ -330,6 +330,11 @@ with an fsync:
 | plan  |         100 |                      4.19 |        209 |                         61.1 |                 102.1 |
 | plan  |         300 |                      4.07 |        610 |                        131.6 |                 243.5 |
 
+These counts predate two later checks. Setup now confirms what the tables are, which adds up to
+three statements per run, and a DuckDB `checkpoint_store` repeats that on every operation, which
+adds about 11 ms to each. A load that rebuilds a run from its rows checks the total first, which
+adds one statement, and it names the writes it reads, which adds one for each 1,024 past the first.
+
 Statements per assignment settle at four: two per model call, plus a fixed cost per run. In these
 figures time per assignment still grows with the run, but no longer because of storage. The
 coordinator and the store each validated the whole snapshot on every checkpoint: a CPU profile put

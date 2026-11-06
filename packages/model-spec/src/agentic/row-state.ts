@@ -18,6 +18,7 @@ import {
   type AgenticRowItem,
 } from './row-state-layout.js';
 import {
+  agenticHeaderColumns,
   insertAgenticWrite,
   purgeExpiredAgenticRuns,
   readAgenticWrites,
@@ -192,9 +193,8 @@ export async function openAgenticRowSession(
     const sweepOrphans = !loaded;
     loaded = true;
     const statement = agenticStatement(dialect);
-    const columns = ['layout', 'revision', 'head', 'token', 'summary', 'scope', 'model', 'run_id'];
     const headers = await db.query(
-      `SELECT ${columns.map(q).join(', ')} FROM ${runs} WHERE ${owned(statement)} LIMIT 2`,
+      `SELECT ${agenticHeaderColumns(dialect)} FROM ${runs} WHERE ${owned(statement)} LIMIT 2`,
       statement.params
     );
     if (headers.length === 0) throw loseOwnership();
@@ -206,11 +206,12 @@ export async function openAgenticRowSession(
       header.model !== key.model ||
       header.run_id !== key.id ||
       typeof header.summary !== 'string' ||
-      typeof header.head !== 'string'
+      typeof header.head !== 'string' ||
+      typeof header.token !== 'string'
     ) {
       throw new AgenticStateError('corrupt');
     }
-    token = String(header.token);
+    token = header.token;
     const revision = Number(header.revision);
     const head = header.head;
     if (header.summary === '') {

@@ -15,11 +15,14 @@ import { AGENTIC_MAX_ROWS } from './rows.js';
 import { agenticRowColumns, agenticStatement } from './row-state-tables.js';
 import { AgenticStateError } from './state.js';
 
-// Bounds on what one load reads, derived from the caps so that they rise together. A snapshot's
+// Bounds on what one run may hold, derived from the caps so that they rise together. A snapshot's
 // rows hold it about once, plus the start rows of finished attempts. An assignment has up to two
-// writes per attempt, and orphans come on top.
+// writes per attempt, a long value takes several rows, and orphans come on top.
 const maxStoredChars = 4 * AGENTIC_MAX_CHECKPOINT_BYTES;
 const maxStoredWrites = 64 * AGENTIC_MAX_ROWS + 1024;
+const maxStoredRows = 2 * maxStoredWrites;
+/** Write IDs named in one statement: few enough for any engine, and a long run takes two. */
+const maxIdsPerStatement = 1024;
 /** Expired runs removed per acquisition, so a backlog cannot delay a run. */
 const maxPurgedRuns = 64;
 const insertColumns = agenticRowColumns.map((column) => column.name);
@@ -56,6 +59,28 @@ function storedRow(row: Record<string, unknown>): AgenticStoredRow {
     parts: Number(row.parts),
     data: String(row.data),
   };
+}
+
+function idBatches(ids: readonly string[]): string[][] {
+  const batches: string[][] = [];
+  for (let start = 0; start < ids.length; start += maxIdsPerStatement) {
+    batches.push(ids.slice(start, start + maxIdsPerStatement));
+  }
+  return batches;
+}
+
+/**
+ * The header columns one load needs. A text value past the snapshot cap comes back as null, so
+ * a stored value is never fetched whole before anything can reject it. No value `save` wrote is
+ * that long: each is part of a snapshot within the cap.
+ */
+export function agenticHeaderColumns(dialect: AgenticRowDialect): string {
+  const q = dialect.identifier;
+  const capped = ['head', 'token', 'summary', 'scope', 'model', 'run_id'].map(
+    (name) =>
+      `CASE WHEN LENGTH(${q(name)}) <= ${AGENTIC_MAX_CHECKPOINT_BYTES} THEN ${q(name)} END AS ${q(name)}`
+  );
+  return [q('layout'), q('revision'), ...capped].join(', ');
 }
 
 export interface AgenticRunRows {
@@ -152,41 +177,52 @@ export async function readAgenticWrites(
 ): Promise<AgenticRowWrite[]> {
   const q = dialect.identifier;
   const where = `${q('run_hash')} = ${dialect.bind(1)}`;
-  const writeColumns = `${q('write_id')}, ${q('parent')}, ${q('revision')}`;
-  const infos = await db.query(
-    `SELECT ${writeColumns}, SUM(LENGTH(${q('data')})) AS ${q('chars')} FROM ${table} WHERE ${where} GROUP BY ${writeColumns} LIMIT ${maxStoredWrites + 1}`,
-    [hash]
-  );
+  const ids = (batch: readonly string[]): string =>
+    `${q('write_id')} IN (${batch.map((_, index) => dialect.bind(index + 2)).join(', ')})`;
   const tooMuch = (): AgenticStateError =>
     new AgenticStateError('limit', {
       reason: 'stored_rows_exceeded',
       message: 'This run holds more stored data than a checkpoint can contain.',
       hint: 'Stop all writers and inspect the run rows.',
     });
+  // First, and over every stored row, so nothing below reads more than these bounds allow.
+  const text = ['write_id', 'parent', 'operation_id', 'kind', 'data']
+    .map((name) => `COALESCE(LENGTH(${q(name)}), 0)`)
+    .join(' + ');
+  const [total] = await db.query(
+    `SELECT COUNT(*) AS ${q('stored_rows')}, SUM(${text}) AS ${q('stored_chars')} FROM ${table} WHERE ${where}`,
+    [hash]
+  );
+  if (Number(total?.stored_rows) > maxStoredRows || Number(total?.stored_chars) > maxStoredChars) {
+    throw tooMuch();
+  }
+  const writeColumns = `${q('write_id')}, ${q('parent')}, ${q('revision')}`;
+  const infos = await db.query(
+    `SELECT ${writeColumns} FROM ${table} WHERE ${where} GROUP BY ${writeColumns} LIMIT ${maxStoredWrites + 1}`,
+    [hash]
+  );
   if (infos.length > maxStoredWrites) throw tooMuch();
-  const { committed, orphans, chars } = walkAgenticWrites(
+  const { committed, orphans } = walkAgenticWrites(
     infos.map((info) => ({
       write_id: String(info.write_id),
       parent: String(info.parent),
       revision: Number(info.revision),
-      chars: Number(info.chars),
     })),
     head,
     revision
   );
-  if (chars > maxStoredChars) throw tooMuch();
   if (sweepOrphans) {
-    for (let start = 0; start < orphans.length; start += 256) {
-      const ids = orphans.slice(start, start + 256);
-      await db.query(
-        `DELETE FROM ${table} WHERE ${where} AND ${q('write_id')} IN (${ids.map((_, index) => dialect.bind(index + 2)).join(', ')})`,
-        [hash, ...ids]
-      );
+    for (const batch of idBatches(orphans)) {
+      await db.query(`DELETE FROM ${table} WHERE ${where} AND ${ids(batch)}`, [hash, ...batch]);
     }
   }
-  const stored = await db.query(
-    `SELECT ${insertColumns.slice(1).map(q).join(', ')} FROM ${table} WHERE ${where}`,
-    [hash]
-  );
-  return assembleAgenticWrites(stored.map(storedRow), committed);
+  const stored: AgenticStoredRow[] = [];
+  for (const batch of idBatches([...committed])) {
+    const rows = await db.query(
+      `SELECT ${insertColumns.slice(1).map(q).join(', ')} FROM ${table} WHERE ${where} AND ${ids(batch)}`,
+      [hash, ...batch]
+    );
+    for (const row of rows) stored.push(storedRow(row));
+  }
+  return assembleAgenticWrites(stored, committed);
 }
