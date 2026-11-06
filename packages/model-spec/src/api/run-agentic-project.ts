@@ -28,6 +28,7 @@ import {
 import { CommandError } from '../errors.js';
 import {
   assertCheckpointFile,
+  assertCheckpointFileResolved,
   checkpointIntegration as resolveCheckpointIntegration,
   configuredDuckDbStore,
 } from './checkpoint-config.js';
@@ -81,6 +82,23 @@ export async function runAgenticProject(
     (host.minDispatchIntervalMs ?? 0) > 60000
   ) {
     throw new CommandError('Agentic minDispatchIntervalMs must be an integer from 0 to 60000', 2);
+  }
+  if (
+    checkpointIntegration?.integration.source_type === 'duckdb' &&
+    !options.agentic?.stateStore &&
+    !options.dryRun
+  ) {
+    const secrets =
+      options.secretResolver ?? (await buildSecretResolver(project.cwd, options.secrets));
+    await assertCheckpointFileResolved(
+      await interpolateSecrets(checkpointIntegration.integration, secrets),
+      await Promise.all(
+        contexts
+          .map((context) => context.integration.integration)
+          .filter((target) => target.source_type === 'duckdb')
+          .map((target) => interpolateSecrets(target, secrets))
+      )
+    );
   }
   const selected = new Set(
     contexts.flatMap((context) => context.orderedNodes.map((node) => node.name))

@@ -372,7 +372,10 @@ run until the lease expires. Statements have the client deadline described there
 hits it stops with `lease_lost (statement_timeout)`; DuckDB has no server-side limit to set. The
 file is opened for each operation and never held between them. It must not be a model's output
 file, which fails validation: a host reads that file outside this store's guard, and overlapping
-instances of one file in a process can drop its lock.
+instances of one file in a process can drop its lock. A run compares the real paths after resolving
+secrets, so a symlink or a secret that leads to that file fails too. A hard link is not detected,
+and neither, on a case-insensitive file system, is another spelling of a name that does not exist
+yet.
 
 The file holds frozen inputs and results, so on a shared host put it in a directory that only its
 owner can read. Dogsled also sets the file to mode `600` when it connects, just after DuckDB
