@@ -226,6 +226,103 @@ describe('Snowflake row dialect', () => {
   });
 });
 
+describe('the base table check', () => {
+  const shape = [
+    {
+      name: '__dogsled_agentic_cursors',
+      columns: [
+        { name: 'key_hash', type: 'text' as const },
+        { name: 'version', type: 'integer' as const },
+        { name: 'active', type: 'boolean' as const },
+      ],
+    },
+  ];
+  const namespace = '"DB"."S"';
+  const snowflakeRows = () =>
+    [
+      { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'KEY_HASH', data_type: 'TEXT' },
+      { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'VERSION', data_type: 'NUMBER' },
+      { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'ACTIVE', data_type: 'BOOLEAN' },
+    ].map((row) => ({
+      ...row,
+      numeric_scale: row.data_type === 'NUMBER' ? '0' : null,
+      is_nullable: 'NO',
+      column_default: null,
+      is_identity: 'NO',
+    }));
+  const snowflake = (rows: Record<string, unknown>[]) => {
+    const db = fakeDb(async () => rows);
+    return { db, result: snowflakeRowDialect.hasBaseTables(db, namespace, shape) };
+  };
+
+  it('accepts what the Snowflake catalog reports for the declared types', async () => {
+    const { db, result } = snowflake(snowflakeRows());
+    expect(await result).toBe(true);
+    const [sql, params] = db.query.mock.calls[0]!;
+    expect(sql).toContain('"DB".information_schema.columns');
+    expect(sql).toContain('"DB".information_schema.tables');
+    expect(sql).toContain("t.table_type = 'BASE TABLE'");
+    expect(params).toEqual(['S']);
+  });
+
+  it.each([
+    ['a missing column', (rows: Record<string, unknown>[]) => rows.slice(1)],
+    [
+      'an extra column',
+      (rows: Record<string, unknown>[]) => [...rows, { ...rows[0], column_name: 'EXTRA' }],
+    ],
+    [
+      'a decimal',
+      (rows: Record<string, unknown>[]) =>
+        rows.map((row) => (row.column_name === 'VERSION' ? { ...row, numeric_scale: '2' } : row)),
+    ],
+    [
+      'a default',
+      (rows: Record<string, unknown>[]) =>
+        rows.map((row, index) => (index ? row : { ...row, column_default: "'x'" })),
+    ],
+    [
+      'an identity',
+      (rows: Record<string, unknown>[]) =>
+        rows.map((row, index) => (index ? row : { ...row, is_identity: 'YES' })),
+    ],
+    [
+      'a nullable column',
+      (rows: Record<string, unknown>[]) =>
+        rows.map((row, index) => (index ? row : { ...row, is_nullable: 'YES' })),
+    ],
+    [
+      'a name that differs by case',
+      (rows: Record<string, unknown>[]) =>
+        rows.map((row, index) => (index ? row : { ...row, column_name: 'key_hash' })),
+    ],
+  ])('refuses %s on Snowflake', async (_name, change) => {
+    expect(await snowflake(change(snowflakeRows())).result).toBe(false);
+  });
+
+  it('asks PostgreSQL for base tables and reads its own spelling of the types', async () => {
+    const plain = { is_nullable: 'NO', column_default: null, is_generated: 'NEVER' };
+    const table = { table_name: '__dogsled_agentic_cursors', ...plain };
+    const rows = [
+      { ...table, column_name: 'key_hash', data_type: 'text' },
+      { ...table, column_name: 'version', data_type: 'bigint' },
+      { ...table, column_name: 'active', data_type: 'boolean' },
+    ];
+    const db = fakeDb(async () => rows);
+    expect(await postgresRowDialect.hasBaseTables(db, '"s"', shape)).toBe(true);
+    expect(db.query.mock.calls[0]![0]).toContain("t.table_type = 'BASE TABLE'");
+    expect(db.query.mock.calls[0]![1]).toEqual(['s']);
+    const generated = rows.map((row) => ({ ...row, is_generated: 'ALWAYS' }));
+    expect(
+      await postgresRowDialect.hasBaseTables(
+        fakeDb(async () => generated),
+        '"s"',
+        shape
+      )
+    ).toBe(false);
+  });
+});
+
 describe('Snowflake lock queue', () => {
   const full = () =>
     Object.assign(

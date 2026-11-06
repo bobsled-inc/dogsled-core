@@ -125,6 +125,18 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
     damage: async (handle) => {
       await emulators.get(handle)!.sql(`UPDATE ${rowTable('ROWS')} SET "DATA" = '{"damaged":1}'`);
     },
+    replaceRowsTable: async (handle) => {
+      const emulator = emulators.get(handle)!;
+      await emulator.sql(`ALTER TABLE ${rowTable('ROWS')} RENAME TO kept_rows`);
+      await emulator.sql(
+        `CREATE VIEW ${rowTable('ROWS')} AS SELECT * FROM "MEMORY"."CHECKPOINTS".kept_rows`
+      );
+    },
+    addComputedColumn: async (handle) => {
+      await emulators
+        .get(handle)!
+        .sql(`ALTER TABLE ${rowTable('ROWS')} ADD COLUMN computed VARCHAR DEFAULT 'x'`);
+    },
   });
 
   describeAgenticStoreConformance({

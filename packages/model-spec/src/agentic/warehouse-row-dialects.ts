@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { throwIfCancelled } from '@bobsled-inc/connections';
 import { caseName, quoteIdentifier, quoteLiteral } from '../compiler/dialect.js';
-import type { AgenticRowDb, AgenticRowDialect } from './row-state-dialect.js';
+import {
+  agenticQuotedParts,
+  agenticTablesMatch,
+  type AgenticRowDb,
+  type AgenticRowDialect,
+} from './row-state-dialect.js';
 
 const pg = (name: string): string => quoteIdentifier(caseName(name, 'postgres'), 'postgres');
 const pgTypes = { text: 'TEXT', integer: 'BIGINT', boolean: 'BOOLEAN' };
@@ -23,6 +28,26 @@ export const postgresRowDialect: AgenticRowDialect = {
     `CREATE TABLE IF NOT EXISTS ${table} (${columns
       .map((column) => `${pg(column.name)} ${pgTypes[column.type]} NOT NULL`)
       .join(', ')}, PRIMARY KEY (${key.map(pg).join(', ')}))`,
+  /** A name resolves `pg_catalog` first, unless a role's `search_path` lists it later, so a
+   * stored function cannot change what this means. It calls none, and names its views in full. */
+  async hasBaseTables(db, namespace, tables) {
+    const columns = await db.query(
+      `SELECT c.table_name, c.column_name, c.data_type, c.is_nullable, c.column_default, c.is_generated FROM information_schema.columns AS c JOIN information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = $1 AND t.table_type = 'BASE TABLE'`,
+      [agenticQuotedParts(namespace).at(-1)!]
+    );
+    const found = columns.map((row) => ({
+      table: String(row.table_name),
+      name: String(row.column_name),
+      type: String(row.data_type),
+      plain:
+        row.is_nullable === 'NO' && row.column_default === null && row.is_generated === 'NEVER',
+    }));
+    return agenticTablesMatch(found, tables, {
+      text: 'text',
+      integer: 'bigint',
+      boolean: 'boolean',
+    });
+  },
   async insertIfAbsent(db, table, values, key) {
     const names = Object.keys(values);
     await db.query(
@@ -107,6 +132,33 @@ export const snowflakeRowDialect: AgenticRowDialect = {
     `CREATE TABLE IF NOT EXISTS ${table} (${columns
       .map((column) => `${sf(column.name)} ${sfTypes[column.type]} NOT NULL`)
       .join(', ')})`,
+  /** Snowflake refuses a function named like a system one, so nothing stored can change what
+   * this means. Its catalog folds names to upper case and reports `BIGINT` as `NUMBER`, so a
+   * scale is what tells it from a decimal. A table has no generated columns, but a default or an
+   * identity would still put a value there that the store did not write. */
+  async hasBaseTables(db, namespace, tables) {
+    const parts = agenticQuotedParts(namespace);
+    const catalog = parts.length > 1 ? `${sf(parts[0]!)}.` : '';
+    const columns = await db.query(
+      `SELECT c.table_name, c.column_name, c.data_type, c.numeric_scale, c.is_nullable, c.column_default, c.is_identity FROM ${catalog}information_schema.columns AS c JOIN ${catalog}information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = ? AND t.table_type = 'BASE TABLE'`,
+      [parts.at(-1)!]
+    );
+    const found = columns.map((row) => ({
+      table: String(row.table_name),
+      name: String(row.column_name),
+      type: Number(row.numeric_scale ?? 0) === 0 ? String(row.data_type) : 'decimal',
+      plain: row.is_nullable === 'NO' && row.column_default === null && row.is_identity === 'NO',
+    }));
+    const folded = tables.map(({ name, columns: shape }) => ({
+      name: caseName(name, 'snowflake'),
+      columns: shape.map((column) => ({ ...column, name: caseName(column.name, 'snowflake') })),
+    }));
+    return agenticTablesMatch(found, folded, {
+      text: 'TEXT',
+      integer: 'NUMBER',
+      boolean: 'BOOLEAN',
+    });
+  },
   // A single atomic CTAS, so the guard is never empty.
   setup: (namespace) => [
     `CREATE TABLE IF NOT EXISTS ${guardTable(namespace)} AS SELECT CAST('' AS VARCHAR) AS ${sf('token')}`,

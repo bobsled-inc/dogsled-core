@@ -149,7 +149,7 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
   const translate = (sql: string): string =>
     mapLiterals(sql, ansiLiteral)
       .replaceAll(CLOCK, engineClock)
-      .replace('"MEMORY".information_schema', 'information_schema');
+      .replaceAll('"MEMORY".information_schema', 'information_schema');
   /** What Snowflake would not compile, checked outside string literals. */
   const assertSnowflakeSql = (sql: string): void => {
     const code = mapLiterals(sql, () => "''");
@@ -190,11 +190,18 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
         : [{ 'number of rows deleted': String(changed.length) }];
     }
     const rows = await exec(translate(sql), params);
+    const reported: Record<string, string> = { VARCHAR: 'TEXT', BIGINT: 'NUMBER' };
     return rows.map((row) =>
       Object.fromEntries(
         Object.entries(row).map(([name, value]) => [
           name,
-          typeof value === 'number' || typeof value === 'bigint' ? String(value) : value,
+          name === 'data_type'
+            ? (reported[String(value)] ?? value)
+            : name === 'is_identity'
+              ? 'NO'
+              : typeof value === 'number' || typeof value === 'bigint'
+                ? String(value)
+                : value,
         ])
       )
     );

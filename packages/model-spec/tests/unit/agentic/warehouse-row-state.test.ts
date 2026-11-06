@@ -1,5 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IntegrationFile, SqlRunnerModule } from '@bobsled-inc/connections';
+import {
+  postgresRowDialect,
+  snowflakeRowDialect,
+} from '../../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../../src/agentic/warehouse-row-state.js';
 import type { AgenticRunKey } from '../../../src/agentic/state.js';
 import { checkpointIntegrations } from '../../support/checkpoint-transport.js';
@@ -10,8 +14,14 @@ vi.mock('@bobsled-inc/connections', async (original) => ({
   ...(await original<typeof import('@bobsled-inc/connections')>()),
   resolveRunner: resolve,
 }));
+// These runners answer like an empty database, so the catalog would report no tables at all.
+beforeEach(() => {
+  vi.spyOn(postgresRowDialect, 'hasBaseTables').mockResolvedValue(true);
+  vi.spyOn(snowflakeRowDialect, 'hasBaseTables').mockResolvedValue(true);
+});
 afterEach(() => {
   resolve.mockReset();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 

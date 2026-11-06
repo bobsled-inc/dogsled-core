@@ -65,6 +65,17 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
         `UPDATE ${table(handle, '__dogsled_agentic_rows')} SET ${q('data')} = '{"damaged":1}'`
       );
     },
+    replaceRowsTable: async (handle) => {
+      const rowsTable = table(handle, '__dogsled_agentic_rows');
+      const kept = table(handle, 'kept_rows');
+      await sql(`ALTER TABLE ${rowsTable} RENAME TO ${kept}`);
+      await sql(`CREATE VIEW ${rowsTable} AS SELECT * FROM ${kept}`);
+    },
+    addComputedColumn: async (handle) => {
+      await sql(
+        `ALTER TABLE ${table(handle, '__dogsled_agentic_rows')} ADD COLUMN ${q('computed')} VARCHAR DEFAULT 'x'`
+      );
+    },
   });
 
   describe('what the dialect assumes', { timeout: 300_000 }, () => {
@@ -127,6 +138,20 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
         expect(Number(row!.N)).toBe(snowflakeRowDialect.maxRowChars);
       } finally {
         await runner.close?.();
+        await dropSchema(schema);
+      }
+    });
+
+    it('refuses a function named like a built-in the store calls', async () => {
+      const schema = testSchema();
+      await sql(`CREATE SCHEMA ${qualified(schema)}`);
+      try {
+        await expect(
+          sql(
+            `CREATE FUNCTION ${qualified(schema)}.${q('sysdate')}() RETURNS TIMESTAMP_NTZ AS 'CAST(0 AS TIMESTAMP_NTZ)'`
+          )
+        ).rejects.toThrow();
+      } finally {
         await dropSchema(schema);
       }
     });
