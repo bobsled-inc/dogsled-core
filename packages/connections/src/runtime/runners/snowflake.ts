@@ -559,13 +559,17 @@ export async function buildSnowflakeRunner(
   }
 
   // Session settings do not survive a reconnect, so every new session applies the limit.
-  // The limit covers queueing, lock waits and execution.
+  // The limit covers queueing, lock waits and execution. Only state sessions ask for one, and
+  // they treat each statement as a write of its own, which an account default must not undo.
   const statementTimeoutMs = options?.statementTimeoutMs;
   async function openSession(connection: SnowflakeSdkConnection): Promise<void> {
     await connectAsync(connection);
     if (statementTimeoutMs === undefined) return;
     const seconds = Math.ceil(statementTimeoutMs / 1000);
-    await executeAsync(connection, `ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = ${seconds}`);
+    await executeAsync(
+      connection,
+      `ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = ${seconds} AUTOCOMMIT = TRUE`
+    );
   }
 
   let raw: SnowflakeSdkConnection;

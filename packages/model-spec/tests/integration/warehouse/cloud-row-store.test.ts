@@ -5,6 +5,7 @@ import { agenticRowDb } from '../../../src/agentic/row-state-dialect.js';
 import { createWarehouseAgenticCursorStore } from '../../../src/agentic/warehouse-cursors.js';
 import { snowflakeRowDialect } from '../../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../../src/agentic/warehouse-row-state.js';
+import { openLimitedRunner } from '../../../src/agentic/warehouse-statement-limit.js';
 import { caseName, quoteIdentifier } from '../../../src/compiler/dialect.js';
 import {
   describeAgenticStoreConformance,
@@ -98,6 +99,16 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
       } finally {
         await runner.close?.();
         await dropSchema(schema);
+      }
+    });
+
+    it('turns AUTOCOMMIT on for a state session', async () => {
+      const runner = await openLimitedRunner(snowflake!, { ...runners, leaseMs: 120_000 });
+      try {
+        const [row] = await runner.query!(`SHOW PARAMETERS LIKE 'AUTOCOMMIT' IN SESSION`);
+        expect(row).toMatchObject({ value: 'true', level: 'SESSION' });
+      } finally {
+        await runner.close?.();
       }
     });
 
