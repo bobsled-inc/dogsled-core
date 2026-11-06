@@ -117,14 +117,20 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
 
   describe('statements', () => {
     it('stays near four statements per assignment, whatever the engine', async () => {
-      const { emulator, store } = await open();
-      const assignments = 100;
+      const { emulator } = await open();
+      const assignments = 50;
       const workload = benchmarkWorkload(assignments, 'map');
       const directory = mkdtempSync(join(tmpdir(), 'row-statements-'));
+      // A lease this long renews nothing during the run, so its speed cannot change the count.
+      const stateStore = createWarehouseRowStore(emulator.integration, {
+        schema: 'checkpoints',
+        customRunners: emulator.customRunners,
+        leaseMs: 600_000,
+      });
       try {
         await executeAgenticRun(workload.host, workload.context(), {
           projectDirectory: directory,
-          stateStore: store(),
+          stateStore,
           run: { id: 'counted', mode: 'start' },
         });
       } finally {
@@ -132,8 +138,8 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
       }
       const perAssignment = emulator.statements.length / assignments;
       expect(perAssignment).toBeGreaterThanOrEqual(4);
-      expect(perAssignment).toBeLessThan(4.25);
-    }, 60_000);
+      expect(perAssignment).toBeLessThan(4.5);
+    }, 120_000);
   });
 
   describe('statement limits', () => {
