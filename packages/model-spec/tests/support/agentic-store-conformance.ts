@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { beginAgenticCursor } from '../../src/agentic/begin-cursor.js';
 import { validateAgenticReceipt } from '../../src/agentic/checkpoint-receipt.js';
 import { AgenticCursorConflict, type AgenticCursorStore } from '../../src/agentic/cursor.js';
@@ -106,10 +106,15 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
       sessions.push(session);
       return session;
     };
-    beforeAll(async () => {
+    // A scenario keeps the deadline it was recorded with, which a suite on a real warehouse
+    // outlasts. Recording is cheap next to that.
+    let recordedAt = 0;
+    beforeEach(async () => {
+      if (Date.now() - recordedAt < 120_000) return;
       map = await mapScenario();
       plan = await planScenario();
-    });
+      recordedAt = Date.now();
+    }, timeout);
     afterEach(async () => {
       for (const session of sessions.splice(0)) await session.release().catch(() => {});
       for (const handle of handles.splice(0)) await handle.cleanup();
