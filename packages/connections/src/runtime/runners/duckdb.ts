@@ -53,7 +53,7 @@ interface DuckDbConnectionLike {
   disconnectSync?(): void;
 }
 interface DuckDbPreparedStatementLike {
-  bind(...values: unknown[]): void;
+  bind(values: readonly unknown[], types?: readonly unknown[]): void;
   runAndReadAll(): Promise<DuckDbResultLike>;
 }
 interface DuckDbResultLike {
@@ -61,17 +61,16 @@ interface DuckDbResultLike {
   getRowObjects?(): Promise<Array<Record<string, unknown>>> | Array<Record<string, unknown>>;
 }
 
-async function loadDuckDb(): Promise<{
+interface DuckDbDriverLike {
   DuckDBInstance: {
     create(path: string, config?: DuckDbInstanceConfig): Promise<DuckDbInstanceLike>;
   };
-}> {
+  DOUBLE?: unknown;
+}
+
+async function loadDuckDb(): Promise<DuckDbDriverLike> {
   try {
-    return (await import('@duckdb/node-api')) as unknown as {
-      DuckDBInstance: {
-        create(path: string, config?: DuckDbInstanceConfig): Promise<DuckDbInstanceLike>;
-      };
-    };
+    return (await import('@duckdb/node-api')) as unknown as DuckDbDriverLike;
   } catch (err) {
     throw new CommandError(
       '@duckdb/node-api is required for the built-in DuckDB runner but is not ' +
@@ -80,6 +79,26 @@ async function loadDuckDb(): Promise<{
       1
     );
   }
+}
+
+/**
+ * The driver binds every whole JS number as a 32-bit integer and silently wraps anything
+ * larger, so 3000000000 is stored as -1294967296. Send other safe integers as bigint, which
+ * it binds exactly, and whole numbers beyond that as doubles, which is what they are.
+ */
+function boundParams(
+  params: readonly unknown[],
+  driver: DuckDbDriverLike
+): { values: unknown[]; types: unknown[] } {
+  const types: unknown[] = [];
+  const values = params.map((value, index) => {
+    if (typeof value !== 'number' || Math.round(value) !== value) return value;
+    if (value >= -2147483648 && value <= 2147483647) return value;
+    if (Number.isSafeInteger(value)) return BigInt(value);
+    types[index] = driver.DOUBLE;
+    return value;
+  });
+  return { values, types };
 }
 
 function dbPathFromAuth(auth: DuckDbAuth): string {
@@ -114,7 +133,7 @@ function parquetUri(targetUri: string): string {
  * across calls pointing at the same path.
  */
 export async function buildDuckDbRunner(integration: DuckDbIntegration): Promise<SqlRunnerModule> {
-  const { DuckDBInstance } = await loadDuckDb();
+  const driver = await loadDuckDb();
   const dbPath = dbPathFromAuth(integration.auth);
   const readOnly = integration.auth.type === 'file' && integration.auth.read_only === true;
   // `DuckDBInstance.create()` opens (and creates) the database file but does NOT
@@ -126,7 +145,7 @@ export async function buildDuckDbRunner(integration: DuckDbIntegration): Promise
   if (integration.auth.type === 'file' && !readOnly) {
     await fs.mkdir(path.dirname(dbPath), { recursive: true });
   }
-  const instance = await DuckDBInstance.create(
+  const instance = await driver.DuckDBInstance.create(
     dbPath,
     readOnly ? { access_mode: 'READ_ONLY' } : undefined
   );
@@ -178,7 +197,8 @@ export async function buildDuckDbRunner(integration: DuckDbIntegration): Promise
         );
       }
       const statement = await connection.prepare(sql);
-      statement.bind(params);
+      const bound = boundParams(params, driver);
+      statement.bind(bound.values, bound.types);
       const result = await withInterrupt(options?.signal, () => statement.runAndReadAll());
       if (!result.getRowObjects) {
         throw new CommandError(
