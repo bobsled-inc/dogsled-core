@@ -52,6 +52,12 @@ export interface AgenticRowDialect {
   nameTaken?(error: unknown): boolean;
   /** Statements to run after the tables, for an engine that needs more than them. */
   setup?(namespace: string): readonly string[];
+  /** How many tables hold run headers, as sizes of sets, newest first. A run starts in the first
+   * set, in the table a hash of the run picks, and stays where it started. An engine that runs
+   * updates of one table one at a time needs several, or every run queues behind every other.
+   * To change the number, put the new size first and keep the old one: runs in flight are found
+   * there, and retention empties it. A set's size is in its tables' names, so sets never clash. */
+  headerTables: readonly number[];
   /** Adds one row unless `key` already exists. Concurrent calls must add one row between
    * them. Engines that enforce no keys need their own way to do that, which may take more
    * than one statement. A second row fails closed: readers report the run as corrupt. */
@@ -131,6 +137,7 @@ const types = { text: 'VARCHAR', integer: 'BIGINT', boolean: 'BOOLEAN' };
  * store serializes the connections inside it, so `insertIfAbsent` cannot race.
  */
 export const duckDbRowDialect: AgenticRowDialect = {
+  headerTables: [1],
   identifier: (name) => quoteIdentifier(caseName(name, 'duckdb'), 'duckdb'),
   bind: (index) => `$${index}`,
   clock: 'CAST(epoch(now()) * 1000 AS BIGINT)',

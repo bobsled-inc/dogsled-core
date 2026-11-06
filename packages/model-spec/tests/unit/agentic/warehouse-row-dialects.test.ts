@@ -41,6 +41,10 @@ const script = (sql: string): string =>
 describe('PostgreSQL row dialect', () => {
   const dialect = postgresRowDialect;
 
+  it('keeps one header table, because rows lock on their own', () => {
+    expect(dialect.headerTables).toEqual([1]);
+  });
+
   it('keeps one row per key through the key the table declares', async () => {
     expect(dialect.createTable('t', [{ name: 'key_hash', type: 'text' }], ['key_hash'])).toContain(
       'PRIMARY KEY ("key_hash")'
@@ -84,6 +88,10 @@ describe('Snowflake row dialect', () => {
     const statement = agenticStatement(dialect);
     expect(`${statement.bind('a')} ${statement.bind(2)}`).toBe('? ?');
     expect(statement.params).toEqual(['a', 2]);
+  });
+
+  it('spreads run headers over a fixed set of tables', () => {
+    expect(dialect.headerTables).toEqual([8]);
   });
 
   it('recognizes a table refused because a view holds its name', () => {
@@ -268,6 +276,7 @@ describe('the base table check', () => {
       { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'KEY_HASH', data_type: 'TEXT' },
       { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'VERSION', data_type: 'NUMBER' },
       { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'ACTIVE', data_type: 'BOOLEAN' },
+      { table_name: '__DOGSLED_AGENTIC_GUARD', column_name: 'TOKEN', data_type: 'TEXT' },
     ].map((row) => ({
       ...row,
       // What the driver reads back: numbers as text, and so a null number as the text NULL.
@@ -280,6 +289,11 @@ describe('the base table check', () => {
     const db = fakeDb(async () => rows);
     return { db, result: snowflakeRowDialect.hasBaseTables(db, namespace, shape) };
   };
+
+  it('needs the guard table as well, because a check that passes skips setup', async () => {
+    const rows = snowflakeRows();
+    expect(await snowflake(rows.slice(0, 3)).result).toBe(false);
+  });
 
   it('accepts what the Snowflake catalog reports for the declared types', async () => {
     const { db, result } = snowflake(snowflakeRows());

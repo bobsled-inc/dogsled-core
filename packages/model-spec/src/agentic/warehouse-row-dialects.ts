@@ -29,6 +29,7 @@ const pgTuple = (columns: number, row: number): string =>
  * `now()` is the start of the transaction, which is not the moment a fence is checked.
  */
 export const postgresRowDialect: AgenticRowDialect = {
+  headerTables: [1],
   identifier: pg,
   bind: (index) => `$${index}`,
   clock: 'CAST(EXTRACT(EPOCH FROM clock_timestamp()) * 1000 AS BIGINT)',
@@ -84,7 +85,8 @@ const sfLiteral = (value: string | number | bigint | boolean): string =>
   typeof value === 'string' || typeof value === 'number'
     ? quoteLiteral(value, 'snowflake')
     : String(value).toUpperCase();
-const guardTable = (namespace: string): string => `${namespace}.${sf('__dogsled_agentic_guard')}`;
+const guardName = '__dogsled_agentic_guard';
+const guardTable = (namespace: string): string => `${namespace}.${sf(guardName)}`;
 
 /**
  * One submission, because a reconnect between statements would split a client-side transaction.
@@ -141,6 +143,7 @@ function rowsUpdated(rows: readonly Record<string, unknown>[]): number {
  * full only about eight times.
  */
 export const snowflakeRowDialect: AgenticRowDialect = {
+  headerTables: [8],
   identifier: sf,
   bind: () => '?',
   // SYSDATE is UTC by definition. CURRENT_TIMESTAMP is in the session's time zone, and the
@@ -161,10 +164,12 @@ export const snowflakeRowDialect: AgenticRowDialect = {
       name: caseName(name, 'snowflake'),
       columns: shape.map((column) => ({ ...column, name: caseName(column.name, 'snowflake') })),
     }));
+    const guard = caseName(guardName, 'snowflake');
+    const names = [...folded.map(({ name }) => name), guard];
     // Only the store's own tables: the schema can hold others, such as the old store's.
     const columns = await db.query(
-      `SELECT c.table_name, c.column_name, c.data_type, c.numeric_scale, c.is_nullable, c.column_default, c.is_identity FROM ${catalog}information_schema.columns AS c JOIN ${catalog}information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = ? AND t.table_type = 'BASE TABLE' AND c.table_name IN (${folded.map(() => '?').join(', ')})`,
-      [parts.at(-1)!, ...folded.map(({ name }) => name)]
+      `SELECT c.table_name, c.column_name, c.data_type, c.numeric_scale, c.is_nullable, c.column_default, c.is_identity FROM ${catalog}information_schema.columns AS c JOIN ${catalog}information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = ? AND t.table_type = 'BASE TABLE' AND c.table_name IN (${names.map(() => '?').join(', ')})`,
+      [parts.at(-1)!, ...names]
     );
     const found = columns.map((row) => ({
       table: String(row.table_name),
@@ -176,6 +181,7 @@ export const snowflakeRowDialect: AgenticRowDialect = {
           : String(row.data_type),
       plain: row.is_nullable === 'NO' && row.column_default === null && row.is_identity === 'NO',
     }));
+    if (!found.some((row) => row.table === guard)) return false;
     return agenticTablesMatch(found, folded, {
       text: 'TEXT',
       integer: 'NUMBER',

@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { CustomRunnerRegistry, resolveRunner } from '@bobsled-inc/connections';
 import { agenticRowDb } from '../../../src/agentic/row-state-dialect.js';
+import { agenticHeaderTableName } from '../../../src/agentic/row-state-tables.js';
+import { digestAgenticState } from '../../../src/agentic/state.js';
 import { createAgenticRowWrite } from '../../../src/agentic/row-state-layout.js';
 import { insertAgenticWrite } from '../../../src/agentic/row-state-rows.js';
 import { createWarehouseAgenticCursorStore } from '../../../src/agentic/warehouse-cursors.js';
@@ -56,8 +58,12 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
       schemas.set(handle, schema);
       return handle;
     },
-    expireLease: async (handle) => {
-      await sql(`UPDATE ${table(handle, '__dogsled_agentic_runs')} SET ${q('lease_expires')} = 0`);
+    expireLease: async (handle, key) => {
+      const header = agenticHeaderTableName(
+        digestAgenticState(key),
+        snowflakeRowDialect.headerTables[0]!
+      );
+      await sql(`UPDATE ${table(handle, header)} SET ${q('lease_expires')} = 0`);
     },
     withRetention: (handle, retentionMs) => rows(schemas.get(handle)!, retentionMs),
     damage: async (handle) => {

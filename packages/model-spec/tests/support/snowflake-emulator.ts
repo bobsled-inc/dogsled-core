@@ -129,6 +129,9 @@ export interface SnowflakeEmulator {
   lockHoldMs: number;
   /** How many statements a full lock queue has refused. */
   lockRefusals(): number;
+  /** Holds the lock on a table, as a statement that does not finish would, until the returned
+   * function is called. `table` is the quoted name as the SQL writes it. */
+  holdLock(table: string): Promise<() => void>;
   /** Fails a statement this matches, as a crash before it would, and then stops matching. */
   crashBefore?: RegExp;
   /** Runs SQL on the engine directly, with no emulation. */
@@ -164,6 +167,7 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
     statements: [],
     lockHoldMs: 0,
     lockRefusals: () => locks.refused,
+    holdLock: (table) => locks.acquire(table),
     sql: (statement) => exec(statement),
     close: async () => {
       await tail;

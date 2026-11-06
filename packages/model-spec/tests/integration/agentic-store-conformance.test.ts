@@ -14,6 +14,8 @@ import {
   createLocalAgenticStateStore,
   digestAgenticState,
 } from '../../src/agentic/index.js';
+import { agenticHeaderTableName } from '../../src/agentic/row-state-tables.js';
+import { snowflakeRowDialect } from '../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import {
   describeAgenticStoreConformance,
@@ -96,6 +98,12 @@ const runFile = (handle: StoreHandle, key: Parameters<typeof digestAgenticState>
 });
 const emulators = new WeakMap<StoreHandle, SnowflakeEmulator>();
 const rowTable = (name: string) => `"MEMORY"."CHECKPOINTS"."__DOGSLED_AGENTIC_${name}"`;
+/** The header table of `key`, which the store must find without being told. */
+const headerTable = (key: Parameters<typeof digestAgenticState>[0]) =>
+  `"MEMORY"."CHECKPOINTS"."${agenticHeaderTableName(
+    digestAgenticState(key),
+    snowflakeRowDialect.headerTables[0]!
+  ).toUpperCase()}"`;
 const emulated = (emulator: SnowflakeEmulator, retentionMs?: number) =>
   createWarehouseRowStore(emulator.integration, {
     schema: 'checkpoints',
@@ -118,8 +126,8 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
       emulators.set(handle, emulator);
       return handle;
     },
-    expireLease: async (handle) => {
-      await emulators.get(handle)!.sql(`UPDATE ${rowTable('RUNS')} SET "LEASE_EXPIRES" = 0`);
+    expireLease: async (handle, key) => {
+      await emulators.get(handle)!.sql(`UPDATE ${headerTable(key)} SET "LEASE_EXPIRES" = 0`);
     },
     withRetention: (handle, retentionMs) => emulated(emulators.get(handle)!, retentionMs),
     damage: async (handle) => {
