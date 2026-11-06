@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { CustomRunnerRegistry, resolveRunner } from '@bobsled-inc/connections';
 import { agenticRowDb } from '../../../src/agentic/row-state-dialect.js';
+import { createAgenticRowWrite } from '../../../src/agentic/row-state-layout.js';
+import { insertAgenticWrite } from '../../../src/agentic/row-state-rows.js';
 import { createWarehouseAgenticCursorStore } from '../../../src/agentic/warehouse-cursors.js';
 import { snowflakeRowDialect } from '../../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../../src/agentic/warehouse-row-state.js';
@@ -96,6 +98,33 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
         expect(await snowflakeRowDialect.changed(db, `${set} WHERE ${q('a')} = ?`, [1])).toBe(1);
         expect(await snowflakeRowDialect.changed(db, `${set} WHERE ${q('a')} = ?`, [99])).toBe(0);
         expect(await snowflakeRowDialect.changed(db, set, [])).toBe(2);
+      } finally {
+        await runner.close?.();
+        await dropSchema(schema);
+      }
+    });
+
+    it('accepts the largest INSERT the row bounds allow', async () => {
+      const schema = testSchema();
+      const runner = await resolveRunner(snowflake!, runners);
+      try {
+        const session = await rows(schema).acquire({ scope: 'size', model: 'probe', id: 'run' });
+        await session.release();
+        const table = `${qualified(schema)}.${q('__dogsled_agentic_rows')}`;
+        // Three bytes per character: the most one statement can carry under these bounds.
+        const data = '語'.repeat(snowflakeRowDialect.maxRowChars);
+        await insertAgenticWrite(
+          {
+            db: agenticRowDb(runner),
+            dialect: snowflakeRowDialect,
+            table,
+            hash: 'h'.repeat(64),
+          },
+          createAgenticRowWrite('', 1, 'operation', [{ kind: 'attempt', data }]),
+          async () => {}
+        );
+        const [row] = await runner.query!(`SELECT LENGTH(${q('data')}) AS ${q('n')} FROM ${table}`);
+        expect(Number(row!.N)).toBe(snowflakeRowDialect.maxRowChars);
       } finally {
         await runner.close?.();
         await dropSchema(schema);
