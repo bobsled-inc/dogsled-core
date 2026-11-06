@@ -394,6 +394,28 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     expect(headers.map((row) => row.run_id)).toEqual(['other']);
   });
 
+  it.each([
+    ['its rows and left the header', /^DELETE FROM .*__dogsled_agentic_runs/],
+    ['nothing yet', /^DELETE FROM .*__dogsled_agentic_rows/],
+  ])('reads a run as new after a purge that deleted %s', async (_, stoppedAt) => {
+    const { open, expire } = await fixture();
+    const first = await open(map.key, { retentionMs: 1 });
+    await replay(first, map, 2);
+    await first.release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    faults.next = once(stoppedAt, 'lose_before');
+    await expect(open({ ...map.key, id: 'other' })).rejects.toThrow('Synthetic');
+    await expire();
+    const resumed = await open(map.key);
+    await expect(resumed.read()).resolves.toBeNull();
+    // A run can start again in its place, and what the purge left does not disturb it.
+    const snapshot = await replay(resumed, map, 1);
+    await resumed.release();
+    const next = await open(map.key);
+    await expect(next.read()).resolves.toEqual(snapshot);
+    await next.release();
+  });
+
   it('reports a statement timeout as the reason the session stopped', async () => {
     const { open } = await fixture();
     const session = await open(plan.key);

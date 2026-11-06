@@ -68,8 +68,10 @@ export interface AgenticRunRows {
 
 /**
  * Removes runs past their retention date, other than the one being opened. The purge takes
- * each run as an owner would, so a resume cannot start while its rows are being deleted. If
- * it stops partway, its lease ends, the header is still expired, and a later purge finishes.
+ * each run as an owner would, so a resume cannot start while its rows are being deleted. The
+ * same statement empties the header, so from then on the run reads as new and its rows are
+ * orphans: a header left naming deleted rows would read as corrupt. If the purge stops partway,
+ * its lease ends, the header is still expired, and a later purge finishes.
  * Everything is by run ID, so it touches only the runs it removes.
  */
 export async function purgeExpiredAgenticRuns(
@@ -90,7 +92,13 @@ export async function purgeExpiredAgenticRuns(
   if (!due.length) return;
   const owner = randomUUID();
   const claim = agenticStatement(dialect);
-  const set = `${q('lease_owner')} = ${claim.bind(owner)}, ${q('lease_expires')} = ${clock} + ${claim.bind(leaseMs)}`;
+  const set = [
+    `${q('lease_owner')} = ${claim.bind(owner)}`,
+    `${q('lease_expires')} = ${clock} + ${claim.bind(leaseMs)}`,
+    `${q('revision')} = -1`,
+    `${q('head')} = ''`,
+    `${q('summary')} = ''`,
+  ].join(', ');
   const candidates = due.map((row) => claim.bind(String(row.run_hash))).join(', ');
   await dialect.changed(
     db,
