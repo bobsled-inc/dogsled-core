@@ -310,25 +310,21 @@ reservation. Cursor rows never expire.
 
 ### Why the row limits stay
 
-The row store could hold more than today's 1,000 rows, but the time a run spends outside model
-calls grows with the square of its size. These are DuckDB run files on the synthetic benchmark
-workload, so the overhead excludes any model time. The 2,000 row lifted the ceilings in a scratch
-change:
+The row store could hold more than today's 1,000 rows, and time no longer stands in the way.
+Validating the whole snapshot on every checkpoint used to make a run's total overhead grow with
+the square of its size, and [checkpoint cost](#checkpoint-cost) no longer does. These are DuckDB
+run files on the synthetic benchmark workload, so they exclude any model time. The 2,000 row
+lifted the ceilings in a scratch change:
 
-| Assignments | Statements per assignment | Data sent | Overhead per assignment | Total overhead |
-| ----------: | ------------------------: | --------: | ----------------------: | -------------: |
-|         300 |                      4.05 |    2.1 MB |                  152 ms |           46 s |
-|       1,000 |                      4.02 |    6.4 MB |                  506 ms |        8.4 min |
-|       2,000 |                      4.01 |   12.3 MB |                1,003 ms |         33 min |
+| Assignments | Statements per assignment | Before |  After | Whole run, before | Whole run, after |
+| ----------: | ------------------------: | -----: | -----: | ----------------: | ---------------: |
+|         100 |                      4.13 |  78 ms | 4.4 ms |             7.8 s |            0.4 s |
+|       1,000 |                      4.02 | 445 ms | 4.0 ms |           7.4 min |            4.1 s |
+|       2,000 |                      4.01 | 878 ms | 3.6 ms |            29 min |            7.1 s |
 
-Statements stay flat and data grows in step with the run. Memory holds up: peak heap stayed under
-900 MiB at all three sizes, although it includes uncollected garbage and varies between runs (570
-and 881 MiB at 1,000). Overhead per assignment doubles when the run doubles, so on this curve a
-run's total is about 3.5 hours at 5,000 and 14 hours at 10,000.
-
-That cost is validating the whole snapshot on every checkpoint, in the coordinator and in the
-store: a CPU profile puts 80% of a 1,000-assignment run inside schema validation. Raising the
-limits first needs validation of the change alone. See the
+Statements stay flat and data grows in step with the run. The limits stay because nothing has been
+proved above them: the store conformance suite runs at today's limits. Raising one is a separate
+change, with a measurement on the row store at the new size. See the
 [benchmark](checkpoint-transport-benchmark.md#row-layout) for the method.
 
 ### Local DuckDB files
@@ -598,8 +594,10 @@ the run, although the store has already paid more than that to make the copy. A 
 differs anywhere stops the run as `corrupt`, as it always has. So does one that holds the right
 values but is not plain JSON, which takes the complete check.
 
-The built-in file and warehouse stores are not flat. They rewrite the run on every checkpoint,
-which grows with the run whatever the coordinator does, and they gain little from this.
+The row store does exactly this, so DuckDB run files are flat too: see
+[why the row limits stay](#why-the-row-limits-stay). The file and warehouse stores are not. They
+rewrite the run on every checkpoint, which grows with the run whatever the coordinator does, and
+they gain little from this.
 
 Only these two commands take this path. The others happen a fixed number of times per run and
 take the complete check. So does anything the path cannot prove: it can only accept, so the
