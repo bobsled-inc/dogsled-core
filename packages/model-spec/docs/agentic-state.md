@@ -427,9 +427,10 @@ to a project that configures `checkpoint_store`. Other engines are rejected.
 The three tables live in the given schema, shared by every run, so the store creates no tables per
 run. Ownership is the same fenced lease, and each statement has the same
 [limits](#warehouse-checkpoints) as the warehouse store: it runs on a dedicated session through the
-same statement limit and client deadline. The role needs schema and table creation, `SELECT`,
-`INSERT`, `UPDATE` and `DELETE`. Rows hold the same data as the warehouse store, so apply the same
-access policies.
+same statement limit and client deadline. The role needs table creation, `SELECT`, `INSERT`,
+`UPDATE` and `DELETE` in the schema. It needs to create schemas only if the schema does not exist
+yet, so a role scoped to one pre-created schema is enough. Rows hold the same data as the warehouse
+store, so apply the same access policies.
 
 Runs in progress stay in the store that started them. A host that opts in must not resume them from
 this store, which would not find them. Each cursor key takes its value from `__dogsled_cursors` in

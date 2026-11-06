@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { resolveRunner } from '@bobsled-inc/connections';
+import { CustomRunnerRegistry, resolveRunner } from '@bobsled-inc/connections';
 import { agenticRowDb } from '../../../src/agentic/row-state-dialect.js';
 import { createWarehouseAgenticCursorStore } from '../../../src/agentic/warehouse-cursors.js';
 import { snowflakeRowDialect } from '../../../src/agentic/warehouse-row-dialects.js';
@@ -97,6 +97,32 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
         expect(await snowflakeRowDialect.changed(db, set, [])).toBe(2);
       } finally {
         await runner.close?.();
+        await dropSchema(schema);
+      }
+    });
+
+    it('sends no CREATE SCHEMA for a schema that exists', async () => {
+      const schema = testSchema();
+      const sent: string[] = [];
+      const customRunners = new CustomRunnerRegistry();
+      customRunners.register('snowflake', snowflake!.auth.type, async (base, context) => {
+        const runner = await resolveRunner(base, { ...context, ...runners });
+        return {
+          ...runner,
+          run: (...args) => {
+            sent.push(args[0]);
+            return runner.run(...args);
+          },
+        };
+      });
+      await sql(`CREATE SCHEMA ${qualified(schema)}`);
+      try {
+        const store = createWarehouseRowStore(snowflake!, { schema, customRunners });
+        const session = await store.acquire({ scope: 'schema', model: 'probe', id: randomUUID() });
+        await session.release();
+        expect(sent.filter((statement) => statement.startsWith('CREATE TABLE'))).not.toEqual([]);
+        expect(sent.filter((statement) => statement.startsWith('CREATE SCHEMA'))).toEqual([]);
+      } finally {
         await dropSchema(schema);
       }
     });

@@ -124,6 +124,30 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     expect(await sql(`SELECT 1 FROM "${name}"."__dogsled_agentic_rows"`)).toHaveLength(1);
   });
 
+  it('works for a role that can use a schema but not create one', async () => {
+    const name = schema();
+    const role = `row_store_${randomUUID().replaceAll('-', '')}`;
+    const password = randomUUID();
+    await sql(`CREATE SCHEMA "${name}"`);
+    await sql(`CREATE ROLE "${role}" LOGIN PASSWORD '${password}'`);
+    try {
+      await sql(`GRANT USAGE, CREATE ON SCHEMA "${name}" TO "${role}"`);
+      const scoped = {
+        ...integration(),
+        auth: { type: 'password' as const, user: role, password },
+      };
+      const { key: run, initial } = await mapScenario();
+      const store = createWarehouseRowStore(scoped, { schema: name });
+      const session = await store.acquire(run);
+      expect(await session.create(initial)).toEqual(initial);
+      await session.release();
+      expect(await store.cursors!.begin(key, signature, 'run')).toEqual({});
+    } finally {
+      await sql(`DROP SCHEMA "${name}" CASCADE`);
+      await sql(`DROP ROLE "${role}"`);
+    }
+  });
+
   it('declares the keys it relies on', async () => {
     const name = schema();
     const { key: run } = await mapScenario();

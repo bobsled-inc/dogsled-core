@@ -76,6 +76,9 @@ export interface AgenticRowConnection {
 }
 export interface AgenticRowBackend {
   dialect: AgenticRowDialect;
+  /** Whether the schema exists already. A role scoped to one schema can use it but not create
+   * schemas, and PostgreSQL refuses `CREATE SCHEMA IF NOT EXISTS` to such a role even then. */
+  hasSchema?(db: AgenticRowDb): Promise<boolean>;
   /** `handling` is what a timed-out statement does to the session. A warehouse backend passes
    * it to `openLimitedRunner`, which sets the server-side limit for that session. */
   connect(handling?: StatementTimeoutHandling): Promise<AgenticRowConnection>;
@@ -129,11 +132,12 @@ export function agenticRowTable(
 async function createAgenticRowTables(
   db: AgenticRowDb,
   dialect: AgenticRowDialect,
-  namespace: string
+  namespace: string,
+  hasSchema?: AgenticRowBackend['hasSchema']
 ): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     try {
-      await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
+      if (!(await hasSchema?.(db))) await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
       for (const { name, columns, key } of agenticTables) {
         await db.run(dialect.createTable(agenticRowTable(dialect, namespace, name), columns, key));
       }
@@ -166,9 +170,10 @@ async function assertAgenticRowTables(
 export async function prepareAgenticRowTables(
   db: AgenticRowDb,
   dialect: AgenticRowDialect,
-  namespace: string
+  namespace: string,
+  hasSchema?: AgenticRowBackend['hasSchema']
 ): Promise<void> {
-  await createAgenticRowTables(db, dialect, namespace);
+  await createAgenticRowTables(db, dialect, namespace, hasSchema);
   await assertAgenticRowTables(db, dialect, namespace);
 }
 
@@ -182,7 +187,7 @@ export async function ensureAgenticRowTables(
   namespace: string
 ): Promise<void> {
   if (preparedBackends.has(backend)) return;
-  await prepareAgenticRowTables(db, backend.dialect, namespace);
+  await prepareAgenticRowTables(db, backend.dialect, namespace, backend.hasSchema);
   preparedBackends.add(backend);
 }
 

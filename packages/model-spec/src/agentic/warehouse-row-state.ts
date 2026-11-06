@@ -40,15 +40,31 @@ const dialects: Record<RowEngine, AgenticRowDialect> = {
 const statementLayers: Record<RowEngine, (db: AgenticRowDb, signal?: AbortSignal) => AgenticRowDb> =
   { postgres: (db) => db, snowflake: waitForSnowflakeLockQueue };
 
+type WarehouseTarget = { catalog?: string; schema: string };
+
+/** Names a view of the target's catalog. Snowflake's information schema is per database. */
+const catalogView = (dialect: AgenticRowDialect, target: WarehouseTarget, view: string): string =>
+  `${target.catalog ? `${dialect.identifier(target.catalog)}.` : ''}information_schema.${view}`;
+
+/** PostgreSQL's information schema can hide a schema that a role does not own, so it asks the
+ * catalog. A wrong "no" would send the statement this exists to avoid. */
+const schemaQuery = (engine: RowEngine, target: WarehouseTarget): string =>
+  engine === 'postgres'
+    ? 'SELECT 1 AS found FROM pg_catalog.pg_namespace WHERE nspname = $1 LIMIT 1'
+    : `SELECT 1 AS found FROM ${catalogView(dialects[engine], target, 'schemata')} WHERE schema_name = ? LIMIT 1`;
+
 function warehouseRowBackend(
   integration: IntegrationFile,
   engine: RowEngine,
+  target: WarehouseTarget,
   namespace: string,
   options: WarehouseRowStoreOptions
 ): AgenticRowBackend {
   const { signal } = options;
   return {
     dialect: dialects[engine],
+    hasSchema: async (db) =>
+      (await db.query(schemaQuery(engine, target), [target.schema])).length > 0,
     async connect(handling) {
       const runner = await openLimitedRunner(integration, options, handling);
       return {
@@ -71,11 +87,11 @@ function warehouseRowBackend(
 function legacyCursorReader(
   backend: AgenticRowBackend,
   engine: RowEngine,
-  target: { catalog?: string; schema: string }
+  target: WarehouseTarget
 ): AgenticLegacyCursorReader {
   const { dialect } = backend;
   const q = dialect.identifier;
-  const tables = `${target.catalog ? `${q(target.catalog)}.` : ''}information_schema.tables`;
+  const tables = catalogView(dialect, target, 'tables');
   return async (key) => {
     const connection = await backend.connect();
     try {
@@ -133,7 +149,10 @@ export function createWarehouseRowStore(
   const namespace = [...(target.catalog ? [target.catalog] : []), target.schema]
     .map(dialect.identifier)
     .join('.');
-  const backend = warehouseRowBackend(integration, engine, namespace, { ...options, leaseMs });
+  const backend = warehouseRowBackend(integration, engine, target, namespace, {
+    ...options,
+    leaseMs,
+  });
   return createAgenticRowStore(backend, {
     leaseMs,
     retentionMs,

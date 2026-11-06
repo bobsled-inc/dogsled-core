@@ -142,6 +142,25 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
     }, 120_000);
   });
 
+  describe('schemas', () => {
+    const creates = (emulator: SnowflakeEmulator) =>
+      emulator.statements.filter((sql) => sql.startsWith('CREATE SCHEMA'));
+
+    it('creates a schema that is missing', async () => {
+      const { emulator, store } = await open();
+      await (await store().acquire((await mapScenario()).key)).release();
+      expect(creates(emulator)).toHaveLength(1);
+    });
+
+    it('never asks to create a schema that exists', async () => {
+      const { emulator, store } = await open();
+      await emulator.sql(`CREATE SCHEMA ${namespace}`);
+      await (await store().acquire((await mapScenario()).key)).release();
+      await store().cursors!.begin(key, signature, 'run-1');
+      expect(creates(emulator)).toEqual([]);
+    });
+  });
+
   describe('statement limits', () => {
     it('opens each session through the limited runner', async () => {
       const { emulator, store } = await open();
