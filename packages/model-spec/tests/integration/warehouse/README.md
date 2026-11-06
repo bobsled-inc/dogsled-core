@@ -47,7 +47,7 @@ pnpm exec vitest run tests/integration/warehouse/cloud-row-store.test.ts
 
 Each test creates its own schema, named after `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA` with a random
 suffix, and drops only that one. The role therefore needs to create schemas in the database. With
-another engine's integration the suite is skipped. Allow about 40 minutes.
+another engine's integration the suite is skipped. It takes about 25 minutes.
 
 A host that opens Snowflake through its own runner factory should prove it here before it switches.
 Set `DOGSLED_MODEL_SPEC_CHECKPOINT_RUNNERS` to the absolute path of an ES module that exports a

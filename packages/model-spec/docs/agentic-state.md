@@ -437,19 +437,22 @@ this store, which would not find them. Each cursor key takes its value from `__d
 that schema when the row store first sees the key, and never reads it again once the value has
 landed. A key that an unfinished run still holds there fails with `cursor_held_elsewhere` and writes
 nothing: this store cannot open that run to take it over. Finish the run from the previous store
-first. If the old table cannot be read, or a record is damaged, the key stops rather than starting
-again from the beginning.
+first. A damaged record stops the key rather than starting it again from the beginning. So does a
+role that cannot read the old table on PostgreSQL. Snowflake reports a table the role cannot see
+exactly as it reports one that does not exist, so **on Snowflake the role must hold `SELECT` on
+`__DOGSLED_CURSORS` wherever the old store ran**. Without it, a key starts from empty.
 
 A carried value goes in as a bound update after the key's first row, never inside it. That first row
 has version -1 until the value lands. If a process stops in between, the next use of the key reads
-the old value again, so an empty row can never pass for a key with no progress.
+the old value again, so an empty row can never pass for a key with no progress. Do not drop
+`__dogsled_cursors` while any cursor row has version -1: that key would start from empty.
 
 |                           | PostgreSQL                        | Snowflake                                                   |
 | ------------------------- | --------------------------------- | ----------------------------------------------------------- |
 | One row per key           | Primary key, `ON CONFLICT`        | One transaction behind the guard table                      |
 | Rows changed by an update | `RETURNING`                       | The count the update returns                                |
 | Store clock               | `clock_timestamp()`               | `SYSDATE()`, which the session time zone cannot move        |
-| Concurrent header updates | Row locks, so runs do not contend | Generally one at a time per table, so updates queue         |
+| Concurrent header updates | Row locks, so runs do not contend | One at a time per table, about 2.2 a second measured        |
 | Largest `INSERT` (`data`) | 4 Mi characters, 256 rows         | 256 Ki characters, 128 rows, under the 1 MB statement limit |
 
 Snowflake standard tables enforce no keys, so the first row for a run or cursor key goes through a
@@ -458,20 +461,22 @@ take turns, then counts the key's rows and inserts only if there are none. This 
 run and once per key. A statement that Snowflake refuses because too many others wait for the same
 table lock never ran, so the store repeats it, for about 15 seconds at most.
 
-The store relies on Snowflake's default `AUTOCOMMIT = TRUE`, because each statement is a write of its
-own.
+Each statement is a write of its own, so state sessions turn `AUTOCOMMIT` on, whatever the account's
+default is.
 
-A host that opens Snowflake through its own runner factory must provide three things the built-in
+A host that opens Snowflake through its own runner factory must provide four things the built-in
 runner does: the result row of an `UPDATE`, with its `number of rows updated` column, returned from
-`query`; `EXECUTE IMMEDIATE` scripts through `run`; and `bigint` values among bind parameters.
-Without the first, every write fails as an uncertain one rather than reading as a lost lease. Run
-the [live suite](../tests/integration/warehouse/README.md#agentic-store-conformance) through that
-factory before switching.
+`query`; `EXECUTE IMMEDIATE` scripts through `run`; `bigint` values among bind parameters; and
+`AUTOCOMMIT` on in the session. Without the first, every write fails as an uncertain one rather than
+reading as a lost lease. Run the
+[live suite](../tests/integration/warehouse/README.md#agentic-store-conformance) through that factory
+before switching.
 
-The Snowflake dialect passes the conformance suite against an emulator in every test run, which
-proves its logic but not Snowflake's behavior. Run the [live suite](../tests/integration/warehouse/README.md#agentic-store-conformance)
-against your account first. How header updates behave as runs are added is in the
-[benchmark](checkpoint-transport-benchmark.md#row-store-on-a-shared-header-table).
+The store passes its conformance suite on PostgreSQL 17 and on a real Snowflake account, including
+concurrent first use of a key and concurrent takeover of a lease. On Snowflake, one shared table of
+headers limits a schema to about 55 model calls a minute, however many runs share it. See the
+[benchmark](checkpoint-transport-benchmark.md#row-store-on-a-shared-header-table) for what that means
+for more than about four runs at once.
 
 ## Local files, ownership and retention
 

@@ -370,9 +370,10 @@ It runs on PostgreSQL with `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres` a
 `DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION` and `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA`. Settings:
 `CHECKPOINT_BENCHMARK_RUNS` (default `1,4,8,16`), `CHECKPOINT_BENCHMARK_ASSIGNMENTS` (per run,
 default `100`), `CHECKPOINT_BENCHMARK_SAMPLES` (default `3`), `CHECKPOINT_BENCHMARK_MODEL_MS`
-(default `0`) and `CHECKPOINT_BENCHMARK_OUTPUT` (a file for one JSON line per sample). On Snowflake,
-30 assignments and one sample are enough to start with: at 500 ms per statement that is about ten
-minutes at 16 runs.
+(default `0`), `CHECKPOINT_BENCHMARK_SCHEMAS` (how many schemas the runs spread across, default `1`),
+`CHECKPOINT_BENCHMARK_STORE` (`warehouse` for the store this replaces) and
+`CHECKPOINT_BENCHMARK_OUTPUT` (a file for one JSON line per sample). On Snowflake, 30 assignments and
+one sample are enough: 16 runs on one table take about ten minutes.
 
 **PostgreSQL 17, real engine.** 100 assignments per run, the median of 3 samples of each measure, on
 one Apple M3 Max laptop with Node.js 25.9 and PostgreSQL in Docker, while other jobs ran:
@@ -388,53 +389,50 @@ Header updates scale with the runs, because PostgreSQL locks rows and each run u
 16 runs throughput stops rising and latency goes up, but the cause is the machine rather than the
 table: the row inserts, which contend for nothing, slow down at least as much as the header updates.
 
-**A table-locking engine, simulated.** PostgreSQL cannot show what happens when updates of one
-table run one at a time, which is what Snowflake
-[documents for standard tables](https://docs.snowflake.com/en/sql-reference/transactions). So the
-same real runs also model it. `CHECKPOINT_BENCHMARK_SERIALIZE_MS` makes each header update hold a lock
-for that long, as a table lock would. `CHECKPOINT_BENCHMARK_STATEMENT_MS` adds a delay to every other
-statement. `CHECKPOINT_BENCHMARK_HEADER_TABLES` sets how many locks there are, chosen by a hash of the
-run, which models a fixed set of header tables. **These are the results of an assumption, not
-measurements of Snowflake.**
+**Snowflake, real account.** 30 assignments per run, one sample, run from one laptop. Spreading the
+runs across 8 schemas, by a hash of the run, gives each group its own header table, so the right half
+measures a fixed set of 8 tables with no change to the store:
 
-Two hold times bracket it, with the same delay on other statements. 800 ms is calibrated: at about 48
-statements per model call it gives 38 seconds a call, which is the 1.5 calls a minute seen on a cloud
-warehouse. 300 ms is a fast statement. Each run has 20 assignments, one sample, and a model call that
-returns at once. No run failed in any configuration.
+| Runs at once | One table: calls a minute | Per run | Header update p50 / p95 | 8 tables: calls a minute | Per run | Header update p50 / p95 |
+| -----------: | ------------------------: | ------: | ----------------------: | -----------------------: | ------: | ----------------------: |
+|            1 |                      20.4 |    20.4 |          550 / 1,090 ms |                     21.4 |    21.4 |            563 / 857 ms |
+|            4 |                      52.2 |    13.0 |        1,133 / 2,734 ms |                     74.0 |    18.5 |          565 / 1,145 ms |
+|            8 |                      56.8 |     7.1 |        2,745 / 4,128 ms |                    163.9 |    20.5 |          546 / 1,048 ms |
+|           16 |                      52.1 |     3.3 |        6,219 / 8,034 ms |                    243.6 |    15.2 |          657 / 2,567 ms |
 
-| Hold   | Runs at once | One table: calls a minute | Per run | Header update p50 | 8 tables: calls a minute | Per run | Header update p50 |
-| ------ | -----------: | ------------------------: | ------: | ----------------: | -----------------------: | ------: | ----------------: |
-| 300 ms |            1 |                        41 |    41.2 |             0.3 s |                       41 |    41.1 |             0.3 s |
-| 300 ms |            4 |                        82 |    20.6 |             0.9 s |                      160 |    39.9 |             0.3 s |
-| 300 ms |            8 |                        82 |    10.3 |             2.1 s |                      318 |    39.8 |             0.3 s |
-| 300 ms |           16 |                        78 |     4.9 |             4.6 s |                      443 |    27.7 |             0.6 s |
-| 800 ms |            1 |                        16 |    15.6 |             0.8 s |                       16 |    15.6 |             0.8 s |
-| 800 ms |            4 |                        30 |     7.5 |             2.4 s |                       60 |    15.0 |             0.8 s |
-| 800 ms |            8 |                        28 |     3.5 |             5.6 s |                      120 |    15.0 |             0.8 s |
-| 800 ms |           16 |                        23 |     1.4 |            12.1 s |                      162 |    10.1 |             1.6 s |
+No run failed in any configuration. Statements per assignment were 4.57 to 4.93 on one table and 4.57
+to 4.59 on eight. They are above four because a 30-assignment run has a larger fixed share, and on one
+table a run that waits renews its lease more often.
 
-One run gains what the row layout promises: 15.6 calls a minute against 1.5 at the same statement
-cost. A shared table then stops scaling at about four runs. Its ceiling is about 30 calls a minute
-divided by the hold in seconds, across every run in the schema, however many there are. Past it the
-total falls, from 30 to 23 calls a minute at 800 ms, because a run waiting in the queue still renews
-its lease, and renewals join the same queue. At 16 runs and 800 ms a run is back at 1.4 calls a
-minute, which is today's speed. A slower model call moves when the ceiling arrives but not where it
-is: with a 2 second model call and a 300 ms hold, 16 runs still reach 78 calls a minute on one table,
-and 251 on eight.
+Latency per statement with one run: a header update 550 ms, a row insert 532 ms, a read about 290 ms,
+a table setup statement 234 ms and the first-row script 1,631 ms. Row inserts stay at 500 to 590 ms
+whatever the concurrency, so appends do not contend. The first-row script queues on its guard, up to 13
+seconds with 16 runs starting together, but it runs once per run.
 
-**Recommendation: one shared header table on PostgreSQL, and a small fixed set on Snowflake.**
+Updates of one table do run one at a time on Snowflake, at about 2.2 a second. So a shared table stops
+scaling at about four runs, and it holds a schema to about 55 model calls a minute however many runs
+share it. Past that point the total falls, because a run waiting in the queue still renews its lease,
+and renewals join the same queue. At 16 runs a header update waits 6.2 seconds and a run does 3.3 calls
+a minute. Eight tables take that wait back to 0.7 seconds and give 4.7 times the total.
+
+**Before and after, same account and workload.** One run of 30 assignments on the store this replaces
+took 8.77 statements per assignment and did 7.7 calls a minute, against 4.57 and 20.4. That is the
+smallest the gap gets, because the old store's work grows with the run and the row store's does not.
+Its transaction scripts took 2,033 ms each at the median, and nothing here measures it at 1,000 rows.
+
+**Recommendation: one shared header table on PostgreSQL, and a fixed set of 8 on Snowflake.**
 
 - **PostgreSQL:** measured above, runs do not contend. A fixed set would add nothing.
-- **Snowflake:** 8 header tables, chosen by a hash of the run. Eight tables divide the ceiling by
-  eight with no per-run objects, and they also divide the queue that reports say Snowflake aborts at
-  about 20 waiters. It is one small core change: the table name per run. Retention already deletes by
-  run ID.
+- **Snowflake:** 8 header tables, chosen by a hash of the run. A header update's median is 550 ms, more
+  than five times the 100 ms below which one table would have been enough. Eight tables also divide the
+  queue of waiting statements, which
+  [public reports](https://community.streamsets.com/community-articles-and-got-a-question-7/jdbcqueryexecutor-can-t-execute-querynet-snowflake-client-jdbc-snowflakesqlexception-2177)
+  say Snowflake aborts at 20 waiters. It is one small core change: the table name per run. Retention
+  already deletes by run ID.
 
-Confirm this with one number before building it. A header update's p50 with one run, from the command
-above on Snowflake, is an upper bound on the hold. If it is under about 100 ms, a shared table carries
-about 300 calls a minute, and that may be enough. Otherwise build the fixed set before more than about
-four runs share a schema. Until then, a host can get the same effect by giving different models
-different schemas. A model's runs must stay in one schema, because its cursor lives there.
+Until that exists, a host running more than about four runs at once can get the same effect by giving
+different models different schemas, which is what the measurement above did. A model's runs must stay
+in one schema, because its cursor lives there.
 
 ## Remaining work
 

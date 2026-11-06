@@ -68,9 +68,9 @@ database. These records can contain source data and personal information.
 
 Runs saved as rows expire, in DuckDB and in the opt-in warehouse row store: Dogsled removes a run
 30 days after its last write, or after the period the store sets, unless it is still owed
-publication or cursor recovery. This is storage housekeeping, not secure erasure. Nothing else
-expires automatically, including runs in the file store, warehouse checkpoints and publication
-stages.
+publication or cursor recovery. This is storage housekeeping, not secure erasure: a warehouse can
+keep deleted rows for a time, as Snowflake does in Time Travel and Fail-safe. Nothing else expires
+automatically, including runs in the file store, warehouse checkpoints and publication stages.
 Apply storage access controls and a retention policy that preserves pending work
 and receipts needed for recovery. Removing required state prevents resume. See
 [agentic operations](docs/reference/advanced/agentic-model-operations.md#retention-and-cleanup)
