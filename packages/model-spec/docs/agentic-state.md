@@ -584,7 +584,7 @@ then reduces went from 112 ms to 3.0 ms per assignment at 100, and from 1,056 ms
 1,000.
 
 A snapshot that passes `AgenticRunSnapshotSchema` is deeply frozen and remembered as verified.
-It cannot change, so it never needs checking again. A start or finish of an attempt on a
+It cannot change, so it needs checking again only if the clock moves behind a time saved in it. A start or finish of an attempt on a
 verified snapshot copies only the work item it changes, and shares the rest with the state
 before it. Only that item is checked, by the same code the schema uses. Running totals stand
 in for what the schema learns by reading everything: the size limits, the attempt IDs, and

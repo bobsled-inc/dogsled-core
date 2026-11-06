@@ -21,7 +21,7 @@ type Work = AgenticRunSnapshot['work'][number];
 
 /**
  * A verified snapshot has passed AgenticRunSnapshotSchema, directly or by a chain of proved
- * commands from one that did, and is deeply frozen, so it can never stop being valid. That is
+ * commands from one that did, and is deeply frozen, so only the clock can invalidate it. That is
  * what lets a start or finish of an attempt check only what it changed: everything else is the
  * same frozen object as in its predecessor. A failed proof decides nothing. The caller takes the
  * complete path, which accepts or reports the error exactly as it would without this module.
