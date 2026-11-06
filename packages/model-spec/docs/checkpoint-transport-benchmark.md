@@ -391,7 +391,8 @@ table: the row inserts, which contend for nothing, slow down at least as much as
 
 **Snowflake, real account.** 30 assignments per run, one sample, run from one laptop. Spreading the
 runs across 8 schemas, by a hash of the run, gives each group its own header table, so the right half
-measures a fixed set of 8 tables with no change to the store:
+shows what 8 tables do for header updates with no change to the store. Each group also gets its own
+rows table, which a set of header tables would not:
 
 | Runs at once | One table: calls a minute | Per run | Header update p50 / p95 | 8 tables: calls a minute | Per run | Header update p50 / p95 |
 | -----------: | ------------------------: | ------: | ----------------------: | -----------------------: | ------: | ----------------------: |
@@ -406,14 +407,18 @@ table a run that waits renews its lease more often.
 
 Latency per statement with one run: a header update 550 ms, a row insert 532 ms, a read about 290 ms,
 a table setup statement 234 ms and the first-row script 1,631 ms. Row inserts stay at 500 to 590 ms
-whatever the concurrency, so appends do not contend. The first-row script queues on its guard, up to 13
-seconds with 16 runs starting together, but it runs once per run.
+here, but that does not show that appends are free. On one table the header queue holds inserts to
+about two a second, and the runs across 8 schemas split the rows table as well as the headers. The
+first-row script queues on its guard, up to 13 seconds with 16 runs starting together, but it runs
+once per run.
 
 Updates of one table do run one at a time on Snowflake, at about 2.2 a second. So a shared table stops
 scaling at about four runs, and it holds a schema to about 55 model calls a minute however many runs
 share it. Past that point the total falls, because a run waiting in the queue still renews its lease,
 and renewals join the same queue. At 16 runs a header update waits 6.2 seconds and a run does 3.3 calls
-a minute. Eight tables take that wait back to 0.7 seconds and give 4.7 times the total.
+a minute. Eight schemas take that wait back to 0.7 seconds and give 4.7 times the total. That total
+has eight rows tables behind it, so it is what a spread across schemas gives, not what a set of
+header tables inside one schema would.
 
 **Before and after, same account and workload.** One run of 30 assignments on the store this replaces
 took 8.77 statements per assignment and did 7.7 calls a minute, against 4.57 and 20.4. That is the
