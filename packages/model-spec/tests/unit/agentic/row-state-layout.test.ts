@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   agenticCommandItems,
@@ -175,6 +176,21 @@ describe('agentic row layout', () => {
       expect(() => walkAgenticWrites(infos, head as string, revision as number)).toThrow(
         expect.objectContaining({ code: 'corrupt' })
       );
+    });
+  });
+
+  describe('trust', () => {
+    it('accepts a chain from anyone who can write the store, as the docs say', () => {
+      const forged = createAgenticRowWrite('', 0, 'create', [item('written by someone else')]);
+      const rows = agenticStoredRows(forged, 100);
+      expect(assembleAgenticWrites(rows, new Set([forged.id]))).toEqual([forged]);
+      const guide = readFileSync(
+        new URL('../../../docs/agentic-state.md', import.meta.url),
+        'utf8'
+      );
+      const text = guide.replace(/\s+/g, ' ');
+      expect(text).toContain('The digest detects damage, not forgery.');
+      expect(text).toContain('anyone who can write the store can write a chain that verifies');
     });
   });
 

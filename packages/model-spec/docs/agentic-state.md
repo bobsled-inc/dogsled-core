@@ -281,12 +281,23 @@ else. A long value spans several rows of one write. Before it reads any content,
 much the run holds, and it stops with `stored_rows_exceeded` past that bound. A header value too
 long for a snapshot reads as `corrupt`.
 
+The digest detects damage, not forgery. It has no key, so anyone who can write the store can write
+a chain that verifies. Treat write access to a state file, or to the schema that holds these
+tables, as trusted: whoever has it decides what a run resumes from.
+
 Setup confirms that all three are base tables with exactly the columns the store creates, because
-`CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses a file
-that stores any function, because a stored macro can replace a built-in in every statement run on
-that file. So a DuckDB state file must hold nothing else. Any of these reports `corrupt` with the
-reason `state_table_replaced`. DuckDB state files also open with external access and extension
-loading off, so nothing stored in one can read other files or reach the network.
+`CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses indexes,
+keys and check constraints on those tables, and any stored function in the file, because a stored
+macro can replace a built-in in every statement run on that file. Any of these reports `corrupt`
+with the reason `state_table_replaced`. So give a DuckDB store a file of its own. The check does
+not look at column collations, user types or objects unrelated to the store. DuckDB state files
+also open with external access and extension loading off, so nothing stored in one can read other
+files or reach the network.
+
+A file held open for a session is checked when it opens, and a file opened for each operation is
+checked at each open. This refuses what was planted in a file before it was opened. It is no
+defence against someone who writes the file with the owner's rights while a run is using it, which
+the trust statement above covers.
 
 A command writes its rows, then commits them with one update of the header. That update is the
 only commit. It matches the session's owner, unexpired lease, token and revision, and its result
