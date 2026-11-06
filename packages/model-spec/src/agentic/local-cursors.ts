@@ -1,11 +1,24 @@
-import { updateLocalState } from '../compiler/state.js';
+import { loadState, updateLocalState } from '../compiler/state.js';
 import { z } from 'zod';
 import { digestAgenticState } from './state.js';
 import { AgenticCursorKeySchema, CursorRecordSchema, updateCursorRecord } from './cursor.js';
-import type { AgenticCursorStore, AgenticCursorKey, AgenticCursorValues } from './cursor.js';
+import type {
+  AgenticCursorStore,
+  AgenticCursorKey,
+  AgenticCursorValues,
+  CursorRecord,
+} from './cursor.js';
 const Index = z
   .record(z.string().regex(/^[a-f0-9]{64}$/), CursorRecordSchema)
   .refine((value) => Object.keys(value).length <= 10000);
+/** The progress saved for a key in the file store, if any. */
+export function readLocalAgenticCursor(
+  project: string,
+  key: AgenticCursorKey
+): CursorRecord | null {
+  const index = Index.parse(loadState(project).agentic_cursors ?? {});
+  return index[digestAgenticState(AgenticCursorKeySchema.parse(key))] ?? null;
+}
 /** Shared local state is the local equivalent of the warehouse cursor table. */
 export function createLocalAgenticCursorStore(project: string): AgenticCursorStore {
   const mutate = (

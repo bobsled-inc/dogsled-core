@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   executeAgenticRun,
+  createDefaultAgenticStateStore,
   createLocalAgenticStateStore,
   AgenticStateError,
   applyAgenticCheckpoint,
@@ -87,7 +88,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
       '18',
       '19',
     ]);
-    const session = await createLocalAgenticStateStore(dir).acquire({ ...key, id: 'recovery' });
+    const session = await createDefaultAgenticStateStore(dir).acquire({ ...key, id: 'recovery' });
     const state = await session.read();
     expect(state?.work.filter((work) => work.accepted)).toHaveLength(20);
     expect(state?.charged).toBe(140); // 20 measured outcomes plus the lost reservation.
@@ -162,9 +163,12 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
       executeAgenticRun(f.host, f.context(), { ...options, run: { id: 'run', mode: 'resume' } })
     ).rejects.toThrow('limit');
     expect(f.host.executeAgent).not.toHaveBeenCalled();
-    expect(fs.readFileSync(join(dir, '.dogsled/model-spec/run-state.json'), 'utf8')).not.toContain(
-      'provider secret'
-    );
+    const session = await createDefaultAgenticStateStore(dir).acquire(key);
+    try {
+      expect(JSON.stringify(await session.read())).not.toContain('provider secret');
+    } finally {
+      await session.release();
+    }
   });
 
   it('refreshes the deadline but still enforces the original definition on resume', async () => {
@@ -252,6 +256,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
     const f = runFixture(0);
     const options = {
       projectDirectory: dir,
+      stateStore: createLocalAgenticStateStore(dir),
       run: { id: 'run', mode: 'resume' as const },
       accounting: 'reservation' as const,
     };
@@ -437,6 +442,7 @@ it('stops before writing when orphan files exhaust the local artifact budget', a
   await expect(
     executeAgenticRun(f.host, f.context(), {
       projectDirectory: dir,
+      stateStore: createLocalAgenticStateStore(dir),
       run: { id: 'run', mode: 'start' },
       accounting: 'reservation' as const,
     })

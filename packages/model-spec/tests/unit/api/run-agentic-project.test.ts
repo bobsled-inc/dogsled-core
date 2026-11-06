@@ -252,8 +252,15 @@ describe('mixed agentic dispatch probe', () => {
   it('creates and closes the default publisher for the selected integration', async () => {
     const f = fixture();
     writeFileSync(
+      join(f.root, 'integrations/checkpoints.yml'),
+      stringify({
+        ...checkpointIntegrations.find((item) => item.source_type === 'postgres')!,
+        name: 'checkpoints',
+      })
+    );
+    writeFileSync(
       join(f.root, 'model-spec.yml'),
-      stringify({ checkpoint_store: { integration: 'lake', schema: 'system_store' } })
+      stringify({ checkpoint_store: { integration: 'checkpoints', schema: 'system_store' } })
     );
     warehouseFactory.mockReturnValue(new MemoryStateStore());
     const close = vi.fn(async () => {});
@@ -434,11 +441,16 @@ describe('mixed agentic dispatch probe', () => {
     'resolves configured checkpoints with lease %s and host credentials',
     async (leaseSeconds) => {
       const f = fixture();
+      const warehouse = checkpointIntegrations.find((item) => item.source_type === 'postgres')!;
+      writeFileSync(
+        join(f.root, 'integrations/checkpoints.yml'),
+        stringify({ ...warehouse, name: 'checkpoints' })
+      );
       writeFileSync(
         join(f.root, 'model-spec.yml'),
         stringify({
           checkpoint_store: {
-            integration: 'lake',
+            integration: 'checkpoints',
             schema: 'checkpoints',
             lease_seconds: leaseSeconds,
           },
@@ -454,7 +466,7 @@ describe('mixed agentic dispatch probe', () => {
       });
       expect(result.ok).toBe(true);
       expect(warehouseFactory).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'lake' }),
+        expect.objectContaining({ name: 'checkpoints' }),
         expect.objectContaining({
           schema: 'checkpoints',
           ...(leaseSeconds === undefined ? {} : { leaseMs: leaseSeconds * 1000 }),

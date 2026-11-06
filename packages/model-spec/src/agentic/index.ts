@@ -42,7 +42,13 @@ export {
   type AgenticStateSession,
   type AgenticStateStore,
 } from './state.js';
-export * from './local-state.js';
+export { createLocalAgenticStateStore } from './local-state.js';
+export {
+  createDefaultAgenticStateStore,
+  type DefaultAgenticStateOptions,
+} from './default-state.js';
+export { createDuckDbCheckpointStore, type DuckDbCheckpointOptions } from './duckdb-state.js';
+export type { AgenticStoreLimits } from './store-limits.js';
 export * from './run.js';
 export type { AgenticAssignmentCounts, AgenticRunProgress } from './progress.js';
 

@@ -21,6 +21,7 @@ import {
   digestAgenticState,
   transitionAgenticCheckpoint,
 } from './state.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS } from './store-limits.js';
 import type { AgenticStateStore, AgenticRunSnapshot } from './state.js';
 
 interface Confirmed {
@@ -36,7 +37,7 @@ export type WarehouseCheckpointOptions = ResolveRunnerOptions & {
   signal?: AbortSignal;
 };
 
-const maxBytes = 16 * 1024 * 1024;
+const maxBytes = AGENTIC_DEFAULT_STORE_LIMITS.maxCheckpointBytes;
 const chunkSize = 64 * 1024;
 // Seven full chunks (448 KiB) and 21 bindings leave ample headroom below
 // Snowflake's 1 MB recommendation including bound values. SQL contains only
@@ -86,6 +87,7 @@ export function createWarehouseCheckpointStore(
   const lit = (value: string | number) => publicationLiteral(value, sqlDialect);
   return {
     cursors: createWarehouseAgenticCursorStore(integration, options),
+    limits: AGENTIC_DEFAULT_STORE_LIMITS,
     async acquire(rawKey) {
       throwIfCancelled(options.signal);
       const key = AgenticRunKeySchema.parse(rawKey);

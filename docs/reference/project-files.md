@@ -85,8 +85,8 @@ optional `overrides` and `defaults`, used by `load run` when a resource has no
 Optional folder settings: `sources_dir`, `models_dir`, `seeds_dir`,
 `entity_graph_dir` (default `entity-graph`), `integrations_dir`, `targets_dir`,
 `metrics_dir`, `relationships_dir`, `vqs_dir`, and `checkpoint_store`
-(`integration`, `schema`, `lease_seconds`) for agentic model checkpoints in a
-warehouse.
+(`integration`, `schema`, `lease_seconds`, and `retention_days` for DuckDB) for
+agentic model checkpoints in a warehouse or DuckDB file.
 
 ## Integrations
 

@@ -105,6 +105,19 @@ function dbPathFromAuth(auth: DuckDbAuth): string {
   return auth.type === 'memory' ? ':memory:' : auth.path;
 }
 
+/**
+ * Whether the optional DuckDB driver can be loaded here. A missing package and a
+ * native binding that fails to load are both reported as unavailable.
+ */
+export async function isDuckDbAvailable(): Promise<boolean> {
+  try {
+    await loadDuckDb();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function escapeDuckDbString(value: string): string {
   return value.replace(/'/g, "''");
 }

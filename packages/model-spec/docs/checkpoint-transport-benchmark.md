@@ -250,13 +250,108 @@ elapsed). The tables above capture the initial batching measurements. The
 follow-up changes when renewals become due; the frozen-date benchmark keeps
 its fast-path request counts unchanged.
 
+## Row layout
+
+The [row layout](agentic-state.md#row-layout) writes only what changed, so what a checkpoint writes
+no longer grows with the run. This benchmark measures it on real engines: DuckDB in process
+and PostgreSQL over a local socket. It uses the workloads above and counts every statement at the
+runner boundary. Each run is the real executor, scheduler, receipts and store. Only the model call
+is synthetic, and it returns at once, so these numbers are store overhead and not run length.
+
+```sh
+CHECKPOINT_BENCHMARK=1 pnpm --filter @bobsled-inc/model-spec exec vitest run \
+  tests/integration/agentic-row-state.bench.test.ts
+```
+
+Settings: `CHECKPOINT_BENCHMARK_STORES` (`file`, `duckdb-run-file`, `duckdb-shared`,
+`postgres-warehouse`, `postgres-rows`), `CHECKPOINT_BENCHMARK_SIZES`,
+`CHECKPOINT_BENCHMARK_SHAPES`, `CHECKPOINT_BENCHMARK_SAMPLES` and
+`CHECKPOINT_BENCHMARK_LATENCY_MS`. The PostgreSQL stores use the settings in
+`tests/integration/warehouse/README.md`. `postgres-rows` uses the dialect in test support, which
+does not ship.
+
+Measured on one Apple M3 Max laptop with Node.js 25.9.0, and PostgreSQL 17 in Docker on the same
+machine, while other jobs ran. Before and after ran in the same session on the same code, so compare
+within a row; timings are indicative. Timings are medians of the listed samples. The 1,000-assignment
+row-layout PostgreSQL figure is the median of three runs of 492, 567 and 1,858 ms per assignment; the
+slowest ran during a load spike that slowed the coordinator by the same factor. Statement and byte
+counts are deterministic.
+
+**PostgreSQL, 0 ms added latency** (warehouse store → row layout):
+
+| Shape | Assignments | Samples | Statements per assignment | Checkpoint ms per assignment | Run ms per assignment |
+| ----- | ----------: | :-----: | ------------------------: | ---------------------------: | --------------------: |
+| map   |           5 |  3 / 3  |              22.60 → 6.80 |                   21.8 → 7.4 |           30.6 → 15.2 |
+| map   |         100 |  3 / 3  |              18.35 → 4.14 |                  68.9 → 32.9 |           96.9 → 57.9 |
+| map   |         300 |  3 / 3  |              21.95 → 4.05 |                 174.0 → 77.5 |         251.3 → 150.9 |
+| map   |       1,000 |  1 / 3  |              33.92 → 4.03 |                457.3 → 273.9 |         705.9 → 567.3 |
+| plan  |           5 |  3 / 3  |              25.80 → 7.60 |                  23.4 → 11.4 |           34.6 → 23.6 |
+| plan  |         100 |  3 / 3  |              18.94 → 4.18 |                  86.5 → 47.0 |          127.4 → 87.2 |
+| plan  |         300 |  3 / 3  |              22.24 → 4.07 |                211.3 → 119.3 |         324.1 → 237.5 |
+
+**PostgreSQL, 50 ms added per statement.** A local socket hides what statements cost, so this adds
+a delay per statement, as the transport benchmark does:
+
+| Shape | Assignments | Statements per assignment | Run ms per assignment |
+| ----- | ----------: | ------------------------: | --------------------: |
+| map   |         100 |              18.43 → 4.14 |       1,143.6 → 296.2 |
+| plan  |         100 |              19.02 → 4.18 |       1,181.4 → 323.6 |
+
+**DuckDB project** (file store → one DuckDB file per run). DuckDB could not hold checkpoints
+before, so the file store is the baseline. It issues no statements. Each rewrite is a full snapshot
+with an fsync:
+
+| Shape | Assignments | Samples | Before: file rewrites per assignment | After: statements per assignment | Checkpoint ms per assignment | Run ms per assignment |
+| ----- | ----------: | :-----: | -----------------------------------: | -------------------------------: | ---------------------------: | --------------------: |
+| map   |           5 |  3 / 3  |                                 5.20 |                             6.60 |                   90.6 → 6.2 |           99.2 → 16.0 |
+| map   |         100 |  3 / 3  |                                 4.06 |                             4.13 |                 195.1 → 28.4 |          222.7 → 56.1 |
+| map   |         300 |  3 / 3  |                                 4.02 |                             4.05 |                 465.8 → 75.7 |         544.7 → 152.2 |
+| map   |       1,000 |  1 / 2  |                                 4.01 |                             4.02 |              1,449.7 → 247.0 |       1,709.8 → 506.4 |
+| plan  |           5 |  3 / 3  |                                 6.00 |                             7.40 |                  115.6 → 9.6 |          128.4 → 22.4 |
+| plan  |         100 |  3 / 3  |                                 4.10 |                             4.17 |                 263.8 → 44.3 |          305.3 → 87.3 |
+| plan  |         300 |  3 / 3  |                                 4.03 |                             4.06 |                675.8 → 121.6 |         797.9 → 241.4 |
+
+**Data each run sends or rewrites.** The old stores grow with the square of the run:
+
+| Assignments | File store rewrites (MB) | PostgreSQL warehouse store sends (MB) | Row store sends (MB) |
+| ----------: | -----------------------: | ------------------------------------: | -------------------: |
+|         100 |                    105.3 |                                 141.0 |                  0.9 |
+|         300 |                    707.5 |                                 946.2 |                  2.3 |
+|       1,000 |                  6,476.6 |                               8,656.9 |                  7.0 |
+
+**DuckDB `checkpoint_store`**, which opens its file for each operation:
+
+| Shape | Assignments | Statements per assignment | File opens | Checkpoint ms per assignment | Run ms per assignment |
+| ----- | ----------: | ------------------------: | ---------: | ---------------------------: | --------------------: |
+| map   |           5 |                      7.00 |         17 |                         22.4 |                  31.0 |
+| map   |         100 |                      4.15 |        207 |                         46.3 |                  74.4 |
+| map   |         300 |                      4.06 |        608 |                         94.0 |                 168.7 |
+| map   |       1,000 |                      4.03 |      2,020 |                        272.9 |                 526.5 |
+| plan  |           5 |                      7.80 |         19 |                         30.2 |                  42.6 |
+| plan  |         100 |                      4.19 |        209 |                         61.1 |                 102.1 |
+| plan  |         300 |                      4.07 |        610 |                        131.6 |                 243.5 |
+
+Statements per assignment settle at four: two per model call, plus a fixed cost per run. Time per
+assignment still grows with the run, but no longer because of storage. The coordinator and the
+store each validate the whole snapshot on every checkpoint, and the run loop is deliberately
+unchanged. That is now the main cost, and it is why the row limits stay where they are: a CPU
+profile puts 80% of a 1,000-assignment run on a run file inside schema validation, and 77% at 300.
+
+**Why the limits stay at 1,000 rows.** To see whether the store could hold more, one run lifted the
+ceilings temporarily, in a scratch change. At 2,000 assignments on a run file, statements stayed at
+4.01 per assignment, the run sent 12.3 MB, and peak heap was 623 MiB with 863 MiB resident, so storage
+and memory hold up. Time does not. Overhead reached 1,003 ms per assignment, double the
+1,000-assignment figure, so a run's total overhead grows with the square of its size: 33 minutes at
+2,000, and on the same curve about 3.5 hours at 5,000 and 14 hours at 10,000, before any model time.
+Raising the limits first needs checkpoint validation that does not read the whole snapshot.
+
 ## Remaining work
 
-Every transition still validates the whole new state twice (store and coordinator)
-and writes the whole snapshot, so total work grows with the square of plan size.
-Each save still issues a pointer read, a retained-size scan, its payload INSERTs and
-the fenced pointer commit. Reducing written bytes would need a new persistence format,
-which is outside this change. Batching and reuse do not change billable
-dispatch reservations, result acceptance, usage accounting, cursor or publication
-semantics. Measure representative applications on real providers before drawing
-conclusions about end-to-end production speedups.
+Every transition still validates the whole new state twice (store and coordinator),
+so total work grows with the square of plan size. The warehouse store also writes the
+whole snapshot on each save, and issues a pointer read, a retained-size scan, its
+payload INSERTs and the fenced pointer commit; the row layout removes that once a
+warehouse dialect exists. Batching and reuse do not change billable dispatch
+reservations, result acceptance, usage accounting, cursor or publication semantics.
+Measure representative applications on real providers before drawing conclusions
+about end-to-end production speedups.

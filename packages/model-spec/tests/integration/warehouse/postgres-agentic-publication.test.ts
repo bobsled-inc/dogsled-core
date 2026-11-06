@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveRunner, type PostgresIntegration } from '@bobsled-inc/connections';
-import { createLocalAgenticStateStore, executeAgenticRun } from '../../../src/agentic/index.js';
+import { createDefaultAgenticStateStore, executeAgenticRun } from '../../../src/agentic/index.js';
 import { createSqlAgenticPublisher } from '../../../src/agentic/sql-publisher.js';
 import { publicationNames, publicationType } from '../../../src/agentic/sql-publication-dialect.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
@@ -310,7 +310,7 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
 
   it('recovers after target commit before state confirmation with both stores reopened', async () => {
     const f = await setup();
-    const local = createLocalAgenticStateStore(f.directory);
+    const local = createDefaultAgenticStateStore(f.directory);
     const brokenStore = {
       async acquire(key: Parameters<typeof local.acquire>[0]) {
         const session = await local.acquire(key);
@@ -361,7 +361,7 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
         publisher: stopBeforeCommit,
       })
     ).rejects.toThrow('before commit');
-    const local = createLocalAgenticStateStore(f.directory);
+    const local = createDefaultAgenticStateStore(f.directory);
     const session = await local.acquire({ scope: 'lake', model: f.model.name, id: 'old' });
     const snapshot = await session.read();
     await session.release();

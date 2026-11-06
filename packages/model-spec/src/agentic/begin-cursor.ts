@@ -43,7 +43,12 @@ export async function beginAgenticCursor(
   try {
     throwIfCancelled(signal);
     const raw = await session.read();
-    if (!raw) throw new AgenticStateError('missing');
+    if (!raw) {
+      if (!states.expiresRuns) throw new AgenticStateError('missing');
+      // Retention never removes a run with a publication, so there is nothing to retire.
+      throwIfCancelled(signal);
+      return await cursors.supersede(key, signature, previousRunId, runId);
+    }
     const previous = AgenticRunSnapshotSchema.parse(raw);
     if (
       digestAgenticState(previous.key) !== digestAgenticState(previousKey) ||

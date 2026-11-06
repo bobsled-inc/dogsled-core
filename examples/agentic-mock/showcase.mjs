@@ -62,7 +62,7 @@ export async function run(ctx) {
   const tables = (await ctx.sql('SELECT table_schema, table_name FROM information_schema.tables'))
     .rows;
   const files = await readdir(ctx.project, { recursive: true });
-  assert.ok(files.some((name) => /[a-f0-9]{64}-[a-f0-9]{64}\.json$/.test(name)));
+  assert.ok(files.some((name) => /run-[a-f0-9]{64}\.duckdb$/.test(name)));
   assert.ok(tables.some((row) => row.table_schema === '_dogsled_agentic_publication'));
   await ctx.cli([...args, '--agent-resume']);
   assert.equal((await ctx.read('calls.jsonl')).trim().split('\n').length, calls.length);

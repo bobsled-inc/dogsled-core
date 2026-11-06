@@ -165,7 +165,7 @@ export type { CustomRunnerFactory, RunnerFactoryContext } from './runtime/custom
 export { resolveRunner } from './runtime/resolve-runner.js';
 export type { ResolveRunnerOptions } from './runtime/resolve-runner.js';
 export { QUERY_TAG_MAX_LENGTH, validateQueryTag } from './runtime/query-tag.js';
-export { buildDuckDbRunner } from './runtime/runners/duckdb.js';
+export { buildDuckDbRunner, isDuckDbAvailable } from './runtime/runners/duckdb.js';
 export { resolveSnowflakeWarehouseOverride } from './runtime/runners/snowflake.js';
 
 // ── Refreshable managed credentials (mid-run token refresh) ─────────────────

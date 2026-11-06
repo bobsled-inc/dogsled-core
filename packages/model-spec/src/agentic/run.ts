@@ -17,13 +17,8 @@ import { AgenticHostError } from './errors.js';
 import { assertAgenticPricing } from './spend.js';
 import { agenticDeadlinePassed, statementTimeoutReason } from './state-errors.js';
 import { scheduleAgenticAssignments } from './schedule.js';
-import {
-  AGENTIC_MAX_BYTES,
-  boundedAgenticRows,
-  AGENTIC_MAX_ROWS,
-  AgenticJsonSchema,
-  createAgenticRowSchema,
-} from './rows.js';
+import { boundedAgenticRows, AgenticJsonSchema, createAgenticRowSchema } from './rows.js';
+import { resolveAgenticStoreLimits } from './store-limits.js';
 import {
   AgenticRunSnapshotSchema,
   AgenticRunKeySchema,
@@ -31,7 +26,7 @@ import {
   digestAgenticState,
 } from './state.js';
 import type { AgenticStateStore, AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
-import { createLocalAgenticStateStore } from './local-state.js';
+import { createDefaultAgenticStateStore } from './default-state.js';
 import type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
 import { createAgenticProgress, type AgenticRunProgress } from './progress.js';
 
@@ -213,7 +208,13 @@ async function executeOwnedAgenticRun(
     });
   }
   const costCapMicrousd = costCapUsd === null ? null : Math.round(costCapUsd * 1_000_000);
-  const store = options.stateStore ?? createLocalAgenticStateStore(options.projectDirectory);
+  const store =
+    options.stateStore ??
+    createDefaultAgenticStateStore(
+      options.projectDirectory,
+      options.signal ? { signal: options.signal } : {}
+    );
+  const limits = resolveAgenticStoreLimits(store);
   const incremental = Object.values(model.sources).some((source) => source.incremental);
   const cursorStore =
     options.cursorStore ??
@@ -407,6 +408,7 @@ async function executeOwnedAgenticRun(
         abort: () => coordinator.abort(),
         concurrency,
         minDispatchIntervalMs,
+        limits,
       });
     } else if (snapshot.status === 'preparing') {
       const started = new Date(snapshot.started_at);
@@ -415,8 +417,8 @@ async function executeOwnedAgenticRun(
       const access: AgenticProbeContext = {
         ...context,
         signal: runSignal,
-        maxRows: AGENTIC_MAX_ROWS,
-        maxBytes: AGENTIC_MAX_BYTES,
+        maxRows: limits.maxRows,
+        maxBytes: limits.maxBatchBytes,
       };
       const raw = await boundary(
         runSignal,
@@ -425,7 +427,7 @@ async function executeOwnedAgenticRun(
       );
       const retrievedAt = new Date().toISOString();
       throwIfCancelled(runSignal);
-      const data = boundedAgenticRows(raw, `Agentic input "${context.inputRef}"`);
+      const data = boundedAgenticRows(raw, `Agentic input "${context.inputRef}"`, limits);
       const resolved = context.resolved.steps[0]!;
       const step = resolved.step;
       if (!('map' in step)) throw new Error('Agentic probe requires one map step');
@@ -527,7 +529,7 @@ async function executeOwnedAgenticRun(
         findings.push({ ...row, _dogsled_run_id: key.id });
       }
     }
-    boundedAgenticRows(findings, `The output of agentic model "${model.name}"`);
+    boundedAgenticRows(findings, `The output of agentic model "${model.name}"`, limits);
     if (snapshot.status !== 'execution_complete') {
       await checkpoint({
         type: 'complete',

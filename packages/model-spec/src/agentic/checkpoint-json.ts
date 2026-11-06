@@ -1,3 +1,7 @@
+/** The most any store can declare for one run's snapshot. Raising this also raises
+ * `maxStoredChars` in row-state-rows.ts, which is derived from it. */
+export const AGENTIC_MAX_CHECKPOINT_BYTES = 16 * 1024 * 1024;
+
 /** Bound a whole checkpoint before recursive schema parsing or serialization. */
 export function isBoundedCheckpoint(value: unknown): boolean {
   const pending: Array<{ value: unknown; depth: number; leave?: boolean }> = [{ value, depth: 0 }];
@@ -34,7 +38,7 @@ export function isBoundedCheckpoint(value: unknown): boolean {
         pending.push({ value: child, depth: item.depth + 1 });
       }
     }
-    if (bytes > 16 * 1024 * 1024) return false;
+    if (bytes > AGENTIC_MAX_CHECKPOINT_BYTES) return false;
   }
-  return Buffer.byteLength(JSON.stringify(value)) <= 16 * 1024 * 1024;
+  return Buffer.byteLength(JSON.stringify(value)) <= AGENTIC_MAX_CHECKPOINT_BYTES;
 }
