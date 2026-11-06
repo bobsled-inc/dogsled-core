@@ -10,8 +10,8 @@ import { createDefaultAgenticStateStore } from '../../src/agentic/default-state.
 import { createDuckDbCheckpointStore } from '../../src/agentic/duckdb-state.js';
 import { createLocalAgenticStateStore } from '../../src/agentic/local-state.js';
 import { executeAgenticRun } from '../../src/agentic/run.js';
-import { createAgenticRowStore } from '../../src/agentic/row-store.js';
 import type { AgenticStateStore } from '../../src/agentic/state.js';
+import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import { createWarehouseCheckpointStore } from '../../src/agentic/warehouse-state.js';
 import {
   benchmarkWorkload,
@@ -21,7 +21,6 @@ import {
   timedStore,
   type BenchmarkShape,
 } from '../support/agentic-benchmark.js';
-import { postgresRowBackend } from '../support/postgres-row-backend.js';
 
 /** Counts every statement at the runner boundary and adds the simulated request latency. */
 const probe = vi.hoisted(() => ({
@@ -131,10 +130,7 @@ function openStore(kind: string, directory: string, schema: string): AgenticStat
     case 'postgres-warehouse':
       return createWarehouseCheckpointStore(postgres(), { schema });
     case 'postgres-rows':
-      return createAgenticRowStore(postgresRowBackend(postgres(), schema, 120_000), {
-        leaseMs: 120_000,
-        retentionMs: 86_400_000,
-      });
+      return createWarehouseRowStore(postgres(), { schema, retentionMs: 86_400_000 });
     default:
       throw new Error(`Unknown store ${kind}`);
   }

@@ -547,6 +547,36 @@ describe('mixed agentic dispatch probe', () => {
     expect(f.host.executeAgent).not.toHaveBeenCalled();
   });
 
+  it('keeps the warehouse store for a warehouse checkpoint_store until a host opts in', async () => {
+    const f = fixture();
+    writeFileSync(
+      join(f.root, 'integrations/checkpoints.yml'),
+      stringify({
+        ...checkpointIntegrations.find((item) => item.source_type === 'postgres')!,
+        name: 'checkpoints',
+      })
+    );
+    writeFileSync(
+      join(f.root, 'model-spec.yml'),
+      stringify({ checkpoint_store: { integration: 'checkpoints', schema: 'system_store' } })
+    );
+    warehouseFactory.mockReturnValue(new MemoryStateStore());
+    const run = { id: 'default-selection', mode: 'start' as const };
+    await runProject(f.root, { ...f.options, agentic: { host: f.host, run } });
+    expect(warehouseFactory).toHaveBeenCalledTimes(1);
+
+    warehouseFactory.mockClear();
+    const supplied = new MemoryStateStore();
+    const acquire = vi.spyOn(supplied, 'acquire');
+    const injected = { id: 'host-opted-in', mode: 'start' as const };
+    await runProject(f.root, {
+      ...f.options,
+      agentic: { host: f.host, run: injected, stateStore: supplied },
+    });
+    expect(warehouseFactory).not.toHaveBeenCalled();
+    expect(acquire).toHaveBeenCalled();
+  });
+
   it('never falls back to local checkpoints for an explicit checkpoint_store', async () => {
     const f = fixture();
     writeFileSync(

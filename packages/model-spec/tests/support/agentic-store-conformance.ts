@@ -57,6 +57,8 @@ export interface StoreAdapter {
   withRetention?(handle: StoreHandle, retentionMs: number): AgenticStateStore;
   /** Stores that accept any valid snapshot in `create`, not only a new one. */
   createAcceptsStartedRun?: boolean;
+  /** Per test and per hook, for an engine where a statement takes a noticeable time. */
+  timeoutMs?: number;
 }
 
 const stateError = (code: string) => expect.objectContaining({ code });
@@ -88,7 +90,8 @@ async function replay(
 }
 
 export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
-  describe(`${adapter.name} store conformance`, { timeout: 120_000 }, () => {
+  const timeout = adapter.timeoutMs ?? 120_000;
+  describe(`${adapter.name} store conformance`, { timeout }, () => {
     let map: AgenticStoreScenario;
     let plan: AgenticStoreScenario;
     const handles: StoreHandle[] = [];
@@ -110,7 +113,7 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
     afterEach(async () => {
       for (const session of sessions.splice(0)) await session.release().catch(() => {});
       for (const handle of handles.splice(0)) await handle.cleanup();
-    });
+    }, timeout);
 
     describe('create and read', () => {
       it('reads null for a run that does not exist', async () => {
@@ -309,6 +312,19 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
         await session.release();
         await session.release();
       });
+
+      it('gives concurrent acquires of a new run exactly one owner', async () => {
+        const handle = await open();
+        const results = await Promise.allSettled(
+          Array.from({ length: 6 }, () => handle.reopen().acquire(map.key))
+        );
+        const owners = results.flatMap((result) =>
+          result.status === 'fulfilled' ? [result.value] : []
+        );
+        sessions.push(...owners);
+        expect(owners).toHaveLength(1);
+        expect(await owners[0]!.create(map.initial)).toEqual(map.initial);
+      });
     });
 
     describe.skipIf(!adapter.expireLease)('lease loss and fencing', () => {
@@ -334,6 +350,23 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
         await replay(stale, plan, 3);
         await adapter.expireLease!(handle, plan.key);
         await expect(stale.checkpoint(plan.commands[2]!)).rejects.toEqual(stateError('lease_lost'));
+      });
+
+      it('gives concurrent takeovers of an expired lease exactly one owner', async () => {
+        const handle = await open();
+        const stale = await acquire(handle.store, plan.key);
+        const before = await replay(stale, plan, 3);
+        await adapter.expireLease!(handle, plan.key);
+        const results = await Promise.allSettled(
+          Array.from({ length: 6 }, () => handle.reopen().acquire(plan.key))
+        );
+        const owners = results.flatMap((result) =>
+          result.status === 'fulfilled' ? [result.value] : []
+        );
+        sessions.push(...owners);
+        expect(owners).toHaveLength(1);
+        expect(await owners[0]!.read()).toEqual(before);
+        await expect(stale.read()).rejects.toEqual(stateError('lease_lost'));
       });
 
       it('lets a later owner continue after a lost lease', async () => {

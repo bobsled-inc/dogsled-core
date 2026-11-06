@@ -3,12 +3,11 @@ import { describe } from 'vitest';
 import { resolveRunner, type PostgresIntegration } from '@bobsled-inc/connections';
 import { digestAgenticState } from '../../../src/agentic/state.js';
 import { createWarehouseCheckpointStore } from '../../../src/agentic/warehouse-state.js';
-import { createAgenticRowStore } from '../../../src/agentic/row-store.js';
+import { createWarehouseRowStore } from '../../../src/agentic/warehouse-row-state.js';
 import {
   describeAgenticStoreConformance,
   type StoreHandle,
 } from '../../support/agentic-store-conformance.js';
-import { postgresRowBackend } from '../../support/postgres-row-backend.js';
 
 const enabled =
   process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres');
@@ -63,10 +62,7 @@ describe.skipIf(!enabled)('PostgreSQL', () => {
   });
 
   const rows = (schema: string, retentionMs = 86_400_000) =>
-    createAgenticRowStore(postgresRowBackend(integration(), schema, 10_000), {
-      leaseMs: 10_000,
-      retentionMs,
-    });
+    createWarehouseRowStore(integration(), { schema, leaseMs: 10_000, retentionMs });
   describeAgenticStoreConformance({
     name: 'PostgreSQL row layout',
     open: async () => open((schema) => rows(schema)),
