@@ -129,6 +129,12 @@ export async function scheduleAgenticAssignments(
   const active = new Map<number, Promise<void>>();
   const ready: Completion[] = [];
   const dispatchClock = options.dispatchClock ?? { nextAt: 0 };
+  // Accepted work stays accepted, so this search resumes where it stopped.
+  let unfinished = 0;
+  const firstUnfinished = () => {
+    while (snapshot.work[unfinished]?.accepted) unfinished++;
+    return unfinished;
+  };
   async function invoke(index: number, attemptId: string) {
     const template = snapshot.work[index]!.assignment;
     return invokeAgenticAssignment(
@@ -212,7 +218,7 @@ export async function scheduleAgenticAssignments(
     }
   }
   try {
-    while (snapshot.work.some((work) => !work.accepted) || active.size) {
+    while (firstUnfinished() < snapshot.work.length || active.size) {
       // Fast executors and synchronous stores can otherwise keep this loop in microtasks,
       // so signals (Ctrl-C, SIGTERM) and timers would never be delivered.
       await yieldToEventLoop();
@@ -222,8 +228,9 @@ export async function scheduleAgenticAssignments(
         await accept(completed);
         continue;
       }
-      const index = snapshot.work.findIndex((work, index) => !work.accepted && !active.has(index));
-      if (index !== -1 && active.size < concurrency) {
+      let index = firstUnfinished();
+      while (snapshot.work[index]?.accepted || active.has(index)) index++;
+      if (index < snapshot.work.length && active.size < concurrency) {
         const work = snapshot.work[index]!;
         const last = work.attempts.at(-1);
         if (isAgenticFailureBlocked(snapshot, last)) throw assignmentFailed(snapshot, work);

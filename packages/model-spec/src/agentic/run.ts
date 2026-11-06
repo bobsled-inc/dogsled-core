@@ -28,7 +28,7 @@ import {
 import type { AgenticStateStore, AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import { createDefaultAgenticStateStore } from './default-state.js';
 import type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
-import { createAgenticProgress, type AgenticRunProgress } from './progress.js';
+import { createAgenticProgressReporter, type AgenticRunProgress } from './progress.js';
 
 export interface AgenticRunOptions {
   /** Explicit resume only: retry saved terminal failures, retaining answers, charges and attempt counts. */
@@ -331,18 +331,16 @@ async function executeOwnedAgenticRun(
         })
       );
     }
-    // Assignments never change once saved, so each estimate is computed once per run.
-    const tokenEstimates = new Map<string, number>();
-    const reportProgress = async () => {
+    const progress = createAgenticProgressReporter(
+      context.resolved.steps.map(({ step }) => step.id)
+    );
+    const reportProgress = async (
+      before?: AgenticRunSnapshot,
+      command?: AgenticCheckpointCommand
+    ) => {
       if (!options.onProgress) return;
       try {
-        await options.onProgress(
-          createAgenticProgress(
-            snapshot,
-            context.resolved.steps.map(({ step }) => step.id),
-            tokenEstimates
-          )
-        );
+        await options.onProgress(progress(snapshot, before, command));
       } catch {
         // Observability must not undo saved work or cause another model call.
       }
@@ -396,7 +394,7 @@ async function executeOwnedAgenticRun(
         if (!observed) throw new AgenticStateError('missing');
         snapshot = validateAgenticReceipt(observed, before, command, requestedAt);
       }
-      await reportProgress();
+      await reportProgress(before, command);
       return snapshot;
     };
     const planExecution = incremental || context.resolved.steps.length > 1 || !('map' in step);
