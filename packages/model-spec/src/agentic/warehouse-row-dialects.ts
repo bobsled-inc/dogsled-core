@@ -146,7 +146,11 @@ export const snowflakeRowDialect: AgenticRowDialect = {
     const found = columns.map((row) => ({
       table: String(row.table_name),
       name: String(row.column_name),
-      type: Number(row.numeric_scale ?? 0) === 0 ? String(row.data_type) : 'decimal',
+      // Only a number has a scale. Other columns read back the text NULL.
+      type:
+        row.data_type === 'NUMBER' && Number(row.numeric_scale) !== 0
+          ? 'decimal'
+          : String(row.data_type),
       plain: row.is_nullable === 'NO' && row.column_default === null && row.is_identity === 'NO',
     }));
     const folded = tables.map(({ name, columns: shape }) => ({

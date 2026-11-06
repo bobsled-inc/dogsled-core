@@ -245,7 +245,8 @@ describe('the base table check', () => {
       { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'ACTIVE', data_type: 'BOOLEAN' },
     ].map((row) => ({
       ...row,
-      numeric_scale: row.data_type === 'NUMBER' ? '0' : null,
+      // What the driver reads back: numbers as text, and so a null number as the text NULL.
+      numeric_scale: row.data_type === 'NUMBER' ? '0' : 'NULL',
       is_nullable: 'NO',
       column_default: null,
       is_identity: 'NO',

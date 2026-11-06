@@ -199,9 +199,11 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
             ? (reported[String(value)] ?? value)
             : name === 'is_identity'
               ? 'NO'
-              : typeof value === 'number' || typeof value === 'bigint'
-                ? String(value)
-                : value,
+              : name === 'numeric_scale' && value === null
+                ? 'NULL' // The driver reads a null number back as this text.
+                : typeof value === 'number' || typeof value === 'bigint'
+                  ? String(value)
+                  : value,
         ])
       )
     );
