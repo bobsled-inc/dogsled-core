@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { CursorRecordSchema } from '../../../src/agentic/cursor.js';
 import { insertAgenticWrite } from '../../../src/agentic/row-state-rows.js';
 import { createAgenticRowWrite } from '../../../src/agentic/row-state-layout.js';
 import type { AgenticRowDb } from '../../../src/agentic/row-state-dialect.js';
@@ -128,6 +129,37 @@ describe('Snowflake row dialect', () => {
     expect(script(db.run.mock.calls[0]![0])).toContain(
       `VALUES ('k', ${Number.MAX_SAFE_INTEGER}, FALSE);`
     );
+  });
+
+  it('keeps the largest valid cursor record under 1 MB through both levels of quoting', async () => {
+    // A backslash costs the most: JSON doubles it, and each level of quoting doubles it again.
+    const worst = (length: number) => '\\'.repeat(length);
+    const filler = (length: number, index: number) =>
+      `${String(index).padStart(3, '0')}${worst(length - 3)}`;
+    const record = CursorRecordSchema.parse({
+      signature: 'a'.repeat(64),
+      values: Object.fromEntries(
+        Array.from({ length: 256 }, (_, index) => [filler(256, index), filler(128, index)])
+      ),
+      activeRun: worst(1024),
+      committedRun: worst(1024),
+    });
+    const db = fakeDb();
+    await dialect.insertIfAbsent(
+      db,
+      table,
+      {
+        key_hash: 'h'.repeat(64),
+        scope: worst(1024),
+        model: worst(1024),
+        target: worst(1024),
+        version: 0,
+        record: JSON.stringify(record),
+      },
+      'key_hash',
+      '"DB"."S"'
+    );
+    expect(Buffer.byteLength(db.run.mock.calls[0]![0])).toBeLessThan(1_000_000);
   });
 
   it('takes no lock for a key that already has its row', async () => {
