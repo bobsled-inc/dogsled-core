@@ -4,7 +4,11 @@
  * Supports Retry-After header parsing.
  */
 
-import { safeFetch, sanitizeUrlForError } from '../framework/core/index.js';
+import {
+  attachProviderResponseBody,
+  safeFetch,
+  sanitizeUrlForError,
+} from '../framework/core/index.js';
 
 export interface RateLimiterOptions {
   requestsPerSecond: number;
@@ -31,12 +35,19 @@ export class RateLimitTimeoutError extends Error {
   }
 }
 
+export interface FinalRetryableResponseDetail {
+  detail?: string;
+  body?: string;
+}
+
 /**
  * Reads the final response from an exhausted retry sequence. The callback is
  * deliberately owned by the caller so it can apply request-specific redaction
- * before the detail is copied into an error message.
+ * before the detail is copied into an error message and the body is attached.
  */
-export type FinalRetryableResponseHandler = (response: Response) => Promise<string | undefined>;
+export type FinalRetryableResponseHandler = (
+  response: Response
+) => Promise<FinalRetryableResponseDetail | undefined>;
 
 export class RateLimiter {
   private tokens: number;
@@ -113,22 +124,26 @@ export class RateLimiter {
           return response;
         }
 
-        let detail: string | undefined;
+        let finalResponse: FinalRetryableResponseDetail | undefined;
         if (attempt === this.options.maxRetries && onFinalRetryableResponse) {
           // Diagnostics are best effort. A response-body read must never mask
           // the exhausted provider status or alter retry behavior.
           try {
-            detail = await onFinalRetryableResponse(response);
+            finalResponse = await onFinalRetryableResponse(response);
           } catch {
-            detail = undefined;
+            finalResponse = undefined;
           }
         }
         await response.body?.cancel().catch(() => undefined);
-        lastError = Object.assign(
-          new Error(
-            `HTTP ${response.status}: ${response.statusText}${detail ? ` - ${detail}` : ''}`
+        const detail = finalResponse?.detail;
+        lastError = attachProviderResponseBody(
+          Object.assign(
+            new Error(
+              `HTTP ${response.status}: ${response.statusText}${detail ? ` - ${detail}` : ''}`
+            ),
+            { status: response.status }
           ),
-          { status: response.status }
+          finalResponse?.body
         );
 
         if (attempt < this.options.maxRetries) {

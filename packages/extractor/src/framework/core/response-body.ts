@@ -160,3 +160,34 @@ export function limitResponseBody(
     }
   );
 }
+
+const PROVIDER_RESPONSE_BODY_PROPERTY = 'providerResponseBody';
+const MAX_PROVIDER_RESPONSE_BODY_DEPTH = 5;
+
+/**
+ * Attach the already redacted body of a failed provider response to its error.
+ * The property is not enumerable, so error serializers and loggers are unchanged.
+ */
+export function attachProviderResponseBody<T extends Error>(error: T, body: string | undefined): T {
+  if (body) {
+    Object.defineProperty(error, PROVIDER_RESPONSE_BODY_PROPERTY, {
+      value: body,
+      enumerable: false,
+      configurable: true,
+      writable: false,
+    });
+  }
+  return error;
+}
+
+/** Return the provider response body attached to an error or one of its causes. */
+export function readProviderResponseBody(error: unknown): string | undefined {
+  let current = error;
+  for (let depth = 0; depth <= MAX_PROVIDER_RESPONSE_BODY_DEPTH; depth += 1) {
+    if (!current || typeof current !== 'object') return undefined;
+    const body = (current as Record<string, unknown>)[PROVIDER_RESPONSE_BODY_PROPERTY];
+    if (typeof body === 'string') return body;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return undefined;
+}

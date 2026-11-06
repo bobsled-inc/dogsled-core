@@ -6,6 +6,7 @@ import {
   mergeIntegrationOperation,
 } from '../framework/runtime/index.js';
 import {
+  attachProviderResponseBody,
   readResponseTextWithLimit,
   RESPONSE_BODY_LIMITS,
   isPrivateHost,
@@ -285,7 +286,7 @@ export class ExtractorClient {
     }
 
     if (!response.ok && !options.allowStatus?.includes(response.status)) {
-      const detail = await readErrorResponseBody(
+      const { detail, body } = await readErrorResponseBody(
         response,
         collectRequestSecrets(authedRequest.url, authedRequest.headers)
       );
@@ -297,7 +298,7 @@ export class ExtractorClient {
         ),
         { status: response.status }
       );
-      throw error;
+      throw attachProviderResponseBody(error, body);
     }
 
     if (!response.ok && options.allowStatus?.includes(response.status)) {
@@ -629,17 +630,18 @@ const MAX_ERROR_BODY_CHARS = 500;
 /**
  * Best-effort read of an error response body so the thrown error carries the
  * API's actual failure detail (e.g. `{"message":"Invalid API Key"}`) instead
- * of a bare `<status> <statusText>` line. Whitespace is collapsed and the body
- * is truncated to keep log lines tight. Reading is wrapped so a body-read
- * failure can never mask the underlying status error. The URL is already
+ * of a bare `<status> <statusText>` line. `detail` collapses whitespace and is
+ * truncated to keep log lines tight; `body` keeps the bounded redacted text for
+ * callers that extract structured fields. Reading is wrapped so a body-read
+ * failure can never mask the underlying status error.
  * A hostile or misconfigured server can reflect request headers and query
  * parameters into its response, so known outbound values are removed before
- * the detail is included in an error.
+ * the body is included in an error.
  */
 async function readErrorResponseBody(
   response: Response,
   requestSecrets: readonly string[]
-): Promise<string> {
+): Promise<{ detail: string; body: string }> {
   try {
     const text = await readResponseTextWithLimit(
       response,
@@ -651,12 +653,13 @@ async function readErrorResponseBody(
       redacted = redacted.split(secret).join('[REDACTED]');
     }
     const condensed = redacted.replace(/\s+/g, ' ').trim();
-    if (!condensed) return '';
-    return condensed.length > MAX_ERROR_BODY_CHARS
-      ? `${condensed.slice(0, MAX_ERROR_BODY_CHARS)}…`
-      : condensed;
+    const detail =
+      condensed.length > MAX_ERROR_BODY_CHARS
+        ? `${condensed.slice(0, MAX_ERROR_BODY_CHARS)}…`
+        : condensed;
+    return { detail, body: redacted };
   } catch {
-    return '';
+    return { detail: '', body: '' };
   }
 }
 

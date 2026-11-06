@@ -205,6 +205,18 @@ itself. The host app must check project policy and user approval before it calls
 without `dryRun`. The result is a small receipt with success or a stable error code; it does not
 return the full upstream response.
 
+A failed receipt's `error.code` separates a rejected credential (`auth_error`, HTTP 401) from a
+service that refused the Action (`permission_denied`, HTTP 403); neither is retryable. When the
+failure came from an HTTP response, `error.provider_status` holds its status. For a 4xx response
+with a JSON body, `error.provider_message` holds the provider's own reason from `error.message`,
+`message`, a string `error`, `detail`, `errors[0].message`, or `error_description`, in that order.
+Dogsled removes control and formatting characters, sanitizes URLs, then redacts credential-shaped
+text, declared credential values, and the credentials sent with the request, including minted or
+refreshed OAuth and custom tokens, authentication header values, and decoded Basic credentials, in
+raw, URL-, form- and JSON-encoded forms. It then limits the message to 300 characters. It is
+present with `safeErrors`, which still replaces `error.message` with a stable text. Dogsled never
+returns the raw body, and omits the field for 5xx responses and for bodies without such a string.
+
 Use `@bobsled-inc/dogsled/pipeline` to run a named project pipeline with cancellation, bounded
 previews, incremental state handoff, ordered events, and structured per-resource metrics:
 

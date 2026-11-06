@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ResponseBodyLimitError } from '../../src/framework/core/index.js';
+import {
+  readProviderResponseBody,
+  ResponseBodyLimitError,
+} from '../../src/framework/core/index.js';
 import { ExtractorClient } from '../../src/runtime/client.js';
 import { ExtractorDataError } from '../../src/runtime/errors.js';
 import { RateLimitTimeoutError } from '../../src/runtime/rate-limiter.js';
@@ -836,6 +839,64 @@ describe('ExtractorClient', () => {
     expect((error as DogsledRuntimeError).cause?.message).not.toContain('reflected-bearer-secret');
     expect((error as DogsledRuntimeError).cause?.message).not.toContain('reflected-header-key');
     expect((error as DogsledRuntimeError).cause?.message).not.toContain('reflected-query-secret');
+  });
+
+  it('attaches the redacted provider body to a failed response without enumerating it', async () => {
+    const body = {
+      error: { code: 'AutomationIsActive', message: 'Pause the automation first.' },
+      echoed: 'Bearer reflected-bearer-secret',
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () => new Response(JSON.stringify(body), { status: 403, statusText: 'Forbidden' })
+      )
+    );
+    const client = new ExtractorClient({
+      integration: makeProvider('https://api.example.com', {
+        auth: { type: 'bearer', token: 'reflected-bearer-secret' },
+      }),
+    });
+
+    const error = await client
+      .request({ operation: makeResource({ api: { endpoint: '/items', method: 'PUT' } }) })
+      .catch((value) => value as DogsledRuntimeError);
+
+    expect(error).toMatchObject({ kind: 'provider', providerStatus: 403 });
+    const attached = readProviderResponseBody(error);
+    expect(JSON.parse(attached!)).toEqual({ ...body, echoed: '[REDACTED]' });
+    expect(Object.keys(error.cause!)).not.toContain('providerResponseBody');
+    expect(JSON.stringify(error.cause)).not.toContain('AutomationIsActive');
+  });
+
+  it('attaches the redacted final body when retries are exhausted', async () => {
+    const token = 'retry-provider-secret';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ message: `Slow down ${token}` }), {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'Retry-After': '0' },
+          })
+      )
+    );
+    const client = new ExtractorClient({
+      integration: makeProvider('https://api.example.com', {
+        auth: { type: 'bearer', token },
+        retry: { max_retries: 1 },
+      }),
+    });
+
+    const error = await client
+      .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
+      .catch((value) => value as DogsledRuntimeError);
+
+    expect(error).toMatchObject({ kind: 'provider', providerStatus: 429 });
+    expect(JSON.parse(readProviderResponseBody(error)!)).toEqual({
+      message: 'Slow down [REDACTED]',
+    });
   });
 
   it('truncates oversized error response bodies', async () => {

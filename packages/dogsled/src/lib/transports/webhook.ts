@@ -1,6 +1,8 @@
 import {
   isPrivateHost,
+  readResponseTextWithLimit,
   resolveAndValidateHost,
+  RESPONSE_BODY_LIMITS,
   safeFetch,
   SafeHeaderValueSchema,
 } from '@bobsled-inc/extractor/core';
@@ -19,7 +21,7 @@ import {
   classifyTransportError,
   DEFAULT_WEBHOOK_TIMEOUT_MS,
   mapStatusToError,
-  safeTransportErrorMessage,
+  toActionResultError,
 } from './shared.js';
 
 export interface WebhookTransportDeps {
@@ -162,6 +164,32 @@ function interpolateWebhookBody(
   };
 }
 
+async function readClientErrorBody(response: Response): Promise<string | undefined> {
+  if (response.status < 400 || response.status > 499) {
+    await response.body?.cancel().catch(() => undefined);
+    return undefined;
+  }
+  try {
+    return await readResponseTextWithLimit(
+      response,
+      RESPONSE_BODY_LIMITS.error,
+      'Webhook error response'
+    );
+  } catch {
+    await response.body?.cancel().catch(() => undefined);
+    return undefined;
+  }
+}
+
+function interpolatedHeaderValues(
+  templates: Record<string, string>,
+  headers: Record<string, string>
+): string[] {
+  return Object.entries(headers)
+    .filter(([key, value]) => templates[key] !== undefined && templates[key] !== value)
+    .map(([, value]) => value);
+}
+
 /** Executes a webhook-backed action with interpolation, timeout, and SSRF protections. */
 export async function executeWebhookAction(
   action: Action,
@@ -277,6 +305,7 @@ export async function executeWebhookAction(
       ? AbortSignal.any([options.signal, controller.signal])
       : controller.signal;
     let response: Response;
+    let providerBody: string | undefined;
     try {
       response = await fetchFn(url, {
         method: action.spec.webhook.method,
@@ -285,25 +314,29 @@ export async function executeWebhookAction(
         redirect: 'manual',
         signal,
       });
+      providerBody = await readClientErrorBody(response);
     } finally {
       clearTimeout(timeoutId);
     }
-    await response.body?.cancel().catch(() => undefined);
 
     if (response.status < 200 || response.status >= 300) {
-      const mapped = mapStatusToError(response.status);
       return {
         status: 'failed',
         action: action.qualifiedName,
         transport: action.transport,
         attempted_at: attemptedAt,
         duration_ms: Date.now() - startedAt,
-        error: {
-          ...mapped,
-          message: options?.safeErrors
-            ? safeTransportErrorMessage(mapped.code)
-            : `Webhook request failed: ${response.status} ${response.statusText}`,
-        },
+        error: toActionResultError(
+          {
+            ...mapStatusToError(response.status),
+            message: `Webhook request failed: ${response.status} ${response.statusText}`,
+            providerStatus: response.status,
+            ...(providerBody !== undefined ? { providerBody } : {}),
+          },
+          options,
+          action.spec.auth_env_vars,
+          interpolatedHeaderValues(action.spec.webhook.headers, headers)
+        ),
       };
     }
 
@@ -332,9 +365,7 @@ export async function executeWebhookAction(
       transport: action.transport,
       attempted_at: attemptedAt,
       duration_ms: Date.now() - startedAt,
-      error: options?.safeErrors
-        ? { ...normalized, message: safeTransportErrorMessage(normalized.code) }
-        : normalized,
+      error: toActionResultError(normalized, options, action.spec.auth_env_vars),
     };
   }
 }

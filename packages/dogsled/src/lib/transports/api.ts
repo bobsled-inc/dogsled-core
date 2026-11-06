@@ -30,7 +30,7 @@ import type { Action } from '../action-registry.js';
 import type { ActionResult, ExecuteOptions } from '../action-executor.js';
 import { resolveActionProjectRoot } from '../action-paths.js';
 import { createReferenceCollector, describeActionRequest } from '../action-preview-request.js';
-import { classifyTransportError, safeTransportErrorMessage } from './shared.js';
+import { classifyTransportError, toActionResultError } from './shared.js';
 
 interface ApiClientLike {
   request(options: {
@@ -85,6 +85,7 @@ export interface ApiTransportDeps {
       secrets?: Record<string, string | undefined>;
       declaredSecretNames?: readonly string[];
       env?: Record<string, string | undefined>;
+      onResolvedSecret?: (value: string) => void;
     }
   ) => ApiClientLike;
   loadIntegration?: (name: string) => HttpApiActionIntegration;
@@ -250,9 +251,11 @@ export async function executeApiAction(
   }
 
   let mapped: InterpolationMappedValues;
+  let integration: HttpApiActionIntegration | undefined;
+  const sentValues = new Set<string>();
   try {
     options?.signal?.throwIfAborted();
-    const integration = resolveHttpIntegration(action, options, deps);
+    integration = resolveHttpIntegration(action, options, deps);
     try {
       mapped = mapFields(action.spec.field_mapping, inputs);
     } catch (error) {
@@ -335,15 +338,14 @@ export async function executeApiAction(
       deps?.createClient ??
       ((resolvedIntegration: ApiIntegrationSpec, clientOptions) =>
         new ExtractorClient({ integration: resolvedIntegration, ...clientOptions }));
-    const clientOptions =
-      options?.secrets !== undefined
-        ? {
-            secrets: options.secrets,
-            env: options.secrets,
-            declaredSecretNames: options.declaredSecretNames,
-          }
-        : undefined;
-    const client = createClient(integration, clientOptions);
+    const client = createClient(integration, {
+      ...(options?.secrets !== undefined && {
+        secrets: options.secrets,
+        env: options.secrets,
+        declaredSecretNames: options.declaredSecretNames,
+      }),
+      onResolvedSecret: (value) => sentValues.add(value),
+    });
     let response: Awaited<ReturnType<ApiClientLike['request']>>;
     try {
       const signal = actionRequestSignal(options);
@@ -393,9 +395,7 @@ export async function executeApiAction(
       transport: action.transport,
       attempted_at: attemptedAt,
       duration_ms: Date.now() - startedAt,
-      error: options?.safeErrors
-        ? { ...normalized, message: safeTransportErrorMessage(normalized.code) }
-        : normalized,
+      error: toActionResultError(normalized, options, integration?.auth_env_vars, sentValues),
     };
   }
 }

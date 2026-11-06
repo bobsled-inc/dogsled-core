@@ -410,7 +410,97 @@ describe('executeWebhookAction', () => {
     expect(result.error).toMatchObject({
       code: 'rate_limited',
       retryable: true,
+      provider_status: 429,
     });
+  });
+
+  it.each([
+    [401, 'auth_error', 'The external service rejected authentication.'],
+    [403, 'permission_denied', 'The external service refused the Action.'],
+  ] as const)(
+    'maps a %i response to %s with the provider status and message',
+    async (status, code, message) => {
+      vi.stubEnv('WEBHOOK_HOST', 'hooks.example.com');
+      vi.stubEnv('WEBHOOK_TOKEN', 'secret-token');
+
+      const result = await executeWebhookAction(
+        makeWebhookAction(),
+        { entity_id: 'ent_123' },
+        { safeErrors: true },
+        {
+          fetch: vi.fn().mockResolvedValue(
+            new Response(JSON.stringify({ error: { message: 'Pause the automation first.' } }), {
+              status,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          ),
+          checkHost: () => false,
+          resolveHost: async () => undefined,
+        }
+      );
+
+      expect(result.error).toEqual({
+        code,
+        message,
+        retryable: false,
+        provider_status: status,
+        provider_message: 'Pause the automation first.',
+      });
+    }
+  );
+
+  it('redacts interpolated credentials reflected in a webhook provider message', async () => {
+    const token = 'hook"tok/en+1';
+    const result = await executeWebhookAction(
+      makeWebhookAction(),
+      { entity_id: 'ent_123' },
+      {
+        secrets: { WEBHOOK_HOST: 'hooks.example.com', WEBHOOK_TOKEN: token },
+        safeErrors: true,
+      },
+      {
+        fetch: vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              message: `Token ${token} / ${encodeURIComponent(token)} lacks scope.`,
+            }),
+            { status: 403 }
+          )
+        ),
+        checkHost: () => false,
+        resolveHost: async () => undefined,
+      }
+    );
+
+    expect(result.error).toMatchObject({
+      code: 'permission_denied',
+      provider_status: 403,
+      provider_message: 'Token [REDACTED] / [REDACTED] lacks scope.',
+    });
+    expect(JSON.stringify(result)).not.toContain('tok/en');
+  });
+
+  it.each([
+    ['a 5xx JSON body', 500, JSON.stringify({ message: 'Database host db-7 is down.' })],
+    ['an HTML 4xx body', 403, '<html><body>Forbidden</body></html>'],
+  ])('returns no provider message for %s', async (_label, status, body) => {
+    vi.stubEnv('WEBHOOK_HOST', 'hooks.example.com');
+    vi.stubEnv('WEBHOOK_TOKEN', 'secret-token');
+
+    const result = await executeWebhookAction(
+      makeWebhookAction(),
+      { entity_id: 'ent_123' },
+      { safeErrors: true },
+      {
+        fetch: vi.fn().mockResolvedValue(new Response(body, { status })),
+        checkHost: () => false,
+        resolveHost: async () => undefined,
+      }
+    );
+
+    expect(result.error).toMatchObject({ provider_status: status });
+    expect(result.error).not.toHaveProperty('provider_message');
+    expect(JSON.stringify(result)).not.toContain('db-7');
   });
 
   it('hides webhook transport details in safe server mode', async () => {

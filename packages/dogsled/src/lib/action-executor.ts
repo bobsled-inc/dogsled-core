@@ -11,6 +11,7 @@ import type { IntegrationSpec } from '@bobsled-inc/extractor/extractor';
 export type ActionErrorCode =
   | 'validation_error'
   | 'auth_error'
+  | 'permission_denied'
   | 'not_found'
   | 'conflict'
   | 'rate_limited'
@@ -32,6 +33,13 @@ export interface ActionResult {
     code: ActionErrorCode;
     message: string;
     retryable: boolean;
+    /** HTTP status of the provider response, when the failure came from one. */
+    provider_status?: number;
+    /**
+     * Error prose from a JSON 4xx provider response, at most 300 characters, with
+     * credentials and URL query strings redacted. Present even with `safeErrors`.
+     */
+    provider_message?: string;
   };
 }
 
