@@ -109,7 +109,7 @@ async function sweepExpiredRuns(
       inspected++;
       const lock = acquireFileOwnership(path.join(stateDirectory, `agentic-${match[1]}.lock`));
       try {
-        const runner = await buildDuckDbRunner(duckDbStateFile(file));
+        const runner = await buildDuckDbRunner(duckDbStateFile(file), { isolated: true });
         let expired: boolean;
         try {
           const db = agenticRowDb(runner);

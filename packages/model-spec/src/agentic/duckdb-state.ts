@@ -10,7 +10,11 @@ import { dbFor } from './duckdb-publication-storage.js';
 import { readDuckDbCursor } from './duckdb-cursors.js';
 import type { AgenticLegacyCursorReader } from './row-cursors.js';
 import { agenticRowDb, duckDbRowDialect } from './row-state-dialect.js';
-import { AGENTIC_ROW_RETENTION_MS, type AgenticRowBackend } from './row-state-tables.js';
+import {
+  AGENTIC_ROW_RETENTION_MS,
+  reconfirmAgenticRowTables,
+  type AgenticRowBackend,
+} from './row-state-tables.js';
 import { createAgenticRowStore } from './row-store.js';
 import { AgenticStateError, type AgenticStateStore } from './state.js';
 import { limitRunner, warehouseStatementLimits } from './warehouse-statement-limit.js';
@@ -37,8 +41,8 @@ export function duckDbStateFile(path: string): DuckDbIntegration {
   };
 }
 
-async function openRunner(config: DuckDbIntegration, signal?: AbortSignal) {
-  const runner = await openDuckDbWithRetry(() => buildDuckDbRunner(config), {
+async function openRunner(config: DuckDbIntegration, signal?: AbortSignal, isolated = false) {
+  const runner = await openDuckDbWithRetry(() => buildDuckDbRunner(config, { isolated }), {
     ...(signal ? { signal } : {}),
   });
   if (!runner.query || !runner.supportsBindings || !runner.close) {
@@ -47,6 +51,10 @@ async function openRunner(config: DuckDbIntegration, signal?: AbortSignal) {
   }
   return runner;
 }
+
+/** A state file holds only data, so nothing stored in it gets to reach outside it. */
+const openStateFile = (path: string, signal?: AbortSignal) =>
+  openRunner(duckDbStateFile(path), signal, true);
 
 /**
  * Opens the file for each operation and closes it again, so nothing holds the file between
@@ -62,17 +70,16 @@ export function duckDbOperationBackend(
   leaseMs?: number
 ): AgenticRowBackend {
   let namespace: string | undefined;
-  return {
+  const backend: AgenticRowBackend = {
     dialect: duckDbRowDialect,
     async connect(handling) {
       const canonical = await canonicalDuckDbPath(path);
-      const config = duckDbStateFile(canonical);
       // DuckDB names the catalog after the file. A schema with the same name would be
       // ambiguous on its own, so ask for the catalog rather than repeat its naming rules.
       namespace ??= await withDuckDbFile(canonical, async () => {
-        const runner = await openRunner(config, signal);
+        const runner = await openStateFile(canonical, signal);
         try {
-          const rows = await runner.query!('SELECT current_database() AS catalog');
+          const rows = await runner.query!('SELECT system.main.current_database() AS catalog');
           const catalog = duckDbRowDialect.identifier(String(rows[0]?.catalog));
           return `${catalog}.${duckDbRowDialect.identifier(schema)}`;
         } finally {
@@ -85,13 +92,16 @@ export function duckDbOperationBackend(
           withDuckDbFile(canonical, async () => {
             const active = options?.cleanup ? undefined : signal;
             throwIfCancelled(active);
-            const opened = await openRunner(config, active);
+            const opened = await openStateFile(canonical, active);
             const runner =
               leaseMs === undefined
                 ? opened
                 : limitRunner(opened, warehouseStatementLimits(leaseMs), handling ?? {});
             try {
-              return await operation(agenticRowDb(runner, active));
+              const db = agenticRowDb(runner, active);
+              // One writing process per file, so a check made now holds for this operation.
+              await reconfirmAgenticRowTables(db, backend, namespace!);
+              return await operation(db);
             } finally {
               await runner.close?.();
             }
@@ -100,6 +110,7 @@ export function duckDbOperationBackend(
       };
     },
   };
+  return backend;
 }
 
 /**
@@ -111,7 +122,7 @@ export function duckDbHeldBackend(path: string, signal?: AbortSignal): AgenticRo
   return {
     dialect: duckDbRowDialect,
     async connect() {
-      const runner: SqlRunnerModule = await openRunner(duckDbStateFile(path), signal);
+      const runner: SqlRunnerModule = await openStateFile(path, signal);
       return {
         namespace: duckDbRowDialect.identifier('main'),
         use: (operation, options) =>

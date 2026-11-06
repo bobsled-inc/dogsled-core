@@ -279,6 +279,13 @@ digest of its parent, revision, operation ID and content. The header's `head` na
 committed write. A read walks back from `head`, verifies each digest, and ignores everything else.
 A long value spans several rows of one write.
 
+Setup confirms that all three are base tables with exactly the columns the store creates, because
+`CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses a file
+that stores any function, because a stored macro can replace a built-in in every statement run on
+that file. So a DuckDB state file must hold nothing else. Any of these reports `corrupt` with the
+reason `state_table_replaced`. DuckDB state files also open with external access and extension
+loading off, so nothing stored in one can read other files or reach the network.
+
 A command writes its rows, then commits them with one update of the header. That update is the
 only commit. It matches the session's owner, unexpired lease, token and revision, and its result
 must report one changed row. There is no multi-statement transaction. Starting and finishing a

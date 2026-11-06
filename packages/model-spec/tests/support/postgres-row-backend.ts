@@ -1,6 +1,11 @@
 import type { IntegrationFile } from '@bobsled-inc/connections';
 import { caseName, quoteIdentifier } from '../../src/compiler/dialect.js';
-import { agenticRowDb, type AgenticRowDialect } from '../../src/agentic/row-state-dialect.js';
+import {
+  agenticQuotedParts,
+  agenticRowDb,
+  agenticTablesMatch,
+  type AgenticRowDialect,
+} from '../../src/agentic/row-state-dialect.js';
 import type { AgenticRowBackend } from '../../src/agentic/row-state-tables.js';
 import { openLimitedRunner } from '../../src/agentic/warehouse-statement-limit.js';
 
@@ -22,6 +27,24 @@ export const postgresRowDialect: AgenticRowDialect = {
     `CREATE TABLE IF NOT EXISTS ${table} (${columns
       .map((column) => `${q(column.name)} ${types[column.type]} NOT NULL`)
       .join(', ')}, PRIMARY KEY (${key.map(q).join(', ')}))`,
+  async hasBaseTables(db, namespace, tables) {
+    const columns = await db.query(
+      `SELECT c.table_name, c.column_name, c.data_type, c.is_nullable, c.column_default, c.is_generated FROM information_schema.columns AS c JOIN information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = $1 AND t.table_type = 'BASE TABLE'`,
+      [agenticQuotedParts(namespace).at(-1)!]
+    );
+    const found = columns.map((row) => ({
+      table: String(row.table_name),
+      name: String(row.column_name),
+      type: String(row.data_type),
+      plain:
+        row.is_nullable === 'NO' && row.column_default === null && row.is_generated === 'NEVER',
+    }));
+    return agenticTablesMatch(found, tables, {
+      text: 'text',
+      integer: 'bigint',
+      boolean: 'boolean',
+    });
+  },
   async insertIfAbsent(db, table, values, key) {
     const names = Object.keys(values);
     await db.query(

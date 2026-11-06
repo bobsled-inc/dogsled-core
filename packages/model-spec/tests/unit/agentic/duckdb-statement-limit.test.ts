@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DuckDbIntegration, SqlRunnerModule } from '@bobsled-inc/connections';
 import { createDuckDbCheckpointStore } from '../../../src/agentic/duckdb-state.js';
+import { duckDbRowDialect } from '../../../src/agentic/row-state-dialect.js';
 import type { AgenticRunKey } from '../../../src/agentic/state.js';
 import { mapScenario } from '../../support/agentic-store-scenario.js';
 
@@ -52,6 +53,7 @@ describe('DuckDB checkpoint statement limit', () => {
     directories.push(directory);
     const { runner, stick } = stuckRunner(scenario.key);
     open.mockResolvedValue(runner);
+    vi.spyOn(duckDbRowDialect, 'hasBaseTables').mockResolvedValue(true);
     const integration: DuckDbIntegration = {
       spec_version: '1',
       type: 'integration',

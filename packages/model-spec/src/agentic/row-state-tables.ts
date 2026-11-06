@@ -1,7 +1,13 @@
 /** The tables of the row store and what connecting to them takes. No engine-specific SQL. */
 import { setTimeout as delay } from 'node:timers/promises';
 import { isCancellationError, type SqlParamValue } from '@bobsled-inc/connections';
-import type { AgenticRowColumn, AgenticRowDb, AgenticRowDialect } from './row-state-dialect.js';
+import type {
+  AgenticRowColumn,
+  AgenticRowDb,
+  AgenticRowDialect,
+  AgenticRowTableShape,
+} from './row-state-dialect.js';
+import { AgenticStateError } from './state-errors.js';
 import type { AgenticStoreLimits } from './store-limits.js';
 import type { StatementTimeoutHandling } from './warehouse-statement-limit.js';
 
@@ -47,6 +53,16 @@ const cursorColumns: AgenticRowColumn[] = [
   text('target'),
   integer('version'),
   text('record'),
+];
+
+const agenticTables: readonly (AgenticRowTableShape & { key: readonly string[] })[] = [
+  { name: AGENTIC_RUNS_TABLE, columns: runColumns, key: ['run_hash'] },
+  {
+    name: AGENTIC_ROWS_TABLE,
+    columns: agenticRowColumns,
+    key: ['run_hash', 'write_id', 'item', 'part'],
+  },
+  { name: AGENTIC_CURSORS_TABLE, columns: cursorColumns, key: ['key_hash'] },
 ];
 
 /** A database reachable for one session or cursor operation. */
@@ -110,7 +126,7 @@ export function agenticRowTable(
   return `${namespace}.${dialect.identifier(name)}`;
 }
 
-export async function prepareAgenticRowTables(
+async function createAgenticRowTables(
   db: AgenticRowDb,
   dialect: AgenticRowDialect,
   namespace: string
@@ -118,11 +134,7 @@ export async function prepareAgenticRowTables(
   for (let attempt = 0; ; attempt++) {
     try {
       await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
-      for (const [name, columns, key] of [
-        [AGENTIC_RUNS_TABLE, runColumns, ['run_hash']],
-        [AGENTIC_ROWS_TABLE, agenticRowColumns, ['run_hash', 'write_id', 'item', 'part']],
-        [AGENTIC_CURSORS_TABLE, cursorColumns, ['key_hash']],
-      ] as const) {
+      for (const { name, columns, key } of agenticTables) {
         await db.run(dialect.createTable(agenticRowTable(dialect, namespace, name), columns, key));
       }
       return;
@@ -133,6 +145,30 @@ export async function prepareAgenticRowTables(
       await delay(20 * 2 ** attempt);
     }
   }
+}
+
+/** Confirms that what stands under the tables' names is what the store created. */
+async function assertAgenticRowTables(
+  db: AgenticRowDb,
+  dialect: AgenticRowDialect,
+  namespace: string
+): Promise<void> {
+  if (!(await dialect.hasBaseTables(db, namespace, agenticTables))) {
+    throw new AgenticStateError('corrupt', {
+      reason: 'state_table_replaced',
+      message: 'The agentic checkpoint store is not as Dogsled created it.',
+      hint: 'Stop all writers and inspect the store before resuming. It must hold nothing else.',
+    });
+  }
+}
+
+export async function prepareAgenticRowTables(
+  db: AgenticRowDb,
+  dialect: AgenticRowDialect,
+  namespace: string
+): Promise<void> {
+  await createAgenticRowTables(db, dialect, namespace);
+  await assertAgenticRowTables(db, dialect, namespace);
 }
 
 const preparedBackends = new WeakSet<AgenticRowBackend>();
@@ -147,6 +183,19 @@ export async function ensureAgenticRowTables(
   if (preparedBackends.has(backend)) return;
   await prepareAgenticRowTables(db, backend.dialect, namespace);
   preparedBackends.add(backend);
+}
+
+/**
+ * For a backend that opens its database for each operation: what setup confirmed says nothing
+ * about a file that has been closed since. Before setup there is nothing to confirm yet, and
+ * setup checks in the same operation.
+ */
+export async function reconfirmAgenticRowTables(
+  db: AgenticRowDb,
+  backend: AgenticRowBackend,
+  namespace: string
+): Promise<void> {
+  if (preparedBackends.has(backend)) await assertAgenticRowTables(db, backend.dialect, namespace);
 }
 
 /** Parameters for one statement. Bind values in the order they appear in the SQL. */

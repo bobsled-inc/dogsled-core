@@ -75,5 +75,14 @@ describe.skipIf(!enabled)('PostgreSQL', () => {
     withRetention: (handle, retentionMs) => rows(schemas.get(handle)!, retentionMs),
     damage: (handle) =>
       sql(`UPDATE "${schemas.get(handle)}"."__dogsled_agentic_rows" SET "data" = '{"damaged":1}'`),
+    replaceRowsTable: async (handle) => {
+      const table = `"${schemas.get(handle)}"."__dogsled_agentic_rows"`;
+      await sql(`ALTER TABLE ${table} RENAME TO kept_rows`);
+      await sql(`CREATE VIEW ${table} AS SELECT * FROM "${schemas.get(handle)}".kept_rows`);
+    },
+    addComputedColumn: (handle) =>
+      sql(
+        `ALTER TABLE "${schemas.get(handle)}"."__dogsled_agentic_rows" ADD COLUMN computed TEXT GENERATED ALWAYS AS (repeat('x', 10)) STORED`
+      ),
   });
 });
