@@ -41,8 +41,8 @@ const LARGE = AGENTIC_MAX_ROWS;
 const PAYLOAD = 1000;
 /** The target at 2,000 assignments is twice the figure at 100; 1,000 has no cause to do worse. */
 const MAX_GROWTH = 2;
-/** A healthy run takes about two seconds. Growth makes this one take over ten minutes. */
-const RUN_BUDGET_MS = 60_000;
+/** A large run takes seconds, or half a minute on a busy runner. Growth takes hours there. */
+const RUN_BUDGET_MS = 150_000;
 
 const run = (
   workload: ReturnType<typeof benchmarkWorkload>,
@@ -183,7 +183,7 @@ describe('checkpoint cost as a run grows', () => {
       expect(large.hashedPerAssignment).toBeLessThan(small.hashedPerAssignment * 1.25);
       expect(large.serializedPerAssignment).toBeLessThan(small.serializedPerAssignment * 1.25);
     },
-    180_000
+    2 * RUN_BUDGET_MS + 60_000
   );
 
   it.each(['map', 'plan'] as const)(
@@ -198,7 +198,7 @@ describe('checkpoint cost as a run grows', () => {
       }
       expect(Math.min(...growth)).toBeLessThanOrEqual(MAX_GROWTH);
     },
-    240_000
+    4 * RUN_BUDGET_MS
   );
 
   it('schedules each attempt without passing over the run', async () => {

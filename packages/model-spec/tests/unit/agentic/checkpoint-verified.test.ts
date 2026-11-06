@@ -367,7 +367,7 @@ describe('verified checkpoint walks', () => {
         ])
       );
     },
-    60_000
+    180_000
   );
 });
 

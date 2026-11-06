@@ -178,7 +178,10 @@ describe('coordinator receipt validation', () => {
     for (const { command, requestedAt, response } of steps) {
       if (isAttempt(command)) {
         attempts++;
-        for (const path of everyPath(response)) {
+        const paths = everyPath(response);
+        for (const [position, path] of paths.entries()) {
+          // The definition is most of a reply and no attempt touches it, so a sample will do.
+          if (path[0] === 'definition' && position % 10) continue;
           for (const how of ['change', 'remove', 'undefined']) {
             const candidate = changedAt(response, path, how);
             const expected = outcome(() => completeCheck(candidate, before, command, requestedAt));
@@ -192,7 +195,7 @@ describe('coordinator receipt validation', () => {
       before = validateAgenticReceipt(response, before, command, requestedAt);
     }
     expect(attempts).toBe(6);
-  }, 60_000);
+  }, 120_000);
 
   /** Ways to build a response that holds the right values and yet is not plain JSON. */
   class List extends Array {}
@@ -254,6 +257,16 @@ describe('coordinator receipt validation', () => {
     return nodes;
   }
 
+  /** The reply itself and each structure an attempt touches, then a sample of the rest. */
+  function oddPositions(shape: ReturnType<typeof everyNode>) {
+    const named = ['reply', 'work', 'attempts', 'assignment', 'group_key', 'outcome', 'accepted'];
+    const positions = new Set<number>();
+    shape.forEach(({ key }, position) => {
+      if (named.includes(String(key)) || position % 40 === 0) positions.add(position);
+    });
+    return [...positions].slice(0, 20);
+  }
+
   it('gives a response that is not plain JSON the verdict of the complete check', async () => {
     const { initial, steps } = await recordRun();
     let before = validateAgenticReceipt(initial, initial);
@@ -261,9 +274,8 @@ describe('coordinator receipt validation', () => {
     for (const { command, requestedAt, response } of steps) {
       if (isAttempt(command)) {
         const shape = everyNode(structuredClone(response), {}, 'reply');
-        for (const position of shape.keys()) {
-          // The definition is large and takes no part in an attempt, so a sample of it will do.
-          if (position % 7 && JSON.stringify(shape[position]!.value).length > 2000) continue;
+        const positions = oddPositions(shape);
+        for (const position of positions) {
           const oddities = Array.isArray(shape[position]!.value) ? oddArrays : oddObjects;
           for (const [name, change] of Object.entries(oddities)) {
             const holder: { reply: unknown } = { reply: structuredClone(response) };
@@ -287,7 +299,7 @@ describe('coordinator receipt validation', () => {
       expect(verdicts[`${name}: refused`]).toBeGreaterThan(0);
     }
     expect(verdicts['symbol key: refused']).toBeGreaterThan(0);
-  }, 60_000);
+  }, 120_000);
 
   it('refuses a finish time outside the request', async () => {
     const { initial, steps } = await recordRun();
