@@ -1,10 +1,7 @@
 /**
- * One real run on a shared row store, in a process of its own so that runs contend at the
- * database rather than for one event loop. Every statement is timed at the runner boundary.
- * `serializeMs` turns the run into a simulation of a table-locking engine on PostgreSQL: each
- * header update holds one of `headerTables` locks for that long, as a table lock would.
+ * One real run on a shared store, in a process of its own so that runs contend at the database
+ * rather than for one event loop. Every statement is timed at the runner boundary.
  */
-import { createHash } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -19,6 +16,7 @@ import {
 } from '@bobsled-inc/connections';
 import { executeAgenticRun } from '../../src/agentic/run.js';
 import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
+import { createWarehouseCheckpointStore } from '../../src/agentic/warehouse-state.js';
 import { benchmarkWorkload } from './agentic-benchmark.js';
 import {
   hostRunners,
@@ -28,6 +26,8 @@ import {
 
 export interface ContentionWorkerOptions {
   engine: 'postgres' | 'snowflake';
+  /** The row store, or the store it replaces, for a before and after on one account. */
+  store: 'rows' | 'warehouse';
   schema: string;
   run: string;
   assignments: number;
@@ -35,11 +35,6 @@ export interface ContentionWorkerOptions {
   startAt: number;
   output: string;
   modelMs: number;
-  /** Simulated time a statement takes. */
-  statementMs: number;
-  /** Simulated time a header update holds its lock. Zero runs the engine as it is. */
-  serializeMs: number;
-  headerTables: number;
 }
 export interface ContentionWorkerResult {
   /** Milliseconds per statement, by kind. */
@@ -58,27 +53,11 @@ const kindOf = (sql: string): string => {
 };
 
 function timed(runner: SqlRunnerModule): SqlRunnerModule {
-  // Chosen from the run, as a fixed set of tables would be, so runs can land on one table.
-  const digest = createHash('sha256').update(options.run).digest();
-  const lock = 1_000 + (digest.readUInt32BE(0) % options.headerTables);
-  const simulate = async <T>(kind: string, statement: () => Promise<T>): Promise<T> => {
-    if (kind !== 'header_update' || !options.serializeMs) {
-      if (options.statementMs) await delay(options.statementMs);
-      return statement();
-    }
-    await runner.query!(`SELECT pg_advisory_lock(${lock})`);
-    try {
-      await delay(options.serializeMs);
-      return await statement();
-    } finally {
-      await runner.query!(`SELECT pg_advisory_unlock(${lock})`);
-    }
-  };
   const measure = async <T>(sql: string, statement: () => Promise<T>): Promise<T> => {
     const kind = kindOf(sql);
     const started = performance.now();
     try {
-      return await simulate(kind, statement);
+      return await statement();
     } finally {
       (samples[kind] ??= []).push(performance.now() - started);
     }
@@ -114,7 +93,9 @@ async function main(): Promise<void> {
   try {
     await executeAgenticRun(workload.host, workload.context(), {
       projectDirectory: directory,
-      stateStore: createWarehouseRowStore(integration, { schema: options.schema, customRunners }),
+      stateStore: (options.store === 'rows'
+        ? createWarehouseRowStore
+        : createWarehouseCheckpointStore)(integration, { schema: options.schema, customRunners }),
       run: { id: options.run, mode: 'start' },
     });
   } catch (error) {

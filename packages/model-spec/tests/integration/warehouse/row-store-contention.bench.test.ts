@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -27,9 +27,11 @@ const settings = {
   assignments: number(env.CHECKPOINT_BENCHMARK_ASSIGNMENTS, 100),
   samples: number(env.CHECKPOINT_BENCHMARK_SAMPLES, 3),
   modelMs: number(env.CHECKPOINT_BENCHMARK_MODEL_MS, 0),
-  statementMs: number(env.CHECKPOINT_BENCHMARK_STATEMENT_MS, 0),
-  serializeMs: number(env.CHECKPOINT_BENCHMARK_SERIALIZE_MS, 0),
-  headerTables: number(env.CHECKPOINT_BENCHMARK_HEADER_TABLES, 1),
+  /** How many schemas the runs share out by a hash of the run. Each has its own header table,
+   * so this measures a fixed set of them without any change to the store. */
+  schemas: number(env.CHECKPOINT_BENCHMARK_SCHEMAS, 1),
+  store:
+    env.CHECKPOINT_BENCHMARK_STORE === 'warehouse' ? ('warehouse' as const) : ('rows' as const),
 };
 const worker = fileURLToPath(
   new URL('../../support/row-store-contention-worker.ts', import.meta.url)
@@ -63,32 +65,42 @@ async function measure(engine: (typeof engines)[number], runs: number) {
     quoteIdentifier(caseName(name, integration.source_type), integration.source_type);
   const database = integration.source_type === 'snowflake' ? integration.connection.database : null;
   const prefix = env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA ?? 'bench';
-  const schema = `${prefix}_contention_${randomUUID().replaceAll('-', '')}`;
-  const namespace = [...(database ? [database] : []), schema].map(q).join('.');
+  const schemas = Array.from(
+    { length: settings.schemas },
+    () => `${prefix}_contention_${randomUUID().replaceAll('-', '')}`
+  );
+  // PostgreSQL truncates a longer name, which could cut the random part off what gets dropped.
+  if (engine.engine === 'postgres' && Buffer.byteLength(schemas[0]!) > 63) {
+    throw new Error('The schema prefix is too long for PostgreSQL');
+  }
+  const namespace = (schema: string) => [...(database ? [database] : []), schema].map(q).join('.');
+  const schemaFor = (run: string) =>
+    schemas[createHash('sha256').update(run).digest().readUInt32BE(0) % schemas.length]!;
   const directory = mkdtempSync(join(tmpdir(), 'row-contention-'));
   try {
     // Create the tables first, so that the runs measure work rather than setup.
-    const first = await createWarehouseRowStore(integration, { schema, ...runners }).acquire({
-      scope: 'bench',
-      model: 'setup',
-      id: 'setup',
-    });
-    await first.release();
+    for (const schema of schemas) {
+      const first = await createWarehouseRowStore(integration, { schema, ...runners }).acquire({
+        scope: 'bench',
+        model: 'setup',
+        id: 'setup',
+      });
+      await first.release();
+    }
     const startAt = Date.now() + 8_000;
     const outputs = Array.from({ length: runs }, (_, index) => join(directory, `${index}.json`));
     await Promise.all(
       outputs.map(async (output, index) => {
+        const run = `run-${index}`;
         const options: ContentionWorkerOptions = {
           engine: engine.engine,
-          schema,
-          run: `run-${index}`,
+          store: settings.store,
+          schema: schemaFor(run),
+          run,
           assignments: settings.assignments,
           startAt,
           output,
           modelMs: settings.modelMs,
-          statementMs: settings.statementMs,
-          serializeMs: settings.serializeMs,
-          headerTables: settings.headerTables,
         };
         const child = spawn(
           process.execPath,
@@ -126,7 +138,9 @@ async function measure(engine: (typeof engines)[number], runs: number) {
     rmSync(directory, { recursive: true, force: true });
     const runner = await resolveRunner(integration, runners);
     try {
-      await runner.run(`DROP SCHEMA IF EXISTS ${namespace} CASCADE`);
+      for (const schema of schemas) {
+        await runner.run(`DROP SCHEMA IF EXISTS ${namespace(schema)} CASCADE`);
+      }
     } finally {
       await runner.close?.();
     }
@@ -134,11 +148,11 @@ async function measure(engine: (typeof engines)[number], runs: number) {
 }
 
 // Opt-in measurement, not a regression gate. Real runs, a synthetic model call, and one process
-// per run. Set the simulation settings to model a table-locking engine on PostgreSQL.
+// per run.
 describe.skipIf(!engines.length)('row store contention', () => {
   for (const engine of engines) {
     it.each(settings.runs)(
-      `${engine.engine}: %s runs on one header table`,
+      `${engine.engine}: %s runs at once`,
       async (runs) => {
         for (let sample = 0; sample < settings.samples; sample++) {
           const line = JSON.stringify({
