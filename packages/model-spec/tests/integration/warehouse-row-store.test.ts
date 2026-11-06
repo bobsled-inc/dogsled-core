@@ -125,15 +125,17 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
   });
 
   describe('header tables', () => {
-    /** Run keys whose hashes pick tables as asked. The hash is fixed, so a search finds them. */
+    /** Run keys whose hashes pick tables as asked. The hash is fixed, so a search finds them, and
+     * it stops so that a table which no longer depends on the hash fails here instead of hanging. */
     const keyIn = (
       run: AgenticRunKey,
       wanted: (table: string, id: string) => boolean
     ): AgenticRunKey => {
-      for (let index = 0; ; index++) {
+      for (let index = 0; index < 10_000; index++) {
         const candidate = { ...run, id: `run-${index}` };
         if (wanted(tableOf(candidate), candidate.id)) return candidate;
       }
+      throw new Error('No run key picks the table this test asked for.');
     };
     const pending = () => new Promise<'waiting'>((done) => setTimeout(() => done('waiting'), 150));
 
@@ -216,6 +218,19 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
       const name = quotedTable(agenticHeaderTableNames(snowflakeRowDialect).at(-1)!);
       await emulator.sql(`ALTER TABLE ${name} RENAME TO kept_header`);
       await emulator.sql(`CREATE VIEW ${name} AS SELECT * FROM ${namespace}.kept_header`);
+      await expect(store().acquire({ ...run, id: 'next' })).rejects.toMatchObject({
+        code: 'corrupt',
+        reason: 'state_table_replaced',
+      });
+    });
+
+    it('reports a table of another shape in place of any header table', async () => {
+      const { emulator, store } = await open();
+      const { key: run } = await mapScenario();
+      await (await store().acquire(run)).release();
+      const name = quotedTable(agenticHeaderTableNames(snowflakeRowDialect).at(-1)!);
+      await emulator.sql(`DROP TABLE ${name}`);
+      await emulator.sql(`CREATE TABLE ${name} ("OTHER" VARCHAR)`);
       await expect(store().acquire({ ...run, id: 'next' })).rejects.toMatchObject({
         code: 'corrupt',
         reason: 'state_table_replaced',
