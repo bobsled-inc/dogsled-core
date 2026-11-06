@@ -20,7 +20,11 @@ import {
 import { executeAgenticRun } from '../../src/agentic/run.js';
 import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import { benchmarkWorkload } from './agentic-benchmark.js';
-import { postgresIntegration, snowflakeIntegration } from './row-store-integrations.js';
+import {
+  hostRunners,
+  postgresIntegration,
+  snowflakeIntegration,
+} from './row-store-integrations.js';
 
 export interface ContentionWorkerOptions {
   engine: 'postgres' | 'snowflake';
@@ -90,9 +94,10 @@ function timed(runner: SqlRunnerModule): SqlRunnerModule {
 async function main(): Promise<void> {
   const integration: IntegrationFile =
     options.engine === 'postgres' ? postgresIntegration() : (await snowflakeIntegration())!;
+  const host = await hostRunners();
   const customRunners = new CustomRunnerRegistry();
   customRunners.register(integration.source_type, integration.auth.type, async (base, context) =>
-    timed(await resolveRunner(base, context))
+    timed(await resolveRunner(base, { ...context, ...host }))
   );
   const workload = benchmarkWorkload(options.assignments, 'map');
   const execute = workload.host.executeAgent!;

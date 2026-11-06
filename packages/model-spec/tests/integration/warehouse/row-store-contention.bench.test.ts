@@ -13,7 +13,11 @@ import type {
   ContentionWorkerOptions,
   ContentionWorkerResult,
 } from '../../support/row-store-contention-worker.js';
-import { postgresIntegration, snowflakeIntegration } from '../../support/row-store-integrations.js';
+import {
+  hostRunners,
+  postgresIntegration,
+  snowflakeIntegration,
+} from '../../support/row-store-integrations.js';
 
 const env = process.env;
 const enabled = env.CHECKPOINT_BENCHMARK === '1';
@@ -31,6 +35,7 @@ const worker = fileURLToPath(
   new URL('../../support/row-store-contention-worker.ts', import.meta.url)
 );
 const snowflake = enabled ? await snowflakeIntegration() : undefined;
+const runners = enabled ? await hostRunners() : {};
 const engines: { engine: 'postgres' | 'snowflake'; integration: () => IntegrationFile }[] = [
   ...(enabled && env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
     ? [{ engine: 'postgres' as const, integration: postgresIntegration }]
@@ -63,7 +68,7 @@ async function measure(engine: (typeof engines)[number], runs: number) {
   const directory = mkdtempSync(join(tmpdir(), 'row-contention-'));
   try {
     // Create the tables first, so that the runs measure work rather than setup.
-    const first = await createWarehouseRowStore(integration, { schema }).acquire({
+    const first = await createWarehouseRowStore(integration, { schema, ...runners }).acquire({
       scope: 'bench',
       model: 'setup',
       id: 'setup',
@@ -119,7 +124,7 @@ async function measure(engine: (typeof engines)[number], runs: number) {
     };
   } finally {
     rmSync(directory, { recursive: true, force: true });
-    const runner = await resolveRunner(integration);
+    const runner = await resolveRunner(integration, runners);
     try {
       await runner.run(`DROP SCHEMA IF EXISTS ${namespace} CASCADE`);
     } finally {

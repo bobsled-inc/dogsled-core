@@ -1,10 +1,12 @@
 /** The integrations the row store's gated suites connect to. Secrets stay in the environment. */
 import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import { parse } from 'yaml';
 import {
   EnvSecretResolver,
   IntegrationFileSchema,
   interpolateSecrets,
+  type CustomRunnerRegistry,
   type IntegrationFile,
   type PostgresIntegration,
   type SnowflakeIntegration,
@@ -39,4 +41,15 @@ export async function snowflakeIntegration(): Promise<SnowflakeIntegration | und
     await interpolateSecrets(parse(await readFile(path, 'utf8')), new EnvSecretResolver())
   );
   return integration.source_type === 'snowflake' ? integration : undefined;
+}
+
+/** A host's own runner factories, so that it can prove the store through them before it switches.
+ * Names an ES module that exports a `CustomRunnerRegistry` as `customRunners`. */
+export async function hostRunners(): Promise<{ customRunners?: CustomRunnerRegistry }> {
+  const path = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_RUNNERS;
+  if (!path) return {};
+  const { customRunners } = (await import(pathToFileURL(path).href)) as {
+    customRunners: CustomRunnerRegistry;
+  };
+  return { customRunners };
 }

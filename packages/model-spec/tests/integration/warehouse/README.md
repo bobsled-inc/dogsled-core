@@ -49,6 +49,11 @@ Each test creates its own schema, named after `DOGSLED_MODEL_SPEC_CHECKPOINT_SCH
 suffix, and drops only that one. The role therefore needs to create schemas in the database. With
 another engine's integration the suite is skipped. Allow about 40 minutes.
 
+A host that opens Snowflake through its own runner factory should prove it here before it switches.
+Set `DOGSLED_MODEL_SPEC_CHECKPOINT_RUNNERS` to the absolute path of an ES module that exports a
+`CustomRunnerRegistry` as `customRunners`, and both this suite and the benchmark below connect
+through it. The module runs as test code, so point it only at code you trust.
+
 `row-store-contention.bench.test.ts` measures statements per assignment, latency per statement
 and how header updates behave as runs share a header table. It runs with
 `CHECKPOINT_BENCHMARK=1`, on PostgreSQL with the settings below, on Snowflake with the same two

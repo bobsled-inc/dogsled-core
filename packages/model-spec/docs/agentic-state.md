@@ -453,8 +453,14 @@ run and once per key. A statement that Snowflake refuses because too many others
 table lock never ran, so the store repeats it, for about 15 seconds at most.
 
 The store relies on Snowflake's default `AUTOCOMMIT = TRUE`, because each statement is a write of its
-own. A custom Snowflake runner must return the driver's result row for an update. Without it the
-write fails as an uncertain one, rather than reading as a lost lease.
+own.
+
+A host that opens Snowflake through its own runner factory must provide three things the built-in
+runner does: the result row of an `UPDATE`, with its `number of rows updated` column, returned from
+`query`; `EXECUTE IMMEDIATE` scripts through `run`; and `bigint` values among bind parameters.
+Without the first, every write fails as an uncertain one rather than reading as a lost lease. Run
+the [live suite](../tests/integration/warehouse/README.md#agentic-store-conformance) through that
+factory before switching.
 
 The Snowflake dialect passes the conformance suite against an emulator in every test run, which
 proves its logic but not Snowflake's behavior. Run the [live suite](../tests/integration/warehouse/README.md#agentic-store-conformance)

@@ -10,16 +10,17 @@ import {
   describeAgenticStoreConformance,
   type StoreHandle,
 } from '../../support/agentic-store-conformance.js';
-import { snowflakeIntegration } from '../../support/row-store-integrations.js';
+import { hostRunners, snowflakeIntegration } from '../../support/row-store-integrations.js';
 
 const baseSchema = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA;
 const snowflake = await snowflakeIntegration();
+const runners = await hostRunners();
 
 const q = (name: string) => quoteIdentifier(caseName(name, 'snowflake'), 'snowflake');
 const database = snowflake?.connection.database;
 const qualified = (schema: string) => [...(database ? [database] : []), schema].map(q).join('.');
 async function sql(statement: string): Promise<Record<string, unknown>[]> {
-  const runner = await resolveRunner(snowflake!);
+  const runner = await resolveRunner(snowflake!, runners);
   try {
     return await runner.query!(statement);
   } finally {
@@ -32,7 +33,7 @@ const dropSchema = (schema: string) => sql(`DROP SCHEMA IF EXISTS ${qualified(sc
 
 const schemas = new WeakMap<StoreHandle, string>();
 const rows = (schema: string, retentionMs = 86_400_000) =>
-  createWarehouseRowStore(snowflake!, { schema, retentionMs });
+  createWarehouseRowStore(snowflake!, { schema, retentionMs, ...runners });
 const table = (handle: StoreHandle, name: string) =>
   `${qualified(schemas.get(handle)!)}.${q(name)}`;
 
@@ -65,7 +66,7 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
 
   describe('what the dialect assumes', { timeout: 300_000 }, () => {
     it('reads one clock whatever the session time zone', async () => {
-      const runner = await resolveRunner(snowflake!);
+      const runner = await resolveRunner(snowflake!, runners);
       try {
         const clock = async (zone: string) => {
           await runner.run(`ALTER SESSION SET TIMEZONE = '${zone}'`);
@@ -84,7 +85,7 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
     it('reports the rows an update changed as the dialect reads them', async () => {
       const schema = testSchema();
       const name = `${qualified(schema)}.${q('probe')}`;
-      const runner = await resolveRunner(snowflake!);
+      const runner = await resolveRunner(snowflake!, runners);
       try {
         await runner.run(`CREATE SCHEMA IF NOT EXISTS ${qualified(schema)}`);
         await runner.run(`CREATE TABLE ${name} (${q('a')} BIGINT)`);
@@ -105,7 +106,7 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
       const key = { scope: 'row-store-test', model: randomUUID(), target: 'cursor-test' };
       const signature = 'a'.repeat(64);
       try {
-        const old = createWarehouseAgenticCursorStore(snowflake!, { schema });
+        const old = createWarehouseAgenticCursorStore(snowflake!, { schema, ...runners });
         await old.begin(key, signature, 'old-run');
         await old.commit(key, signature, 'old-run', { pairs: 5 });
         const cursors = rows(schema).cursors!;
