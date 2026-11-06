@@ -148,6 +148,31 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     }
   });
 
+  it('stops rather than start over when the role cannot read the old table', async () => {
+    const name = schema();
+    const old = createWarehouseAgenticCursorStore(integration(), { schema: name });
+    await old.begin(key, signature, 'old-run');
+    await old.commit(key, signature, 'old-run', { pairs: 5 });
+    const role = `row_store_${randomUUID().replaceAll('-', '')}`;
+    const password = randomUUID();
+    await sql(`CREATE ROLE "${role}" LOGIN PASSWORD '${password}'`);
+    try {
+      await sql(`GRANT USAGE, CREATE ON SCHEMA "${name}" TO "${role}"`);
+      const scoped = {
+        ...integration(),
+        auth: { type: 'password' as const, user: role, password },
+      };
+      const store = createWarehouseRowStore(scoped, { schema: name });
+      await expect(store.cursors!.begin(key, signature, 'new-run')).rejects.toThrow(
+        'permission denied'
+      );
+      expect(await sql(`SELECT 1 FROM "${name}"."__dogsled_agentic_cursors"`)).toEqual([]);
+    } finally {
+      await sql(`DROP SCHEMA "${name}" CASCADE`);
+      await sql(`DROP ROLE "${role}"`);
+    }
+  });
+
   it('declares the keys it relies on', async () => {
     const name = schema();
     const { key: run } = await mapScenario();

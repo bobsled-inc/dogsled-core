@@ -210,6 +210,17 @@ describe('the warehouse row store factory', () => {
     );
   });
 
+  it('refuses a PostgreSQL schema name that the server would truncate', () => {
+    const name = (bytes: number) => 's'.repeat(bytes);
+    expect(() => createWarehouseRowStore(postgres, { schema: name(64) })).toThrow(
+      expect.objectContaining(invalid)
+    );
+    expect(() => createWarehouseRowStore(postgres, { schema: '語'.repeat(22) })).toThrow(
+      expect.objectContaining(invalid)
+    );
+    expect(() => createWarehouseRowStore(postgres, { schema: name(63) })).not.toThrow();
+  });
+
   it('declares what the row store promises', () => {
     const store = createWarehouseRowStore(postgres, { schema: 's' });
     expect(store.expiresRuns).toBe(true);

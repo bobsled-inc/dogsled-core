@@ -29,6 +29,8 @@ export type WarehouseRowStoreOptions = WarehouseCheckpointOptions & {
 };
 
 const LEGACY_CURSORS_TABLE = '__dogsled_cursors';
+/** PostgreSQL truncates a longer identifier, and a bound name would then match nothing. */
+const postgresNameBytes = 63;
 
 type RowEngine = 'postgres' | 'snowflake';
 const isRowEngine = (engine: string): engine is RowEngine =>
@@ -79,6 +81,14 @@ function warehouseRowBackend(
   };
 }
 
+/** Whether the old table exists. PostgreSQL's catalog answers that whatever the role may read,
+ * so a table it has no grant on fails at the read that follows. Snowflake has no such view:
+ * a table the role cannot see looks missing, so the role must hold `SELECT` on it. */
+const legacyTableQuery = (engine: RowEngine, target: WarehouseTarget): string =>
+  engine === 'postgres'
+    ? 'SELECT 1 AS found FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = $1 AND c.relname = $2 LIMIT 1'
+    : `SELECT 1 AS found FROM ${catalogView(dialects[engine], target, 'tables')} WHERE table_schema = ? AND table_name = ? LIMIT 1`;
+
 /**
  * Reads what `__dogsled_cursors`, the warehouse store's table in this schema, holds for a key.
  * A table that was never created means no earlier progress, and that has to be established: a
@@ -91,15 +101,14 @@ function legacyCursorReader(
 ): AgenticLegacyCursorReader {
   const { dialect } = backend;
   const q = dialect.identifier;
-  const tables = catalogView(dialect, target, 'tables');
   return async (key) => {
     const connection = await backend.connect();
     try {
       return await connection.use(async (db) => {
-        const found = await db.query(
-          `SELECT 1 AS found FROM ${tables} WHERE table_schema = ${dialect.bind(1)} AND table_name = ${dialect.bind(2)} LIMIT 1`,
-          [target.schema, caseName(LEGACY_CURSORS_TABLE, engine)]
-        );
+        const found = await db.query(legacyTableQuery(engine, target), [
+          target.schema,
+          caseName(LEGACY_CURSORS_TABLE, engine),
+        ]);
         if (!found.length) return null;
         const table = agenticRowTable(dialect, connection.namespace, LEGACY_CURSORS_TABLE);
         const rows = await db.query(
@@ -145,6 +154,12 @@ export function createWarehouseRowStore(
     });
   }
   const target = resolveWarehouseCheckpointTarget(integration, options);
+  if (engine === 'postgres' && Buffer.byteLength(target.schema) > postgresNameBytes) {
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_store_config',
+      message: `A PostgreSQL schema name can be at most ${postgresNameBytes} bytes.`,
+    });
+  }
   const dialect = dialects[engine];
   const namespace = [...(target.catalog ? [target.catalog] : []), target.schema]
     .map(dialect.identifier)
