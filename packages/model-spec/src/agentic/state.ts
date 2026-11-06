@@ -24,7 +24,7 @@ import {
 import { buildAgenticStepAssignments } from './plan-work.js';
 import { AgenticColumnsSchema } from './model.js';
 import { checkpointIsConsistent } from './checkpoint-consistency.js';
-import { jsonEqual } from './json-equal.js';
+import { workMatchesRun } from './checkpoint-work.js';
 import { isBoundedCheckpoint } from './checkpoint-json.js';
 import {
   AgentAssignmentSchema,
@@ -162,12 +162,14 @@ const SnapshotObjectSchema = z
     ) {
       invalid();
     }
-    const attempts = run.work.flatMap((work) => work.attempts);
     if (run.accounting === 'spend_cap') {
       if (
         run.charged_microusd !==
-          attempts.reduce((sum, attempt) => sum + (attempt.charge_microusd ?? 0), 0) ||
-        attempts.some((attempt) => attempt.reservation !== null) ||
+          run.work.reduce(
+            (total, work) =>
+              total + work.attempts.reduce((sum, item) => sum + (item.charge_microusd ?? 0), 0),
+            0
+          ) ||
         run.execution_windows?.some((window) => window.token_limit === undefined)
       ) {
         invalid();
@@ -175,7 +177,6 @@ const SnapshotObjectSchema = z
     } else if (
       run.charged_microusd !== undefined ||
       run.cost_limit_microusd !== undefined ||
-      attempts.some((attempt) => attempt.charge_microusd !== undefined) ||
       run.execution_windows?.some(
         (window) => window.token_limit !== undefined || window.cost_limit_microusd !== undefined
       )
@@ -186,54 +187,7 @@ const SnapshotObjectSchema = z
     for (const work of run.work) {
       if (ids.has(work.assignment.shard_id)) invalid();
       ids.add(work.assignment.shard_id);
-      if (
-        work.assignment.run_id !== run.key.id ||
-        work.assignment.model_name !== run.key.model ||
-        work.assignment.limits.deadline_at !== run.deadline_at ||
-        work.assignment.limits.started_at !== run.started_at ||
-        work.attempts.length > run.max_attempts
-      ) {
-        invalid();
-      }
-      for (const attempt of work.attempts) {
-        if (
-          (work.assignment.limits.tokens !== null &&
-            attempt.reservation !== work.assignment.limits.tokens) ||
-          (!attempt.outcome && attempt.charge < (attempt.reservation ?? 0))
-        ) {
-          invalid();
-        }
-        if (attempt.outcome) {
-          const minimum =
-            attempt.outcome.usage.status === 'measured'
-              ? attempt.outcome.usage.total_tokens
-              : (attempt.reservation ?? 0);
-          if (
-            attempt.charge < minimum ||
-            attempt.finish_revision === undefined ||
-            attempt.finish_digest !==
-              finishDigest(attempt.outcome, attempt.charge, attempt.charge_microusd)
-          ) {
-            invalid();
-          }
-          try {
-            // Refinements run only after every field parsed, so this assignment is parsed.
-            parseAttemptOutcome(work.assignment, attempt.id, attempt.outcome);
-          } catch {
-            invalid();
-          }
-        }
-      }
-      if (work.accepted) {
-        const attempt = work.attempts.at(-1);
-        if (
-          !attempt ||
-          work.accepted.status === 'failed' ||
-          !jsonEqual(work.accepted, attempt.outcome)
-        ) {
-          invalid();
-        }
-      }
+      if (!workMatchesRun(run, work)) invalid();
     }
     if (run.status === 'execution_complete' && run.work.some((work) => !work.accepted)) invalid();
   });
@@ -394,6 +348,18 @@ export function applyAgenticCheckpoint(
     : state;
 }
 
+/** The two questions a transition asks about the whole run. */
+export interface AgenticRunLookups {
+  hasOvercharge(): boolean;
+  hasAttempt(attemptId: string): boolean;
+}
+
+export function isOverchargedAttempt(
+  attempt: AgenticRunSnapshot['work'][number]['attempts'][number]
+) {
+  return attempt.reservation !== null && attempt.charge > attempt.reservation;
+}
+
 /** Applies a command to `state` in place and reports whether it changed. `state` must be an
  * unshared copy of AgenticRunSnapshotSchema output. A changed state is not yet validated. */
 export function transitionAgenticCheckpoint(
@@ -401,7 +367,21 @@ export function transitionAgenticCheckpoint(
   input: AgenticCheckpointCommand,
   now: number
 ): boolean {
-  const command = AgenticCheckpointCommandSchema.parse(input);
+  return applyParsedCommand(state, AgenticCheckpointCommandSchema.parse(input), now, {
+    hasOvercharge: () => state.work.some((item) => item.attempts.some(isOverchargedAttempt)),
+    hasAttempt: (attemptId) =>
+      state.work.some((item) => item.attempts.some((attempt) => attempt.id === attemptId)),
+  });
+}
+
+/** As transitionAgenticCheckpoint, for `command` already parsed. A start or finish of an attempt
+ * writes only the run, its work item, that item's attempt list and its last attempt. */
+export function applyParsedCommand(
+  state: AgenticRunSnapshot,
+  command: AgenticCheckpointCommand,
+  now: number,
+  lookups: AgenticRunLookups
+): boolean {
   const conflict = (): never => {
     throw new AgenticStateError('conflict');
   };
@@ -600,14 +580,7 @@ export function transitionAgenticCheckpoint(
     if ((command.charge !== undefined || command.charge_microusd !== undefined) && !spendCap) {
       conflict();
     }
-    if (
-      !spendCap &&
-      state.work.some((item) =>
-        item.attempts.some(
-          (attempt) => attempt.reservation !== null && attempt.charge > attempt.reservation
-        )
-      )
-    ) {
+    if (!spendCap && lookups.hasOvercharge()) {
       throw new AgenticStateError('limit', {
         reason: 'assignment_overcharged',
         message: 'An earlier attempt reported more token usage than it reserved.',
@@ -635,11 +608,7 @@ export function transitionAgenticCheckpoint(
         message: `The run token budget (limits.tokens: ${state.token_limit}) has no room for another attempt; ${state.charged} tokens are charged.`,
       });
     }
-    if (
-      state.work.some((item) => item.attempts.some((attempt) => attempt.id === command.attempt_id))
-    ) {
-      conflict();
-    }
+    if (lookups.hasAttempt(command.attempt_id)) conflict();
     if (spendCap) {
       // Charge an estimate now so an interrupted attempt still counts toward the cap.
       const charge = command.charge ?? 0;
