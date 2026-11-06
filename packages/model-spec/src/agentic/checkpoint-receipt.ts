@@ -1,5 +1,4 @@
 import {
-  AgenticRunSnapshotSchema,
   AgenticStateError,
   applyAgenticCheckpoint,
   digestAgenticState,
@@ -9,7 +8,7 @@ import type { AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import {
   advanceVerifiedCheckpoint,
   isVerifiedCheckpoint,
-  verifiedCheckpoint,
+  safeParseVerifiedCheckpoint,
 } from './checkpoint-verified.js';
 import { isExactJson, jsonEqual } from './json-equal.js';
 
@@ -57,7 +56,7 @@ function provedReceipt(
 
 /**
  * A shape-valid snapshot is not proof that the requested reservation or acceptance happened.
- * The result is verified state, frozen and separate from `value`.
+ * The result is verified state, frozen and separate from `value`, unless `value` is not plain JSON.
  */
 export function validateAgenticReceipt(
   value: unknown,
@@ -67,13 +66,9 @@ export function validateAgenticReceipt(
 ): AgenticRunSnapshot {
   const proved = command && provedReceipt(value, before, command, requestedAt);
   if (proved) return proved;
-  let snapshot: AgenticRunSnapshot;
-  if (isVerifiedCheckpoint(value)) snapshot = value;
-  else {
-    const parsed = AgenticRunSnapshotSchema.safeParse(value);
-    if (!parsed.success) throw new AgenticStateError('corrupt');
-    snapshot = parsed.data;
-  }
+  const parsed = safeParseVerifiedCheckpoint(value);
+  if (!parsed.success) throw new AgenticStateError('corrupt');
+  const snapshot = parsed.data;
   let appliedAt: number | undefined = requestedAt;
   if (command?.type === 'finish_attempt') {
     appliedAt = finishTime(snapshot, command, requestedAt);
@@ -85,7 +80,7 @@ export function validateAgenticReceipt(
     try {
       const expected = JSON.parse(JSON.stringify(before)) as AgenticRunSnapshot;
       transitionAgenticCheckpoint(expected, command, appliedAt);
-      if (jsonEqual(expected, snapshot)) return verifiedCheckpoint(snapshot);
+      if (jsonEqual(expected, snapshot)) return snapshot;
     } catch {
       // The complete check below reproduces the error.
     }
@@ -94,5 +89,5 @@ export function validateAgenticReceipt(
   if (digestAgenticState(snapshot) !== digestAgenticState(expected)) {
     throw new AgenticStateError('corrupt');
   }
-  return verifiedCheckpoint(snapshot);
+  return snapshot;
 }

@@ -36,7 +36,6 @@ import {
 } from './row-state-tables.js';
 import {
   AgenticRunKeySchema,
-  AgenticRunSnapshotSchema,
   AgenticStateError,
   digestAgenticState,
   applyAgenticCheckpoint,
@@ -44,7 +43,7 @@ import {
   type AgenticRunSnapshot,
   type AgenticStateSession,
 } from './state.js';
-import { checkpointJsonBytes, verifiedCheckpoint } from './checkpoint-verified.js';
+import { checkpointJsonBytes, parseVerifiedCheckpoint } from './checkpoint-verified.js';
 
 const LAYOUT_VERSION = 1;
 
@@ -221,13 +220,13 @@ export async function openAgenticRowSession(
     const writes = await readAgenticWrites(stored(db), head, revision, sweepOrphans);
     let snapshot: AgenticRunSnapshot;
     try {
-      snapshot = AgenticRunSnapshotSchema.parse(
+      snapshot = parseVerifiedCheckpoint(
         rebuildAgenticSnapshot({ key, revision, summary: header.summary }, writes)
       );
     } catch {
       throw new AgenticStateError('corrupt');
     }
-    return { snapshot: verifiedCheckpoint(snapshot), revision, head };
+    return { snapshot, revision, head };
   };
 
   /** Rows first, then the single statement that commits them. */
@@ -326,7 +325,7 @@ export async function openAgenticRowSession(
           guard();
           const before = await current(db);
           if (before.snapshot !== null) throw new AgenticStateError('conflict');
-          const value = AgenticRunSnapshotSchema.parse(snapshot);
+          const value = parseVerifiedCheckpoint(snapshot);
           if (
             digestAgenticState(value.key) !== hash ||
             value.revision !== 0 ||
@@ -337,9 +336,7 @@ export async function openAgenticRowSession(
             throw new AgenticStateError('conflict');
           }
           const items = agenticCreateItems(value);
-          return structuredClone(
-            await save(db, before, verifiedCheckpoint(value), 'create', items)
-          );
+          return structuredClone(await save(db, before, value, 'create', items));
         })
       ),
     checkpoint: (command) =>

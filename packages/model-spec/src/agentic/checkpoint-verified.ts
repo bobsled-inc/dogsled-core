@@ -8,6 +8,7 @@ import {
 import { isExactJson } from './json-equal.js';
 import {
   AgenticCheckpointCommandSchema,
+  AgenticRunSnapshotSchema,
   AgenticTokensSchema,
   AgenticWorkProgressSchema,
   applyParsedCommand,
@@ -73,28 +74,45 @@ function latestTimeOf(run: AgenticRunSnapshot): number {
 }
 
 /**
- * Registers a private frozen copy of AgenticRunSnapshotSchema output. A value whose JSON is not
- * what the schema read, such as one with a hidden toJSON, cannot be vouched for, so it is
- * returned as it came and stays on the complete path.
+ * Validates `value` and, when it can, returns it as verified state: a private frozen copy that is
+ * itself what the schema read, so nothing in it went unvalidated. A value whose JSON is not what a
+ * reader of it sees, such as one with a hidden toJSON, cannot be vouched for. It gets the schema's
+ * verdict on the value itself and stays unverified, so the complete path keeps handling it.
  */
-export function verifiedCheckpoint(snapshot: AgenticRunSnapshot): AgenticRunSnapshot {
-  if (verified.has(snapshot)) return snapshot;
-  const copy = jsonCopy(snapshot);
-  const size = measureCheckpoint(copy);
-  if (!size || !isExactJson(copy, snapshot)) return snapshot;
+export function safeParseVerifiedCheckpoint(
+  value: unknown
+): ReturnType<typeof AgenticRunSnapshotSchema.safeParse> {
+  if (isVerifiedCheckpoint(value)) return { success: true, data: value };
+  // Measured first: it bounds the value and refuses what JSON.stringify would throw on.
+  const size = measureCheckpoint(value);
+  const text = size && JSON.stringify(value);
+  const copy: unknown = text && JSON.parse(text);
+  if (!size || !text || !isExactJson(copy, value)) {
+    return AgenticRunSnapshotSchema.safeParse(value);
+  }
+  const parsed = AgenticRunSnapshotSchema.safeParse(copy);
+  if (!parsed.success) return parsed;
+  const snapshot = parsed.data;
   const holders = new Map<string, number[]>();
-  copy.work.forEach((work, index) => {
+  snapshot.work.forEach((work, index) => {
     for (const attempt of work.attempts) holders.set(attempt.id, [index]);
   });
-  deepFreeze(copy);
-  verified.set(copy, {
+  deepFreeze(snapshot);
+  verified.set(snapshot, {
     ...size,
-    jsonBytes: jsonBytes(copy),
-    overcharged: copy.work.some((work) => work.attempts.some(isOverchargedAttempt)),
-    latestTime: latestTimeOf(copy),
+    jsonBytes: Buffer.byteLength(text),
+    overcharged: snapshot.work.some((work) => work.attempts.some(isOverchargedAttempt)),
+    latestTime: latestTimeOf(snapshot),
     holders,
   });
-  return copy;
+  return parsed;
+}
+
+/** As safeParseVerifiedCheckpoint, throwing what AgenticRunSnapshotSchema.parse would throw. */
+export function parseVerifiedCheckpoint(value: unknown): AgenticRunSnapshot {
+  const parsed = safeParseVerifiedCheckpoint(value);
+  if (!parsed.success) throw parsed.error;
+  return parsed.data;
 }
 
 function lookups(run: AgenticRunSnapshot, facts: VerifiedFacts): AgenticRunLookups {

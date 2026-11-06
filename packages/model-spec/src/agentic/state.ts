@@ -26,7 +26,7 @@ import { AgenticColumnsSchema } from './model.js';
 import { checkpointIsConsistent } from './checkpoint-consistency.js';
 import { workMatchesRun } from './checkpoint-work.js';
 import { isBoundedCheckpoint } from './checkpoint-json.js';
-import { advanceVerifiedCheckpoint, verifiedCheckpoint } from './checkpoint-verified.js';
+import { advanceVerifiedCheckpoint, parseVerifiedCheckpoint } from './checkpoint-verified.js';
 import {
   AgentAssignmentSchema,
   AgentAssignmentOutcomeSchema,
@@ -353,9 +353,8 @@ export function applyAgenticCheckpoint(
   const advanced = advanceVerifiedCheckpoint(value, input, now);
   if (advanced) return advanced;
   const state = AgenticRunSnapshotSchema.parse(value);
-  return verifiedCheckpoint(
-    transitionAgenticCheckpoint(state, input, now) ? AgenticRunSnapshotSchema.parse(state) : state
-  );
+  transitionAgenticCheckpoint(state, input, now);
+  return parseVerifiedCheckpoint(state);
 }
 
 /** The two questions a transition asks about the whole run. */

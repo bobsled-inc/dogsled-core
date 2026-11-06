@@ -564,6 +564,88 @@ describe('verified state', () => {
     expect(advanceVerifiedCheckpoint(verifiedState, other, Date.now())).toBeUndefined();
   });
 
+  /** Runs `read` with a value in `target` that turns invalid at one read of a whole snapshot. */
+  function withValueChangingAt(
+    flip: number,
+    target: Record<string, unknown>,
+    read: () => AgenticRunSnapshot
+  ) {
+    let reads = 0;
+    Object.defineProperty(target, 'assessment', {
+      enumerable: true,
+      get: () => (reads >= flip ? 42 : 'Valid.'),
+    });
+    const { stringify } = JSON;
+    JSON.stringify = ((...args: Parameters<typeof JSON.stringify>) => {
+      const value = args[0] as { work?: { accepted?: unknown }[] } | undefined;
+      if (Array.isArray(value?.work) && value.work[0]?.accepted) reads++;
+      return stringify(...args);
+    }) as typeof JSON.stringify;
+    try {
+      return verdict(read);
+    } finally {
+      JSON.stringify = stringify;
+    }
+  }
+
+  it.each([1, 2, 3, 4])(
+    'keeps only what the schema read when a value changes at read %s',
+    async (flip) => {
+      const started = structuredClone(attempt(0, 'one')(await sealed()).started);
+      const row = output('p0', {});
+      const finish = finishCommand(started, 0, 'one', [row]);
+      const result = withValueChangingAt(flip, row, () => applyAgenticCheckpoint(started, finish));
+      // Refused is fine, and so is an unverified result, which later commands validate in full.
+      if ('value' in result && isVerifiedCheckpoint(result.value)) {
+        expect(AgenticRunSnapshotSchema.safeParse(structuredClone(result.value)).success).toBe(
+          true
+        );
+      }
+    }
+  );
+
+  it.each([1, 2, 3, 4])(
+    'keeps only what the schema read from a response that changes at read %s',
+    async (flip) => {
+      const state = finished(await sealed(), 0, 'one', [output('p0', { assessment: 'Valid.' })]);
+      const reply = structuredClone(state);
+      const accepted = reply.work[0]!.accepted as { rows: Record<string, unknown>[] };
+      const result = withValueChangingAt(flip, accepted.rows[0]!, () =>
+        validateAgenticReceipt(reply, structuredClone(state))
+      );
+      if ('value' in result && isVerifiedCheckpoint(result.value)) {
+        expect(AgenticRunSnapshotSchema.safeParse(structuredClone(result.value)).success).toBe(
+          true
+        );
+      }
+    }
+  );
+
+  it('returns verified state itself instead of copying it again', async () => {
+    const state = await sealed();
+    expect(isVerifiedCheckpoint(state)).toBe(true);
+    expect(validateAgenticReceipt(state, state)).toBe(state);
+  });
+
+  it('refuses what JSON would repair or cannot read, as the complete check does', async () => {
+    const state = finished(await sealed(), 0, 'one', [output('p0', { assessment: 'Valid.' })]);
+    const repaired = structuredClone(state);
+    const accepted = repaired.work[0]!.accepted as { rows: Record<string, unknown>[] };
+    accepted.rows[0]!.score = Number.NaN;
+    const cycle: Record<string, unknown> = { ...state };
+    cycle.extra = cycle;
+    const refused = [
+      repaired,
+      cycle,
+      { ...state, extra: undefined },
+      { ...state, extra: () => 1 },
+      { ...state, extra: BigInt(1) },
+    ];
+    for (const candidate of refused) {
+      expect(() => validateAgenticReceipt(candidate, state)).toThrow('corrupt');
+    }
+  });
+
   it('finds an attempt ID in the state it is asked about, not in a sibling state', async () => {
     const base = await sealed();
     const start = (state: AgenticRunSnapshot, work: number, id: string) => ({

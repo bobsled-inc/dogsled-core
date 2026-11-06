@@ -579,12 +579,13 @@ A run of 2,000 assignments spends 2.6 seconds on this instead of 47 minutes. A p
 then reduces went from 112 ms to 3.0 ms per assignment at 100, and from 1,056 ms to 2.7 ms at
 1,000.
 
-A snapshot that passes `AgenticRunSnapshotSchema` is deeply frozen and remembered as verified.
-It cannot change, so it needs checking again only if the clock moves behind a time saved in it. A start or finish of an attempt on a
-verified snapshot copies only the work item it changes, and shares the rest with the state
-before it. Only that item is checked, by the same code the schema uses. Running totals stand
-in for what the schema learns by reading everything: the size limits, the attempt IDs, and
-whether any attempt was overcharged.
+`AgenticRunSnapshotSchema` reads a private copy of a snapshot, and that same copy is deeply
+frozen and remembered as verified, so what is kept is exactly what was checked. It cannot
+change, so it needs checking again only if the clock moves behind a time saved in it. A start
+or finish of an attempt on a verified snapshot copies only the work item it changes, and shares
+the rest with the state before it. Only that item is checked, by the same code the schema
+uses. Running totals stand in for what the schema learns by reading everything: the size
+limits, the attempt IDs, and whether any attempt was overcharged.
 
 The coordinator still validates every store response. It works out the state the command must
 produce and requires the response to be exactly that. Frozen objects shared with verified
