@@ -58,6 +58,11 @@ export function isVerifiedCheckpoint(value: unknown): value is AgenticRunSnapsho
   return facts !== undefined && facts.latestTime <= Date.now();
 }
 
+/** The snapshot's size as JSON. A verified snapshot already knows it, so nothing is read. */
+export function checkpointJsonBytes(snapshot: AgenticRunSnapshot): number {
+  return verified.get(snapshot)?.jsonBytes ?? jsonBytes(snapshot);
+}
+
 function latestTimeOf(run: AgenticRunSnapshot): number {
   const times = [
     ...(run.execution_windows ?? []).map((window) => window.started_at),

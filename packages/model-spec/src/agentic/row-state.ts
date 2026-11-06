@@ -39,17 +39,19 @@ import {
   AgenticRunSnapshotSchema,
   AgenticStateError,
   digestAgenticState,
-  transitionAgenticCheckpoint,
+  applyAgenticCheckpoint,
   type AgenticRunKey,
   type AgenticRunSnapshot,
   type AgenticStateSession,
 } from './state.js';
+import { checkpointJsonBytes, verifiedCheckpoint } from './checkpoint-verified.js';
 
 const LAYOUT_VERSION = 1;
 
 /** The durable state this session confirmed. `json` is null before `create`. */
 interface Durable {
-  json: string | null;
+  /** Verified state, so a command costs what it changes. Null before create(). */
+  snapshot: AgenticRunSnapshot | null;
   revision: number;
   head: string;
 }
@@ -214,7 +216,7 @@ export async function openAgenticRowSession(
     const head = header.head;
     if (header.summary === '') {
       if (revision !== -1 || head !== '') throw new AgenticStateError('corrupt');
-      return { json: null, revision, head };
+      return { snapshot: null, revision, head };
     }
     const writes = await readAgenticWrites(stored(db), head, revision, sweepOrphans);
     let snapshot: AgenticRunSnapshot;
@@ -225,7 +227,7 @@ export async function openAgenticRowSession(
     } catch {
       throw new AgenticStateError('corrupt');
     }
-    return { json: JSON.stringify(snapshot), revision, head };
+    return { snapshot: verifiedCheckpoint(snapshot), revision, head };
   };
 
   /** Rows first, then the single statement that commits them. */
@@ -237,8 +239,7 @@ export async function openAgenticRowSession(
     items: AgenticRowItem[]
   ): Promise<AgenticRunSnapshot> => {
     guard();
-    const json = JSON.stringify(next);
-    if (Buffer.byteLength(json) > limits.maxCheckpointBytes) {
+    if (checkpointJsonBytes(next) > limits.maxCheckpointBytes) {
       throw new AgenticStateError('limit', {
         reason: 'snapshot_too_large',
         message: `The agentic run checkpoint is larger than ${Math.floor(limits.maxCheckpointBytes / 1048576)} MiB.`,
@@ -279,7 +280,7 @@ export async function openAgenticRowSession(
     if (changed !== 1) throw loseOwnership();
     token = nextToken;
     extendedAt = committing;
-    durable = { json, revision: next.revision, head };
+    durable = { snapshot: next, revision: next.revision, head };
     return next;
   };
 
@@ -316,7 +317,7 @@ export async function openAgenticRowSession(
         connection.use(async (db) => {
           guard();
           durable = await load(db);
-          return durable.json === null ? null : (JSON.parse(durable.json) as AgenticRunSnapshot);
+          return structuredClone(durable.snapshot);
         })
       ),
     create: (snapshot) =>
@@ -324,7 +325,7 @@ export async function openAgenticRowSession(
         connection.use(async (db) => {
           guard();
           const before = await current(db);
-          if (before.json !== null) throw new AgenticStateError('conflict');
+          if (before.snapshot !== null) throw new AgenticStateError('conflict');
           const value = AgenticRunSnapshotSchema.parse(snapshot);
           if (
             digestAgenticState(value.key) !== hash ||
@@ -335,7 +336,10 @@ export async function openAgenticRowSession(
           ) {
             throw new AgenticStateError('conflict');
           }
-          return save(db, before, value, 'create', agenticCreateItems(value));
+          const items = agenticCreateItems(value);
+          return structuredClone(
+            await save(db, before, verifiedCheckpoint(value), 'create', items)
+          );
         })
       ),
     checkpoint: (command) =>
@@ -343,10 +347,10 @@ export async function openAgenticRowSession(
         connection.use(async (db) => {
           guard();
           const before = await current(db);
-          if (before.json === null) throw new AgenticStateError('missing');
-          const next = JSON.parse(before.json) as AgenticRunSnapshot;
-          const workBefore = next.work.length;
-          if (!transitionAgenticCheckpoint(next, command, Date.now())) {
+          if (before.snapshot === null) throw new AgenticStateError('missing');
+          const workBefore = before.snapshot.work.length;
+          const value = applyAgenticCheckpoint(before.snapshot, command, Date.now());
+          if (value.revision === before.snapshot.revision) {
             // A repeated command writes nothing, but obsolete ownership must still fail.
             const statement = agenticStatement(dialect);
             const alive = await db.query(
@@ -354,9 +358,8 @@ export async function openAgenticRowSession(
               statement.params
             );
             if (!alive.length) throw loseOwnership();
-            return next;
+            return value;
           }
-          const value = AgenticRunSnapshotSchema.parse(next);
           const items = agenticCommandItems(value, command, workBefore);
           return save(db, before, value, command.operation_id, items);
         })

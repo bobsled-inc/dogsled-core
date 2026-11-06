@@ -1,5 +1,9 @@
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { describe, expect, it, vi } from 'vitest';
+import { createDefaultAgenticStateStore } from '../../../src/agentic/default-state.js';
 import { createAgenticProgressReporter } from '../../../src/agentic/progress.js';
 import { AGENTIC_MAX_ROWS } from '../../../src/agentic/rows.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
@@ -58,8 +62,12 @@ const run = (
   });
 
 /** A run inside the budget, so that returning growth fails here and names the cause. */
-const budgeted = (workload: ReturnType<typeof benchmarkWorkload>, assignments: number) =>
-  run(workload, AbortSignal.timeout(RUN_BUDGET_MS)).catch((error: unknown) => {
+const budgeted = (
+  workload: ReturnType<typeof benchmarkWorkload>,
+  assignments: number,
+  stateStore?: AgenticStateStore
+) =>
+  run(workload, AbortSignal.timeout(RUN_BUDGET_MS), stateStore).catch((error: unknown) => {
     throw new Error(
       `${assignments} assignments did not finish in ${RUN_BUDGET_MS} ms. The cost of a checkpoint is growing with the run.`,
       { cause: error }
@@ -82,7 +90,7 @@ function copyingStore(): AgenticStateStore {
 }
 
 /** What one run reads in bulk, per assignment, and how often it validates the whole snapshot. */
-async function counted(assignments: number, shape: BenchmarkShape) {
+async function counted(assignments: number, shape: BenchmarkShape, stateStore?: AgenticStateStore) {
   const workload = benchmarkWorkload(assignments, shape, PAYLOAD);
   const counters = { validations: 0 };
   let serialized = 0;
@@ -95,7 +103,7 @@ async function counted(assignments: number, shape: BenchmarkShape) {
   }) as typeof JSON.stringify;
   const restore = countSnapshotValidations(counters);
   try {
-    await budgeted(workload, assignments);
+    await budgeted(workload, assignments, stateStore);
   } finally {
     restore();
     JSON.stringify = stringify;
@@ -200,6 +208,25 @@ describe('checkpoint cost as a run grows', () => {
     },
     4 * RUN_BUDGET_MS
   );
+
+  it('keeps the row store from reading the run on every checkpoint', async () => {
+    const onRowStore = async (assignments: number) => {
+      const directory = mkdtempSync(join(tmpdir(), 'dogsled-growth-'));
+      try {
+        const result = await counted(assignments, 'map', createDefaultAgenticStateStore(directory));
+        // The default store falls back to files without DuckDB, which would prove nothing here.
+        const files = readdirSync(join(directory, '.dogsled/model-spec/agentic-state'));
+        expect(files.some((name) => name.endsWith('.duckdb'))).toBe(true);
+        return result;
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
+    };
+    const small = await onRowStore(25);
+    const large = await onRowStore(SMALL);
+    expect(large.validations).toBe(small.validations);
+    expect(large.serializedPerAssignment).toBeLessThan(small.serializedPerAssignment * 1.25);
+  }, 120_000);
 
   it('schedules each attempt without passing over the run', async () => {
     const reads = { count: 0 };

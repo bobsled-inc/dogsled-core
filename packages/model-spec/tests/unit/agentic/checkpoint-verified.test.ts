@@ -11,6 +11,7 @@ import {
 } from '../../../src/agentic/checkpoint-json.js';
 import {
   advanceVerifiedCheckpoint,
+  checkpointJsonBytes,
   isVerifiedCheckpoint,
 } from '../../../src/agentic/checkpoint-verified.js';
 import { validateAgenticReceipt } from '../../../src/agentic/checkpoint-receipt.js';
@@ -687,6 +688,23 @@ describe('verified state', () => {
     const exact = Math.floor((limit - measure(probe)) / 2);
     return { started, command, exact };
   }
+
+  it('knows the JSON size of a verified snapshot without reading it', async () => {
+    let state = await sealed();
+    const sizes = () => [checkpointJsonBytes(state), jsonBytes(state)];
+    for (const [work, id] of ['one', 'two', 'three'].entries()) {
+      const { started, finish } = attempt(work, id, [
+        output(`p${work}`, { assessment: 'é'.repeat(9) }),
+      ])(state);
+      state = started;
+      expect(new Set(sizes()).size).toBe(1);
+      state = applyAgenticCheckpoint(started, finish);
+      expect(new Set(sizes()).size).toBe(1);
+    }
+    // A copy is not verified, so its size is measured.
+    const copy = structuredClone(state);
+    expect(checkpointJsonBytes(copy)).toBe(jsonBytes(copy));
+  });
 
   it('stops at the JSON size limit exactly where the complete check does', async () => {
     const { started, command, exact } = await boundary(
