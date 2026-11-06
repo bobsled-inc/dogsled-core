@@ -8,6 +8,7 @@ import * as fs from 'node:fs';
 import path from 'node:path';
 import { buildDuckDbRunner, isDuckDbAvailable, throwIfCancelled } from '@bobsled-inc/connections';
 import { ensureStateDirectory, acquireFileOwnership } from '../compiler/durable-file.js';
+import { keepDuckDbFilePrivate } from './duckdb-file.js';
 import { duckDbHeldBackend, duckDbOperationBackend, duckDbStateFile } from './duckdb-state.js';
 import { readLocalAgenticCursor } from './local-cursors.js';
 import {
@@ -109,7 +110,7 @@ async function sweepExpiredRuns(
       inspected++;
       const lock = acquireFileOwnership(path.join(stateDirectory, `agentic-${match[1]}.lock`));
       try {
-        const runner = await buildDuckDbRunner(duckDbStateFile(file));
+        const runner = await buildDuckDbRunner(duckDbStateFile(file), { isolated: true });
         let expired: boolean;
         try {
           const db = agenticRowDb(runner);
@@ -170,11 +171,7 @@ async function openRunFile(
       { cause: error }
     );
   }
-  try {
-    fs.chmodSync(file, 0o600);
-  } catch {
-    // The directory is already private; a file system without modes must not stop the run.
-  }
+  keepDuckDbFilePrivate(file);
   // Opening a run that was never created must leave nothing behind.
   let stored = existed;
   let released = false;

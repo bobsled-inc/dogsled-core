@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   agenticCommandItems,
@@ -30,7 +31,6 @@ const info = (write: AgenticRowWrite): AgenticWriteInfo => ({
   write_id: write.id,
   parent: write.parent,
   revision: write.revision,
-  chars: write.items.reduce((sum, item) => sum + item.data.length, 0),
 });
 const item = (data: string) => ({ kind: 'assignment' as const, data });
 
@@ -142,6 +142,15 @@ describe('agentic row layout', () => {
     });
 
     it.each([
+      ['before', [info(first), { ...info(second), parent: 'a'.repeat(64) }, info(second)]],
+      ['after', [info(first), info(second), { ...info(second), parent: 'a'.repeat(64) }]],
+    ])('rejects a write ID stored with two parents, the other one %s', (_, infos) => {
+      expect(() => walkAgenticWrites(infos, second.id, 1)).toThrow(
+        expect.objectContaining({ code: 'corrupt' })
+      );
+    });
+
+    it.each([
       ['a missing head', [first], 'unknown', 2],
       ['a broken parent', [third], third.id, 2],
       ['a head newer than the header', [first, second, third], third.id, 1],
@@ -167,6 +176,21 @@ describe('agentic row layout', () => {
       expect(() => walkAgenticWrites(infos, head as string, revision as number)).toThrow(
         expect.objectContaining({ code: 'corrupt' })
       );
+    });
+  });
+
+  describe('trust', () => {
+    it('accepts a chain from anyone who can write the store, as the docs say', () => {
+      const forged = createAgenticRowWrite('', 0, 'create', [item('written by someone else')]);
+      const rows = agenticStoredRows(forged, 100);
+      expect(assembleAgenticWrites(rows, new Set([forged.id]))).toEqual([forged]);
+      const guide = readFileSync(
+        new URL('../../../docs/agentic-state.md', import.meta.url),
+        'utf8'
+      );
+      const text = guide.replace(/\s+/g, ' ');
+      expect(text).toContain('The digest detects damage, not forgery.');
+      expect(text).toContain('anyone who can write the store can write a chain that verifies');
     });
   });
 

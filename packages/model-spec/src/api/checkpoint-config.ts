@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import type { DuckDbIntegration, IntegrationFile } from '@bobsled-inc/connections';
 import { readDefaultAgenticCursor } from '../agentic/default-state.js';
+import { realDuckDbPath } from '../agentic/duckdb-file.js';
 import {
   createDuckDbCheckpointStore,
   duckDbPublicationCursorReader,
@@ -30,9 +31,16 @@ export function checkpointIntegration(project: LoadedProject) {
   return integration;
 }
 
+const sharedFile = (): CommandError =>
+  new CommandError(
+    'checkpoint_store must not use the DuckDB file that holds model output; give it a file of its own',
+    2
+  );
+
 /**
  * A host reads a model's target outside the store's file guard, and overlapping instances of
- * one file in a process can drop its lock. So DuckDB state needs a file of its own.
+ * one file in a process can drop its lock. So DuckDB state needs a file of its own. This sees
+ * the configuration as written, so it also holds for a dry run, which resolves no secrets.
  */
 export function assertCheckpointFile(
   checkpoint: IntegrationFile,
@@ -49,11 +57,25 @@ export function assertCheckpointFile(
       target.auth.type === 'file' &&
       resolve(target.auth.path) === file
     ) {
-      throw new CommandError(
-        'checkpoint_store must not use the DuckDB file that holds model output; give it a file of its own',
-        2
-      );
+      throw sharedFile();
     }
+  }
+}
+
+/**
+ * The same rule on what the paths really name, once secrets are resolved: a secret, a symlink
+ * or another spelling can lead to one file through paths that differ as written. Comparing
+ * creates nothing, so a read-only target's directory stays as it is.
+ */
+export async function assertCheckpointFileResolved(
+  checkpoint: IntegrationFile,
+  targets: readonly IntegrationFile[]
+): Promise<void> {
+  if (checkpoint.source_type !== 'duckdb' || checkpoint.auth.type !== 'file') return;
+  const file = await realDuckDbPath(checkpoint.auth.path);
+  for (const target of targets) {
+    if (target.source_type !== 'duckdb' || target.auth.type !== 'file') continue;
+    if ((await realDuckDbPath(target.auth.path)) === file) throw sharedFile();
   }
 }
 

@@ -276,8 +276,28 @@ the snapshot from its rows. Commands, snapshots and the store interfaces are unc
 
 Writes in `__dogsled_agentic_rows` form a chain: each names its `parent`, and its `write_id` is a
 digest of its parent, revision, operation ID and content. The header's `head` names the newest
-committed write. A read walks back from `head`, verifies each digest, and ignores everything else.
-A long value spans several rows of one write.
+committed write. A read walks back from `head`, verifies each digest, and never fetches anything
+else. A long value spans several rows of one write. Before it reads any content, a load checks how
+much the run holds, and it stops with `stored_rows_exceeded` past that bound. A header value too
+long for a snapshot reads as `corrupt`.
+
+The digest detects damage, not forgery. It has no key, so anyone who can write the store can write
+a chain that verifies. Treat write access to a state file, or to the schema that holds these
+tables, as trusted: whoever has it decides what a run resumes from.
+
+Setup confirms that all three are base tables with exactly the columns the store creates, because
+`CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses indexes,
+keys and check constraints on those tables, and any stored function in the file, because a stored
+macro can replace a built-in in every statement run on that file. Any of these reports `corrupt`
+with the reason `state_table_replaced`. So give a DuckDB store a file of its own. The check does
+not look at column collations, user types or objects unrelated to the store. DuckDB state files
+also open with external access and extension loading off, so nothing stored in one can read other
+files or reach the network.
+
+A file held open for a session is checked when it opens, and a file opened for each operation is
+checked at each open. This refuses what was planted in a file before it was opened. It is no
+defence against someone who writes the file with the owner's rights while a run is using it, which
+the trust statement above covers.
 
 A command writes its rows, then commits them with one update of the header. That update is the
 only commit. It matches the session's owner, unexpired lease, token and revision, and its result
@@ -299,7 +319,8 @@ enforce. The row layout supports DuckDB today.
 Rows expire: acquiring a run and each header write set `retain_until`, 30 days ahead by default,
 from the store's clock. A later acquisition removes unowned runs past that time. It claims each
 one under a short lease first, so a resume cannot race the delete, and it deletes by run ID, so it
-touches nothing else. If it stops partway, the lease ends and a later acquisition finishes.
+touches nothing else. The claim also empties the header, so from then on the run reads as new, and
+never as damaged. If the purge stops partway, the lease ends and a later acquisition finishes.
 
 This covers failed runs too: a run without incremental sources that is resumed after that time
 starts again and pays again. A run still owed recovery does not expire: one with a prepared
@@ -362,7 +383,17 @@ run until the lease expires. Statements have the client deadline described there
 hits it stops with `lease_lost (statement_timeout)`; DuckDB has no server-side limit to set. The
 file is opened for each operation and never held between them. It must not be a model's output
 file, which fails validation: a host reads that file outside this store's guard, and overlapping
-instances of one file in a process can drop its lock.
+instances of one file in a process can drop its lock. A run compares the real paths after resolving
+secrets, so a symlink or a secret that leads to that file fails too. A hard link is not detected,
+and neither, on a case-insensitive file system, is another spelling of a name that does not exist
+yet.
+
+The file holds frozen inputs and results, so on a shared host put it in a directory that only its
+owner can read. Dogsled also sets the file to mode `600` when it connects, just after DuckDB
+creates the file and before anything is saved in it. A failure is ignored, as for a file owned by
+another user or on a file system without modes. DuckDB creates its write-ahead log, `<file>.wal`,
+with the default permissions, and Dogsled cannot change that first. The log exists while an
+operation writes, and after a crash until the file next opens.
 
 Existing runs are not moved, so finish them before adding this setting. The store takes over each
 cursor on first use of its key, from the DuckDB target or the default store. A key that an

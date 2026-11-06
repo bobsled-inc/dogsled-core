@@ -48,7 +48,6 @@ export interface AgenticWriteInfo {
   write_id: string;
   parent: string;
   revision: number;
-  chars: number;
 }
 
 const corrupt = (): never => {
@@ -213,20 +212,20 @@ export function walkAgenticWrites(
   infos: readonly AgenticWriteInfo[],
   head: string,
   revision: number
-): { committed: Set<string>; orphans: string[]; chars: number } {
+): { committed: Set<string>; orphans: string[] } {
   const byId = new Map(infos.map((info) => [info.write_id, info]));
+  // A write's ID covers its parent and revision, so one ID cannot honestly name two of them.
+  if (byId.size !== infos.length) return corrupt();
   const committed = new Set<string>();
-  let chars = 0;
   let newer = revision + 1;
   for (let id = head; id !== ''; ) {
     const info = byId.get(id);
     if (!info || committed.has(id) || info.revision >= newer) return corrupt();
     committed.add(id);
-    chars += info.chars;
     newer = info.revision;
     id = info.parent;
   }
-  return { committed, chars, orphans: [...byId.keys()].filter((id) => !committed.has(id)) };
+  return { committed, orphans: [...byId.keys()].filter((id) => !committed.has(id)) };
 }
 
 /**

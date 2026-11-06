@@ -47,13 +47,27 @@ const shared = (directory: string, retentionMs?: number) =>
     ...(retentionMs === undefined ? {} : { retentionMs }),
   });
 async function sql(directory: string, statement: string): Promise<void> {
-  const runner = await buildDuckDbRunner(integration(directory));
+  await runOn(integration(directory), [statement]);
+}
+async function runOn(database: DuckDbIntegration, statements: string[]): Promise<void> {
+  const runner = await buildDuckDbRunner(database);
   try {
-    await runner.run(statement);
+    for (const statement of statements) await runner.run(statement);
   } finally {
     await runner.close?.();
   }
 }
+// DuckDB cannot add a generated column to an existing table.
+const computedColumn = (table: string) => [
+  `CREATE TABLE ${table}_kept AS SELECT * FROM ${table}`,
+  `DROP TABLE ${table}`,
+  `CREATE TABLE ${table} (run_hash VARCHAR NOT NULL, computed VARCHAR GENERATED ALWAYS AS (repeat('x', 10)))`,
+];
+const lowerMacro = ['CREATE MACRO lower(x) AS x'];
+const asView = (table: string) => [
+  `ALTER TABLE ${table} RENAME TO kept_rows`,
+  `CREATE VIEW ${table} AS SELECT * FROM ${table.replace(/[^.]*$/, 'kept_rows')}`,
+];
 
 describeAgenticStoreConformance({
   name: 'local file',
@@ -67,6 +81,18 @@ describeAgenticStoreConformance({
   },
 });
 
+const runFile = (handle: StoreHandle, key: Parameters<typeof digestAgenticState>[0]) => ({
+  ...integration(project(handle)),
+  auth: {
+    type: 'file' as const,
+    path: join(
+      project(handle),
+      `.dogsled/model-spec/agentic-state/run-${digestAgenticState(key)}.duckdb`
+    ),
+    read_only: false,
+  },
+});
+
 describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
   describeAgenticStoreConformance({
     name: 'DuckDB run file',
@@ -74,21 +100,13 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
     crashWorker: (handle) => [worker, 'duckdb', project(handle)],
     withRetention: (handle, retentionMs) =>
       createDefaultAgenticStateStore(project(handle), { retentionMs }),
-    damage: async (handle, key) => {
-      const file = join(
-        project(handle),
-        `.dogsled/model-spec/agentic-state/run-${digestAgenticState(key)}.duckdb`
-      );
-      const runner = await buildDuckDbRunner({
-        ...integration(project(handle)),
-        auth: { type: 'file', path: file, read_only: false },
-      });
-      try {
-        await runner.run(`UPDATE __dogsled_agentic_rows SET data = '{"damaged":true}'`);
-      } finally {
-        await runner.close?.();
-      }
-    },
+    damage: (handle, key) =>
+      runOn(runFile(handle, key), [`UPDATE __dogsled_agentic_rows SET data = '{"damaged":true}'`]),
+    replaceRowsTable: (handle, key) =>
+      runOn(runFile(handle, key), asView('__dogsled_agentic_rows')),
+    addComputedColumn: (handle, key) =>
+      runOn(runFile(handle, key), computedColumn('__dogsled_agentic_rows')),
+    plantLowerMacro: (handle, key) => runOn(runFile(handle, key), lowerMacro),
   });
 
   describeAgenticStoreConformance({
@@ -105,5 +123,13 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
         project(handle),
         `UPDATE agentic_checkpoints.__dogsled_agentic_rows SET data = '{"damaged":true}'`
       ),
+    replaceRowsTable: (handle) =>
+      runOn(integration(project(handle)), asView('agentic_checkpoints.__dogsled_agentic_rows')),
+    addComputedColumn: (handle) =>
+      runOn(
+        integration(project(handle)),
+        computedColumn('agentic_checkpoints.__dogsled_agentic_rows')
+      ),
+    plantLowerMacro: (handle) => runOn(integration(project(handle)), lowerMacro),
   });
 });

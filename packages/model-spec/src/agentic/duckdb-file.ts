@@ -1,7 +1,8 @@
 /** Rules for opening a DuckDB file safely from one process. */
-import { mkdir, realpath } from 'node:fs/promises';
+import { chmodSync } from 'node:fs';
+import { mkdir, readlink, realpath } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
-import { basename, dirname, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, parse, resolve, sep } from 'node:path';
 import { throwIfCancelled } from '@bobsled-inc/connections';
 import { AgenticStateError } from './state-errors.js';
 
@@ -17,14 +18,57 @@ const registry = globalThis as { [key: symbol]: Guards | undefined };
 const key = Symbol.for('@bobsled-inc/model-spec/duckdb-file-guards');
 const guards: Guards = (registry[key] ??= new Map());
 
-/** Resolves symlinks in the path, creating the parent directory if necessary. */
-export async function canonicalDuckDbPath(path: string): Promise<string> {
+/**
+ * `links` is what is left of a limit shared by the whole resolution, because the text of a link
+ * can name itself through a directory that does not exist, which no system call reports as a loop.
+ */
+async function followDuckDbPath(path: string, budget: { links: number }): Promise<string> {
   const absolute = resolve(path);
-  await mkdir(dirname(absolute), { recursive: true });
   try {
     return await realpath(absolute);
+  } catch (error) {
+    const parent = dirname(absolute);
+    if (parent === absolute) return absolute;
+    const directory = await followDuckDbPath(parent, budget);
+    const text =
+      (error as NodeJS.ErrnoException).code === 'ENOENT' && budget.links > 0
+        ? await readlink(absolute).catch(() => undefined)
+        : undefined;
+    if (text === undefined) return resolve(directory, basename(absolute));
+    budget.links--;
+    // One part at a time: `..` after a part that is itself a link means that link's parent.
+    let current = isAbsolute(text) ? parse(text).root : directory;
+    for (const part of text.split(sep)) {
+      if (part === '..') current = dirname(current);
+      else if (part && part !== '.') current = await followDuckDbPath(join(current, part), budget);
+    }
+    return current;
+  }
+}
+
+/**
+ * Where a path really leads, following links as far as anything exists, and creating nothing.
+ * A link to a file that does not exist yet names the place that file will have.
+ */
+export function realDuckDbPath(path: string): Promise<string> {
+  return followDuckDbPath(path, { links: 32 });
+}
+
+/** The path a store opens, creating its parent directory if necessary. */
+export async function canonicalDuckDbPath(path: string): Promise<string> {
+  await mkdir(dirname(resolve(path)), { recursive: true });
+  return realDuckDbPath(path);
+}
+
+/**
+ * DuckDB creates its files with the default permissions, and state holds frozen inputs and
+ * results. A file system without modes must not stop the run.
+ */
+export function keepDuckDbFilePrivate(file: string): void {
+  try {
+    chmodSync(file, 0o600);
   } catch {
-    return resolve(await realpath(dirname(absolute)), basename(absolute));
+    // Nothing more can be done here. The docs say to keep the directory private as well.
   }
 }
 

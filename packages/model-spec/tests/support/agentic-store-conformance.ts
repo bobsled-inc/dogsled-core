@@ -47,6 +47,12 @@ export interface StoreAdapter {
   crashWorker?(handle: StoreHandle): string[];
   /** Damages a stored run in a way a read must report. */
   damage?(handle: StoreHandle, key: AgenticRunKey): Promise<void>;
+  /** Puts a view in place of the table that holds stored rows. Row stores only. */
+  replaceRowsTable?(handle: StoreHandle, key: AgenticRunKey): Promise<void>;
+  /** Adds a computed column to the table that holds stored rows. Row stores only. */
+  addComputedColumn?(handle: StoreHandle, key: AgenticRunKey): Promise<void>;
+  /** Stores a macro that replaces the built-in `lower`. Engines where one can. */
+  plantLowerMacro?(handle: StoreHandle, key: AgenticRunKey): Promise<void>;
   /** A view of this storage whose runs expire after `retentionMs`. */
   withRetention?(handle: StoreHandle, retentionMs: number): AgenticStateStore;
   /** Stores that accept any valid snapshot in `create`, not only a new one. */
@@ -666,6 +672,21 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
         const second = await acquire(handle.reopen(), plan.key);
         await expect(second.read()).rejects.toEqual(stateError('corrupt'));
       });
+
+      for (const [name, tamper] of [
+        ['a view in place of a table', adapter.replaceRowsTable],
+        ['a computed column', adapter.addComputedColumn],
+        ['a stored macro that replaces a built-in', adapter.plantLowerMacro],
+      ] as const) {
+        it.skipIf(!tamper)(`reports ${name}`, async () => {
+          const handle = await open();
+          const first = await acquire(handle.store, plan.key);
+          await replay(first, plan, 3);
+          await first.release();
+          await tamper!(handle, plan.key);
+          await expect(acquire(handle.reopen(), plan.key)).rejects.toEqual(stateError('corrupt'));
+        });
+      }
     });
   });
 }

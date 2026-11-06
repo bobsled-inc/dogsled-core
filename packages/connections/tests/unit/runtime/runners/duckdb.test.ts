@@ -182,6 +182,31 @@ describe('buildDuckDbRunner — file-backed', () => {
     }
   });
 
+  it('keeps an isolated database away from other files, and keeps it that way', async () => {
+    const other = path.join(tmpDir, 'other.txt');
+    await fs.writeFile(other, 'not for this database');
+    const read = `SELECT content FROM read_text('${other}')`;
+    const dbPath = path.join(tmpDir, 'isolated.duckdb');
+    const open = await buildDuckDbRunner(fileIntegration(path.join(tmpDir, 'open.duckdb')));
+    const isolated = await buildDuckDbRunner(fileIntegration(dbPath), { isolated: true });
+    try {
+      await expect(open.query!(read)).resolves.toEqual([{ content: 'not for this database' }]);
+      await expect(isolated.query!(read)).rejects.toThrow('disabled by configuration');
+      await expect(isolated.run('SET enable_external_access = true')).rejects.toThrow('locked');
+      await isolated.run('CREATE TABLE t (id INTEGER)');
+      await isolated.run('INSERT INTO t VALUES (7)');
+    } finally {
+      await open.close?.();
+      await isolated.close?.();
+    }
+    const reopened = await buildDuckDbRunner(fileIntegration(dbPath), { isolated: true });
+    try {
+      await expect(reopened.query!('SELECT id FROM t')).resolves.toEqual([{ id: 7 }]);
+    } finally {
+      await reopened.close?.();
+    }
+  });
+
   it('unloads query results to a local Parquet file', async () => {
     const runner = await buildDuckDbRunner(fileIntegration(dbPath));
     try {

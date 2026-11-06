@@ -7,8 +7,13 @@ import { validateAgenticReceipt } from '../../src/agentic/checkpoint-receipt.js'
 import { duckDbOperationBackend, duckDbStateFile } from '../../src/agentic/duckdb-state.js';
 import type { AgenticRowDb } from '../../src/agentic/row-state-dialect.js';
 import { duckDbRowDialect } from '../../src/agentic/row-state-dialect.js';
+import { createAgenticRowWrite } from '../../src/agentic/row-state-layout.js';
+import { insertAgenticWrite, readAgenticWrites } from '../../src/agentic/row-state-rows.js';
 import { openAgenticRowSession } from '../../src/agentic/row-state.js';
-import type { AgenticRowBackend } from '../../src/agentic/row-state-tables.js';
+import {
+  prepareAgenticRowTables,
+  type AgenticRowBackend,
+} from '../../src/agentic/row-state-tables.js';
 import {
   AgenticStateError,
   type AgenticCheckpointCommand,
@@ -34,6 +39,8 @@ interface Faults {
   next?: Fault;
   /** Runs just before a statement, on the same connection. */
   before?: (sql: string, db: AgenticRowDb) => Promise<void>;
+  /** Everything statements returned, to show what a load did not read. */
+  returned: Record<string, unknown>[];
   handling?: StatementTimeoutHandling;
   statements: string[];
 }
@@ -51,6 +58,7 @@ function faultyBackend(file: string, faults: Faults): AgenticRowBackend {
       const fault = faults.next?.(sql, params);
       if (fault === 'lose_before') throw new Error('Synthetic failure before the statement');
       const rows = await db.query(sql, params);
+      faults.returned.push(...rows);
       if (fault === 'lose_after') throw new Error('Synthetic lost reply');
       return rows;
     },
@@ -82,7 +90,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
   let map: AgenticStoreScenario;
   let plan: AgenticStoreScenario;
   const directories: string[] = [];
-  const faults: Faults = { statements: [] };
+  const faults: Faults = { statements: [], returned: [] };
   const file = () => join(directories.at(-1)!, 'state.duckdb');
   beforeAll(async () => {
     map = await mapScenario();
@@ -92,6 +100,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     delete faults.next;
     delete faults.before;
     faults.statements = [];
+    faults.returned = [];
     for (const directory of directories.splice(0)) {
       rmSync(directory, { recursive: true, force: true });
     }
@@ -392,6 +401,137 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     await other.release();
     const headers = await sql(`SELECT run_id FROM ${schema}.__dogsled_agentic_runs`);
     expect(headers.map((row) => row.run_id)).toEqual(['other']);
+  });
+
+  it.each([
+    ['its rows and left the header', /^DELETE FROM .*__dogsled_agentic_runs/],
+    ['nothing yet', /^DELETE FROM .*__dogsled_agentic_rows/],
+  ])('reads a run as new after a purge that deleted %s', async (_, stoppedAt) => {
+    const { open, expire } = await fixture();
+    const first = await open(map.key, { retentionMs: 1 });
+    await replay(first, map, 2);
+    await first.release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    faults.next = once(stoppedAt, 'lose_before');
+    await expect(open({ ...map.key, id: 'other' })).rejects.toThrow('Synthetic');
+    await expire();
+    const resumed = await open(map.key);
+    await expect(resumed.read()).resolves.toBeNull();
+    // A run can start again in its place, and what the purge left does not disturb it.
+    const snapshot = await replay(resumed, map, 1);
+    await resumed.release();
+    const next = await open(map.key);
+    await expect(next.read()).resolves.toEqual(snapshot);
+    await next.release();
+  });
+
+  describe('what a load reads', () => {
+    const rowsTable = `${schema}.__dogsled_agentic_rows`;
+    const runsTable = `${schema}.__dogsled_agentic_runs`;
+    /** Rows that no header reaches, added where a running session cannot sweep them. */
+    const plant = (count: number, data: string) =>
+      `INSERT INTO ${rowsTable} SELECT first(run_hash), 'off-chain-' || i, '', 0, 'planted', 'attempt', 0, 0, 1, ${data} FROM ${rowsTable}, range(${count}) AS r(i) GROUP BY i`;
+    const longest = () =>
+      Math.max(
+        ...faults.returned.flatMap((row) =>
+          Object.values(row).map((value) => (typeof value === 'string' ? value.length : 0))
+        )
+      );
+
+    it('reads only the writes on the chain', async () => {
+      const { open, sql } = await fixture();
+      const session = await open(map.key);
+      const snapshot = await replay(session, map, 2);
+      await sql(plant(1, `'planted content'`));
+      faults.returned = [];
+      await expect(session.read()).resolves.toEqual(snapshot);
+      expect(faults.returned.flatMap((row) => Object.values(row))).not.toContain('planted content');
+      await session.release();
+    });
+
+    // About 1,100 statements, which takes six seconds on a CI runner.
+    it('reads a chain longer than one statement can name', { timeout: 60_000 }, async () => {
+      await fixture();
+      const connection = await duckDbOperationBackend(file(), schema).connect();
+      const writes = await connection.use(async (db) => {
+        await prepareAgenticRowTables(db, duckDbRowDialect, connection.namespace);
+        const stored = { db, dialect: duckDbRowDialect, table: rowsTable, hash: 'run' };
+        let parent = '';
+        for (let revision = 0; revision < 1100; revision++) {
+          const items = [{ kind: 'attempt' as const, data: JSON.stringify({ revision }) }];
+          const write = createAgenticRowWrite(parent, revision, `step-${revision}`, items);
+          await insertAgenticWrite(stored, write, async () => {});
+          parent = write.id;
+        }
+        return readAgenticWrites(stored, parent, 1099, false);
+      });
+      await connection.close();
+      expect(writes.map((write) => write.revision)).toEqual(Array.from(Array(1100).keys()));
+    });
+
+    it.each([
+      ['more text than a run can hold', 65, `repeat('x', 1048576)`],
+      ['more rows than a run can hold', 140_000, `''`],
+    ])('stops before reading %s', async (_, count, data) => {
+      const { open, sql } = await fixture();
+      const session = await open(map.key);
+      await replay(session, map, 2);
+      await session.release();
+      await sql(plant(count, data));
+      faults.returned = [];
+      const next = await open(map.key);
+      await expect(next.read()).rejects.toMatchObject({
+        code: 'limit',
+        reason: 'stored_rows_exceeded',
+      });
+      expect(faults.returned.length).toBeLessThan(10);
+      await next.release();
+    });
+
+    it('counts the text of a row with a null column', async () => {
+      const { open, sql } = await fixture();
+      const session = await open(map.key);
+      await replay(session, map, 2);
+      await sql(`ALTER TABLE ${rowsTable} ALTER COLUMN kind DROP NOT NULL`);
+      await sql(plant(65, `repeat('x', 1048576)`));
+      await sql(`UPDATE ${rowsTable} SET kind = NULL WHERE operation_id = 'planted'`);
+      faults.returned = [];
+      await expect(session.read()).rejects.toMatchObject({
+        code: 'limit',
+        reason: 'stored_rows_exceeded',
+      });
+      await session.release();
+    });
+
+    it('reports one write ID with two parents', async () => {
+      const { open, sql } = await fixture();
+      const session = await open(map.key);
+      await replay(session, map, 2);
+      await session.release();
+      await sql(
+        `INSERT INTO ${rowsTable} SELECT run_hash, write_id, 'elsewhere', revision, operation_id, kind, item, part, parts, data FROM ${rowsTable}`
+      );
+      const next = await open(map.key);
+      await expect(next.read()).rejects.toMatchObject({ code: 'corrupt' });
+      await next.release();
+    });
+
+    it.each(['summary', 'head', 'scope', 'model', 'run_id'])(
+      'does not fetch an oversized %s',
+      async (column) => {
+        const { open, sql } = await fixture();
+        const session = await open(map.key);
+        await replay(session, map, 2);
+        await session.release();
+        // Still valid JSON in the summary, so only the cap can reject it.
+        await sql(`UPDATE ${runsTable} SET ${column} = ${column} || repeat(' ', 16777217)`);
+        faults.returned = [];
+        const next = await open(map.key);
+        await expect(next.read()).rejects.toMatchObject({ code: 'corrupt' });
+        expect(longest()).toBeLessThan(16_777_216);
+        await next.release();
+      }
+    );
   });
 
   it('reports a statement timeout as the reason the session stopped', async () => {

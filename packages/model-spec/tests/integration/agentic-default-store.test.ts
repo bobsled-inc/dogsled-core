@@ -618,6 +618,81 @@ describe.skipIf(!duckdb)('default local store', { timeout: 60_000 }, () => {
       expect(calls).not.toHaveBeenCalled();
     });
 
+    it.each([
+      [
+        'a symlink to the output file',
+        (root: string) => {
+          fs.writeFileSync(join(root, 'lake.duckdb'), '');
+          fs.symlinkSync(join(root, 'lake.duckdb'), join(root, 'state.duckdb'));
+          return integration(join(root, 'state.duckdb'));
+        },
+      ],
+      [
+        'a symlink to an output file that does not exist yet',
+        (root: string) => {
+          fs.symlinkSync(join(root, 'lake.duckdb'), join(root, 'state.duckdb'));
+          return integration(join(root, 'state.duckdb'));
+        },
+      ],
+      [
+        'the output file through a linked directory',
+        (root: string) => {
+          fs.symlinkSync(root, join(root, 'alias'));
+          return integration(join(root, 'alias', 'lake.duckdb'));
+        },
+      ],
+      [
+        'a relative link in a linked directory that leads to the output file',
+        (root: string) => {
+          fs.mkdirSync(join(root, 'real/deep'), { recursive: true });
+          fs.symlinkSync(join(root, 'real/deep'), join(root, 'alias'));
+          fs.symlinkSync('../../lake.duckdb', join(root, 'real/deep/state.duckdb'));
+          return integration(join(root, 'alias', 'state.duckdb'));
+        },
+      ],
+      [
+        'a link whose own text goes through a link and back out of it',
+        (root: string) => {
+          fs.mkdirSync(join(root, 'real/deep'), { recursive: true });
+          fs.symlinkSync(join(root, 'real/deep'), join(root, 'alias'));
+          fs.symlinkSync('alias/../../lake.duckdb', join(root, 'state.duckdb'));
+          return integration(join(root, 'state.duckdb'));
+        },
+      ],
+      [
+        'a secret that names the output file',
+        (root: string) => {
+          vi.stubEnv('STATE_FILE', join(root, 'lake.duckdb'));
+          return { ...integration('${{ env.STATE_FILE }}'), auth_env_vars: ['STATE_FILE'] };
+        },
+      ],
+    ])('rejects %s before any run starts', async (_, stateIntegration) => {
+      const { runProject } = await import('../../src/api/index.js');
+      const root = project();
+      const fixture = agenticProject(root, stateIntegration(root));
+      const calls = vi.spyOn(fixture.host, 'executeAgent');
+      await expect(
+        runProject(root, {
+          models: ['pair_assessments'],
+          agentic: { host: fixture.host, run: { id: key.id, mode: 'start' } },
+        })
+      ).rejects.toMatchObject({ exitCode: 2 });
+      expect(calls).not.toHaveBeenCalled();
+      vi.unstubAllEnvs();
+    });
+
+    it('creates no directory when it compares paths', async () => {
+      const { assertCheckpointFileResolved } = await import('../../src/api/checkpoint-config.js');
+      const root = project();
+      const missing = join(root, 'missing/deeper/out.duckdb');
+      const link = join(root, 'state.duckdb');
+      fs.symlinkSync(missing, link);
+      const target = { ...integration(join(root, 'absent/out.duckdb'), true), name: 'target' };
+      await assertCheckpointFileResolved(integration(link), [target]);
+      expect(fs.existsSync(join(root, 'missing'))).toBe(false);
+      expect(fs.existsSync(join(root, 'absent'))).toBe(false);
+    });
+
     it('serves a project through model-spec.yml', async () => {
       const { runProject } = await import('../../src/api/index.js');
       const root = project();

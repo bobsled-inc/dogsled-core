@@ -37,6 +37,10 @@ interface DuckDbInstanceLike {
 }
 interface DuckDbInstanceConfig {
   access_mode?: 'READ_ONLY' | 'READ_WRITE' | 'AUTOMATIC';
+  enable_external_access?: 'false';
+  autoload_known_extensions?: 'false';
+  autoinstall_known_extensions?: 'false';
+  lock_configuration?: 'true';
 }
 interface DuckDbConnectionLike {
   run(sql: string): Promise<DuckDbResultLike>;
@@ -135,6 +139,19 @@ function parquetUri(targetUri: string): string {
   return `${targetUri.replace(/\/+$/, '')}/part-00000.parquet`;
 }
 
+/** No access to other files, the network or extensions, and no statement can turn it back on. */
+const ISOLATED_CONFIG: DuckDbInstanceConfig = {
+  enable_external_access: 'false',
+  autoload_known_extensions: 'false',
+  autoinstall_known_extensions: 'false',
+  lock_configuration: 'true',
+};
+
+export interface DuckDbRunnerOptions {
+  /** For a file that holds only data: a view stored in it cannot reach anything outside it. */
+  isolated?: boolean;
+}
+
 /**
  * Construct a DuckDB runner from an integration. The returned module:
  *   - runs DDL / DML through `run()`
@@ -145,7 +162,10 @@ function parquetUri(targetUri: string): string {
  * creates a fresh database. File-backed integrations share persistent state
  * across calls pointing at the same path.
  */
-export async function buildDuckDbRunner(integration: DuckDbIntegration): Promise<SqlRunnerModule> {
+export async function buildDuckDbRunner(
+  integration: DuckDbIntegration,
+  options: DuckDbRunnerOptions = {}
+): Promise<SqlRunnerModule> {
   const driver = await loadDuckDb();
   const dbPath = dbPathFromAuth(integration.auth);
   const readOnly = integration.auth.type === 'file' && integration.auth.read_only === true;
@@ -158,9 +178,13 @@ export async function buildDuckDbRunner(integration: DuckDbIntegration): Promise
   if (integration.auth.type === 'file' && !readOnly) {
     await fs.mkdir(path.dirname(dbPath), { recursive: true });
   }
+  const config: DuckDbInstanceConfig = {
+    ...(readOnly ? { access_mode: 'READ_ONLY' } : {}),
+    ...(options.isolated ? ISOLATED_CONFIG : {}),
+  };
   const instance = await driver.DuckDBInstance.create(
     dbPath,
-    readOnly ? { access_mode: 'READ_ONLY' } : undefined
+    Object.keys(config).length ? config : undefined
   );
   const connection = await instance.connect();
 
