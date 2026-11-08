@@ -138,6 +138,25 @@ describe('Snowflake row dialect', () => {
     );
   });
 
+  it('reports an empty guard as a replaced table, and passes other failures on', async () => {
+    const failing = (error: Error) => ({
+      run: vi.fn(async () => Promise.reject(error)),
+      query: vi.fn(async () => []),
+    });
+    // How the Snowflake driver reports the script's own exception.
+    const noGuard = Object.assign(new Error('Uncaught exception of type NO_GUARD'), {
+      code: '-20001',
+      sqlState: 'P0001',
+    });
+    await expect(
+      dialect.insertIfAbsent(failing(noGuard), table, values, 'key_hash', '"DB"."S"')
+    ).rejects.toMatchObject({ code: 'corrupt', reason: 'state_table_replaced', cause: noGuard });
+    const other = Object.assign(new Error('x'), { code: '002003' });
+    await expect(
+      dialect.insertIfAbsent(failing(other), table, values, 'key_hash', '"DB"."S"')
+    ).rejects.toBe(other);
+  });
+
   it('takes no lock for a key that already has its row', async () => {
     const db = fakeDb(async () => [{ found: 1 }]);
     await dialect.insertIfAbsent(db, table, values, 'key_hash', '"DB"."S"');
@@ -269,7 +288,9 @@ describe('the base table check', () => {
     expect(sql).toContain('"DB".information_schema.columns');
     expect(sql).toContain('"DB".information_schema.tables');
     expect(sql).toContain("t.table_type = 'BASE TABLE'");
-    expect(params).toEqual(['S']);
+    // Only the store's tables, which can share the schema with others.
+    expect(sql).toContain('AND c.table_name IN (?)');
+    expect(params).toEqual(['S', '__DOGSLED_AGENTIC_CURSORS']);
   });
 
   it.each([
@@ -307,22 +328,56 @@ describe('the base table check', () => {
     expect(await snowflake(change(snowflakeRows())).result).toBe(false);
   });
 
-  it('asks PostgreSQL for base tables and reads its own spelling of the types', async () => {
-    const plain = { is_nullable: 'NO', column_default: null, is_generated: 'NEVER' };
+  const postgresRows = () => {
+    const plain = {
+      is_nullable: 'NO',
+      column_default: null,
+      is_generated: 'NEVER',
+      domain_name: null,
+      trusted: true,
+    };
     const table = { table_name: '__dogsled_agentic_cursors', ...plain };
-    const rows = [
+    return [
       { ...table, column_name: 'key_hash', data_type: 'text' },
       { ...table, column_name: 'version', data_type: 'bigint' },
       { ...table, column_name: 'active', data_type: 'boolean' },
     ];
-    const db = fakeDb(async () => rows);
+  };
+
+  it('asks PostgreSQL for base tables and reads its own spelling of the types', async () => {
+    const db = fakeDb(async () => postgresRows());
     expect(await postgresRowDialect.hasBaseTables(db, '"s"', shape)).toBe(true);
-    expect(db.query.mock.calls[0]![0]).toContain("t.table_type = 'BASE TABLE'");
-    expect(db.query.mock.calls[0]![1]).toEqual(['s']);
-    const generated = rows.map((row) => ({ ...row, is_generated: 'ALWAYS' }));
+    const [sql, params] = db.query.mock.calls[0]!;
+    expect(sql).toContain("t.table_type = 'BASE TABLE'");
+    expect(sql).toContain('AND c.table_name IN ($2)');
+    expect(params).toEqual(['s', '__dogsled_agentic_cursors']);
+  });
+
+  it('asks PostgreSQL about everything that would run as the role that writes', async () => {
+    const db = fakeDb(async () => postgresRows());
+    await postgresRowDialect.hasBaseTables(db, '"s"', shape);
+    const [sql] = db.query.mock.calls[0]!;
+    for (const part of [
+      "k.relkind = 'r'",
+      'k.relowner = (SELECT r.oid FROM pg_catalog.pg_roles AS r WHERE r.rolname = CURRENT_USER)',
+      'NOT k.relrowsecurity',
+      'pg_catalog.pg_trigger AS g WHERE g.tgrelid = k.oid AND NOT g.tgisinternal',
+      'pg_catalog.pg_rewrite AS w WHERE w.ev_class = k.oid',
+      "pg_catalog.pg_constraint AS x WHERE x.conrelid = k.oid AND x.contype = 'c'",
+    ]) {
+      expect(sql).toContain(part);
+    }
+  });
+
+  it.each([
+    ['a generated column', { is_generated: 'ALWAYS' }],
+    ['a domain', { domain_name: 'checked' }],
+    ['a table where another role could run code', { trusted: false }],
+  ])('refuses %s on PostgreSQL', async (_name, change) => {
+    const rows = postgresRows().map((row, index) => (index ? row : { ...row, ...change }));
     expect(
       await postgresRowDialect.hasBaseTables(
-        fakeDb(async () => generated),
+        fakeDb(async () => rows),
         '"s"',
         shape
       )

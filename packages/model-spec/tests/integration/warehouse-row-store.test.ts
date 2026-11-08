@@ -85,7 +85,10 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
       const { emulator, store } = await open();
       await (await store().acquire((await mapScenario()).key)).release();
       await emulator.sql(`DELETE FROM ${namespace}."__DOGSLED_AGENTIC_GUARD"`);
-      await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toThrow('NO_GUARD');
+      await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toMatchObject({
+        code: 'corrupt',
+        reason: 'state_table_replaced',
+      });
       expect(await emulator.sql(`SELECT * FROM ${namespace}."__DOGSLED_AGENTIC_CURSORS"`)).toEqual(
         []
       );

@@ -173,6 +173,53 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     }
   });
 
+  it.each([
+    [
+      'a trigger',
+      (table: string, name: string) => [
+        `CREATE FUNCTION "${name}".keep() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RETURN NEW; END$$`,
+        `CREATE TRIGGER keep BEFORE INSERT ON ${table} FOR EACH ROW EXECUTE FUNCTION "${name}".keep()`,
+      ],
+    ],
+    ['a rule', (table: string) => [`CREATE RULE keep AS ON DELETE TO ${table} DO INSTEAD NOTHING`]],
+    ['row-level security', (table: string) => [`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`]],
+    ['a check', (table: string) => [`ALTER TABLE ${table} ADD CHECK (length("data") >= 0)`]],
+    [
+      'a domain',
+      (table: string, name: string) => [
+        `CREATE DOMAIN "${name}".checked AS TEXT CHECK (VALUE IS NOT NULL)`,
+        `ALTER TABLE ${table} ALTER COLUMN "data" TYPE "${name}".checked`,
+      ],
+    ],
+  ])('refuses a store table with %s, which would run as the store', async (_name, change) => {
+    const name = schema();
+    const { key: run } = await mapScenario();
+    await (await createWarehouseRowStore(integration(), { schema: name }).acquire(run)).release();
+    for (const statement of change(`"${name}"."__dogsled_agentic_rows"`, name)) {
+      await sql(statement);
+    }
+    await expect(
+      createWarehouseRowStore(integration(), { schema: name }).acquire({ ...run, id: 'next' })
+    ).rejects.toMatchObject({ code: 'corrupt', reason: 'state_table_replaced' });
+  });
+
+  it('refuses a store table that another role owns', async () => {
+    const name = schema();
+    const role = `row_store_${randomUUID().replaceAll('-', '')}`;
+    const { key: run } = await mapScenario();
+    await (await createWarehouseRowStore(integration(), { schema: name }).acquire(run)).release();
+    await sql(`CREATE ROLE "${role}"`);
+    try {
+      await sql(`ALTER TABLE "${name}"."__dogsled_agentic_runs" OWNER TO "${role}"`);
+      await expect(
+        createWarehouseRowStore(integration(), { schema: name }).acquire({ ...run, id: 'next' })
+      ).rejects.toMatchObject({ code: 'corrupt', reason: 'state_table_replaced' });
+    } finally {
+      await sql(`DROP SCHEMA "${name}" CASCADE`);
+      await sql(`DROP ROLE "${role}"`);
+    }
+  });
+
   it('declares the keys it relies on', async () => {
     const name = schema();
     const { key: run } = await mapScenario();

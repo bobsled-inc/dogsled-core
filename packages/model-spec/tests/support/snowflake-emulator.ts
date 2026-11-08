@@ -233,7 +233,13 @@ export async function createSnowflakeEmulator(): Promise<SnowflakeEmulator> {
         } else if (skipping) {
           continue;
         } else if (statement === 'IF (SQLROWCOUNT <> 1) THEN RAISE no_guard; END IF') {
-          if (rowCount !== 1) throw new Error('Uncaught exception of type NO_GUARD');
+          // As the driver reports the script's own exception.
+          if (rowCount !== 1) {
+            throw Object.assign(new Error('Uncaught exception of type NO_GUARD'), {
+              code: '-20001',
+              sqlState: 'P0001',
+            });
+          }
         } else if (statement === 'IF (matches = 0) THEN') {
           skipping = matches !== 0;
         } else if (statement.startsWith('matches := (')) {

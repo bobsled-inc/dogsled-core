@@ -9,8 +9,16 @@ import {
   type AgenticRowDb,
   type AgenticRowDialect,
 } from './row-state-dialect.js';
+import { agenticTableReplaced } from './row-state-tables.js';
 
 const pg = (name: string): string => quoteIdentifier(caseName(name, 'postgres'), 'postgres');
+/**
+ * Whether nothing another role attached to table `k` runs when the store writes to it. A trigger,
+ * rule, check or domain runs with the privileges of the role that writes, and a row policy decides
+ * what the store sees. Only the owner can add most of these, so the store's own role must own the
+ * table; a trigger can also come from a role it was granted to.
+ */
+const pgTrusted = `(k.relkind = 'r' AND k.relowner = (SELECT r.oid FROM pg_catalog.pg_roles AS r WHERE r.rolname = CURRENT_USER) AND NOT k.relrowsecurity AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger AS g WHERE g.tgrelid = k.oid AND NOT g.tgisinternal) AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_rewrite AS w WHERE w.ev_class = k.oid) AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint AS x WHERE x.conrelid = k.oid AND x.contype = 'c'))`;
 const pgTypes = { text: 'TEXT', integer: 'BIGINT', boolean: 'BOOLEAN' };
 const pgTuple = (columns: number, row: number): string =>
   `(${Array.from({ length: columns }, (_, column) => `$${row * columns + column + 1}`).join(', ')})`;
@@ -29,18 +37,24 @@ export const postgresRowDialect: AgenticRowDialect = {
       .map((column) => `${pg(column.name)} ${pgTypes[column.type]} NOT NULL`)
       .join(', ')}, PRIMARY KEY (${key.map(pg).join(', ')}))`,
   /** A name resolves `pg_catalog` first, unless a role's `search_path` lists it later, so a
-   * stored function cannot change what this means. It calls none, and names its views in full. */
+   * stored function cannot change what this means. It calls none, and names its views in full.
+   * It reads only the store's own tables, and refuses one that could run another role's code. */
   async hasBaseTables(db, namespace, tables) {
+    const names = tables.map(({ name }) => caseName(name, 'postgres'));
     const columns = await db.query(
-      `SELECT c.table_name, c.column_name, c.data_type, c.is_nullable, c.column_default, c.is_generated FROM information_schema.columns AS c JOIN information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = $1 AND t.table_type = 'BASE TABLE'`,
-      [agenticQuotedParts(namespace).at(-1)!]
+      `SELECT c.table_name, c.column_name, c.data_type, c.domain_name, c.is_nullable, c.column_default, c.is_generated, ${pgTrusted} AS trusted FROM information_schema.columns AS c JOIN information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name JOIN pg_catalog.pg_namespace AS n ON n.nspname = c.table_schema JOIN pg_catalog.pg_class AS k ON k.relnamespace = n.oid AND k.relname = c.table_name WHERE c.table_schema = $1 AND t.table_type = 'BASE TABLE' AND c.table_name IN (${names.map((_, index) => `$${index + 2}`).join(', ')})`,
+      [agenticQuotedParts(namespace).at(-1)!, ...names]
     );
     const found = columns.map((row) => ({
       table: String(row.table_name),
       name: String(row.column_name),
       type: String(row.data_type),
       plain:
-        row.is_nullable === 'NO' && row.column_default === null && row.is_generated === 'NEVER',
+        row.trusted === true &&
+        row.domain_name === null &&
+        row.is_nullable === 'NO' &&
+        row.column_default === null &&
+        row.is_generated === 'NEVER',
     }));
     return agenticTablesMatch(found, tables, {
       text: 'text',
@@ -103,6 +117,10 @@ function insertOnceScript(
   ].join('\n');
 }
 
+/** The driver reports a raised `no_guard` with its own number, as the text `-20001`. */
+const isNoGuard = (error: unknown): boolean =>
+  /^-?0*20001$/.test(String((error as { code?: unknown }).code));
+
 /** A DML result is one row of counts. Without it the write's outcome is unknown, which is not
  * the same as changing nothing: that would read as lost ownership. */
 function rowsUpdated(rows: readonly Record<string, unknown>[]): number {
@@ -139,9 +157,14 @@ export const snowflakeRowDialect: AgenticRowDialect = {
   async hasBaseTables(db, namespace, tables) {
     const parts = agenticQuotedParts(namespace);
     const catalog = parts.length > 1 ? `${sf(parts[0]!)}.` : '';
+    const folded = tables.map(({ name, columns: shape }) => ({
+      name: caseName(name, 'snowflake'),
+      columns: shape.map((column) => ({ ...column, name: caseName(column.name, 'snowflake') })),
+    }));
+    // Only the store's own tables: the schema can hold others, such as the old store's.
     const columns = await db.query(
-      `SELECT c.table_name, c.column_name, c.data_type, c.numeric_scale, c.is_nullable, c.column_default, c.is_identity FROM ${catalog}information_schema.columns AS c JOIN ${catalog}information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = ? AND t.table_type = 'BASE TABLE'`,
-      [parts.at(-1)!]
+      `SELECT c.table_name, c.column_name, c.data_type, c.numeric_scale, c.is_nullable, c.column_default, c.is_identity FROM ${catalog}information_schema.columns AS c JOIN ${catalog}information_schema.tables AS t ON c.table_schema = t.table_schema AND c.table_name = t.table_name WHERE c.table_schema = ? AND t.table_type = 'BASE TABLE' AND c.table_name IN (${folded.map(() => '?').join(', ')})`,
+      [parts.at(-1)!, ...folded.map(({ name }) => name)]
     );
     const found = columns.map((row) => ({
       table: String(row.table_name),
@@ -152,10 +175,6 @@ export const snowflakeRowDialect: AgenticRowDialect = {
           ? 'decimal'
           : String(row.data_type),
       plain: row.is_nullable === 'NO' && row.column_default === null && row.is_identity === 'NO',
-    }));
-    const folded = tables.map(({ name, columns: shape }) => ({
-      name: caseName(name, 'snowflake'),
-      columns: shape.map((column) => ({ ...column, name: caseName(column.name, 'snowflake') })),
     }));
     return agenticTablesMatch(found, folded, {
       text: 'TEXT',
@@ -176,7 +195,13 @@ export const snowflakeRowDialect: AgenticRowDialect = {
     ]);
     if (found.length) return;
     const script = insertOnceScript(namespace, table, values, key);
-    await db.run(`EXECUTE IMMEDIATE ${quoteLiteral(script, 'snowflake')}`);
+    try {
+      await db.run(`EXECUTE IMMEDIATE ${quoteLiteral(script, 'snowflake')}`);
+    } catch (error) {
+      // `no_guard`: the guard had no row to lock, so the script stopped before adding anything.
+      if (isNoGuard(error)) throw agenticTableReplaced(error);
+      throw error;
+    }
   },
   insertRows(table, columns, rows) {
     const tuple = `(${columns.map(() => '?').join(', ')})`;
