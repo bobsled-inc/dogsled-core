@@ -160,7 +160,8 @@ export async function openAgenticRowSession(
       db,
       runs,
       agenticNewRunHeader(key, hash, LAYOUT_VERSION),
-      'run_hash'
+      'run_hash',
+      namespace
     );
     const statement = agenticStatement(dialect);
     const next = randomUUID();

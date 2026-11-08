@@ -263,8 +263,9 @@ Without it, recovery starts at once.
 
 ## Row layout
 
-The DuckDB stores save a run as rows, so what a checkpoint writes does not grow with the run. A
-session keeps the snapshot in memory while it owns the run, applies each command
+The DuckDB stores and the [warehouse row store](#warehouse-row-store) save a run as rows, so what a
+checkpoint writes does not grow with the run. A session keeps the snapshot in memory while it owns
+the run, applies each command
 with `applyAgenticCheckpoint`'s transition, and writes only what changed. Opening a run rebuilds
 the snapshot from its rows. Commands, snapshots and the store interfaces are unchanged.
 
@@ -288,7 +289,10 @@ tables, as trusted: whoever has it decides what a run resumes from.
 Setup confirms that all three are base tables with exactly the columns the store creates, because
 `CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses indexes,
 keys and check constraints on those tables, and any stored function in the file, because a stored
-macro can replace a built-in in every statement run on that file. Any of these reports `corrupt`
+macro can replace a built-in in every statement run on that file. On PostgreSQL it also refuses a
+table that the store's own role does not own, or that has a trigger, rule, row-level security,
+check constraint or domain-typed column, because each of these runs code with the privileges of
+the role that writes, or decides what the store sees. Any of these reports `corrupt`
 with the reason `state_table_replaced`. So give a DuckDB store a file of its own. The check does
 not look at column collations, user types or objects unrelated to the store. DuckDB state files
 also open with external access and extension loading off, so nothing stored in one can read other
@@ -314,7 +318,7 @@ header update changes nothing. A new owner deletes unreachable rows the first ti
 run. A session never trusts its memory after an uncertain write: it reloads from the rows first.
 
 No table relies on a unique key, which three of the warehouses this layout targets do not
-enforce. The row layout supports DuckDB today.
+enforce. The row layout supports DuckDB, PostgreSQL and Snowflake.
 
 Rows expire: acquiring a run and each header write set `retain_until`, 30 days ahead by default,
 from the store's clock. A later acquisition removes unowned runs past that time. It claims each
@@ -399,6 +403,90 @@ Existing runs are not moved, so finish them before adding this setting. The stor
 cursor on first use of its key, from the DuckDB target or the default store. A key that an
 unfinished run still holds fails with `cursor_held_elsewhere`, and nothing is written: this store
 cannot open that run to take it over. Remove the setting, finish the run, then add it again.
+
+### Warehouse row store
+
+A warehouse `checkpoint_store` keeps using the [warehouse store](#warehouse-checkpoints), which
+rewrites the whole run as one document on every checkpoint. A library host opts a run into rows by
+supplying this store:
+
+```typescript
+import { createWarehouseRowStore } from '@bobsled-inc/model-spec/agentic';
+
+const stateStore = createWarehouseRowStore(integration, {
+  schema: 'track_checkpoints',
+  database: 'writable_database', // Optional. Snowflake only.
+  leaseMs: 300_000, // Optional. Default: 120,000. Range: 10,000–600,000.
+  retentionMs: 30 * 86_400_000, // Optional. Default: 30 days.
+});
+await runProject(projectDirectory, { agentic: { host, stateStore } });
+```
+
+`integration` is a PostgreSQL or Snowflake integration with its secrets resolved. The options also
+take what `createWarehouseCheckpointStore` takes, such as `customRunners`, `tokenProvider` and
+`signal`. A supplied store comes first in [the selection](#where-state-is-stored), so it also applies
+to a project that configures `checkpoint_store`. Other engines are rejected.
+
+The three tables live in the given schema, shared by every run, so the store creates no tables per
+run. Ownership is the same fenced lease, and each statement has the same
+[limits](#warehouse-checkpoints) as the warehouse store: it runs on a dedicated session through the
+same statement limit and client deadline. The role needs table creation, `SELECT`, `INSERT`,
+`UPDATE` and `DELETE` in the schema. It needs to create schemas only if the schema does not exist
+yet, so a role scoped to one pre-created schema is enough. Rows hold the same data as the warehouse
+store, so apply the same access policies.
+
+Runs in progress stay in the store that started them. A host that opts in must not resume them from
+this store, which would not find them. Each cursor key takes its value from `__dogsled_cursors` in
+that schema when the row store first sees the key, and never reads it again once the value has
+landed. A key that an unfinished run still holds there fails with `cursor_held_elsewhere` and writes
+nothing: this store cannot open that run to take it over. Finish the run from the previous store
+first. A damaged record stops the key rather than starting it again from the beginning. So does a
+role that cannot read the old table on PostgreSQL. Snowflake reports a table the role cannot see
+exactly as it reports one that does not exist, so **on Snowflake the role must hold `SELECT` on
+`__DOGSLED_CURSORS` wherever the old store ran**. Without it, a key starts from empty.
+
+A carried value goes in as a bound update after the key's first row, never inside it. That first row
+has version -1 until the value lands. If a process stops in between, the next use of the key reads
+the old value again, so an empty row can never pass for a key with no progress. Do not drop
+`__dogsled_cursors` while any cursor row has version -1: that key would start from empty.
+
+|                           | PostgreSQL                        | Snowflake                                                   |
+| ------------------------- | --------------------------------- | ----------------------------------------------------------- |
+| One row per key           | Primary key, `ON CONFLICT`        | One transaction behind the guard table                      |
+| Rows changed by an update | `RETURNING`                       | The count the update returns                                |
+| Store clock               | `clock_timestamp()`               | `SYSDATE()`, which the session time zone cannot move        |
+| Concurrent header updates | Row locks, so runs do not contend | One at a time per table: 2.2 a second in one sample         |
+| Largest `INSERT` (`data`) | 4 Mi characters, 256 rows         | 256 Ki characters, 128 rows, under the 1 MB statement limit |
+
+Snowflake standard tables enforce no keys, so the first row for a run or cursor key goes through a
+single script. It updates the one row of `__DOGSLED_AGENTIC_GUARD`, which makes concurrent scripts
+take turns, then counts the key's rows and inserts only if there are none. This happens once per
+run and once per key. If the guard has lost its row, the script stops before it adds anything, and
+the store reports `corrupt` with the reason `state_table_replaced`. A statement that Snowflake refuses because too many others wait for the same
+table lock never ran, so the store repeats it, for about 15 seconds at most.
+
+Each statement is a write of its own, so state sessions turn `AUTOCOMMIT` on, whatever the account's
+default is.
+
+A host that opens Snowflake through its own runner factory must provide four things the built-in
+runner does: the result row of an `UPDATE`, with its `number of rows updated` column, returned from
+`query`; `EXECUTE IMMEDIATE` scripts through `run`; `bigint` values among bind parameters; and
+`AUTOCOMMIT` on in the session. Without the first, every write fails as an uncertain one rather than
+reading as a lost lease. Run the
+[live suite](../tests/integration/warehouse/README.md#agentic-store-conformance) through that factory
+before switching.
+
+**On PostgreSQL, no less-trusted role may hold `CREATE` on the store's schema.** Such a role can
+create the store's tables before the store does. Setup refuses them rather than run that role's
+code, but the store then stops until someone removes them. Do not use the `public` schema on
+PostgreSQL 14 or older, where every role can create in it by default.
+
+The store passes its conformance suite on PostgreSQL 17 and on a real Snowflake account, including
+concurrent first use of a key and concurrent takeover of a lease. On one Snowflake account, in one
+sample where a statement took about 550 ms, one shared table of headers held a schema to about 55
+model calls a minute, however many runs shared it. See the
+[benchmark](checkpoint-transport-benchmark.md#row-store-on-a-shared-header-table) for what that means
+for more than about four runs at once.
 
 ## Local files, ownership and retention
 

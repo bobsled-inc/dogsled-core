@@ -76,6 +76,9 @@ export interface AgenticRowConnection {
 }
 export interface AgenticRowBackend {
   dialect: AgenticRowDialect;
+  /** Whether the schema exists already. A role scoped to one schema can use it but not create
+   * schemas, and PostgreSQL refuses `CREATE SCHEMA IF NOT EXISTS` to such a role even then. */
+  hasSchema?(db: AgenticRowDb): Promise<boolean>;
   /** `handling` is what a timed-out statement does to the session. A warehouse backend passes
    * it to `openLimitedRunner`, which sets the server-side limit for that session. */
   connect(handling?: StatementTimeoutHandling): Promise<AgenticRowConnection>;
@@ -126,19 +129,35 @@ export function agenticRowTable(
   return `${namespace}.${dialect.identifier(name)}`;
 }
 
+/** What a dialect reports when the store's tables are not as it created them. The driver's text
+ * stays in the cause: formatters never print it. */
+export const agenticTableReplaced = (cause?: unknown): AgenticStateError =>
+  new AgenticStateError(
+    'corrupt',
+    {
+      reason: 'state_table_replaced',
+      message: 'The agentic checkpoint store is not as Dogsled created it.',
+      hint: 'Stop all writers and inspect the store before resuming. It must hold nothing else.',
+    },
+    cause === undefined ? undefined : { cause }
+  );
+
 async function createAgenticRowTables(
   db: AgenticRowDb,
   dialect: AgenticRowDialect,
-  namespace: string
+  namespace: string,
+  hasSchema?: AgenticRowBackend['hasSchema']
 ): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     try {
-      await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
+      if (!(await hasSchema?.(db))) await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
       for (const { name, columns, key } of agenticTables) {
         await db.run(dialect.createTable(agenticRowTable(dialect, namespace, name), columns, key));
       }
+      for (const statement of dialect.setup?.(namespace) ?? []) await db.run(statement);
       return;
     } catch (error) {
+      if (dialect.nameTaken?.(error)) throw agenticTableReplaced(error);
       // Concurrent first use can fail despite IF NOT EXISTS: PostgreSQL reports a duplicate
       // catalog row. The statements are idempotent, so repeat them.
       if (attempt >= 3 || isCancellationError(error)) throw error;
@@ -153,21 +172,16 @@ async function assertAgenticRowTables(
   dialect: AgenticRowDialect,
   namespace: string
 ): Promise<void> {
-  if (!(await dialect.hasBaseTables(db, namespace, agenticTables))) {
-    throw new AgenticStateError('corrupt', {
-      reason: 'state_table_replaced',
-      message: 'The agentic checkpoint store is not as Dogsled created it.',
-      hint: 'Stop all writers and inspect the store before resuming. It must hold nothing else.',
-    });
-  }
+  if (!(await dialect.hasBaseTables(db, namespace, agenticTables))) throw agenticTableReplaced();
 }
 
 export async function prepareAgenticRowTables(
   db: AgenticRowDb,
   dialect: AgenticRowDialect,
-  namespace: string
+  namespace: string,
+  hasSchema?: AgenticRowBackend['hasSchema']
 ): Promise<void> {
-  await createAgenticRowTables(db, dialect, namespace);
+  await createAgenticRowTables(db, dialect, namespace, hasSchema);
   await assertAgenticRowTables(db, dialect, namespace);
 }
 
@@ -181,7 +195,7 @@ export async function ensureAgenticRowTables(
   namespace: string
 ): Promise<void> {
   if (preparedBackends.has(backend)) return;
-  await prepareAgenticRowTables(db, backend.dialect, namespace);
+  await prepareAgenticRowTables(db, backend.dialect, namespace, backend.hasSchema);
   preparedBackends.add(backend);
 }
 

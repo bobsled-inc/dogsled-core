@@ -516,8 +516,8 @@ describe('buildSnowflakeRunner — refreshable managed credentials', () => {
     await runner.run('SELECT 1');
     expect(execute.mock.calls.map(([options]) => (options as { sqlText: string }).sqlText)).toEqual(
       [
-        'ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 60',
-        'ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 60',
+        'ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 60 AUTOCOMMIT = TRUE',
+        'ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 60 AUTOCOMMIT = TRUE',
         'SELECT 1',
       ]
     );

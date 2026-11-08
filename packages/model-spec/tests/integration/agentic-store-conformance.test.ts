@@ -14,10 +14,12 @@ import {
   createLocalAgenticStateStore,
   digestAgenticState,
 } from '../../src/agentic/index.js';
+import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import {
   describeAgenticStoreConformance,
   type StoreHandle,
 } from '../support/agentic-store-conformance.js';
+import { createSnowflakeEmulator, type SnowflakeEmulator } from '../support/snowflake-emulator.js';
 
 const worker = fileURLToPath(new URL('../support/agentic-store-crash-process.ts', import.meta.url));
 const projects = new WeakMap<StoreHandle, string>();
@@ -92,8 +94,51 @@ const runFile = (handle: StoreHandle, key: Parameters<typeof digestAgenticState>
     read_only: false,
   },
 });
+const emulators = new WeakMap<StoreHandle, SnowflakeEmulator>();
+const rowTable = (name: string) => `"MEMORY"."CHECKPOINTS"."__DOGSLED_AGENTIC_${name}"`;
+const emulated = (emulator: SnowflakeEmulator, retentionMs?: number) =>
+  createWarehouseRowStore(emulator.integration, {
+    schema: 'checkpoints',
+    customRunners: emulator.customRunners,
+    leaseMs: 10_000,
+    ...(retentionMs === undefined ? {} : { retentionMs }),
+  });
 
 describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
+  // The Snowflake dialect and backend on an emulator. See cloud-row-store.test.ts for the proof.
+  describeAgenticStoreConformance({
+    name: 'Snowflake emulator',
+    open: async () => {
+      const emulator = await createSnowflakeEmulator();
+      const handle: StoreHandle = {
+        store: emulated(emulator),
+        reopen: () => emulated(emulator),
+        cleanup: () => emulator.close(),
+      };
+      emulators.set(handle, emulator);
+      return handle;
+    },
+    expireLease: async (handle) => {
+      await emulators.get(handle)!.sql(`UPDATE ${rowTable('RUNS')} SET "LEASE_EXPIRES" = 0`);
+    },
+    withRetention: (handle, retentionMs) => emulated(emulators.get(handle)!, retentionMs),
+    damage: async (handle) => {
+      await emulators.get(handle)!.sql(`UPDATE ${rowTable('ROWS')} SET "DATA" = '{"damaged":1}'`);
+    },
+    replaceRowsTable: async (handle) => {
+      const emulator = emulators.get(handle)!;
+      await emulator.sql(`ALTER TABLE ${rowTable('ROWS')} RENAME TO kept_rows`);
+      await emulator.sql(
+        `CREATE VIEW ${rowTable('ROWS')} AS SELECT * FROM "MEMORY"."CHECKPOINTS".kept_rows`
+      );
+    },
+    addComputedColumn: async (handle) => {
+      await emulators
+        .get(handle)!
+        .sql(`ALTER TABLE ${rowTable('ROWS')} ADD COLUMN computed VARCHAR DEFAULT 'x'`);
+    },
+  });
+
   describeAgenticStoreConformance({
     name: 'DuckDB run file',
     open: async () => localHandle(createDefaultAgenticStateStore),

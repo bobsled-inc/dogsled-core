@@ -61,6 +61,7 @@ export * from './sql-publisher.js';
 export * from './evidence.js';
 
 export * from './warehouse-state.js';
+export { createWarehouseRowStore, type WarehouseRowStoreOptions } from './warehouse-row-state.js';
 export { createLocalAgenticCursorStore } from './local-cursors.js';
 export { createWarehouseAgenticCursorStore } from './warehouse-cursors.js';
 export type { AgenticCursorStore, AgenticCursorKey, AgenticCursorValues } from './cursor.js';

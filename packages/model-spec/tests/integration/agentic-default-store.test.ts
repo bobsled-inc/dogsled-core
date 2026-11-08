@@ -20,7 +20,7 @@ import {
 } from '../../src/agentic/index.js';
 import { beginAgenticCursor } from '../../src/agentic/begin-cursor.js';
 import { readDefaultAgenticCursor } from '../../src/agentic/default-state.js';
-import { duckDbPublicationCursorReader } from '../../src/agentic/duckdb-state.js';
+import { duckDbPublicationCursorReader, duckDbStateFile } from '../../src/agentic/duckdb-state.js';
 import { currentCommand, mapScenario, planScenario } from '../support/agentic-store-scenario.js';
 import { runFixture } from '../unit/agentic/state-fixture.js';
 
@@ -367,6 +367,28 @@ describe.skipIf(!duckdb)('default local store', { timeout: 60_000 }, () => {
       await old.commit(cursorKey, signature, 'stale', { pairs: 100 });
       const reopened = createDefaultAgenticStateStore(root).cursors!;
       expect(await reopened.begin(cursorKey, signature, 'later')).toEqual({ pairs: 9 });
+    });
+
+    it('leads back to the old store after a crash before the record landed', async () => {
+      const root = project();
+      const old = createLocalAgenticCursorStore(root);
+      await old.begin(cursorKey, signature, 'old-run');
+      await old.commit(cursorKey, signature, 'old-run', { pairs: 5 });
+      const cursors = createDefaultAgenticStateStore(root).cursors!;
+      await cursors.begin({ ...cursorKey, target: 'main.other' }, signature, 'other');
+      // The state a crash leaves between the first row and its record.
+      const { scope, model, target } = cursorKey;
+      const runner = await buildDuckDbRunner(duckDbStateFile(cursorFile(root)));
+      try {
+        await runner.run(
+          `INSERT INTO __dogsled_agentic_cursors VALUES ('${digestAgenticState(cursorKey)}', '${scope}', '${model}', '${target}', -1, '')`
+        );
+      } finally {
+        await runner.close?.();
+      }
+      expect((await readDefaultAgenticCursor(root, cursorKey))?.values).toEqual({ pairs: 5 });
+      const reopened = createDefaultAgenticStateStore(root).cursors!;
+      expect(await reopened.begin(cursorKey, signature, 'new-run')).toEqual({ pairs: 5 });
     });
 
     it('carries an active reservation over, so takeover still sees the old owner', async () => {

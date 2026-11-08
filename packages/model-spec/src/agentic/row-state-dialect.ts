@@ -46,6 +46,12 @@ export interface AgenticRowDialect {
     namespace: string,
     tables: readonly AgenticRowTableShape[]
   ): Promise<boolean>;
+  /** Whether creating a table failed because something else holds its name. `CREATE TABLE IF NOT
+   * EXISTS` keeps that object on most engines and refuses on others, and the store reports both
+   * alike. Only for an engine that refuses. */
+  nameTaken?(error: unknown): boolean;
+  /** Statements to run after the tables, for an engine that needs more than them. */
+  setup?(namespace: string): readonly string[];
   /** Adds one row unless `key` already exists. Concurrent calls must add one row between
    * them. Engines that enforce no keys need their own way to do that, which may take more
    * than one statement. A second row fails closed: readers report the run as corrupt. */
@@ -53,7 +59,8 @@ export interface AgenticRowDialect {
     db: AgenticRowDb,
     table: string,
     values: Readonly<Record<string, string | number | bigint | boolean>>,
-    key: string
+    key: string,
+    namespace: string
   ): Promise<void>;
   /** Inserts `rows` rows of `columns`. Repeating identical rows must be harmless. */
   insertRows(table: string, columns: readonly string[], rows: number): string;
