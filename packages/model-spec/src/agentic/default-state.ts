@@ -23,7 +23,7 @@ import { agenticRowDb, duckDbRowDialect } from './row-state-dialect.js';
 import { openAgenticRowSession } from './row-state.js';
 import {
   AGENTIC_ROW_RETENTION_MS,
-  AGENTIC_RUNS_TABLE,
+  agenticHeaderTableNames,
   agenticRowTable,
   prepareAgenticRowTables,
 } from './row-state-tables.js';
@@ -116,11 +116,13 @@ async function sweepExpiredRuns(
           const db = agenticRowDb(runner);
           const namespace = duckDbRowDialect.identifier('main');
           await prepareAgenticRowTables(db, duckDbRowDialect, namespace);
-          const table = agenticRowTable(duckDbRowDialect, namespace, AGENTIC_RUNS_TABLE);
           const q = duckDbRowDialect.identifier;
-          const rows = await db.query(
-            `SELECT ${q('retain_until')} <= ${duckDbRowDialect.clock} AND ${q('reclaimable')} AS ${q('expired')} FROM ${table} LIMIT 2`
+          const due = `${q('retain_until')} <= ${duckDbRowDialect.clock} AND ${q('reclaimable')} AS ${q('expired')}`;
+          // Wherever the header is, so that this keeps up with the dialect's header sets.
+          const headers = agenticHeaderTableNames(duckDbRowDialect).map(
+            (name) => `SELECT ${due} FROM ${agenticRowTable(duckDbRowDialect, namespace, name)}`
           );
+          const rows = await db.query(`${headers.join(' UNION ALL ')} LIMIT 2`);
           expired = rows.length === 0 || (rows.length === 1 && rows[0]!.expired === true);
         } finally {
           await runner.close?.();
