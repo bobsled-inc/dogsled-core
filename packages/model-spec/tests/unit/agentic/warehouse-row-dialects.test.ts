@@ -302,9 +302,9 @@ describe('the base table check', () => {
     expect(sql).toContain('"DB".information_schema.columns');
     expect(sql).toContain('"DB".information_schema.tables');
     expect(sql).toContain("t.table_type = 'BASE TABLE'");
-    // Only the store's tables, which can share the schema with others.
-    expect(sql).toContain('AND c.table_name IN (?)');
-    expect(params).toEqual(['S', '__DOGSLED_AGENTIC_CURSORS']);
+    // Only the store's tables and its guard, which can share the schema with others.
+    expect(sql).toContain('AND c.table_name IN (?, ?)');
+    expect(params).toEqual(['S', '__DOGSLED_AGENTIC_CURSORS', '__DOGSLED_AGENTIC_GUARD']);
   });
 
   it.each([
