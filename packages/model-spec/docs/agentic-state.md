@@ -470,8 +470,9 @@ for about 15 seconds at most.
 Because updates of one table queue, Snowflake keeps run headers in a fixed set of tables,
 `__DOGSLED_AGENTIC_RUNS_8_0` to `__DOGSLED_AGENTIC_RUNS_8_7`, and PostgreSQL and DuckDB keep the one
 table. The dialect names the size, and the run's hash picks the table, so two runs in different
-tables never wait for each other. Setup and the base table check cover every table, and one statement
-looks for expired runs in all of them, so no table depends on a run happening to land in it.
+tables never wait for each other's header update. Setup and the base table check cover every table,
+and one statement looks for expired runs in all of them, so no table depends on a run happening to
+land in it.
 
 To change the size in a later version, put the new size first in the dialect's `headerTables` and keep
 the old sizes after it. A table's name holds its size, so sets cannot collide. Setup creates the new

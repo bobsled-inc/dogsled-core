@@ -412,11 +412,12 @@ about two a second, and the runs across 8 schemas split the rows table as well a
 first-row script queues on its guard, up to 13 seconds with 16 runs starting together, but it runs
 once per run.
 
-Updates of one table do run one at a time on Snowflake, at about 2.2 a second. So a shared table stops
-scaling at about four runs, and it holds a schema to about 55 model calls a minute however many runs
-share it. Past that point the total falls, because a run waiting in the queue still renews its lease,
-and renewals join the same queue. At 16 runs a header update waits 6.2 seconds and a run does 3.3 calls
-a minute. Eight schemas take that wait back to 0.7 seconds and give 4.7 times the total.
+Updates of one table do run one at a time on Snowflake. In this sample they ran at about 2.2 a
+second, so a shared table stopped scaling at about four runs and held a schema to about 55 model
+calls a minute however many runs shared it. Past that point the total fell, because a run waiting in
+the queue still renews its lease, and renewals join the same queue. At 16 runs a header update waited
+6.2 seconds and a run did 3.3 calls a minute. Eight schemas took that wait back to 0.7 seconds and
+gave 4.7 times the total.
 
 **A set of header tables, same account and workload.** Inside one schema the store picks a table from
 a hash of the run, and all runs share one rows table. One sample of each size, while other jobs ran
@@ -433,16 +434,20 @@ on the laptop:
 |     16 |            8 |          127.9 |    16.0 |                      4.47 |          539 / 1,068 ms |         671 ms |
 |     16 |           16 |          133.0 |     8.3 |                      4.53 |          549 / 1,126 ms |       2,242 ms |
 
-No run failed. With 16 runs a header update's median stays at its single-run value on both sizes:
-602 ms against 599 on 8 tables, and 549 ms against 589 on 16. So 8 is enough, and 16 improves only
-the p95, because 16 runs cannot all get a table of their own from a hash of 8. Four tables were not
-measured, but they would put about four runs on each, and four runs on one table take 1,133 ms.
+No run failed. Each row is one sample, and passes with the same number of runs differed by up to
+19%, 67.5 against 80.2 calls a minute at 4 runs, so only large gaps mean anything. With 16 runs a
+header update's median stayed at its single-run value on both sizes: 602 ms against 599 on 8
+tables, and 549 ms against 589 on 16. So 8 was enough in this sample, and 16 improved only the p95,
+because 16 runs cannot all get a table of their own from a hash of 8. Four tables were not
+measured, but they would put about four runs on each, and four runs on one table took 1,133 ms.
 
-The limit then moves to the rows table. Row inserts stay under 700 ms up to 8 runs, reach 2.2 seconds
-at 16, and stop rising at about 4.5 a second, so the total stops at about 130 calls a minute. The
-spread across schemas went further, to 243.6, because it had eight rows tables. At 16 runs a set of 8
-tables therefore gives 2.4 times the total of one table, 125.3 calls a minute against 52.1, rather
-than the 4.7 times of the spread, and a header update's median falls from 6.2 seconds to 0.6.
+The limit then moved, probably to the rows table. Row inserts stayed under 700 ms up to 8 runs and
+reached 2.2 seconds at 16. Counting each pass's row inserts over its elapsed time, they levelled off
+at 4.3 and 4.6 a second with 16 runs on the two sizes, and the total stopped near 130 calls a
+minute. The spread across schemas went further, to 243.6, which is consistent with its having eight
+rows tables. At 16 runs in this sample, a set of 8 tables gave 2.4 times the total of one table,
+125.3 calls a minute against 52.1, rather than the 4.7 times of the spread, and a header update's
+median fell from 6.2 seconds to 0.6.
 
 **Before and after, same account and workload.** One run of 30 assignments on the store this replaces
 took 8.77 statements per assignment and did 7.7 calls a minute, against 4.57 and 20.4, in one sample.
@@ -453,15 +458,15 @@ here.
 **What ships: one header table on PostgreSQL, and a fixed set of 8 on Snowflake.**
 
 - **PostgreSQL:** measured above, runs do not contend. A fixed set would add nothing.
-- **Snowflake:** 8 header tables, chosen by a hash of the run. It is the smaller of the two sizes
-  measured that keeps a header update near its single-run median at 16 runs. Eight tables also divide
-  the queue of waiting statements, which
+- **Snowflake:** 8 header tables, chosen by a hash of the run. In this sample it was the smaller of
+  the two sizes measured that kept a header update near its single-run median at 16 runs. Eight
+  tables also divide the queue of waiting statements, which
   [public reports](https://community.streamsets.com/community-articles-and-got-a-question-7/jdbcqueryexecutor-can-t-execute-querynet-snowflake-client-jdbc-snowflakesqlexception-2177)
   say Snowflake aborts at 20 waiters.
 
-A host that needs more than about 130 calls a minute can give different models different schemas,
-which divides the rows table too. A model's runs must stay in one schema, because its cursor lives
-there.
+A host that needs more than the roughly 130 calls a minute seen here can give different models
+different schemas, which divides the rows table too. A model's runs must stay in one schema, because
+its cursor lives there.
 
 ## Remaining work
 
