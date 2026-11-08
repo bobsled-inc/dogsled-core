@@ -289,7 +289,10 @@ tables, as trusted: whoever has it decides what a run resumes from.
 Setup confirms that all three are base tables with exactly the columns the store creates, because
 `CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses indexes,
 keys and check constraints on those tables, and any stored function in the file, because a stored
-macro can replace a built-in in every statement run on that file. Any of these reports `corrupt`
+macro can replace a built-in in every statement run on that file. On PostgreSQL it also refuses a
+table that the store's own role does not own, or that has a trigger, rule, row-level security,
+check constraint or domain-typed column, because each of these runs code with the privileges of
+the role that writes, or decides what the store sees. Any of these reports `corrupt`
 with the reason `state_table_replaced`. So give a DuckDB store a file of its own. The check does
 not look at column collations, user types or objects unrelated to the store. DuckDB state files
 also open with external access and extension loading off, so nothing stored in one can read other
@@ -452,13 +455,14 @@ the old value again, so an empty row can never pass for a key with no progress. 
 | One row per key           | Primary key, `ON CONFLICT`        | One transaction behind the guard table                      |
 | Rows changed by an update | `RETURNING`                       | The count the update returns                                |
 | Store clock               | `clock_timestamp()`               | `SYSDATE()`, which the session time zone cannot move        |
-| Concurrent header updates | Row locks, so runs do not contend | One at a time per table, about 2.2 a second measured        |
+| Concurrent header updates | Row locks, so runs do not contend | One at a time per table: 2.2 a second in one sample         |
 | Largest `INSERT` (`data`) | 4 Mi characters, 256 rows         | 256 Ki characters, 128 rows, under the 1 MB statement limit |
 
 Snowflake standard tables enforce no keys, so the first row for a run or cursor key goes through a
 single script. It updates the one row of `__DOGSLED_AGENTIC_GUARD`, which makes concurrent scripts
 take turns, then counts the key's rows and inserts only if there are none. This happens once per
-run and once per key. A statement that Snowflake refuses because too many others wait for the same
+run and once per key. If the guard has lost its row, the script stops before it adds anything, and
+the store reports `corrupt` with the reason `state_table_replaced`. A statement that Snowflake refuses because too many others wait for the same
 table lock never ran, so the store repeats it, for about 15 seconds at most.
 
 Each statement is a write of its own, so state sessions turn `AUTOCOMMIT` on, whatever the account's
@@ -472,9 +476,15 @@ reading as a lost lease. Run the
 [live suite](../tests/integration/warehouse/README.md#agentic-store-conformance) through that factory
 before switching.
 
+**On PostgreSQL, no less-trusted role may hold `CREATE` on the store's schema.** Such a role can
+create the store's tables before the store does. Setup refuses them rather than run that role's
+code, but the store then stops until someone removes them. Do not use the `public` schema on
+PostgreSQL 14 or older, where every role can create in it by default.
+
 The store passes its conformance suite on PostgreSQL 17 and on a real Snowflake account, including
-concurrent first use of a key and concurrent takeover of a lease. On Snowflake, one shared table of
-headers limits a schema to about 55 model calls a minute, however many runs share it. See the
+concurrent first use of a key and concurrent takeover of a lease. On one Snowflake account, in one
+sample where a statement took about 550 ms, one shared table of headers held a schema to about 55
+model calls a minute, however many runs shared it. See the
 [benchmark](checkpoint-transport-benchmark.md#row-store-on-a-shared-header-table) for what that means
 for more than about four runs at once.
 

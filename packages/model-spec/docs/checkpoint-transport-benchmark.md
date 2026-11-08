@@ -421,9 +421,10 @@ has eight rows tables behind it, so it is what a spread across schemas gives, no
 header tables inside one schema would.
 
 **Before and after, same account and workload.** One run of 30 assignments on the store this replaces
-took 8.77 statements per assignment and did 7.7 calls a minute, against 4.57 and 20.4. That is the
-smallest the gap gets, because the old store's work grows with the run and the row store's does not.
-Its transaction scripts took 2,033 ms each at the median, and nothing here measures it at 1,000 rows.
+took 8.77 statements per assignment and did 7.7 calls a minute, against 4.57 and 20.4, in one sample.
+Its transaction scripts took 2,033 ms each at the median. It writes the whole run at every
+checkpoint, so its writes get larger as a run grows, but neither store was measured at 1,000 rows
+here.
 
 **Recommendation: one shared header table on PostgreSQL, and a fixed set of 8 on Snowflake.**
 

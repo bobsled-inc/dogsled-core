@@ -124,6 +124,14 @@ function legacyCursorReader(
   };
 }
 
+/**
+ * Keeps agentic state as rows in `options.schema` on PostgreSQL or Snowflake. A host opts in by
+ * passing it as `agentic.stateStore`: a warehouse `checkpoint_store` keeps the warehouse store.
+ * A new cursor key carries over its value from `__dogsled_cursors`, the warehouse store's table
+ * in the same schema. On Snowflake the store's role must hold `SELECT` on that table wherever
+ * the old store ran, because Snowflake reports a table the role cannot see as missing, and the
+ * key would then start from empty.
+ */
 export function createWarehouseRowStore(
   integration: IntegrationFile,
   options: WarehouseRowStoreOptions
