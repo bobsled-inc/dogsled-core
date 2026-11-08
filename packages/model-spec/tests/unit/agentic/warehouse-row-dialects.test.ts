@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { insertAgenticWrite } from '../../../src/agentic/row-state-rows.js';
 import { createAgenticRowWrite } from '../../../src/agentic/row-state-layout.js';
-import type { AgenticRowDb } from '../../../src/agentic/row-state-dialect.js';
-import { agenticRowColumns, agenticStatement } from '../../../src/agentic/row-state-tables.js';
+import type { AgenticRowDb, AgenticRowDialect } from '../../../src/agentic/row-state-dialect.js';
+import { duckDbRowDialect } from '../../../src/agentic/row-state-dialect.js';
+import {
+  agenticHeaderSizes,
+  agenticRowColumns,
+  agenticStatement,
+} from '../../../src/agentic/row-state-tables.js';
 import {
   postgresRowDialect,
   snowflakeRowDialect,
@@ -40,6 +45,12 @@ const script = (sql: string): string =>
 
 describe('PostgreSQL row dialect', () => {
   const dialect = postgresRowDialect;
+
+  it('refuses to look for a key in more than one table, which no key here could cover', async () => {
+    await expect(
+      dialect.insertIfAbsent(fakeDb(), 't', values, 'key_hash', 'n', ['other'])
+    ).rejects.toThrow('one table');
+  });
 
   it('keeps one header table, because rows lock on their own', () => {
     expect(dialect.headerTables).toEqual([1]);
@@ -163,6 +174,28 @@ describe('Snowflake row dialect', () => {
     await expect(
       dialect.insertIfAbsent(failing(other), table, values, 'key_hash', '"DB"."S"')
     ).rejects.toBe(other);
+  });
+
+  it('counts the key in the other listed sets as well, behind the same guard', async () => {
+    const other = '"DB"."S"."OTHER"';
+    const db = fakeDb();
+    await dialect.insertIfAbsent(db, table, values, 'key_hash', '"DB"."S"', [other]);
+    expect(db.query).toHaveBeenCalledWith(
+      `SELECT 1 AS found FROM ${table} WHERE "KEY_HASH" = ? UNION ALL SELECT 1 AS found FROM ${other} WHERE "KEY_HASH" = ? LIMIT 1`,
+      ['hash', 'hash']
+    );
+    const lines = script(db.run.mock.calls[0]![0]).split('\n');
+    expect(lines[3]).toMatch(/^UPDATE "DB"\."S"\."__DOGSLED_AGENTIC_GUARD" SET /);
+    expect(lines[5]).toBe(
+      `matches := (SELECT COUNT(*) FROM (SELECT "KEY_HASH" FROM ${table} WHERE "KEY_HASH" = 'hash' UNION ALL SELECT "KEY_HASH" FROM ${other} WHERE "KEY_HASH" = 'hash'));`
+    );
+    expect(lines[7]).toContain(`INSERT INTO ${table} `);
+  });
+
+  it('adds no first row for a key that another listed set already holds', async () => {
+    const db = fakeDb(async () => [{ found: 1 }]);
+    await dialect.insertIfAbsent(db, table, values, 'key_hash', '"DB"."S"', ['"DB"."S"."OTHER"']);
+    expect(db.run).not.toHaveBeenCalled();
   });
 
   it('takes no lock for a key that already has its row', async () => {
@@ -465,5 +498,32 @@ describe('Snowflake lock queue', () => {
       waitForSnowflakeLockQueue(db, controller.signal).query('UPDATE t')
     ).rejects.toMatchObject({ name: 'SqlCancelledError' });
     expect(db.query).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DuckDB row dialect', () => {
+  it('adds a first row only where none of the other tables holds the key', async () => {
+    const db = fakeDb();
+    await duckDbRowDialect.insertIfAbsent(db, 't', { key_hash: 'k', n: 1 }, 'key_hash', 'm', ['o']);
+    expect(db.query).toHaveBeenCalledWith(
+      'INSERT INTO t ("key_hash", "n") SELECT $1, $2 WHERE NOT EXISTS (SELECT 1 FROM t WHERE "key_hash" = $1) AND NOT EXISTS (SELECT 1 FROM o WHERE "key_hash" = $1)',
+      ['k', 1]
+    );
+  });
+});
+
+describe('header sets', () => {
+  const sized = (headerTables: number[]) =>
+    ({ ...duckDbRowDialect, headerTables }) as AgenticRowDialect;
+
+  it.each([[[]], [[0]], [[-8]], [[1.5]], [[8, 8]], [[Number.NaN]]])(
+    'refuses %j, which would name tables the store did not mean',
+    (headerTables) => {
+      expect(() => agenticHeaderSizes(sized(headerTables))).toThrow('header set');
+    }
+  );
+
+  it('accepts sizes listed once each, newest first', () => {
+    expect(agenticHeaderSizes(sized([32, 8, 1]))).toEqual([32, 8, 1]);
   });
 });

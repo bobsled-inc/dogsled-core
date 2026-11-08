@@ -478,9 +478,11 @@ To change the size in a later version, put the new size first in the dialect's `
 the old sizes after it. A table's name holds its size, so sets cannot collide. Setup creates the new
 tables and new runs go there. A run that started in an older set is found there when it is opened,
 for one read per older set, and it stays there until it ends, so no run has to move. Retention
-visits every listed set. Keep a size listed for as long as a run can be in it. Hosts that share a
-schema must change version together, because an older version does not know the new tables and would
-start a second copy of a run it cannot find.
+visits every listed set. Keep a size listed for as long as a run can be in it. A first header goes
+through the guard like any first row, and that script also counts the run's table in every other
+listed set, so two openers can never give one run a header in two sets, even when a purge removes
+it between them. Hosts that share a schema must change version together, because an older version
+does not know the new tables and would start a second copy of a run it cannot find.
 
 Each statement is a write of its own, so state sessions turn `AUTOCOMMIT` on, whatever the account's
 default is.

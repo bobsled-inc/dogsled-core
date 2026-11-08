@@ -56,17 +56,22 @@ export interface AgenticRowDialect {
    * set, in the table a hash of the run picks, and stays where it started. An engine that runs
    * updates of one table one at a time needs several, or every run queues behind every other.
    * To change the number, put the new size first and keep the old one: runs in flight are found
-   * there, and retention empties it. A set's size is in its tables' names, so sets never clash. */
+   * there, and retention empties it. A set's size is in its tables' names, so sets never clash.
+   * More than one set needs `insertIfAbsent` to check the others in the same step. */
   headerTables: readonly number[];
-  /** Adds one row unless `key` already exists. Concurrent calls must add one row between
-   * them. Engines that enforce no keys need their own way to do that, which may take more
-   * than one statement. A second row fails closed: readers report the run as corrupt. */
+  /** Adds one row unless `key` already exists, in `table` or in any of `absentFrom`. Concurrent
+   * calls must add one row between them, across all of those tables. Engines that enforce no
+   * keys need their own way to do that, which may take more than one statement. A second row
+   * fails closed: readers report the run as corrupt. `absentFrom` is where the same run's header
+   * would be in the other listed sets, so an engine that cannot check other tables in the same
+   * step lists one set. */
   insertIfAbsent(
     db: AgenticRowDb,
     table: string,
     values: Readonly<Record<string, string | number | bigint | boolean>>,
     key: string,
-    namespace: string
+    namespace: string,
+    absentFrom?: readonly string[]
   ): Promise<void>;
   /** Inserts `rows` rows of `columns`. Repeating identical rows must be harmless. */
   insertRows(table: string, columns: readonly string[], rows: number): string;
@@ -184,12 +189,18 @@ export const duckDbRowDialect: AgenticRowDialect = {
       throw error;
     }
   },
-  async insertIfAbsent(db, table, values, key) {
+  async insertIfAbsent(db, table, values, key, _namespace, absentFrom = []) {
     const names = Object.keys(values);
     const quoted = names.map((name) => duckDbRowDialect.identifier(name)).join(', ');
     const binds = names.map((_, index) => `$${index + 1}`).join(', ');
+    const absent = [table, ...absentFrom]
+      .map(
+        (from) =>
+          `NOT EXISTS (SELECT 1 FROM ${from} WHERE ${duckDbRowDialect.identifier(key)} = $${names.indexOf(key) + 1})`
+      )
+      .join(' AND ');
     await db.query(
-      `INSERT INTO ${table} (${quoted}) SELECT ${binds} WHERE NOT EXISTS (SELECT 1 FROM ${table} WHERE ${duckDbRowDialect.identifier(key)} = $${names.indexOf(key) + 1})`,
+      `INSERT INTO ${table} (${quoted}) SELECT ${binds} WHERE ${absent}`,
       Object.values(values)
     );
   },

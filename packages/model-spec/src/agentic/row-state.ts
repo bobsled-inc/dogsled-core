@@ -27,8 +27,8 @@ import {
 import {
   AGENTIC_ROWS_TABLE,
   AGENTIC_ROW_RETENTION_MS,
-  agenticHeaderTableName,
   agenticHeaderTableNames,
+  placeAgenticRunHeader,
   agenticNewRunHeader,
   agenticRowTable,
   agenticStatement,
@@ -91,11 +91,8 @@ export async function openAgenticRowSession(
     lease ? { retryAfterMs: lease.leaseMs, onTimeout: loseOwnership } : undefined
   );
   const { namespace } = connection;
-  const headerTable = (size: number): string =>
-    agenticRowTable(dialect, namespace, agenticHeaderTableName(hash, size));
-  // Where this run's header is. A run stays in the table it started in, so `claim` moves this
-  // to an older set when the run is already there.
-  let runs = headerTable(dialect.headerTables[0]!);
+  // The table that holds this run's header. `claim` sets it before anything reads or writes one.
+  let runs = '';
   const rows = agenticRowTable(dialect, namespace, AGENTIC_ROWS_TABLE);
   const clock = dialect.clock;
 
@@ -166,20 +163,11 @@ export async function openAgenticRowSession(
       );
       await purgeExpiredAgenticRuns(stored(db), headers, lease.leaseMs);
     }
-    for (const size of dialect.headerTables.slice(1)) {
-      const older = headerTable(size);
-      const found = await db.query(
-        `SELECT 1 AS found FROM ${older} WHERE ${q('run_hash')} = ${dialect.bind(1)} LIMIT 1`,
-        [hash]
-      );
-      if (found.length) runs = older;
-    }
-    await dialect.insertIfAbsent(
+    runs = await placeAgenticRunHeader(
       db,
-      runs,
-      agenticNewRunHeader(key, hash, LAYOUT_VERSION),
-      'run_hash',
-      namespace
+      dialect,
+      namespace,
+      agenticNewRunHeader(key, hash, LAYOUT_VERSION)
     );
     const statement = agenticStatement(dialect);
     const next = randomUUID();

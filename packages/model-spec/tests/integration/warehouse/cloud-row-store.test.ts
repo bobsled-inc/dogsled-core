@@ -2,7 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { CustomRunnerRegistry, resolveRunner } from '@bobsled-inc/connections';
 import { agenticRowDb } from '../../../src/agentic/row-state-dialect.js';
-import { agenticHeaderTableName } from '../../../src/agentic/row-state-tables.js';
+import {
+  agenticHeaderTableName,
+  agenticHeaderTableNames,
+  agenticNewRunHeader,
+} from '../../../src/agentic/row-state-tables.js';
 import { digestAgenticState } from '../../../src/agentic/state.js';
 import { createAgenticRowWrite } from '../../../src/agentic/row-state-layout.js';
 import { insertAgenticWrite } from '../../../src/agentic/row-state-rows.js';
@@ -115,6 +119,57 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
         expect(await snowflakeRowDialect.changed(db, `${set} WHERE ${q('a')} = ?`, [1])).toBe(1);
         expect(await snowflakeRowDialect.changed(db, `${set} WHERE ${q('a')} = ?`, [99])).toBe(0);
         expect(await snowflakeRowDialect.changed(db, set, [])).toBe(2);
+      } finally {
+        await runner.close?.();
+        await dropSchema(schema);
+      }
+    });
+
+    it('adds a first row only where no other listed set holds the key', async () => {
+      const schema = testSchema();
+      const runner = await resolveRunner(snowflake!, runners);
+      try {
+        await (await rows(schema).acquire({ scope: 'sets', model: 'probe', id: 'run' })).release();
+        const [held, empty, other] = agenticHeaderTableNames(snowflakeRowDialect)
+          .slice(0, 3)
+          .map((name) => `${qualified(schema)}.${q(name)}`);
+        const db = agenticRowDb(runner);
+        const header = (id: string, hash: string) =>
+          agenticNewRunHeader({ scope: 'sets', model: 'probe', id }, hash, 1);
+        const count = async (table: string, hash: string) =>
+          (
+            await runner.query!(
+              `SELECT 1 AS ${q('found')} FROM ${table} WHERE ${q('run_hash')} = '${hash}'`
+            )
+          ).length;
+        const first = 'a'.repeat(64);
+        await snowflakeRowDialect.insertIfAbsent(
+          db,
+          held!,
+          header('a', first),
+          'run_hash',
+          qualified(schema)
+        );
+        await snowflakeRowDialect.insertIfAbsent(
+          db,
+          empty!,
+          header('a', first),
+          'run_hash',
+          qualified(schema),
+          [held!]
+        );
+        expect(await count(empty!, first)).toBe(0);
+        // A key no table holds goes through the script that counts every listed table.
+        const second = 'b'.repeat(64);
+        await snowflakeRowDialect.insertIfAbsent(
+          db,
+          empty!,
+          header('b', second),
+          'run_hash',
+          qualified(schema),
+          [other!]
+        );
+        expect(await count(empty!, second)).toBe(1);
       } finally {
         await runner.close?.();
         await dropSchema(schema);

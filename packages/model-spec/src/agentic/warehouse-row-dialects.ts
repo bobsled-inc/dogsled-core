@@ -63,7 +63,9 @@ export const postgresRowDialect: AgenticRowDialect = {
       boolean: 'boolean',
     });
   },
-  async insertIfAbsent(db, table, values, key) {
+  async insertIfAbsent(db, table, values, key, _namespace, absentFrom = []) {
+    // A key covers one table, and nothing here could cover two at once.
+    if (absentFrom.length) throw new Error('PostgreSQL keeps run headers in one table');
     const names = Object.keys(values);
     await db.query(
       `INSERT INTO ${table} (${names.map(pg).join(', ')}) VALUES ${pgTuple(names.length, 0)} ON CONFLICT (${pg(key)}) DO NOTHING`,
@@ -99,17 +101,24 @@ function insertOnceScript(
   namespace: string,
   table: string,
   values: Readonly<Record<string, string | number | bigint | boolean>>,
-  key: string
+  key: string,
+  absentFrom: readonly string[]
 ): string {
   const names = Object.keys(values);
   const tuple = names.map((name) => sfLiteral(values[name]!)).join(', ');
+  const match = `${sf(key)} = ${sfLiteral(values[key]!)}`;
+  // Every script takes the same guard, so counting the other tables here too means that no two
+  // of them can each get a first row for one key.
+  const count = absentFrom.length
+    ? `(SELECT COUNT(*) FROM (${[table, ...absentFrom].map((from) => `SELECT ${sf(key)} FROM ${from} WHERE ${match}`).join(' UNION ALL ')}))`
+    : `(SELECT COUNT(*) FROM ${table} WHERE ${match})`;
   return [
     "DECLARE no_guard EXCEPTION (-20001, 'The row store guard table must hold one row'); matches INTEGER;",
     'BEGIN',
     'BEGIN TRANSACTION;',
     `UPDATE ${guardTable(namespace)} SET ${sf('token')} = ${sfLiteral(randomUUID())};`,
     'IF (SQLROWCOUNT <> 1) THEN RAISE no_guard; END IF;',
-    `matches := (SELECT COUNT(*) FROM ${table} WHERE ${sf(key)} = ${sfLiteral(values[key]!)});`,
+    `matches := ${count};`,
     'IF (matches = 0) THEN',
     `INSERT INTO ${table} (${names.map(sf).join(', ')}) VALUES (${tuple});`,
     'END IF;',
@@ -194,13 +203,15 @@ export const snowflakeRowDialect: AgenticRowDialect = {
   setup: (namespace) => [
     `CREATE TABLE IF NOT EXISTS ${guardTable(namespace)} AS SELECT CAST('' AS VARCHAR) AS ${sf('token')}`,
   ],
-  async insertIfAbsent(db, table, values, key, namespace) {
+  async insertIfAbsent(db, table, values, key, namespace, absentFrom = []) {
     // A resumed run or a known key needs no lock. A row, once present, stays.
-    const found = await db.query(`SELECT 1 AS found FROM ${table} WHERE ${sf(key)} = ? LIMIT 1`, [
-      values[key]!,
-    ]);
+    const tables = [table, ...absentFrom];
+    const found = await db.query(
+      `${tables.map((from) => `SELECT 1 AS found FROM ${from} WHERE ${sf(key)} = ?`).join(' UNION ALL ')} LIMIT 1`,
+      tables.map(() => values[key]!)
+    );
     if (found.length) return;
-    const script = insertOnceScript(namespace, table, values, key);
+    const script = insertOnceScript(namespace, table, values, key, absentFrom);
     try {
       await db.run(`EXECUTE IMMEDIATE ${quoteLiteral(script, 'snowflake')}`);
     } catch (error) {

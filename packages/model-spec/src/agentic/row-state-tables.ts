@@ -62,9 +62,23 @@ export function agenticHeaderTableName(hash: string, size: number): string {
   return `${AGENTIC_RUNS_TABLE}_${size}_${Number.parseInt(hash.slice(0, 8), 16) % size}`;
 }
 
+/** The dialect's header sets, newest first: each a whole number of tables, at least one, and none
+ * listed twice, or the names below would not be the tables the store meant. */
+export function agenticHeaderSizes(dialect: AgenticRowDialect): readonly number[] {
+  const sizes = dialect.headerTables;
+  if (
+    !sizes.length ||
+    sizes.some((size) => !Number.isSafeInteger(size) || size < 1) ||
+    new Set(sizes).size !== sizes.length
+  ) {
+    throw new Error('A row dialect must list each header set once, as a whole number of tables');
+  }
+  return sizes;
+}
+
 /** Every header table in every set the dialect names, which is what setup and retention visit. */
 export function agenticHeaderTableNames(dialect: AgenticRowDialect): string[] {
-  return dialect.headerTables.flatMap((size) =>
+  return agenticHeaderSizes(dialect).flatMap((size) =>
     size === 1
       ? [AGENTIC_RUNS_TABLE]
       : Array.from({ length: size }, (_, index) => `${AGENTIC_RUNS_TABLE}_${size}_${index}`)
@@ -141,6 +155,34 @@ export function agenticNewRunHeader(
     retain_until: BigInt(Number.MAX_SAFE_INTEGER),
     reclaimable: true,
   };
+}
+
+/**
+ * Gives the run a header if it has none, and returns the table it is in: its table in an older
+ * set if that holds it, since a run stays where it started, or else its table in the newest set.
+ * A first row in another set as well would give the run a second owner, so the insert checks
+ * the run's table in every other listed set in the same step.
+ */
+export async function placeAgenticRunHeader(
+  db: AgenticRowDb,
+  dialect: AgenticRowDialect,
+  namespace: string,
+  header: ReturnType<typeof agenticNewRunHeader>
+): Promise<string> {
+  const sizes = agenticHeaderSizes(dialect);
+  const table = (size: number): string =>
+    agenticRowTable(dialect, namespace, agenticHeaderTableName(header.run_hash, size));
+  let runs = table(sizes[0]!);
+  for (const size of sizes.slice(1)) {
+    const found = await db.query(
+      `SELECT 1 AS found FROM ${table(size)} WHERE ${dialect.identifier('run_hash')} = ${dialect.bind(1)} LIMIT 1`,
+      [header.run_hash]
+    );
+    if (found.length) runs = table(size);
+  }
+  const elsewhere = sizes.map(table).filter((other) => other !== runs);
+  await dialect.insertIfAbsent(db, runs, header, 'run_hash', namespace, elsewhere);
+  return runs;
 }
 
 export function agenticRowTable(

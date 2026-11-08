@@ -1,13 +1,14 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it, afterEach } from 'vitest';
+import { describe, expect, it, afterEach, vi } from 'vitest';
 import { isDuckDbAvailable, type DuckDbIntegration } from '@bobsled-inc/connections';
 import type { AgenticCursorKey } from '../../src/agentic/cursor.js';
 import { agenticRowDb } from '../../src/agentic/row-state-dialect.js';
 import {
   agenticHeaderTableName,
   agenticHeaderTableNames,
+  agenticNewRunHeader,
 } from '../../src/agentic/row-state-tables.js';
 import { digestAgenticState, type AgenticRunKey } from '../../src/agentic/state.js';
 import { executeAgenticRun } from '../../src/agentic/run.js';
@@ -247,6 +248,94 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
       emulator.statements.length = 0;
       await (await store().acquire({ ...run, id: 'second' })).release();
       expect(emulator.statements.filter((sql) => sql.startsWith('CREATE'))).toEqual([]);
+    });
+
+    /** Runs `test` with a later version's sets, 32 tables listed before the dialect's own. */
+    const withNewerSet = async (test: (older: number) => Promise<void>) => {
+      const original = snowflakeRowDialect.headerTables;
+      try {
+        Object.assign(snowflakeRowDialect, { headerTables: [32, ...original] });
+        await test(original[0]!);
+      } finally {
+        Object.assign(snowflakeRowDialect, { headerTables: original });
+      }
+    };
+
+    it('never gives one run a first header in two sets, however callers race', async () => {
+      const { emulator, store, db } = await open();
+      const { key: run } = await mapScenario();
+      const hash = digestAgenticState(run);
+      await withNewerSet(async (size) => {
+        await (await store().acquire({ ...run, id: 'setup' })).release();
+        const newer = quotedTable(agenticHeaderTableName(hash, 32));
+        const older = quotedTable(agenticHeaderTableName(hash, size));
+        const connection = await db();
+        await Promise.all(
+          Array.from({ length: 6 }, (_, index) => {
+            const [into, other] = index % 2 ? [newer, older] : [older, newer];
+            const header = agenticNewRunHeader(run, hash, 1);
+            return snowflakeRowDialect.insertIfAbsent(
+              connection,
+              into,
+              header,
+              'run_hash',
+              namespace,
+              [other]
+            );
+          })
+        );
+        const where = `WHERE "RUN_HASH" = '${hash}'`;
+        const found = [
+          ...(await emulator.sql(`SELECT 1 FROM ${newer} ${where}`)),
+          ...(await emulator.sql(`SELECT 1 FROM ${older} ${where}`)),
+        ];
+        expect(found).toHaveLength(1);
+      });
+    });
+
+    it('gives no second owner to a run that a purge removed from an older set', async () => {
+      const { emulator, store, db } = await open();
+      const { key: run } = await mapScenario();
+      const hash = digestAgenticState(run);
+      const where = `WHERE "RUN_HASH" = '${hash}'`;
+      await (await store().acquire(run)).release();
+      await withNewerSet(async (size) => {
+        const older = quotedTable(agenticHeaderTableName(hash, size));
+        const newer = quotedTable(agenticHeaderTableName(hash, 32));
+        // One opener has just found the run in the older set when a purge removes it there.
+        await emulator.sql(`DELETE FROM ${older} ${where}`);
+        // A second opener starts the run again, in the newest set, and owns it.
+        const second = await store().acquire(run);
+        // The first opener's next step must not add the run to the older set as well.
+        await snowflakeRowDialect.insertIfAbsent(
+          await db(),
+          older,
+          agenticNewRunHeader(run, hash, 1),
+          'run_hash',
+          namespace,
+          [newer]
+        );
+        expect(await emulator.sql(`SELECT 1 FROM ${older} ${where}`)).toEqual([]);
+        expect(await emulator.sql(`SELECT 1 FROM ${newer} ${where}`)).toHaveLength(1);
+        await second.release();
+      });
+    });
+
+    it('checks every other listed set when it adds a first header', async () => {
+      const { store } = await open();
+      const { key: run } = await mapScenario();
+      const hash = digestAgenticState(run);
+      const insert = vi.spyOn(snowflakeRowDialect, 'insertIfAbsent');
+      try {
+        await withNewerSet(async (size) => {
+          await (await store().acquire(run)).release();
+          const call = insert.mock.calls.find((args) => args[3] === 'run_hash')!;
+          expect(call[1]).toBe(quotedTable(agenticHeaderTableName(hash, 32)));
+          expect(call[5]).toEqual([quotedTable(agenticHeaderTableName(hash, size))]);
+        });
+      } finally {
+        insert.mockRestore();
+      }
     });
 
     it('keeps a run in flight when a later version changes the number of tables', async () => {
