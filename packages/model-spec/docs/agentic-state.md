@@ -286,7 +286,7 @@ The digest detects damage, not forgery. It has no key, so anyone who can write t
 a chain that verifies. Treat write access to a state file, or to the schema that holds these
 tables, as trusted: whoever has it decides what a run resumes from.
 
-Setup confirms that all three are base tables with exactly the columns the store creates, because
+Setup confirms that all of them are base tables with exactly the columns the store creates, because
 `CREATE TABLE IF NOT EXISTS` keeps whatever already has the name. On DuckDB it also refuses indexes,
 keys and check constraints on those tables, and any stored function in the file, because a stored
 macro can replace a built-in in every statement run on that file. On PostgreSQL it also refuses a
@@ -456,14 +456,33 @@ the old value again, so an empty row can never pass for a key with no progress. 
 | Rows changed by an update | `RETURNING`                       | The count the update returns                                |
 | Store clock               | `clock_timestamp()`               | `SYSDATE()`, which the session time zone cannot move        |
 | Concurrent header updates | Row locks, so runs do not contend | One at a time per table: 2.2 a second in one sample         |
+| Header tables             | One                               | 8, picked by a hash of the run                              |
 | Largest `INSERT` (`data`) | 4 Mi characters, 256 rows         | 256 Ki characters, 128 rows, under the 1 MB statement limit |
 
 Snowflake standard tables enforce no keys, so the first row for a run or cursor key goes through a
 single script. It updates the one row of `__DOGSLED_AGENTIC_GUARD`, which makes concurrent scripts
 take turns, then counts the key's rows and inserts only if there are none. This happens once per
 run and once per key. If the guard has lost its row, the script stops before it adds anything, and
-the store reports `corrupt` with the reason `state_table_replaced`. A statement that Snowflake refuses because too many others wait for the same
-table lock never ran, so the store repeats it, for about 15 seconds at most.
+the store reports `corrupt` with the reason `state_table_replaced`. A statement that Snowflake
+refuses because too many others wait for the same table lock never ran, so the store repeats it,
+for about 15 seconds at most.
+
+Because updates of one table queue, Snowflake keeps run headers in a fixed set of tables,
+`__DOGSLED_AGENTIC_RUNS_8_0` to `__DOGSLED_AGENTIC_RUNS_8_7`, and PostgreSQL and DuckDB keep the one
+table. The dialect names the size, and the run's hash picks the table, so two runs in different
+tables never wait for each other's header update. Setup and the base table check cover every table,
+and one statement looks for expired runs in all of them, so no table depends on a run happening to
+land in it.
+
+To change the size in a later version, put the new size first in the dialect's `headerTables` and keep
+the old sizes after it. A table's name holds its size, so sets cannot collide. Setup creates the new
+tables and new runs go there. A run that started in an older set is found there when it is opened,
+for one read per older set, and it stays there until it ends, so no run has to move. Retention
+visits every listed set. Keep a size listed for as long as a run can be in it. A first header goes
+through the guard like any first row, and that script also counts the run's table in every other
+listed set, so two openers can never give one run a header in two sets, even when a purge removes
+it between them. Hosts that share a schema must change version together, because an older version
+does not know the new tables and would start a second copy of a run it cannot find.
 
 Each statement is a write of its own, so state sessions turn `AUTOCOMMIT` on, whatever the account's
 default is.
@@ -483,10 +502,10 @@ PostgreSQL 14 or older, where every role can create in it by default.
 
 The store passes its conformance suite on PostgreSQL 17 and on a real Snowflake account, including
 concurrent first use of a key and concurrent takeover of a lease. On one Snowflake account, in one
-sample where a statement took about 550 ms, one shared table of headers held a schema to about 55
-model calls a minute, however many runs shared it. See the
-[benchmark](checkpoint-transport-benchmark.md#row-store-on-a-shared-header-table) for what that means
-for more than about four runs at once.
+sample with 16 runs at once, a header update stayed near its single-run median of about 0.6
+seconds, and the shared rows table held a schema to about 130 model calls a minute across all its
+runs. See the [benchmark](checkpoint-transport-benchmark.md#row-store-header-tables) for the
+figures.
 
 ## Local files, ownership and retention
 

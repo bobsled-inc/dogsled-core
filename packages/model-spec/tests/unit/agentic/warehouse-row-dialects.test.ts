@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { insertAgenticWrite } from '../../../src/agentic/row-state-rows.js';
 import { createAgenticRowWrite } from '../../../src/agentic/row-state-layout.js';
-import type { AgenticRowDb } from '../../../src/agentic/row-state-dialect.js';
-import { agenticRowColumns, agenticStatement } from '../../../src/agentic/row-state-tables.js';
+import type { AgenticRowDb, AgenticRowDialect } from '../../../src/agentic/row-state-dialect.js';
+import { duckDbRowDialect } from '../../../src/agentic/row-state-dialect.js';
+import {
+  agenticHeaderSizes,
+  agenticRowColumns,
+  agenticStatement,
+} from '../../../src/agentic/row-state-tables.js';
 import {
   postgresRowDialect,
   snowflakeRowDialect,
@@ -40,6 +45,16 @@ const script = (sql: string): string =>
 
 describe('PostgreSQL row dialect', () => {
   const dialect = postgresRowDialect;
+
+  it('refuses to look for a key in more than one table, which no key here could cover', async () => {
+    await expect(
+      dialect.insertIfAbsent(fakeDb(), 't', values, 'key_hash', 'n', ['other'])
+    ).rejects.toThrow('one table');
+  });
+
+  it('keeps one header table, because rows lock on their own', () => {
+    expect(dialect.headerTables).toEqual([1]);
+  });
 
   it('keeps one row per key through the key the table declares', async () => {
     expect(dialect.createTable('t', [{ name: 'key_hash', type: 'text' }], ['key_hash'])).toContain(
@@ -84,6 +99,10 @@ describe('Snowflake row dialect', () => {
     const statement = agenticStatement(dialect);
     expect(`${statement.bind('a')} ${statement.bind(2)}`).toBe('? ?');
     expect(statement.params).toEqual(['a', 2]);
+  });
+
+  it('spreads run headers over a fixed set of tables', () => {
+    expect(dialect.headerTables).toEqual([8]);
   });
 
   it('recognizes a table refused because a view holds its name', () => {
@@ -155,6 +174,28 @@ describe('Snowflake row dialect', () => {
     await expect(
       dialect.insertIfAbsent(failing(other), table, values, 'key_hash', '"DB"."S"')
     ).rejects.toBe(other);
+  });
+
+  it('counts the key in the other listed sets as well, behind the same guard', async () => {
+    const other = '"DB"."S"."OTHER"';
+    const db = fakeDb();
+    await dialect.insertIfAbsent(db, table, values, 'key_hash', '"DB"."S"', [other]);
+    expect(db.query).toHaveBeenCalledWith(
+      `SELECT 1 AS found FROM ${table} WHERE "KEY_HASH" = ? UNION ALL SELECT 1 AS found FROM ${other} WHERE "KEY_HASH" = ? LIMIT 1`,
+      ['hash', 'hash']
+    );
+    const lines = script(db.run.mock.calls[0]![0]).split('\n');
+    expect(lines[3]).toMatch(/^UPDATE "DB"\."S"\."__DOGSLED_AGENTIC_GUARD" SET /);
+    expect(lines[5]).toBe(
+      `matches := (SELECT COUNT(*) FROM (SELECT "KEY_HASH" FROM ${table} WHERE "KEY_HASH" = 'hash' UNION ALL SELECT "KEY_HASH" FROM ${other} WHERE "KEY_HASH" = 'hash'));`
+    );
+    expect(lines[7]).toContain(`INSERT INTO ${table} `);
+  });
+
+  it('adds no first row for a key that another listed set already holds', async () => {
+    const db = fakeDb(async () => [{ found: 1 }]);
+    await dialect.insertIfAbsent(db, table, values, 'key_hash', '"DB"."S"', ['"DB"."S"."OTHER"']);
+    expect(db.run).not.toHaveBeenCalled();
   });
 
   it('takes no lock for a key that already has its row', async () => {
@@ -268,6 +309,7 @@ describe('the base table check', () => {
       { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'KEY_HASH', data_type: 'TEXT' },
       { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'VERSION', data_type: 'NUMBER' },
       { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'ACTIVE', data_type: 'BOOLEAN' },
+      { table_name: '__DOGSLED_AGENTIC_GUARD', column_name: 'TOKEN', data_type: 'TEXT' },
     ].map((row) => ({
       ...row,
       // What the driver reads back: numbers as text, and so a null number as the text NULL.
@@ -281,6 +323,11 @@ describe('the base table check', () => {
     return { db, result: snowflakeRowDialect.hasBaseTables(db, namespace, shape) };
   };
 
+  it('needs the guard table as well, because a check that passes skips setup', async () => {
+    const rows = snowflakeRows();
+    expect(await snowflake(rows.slice(0, 3)).result).toBe(false);
+  });
+
   it('accepts what the Snowflake catalog reports for the declared types', async () => {
     const { db, result } = snowflake(snowflakeRows());
     expect(await result).toBe(true);
@@ -288,9 +335,9 @@ describe('the base table check', () => {
     expect(sql).toContain('"DB".information_schema.columns');
     expect(sql).toContain('"DB".information_schema.tables');
     expect(sql).toContain("t.table_type = 'BASE TABLE'");
-    // Only the store's tables, which can share the schema with others.
-    expect(sql).toContain('AND c.table_name IN (?)');
-    expect(params).toEqual(['S', '__DOGSLED_AGENTIC_CURSORS']);
+    // Only the store's tables and its guard, which can share the schema with others.
+    expect(sql).toContain('AND c.table_name IN (?, ?)');
+    expect(params).toEqual(['S', '__DOGSLED_AGENTIC_CURSORS', '__DOGSLED_AGENTIC_GUARD']);
   });
 
   it.each([
@@ -451,5 +498,32 @@ describe('Snowflake lock queue', () => {
       waitForSnowflakeLockQueue(db, controller.signal).query('UPDATE t')
     ).rejects.toMatchObject({ name: 'SqlCancelledError' });
     expect(db.query).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DuckDB row dialect', () => {
+  it('adds a first row only where none of the other tables holds the key', async () => {
+    const db = fakeDb();
+    await duckDbRowDialect.insertIfAbsent(db, 't', { key_hash: 'k', n: 1 }, 'key_hash', 'm', ['o']);
+    expect(db.query).toHaveBeenCalledWith(
+      'INSERT INTO t ("key_hash", "n") SELECT $1, $2 WHERE NOT EXISTS (SELECT 1 FROM t WHERE "key_hash" = $1) AND NOT EXISTS (SELECT 1 FROM o WHERE "key_hash" = $1)',
+      ['k', 1]
+    );
+  });
+});
+
+describe('header sets', () => {
+  const sized = (headerTables: number[]) =>
+    ({ ...duckDbRowDialect, headerTables }) as AgenticRowDialect;
+
+  it.each([[[]], [[0]], [[-8]], [[1.5]], [[8, 8]], [[Number.NaN]]])(
+    'refuses %j, which would name tables the store did not mean',
+    (headerTables) => {
+      expect(() => agenticHeaderSizes(sized(headerTables))).toThrow('header set');
+    }
+  );
+
+  it('accepts sizes listed once each, newest first', () => {
+    expect(agenticHeaderSizes(sized([32, 8, 1]))).toEqual([32, 8, 1]);
   });
 });

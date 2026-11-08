@@ -93,15 +93,15 @@ export interface AgenticRunRows {
 
 /**
  * Removes runs past their retention date, other than the one being opened. The purge takes
- * each run as an owner would, so a resume cannot start while its rows are being deleted. The
- * same statement empties the header, so from then on the run reads as new and its rows are
- * orphans: a header left naming deleted rows would read as corrupt. If the purge stops partway,
- * its lease ends, the header is still expired, and a later purge finishes.
- * Everything is by run ID, so it touches only the runs it removes.
+ * each run as an owner would, so a resume cannot start while its rows are being deleted. If
+ * it stops partway, its lease ends, the header is still expired, and a later purge finishes.
+ * Everything is by run ID, so it touches only the runs it removes. One statement looks in every
+ * header table, so that no table depends on a run happening to land in it, and the usual case
+ * of nothing due stays one statement however many tables there are.
  */
 export async function purgeExpiredAgenticRuns(
   { db, dialect, table, hash }: AgenticRunRows,
-  runs: string,
+  headers: readonly string[],
   leaseMs: number
 ): Promise<void> {
   const q = dialect.identifier;
@@ -110,33 +110,37 @@ export async function purgeExpiredAgenticRuns(
   const expired = (statement: ReturnType<typeof agenticStatement>): string =>
     `${q('retain_until')} <= ${clock} AND ${q('reclaimable')} AND ${q('lease_expires')} <= ${clock} AND ${id} <> ${statement.bind(hash)}`;
   const find = agenticStatement(dialect);
-  const due = await db.query(
-    `SELECT ${id} FROM ${runs} WHERE ${expired(find)} LIMIT ${maxPurgedRuns}`,
-    find.params
+  const sources = headers.map(
+    (header, index) =>
+      `SELECT ${index} AS ${q('source')}, ${id} FROM ${header} WHERE ${expired(find)}`
   );
-  if (!due.length) return;
-  const owner = randomUUID();
-  const claim = agenticStatement(dialect);
-  const set = [
-    `${q('lease_owner')} = ${claim.bind(owner)}`,
-    `${q('lease_expires')} = ${clock} + ${claim.bind(leaseMs)}`,
-    `${q('revision')} = -1`,
-    `${q('head')} = ''`,
-    `${q('summary')} = ''`,
-  ].join(', ');
-  const candidates = due.map((row) => claim.bind(String(row.run_hash))).join(', ');
-  await dialect.changed(
-    db,
-    `UPDATE ${runs} SET ${set} WHERE ${id} IN (${candidates}) AND ${expired(claim)}`,
-    claim.params
-  );
-  const mine = `${q('lease_owner')} = ${dialect.bind(1)}`;
-  const claimed = await db.query(`SELECT ${id} FROM ${runs} WHERE ${mine}`, [owner]);
-  if (!claimed.length) return;
-  const remove = agenticStatement(dialect);
-  const ids = claimed.map((row) => remove.bind(String(row.run_hash))).join(', ');
-  await db.query(`DELETE FROM ${table} WHERE ${id} IN (${ids})`, remove.params);
-  await db.query(`DELETE FROM ${runs} WHERE ${mine}`, [owner]);
+  const due = await db.query(`${sources.join(' UNION ALL ')} LIMIT ${maxPurgedRuns}`, find.params);
+  for (const [index, header] of headers.entries()) {
+    const runs = due.filter((row) => Number(row.source) === index);
+    if (!runs.length) continue;
+    const owner = randomUUID();
+    const claim = agenticStatement(dialect);
+    const set = [
+      `${q('lease_owner')} = ${claim.bind(owner)}`,
+      `${q('lease_expires')} = ${clock} + ${claim.bind(leaseMs)}`,
+      `${q('revision')} = -1`,
+      `${q('head')} = ''`,
+      `${q('summary')} = ''`,
+    ].join(', ');
+    const candidates = runs.map((row) => claim.bind(String(row.run_hash))).join(', ');
+    await dialect.changed(
+      db,
+      `UPDATE ${header} SET ${set} WHERE ${id} IN (${candidates}) AND ${expired(claim)}`,
+      claim.params
+    );
+    const mine = `${q('lease_owner')} = ${dialect.bind(1)}`;
+    const claimed = await db.query(`SELECT ${id} FROM ${header} WHERE ${mine}`, [owner]);
+    if (!claimed.length) continue;
+    const remove = agenticStatement(dialect);
+    const ids = claimed.map((row) => remove.bind(String(row.run_hash))).join(', ');
+    await db.query(`DELETE FROM ${table} WHERE ${id} IN (${ids})`, remove.params);
+    await db.query(`DELETE FROM ${header} WHERE ${mine}`, [owner]);
+  }
 }
 
 /** Inserts one write. `beforeBatch` runs before each statement, so a long write can stop or

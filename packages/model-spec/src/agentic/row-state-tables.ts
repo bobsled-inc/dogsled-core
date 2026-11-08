@@ -55,8 +55,44 @@ const cursorColumns: AgenticRowColumn[] = [
   text('record'),
 ];
 
-const agenticTables: readonly (AgenticRowTableShape & { key: readonly string[] })[] = [
-  { name: AGENTIC_RUNS_TABLE, columns: runColumns, key: ['run_hash'] },
+/** The header table `hash` picks in a set of `size` tables. A single table keeps the plain name,
+ * so an engine with one has nothing to tell apart. */
+export function agenticHeaderTableName(hash: string, size: number): string {
+  if (size === 1) return AGENTIC_RUNS_TABLE;
+  return `${AGENTIC_RUNS_TABLE}_${size}_${Number.parseInt(hash.slice(0, 8), 16) % size}`;
+}
+
+/** The dialect's header sets, newest first: each a whole number of tables, at least one, and none
+ * listed twice, or the names below would not be the tables the store meant. */
+export function agenticHeaderSizes(dialect: AgenticRowDialect): readonly number[] {
+  const sizes = dialect.headerTables;
+  if (
+    !sizes.length ||
+    sizes.some((size) => !Number.isSafeInteger(size) || size < 1) ||
+    new Set(sizes).size !== sizes.length
+  ) {
+    throw new Error('A row dialect must list each header set once, as a whole number of tables');
+  }
+  return sizes;
+}
+
+/** Every header table in every set the dialect names, which is what setup and retention visit. */
+export function agenticHeaderTableNames(dialect: AgenticRowDialect): string[] {
+  return agenticHeaderSizes(dialect).flatMap((size) =>
+    size === 1
+      ? [AGENTIC_RUNS_TABLE]
+      : Array.from({ length: size }, (_, index) => `${AGENTIC_RUNS_TABLE}_${size}_${index}`)
+  );
+}
+
+const agenticTables = (
+  dialect: AgenticRowDialect
+): readonly (AgenticRowTableShape & { key: readonly string[] })[] => [
+  ...agenticHeaderTableNames(dialect).map((name) => ({
+    name,
+    columns: runColumns,
+    key: ['run_hash'],
+  })),
   {
     name: AGENTIC_ROWS_TABLE,
     columns: agenticRowColumns,
@@ -121,6 +157,34 @@ export function agenticNewRunHeader(
   };
 }
 
+/**
+ * Gives the run a header if it has none, and returns the table it is in: its table in an older
+ * set if that holds it, since a run stays where it started, or else its table in the newest set.
+ * A first row in another set as well would give the run a second owner, so the insert checks
+ * the run's table in every other listed set in the same step.
+ */
+export async function placeAgenticRunHeader(
+  db: AgenticRowDb,
+  dialect: AgenticRowDialect,
+  namespace: string,
+  header: ReturnType<typeof agenticNewRunHeader>
+): Promise<string> {
+  const sizes = agenticHeaderSizes(dialect);
+  const table = (size: number): string =>
+    agenticRowTable(dialect, namespace, agenticHeaderTableName(header.run_hash, size));
+  let runs = table(sizes[0]!);
+  for (const size of sizes.slice(1)) {
+    const found = await db.query(
+      `SELECT 1 AS found FROM ${table(size)} WHERE ${dialect.identifier('run_hash')} = ${dialect.bind(1)} LIMIT 1`,
+      [header.run_hash]
+    );
+    if (found.length) runs = table(size);
+  }
+  const elsewhere = sizes.map(table).filter((other) => other !== runs);
+  await dialect.insertIfAbsent(db, runs, header, 'run_hash', namespace, elsewhere);
+  return runs;
+}
+
 export function agenticRowTable(
   dialect: AgenticRowDialect,
   namespace: string,
@@ -151,7 +215,7 @@ async function createAgenticRowTables(
   for (let attempt = 0; ; attempt++) {
     try {
       if (!(await hasSchema?.(db))) await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
-      for (const { name, columns, key } of agenticTables) {
+      for (const { name, columns, key } of agenticTables(dialect)) {
         await db.run(dialect.createTable(agenticRowTable(dialect, namespace, name), columns, key));
       }
       for (const statement of dialect.setup?.(namespace) ?? []) await db.run(statement);
@@ -172,7 +236,9 @@ async function assertAgenticRowTables(
   dialect: AgenticRowDialect,
   namespace: string
 ): Promise<void> {
-  if (!(await dialect.hasBaseTables(db, namespace, agenticTables))) throw agenticTableReplaced();
+  if (!(await dialect.hasBaseTables(db, namespace, agenticTables(dialect)))) {
+    throw agenticTableReplaced();
+  }
 }
 
 export async function prepareAgenticRowTables(
@@ -181,6 +247,9 @@ export async function prepareAgenticRowTables(
   namespace: string,
   hasSchema?: AgenticRowBackend['hasSchema']
 ): Promise<void> {
+  // One statement when setup is done already, rather than one per table, which matters when a
+  // dialect has several header tables. Anything else goes on to the creation and the real check.
+  if (await dialect.hasBaseTables(db, namespace, agenticTables(dialect))) return;
   await createAgenticRowTables(db, dialect, namespace, hasSchema);
   await assertAgenticRowTables(db, dialect, namespace);
 }

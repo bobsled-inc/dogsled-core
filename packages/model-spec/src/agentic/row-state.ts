@@ -27,7 +27,8 @@ import {
 import {
   AGENTIC_ROWS_TABLE,
   AGENTIC_ROW_RETENTION_MS,
-  AGENTIC_RUNS_TABLE,
+  agenticHeaderTableNames,
+  placeAgenticRunHeader,
   agenticNewRunHeader,
   agenticRowTable,
   agenticStatement,
@@ -90,7 +91,8 @@ export async function openAgenticRowSession(
     lease ? { retryAfterMs: lease.leaseMs, onTimeout: loseOwnership } : undefined
   );
   const { namespace } = connection;
-  const runs = agenticRowTable(dialect, namespace, AGENTIC_RUNS_TABLE);
+  // The table that holds this run's header. `claim` sets it before anything reads or writes one.
+  let runs = '';
   const rows = agenticRowTable(dialect, namespace, AGENTIC_ROWS_TABLE);
   const clock = dialect.clock;
 
@@ -155,13 +157,17 @@ export async function openAgenticRowSession(
   const stored = (db: AgenticRowDb): AgenticRunRows => ({ db, dialect, table: rows, hash });
   const claim = async (db: AgenticRowDb): Promise<void> => {
     await ensureAgenticRowTables(db, backend, namespace);
-    if (lease) await purgeExpiredAgenticRuns(stored(db), runs, lease.leaseMs);
-    await dialect.insertIfAbsent(
+    if (lease) {
+      const headers = agenticHeaderTableNames(dialect).map((name) =>
+        agenticRowTable(dialect, namespace, name)
+      );
+      await purgeExpiredAgenticRuns(stored(db), headers, lease.leaseMs);
+    }
+    runs = await placeAgenticRunHeader(
       db,
-      runs,
-      agenticNewRunHeader(key, hash, LAYOUT_VERSION),
-      'run_hash',
-      namespace
+      dialect,
+      namespace,
+      agenticNewRunHeader(key, hash, LAYOUT_VERSION)
     );
     const statement = agenticStatement(dialect);
     const next = randomUUID();

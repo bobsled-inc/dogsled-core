@@ -15,6 +15,7 @@ import {
   type SqlRunnerModule,
 } from '@bobsled-inc/connections';
 import { executeAgenticRun } from '../../src/agentic/run.js';
+import { snowflakeRowDialect } from '../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import { createWarehouseCheckpointStore } from '../../src/agentic/warehouse-state.js';
 import { benchmarkWorkload } from './agentic-benchmark.js';
@@ -29,6 +30,8 @@ export interface ContentionWorkerOptions {
   /** The row store, or the store it replaces, for a before and after on one account. */
   store: 'rows' | 'warehouse';
   schema: string;
+  /** Header tables on Snowflake, in place of the dialect's own number. */
+  headerTables?: number;
   run: string;
   assignments: number;
   /** Epoch milliseconds at which every worker starts. */
@@ -71,6 +74,9 @@ function timed(runner: SqlRunnerModule): SqlRunnerModule {
 }
 
 async function main(): Promise<void> {
+  if (options.headerTables) {
+    Object.assign(snowflakeRowDialect, { headerTables: [options.headerTables] });
+  }
   const integration: IntegrationFile =
     options.engine === 'postgres' ? postgresIntegration() : (await snowflakeIntegration())!;
   const host = await hostRunners();
