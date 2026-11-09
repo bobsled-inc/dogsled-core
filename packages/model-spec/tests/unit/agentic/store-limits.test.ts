@@ -152,7 +152,7 @@ describe('limits the row store declares', () => {
       schema: 'checkpoints',
     });
 
-  it('raises them on DuckDB and PostgreSQL only, and keeps the file store at the defaults', () => {
+  it('raises them on every row store engine, and keeps the file store at the defaults', () => {
     const duckdb = createDuckDbCheckpointStore(
       {
         spec_version: '1',
@@ -166,7 +166,7 @@ describe('limits the row store declares', () => {
     );
     expect(resolveAgenticStoreLimits(duckdb)).toBe(AGENTIC_ROW_STORE_LIMITS);
     expect(resolveAgenticStoreLimits(warehouse('postgres'))).toBe(AGENTIC_ROW_STORE_LIMITS);
-    expect(resolveAgenticStoreLimits(warehouse('snowflake'))).toEqual(AGENTIC_DEFAULT_STORE_LIMITS);
+    expect(resolveAgenticStoreLimits(warehouse('snowflake'))).toBe(AGENTIC_ROW_STORE_LIMITS);
     expect(resolveAgenticStoreLimits(createLocalAgenticStateStore(project()))).toEqual(
       AGENTIC_DEFAULT_STORE_LIMITS
     );

@@ -105,28 +105,31 @@ const headerTable = (key: Parameters<typeof digestAgenticState>[0]) =>
     digestAgenticState(key),
     snowflakeRowDialect.headerTables[0]!
   ).toUpperCase()}"`;
-const emulated = (emulator: SnowflakeEmulator, retentionMs?: number) =>
+const emulated = (emulator: SnowflakeEmulator, retentionMs?: number, leaseMs = 10_000) =>
   createWarehouseRowStore(emulator.integration, {
     schema: 'checkpoints',
     customRunners: emulator.customRunners,
-    leaseMs: 10_000,
+    leaseMs,
     ...(retentionMs === undefined ? {} : { retentionMs }),
   });
+async function emulatorHandle(leaseMs?: number): Promise<StoreHandle> {
+  const emulator = await createSnowflakeEmulator();
+  const handle: StoreHandle = {
+    store: emulated(emulator, undefined, leaseMs),
+    reopen: () => emulated(emulator, undefined, leaseMs),
+    cleanup: () => emulator.close(),
+  };
+  emulators.set(handle, emulator);
+  return handle;
+}
 
 describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
   // The Snowflake dialect and backend on an emulator. See cloud-row-store.test.ts for the proof.
   describeAgenticStoreConformance({
     name: 'Snowflake emulator',
-    open: async () => {
-      const emulator = await createSnowflakeEmulator();
-      const handle: StoreHandle = {
-        store: emulated(emulator),
-        reopen: () => emulated(emulator),
-        cleanup: () => emulator.close(),
-      };
-      emulators.set(handle, emulator);
-      return handle;
-    },
+    limits: snowflakeRowDialect.limits,
+    open: () => emulatorHandle(),
+    openLarge: () => emulatorHandle(600_000),
     expireLease: async (handle, key) => {
       await emulators.get(handle)!.sql(`UPDATE ${headerTable(key)} SET "LEASE_EXPIRES" = 0`);
     },

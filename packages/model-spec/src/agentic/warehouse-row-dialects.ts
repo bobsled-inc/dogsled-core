@@ -10,7 +10,7 @@ import {
   type AgenticRowDialect,
 } from './row-state-dialect.js';
 import { agenticTableReplaced } from './row-state-tables.js';
-import { AGENTIC_DEFAULT_STORE_LIMITS, AGENTIC_ROW_STORE_LIMITS } from './store-limits.js';
+import { AGENTIC_ROW_STORE_LIMITS } from './store-limits.js';
 
 const pg = (name: string): string => quoteIdentifier(caseName(name, 'postgres'), 'postgres');
 /**
@@ -154,8 +154,9 @@ function rowsUpdated(rows: readonly Record<string, unknown>[]): number {
  * full only about eight times.
  */
 export const snowflakeRowDialect: AgenticRowDialect = {
-  // Not yet measured above these on a real account, so a run keeps the defaults here.
-  limits: AGENTIC_DEFAULT_STORE_LIMITS,
+  // Measured on a real account up to these limits. Every step that reads the whole run is many
+  // statements there, and the session renews its lease between them: see docs/agentic-state.md.
+  limits: AGENTIC_ROW_STORE_LIMITS,
   headerTables: [8],
   identifier: sf,
   bind: () => '?',

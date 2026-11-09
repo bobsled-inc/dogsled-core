@@ -350,7 +350,7 @@ A run holds what its store holds. These are the limits each store declares:
 | ------------------------------------------------------- | -------------------------------------: | ---------------: | ------------------------: |
 | Row store on DuckDB: run files and a `checkpoint_store` |                                 10,000 |           16 MiB | 128 MiB, 2,097,152 values |
 | Row store on PostgreSQL                                 |                                 10,000 |           16 MiB | 128 MiB, 2,097,152 values |
-| Row store on Snowflake                                  |                                  1,000 |            1 MiB |    16 MiB, 262,144 values |
+| Row store on Snowflake                                  |                                 10,000 |           16 MiB | 128 MiB, 2,097,152 values |
 | File store, warehouse store and supplied stores         |                                  1,000 |            1 MiB |    16 MiB, 262,144 values |
 
 The default store declares the file store's limits, because a run stays in the file store without
@@ -384,6 +384,19 @@ and open run is the heap a run of that size holds:
 | DuckDB `checkpoint_store` |       5,000 |        54.4 ms |  2.2 s |    1.0 s |  3.5 s |  2.6 s |    1.08 GiB |   39 MiB |
 | DuckDB `checkpoint_store` |      10,000 |        51.6 ms |  4.0 s |    2.0 s |  6.9 s |  4.9 s |    1.58 GiB |   75 MiB |
 
+On Snowflake a checkpoint takes about a second, so the benchmark writes most of each run in bulk
+through the store's own writes and runs only its last 40 assignments; per assignment is over the last
+ten. Set up
+there includes about ten seconds of creating the store's tables in a new schema, which a schema pays
+once:
+
+| Store     | Assignments | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
+| --------- | ----------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
+| Snowflake |       1,000 |          2.5 s | 27.5 s |   772 ms | 11.8 s | 11.7 s |     548 MiB |   34 MiB |
+| Snowflake |       2,000 |          2.5 s | 36.1 s |    1.1 s | 15.5 s | 13.4 s |     767 MiB |   41 MiB |
+| Snowflake |       5,000 |          2.4 s | 60.5 s |    1.6 s | 22.8 s | 23.4 s |    1.14 GiB |   64 MiB |
+| Snowflake |      10,000 |          2.6 s | 96.3 s |    2.7 s | 39.7 s | 33.3 s |    1.61 GiB |   97 MiB |
+
 What sets the limits:
 
 - **10,000 rows: the work that reads the whole run.** Checkpoints stay flat: per assignment rose by
@@ -406,10 +419,17 @@ What sets the limits:
   each step starts with nine tenths of it. With the default lease of two minutes that leaves a wide
   margin. With the shortest, 10 seconds, a plan of 10,000 assignments leaves room for a host about two
   and a half times slower than the one measured, so give a large run a longer lease on a slower host.
-- **Snowflake keeps the defaults.** The row store there has not been measured above 1,000
-  assignments on a real account, and the emulator proves its logic, not its timing. A statement on
-  Snowflake takes about half a second, so what a larger run costs to resume, and whether each step
-  stays inside the lease, needs that measurement first.
+- **Snowflake: the same limits, set by statements rather than local work.** A statement there takes
+  about 0.6 seconds, so a step that reads or writes the whole run is many statements, and the session
+  renews its lease between them. At 10,000 assignments a load is 24 statements in 25 to 27 seconds
+  and the seal 86 in 72 seconds, and each of publication's seven reads takes about 18 seconds. So the
+  lease has to outlast one statement or one stretch of local work, not a whole step. The longest
+  statement took 4.2 seconds and the longest stretch 6.5, or 7.1 with the largest checkpoint,
+  against the 60 seconds a statement may take and the 108 a stretch starts with under the default
+  lease. Checkpoints stay flat, at about 2.5 seconds and four statements per model call at every
+  size, and a resume takes 40 seconds at 10,000. The shortest lease does not suit Snowflake at any
+  size: it leaves five seconds per statement, and a statement in a run of 1,000 took 3.2. Keep the
+  default lease there, or at least 30 seconds.
 
 A run saved before these limits resumes unchanged. A run of more than 1,000 assignments cannot go
 back: an older release reads it as damaged, `corrupt`, and makes no model calls, so finish such a run

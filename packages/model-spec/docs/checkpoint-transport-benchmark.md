@@ -566,11 +566,53 @@ A run takes longer under a tight heap: resuming the map workload took 9.2 second
 | Map, published          |  42.5 MB |                   768 MiB |                  1.5 GiB |
 | Map, larger assignments | 130.8 MB |                     1 GiB |                  2.4 GiB |
 
-**Not measured: Snowflake.** No Snowflake account was available for this measurement, so the row
-store keeps the default limits there. The benchmark runs on Snowflake with the two checkpoint
-variables and `CHECKPOINT_BENCHMARK_STORES=snowflake-rows`. One run did about 20 model calls a
-minute there in the [header table measurement](#row-store-header-tables), so 1,000 assignments take
-about an hour of checkpoints alone and 5,000 about four.
+### On Snowflake
+
+A checkpoint on Snowflake takes about a second, so running every assignment of a 10,000-assignment
+run would take hours. In bulk mode, the default for `snowflake-rows`, the first process instead
+starts another run of the same size and stops it at its first model call, which times setting up and
+sealing the whole run. The second writes the measured run with all but its last 40 assignments done,
+through the store's own backend and batched inserts. The third resumes it and finishes it, the fourth
+reopens it, and with `CHECKPOINT_BENCHMARK_PUBLICATION=1`, as here, a fifth publishes it through a
+publisher that writes nothing. Opening the run
+through the store verifies every write and validates the whole run, so a mistake in the bulk writer
+reads as a damaged run, never as a fast one. Each run has a schema of its own, which the benchmark
+drops afterwards. One sample per size, on a real account, from the same laptop:
+
+| Store     | Assignments | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
+| --------- | ----------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
+| Snowflake |       1,000 |          2.5 s | 27.5 s |   772 ms | 11.8 s | 11.7 s |     548 MiB |   34 MiB |
+| Snowflake |       2,000 |          2.5 s | 36.1 s |    1.1 s | 15.5 s | 13.4 s |     767 MiB |   41 MiB |
+| Snowflake |       5,000 |          2.4 s | 60.5 s |    1.6 s | 22.8 s | 23.4 s |    1.14 GiB |   64 MiB |
+| Snowflake |      10,000 |          2.6 s | 96.3 s |    2.7 s | 39.7 s | 33.3 s |    1.61 GiB |   97 MiB |
+
+Per assignment is the time between model calls over the last ten of the 40 that the resume runs:
+four statements per model call at every size, at about 0.6 seconds each. Set up includes about ten
+seconds of creating the store's tables in a new schema, which a schema pays once. Peak memory leaves
+out the bulk writer, which is not part of a run.
+
+Every step that reads or writes the whole run is many statements there, and the session renews its
+lease between them, so what the lease has to outlast is one statement or one stretch of local work.
+Under the default lease of two minutes, a statement may take 60 seconds and a stretch starts with 108. Load is opening the finished run, and publication's reads are the opening read and the seven
+that prove ownership:
+
+| Assignments |                  Seal |                  Load | Publication's reads | Longest statement | Longest stretch |
+| ----------: | --------------------: | --------------------: | ------------------: | ----------------: | --------------: |
+|       1,000 |  8.4 s, 10 statements |   5.2 s, 5 statements |           22.5 s, 8 |             3.2 s |          727 ms |
+|       2,000 | 15.1 s, 18 statements |   7.7 s, 7 statements |           30.2 s, 8 |             2.5 s |           1.4 s |
+|       5,000 | 40.7 s, 44 statements | 15.5 s, 14 statements |           80.8 s, 8 |             2.7 s |           3.2 s |
+|      10,000 | 72.2 s, 86 statements | 24.9 s, 24 statements |          147.9 s, 8 |             4.2 s |           6.5 s |
+
+A load's longest statement grew from 1.5 seconds at 1,000 assignments to 3.3 at 10,000, and one of
+publication's reads at 10,000 had a statement of 4.2. Each statement of a load returns the rows of at
+most 1,024 writes, and one of them also holds every sealed assignment. With the largest checkpoint,
+10,000 larger assignments and 131 MB, a load took 28 to 30 seconds in 24 statements, its longest
+statement 3.2 seconds and the longest stretch 7.1, and resuming took 42 seconds at 2.83 GiB peak.
+
+The shortest lease, 10 seconds, leaves five seconds per statement, and a statement in a run of 1,000
+took 3.2, so it does not suit Snowflake at any size. The measurement took about 71 minutes of
+warehouse time: 34 for `cloud-row-store.test.ts`, with its case at the limit, 26 for the four sizes
+with publication, and 11 for the largest checkpoint.
 
 ## Remaining work
 
