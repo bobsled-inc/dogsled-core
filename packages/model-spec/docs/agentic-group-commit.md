@@ -295,9 +295,9 @@ minute. The earlier sample held a schema near 130 calls a minute; on this day th
 one command at a time, and 499 grouped.
 
 The live [conformance suite](../tests/integration/warehouse/README.md#agentic-store-conformance)
-passes on this account with groups, all 61 cases. Among them are a group refused whole, a repeated
-group, a lost reply, a group from an expired owner, and several calls at once through the
-coordinator, resumed without repeating any.
+passes on this account with groups, all 63 cases. Among them are a group refused whole, a repeated
+group, a lost reply, a group from an expired owner, a group on a run at the store's row limit of
+10,000, and several calls at once through the coordinator, resumed without repeating any.
 
 ### On the emulator
 
