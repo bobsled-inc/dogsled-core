@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      has_actions: ${{ steps.plan.outputs.has_actions }}
+      has_actions: ${{ steps.check.outputs.has_actions }}
     steps:
       - name: Check bot mode
         id: mode
@@ -51,7 +51,7 @@ jobs:
         if: steps.mode.outputs.mode != 'off'
         run: pnpm install --frozen-lockfile
 
-      - name: Mint GitHub App token
+      - name: Mint read-only GitHub App token
         id: app-token
         if: steps.mode.outputs.mode != 'off' && vars.DEPS_BOT_APP_ID != ''
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
@@ -62,32 +62,48 @@ jobs:
           permission-vulnerability-alerts: read
 
       - name: Run dependency planner
-        id: plan
         if: steps.mode.outputs.mode != 'off'
         env:
-          DEPS_BOT: ${{ steps.mode.outputs.mode }}
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token || '' }}
         run: |
-          node scripts/deps/run.mjs --mode "$DEPS_BOT" 2>&1 | tee /tmp/plan-output.txt || true
-          cat /tmp/plan-output.txt >> "$GITHUB_STEP_SUMMARY"
+          effective_mode="${{ steps.mode.outputs.mode }}"
+          if [ "$effective_mode" = "on" ]; then
+            effective_mode="prepare"
+          fi
+          node scripts/deps/run.mjs \
+            --mode "$effective_mode" \
+            --output "$RUNNER_TEMP/deps-plan"
+
+      - name: Check plan for actions
+        id: check
+        if: steps.mode.outputs.mode != 'off'
+        run: |
+          plan="$RUNNER_TEMP/deps-plan/plan.json"
           has_actions="false"
-          if node --input-type=module -e "
-            import { readFileSync } from 'node:fs';
-            const text = readFileSync('/tmp/plan-output.txt', 'utf8');
-            const match = text.match(/^\\{[\\s\\S]*\\}$/m);
-            if (!match) process.exit(1);
-            const plan = JSON.parse(match[0]);
-            process.exit(plan.actions?.length > 0 ? 0 : 1);
-          " 2>/dev/null; then
-            has_actions="true"
+          if [ -f "$plan" ]; then
+            count=$(node -e "const p=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write(String(p.actions?.length??0))" "$plan")
+            if [ "$count" -gt 0 ]; then
+              has_actions="true"
+            fi
+            echo "Plan has $count action(s)."
+          else
+            echo "No plan file found."
           fi
           echo "has_actions=$has_actions" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.mode.outputs.mode != 'off' && steps.check.outputs.has_actions == 'true'
+        with:
+          name: deps-plan
+          path: ${{ runner.temp }}/deps-plan/
+          retention-days: 1
+          if-no-files-found: error
 
   act:
     needs: plan
     if: needs.plan.outputs.has_actions == 'true' && vars.DEPS_BOT == 'on'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -95,17 +111,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version-file: .nvmrc
-          cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: deps-plan
+          path: ${{ runner.temp }}/deps-plan
 
-      - name: Mint GitHub App token
+      - name: Mint write GitHub App token
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
@@ -117,7 +132,6 @@ jobs:
 
       - name: Create dependency PRs
         env:
-          DEPS_BOT: on
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           SLACK_DEPS_WEBHOOK_URL: ${{ secrets.SLACK_DEPS_WEBHOOK_URL }}
-        run: node scripts/deps/run.mjs --mode on
+        run: node scripts/deps/run.mjs --mode execute --input "$RUNNER_TEMP/deps-plan"
