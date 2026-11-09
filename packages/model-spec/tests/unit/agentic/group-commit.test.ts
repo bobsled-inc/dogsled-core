@@ -358,23 +358,32 @@ describe('group commit', { timeout: 60_000 }, () => {
       output_tokens: 4000,
       total_tokens: 10_000,
     };
+    // How many calls start before the first answer lands depends on timing, in either mode, so
+    // each mode is held to the rule rather than to the other's count.
     const run = async (stateStore: GroupMemoryStore) => {
       const f = setup(5, 3, stateStore);
       f.model.limits.tokens = 10_400;
+      let calls = 0;
       f.host.executeAgent = async (request) => {
+        calls++;
         await delay(5);
         return answer(request, large);
       };
       const error = await f.run().catch((caught: unknown) => caught);
-      return { error, snapshot: f.state() };
+      return { error, calls, snapshot: f.state() };
     };
-    const single = await run(new GroupMemoryStore(false));
-    const grouped = await run(new GroupMemoryStore());
-    expect(grouped.error).toMatchObject({ code: 'limit', reason: 'spend_cap_reached' });
-    expect((grouped.error as AgenticStateError).message).toBe(
-      (single.error as AgenticStateError).message
-    );
-    expect(outcome(grouped.snapshot)).toEqual(outcome(single.snapshot));
+    for (const result of [
+      await run(new GroupMemoryStore(false)),
+      await run(new GroupMemoryStore()),
+    ]) {
+      expect(result.error).toMatchObject({ code: 'limit', reason: 'spend_cap_reached' });
+      // The cap stops new calls; the ones in flight finish and their answers are kept.
+      const started = result.snapshot.work.filter((work) => work.attempts.length);
+      expect(started.length).toBe(result.calls);
+      expect(started.every((work) => work.accepted?.status === 'succeeded')).toBe(true);
+      expect(result.calls).toBeGreaterThanOrEqual(1);
+      expect(result.calls).toBeLessThanOrEqual(3);
+    }
   });
 
   it('reports progress after each group with the counts a fresh count gives', async () => {
