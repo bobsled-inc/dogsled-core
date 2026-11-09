@@ -340,8 +340,8 @@ coordinator and the store each validated the whole snapshot on every checkpoint:
 80% of a 1,000-assignment run on a run file inside schema validation, and 77% at 300. A later change
 removed that cost. See [checkpoint cost](agentic-state.md#checkpoint-cost) for the figures since.
 
-**What the limits looked like at 2,000 rows.** To see whether the store could hold more, one run
-lifted the ceilings temporarily, in a scratch change. At 2,000 assignments on a run file, statements stayed at
+**What the limits looked like at 2,000 rows.** To see whether the store could hold more, this was
+measured with the row limits temporarily raised. At 2,000 assignments on a run file, statements stayed at
 4.01 per assignment, the run sent 12.3 MB, and peak heap was 623 MiB with 863 MiB resident, so storage
 and memory hold up. Time does not. Overhead reached 1,003 ms per assignment, double the
 1,000-assignment figure, so a run's total overhead grows with the square of its size: 33 minutes at
@@ -349,9 +349,7 @@ and memory hold up. Time does not. Overhead reached 1,003 ms per assignment, dou
 Checkpoint validation no longer reads the whole snapshot, so that curve is gone, and the same run
 now takes seconds. See [row store limits](agentic-state.md#row-store-limits) for the limits that
 followed, and [the row store at 10,000 assignments](#row-store-at-10000-assignments) for their
-measurement. The 878 ms in an earlier version of that section was a later run of the same
-benchmark, taken as the before figure for checkpoint cost. Both runs double from 1,000 to 2,000
-assignments.
+measurement.
 
 ## Row store header tables
 
@@ -518,20 +516,21 @@ a collection. Statements stayed at 4.0 per model call on PostgreSQL at every siz
 | DuckDB `checkpoint_store` |       5,000 |        54.4 ms |  2.2 s |    1.0 s |  3.5 s |  2.6 s |    1.08 GiB |   39 MiB |
 | DuckDB `checkpoint_store` |      10,000 |        51.6 ms |  4.0 s |    2.0 s |  6.9 s |  4.9 s |    1.58 GiB |   75 MiB |
 
-**Before and after.** Before is v0.1.10 with only the row limits raised in a scratch change, on the
+**Before and after.** Before is v0.1.10, measured with the row limits temporarily raised, on the
 same machine and harness. At 1,000 that is v0.1.10 as released. Opening a run, starting a new
-execution window and completing a run each validate the whole run fewer times now. Reopening a
-finished run is a little slower, because the opened run is now kept as verified state, which is what
-makes the next command cheap:
+execution window and completing a run each validate the whole run fewer times now, so resuming
+takes 34 to 43% less time and completing a run 37 to 42% less. Reopening a finished run takes up to
+13% more, because the opened run is now kept as verified state, which is what makes the next
+command cheap:
 
-| Store                     | Assignments | Per assignment |         Resume |        Complete |          Reopen |         Peak memory |
-| ------------------------- | ----------: | -------------: | -------------: | --------------: | --------------: | ------------------: |
-| DuckDB run file           |       1,000 |   2.3 → 2.5 ms | 1.3 s → 834 ms | 346 ms → 208 ms | 611 ms → 611 ms |   641 MiB → 595 MiB |
-| DuckDB run file           |      10,000 |   3.0 → 2.9 ms | 11.7 s → 6.9 s |   3.3 s → 2.0 s |   4.5 s → 4.8 s | 2.00 GiB → 1.82 GiB |
-| PostgreSQL                |       1,000 |   2.8 → 2.5 ms | 1.3 s → 813 ms | 360 ms → 209 ms | 567 ms → 602 ms |   592 MiB → 562 MiB |
-| PostgreSQL                |      10,000 |   3.0 → 3.2 ms | 11.6 s → 6.8 s |   3.5 s → 2.1 s |   4.3 s → 4.8 s | 1.95 GiB → 1.67 GiB |
-| DuckDB `checkpoint_store` |       1,000 | 50.8 → 50.0 ms | 1.4 s → 889 ms | 366 ms → 229 ms | 582 ms → 657 ms |   683 MiB → 645 MiB |
-| DuckDB `checkpoint_store` |      10,000 | 52.4 → 51.6 ms | 12.1 s → 6.9 s |   3.5 s → 2.0 s |   4.4 s → 4.9 s | 1.68 GiB → 1.58 GiB |
+| Store                     | Assignments | Per assignment |            Resume |         Complete |           Reopen |         Peak memory |
+| ------------------------- | ----------: | -------------: | ----------------: | ---------------: | ---------------: | ------------------: |
+| DuckDB run file           |       1,000 |   2.3 → 2.5 ms |    1,260 → 834 ms |     346 → 208 ms |     611 → 611 ms |   641 MiB → 595 MiB |
+| DuckDB run file           |      10,000 |   3.0 → 2.9 ms | 11,659 → 6,911 ms | 3,344 → 2,046 ms | 4,452 → 4,789 ms | 2.00 GiB → 1.82 GiB |
+| PostgreSQL                |       1,000 |   2.8 → 2.5 ms |    1,324 → 813 ms |     360 → 209 ms |     567 → 602 ms |   592 MiB → 562 MiB |
+| PostgreSQL                |      10,000 |   3.0 → 3.2 ms | 11,558 → 6,809 ms | 3,462 → 2,058 ms | 4,286 → 4,765 ms | 1.95 GiB → 1.67 GiB |
+| DuckDB `checkpoint_store` |       1,000 | 50.8 → 50.0 ms |    1,350 → 889 ms |     366 → 229 ms |     582 → 657 ms |   683 MiB → 645 MiB |
+| DuckDB `checkpoint_store` |      10,000 | 52.4 → 51.6 ms | 12,050 → 6,879 ms | 3,456 → 2,041 ms | 4,381 → 4,904 ms | 1.68 GiB → 1.58 GiB |
 
 **Other workloads, on a DuckDB run file.** A plan that maps four fifths of its rows and then
 reduces groups of four holds 199 JSON values per assignment, so at 10,000 it is near the checkpoint's

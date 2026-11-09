@@ -789,8 +789,8 @@ once:
 |       1,000 |   730 ms | 1.3 ms |                            35 ms |
 |       2,000 | 1,411 ms | 1.3 ms |                            70 ms |
 
-The 2,000 row is above today's limit of 1,000, so it was measured with the limits raised in a
-scratch change: see [Reproduce](#reproduce). A run that size would spend 2.6 seconds on this
+The 2,000 row is above the default limit of 1,000, so it was measured with the row limits
+temporarily raised: see [Reproduce](#reproduce). A run that size would spend 2.6 seconds on this
 instead of 47 minutes. A plan that maps then reduces went from 112 ms to 3.0 ms per assignment
 at 100, and from 1,056 ms to 2.7 ms at 1,000.
 
@@ -873,8 +873,7 @@ CHECKPOINT_BENCHMARK=1 CHECKPOINT_BENCHMARK_SIZES=100,1000 \
 
 Set `CHECKPOINT_BENCHMARK_PROFILE` to a directory for a V8 CPU profile of each run. The
 benchmark's store holds what the row store holds, so it runs at any size up to 10,000. The
-2,000 row above was measured before that, on a scratch change that raised the limits, on both
-sides. The workload keeps each assignment the same size at every run size.
+2,000 row above was measured before that, with the row limits temporarily raised on both sides. The workload keeps each assignment the same size at every run size.
 
 ## Incremental input progress
 
