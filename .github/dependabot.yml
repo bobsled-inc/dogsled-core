@@ -1,14 +1,21 @@
 version: 2
-# Routine version-update PRs are off (limit 0). Dependabot security-update PRs
-# are enabled in repository settings and still open for security advisories.
+# Weekly grouped minor/patch version updates. Major updates stay manual.
+# Dependabot security-update PRs are enabled in repository settings until the
+# dependency bot (separate task) is live; turn them off at that point because
+# they ignore the cooldown.
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 2
     cooldown:
       default-days: 7
+    labels:
+      - dependencies
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -16,9 +23,14 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 1
     cooldown:
       default-days: 7
+    labels:
+      - dependencies
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       minor-and-patch:
         update-types: [minor, patch]

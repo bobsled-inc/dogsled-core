@@ -889,7 +889,7 @@ describe('release and dependency policy guardrails', () => {
     const dependabot = readFileSync(path.join(repoRoot, '.github', 'dependabot.yml'), 'utf8');
     deepStrictEqual(
       [...dependabot.matchAll(/open-pull-requests-limit:\s*(\d+)/g)].map((match) => match[1]),
-      ['0', '0']
+      ['2', '1']
     );
     deepStrictEqual(
       [...dependabot.matchAll(/default-days:\s*(\d+)/g)].map((match) => match[1]),
