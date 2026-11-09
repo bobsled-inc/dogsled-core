@@ -29,12 +29,12 @@ one sample of each:
 |   16 |                    3 |                               146 → 499 |         4.52 → 1.13 |
 
 A free slot waited about one commit for its next call, 1.2 to 1.5 seconds, instead of every
-checkpoint queued ahead of it, 7.6 to 18.7 seconds. No run failed, and the live store conformance suite passes on the same account with groups. An
-emulator
-with statement times fitted to an earlier sample predicted gains 13 to 33% larger; with model calls
-that take 2 seconds it predicts about twice the calls a minute at three in flight. On PostgreSQL 17
-the statements per call fell the same way and runs did 1.3 to 1.7 times as many calls. Runs move
-both ways between the prototype and v0.1.10.
+checkpoint queued ahead of it, 7.6 to 18.7 seconds. No run failed, and the live store conformance
+suite passes on the same account with groups. An emulator with statement times fitted to an earlier
+sample predicted gains 13 to 33% larger; with model calls that take 2 seconds it predicts about
+twice the calls a minute at three in flight. On PostgreSQL 17 the statements per call fell the same
+way and runs did 1.3 to 1.7 times as many calls. Runs move both ways between the prototype and the
+previous release.
 
 ## Why a run is bounded today
 
@@ -42,9 +42,10 @@ The coordinator saves one checkpoint at a time. A call's start must be saved bef
 its finish after it, and each save is an insert followed by a header update that must report one
 changed row. With concurrency 3, three calls can be in flight, but their six checkpoints still go
 through one queue. On Snowflake, with about 550 ms per statement, that queue drains about one call
-every 2.2 seconds: about 27 calls a minute, the figure one host application saw with three calls in
-flight. A free slot waits behind every checkpoint ahead of it, which is up to `2 × concurrency - 1`
-of them.
+every 2.2 seconds: about 27 calls a minute at best, whatever the concurrency. On a Snowflake account
+one run did 19 calls a minute with three calls in flight and 22 with eight; see the
+[measurement](#on-a-snowflake-account). A free slot waits behind every checkpoint ahead of it, which
+is up to `2 × concurrency - 1` of them.
 
 Across runs the limits are per table. Updates of one table run one at a time, which is why headers
 are spread over 8 tables. Inserts into the shared rows table levelled off near 4.5 a second with 16
@@ -232,20 +233,20 @@ None of these is a weaker guarantee, but each is a change:
 
 ## Guarantees, one by one
 
-| Guarantee                                                       | One command at a time      | Group commit                                   |
-| --------------------------------------------------------------- | -------------------------- | ---------------------------------------------- |
-| A call's start is saved before the call                         | Yes                        | Yes: calls wait for their group's commit       |
-| A resumed run never makes a charged call without a record of it | Yes                        | Yes, from the row above                        |
-| A finish records the result and the spend                       | Yes                        | Yes, as the same write                         |
-| One commit per change, the fenced header update                 | Yes                        | Yes: one per group, fenced the same way        |
-| A stale owner commits nothing                                   | Yes                        | Yes: same fence                                |
-| Each command has one effect                                     | Yes                        | Yes: same operation IDs and expected revisions |
-| Rows are immutable and content-addressed                        | Yes                        | Yes: same writes                               |
-| Spend caps are checked before dispatch                          | Yes                        | Yes, on the state including the group so far   |
-| No new call after a known terminal failure                      | Yes                        | Yes                                            |
-| Answers not yet saved when a run crashes                        | Those waiting in the queue | Those waiting for the next group, saved sooner |
-| Attempts left started and not run by a crash                    | Up to the concurrency      | Up to the concurrency                          |
-| Runs of the previous release resume                             | Yes                        | Yes, both ways, checked against v0.1.10        |
+| Guarantee                                                       | One command at a time      | Group commit                                         |
+| --------------------------------------------------------------- | -------------------------- | ---------------------------------------------------- |
+| A call's start is saved before the call                         | Yes                        | Yes: calls wait for their group's commit             |
+| A resumed run never makes a charged call without a record of it | Yes                        | Yes, from the row above                              |
+| A finish records the result and the spend                       | Yes                        | Yes, as the same write                               |
+| One commit per change, the fenced header update                 | Yes                        | Yes: one per group, fenced the same way              |
+| A stale owner commits nothing                                   | Yes                        | Yes: same fence                                      |
+| Each command has one effect                                     | Yes                        | Yes: same operation IDs and expected revisions       |
+| Rows are immutable and content-addressed                        | Yes                        | Yes: same writes                                     |
+| Spend caps are checked before dispatch                          | Yes                        | Yes, on the state including the group so far         |
+| No new call after a known terminal failure                      | Yes                        | Yes                                                  |
+| Answers not yet saved when a run crashes                        | Those waiting in the queue | Those waiting for the next group, saved sooner       |
+| Attempts left started and not run by a crash                    | Up to the concurrency      | Up to the concurrency                                |
+| Runs of the previous release resume                             | Yes                        | Yes, both ways, checked against the previous release |
 
 Nothing in the table is weaker, so the design stands.
 
@@ -267,9 +268,9 @@ Nothing in the table is weaker, so the design stands.
 ### On a Snowflake account
 
 The [benchmark](checkpoint-transport-benchmark.md#row-store-header-tables) ran on one Snowflake
-account from one laptop: one process per run, 30 assignments per run as in the earlier sample, model
-calls that return at once, and one sample of each. The account's warehouse is shared with other test
-connections. No run failed.
+account from a developer machine: one process per run, 30 assignments per run as in the earlier
+sample, model calls that return at once, and one sample of each. The account's warehouse is shared
+with other test connections. No run failed.
 
 | Runs | Calls in flight | Calls a minute, off → on |     Per run | Statements per call, off → on | Row inserts a second, off → on | Header update p50 / p95, off → on | Free slot waits, p50 off → on | Longest start wait, on |
 | ---: | --------------: | -----------------------: | ----------: | ----------------------------: | -----------------------------: | --------------------------------: | ----------------------------: | ---------------------: |
@@ -445,8 +446,8 @@ table took about 16.6 rows a second in 3.6 statements.
 ### PostgreSQL
 
 The same benchmark on PostgreSQL 17 in Docker: the real engine, 100 assignments per run, calls that
-return at once, one process per run and one sample, on one laptop while other jobs ran. No run
-failed.
+return at once, one process per run and one sample, on a developer machine while other jobs ran. No
+run failed.
 
 | Runs × calls in flight | Calls a minute, off → on | Statements per call, off → on | Header update p50, off → on |
 | ---------------------- | -----------------------: | ----------------------------: | --------------------------: |
@@ -501,15 +502,16 @@ process of its own. On Snowflake, 30 assignments per run and one sample keep it 
 ## Recommendation
 
 The design holds: nothing it changes weakens a guarantee, and on a Snowflake account it took one run
-from about 20 to between 69 and 99 calls a minute and 16 runs sharing a schema from 146 to 499. Next,
-in order:
+from about 20 to between 69 and 99 calls a minute and 16 runs sharing a schema from 146 to 499.
 
-1. Keep the option experimental and off by default for now.
-2. Let one host try it with real model calls. With calls that take seconds, expect about twice the
-   calls a minute at three in flight rather than three and a half times: the store stops being the
-   limit and the model's time decides. The emulator predicts 2.2 times there, and it overstated the
-   gain by 13 to 33% where the account could check it.
-3. Make it the default for the warehouse row store only after that, in a change of its own.
+- Keep the option experimental and off by default.
+- Before turning it on for a warehouse, run the live conformance suite there with
+  `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1`, and the benchmark.
+- Change the default only in a change of its own.
+
+With model calls that take seconds, expect less: the store stops being the limit, and the model's
+time decides. With 2-second calls the emulator predicts 2.2 times the calls a minute at three in
+flight, and it overstated the gain by 13 to 33% where the account could check it.
 
 With many runs in one schema the rows table is still the limit, at about 4 to 5 inserts a second,
 but each insert then carries several calls. Giving different models different schemas still divides
