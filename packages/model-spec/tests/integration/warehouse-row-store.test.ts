@@ -16,7 +16,10 @@ import {
   snowflakeRowDialect,
   waitForSnowflakeLockQueue,
 } from '../../src/agentic/warehouse-row-dialects.js';
-import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
+import {
+  createWarehouseRowStore,
+  warehouseRowStoreBackend,
+} from '../../src/agentic/warehouse-row-state.js';
 import { openLimitedRunner } from '../../src/agentic/warehouse-statement-limit.js';
 import { benchmarkWorkload } from '../support/agentic-benchmark.js';
 import { mapScenario } from '../support/agentic-store-scenario.js';
@@ -478,11 +481,13 @@ describe('the warehouse row store factory', () => {
     auth: { type: 'memory' },
   };
   const invalid = { code: 'limit', reason: 'invalid_store_config' };
+  // The backend a test fixture writes through takes the same checks as the store.
+  const opens = [createWarehouseRowStore, warehouseRowStoreBackend];
 
   it('refuses engines without a dialect', () => {
-    expect(() => createWarehouseRowStore(duckdb, { schema: 's' })).toThrow(
-      expect.objectContaining(invalid)
-    );
+    for (const open of opens) {
+      expect(() => open(duckdb, { schema: 's' })).toThrow(expect.objectContaining(invalid));
+    }
   });
 
   it.each([
@@ -491,20 +496,20 @@ describe('the warehouse row store factory', () => {
     ['a lease that is too long', { schema: 's', leaseMs: 600_001 }],
     ['no retention', { schema: 's', retentionMs: 0 }],
   ])('refuses %s', (_name, options) => {
-    expect(() => createWarehouseRowStore(postgres, options)).toThrow(
-      expect.objectContaining(invalid)
-    );
+    for (const open of opens) {
+      expect(() => open(postgres, options)).toThrow(expect.objectContaining(invalid));
+    }
   });
 
   it('refuses a PostgreSQL schema name that the server would truncate', () => {
     const name = (bytes: number) => 's'.repeat(bytes);
-    expect(() => createWarehouseRowStore(postgres, { schema: name(64) })).toThrow(
-      expect.objectContaining(invalid)
-    );
-    expect(() => createWarehouseRowStore(postgres, { schema: '語'.repeat(22) })).toThrow(
-      expect.objectContaining(invalid)
-    );
-    expect(() => createWarehouseRowStore(postgres, { schema: name(63) })).not.toThrow();
+    for (const open of opens) {
+      expect(() => open(postgres, { schema: name(64) })).toThrow(expect.objectContaining(invalid));
+      expect(() => open(postgres, { schema: '語'.repeat(22) })).toThrow(
+        expect.objectContaining(invalid)
+      );
+      expect(() => open(postgres, { schema: name(63) })).not.toThrow();
+    }
   });
 
   it('declares what the row store promises', () => {
