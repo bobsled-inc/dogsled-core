@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Clarify how to ask the Dogsled Core plugin to install Dogsled and set up a project.
+
 - `applyAgenticCheckpoint` now returns a deeply frozen snapshot, so a supplied store that writes to the result will throw. That is the one way this change can break a host that worked before; save the result as it is. In return, agentic runs spend far less on each checkpoint. Every model call saves two checkpoints, and each one used to validate the whole run several times, so a run's total overhead grew with the square of its assignments. Starting and finishing an attempt now checks only what changed, with the same guarantees. On a DuckDB run file, overhead per assignment no longer grows with the run: at 1,000 assignments it fell from 445 ms to 4 ms. A supplied store gets the same by keeping the value `applyAgenticCheckpoint` returned, passing it to the next call and returning it from `checkpoint`. A store that copies its state stays correct and pays for the copy on every checkpoint. The file and warehouse stores still rewrite the run on every checkpoint, so their cost still grows, and they gain little from this.
 
 - Action provider messages now match percent-encoded credential values regardless of hexadecimal letter case, while preserving case-sensitive matching for literal characters.
