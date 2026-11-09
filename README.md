@@ -74,6 +74,12 @@ The [installation guide](docs/getting-started.md#install-dogsled) also covers gl
 
 ### Set up your own data with your coding agent
 
+Install the [Dogsled Core plugin for Claude Code or Codex](plugins/dogsled-core/README.md),
+open your project folder in the agent, and ask:
+
+> Use dogsled-get-started to install Dogsled and set up my project.
+
+The skill checks Node.js 24+ and installs Dogsled in your project if needed.
 Use **`dogsled-get-started`** to set up your Dogsled environment with your own
 connections, sources, pipelines and models. It can create a project or continue
 an existing one, then validate the setup and help you run a first useful query.
