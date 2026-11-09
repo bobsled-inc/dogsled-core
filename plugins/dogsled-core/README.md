@@ -16,8 +16,12 @@ Run these commands inside Claude Code:
 /plugin install dogsled-core@dogsled
 ```
 
-Then ask: "Use the Dogsled Core plugin to help me set up a data pipeline."
-For the guided tutorial, run `/dogsled-core:dogsled-get-started`.
+Open your project folder in Claude Code and ask:
+
+> Use dogsled-get-started to install Dogsled and set up my project.
+
+The skill checks Node.js 24+ and installs Dogsled in your project if needed.
+For the guided tutorial, run `/dogsled-core:dogsled-tutorials`.
 
 ## Install in Codex
 
@@ -28,8 +32,12 @@ codex plugin marketplace add bobsled-inc/dogsled-core
 codex plugin add dogsled-core@dogsled
 ```
 
-Start a new Codex chat and ask: "Use the Dogsled Core plugin to help me set up a data
-pipeline." In the desktop app, you can also select the Dogsled marketplace in
+Start a new Codex chat in your project folder and ask:
+
+> Use dogsled-get-started to install Dogsled and set up my project.
+
+The skill checks Node.js 24+ and installs Dogsled in your project if needed.
+In the desktop app, you can also select the Dogsled marketplace in
 Plugins and install Dogsled Core there after adding the marketplace.
 
 These GitHub commands work after the plugin files reach the repository's default
@@ -38,7 +46,8 @@ of `bobsled-inc/dogsled-core` when adding the marketplace.
 
 ## Install the Dogsled CLI
 
-Use Node.js 24 or newer. In your data project, install Dogsled:
+The setup skill can install the CLI for you. To install it yourself, use Node.js
+24 or newer and run these commands in your data project:
 
 ```bash
 npm install @bobsled-inc/dogsled
