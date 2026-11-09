@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { buildDuckDbRunner, isDuckDbAvailable } from '@bobsled-inc/connections';
-import { validateAgenticReceipt } from '../../src/agentic/checkpoint-receipt.js';
+import {
+  validateAgenticReceipt,
+  validateAgenticReceipts,
+} from '../../src/agentic/checkpoint-receipt.js';
 import { duckDbOperationBackend, duckDbStateFile } from '../../src/agentic/duckdb-state.js';
 import type { AgenticRowDb } from '../../src/agentic/row-state-dialect.js';
 import { duckDbRowDialect } from '../../src/agentic/row-state-dialect.js';
@@ -14,6 +17,8 @@ import {
   readAgenticWrites,
 } from '../../src/agentic/row-state-rows.js';
 import { openAgenticRowSession } from '../../src/agentic/row-state.js';
+import { createAgenticRowStore } from '../../src/agentic/row-store.js';
+import { executeAgenticRun } from '../../src/agentic/run.js';
 import {
   prepareAgenticRowTables,
   type AgenticRowBackend,
@@ -34,6 +39,7 @@ import {
   planScenario,
   type AgenticStoreScenario,
 } from '../support/agentic-store-scenario.js';
+import { runFixture } from '../unit/agentic/state-fixture.js';
 
 const schema = 'recovery';
 type Fault = (
@@ -120,7 +126,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const backend = faultyBackend(file, faults);
     const open = (
       key: AgenticStoreScenario['key'],
-      options: { retentionMs?: number; limits?: AgenticStoreLimits } = {}
+      options: { retentionMs?: number; limits?: AgenticStoreLimits; groupCommit?: boolean } = {}
     ) =>
       openAgenticRowSession(backend, key, {
         ownership: { mode: 'lease', leaseMs: 10_000 },
@@ -210,28 +216,38 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     await session.release();
   });
 
-  it('keeps rows whose header update lands after the recovery read', async () => {
-    const { open } = await fixture();
-    const session = await open(plan.key);
-    expect(await session.read()).toBeNull();
-    await session.create(plan.initial);
-    const seal = plan.commands[0]!;
-    // The reply is lost while the statement is still running on the server.
+  /** Loses the reply to the next header commit while the statement still runs on the server.
+   * Returns a function that lands it later, and reports how many rows it changed. */
+  function delayNextCommit() {
     let delayed: { sql: string; params: Parameters<AgenticRowDb['query']>[1] } | undefined;
     faults.next = (statement, params) => {
       if (delayed || !headerUpdate.test(statement)) return undefined;
       delayed = { sql: statement, params };
       return 'lose_before';
     };
+    return async (): Promise<number> => {
+      const runner = await buildDuckDbRunner(duckDbStateFile(file()));
+      try {
+        return (await runner.query!(delayed!.sql, delayed!.params)).length;
+      } finally {
+        await runner.close?.();
+      }
+    };
+  }
+
+  it('lets no header update land after the recovery read', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key);
+    expect(await session.read()).toBeNull();
+    await session.create(plan.initial);
+    const seal = plan.commands[0]!;
+    const land = delayNextCommit();
     await expect(session.checkpoint(seal)).rejects.toThrow('Synthetic');
+    // The read changes the run's token first, so what it shows is final.
     expect(await session.read()).toEqual(plan.initial);
-    const runner = await buildDuckDbRunner(duckDbStateFile(file()));
-    try {
-      await runner.query!(delayed!.sql, delayed!.params);
-    } finally {
-      await runner.close?.();
-    }
-    expect((await session.read())?.status).toBe('running');
+    expect(await land()).toBe(0);
+    expect(await session.read()).toEqual(plan.initial);
+    expect((await session.checkpoint(seal)).status).toBe('running');
     await session.release();
   });
 
@@ -759,6 +775,189 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     });
     expect(await session.read()).toBeNull();
     await session.release();
+  });
+
+  /** A run up to its first attempt command, and that command with the two after it. */
+  async function beforeGroup(
+    session: Awaited<ReturnType<Awaited<ReturnType<typeof fixture>>['open']>>
+  ) {
+    const index = plan.commands.findIndex((command) => command.type === 'start_attempt');
+    const group = plan.commands.slice(index, index + 3);
+    expect(group.every((command) => /_attempt$/.test(command.type))).toBe(true);
+    return { before: await replay(session, plan, index), group };
+  }
+
+  it('writes a group of commands with one insert and one header update', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    faults.statements = [];
+    const requestedAt = Date.now();
+    const after = validateAgenticReceipts(
+      await session.checkpointMany!(group),
+      before,
+      group,
+      requestedAt
+    );
+    expect(after.revision).toBe(before.revision + 3);
+    // A lease renewal can land in between on a slow machine; it commits nothing.
+    expect(faults.statements.filter((sql) => rowInsert.test(sql))).toHaveLength(1);
+    expect(faults.statements.filter((sql) => headerUpdate.test(sql))).toHaveLength(1);
+    await session.release();
+  });
+
+  it('keeps the previous state when a crash follows the rows of a group', async () => {
+    const { open, expire, rows } = await fixture();
+    const first = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(first);
+    const stored = await rows();
+    faults.next = once(headerUpdate, 'lose_before');
+    await expect(first.checkpointMany!(group)).rejects.toThrow('Synthetic');
+    // The group's rows are there, but no header names them.
+    expect(await rows()).toBeGreaterThan(stored);
+    expect(await first.read()).toEqual(before);
+    await expire();
+    const second = await open(plan.key, { groupCommit: true });
+    expect(await second.read()).toEqual(before);
+    // A new owner removes rows that no header reached.
+    expect(await rows()).toBe(stored);
+    const requestedAt = Date.now();
+    const after = validateAgenticReceipts(
+      await second.checkpointMany!(group),
+      before,
+      group,
+      requestedAt
+    );
+    expect(after.revision).toBe(before.revision + 3);
+    await second.release();
+    await first.release();
+  });
+
+  it('shows the whole group when only the header reply was lost', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    const requestedAt = Date.now();
+    faults.next = once(headerUpdate, 'lose_after');
+    await expect(session.checkpointMany!(group)).rejects.toThrow('Synthetic lost reply');
+    const after = validateAgenticReceipts(await session.read(), before, group, requestedAt);
+    expect(after.revision).toBe(before.revision + 3);
+    expect(await session.checkpointMany!(group)).toEqual(after);
+    await session.release();
+  });
+
+  it('commits none of a group whose rows insert lost its reply', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    faults.next = once(rowInsert, 'lose_after');
+    await expect(session.checkpointMany!(group)).rejects.toThrow('Synthetic lost reply');
+    expect(await session.read()).toEqual(before);
+    const requestedAt = Date.now();
+    const after = validateAgenticReceipts(
+      await session.checkpointMany!(group),
+      before,
+      group,
+      requestedAt
+    );
+    expect(await session.read()).toEqual(after);
+    await session.release();
+  });
+
+  it('lets no group land after the recovery read, so its commands can go again alone', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    const land = delayNextCommit();
+    await expect(session.checkpointMany!(group)).rejects.toThrow('Synthetic');
+    expect(await session.read()).toEqual(before);
+    expect(await land()).toBe(0);
+    let snapshot = before;
+    for (const command of group) {
+      const requestedAt = Date.now();
+      const saved = await session.checkpoint(command);
+      snapshot = validateAgenticReceipt(saved, snapshot, command, requestedAt);
+    }
+    expect(snapshot.revision).toBe(before.revision + group.length);
+    expect(await session.read()).toEqual(snapshot);
+    await session.release();
+  });
+
+  it('completes a run whose lost group lands between the recovery read and the resend', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'row-recovery-'));
+    directories.push(directory);
+    const backend = faultyBackend(join(directory, 'state.duckdb'), faults);
+    const stateStore = createAgenticRowStore(backend, {
+      leaseMs: 10_000,
+      retentionMs: 86_400_000,
+      groupCommit: true,
+    });
+    const fixture = runFixture(6);
+    fixture.host.concurrency = 3;
+    let calls = 0;
+    const execute = fixture.host.executeAgent;
+    fixture.host.executeAgent = (request) => {
+      calls++;
+      return execute(request);
+    };
+    // The third commit is the first group: create, seal, then three starts together.
+    let commits = 0;
+    let delayed: { sql: string; params: Parameters<AgenticRowDb['query']>[1] } | undefined;
+    faults.next = (statement, params) => {
+      if (delayed || !headerUpdate.test(statement) || ++commits < 3) return undefined;
+      delayed = { sql: statement, params };
+      return 'lose_before';
+    };
+    // It lands after the coordinator's recovery read, just before the first command it resends.
+    let read = false;
+    let landed: number | undefined;
+    faults.before = async (sql, db) => {
+      if (!delayed || landed !== undefined) return;
+      if (/^SELECT .*__dogsled_agentic_runs/.test(sql)) read = true;
+      else if (read && rowInsert.test(sql)) {
+        landed = (await db.query(delayed.sql, delayed.params)).length;
+      }
+    };
+    const result = await executeAgenticRun(fixture.host, fixture.context(), {
+      projectDirectory: directory,
+      stateStore,
+      run: { id: 'late-group', mode: 'start' },
+    });
+    expect(landed).toBe(0);
+    expect(result.processedKeys).toHaveLength(6);
+    expect(calls).toBe(6);
+  });
+
+  it('reads a run saved in groups with a session that saves one command at a time', async () => {
+    const { open } = await fixture();
+    const grouped = await open(plan.key, { groupCommit: true });
+    let snapshot = await grouped.create(plan.initial);
+    // Every run of attempt commands goes as one group.
+    for (let index = 0; index < plan.commands.length; ) {
+      let end = index;
+      while (end < plan.commands.length && /_attempt$/.test(plan.commands[end]!.type)) end++;
+      if (end - index > 1) {
+        const group = plan.commands.slice(index, end);
+        const requestedAt = Date.now();
+        snapshot = validateAgenticReceipts(
+          await grouped.checkpointMany!(group),
+          snapshot,
+          group,
+          requestedAt
+        );
+        index = end;
+      } else {
+        snapshot = await grouped.checkpoint(currentCommand(snapshot, plan.commands[index]!));
+        index++;
+      }
+    }
+    await grouped.release();
+    // The layout a group writes is the one a single command writes, so a reader that knows
+    // nothing of groups rebuilds the same run.
+    const single = await open(plan.key);
+    expect(single.checkpointMany).toBeUndefined();
+    expect(await single.read()).toEqual(snapshot);
+    await single.release();
   });
 
   it('forwards cancellation and stops before the next statement', async () => {

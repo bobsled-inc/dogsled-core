@@ -115,7 +115,8 @@ export function createAgenticProgress(
 /**
  * Reports each checkpoint without rereading the run. A start or finish of an attempt moves at most
  * one assignment between counts, because nothing else that decides an assignment's state changes
- * within an execution window. Any other command counts again with createAgenticProgress.
+ * within an execution window, and a group of them moves only the assignments they name. Any
+ * other command counts again with createAgenticProgress.
  */
 export function createAgenticProgressReporter(stepIds: readonly string[]) {
   // Assignments never change once saved, so each estimate is computed once per run.
@@ -124,19 +125,33 @@ export function createAgenticProgressReporter(stepIds: readonly string[]) {
   return (
     snapshot: AgenticRunSnapshot,
     before?: AgenticRunSnapshot,
-    command?: AgenticCheckpointCommand
+    command?: AgenticCheckpointCommand | readonly AgenticCheckpointCommand[]
   ): AgenticRunProgress => {
+    const commands: readonly AgenticCheckpointCommand[] =
+      command === undefined ? [] : 'type' in command ? [command] : command;
     const known = last?.snapshot === before ? last?.progress : undefined;
-    const progress =
-      known && (command?.type === 'start_attempt' || command?.type === 'finish_attempt')
-        ? moveAssignment(known, before!, snapshot, command.work, tokenEstimates)
-        : createAgenticProgress(snapshot, stepIds, tokenEstimates);
+    let progress: AgenticRunProgress;
+    if (known && commands.length && commands.every(isAttemptCommand)) {
+      progress = known;
+      for (const index of new Set(commands.map((item) => item.work))) {
+        progress = moveAssignment(progress, before!, snapshot, index, tokenEstimates);
+      }
+    } else {
+      progress = createAgenticProgress(snapshot, stepIds, tokenEstimates);
+    }
     last = { snapshot, progress };
     // The callback gets a separate value, so nothing it does reaches these counts.
     return structuredClone(progress);
   };
 }
 
+const isAttemptCommand = (
+  command: AgenticCheckpointCommand
+): command is Extract<AgenticCheckpointCommand, { type: 'start_attempt' | 'finish_attempt' }> =>
+  command.type === 'start_attempt' || command.type === 'finish_attempt';
+
+/** Moves one assignment from its state in `before` to its state in `snapshot`. Assignments are
+ * counted independently, so moving several from one pair of states moves each once. */
 function moveAssignment(
   progress: AgenticRunProgress,
   before: AgenticRunSnapshot,

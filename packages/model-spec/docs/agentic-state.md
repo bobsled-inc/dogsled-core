@@ -234,6 +234,13 @@ retry bounds and accepted results. Duplicate commands have one effect. Reusing
 an operation ID with a different payload causes a conflict. Reads return `null`
 only when the run does not exist. Storage failures must throw.
 
+A session may also implement the optional, experimental `checkpointMany(commands)`: apply the
+commands in order with `applyAgenticCheckpoint`, each with the expected revision the one before it
+produces, and save all of them or none. The coordinator then saves the starts and finishes that are
+waiting together, and sends one command at a time to a session without it. A wrapper that changes
+`checkpoint` must change `checkpointMany` too, or leave it out: spreading a session copies it. See
+[group commit](agentic-group-commit.md).
+
 `applyAgenticCheckpoint` returns a deeply frozen snapshot that holds none of your objects.
 Treat it as read-only. Keep that value, pass it to the next `applyAgenticCheckpoint` call,
 and return it from `checkpoint`. A start or finish of an attempt then costs the same however
@@ -325,6 +332,8 @@ such as a `seal_work` after preparation runs again: its digest differs, so it is
 and the old rows stay unreachable. A worker that lost its lease can still insert rows, but its
 header update changes nothing. A new owner deletes unreachable rows the first time it loads the
 run. A session never trusts its memory after an uncertain write: it reloads from the rows first.
+After a header update with no reply it renews its lease before that read, which changes the token,
+so an update still running on the server can no longer commit after the read.
 
 No table relies on a unique key, which three of the warehouses this layout targets do not
 enforce. The row layout supports DuckDB, PostgreSQL and Snowflake.
@@ -595,6 +604,13 @@ before switching.
 create the store's tables before the store does. Setup refuses them rather than run that role's
 code, but the store then stops until someone removes them. Do not use the `public` schema on
 PostgreSQL 14 or older, where every role can create in it by default.
+
+A model call costs about four statements on this store: a row insert and a header update to start
+it, and the same to finish it, one after another. On a warehouse where a statement takes half a
+second, that bounds a run whatever its concurrency. `groupCommit: true`, which is experimental and
+off by default, saves the starts and finishes that are waiting with one insert and one header update.
+A call still starts only once its start is saved, and the tables do not change. See
+[group commit](agentic-group-commit.md) for the design and a measurement.
 
 The store passes its conformance suite on PostgreSQL 17 and on a real Snowflake account, including
 concurrent first use of a key and concurrent takeover of a lease. On one Snowflake account, in one

@@ -129,6 +129,9 @@ export interface AgenticRowSessionOptions {
   limits: AgenticStoreLimits;
   retentionMs?: number;
   signal?: AbortSignal;
+  /** Experimental: offer `checkpointMany`, which commits several commands with one header
+   * update. Off by default. */
+  groupCommit?: boolean;
 }
 
 /**

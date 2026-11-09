@@ -99,3 +99,67 @@ export function validateAgenticReceipt(
   }
   return snapshot;
 }
+
+/** When the store applied each command: a finish at the time it saved, the rest on request. */
+function appliedTimes(
+  snapshot: AgenticRunSnapshot,
+  commands: readonly AgenticCheckpointCommand[],
+  requestedAt: number
+): number[] | undefined {
+  const times: number[] = [];
+  for (const command of commands) {
+    const time =
+      command.type === 'finish_attempt' ? finishTime(snapshot, command, requestedAt) : requestedAt;
+    if (time === undefined) return undefined;
+    times.push(time);
+  }
+  return times;
+}
+
+/**
+ * As validateAgenticReceipt, for commands that a store applied in order and committed together.
+ * The response must be exactly what they produce from `before`. On verified state each command is
+ * proved as it would be alone, so a group costs what its commands change.
+ */
+export function validateAgenticReceipts(
+  value: unknown,
+  before: AgenticRunSnapshot,
+  commands: readonly AgenticCheckpointCommand[],
+  requestedAt = Date.now(),
+  limits: AgenticStoreLimits = AGENTIC_DEFAULT_STORE_LIMITS
+): AgenticRunSnapshot {
+  if (commands.length === 1) {
+    return validateAgenticReceipt(value, before, commands[0], requestedAt, limits);
+  }
+  if (isVerifiedCheckpoint(before)) {
+    try {
+      const times = appliedTimes(value as AgenticRunSnapshot, commands, requestedAt);
+      let expected: AgenticRunSnapshot | undefined = times && before;
+      for (const [index, command] of commands.entries()) {
+        if (!expected) break;
+        expected = advanceVerifiedCheckpoint(expected, command, times![index]!, limits);
+      }
+      const shared = isVerifiedCheckpoint(value);
+      if (expected && isExactJson(expected, value, shared)) {
+        return shared ? (value as AgenticRunSnapshot) : expected;
+      }
+    } catch {
+      // The complete check below decides.
+    }
+  }
+  let snapshot: AgenticRunSnapshot;
+  try {
+    // A response larger than `limits` is refused before any schema reads it.
+    snapshot = parseVerifiedCheckpointWithin(value, limits);
+  } catch {
+    throw new AgenticStateError('corrupt');
+  }
+  const times = appliedTimes(snapshot, commands, requestedAt);
+  if (!times) throw new AgenticStateError('corrupt');
+  let expected = before;
+  for (const [index, command] of commands.entries()) {
+    expected = applyAgenticCheckpointWithin(expected, command, times[index]!, limits);
+  }
+  if (!jsonEqual(snapshot, expected)) throw new AgenticStateError('corrupt');
+  return snapshot;
+}

@@ -26,6 +26,12 @@ import { openLimitedRunner } from './warehouse-statement-limit.js';
 export type WarehouseRowStoreOptions = WarehouseCheckpointOptions & {
   /** How long a finished run stays after its last write. Default: 30 days. */
   retentionMs?: number;
+  /**
+   * Experimental, off by default. Commits the starts and finishes of model calls that are waiting
+   * together, with one insert and one header update, rather than two statements for each. A call
+   * still starts only once its start is saved. See docs/agentic-group-commit.md.
+   */
+  groupCommit?: boolean;
 };
 
 const LEGACY_CURSORS_TABLE = '__dogsled_cursors';
@@ -202,5 +208,6 @@ export function createWarehouseRowStore(
     retentionMs,
     ...(signal ? { signal } : {}),
     legacyCursors: legacyCursorReader(backend, engine, target),
+    ...(options.groupCommit === true ? { groupCommit: true } : {}),
   });
 }

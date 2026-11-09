@@ -50,6 +50,10 @@ suffix, and drops only that one. The role therefore needs to create schemas in t
 another engine's integration the suite is skipped. It takes about 35 minutes, including a run at the
 row store's limit.
 
+Set `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1` to run the same suite on a store with experimental
+[group commit](../../../docs/agentic-group-commit.md) instead, including its own cases. The
+PostgreSQL and emulator suites run both every time.
+
 A host that opens Snowflake through its own runner factory should prove it here before it switches.
 Set `DOGSLED_MODEL_SPEC_CHECKPOINT_RUNNERS` to the absolute path of an ES module that exports a
 `CustomRunnerRegistry` as `customRunners`, and both this suite and the benchmark below connect
@@ -58,9 +62,10 @@ through it. The module runs as test code, so point it only at code you trust.
 `row-store-contention.bench.test.ts` measures statements per assignment, latency per statement
 and how header updates behave as runs are added. It runs with
 `CHECKPOINT_BENCHMARK=1`, on PostgreSQL with the settings below, on Snowflake with the same two
-variables, or both. See the
-[benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-header-tables) for
-its settings.
+variables, on the emulator with Snowflake's timing with `CHECKPOINT_BENCHMARK_EMULATOR=1`, or any
+of them together. See the
+[benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-header-tables) and
+[group commit](../../../docs/agentic-group-commit.md#reproduce) for its settings.
 
 `../agentic-row-limits.bench.test.ts` measures one run at the row store's limits, up to 10,000
 assignments: checkpoint cost, setup, completion, resume and peak memory. It runs the same way, and

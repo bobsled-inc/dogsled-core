@@ -1,46 +1,24 @@
 import {
   agenticDeadlineAt,
   agenticSpendCapError,
-  agenticSpendCapReached,
   agenticSpendCaps,
   formatMicroUsd,
   isAgenticFailureBlocked,
 } from './execution-window.js';
-import { randomUUID } from 'node:crypto';
 import { setImmediate as yieldToEventLoop, setTimeout as delay } from 'node:timers/promises';
 import { throwIfCancelled } from '@bobsled-inc/connections';
 import { AgenticStateError } from './state.js';
-import { AgenticAssignmentError } from './errors.js';
+import { applyAgenticCheckpointWithin } from './checkpoint-verified.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS, type AgenticStoreLimits } from './store-limits.js';
 import { invokeAgenticAssignment } from './invoke.js';
-import { chargedUsage, estimateAssignmentTokens, priceMicrousd } from './spend.js';
+import {
+  assignmentFailed,
+  createScheduleRules,
+  legacyBudgetExhausted,
+  type ReturnedCall,
+} from './schedule-rules.js';
 import type { AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import type { ExperimentalAgenticProbe } from './probe.js';
-
-type Work = AgenticRunSnapshot['work'][number];
-
-function assignmentFailed(
-  snapshot: AgenticRunSnapshot,
-  work: Work,
-  detail?: string
-): AgenticAssignmentError {
-  const outcome = work.attempts.at(-1)?.outcome;
-  const error = outcome?.status === 'failed' ? outcome.error : undefined;
-  return new AgenticAssignmentError({
-    step_id: work.assignment.step_id,
-    shard_id: work.assignment.shard_id,
-    attempts: work.attempts.length,
-    max_attempts: snapshot.max_attempts,
-    ...(error ? { kind: error.kind, code: error.code, retryable: error.retryable } : {}),
-    ...(detail ? { detail } : {}),
-  });
-}
-
-function legacyBudgetExhausted(snapshot: AgenticRunSnapshot): AgenticStateError {
-  return new AgenticStateError('limit', {
-    reason: 'token_budget_exhausted',
-    message: `The run token budget (limits.tokens: ${snapshot.token_limit}) is used up or reserved; ${snapshot.charged} tokens are charged.`,
-  });
-}
 
 /** Execute bounded work while keeping all checkpoint changes in one coordinator. */
 export async function scheduleAgenticAssignments(
@@ -48,6 +26,12 @@ export async function scheduleAgenticAssignments(
   options: {
     snapshot: AgenticRunSnapshot;
     checkpoint: (command: AgenticCheckpointCommand) => Promise<AgenticRunSnapshot>;
+    /** Saves several commands as one checkpoint, or returns null when the store saved none of
+     * them. Present only for a store that offers it. */
+    checkpointGroup?: (commands: AgenticCheckpointCommand[]) => Promise<AgenticRunSnapshot | null>;
+    /** What the store holds, so that a group is worked out as the store will apply it. Omitted:
+     * the default limits. */
+    checkpointLimits?: AgenticStoreLimits;
     signal: AbortSignal;
     abort: () => void;
     concurrency: number;
@@ -59,26 +43,21 @@ export async function scheduleAgenticAssignments(
   const runSignal = options.signal;
   const { concurrency, minDispatchIntervalMs } = options;
   const spendCap = snapshot.accounting === 'spend_cap';
+  const limits = options.checkpointLimits ?? AGENTIC_DEFAULT_STORE_LIMITS;
+  const predict = (state: AgenticRunSnapshot, command: AgenticCheckpointCommand) =>
+    applyAgenticCheckpointWithin(state, command, Date.now(), limits);
   const checkpoint = async (command: AgenticCheckpointCommand) => {
     snapshot = await options.checkpoint(command);
     return snapshot;
   };
-  const estimates = new Map<string, { tokens: number; microusd: number }>();
-  const estimate = (work: Work) => {
-    let value = estimates.get(work.assignment.shard_id);
-    if (!value) {
-      const tokens = estimateAssignmentTokens(work.assignment);
-      value = {
-        tokens,
-        microusd: priceMicrousd(host.priceUsage, work.assignment.profile, {
-          input_tokens: tokens,
-          output_tokens: 0,
-        }),
-      };
-      estimates.set(work.assignment.shard_id, value);
-    }
-    return value;
-  };
+  const {
+    estimate,
+    finishCommand,
+    stopAfterFinish,
+    blockedBeforeStart,
+    hasCapacity,
+    startCommand,
+  } = createScheduleRules(host, spendCap);
   // Out-of-order failure can leave earlier shards unfinished. Inspect every saved
   // shard before resume can spend tokens on any of them.
   for (const work of snapshot.work) {
@@ -125,7 +104,7 @@ export async function scheduleAgenticAssignments(
     | { result: Awaited<ReturnType<typeof invoke>>; error?: never }
     | { error: unknown; result?: never }
   );
-  type Finished = Completion & { result: NonNullable<Completion['result']> };
+  type Finished = Completion & ReturnedCall;
   const active = new Map<number, Promise<void>>();
   const ready: Completion[] = [];
   const dispatchClock = options.dispatchClock ?? { nextAt: 0 };
@@ -151,73 +130,53 @@ export async function scheduleAgenticAssignments(
       runSignal
     );
   }
+  function dispatch(index: number, attemptId: string) {
+    active.set(
+      index,
+      invoke(index, attemptId).then(
+        (result) => {
+          ready.push({ index, attemptId, result });
+        },
+        (error: unknown) => {
+          ready.push({ index, attemptId, error });
+        }
+      )
+    );
+  }
 
   /** Save a finished attempt. Separate from `accept` so paid answers survive a stop. */
   async function saveFinish(completed: Finished) {
-    const { outcome } = completed.result;
-    const work = snapshot.work[completed.index]!;
-    // Unreported usage keeps the start estimate rather than charging nothing.
-    const charge = spendCap
-      ? Math.max(
-          completed.result.charge,
-          outcome.usage.status === 'measured' ? 0 : estimate(work).tokens
-        )
-      : completed.result.charge;
-    const microusd = spendCap
-      ? priceMicrousd(host.priceUsage, work.assignment.profile, chargedUsage(outcome.usage, charge))
-      : 0;
-    // Implausible usage reports would overflow the saved totals; stop with a clear reason.
-    if (
-      charge > Number.MAX_SAFE_INTEGER - snapshot.charged ||
-      microusd > Number.MAX_SAFE_INTEGER - (snapshot.charged_microusd ?? 0)
-    ) {
-      throw new AgenticStateError('limit', {
-        reason: 'usage_overflow',
-        message: `The executor reported implausibly large usage for assignment ${work.assignment.shard_id} of step "${work.assignment.step_id}".`,
-        hint: 'Check the executor usage report, then resume.',
-      });
-    }
-    await checkpoint({
-      type: 'finish_attempt',
-      operation_id: `finish_attempt:${completed.attemptId}`,
-      expected_revision: snapshot.revision,
-      work: completed.index,
-      attempt_id: completed.attemptId,
-      outcome,
-      charge,
-      ...(spendCap ? { charge_microusd: microusd } : {}),
-    });
+    const { command, charge } = finishCommand(snapshot, completed);
+    await checkpoint(command);
     return charge;
   }
 
   async function accept(completed: Completion) {
     active.delete(completed.index);
     if (!completed.result) throw completed.error;
-    const { outcome } = completed.result;
     const charge = await saveFinish(completed as Finished);
     throwIfCancelled(runSignal);
-    const saved = snapshot.work[completed.index]!;
-    if (!spendCap) {
-      const allowance = saved.attempts.at(-1)!.reservation;
-      if (allowance !== null && charge > allowance) {
-        throw new AgenticStateError('limit', {
-          reason: 'assignment_overcharged',
-          message: `Assignment ${saved.assignment.shard_id} of step "${saved.assignment.step_id}" used ${charge} tokens but reserved ${allowance}.`,
-        });
-      }
-      if (snapshot.token_limit !== null && snapshot.charged > snapshot.token_limit) {
-        throw legacyBudgetExhausted(snapshot);
-      }
-    }
-    const detail = completed.result.invalidOutput;
-    if (outcome.status === 'failed' && !outcome.error.retryable) {
-      throw assignmentFailed(snapshot, saved, detail);
-    }
-    if (outcome.status === 'failed' && saved.attempts.length >= snapshot.max_attempts) {
-      throw assignmentFailed(snapshot, saved, detail);
+    const stop = stopAfterFinish(snapshot, completed as Finished, charge);
+    if (stop) throw stop;
+  }
+
+  /** Waits for a call to return or for the dispatch interval to pass, whichever comes first. */
+  async function waitForInterval() {
+    // A completion interrupts throttling so accepted results are saved promptly.
+    const waiting = new AbortController();
+    try {
+      await Promise.race([
+        ...active.values(),
+        delay(Math.max(1, dispatchClock.nextAt - Date.now()), undefined, {
+          signal: AbortSignal.any([runSignal, waiting.signal]),
+        }),
+      ]);
+    } finally {
+      waiting.abort();
     }
   }
-  try {
+
+  async function oneAtATime() {
     while (firstUnfinished() < snapshot.work.length || active.size) {
       // Fast executors and synchronous stores can otherwise keep this loop in microtasks,
       // so signals (Ctrl-C, SIGTERM) and timers would never be delivered.
@@ -232,47 +191,17 @@ export async function scheduleAgenticAssignments(
       while (snapshot.work[index]?.accepted || active.has(index)) index++;
       if (index < snapshot.work.length && active.size < concurrency) {
         const work = snapshot.work[index]!;
-        const last = work.attempts.at(-1);
-        if (isAgenticFailureBlocked(snapshot, last)) throw assignmentFailed(snapshot, work);
-        if (work.attempts.length >= snapshot.max_attempts) throw assignmentFailed(snapshot, work);
-        if (!spendCap && last && last.reservation !== null && last.charge > last.reservation) {
-          throw new AgenticStateError('limit', {
-            reason: 'assignment_overcharged',
-            message: `Assignment ${work.assignment.shard_id} of step "${work.assignment.step_id}" reported more token usage than it reserved.`,
-          });
-        }
-        // At the cap, stop starting work; running calls finish and their answers are kept.
-        const capacity = spendCap
-          ? !agenticSpendCapReached(snapshot)
-          : snapshot.token_limit === null ||
-            (snapshot.charged < snapshot.token_limit &&
-              snapshot.charged + (work.assignment.limits.tokens ?? 0) <= snapshot.token_limit);
+        const blocked = blockedBeforeStart(snapshot, work);
+        if (blocked) throw blocked;
+        const capacity = hasCapacity(snapshot, work);
         if (capacity && Date.now() >= dispatchClock.nextAt) {
-          const attemptId = randomUUID();
-          const initial = spendCap ? estimate(work) : undefined;
-          await checkpoint({
-            type: 'start_attempt',
-            operation_id: `start_attempt:${attemptId}`,
-            expected_revision: snapshot.revision,
-            work: index,
-            attempt_id: attemptId,
-            ...(initial ? { charge: initial.tokens, charge_microusd: initial.microusd } : {}),
-          });
+          const command = startCommand(snapshot, index);
+          await checkpoint(command);
           // A call may have failed while the reservation was being saved.
           // Process those completions before starting another external call.
           while (ready.length) await accept(ready.shift()!);
           throwIfCancelled(runSignal);
-          active.set(
-            index,
-            invoke(index, attemptId).then(
-              (result) => {
-                ready.push({ index, attemptId, result });
-              },
-              (error: unknown) => {
-                ready.push({ index, attemptId, error });
-              }
-            )
-          );
+          dispatch(index, command.attempt_id);
           // The executor has started by now, so the interval holds between calls themselves,
           // however long this one took to prepare and however quick the next checkpoint is.
           dispatchClock.nextAt = Date.now() + minDispatchIntervalMs;
@@ -282,23 +211,168 @@ export async function scheduleAgenticAssignments(
           throw spendCap ? agenticSpendCapError(snapshot) : legacyBudgetExhausted(snapshot);
         }
         if (capacity) {
-          // A completion interrupts throttling so accepted results are saved promptly.
-          const waiting = new AbortController();
-          try {
-            await Promise.race([
-              ...active.values(),
-              delay(Math.max(1, dispatchClock.nextAt - Date.now()), undefined, {
-                signal: AbortSignal.any([runSignal, waiting.signal]),
-              }),
-            ]);
-          } finally {
-            waiting.abort();
-          }
+          await waitForInterval();
           continue;
         }
       }
       if (active.size) await Promise.race(active.values());
     }
+  }
+
+  /** Whether saving the calls that have returned would stop the run. */
+  function returnedCallsStop(): boolean {
+    let state = snapshot;
+    for (const completed of ready) {
+      if (!completed.result) return true;
+      try {
+        const { command, charge } = finishCommand(state, completed as Finished);
+        state = predict(state, command);
+        if (stopAfterFinish(state, completed as Finished, charge)) return true;
+      } catch {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Makes the calls whose starts are saved, unless a call that returned while they were saved
+   * stops the run: the next pass then saves it and stops. Reports whether it made them. */
+  function makeSavedCalls(saved: { index: number; attemptId: string }[]): boolean {
+    throwIfCancelled(runSignal);
+    if (returnedCallsStop()) return false;
+    for (const start of saved) dispatch(start.index, start.attemptId);
+    dispatchClock.nextAt = Date.now() + minDispatchIntervalMs;
+    return true;
+  }
+
+  const finishSaved = (completed: Completion): boolean =>
+    snapshot.work[completed.index]?.attempts.some(
+      (attempt) => attempt.id === completed.attemptId && attempt.finish_digest !== undefined
+    ) ?? false;
+
+  /**
+   * Group commit. Each pass saves, as one checkpoint, the finishes of every call that has returned
+   * and the starts of as many calls as there are free slots, then makes those calls. What becomes
+   * due while that checkpoint is saved waits for the next one. A call is still made only once its
+   * start is saved. The group is worked out on the state its commands produce, by the same rules
+   * as one command at a time, and anything the transition refuses there goes on its own, after the
+   * group, so that it is decided and reported as it always has been.
+   */
+  async function inGroups(
+    checkpointGroup: (commands: AgenticCheckpointCommand[]) => Promise<AgenticRunSnapshot | null>
+  ) {
+    while (firstUnfinished() < snapshot.work.length || active.size) {
+      await yieldToEventLoop();
+      throwIfCancelled(runSignal);
+      let state = snapshot;
+      const commands: AgenticCheckpointCommand[] = [];
+      const finished: Finished[] = [];
+      const starts: { index: number; attemptId: string }[] = [];
+      let stop: { error: unknown } | undefined;
+      let alone: Finished | ReturnType<typeof startCommand> | undefined;
+      // Finishes first, oldest first, so that starts see what they charged.
+      while (ready.length && !stop && !alone) {
+        const completed = ready.shift()!;
+        active.delete(completed.index);
+        if (!completed.result) {
+          stop = { error: completed.error };
+          break;
+        }
+        let finish: ReturnType<typeof finishCommand>;
+        try {
+          finish = finishCommand(state, completed as Finished);
+        } catch (error) {
+          stop = { error };
+          break;
+        }
+        try {
+          state = predict(state, finish.command);
+        } catch {
+          alone = completed as Finished;
+          break;
+        }
+        commands.push(finish.command);
+        finished.push(completed as Finished);
+        const failure = stopAfterFinish(state, completed as Finished, finish.charge);
+        if (failure) stop = { error: failure };
+      }
+      let noCapacity = false;
+      let throttled = false;
+      if (!stop && !alone) {
+        for (let index = firstUnfinished(); active.size + starts.length < concurrency; index++) {
+          while (state.work[index]?.accepted || active.has(index)) index++;
+          if (index >= state.work.length) break;
+          const work = state.work[index]!;
+          const blocked = blockedBeforeStart(state, work);
+          if (blocked) {
+            stop = { error: blocked };
+            break;
+          }
+          if (!hasCapacity(state, work)) {
+            noCapacity = true;
+            break;
+          }
+          // An interval between calls allows one start per checkpoint, as one at a time does.
+          if (minDispatchIntervalMs && (starts.length || Date.now() < dispatchClock.nextAt)) {
+            throttled = true;
+            break;
+          }
+          const command = startCommand(state, index);
+          try {
+            state = predict(state, command);
+          } catch {
+            alone = command;
+            break;
+          }
+          commands.push(command);
+          starts.push({ index, attemptId: command.attempt_id });
+        }
+      }
+      if (commands.length) {
+        try {
+          const saved = commands.length > 1 ? await checkpointGroup(commands) : null;
+          if (saved) {
+            snapshot = saved;
+          } else {
+            // One command, or a group the store saved none of: one at a time decides and
+            // reports each command as it always has.
+            for (const command of commands) await checkpoint(command);
+          }
+        } catch (error) {
+          // Answers this did not save go back, so that the drain below can still save them.
+          const returned = alone && 'result' in alone ? [...finished, alone] : finished;
+          ready.unshift(...returned.filter((completed) => !finishSaved(completed)));
+          throw error;
+        }
+      }
+      if (alone && 'result' in alone) {
+        await accept(alone);
+        continue;
+      }
+      if (stop) throw stop.error;
+      // The group's calls go first, so that if the store refuses the start below as well, the run
+      // stops with them in flight, as it does one command at a time.
+      if (starts.length && !makeSavedCalls(starts)) continue;
+      if (alone) {
+        await checkpoint(alone);
+        makeSavedCalls([{ index: alone.work, attemptId: alone.attempt_id }]);
+        continue;
+      }
+      if (starts.length || commands.length) continue;
+      if (noCapacity && active.size === 0) {
+        throw spendCap ? agenticSpendCapError(snapshot) : legacyBudgetExhausted(snapshot);
+      }
+      if (throttled) {
+        await waitForInterval();
+        continue;
+      }
+      if (active.size) await Promise.race(active.values());
+    }
+  }
+
+  try {
+    if (options.checkpointGroup) await inGroups(options.checkpointGroup);
+    else await oneAtATime();
   } catch (error) {
     // Save answers that already finished; spend-cap runs keep every answer they paid for.
     // Keep draining: another answer can arrive while a checkpoint write is awaited.
