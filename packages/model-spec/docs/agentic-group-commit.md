@@ -289,7 +289,9 @@ Each run is the synthetic map workload of the benchmark, with 60 assignments. Mo
 once, which is the worst case for the store, or after 2 seconds. Every run is a real run: the
 coordinator, the scheduler, the store and its SQL are the shipped code, and only the warehouse is
 emulated. Runs that share a schema run in one process against one emulator. A row is one sample, or
-the median of two.
+the median of two. Most rows were measured before the scheduler's rules moved to
+`schedule-rules.ts`, a change meant to alter nothing. Repeating six of them with medians on the final
+code gave the same statements per call and calls a minute within 0.3%.
 
 What the columns mean:
 
