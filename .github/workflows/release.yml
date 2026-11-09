@@ -73,9 +73,8 @@ jobs:
           package-manager-cache: false
       - run: pnpm install --frozen-lockfile
         timeout-minutes: 10
-      # PR #58 adds `pnpm deps:expiries --fail-within 0` here as the first
-      # release check, so an upcoming exemption expiry fails fast before the
-      # parallel jobs start.
+      - name: Check dependency expiry dates
+        run: pnpm deps:expiries --fail-within 0
       - name: Require reviewed package access settings
         run: |
           node --input-type=module <<'JS'
