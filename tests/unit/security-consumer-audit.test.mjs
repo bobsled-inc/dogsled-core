@@ -367,53 +367,14 @@ describe('reviewed transitive advisory consumer exceptions', () => {
   }
   const dogsled = ['@bobsled-inc/dogsled', '0.62.0'];
   const sdk = ['@modelcontextprotocol/sdk', '1.32.0'];
-  const msal = {
-    id: 'GHSA-xcx6-jx8p-x3h5',
-    name: '@azure/msal-node',
-    range: '>=5.0.0-beta.0 <7.1.0',
-  };
-  const identity = ['@azure/identity', '4.13.3'];
-  const cases = [
-    {
-      ...msal,
-      version: '6.0.1',
-      chain: [['snowflake-sdk', '3.4.0'], identity],
-      deadline: '2026-11-24T00:00:00Z',
-    },
-    {
-      ...msal,
-      version: '6.0.1',
-      chain: [['tedious', '20.3.4'], identity],
-      deadline: '2026-11-24T00:00:00Z',
-    },
-  ];
-  it.each(cases.map((entry) => [`${entry.id} ${entry.chain.map(([n]) => n).join('>')}`, entry]))(
-    'allows %s only for the reviewed parent until its deadline',
-    (_label, entry) => {
-      expect(chainTriage(entry)).toBe(true);
-      expect(chainTriage(entry, Date.parse(entry.deadline))).toBe(false);
-      expect(chainTriage({ ...entry, version: '1.0.0', range: '<9999.0.0' })).toBe(false);
-      const otherParent = [...entry.chain.slice(0, -1), ['other-sdk', '1.0.0']];
-      expect(chainTriage({ ...entry, chain: otherParent })).toBe(false);
-    }
-  );
-  it('requires re-review when a reviewed SDK parent changes version', () => {
-    expect(
-      chainTriage({
-        ...cases[0],
-        chain: [
-          ['snowflake-sdk', '3.4.0'],
-          ['@azure/identity', '4.15.0'],
-        ],
-      })
-    ).toBe(false);
-  });
   it.each([
     ['GHSA-xjj6-f33q-929c', 'undici', '8.11.2', [dogsled]],
     ['GHSA-xjj6-f33q-929c', 'undici', '7.30.0', [['@turbopuffer/turbopuffer', '2.0.0']]],
     ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.3.6', [dogsled]],
     ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.6.5', [dogsled, sdk]],
     ['GHSA-27r3-jxmh-p828', 'body-parser', '2.3.0', [dogsled, sdk, ['express', '5.2.1']]],
+    ['GHSA-xcx6-jx8p-x3h5', '@azure/msal-node', '6.0.1', [['snowflake-sdk', '3.4.0'], ['@azure/identity', '4.13.3']]],
+    ['GHSA-xcx6-jx8p-x3h5', '@azure/msal-node', '6.0.1', [['tedious', '20.3.4'], ['@azure/identity', '4.13.3']]],
   ])('no longer allows %s for %s %s after the fixed release', (id, name, version, chain) => {
     expect(chainTriage({ id, name, version, range: '<9999.0.0', chain })).toBe(false);
   });

@@ -123,21 +123,11 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   check command and connections runner pass only host, path and token.
   Regression tests assert those exact options and the absence of `proxy`. The
   PAC/FTP path cannot receive input through these adapters. Review by 2026-11-20.
-- Snowflake and Tedious > Azure Identity > MSAL Node 5.1.1 (workspace) and
-  6.0.1 (consumers): GHSA-xcx6-jx8p-x3h5 affects the authorization-code flow.
-  Snowflake workload identity uses `DefaultAzureCredential`, whose chain never
-  calls `acquireTokenByCode`. Its broker and VS Code credentials need an Azure
-  Identity plugin, and Dogsled registers none. Dogsled constructs no
-  authorization-code or interactive credential. Tedious loads Azure Identity, but
-  Dogsled's SQL Server destination hard-codes `authentication.type: 'default'`
-  (SQL login), so Tedious never constructs an Azure credential. Re-reviewed on 2026-11-05: these authentication paths are unchanged.
-  Azure Identity 4.14.1 now uses fixed MSAL Node ^7.1.0. It was published on
-  2026-10-29 and meets the 7-day release-age rule on 2026-11-05T22:16:07.100Z.
-  The owner requested extending the existing exceptions to 2026-11-24 while
-  waiting for that update. Under the 7-day policy, the upgrade is possible now
-  (age-eligible since 2026-11-05T22:16:07Z) and must land before
-  2026-11-24T00:00:00Z. Do not extend them again. The package versions and allowed
-  paths stay the same.
+- Snowflake and Tedious > Azure Identity > MSAL Node: GHSA-xcx6-jx8p-x3h5 is
+  resolved. Azure Identity 4.14.1 (published 2026-10-29, age-eligible since
+  2026-11-05) uses fixed MSAL Node ^7.1.0. A workspace override pins it and
+  the lockfile resolves `@azure/msal-node@7.1.2`. The `audit-ci.json` and
+  `consumer-exceptions.json` MSAL entries have been removed.
 
 The `tedious > sprintf-js` advisory is moderate. Tedious uses literal format
 strings, so remote values cannot set precision specifiers. It requires no
