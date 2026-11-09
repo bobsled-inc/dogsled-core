@@ -373,8 +373,24 @@ describe('reviewed transitive advisory consumer exceptions', () => {
     ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.3.6', [dogsled]],
     ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.6.5', [dogsled, sdk]],
     ['GHSA-27r3-jxmh-p828', 'body-parser', '2.3.0', [dogsled, sdk, ['express', '5.2.1']]],
-    ['GHSA-xcx6-jx8p-x3h5', '@azure/msal-node', '6.0.1', [['snowflake-sdk', '3.4.0'], ['@azure/identity', '4.13.3']]],
-    ['GHSA-xcx6-jx8p-x3h5', '@azure/msal-node', '6.0.1', [['tedious', '20.3.4'], ['@azure/identity', '4.13.3']]],
+    [
+      'GHSA-xcx6-jx8p-x3h5',
+      '@azure/msal-node',
+      '6.0.1',
+      [
+        ['snowflake-sdk', '3.4.0'],
+        ['@azure/identity', '4.13.3'],
+      ],
+    ],
+    [
+      'GHSA-xcx6-jx8p-x3h5',
+      '@azure/msal-node',
+      '6.0.1',
+      [
+        ['tedious', '20.3.4'],
+        ['@azure/identity', '4.13.3'],
+      ],
+    ],
   ])('no longer allows %s for %s %s after the fixed release', (id, name, version, chain) => {
     expect(chainTriage({ id, name, version, range: '<9999.0.0', chain })).toBe(false);
   });
