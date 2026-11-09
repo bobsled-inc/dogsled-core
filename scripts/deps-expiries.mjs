@@ -44,11 +44,11 @@ if (entries.length === 0) {
     const icon =
       entry.status === 'expired' ? 'EXPIRED' : entry.status === 'warning' ? 'WARNING' : '     ok';
     const days =
-      entry.daysLeft <= 0
-        ? `${Math.abs(entry.daysLeft)}d overdue`
-        : `${entry.daysLeft}d left`;
+      entry.daysLeft <= 0 ? `${Math.abs(entry.daysLeft)}d overdue` : `${entry.daysLeft}d left`;
     console.log(`  [${icon}]  ${days.padEnd(14)} ${entry.source.padEnd(24)} ${entry.label}`);
-    console.log(`           date: ${entry.date}${entry.graceDays ? `  (${entry.graceDays}d grace)` : ''}`);
+    console.log(
+      `           date: ${entry.date}${entry.graceDays ? `  (${entry.graceDays}d grace)` : ''}`
+    );
   }
   console.log('─'.repeat(80));
   console.log('');
@@ -56,7 +56,9 @@ if (entries.length === 0) {
 
 const expired = entries.filter((e) => e.status === 'expired');
 const dueSoon =
-  failWithin !== null ? entries.filter((e) => e.status !== 'expired' && e.daysLeft <= failWithin) : [];
+  failWithin !== null
+    ? entries.filter((e) => e.status !== 'expired' && e.daysLeft <= failWithin)
+    : [];
 
 if (expired.length > 0) {
   console.error(`${expired.length} expiry date(s) past their grace period.`);
