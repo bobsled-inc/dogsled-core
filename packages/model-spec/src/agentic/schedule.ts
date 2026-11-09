@@ -227,6 +227,16 @@ export async function scheduleAgenticAssignments(
     return false;
   }
 
+  /** Makes the calls whose starts are saved, unless a call that returned while they were saved
+   * stops the run: the next pass then saves it and stops. Reports whether it made them. */
+  function makeSavedCalls(saved: { index: number; attemptId: string }[]): boolean {
+    throwIfCancelled(runSignal);
+    if (returnedCallsStop()) return false;
+    for (const start of saved) dispatch(start.index, start.attemptId);
+    dispatchClock.nextAt = Date.now() + minDispatchIntervalMs;
+    return true;
+  }
+
   const finishSaved = (completed: Completion): boolean =>
     snapshot.work[completed.index]?.attempts.some(
       (attempt) => attempt.id === completed.attemptId && attempt.finish_digest !== undefined
@@ -332,21 +342,15 @@ export async function scheduleAgenticAssignments(
         continue;
       }
       if (stop) throw stop.error;
+      // The group's calls go first, so that if the store refuses the start below as well, the run
+      // stops with them in flight, as it does one command at a time.
+      if (starts.length && !makeSavedCalls(starts)) continue;
       if (alone) {
         await checkpoint(alone);
-        starts.push({ index: alone.work, attemptId: alone.attempt_id });
-      }
-      if (starts.length) {
-        throwIfCancelled(runSignal);
-        // A call may have failed while the group was being saved. If saving it stops the run,
-        // make no more calls: the next pass saves it and stops.
-        if (!returnedCallsStop()) {
-          for (const start of starts) dispatch(start.index, start.attemptId);
-          dispatchClock.nextAt = Date.now() + minDispatchIntervalMs;
-        }
+        makeSavedCalls([{ index: alone.work, attemptId: alone.attempt_id }]);
         continue;
       }
-      if (commands.length) continue;
+      if (starts.length || commands.length) continue;
       if (noCapacity && active.size === 0) {
         throw spendCap ? agenticSpendCapError(snapshot) : legacyBudgetExhausted(snapshot);
       }

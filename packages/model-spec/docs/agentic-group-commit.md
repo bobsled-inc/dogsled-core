@@ -156,6 +156,9 @@ before it. It uses the same rules as one command at a time: the attempt limit, b
 spend cap, the old reservation accounting, and every other check `start_attempt` and `finish_attempt`
 make. If the transition refuses a command there, the group ends before it, and that command is sent
 alone after the group, so the store decides it and the run reports it in the same words as today.
+A start sent alone goes after the group's calls have been made, so that if the store refuses it too,
+the run stops with those calls in flight, as it does one command at a time, and leaves no saved start
+without its call.
 
 The store can still refuse a group the scheduler expected to pass, for example because its clock
 passed the deadline in between. It then writes nothing, the coordinator finds the state unchanged,
