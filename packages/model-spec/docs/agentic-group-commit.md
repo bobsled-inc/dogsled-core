@@ -299,12 +299,12 @@ The emulator predicts what an account cannot show cheaply, such as model calls t
 runs the store's real SQL with Snowflake's timing put back in, as the method below describes. At the
 account's settings it was optimistic about the gain, with the same statements per call:
 
-| Runs | Calls in flight | Account, one at a time → grouped | Gain | Emulator with a tail | Gain |
-| ---: | --------------: | -------------------------------: | ---: | -------------------: | ---: |
-|    1 |               3 |                      19.1 → 68.5 | 3.6× |          18.4 → 80.3 | 4.4× |
-|    1 |               8 |                      22.1 → 99.2 | 4.5× |         18.5 → 110.7 | 6.0× |
-|    4 |               3 |                     75.4 → 237.3 | 3.1× |         70.0 → 248.5 | 3.6× |
-|   16 |               3 |                    145.8 → 499.3 | 3.4× |        123.9 → 525.8 | 4.2× |
+| Runs | Calls in flight | Account, one at a time → grouped |  Gain | Emulator with a tail |  Gain |
+| ---: | --------------: | -------------------------------: | ----: | -------------------: | ----: |
+|    1 |               3 |                      19.1 → 68.5 | 3.59× |          18.4 → 80.3 | 4.36× |
+|    1 |               8 |                      22.1 → 99.2 | 4.49× |         18.5 → 110.7 | 5.98× |
+|    4 |               3 |                     75.4 → 237.3 | 3.15× |         70.0 → 248.5 | 3.55× |
+|   16 |               3 |                    145.8 → 499.3 | 3.42× |        123.9 → 525.8 | 4.24× |
 
 Read its other figures with that margin.
 
@@ -332,7 +332,8 @@ coordinator, the scheduler, the store and its SQL are the shipped code, and only
 emulated. Runs that share a schema run in one process against one emulator. A row is one sample, or
 the median of two. Most rows were measured before the scheduler's rules moved to
 `schedule-rules.ts`, a change meant to alter nothing. Repeating six of them with medians on the final
-code gave the same statements per call and calls a minute within 0.3%.
+code gave the same statements per call, and calls a minute that differed by at most 0.2, apart
+from 451.2 against 452.5.
 
 What the columns mean:
 
