@@ -488,8 +488,11 @@ Settings: `CHECKPOINT_BENCHMARK_STORES` (`duckdb-run-file`, `duckdb-shared`, `po
 `CHECKPOINT_BENCHMARK_STOP_SHARE` (default `0.9`), `CHECKPOINT_BENCHMARK_PUBLISH=1` for a publisher
 that writes nothing, `CHECKPOINT_BENCHMARK_PAYLOAD` (smaller makes each assignment larger),
 `CHECKPOINT_BENCHMARK_NODE_OPTIONS`, for example a heap limit, and `CHECKPOINT_BENCHMARK_OUTPUT`.
-PostgreSQL uses the settings in `tests/integration/warehouse/README.md`, and Snowflake the two
-checkpoint variables there.
+`CHECKPOINT_BENCHMARK_BULK` is the number of assignments a run on a warehouse row store leaves to
+its resume when the rest is written in bulk, 40 by default on `snowflake-rows` and none elsewhere.
+In bulk mode, `CHECKPOINT_BENCHMARK_PUBLICATION=1` also publishes the finished run, and
+`CHECKPOINT_BENCHMARK_PHASES` chooses the phases. PostgreSQL uses the settings in
+`tests/integration/warehouse/README.md`, and Snowflake the two checkpoint variables there.
 
 Measured on one Apple M3 Max laptop with Node.js 25.9.0, and PostgreSQL 17 in Docker on the same
 machine, one sample of each row with nothing else running. Per assignment is the time between model

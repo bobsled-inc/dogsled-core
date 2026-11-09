@@ -42,6 +42,17 @@ const stopShare = Number(env.CHECKPOINT_BENCHMARK_STOP_SHARE ?? 0.9);
 const publish = env.CHECKPOINT_BENCHMARK_PUBLISH === '1';
 /** Smaller makes each assignment larger; see `benchmarkWorkload`. */
 const payload = Number(env.CHECKPOINT_BENCHMARK_PAYLOAD ?? 1000);
+/**
+ * Assignments left for `resume` when the rest of the run is written in bulk, on a warehouse row
+ * store. Snowflake does this by default, where running every assignment would take hours. Zero
+ * runs every assignment.
+ */
+const bulkFor = (store: RowLimitsStore) =>
+  Number(env.CHECKPOINT_BENCHMARK_BULK ?? (store === 'snowflake-rows' ? 40 : 0));
+/** In bulk mode, also publish the finished run, to time publication's reads of the whole run. */
+const publication = env.CHECKPOINT_BENCHMARK_PUBLICATION === '1';
+/** In bulk mode, the phases to run, for example `build,resume,reopen` to time only the reads. */
+const bulkPhases = env.CHECKPOINT_BENCHMARK_PHASES?.split(',') as RowLimitsPhase[] | undefined;
 const worker = fileURLToPath(new URL('../support/row-limits-worker.ts', import.meta.url));
 
 async function phase(options: RowLimitsWorkerOptions): Promise<RowLimitsPhaseResult> {
@@ -89,7 +100,20 @@ describe.skipIf(!enabled)('row store at large run sizes', () => {
           const schema = `${prefix}_limits_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
           try {
             const phases: Partial<Record<RowLimitsPhase, RowLimitsPhaseResult>> = {};
-            for (const name of ['run', 'resume', 'reopen'] as const) {
+            const bulk = bulkFor(store);
+            if (bulk && store !== 'postgres-rows' && store !== 'snowflake-rows') {
+              throw new Error('Only a warehouse row store is built in bulk');
+            }
+            const names: RowLimitsPhase[] = bulk
+              ? (bulkPhases ?? [
+                  'setup',
+                  'build',
+                  'resume',
+                  'reopen',
+                  ...(publication ? ['publish' as const] : []),
+                ])
+              : ['run', 'resume', 'reopen'];
+            for (const name of names) {
               phases[name] = await phase({
                 store,
                 shape,
@@ -98,10 +122,14 @@ describe.skipIf(!enabled)('row store at large run sizes', () => {
                 directory,
                 schema,
                 stopAt: Math.round(assignments * stopShare),
+                late: bulk,
                 publish,
                 payload,
                 output: join(directory, `${name}.json`),
               });
+              process.stdout.write(
+                `PHASE ${store} ${assignments} ${name} ${phases[name]!.totalMs} ms\n`
+              );
               expect(phases[name]!.failure).toBeUndefined();
             }
             const line = JSON.stringify({ store, shape, assignments, publish, payload, ...phases });

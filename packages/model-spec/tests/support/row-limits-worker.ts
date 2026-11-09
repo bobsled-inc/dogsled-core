@@ -4,6 +4,13 @@
  * finishes it in a new process, as after a crash, and `reopen` opens the finished run again.
  * The model call is synthetic and returns at once, so every figure is store and coordinator
  * overhead.
+ *
+ * On a warehouse where a checkpoint takes about a second, driving every assignment would take
+ * hours, so a run can be built in bulk instead. `setup` starts another run of the same size and
+ * stops at its first model call, which times the work that seals the whole run. `build` writes
+ * the measured run with all but its last assignments done through the store's own backend, and
+ * `publish` publishes the finished run through a publisher that writes nothing, which times
+ * publication's reads of the whole run.
  */
 import { writeFileSync } from 'node:fs';
 import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
@@ -19,14 +26,16 @@ import { createDuckDbCheckpointStore } from '../../src/agentic/duckdb-state.js';
 import { createLocalAgenticStateStore } from '../../src/agentic/local-state.js';
 import type { AgenticPublisher } from '../../src/agentic/publication.js';
 import { executeAgenticRun } from '../../src/agentic/run.js';
-import type {
-  AgenticCheckpointCommand,
-  AgenticRunSnapshot,
-  AgenticStateStore,
+import {
+  AgenticStateError,
+  type AgenticCheckpointCommand,
+  type AgenticRunSnapshot,
+  type AgenticStateStore,
 } from '../../src/agentic/state.js';
 import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import { createWarehouseCheckpointStore } from '../../src/agentic/warehouse-state.js';
 import { benchmarkWorkload, type BenchmarkShape } from './agentic-benchmark.js';
+import { writeWarehouseRowRun } from './agentic-row-run.js';
 import {
   hostRunners,
   postgresIntegration,
@@ -41,7 +50,7 @@ export type RowLimitsStore =
   /** The stores the row store replaces, which keep the default limits. */
   | 'file'
   | 'postgres-warehouse';
-export type RowLimitsPhase = 'run' | 'resume' | 'reopen';
+export type RowLimitsPhase = 'run' | 'resume' | 'reopen' | 'setup' | 'build' | 'publish';
 export interface RowLimitsWorkerOptions {
   store: RowLimitsStore;
   shape: BenchmarkShape;
@@ -53,6 +62,8 @@ export interface RowLimitsWorkerOptions {
   schema: string;
   /** Model calls that `run` makes before its executor stops the run. */
   stopAt: number;
+  /** Assignments `build` leaves for `resume`. */
+  late?: number;
   /** Publish through a publisher that writes nothing, to time what publication costs the run. */
   publish?: boolean;
   /** `benchmarkWorkload`'s payload size: smaller makes each assignment larger. Default 1000. */
@@ -76,6 +87,11 @@ export interface RowLimitsPhaseResult {
   lateGapMs: { p50: number; p95: number } | null;
   /** Statements sent, on warehouses only: DuckDB has no runner hook. */
   statements: number | null;
+  /** How long statements took, on warehouses only. */
+  statementMs: { p50: number; p95: number; max: number } | null;
+  /** Statements and the longest of them, for each session method other than an attempt's
+   * checkpoints, which can overlap. On warehouses only. */
+  steps: Record<string, { statements: number; maxStatementMs: number }>;
   /** The longest the event loop was blocked, which a lease heartbeat has to outlast. */
   maxBlockMs: number;
   peakHeapMiB: number;
@@ -109,7 +125,27 @@ function countValues(value: unknown): number {
 }
 
 const options = JSON.parse(process.argv[2]!) as RowLimitsWorkerOptions;
+const warehouse = options.store.startsWith('postgres') || options.store.startsWith('snowflake');
+const runId = options.phase === 'setup' ? 'setup' : 'large';
 let statements = 0;
+const statementTimes: number[] = [];
+const steps: Record<string, { statements: number; maxStatementMs: number }> = {};
+let currentStep: string | undefined;
+async function counted<T>(send: () => Promise<T>): Promise<T> {
+  statements++;
+  const started = performance.now();
+  try {
+    return await send();
+  } finally {
+    const ms = performance.now() - started;
+    statementTimes.push(ms);
+    if (currentStep) {
+      const step = (steps[currentStep] ??= { statements: 0, maxStatementMs: 0 });
+      step.statements++;
+      step.maxStatementMs = Math.max(step.maxStatementMs, Math.round(ms));
+    }
+  }
+}
 
 /** Confirms every publication at once, so only the coordinator and the store take time. */
 const publisher: AgenticPublisher = {
@@ -125,28 +161,27 @@ const publisher: AgenticPublisher = {
   close: async () => {},
 };
 
+/** The warehouse integration of a warehouse store, and runners that count and time statements. */
+async function countingRunners() {
+  const integration = options.store.startsWith('postgres')
+    ? postgresIntegration()
+    : (await snowflakeIntegration())!;
+  const host = await hostRunners();
+  const customRunners = new CustomRunnerRegistry();
+  customRunners.register(integration.source_type, integration.auth.type, async (base, context) => {
+    const runner: SqlRunnerModule = await resolveRunner(base, { ...context, ...host });
+    return {
+      ...runner,
+      run: (...args: Parameters<SqlRunnerModule['run']>) => counted(() => runner.run(...args)),
+      query: (...args: Parameters<SqlQueryRunner>) => counted(() => runner.query!(...args)),
+    };
+  });
+  return { integration, customRunners };
+}
+
 async function openStore(): Promise<AgenticStateStore> {
   const counting = async (integration: IntegrationFile) => {
-    const host = await hostRunners();
-    const customRunners = new CustomRunnerRegistry();
-    customRunners.register(
-      integration.source_type,
-      integration.auth.type,
-      async (base, context) => {
-        const runner: SqlRunnerModule = await resolveRunner(base, { ...context, ...host });
-        return {
-          ...runner,
-          run: (...args: Parameters<SqlRunnerModule['run']>) => {
-            statements++;
-            return runner.run(...args);
-          },
-          query: (...args: Parameters<SqlQueryRunner>) => {
-            statements++;
-            return runner.query!(...args);
-          },
-        };
-      }
-    );
+    const { customRunners } = await countingRunners();
     return options.store === 'postgres-warehouse'
       ? createWarehouseCheckpointStore(integration, { schema: options.schema, customRunners })
       : createWarehouseRowStore(integration, {
@@ -182,7 +217,21 @@ async function openStore(): Promise<AgenticStateStore> {
 
 const collect = (globalThis as { gc?: () => void }).gc;
 
+/** What a phase reports when it fails. Dogsled's state errors are safe to print; a driver's message
+ * can name the account, so only its kind goes in the result, and the rest to stderr. */
+function failureOf(error: unknown): string {
+  if (error instanceof AgenticStateError) {
+    return [error.code, error.reason, error.message].filter(Boolean).join(' ');
+  }
+  process.stderr.write(
+    `${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`
+  );
+  return `${error instanceof Error ? error.name : 'failed'} from outside Dogsled`;
+}
+
 async function main(): Promise<void> {
+  // Before the samplers below start: they would keep this process alive.
+  if (options.phase === 'build') return build();
   collect?.();
   const loop = monitorEventLoopDelay({ resolution: 10 });
   const baseRss = process.memoryUsage().rss;
@@ -201,9 +250,13 @@ async function main(): Promise<void> {
   let last: AgenticRunSnapshot | null = null;
   const timed = async <T>(name: string, call: () => Promise<T>): Promise<T> => {
     const started = performance.now();
+    // An attempt's checkpoints can overlap, so only other methods take statements as their own.
+    const step = name === 'start_attempt' || name === 'finish_attempt' ? undefined : name;
+    if (step) currentStep = step;
     try {
       return await call();
     } finally {
+      if (step) currentStep = undefined;
       const ms = performance.now() - started;
       const entry = (sessions[name] ??= { count: 0, ms: 0 });
       entry.count++;
@@ -240,6 +293,7 @@ async function main(): Promise<void> {
       throw new Error('The benchmark stops the run here.');
     }
     calls.push(performance.now());
+    if (options.phase === 'setup') throw new Error('The benchmark stops the run here.');
     try {
       return await execute(request);
     } finally {
@@ -250,21 +304,15 @@ async function main(): Promise<void> {
   loop.enable();
   let failure: string | undefined;
   try {
+    const starts = options.phase === 'run' || options.phase === 'setup';
     await executeAgenticRun(workload.host, workload.context(), {
       projectDirectory: options.directory,
       stateStore: store,
-      run: { id: 'large', mode: options.phase === 'run' ? 'start' : 'resume' },
-      ...(options.publish ? { publisher } : {}),
+      run: { id: runId, mode: starts ? 'start' : 'resume' },
+      ...(options.publish || options.phase === 'publish' ? { publisher } : {}),
     });
   } catch (error) {
-    if (options.phase !== 'run') {
-      const { code, reason, message } = error as {
-        code?: string;
-        reason?: string;
-        message?: string;
-      };
-      failure = [code ?? 'failed', reason, message].filter(Boolean).join(' ');
-    }
+    if (options.phase !== 'run' && options.phase !== 'setup') failure = failureOf(error);
   }
   const finished = performance.now();
   loop.disable();
@@ -286,16 +334,69 @@ async function main(): Promise<void> {
     ),
     lateCheckpointMs: percentiles(attemptMs.slice(Math.floor(attemptMs.length * 0.75))),
     lateGapMs: percentiles(gaps),
-    statements:
-      options.store.startsWith('postgres') || options.store.startsWith('snowflake')
-        ? statements
-        : null,
+    statements: warehouse ? statements : null,
+    statementMs: warehouse ? statementPercentiles() : null,
+    steps,
     maxBlockMs: Math.round(loop.max / 1e6),
     peakHeapMiB: mib(peakHeap - baseHeap),
     retainedHeapMiB: retained === null ? null : mib(retained),
     peakRssMiB: mib(peakRss),
     maxRssMiB: mib(process.resourceUsage().maxRSS * 1024),
     baseRssMiB: mib(baseRss),
+    snapshot: snapshot
+      ? {
+          bytes: Buffer.byteLength(JSON.stringify(snapshot)),
+          values: countValues(snapshot),
+          work: snapshot.work.length,
+        }
+      : null,
+    ...(failure ? { failure } : {}),
+  };
+  writeFileSync(options.output, JSON.stringify(result));
+}
+
+function statementPercentiles() {
+  const middle = percentiles(statementTimes);
+  if (!middle) return null;
+  return { ...middle, max: Math.round(Math.max(...statementTimes)) };
+}
+
+/** Writes the measured run in bulk through the store's own backend, and reports what it sent. */
+async function build(): Promise<void> {
+  const started = performance.now();
+  const { integration, customRunners } = await countingRunners();
+  const workload = benchmarkWorkload(options.assignments, options.shape, options.payload ?? 1000);
+  let failure: string | undefined;
+  let snapshot: AgenticRunSnapshot | null = null;
+  try {
+    snapshot = await writeWarehouseRowRun(workload, integration, {
+      schema: options.schema,
+      retentionMs: 86_400_000,
+      customRunners,
+      runId,
+      finished: options.assignments - (options.late ?? 0),
+    });
+  } catch (error) {
+    failure = failureOf(error);
+  }
+  const result: RowLimitsPhaseResult = {
+    phase: options.phase,
+    totalMs: Math.round(performance.now() - started),
+    firstCallMs: null,
+    afterLastCallMs: null,
+    calls: 0,
+    sessions: {},
+    lateCheckpointMs: null,
+    lateGapMs: null,
+    statements,
+    statementMs: statementPercentiles(),
+    steps,
+    maxBlockMs: 0,
+    peakHeapMiB: 0,
+    retainedHeapMiB: null,
+    peakRssMiB: mib(process.memoryUsage().rss),
+    maxRssMiB: mib(process.resourceUsage().maxRSS * 1024),
+    baseRssMiB: 0,
     snapshot: snapshot
       ? {
           bytes: Buffer.byteLength(JSON.stringify(snapshot)),

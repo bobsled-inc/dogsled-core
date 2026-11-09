@@ -81,6 +81,41 @@ function warehouseRowBackend(
   };
 }
 
+/** The schema a store with `options` keeps its tables in, named as its dialect names it. */
+function rowNamespace(
+  integration: IntegrationFile,
+  engine: RowEngine,
+  options: WarehouseRowStoreOptions
+) {
+  const target = resolveWarehouseCheckpointTarget(integration, options);
+  const namespace = [...(target.catalog ? [target.catalog] : []), target.schema]
+    .map(dialects[engine].identifier)
+    .join('.');
+  return { target, namespace };
+}
+
+/**
+ * The backend `createWarehouseRowStore` writes through for `options`: its tables, statements and
+ * statement limits. Test fixtures use it to write a large run in bulk as the store would.
+ */
+export function warehouseRowStoreBackend(
+  integration: IntegrationFile,
+  options: WarehouseRowStoreOptions
+): AgenticRowBackend {
+  const engine = integration.source_type;
+  if (!isRowEngine(engine)) {
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_store_config',
+      message: 'The warehouse row store supports PostgreSQL and Snowflake.',
+    });
+  }
+  const { target, namespace } = rowNamespace(integration, engine, options);
+  return warehouseRowBackend(integration, engine, target, namespace, {
+    ...options,
+    leaseMs: options.leaseMs ?? 120_000,
+  });
+}
+
 /** Whether the old table exists. PostgreSQL's catalog answers that whatever the role may read,
  * so a table it has no grant on fails at the read that follows. Snowflake has no such view:
  * a table the role cannot see looks missing, so the role must hold `SELECT` on it. */
@@ -161,17 +196,13 @@ export function createWarehouseRowStore(
         'The warehouse row store settings are invalid: schema must be one non-empty name, leaseMs must be 10,000 to 600,000 and retentionMs must be positive.',
     });
   }
-  const target = resolveWarehouseCheckpointTarget(integration, options);
+  const { target, namespace } = rowNamespace(integration, engine, options);
   if (engine === 'postgres' && Buffer.byteLength(target.schema) > postgresNameBytes) {
     throw new AgenticStateError('limit', {
       reason: 'invalid_store_config',
       message: `A PostgreSQL schema name can be at most ${postgresNameBytes} bytes.`,
     });
   }
-  const dialect = dialects[engine];
-  const namespace = [...(target.catalog ? [target.catalog] : []), target.schema]
-    .map(dialect.identifier)
-    .join('.');
   const backend = warehouseRowBackend(integration, engine, target, namespace, {
     ...options,
     leaseMs,
