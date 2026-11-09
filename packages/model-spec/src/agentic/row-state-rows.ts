@@ -146,11 +146,22 @@ export async function purgeExpiredAgenticRuns(
 /** Inserts one write. `beforeBatch` runs before each statement, so a long write can stop or
  * extend its lease. */
 export async function insertAgenticWrite(
-  { db, dialect, table, hash }: AgenticRunRows,
+  rows: AgenticRunRows,
   write: AgenticRowWrite,
   beforeBatch: () => Promise<void>
 ): Promise<void> {
-  for (const batch of insertBatches(agenticStoredRows(write, dialect.maxRowChars), dialect)) {
+  await insertAgenticWrites(rows, [write], beforeBatch);
+}
+
+/** Inserts writes in as few statements as the dialect's bounds allow. Each row names its own
+ * write, so writes that share a statement stay separate, and they commit only with the header. */
+export async function insertAgenticWrites(
+  { db, dialect, table, hash }: AgenticRunRows,
+  writes: readonly AgenticRowWrite[],
+  beforeBatch: () => Promise<void>
+): Promise<void> {
+  const stored = writes.flatMap((write) => agenticStoredRows(write, dialect.maxRowChars));
+  for (const batch of insertBatches(stored, dialect)) {
     await beforeBatch();
     const params: SqlParamValue[] = batch.flatMap((row) => [
       hash,

@@ -120,6 +120,27 @@ export function sharedMemoryStore(): AgenticStateStore {
   };
 }
 
+/** As sharedMemoryStore, with a group commit that applies each command in turn and replies
+ * with what the last returned, as the row store does. */
+export function sharedGroupStore(): AgenticStateStore {
+  let saved: AgenticRunSnapshot | null = null;
+  return {
+    async acquire() {
+      return {
+        read: async () => saved,
+        create: async (snapshot) => (saved = snapshot),
+        checkpoint: async (command) => (saved = applyAgenticCheckpoint(saved!, command)),
+        checkpointMany: async (commands) => {
+          let state = saved!;
+          for (const command of commands) state = applyAgenticCheckpoint(state, command);
+          return (saved = state);
+        },
+        release: async () => {},
+      };
+    },
+  };
+}
+
 export interface PhaseTimer {
   phases: Record<string, number>;
   /** Adds the awaited duration of a call to its phase. */

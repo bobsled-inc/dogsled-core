@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { buildDuckDbRunner, isDuckDbAvailable } from '@bobsled-inc/connections';
-import { validateAgenticReceipt } from '../../src/agentic/checkpoint-receipt.js';
+import {
+  validateAgenticReceipt,
+  validateAgenticReceipts,
+} from '../../src/agentic/checkpoint-receipt.js';
 import { duckDbOperationBackend, duckDbStateFile } from '../../src/agentic/duckdb-state.js';
 import type { AgenticRowDb } from '../../src/agentic/row-state-dialect.js';
 import { duckDbRowDialect } from '../../src/agentic/row-state-dialect.js';
@@ -110,7 +113,10 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     directories.push(directory);
     const file = join(directory, 'state.duckdb');
     const backend = faultyBackend(file, faults);
-    const open = (key: AgenticStoreScenario['key'], options: { retentionMs?: number } = {}) =>
+    const open = (
+      key: AgenticStoreScenario['key'],
+      options: { retentionMs?: number; groupCommit?: boolean } = {}
+    ) =>
       openAgenticRowSession(backend, key, {
         ownership: { mode: 'lease', leaseMs: 10_000 },
         limits: AGENTIC_DEFAULT_STORE_LIMITS,
@@ -646,6 +652,125 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     });
     expect(await session.read()).toBeNull();
     await session.release();
+  });
+
+  /** A run up to its first attempt command, and that command with the two after it. */
+  async function beforeGroup(
+    session: Awaited<ReturnType<Awaited<ReturnType<typeof fixture>>['open']>>
+  ) {
+    const index = plan.commands.findIndex((command) => command.type === 'start_attempt');
+    const group = plan.commands.slice(index, index + 3);
+    expect(group.every((command) => /_attempt$/.test(command.type))).toBe(true);
+    return { before: await replay(session, plan, index), group };
+  }
+
+  it('writes a group of commands with one insert and one header update', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    faults.statements = [];
+    const requestedAt = Date.now();
+    const after = validateAgenticReceipts(
+      await session.checkpointMany!(group),
+      before,
+      group,
+      requestedAt
+    );
+    expect(after.revision).toBe(before.revision + 3);
+    // A lease renewal can land in between on a slow machine; it commits nothing.
+    expect(faults.statements.filter((sql) => rowInsert.test(sql))).toHaveLength(1);
+    expect(faults.statements.filter((sql) => headerUpdate.test(sql))).toHaveLength(1);
+    await session.release();
+  });
+
+  it('keeps the previous state when a crash follows the rows of a group', async () => {
+    const { open, expire, rows } = await fixture();
+    const first = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(first);
+    const stored = await rows();
+    faults.next = once(headerUpdate, 'lose_before');
+    await expect(first.checkpointMany!(group)).rejects.toThrow('Synthetic');
+    // The group's rows are there, but no header names them.
+    expect(await rows()).toBeGreaterThan(stored);
+    expect(await first.read()).toEqual(before);
+    await expire();
+    const second = await open(plan.key, { groupCommit: true });
+    expect(await second.read()).toEqual(before);
+    // A new owner removes rows that no header reached.
+    expect(await rows()).toBe(stored);
+    const requestedAt = Date.now();
+    const after = validateAgenticReceipts(
+      await second.checkpointMany!(group),
+      before,
+      group,
+      requestedAt
+    );
+    expect(after.revision).toBe(before.revision + 3);
+    await second.release();
+    await first.release();
+  });
+
+  it('shows the whole group when only the header reply was lost', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    const requestedAt = Date.now();
+    faults.next = once(headerUpdate, 'lose_after');
+    await expect(session.checkpointMany!(group)).rejects.toThrow('Synthetic lost reply');
+    const after = validateAgenticReceipts(await session.read(), before, group, requestedAt);
+    expect(after.revision).toBe(before.revision + 3);
+    expect(await session.checkpointMany!(group)).toEqual(after);
+    await session.release();
+  });
+
+  it('commits none of a group whose rows insert lost its reply', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    faults.next = once(rowInsert, 'lose_after');
+    await expect(session.checkpointMany!(group)).rejects.toThrow('Synthetic lost reply');
+    expect(await session.read()).toEqual(before);
+    const requestedAt = Date.now();
+    const after = validateAgenticReceipts(
+      await session.checkpointMany!(group),
+      before,
+      group,
+      requestedAt
+    );
+    expect(await session.read()).toEqual(after);
+    await session.release();
+  });
+
+  it('reads a run saved in groups with a session that saves one command at a time', async () => {
+    const { open } = await fixture();
+    const grouped = await open(plan.key, { groupCommit: true });
+    let snapshot = await grouped.create(plan.initial);
+    // Every run of attempt commands goes as one group.
+    for (let index = 0; index < plan.commands.length; ) {
+      let end = index;
+      while (end < plan.commands.length && /_attempt$/.test(plan.commands[end]!.type)) end++;
+      if (end - index > 1) {
+        const group = plan.commands.slice(index, end);
+        const requestedAt = Date.now();
+        snapshot = validateAgenticReceipts(
+          await grouped.checkpointMany!(group),
+          snapshot,
+          group,
+          requestedAt
+        );
+        index = end;
+      } else {
+        snapshot = await grouped.checkpoint(currentCommand(snapshot, plan.commands[index]!));
+        index++;
+      }
+    }
+    await grouped.release();
+    // The layout a group writes is the one a single command writes, so a reader that knows
+    // nothing of groups rebuilds the same run.
+    const single = await open(plan.key);
+    expect(single.checkpointMany).toBeUndefined();
+    expect(await single.read()).toEqual(snapshot);
+    await single.release();
   });
 
   it('forwards cancellation and stops before the next statement', async () => {

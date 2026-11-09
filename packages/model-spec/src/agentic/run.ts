@@ -9,7 +9,8 @@ import { bindAgenticTools, validateAgenticTools } from './tool-access.js';
 import { executeAgenticPlan } from './plan-run.js';
 import { preflightAgenticPublication, publishAgenticRun } from './publish-run.js';
 import type { AgenticPublisher, AgenticHost } from './publication.js';
-import { validateAgenticReceipt } from './checkpoint-receipt.js';
+import { validateAgenticReceipt, validateAgenticReceipts } from './checkpoint-receipt.js';
+import { jsonEqual } from './json-equal.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
@@ -336,7 +337,7 @@ async function executeOwnedAgenticRun(
     );
     const reportProgress = async (
       before?: AgenticRunSnapshot,
-      command?: AgenticCheckpointCommand
+      command?: AgenticCheckpointCommand | readonly AgenticCheckpointCommand[]
     ) => {
       if (!options.onProgress) return;
       try {
@@ -397,12 +398,38 @@ async function executeOwnedAgenticRun(
       await reportProgress(before, command);
       return snapshot;
     };
+    /**
+     * Several commands saved as one checkpoint, for a store that offers it. The store saves all of
+     * them or none, so after an uncertain response the saved state is either the whole group's
+     * effect or what came before it. Null means none was saved: the scheduler then sends them one
+     * at a time, and that path decides and reports each as it always has.
+     */
+    const many = session.checkpointMany?.bind(session);
+    const checkpointGroup =
+      many &&
+      (async (commands: AgenticCheckpointCommand[]): Promise<AgenticRunSnapshot | null> => {
+        const before = snapshot;
+        const requestedAt = Date.now();
+        let observed: unknown;
+        try {
+          observed = await many(commands);
+        } catch {
+          observed = await storage(async () => session.read());
+          if (!observed) throw new AgenticStateError('missing');
+          const saved = observed as AgenticRunSnapshot;
+          if (saved.revision === before.revision && jsonEqual(saved, before)) return null;
+        }
+        snapshot = validateAgenticReceipts(observed, before, commands, requestedAt);
+        await reportProgress(before, commands);
+        return snapshot;
+      });
     const planExecution = incremental || context.resolved.steps.length > 1 || !('map' in step);
     if (planExecution) {
       await executeAgenticPlan(host, context, {
         snapshot,
         ...(cursorValues ? { cursorValues } : {}),
         checkpoint,
+        ...(checkpointGroup ? { checkpointGroup } : {}),
         signal: runSignal,
         abort: () => coordinator.abort(),
         concurrency,
@@ -503,6 +530,7 @@ async function executeOwnedAgenticRun(
     await scheduleAgenticAssignments(host, {
       snapshot,
       checkpoint,
+      ...(checkpointGroup ? { checkpointGroup } : {}),
       signal: runSignal,
       abort: () => coordinator.abort(),
       concurrency,

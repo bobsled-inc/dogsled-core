@@ -12,9 +12,11 @@ export function createAgenticRowStore(
     retentionMs: number;
     signal?: AbortSignal;
     legacyCursors?: AgenticLegacyCursorReader;
+    /** Experimental: commit waiting commands together. Off by default. */
+    groupCommit?: boolean;
   }
 ): AgenticStateStore {
-  const { leaseMs, retentionMs, signal, legacyCursors } = options;
+  const { leaseMs, retentionMs, signal, legacyCursors, groupCommit } = options;
   const limits = AGENTIC_DEFAULT_STORE_LIMITS;
   const cancellation = signal ? { signal } : {};
   return {
@@ -31,6 +33,7 @@ export function createAgenticRowStore(
         limits,
         retentionMs,
         ...cancellation,
+        ...(groupCommit ? { groupCommit } : {}),
       }),
   };
 }

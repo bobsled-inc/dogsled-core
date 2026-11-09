@@ -9,17 +9,17 @@ import { randomUUID } from 'node:crypto';
 import { throwIfCancelled } from '@bobsled-inc/connections';
 import type { AgenticRowDb } from './row-state-dialect.js';
 import {
-  agenticCommandItems,
+  agenticCommandWrites,
   agenticCreateItems,
   agenticRunSummary,
   createAgenticRowWrite,
   isAgenticRunReclaimable,
   rebuildAgenticSnapshot,
-  type AgenticRowItem,
+  type AgenticRowWrite,
 } from './row-state-layout.js';
 import {
   agenticHeaderColumns,
-  insertAgenticWrite,
+  insertAgenticWrites,
   purgeExpiredAgenticRuns,
   readAgenticWrites,
   type AgenticRunRows,
@@ -41,6 +41,7 @@ import {
   AgenticStateError,
   digestAgenticState,
   applyAgenticCheckpoint,
+  type AgenticCheckpointCommand,
   type AgenticRunKey,
   type AgenticRunSnapshot,
   type AgenticStateSession,
@@ -237,13 +238,12 @@ export async function openAgenticRowSession(
     return { snapshot, revision, head };
   };
 
-  /** Rows first, then the single statement that commits them. */
+  /** Rows first, then the single statement that commits them, however many writes they hold. */
   const save = async (
     db: AgenticRowDb,
     current: Durable,
     next: AgenticRunSnapshot,
-    operationId: string,
-    items: AgenticRowItem[]
+    writes: readonly AgenticRowWrite[]
   ): Promise<AgenticRunSnapshot> => {
     guard();
     if (checkpointJsonBytes(next) > limits.maxCheckpointBytes) {
@@ -253,12 +253,9 @@ export async function openAgenticRowSession(
         hint: 'Process fewer or smaller input rows per run.',
       });
     }
-    const write = items.length
-      ? createAgenticRowWrite(current.head, next.revision, operationId, items)
-      : undefined;
     durable = undefined;
-    if (write) {
-      await insertAgenticWrite(stored(db), write, async () => {
+    if (writes.length) {
+      await insertAgenticWrites(stored(db), writes, async () => {
         guard();
         await renewIfDue(db);
       });
@@ -267,7 +264,7 @@ export async function openAgenticRowSession(
     guard();
     const statement = agenticStatement(dialect);
     const nextToken = randomUUID();
-    const head = write?.id ?? current.head;
+    const head = writes.at(-1)?.id ?? current.head;
     const set = [
       `${q('revision')} = ${statement.bind(next.revision)}`,
       `${q('head')} = ${statement.bind(head)}`,
@@ -316,8 +313,32 @@ export async function openAgenticRowSession(
     timer.unref();
   }
   const current = async (db: AgenticRowDb): Promise<Durable> => (durable ??= await load(db));
+  /** One command, or a group in order, saved as one commit. A refusal writes nothing. */
+  const apply = (commands: readonly AgenticCheckpointCommand[]): Promise<AgenticRunSnapshot> =>
+    serial(() =>
+      connection.use(async (db) => {
+        guard();
+        const before = await current(db);
+        if (before.snapshot === null) throw new AgenticStateError('missing');
+        const { snapshot, writes } = agenticCommandWrites(
+          { snapshot: before.snapshot, head: before.head },
+          commands,
+          (state, command) => applyAgenticCheckpoint(state, command, Date.now())
+        );
+        if (snapshot !== before.snapshot) return save(db, before, snapshot, writes);
+        // A repeated command writes nothing, but obsolete ownership must still fail.
+        const statement = agenticStatement(dialect);
+        const alive = await db.query(
+          `SELECT 1 AS alive FROM ${runs} WHERE ${owned(statement)} LIMIT 1`,
+          statement.params
+        );
+        if (!alive.length) throw loseOwnership();
+        return snapshot;
+      })
+    );
   return {
     ...(lease ? { ownershipLost: controller.signal } : {}),
+    ...(options.groupCommit ? { checkpointMany: apply } : {}),
     // Always from the rows, so a read proves what is durable and detects damage.
     read: () =>
       serial(() =>
@@ -344,31 +365,11 @@ export async function openAgenticRowSession(
             throw new AgenticStateError('conflict');
           }
           const items = agenticCreateItems(value);
-          return structuredClone(await save(db, before, value, 'create', items));
+          const write = createAgenticRowWrite(before.head, value.revision, 'create', items);
+          return structuredClone(await save(db, before, value, [write]));
         })
       ),
-    checkpoint: (command) =>
-      serial(() =>
-        connection.use(async (db) => {
-          guard();
-          const before = await current(db);
-          if (before.snapshot === null) throw new AgenticStateError('missing');
-          const workBefore = before.snapshot.work.length;
-          const value = applyAgenticCheckpoint(before.snapshot, command, Date.now());
-          if (value.revision === before.snapshot.revision) {
-            // A repeated command writes nothing, but obsolete ownership must still fail.
-            const statement = agenticStatement(dialect);
-            const alive = await db.query(
-              `SELECT 1 AS alive FROM ${runs} WHERE ${owned(statement)} LIMIT 1`,
-              statement.params
-            );
-            if (!alive.length) throw loseOwnership();
-            return value;
-          }
-          const items = agenticCommandItems(value, command, workBefore);
-          return save(db, before, value, command.operation_id, items);
-        })
-      ),
+    checkpoint: (command) => apply([command]),
     release: () =>
       serial(async () => {
         if (closed) return;

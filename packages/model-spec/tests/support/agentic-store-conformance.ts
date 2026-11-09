@@ -6,7 +6,10 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { beginAgenticCursor } from '../../src/agentic/begin-cursor.js';
-import { validateAgenticReceipt } from '../../src/agentic/checkpoint-receipt.js';
+import {
+  validateAgenticReceipt,
+  validateAgenticReceipts,
+} from '../../src/agentic/checkpoint-receipt.js';
 import { AgenticCursorConflict, type AgenticCursorStore } from '../../src/agentic/cursor.js';
 import { executeAgenticRun } from '../../src/agentic/run.js';
 import {
@@ -59,6 +62,8 @@ export interface StoreAdapter {
   createAcceptsStartedRun?: boolean;
   /** Per test and per hook, for an engine where a statement takes a noticeable time. */
   timeoutMs?: number;
+  /** The store's sessions offer `checkpointMany`. */
+  groupCommit?: boolean;
 }
 
 const stateError = (code: string) => expect.objectContaining({ code });
@@ -85,6 +90,49 @@ async function replay(
   let snapshot = validateAgenticReceipt(await session.create(scenario.initial), scenario.initial);
   for (const command of scenario.commands.slice(0, count)) {
     snapshot = await apply(session, snapshot, command);
+  }
+  return snapshot;
+}
+
+const isAttempt = (command: AgenticCheckpointCommand): boolean =>
+  command.type === 'start_attempt' || command.type === 'finish_attempt';
+
+/** The first `size` attempt commands in a row in a scenario, and where they start. */
+function firstGroup(scenario: AgenticStoreScenario, size: number) {
+  for (let index = 0; index + size <= scenario.commands.length; index++) {
+    const group = scenario.commands.slice(index, index + size);
+    if (group.every(isAttempt)) return { index, group };
+  }
+  throw new Error(`The scenario has no ${size} attempt commands in a row`);
+}
+
+/** Sends a group exactly as the coordinator does, including its receipt validation. */
+async function applyGroup(
+  session: AgenticStateSession,
+  before: AgenticRunSnapshot,
+  group: AgenticCheckpointCommand[]
+): Promise<AgenticRunSnapshot> {
+  const requestedAt = Date.now();
+  return validateAgenticReceipts(await session.checkpointMany!(group), before, group, requestedAt);
+}
+
+/** Every run of attempt commands as one group, and everything else one command at a time. */
+async function replayInGroups(
+  session: AgenticStateSession,
+  scenario: AgenticStoreScenario
+): Promise<AgenticRunSnapshot> {
+  const { commands } = scenario;
+  let snapshot = validateAgenticReceipt(await session.create(scenario.initial), scenario.initial);
+  for (let index = 0; index < commands.length; ) {
+    let end = index;
+    while (end < commands.length && isAttempt(commands[end]!)) end++;
+    if (end - index > 1) {
+      snapshot = await applyGroup(session, snapshot, commands.slice(index, end));
+      index = end;
+    } else {
+      snapshot = await apply(session, snapshot, commands[index]!);
+      index++;
+    }
   }
   return snapshot;
 }
@@ -385,6 +433,87 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
           snapshot = await apply(owner, snapshot, command);
         }
         expect(snapshot.cursors_committed).toBe(true);
+      });
+    });
+
+    describe.skipIf(!adapter.groupCommit)('group commit', () => {
+      it('saves groups that a reopened store reads back exactly', async () => {
+        const handle = await open();
+        const session = await acquire(handle.store, plan.key);
+        const grouped = await replayInGroups(session, plan);
+        expect(grouped.cursors_committed).toBe(true);
+        expect(await session.read()).toEqual(grouped);
+        await session.release();
+        const reopened = await acquire(handle.reopen(), plan.key);
+        expect(await reopened.read()).toEqual(grouped);
+      });
+
+      it('refuses a group with a stale command and saves none of it', async () => {
+        const session = await acquire((await open()).store, map.key);
+        const { index, group } = firstGroup(map, 3);
+        const before = await replay(session, map, index);
+        const stale = group.map((command, position) =>
+          position === 2 ? { ...command, expected_revision: 0 } : command
+        );
+        await expect(session.checkpointMany!(stale)).rejects.toEqual(stateError('conflict'));
+        expect(await session.read()).toEqual(before);
+        expect(await applyGroup(session, before, group)).toEqual(await session.read());
+      });
+
+      it('gives a repeated group one effect', async () => {
+        const session = await acquire((await open()).store, map.key);
+        const { index, group } = firstGroup(map, 3);
+        const after = await applyGroup(session, await replay(session, map, index), group);
+        expect(await session.checkpointMany!(group)).toEqual(after);
+        expect(await session.read()).toEqual(after);
+      });
+
+      it('shows a whole group to a reader whose reply was lost', async () => {
+        const session = await acquire((await open()).store, plan.key);
+        const { index, group } = firstGroup(plan, 2);
+        const before = await replay(session, plan, index);
+        const requestedAt = Date.now();
+        await session.checkpointMany!(group); // The reply is discarded, as if the network failed.
+        const after = validateAgenticReceipts(await session.read(), before, group, requestedAt);
+        expect(after.revision).toBe(before.revision + group.length);
+      });
+
+      it.skipIf(!adapter.expireLease)('fences a group from an expired owner', async () => {
+        const handle = await open();
+        const stale = await acquire(handle.store, map.key);
+        const { index, group } = firstGroup(map, 3);
+        const before = await replay(stale, map, index);
+        await adapter.expireLease!(handle, map.key);
+        const owner = await acquire(handle.reopen(), map.key);
+        await expect(stale.checkpointMany!(group)).rejects.toEqual(stateError('lease_lost'));
+        expect(await owner.read()).toEqual(before);
+        expect(await applyGroup(owner, before, group)).toEqual(await owner.read());
+      });
+
+      it('runs several calls at once through the coordinator and resumes without repeating any', async () => {
+        const handle = await open();
+        const fixture = runFixture(6);
+        fixture.host.concurrency = 3;
+        const directory = mkdtempSync(join(tmpdir(), 'store-conformance-'));
+        try {
+          const calls = vi.spyOn(fixture.host, 'executeAgent');
+          const options = { projectDirectory: directory, stateStore: handle.store };
+          await executeAgenticRun(fixture.host, fixture.context(), {
+            ...options,
+            run: { id: 'grouped', mode: 'start' },
+          });
+          expect(calls).toHaveBeenCalledTimes(6);
+          calls.mockClear();
+          const resumed = await executeAgenticRun(fixture.host, fixture.context(), {
+            ...options,
+            stateStore: handle.reopen(),
+            run: { id: 'grouped', mode: 'resume' },
+          });
+          expect(resumed.reusedCompletion).toBe(true);
+          expect(calls).not.toHaveBeenCalled();
+        } finally {
+          rmSync(directory, { recursive: true, force: true });
+        }
       });
     });
 

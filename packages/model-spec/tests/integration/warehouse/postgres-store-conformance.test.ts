@@ -61,8 +61,20 @@ describe.skipIf(!enabled)('PostgreSQL', () => {
     createAcceptsStartedRun: true,
   });
 
-  const rows = (schema: string, retentionMs = 86_400_000) =>
-    createWarehouseRowStore(integration(), { schema, leaseMs: 10_000, retentionMs });
+  const rows = (schema: string, retentionMs = 86_400_000, groupCommit = false) =>
+    createWarehouseRowStore(integration(), {
+      schema,
+      leaseMs: 10_000,
+      retentionMs,
+      ...(groupCommit ? { groupCommit } : {}),
+    });
+  describeAgenticStoreConformance({
+    name: 'PostgreSQL row layout, group commit',
+    groupCommit: true,
+    open: async () => open((schema) => rows(schema, undefined, true)),
+    expireLease: (handle) =>
+      sql(`UPDATE "${schemas.get(handle)}"."__dogsled_agentic_runs" SET "lease_expires" = 0`),
+  });
   describeAgenticStoreConformance({
     name: 'PostgreSQL row layout',
     open: async () => open((schema) => rows(schema)),

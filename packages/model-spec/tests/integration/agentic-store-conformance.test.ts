@@ -14,7 +14,9 @@ import {
   createLocalAgenticStateStore,
   digestAgenticState,
 } from '../../src/agentic/index.js';
+import { duckDbOperationBackend } from '../../src/agentic/duckdb-state.js';
 import { agenticHeaderTableName } from '../../src/agentic/row-state-tables.js';
+import { createAgenticRowStore } from '../../src/agentic/row-store.js';
 import { snowflakeRowDialect } from '../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import {
@@ -104,47 +106,71 @@ const headerTable = (key: Parameters<typeof digestAgenticState>[0]) =>
     digestAgenticState(key),
     snowflakeRowDialect.headerTables[0]!
   ).toUpperCase()}"`;
-const emulated = (emulator: SnowflakeEmulator, retentionMs?: number) =>
+const emulated = (emulator: SnowflakeEmulator, retentionMs?: number, groupCommit = false) =>
   createWarehouseRowStore(emulator.integration, {
     schema: 'checkpoints',
     customRunners: emulator.customRunners,
     leaseMs: 10_000,
     ...(retentionMs === undefined ? {} : { retentionMs }),
+    ...(groupCommit ? { groupCommit } : {}),
   });
 
+/** Shared tables in a DuckDB file, through the row store's own factory, with group commit. */
+const groupedDuckDb = (directory: string) =>
+  createAgenticRowStore(
+    duckDbOperationBackend(join(directory, 'checkpoints.duckdb'), 'agentic_checkpoints'),
+    { leaseMs: 10_000, retentionMs: 30 * 86_400_000, groupCommit: true }
+  );
+
 describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
-  // The Snowflake dialect and backend on an emulator. See cloud-row-store.test.ts for the proof.
+  for (const groupCommit of [false, true]) {
+    // The Snowflake dialect and backend on an emulator. See cloud-row-store.test.ts for the proof.
+    describeAgenticStoreConformance({
+      name: groupCommit ? 'Snowflake emulator, group commit' : 'Snowflake emulator',
+      groupCommit,
+      open: async () => {
+        const emulator = await createSnowflakeEmulator();
+        const handle: StoreHandle = {
+          store: emulated(emulator, undefined, groupCommit),
+          reopen: () => emulated(emulator, undefined, groupCommit),
+          cleanup: () => emulator.close(),
+        };
+        emulators.set(handle, emulator);
+        return handle;
+      },
+      expireLease: async (handle, key) => {
+        await emulators.get(handle)!.sql(`UPDATE ${headerTable(key)} SET "LEASE_EXPIRES" = 0`);
+      },
+      withRetention: (handle, retentionMs) =>
+        emulated(emulators.get(handle)!, retentionMs, groupCommit),
+      damage: async (handle) => {
+        await emulators.get(handle)!.sql(`UPDATE ${rowTable('ROWS')} SET "DATA" = '{"damaged":1}'`);
+      },
+      replaceRowsTable: async (handle) => {
+        const emulator = emulators.get(handle)!;
+        await emulator.sql(`ALTER TABLE ${rowTable('ROWS')} RENAME TO kept_rows`);
+        await emulator.sql(
+          `CREATE VIEW ${rowTable('ROWS')} AS SELECT * FROM "MEMORY"."CHECKPOINTS".kept_rows`
+        );
+      },
+      addComputedColumn: async (handle) => {
+        await emulators
+          .get(handle)!
+          .sql(`ALTER TABLE ${rowTable('ROWS')} ADD COLUMN computed VARCHAR DEFAULT 'x'`);
+      },
+    });
+  }
+
+  // A real engine with real transactions under group commit.
   describeAgenticStoreConformance({
-    name: 'Snowflake emulator',
-    open: async () => {
-      const emulator = await createSnowflakeEmulator();
-      const handle: StoreHandle = {
-        store: emulated(emulator),
-        reopen: () => emulated(emulator),
-        cleanup: () => emulator.close(),
-      };
-      emulators.set(handle, emulator);
-      return handle;
-    },
-    expireLease: async (handle, key) => {
-      await emulators.get(handle)!.sql(`UPDATE ${headerTable(key)} SET "LEASE_EXPIRES" = 0`);
-    },
-    withRetention: (handle, retentionMs) => emulated(emulators.get(handle)!, retentionMs),
-    damage: async (handle) => {
-      await emulators.get(handle)!.sql(`UPDATE ${rowTable('ROWS')} SET "DATA" = '{"damaged":1}'`);
-    },
-    replaceRowsTable: async (handle) => {
-      const emulator = emulators.get(handle)!;
-      await emulator.sql(`ALTER TABLE ${rowTable('ROWS')} RENAME TO kept_rows`);
-      await emulator.sql(
-        `CREATE VIEW ${rowTable('ROWS')} AS SELECT * FROM "MEMORY"."CHECKPOINTS".kept_rows`
-      );
-    },
-    addComputedColumn: async (handle) => {
-      await emulators
-        .get(handle)!
-        .sql(`ALTER TABLE ${rowTable('ROWS')} ADD COLUMN computed VARCHAR DEFAULT 'x'`);
-    },
+    name: 'DuckDB shared tables, group commit',
+    groupCommit: true,
+    open: async () => localHandle(groupedDuckDb),
+    expireLease: (handle) =>
+      sql(
+        project(handle),
+        'UPDATE agentic_checkpoints.__dogsled_agentic_runs SET lease_expires = 0'
+      ),
   });
 
   describeAgenticStoreConformance({

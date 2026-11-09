@@ -41,14 +41,22 @@ const testSchema = () => `${baseSchema}_row_${randomUUID().replaceAll('-', '')}`
 const dropSchema = (schema: string) => sql(`DROP SCHEMA IF EXISTS ${qualified(schema)} CASCADE`);
 
 const schemas = new WeakMap<StoreHandle, string>();
+/** Group commit doubles a long suite, so its live proof is a separate opt-in. */
+const groupCommit = process.env.DOGSLED_MODEL_SPEC_GROUP_COMMIT === '1';
 const rows = (schema: string, retentionMs = 86_400_000) =>
-  createWarehouseRowStore(snowflake!, { schema, retentionMs, ...runners });
+  createWarehouseRowStore(snowflake!, {
+    schema,
+    retentionMs,
+    ...runners,
+    ...(groupCommit ? { groupCommit } : {}),
+  });
 const table = (handle: StoreHandle, name: string) =>
   `${qualified(schemas.get(handle)!)}.${q(name)}`;
 
 describe.skipIf(!snowflake)('Snowflake row store', () => {
   describeAgenticStoreConformance({
-    name: 'Snowflake row layout',
+    name: groupCommit ? 'Snowflake row layout, group commit' : 'Snowflake row layout',
+    groupCommit,
     timeoutMs: 900_000,
     open: async () => {
       const schema = testSchema();

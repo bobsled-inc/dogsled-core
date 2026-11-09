@@ -311,6 +311,14 @@ export interface AgenticStateSession {
   read(): Promise<AgenticRunSnapshot | null>;
   create(snapshot: AgenticRunSnapshot): Promise<AgenticRunSnapshot>;
   checkpoint(command: AgenticCheckpointCommand): Promise<AgenticRunSnapshot>;
+  /**
+   * Experimental. Applies `commands` in order, each with `applyAgenticCheckpoint`, and commits
+   * them as one write: every command or none. A command's `expected_revision` is the revision the
+   * one before it produces. A refusal of any command must leave the run unchanged. A coordinator
+   * uses this, when it is present, to commit waiting starts and finishes together. A wrapper that
+   * changes `checkpoint` must change this too, or leave it out.
+   */
+  checkpointMany?(commands: readonly AgenticCheckpointCommand[]): Promise<AgenticRunSnapshot>;
   release(): Promise<void>;
 }
 export interface AgenticStateStore {

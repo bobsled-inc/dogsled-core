@@ -23,6 +23,7 @@ export async function executeAgenticPlan(
     snapshot: AgenticRunSnapshot;
     cursorValues?: AgenticCursorValues;
     checkpoint: (command: AgenticCheckpointCommand) => Promise<AgenticRunSnapshot>;
+    checkpointGroup?: (commands: AgenticCheckpointCommand[]) => Promise<AgenticRunSnapshot | null>;
     signal: AbortSignal;
     abort: () => void;
     concurrency: number;
@@ -36,6 +37,15 @@ export async function executeAgenticPlan(
     snapshot = await options.checkpoint(command);
     return snapshot;
   };
+  // Every way of saving keeps this copy current, or the next step would use an old revision.
+  const group = options.checkpointGroup;
+  const checkpointGroup =
+    group &&
+    (async (commands: AgenticCheckpointCommand[]) => {
+      const saved = await group(commands);
+      if (saved) snapshot = saved;
+      return saved;
+    });
   if (snapshot.status === 'preparing') {
     const cursorValues: AgenticCursorValues = Object.assign(
       Object.create(null),
@@ -147,6 +157,12 @@ export async function executeAgenticPlan(
         assignments: structuredClone(buildAgenticStepAssignments(snapshot, index)),
       });
     }
-    await scheduleAgenticAssignments(host, { ...scheduling, snapshot, checkpoint, dispatchClock });
+    await scheduleAgenticAssignments(host, {
+      ...scheduling,
+      snapshot,
+      checkpoint,
+      ...(checkpointGroup ? { checkpointGroup } : {}),
+      dispatchClock,
+    });
   }
 }
