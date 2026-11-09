@@ -61,6 +61,12 @@ variables, or both. See the
 [benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-header-tables) for
 its settings.
 
+`../agentic-row-limits.bench.test.ts` measures one run at the row store's limits, up to 10,000
+assignments: checkpoint cost, setup, completion, resume and peak memory. It runs the same way, and
+on Snowflake with `CHECKPOINT_BENCHMARK_STORES=snowflake-rows`. Snowflake keeps the default limits
+until this has been measured there. See the
+[benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-at-10000-assignments).
+
 ## Agentic publication
 
 The PostgreSQL suite uses `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres`. Set

@@ -123,7 +123,7 @@ export async function executeAgenticPlan(
         ...(more ? { more: true as const } : {}),
       };
     }
-    validateAgenticPlanInputs(context.resolved, inputs);
+    validateAgenticPlanInputs(context.resolved, inputs, limits);
     await checkpoint({
       type: 'seal_work',
       operation_id: 'seal_work',

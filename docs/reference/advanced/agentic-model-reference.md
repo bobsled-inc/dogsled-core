@@ -182,12 +182,17 @@ Retrieval times come from actual observations. Shape validation does not prove
 that a citation supports a claim. Dogsled does not invent evidence or average
 confidence values.
 
-Each prepared input and the model's final output hold at most 1,000 rows and
-1 MiB. Each row, and each assignment and outcome sent to an executor, holds at most
-16,384 JSON values, 16 levels, and 1 MiB. When a limit is exceeded, the error names
-the input, the limit, and the row. Dogsled never truncates silently: split oversized
-work upstream, or use an incremental input to process a large table in batches.
-The whole run checkpoint is limited to 16 MiB. See the [executor contract](../../../packages/model-spec/docs/agentic-contracts.md)
+Each prepared input and the model's final output hold at most what the run's state
+store holds: 10,000 rows and 16 MiB on the row store on DuckDB and PostgreSQL, which
+includes the DuckDB run files the CLI uses by default, and 1,000 rows and 1 MiB
+elsewhere. Each row, and each assignment and outcome sent to an executor, holds at
+most 16,384 JSON values, 16 levels, and 1 MiB, and one assignment holds at most 1,000
+rows. When a limit is exceeded, the error names the input, the limit, and the row.
+Dogsled never truncates silently: split oversized work upstream, or use an
+incremental input to process a large table in batches. The whole run checkpoint is
+limited to 128 MiB on the row store on DuckDB and PostgreSQL and 16 MiB elsewhere. See
+[row store limits](../../../packages/model-spec/docs/agentic-state.md#row-store-limits)
+and the [executor contract](../../../packages/model-spec/docs/agentic-contracts.md)
 for the exact wire format.
 
 ## Final checks

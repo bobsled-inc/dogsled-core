@@ -1,11 +1,8 @@
 import { attemptsAreConsistent, preparationRevisionOf, workMatchesRun } from './checkpoint-work.js';
-import {
-  AGENTIC_MAX_CHECKPOINT_BYTES,
-  AGENTIC_MAX_CHECKPOINT_VALUES,
-  measureCheckpoint,
-  type CheckpointMeasure,
-} from './checkpoint-json.js';
+import { measureCheckpoint, type CheckpointMeasure } from './checkpoint-json.js';
 import { isExactJson } from './json-equal.js';
+import type { AgenticStateError } from './state-errors.js';
+import { agenticCheckpointLimitError, type AgenticStoreLimits } from './store-limits.js';
 import {
   AgenticCheckpointCommandSchema,
   AgenticRunSnapshotSchema,
@@ -13,6 +10,7 @@ import {
   AgenticWorkProgressSchema,
   applyParsedCommand,
   isOverchargedAttempt,
+  transitionAgenticCheckpoint,
   type AgenticCheckpointCommand,
   type AgenticRunLookups,
   type AgenticRunSnapshot,
@@ -62,6 +60,37 @@ export function isVerifiedCheckpoint(value: unknown): value is AgenticRunSnapsho
 /** The snapshot's size as JSON. A verified snapshot already knows it, so nothing is read. */
 export function checkpointJsonBytes(snapshot: AgenticRunSnapshot): number {
   return verified.get(snapshot)?.jsonBytes ?? jsonBytes(snapshot);
+}
+
+/** The most rows in any one frozen input: at most 256 inputs, so this reads no rows. */
+const inputRowsOf = (run: AgenticRunSnapshot): number =>
+  Object.values(run.plan_inputs ?? {}).reduce(
+    (most, input) => Math.max(most, input.rows.length),
+    0
+  );
+
+/**
+ * Why `snapshot` does not fit what a store holds, or undefined when it does. A verified snapshot
+ * knows its size, so this reads nothing of it. Anything else is measured, and a value the
+ * measure refuses does not fit.
+ */
+export function checkpointLimitError(
+  snapshot: AgenticRunSnapshot,
+  limits: AgenticStoreLimits
+): AgenticStateError | undefined {
+  const facts = verified.get(snapshot);
+  const size = facts ?? measureCheckpoint(snapshot);
+  const json = facts ? facts.jsonBytes : size ? jsonBytes(snapshot) : Infinity;
+  return agenticCheckpointLimitError(
+    {
+      work: snapshot.work.length,
+      inputRows: inputRowsOf(snapshot),
+      values: size?.values ?? Infinity,
+      textBytes: size?.textBytes ?? Infinity,
+      jsonBytes: json,
+    },
+    limits
+  );
 }
 
 function latestTimeOf(run: AgenticRunSnapshot): number {
@@ -152,7 +181,8 @@ function proveChange(
   run: AgenticRunSnapshot,
   next: AgenticRunSnapshot,
   index: number,
-  facts: VerifiedFacts
+  facts: VerifiedFacts,
+  limits: AgenticStoreLimits
 ): VerifiedFacts | undefined {
   const before = run.work[index]!;
   const work = next.work[index]!;
@@ -192,9 +222,16 @@ function proveChange(
     counterDigits(next) -
     counterDigits(run);
   if (
-    values > AGENTIC_MAX_CHECKPOINT_VALUES ||
-    textBytes > AGENTIC_MAX_CHECKPOINT_BYTES ||
-    bytes > AGENTIC_MAX_CHECKPOINT_BYTES
+    agenticCheckpointLimitError(
+      {
+        work: next.work.length,
+        inputRows: inputRowsOf(next),
+        values,
+        textBytes,
+        jsonBytes: bytes,
+      },
+      limits
+    )
   ) {
     return undefined;
   }
@@ -209,15 +246,21 @@ function proveChange(
   };
 }
 
+/** Commands a proof can apply without reading the run. Every other one reads all of it. */
+export const isProvableCommand = (command: AgenticCheckpointCommand): boolean =>
+  command.type === 'start_attempt' || command.type === 'finish_attempt';
+
 /**
  * Applies a start or finish of an attempt to a verified snapshot without reading the rest of the
  * run. Returns undefined when it cannot prove the result: another command, an unverified
- * snapshot, a command the transition refuses, or a result it cannot show to be valid.
+ * snapshot, a command the transition refuses, or a result it cannot show to be valid and within
+ * `limits`.
  */
 export function advanceVerifiedCheckpoint(
   value: unknown,
   input: AgenticCheckpointCommand,
-  now: number
+  now: number,
+  limits: AgenticStoreLimits
 ): AgenticRunSnapshot | undefined {
   if (!isVerifiedCheckpoint(value)) return undefined;
   const facts = verified.get(value)!;
@@ -240,7 +283,7 @@ export function advanceVerifiedCheckpoint(
     Object.freeze(items);
     const next = { ...value, work: items };
     if (!applyParsedCommand(next, command, now, lookups(value, facts))) return value;
-    const proved = proveChange(value, next, command.work, facts);
+    const proved = proveChange(value, next, command.work, facts, limits);
     if (!proved) return undefined;
     deepFreeze(work);
     Object.freeze(next);
@@ -253,4 +296,28 @@ export function advanceVerifiedCheckpoint(
   } catch {
     return undefined;
   }
+}
+
+/**
+ * As applyAgenticCheckpoint, for a store that holds `limits`. A start or finish of an attempt is
+ * proved without reading the run. Anything else takes the complete check, which decides and
+ * reports. Verified state needs no reading before its transition, so that check reads the run
+ * once, in the result.
+ */
+export function applyAgenticCheckpointWithin(
+  value: AgenticRunSnapshot,
+  input: AgenticCheckpointCommand,
+  now: number,
+  limits: AgenticStoreLimits
+): AgenticRunSnapshot {
+  const advanced = advanceVerifiedCheckpoint(value, input, now, limits);
+  if (advanced) return advanced;
+  const state = isVerifiedCheckpoint(value)
+    ? jsonCopy(value)
+    : AgenticRunSnapshotSchema.parse(value);
+  transitionAgenticCheckpoint(state, input, now);
+  const next = parseVerifiedCheckpoint(state);
+  const error = checkpointLimitError(next, limits);
+  if (error) throw error;
+  return next;
 }

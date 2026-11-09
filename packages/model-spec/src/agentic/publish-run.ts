@@ -17,6 +17,7 @@ import {
   type AgenticCheckpointCommand,
 } from './state.js';
 import { validateAgenticReceipt } from './checkpoint-receipt.js';
+import type { AgenticStoreLimits } from './store-limits.js';
 
 /** Preflight is protected work: it consumes the original saved deadline. */
 export async function preflightAgenticPublication(
@@ -24,14 +25,15 @@ export async function preflightAgenticPublication(
   session: AgenticStateSession,
   snapshot: AgenticRunSnapshot,
   context: AgenticPublicationContext,
-  signal: AbortSignal
+  signal: AbortSignal,
+  limits: AgenticStoreLimits
 ): Promise<void> {
   if (Date.now() >= deadlineTime(agenticDeadlineAt(snapshot))) {
     throw agenticDeadlinePassed('before publication');
   }
-  validateAgenticReceipt(await session.read(), snapshot);
+  validateAgenticReceipt(await session.read(), snapshot, undefined, Date.now(), limits);
   await runCancellable(signal, () => publisher.preflight(context, signal));
-  validateAgenticReceipt(await session.read(), snapshot);
+  validateAgenticReceipt(await session.read(), snapshot, undefined, Date.now(), limits);
   if (Date.now() >= deadlineTime(agenticDeadlineAt(snapshot))) {
     throw agenticDeadlinePassed('before publication');
   }
@@ -48,10 +50,11 @@ export async function publishAgenticRun(
   checkpoint: (command: AgenticCheckpointCommand) => Promise<AgenticRunSnapshot>,
   runSignal: AbortSignal,
   needsPreflight: boolean,
-  signal?: AbortSignal
+  signal: AbortSignal | undefined,
+  limits: AgenticStoreLimits
 ): Promise<AgenticRunSnapshot> {
   const assertOwner = async (): Promise<void> => {
-    validateAgenticReceipt(await session.read(), snapshot);
+    validateAgenticReceipt(await session.read(), snapshot, undefined, Date.now(), limits);
   };
   const identity = createAgenticPublicationIdentity(snapshot);
   // Saved state is frozen. A publisher receives data of its own.
@@ -63,7 +66,7 @@ export async function publishAgenticRun(
     }
     throwIfCancelled(runSignal);
     if (needsPreflight) {
-      await preflightAgenticPublication(publisher, session, snapshot, context, runSignal);
+      await preflightAgenticPublication(publisher, session, snapshot, context, runSignal, limits);
     }
     await assertOwner();
     const claim = await publisher.claim(context.target, runSignal);

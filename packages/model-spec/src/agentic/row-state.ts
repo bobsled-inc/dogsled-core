@@ -40,12 +40,16 @@ import {
   AgenticRunKeySchema,
   AgenticStateError,
   digestAgenticState,
-  applyAgenticCheckpoint,
   type AgenticRunKey,
   type AgenticRunSnapshot,
   type AgenticStateSession,
 } from './state.js';
-import { checkpointJsonBytes, parseVerifiedCheckpoint } from './checkpoint-verified.js';
+import {
+  applyAgenticCheckpointWithin,
+  checkpointLimitError,
+  isProvableCommand,
+  parseVerifiedCheckpoint,
+} from './checkpoint-verified.js';
 
 const LAYOUT_VERSION = 1;
 
@@ -153,6 +157,11 @@ export async function openAgenticRowSession(
   const renewIfDue = async (db: AgenticRowDb): Promise<void> => {
     if (lease && Date.now() - extendedAt >= lease.leaseMs / 3) await renew(db);
   };
+  // The heartbeat cannot run during work that reads the whole run, which takes seconds in a large
+  // run. Started with nine tenths of the lease, only a step longer than that could outlast it.
+  const freshen = async (db: AgenticRowDb): Promise<void> => {
+    if (lease && Date.now() - extendedAt >= lease.leaseMs / 10) await renew(db);
+  };
 
   const stored = (db: AgenticRowDb): AgenticRunRows => ({ db, dialect, table: rows, hash });
   const claim = async (db: AgenticRowDb): Promise<void> => {
@@ -201,7 +210,7 @@ export async function openAgenticRowSession(
     loaded = true;
     const statement = agenticStatement(dialect);
     const headers = await db.query(
-      `SELECT ${agenticHeaderColumns(dialect)} FROM ${runs} WHERE ${owned(statement)} LIMIT 2`,
+      `SELECT ${agenticHeaderColumns(dialect, limits)} FROM ${runs} WHERE ${owned(statement)} LIMIT 2`,
       statement.params
     );
     if (headers.length === 0) throw loseOwnership();
@@ -225,7 +234,11 @@ export async function openAgenticRowSession(
       if (revision !== -1 || head !== '') throw new AgenticStateError('corrupt');
       return { snapshot: null, revision, head };
     }
-    const writes = await readAgenticWrites(stored(db), head, revision, sweepOrphans);
+    // A large run takes many statements to read, and the heartbeat waits behind them.
+    const writes = await readAgenticWrites(stored(db), head, revision, sweepOrphans, limits, () =>
+      renewIfDue(db)
+    );
+    await freshen(db);
     let snapshot: AgenticRunSnapshot;
     try {
       snapshot = parseVerifiedCheckpoint(
@@ -234,6 +247,10 @@ export async function openAgenticRowSession(
     } catch {
       throw new AgenticStateError('corrupt');
     }
+    // A run this store could not have written reads as damaged, as it always has.
+    if (checkpointLimitError(snapshot, limits)) throw new AgenticStateError('corrupt');
+    // The caller validates what it reads in turn.
+    await freshen(db);
     return { snapshot, revision, head };
   };
 
@@ -246,13 +263,8 @@ export async function openAgenticRowSession(
     items: AgenticRowItem[]
   ): Promise<AgenticRunSnapshot> => {
     guard();
-    if (checkpointJsonBytes(next) > limits.maxCheckpointBytes) {
-      throw new AgenticStateError('limit', {
-        reason: 'snapshot_too_large',
-        message: `The agentic run checkpoint is larger than ${Math.floor(limits.maxCheckpointBytes / 1048576)} MiB.`,
-        hint: 'Process fewer or smaller input rows per run.',
-      });
-    }
+    const tooLarge = checkpointLimitError(next, limits);
+    if (tooLarge) throw tooLarge;
     const write = items.length
       ? createAgenticRowWrite(current.head, next.revision, operationId, items)
       : undefined;
@@ -318,6 +330,7 @@ export async function openAgenticRowSession(
   const current = async (db: AgenticRowDb): Promise<Durable> => (durable ??= await load(db));
   return {
     ...(lease ? { ownershipLost: controller.signal } : {}),
+    limits,
     // Always from the rows, so a read proves what is durable and detects damage.
     read: () =>
       serial(() =>
@@ -354,7 +367,8 @@ export async function openAgenticRowSession(
           const before = await current(db);
           if (before.snapshot === null) throw new AgenticStateError('missing');
           const workBefore = before.snapshot.work.length;
-          const value = applyAgenticCheckpoint(before.snapshot, command, Date.now());
+          if (!isProvableCommand(command)) await freshen(db);
+          const value = applyAgenticCheckpointWithin(before.snapshot, command, Date.now(), limits);
           if (value.revision === before.snapshot.revision) {
             // A repeated command writes nothing, but obsolete ownership must still fail.
             const statement = agenticStatement(dialect);

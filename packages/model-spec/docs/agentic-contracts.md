@@ -140,8 +140,10 @@ References are opaque host identifiers, not paths or URLs to open automatically.
 The host owns their resolution, retention, access controls and immutable identity.
 This slice supports inline JSON only: at most 1 MiB, 16 levels and 16,384 JSON
 values per assignment or outcome, and 1,000 rows. Batches of rows (prepared inputs,
-final output and publication) apply the value limit to each row and allow 1,000 rows
-and 1 MiB in total. Larger work must be split or rejected; it must not be truncated. Handles and streaming transports require a later contract.
+final output and publication) apply the value limit to each row and allow what the
+run's state store holds in total: 1,000 rows and 1 MiB by default, and 10,000 rows and
+16 MiB on the [row store](agentic-state.md#row-store-limits) on DuckDB and PostgreSQL.
+Larger work must be split or rejected; it must not be truncated. Handles and streaming transports require a later contract.
 
 `AgentExecutorRequestSchema` wraps the payload with an `AbortSignal` and host-owned
 `budget.reserve` and `budget.settle` functions. Only an `agent_loop` request contains

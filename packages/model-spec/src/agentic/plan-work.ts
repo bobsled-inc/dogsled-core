@@ -3,7 +3,9 @@ import { assignmentLimits } from './limits.js';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
 import type { AgentAssignment } from './assignment.js';
-import { createAgenticRowSchema, boundedAgenticRows } from './rows.js';
+import { AGENTIC_MAX_ROWS, createAgenticRowSchema, boundedAgenticRows } from './rows.js';
+import { AgenticStateError } from './state-errors.js';
+import type { AgenticStoreLimits } from './store-limits.js';
 import type { AgenticColumn, AgenticStep } from './model.js';
 import type { ResolvedAgenticModel } from './resolve.js';
 import type { AgenticRunSnapshot } from './state.js';
@@ -43,9 +45,11 @@ export function planInputColumns(resolved: ResolvedAgenticModel, alias: string):
   if (!step) throw new Error('Plan input is not declared');
   return step.input_schemas?.[alias] ?? step.input_columns;
 }
+/** `limits` is what the run's store holds: a batch is bounded by it, as preparation was. */
 export function validateAgenticPlanInputs(
   resolved: ResolvedAgenticModel,
-  inputs: Record<string, PreparedPlanInput>
+  inputs: Record<string, PreparedPlanInput>,
+  limits: Pick<AgenticStoreLimits, 'maxRows' | 'maxBatchBytes'>
 ): void {
   const aliases = agenticPlanSourceAliases(resolved);
   if (digestAgenticState(Object.keys(inputs).sort()) !== digestAgenticState(aliases.sort())) {
@@ -60,10 +64,28 @@ export function validateAgenticPlanInputs(
     ) {
       throw new Error('Plan input schema differs from declared input');
     }
-    boundedAgenticRows(input.rows, `Agentic input "${input.ref}"`);
+    boundedAgenticRows(input.rows, `Agentic input "${input.ref}"`, limits);
     const schema = createAgenticRowSchema(columns);
     for (const row of input.rows) schema.parse(row);
     for (const { step } of resolved.steps) {
+      // One assignment holds at most AGENTIC_MAX_ROWS rows of an input. A run can hold more,
+      // so a group too large for one assignment fails here, before any spend.
+      if (agenticStepRefs(step).includes(alias)) {
+        const { group_by } = 'map' in step ? step.map : step.reduce;
+        const sizes = new Map<string, number>();
+        for (const row of input.rows) {
+          const group = digestAgenticState(fields(row as Row, group_by));
+          const size = (sizes.get(group) ?? 0) + 1;
+          sizes.set(group, size);
+          if (size > AGENTIC_MAX_ROWS) {
+            throw new AgenticStateError('limit', {
+              reason: 'group_too_large',
+              message: `Step "${step.id}" groups more than ${AGENTIC_MAX_ROWS.toLocaleString('en-US')} rows of "${input.ref}" into one assignment.`,
+              hint: 'Group by a key with smaller groups, or process fewer input rows per run.',
+            });
+          }
+        }
+      }
       if (!step.classification || !('map' in step) || step.source.ref !== alias) continue;
       const groups = input.rows.map((row) =>
         digestAgenticState(fields(row as Row, step.map.group_by))

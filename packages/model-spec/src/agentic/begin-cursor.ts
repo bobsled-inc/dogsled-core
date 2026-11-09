@@ -6,13 +6,14 @@ import {
   type AgenticCursorValues,
 } from './cursor.js';
 import {
-  AgenticRunSnapshotSchema,
   AgenticStateError,
   digestAgenticState,
   type AgenticStateStore,
   type AgenticCheckpointCommand,
 } from './state.js';
 import { validateAgenticReceipt } from './checkpoint-receipt.js';
+import { checkpointLimitError, parseVerifiedCheckpoint } from './checkpoint-verified.js';
+import { agenticCheckpointLimits, resolveAgenticStoreLimits } from './store-limits.js';
 
 /** Retire the old checkpoint before changing the shared cursor owner. A crash between
  * these writes leaves a retired owner that a later start can safely replace. */
@@ -49,7 +50,12 @@ export async function beginAgenticCursor(
       throwIfCancelled(signal);
       return await cursors.supersede(key, signature, previousRunId, runId);
     }
-    const previous = AgenticRunSnapshotSchema.parse(raw);
+    // The old run may be as large as its storage holds, which can be more than the store says.
+    const limits = agenticCheckpointLimits(
+      resolveAgenticStoreLimits(session.limits ? session : states)
+    );
+    const previous = parseVerifiedCheckpoint(raw);
+    if (checkpointLimitError(previous, limits)) throw new AgenticStateError('corrupt');
     if (
       digestAgenticState(previous.key) !== digestAgenticState(previousKey) ||
       (previous.definition as { target?: unknown }).target !== key.target
@@ -67,10 +73,16 @@ export async function beginAgenticCursor(
       };
       const requestedAt = Date.now();
       try {
-        validateAgenticReceipt(await session.checkpoint(command), previous, command, requestedAt);
+        validateAgenticReceipt(
+          await session.checkpoint(command),
+          previous,
+          command,
+          requestedAt,
+          limits
+        );
       } catch {
         // A lost reply is not a reason to undo or skip retirement.
-        validateAgenticReceipt(await session.read(), previous, command, requestedAt);
+        validateAgenticReceipt(await session.read(), previous, command, requestedAt, limits);
       }
     }
     throwIfCancelled(signal);

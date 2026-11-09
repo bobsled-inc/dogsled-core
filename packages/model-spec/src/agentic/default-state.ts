@@ -158,7 +158,7 @@ async function openRunFile(
     // local commit takes about a millisecond, so there is nothing to cancel.
     session = await openAgenticRowSession(duckDbHeldBackend(file), key, {
       ownership: { mode: 'exclusive', assert: ownership.assert },
-      limits: AGENTIC_DEFAULT_STORE_LIMITS,
+      limits: duckDbRowDialect.limits,
       retentionMs,
     });
   } catch (error) {
@@ -178,6 +178,8 @@ async function openRunFile(
   let stored = existed;
   let released = false;
   return {
+    // More than the store declares: runs that stay in the file store keep its limits.
+    limits: duckDbRowDialect.limits,
     read: async () => {
       const value = await session.read();
       stored ||= value !== null;

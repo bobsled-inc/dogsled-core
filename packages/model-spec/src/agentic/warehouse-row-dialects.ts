@@ -10,6 +10,7 @@ import {
   type AgenticRowDialect,
 } from './row-state-dialect.js';
 import { agenticTableReplaced } from './row-state-tables.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS, AGENTIC_ROW_STORE_LIMITS } from './store-limits.js';
 
 const pg = (name: string): string => quoteIdentifier(caseName(name, 'postgres'), 'postgres');
 /**
@@ -29,6 +30,7 @@ const pgTuple = (columns: number, row: number): string =>
  * `now()` is the start of the transaction, which is not the moment a fence is checked.
  */
 export const postgresRowDialect: AgenticRowDialect = {
+  limits: AGENTIC_ROW_STORE_LIMITS,
   headerTables: [1],
   identifier: pg,
   bind: (index) => `$${index}`,
@@ -152,6 +154,8 @@ function rowsUpdated(rows: readonly Record<string, unknown>[]): number {
  * full only about eight times.
  */
 export const snowflakeRowDialect: AgenticRowDialect = {
+  // Not yet measured above these on a real account, so a run keeps the defaults here.
+  limits: AGENTIC_DEFAULT_STORE_LIMITS,
   headerTables: [8],
   identifier: sf,
   bind: () => '?',

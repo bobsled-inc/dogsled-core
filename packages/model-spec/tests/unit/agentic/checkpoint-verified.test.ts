@@ -4,16 +4,16 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import { createLocalAgenticCursorStore } from '../../../src/agentic/local-cursors.js';
-import {
-  AGENTIC_MAX_CHECKPOINT_BYTES,
-  AGENTIC_MAX_CHECKPOINT_VALUES,
-  measureCheckpoint,
-} from '../../../src/agentic/checkpoint-json.js';
+import { measureCheckpoint } from '../../../src/agentic/checkpoint-json.js';
 import {
   advanceVerifiedCheckpoint,
   checkpointJsonBytes,
   isVerifiedCheckpoint,
 } from '../../../src/agentic/checkpoint-verified.js';
+import {
+  AGENTIC_DEFAULT_STORE_LIMITS,
+  agenticCheckpointValues,
+} from '../../../src/agentic/store-limits.js';
 import { validateAgenticReceipt } from '../../../src/agentic/checkpoint-receipt.js';
 import { buildAgenticStepAssignments } from '../../../src/agentic/plan-work.js';
 import { resolveAgenticModel } from '../../../src/agentic/resolve.js';
@@ -32,6 +32,9 @@ import { countSnapshotValidations } from '../../support/snapshot-validations.js'
 import { MemoryStateStore, runFixture } from './state-fixture.js';
 
 type Accounting = 'spend_cap' | 'reservation';
+/** What applyAgenticCheckpoint holds a run to: the default store limits. */
+const CHECKPOINT_BYTES = AGENTIC_DEFAULT_STORE_LIMITS.maxCheckpointBytes;
+const CHECKPOINT_VALUES = agenticCheckpointValues(AGENTIC_DEFAULT_STORE_LIMITS);
 type Verdict = { value: AgenticRunSnapshot } | { error: string };
 type Outcome = Extract<AgenticCheckpointCommand, { type: 'finish_attempt' }>['outcome'];
 
@@ -556,12 +559,16 @@ describe('verified state', () => {
       charge: 1,
       charge_microusd: 1,
     });
-    expect(advanceVerifiedCheckpoint(verifiedState, finish, Date.now())).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(verifiedState, finish, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
     // Even when the hidden JSON would pass by itself, it is not what was read.
     const plausible = { ...valid, assessment: 'Valid too, and never validated.' };
     const twoFaced = Object.defineProperty({ ...valid }, 'toJSON', { value: () => plausible });
     const other = finishCommand(started, 0, 'one', [twoFaced]);
-    expect(advanceVerifiedCheckpoint(verifiedState, other, Date.now())).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(verifiedState, other, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
   });
 
   /** Runs `read` with a value in `target` that turns invalid at one read of a whole snapshot. */
@@ -793,7 +800,7 @@ describe('verified state', () => {
       [{ name: 'assessment', type: 'string', nullable: false }],
       (size) => ({ assessment: 'x'.repeat(size) }),
       jsonBytes,
-      AGENTIC_MAX_CHECKPOINT_BYTES,
+      CHECKPOINT_BYTES,
       16,
       490_000
     );
@@ -803,11 +810,11 @@ describe('verified state', () => {
     const fits = applyAgenticCheckpoint(started, command(exact));
     restore();
     expect(counters.validations).toBe(0);
-    expect(jsonBytes(fits)).toBeLessThanOrEqual(AGENTIC_MAX_CHECKPOINT_BYTES);
-    expect(jsonBytes(fits)).toBeGreaterThan(AGENTIC_MAX_CHECKPOINT_BYTES - 2);
+    expect(jsonBytes(fits)).toBeLessThanOrEqual(CHECKPOINT_BYTES);
+    expect(jsonBytes(fits)).toBeGreaterThan(CHECKPOINT_BYTES - 2);
     const over = command(exact + 1);
     const expected = complete(started, over, Date.now());
-    expect(expected).toMatchObject({ error: expect.stringContaining('exceeds its limits') });
+    expect(expected).toMatchObject({ error: expect.stringContaining('limit/snapshot_too_large') });
     expect(verdict(() => applyAgenticCheckpoint(started, over))).toEqual(expected);
   }, 60_000);
 
@@ -832,16 +839,16 @@ describe('verified state', () => {
       state = finished(state, work, `long-${work}`, [output(`p${work}`, fields(510_000, 0))]);
     }
     const { started } = attempt(16, 'last')(state);
-    const room = AGENTIC_MAX_CHECKPOINT_BYTES - jsonBytes(started);
+    const room = CHECKPOINT_BYTES - jsonBytes(started);
     const last = finishCommand(started, 16, 'last', [
       output('p16', fields(Math.floor(room / 2) - 4_000, 0)),
     ]);
     const expected = complete(started, last, Date.now());
-    expect(expected).toMatchObject({ error: expect.stringContaining('exceeds its limits') });
+    expect(expected).toMatchObject({ error: expect.stringContaining('limit/snapshot_too_large') });
     expect(verdict(() => applyAgenticCheckpoint(started, last))).toEqual(expected);
     // The JSON alone would have fitted, so only the text limit can have refused this.
     const size = jsonBytes(started) + 2 * Math.floor(room / 2) - 8_000;
-    expect(size).toBeLessThan(AGENTIC_MAX_CHECKPOINT_BYTES);
+    expect(size).toBeLessThan(CHECKPOINT_BYTES);
   }, 60_000);
 
   it('stops at the value limit exactly where the complete check does', async () => {
@@ -849,7 +856,7 @@ describe('verified state', () => {
       [{ name: 'items', type: 'array', nullable: false }],
       (size) => ({ items: Array.from({ length: size }, () => 0) }),
       (state) => measureCheckpoint(state)?.values ?? Infinity,
-      AGENTIC_MAX_CHECKPOINT_VALUES,
+      CHECKPOINT_VALUES,
       8,
       15_000
     );
@@ -859,12 +866,10 @@ describe('verified state', () => {
     const fits = applyAgenticCheckpoint(started, command(exact));
     restore();
     expect(counters.validations).toBe(0);
-    expect(measureCheckpoint(fits)?.values).toBeGreaterThanOrEqual(
-      AGENTIC_MAX_CHECKPOINT_VALUES - 1
-    );
+    expect(measureCheckpoint(fits)?.values).toBeGreaterThanOrEqual(CHECKPOINT_VALUES - 1);
     const over = command(exact + 1);
     const expected = complete(started, over, Date.now());
-    expect(expected).toMatchObject({ error: expect.stringContaining('exceeds its limits') });
+    expect(expected).toMatchObject({ error: expect.stringContaining('limit/snapshot_too_large') });
     expect(verdict(() => applyAgenticCheckpoint(started, over))).toEqual(expected);
   }, 60_000);
 });

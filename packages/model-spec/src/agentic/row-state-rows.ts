@@ -1,7 +1,6 @@
 /** Reading and writing a run's immutable rows. Knows nothing of ownership. */
 import { randomUUID } from 'node:crypto';
 import type { SqlParamValue } from '@bobsled-inc/connections';
-import { AGENTIC_MAX_CHECKPOINT_BYTES } from './checkpoint-json.js';
 import type { AgenticRowDb, AgenticRowDialect } from './row-state-dialect.js';
 import {
   agenticStoredRows,
@@ -11,16 +10,20 @@ import {
   type AgenticRowWrite,
   type AgenticStoredRow,
 } from './row-state-layout.js';
-import { AGENTIC_MAX_ROWS } from './rows.js';
 import { agenticRowColumns, agenticStatement } from './row-state-tables.js';
 import { AgenticStateError } from './state.js';
+import type { AgenticStoreLimits } from './store-limits.js';
 
-// Bounds on what one run may hold, derived from the caps so that they rise together. A snapshot's
-// rows hold it about once, plus the start rows of finished attempts. An assignment has up to two
-// writes per attempt, a long value takes several rows, and orphans come on top.
-const maxStoredChars = 4 * AGENTIC_MAX_CHECKPOINT_BYTES;
-const maxStoredWrites = 64 * AGENTIC_MAX_ROWS + 1024;
-const maxStoredRows = 2 * maxStoredWrites;
+/**
+ * Bounds on what one run may hold, derived from the limits of the store that holds it, so that
+ * they rise together. A snapshot's rows hold it about once, plus the start rows of finished
+ * attempts. An assignment has up to two writes per attempt, a long value takes several rows, and
+ * orphans come on top.
+ */
+export function agenticStoredBounds(limits: AgenticStoreLimits) {
+  const writes = 64 * limits.maxRows + 1024;
+  return { chars: 4 * limits.maxCheckpointBytes, writes, rows: 2 * writes };
+}
 /** Write IDs named in one statement: few enough for any engine, and a long run takes two. */
 const maxIdsPerStatement = 1024;
 /** Expired runs removed per acquisition, so a backlog cannot delay a run. */
@@ -74,11 +77,14 @@ function idBatches(ids: readonly string[]): string[][] {
  * a stored value is never fetched whole before anything can reject it. No value `save` wrote is
  * that long: each is part of a snapshot within the cap.
  */
-export function agenticHeaderColumns(dialect: AgenticRowDialect): string {
+export function agenticHeaderColumns(
+  dialect: AgenticRowDialect,
+  limits: AgenticStoreLimits
+): string {
   const q = dialect.identifier;
   const capped = ['head', 'token', 'summary', 'scope', 'model', 'run_id'].map(
     (name) =>
-      `CASE WHEN LENGTH(${q(name)}) <= ${AGENTIC_MAX_CHECKPOINT_BYTES} THEN ${q(name)} END AS ${q(name)}`
+      `CASE WHEN LENGTH(${q(name)}) <= ${limits.maxCheckpointBytes} THEN ${q(name)} END AS ${q(name)}`
   );
   return [q('layout'), q('revision'), ...capped].join(', ');
 }
@@ -171,14 +177,19 @@ export async function insertAgenticWrite(
 /**
  * The committed writes reachable from `head`, oldest first. Only a new owner may set
  * `sweepOrphans`: by then no earlier writer's header update can still land, whereas later
- * a reply this session lost might still commit.
+ * a reply this session lost might still commit. `limits` is what the store holds, which bounds
+ * what this reads. `beforeStatement` runs before each statement after the first two, so a long
+ * read can stop or extend its lease.
  */
 export async function readAgenticWrites(
   { db, dialect, table, hash }: AgenticRunRows,
   head: string,
   revision: number,
-  sweepOrphans: boolean
+  sweepOrphans: boolean,
+  limits: AgenticStoreLimits,
+  beforeStatement: () => Promise<void> = async () => {}
 ): Promise<AgenticRowWrite[]> {
+  const bounds = agenticStoredBounds(limits);
   const q = dialect.identifier;
   const where = `${q('run_hash')} = ${dialect.bind(1)}`;
   const ids = (batch: readonly string[]): string =>
@@ -197,15 +208,15 @@ export async function readAgenticWrites(
     `SELECT COUNT(*) AS ${q('stored_rows')}, SUM(${text}) AS ${q('stored_chars')} FROM ${table} WHERE ${where}`,
     [hash]
   );
-  if (Number(total?.stored_rows) > maxStoredRows || Number(total?.stored_chars) > maxStoredChars) {
+  if (Number(total?.stored_rows) > bounds.rows || Number(total?.stored_chars) > bounds.chars) {
     throw tooMuch();
   }
   const writeColumns = `${q('write_id')}, ${q('parent')}, ${q('revision')}`;
   const infos = await db.query(
-    `SELECT ${writeColumns} FROM ${table} WHERE ${where} GROUP BY ${writeColumns} LIMIT ${maxStoredWrites + 1}`,
+    `SELECT ${writeColumns} FROM ${table} WHERE ${where} GROUP BY ${writeColumns} LIMIT ${bounds.writes + 1}`,
     [hash]
   );
-  if (infos.length > maxStoredWrites) throw tooMuch();
+  if (infos.length > bounds.writes) throw tooMuch();
   const { committed, orphans } = walkAgenticWrites(
     infos.map((info) => ({
       write_id: String(info.write_id),
@@ -217,11 +228,13 @@ export async function readAgenticWrites(
   );
   if (sweepOrphans) {
     for (const batch of idBatches(orphans)) {
+      await beforeStatement();
       await db.query(`DELETE FROM ${table} WHERE ${where} AND ${ids(batch)}`, [hash, ...batch]);
     }
   }
   const stored: AgenticStoredRow[] = [];
   for (const batch of idBatches([...committed])) {
+    await beforeStatement();
     const rows = await db.query(
       `SELECT ${insertColumns.slice(1).map(q).join(', ')} FROM ${table} WHERE ${where} AND ${ids(batch)}`,
       [hash, ...batch]
