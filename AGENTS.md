@@ -82,9 +82,9 @@ release notes, and every published npm version.
 - Keep commit messages and pull request descriptions self-contained and safe to
   publish. Internal motivation stays in internal tools.
 - Never weaken the security and privacy guards, the rule that credential references
-  are declared (`auth_env_vars`), or the 21-day dependency release age, which is never
-  bypassed except by owner-approved exact-version security-fix exemptions listed in
-  `docs/dependency-security.md`.
+  are declared (`auth_env_vars`), or the 7-day dependency release age, which is never
+  lowered further without an owner decision and is bypassed only by owner-approved
+  exact-version security-fix exemptions listed in `docs/dependency-security.md`.
 - Report vulnerabilities and coordinate their fixes only through `SECURITY.md` and
   private security advisories, never in a public issue, pull request, or commit
   message, until a fix is released.

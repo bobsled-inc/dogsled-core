@@ -882,9 +882,9 @@ describe('GitHub Actions security', () => {
 describe('release and dependency policy guardrails', () => {
   const templatePath = path.join(repoRoot, '.github', 'pull_request_template.md');
 
-  it('delays every package update for three weeks', () => {
+  it('delays every package update for one week', () => {
     const workspace = readFileSync(path.join(repoRoot, 'pnpm-workspace.yaml'), 'utf8');
-    match(workspace, /^minimumReleaseAge:\s*30240$/m);
+    match(workspace, /^minimumReleaseAge:\s*10080$/m);
 
     const dependabot = readFileSync(path.join(repoRoot, '.github', 'dependabot.yml'), 'utf8');
     deepStrictEqual(
@@ -893,7 +893,7 @@ describe('release and dependency policy guardrails', () => {
     );
     deepStrictEqual(
       [...dependabot.matchAll(/default-days:\s*(\d+)/g)].map((match) => match[1]),
-      ['21', '21']
+      ['7', '7']
     );
   });
 
