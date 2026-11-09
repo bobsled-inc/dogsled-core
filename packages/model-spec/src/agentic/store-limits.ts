@@ -25,9 +25,9 @@ export const AGENTIC_DEFAULT_STORE_LIMITS: Readonly<AgenticStoreLimits> = Object
 });
 
 /**
- * The row store on DuckDB, PostgreSQL and Snowflake. A run at this size resumes in seconds on
- * DuckDB and PostgreSQL and in under a minute on Snowflake, and fits in the memory measured in
- * docs/agentic-state.md.
+ * The row store on DuckDB, PostgreSQL and Snowflake. As measured in docs/agentic-state.md, a run at
+ * this size resumed in seconds on DuckDB and PostgreSQL and in under a minute on Snowflake, and fit
+ * in the memory measured there.
  */
 export const AGENTIC_ROW_STORE_LIMITS: Readonly<AgenticStoreLimits> = Object.freeze({
   maxRows: 10_000,

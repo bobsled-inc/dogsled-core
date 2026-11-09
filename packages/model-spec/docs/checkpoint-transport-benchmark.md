@@ -568,8 +568,8 @@ A run takes longer under a tight heap: resuming the map workload took 9.2 second
 
 ### On Snowflake
 
-A checkpoint on Snowflake takes about a second, so running every assignment of a 10,000-assignment
-run would take hours. In bulk mode, the default for `snowflake-rows`, the first process instead
+A checkpoint on Snowflake took about a second here, so running every assignment of a
+10,000-assignment run would take hours. In bulk mode, the default for `snowflake-rows`, the first process instead
 starts another run of the same size and stops it at its first model call, which times setting up and
 sealing the whole run. The second writes the measured run with all but its last 40 assignments done,
 through the store's own backend and batched inserts. The third resumes it and finishes it, the fourth

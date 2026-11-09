@@ -384,11 +384,11 @@ and open run is the heap a run of that size holds:
 | DuckDB `checkpoint_store` |       5,000 |        54.4 ms |  2.2 s |    1.0 s |  3.5 s |  2.6 s |    1.08 GiB |   39 MiB |
 | DuckDB `checkpoint_store` |      10,000 |        51.6 ms |  4.0 s |    2.0 s |  6.9 s |  4.9 s |    1.58 GiB |   75 MiB |
 
-On Snowflake a checkpoint takes about a second, so the benchmark writes most of each run in bulk
+On Snowflake a checkpoint took about a second, so the benchmark writes most of each run in bulk
 through the store's own writes and runs only its last 40 assignments; per assignment is over the last
-ten. Set up
-there includes about ten seconds of creating the store's tables in a new schema, which a schema pays
-once:
+ten. These are one sample per size on one account, run from a laptop, and latency there depends on
+the warehouse size, the network and the region. Set up includes about ten seconds of creating the
+store's tables in a new schema, which a schema pays once:
 
 | Store     | Assignments | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
 | --------- | ----------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
@@ -419,17 +419,19 @@ What sets the limits:
   each step starts with nine tenths of it. With the default lease of two minutes that leaves a wide
   margin. With the shortest, 10 seconds, a plan of 10,000 assignments leaves room for a host about two
   and a half times slower than the one measured, so give a large run a longer lease on a slower host.
-- **Snowflake: the same limits, set by statements rather than local work.** A statement there takes
-  about 0.6 seconds, so a step that reads or writes the whole run is many statements, and the session
-  renews its lease between them. At 10,000 assignments a load is 24 statements in 25 to 27 seconds
-  and the seal 86 in 72 seconds, and each of publication's seven reads takes about 18 seconds. So the
-  lease has to outlast one statement or one stretch of local work, not a whole step. The longest
-  statement took 4.2 seconds and the longest stretch 6.5, or 7.1 with the largest checkpoint,
-  against the 60 seconds a statement may take and the 108 a stretch starts with under the default
-  lease. Checkpoints stay flat, at about 2.5 seconds and four statements per model call at every
-  size, and a resume takes 40 seconds at 10,000. The shortest lease does not suit Snowflake at any
-  size: it leaves five seconds per statement, and a statement in a run of 1,000 took 3.2. Keep the
-  default lease there, or at least 30 seconds.
+- **Snowflake: the same limits, set by statements rather than local work.** In one sample on one
+  account, run from a laptop, a statement took about 0.6 seconds, so a step that reads or writes the
+  whole run is many statements, and the session renews its lease between them. At 10,000
+  assignments a load was 24 statements in 25 to 27 seconds and the seal 86 in 72 seconds, and each of
+  publication's seven reads took about 18 seconds. So the lease has to outlast one statement or one
+  stretch of local work, not a whole step. The longest statement took 4.2 seconds and the longest
+  stretch 6.5, or 7.1 with the largest checkpoint, against the 60 seconds a statement may take and
+  the 108 a stretch starts with under the default lease. Checkpoints stayed flat, at about 2.5
+  seconds and four statements per model call at every size, and a resume took 40 seconds at 10,000.
+  Statement latency depends on the warehouse size, the network and the region. The shortest lease
+  does not suit Snowflake: it leaves five seconds per statement, and a statement in a run of 1,000
+  took 3.2. Keep the default lease there, or at least 30 seconds, which leaves 15 seconds per
+  statement against the 4.2 seen. That floor is derived from the longest statement, not measured.
 
 A run saved before these limits resumes unchanged. A run of more than 1,000 assignments cannot go
 back: an older release reads it as damaged, `corrupt`, and makes no model calls, so finish such a run
