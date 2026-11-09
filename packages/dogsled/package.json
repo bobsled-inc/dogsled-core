@@ -223,14 +223,6 @@
     "yaml": "catalog:app-packages",
     "zod": "catalog:dev-packages"
   },
-  "peerDependencies": {
-    "ssh2": ">=1.17.0"
-  },
-  "peerDependenciesMeta": {
-    "ssh2": {
-      "optional": true
-    }
-  },
   "bundleDependencies": [
     "@bobsled-inc/api-resource",
     "@bobsled-inc/ai",
