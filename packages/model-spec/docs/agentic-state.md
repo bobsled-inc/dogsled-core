@@ -323,6 +323,8 @@ such as a `seal_work` after preparation runs again: its digest differs, so it is
 and the old rows stay unreachable. A worker that lost its lease can still insert rows, but its
 header update changes nothing. A new owner deletes unreachable rows the first time it loads the
 run. A session never trusts its memory after an uncertain write: it reloads from the rows first.
+After a header update with no reply it renews its lease before that read, which changes the token,
+so an update still running on the server can no longer commit after the read.
 
 No table relies on a unique key, which three of the warehouses this layout targets do not
 enforce. The row layout supports DuckDB, PostgreSQL and Snowflake.

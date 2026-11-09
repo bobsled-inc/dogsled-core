@@ -99,6 +99,9 @@ export async function openAgenticRowSession(
 
   // Changes with every header write. Only a session that saw the latest write can make the next.
   let token = '';
+  // A header update was sent and no reply came. On a server it may still be running; an embedded
+  // file in exclusive mode has nothing in flight once a call has returned.
+  let uncertain = false;
   let closed = false;
   // Local time at which the last successful lease extension was requested.
   let extendedAt = 0;
@@ -148,6 +151,8 @@ export async function openAgenticRowSession(
     }
     if (changed !== 1) throw loseOwnership();
     token = next;
+    // A header update still in flight is fenced on the old token, so it can no longer land.
+    uncertain = false;
     extendedAt = started;
   };
   // The heartbeat waits behind a long write, so renew inside it before the lease runs out.
@@ -197,6 +202,8 @@ export async function openAgenticRowSession(
   };
 
   const load = async (db: AgenticRowDb): Promise<Durable> => {
+    // That update is fenced on the token, which a renewal changes, so this read is then final.
+    if (uncertain) await renew(db);
     // Only the session's first load, which comes before any write of its own, can sweep.
     const sweepOrphans = !loaded;
     loaded = true;
@@ -276,12 +283,14 @@ export async function openAgenticRowSession(
     ].join(', ');
     const fence = `${owned(statement)} AND ${q('token')} = ${statement.bind(token)} AND ${q('revision')} = ${statement.bind(current.revision)}`;
     const committing = Date.now();
+    uncertain = true;
     const changed = await dialect.changed(
       db,
       `UPDATE ${runs} SET ${set} WHERE ${fence}`,
       statement.params
     );
     if (changed !== 1) throw loseOwnership();
+    uncertain = false;
     token = nextToken;
     extendedAt = committing;
     durable = { snapshot: next, revision: next.revision, head };

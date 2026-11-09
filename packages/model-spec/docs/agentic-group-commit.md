@@ -128,11 +128,11 @@ at all. There is no state in which some of its commands are saved and others are
   the commands go again one at a time. Their writes repeat the group's own when the content is the
   same, and a finish's time makes them differ otherwise; either way the rows that no header reaches
   stay inert.
-- **The update lands after the read.** A statement can still be running on the server when its reply
-  is lost. The single commands that follow are fenced on the same token as the group. Whichever lands
-  first changes the token, so the other changes nothing: either the late group commits nothing, or
-  the first single command finds the token changed and reports lost ownership, and the run recovers
-  by reloading the saved state, which then holds the group.
+- **The update could land after the read.** A statement can still be running on the server when its
+  reply is lost, and it is fenced on the run's token. So a session that sent a header update and got
+  no reply renews its lease before it reads again, which changes the token under the same ownership
+  fence. From then on the update in flight can no longer commit, and the read shows the final state:
+  the whole group, or the state before it, which the commands then build on one at a time.
 - **A read shows anything else**, such as some of the group's commands but not all, the run stops as
   `corrupt`. The store broke its contract and nothing it says can be trusted.
 

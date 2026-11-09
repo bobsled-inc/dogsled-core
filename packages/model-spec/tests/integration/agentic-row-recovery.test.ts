@@ -13,6 +13,8 @@ import { duckDbRowDialect } from '../../src/agentic/row-state-dialect.js';
 import { createAgenticRowWrite } from '../../src/agentic/row-state-layout.js';
 import { insertAgenticWrite, readAgenticWrites } from '../../src/agentic/row-state-rows.js';
 import { openAgenticRowSession } from '../../src/agentic/row-state.js';
+import { createAgenticRowStore } from '../../src/agentic/row-store.js';
+import { executeAgenticRun } from '../../src/agentic/run.js';
 import {
   prepareAgenticRowTables,
   type AgenticRowBackend,
@@ -30,6 +32,7 @@ import {
   planScenario,
   type AgenticStoreScenario,
 } from '../support/agentic-store-scenario.js';
+import { runFixture } from '../unit/agentic/state-fixture.js';
 
 const schema = 'recovery';
 type Fault = (
@@ -205,28 +208,38 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     await session.release();
   });
 
-  it('keeps rows whose header update lands after the recovery read', async () => {
-    const { open } = await fixture();
-    const session = await open(plan.key);
-    expect(await session.read()).toBeNull();
-    await session.create(plan.initial);
-    const seal = plan.commands[0]!;
-    // The reply is lost while the statement is still running on the server.
+  /** Loses the reply to the next header commit while the statement still runs on the server.
+   * Returns a function that lands it later, and reports how many rows it changed. */
+  function delayNextCommit() {
     let delayed: { sql: string; params: Parameters<AgenticRowDb['query']>[1] } | undefined;
     faults.next = (statement, params) => {
       if (delayed || !headerUpdate.test(statement)) return undefined;
       delayed = { sql: statement, params };
       return 'lose_before';
     };
+    return async (): Promise<number> => {
+      const runner = await buildDuckDbRunner(duckDbStateFile(file()));
+      try {
+        return (await runner.query!(delayed!.sql, delayed!.params)).length;
+      } finally {
+        await runner.close?.();
+      }
+    };
+  }
+
+  it('lets no header update land after the recovery read', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key);
+    expect(await session.read()).toBeNull();
+    await session.create(plan.initial);
+    const seal = plan.commands[0]!;
+    const land = delayNextCommit();
     await expect(session.checkpoint(seal)).rejects.toThrow('Synthetic');
+    // The read changes the run's token first, so what it shows is final.
     expect(await session.read()).toEqual(plan.initial);
-    const runner = await buildDuckDbRunner(duckDbStateFile(file()));
-    try {
-      await runner.query!(delayed!.sql, delayed!.params);
-    } finally {
-      await runner.close?.();
-    }
-    expect((await session.read())?.status).toBe('running');
+    expect(await land()).toBe(0);
+    expect(await session.read()).toEqual(plan.initial);
+    expect((await session.checkpoint(seal)).status).toBe('running');
     await session.release();
   });
 
@@ -739,6 +752,70 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     );
     expect(await session.read()).toEqual(after);
     await session.release();
+  });
+
+  it('lets no group land after the recovery read, so its commands can go again alone', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key, { groupCommit: true });
+    const { before, group } = await beforeGroup(session);
+    const land = delayNextCommit();
+    await expect(session.checkpointMany!(group)).rejects.toThrow('Synthetic');
+    expect(await session.read()).toEqual(before);
+    expect(await land()).toBe(0);
+    let snapshot = before;
+    for (const command of group) {
+      const requestedAt = Date.now();
+      const saved = await session.checkpoint(command);
+      snapshot = validateAgenticReceipt(saved, snapshot, command, requestedAt);
+    }
+    expect(snapshot.revision).toBe(before.revision + group.length);
+    expect(await session.read()).toEqual(snapshot);
+    await session.release();
+  });
+
+  it('completes a run whose lost group lands between the recovery read and the resend', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'row-recovery-'));
+    directories.push(directory);
+    const backend = faultyBackend(join(directory, 'state.duckdb'), faults);
+    const stateStore = createAgenticRowStore(backend, {
+      leaseMs: 10_000,
+      retentionMs: 86_400_000,
+      groupCommit: true,
+    });
+    const fixture = runFixture(6);
+    fixture.host.concurrency = 3;
+    let calls = 0;
+    const execute = fixture.host.executeAgent;
+    fixture.host.executeAgent = (request) => {
+      calls++;
+      return execute(request);
+    };
+    // The third commit is the first group: create, seal, then three starts together.
+    let commits = 0;
+    let delayed: { sql: string; params: Parameters<AgenticRowDb['query']>[1] } | undefined;
+    faults.next = (statement, params) => {
+      if (delayed || !headerUpdate.test(statement) || ++commits < 3) return undefined;
+      delayed = { sql: statement, params };
+      return 'lose_before';
+    };
+    // It lands after the coordinator's recovery read, just before the first command it resends.
+    let read = false;
+    let landed: number | undefined;
+    faults.before = async (sql, db) => {
+      if (!delayed || landed !== undefined) return;
+      if (/^SELECT .*__dogsled_agentic_runs/.test(sql)) read = true;
+      else if (read && rowInsert.test(sql)) {
+        landed = (await db.query(delayed.sql, delayed.params)).length;
+      }
+    };
+    const result = await executeAgenticRun(fixture.host, fixture.context(), {
+      projectDirectory: directory,
+      stateStore,
+      run: { id: 'late-group', mode: 'start' },
+    });
+    expect(landed).toBe(0);
+    expect(result.processedKeys).toHaveLength(6);
+    expect(calls).toBe(6);
   });
 
   it('reads a run saved in groups with a session that saves one command at a time', async () => {
