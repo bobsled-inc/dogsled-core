@@ -298,7 +298,11 @@ connection fails the run instead of skipping the remaining files. Connection
 failures carry a stable `code`, for example `SFTP_HOST_KEY_MISMATCH`,
 `SFTP_HOST_KEY_TYPE_UNAVAILABLE`, `SFTP_AUTH_FAILED`, `SFTP_TIMEOUT` or
 `SFTP_CONNECTION_LOST`. The full list is exported as `SFTP_ERROR_CODES` from
-`@bobsled-inc/extractor`.
+`@bobsled-inc/extractor` and `@bobsled-inc/dogsled/sftp`. Library hosts can use
+`SftpFileStorageClient` from that subpath, with `ssh2` installed, and pin a
+download with `expected: { size, mtimeSeconds }`: a file that no longer matches
+fails with `SFTP_FILE_CHANGED`. Passing the same `progress` object and target
+again resumes a download after a retryable failure.
 
 A private Vercel Blob object uses `source_type: vercel_blob` with
 `connection.blob_ref` and `auth: { type: signed_url_env, url_env, origin_env }`.

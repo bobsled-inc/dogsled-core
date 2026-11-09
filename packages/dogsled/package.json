@@ -165,6 +165,11 @@
       "types": "./dist/compat/ontology.d.ts",
       "import": "./dist/compat/ontology.js",
       "default": "./dist/compat/ontology.js"
+    },
+    "./sftp": {
+      "types": "./dist/compat/sftp.d.ts",
+      "import": "./dist/compat/sftp.js",
+      "default": "./dist/compat/sftp.js"
     }
   },
   "files": [
@@ -217,6 +222,14 @@
     "jsonpath-plus": "catalog:app-packages",
     "yaml": "catalog:app-packages",
     "zod": "catalog:dev-packages"
+  },
+  "peerDependencies": {
+    "ssh2": ">=1.17.0"
+  },
+  "peerDependenciesMeta": {
+    "ssh2": {
+      "optional": true
+    }
   },
   "bundleDependencies": [
     "@bobsled-inc/api-resource",

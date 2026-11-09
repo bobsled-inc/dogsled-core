@@ -18,6 +18,7 @@ export const SFTP_ERROR_CODES = [
   'SFTP_PATH_NOT_FOUND',
   'SFTP_PERMISSION_DENIED',
   'SFTP_LOCAL_WRITE_FAILED',
+  'SFTP_FILE_CHANGED',
 ] as const;
 export type SftpErrorCode = (typeof SFTP_ERROR_CODES)[number];
 
@@ -35,6 +36,7 @@ const SPECS: Record<SftpErrorCode, { kind: DogsledRuntimeErrorKind; retryable: b
   SFTP_PATH_NOT_FOUND: { kind: 'validation', retryable: false },
   SFTP_PERMISSION_DENIED: { kind: 'auth', retryable: false },
   SFTP_LOCAL_WRITE_FAILED: { kind: 'internal', retryable: false },
+  SFTP_FILE_CHANGED: { kind: 'validation', retryable: false },
 };
 
 export function sftpError(code: SftpErrorCode, op: string, cause?: unknown): DogsledRuntimeError {
