@@ -8,7 +8,11 @@ import { duckDbOperationBackend, duckDbStateFile } from '../../src/agentic/duckd
 import type { AgenticRowDb } from '../../src/agentic/row-state-dialect.js';
 import { duckDbRowDialect } from '../../src/agentic/row-state-dialect.js';
 import { createAgenticRowWrite } from '../../src/agentic/row-state-layout.js';
-import { insertAgenticWrite, readAgenticWrites } from '../../src/agentic/row-state-rows.js';
+import {
+  agenticStoredBounds,
+  insertAgenticWrite,
+  readAgenticWrites,
+} from '../../src/agentic/row-state-rows.js';
 import { openAgenticRowSession } from '../../src/agentic/row-state.js';
 import {
   prepareAgenticRowTables,
@@ -61,7 +65,8 @@ function faultyBackend(file: string, faults: Faults): AgenticRowBackend {
       const fault = faults.next?.(sql, params);
       if (fault === 'lose_before') throw new Error('Synthetic failure before the statement');
       const rows = await db.query(sql, params);
-      faults.returned.push(...rows);
+      // One at a time: a load can return more rows than a call takes arguments.
+      for (const row of rows) faults.returned.push(row);
       if (fault === 'lose_after') throw new Error('Synthetic lost reply');
       return rows;
     },
@@ -438,11 +443,26 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const plant = (count: number, data: string) =>
       `INSERT INTO ${rowsTable} SELECT first(run_hash), 'off-chain-' || i, '', 0, 'planted', 'attempt', 0, 0, 1, ${data} FROM ${rowsTable}, range(${count}) AS r(i) GROUP BY i`;
     const longest = () =>
-      Math.max(
-        ...faults.returned.flatMap((row) =>
-          Object.values(row).map((value) => (typeof value === 'string' ? value.length : 0))
-        )
+      faults.returned.reduce(
+        (most, row) =>
+          Object.values(row).reduce<number>(
+            (longer, value) => Math.max(longer, typeof value === 'string' ? value.length : 0),
+            most
+          ),
+        0
       );
+    /** Copies of one of the run's own rows, which the read of its write fetches too. */
+    const copy = (count: number, data: string) =>
+      `INSERT INTO ${rowsTable} SELECT run_hash, write_id, parent, revision, operation_id, kind, item, part, parts, ${data} FROM (SELECT * FROM ${rowsTable} LIMIT 1) AS one, range(${count}) AS r(i)`;
+    /** Runs `statement` once, after the count and just before the first read of the run's rows. */
+    const afterTheCount = (statement: string) => {
+      let done = false;
+      faults.before = async (sql, db) => {
+        if (done || !/^SELECT .* IN \(/s.test(sql)) return;
+        done = true;
+        await db.query(statement, []);
+      };
+    };
 
     it('reads only the writes on the chain', async () => {
       const { open, sql } = await fixture();
@@ -521,6 +541,29 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
       await next.release();
     });
 
+    it.each([
+      ['rows arrive', 140_000, `''`],
+      ['text arrives', 65, `repeat('x', 1048576)`],
+    ])('stops reading when more %s after the count', async (_, count, data) => {
+      const { open } = await fixture();
+      const session = await open(map.key);
+      await replay(session, map, 2);
+      await session.release();
+      afterTheCount(copy(count, data));
+      faults.returned = [];
+      const next = await open(map.key);
+      await expect(next.read()).rejects.toMatchObject({
+        code: 'limit',
+        reason: 'stored_rows_exceeded',
+      });
+      // At most the rows the bounds have left, and none of the text that came after the count.
+      expect(faults.returned.length).toBeLessThan(
+        agenticStoredBounds(AGENTIC_DEFAULT_STORE_LIMITS).rows + 10
+      );
+      expect(longest()).toBeLessThan(1_048_576);
+      await next.release();
+    });
+
     it('counts the text of a row with a null column', async () => {
       const { open, sql } = await fixture();
       const session = await open(map.key);
@@ -549,22 +592,29 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
       await next.release();
     });
 
-    it.each(['summary', 'head', 'scope', 'model', 'run_id'])(
-      'does not fetch an oversized %s',
-      async (column) => {
-        const { open, sql } = await fixture();
-        const session = await open(map.key);
-        await replay(session, map, 2);
-        await session.release();
-        // Still valid JSON in the summary, so only the cap can reject it.
-        await sql(`UPDATE ${runsTable} SET ${column} = ${column} || repeat(' ', 16777217)`);
-        faults.returned = [];
-        const next = await open(map.key);
-        await expect(next.read()).rejects.toMatchObject({ code: 'corrupt' });
-        expect(longest()).toBeLessThan(16_777_216);
-        await next.release();
-      }
-    );
+    // The summary may be as long as a snapshot the store holds; the rest are identities.
+    it.each([
+      ['summary', AGENTIC_DEFAULT_STORE_LIMITS.maxCheckpointBytes],
+      ['head', 1024],
+      ['scope', 1024],
+      ['model', 1024],
+      ['run_id', 1024],
+    ])('does not fetch an oversized %s', async (column, cap) => {
+      const { open, sql } = await fixture();
+      const session = await open(map.key);
+      await replay(session, map, 2);
+      await session.release();
+      // Still valid JSON in the summary, so only the cap can reject it.
+      await sql(`UPDATE ${runsTable} SET ${column} = ${column} || repeat(' ', ${cap + 1})`);
+      faults.returned = [];
+      const next = await open(map.key);
+      await expect(next.read()).rejects.toMatchObject({ code: 'corrupt' });
+      const fetched = faults.returned.map((row) => row[column]);
+      expect(fetched.filter((value) => typeof value === 'string' && value.length > cap)).toEqual(
+        []
+      );
+      await next.release();
+    });
   });
 
   it('renews its lease before work that reads the whole run, and not before an attempt', async () => {

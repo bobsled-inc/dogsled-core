@@ -49,22 +49,32 @@ export function agenticCheckpointValues(limits: Pick<AgenticStoreLimits, 'maxChe
  * a wrapper that passes a store's declaration on keeps it, and a copy does not. */
 const measured = new WeakSet<object>([AGENTIC_ROW_STORE_LIMITS]);
 
-/** Supplied stores that declare nothing keep the historic limits. */
+/**
+ * Supplied stores that declare nothing keep the historic limits. Dogsled's own declarations are
+ * frozen and returned as they are. Any other is read once into a frozen copy, so that a getter or
+ * a later change cannot give a run more than was checked.
+ */
 export function resolveAgenticStoreLimits(store: {
   limits?: AgenticStoreLimits;
 }): AgenticStoreLimits {
-  const limits = store.limits ?? AGENTIC_DEFAULT_STORE_LIMITS;
-  const ceiling = measured.has(limits) ? AGENTIC_MAX_STORE_LIMITS : AGENTIC_DEFAULT_STORE_LIMITS;
+  const declared = store.limits ?? AGENTIC_DEFAULT_STORE_LIMITS;
+  if (measured.has(declared) || declared === AGENTIC_DEFAULT_STORE_LIMITS) return declared;
+  const limits: AgenticStoreLimits = {
+    maxRows: declared.maxRows,
+    maxBatchBytes: declared.maxBatchBytes,
+    maxCheckpointBytes: declared.maxCheckpointBytes,
+  };
   for (const name of ['maxRows', 'maxBatchBytes', 'maxCheckpointBytes'] as const) {
     const value = limits[name];
-    if (!Number.isSafeInteger(value) || value < 1 || value > ceiling[name]) {
+    const ceiling = AGENTIC_DEFAULT_STORE_LIMITS[name];
+    if (!Number.isSafeInteger(value) || value < 1 || value > ceiling) {
       throw new AgenticStateError('limit', {
         reason: 'invalid_store_limits',
-        message: `The state store declares ${name} ${value}; the allowed range is 1 to ${ceiling[name]}.`,
+        message: `The state store declares ${name} ${value}; the allowed range is 1 to ${ceiling}.`,
       });
     }
   }
-  return limits;
+  return Object.freeze(limits);
 }
 
 /**
@@ -98,7 +108,7 @@ export interface AgenticCheckpointSize {
 }
 
 /** Why a snapshot of this size does not fit `limits`, or undefined when it does. */
-export function agenticCheckpointLimitError(
+export function agenticSizeLimitError(
   size: AgenticCheckpointSize,
   limits: AgenticStoreLimits
 ): AgenticStateError | undefined {

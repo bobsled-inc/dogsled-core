@@ -10,7 +10,7 @@ import { executeAgenticPlan } from './plan-run.js';
 import { preflightAgenticPublication, publishAgenticRun } from './publish-run.js';
 import type { AgenticPublisher, AgenticHost } from './publication.js';
 import { validateAgenticReceipt } from './checkpoint-receipt.js';
-import { checkpointLimitError, safeParseVerifiedCheckpoint } from './checkpoint-verified.js';
+import { parseVerifiedCheckpointWithin } from './checkpoint-verified.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
@@ -257,15 +257,16 @@ async function executeOwnedAgenticRun(
     const saved = await storage(async () => session.read());
     if (saved) {
       snapshot = await storage(async () => {
-        // Verified once here, so later receipts are checked against it without reading the run.
-        const parsed = safeParseVerifiedCheckpoint(saved);
-        if (!parsed.success || checkpointLimitError(parsed.data, checkpointLimits)) {
+        try {
+          // Verified once here, so later receipts are checked against it without reading the run.
+          // A run larger than the store holds is refused before the schema reads it.
+          return parseVerifiedCheckpointWithin(saved, checkpointLimits);
+        } catch {
           throw new AgenticStateError('corrupt', {
             reason: 'invalid_checkpoint',
             message: `The saved checkpoint for run "${key.id}" failed validation. It may be damaged or written by a different Dogsled version.`,
           });
         }
-        return parsed.data;
       });
       if (snapshot.superseded) throw new AgenticStateError('superseded');
       if (

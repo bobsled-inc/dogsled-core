@@ -21,7 +21,7 @@ import {
   digestAgenticState,
   transitionAgenticCheckpoint,
 } from './state.js';
-import { checkpointLimitError } from './checkpoint-verified.js';
+import { agenticCheckpointLimitError } from './checkpoint-verified.js';
 import { AGENTIC_DEFAULT_STORE_LIMITS } from './store-limits.js';
 import type { AgenticStateStore, AgenticRunSnapshot } from './state.js';
 
@@ -262,7 +262,7 @@ export function createWarehouseCheckpointStore(
             throw new AgenticStateError('corrupt');
           }
           // The schema accepts what the largest store holds. This one holds the defaults.
-          if (checkpointLimitError(snapshot, limits)) throw new AgenticStateError('corrupt');
+          if (agenticCheckpointLimitError(snapshot, limits)) throw new AgenticStateError('corrupt');
           if (
             digestAgenticState(snapshot) !== id.slice(37) ||
             digestAgenticState(snapshot.key) !== digestAgenticState(key)
@@ -288,7 +288,7 @@ export function createWarehouseCheckpointStore(
           if (digestAgenticState(value.key) !== digestAgenticState(key)) {
             throw new AgenticStateError('conflict');
           }
-          const tooLarge = checkpointLimitError(value, limits);
+          const tooLarge = agenticCheckpointLimitError(value, limits);
           if (tooLarge) throw tooLarge;
           const json = JSON.stringify(value);
           const bytes = Buffer.from(json);

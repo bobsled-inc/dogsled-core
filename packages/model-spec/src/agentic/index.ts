@@ -49,6 +49,7 @@ export {
 } from './default-state.js';
 export { createDuckDbCheckpointStore, type DuckDbCheckpointOptions } from './duckdb-state.js';
 export type { AgenticStoreLimits } from './store-limits.js';
+export { agenticCheckpointLimitError } from './checkpoint-verified.js';
 export * from './run.js';
 export type { AgenticAssignmentCounts, AgenticRunProgress } from './progress.js';
 

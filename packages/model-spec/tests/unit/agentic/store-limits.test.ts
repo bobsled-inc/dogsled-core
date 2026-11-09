@@ -6,6 +6,8 @@ import { isDuckDbAvailable } from '@bobsled-inc/connections';
 import {
   AGENTIC_MAX_BYTES,
   AGENTIC_MAX_ROWS,
+  AgenticRunSnapshotSchema,
+  agenticCheckpointLimitError,
   applyAgenticCheckpoint,
   boundedAgenticRows,
   createDefaultAgenticStateStore,
@@ -23,7 +25,12 @@ import {
   agenticCheckpointValues,
   resolveAgenticStoreLimits,
 } from '../../../src/agentic/store-limits.js';
-import { applyAgenticCheckpointWithin } from '../../../src/agentic/checkpoint-verified.js';
+import {
+  applyAgenticCheckpointWithin,
+  parseVerifiedCheckpointWithin,
+} from '../../../src/agentic/checkpoint-verified.js';
+import { validateAgenticReceipt } from '../../../src/agentic/checkpoint-receipt.js';
+import { countSnapshotValidations } from '../../support/snapshot-validations.js';
 import { checkpointIntegrations } from '../../support/checkpoint-transport.js';
 import { sealedScenario } from '../../support/agentic-store-scenario.js';
 import { MemoryStateStore, runFixture } from './state-fixture.js';
@@ -185,6 +192,27 @@ describe('limits the row store declares', () => {
     );
   });
 
+  it('reads a supplied declaration once, into a frozen copy', () => {
+    const declared = { maxRows: 500, maxBatchBytes: 4096, maxCheckpointBytes: 65_536 };
+    const limits = resolveAgenticStoreLimits({ limits: declared });
+    // A later change to the store's object gives a run nothing more than was checked.
+    declared.maxRows = AGENTIC_ROW_STORE_LIMITS.maxRows;
+    expect(limits).toEqual({ maxRows: 500, maxBatchBytes: 4096, maxCheckpointBytes: 65_536 });
+    expect(Object.isFrozen(limits)).toBe(true);
+    // Nor does a getter that answers differently once it has been checked.
+    let reads = 0;
+    const shifting = {
+      get maxRows() {
+        reads++;
+        return reads === 1 ? 500 : AGENTIC_ROW_STORE_LIMITS.maxRows;
+      },
+      maxBatchBytes: 4096,
+      maxCheckpointBytes: 65_536,
+    };
+    expect(resolveAgenticStoreLimits({ limits: shifting }).maxRows).toBe(500);
+    expect(reads).toBe(1);
+  });
+
   it('keeps 262,144 values for 16 MiB and scales the count with the bytes', () => {
     expect(agenticCheckpointValues(AGENTIC_DEFAULT_STORE_LIMITS)).toBe(262_144);
     expect(agenticCheckpointValues(AGENTIC_ROW_STORE_LIMITS)).toBe(2_097_152);
@@ -210,6 +238,47 @@ describe('limits the row store declares', () => {
       AGENTIC_ROW_STORE_LIMITS
     );
     expect(sealed.work).toHaveLength(AGENTIC_MAX_ROWS + 1);
+  }, 60_000);
+
+  it('refuses a run past the limits of its store before any schema reads it', async () => {
+    const { initial, over } = await sealedScenario(AGENTIC_MAX_ROWS);
+    const sealed = applyAgenticCheckpointWithin(
+      initial,
+      over,
+      Date.now(),
+      AGENTIC_ROW_STORE_LIMITS
+    );
+    const counters = { validations: 0 };
+    const restore = countSnapshotValidations(counters);
+    try {
+      // A copy is not verified state, so only its size can refuse it this early.
+      expect(() =>
+        validateAgenticReceipt(structuredClone(sealed), structuredClone(sealed))
+      ).toThrow(expect.objectContaining({ code: 'corrupt' }));
+      expect(() =>
+        parseVerifiedCheckpointWithin(structuredClone(sealed), AGENTIC_DEFAULT_STORE_LIMITS)
+      ).toThrow(expect.objectContaining({ code: 'corrupt' }));
+      expect(counters.validations).toBe(0);
+      // The row store holds it, so the same value is validated as before.
+      const read = validateAgenticReceipt(
+        structuredClone(sealed),
+        structuredClone(sealed),
+        undefined,
+        Date.now(),
+        AGENTIC_ROW_STORE_LIMITS
+      );
+      expect(read).toEqual(sealed);
+      expect(counters.validations).toBe(1);
+    } finally {
+      restore();
+    }
+    // A supplied store that validates with the schema alone checks its limits with this.
+    expect(AgenticRunSnapshotSchema.safeParse(structuredClone(sealed)).success).toBe(true);
+    expect(agenticCheckpointLimitError(structuredClone(sealed))).toMatchObject({
+      code: 'limit',
+      reason: 'too_many_rows',
+    });
+    expect(agenticCheckpointLimitError(sealed, AGENTIC_ROW_STORE_LIMITS)).toBeUndefined();
   }, 60_000);
 
   it.skipIf(!duckDbAvailable)(

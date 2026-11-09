@@ -12,7 +12,7 @@ import {
   type AgenticCheckpointCommand,
 } from './state.js';
 import { validateAgenticReceipt } from './checkpoint-receipt.js';
-import { checkpointLimitError, parseVerifiedCheckpoint } from './checkpoint-verified.js';
+import { parseVerifiedCheckpointWithin } from './checkpoint-verified.js';
 import { agenticCheckpointLimits, resolveAgenticStoreLimits } from './store-limits.js';
 
 /** Retire the old checkpoint before changing the shared cursor owner. A crash between
@@ -54,8 +54,7 @@ export async function beginAgenticCursor(
     const limits = agenticCheckpointLimits(
       resolveAgenticStoreLimits(session.limits ? session : states)
     );
-    const previous = parseVerifiedCheckpoint(raw);
-    if (checkpointLimitError(previous, limits)) throw new AgenticStateError('corrupt');
+    const previous = parseVerifiedCheckpointWithin(raw, limits);
     if (
       digestAgenticState(previous.key) !== digestAgenticState(previousKey) ||
       (previous.definition as { target?: unknown }).target !== key.target

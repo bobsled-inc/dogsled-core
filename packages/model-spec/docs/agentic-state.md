@@ -247,13 +247,15 @@ The current API uses bounded whole snapshots rather than unbounded record lists.
 A store that removes old runs sets `expiresRuns`, and must never remove one with a publication.
 Takeover then replaces a reservation whose run is gone; otherwise it reports the run `missing`.
 A store can declare `limits` with `maxRows`, `maxBatchBytes` and `maxCheckpointBytes`. Dogsled
+reads them once for each run, so a later change to them does not reach a run in progress. It
 bounds each input batch and the run's output by them and tells the host through `maxRows` and
 `maxBytes`. Without `limits`, a store gets 1,000 rows, 1 MiB per batch and 16 MiB per
 checkpoint, which also allows 262,144 JSON values, one for every 64 bytes. These defaults are the
 most a supplied store can declare, and `applyAgenticCheckpoint` holds a run to them: a larger one
 fails with `limit` and the reason `too_many_rows` or `snapshot_too_large`. `AgenticRunSnapshotSchema`
 accepts what the largest store holds, so a store that validates with the schema alone must check
-its own limits too. A store that declares less bounds the input it is given, and its checkpoints
+its own limits too: `agenticCheckpointLimitError(snapshot, limits)` returns the `limit` error for a
+run that does not fit them, or the defaults without `limits`, and undefined for one that does. A store that declares less bounds the input it is given, and its checkpoints
 are still checked at the defaults, as they always were. Only the [row store](#row-store-limits) holds more. A session can declare `limits`
 too, for a store that keeps runs in more than one place, and its run uses those. All input and
 outcome values also use the existing agentic contract bounds: one assignment holds at most 1,000
@@ -415,7 +417,10 @@ before you downgrade.
 
 A load checks how much a run holds before it reads any content, against bounds derived from the
 store's limits: four times its checkpoint bytes of stored text, and 64 writes for each row it may
-hold, plus 1,024. A run within its store's limits never reaches them.
+hold, plus 1,024. A run within its store's limits never reaches them. Each statement that then
+fetches rows is held to what those bounds have left, so rows that arrive during a load cannot take
+it past them, and the header's identity columns are fetched only up to the 1,024 characters an
+identity may have.
 
 `tests/integration/agentic-row-limits.bench.test.ts` measures this. See the
 [benchmark](checkpoint-transport-benchmark.md#row-store-at-10000-assignments) for the method and

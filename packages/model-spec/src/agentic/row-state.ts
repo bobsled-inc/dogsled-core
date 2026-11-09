@@ -19,6 +19,7 @@ import {
 } from './row-state-layout.js';
 import {
   agenticHeaderColumns,
+  agenticRunHeaderOf,
   insertAgenticWrite,
   purgeExpiredAgenticRuns,
   readAgenticWrites,
@@ -46,9 +47,10 @@ import {
 } from './state.js';
 import {
   applyAgenticCheckpointWithin,
-  checkpointLimitError,
+  agenticCheckpointLimitError,
   isProvableCommand,
   parseVerifiedCheckpoint,
+  parseVerifiedCheckpointWithin,
 } from './checkpoint-verified.js';
 
 const LAYOUT_VERSION = 1;
@@ -157,8 +159,8 @@ export async function openAgenticRowSession(
   const renewIfDue = async (db: AgenticRowDb): Promise<void> => {
     if (lease && Date.now() - extendedAt >= lease.leaseMs / 3) await renew(db);
   };
-  // The heartbeat cannot run during work that reads the whole run, which takes seconds in a large
-  // run. Started with nine tenths of the lease, only a step longer than that could outlast it.
+  // The heartbeat cannot run during work that reads the whole run, such as a load and its
+  // caller's check. Started with nine tenths of the lease, only a longer step could outlast it.
   const freshen = async (db: AgenticRowDb): Promise<void> => {
     if (lease && Date.now() - extendedAt >= lease.leaseMs / 10) await renew(db);
   };
@@ -214,22 +216,9 @@ export async function openAgenticRowSession(
       statement.params
     );
     if (headers.length === 0) throw loseOwnership();
-    const header = headers[0]!;
-    if (
-      headers.length !== 1 ||
-      Number(header.layout) !== LAYOUT_VERSION ||
-      header.scope !== key.scope ||
-      header.model !== key.model ||
-      header.run_id !== key.id ||
-      typeof header.summary !== 'string' ||
-      typeof header.head !== 'string' ||
-      typeof header.token !== 'string'
-    ) {
-      throw new AgenticStateError('corrupt');
-    }
+    const header = agenticRunHeaderOf(headers, key, LAYOUT_VERSION);
     token = header.token;
-    const revision = Number(header.revision);
-    const head = header.head;
+    const { revision, head } = header;
     if (header.summary === '') {
       if (revision !== -1 || head !== '') throw new AgenticStateError('corrupt');
       return { snapshot: null, revision, head };
@@ -241,15 +230,14 @@ export async function openAgenticRowSession(
     await freshen(db);
     let snapshot: AgenticRunSnapshot;
     try {
-      snapshot = parseVerifiedCheckpoint(
-        rebuildAgenticSnapshot({ key, revision, summary: header.summary }, writes)
+      // A run this store could not have written reads as damaged, as it always has.
+      snapshot = parseVerifiedCheckpointWithin(
+        rebuildAgenticSnapshot({ key, revision, summary: header.summary }, writes),
+        limits
       );
     } catch {
       throw new AgenticStateError('corrupt');
     }
-    // A run this store could not have written reads as damaged, as it always has.
-    if (checkpointLimitError(snapshot, limits)) throw new AgenticStateError('corrupt');
-    // The caller validates what it reads in turn.
     await freshen(db);
     return { snapshot, revision, head };
   };
@@ -263,7 +251,7 @@ export async function openAgenticRowSession(
     items: AgenticRowItem[]
   ): Promise<AgenticRunSnapshot> => {
     guard();
-    const tooLarge = checkpointLimitError(next, limits);
+    const tooLarge = agenticCheckpointLimitError(next, limits);
     if (tooLarge) throw tooLarge;
     const write = items.length
       ? createAgenticRowWrite(current.head, next.revision, operationId, items)

@@ -11,7 +11,7 @@ import {
   type AgenticStoredRow,
 } from './row-state-layout.js';
 import { agenticRowColumns, agenticStatement } from './row-state-tables.js';
-import { AgenticStateError } from './state.js';
+import { AgenticStateError, type AgenticRunKey } from './state.js';
 import type { AgenticStoreLimits } from './store-limits.js';
 
 /**
@@ -72,21 +72,53 @@ function idBatches(ids: readonly string[]): string[][] {
   return batches;
 }
 
+/** Scope, model and run ID are identities of at most 1,024 characters, and head and token are
+ * a digest and a UUID, so no value `save` wrote in those columns is longer. */
+const maxHeaderIdentityChars = 1024;
+
 /**
- * The header columns one load needs. A text value past the snapshot cap comes back as null, so
- * a stored value is never fetched whole before anything can reject it. No value `save` wrote is
- * that long: each is part of a snapshot within the cap.
+ * The header columns one load needs. A text value past its cap comes back as null, so a stored
+ * value is never fetched whole before anything can reject it. The summary is part of a snapshot
+ * within the store's cap, and every other text column is an identity.
  */
 export function agenticHeaderColumns(
   dialect: AgenticRowDialect,
   limits: AgenticStoreLimits
 ): string {
   const q = dialect.identifier;
-  const capped = ['head', 'token', 'summary', 'scope', 'model', 'run_id'].map(
-    (name) =>
-      `CASE WHEN LENGTH(${q(name)}) <= ${limits.maxCheckpointBytes} THEN ${q(name)} END AS ${q(name)}`
-  );
-  return [q('layout'), q('revision'), ...capped].join(', ');
+  const capped = (name: string, cap: number) =>
+    `CASE WHEN LENGTH(${q(name)}) <= ${cap} THEN ${q(name)} END AS ${q(name)}`;
+  return [
+    q('layout'),
+    q('revision'),
+    ...['head', 'token', 'scope', 'model', 'run_id'].map((name) =>
+      capped(name, maxHeaderIdentityChars)
+    ),
+    capped('summary', limits.maxCheckpointBytes),
+  ].join(', ');
+}
+
+/** The header that `agenticHeaderColumns` read, when it is the one header of `key` in `layout`. */
+export function agenticRunHeaderOf(
+  headers: Record<string, unknown>[],
+  key: AgenticRunKey,
+  layout: number
+): { revision: number; head: string; token: string; summary: string } {
+  const header = headers[0]!;
+  if (
+    headers.length !== 1 ||
+    Number(header.layout) !== layout ||
+    header.scope !== key.scope ||
+    header.model !== key.model ||
+    header.run_id !== key.id ||
+    typeof header.summary !== 'string' ||
+    typeof header.head !== 'string' ||
+    typeof header.token !== 'string'
+  ) {
+    throw new AgenticStateError('corrupt');
+  }
+  const { head, token, summary } = header;
+  return { revision: Number(header.revision), head, token, summary };
 }
 
 export interface AgenticRunRows {
@@ -232,13 +264,23 @@ export async function readAgenticWrites(
       await db.query(`DELETE FROM ${table} WHERE ${where} AND ${ids(batch)}`, [hash, ...batch]);
     }
   }
+  // Rows can arrive after the count, so each batch is held to what the bounds have left: the
+  // engine sums the batch's text before it sends any, and returns rows only when that fits.
+  const columns = insertColumns.slice(1).map(q).join(', ');
+  const batchChars = q('batch_chars');
   const stored: AgenticStoredRow[] = [];
+  let chars = 0;
   for (const batch of idBatches([...committed])) {
     await beforeStatement();
+    const left = { rows: bounds.rows - stored.length, chars: bounds.chars - chars };
+    const fetched = `SELECT *, SUM(${text}) OVER () AS ${batchChars} FROM ${table} WHERE ${where} AND ${ids(batch)}`;
     const rows = await db.query(
-      `SELECT ${insertColumns.slice(1).map(q).join(', ')} FROM ${table} WHERE ${where} AND ${ids(batch)}`,
+      `SELECT ${columns}, ${batchChars} FROM (${fetched}) AS ${q('batch')} WHERE ${batchChars} <= ${left.chars} LIMIT ${left.rows + 1}`,
       [hash, ...batch]
     );
+    // Every write on the chain has rows, so a batch that returns none holds more than is left.
+    if (!rows.length || rows.length > left.rows) throw tooMuch();
+    chars += Number(rows[0]!.batch_chars);
     for (const row of rows) stored.push(storedRow(row));
   }
   return assembleAgenticWrites(stored, committed);

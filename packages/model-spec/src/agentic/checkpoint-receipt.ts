@@ -3,9 +3,8 @@ import type { AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import {
   advanceVerifiedCheckpoint,
   applyAgenticCheckpointWithin,
-  checkpointLimitError,
   isVerifiedCheckpoint,
-  safeParseVerifiedCheckpoint,
+  parseVerifiedCheckpointWithin,
 } from './checkpoint-verified.js';
 import { isExactJson, jsonEqual } from './json-equal.js';
 import { AGENTIC_DEFAULT_STORE_LIMITS, type AgenticStoreLimits } from './store-limits.js';
@@ -69,11 +68,13 @@ export function validateAgenticReceipt(
   if (proved) return proved;
   // A read that is exactly verified state is valid by that equality, however large the run.
   if (!command && isVerifiedCheckpoint(before) && isExactJson(before, value)) return before;
-  const parsed = safeParseVerifiedCheckpoint(value);
-  if (!parsed.success || checkpointLimitError(parsed.data, limits)) {
+  let snapshot: AgenticRunSnapshot;
+  try {
+    // A response larger than `limits` is refused before any schema reads it.
+    snapshot = parseVerifiedCheckpointWithin(value, limits);
+  } catch {
     throw new AgenticStateError('corrupt');
   }
-  const snapshot = parsed.data;
   let appliedAt: number | undefined = requestedAt;
   if (command?.type === 'finish_attempt') {
     appliedAt = finishTime(snapshot, command, requestedAt);
