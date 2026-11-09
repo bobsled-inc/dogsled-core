@@ -194,22 +194,25 @@ export const sealedScenarioKey: AgenticRunKey = {
 
 const sealed = new Map<
   number,
-  Promise<AgenticStoreScenario & { over: AgenticCheckpointCommand }>
+  {
+    recordedAt: number;
+    scenario: Promise<AgenticStoreScenario & { over: AgenticCheckpointCommand }>;
+  }
 >();
 
 /**
  * A single map step sealed with `assignments` assignments and nothing run yet, and `over`, the
  * same seal with one assignment more, built as the coordinator builds them. Recorded once per
- * size: a large seal takes a few seconds to prepare and validate.
+ * size, as a large seal takes a few seconds to prepare and validate, and again once two minutes
+ * old: a recording keeps the deadline it was made with, which a suite on a real warehouse outlasts.
  */
 export function sealedScenario(
   assignments: number
 ): Promise<AgenticStoreScenario & { over: AgenticCheckpointCommand }> {
-  let scenario = sealed.get(assignments);
-  if (!scenario) {
-    scenario = recordSealed(assignments);
-    sealed.set(assignments, scenario);
-  }
+  const cached = sealed.get(assignments);
+  if (cached && Date.now() - cached.recordedAt < 120_000) return cached.scenario;
+  const scenario = recordSealed(assignments);
+  sealed.set(assignments, { recordedAt: Date.now(), scenario });
   return scenario;
 }
 

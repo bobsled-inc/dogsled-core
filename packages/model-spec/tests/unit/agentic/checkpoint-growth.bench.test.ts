@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { describe, expect, it, vi } from 'vitest';
 import { createDefaultAgenticStateStore } from '../../../src/agentic/default-state.js';
+import { parseVerifiedCheckpoint } from '../../../src/agentic/checkpoint-verified.js';
 import { createAgenticProgressReporter } from '../../../src/agentic/progress.js';
 import { AGENTIC_MAX_ROWS } from '../../../src/agentic/rows.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
@@ -17,6 +18,7 @@ import type {
 import {
   benchmarkWorkload,
   profiled,
+  sharedGroupStore,
   sharedMemoryStore,
   type BenchmarkShape,
 } from '../../support/agentic-benchmark.js';
@@ -92,8 +94,14 @@ function copyingStore(): AgenticStateStore {
 }
 
 /** What one run reads in bulk, per assignment, and how often it validates the whole snapshot. */
-async function counted(assignments: number, shape: BenchmarkShape, stateStore?: AgenticStateStore) {
+async function counted(
+  assignments: number,
+  shape: BenchmarkShape,
+  stateStore?: AgenticStateStore,
+  concurrency?: number
+) {
   const workload = benchmarkWorkload(assignments, shape, PAYLOAD);
+  if (concurrency) workload.host.concurrency = concurrency;
   const counters = { validations: 0 };
   let serialized = 0;
   hashed.bytes = 0;
@@ -211,6 +219,18 @@ describe('checkpoint cost as a run grows', () => {
     4 * RUN_BUDGET_MS
   );
 
+  it(
+    'in groups: a run validates the same number of times and reads the same per assignment',
+    async () => {
+      const small = await counted(SMALL, 'map', sharedGroupStore(), 4);
+      const large = await counted(LARGE, 'map', sharedGroupStore(), 4);
+      expect(large.validations).toBe(small.validations);
+      expect(large.hashedPerAssignment).toBeLessThan(small.hashedPerAssignment * 1.25);
+      expect(large.serializedPerAssignment).toBeLessThan(small.serializedPerAssignment * 1.25);
+    },
+    2 * RUN_BUDGET_MS + 60_000
+  );
+
   it('keeps the row store from reading the run on every checkpoint', async () => {
     const onRowStore = async (assignments: number) => {
       const directory = mkdtempSync(join(tmpdir(), 'dogsled-growth-'));
@@ -251,6 +271,45 @@ describe('checkpoint cost as a run grows', () => {
     expect(perCheckpoint.length).toBeGreaterThanOrEqual(400);
     // The first look at the saved run reads it once, by design. After that, a few items each.
     expect(Math.max(...perCheckpoint.slice(1))).toBeLessThan(20);
+  }, 30_000);
+
+  it('schedules groups of attempts without validating the run', async () => {
+    // A group is worked out by applying its commands to the saved state. That costs what they
+    // change on verified state, which is what the coordinator holds, so the replies are that.
+    let saved = parseVerifiedCheckpoint(await sealedState(200));
+    const workload = benchmarkWorkload(200, 'map', PAYLOAD);
+    const counters = { validations: 0 };
+    let commands = 0;
+    let saves = 0;
+    const save = (command: AgenticCheckpointCommand) => {
+      saved = applyAgenticCheckpoint(saved, command);
+      commands++;
+    };
+    const restore = countSnapshotValidations(counters);
+    try {
+      await scheduleAgenticAssignments(workload.host, {
+        snapshot: saved,
+        checkpoint: async (command: AgenticCheckpointCommand) => {
+          saves++;
+          save(command);
+          return saved;
+        },
+        checkpointGroup: async (group: AgenticCheckpointCommand[]) => {
+          saves++;
+          group.forEach(save);
+          return saved;
+        },
+        signal: new AbortController().signal,
+        abort: () => {},
+        concurrency: 4,
+        minDispatchIntervalMs: 0,
+      });
+    } finally {
+      restore();
+    }
+    expect(commands).toBe(400);
+    expect(saves).toBeLessThan(commands / 2);
+    expect(counters.validations).toBe(0);
   }, 30_000);
 
   it('reports an attempt without passing over the run', async () => {

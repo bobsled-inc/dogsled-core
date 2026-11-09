@@ -9,18 +9,18 @@ import { randomUUID } from 'node:crypto';
 import { throwIfCancelled } from '@bobsled-inc/connections';
 import type { AgenticRowDb } from './row-state-dialect.js';
 import {
-  agenticCommandItems,
+  agenticCommandWrites,
   agenticCreateItems,
   agenticRunSummary,
   createAgenticRowWrite,
   isAgenticRunReclaimable,
   rebuildAgenticSnapshot,
-  type AgenticRowItem,
+  type AgenticRowWrite,
 } from './row-state-layout.js';
 import {
   agenticHeaderColumns,
   agenticRunHeaderOf,
-  insertAgenticWrite,
+  insertAgenticWrites,
   purgeExpiredAgenticRuns,
   readAgenticWrites,
   type AgenticRunRows,
@@ -41,6 +41,7 @@ import {
   AgenticRunKeySchema,
   AgenticStateError,
   digestAgenticState,
+  type AgenticCheckpointCommand,
   type AgenticRunKey,
   type AgenticRunSnapshot,
   type AgenticStateSession,
@@ -104,6 +105,9 @@ export async function openAgenticRowSession(
 
   // Changes with every header write. Only a session that saw the latest write can make the next.
   let token = '';
+  // A header update was sent and no reply came. On a server it may still be running; an embedded
+  // file in exclusive mode has nothing in flight once a call has returned.
+  let uncertain = false;
   let closed = false;
   // Local time at which the last successful lease extension was requested.
   let extendedAt = 0;
@@ -153,6 +157,8 @@ export async function openAgenticRowSession(
     }
     if (changed !== 1) throw loseOwnership();
     token = next;
+    // A header update still in flight is fenced on the old token, so it can no longer land.
+    uncertain = false;
     extendedAt = started;
   };
   // The heartbeat waits behind a long write, so renew inside it before the lease runs out.
@@ -207,6 +213,8 @@ export async function openAgenticRowSession(
   };
 
   const load = async (db: AgenticRowDb): Promise<Durable> => {
+    // That update is fenced on the token, which a renewal changes, so this read is then final.
+    if (uncertain) await renew(db);
     // Only the session's first load, which comes before any write of its own, can sweep.
     const sweepOrphans = !loaded;
     loaded = true;
@@ -242,23 +250,19 @@ export async function openAgenticRowSession(
     return { snapshot, revision, head };
   };
 
-  /** Rows first, then the single statement that commits them. */
+  /** Rows first, then the single statement that commits them, however many writes they hold. */
   const save = async (
     db: AgenticRowDb,
     current: Durable,
     next: AgenticRunSnapshot,
-    operationId: string,
-    items: AgenticRowItem[]
+    writes: readonly AgenticRowWrite[]
   ): Promise<AgenticRunSnapshot> => {
     guard();
     const tooLarge = agenticCheckpointLimitError(next, limits);
     if (tooLarge) throw tooLarge;
-    const write = items.length
-      ? createAgenticRowWrite(current.head, next.revision, operationId, items)
-      : undefined;
     durable = undefined;
-    if (write) {
-      await insertAgenticWrite(stored(db), write, async () => {
+    if (writes.length) {
+      await insertAgenticWrites(stored(db), writes, async () => {
         guard();
         await renewIfDue(db);
       });
@@ -267,7 +271,7 @@ export async function openAgenticRowSession(
     guard();
     const statement = agenticStatement(dialect);
     const nextToken = randomUUID();
-    const head = write?.id ?? current.head;
+    const head = writes.at(-1)?.id ?? current.head;
     const set = [
       `${q('revision')} = ${statement.bind(next.revision)}`,
       `${q('head')} = ${statement.bind(head)}`,
@@ -279,12 +283,14 @@ export async function openAgenticRowSession(
     ].join(', ');
     const fence = `${owned(statement)} AND ${q('token')} = ${statement.bind(token)} AND ${q('revision')} = ${statement.bind(current.revision)}`;
     const committing = Date.now();
+    uncertain = true;
     const changed = await dialect.changed(
       db,
       `UPDATE ${runs} SET ${set} WHERE ${fence}`,
       statement.params
     );
     if (changed !== 1) throw loseOwnership();
+    uncertain = false;
     token = nextToken;
     extendedAt = committing;
     durable = { snapshot: next, revision: next.revision, head };
@@ -316,9 +322,37 @@ export async function openAgenticRowSession(
     timer.unref();
   }
   const current = async (db: AgenticRowDb): Promise<Durable> => (durable ??= await load(db));
+  /** One command, or a group in order, saved as one commit. A refusal writes nothing. */
+  const apply = (commands: readonly AgenticCheckpointCommand[]): Promise<AgenticRunSnapshot> =>
+    serial(() =>
+      connection.use(async (db) => {
+        guard();
+        const before = await current(db);
+        if (before.snapshot === null) throw new AgenticStateError('missing');
+        const { snapshot, writes } = await agenticCommandWrites(
+          { snapshot: before.snapshot, head: before.head },
+          commands,
+          async (state, command) => {
+            // Each command that reads the whole run keeps the heartbeat waiting, as one alone does.
+            if (!isProvableCommand(command)) await freshen(db);
+            return applyAgenticCheckpointWithin(state, command, Date.now(), limits);
+          }
+        );
+        if (snapshot !== before.snapshot) return save(db, before, snapshot, writes);
+        // A repeated command writes nothing, but obsolete ownership must still fail.
+        const statement = agenticStatement(dialect);
+        const alive = await db.query(
+          `SELECT 1 AS alive FROM ${runs} WHERE ${owned(statement)} LIMIT 1`,
+          statement.params
+        );
+        if (!alive.length) throw loseOwnership();
+        return snapshot;
+      })
+    );
   return {
     ...(lease ? { ownershipLost: controller.signal } : {}),
     limits,
+    ...(options.groupCommit ? { checkpointMany: apply } : {}),
     // Always from the rows, so a read proves what is durable and detects damage.
     read: () =>
       serial(() =>
@@ -345,32 +379,11 @@ export async function openAgenticRowSession(
             throw new AgenticStateError('conflict');
           }
           const items = agenticCreateItems(value);
-          return structuredClone(await save(db, before, value, 'create', items));
+          const write = createAgenticRowWrite(before.head, value.revision, 'create', items);
+          return structuredClone(await save(db, before, value, [write]));
         })
       ),
-    checkpoint: (command) =>
-      serial(() =>
-        connection.use(async (db) => {
-          guard();
-          const before = await current(db);
-          if (before.snapshot === null) throw new AgenticStateError('missing');
-          const workBefore = before.snapshot.work.length;
-          if (!isProvableCommand(command)) await freshen(db);
-          const value = applyAgenticCheckpointWithin(before.snapshot, command, Date.now(), limits);
-          if (value.revision === before.snapshot.revision) {
-            // A repeated command writes nothing, but obsolete ownership must still fail.
-            const statement = agenticStatement(dialect);
-            const alive = await db.query(
-              `SELECT 1 AS alive FROM ${runs} WHERE ${owned(statement)} LIMIT 1`,
-              statement.params
-            );
-            if (!alive.length) throw loseOwnership();
-            return value;
-          }
-          const items = agenticCommandItems(value, command, workBefore);
-          return save(db, before, value, command.operation_id, items);
-        })
-      ),
+    checkpoint: (command) => apply([command]),
     release: () =>
       serial(async () => {
         if (closed) return;

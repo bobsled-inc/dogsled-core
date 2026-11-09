@@ -188,7 +188,17 @@ export async function insertAgenticWrite(
   write: AgenticRowWrite,
   beforeBatch: () => Promise<void>
 ): Promise<void> {
-  const rows = agenticStoredRows(write, stored.dialect.maxRowChars);
+  await insertAgenticWrites(stored, [write], beforeBatch);
+}
+
+/** Inserts writes in as few statements as the dialect's bounds allow. Each row names its own
+ * write, so writes that share a statement stay separate, and they commit only with the header. */
+export async function insertAgenticWrites(
+  stored: AgenticRunRows,
+  writes: readonly AgenticRowWrite[],
+  beforeBatch: () => Promise<void>
+): Promise<void> {
+  const rows = writes.flatMap((write) => agenticStoredRows(write, stored.dialect.maxRowChars));
   await insertAgenticRows(stored, rows, beforeBatch);
 }
 

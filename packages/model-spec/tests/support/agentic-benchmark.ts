@@ -5,7 +5,11 @@ import { setFlagsFromString } from 'node:v8';
 import { runInNewContext } from 'node:vm';
 import { resolveAgenticModel } from '../../src/agentic/resolve.js';
 import { applyAgenticCheckpointWithin } from '../../src/agentic/checkpoint-verified.js';
-import type { AgenticRunSnapshot, AgenticStateStore } from '../../src/agentic/state.js';
+import type {
+  AgenticCheckpointCommand,
+  AgenticRunSnapshot,
+  AgenticStateStore,
+} from '../../src/agentic/state.js';
 import { AGENTIC_ROW_STORE_LIMITS } from '../../src/agentic/store-limits.js';
 import type { AgentExecutorRequest } from '../../src/agentic/index.js';
 import { runFixture } from '../unit/agentic/state-fixture.js';
@@ -119,6 +123,31 @@ export function sharedMemoryStore(): AgenticStateStore {
         create: async (snapshot) => (saved = snapshot),
         checkpoint: async (command) =>
           (saved = applyAgenticCheckpointWithin(saved!, command, Date.now(), limits)),
+        release: async () => {},
+      };
+    },
+  };
+}
+
+/** As sharedMemoryStore, with a group commit that applies each command in turn and replies
+ * with what the last returned, as the row store does. */
+export function sharedGroupStore(): AgenticStateStore {
+  let saved: AgenticRunSnapshot | null = null;
+  const limits = AGENTIC_ROW_STORE_LIMITS;
+  const apply = (state: AgenticRunSnapshot, command: AgenticCheckpointCommand) =>
+    applyAgenticCheckpointWithin(state, command, Date.now(), limits);
+  return {
+    limits,
+    async acquire() {
+      return {
+        read: async () => saved,
+        create: async (snapshot) => (saved = snapshot),
+        checkpoint: async (command) => (saved = apply(saved!, command)),
+        checkpointMany: async (commands) => {
+          let state = saved!;
+          for (const command of commands) state = apply(state, command);
+          return (saved = state);
+        },
         release: async () => {},
       };
     },
