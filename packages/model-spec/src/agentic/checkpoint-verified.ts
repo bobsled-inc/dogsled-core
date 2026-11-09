@@ -138,8 +138,9 @@ export function safeParseVerifiedCheckpoint(value: unknown): SnapshotParse {
 
 /**
  * As parseVerifiedCheckpoint, for a value that must also fit `limits`: one that does not is
- * AgenticStateError('corrupt'). Its size is checked against `limits` with the measure that bounds
- * the parse, before any schema reads it, so a run larger than the store holds costs one pass.
+ * AgenticStateError('corrupt'). Its size is checked against `limits` before any schema reads it,
+ * with the measure that bounds the parse and the plain copy the parse reads, so a run larger than
+ * the store holds is never validated.
  */
 export function parseVerifiedCheckpointWithin(
   value: unknown,
