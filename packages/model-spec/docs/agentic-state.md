@@ -409,6 +409,10 @@ What sets the limits:
   Snowflake takes about half a second, so what a larger run costs to resume, and whether each step
   stays inside the lease, needs that measurement first.
 
+A run saved before these limits resumes unchanged. A run of more than 1,000 assignments cannot go
+back: an older release reads it as damaged, `corrupt`, and makes no model calls, so finish such a run
+before you downgrade.
+
 A load checks how much a run holds before it reads any content, against bounds derived from the
 store's limits: four times its checkpoint bytes of stored text, and 64 writes for each row it may
 hold, plus 1,024. A run within its store's limits never reaches them.
