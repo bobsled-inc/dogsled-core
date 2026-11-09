@@ -145,3 +145,64 @@ The `tedious > sprintf-js` advisory is moderate. Tedious uses literal format
 strings, so remote values cannot set precision specifiers. It requires no
 exception at the high threshold. No generic package-name or severity exception
 is used. New dependency paths and expired exceptions block the release.
+
+## Daily dependency maintenance bot
+
+A scheduled GitHub Actions workflow (`dependency-maintenance.yml`) runs once a day
+at 06:17 UTC. It reads open Dependabot alerts (through a GitHub App token) or falls
+back to `pnpm audit --json`, checks each advisory's fixed version against the npm
+registry, and compares the publish date to `minimumReleaseAge` in `pnpm-workspace.yaml`.
+
+### Modes
+
+The repository variable `DEPS_BOT` controls behavior:
+
+| Value          | Effect                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `off` or unset | The workflow exits immediately.                                                                              |
+| `dry-run`      | The planner runs and writes its full plan to the step summary. No PRs are opened.                            |
+| `on`           | The planner runs, PRs are created, and Slack is notified for unfixable advisories and approaching deadlines. |
+
+### Actions
+
+For each open advisory the bot decides one of:
+
+- **Bump** (fix is at least `minimumReleaseAge` old): open a PR that pins the fixed
+  version in the catalog or package.json, adds an override for transitive packages,
+  and refreshes the lockfile.
+- **Exempt** (fix is younger): open an exemption PR with the exact `name@version` in
+  `minimumReleaseAgeExclude`, a docs table row, an override if transitive, and
+  publisher/provenance evidence in the PR body. Labeled for owner approval.
+- **No fix**: Slack ping (if `SLACK_DEPS_WEBHOOK_URL` is set) and a step-summary entry.
+
+The bot also handles clean-up:
+
+- **Expired exemptions**: removes entries whose version reached the release-age policy.
+- **Unneeded overrides**: for each, tests removal with `pnpm install --lockfile-only`
+  and proposes removal when the resolved version stays at or above the pin.
+- **Approaching deadlines**: pings Slack and adds a step-summary entry for `audit-ci`
+  and consumer-exception expiries within seven days.
+
+### PR mechanics
+
+- One PR per action, on branch `deps-bot/<kind>/<pkg>-<version>`.
+- Skipped if an open PR for that branch already exists.
+- The bot never merges PRs and never changes `minimumReleaseAge`.
+
+### Settings
+
+The workflow requires:
+
+- A GitHub App installed on the repository with Contents write, Pull Requests write,
+  and Dependabot Alerts read permissions.
+- Repository secrets `DEPS_BOT_APP_ID` and `DEPS_BOT_APP_PRIVATE_KEY`.
+- Optional secret `SLACK_DEPS_WEBHOOK_URL` for Slack notifications.
+- Repository variable `DEPS_BOT` set to `dry-run` or `on`.
+
+### Code
+
+The bot scripts live in `scripts/deps/`:
+
+- `planner.mjs` — pure planner (inputs to actions), no I/O.
+- `io.mjs` — file reads, API calls, subprocess execution.
+- `run.mjs` — CLI entry point and orchestration.

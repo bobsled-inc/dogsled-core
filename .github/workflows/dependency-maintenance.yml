@@ -1,0 +1,123 @@
+name: Dependency maintenance
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      has_actions: ${{ steps.plan.outputs.has_actions }}
+    steps:
+      - name: Check bot mode
+        id: mode
+        env:
+          DEPS_BOT: ${{ vars.DEPS_BOT }}
+        run: |
+          mode="${DEPS_BOT:-off}"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          if [ "$mode" = "off" ]; then
+            echo "DEPS_BOT is off or unset; exiting."
+            exit 0
+          fi
+          echo "DEPS_BOT=$mode"
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        if: steps.mode.outputs.mode != 'off'
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: steps.mode.outputs.mode != 'off'
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.mode.outputs.mode != 'off'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.mode.outputs.mode != 'off'
+        run: pnpm install --frozen-lockfile
+
+      - name: Mint GitHub App token
+        id: app-token
+        if: steps.mode.outputs.mode != 'off' && vars.DEPS_BOT_APP_ID != ''
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ secrets.DEPS_BOT_APP_ID }}
+          private-key: ${{ secrets.DEPS_BOT_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-vulnerability-alerts: read
+
+      - name: Run dependency planner
+        id: plan
+        if: steps.mode.outputs.mode != 'off'
+        env:
+          DEPS_BOT: ${{ steps.mode.outputs.mode }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || '' }}
+        run: |
+          node scripts/deps/run.mjs --mode "$DEPS_BOT" 2>&1 | tee /tmp/plan-output.txt || true
+          cat /tmp/plan-output.txt >> "$GITHUB_STEP_SUMMARY"
+          has_actions="false"
+          if node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            const text = readFileSync('/tmp/plan-output.txt', 'utf8');
+            const match = text.match(/^\\{[\\s\\S]*\\}$/m);
+            if (!match) process.exit(1);
+            const plan = JSON.parse(match[0]);
+            process.exit(plan.actions?.length > 0 ? 0 : 1);
+          " 2>/dev/null; then
+            has_actions="true"
+          fi
+          echo "has_actions=$has_actions" >> "$GITHUB_OUTPUT"
+
+  act:
+    needs: plan
+    if: needs.plan.outputs.has_actions == 'true' && vars.DEPS_BOT == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ secrets.DEPS_BOT_APP_ID }}
+          private-key: ${{ secrets.DEPS_BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-vulnerability-alerts: read
+
+      - name: Create dependency PRs
+        env:
+          DEPS_BOT: on
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          SLACK_DEPS_WEBHOOK_URL: ${{ secrets.SLACK_DEPS_WEBHOOK_URL }}
+        run: node scripts/deps/run.mjs --mode on
