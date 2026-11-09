@@ -81,6 +81,65 @@ function warehouseRowBackend(
   };
 }
 
+/**
+ * The checked settings of a store with `options`, and the backend it writes through. The store and
+ * `warehouseRowStoreBackend` both start here, so neither can skip a check.
+ */
+function rowStoreSetup(integration: IntegrationFile, options: WarehouseRowStoreOptions) {
+  const engine = integration.source_type;
+  if (!isRowEngine(engine)) {
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_store_config',
+      message: 'The warehouse row store supports PostgreSQL and Snowflake.',
+    });
+  }
+  const { schema } = options;
+  const leaseMs = options.leaseMs ?? 120_000;
+  const retentionMs = options.retentionMs ?? AGENTIC_ROW_RETENTION_MS;
+  if (
+    !schema.trim() ||
+    schema.length > 1024 ||
+    !Number.isSafeInteger(leaseMs) ||
+    leaseMs < 10_000 ||
+    leaseMs > 600_000 ||
+    !Number.isSafeInteger(retentionMs) ||
+    retentionMs < 1
+  ) {
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_store_config',
+      message:
+        'The warehouse row store settings are invalid: schema must be one non-empty name, leaseMs must be 10,000 to 600,000 and retentionMs must be positive.',
+    });
+  }
+  const target = resolveWarehouseCheckpointTarget(integration, options);
+  if (engine === 'postgres' && Buffer.byteLength(target.schema) > postgresNameBytes) {
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_store_config',
+      message: `A PostgreSQL schema name can be at most ${postgresNameBytes} bytes.`,
+    });
+  }
+  const namespace = [...(target.catalog ? [target.catalog] : []), target.schema]
+    .map(dialects[engine].identifier)
+    .join('.');
+  const backend = warehouseRowBackend(integration, engine, target, namespace, {
+    ...options,
+    leaseMs,
+  });
+  return { engine, target, backend, leaseMs, retentionMs };
+}
+
+/**
+ * The backend `createWarehouseRowStore` writes through for `options`, after the same checks: its
+ * tables, statements and statement limits. Test fixtures use it to write a large run in bulk as the
+ * store would. Internal: the package does not export it.
+ */
+export function warehouseRowStoreBackend(
+  integration: IntegrationFile,
+  options: WarehouseRowStoreOptions
+): AgenticRowBackend {
+  return rowStoreSetup(integration, options).backend;
+}
+
 /** Whether the old table exists. PostgreSQL's catalog answers that whatever the role may read,
  * so a table it has no grant on fails at the read that follows. Snowflake has no such view:
  * a table the role cannot see looks missing, so the role must hold `SELECT` on it. */
@@ -136,46 +195,8 @@ export function createWarehouseRowStore(
   integration: IntegrationFile,
   options: WarehouseRowStoreOptions
 ): AgenticStateStore {
-  const engine = integration.source_type;
-  if (!isRowEngine(engine)) {
-    throw new AgenticStateError('limit', {
-      reason: 'invalid_store_config',
-      message: 'The warehouse row store supports PostgreSQL and Snowflake.',
-    });
-  }
-  const { schema, signal } = options;
-  const leaseMs = options.leaseMs ?? 120_000;
-  const retentionMs = options.retentionMs ?? AGENTIC_ROW_RETENTION_MS;
-  if (
-    !schema.trim() ||
-    schema.length > 1024 ||
-    !Number.isSafeInteger(leaseMs) ||
-    leaseMs < 10_000 ||
-    leaseMs > 600_000 ||
-    !Number.isSafeInteger(retentionMs) ||
-    retentionMs < 1
-  ) {
-    throw new AgenticStateError('limit', {
-      reason: 'invalid_store_config',
-      message:
-        'The warehouse row store settings are invalid: schema must be one non-empty name, leaseMs must be 10,000 to 600,000 and retentionMs must be positive.',
-    });
-  }
-  const target = resolveWarehouseCheckpointTarget(integration, options);
-  if (engine === 'postgres' && Buffer.byteLength(target.schema) > postgresNameBytes) {
-    throw new AgenticStateError('limit', {
-      reason: 'invalid_store_config',
-      message: `A PostgreSQL schema name can be at most ${postgresNameBytes} bytes.`,
-    });
-  }
-  const dialect = dialects[engine];
-  const namespace = [...(target.catalog ? [target.catalog] : []), target.schema]
-    .map(dialect.identifier)
-    .join('.');
-  const backend = warehouseRowBackend(integration, engine, target, namespace, {
-    ...options,
-    leaseMs,
-  });
+  const { engine, target, backend, leaseMs, retentionMs } = rowStoreSetup(integration, options);
+  const { signal } = options;
   return createAgenticRowStore(backend, {
     leaseMs,
     retentionMs,

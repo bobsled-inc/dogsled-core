@@ -47,7 +47,8 @@ pnpm exec vitest run tests/integration/warehouse/cloud-row-store.test.ts
 
 Each test creates its own schema, named after `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA` with a random
 suffix, and drops only that one. The role therefore needs to create schemas in the database. With
-another engine's integration the suite is skipped. It takes about 25 minutes.
+another engine's integration the suite is skipped. It takes about 35 minutes, including a run at the
+row store's limit.
 
 A host that opens Snowflake through its own runner factory should prove it here before it switches.
 Set `DOGSLED_MODEL_SPEC_CHECKPOINT_RUNNERS` to the absolute path of an ES module that exports a
@@ -60,6 +61,13 @@ and how header updates behave as runs are added. It runs with
 variables, or both. See the
 [benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-header-tables) for
 its settings.
+
+`../agentic-row-limits.bench.test.ts` measures one run at the row store's limits, up to 10,000
+assignments: checkpoint cost, setup, completion, resume and peak memory. It runs the same way, and
+on Snowflake with `CHECKPOINT_BENCHMARK_STORES=snowflake-rows`. There it writes most of each run in
+bulk and runs only its last assignments, because running every assignment would take hours: the four
+sizes with `CHECKPOINT_BENCHMARK_PUBLICATION=1` took about 26 minutes. See the
+[benchmark](../../../docs/checkpoint-transport-benchmark.md#row-store-at-10000-assignments).
 
 ## Agentic publication
 

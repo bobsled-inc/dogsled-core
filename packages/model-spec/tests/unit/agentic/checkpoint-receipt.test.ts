@@ -394,4 +394,25 @@ describe('coordinator receipt validation', () => {
     expect(proved).toBe(6);
     expect(counters.validations).toBe(0);
   });
+
+  it('confirms an unchanged read of verified state without validating it again', async () => {
+    const { initial, steps } = await recordRun();
+    let before = validateAgenticReceipt(initial, initial);
+    for (const { command, requestedAt, response } of steps) {
+      before = validateAgenticReceipt(response, before, command, requestedAt);
+    }
+    expect(isVerifiedCheckpoint(before)).toBe(true);
+    const counters = { validations: 0 };
+    const restore = countSnapshotValidations(counters);
+    // An ownership check before publication reads a copy of what the coordinator holds.
+    const read = structuredClone(before);
+    expect(validateAgenticReceipt(read, before)).toBe(before);
+    restore();
+    expect(counters.validations).toBe(0);
+    // Anything else still takes the complete check, which refuses a changed read.
+    const changed = { ...structuredClone(before), charged: before.charged + 1 };
+    expect(() => validateAgenticReceipt(changed, before)).toThrow(
+      expect.objectContaining({ code: 'corrupt' })
+    );
+  });
 });

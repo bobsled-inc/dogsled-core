@@ -247,10 +247,19 @@ The current API uses bounded whole snapshots rather than unbounded record lists.
 A store that removes old runs sets `expiresRuns`, and must never remove one with a publication.
 Takeover then replaces a reservation whose run is gone; otherwise it reports the run `missing`.
 A store can declare `limits` with `maxRows`, `maxBatchBytes` and `maxCheckpointBytes`. Dogsled
-bounds each input batch by them and tells the host through `maxRows` and `maxBytes`; the store
-rejects a larger checkpoint. Without `limits`, a store gets 1,000 rows, 1 MiB per batch and
-16 MiB per checkpoint. These values are also the most a store can declare, because the snapshot
-schema enforces them. All input and outcome values also use the existing agentic contract bounds.
+reads them once for each run, so a later change to them does not reach a run in progress. It
+bounds each input batch and the run's output by them and tells the host through `maxRows` and
+`maxBytes`. Without `limits`, a store gets 1,000 rows, 1 MiB per batch and 16 MiB per
+checkpoint, which also allows 262,144 JSON values, one for every 64 bytes. These defaults are the
+most a supplied store can declare, and `applyAgenticCheckpoint` holds a run to them: a larger one
+fails with `limit` and the reason `too_many_rows` or `snapshot_too_large`. `AgenticRunSnapshotSchema`
+accepts what the largest store holds, so a store that validates with the schema alone must check
+its own limits too: `agenticCheckpointLimitError(snapshot, limits)` returns the `limit` error for a
+run that does not fit them, or the defaults without `limits`, and undefined for one that does. A store that declares less bounds the input it is given, and its checkpoints
+are still checked at the defaults, as they always were. Only the [row store](#row-store-limits) holds more. A session can declare `limits`
+too, for a store that keeps runs in more than one place, and its run uses those. All input and
+outcome values also use the existing agentic contract bounds: one assignment holds at most 1,000
+rows and 1 MiB.
 
 Use `AgenticStateError` with a safe code: `conflict`, `missing`, `corrupt`,
 `unavailable`, `limit` or `expired`. Dogsled removes other storage error messages at
@@ -333,24 +342,111 @@ that is not finished. Superseding such a run releases it. A preparing run does e
 has no inputs, work or spend. If it held a cursor reservation, a later start replaces that
 reservation. Cursor rows never expire.
 
-### Why the row limits stay
+### Row store limits
 
-The row store could hold more than today's 1,000 rows, and time no longer stands in the way.
-Validating the whole snapshot on every checkpoint used to make a run's total overhead grow with
-the square of its size, and [checkpoint cost](#checkpoint-cost) no longer does. These are DuckDB
-run files on the synthetic benchmark workload, so they exclude any model time. The 2,000 row is
-above today's limit of 1,000, so it lifted the ceilings in a scratch change:
+A run holds what its store holds. These are the limits each store declares:
 
-| Assignments | Statements per assignment | Before |  After | Whole run, before | Whole run, after |
-| ----------: | ------------------------: | -----: | -----: | ----------------: | ---------------: |
-|         100 |                      4.13 |  78 ms | 4.4 ms |             7.8 s |            0.4 s |
-|       1,000 |                      4.02 | 445 ms | 4.0 ms |           7.4 min |            4.1 s |
-|       2,000 |                      4.01 | 878 ms | 3.6 ms |            29 min |            7.1 s |
+| Store                                                   | Rows per batch and assignments per run | Batch and output |                Checkpoint |
+| ------------------------------------------------------- | -------------------------------------: | ---------------: | ------------------------: |
+| Row store on DuckDB: run files and a `checkpoint_store` |                                 10,000 |           16 MiB | 128 MiB, 2,097,152 values |
+| Row store on PostgreSQL                                 |                                 10,000 |           16 MiB | 128 MiB, 2,097,152 values |
+| Row store on Snowflake                                  |                                 10,000 |           16 MiB | 128 MiB, 2,097,152 values |
+| File store, warehouse store and supplied stores         |                                  1,000 |            1 MiB |    16 MiB, 262,144 values |
 
-Statements stay flat and data grows in step with the run. The limits stay because nothing has been
-proved above them: the store conformance suite runs at today's limits. Raising one is a separate
-change, with a measurement on the row store at the new size. See the
-[benchmark](checkpoint-transport-benchmark.md#row-layout) for the method.
+The default store declares the file store's limits, because a run stays in the file store without
+DuckDB, and each run in a DuckDB file declares the row store's limits for itself. Dogsled tells the
+host the limits as `maxRows` and `maxBytes`, so an incremental input takes batches of that size.
+One assignment still holds at most 1,000 rows and 1 MiB, which is the executor contract: a step
+that would group more rows of one input into one assignment fails with `group_too_large` before
+any model call.
+
+What a run costs on the row store, on the benchmark workload of about 4.2 KB and 134 JSON values
+per assignment, with a model call that returns at once, so this is store and coordinator time and
+not run length. Per assignment is the time between model calls late in the run, which covers both
+checkpoints of a call and the coordinator's work. Set up is from the start of a run to its first
+model call, and complete is the `complete` checkpoint. Resume is from a new process opening a run
+that stopped at 90% to its first model call, and reopen is opening a finished run. Peak memory is
+the largest resident set of any of those processes, about 270 MiB of which is the process itself,
+and open run is the heap a run of that size holds:
+
+| Store                     | Assignments | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
+| ------------------------- | ----------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
+| DuckDB run file           |       1,000 |         2.5 ms | 616 ms |   208 ms | 834 ms | 611 ms |     595 MiB |   13 MiB |
+| DuckDB run file           |       2,000 |         2.6 ms | 936 ms |   398 ms |  1.5 s |  1.1 s |     770 MiB |   21 MiB |
+| DuckDB run file           |       5,000 |         2.7 ms |  2.3 s |   984 ms |  3.5 s |  2.5 s |    1.15 GiB |   42 MiB |
+| DuckDB run file           |      10,000 |         2.9 ms |  3.9 s |    2.0 s |  6.9 s |  4.8 s |    1.82 GiB |   75 MiB |
+| PostgreSQL                |       1,000 |         2.5 ms | 524 ms |   209 ms | 813 ms | 602 ms |     562 MiB |   12 MiB |
+| PostgreSQL                |       2,000 |         2.6 ms | 889 ms |   407 ms |  1.5 s |  1.0 s |     782 MiB |   20 MiB |
+| PostgreSQL                |       5,000 |         3.0 ms |  1.9 s |   964 ms |  3.4 s |  2.7 s |    1.05 GiB |   43 MiB |
+| PostgreSQL                |      10,000 |         3.2 ms |  3.8 s |    2.1 s |  6.8 s |  4.8 s |    1.67 GiB |   74 MiB |
+| DuckDB `checkpoint_store` |       1,000 |        50.0 ms | 692 ms |   229 ms | 889 ms | 657 ms |     645 MiB |   12 MiB |
+| DuckDB `checkpoint_store` |       2,000 |        51.1 ms |  1.0 s |   459 ms |  1.5 s |  1.1 s |     672 MiB |   18 MiB |
+| DuckDB `checkpoint_store` |       5,000 |        54.4 ms |  2.2 s |    1.0 s |  3.5 s |  2.6 s |    1.08 GiB |   39 MiB |
+| DuckDB `checkpoint_store` |      10,000 |        51.6 ms |  4.0 s |    2.0 s |  6.9 s |  4.9 s |    1.58 GiB |   75 MiB |
+
+On Snowflake a checkpoint took about a second, so the benchmark writes most of each run in bulk
+through the store's own writes and runs only its last 40 assignments; per assignment is over the last
+ten. These are one sample per size on one account, run from a laptop, and latency there depends on
+the warehouse size, the network and the region. Set up includes about ten seconds of creating the
+store's tables in a new schema, which a schema pays once:
+
+| Store     | Assignments | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
+| --------- | ----------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
+| Snowflake |       1,000 |          2.5 s | 27.5 s |   772 ms | 11.8 s | 11.7 s |     548 MiB |   34 MiB |
+| Snowflake |       2,000 |          2.5 s | 36.1 s |    1.1 s | 15.5 s | 13.4 s |     767 MiB |   41 MiB |
+| Snowflake |       5,000 |          2.4 s | 60.5 s |    1.6 s | 22.8 s | 23.4 s |    1.14 GiB |   64 MiB |
+| Snowflake |      10,000 |          2.6 s | 96.3 s |    2.7 s | 39.7 s | 33.3 s |    1.61 GiB |   97 MiB |
+
+What sets the limits:
+
+- **10,000 rows: the work that reads the whole run.** Checkpoints stay flat: per assignment rose by
+  3% to 28% from 1,000 to 10,000, as the heap grew, and statements stayed at four per model call.
+  The DuckDB `checkpoint_store` opens its file for every operation, which is most of its 50 ms at
+  any size. Work that reads the whole run grows in step with it, at about 0.2 ms per assignment for
+  each step: setting up the run, completing it, and each of the three steps of a resume, which reads
+  the rows, validates what it read and opens a new execution window. At 10,000 each step took about
+  two seconds, three and a half for a plan that maps and then reduces, and resuming took seven.
+- **128 MiB per checkpoint: memory.** V8 collects lazily on a large machine, so peak resident memory
+  says little about what a run needs. The same 10,000 assignments ran, resumed and reopened inside a
+  384 MiB heap, at 1.0 GiB resident, and inside 768 MiB when they also published. At 131 MB, just
+  inside the limit, larger assignments needed a 1 GiB heap and peaked at 2.4 GiB resident. The
+  value count is derived from the bytes, so a plan at 199 values per assignment holds about 10,500.
+- **16 MiB per batch: room per row.** That is 1.6 KiB per row on average at 10,000 rows, a little
+  more than the 1 KiB of today's limits, and the batch is inside the checkpoint, which bounds it too.
+- **The lease, which the limits do not depend on.** A step that reads the whole run keeps the event
+  loop busy, so the lease heartbeat cannot run during it. A session renews its lease before each
+  such step whenever a tenth of the lease has passed, and between the statements of a long read, so
+  each step starts with nine tenths of it. With the default lease of two minutes that leaves a wide
+  margin. With the shortest, 10 seconds, a plan of 10,000 assignments leaves room for a host about two
+  and a half times slower than the one measured, so give a large run a longer lease on a slower host.
+- **Snowflake: the same limits, set by statements rather than local work.** In one sample on one
+  account, run from a laptop, a statement took about 0.6 seconds, so a step that reads or writes the
+  whole run is many statements, and the session renews its lease between them. At 10,000
+  assignments a load was 24 statements in 25 to 27 seconds and the seal 86 in 72 seconds, and each of
+  publication's seven reads took about 18 seconds. So the lease has to outlast one statement or one
+  stretch of local work, not a whole step. The longest statement took 4.2 seconds and the longest
+  stretch 6.5, or 7.1 with the largest checkpoint, against the 60 seconds a statement may take and
+  the 108 a stretch starts with under the default lease. Checkpoints stayed flat, at about 2.5
+  seconds and four statements per model call at every size, and a resume took 40 seconds at 10,000.
+  Statement latency depends on the warehouse size, the network and the region. The shortest lease
+  does not suit Snowflake: it leaves five seconds per statement, and a statement in a run of 1,000
+  took 3.2. Keep the default lease there, or at least 30 seconds, which leaves 15 seconds per
+  statement against the 4.2 seen. That floor is derived from the longest statement, not measured.
+
+A run saved before these limits resumes unchanged. A run of more than 1,000 assignments cannot go
+back: an older release reads it as damaged, `corrupt`, and makes no model calls, so finish such a run
+before you downgrade.
+
+A load checks how much a run holds before it reads any content, against bounds derived from the
+store's limits: four times its checkpoint bytes of stored text, and 64 writes for each row it may
+hold, plus 1,024. A run within its store's limits never reaches them. Each statement that then
+fetches rows is held to what those bounds have left, so rows that arrive during a load cannot take
+it past them, and the header's identity columns are fetched only up to the 1,024 characters an
+identity may have.
+
+`tests/integration/agentic-row-limits.bench.test.ts` measures this. See the
+[benchmark](checkpoint-transport-benchmark.md#row-store-at-10000-assignments) for the method and
+how to run it, and `row-store-growth.bench.test.ts` for the gate that keeps it flat.
 
 ### Local DuckDB files
 
@@ -715,8 +811,8 @@ once:
 |       1,000 |   730 ms | 1.3 ms |                            35 ms |
 |       2,000 | 1,411 ms | 1.3 ms |                            70 ms |
 
-The 2,000 row is above today's limit of 1,000, so it was measured with the limits raised in a
-scratch change: see [Reproduce](#reproduce). A run that size would spend 2.6 seconds on this
+The 2,000 row is above the default limit of 1,000, so it was measured with the row limits
+temporarily raised: see [Reproduce](#reproduce). A run that size would spend 2.6 seconds on this
 instead of 47 minutes. A plan that maps then reduces went from 112 ms to 3.0 ms per assignment
 at 100, and from 1,056 ms to 2.7 ms at 1,000.
 
@@ -737,7 +833,7 @@ differs anywhere stops the run as `corrupt`, as it always has. So does one that 
 values but is not plain JSON, which takes the complete check.
 
 The row store does exactly this, so DuckDB run files are flat too: see
-[why the row limits stay](#why-the-row-limits-stay). The file and warehouse stores are not. They
+[row store limits](#row-store-limits). The file and warehouse stores are not. They
 rewrite the run on every checkpoint, which grows with the run whatever the coordinator does, and
 they gain little from this.
 
@@ -787,7 +883,9 @@ does not depend on it being correct.
 ### Reproduce
 
 `tests/unit/agentic/checkpoint-growth.bench.test.ts` runs in the unit suite and fails if the
-cost of a checkpoint grows between 100 assignments and the row cap. To print the table above:
+cost of a checkpoint grows between 100 assignments and the default row limit of 1,000.
+`row-store-growth.bench.test.ts` does the same on a DuckDB run file up to the row store's limit,
+and also fails if resuming a run stops growing in step with it. To print the table above:
 
 ```sh
 CHECKPOINT_BENCHMARK=1 CHECKPOINT_BENCHMARK_SIZES=100,1000 \
@@ -795,11 +893,9 @@ CHECKPOINT_BENCHMARK=1 CHECKPOINT_BENCHMARK_SIZES=100,1000 \
   tests/unit/agentic/checkpoint-growth.bench.test.ts
 ```
 
-Set `CHECKPOINT_BENCHMARK_PROFILE` to a directory for a V8 CPU profile of each run. Above 1,000
-assignments, run on a scratch change that raises `AGENTIC_MAX_ROWS` and `AGENTIC_MAX_BYTES` in
-`rows.ts` and the limits in `checkpoint-json.ts`. These limits are unchanged; the 2,000 row
-above was measured that way, on both sides. The workload keeps each assignment the same size at
-every run size.
+Set `CHECKPOINT_BENCHMARK_PROFILE` to a directory for a V8 CPU profile of each run. The
+benchmark's store holds what the row store holds, so it runs at any size up to 10,000. The
+2,000 row above was measured before that, with the row limits temporarily raised on both sides. The workload keeps each assignment the same size at every run size.
 
 ## Incremental input progress
 

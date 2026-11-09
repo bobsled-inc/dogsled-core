@@ -175,8 +175,10 @@ Outputs returned after cancellation are not accepted; their attempts remain
 charged. Each execution window includes preparation, dispatch waits, and assignment
 retries. A later explicit retry starts a new window.
 
-The existing preparation bounds still apply: at most 1,000 rows and 1 MiB per input,
-with the per-value limit applied to each row. Built-in preparation requests one extra
+The existing preparation bounds still apply: at most what the run's state store holds
+per input, 1,000 rows and 1 MiB by default and 10,000 rows and 16 MiB on the
+[row store](agentic-state.md#row-store-limits) on DuckDB, PostgreSQL and Snowflake, with the
+per-value limit applied to each row. Built-in preparation requests one extra
 row. It rejects overflow rather than truncating, except for incremental inputs, which
 are processed in ordered batches; see [incremental agentic inputs](../README.md#incremental-agentic-inputs). DuckDB publication inserts up to 128 rows and
 4,096 bindings per batch inside the existing transaction. Other built-in SQL

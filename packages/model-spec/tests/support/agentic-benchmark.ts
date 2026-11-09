@@ -4,8 +4,9 @@ import { performance } from 'node:perf_hooks';
 import { setFlagsFromString } from 'node:v8';
 import { runInNewContext } from 'node:vm';
 import { resolveAgenticModel } from '../../src/agentic/resolve.js';
-import { applyAgenticCheckpoint } from '../../src/agentic/state.js';
+import { applyAgenticCheckpointWithin } from '../../src/agentic/checkpoint-verified.js';
 import type { AgenticRunSnapshot, AgenticStateStore } from '../../src/agentic/state.js';
+import { AGENTIC_ROW_STORE_LIMITS } from '../../src/agentic/store-limits.js';
 import type { AgentExecutorRequest } from '../../src/agentic/index.js';
 import { runFixture } from '../unit/agentic/state-fixture.js';
 
@@ -103,17 +104,21 @@ export function benchmarkWorkload(
 }
 
 /**
- * The cheapest conforming store: nothing to save, and each reply is the value that
- * applyAgenticCheckpoint returned, so storage takes no part in a measurement.
+ * The cheapest conforming store: nothing to save, and each reply is the value that the shared
+ * transition returned, so storage takes no part in a measurement. It holds what the row store
+ * holds, so a run can be measured at any size the row store allows.
  */
 export function sharedMemoryStore(): AgenticStateStore {
   let saved: AgenticRunSnapshot | null = null;
+  const limits = AGENTIC_ROW_STORE_LIMITS;
   return {
+    limits,
     async acquire() {
       return {
         read: async () => saved,
         create: async (snapshot) => (saved = snapshot),
-        checkpoint: async (command) => (saved = applyAgenticCheckpoint(saved!, command)),
+        checkpoint: async (command) =>
+          (saved = applyAgenticCheckpointWithin(saved!, command, Date.now(), limits)),
         release: async () => {},
       };
     },
@@ -141,14 +146,18 @@ export function phaseTimer(afterCall?: () => void): PhaseTimer {
   };
 }
 
-/** Times session calls by phase. The wrapper is treated as a supplied store. */
+/** Times session calls by phase. It passes the store's declarations on unchanged: a wrapper that
+ * dropped them would get the default limits. */
 export function timedStore(base: AgenticStateStore, timer: PhaseTimer): AgenticStateStore {
   return {
     ...(base.cursors ? { cursors: base.cursors } : {}),
+    ...(base.limits ? { limits: base.limits } : {}),
+    ...(base.expiresRuns ? { expiresRuns: base.expiresRuns } : {}),
     async acquire(key) {
       const session = await timer.time('acquire', () => base.acquire(key));
       return {
         ...(session.ownershipLost ? { ownershipLost: session.ownershipLost } : {}),
+        ...(session.limits ? { limits: session.limits } : {}),
         read: () => timer.time('read', () => session.read()),
         create: (value) => timer.time('checkpoint', () => session.create(value)),
         checkpoint: (command) => timer.time('checkpoint', () => session.checkpoint(command)),

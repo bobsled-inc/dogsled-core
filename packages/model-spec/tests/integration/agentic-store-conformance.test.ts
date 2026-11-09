@@ -15,6 +15,7 @@ import {
   digestAgenticState,
 } from '../../src/agentic/index.js';
 import { agenticHeaderTableName } from '../../src/agentic/row-state-tables.js';
+import { AGENTIC_ROW_STORE_LIMITS } from '../../src/agentic/store-limits.js';
 import { snowflakeRowDialect } from '../../src/agentic/warehouse-row-dialects.js';
 import { createWarehouseRowStore } from '../../src/agentic/warehouse-row-state.js';
 import {
@@ -44,10 +45,10 @@ const integration = (directory: string): DuckDbIntegration => ({
   connection: {},
   auth: { type: 'file', path: join(directory, 'checkpoints.duckdb'), read_only: false },
 });
-const shared = (directory: string, retentionMs?: number) =>
+const shared = (directory: string, retentionMs?: number, leaseMs = 10_000) =>
   createDuckDbCheckpointStore(integration(directory), {
     schema: 'agentic_checkpoints',
-    leaseMs: 10_000,
+    leaseMs,
     ...(retentionMs === undefined ? {} : { retentionMs }),
   });
 async function sql(directory: string, statement: string): Promise<void> {
@@ -104,28 +105,31 @@ const headerTable = (key: Parameters<typeof digestAgenticState>[0]) =>
     digestAgenticState(key),
     snowflakeRowDialect.headerTables[0]!
   ).toUpperCase()}"`;
-const emulated = (emulator: SnowflakeEmulator, retentionMs?: number) =>
+const emulated = (emulator: SnowflakeEmulator, retentionMs?: number, leaseMs = 10_000) =>
   createWarehouseRowStore(emulator.integration, {
     schema: 'checkpoints',
     customRunners: emulator.customRunners,
-    leaseMs: 10_000,
+    leaseMs,
     ...(retentionMs === undefined ? {} : { retentionMs }),
   });
+async function emulatorHandle(leaseMs?: number): Promise<StoreHandle> {
+  const emulator = await createSnowflakeEmulator();
+  const handle: StoreHandle = {
+    store: emulated(emulator, undefined, leaseMs),
+    reopen: () => emulated(emulator, undefined, leaseMs),
+    cleanup: () => emulator.close(),
+  };
+  emulators.set(handle, emulator);
+  return handle;
+}
 
 describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
   // The Snowflake dialect and backend on an emulator. See cloud-row-store.test.ts for the proof.
   describeAgenticStoreConformance({
     name: 'Snowflake emulator',
-    open: async () => {
-      const emulator = await createSnowflakeEmulator();
-      const handle: StoreHandle = {
-        store: emulated(emulator),
-        reopen: () => emulated(emulator),
-        cleanup: () => emulator.close(),
-      };
-      emulators.set(handle, emulator);
-      return handle;
-    },
+    limits: snowflakeRowDialect.limits,
+    open: () => emulatorHandle(),
+    openLarge: () => emulatorHandle(600_000),
     expireLease: async (handle, key) => {
       await emulators.get(handle)!.sql(`UPDATE ${headerTable(key)} SET "LEASE_EXPIRES" = 0`);
     },
@@ -149,6 +153,8 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
 
   describeAgenticStoreConformance({
     name: 'DuckDB run file',
+    // The store declares what its file-store runs hold, and a DuckDB run file holds more.
+    runLimits: AGENTIC_ROW_STORE_LIMITS,
     open: async () => localHandle(createDefaultAgenticStateStore),
     crashWorker: (handle) => [worker, 'duckdb', project(handle)],
     withRetention: (handle, retentionMs) =>
@@ -164,7 +170,9 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
 
   describeAgenticStoreConformance({
     name: 'DuckDB shared tables',
+    limits: AGENTIC_ROW_STORE_LIMITS,
     open: async () => localHandle(shared),
+    openLarge: async () => localHandle((directory) => shared(directory, undefined, 600_000)),
     expireLease: (handle) =>
       sql(
         project(handle),

@@ -340,16 +340,16 @@ coordinator and the store each validated the whole snapshot on every checkpoint:
 80% of a 1,000-assignment run on a run file inside schema validation, and 77% at 300. A later change
 removed that cost. See [checkpoint cost](agentic-state.md#checkpoint-cost) for the figures since.
 
-**What the limits looked like at 2,000 rows.** To see whether the store could hold more, one run
-lifted the ceilings temporarily, in a scratch change. At 2,000 assignments on a run file, statements stayed at
+**What the limits looked like at 2,000 rows.** To see whether the store could hold more, this was
+measured with the row limits temporarily raised. At 2,000 assignments on a run file, statements stayed at
 4.01 per assignment, the run sent 12.3 MB, and peak heap was 623 MiB with 863 MiB resident, so storage
 and memory hold up. Time does not. Overhead reached 1,003 ms per assignment, double the
 1,000-assignment figure, so a run's total overhead grows with the square of its size: 33 minutes at
 2,000, and on the same curve about 3.5 hours at 5,000 and 14 hours at 10,000, before any model time.
 Checkpoint validation no longer reads the whole snapshot, so that curve is gone, and the same run
-now takes seconds. See [why the row limits stay](agentic-state.md#why-the-row-limits-stay), whose
-878 ms is a later run of the same benchmark, taken as the before figure for checkpoint cost. Both
-runs double from 1,000 to 2,000 assignments.
+now takes seconds. See [row store limits](agentic-state.md#row-store-limits) for the limits that
+followed, and [the row store at 10,000 assignments](#row-store-at-10000-assignments) for their
+measurement.
 
 ## Row store header tables
 
@@ -467,6 +467,152 @@ here.
 A host that needs more than the roughly 130 calls a minute seen here can give different models
 different schemas, which divides the rows table too. A model's runs must stay in one schema, because
 its cursor lives there.
+
+## Row store at 10,000 assignments
+
+The [row store limits](agentic-state.md#row-store-limits) come from this measurement. It runs the
+real executor, scheduler, receipts and store with the synthetic workload above, at a payload that
+keeps each assignment the same size at every run size, about 4.2 KB and 134 JSON values, and a
+model call that returns at once. Each run goes through three processes, so that the peak memory of
+each is its own: the first starts the run and stops it once 90% of its assignments are done, the
+second resumes it as after a crash and finishes it, and the third opens the finished run again.
+
+```sh
+CHECKPOINT_BENCHMARK=1 pnpm --filter @bobsled-inc/model-spec exec vitest run \
+  tests/integration/agentic-row-limits.bench.test.ts
+```
+
+Settings: `CHECKPOINT_BENCHMARK_STORES` (`duckdb-run-file`, `duckdb-shared`, `postgres-rows` and
+`snowflake-rows`, and `file` and `postgres-warehouse` for the stores they replace),
+`CHECKPOINT_BENCHMARK_SIZES` (default `1000,2000,5000,10000`), `CHECKPOINT_BENCHMARK_SHAPES`,
+`CHECKPOINT_BENCHMARK_STOP_SHARE` (default `0.9`), `CHECKPOINT_BENCHMARK_PUBLISH=1` for a publisher
+that writes nothing, `CHECKPOINT_BENCHMARK_PAYLOAD` (smaller makes each assignment larger),
+`CHECKPOINT_BENCHMARK_NODE_OPTIONS`, for example a heap limit, and `CHECKPOINT_BENCHMARK_OUTPUT`.
+`CHECKPOINT_BENCHMARK_BULK` is the number of assignments a run on a warehouse row store leaves to
+its resume when the rest is written in bulk, 40 by default on `snowflake-rows` and none elsewhere.
+In bulk mode, `CHECKPOINT_BENCHMARK_PUBLICATION=1` also publishes the finished run, and
+`CHECKPOINT_BENCHMARK_PHASES` chooses the phases. PostgreSQL uses the settings in
+`tests/integration/warehouse/README.md`, and Snowflake the two checkpoint variables there.
+
+Measured on one Apple M3 Max laptop with Node.js 25.9.0, and PostgreSQL 17 in Docker on the same
+machine, one sample of each row with nothing else running. Per assignment is the time between model
+calls over the last quarter of the first process, which covers both checkpoints of a call and the
+coordinator's work. Set up runs from the start of a run to its first model call, and complete is the
+`complete` checkpoint. Resume runs from the start of the second process to its first model call:
+opening the run, validating it and starting a new execution window. Reopen is opening the finished
+run in the third process. Peak memory is the largest resident set of the three processes, about 270 MiB of which is
+the process itself, and open run is the heap that the second process still held for the run after
+a collection. Statements stayed at 4.0 per model call on PostgreSQL at every size.
+
+| Store                     | Assignments | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
+| ------------------------- | ----------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
+| DuckDB run file           |       1,000 |         2.5 ms | 616 ms |   208 ms | 834 ms | 611 ms |     595 MiB |   13 MiB |
+| DuckDB run file           |       2,000 |         2.6 ms | 936 ms |   398 ms |  1.5 s |  1.1 s |     770 MiB |   21 MiB |
+| DuckDB run file           |       5,000 |         2.7 ms |  2.3 s |   984 ms |  3.5 s |  2.5 s |    1.15 GiB |   42 MiB |
+| DuckDB run file           |      10,000 |         2.9 ms |  3.9 s |    2.0 s |  6.9 s |  4.8 s |    1.82 GiB |   75 MiB |
+| PostgreSQL                |       1,000 |         2.5 ms | 524 ms |   209 ms | 813 ms | 602 ms |     562 MiB |   12 MiB |
+| PostgreSQL                |       2,000 |         2.6 ms | 889 ms |   407 ms |  1.5 s |  1.0 s |     782 MiB |   20 MiB |
+| PostgreSQL                |       5,000 |         3.0 ms |  1.9 s |   964 ms |  3.4 s |  2.7 s |    1.05 GiB |   43 MiB |
+| PostgreSQL                |      10,000 |         3.2 ms |  3.8 s |    2.1 s |  6.8 s |  4.8 s |    1.67 GiB |   74 MiB |
+| DuckDB `checkpoint_store` |       1,000 |        50.0 ms | 692 ms |   229 ms | 889 ms | 657 ms |     645 MiB |   12 MiB |
+| DuckDB `checkpoint_store` |       2,000 |        51.1 ms |  1.0 s |   459 ms |  1.5 s |  1.1 s |     672 MiB |   18 MiB |
+| DuckDB `checkpoint_store` |       5,000 |        54.4 ms |  2.2 s |    1.0 s |  3.5 s |  2.6 s |    1.08 GiB |   39 MiB |
+| DuckDB `checkpoint_store` |      10,000 |        51.6 ms |  4.0 s |    2.0 s |  6.9 s |  4.9 s |    1.58 GiB |   75 MiB |
+
+**Before and after.** Before is v0.1.10, measured with the row limits temporarily raised, on the
+same machine and harness. At 1,000 that is v0.1.10 as released. Opening a run, starting a new
+execution window and completing a run each validate the whole run fewer times now, so resuming
+takes 34 to 43% less time and completing a run 37 to 42% less. Reopening a finished run takes up to
+13% more, because the opened run is now kept as verified state, which is what makes the next
+command cheap:
+
+| Store                     | Assignments | Per assignment |            Resume |         Complete |           Reopen |         Peak memory |
+| ------------------------- | ----------: | -------------: | ----------------: | ---------------: | ---------------: | ------------------: |
+| DuckDB run file           |       1,000 |   2.3 → 2.5 ms |    1,260 → 834 ms |     346 → 208 ms |     611 → 611 ms |   641 MiB → 595 MiB |
+| DuckDB run file           |      10,000 |   3.0 → 2.9 ms | 11,659 → 6,911 ms | 3,344 → 2,046 ms | 4,452 → 4,789 ms | 2.00 GiB → 1.82 GiB |
+| PostgreSQL                |       1,000 |   2.8 → 2.5 ms |    1,324 → 813 ms |     360 → 209 ms |     567 → 602 ms |   592 MiB → 562 MiB |
+| PostgreSQL                |      10,000 |   3.0 → 3.2 ms | 11,558 → 6,809 ms | 3,462 → 2,058 ms | 4,286 → 4,765 ms | 1.95 GiB → 1.67 GiB |
+| DuckDB `checkpoint_store` |       1,000 | 50.8 → 50.0 ms |    1,350 → 889 ms |     366 → 229 ms |     582 → 657 ms |   683 MiB → 645 MiB |
+| DuckDB `checkpoint_store` |      10,000 | 52.4 → 51.6 ms | 12,050 → 6,879 ms | 3,456 → 2,041 ms | 4,381 → 4,904 ms | 1.68 GiB → 1.58 GiB |
+
+**Other workloads, on a DuckDB run file.** A plan that maps four fifths of its rows and then
+reduces groups of four holds 199 JSON values per assignment, so at 10,000 it is near the checkpoint's
+2,097,152. Each step that reads such a run takes about 3.5 seconds, and the longest stretch without
+a pause, 4.7 seconds, builds and appends the 8,000 assignments of its first step. Published uses a
+publisher that writes nothing, so its complete column is everything from the last model call to the
+end. Publication proves ownership by reading the whole run again, two times before the first model
+call and five after the last, and each read of 10,000 assignments takes about 2.5 seconds. Larger assignments use a
+payload that brings 10,000 of them to 131 MB, just inside the 128 MiB limit:
+
+| Workload                | Assignments |                Snapshot | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
+| ----------------------- | ----------: | ----------------------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
+| Map then reduce         |       1,000 |   6.4 MB, 0.20 M values |         3.1 ms | 736 ms |   368 ms |  1.4 s | 989 ms |     778 MiB |   17 MiB |
+| Map then reduce         |      10,000 |  64.5 MB, 1.99 M values |         3.3 ms |  6.0 s |    3.6 s | 11.6 s |  8.3 s |    2.25 GiB |  106 MiB |
+| Map, published          |       1,000 |   4.2 MB, 0.13 M values |         2.5 ms | 544 ms |    2.1 s |  1.3 s | 616 ms |     774 MiB |   13 MiB |
+| Map, published          |      10,000 |  42.5 MB, 1.34 M values |         2.6 ms |  3.9 s |   20.9 s | 11.9 s |  5.0 s |    3.08 GiB |   78 MiB |
+| Map, larger assignments |       1,000 |  13.1 MB, 0.13 M values |         3.0 ms | 636 ms |   221 ms | 919 ms | 678 ms |     832 MiB |   22 MiB |
+| Map, larger assignments |      10,000 | 130.8 MB, 1.34 M values |         3.0 ms |  5.1 s |    2.2 s |  8.1 s |  5.5 s |    3.78 GiB |  163 MiB |
+
+**Memory under a heap limit.** V8 collects lazily on a machine with plenty of memory, so the peak
+resident sets above say little about what a run needs. These ran 10,000 assignments, the resume and
+the reopen, with `--max-old-space-size` set through `CHECKPOINT_BENCHMARK_NODE_OPTIONS`, starting at
+256 MiB and stopping at the first heap that passed. Each smaller heap failed with V8 out of memory.
+A run takes longer under a tight heap: resuming the map workload took 9.2 seconds in 384 MiB, against
+6.9 without a limit.
+
+| Workload                | Snapshot | Smallest heap that passed | Peak memory at that heap |
+| ----------------------- | -------: | ------------------------: | -----------------------: |
+| Map                     |  42.5 MB |                   384 MiB |                  1.0 GiB |
+| Map, published          |  42.5 MB |                   768 MiB |                  1.5 GiB |
+| Map, larger assignments | 130.8 MB |                     1 GiB |                  2.4 GiB |
+
+### On Snowflake
+
+A checkpoint on Snowflake took about a second here, so running every assignment of a
+10,000-assignment run would take hours. In bulk mode, the default for `snowflake-rows`, the first process instead
+starts another run of the same size and stops it at its first model call, which times setting up and
+sealing the whole run. The second writes the measured run with all but its last 40 assignments done,
+through the store's own backend and batched inserts. The third resumes it and finishes it, the fourth
+reopens it, and with `CHECKPOINT_BENCHMARK_PUBLICATION=1`, as here, a fifth publishes it through a
+publisher that writes nothing. Opening the run
+through the store verifies every write and validates the whole run, so a mistake in the bulk writer
+reads as a damaged run, never as a fast one. Each run has a schema of its own, which the benchmark
+drops afterwards. One sample per size, on a real account, from the same laptop:
+
+| Store     | Assignments | Per assignment | Set up | Complete | Resume | Reopen | Peak memory | Open run |
+| --------- | ----------: | -------------: | -----: | -------: | -----: | -----: | ----------: | -------: |
+| Snowflake |       1,000 |          2.5 s | 27.5 s |   772 ms | 11.8 s | 11.7 s |     548 MiB |   34 MiB |
+| Snowflake |       2,000 |          2.5 s | 36.1 s |    1.1 s | 15.5 s | 13.4 s |     767 MiB |   41 MiB |
+| Snowflake |       5,000 |          2.4 s | 60.5 s |    1.6 s | 22.8 s | 23.4 s |    1.14 GiB |   64 MiB |
+| Snowflake |      10,000 |          2.6 s | 96.3 s |    2.7 s | 39.7 s | 33.3 s |    1.61 GiB |   97 MiB |
+
+Per assignment is the time between model calls over the last ten of the 40 that the resume runs:
+four statements per model call at every size, at about 0.6 seconds each. Set up includes about ten
+seconds of creating the store's tables in a new schema, which a schema pays once. Peak memory leaves
+out the bulk writer, which is not part of a run.
+
+Every step that reads or writes the whole run is many statements there, and the session renews its
+lease between them, so what the lease has to outlast is one statement or one stretch of local work.
+Under the default lease of two minutes, a statement may take 60 seconds and a stretch starts with 108. Load is opening the finished run, and publication's reads are the opening read and the seven
+that prove ownership:
+
+| Assignments |                  Seal |                  Load | Publication's reads | Longest statement | Longest stretch |
+| ----------: | --------------------: | --------------------: | ------------------: | ----------------: | --------------: |
+|       1,000 |  8.4 s, 10 statements |   5.2 s, 5 statements |           22.5 s, 8 |             3.2 s |          727 ms |
+|       2,000 | 15.1 s, 18 statements |   7.7 s, 7 statements |           30.2 s, 8 |             2.5 s |           1.4 s |
+|       5,000 | 40.7 s, 44 statements | 15.5 s, 14 statements |           80.8 s, 8 |             2.7 s |           3.2 s |
+|      10,000 | 72.2 s, 86 statements | 24.9 s, 24 statements |          147.9 s, 8 |             4.2 s |           6.5 s |
+
+A load's longest statement grew from 1.5 seconds at 1,000 assignments to 3.3 at 10,000, and one of
+publication's reads at 10,000 had a statement of 4.2. Each statement of a load returns the rows of at
+most 1,024 writes, and one of them also holds every sealed assignment. With the largest checkpoint,
+10,000 larger assignments and 131 MB, a load took 28 to 30 seconds in 24 statements, its longest
+statement 3.2 seconds and the longest stretch 7.1, and resuming took 42 seconds at 2.83 GiB peak.
+
+The shortest lease, 10 seconds, leaves five seconds per statement, and a statement in a run of 1,000
+took 3.2, so it does not suit Snowflake at any size. The measurement took about 71 minutes of
+warehouse time: 34 for `cloud-row-store.test.ts`, with its case at the limit, 26 for the four sizes
+with publication, and 11 for the largest checkpoint.
 
 ## Remaining work
 

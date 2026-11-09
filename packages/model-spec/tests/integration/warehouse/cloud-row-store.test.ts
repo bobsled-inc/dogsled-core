@@ -41,8 +41,25 @@ const testSchema = () => `${baseSchema}_row_${randomUUID().replaceAll('-', '')}`
 const dropSchema = (schema: string) => sql(`DROP SCHEMA IF EXISTS ${qualified(schema)} CASCADE`);
 
 const schemas = new WeakMap<StoreHandle, string>();
-const rows = (schema: string, retentionMs = 86_400_000) =>
-  createWarehouseRowStore(snowflake!, { schema, retentionMs, ...runners });
+const rows = (schema: string, retentionMs = 86_400_000, leaseMs?: number) =>
+  createWarehouseRowStore(snowflake!, {
+    schema,
+    retentionMs,
+    ...(leaseMs ? { leaseMs } : {}),
+    ...runners,
+  });
+function openSchema(create: (schema: string) => StoreHandle['store']): StoreHandle {
+  const schema = testSchema();
+  const handle: StoreHandle = {
+    store: create(schema),
+    reopen: () => create(schema),
+    cleanup: async () => {
+      await dropSchema(schema);
+    },
+  };
+  schemas.set(handle, schema);
+  return handle;
+}
 const table = (handle: StoreHandle, name: string) =>
   `${qualified(schemas.get(handle)!)}.${q(name)}`;
 
@@ -50,18 +67,10 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
   describeAgenticStoreConformance({
     name: 'Snowflake row layout',
     timeoutMs: 900_000,
-    open: async () => {
-      const schema = testSchema();
-      const handle: StoreHandle = {
-        store: rows(schema),
-        reopen: () => rows(schema),
-        cleanup: async () => {
-          await dropSchema(schema);
-        },
-      };
-      schemas.set(handle, schema);
-      return handle;
-    },
+    limits: snowflakeRowDialect.limits,
+    open: async () => openSchema((schema) => rows(schema)),
+    // A run at the limit is read and sealed in many statements: give it the longest lease.
+    openLarge: async () => openSchema((schema) => rows(schema, undefined, 600_000)),
     expireLease: async (handle, key) => {
       const header = agenticHeaderTableName(
         digestAgenticState(key),

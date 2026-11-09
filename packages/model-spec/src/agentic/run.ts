@@ -10,6 +10,7 @@ import { executeAgenticPlan } from './plan-run.js';
 import { preflightAgenticPublication, publishAgenticRun } from './publish-run.js';
 import type { AgenticPublisher, AgenticHost } from './publication.js';
 import { validateAgenticReceipt } from './checkpoint-receipt.js';
+import { parseVerifiedCheckpointWithin } from './checkpoint-verified.js';
 import { isCancellationError, runCancellable, throwIfCancelled } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgentAssignmentSchema } from './assignment.js';
@@ -18,7 +19,7 @@ import { assertAgenticPricing } from './spend.js';
 import { agenticDeadlinePassed, statementTimeoutReason } from './state-errors.js';
 import { scheduleAgenticAssignments } from './schedule.js';
 import { boundedAgenticRows, AgenticJsonSchema, createAgenticRowSchema } from './rows.js';
-import { resolveAgenticStoreLimits } from './store-limits.js';
+import { agenticCheckpointLimits, resolveAgenticStoreLimits } from './store-limits.js';
 import {
   AgenticRunSnapshotSchema,
   AgenticRunKeySchema,
@@ -214,7 +215,7 @@ async function executeOwnedAgenticRun(
       options.projectDirectory,
       options.signal ? { signal: options.signal } : {}
     );
-  const limits = resolveAgenticStoreLimits(store);
+  const storeLimits = resolveAgenticStoreLimits(store);
   const incremental = Object.values(model.sources).some((source) => source.incremental);
   const cursorStore =
     options.cursorStore ??
@@ -250,17 +251,22 @@ async function executeOwnedAgenticRun(
   const session = await storage(async () => store.acquire(key));
   let snapshot: AgenticRunSnapshot;
   try {
+    // A store that keeps runs in more than one place says what this run's storage holds.
+    const limits = session.limits ? resolveAgenticStoreLimits(session) : storeLimits;
+    const checkpointLimits = agenticCheckpointLimits(limits);
     const saved = await storage(async () => session.read());
     if (saved) {
       snapshot = await storage(async () => {
-        const parsed = AgenticRunSnapshotSchema.safeParse(saved);
-        if (!parsed.success) {
+        try {
+          // Verified once here, so later receipts are checked against it without reading the run.
+          // A run larger than the store holds is refused before the schema reads it.
+          return parseVerifiedCheckpointWithin(saved, checkpointLimits);
+        } catch {
           throw new AgenticStateError('corrupt', {
             reason: 'invalid_checkpoint',
             message: `The saved checkpoint for run "${key.id}" failed validation. It may be damaged or written by a different Dogsled version.`,
           });
         }
-        return parsed.data;
       });
       if (snapshot.superseded) throw new AgenticStateError('superseded');
       if (
@@ -313,7 +319,13 @@ async function executeOwnedAgenticRun(
       });
       const initial = snapshot;
       snapshot = await storage(async () =>
-        validateAgenticReceipt(await session.create(initial), initial)
+        validateAgenticReceipt(
+          await session.create(initial),
+          initial,
+          undefined,
+          Date.now(),
+          checkpointLimits
+        )
       );
     }
     if (
@@ -323,12 +335,17 @@ async function executeOwnedAgenticRun(
       (snapshot.status !== 'execution_complete' || options.publisher)
     ) {
       snapshot = await storage(async () =>
-        beginAgenticExecution(session, snapshot, {
-          ...execution,
-          ...(snapshot.accounting === 'spend_cap'
-            ? { caps: { tokens: model.limits.tokens ?? null, microusd: costCapMicrousd } }
-            : {}),
-        })
+        beginAgenticExecution(
+          session,
+          snapshot,
+          {
+            ...execution,
+            ...(snapshot.accounting === 'spend_cap'
+              ? { caps: { tokens: model.limits.tokens ?? null, microusd: costCapMicrousd } }
+              : {}),
+          },
+          checkpointLimits
+        )
       );
     }
     const progress = createAgenticProgressReporter(
@@ -376,7 +393,14 @@ async function executeOwnedAgenticRun(
       ...(options.signal ? [options.signal] : []),
     ]);
     if (options.publisher && !reusedCompletion) {
-      await preflightAgenticPublication(options.publisher, session, snapshot, context, runSignal);
+      await preflightAgenticPublication(
+        options.publisher,
+        session,
+        snapshot,
+        context,
+        runSignal,
+        checkpointLimits
+      );
     }
     const checkpoint = async (command: AgenticCheckpointCommand): Promise<AgenticRunSnapshot> => {
       const before = snapshot;
@@ -386,13 +410,14 @@ async function executeOwnedAgenticRun(
           await session.checkpoint(command),
           before,
           command,
-          requestedAt
+          requestedAt,
+          checkpointLimits
         );
       } catch {
         // Confirm the complete effect after an uncertain response. Presence alone is not a receipt.
         const observed = await storage(async () => session.read());
         if (!observed) throw new AgenticStateError('missing');
-        snapshot = validateAgenticReceipt(observed, before, command, requestedAt);
+        snapshot = validateAgenticReceipt(observed, before, command, requestedAt, checkpointLimits);
       }
       await reportProgress(before, command);
       return snapshot;
@@ -548,7 +573,8 @@ async function executeOwnedAgenticRun(
         checkpoint,
         runSignal,
         reusedCompletion,
-        options.signal
+        options.signal,
+        checkpointLimits
       );
     }
     if (incremental && snapshot.publication === 'confirmed' && !snapshot.cursors_committed) {

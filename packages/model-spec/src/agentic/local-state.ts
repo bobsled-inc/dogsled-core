@@ -18,6 +18,7 @@ import {
   applyAgenticCheckpoint,
   digestAgenticState,
 } from './state.js';
+import { agenticCheckpointLimitError } from './checkpoint-verified.js';
 import { AGENTIC_DEFAULT_STORE_LIMITS } from './store-limits.js';
 import type {
   AgenticRunKey,
@@ -25,6 +26,9 @@ import type {
   AgenticStateStore,
   AgenticStateSession,
 } from './state.js';
+
+/** The file store holds the default limits, as it always has. */
+const limits = AGENTIC_DEFAULT_STORE_LIMITS;
 
 const IndexSchema = z
   .object({
@@ -85,7 +89,7 @@ export function localAgenticStateStore(
 ): AgenticStateStore {
   return {
     cursors: createLocalAgenticCursorStore(project),
-    limits: AGENTIC_DEFAULT_STORE_LIMITS,
+    limits,
     async acquire(rawKey): Promise<AgenticStateSession> {
       const key = AgenticRunKeySchema.parse(rawKey);
       const hash = digestAgenticState(key);
@@ -128,6 +132,8 @@ export function localAgenticStateStore(
           }
           const snapshot = AgenticRunSnapshotSchema.parse(parsed);
           if (digestAgenticState(snapshot.key) !== hash) throw new AgenticStateError('corrupt');
+          // The schema accepts what the largest store holds. This one holds the defaults.
+          if (agenticCheckpointLimitError(snapshot, limits)) throw new AgenticStateError('corrupt');
           return snapshot;
         } catch (error) {
           if (error instanceof AgenticStateError) throw error;
@@ -138,6 +144,8 @@ export function localAgenticStateStore(
         guard();
         const validated = AgenticRunSnapshotSchema.parse(snapshot);
         if (digestAgenticState(validated.key) !== hash) throw new AgenticStateError('conflict');
+        const tooLarge = agenticCheckpointLimitError(validated, limits);
+        if (tooLarge) throw tooLarge;
         const ref = `${hash}-${digestAgenticState(validated)}.json`;
         let previous: string | undefined;
         try {

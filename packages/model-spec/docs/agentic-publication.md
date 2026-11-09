@@ -199,7 +199,8 @@ The default limit is 32 manifests: per database for DuckDB, per target for the o
 adapters. Incomplete stages count toward the generic adapter limit. Each full stage
 can contain at most 1,000,000 rows by default, including untouched rows.
 `maxRetainedStages` accepts 1–1,024. `maxStageRows` accepts 1–10,000,000.
-New rows and processed keys retain the existing 1,000-row and JSON size limits.
+New rows and processed keys are bounded by what the run's state store holds, as its
+input is: see [row store limits](agentic-state.md#row-store-limits).
 The host must also enforce a database disk quota. There is no automatic expiry.
 
 DuckDB stores private tables in `_dogsled_agentic_publication`. The other adapters
