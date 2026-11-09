@@ -225,27 +225,36 @@ describe('group commit', { timeout: 60_000 }, () => {
   });
 
   it('decides a group the store refuses as one command at a time decides it', async () => {
-    // Once three calls have returned, the store refuses groups and single starts alike.
+    // Once three calls have returned, the store refuses groups and single starts alike. How many
+    // more calls return before the run stops depends on timing, so only those three are compared.
     const run = async (stateStore: GroupMemoryStore) => {
       const f = setup(6, 3, stateStore);
-      let returned = 0;
+      const returned: string[] = [];
       f.host.executeAgent = async (request) => {
         const result = await uneven(request);
-        if (++returned === 3) {
+        returned.push(request.assignment.attempt_id);
+        if (returned.length === 3) {
           stateStore.faults = Array.from({ length: 10 }, () => 'refuse' as const);
           stateStore.refuseSingleStart = new AgenticStateError('unavailable');
         }
         return result;
       };
       const error = await f.run().catch((caught: unknown) => caught);
-      return { error, accepted: f.state().work.filter((work) => work.accepted).length };
+      const saved = new Set(
+        f
+          .state()
+          .work.flatMap((work) => work.attempts.filter((attempt) => attempt.outcome))
+          .map((attempt) => attempt.id)
+      );
+      return { error, firstThreeSaved: returned.slice(0, 3).every((id) => saved.has(id)) };
     };
     const single = await run(new GroupMemoryStore(false));
     const grouped = await run(new GroupMemoryStore());
     // The store refused a start it should have taken: both report what one command reports.
     expect(grouped.error).toMatchObject({ code: (single.error as AgenticStateError).code });
-    // The finishes that came first were saved, one at a time after the group was refused.
-    expect(grouped.accepted).toBeGreaterThanOrEqual(Math.max(3, single.accepted));
+    // The answers that returned first were saved, one at a time after the group was refused.
+    expect(single.firstThreeSaved).toBe(true);
+    expect(grouped.firstThreeSaved).toBe(true);
   });
 
   it('stops when an executor throws and still saves the answers that returned', async () => {
