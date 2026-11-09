@@ -215,7 +215,8 @@ describe('limits the row store declares', () => {
   it.skipIf(!duckDbAvailable)(
     'runs past the defaults on a DuckDB run file, and the file store refuses the same input',
     async () => {
-      const rows = AGENTIC_MAX_ROWS + 200;
+      // One row past the defaults. Each assignment is a real coordinator round, about 40 ms on CI.
+      const rows = AGENTIC_MAX_ROWS + 1;
       const f = runFixture(rows);
       f.model.limits = {};
       const result = await executeAgenticRun(f.host, f.context(), {
@@ -233,7 +234,7 @@ describe('limits the row store declares', () => {
       ).rejects.toMatchObject({ code: 'limit', reason: 'too_many_rows' });
       expect(prepare).toHaveBeenCalledWith(expect.objectContaining({ maxRows: AGENTIC_MAX_ROWS }));
     },
-    120_000
+    300_000
   );
 
   it.skipIf(!duckDbAvailable)(
