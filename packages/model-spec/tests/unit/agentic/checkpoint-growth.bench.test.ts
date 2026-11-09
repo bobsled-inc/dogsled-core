@@ -39,9 +39,10 @@ vi.mock('json-canonicalize', async (original) => {
 });
 
 // A checkpoint must cost the same in a large run as in a small one. These tests run on every
-// change, at the largest run the row cap allows. Counts come first: they do not depend on the
-// machine, and they name what grew. The clock then catches a pass over the run that no count
-// sees, and compares two sizes in one process, so a slow runner slows both.
+// change, at the default row limit, the most a supplied store holds; row-store-growth.bench.test.ts
+// takes the row store up to its own. Counts come first: they do not depend on the machine, and
+// they name what grew. The clock then catches a pass over the run that no count sees, and
+// compares two sizes in one process, so a slow runner slows both.
 const SMALL = 100;
 const LARGE = AGENTIC_MAX_ROWS;
 const PAYLOAD = 1000;
@@ -80,6 +81,7 @@ const budgeted = (
 function copyingStore(): AgenticStateStore {
   const store = sharedMemoryStore();
   return {
+    ...(store.limits ? { limits: store.limits } : {}),
     async acquire(key) {
       const session = await store.acquire(key);
       return {

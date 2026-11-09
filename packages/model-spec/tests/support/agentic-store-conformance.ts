@@ -22,13 +22,18 @@ import {
 } from '../../src/agentic/state.js';
 import {
   AGENTIC_DEFAULT_STORE_LIMITS,
+  AGENTIC_MAX_STORE_LIMITS,
+  agenticCheckpointLimits,
   resolveAgenticStoreLimits,
+  type AgenticStoreLimits,
 } from '../../src/agentic/store-limits.js';
 import { runFixture } from '../unit/agentic/state-fixture.js';
 import {
   currentCommand,
   mapScenario,
   planScenario,
+  sealedScenario,
+  sealedScenarioKey,
   type AgenticStoreScenario,
 } from './agentic-store-scenario.js';
 
@@ -62,6 +67,14 @@ export interface StoreAdapter {
   createAcceptsStartedRun?: boolean;
   /** Per test and per hook, for an engine where a statement takes a noticeable time. */
   timeoutMs?: number;
+  /** What the store declares. Default: the default limits. */
+  limits?: AgenticStoreLimits;
+  /** What a run's session declares, for a store that keeps runs in more than one place.
+   * Default: `limits`. */
+  runLimits?: AgenticStoreLimits;
+  /** Opens the store for a run at its limits, with a lease that the work of reading such a run
+   * cannot outlast on a slow runner. Default: `open`. */
+  openLarge?(): Promise<StoreHandle>;
   /** The store's sessions offer `checkpointMany`. */
   groupCommit?: boolean;
 }
@@ -71,25 +84,34 @@ const cursorKey = { scope: 'lake', model: 'pair_assessments', target: 'main.pair
 const signature = 'a'.repeat(64);
 const otherSignature = 'b'.repeat(64);
 
-/** Sends commands exactly as the coordinator does, including its receipt validation. */
+/** Sends commands exactly as the coordinator does, including its receipt validation against
+ * what the store holds. */
 async function apply(
   session: AgenticStateSession,
   before: AgenticRunSnapshot,
-  recorded: AgenticCheckpointCommand
+  recorded: AgenticCheckpointCommand,
+  limits: AgenticStoreLimits = AGENTIC_DEFAULT_STORE_LIMITS
 ): Promise<AgenticRunSnapshot> {
   const command = currentCommand(before, recorded);
   const requestedAt = Date.now();
-  return validateAgenticReceipt(await session.checkpoint(command), before, command, requestedAt);
+  return validateAgenticReceipt(
+    await session.checkpoint(command),
+    before,
+    command,
+    requestedAt,
+    agenticCheckpointLimits(limits)
+  );
 }
 
 async function replay(
   session: AgenticStateSession,
   scenario: AgenticStoreScenario,
-  count = scenario.commands.length
+  count = scenario.commands.length,
+  limits: AgenticStoreLimits = AGENTIC_DEFAULT_STORE_LIMITS
 ): Promise<AgenticRunSnapshot> {
   let snapshot = validateAgenticReceipt(await session.create(scenario.initial), scenario.initial);
   for (const command of scenario.commands.slice(0, count)) {
-    snapshot = await apply(session, snapshot, command);
+    snapshot = await apply(session, snapshot, command, limits);
   }
   return snapshot;
 }
@@ -106,14 +128,22 @@ function firstGroup(scenario: AgenticStoreScenario, size: number) {
   throw new Error(`The scenario has no ${size} attempt commands in a row`);
 }
 
-/** Sends a group exactly as the coordinator does, including its receipt validation. */
+/** Sends a group exactly as the coordinator does, including its receipt validation against
+ * what the store holds. */
 async function applyGroup(
   session: AgenticStateSession,
   before: AgenticRunSnapshot,
-  group: AgenticCheckpointCommand[]
+  group: AgenticCheckpointCommand[],
+  limits: AgenticStoreLimits = AGENTIC_DEFAULT_STORE_LIMITS
 ): Promise<AgenticRunSnapshot> {
   const requestedAt = Date.now();
-  return validateAgenticReceipts(await session.checkpointMany!(group), before, group, requestedAt);
+  return validateAgenticReceipts(
+    await session.checkpointMany!(group),
+    before,
+    group,
+    requestedAt,
+    agenticCheckpointLimits(limits)
+  );
 }
 
 /** Every run of attempt commands as one group, and everything else one command at a time. */
@@ -212,8 +242,47 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
 
       it('declares the limits it holds', async () => {
         const { store } = await open();
-        expect(resolveAgenticStoreLimits(store)).toEqual(AGENTIC_DEFAULT_STORE_LIMITS);
+        const declared = adapter.limits ?? AGENTIC_DEFAULT_STORE_LIMITS;
+        expect(resolveAgenticStoreLimits(store)).toEqual(declared);
+        const session = await acquire(store, map.key);
+        expect(resolveAgenticStoreLimits(session.limits ? session : store)).toEqual(
+          adapter.runLimits ?? declared
+        );
       });
+
+      // A whole run at the declared row limit, through create, seal and a reopen. Each of those
+      // reads the whole run, which takes seconds at 10,000 rows on a slow runner.
+      it(
+        'holds a run of as many rows as it declares and refuses one more',
+        {
+          timeout: Math.max(timeout, 600_000),
+        },
+        async () => {
+          const limits = adapter.runLimits ?? adapter.limits ?? AGENTIC_DEFAULT_STORE_LIMITS;
+          const { maxRows } = limits;
+          const scenario = await sealedScenario(maxRows);
+          const handle = await (adapter.openLarge ?? adapter.open)();
+          handles.push(handle);
+          const first = await acquire(handle.store, sealedScenarioKey);
+          const sealed = await replay(first, scenario, 1, limits);
+          expect(sealed.work).toHaveLength(maxRows);
+          await first.release();
+          const reopened = await acquire(handle.reopen(), sealedScenarioKey);
+          expect(await reopened.read()).toEqual(sealed);
+          await reopened.release();
+          const other = { ...sealedScenarioKey, scope: 'over' };
+          const second = await acquire(handle.reopen(), other);
+          const created = await second.create({ ...scenario.initial, key: other });
+          const over = second.checkpoint(scenario.over);
+          // Past the most any store holds, the command itself is refused.
+          await expect(over).rejects.toEqual(
+            maxRows < AGENTIC_MAX_STORE_LIMITS.maxRows
+              ? expect.objectContaining({ code: 'limit', reason: 'too_many_rows' })
+              : expect.anything()
+          );
+          expect(await second.read()).toEqual(created);
+        }
+      );
     });
 
     describe('commands', () => {
@@ -489,6 +558,33 @@ export function describeAgenticStoreConformance(adapter: StoreAdapter): void {
         expect(await owner.read()).toEqual(before);
         expect(await applyGroup(owner, before, group)).toEqual(await owner.read());
       });
+
+      // The store applies a group within what it holds, as it does one command, so a run past
+      // the default limits saves its groups too.
+      it(
+        'saves a group on a run of as many rows as it declares',
+        { timeout: Math.max(timeout, 600_000) },
+        async () => {
+          const limits = adapter.runLimits ?? adapter.limits ?? AGENTIC_DEFAULT_STORE_LIMITS;
+          const scenario = await sealedScenario(limits.maxRows);
+          const handle = await (adapter.openLarge ?? adapter.open)();
+          handles.push(handle);
+          const session = await acquire(handle.store, sealedScenarioKey);
+          const sealed = await replay(session, scenario, 1, limits);
+          const group = [0, 1, 2].map((work, position) => ({
+            type: 'start_attempt' as const,
+            operation_id: `start_attempt:large-${work}`,
+            expected_revision: sealed.revision + position,
+            work,
+            attempt_id: `large-${work}`,
+          }));
+          const after = await applyGroup(session, sealed, group, limits);
+          expect(after.revision).toBe(sealed.revision + group.length);
+          await session.release();
+          const reopened = await acquire(handle.reopen(), sealedScenarioKey);
+          expect(await reopened.read()).toEqual(after);
+        }
+      );
 
       it('runs several calls at once through the coordinator and resumes without repeating any', async () => {
         const handle = await open();

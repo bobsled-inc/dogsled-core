@@ -1,16 +1,13 @@
-import {
-  AgenticStateError,
-  applyAgenticCheckpoint,
-  digestAgenticState,
-  transitionAgenticCheckpoint,
-} from './state.js';
+import { AgenticStateError, digestAgenticState, transitionAgenticCheckpoint } from './state.js';
 import type { AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import {
   advanceVerifiedCheckpoint,
+  applyAgenticCheckpointWithin,
   isVerifiedCheckpoint,
-  safeParseVerifiedCheckpoint,
+  parseVerifiedCheckpointWithin,
 } from './checkpoint-verified.js';
 import { isExactJson, jsonEqual } from './json-equal.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS, type AgenticStoreLimits } from './store-limits.js';
 
 /** When the store says it finished the attempt, provided that is within this request. */
 function finishTime(
@@ -36,7 +33,8 @@ function provedReceipt(
   value: unknown,
   before: AgenticRunSnapshot,
   command: AgenticCheckpointCommand,
-  requestedAt: number
+  requestedAt: number,
+  limits: AgenticStoreLimits
 ): AgenticRunSnapshot | undefined {
   if (!isVerifiedCheckpoint(before)) return undefined;
   try {
@@ -45,7 +43,7 @@ function provedReceipt(
         ? finishTime(value as AgenticRunSnapshot, command, requestedAt)
         : requestedAt;
     if (appliedAt === undefined) return undefined;
-    const expected = advanceVerifiedCheckpoint(before, command, appliedAt);
+    const expected = advanceVerifiedCheckpoint(before, command, appliedAt, limits);
     const shared = isVerifiedCheckpoint(value);
     if (!expected || !isExactJson(expected, value, shared)) return undefined;
     return shared ? value : expected;
@@ -57,18 +55,26 @@ function provedReceipt(
 /**
  * A shape-valid snapshot is not proof that the requested reservation or acceptance happened.
  * The result is verified state, frozen and separate from `value`, unless `value` is not plain JSON.
+ * `limits` is what the store may hold: a larger response is refused like any other invalid one.
  */
 export function validateAgenticReceipt(
   value: unknown,
   before: AgenticRunSnapshot,
   command?: AgenticCheckpointCommand,
-  requestedAt = Date.now()
+  requestedAt = Date.now(),
+  limits: AgenticStoreLimits = AGENTIC_DEFAULT_STORE_LIMITS
 ): AgenticRunSnapshot {
-  const proved = command && provedReceipt(value, before, command, requestedAt);
+  const proved = command && provedReceipt(value, before, command, requestedAt, limits);
   if (proved) return proved;
-  const parsed = safeParseVerifiedCheckpoint(value);
-  if (!parsed.success) throw new AgenticStateError('corrupt');
-  const snapshot = parsed.data;
+  // A read that is exactly verified state is valid by that equality, however large the run.
+  if (!command && isVerifiedCheckpoint(before) && isExactJson(before, value)) return before;
+  let snapshot: AgenticRunSnapshot;
+  try {
+    // A response larger than `limits` is refused before any schema reads it.
+    snapshot = parseVerifiedCheckpointWithin(value, limits);
+  } catch {
+    throw new AgenticStateError('corrupt');
+  }
   let appliedAt: number | undefined = requestedAt;
   if (command?.type === 'finish_attempt') {
     appliedAt = finishTime(snapshot, command, requestedAt);
@@ -85,7 +91,9 @@ export function validateAgenticReceipt(
       // The complete check below reproduces the error.
     }
   }
-  const expected = command ? applyAgenticCheckpoint(before, command, appliedAt) : before;
+  const expected = command
+    ? applyAgenticCheckpointWithin(before, command, appliedAt, limits)
+    : before;
   if (digestAgenticState(snapshot) !== digestAgenticState(expected)) {
     throw new AgenticStateError('corrupt');
   }
@@ -117,16 +125,19 @@ export function validateAgenticReceipts(
   value: unknown,
   before: AgenticRunSnapshot,
   commands: readonly AgenticCheckpointCommand[],
-  requestedAt = Date.now()
+  requestedAt = Date.now(),
+  limits: AgenticStoreLimits = AGENTIC_DEFAULT_STORE_LIMITS
 ): AgenticRunSnapshot {
-  if (commands.length === 1) return validateAgenticReceipt(value, before, commands[0], requestedAt);
+  if (commands.length === 1) {
+    return validateAgenticReceipt(value, before, commands[0], requestedAt, limits);
+  }
   if (isVerifiedCheckpoint(before)) {
     try {
       const times = appliedTimes(value as AgenticRunSnapshot, commands, requestedAt);
       let expected: AgenticRunSnapshot | undefined = times && before;
       for (const [index, command] of commands.entries()) {
         if (!expected) break;
-        expected = advanceVerifiedCheckpoint(expected, command, times![index]!);
+        expected = advanceVerifiedCheckpoint(expected, command, times![index]!, limits);
       }
       const shared = isVerifiedCheckpoint(value);
       if (expected && isExactJson(expected, value, shared)) {
@@ -136,14 +147,18 @@ export function validateAgenticReceipts(
       // The complete check below decides.
     }
   }
-  const parsed = safeParseVerifiedCheckpoint(value);
-  if (!parsed.success) throw new AgenticStateError('corrupt');
-  const snapshot = parsed.data;
+  let snapshot: AgenticRunSnapshot;
+  try {
+    // A response larger than `limits` is refused before any schema reads it.
+    snapshot = parseVerifiedCheckpointWithin(value, limits);
+  } catch {
+    throw new AgenticStateError('corrupt');
+  }
   const times = appliedTimes(snapshot, commands, requestedAt);
   if (!times) throw new AgenticStateError('corrupt');
   let expected = before;
   for (const [index, command] of commands.entries()) {
-    expected = applyAgenticCheckpoint(expected, command, times[index]!);
+    expected = applyAgenticCheckpointWithin(expected, command, times[index]!, limits);
   }
   if (!jsonEqual(snapshot, expected)) throw new AgenticStateError('corrupt');
   return snapshot;

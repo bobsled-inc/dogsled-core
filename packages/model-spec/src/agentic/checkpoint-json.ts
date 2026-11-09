@@ -1,7 +1,9 @@
-export const AGENTIC_MAX_CHECKPOINT_VALUES = 262144;
-/** The most any store can declare for one run's snapshot. Raising this also raises
- * `maxStoredChars` in row-state-rows.ts, which is derived from it. */
-export const AGENTIC_MAX_CHECKPOINT_BYTES = 16 * 1024 * 1024;
+import { AGENTIC_MAX_STORE_LIMITS, agenticCheckpointValues } from './store-limits.js';
+
+/** The most any store can declare for one run's snapshot, which the snapshot schema enforces.
+ * Each store checks its own limits besides: see `agenticCheckpointLimitError`. */
+export const AGENTIC_MAX_CHECKPOINT_BYTES = AGENTIC_MAX_STORE_LIMITS.maxCheckpointBytes;
+export const AGENTIC_MAX_CHECKPOINT_VALUES = agenticCheckpointValues(AGENTIC_MAX_STORE_LIMITS);
 const MAX_DEPTH = 32;
 
 export interface CheckpointMeasure {

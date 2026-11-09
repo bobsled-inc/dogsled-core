@@ -18,8 +18,10 @@ import {
   type AgenticCheckpointCommand,
   type AgenticRunKey,
   type AgenticRunSnapshot,
+  type AgenticStateStore,
 } from '../../../src/agentic/state.js';
-import { benchmarkWorkload } from '../../support/agentic-benchmark.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
+import { benchmarkWorkload, sharedGroupStore } from '../../support/agentic-benchmark.js';
 import { parseVerifiedCheckpoint } from '../../../src/agentic/checkpoint-verified.js';
 import { mapScenario } from '../../support/agentic-store-scenario.js';
 import { MemoryStateStore, runFixture } from './state-fixture.js';
@@ -397,6 +399,38 @@ describe('group commit', { timeout: 60_000 }, () => {
     for (const report of reports) {
       expect(report.accepted + report.running + report.pending + report.failed).toBe(report.total);
     }
+  });
+
+  it('groups the commands of a run past the default limits on a store that holds it', async () => {
+    const base = sharedGroupStore();
+    const sizes: number[] = [];
+    const stateStore: AgenticStateStore = {
+      limits: base.limits!,
+      async acquire(key) {
+        const session = await base.acquire(key);
+        return {
+          ...session,
+          checkpointMany: async (commands) => {
+            sizes.push(commands.length);
+            return session.checkpointMany!(commands);
+          },
+        };
+      },
+    };
+    const count = AGENTIC_DEFAULT_STORE_LIMITS.maxRows + 1;
+    const f = runFixture(count);
+    // No token cap, which this many assignments would pass before the first call.
+    f.model.limits = {};
+    f.host.concurrency = 3;
+    f.host.executeAgent = async (request) => answer(request);
+    const result = await executeAgenticRun(f.host, f.context(), {
+      projectDirectory: '/not-used',
+      stateStore,
+      run: { id: 'wide', mode: 'start' },
+    });
+    expect(result.processedKeys).toHaveLength(count);
+    // Worked out within the default limits instead, every command would go alone.
+    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeGreaterThan(count);
   });
 });
 

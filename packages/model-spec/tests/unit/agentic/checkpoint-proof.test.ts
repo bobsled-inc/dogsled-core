@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { advanceVerifiedCheckpoint } from '../../../src/agentic/checkpoint-verified.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import { applyAgenticCheckpoint } from '../../../src/agentic/state.js';
 import type { AgenticCheckpointCommand, AgenticRunSnapshot } from '../../../src/agentic/state.js';
@@ -135,8 +136,12 @@ describe('a proof does not trust the transition', () => {
       const { saved, start, started, finish } = await fixture(accounting);
       sabotage.damage = damage;
       sabotage.used = 0;
-      expect(advanceVerifiedCheckpoint(saved, start, Date.now())).toBeUndefined();
-      expect(advanceVerifiedCheckpoint(started, finish, Date.now())).toBeUndefined();
+      expect(
+        advanceVerifiedCheckpoint(saved, start, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+      ).toBeUndefined();
+      expect(
+        advanceVerifiedCheckpoint(started, finish, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+      ).toBeUndefined();
       expect(sabotage.used).toBe(2);
       // The complete path never saw the damage, so a real command still succeeds.
       expect(applyAgenticCheckpoint(saved, start)).toEqual(started);
@@ -153,8 +158,12 @@ describe('a proof does not trust the transition', () => {
   it.each(spendCapOnly)('refuses a transition that %s', async (_name, damage) => {
     const { saved, start, started, finish } = await fixture('spend_cap');
     sabotage.damage = damage;
-    expect(advanceVerifiedCheckpoint(saved, start, Date.now())).toBeUndefined();
-    expect(advanceVerifiedCheckpoint(started, finish, Date.now())).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(saved, start, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(started, finish, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
   });
 
   const reservationOnly: [string, Damage][] = [
@@ -164,8 +173,12 @@ describe('a proof does not trust the transition', () => {
   it.each(reservationOnly)('refuses a transition that %s', async (_name, damage) => {
     const { saved, start, started, finish } = await fixture('reservation');
     sabotage.damage = damage;
-    expect(advanceVerifiedCheckpoint(saved, start, Date.now())).toBeUndefined();
-    expect(advanceVerifiedCheckpoint(started, finish, Date.now())).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(saved, start, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(started, finish, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
   });
 
   it('refuses a reservation that does not match a shared budget', async () => {
@@ -206,7 +219,9 @@ describe('a proof does not trust the transition', () => {
       work: 0,
       attempt_id: 'one',
     };
-    expect(advanceVerifiedCheckpoint(saved, start, Date.now())).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(saved, start, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
     expect(sabotage.used).toBe(1);
   });
 
@@ -248,7 +263,9 @@ describe('a proof does not trust the transition', () => {
   it.each(finishOnly)('refuses a transition that %s', async (_name, damage) => {
     const { started, finish } = await fixture('spend_cap');
     sabotage.damage = damage;
-    expect(advanceVerifiedCheckpoint(started, finish, Date.now())).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(started, finish, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
     expect(sabotage.used).toBe(1);
   });
 
@@ -268,7 +285,9 @@ describe('a proof does not trust the transition', () => {
       charge: 1,
       charge_microusd: 1,
     };
-    expect(advanceVerifiedCheckpoint(saved, again, Date.now())).toBeUndefined();
+    expect(
+      advanceVerifiedCheckpoint(saved, again, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+    ).toBeUndefined();
     expect(applyAgenticCheckpoint(saved, again).work[0]!.attempts[0]).toEqual(
       saved.work[0]!.attempts[0]
     );
@@ -277,8 +296,12 @@ describe('a proof does not trust the transition', () => {
   it('accepts the same commands from the undamaged transition', async () => {
     for (const accounting of ['spend_cap', 'reservation'] as const) {
       const { saved, start, started, finish } = await fixture(accounting);
-      expect(advanceVerifiedCheckpoint(saved, start, Date.now())).toEqual(started);
-      expect(advanceVerifiedCheckpoint(started, finish, Date.now())).toBeDefined();
+      expect(
+        advanceVerifiedCheckpoint(saved, start, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+      ).toEqual(started);
+      expect(
+        advanceVerifiedCheckpoint(started, finish, Date.now(), AGENTIC_DEFAULT_STORE_LIMITS)
+      ).toBeDefined();
     }
   });
 });

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { describe } from 'vitest';
 import { resolveRunner, type PostgresIntegration } from '@bobsled-inc/connections';
 import { digestAgenticState } from '../../../src/agentic/state.js';
+import { AGENTIC_ROW_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
 import { createWarehouseCheckpointStore } from '../../../src/agentic/warehouse-state.js';
 import { createWarehouseRowStore } from '../../../src/agentic/warehouse-row-state.js';
 import {
@@ -61,23 +62,27 @@ describe.skipIf(!enabled)('PostgreSQL', () => {
     createAcceptsStartedRun: true,
   });
 
-  const rows = (schema: string, retentionMs = 86_400_000, groupCommit = false) =>
+  const rows = (schema: string, retentionMs = 86_400_000, leaseMs = 10_000, groupCommit = false) =>
     createWarehouseRowStore(integration(), {
       schema,
-      leaseMs: 10_000,
+      leaseMs,
       retentionMs,
       ...(groupCommit ? { groupCommit } : {}),
     });
   describeAgenticStoreConformance({
     name: 'PostgreSQL row layout, group commit',
     groupCommit: true,
-    open: async () => open((schema) => rows(schema, undefined, true)),
+    limits: AGENTIC_ROW_STORE_LIMITS,
+    open: async () => open((schema) => rows(schema, undefined, undefined, true)),
+    openLarge: async () => open((schema) => rows(schema, undefined, 600_000, true)),
     expireLease: (handle) =>
       sql(`UPDATE "${schemas.get(handle)}"."__dogsled_agentic_runs" SET "lease_expires" = 0`),
   });
   describeAgenticStoreConformance({
     name: 'PostgreSQL row layout',
+    limits: AGENTIC_ROW_STORE_LIMITS,
     open: async () => open((schema) => rows(schema)),
+    openLarge: async () => open((schema) => rows(schema, undefined, 600_000)),
     expireLease: (handle) =>
       sql(`UPDATE "${schemas.get(handle)}"."__dogsled_agentic_runs" SET "lease_expires" = 0`),
     withRetention: (handle, retentionMs) => rows(schemas.get(handle)!, retentionMs),

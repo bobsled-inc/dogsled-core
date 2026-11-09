@@ -24,6 +24,7 @@ export async function executeAgenticPlan(
     cursorValues?: AgenticCursorValues;
     checkpoint: (command: AgenticCheckpointCommand) => Promise<AgenticRunSnapshot>;
     checkpointGroup?: (commands: AgenticCheckpointCommand[]) => Promise<AgenticRunSnapshot | null>;
+    checkpointLimits?: AgenticStoreLimits;
     signal: AbortSignal;
     abort: () => void;
     concurrency: number;
@@ -133,7 +134,7 @@ export async function executeAgenticPlan(
         ...(more ? { more: true as const } : {}),
       };
     }
-    validateAgenticPlanInputs(context.resolved, inputs);
+    validateAgenticPlanInputs(context.resolved, inputs, limits);
     await checkpoint({
       type: 'seal_work',
       operation_id: 'seal_work',

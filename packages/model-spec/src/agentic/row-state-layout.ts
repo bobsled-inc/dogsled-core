@@ -148,16 +148,19 @@ export function agenticCommandItems(
  * commands would be stored one at a time. A command that repeats one already saved has no effect
  * and adds no write. A refusal throws before anything is returned.
  */
-export function agenticCommandWrites(
+export async function agenticCommandWrites(
   before: { snapshot: AgenticRunSnapshot; head: string },
   commands: readonly AgenticCheckpointCommand[],
-  apply: (state: AgenticRunSnapshot, command: AgenticCheckpointCommand) => AgenticRunSnapshot
-): { snapshot: AgenticRunSnapshot; writes: AgenticRowWrite[] } {
+  apply: (
+    state: AgenticRunSnapshot,
+    command: AgenticCheckpointCommand
+  ) => Promise<AgenticRunSnapshot>
+): Promise<{ snapshot: AgenticRunSnapshot; writes: AgenticRowWrite[] }> {
   let { snapshot, head } = before;
   const writes: AgenticRowWrite[] = [];
   for (const command of commands) {
     const workBefore = snapshot.work.length;
-    const next = apply(snapshot, command);
+    const next = await apply(snapshot, command);
     if (next.revision === snapshot.revision) continue;
     const items = agenticCommandItems(next, command, workBefore);
     if (items.length) {

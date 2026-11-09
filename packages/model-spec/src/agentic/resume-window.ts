@@ -1,5 +1,6 @@
 import { validateAgenticReceipt } from './checkpoint-receipt.js';
 import type { AgenticCheckpointCommand, AgenticRunSnapshot, AgenticStateSession } from './state.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS, type AgenticStoreLimits } from './store-limits.js';
 
 /** One durable window per caller invocation, including uncertain checkpoint responses. */
 export async function beginAgenticExecution(
@@ -11,7 +12,8 @@ export async function beginAgenticExecution(
     retryFailed?: boolean;
     /** Spend-cap runs only: the caps this invocation applies. */
     caps?: { tokens: number | null; microusd: number | null };
-  }
+  },
+  limits: AgenticStoreLimits = AGENTIC_DEFAULT_STORE_LIMITS
 ): Promise<AgenticRunSnapshot> {
   if (snapshot.execution_windows?.some((window) => window.operation_id === execution.id)) {
     return snapshot;
@@ -32,9 +34,10 @@ export async function beginAgenticExecution(
       await session.checkpoint(command),
       snapshot,
       command,
-      requestedAt
+      requestedAt,
+      limits
     );
   } catch {
-    return validateAgenticReceipt(await session.read(), snapshot, command, requestedAt);
+    return validateAgenticReceipt(await session.read(), snapshot, command, requestedAt, limits);
   }
 }

@@ -3,7 +3,12 @@ import { AgenticStateError, agenticDeadlinePassed } from './state-errors.js';
 export { AgenticStateError, type AgenticStateErrorCode } from './state-errors.js';
 import type { AgenticCursorStore } from './cursor.js';
 import { CursorValuesSchema } from './cursor.js';
-import type { AgenticStoreLimits } from './store-limits.js';
+import {
+  AGENTIC_DEFAULT_STORE_LIMITS,
+  AGENTIC_MAX_STORE_LIMITS,
+  agenticCheckpointValues,
+  type AgenticStoreLimits,
+} from './store-limits.js';
 import {
   agenticDeadlineAt,
   agenticSpendCapError,
@@ -26,13 +31,16 @@ import { AgenticColumnsSchema } from './model.js';
 import { checkpointIsConsistent } from './checkpoint-consistency.js';
 import { workMatchesRun } from './checkpoint-work.js';
 import { isBoundedCheckpoint } from './checkpoint-json.js';
-import { advanceVerifiedCheckpoint, parseVerifiedCheckpoint } from './checkpoint-verified.js';
+import { applyAgenticCheckpointWithin } from './checkpoint-verified.js';
 import {
   AgentAssignmentSchema,
   AgentAssignmentOutcomeSchema,
   parseAttemptOutcome,
 } from './assignment.js';
-import { AgenticJsonSchema, AGENTIC_MAX_ROWS } from './rows.js';
+import { AgenticJsonSchema } from './rows.js';
+
+/** The most rows any store holds. Each store checks its own limits besides. */
+const MAX_RUN_ROWS = AGENTIC_MAX_STORE_LIMITS.maxRows;
 
 const Identity = z.string().min(1).max(1024);
 const Tokens = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -72,7 +80,7 @@ const PlanInputsSchema = z
         ref: Identity,
         retrieved_at: z.iso.datetime({ offset: true }),
         columns: AgenticColumnsSchema,
-        rows: z.array(AgenticJsonSchema).max(AGENTIC_MAX_ROWS),
+        rows: z.array(AgenticJsonSchema).max(MAX_RUN_ROWS),
         // Set when the source had rows past this batch; a later run processes them.
         more: z.literal(true).optional(),
       })
@@ -125,7 +133,7 @@ const SnapshotObjectSchema = z
       .array(z.object({ id: Identity, revision: z.number().int().positive() }).strict())
       .max(256)
       .optional(),
-    work: z.array(AgenticWorkStateSchema).max(AGENTIC_MAX_ROWS),
+    work: z.array(AgenticWorkStateSchema).max(MAX_RUN_ROWS),
   })
   .strict()
   .superRefine((run, ctx) => {
@@ -198,7 +206,7 @@ const SnapshotObjectSchema = z
 export const AgenticRunSnapshotSchema = z
   .custom<unknown>(
     isBoundedCheckpoint,
-    'The run checkpoint exceeds its limits of 16 MiB and 262,144 values; process fewer or smaller rows per run'
+    `The run checkpoint exceeds its limits of ${AGENTIC_MAX_STORE_LIMITS.maxCheckpointBytes / 1048576} MiB and ${agenticCheckpointValues(AGENTIC_MAX_STORE_LIMITS).toLocaleString('en-US')} values; process fewer or smaller rows per run`
   )
   .pipe(SnapshotObjectSchema);
 export type AgenticRunSnapshot = z.infer<typeof AgenticRunSnapshotSchema>;
@@ -249,7 +257,7 @@ const CommandObjectSchema = z.discriminatedUnion('type', [
       type: z.literal('seal_work'),
       operation_id: z.literal('seal_work'),
       expected_revision: z.number().int().nonnegative(),
-      assignments: z.array(AgentAssignmentSchema).max(AGENTIC_MAX_ROWS),
+      assignments: z.array(AgentAssignmentSchema).max(MAX_RUN_ROWS),
       plan_inputs: PlanInputsSchema.optional(),
       cursor_values: z.lazy(() => CursorValuesSchema).optional(),
     })
@@ -260,7 +268,7 @@ const CommandObjectSchema = z.discriminatedUnion('type', [
       operation_id: Identity,
       expected_revision: z.number().int().nonnegative(),
       step_id: Identity,
-      assignments: z.array(AgentAssignmentSchema).max(AGENTIC_MAX_ROWS),
+      assignments: z.array(AgentAssignmentSchema).max(MAX_RUN_ROWS),
     })
     .strict(),
   z
@@ -308,22 +316,23 @@ export type AgenticCheckpointCommand = z.infer<typeof AgenticCheckpointCommandSc
 export interface AgenticStateSession {
   /** Aborts when this session can no longer prove ownership. */
   readonly ownershipLost?: AbortSignal;
+  /** What this run's storage holds, for a store that keeps runs in more than one place.
+   * Omitted: the store's `limits`. */
+  readonly limits?: AgenticStoreLimits;
   read(): Promise<AgenticRunSnapshot | null>;
   create(snapshot: AgenticRunSnapshot): Promise<AgenticRunSnapshot>;
   checkpoint(command: AgenticCheckpointCommand): Promise<AgenticRunSnapshot>;
-  /**
-   * Experimental. Applies `commands` in order, each with `applyAgenticCheckpoint`, and commits
-   * them as one write: every command or none. A command's `expected_revision` is the revision the
-   * one before it produces. A refusal of any command must leave the run unchanged. A coordinator
-   * uses this, when it is present, to commit waiting starts and finishes together. A wrapper that
-   * changes `checkpoint` must change this too, or leave it out.
-   */
+  /** Experimental. Applies `commands` in order, each as `checkpoint` would, and commits them as
+   * one write, all or none: a refusal leaves the run unchanged. Each `expected_revision` is the
+   * revision the command before it produces. Coordinators use this to commit waiting starts and
+   * finishes together. A wrapper that changes `checkpoint` must change this too, or leave it out. */
   checkpointMany?(commands: readonly AgenticCheckpointCommand[]): Promise<AgenticRunSnapshot>;
   release(): Promise<void>;
 }
 export interface AgenticStateStore {
   cursors?: AgenticCursorStore;
-  /** What this store can hold. Omitted: the default limits. */
+  /** What every run in this store can hold. Omitted: the default limits, which are also the
+   * most a supplied store can declare. */
   limits?: AgenticStoreLimits;
   /** The store removes old runs, though never one with a publication, so a cursor reservation
    * can outlive its run. Takeover may then replace it instead of reporting the run missing. */
@@ -352,17 +361,14 @@ export function digestAgenticState(value: unknown): string {
  * Shared store conformance function: one accepted attempt, conservative charges, bounded retries.
  * The result is deeply frozen and holds none of the caller's objects. Pass it back to the next
  * call and return it from `checkpoint`: a start or finish of an attempt then costs what it changed.
+ * A run larger than the default store limits fails with `AgenticStateError('limit')`.
  */
 export function applyAgenticCheckpoint(
   value: AgenticRunSnapshot,
   input: AgenticCheckpointCommand,
   now = Date.now()
 ): AgenticRunSnapshot {
-  const advanced = advanceVerifiedCheckpoint(value, input, now);
-  if (advanced) return advanced;
-  const state = AgenticRunSnapshotSchema.parse(value);
-  transitionAgenticCheckpoint(state, input, now);
-  return parseVerifiedCheckpoint(state);
+  return applyAgenticCheckpointWithin(value, input, now, AGENTIC_DEFAULT_STORE_LIMITS);
 }
 
 /** The two questions a transition asks about the whole run. */

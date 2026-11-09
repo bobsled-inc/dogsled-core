@@ -7,7 +7,9 @@ import {
 } from './execution-window.js';
 import { setImmediate as yieldToEventLoop, setTimeout as delay } from 'node:timers/promises';
 import { throwIfCancelled } from '@bobsled-inc/connections';
-import { AgenticStateError, applyAgenticCheckpoint } from './state.js';
+import { AgenticStateError } from './state.js';
+import { applyAgenticCheckpointWithin } from './checkpoint-verified.js';
+import { AGENTIC_DEFAULT_STORE_LIMITS, type AgenticStoreLimits } from './store-limits.js';
 import { invokeAgenticAssignment } from './invoke.js';
 import {
   assignmentFailed,
@@ -27,6 +29,9 @@ export async function scheduleAgenticAssignments(
     /** Saves several commands as one checkpoint, or returns null when the store saved none of
      * them. Present only for a store that offers it. */
     checkpointGroup?: (commands: AgenticCheckpointCommand[]) => Promise<AgenticRunSnapshot | null>;
+    /** What the store holds, so that a group is worked out as the store will apply it. Omitted:
+     * the default limits. */
+    checkpointLimits?: AgenticStoreLimits;
     signal: AbortSignal;
     abort: () => void;
     concurrency: number;
@@ -38,6 +43,9 @@ export async function scheduleAgenticAssignments(
   const runSignal = options.signal;
   const { concurrency, minDispatchIntervalMs } = options;
   const spendCap = snapshot.accounting === 'spend_cap';
+  const limits = options.checkpointLimits ?? AGENTIC_DEFAULT_STORE_LIMITS;
+  const predict = (state: AgenticRunSnapshot, command: AgenticCheckpointCommand) =>
+    applyAgenticCheckpointWithin(state, command, Date.now(), limits);
   const checkpoint = async (command: AgenticCheckpointCommand) => {
     snapshot = await options.checkpoint(command);
     return snapshot;
@@ -218,7 +226,7 @@ export async function scheduleAgenticAssignments(
       if (!completed.result) return true;
       try {
         const { command, charge } = finishCommand(state, completed as Finished);
-        state = applyAgenticCheckpoint(state, command, Date.now());
+        state = predict(state, command);
         if (stopAfterFinish(state, completed as Finished, charge)) return true;
       } catch {
         return true;
@@ -278,7 +286,7 @@ export async function scheduleAgenticAssignments(
           break;
         }
         try {
-          state = applyAgenticCheckpoint(state, finish.command, Date.now());
+          state = predict(state, finish.command);
         } catch {
           alone = completed as Finished;
           break;
@@ -311,7 +319,7 @@ export async function scheduleAgenticAssignments(
           }
           const command = startCommand(state, index);
           try {
-            state = applyAgenticCheckpoint(state, command, Date.now());
+            state = predict(state, command);
           } catch {
             alone = command;
             break;

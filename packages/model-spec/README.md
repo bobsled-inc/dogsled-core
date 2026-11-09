@@ -1727,8 +1727,11 @@ fields conflicts with existing progress; migrate/reset that progress explicitly.
 models.
 
 Large backlogs are processed in batches. A run takes the oldest new rows that fit
-in one batch (1,000 rows and 1 MiB), in cursor order, and leaves the rest for the
-next run; the CLI then warns that more rows are waiting. The run saves this with
+in one batch, in cursor order, and leaves the rest for the next run; the CLI then
+warns that more rows are waiting. A batch is what the run's state store holds:
+10,000 rows and 16 MiB on the row store on DuckDB, PostgreSQL and Snowflake, including
+the DuckDB run files the CLI uses by default, and 1,000 rows and 1 MiB on the file store
+and the warehouse store. See [row store limits](docs/agentic-state.md#row-store-limits). The run saves this with
 the batch, so a resumed run warns too. Rows that share the cursor
 value at the cut are never split across batches. If more rows share one cursor value
 than fit in a batch, the run fails and asks for a cursor with more distinct values.

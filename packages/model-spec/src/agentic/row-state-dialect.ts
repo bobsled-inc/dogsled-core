@@ -6,6 +6,7 @@
  */
 import { throwIfCancelled, type SqlParams, type SqlRunnerModule } from '@bobsled-inc/connections';
 import { caseName, quoteIdentifier } from '../compiler/dialect.js';
+import { AGENTIC_ROW_STORE_LIMITS, type AgenticStoreLimits } from './store-limits.js';
 
 export interface AgenticRowDb {
   run(sql: string): Promise<unknown>;
@@ -28,6 +29,9 @@ export interface AgenticCatalogColumn {
   plain: boolean;
 }
 export interface AgenticRowDialect {
+  /** What a run on this engine can hold, as measured on it. The store declares these, and they
+   * bound what a load reads: see docs/agentic-state.md. */
+  limits: Readonly<AgenticStoreLimits>;
   /** Case-folds and quotes one identifier. */
   identifier(name: string): string;
   /** The placeholder for the 1-based parameter `index`. */
@@ -142,6 +146,7 @@ const types = { text: 'VARCHAR', integer: 'BIGINT', boolean: 'BOOLEAN' };
  * store serializes the connections inside it, so `insertIfAbsent` cannot race.
  */
 export const duckDbRowDialect: AgenticRowDialect = {
+  limits: AGENTIC_ROW_STORE_LIMITS,
   headerTables: [1],
   identifier: (name) => quoteIdentifier(caseName(name, 'duckdb'), 'duckdb'),
   bind: (index) => `$${index}`,

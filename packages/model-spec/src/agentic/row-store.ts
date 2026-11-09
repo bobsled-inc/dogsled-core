@@ -2,7 +2,6 @@ import { createAgenticRowCursorStore, type AgenticLegacyCursorReader } from './r
 import { openAgenticRowSession } from './row-state.js';
 import type { AgenticRowBackend } from './row-state-tables.js';
 import type { AgenticStateStore } from './state.js';
-import { AGENTIC_DEFAULT_STORE_LIMITS } from './store-limits.js';
 
 /** Shared tables behind a fenced lease: what every SQL engine needs beyond its dialect. */
 export function createAgenticRowStore(
@@ -17,7 +16,7 @@ export function createAgenticRowStore(
   }
 ): AgenticStateStore {
   const { leaseMs, retentionMs, signal, legacyCursors, groupCommit } = options;
-  const limits = AGENTIC_DEFAULT_STORE_LIMITS;
+  const { limits } = backend.dialect;
   const cancellation = signal ? { signal } : {};
   return {
     limits,

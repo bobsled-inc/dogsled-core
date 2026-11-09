@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { buildDuckDbRunner, isDuckDbAvailable } from '@bobsled-inc/connections';
 import {
   validateAgenticReceipt,
@@ -11,7 +11,11 @@ import { duckDbOperationBackend, duckDbStateFile } from '../../src/agentic/duckd
 import type { AgenticRowDb } from '../../src/agentic/row-state-dialect.js';
 import { duckDbRowDialect } from '../../src/agentic/row-state-dialect.js';
 import { createAgenticRowWrite } from '../../src/agentic/row-state-layout.js';
-import { insertAgenticWrite, readAgenticWrites } from '../../src/agentic/row-state-rows.js';
+import {
+  agenticStoredBounds,
+  insertAgenticWrite,
+  readAgenticWrites,
+} from '../../src/agentic/row-state-rows.js';
 import { openAgenticRowSession } from '../../src/agentic/row-state.js';
 import { createAgenticRowStore } from '../../src/agentic/row-store.js';
 import { executeAgenticRun } from '../../src/agentic/run.js';
@@ -24,7 +28,10 @@ import {
   type AgenticCheckpointCommand,
   type AgenticRunSnapshot,
 } from '../../src/agentic/state.js';
-import { AGENTIC_DEFAULT_STORE_LIMITS } from '../../src/agentic/store-limits.js';
+import {
+  AGENTIC_DEFAULT_STORE_LIMITS,
+  type AgenticStoreLimits,
+} from '../../src/agentic/store-limits.js';
 import type { StatementTimeoutHandling } from '../../src/agentic/warehouse-statement-limit.js';
 import {
   currentCommand,
@@ -64,7 +71,8 @@ function faultyBackend(file: string, faults: Faults): AgenticRowBackend {
       const fault = faults.next?.(sql, params);
       if (fault === 'lose_before') throw new Error('Synthetic failure before the statement');
       const rows = await db.query(sql, params);
-      faults.returned.push(...rows);
+      // One at a time: a load can return more rows than a call takes arguments.
+      for (const row of rows) faults.returned.push(row);
       if (fault === 'lose_after') throw new Error('Synthetic lost reply');
       return rows;
     },
@@ -118,7 +126,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const backend = faultyBackend(file, faults);
     const open = (
       key: AgenticStoreScenario['key'],
-      options: { retentionMs?: number; groupCommit?: boolean } = {}
+      options: { retentionMs?: number; limits?: AgenticStoreLimits; groupCommit?: boolean } = {}
     ) =>
       openAgenticRowSession(backend, key, {
         ownership: { mode: 'lease', leaseMs: 10_000 },
@@ -451,11 +459,26 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const plant = (count: number, data: string) =>
       `INSERT INTO ${rowsTable} SELECT first(run_hash), 'off-chain-' || i, '', 0, 'planted', 'attempt', 0, 0, 1, ${data} FROM ${rowsTable}, range(${count}) AS r(i) GROUP BY i`;
     const longest = () =>
-      Math.max(
-        ...faults.returned.flatMap((row) =>
-          Object.values(row).map((value) => (typeof value === 'string' ? value.length : 0))
-        )
+      faults.returned.reduce(
+        (most, row) =>
+          Object.values(row).reduce<number>(
+            (longer, value) => Math.max(longer, typeof value === 'string' ? value.length : 0),
+            most
+          ),
+        0
       );
+    /** Copies of one of the run's own rows, which the read of its write fetches too. */
+    const copy = (count: number, data: string) =>
+      `INSERT INTO ${rowsTable} SELECT run_hash, write_id, parent, revision, operation_id, kind, item, part, parts, ${data} FROM (SELECT * FROM ${rowsTable} LIMIT 1) AS one, range(${count}) AS r(i)`;
+    /** Runs `statement` once, after the count and just before the first read of the run's rows. */
+    const afterTheCount = (statement: string) => {
+      let done = false;
+      faults.before = async (sql, db) => {
+        if (done || !/^SELECT .* IN \(/s.test(sql)) return;
+        done = true;
+        await db.query(statement, []);
+      };
+    };
 
     it('reads only the writes on the chain', async () => {
       const { open, sql } = await fixture();
@@ -471,6 +494,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     // About 1,100 statements, which takes six seconds on a CI runner.
     it('reads a chain longer than one statement can name', { timeout: 60_000 }, async () => {
       await fixture();
+      let fetches = 0;
       const connection = await duckDbOperationBackend(file(), schema).connect();
       const writes = await connection.use(async (db) => {
         await prepareAgenticRowTables(db, duckDbRowDialect, connection.namespace);
@@ -482,10 +506,36 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
           await insertAgenticWrite(stored, write, async () => {});
           parent = write.id;
         }
-        return readAgenticWrites(stored, parent, 1099, false);
+        // A long read lets its session renew the lease before each statement that fetches rows.
+        return readAgenticWrites(stored, parent, 1099, false, AGENTIC_DEFAULT_STORE_LIMITS, () => {
+          fetches++;
+          return Promise.resolve();
+        });
       });
       await connection.close();
       expect(writes.map((write) => write.revision)).toEqual(Array.from(Array(1100).keys()));
+      expect(fetches).toBe(2);
+    });
+
+    it('bounds what a load reads by the limits of the store that holds the run', async () => {
+      const { open } = await fixture();
+      const session = await open(map.key);
+      const saved = await replay(session, map, 2);
+      await session.release();
+      // A store that holds less than this run stops before it reads any of the content.
+      const smaller = await open(map.key, {
+        limits: { maxRows: 1, maxBatchBytes: 1024, maxCheckpointBytes: 1024 },
+      });
+      faults.returned = [];
+      await expect(smaller.read()).rejects.toMatchObject({
+        code: 'limit',
+        reason: 'stored_rows_exceeded',
+      });
+      expect(faults.returned.length).toBeLessThan(10);
+      await smaller.release();
+      const same = await open(map.key);
+      expect(await same.read()).toEqual(saved);
+      await same.release();
     });
 
     it.each([
@@ -504,6 +554,29 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
         reason: 'stored_rows_exceeded',
       });
       expect(faults.returned.length).toBeLessThan(10);
+      await next.release();
+    });
+
+    it.each([
+      ['rows arrive', 140_000, `''`],
+      ['text arrives', 65, `repeat('x', 1048576)`],
+    ])('stops reading when more %s after the count', async (_, count, data) => {
+      const { open } = await fixture();
+      const session = await open(map.key);
+      await replay(session, map, 2);
+      await session.release();
+      afterTheCount(copy(count, data));
+      faults.returned = [];
+      const next = await open(map.key);
+      await expect(next.read()).rejects.toMatchObject({
+        code: 'limit',
+        reason: 'stored_rows_exceeded',
+      });
+      // At most the rows the bounds have left, and none of the text that came after the count.
+      expect(faults.returned.length).toBeLessThan(
+        agenticStoredBounds(AGENTIC_DEFAULT_STORE_LIMITS).rows + 10
+      );
+      expect(longest()).toBeLessThan(1_048_576);
       await next.release();
     });
 
@@ -535,22 +608,59 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
       await next.release();
     });
 
-    it.each(['summary', 'head', 'scope', 'model', 'run_id'])(
-      'does not fetch an oversized %s',
-      async (column) => {
-        const { open, sql } = await fixture();
-        const session = await open(map.key);
-        await replay(session, map, 2);
-        await session.release();
-        // Still valid JSON in the summary, so only the cap can reject it.
-        await sql(`UPDATE ${runsTable} SET ${column} = ${column} || repeat(' ', 16777217)`);
-        faults.returned = [];
-        const next = await open(map.key);
-        await expect(next.read()).rejects.toMatchObject({ code: 'corrupt' });
-        expect(longest()).toBeLessThan(16_777_216);
-        await next.release();
-      }
-    );
+    // The summary may be as long as a snapshot the store holds; the rest are identities.
+    it.each([
+      ['summary', AGENTIC_DEFAULT_STORE_LIMITS.maxCheckpointBytes],
+      ['head', 1024],
+      ['scope', 1024],
+      ['model', 1024],
+      ['run_id', 1024],
+    ])('does not fetch an oversized %s', async (column, cap) => {
+      const { open, sql } = await fixture();
+      const session = await open(map.key);
+      await replay(session, map, 2);
+      await session.release();
+      // Still valid JSON in the summary, so only the cap can reject it.
+      await sql(`UPDATE ${runsTable} SET ${column} = ${column} || repeat(' ', ${cap + 1})`);
+      faults.returned = [];
+      const next = await open(map.key);
+      await expect(next.read()).rejects.toMatchObject({ code: 'corrupt' });
+      const fetched = faults.returned.map((row) => row[column]);
+      expect(fetched.filter((value) => typeof value === 'string' && value.length > cap)).toEqual(
+        []
+      );
+      await next.release();
+    });
+  });
+
+  it('renews its lease before work that reads the whole run, and not before an attempt', async () => {
+    const { open } = await fixture();
+    const session = await open(plan.key);
+    await replay(session, plan, 2);
+    const real = Date.now.bind(Date);
+    const renewals = () =>
+      faults.statements.filter((sql) => /^UPDATE .* SET "lease_expires"/.test(sql)).length;
+    try {
+      // A tenth of the lease has passed by this clock: too little for the heartbeat to renew.
+      let offset = 1_500;
+      vi.spyOn(Date, 'now').mockImplementation(() => real() + offset);
+      faults.statements = [];
+      // The transition refuses both commands, so only what comes before it can send anything.
+      await expect(
+        session.checkpoint({ type: 'complete', operation_id: 'complete', expected_revision: 0 })
+      ).rejects.toMatchObject({ code: 'conflict' });
+      expect(renewals()).toBe(1);
+      offset = 6_000;
+      faults.statements = [];
+      const start = plan.commands.find((command) => command.type === 'start_attempt')!;
+      await expect(session.checkpoint({ ...start, expected_revision: 0 })).rejects.toMatchObject({
+        code: 'conflict',
+      });
+      expect(faults.statements).toEqual([]);
+    } finally {
+      vi.restoreAllMocks();
+      await session.release();
+    }
   });
 
   it('reports a statement timeout as the reason the session stopped', async () => {

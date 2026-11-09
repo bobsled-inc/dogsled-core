@@ -208,7 +208,9 @@ replies with the frozen state its last command produced, which shares every unto
 the coordinator's own, so the comparison reads only what the group changed. A reply that is a copy
 takes the complete check, which is correct and costs what the run holds, as it does for one command.
 The scheduler works a group out on the coordinator's verified state, which also costs what the group
-changes. `checkpoint-growth.bench.test.ts` checks groups as well.
+changes. The scheduler, the store and the coordinator each hold a group to what the store holds, as
+they hold one command, so a run of up to 10,000 rows on the row store is grouped and checked the same
+way. `checkpoint-growth.bench.test.ts` checks groups as well.
 
 ### Progress reports
 
@@ -494,7 +496,7 @@ process of its own. On Snowflake, 30 assignments per run and one sample keep it 
 - The store conformance suite runs with groups on the Snowflake emulator and DuckDB in every test
   run, on PostgreSQL with its settings, and on a Snowflake account with
   `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1`. Its group cases cover a group refused whole, a repeated group,
-  a lost reply, and a group from an expired owner. Statement
+  a lost reply, a group from an expired owner, and a group on a run at the store's row limit. Statement
   level tests cover a crash after a group's rows, a lost reply to either statement, and a run saved in
   groups read by a session that does not group. Unit tests compare runs saved in groups with runs
   saved one command at a time.

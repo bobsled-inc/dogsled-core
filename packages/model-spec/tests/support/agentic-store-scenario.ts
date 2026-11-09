@@ -1,12 +1,15 @@
 import { buildAgenticStepAssignments } from '../../src/agentic/plan-work.js';
 import { resolveAgenticModel } from '../../src/agentic/resolve.js';
 import { executeAgenticRun } from '../../src/agentic/run.js';
-import type {
-  AgenticCheckpointCommand,
-  AgenticRunKey,
-  AgenticRunSnapshot,
-  AgenticStateStore,
+import { applyAgenticCheckpointWithin } from '../../src/agentic/checkpoint-verified.js';
+import {
+  AgenticStateError,
+  type AgenticCheckpointCommand,
+  type AgenticRunKey,
+  type AgenticRunSnapshot,
+  type AgenticStateStore,
 } from '../../src/agentic/state.js';
+import { AGENTIC_ROW_STORE_LIMITS } from '../../src/agentic/store-limits.js';
 import type { AgenticPublisher } from '../../src/agentic/publication.js';
 import type { AgenticCursorStore } from '../../src/agentic/cursor.js';
 import { updateCursorRecord, type CursorRecord } from '../../src/agentic/cursor.js';
@@ -180,4 +183,86 @@ export async function planScenario(): Promise<AgenticStoreScenario> {
     publisher,
     cursorStore: memoryCursors(),
   });
+}
+
+/** The run `sealedScenario` records. */
+export const sealedScenarioKey: AgenticRunKey = {
+  scope: 'lake',
+  model: 'pair_assessments',
+  id: 'conformance-wide',
+};
+
+const sealed = new Map<
+  number,
+  Promise<AgenticStoreScenario & { over: AgenticCheckpointCommand }>
+>();
+
+/**
+ * A single map step sealed with `assignments` assignments and nothing run yet, and `over`, the
+ * same seal with one assignment more, built as the coordinator builds them. Recorded once per
+ * size: a large seal takes a few seconds to prepare and validate.
+ */
+export function sealedScenario(
+  assignments: number
+): Promise<AgenticStoreScenario & { over: AgenticCheckpointCommand }> {
+  let scenario = sealed.get(assignments);
+  if (!scenario) {
+    scenario = recordSealed(assignments);
+    sealed.set(assignments, scenario);
+  }
+  return scenario;
+}
+
+async function recordSealed(
+  assignments: number
+): Promise<AgenticStoreScenario & { over: AgenticCheckpointCommand }> {
+  const fixture = runFixture(assignments);
+  let initial: AgenticRunSnapshot | undefined;
+  let seal: Extract<AgenticCheckpointCommand, { type: 'seal_work' }> | undefined;
+  let saved: AgenticRunSnapshot | null = null;
+  // Holds as much as the row store, keeps what the transition returns and stops at the first call.
+  const store: AgenticStateStore = {
+    limits: AGENTIC_ROW_STORE_LIMITS,
+    async acquire() {
+      return {
+        read: async () => saved,
+        create: async (snapshot) => (saved = initial = snapshot),
+        checkpoint: async (command) => {
+          if (command.type !== 'seal_work') throw new AgenticStateError('conflict');
+          seal = command;
+          saved = applyAgenticCheckpointWithin(
+            saved!,
+            command,
+            Date.now(),
+            AGENTIC_ROW_STORE_LIMITS
+          );
+          return saved;
+        },
+        release: async () => {},
+      };
+    },
+  };
+  await executeAgenticRun(fixture.host, fixture.context(), {
+    projectDirectory: '/unused',
+    stateStore: store,
+    run: { id: sealedScenarioKey.id, mode: 'start' },
+  }).catch(() => undefined);
+  if (!initial || !seal) throw new Error('The run did not seal its work');
+  const last = seal.assignments.at(-1)!;
+  const index = seal.assignments.length;
+  const row = { pair_id: `p${index}` };
+  const extra = {
+    ...structuredClone(last),
+    shard_id: String(index),
+    attempt_id: `${sealedScenarioKey.id}:${index}:template`,
+    input: { ...structuredClone(last.input), rows: [row] },
+    group_key: { ...row },
+    processed_keys: [{ ...row }],
+  };
+  return {
+    key: sealedScenarioKey,
+    initial,
+    commands: [seal],
+    over: { ...seal, assignments: [...seal.assignments, extra] },
+  };
 }
