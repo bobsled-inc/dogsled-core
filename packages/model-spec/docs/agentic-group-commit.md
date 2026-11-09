@@ -18,24 +18,23 @@ operation ID and expected revision, and is stored as the same row write. A model
 only once its start is saved. No guarantee becomes weaker; the
 [guarantees](#guarantees-one-by-one) section goes through them.
 
-On the Snowflake emulator, with statement times fitted to one real sample (the fit reproduces that
-sample's throughput at 1, 4, 8 and 16 runs), group commit gave:
+Measured on one Snowflake account, with model calls that return at once and 30 assignments per run,
+one sample of each:
 
-| Runs | Calls in flight each |      Model call | Calls a minute, one at a time → grouped |
-| ---: | -------------------: | --------------: | --------------------------------------: |
-|    1 |                    3 | returns at once |                                 20 → 92 |
-|    1 |                    3 |       2 seconds |                                 21 → 47 |
-|    1 |                    8 | returns at once |                                21 → 179 |
-|    4 |                    3 | returns at once |                                73 → 348 |
-|   16 |                    3 | returns at once |                               128 → 596 |
+| Runs | Calls in flight each | Calls a minute, one at a time → grouped | Statements per call |
+| ---: | -------------------: | --------------------------------------: | ------------------: |
+|    1 |                    3 |                                 19 → 69 |         4.47 → 1.13 |
+|    1 |                    8 |                                 22 → 99 |         4.43 → 0.73 |
+|    4 |                    3 |                                75 → 237 |         4.45 → 1.13 |
+|   16 |                    3 |                               146 → 499 |         4.52 → 1.13 |
 
-A call costs about 0.9 statements instead of 4.3, and 0.5 with eight calls in flight, and a free
-slot waits about one commit for its next call instead of every checkpoint ahead of it. **These are
-predictions from a model fitted to one sample on one account, not measurements of Snowflake:** no
-account was available here. On PostgreSQL 17, a real engine with fast statements, the statements
-per call fell the same way and runs did 1.3 to 1.7 times as many calls. The prototype passes the
-store conformance suite on the emulator, DuckDB and PostgreSQL, and runs move both ways between it
-and v0.1.10.
+A free slot waited about one commit for its next call, 1.2 to 1.5 seconds, instead of every
+checkpoint queued ahead of it, 7.6 to 18.7 seconds. No run failed, and the live store conformance suite passes on the same account with groups. An
+emulator
+with statement times fitted to an earlier sample predicted gains 13 to 33% larger; with model calls
+that take 2 seconds it predicts about twice the calls a minute at three in flight. On PostgreSQL 17
+the statements per call fell the same way and runs did 1.3 to 1.7 times as many calls. Runs move
+both ways between the prototype and v0.1.10.
 
 ## Why a run is bounded today
 
@@ -262,10 +261,52 @@ Nothing in the table is weaker, so the design stands.
 
 ## Measurement
 
-No Snowflake account was available for this, so the measurement is on the Snowflake emulator with
-Snowflake's timing put back in. **These are predictions from a model fitted to one sample, not
-measurements of Snowflake.** The [benchmark](checkpoint-transport-benchmark.md#row-store-header-tables)
-can repeat them on a real account with the same settings: see [reproduce](#reproduce).
+### On a Snowflake account
+
+The [benchmark](checkpoint-transport-benchmark.md#row-store-header-tables) ran on one Snowflake
+account from one laptop: one process per run, 30 assignments per run as in the earlier sample, model
+calls that return at once, and one sample of each. The account's warehouse is shared with other test
+connections. No run failed.
+
+| Runs | Calls in flight | Calls a minute, off → on |     Per run | Statements per call, off → on | Row inserts a second, off → on | Header update p50 / p95, off → on | Free slot waits, p50 off → on | Longest start wait, on |
+| ---: | --------------: | -----------------------: | ----------: | ----------------------------: | -----------------------------: | --------------------------------: | ----------------------------: | ---------------------: |
+|    1 |               3 |              19.1 → 68.5 | 19.1 → 68.5 |                   4.47 → 1.13 |                    0.66 → 0.49 |      633 / 1,216 → 564 / 1,012 ms |                 8.3 s → 1.2 s |                  1.3 s |
+|    1 |               8 |              22.1 → 99.2 | 22.1 → 99.2 |                   4.43 → 0.73 |                    0.76 → 0.39 |        562 / 779 → 611 / 1,048 ms |                18.7 s → 1.2 s |                  1.2 s |
+|    4 |               3 |             75.4 → 237.3 | 18.9 → 59.3 |                   4.45 → 1.13 |                    2.60 → 1.71 |          561 / 903 → 565 / 896 ms |                 7.6 s → 1.2 s |                  2.6 s |
+|   16 |               3 |            145.8 → 499.3 |  9.1 → 31.2 |                   4.52 → 1.13 |                    5.02 → 3.61 |      599 / 1,353 → 634 / 2,218 ms |                15.6 s → 1.5 s |                  4.8 s |
+
+Grouped, one run is no longer held to about 20 calls a minute: it did 3.6 times as many with three
+calls in flight and 4.5 times with eight. Statements per call fell from about 4.5 to 1.13, and to
+0.73 with eight calls in flight. A run of 30 calls carries proportionally more fixed statements than
+one of 60, so these are higher than the emulator's figures below. A free slot waited about one commit
+for its next call instead of every checkpoint queued ahead of it. The longest any call waited for its
+start to be saved was 1.3 seconds for one run, and 2.6 and 4.8 seconds with 4 and 16 runs, whose
+statements queue behind each other's.
+
+With 16 runs sharing a schema the rows table took 5.0 inserts a second one command at a time and 3.6
+grouped, each grouped insert carrying about 2.3 calls, and the schema did 3.4 times as many calls a
+minute. The earlier sample held a schema near 130 calls a minute; on this day this account did 146
+one command at a time, and 499 grouped.
+
+The live [conformance suite](../tests/integration/warehouse/README.md#agentic-store-conformance)
+passes on this account with groups, all 61 cases. Among them are a group refused whole, a repeated
+group, a lost reply, a group from an expired owner, and several calls at once through the
+coordinator, resumed without repeating any.
+
+### On the emulator
+
+The emulator predicts what an account cannot show cheaply, such as model calls that take seconds. It
+runs the store's real SQL with Snowflake's timing put back in, as the method below describes. At the
+account's settings it was optimistic about the gain, with the same statements per call:
+
+| Runs | Calls in flight | Account, one at a time → grouped | Gain | Emulator with a tail | Gain |
+| ---: | --------------: | -------------------------------: | ---: | -------------------: | ---: |
+|    1 |               3 |                      19.1 → 68.5 | 3.6× |          18.4 → 80.3 | 4.4× |
+|    1 |               8 |                      22.1 → 99.2 | 4.5× |         18.5 → 110.7 | 6.0× |
+|    4 |               3 |                     75.4 → 237.3 | 3.1× |         70.0 → 248.5 | 3.6× |
+|   16 |               3 |                    145.8 → 499.3 | 3.4× |        123.9 → 525.8 | 4.2× |
+
+Read its other figures with that margin.
 
 ### Method
 
@@ -320,7 +361,7 @@ Without groups, one call in flight per run and 30 assignments, as the sample was
 With medians alone the model is optimistic until the tables saturate, because a real statement
 sometimes takes much longer than its median. With the tail it stays within the sample's range.
 
-### One run
+### One run on the emulator
 
 With a tail:
 
@@ -351,7 +392,7 @@ The longest any call waited for its start to be saved was about one group's comm
 with medians, and under 4 seconds with the tail. A free slot used to wait for every checkpoint ahead
 of it, a median of 17 to 21 seconds with eight calls in flight, and now waits about one commit.
 
-### Runs that share a schema
+### Runs that share a schema on the emulator
 
 Three calls in flight each, with a tail:
 
@@ -385,13 +426,13 @@ sample supports it. Its inserts mostly held one row, but not all: a run of 30 as
 put about 16 × 62 statements and 16 × 91 rows into the rows table in 220 to 230 seconds: about 4.4
 statements a second, the ceiling it reported, and about 6.5 rows. A limit of 4.5 rows a second could
 not have let those rows in, so the limit counts statements, or something that grows with them, such
-as commits. A run on a real account confirms it: the benchmark reports row inserts a second.
+as commits. The account [above](#on-a-snowflake-account) confirms it: with 16 runs grouped, its rows
+table took about 16.6 rows a second in 3.6 statements.
 
 ### What this does not show
 
-- **Snowflake itself.** Everything here is the emulator with fitted timing. The first measurement on
-  a real account should run this benchmark, and the conformance suite with
-  `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1`.
+- **More than one sample.** Each Snowflake figure is one pass on one shared account on one day. In
+  the earlier sample, passes with the same number of runs differed by up to 19%.
 - **Large answers.** The workload's answers are small, so a group fits one insert. A group of large
   answers takes one insert per 256 Ki characters of them on Snowflake, which lengthens its commit
   but still sends fewer statements than one command at a time.
@@ -445,28 +486,27 @@ process of its own. On Snowflake, 30 assignments per run and one sample keep it 
   Coordinators use it when it is there and send one command at a time when it is not.
 - The coordinator in `run.ts` saves groups and checks their replies with `validateAgenticReceipts`.
   The scheduler in `schedule.ts` builds them; one command at a time is unchanged.
-- The store conformance suite runs on the Snowflake emulator and on DuckDB with groups, including a
-  group refused whole, a repeated group, a lost reply, and a group from an expired owner. Statement
+- The store conformance suite runs with groups on the Snowflake emulator and DuckDB in every test
+  run, on PostgreSQL with its settings, and on a Snowflake account with
+  `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1`. Its group cases cover a group refused whole, a repeated group,
+  a lost reply, and a group from an expired owner. Statement
   level tests cover a crash after a group's rows, a lost reply to either statement, and a run saved in
   groups read by a session that does not group. Unit tests compare runs saved in groups with runs
   saved one command at a time.
 
 ## Recommendation
 
-The design holds: nothing it changes weakens a guarantee, and on the fitted model it removes the
-bound of about 27 calls a minute on a run and lifts a shared schema about 4.7 times. Next, in order:
+The design holds: nothing it changes weakens a guarantee, and on a Snowflake account it took one run
+from about 20 to between 69 and 99 calls a minute and 16 runs sharing a schema from 146 to 499. Next,
+in order:
 
-1. Merge the prototype as it is, experimental and off by default, once the change that raises the
-   row caps has landed and this is rebased on it, with the suites and part of this measurement run
-   again.
-2. Before any host turns it on, run the live suite with `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1` and this
-   benchmark on a real Snowflake account, with 30 assignments and one sample. That checks the two
-   things the emulator cannot: that Snowflake behaves as the dialect assumes when writes come in
-   groups, and how the rows table's limit responds to inserts that carry several rows.
-3. Then let one host try it with real model calls. With calls that take seconds, expect about twice
-   the calls a minute at three in flight rather than 4.7 times: the store stops being the limit and
-   the model's time decides.
-4. Make it the default for the warehouse row store only after that, in a change of its own.
+1. Keep the option experimental and off by default for now.
+2. Let one host try it with real model calls. With calls that take seconds, expect about twice the
+   calls a minute at three in flight rather than three and a half times: the store stops being the
+   limit and the model's time decides. The emulator predicts 2.2 times there, and it overstated the
+   gain by 13 to 33% where the account could check it.
+3. Make it the default for the warehouse row store only after that, in a change of its own.
 
-With many runs in one schema the rows table is still the limit, at about 4 inserts a second, but
-each insert then carries several calls. Giving different models different schemas still divides it.
+With many runs in one schema the rows table is still the limit, at about 4 to 5 inserts a second,
+but each insert then carries several calls. Giving different models different schemas still divides
+it.
