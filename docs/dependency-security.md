@@ -188,26 +188,30 @@ The repository variable `RELEASE_HEALTH` controls behavior:
 
 The workflow also uses:
 
-- Optional secret `SLACK_DEPS_WEBHOOK_URL` for Slack notifications (skipped when unset).
-- Optional variable `HUSKY_SLACK_USER_ID`: when set, each actionable Slack message
-  starts with a mention so the org's agent can open fix PRs automatically. When unset,
-  the same text is posted without the mention for a person to act on.
+- Secret `SLACK_BOT_TOKEN`: the "Dogsled Github Alerts" bot token (same bot the app
+  repo uses). Slack notifications are skipped when unset.
+- Variable `SLACK_HEALTH_CHANNEL_ID`: the Slack channel for health check messages.
+  Falls back to `SLACK_RELEASE_CHANNEL_ID` when unset.
+- Variable `HUSKY_SLACK_USER_ID`: when set, each actionable Slack message starts
+  with a mention so the org's agent can open fix PRs automatically. When unset, the
+  same text is posted without the mention for a person to act on.
 - No GitHub App token or write permissions. The check is read-only.
 
 ### Husky hand-off
 
 When the health check finds an actionable item (stale exception or expired exemption),
-it posts a separate Slack message per finding with a precise PR instruction:
-which file to change, which value to add or remove, and which Change Type to use.
-If `HUSKY_SLACK_USER_ID` is set, the message tags the org's agent so it can open the
-PR. A person still reviews and merges, and exception changes need owner approval.
+it posts a separate Slack message per finding via the Slack Web API
+(`chat.postMessage`) with a precise PR instruction: which file to change, which value
+to add or remove, and which Change Type to use. If `HUSKY_SLACK_USER_ID` is set, the
+message tags the org's agent so it can open the PR. A person still reviews and merges,
+and exception changes need owner approval.
 
 Messages contain only validated values (npm package names, semver versions, GHSA IDs,
 and fixed file paths). Advisory titles, descriptions, and other free-text fields from
 the registry or audit output are never included.
 
-**Open question:** does Husky act on messages posted by a webhook or bot user? If not,
-a person forwards the relevant message to Husky. Confirm with the Husky maintainer.
+**Open question:** does Husky act on messages posted by the "Dogsled Github Alerts"
+bot? If not, a person forwards the relevant message to Husky.
 
 ### Code
 

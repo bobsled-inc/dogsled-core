@@ -69,7 +69,10 @@ jobs:
       - name: Run health check
         if: steps.mode.outputs.mode != 'off'
         env:
-          SLACK_DEPS_WEBHOOK_URL: ${{ secrets.SLACK_DEPS_WEBHOOK_URL }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_HEALTH_CHANNEL_ID: ${{ vars.SLACK_HEALTH_CHANNEL_ID }}
+          SLACK_RELEASE_CHANNEL_ID: ${{ vars.SLACK_RELEASE_CHANNEL_ID }}
+          HUSKY_SLACK_USER_ID: ${{ vars.HUSKY_SLACK_USER_ID }}
         run: >-
           node scripts/deps/health-check.mjs
           --output "$RUNNER_TEMP/health-check"

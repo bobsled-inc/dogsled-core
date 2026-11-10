@@ -162,30 +162,50 @@ async function main() {
   }
 }
 
+const CHANNEL_ID_RE = /^[A-Z0-9]+$/;
+
 async function sendSlackAlerts({ expiredExemptions, deadlines, consumerFindings }) {
-  const slackUrl = process.env.SLACK_DEPS_WEBHOOK_URL;
+  const botToken = process.env.SLACK_BOT_TOKEN || '';
+  const channelId =
+    process.env.SLACK_HEALTH_CHANNEL_ID || process.env.SLACK_RELEASE_CHANNEL_ID || '';
   const huskyId = process.env.HUSKY_SLACK_USER_ID || null;
 
   const allFindings = [...expiredExemptions, ...deadlines, ...consumerFindings];
   if (allFindings.length === 0) return;
 
-  if (!slackUrl) {
-    process.stdout.write('SLACK_DEPS_WEBHOOK_URL is not set; skipping Slack notification.\n');
+  if (!botToken) {
+    process.stdout.write('SLACK_BOT_TOKEN is not set; skipping Slack notifications.\n');
+    return;
+  }
+  if (!CHANNEL_ID_RE.test(channelId)) {
+    process.stdout.write('SLACK_HEALTH_CHANNEL_ID / SLACK_RELEASE_CHANNEL_ID is not configured.\n');
     return;
   }
 
-  // Post one message per actionable finding so Husky can act on each
   let sent = 0;
   for (const finding of allFindings) {
     const text = buildHuskyInstruction(finding, huskyId);
     if (!text) continue;
     try {
-      await fetch(slackUrl, {
+      const response = await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        headers: {
+          Authorization: `Bearer ${botToken}`,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify({
+          channel: channelId,
+          text,
+          unfurl_links: false,
+          unfurl_media: false,
+        }),
       });
-      sent++;
+      const result = await response.json();
+      if (!result.ok) {
+        process.stdout.write(`Slack rejected message: ${result.error}\n`);
+      } else {
+        sent++;
+      }
     } catch (error) {
       process.stdout.write(`Slack message failed: ${error.message}\n`);
     }
