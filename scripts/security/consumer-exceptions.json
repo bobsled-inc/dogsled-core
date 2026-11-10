@@ -9,7 +9,7 @@
     "expiry": "2026-11-20T00:00:00Z",
     "reason": "Databricks uses plain HTTP/HTTPS agents unless options.proxy is supplied. The loader destination, loader check command and connections runner omit proxy options, tested by regression; FTP/PAC cannot reach Client.list. See docs/dependency-security.md.",
     "parentVersions": {
-      "@databricks/sql": ["2.0.0", "2.2.0"]
+      "@databricks/sql": ["2.0.0", "2.2.0", "2.3.0", "2.4.0"]
     }
   },
   {
