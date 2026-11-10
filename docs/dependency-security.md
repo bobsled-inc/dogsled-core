@@ -119,11 +119,12 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
 
 - Databricks SQL > proxy-agent > pac-proxy-agent > get-uri > basic-ftp 5.3.1:
   GHSA-c475-qrg2-pj4r affects `Client.list()` parsing of FTP directory listings.
-  Databricks `dist/connection/connections/HttpConnection.js#getAgent` uses plain
-  HTTP/HTTPS agents unless `options.proxy` is supplied. The loader destination, loader check command and connections runner
-  construct connection options with host, path and token only. Regression tests
-  assert those exact options and the absence of `proxy`. The PAC/FTP path cannot
-  receive input through these adapters. Review by 2026-11-20.
+  In Databricks SQL 2.0.0, 2.2.0, 2.3.0 and 2.4.0,
+  `dist/connection/connections/HttpConnection.js#getAgent` uses plain HTTP/HTTPS
+  agents unless `options.proxy` is supplied. The loader destination, loader
+  check command and connections runner pass only host, path and token.
+  Regression tests assert those exact options and the absence of `proxy`. The
+  PAC/FTP path cannot receive input through these adapters. Review by 2026-11-20.
 - Snowflake and Tedious > Azure Identity > MSAL Node 5.1.1 (workspace) and
   6.0.1 (consumers): GHSA-xcx6-jx8p-x3h5 affects the authorization-code flow.
   Snowflake workload identity uses `DefaultAzureCredential`, whose chain never
