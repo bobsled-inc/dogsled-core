@@ -17,7 +17,7 @@ import {
   type AgenticCheckpointCommand,
 } from './state.js';
 import { validateAgenticReceipt } from './checkpoint-receipt.js';
-import type { AgenticStoreLimits } from './store-limits.js';
+import { agenticCheckpointLimits, type AgenticStoreLimits } from './store-limits.js';
 
 /** Preflight is protected work: it consumes the original saved deadline. */
 export async function preflightAgenticPublication(
@@ -53,8 +53,10 @@ export async function publishAgenticRun(
   signal: AbortSignal | undefined,
   limits: AgenticStoreLimits
 ): Promise<AgenticRunSnapshot> {
+  // Receipts use the checkpoint floor. Publication uses the store's declared payload bounds.
+  const checkpointLimits = agenticCheckpointLimits(limits);
   const assertOwner = async (): Promise<void> => {
-    validateAgenticReceipt(await session.read(), snapshot, undefined, Date.now(), limits);
+    validateAgenticReceipt(await session.read(), snapshot, undefined, Date.now(), checkpointLimits);
   };
   const identity = createAgenticPublicationIdentity(snapshot);
   // Saved state is frozen. A publisher receives data of its own.
@@ -66,7 +68,14 @@ export async function publishAgenticRun(
     }
     throwIfCancelled(runSignal);
     if (needsPreflight) {
-      await preflightAgenticPublication(publisher, session, snapshot, context, runSignal, limits);
+      await preflightAgenticPublication(
+        publisher,
+        session,
+        snapshot,
+        context,
+        runSignal,
+        checkpointLimits
+      );
     }
     await assertOwner();
     const claim = await publisher.claim(context.target, runSignal);
@@ -78,7 +87,8 @@ export async function publishAgenticRun(
         findings,
         processedKeys,
         claim,
-        runSignal
+        runSignal,
+        { maxRows: limits.maxRows, maxBatchBytes: limits.maxBatchBytes }
       );
       if (intent.expected_version !== claim.version) throw new AgenticStateError('corrupt');
       await assertOwner();

@@ -10,6 +10,12 @@ import {
   createAgentAssignmentOutputSchema,
   executeAgenticRun,
 } from '../../../src/agentic/index.js';
+import { AGENTIC_ROW_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
+import {
+  fullPublicationPayload,
+  publicationPayload,
+  publishPayload,
+} from '../../support/publication-payload.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 import { stringify } from 'yaml';
 import { runProject } from '../../../src/api/index.js';
@@ -71,6 +77,30 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
     };
     return { ...fixture, integration, publisher, directory, inspect };
   }
+  it('commits 10,000 rows and a 16 MiB payload', async () => {
+    const f = await setup();
+    try {
+      const context = f.context();
+      await f.publisher.preflight(context);
+      // Start with a populated target so the processed-key stage is also exercised.
+      await publishPayload(f.publisher, context, publicationPayload(context, 1));
+      const payload = fullPublicationPayload(context);
+      const receipt = await publishPayload(f.publisher, context, payload, AGENTIC_ROW_STORE_LIMITS);
+      expect(receipt.committed_version).toBe(2);
+      const expectedBytes = payload.rows.reduce(
+        (total, row) => total + Buffer.byteLength(row.assessment),
+        0
+      );
+      const [row] = await f.inspect(
+        `SELECT COUNT(*) AS n, SUM(OCTET_LENGTH(ENCODE(assessment))) AS bytes FROM main.pair_assessments`
+      );
+      expect(Number(row?.n)).toBe(10_000);
+      expect(Number(row?.bytes)).toBe(expectedBytes);
+    } finally {
+      await f.publisher.close();
+    }
+  }, 60_000);
+
   it('replaces explicit keys and keeps untouched rows and provenance across reopen', async () => {
     const f = await setup();
     f.host.executeAgent = async ({ assignment }) => ({

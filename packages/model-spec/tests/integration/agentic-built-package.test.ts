@@ -1,26 +1,46 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isDuckDbAvailable } from '@bobsled-inc/connections';
-import { createWarehouseRowStore, type AgenticPublisher } from '@bobsled-inc/model-spec/agentic';
+import { CustomRunnerRegistry, isDuckDbAvailable } from '@bobsled-inc/connections';
+import { createWarehouseRowStore } from '@bobsled-inc/model-spec/agentic';
 import { runProject } from '@bobsled-inc/model-spec/project';
 import { expect, it, vi } from 'vitest';
 import { stringify } from 'yaml';
+import { publicationWarehouse } from '../support/publication-warehouse.js';
 import { createSnowflakeEmulator } from '../support/snowflake-emulator.js';
 import { runFixture } from '../unit/agentic/state-fixture.js';
 
 it.skipIf(!(await isDuckDbAvailable()))(
-  'runs more than 1,000 rows through the built agentic and project entries',
+  'publishes more than 1,000 rows through the built agentic and project entries',
   async () => {
     const emulator = await createSnowflakeEmulator();
     const directory = mkdtempSync(join(tmpdir(), 'agentic-built-package-'));
     try {
       const rowCount = 1_001;
-      const { host, model } = runFixture(rowCount);
+      const { host, model, context } = runFixture(rowCount);
       model.limits.tokens = 1_000_000;
       model.sources.pairs!.ref = 'lake.pairs';
       host.inputs['lake.pairs'] = host.inputs.undecided_pairs!;
-      const execute = vi.spyOn(host, 'executeAgent');
+      host.supportedDialects = ['postgres'];
+      const execute = vi.spyOn(host, 'executeAgent').mockImplementation(async ({ assignment }) => ({
+        contract_version: 2,
+        attempt_id: assignment.attempt_id,
+        status: 'succeeded',
+        usage: { status: 'unknown', reason: 'unavailable' },
+        rows: [
+          {
+            pair_id: assignment.group_key.pair_id,
+            assessment: 'review',
+            _dogsled_evidence: null,
+            _dogsled_confidence: null,
+            _dogsled_reason: null,
+          },
+        ],
+      }));
+      const publication = publicationWarehouse('postgres', { context: context() });
+      publication.absent();
+      const customRunners = new CustomRunnerRegistry();
+      customRunners.register('postgres', 'password', async () => publication.runner);
 
       for (const folder of ['integrations', 'sources', 'models']) {
         mkdirSync(join(directory, folder));
@@ -31,9 +51,9 @@ it.skipIf(!(await isDuckDbAvailable()))(
           spec_version: '1',
           type: 'integration',
           name: 'lake',
-          source_type: 'duckdb',
-          connection: { schema: 'main' },
-          auth: { type: 'file', path: join(directory, 'lake.duckdb'), read_only: false },
+          source_type: 'postgres',
+          connection: { host: 'localhost', database: 'test', port: 5432, schema: 'main' },
+          auth: { type: 'password', user: 'test', password: 'test-only' },
         })
       );
       writeFileSync(
@@ -54,26 +74,15 @@ it.skipIf(!(await isDuckDbAvailable()))(
         schema: 'checkpoints',
         customRunners: emulator.customRunners,
       });
-      // Confirm publication through the host contract so this exercises the row store's bounds.
-      const publisher: AgenticPublisher = {
-        preflight: async () => {},
-        claim: async () => ({ version: 0, fence: 'fence' }),
-        prepare: async (_context, identity) => ({
-          identity,
-          expected_version: 0,
-          stage: `stage_${identity.operation_id}`,
-        }),
-        inspect: async () => null,
-        commit: async (intent) => ({ intent, committed_version: 1 }),
-        close: async () => {},
-      };
-      const result = await runProject(directory, { agentic: { host, stateStore, publisher } });
+      const result = await runProject(directory, { customRunners, agentic: { host, stateStore } });
 
       expect(result.ok, result.byIntegration[0]?.error).toBe(true);
       expect(result.byIntegration[0]?.executionResults).toMatchObject([
         { modelName: model.name, status: 'success' },
       ]);
       expect(execute).toHaveBeenCalledTimes(rowCount);
+      expect(publication.target()).toHaveLength(rowCount);
+      expect(publication.receipts()).toHaveLength(1);
     } finally {
       await emulator.close();
       rmSync(directory, { recursive: true, force: true });

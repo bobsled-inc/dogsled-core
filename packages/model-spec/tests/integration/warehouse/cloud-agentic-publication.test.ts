@@ -13,6 +13,8 @@ import {
 import { createLocalAgenticStateStore, executeAgenticRun } from '../../../src/agentic/index.js';
 import { createSqlAgenticPublisher } from '../../../src/agentic/sql-publisher.js';
 import { publicationNames } from '../../../src/agentic/sql-publication-dialect.js';
+import { AGENTIC_ROW_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
+import { fullPublicationPayload, publishPayload } from '../../support/publication-payload.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 
 const integrationPath = process.env.DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION;
@@ -153,6 +155,25 @@ describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () 
         await inspect(`SELECT pair_id, assessment, _dogsled_run_id FROM ${names.target}`)
       ).toEqual([{ pair_id: 'p1', assessment: "first ' finding", _dogsled_run_id: 'first' }]);
       expect(Number((await inspect(`SELECT COUNT(*) AS n FROM ${names.receipts}`))[0]?.n)).toBe(2);
+
+      if (integration.source_type === 'snowflake') {
+        const payload = fullPublicationPayload(context());
+        operationIds.add(payload.identity.operation_id);
+        const receipt = await publishPayload(
+          reopened,
+          context(),
+          payload,
+          AGENTIC_ROW_STORE_LIMITS
+        );
+        expect(receipt.committed_version).toBe(3);
+        const [row] = await inspect(
+          `SELECT COUNT(*) AS n, SUM(OCTET_LENGTH(assessment)) AS bytes FROM ${names.target}`
+        );
+        expect(Number(row?.n)).toBe(10_000);
+        expect(Number(row?.bytes)).toBe(
+          payload.rows.reduce((total, row) => total + Buffer.byteLength(row.assessment), 0)
+        );
+      }
     } finally {
       for (const publisher of publishers) await publisher.close();
       const tables = [...operationIds].flatMap((id) => [names.stage(id), names.stage(id, '_k')]);
@@ -165,5 +186,5 @@ describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () 
         await rm(directory, { recursive: true, force: true });
       }
     }
-  }, 300_000);
+  }, 600_000);
 });

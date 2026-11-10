@@ -216,25 +216,46 @@ export async function insertPublicationRows(
   signal?: AbortSignal
 ) {
   const names = columns.map((column) => quoteIdentifier(column.name, dialect)).join(', ');
-  // Each statement has bounded bindings. Nulls have explicit SQL types (BigQuery cannot infer them).
-  for (let start = 0; start < rows.length; start += 25) {
+  const insert = `INSERT INTO ${relation} (${names}) `;
+  const separator = ' UNION ALL ';
+  // At most 25 * 256 binds on PostgreSQL, below its 65,535-parameter limit.
+  const maxInsertRows = dialect === 'snowflake' ? 128 : 25;
+  // Budget for SQL and JSON-encoded bindings, with room for the driver's request envelope.
+  const cloudByteBudget = 1_000_000 - 1024 - Buffer.byteLength(JSON.stringify(insert));
+  let next = 0;
+  while (next < rows.length) {
     throwIfCancelled(signal);
     const params: SqlParamValue[] = [];
-    const selects = rows.slice(start, start + 25).map(
-      (row) =>
-        `SELECT ${columns
-          .map((column) => {
-            const value = (row as Record<string, JsonValue>)[column.name];
-            if (value == null) return `CAST(NULL AS ${publicationType(column.type, dialect)})`;
-            params.push(typeof value === 'object' ? JSON.stringify(value) : value);
-            const bind = db.p(params.length);
-            return (column.type === 'object' || column.type === 'array') && dialect !== 'postgres'
-              ? `PARSE_JSON(${bind})`
-              : `CAST(${bind} AS ${publicationType(column.type, dialect)})`;
-          })
-          .join(', ')}`
-    );
-    await db.query(`INSERT INTO ${relation} (${names}) ${selects.join(' UNION ALL ')}`, params);
+    const selects: string[] = [];
+    let bytesLeft = cloudByteBudget;
+    for (; next < rows.length && selects.length < maxInsertRows; next++) {
+      const row = rows[next] as Record<string, JsonValue>;
+      const rowParams: SqlParamValue[] = [];
+      // Nulls have explicit SQL types (BigQuery cannot infer them).
+      const values = columns.map((column) => {
+        const value = row[column.name];
+        if (value == null) return `CAST(NULL AS ${publicationType(column.type, dialect)})`;
+        rowParams.push(typeof value === 'object' ? JSON.stringify(value) : value);
+        const bind = db.p(params.length + rowParams.length);
+        return (column.type === 'object' || column.type === 'array') && dialect !== 'postgres'
+          ? `PARSE_JSON(${bind})`
+          : `CAST(${bind} AS ${publicationType(column.type, dialect)})`;
+      });
+      const select = `SELECT ${values.join(', ')}`;
+      if (dialect !== 'postgres') {
+        const rowBytes = rowParams.reduce<number>(
+          (size, value) => size + Buffer.byteLength(JSON.stringify(String(value))) + 48,
+          Buffer.byteLength(select) + separator.length
+        );
+        // Snowflake's 1 MB guideline allows larger statements. A valid row that
+        // exceeds the budget once encoded gets its own statement.
+        if (selects.length && rowBytes > bytesLeft) break;
+        bytesLeft -= rowBytes;
+      }
+      params.push(...rowParams);
+      selects.push(select);
+    }
+    await db.query(insert + selects.join(separator), params);
   }
 }
 export async function atomicPublication(

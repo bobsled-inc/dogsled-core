@@ -535,8 +535,9 @@ take what `createWarehouseCheckpointStore` takes, such as `customRunners`, `toke
 `signal`. A supplied store comes first in [the selection](#where-state-is-stored), so it also applies
 to a project that configures `checkpoint_store`. Other engines are rejected.
 
-The built-in SQL publishers accept up to 1,000 output rows and 1,000 processed keys per
-publication. For larger publications, supply `agentic.publisher`.
+The built-in publishers use the run's store limits for output rows and processed keys.
+On the row store each batch can hold up to 10,000 rows and 16 MiB. Other stores default
+to 1,000 rows and 1 MiB.
 
 The three tables live in the given schema, shared by every run, so the store creates no tables per
 run. Ownership is the same fenced lease, and each statement has the same
