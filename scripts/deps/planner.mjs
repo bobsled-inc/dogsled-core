@@ -407,8 +407,114 @@ export function formatPlanSummary(plan, source) {
         );
         lines.push('');
         break;
+      case 'update-exception':
+        lines.push(`### Update consumer exception: \`${action.package}\` (${action.advisory})`);
+        lines.push(`- Path: \`${action.path}\``);
+        for (const [parent, info] of Object.entries(action.newParentVersions ?? {})) {
+          lines.push(`- \`${parent}\`: ${info.reviewed.join(', ')} -> ${info.actual}`);
+        }
+        if (action.isLookahead) lines.push('- Source: 3-day look-ahead');
+        lines.push('');
+        break;
+      case 'consumer-alert':
+        lines.push(`### Consumer audit alert: \`${action.package}\` (${action.advisory})`);
+        lines.push(`- Path: \`${action.path}\``);
+        if (action.isLookahead) lines.push('- Source: 3-day look-ahead');
+        lines.push('');
+        break;
     }
   }
 
   return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Consumer audit finding classification
+// ---------------------------------------------------------------------------
+
+/**
+ * Classify an unhandled consumer audit finding as either a stale exception
+ * (same advisory/package/version/path exists but parentVersions mismatch)
+ * or a genuinely new finding.
+ *
+ * @param {object} finding  {advisory, package, version, path, disposition:'unhandled'}
+ * @param {Array}  exceptions  consumer-exceptions.json entries
+ * @param {number} now  current timestamp
+ * @returns {{ classification: 'stale-exception', exception: object } | { classification: 'new-finding' }}
+ */
+export function classifyConsumerFinding(finding, exceptions, now = Date.now()) {
+  for (const entry of exceptions) {
+    if (entry.advisory !== finding.advisory) continue;
+    if (entry.package !== finding.package) continue;
+    if (!entry.versions?.includes(finding.version)) continue;
+    const pathMatch = finding.path === entry.path || finding.path.endsWith(`>${entry.path}`);
+    if (!pathMatch) continue;
+    if (!entry.owner || !entry.reason) continue;
+    if (!Number.isFinite(Date.parse(entry.expiry)) || now >= Date.parse(entry.expiry)) continue;
+
+    // All conditions match except parentVersions — the triage already
+    // rejected this exception, so parentVersions must be the cause.
+    return { classification: 'stale-exception', exception: entry };
+  }
+  return { classification: 'new-finding' };
+}
+
+/**
+ * Build plan actions from consumer audit findings.
+ *
+ * @param {Array}  findings  unhandled findings from triageConsumerAudit
+ * @param {object} parentVersionMap  { "advisory:pkg:ver:path": { parent: actualVersion } }
+ * @param {Array}  exceptions  consumer-exceptions.json entries
+ * @param {boolean} isLookahead  true if these came from the 3-day look-ahead run
+ * @param {number}  now
+ */
+export function buildConsumerAuditActions(
+  findings,
+  parentVersionMap,
+  exceptions,
+  isLookahead = false,
+  now = Date.now()
+) {
+  const actions = [];
+  const seen = new Set();
+
+  for (const finding of findings) {
+    if (finding.disposition !== 'unhandled') continue;
+    const key = `${finding.advisory}:${finding.package}:${finding.version}:${finding.path}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const result = classifyConsumerFinding(finding, exceptions, now);
+
+    if (result.classification === 'stale-exception') {
+      const actualParents = parentVersionMap[key] ?? {};
+      const newParentVersions = {};
+      for (const [parent, reviewed] of Object.entries(result.exception.parentVersions ?? {})) {
+        const actual = actualParents[parent];
+        if (actual && !reviewed.includes(actual)) {
+          newParentVersions[parent] = { reviewed, actual };
+        }
+      }
+      actions.push({
+        kind: 'update-exception',
+        advisory: finding.advisory,
+        package: finding.package,
+        version: finding.version,
+        path: finding.path,
+        exception: result.exception,
+        newParentVersions,
+        isLookahead,
+      });
+    } else {
+      actions.push({
+        kind: 'consumer-alert',
+        advisory: finding.advisory,
+        package: finding.package,
+        version: finding.version,
+        path: finding.path,
+        isLookahead,
+      });
+    }
+  }
+  return actions;
 }

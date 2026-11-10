@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildConsumerAuditActions,
   buildPlan,
   classifyAdvisory,
+  classifyConsumerFinding,
   findExpiredExemptions,
   findFirstPatchedVersion,
   findUpcomingDeadlines,
@@ -517,5 +519,194 @@ describe('formatPlanSummary', () => {
     expect(md).toContain('### Remove exemption: `pkg-b@1.5.0`');
     expect(md).toContain('### Deadline warning: audit-ci');
     expect(md).toContain('2 days');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Consumer audit finding classification (fixtures from run 42786680563)
+// ---------------------------------------------------------------------------
+
+const FIXTURE_EXCEPTIONS = [
+  {
+    advisory: 'GHSA-c475-qrg2-pj4r',
+    package: 'basic-ftp',
+    versions: ['5.3.1'],
+    path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+    owner: 'security/release maintainers',
+    status: 'not_applicable',
+    expiry: '2026-11-20T00:00:00Z',
+    reason: 'Databricks uses plain HTTP/HTTPS agents; FTP/PAC cannot reach Client.list.',
+    parentVersions: {
+      '@databricks/sql': ['2.0.0', '2.2.0'],
+    },
+  },
+  {
+    advisory: 'GHSA-xcx6-jx8p-x3h5',
+    package: '@azure/msal-node',
+    versions: ['6.0.1'],
+    path: 'snowflake-sdk>@azure/identity>@azure/msal-node',
+    owner: 'security/release maintainers',
+    status: 'not_applicable',
+    expiry: '2026-11-05T00:00:00Z',
+    reason: 'Authorization-code flow not used.',
+    parentVersions: {
+      'snowflake-sdk': ['3.4.0'],
+      '@azure/identity': ['4.13.3', '4.14.0'],
+    },
+  },
+];
+
+describe('classifyConsumerFinding', () => {
+  const now = Date.parse('2026-11-10T00:00:00Z');
+
+  it('identifies a stale exception when parentVersions mismatch', () => {
+    const finding = {
+      advisory: 'GHSA-c475-qrg2-pj4r',
+      package: 'basic-ftp',
+      version: '5.3.1',
+      location: 'node_modules/basic-ftp',
+      path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+      disposition: 'unhandled',
+    };
+    const result = classifyConsumerFinding(finding, FIXTURE_EXCEPTIONS, now);
+    expect(result.classification).toBe('stale-exception');
+    expect(result.exception.advisory).toBe('GHSA-c475-qrg2-pj4r');
+  });
+
+  it('identifies a new finding when no exception matches', () => {
+    const finding = {
+      advisory: 'GHSA-brand-new',
+      package: 'unknown-pkg',
+      version: '1.0.0',
+      location: 'node_modules/unknown-pkg',
+      path: 'unknown-pkg',
+      disposition: 'unhandled',
+    };
+    const result = classifyConsumerFinding(finding, FIXTURE_EXCEPTIONS, now);
+    expect(result.classification).toBe('new-finding');
+  });
+
+  it('does not match an expired exception', () => {
+    const finding = {
+      advisory: 'GHSA-xcx6-jx8p-x3h5',
+      package: '@azure/msal-node',
+      version: '6.0.1',
+      location: 'node_modules/@azure/msal-node',
+      path: 'snowflake-sdk>@azure/identity>@azure/msal-node',
+      disposition: 'unhandled',
+    };
+    // Exception expires 2026-11-05, now is 2026-11-10
+    const result = classifyConsumerFinding(finding, FIXTURE_EXCEPTIONS, now);
+    expect(result.classification).toBe('new-finding');
+  });
+
+  it('matches when the finding path ends with the exception path', () => {
+    const finding = {
+      advisory: 'GHSA-c475-qrg2-pj4r',
+      package: 'basic-ftp',
+      version: '5.3.1',
+      location: 'node_modules/basic-ftp',
+      path: 'dogsled>@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+      disposition: 'unhandled',
+    };
+    const result = classifyConsumerFinding(finding, FIXTURE_EXCEPTIONS, now);
+    expect(result.classification).toBe('stale-exception');
+  });
+});
+
+describe('buildConsumerAuditActions', () => {
+  const now = Date.parse('2026-11-10T00:00:00Z');
+
+  it('produces update-exception for stale and consumer-alert for new', () => {
+    const findings = [
+      {
+        advisory: 'GHSA-c475-qrg2-pj4r',
+        package: 'basic-ftp',
+        version: '5.3.1',
+        location: 'node_modules/basic-ftp',
+        path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+        disposition: 'unhandled',
+      },
+      {
+        advisory: 'GHSA-new-one',
+        package: 'new-vuln',
+        version: '1.0.0',
+        location: 'node_modules/new-vuln',
+        path: 'some-driver>new-vuln',
+        disposition: 'unhandled',
+      },
+    ];
+    const parentVersionMap = {
+      'GHSA-c475-qrg2-pj4r:basic-ftp:5.3.1:@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp':
+        { '@databricks/sql': '2.3.0' },
+    };
+
+    const actions = buildConsumerAuditActions(
+      findings,
+      parentVersionMap,
+      FIXTURE_EXCEPTIONS,
+      false,
+      now
+    );
+
+    expect(actions).toHaveLength(2);
+
+    const update = actions.find((a) => a.kind === 'update-exception');
+    expect(update).toBeTruthy();
+    expect(update.advisory).toBe('GHSA-c475-qrg2-pj4r');
+    expect(update.newParentVersions['@databricks/sql'].actual).toBe('2.3.0');
+    expect(update.newParentVersions['@databricks/sql'].reviewed).toEqual(['2.0.0', '2.2.0']);
+
+    const alert = actions.find((a) => a.kind === 'consumer-alert');
+    expect(alert).toBeTruthy();
+    expect(alert.advisory).toBe('GHSA-new-one');
+  });
+
+  it('marks look-ahead findings', () => {
+    const findings = [
+      {
+        advisory: 'GHSA-c475-qrg2-pj4r',
+        package: 'basic-ftp',
+        version: '5.3.1',
+        location: 'node_modules/basic-ftp',
+        path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+        disposition: 'unhandled',
+      },
+    ];
+    const actions = buildConsumerAuditActions(findings, {}, FIXTURE_EXCEPTIONS, true, now);
+    expect(actions[0].isLookahead).toBe(true);
+  });
+
+  it('deduplicates by advisory:package:version:path', () => {
+    const finding = {
+      advisory: 'GHSA-c475-qrg2-pj4r',
+      package: 'basic-ftp',
+      version: '5.3.1',
+      location: 'node_modules/basic-ftp',
+      path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+      disposition: 'unhandled',
+    };
+    const actions = buildConsumerAuditActions(
+      [finding, finding],
+      {},
+      FIXTURE_EXCEPTIONS,
+      false,
+      now
+    );
+    expect(actions).toHaveLength(1);
+  });
+
+  it('skips non-unhandled findings', () => {
+    const findings = [
+      {
+        advisory: 'GHSA-c475-qrg2-pj4r',
+        package: 'basic-ftp',
+        version: '5.3.1',
+        disposition: 'not_applicable',
+        path: 'x',
+      },
+    ];
+    const actions = buildConsumerAuditActions(findings, {}, FIXTURE_EXCEPTIONS, false, now);
+    expect(actions).toHaveLength(0);
   });
 });

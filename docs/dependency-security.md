@@ -183,6 +183,28 @@ The bot also handles clean-up:
 - **Approaching deadlines**: pings Slack and adds a step-summary entry for `audit-ci`
   and consumer-exception expiries within seven days.
 
+### Consumer audit
+
+When `DEPS_BOT` is `on`, the bot also runs the same consumer audit that
+`security:release` uses: it builds the packed tarball, installs it in clean
+consumer projects with every supported driver combination, and audits the
+resulting trees. It runs this twice:
+
+- **Current cutoff**: the same release-age cutoff a release would use today.
+- **3-day look-ahead**: the cutoff shifted forward three days, catching driver
+  or transitive versions that are about to age into the release window.
+
+Unhandled findings are classified:
+
+- **Stale exception**: a consumer exception exists for the same advisory, package,
+  version and path, but its `parentVersions` does not include the version the
+  consumer tree now resolves. This happens when an optional driver publishes a new
+  version that pulls in the same transitive tree. The bot opens a PR adding the new
+  parent version to the exception, with a diff link and an owner checklist asking to
+  re-confirm the reachability reasoning. The PR is labeled for owner approval.
+- **New finding**: no matching exception exists at all. A Slack ping and step-summary
+  entry are produced, but no PR. A person writes the exception or fix.
+
 ### PR mechanics
 
 - One PR per action, on branch `deps-bot/<kind>/<pkg>-<version>`.

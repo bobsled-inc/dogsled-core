@@ -62,11 +62,30 @@ Some introductory text.
 More content here.
 `;
 
+const FIXTURE_CONSUMER_EXCEPTIONS = [
+  {
+    advisory: 'GHSA-c475-qrg2-pj4r',
+    package: 'basic-ftp',
+    versions: ['5.3.1'],
+    path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+    owner: 'security/release maintainers',
+    status: 'not_applicable',
+    expiry: '2026-11-20T00:00:00Z',
+    reason: 'FTP path unreachable.',
+    parentVersions: { '@databricks/sql': ['2.0.0', '2.2.0'] },
+  },
+];
+
 function makeTempRepo() {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'deps-bot-test-'));
   mkdirSync(path.join(dir, 'docs'), { recursive: true });
+  mkdirSync(path.join(dir, 'scripts', 'security'), { recursive: true });
   writeFileSync(path.join(dir, 'pnpm-workspace.yaml'), FIXTURE_WORKSPACE);
   writeFileSync(path.join(dir, 'docs', 'dependency-security.md'), FIXTURE_DOCS);
+  writeFileSync(
+    path.join(dir, 'scripts', 'security', 'consumer-exceptions.json'),
+    JSON.stringify(FIXTURE_CONSUMER_EXCEPTIONS, null, 2)
+  );
   return dir;
 }
 
@@ -655,5 +674,145 @@ describe('executeActions', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it('creates a PR for an update-exception patch', async () => {
+    const dir = makePlanDir(
+      [
+        {
+          kind: 'update-exception',
+          advisory: 'GHSA-c475-qrg2-pj4r',
+          package: 'basic-ftp',
+          version: '5.3.1',
+          path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+        },
+      ],
+      [
+        {
+          id: '000-update-exception-basic-ftp',
+          branch: 'deps-bot/update-exception/basic-ftp-GHSA-c475-qrg2-pj4r',
+          labels: ['needs-owner-approval'],
+        },
+      ]
+    );
+    try {
+      const { gitOps, githubOps, githubLog } = makeFakeOps();
+      const results = await executeActions(dir, gitOps, githubOps);
+      expect(results).toHaveLength(1);
+      expect(results[0].skipped).toBe(false);
+      expect(githubLog.find((e) => e.op === 'createPR').labels).toEqual(['needs-owner-approval']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyAction: update-exception
+// ---------------------------------------------------------------------------
+
+describe('applyAction update-exception', () => {
+  it('adds the new parent version to consumer-exceptions.json', () => {
+    const dir = makeTempRepo();
+    try {
+      applyAction(
+        {
+          kind: 'update-exception',
+          advisory: 'GHSA-c475-qrg2-pj4r',
+          package: 'basic-ftp',
+          version: '5.3.1',
+          path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+          newParentVersions: {
+            '@databricks/sql': { reviewed: ['2.0.0', '2.2.0'], actual: '2.3.0' },
+          },
+        },
+        dir
+      );
+
+      const exceptions = JSON.parse(
+        readFileSync(path.join(dir, 'scripts', 'security', 'consumer-exceptions.json'), 'utf8')
+      );
+      const entry = exceptions.find((e) => e.advisory === 'GHSA-c475-qrg2-pj4r');
+      expect(entry.parentVersions['@databricks/sql']).toContain('2.3.0');
+      expect(entry.parentVersions['@databricks/sql']).toContain('2.0.0');
+      expect(entry.parentVersions['@databricks/sql']).toContain('2.2.0');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not duplicate an already-listed parent version', () => {
+    const dir = makeTempRepo();
+    try {
+      applyAction(
+        {
+          kind: 'update-exception',
+          advisory: 'GHSA-c475-qrg2-pj4r',
+          package: 'basic-ftp',
+          version: '5.3.1',
+          path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+          newParentVersions: {
+            '@databricks/sql': { reviewed: ['2.0.0', '2.2.0'], actual: '2.2.0' },
+          },
+        },
+        dir
+      );
+
+      const exceptions = JSON.parse(
+        readFileSync(path.join(dir, 'scripts', 'security', 'consumer-exceptions.json'), 'utf8')
+      );
+      const entry = exceptions.find((e) => e.advisory === 'GHSA-c475-qrg2-pj4r');
+      const databricksVersions = entry.parentVersions['@databricks/sql'];
+      expect(databricksVersions.filter((v) => v === '2.2.0')).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Branch naming and PR metadata for new action kinds
+// ---------------------------------------------------------------------------
+
+describe('update-exception metadata', () => {
+  it('branchName', () => {
+    expect(
+      branchName({
+        kind: 'update-exception',
+        package: 'basic-ftp',
+        advisory: 'GHSA-c475-qrg2-pj4r',
+      })
+    ).toBe('deps-bot/update-exception/basic-ftp-GHSA-c475-qrg2-pj4r');
+  });
+
+  it('commitMessage', () => {
+    expect(
+      commitMessage({
+        kind: 'update-exception',
+        package: 'basic-ftp',
+        advisory: 'GHSA-c475-qrg2-pj4r',
+      })
+    ).toMatch(/Update consumer exception.*basic-ftp/);
+  });
+
+  it('prLabels includes needs-owner-approval', () => {
+    expect(prLabels({ kind: 'update-exception' })).toEqual(['needs-owner-approval']);
+  });
+
+  it('prBody includes owner checklist', () => {
+    const body = prBody({
+      kind: 'update-exception',
+      package: 'basic-ftp',
+      advisory: 'GHSA-c475-qrg2-pj4r',
+      path: '@databricks/sql>proxy-agent>pac-proxy-agent>get-uri>basic-ftp',
+      newParentVersions: {
+        '@databricks/sql': { reviewed: ['2.0.0', '2.2.0'], actual: '2.3.0' },
+      },
+      isLookahead: false,
+    });
+    expect(body).toContain('Owner checklist');
+    expect(body).toContain('reachability reasoning');
+    expect(body).toContain('2.3.0');
+    expect(body).toContain('`dependencies`');
   });
 });

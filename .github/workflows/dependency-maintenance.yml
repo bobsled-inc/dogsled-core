@@ -14,7 +14,7 @@ env:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     permissions:
       contents: read
     outputs:
@@ -60,6 +60,23 @@ jobs:
           private-key: ${{ secrets.DEPS_BOT_APP_PRIVATE_KEY }}
           permission-contents: read
           permission-vulnerability-alerts: read
+
+      - name: Build workspace
+        if: steps.mode.outputs.mode == 'on'
+        run: pnpm build
+        timeout-minutes: 15
+
+      - name: Setup SQLite
+        if: steps.mode.outputs.mode == 'on'
+        run: pnpm run setup:sqlite
+
+      - name: Run consumer audit with look-ahead
+        if: steps.mode.outputs.mode == 'on'
+        run: >-
+          node scripts/deps/consumer-check.mjs
+          --output "$RUNNER_TEMP/deps-plan"
+          --lookahead-days 3
+        timeout-minutes: 20
 
       - name: Run dependency planner
         if: steps.mode.outputs.mode != 'off'

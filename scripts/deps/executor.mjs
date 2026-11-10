@@ -33,6 +33,8 @@ export function branchName(action) {
       return `deps-bot/remove-exemption/${pkg}-${action.version}`;
     case 'remove-override':
       return `deps-bot/remove-override/${pkg}-${action.pinnedVersion}`;
+    case 'update-exception':
+      return `deps-bot/update-exception/${pkg}-${action.advisory}`;
     default:
       return null;
   }
@@ -48,6 +50,8 @@ export function commitMessage(action) {
       return `Remove aged exemption for ${action.package}@${action.version}`;
     case 'remove-override':
       return `Remove unneeded override for ${action.package}`;
+    case 'update-exception':
+      return `Update consumer exception for ${action.package} (${action.advisory})`;
     default:
       return null;
   }
@@ -101,6 +105,40 @@ export function prBody(action) {
         `Without the override, pnpm resolves \`${action.resolvedWithout}\`, which is at or above the pin.`
       );
       break;
+    case 'update-exception': {
+      lines.push(
+        `Updates the consumer exception for \`${action.package}\` (${action.advisory}) to add a new parent version.`
+      );
+      lines.push('');
+      lines.push(`- Path: \`${action.path}\``);
+      lines.push('');
+      lines.push('### Parent version changes');
+      lines.push('');
+      for (const [parent, info] of Object.entries(action.newParentVersions ?? {})) {
+        lines.push(
+          `- \`${parent}\`: reviewed ${info.reviewed.join(', ')} — now \`${info.actual}\``
+        );
+        lines.push(
+          `  - [Diff ${info.reviewed.at(-1)} → ${info.actual}](https://www.npmjs.com/package/${parent}/v/${info.actual})`
+        );
+      }
+      lines.push('');
+      lines.push('### Owner checklist');
+      lines.push('');
+      lines.push(
+        '- [ ] Confirmed the reachability reasoning still holds for the new parent version'
+      );
+      lines.push(
+        '- [ ] Reviewed the parent package diff between the reviewed version and the new one'
+      );
+      if (action.isLookahead) {
+        lines.push('');
+        lines.push(
+          '> This finding is from the 3-day look-ahead. The parent version has not yet aged into the release window.'
+        );
+      }
+      break;
+    }
   }
 
   lines.push('');
@@ -119,7 +157,9 @@ export function prBody(action) {
 }
 
 export function prLabels(action) {
-  return action.kind === 'exempt' ? ['needs-owner-approval'] : [];
+  if (action.kind === 'exempt' || action.kind === 'update-exception')
+    return ['needs-owner-approval'];
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -377,6 +417,33 @@ export function applyAction(action, repoRoot) {
       modified.add(wsPath);
       break;
     }
+
+    case 'update-exception': {
+      const exceptionsPath = path.join(repoRoot, 'scripts', 'security', 'consumer-exceptions.json');
+      const exceptions = JSON.parse(readFileSync(exceptionsPath, 'utf8'));
+      for (const entry of exceptions) {
+        if (
+          entry.advisory !== action.advisory ||
+          entry.package !== action.package ||
+          !entry.versions?.includes(action.version)
+        )
+          continue;
+        const pathMatch = action.path === entry.path || action.path.endsWith(`>${entry.path}`);
+        if (!pathMatch) continue;
+
+        for (const [parent, info] of Object.entries(action.newParentVersions ?? {})) {
+          if (entry.parentVersions?.[parent]) {
+            if (!entry.parentVersions[parent].includes(info.actual)) {
+              entry.parentVersions[parent].push(info.actual);
+            }
+          }
+        }
+        break;
+      }
+      writeFileSync(exceptionsPath, `${JSON.stringify(exceptions, null, 2)}\n`);
+      modified.add(exceptionsPath);
+      break;
+    }
   }
 
   writeFileSync(wsPath, ws);
@@ -389,7 +456,13 @@ export function applyAction(action, repoRoot) {
 // Prepare phase (plan job, no write token)
 // ---------------------------------------------------------------------------
 
-const ACTIONABLE_KINDS = new Set(['bump', 'exempt', 'remove-exemption', 'remove-override']);
+const ACTIONABLE_KINDS = new Set([
+  'bump',
+  'exempt',
+  'remove-exemption',
+  'remove-override',
+  'update-exception',
+]);
 
 export function prepareActions(plan, repoRoot, outputDir, exec) {
   const git = exec ?? ((args) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' }));

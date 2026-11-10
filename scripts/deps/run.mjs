@@ -17,7 +17,7 @@
  *   SLACK_DEPS_WEBHOOK_URL  Optional Slack incoming webhook
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
@@ -229,6 +229,27 @@ async function main() {
   }
 
   if (mode === 'prepare') {
+    // Merge consumer audit actions if the consumer-check ran first
+    const consumerActionsPath = path.join(outputDir, 'consumer-actions.json');
+    if (existsSync(consumerActionsPath)) {
+      const consumerActions = JSON.parse(readFileSync(consumerActionsPath, 'utf8'));
+      if (consumerActions.length > 0) {
+        process.stdout.write(
+          `Merging ${consumerActions.length} consumer audit action(s) into plan.\n`
+        );
+        plan.actions.push(...consumerActions);
+        // Re-count
+        plan.summary.updateException = consumerActions.filter(
+          (a) => a.kind === 'update-exception'
+        ).length;
+        plan.summary.consumerAlert = consumerActions.filter(
+          (a) => a.kind === 'consumer-alert'
+        ).length;
+        // Re-write plan.json with merged actions
+        writeFileSync(planPath, JSON.stringify(plan, null, 2));
+      }
+    }
+
     process.stdout.write('Preparing patches...\n');
     const prepared = prepareActions(plan, repoRoot, outputDir);
     const withPatch = prepared.filter((p) => !p.empty);
