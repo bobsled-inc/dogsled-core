@@ -16,11 +16,12 @@ import {
 } from '@bobsled-inc/connections';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgenticColumnsSchema, type AgenticColumn } from './model.js';
-import { boundedAgenticRows, createAgenticRowSchema } from './rows.js';
+import { createAgenticRowSchema } from './rows.js';
 import { digestAgenticState } from './state.js';
 import {
   AgenticPublicationIntentSchema,
   AgenticPublicationReceiptSchema,
+  validateAgenticPublicationRows,
   type AgenticPublisher,
 } from './publication.js';
 import { stageRef, validatePublicationChecks, publicationCheckSql } from './duckdb-checks.js';
@@ -139,12 +140,13 @@ export async function createDuckDbAgenticPublisher(
         return { version, fence };
       }, signal);
     },
-    async prepare(context, identity, rows, processedKeys, claim, signal) {
+    async prepare(context, identity, rows, processedKeys, claim, signal, limits) {
       const intent = AgenticPublicationIntentSchema.parse({
         identity,
         expected_version: claim.version,
         stage: `stage_${identity.operation_id}`,
       });
+      validateAgenticPublicationRows(rows, processedKeys, limits);
       if (
         identity.target !== context.target ||
         identity.schema_digest !== digestAgenticState(context.resolved.output_columns) ||
@@ -153,8 +155,6 @@ export async function createDuckDbAgenticPublisher(
       ) {
         throw new Error('Publication payload identity mismatch');
       }
-      boundedAgenticRows(rows, 'The rows to publish');
-      boundedAgenticRows(processedKeys, 'The processed keys to publish');
       const columns = context.resolved.output_columns;
       const keys = context.resolved.model.materialization.keys;
       const keyColumns = keys.map((key) => columns.find((column) => column.name === key)!);

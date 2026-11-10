@@ -13,6 +13,15 @@ import { digestAgenticState } from '../../../src/agentic/state.js';
 import { runFixture, MemoryStateStore } from './state-fixture.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import { publicationWarehouse } from '../../support/publication-warehouse.js';
+import {
+  fullPublicationPayload,
+  publicationPayload,
+  publishPayload,
+} from '../../support/publication-payload.js';
+import {
+  AGENTIC_DEFAULT_STORE_LIMITS,
+  AGENTIC_ROW_STORE_LIMITS,
+} from '../../../src/agentic/store-limits.js';
 import { publicationCheckSql } from '../../../src/agentic/duckdb-checks.js';
 
 const resolve = vi.hoisted(() => vi.fn());
@@ -94,6 +103,68 @@ function database(dialect: PublicationDialect, systemSchema?: string) {
   resolve.mockImplementation(async () => db.runner);
   return db;
 }
+
+it.each(['snowflake', 'postgres'] as const)(
+  '%s stages 10,000 rows and 16 MiB in bounded statements',
+  async (dialect) => {
+    const db = database(dialect);
+    const publisher = await createSqlAgenticPublisher(configs[dialect]);
+    await publisher.preflight(db.context);
+    const payload = fullPublicationPayload(db.context);
+    expect(payload.rows).toHaveLength(10_000);
+    expect(Buffer.byteLength(JSON.stringify(payload.rows))).toBe(16 * 1024 * 1024);
+    const receipt = await publishPayload(publisher, db.context, payload, AGENTIC_ROW_STORE_LIMITS);
+    expect(receipt.intent.identity).toEqual(payload.identity);
+    expect(db.target().slice(3)).toEqual(payload.rows);
+
+    for (const suffix of ['', '_k']) {
+      const stage = db.names.stage(payload.identity.operation_id, suffix);
+      const inserts = db.runner.query.mock.calls.filter(([sql]) =>
+        sql.startsWith('INSERT INTO ' + stage + ' (')
+      );
+      expect(inserts.length).toBeGreaterThan(1);
+      for (const [sql, params] of inserts) {
+        if (!Array.isArray(params)) throw new Error('Expected positional bindings');
+        if (dialect === 'snowflake') {
+          const bindings = Object.fromEntries(
+            params.map((value, index) => [index + 1, { type: 'TEXT', value: String(value) }])
+          );
+          expect(Buffer.byteLength(JSON.stringify({ sqlText: sql, bindings }))).toBeLessThan(
+            1_000_000
+          );
+        } else {
+          expect(params.length).toBeLessThanOrEqual(65_535);
+        }
+      }
+    }
+    await publisher.close();
+  }
+);
+
+it('rejects 1,001 rows or processed keys at publication under the default store limits', async () => {
+  const db = database('postgres');
+  const publisher = await createSqlAgenticPublisher(configs.postgres);
+  const { context } = db;
+  const { identity, rows, keys } = publicationPayload(context, 1_001);
+  const claim = await publisher.claim(context.target);
+  const rejected = { code: 'limit', reason: 'too_many_rows' };
+
+  await expect(publisher.prepare(context, identity, rows, keys, claim)).rejects.toMatchObject(
+    rejected
+  );
+  await expect(
+    publisher.prepare(context, identity, rows, keys, claim, undefined, AGENTIC_DEFAULT_STORE_LIMITS)
+  ).rejects.toMatchObject({ ...rejected, message: expect.stringContaining('The rows to publish') });
+  const noRows = { ...identity, results_digest: digestAgenticState([]) };
+  await expect(
+    publisher.prepare(context, noRows, [], keys, claim, undefined, AGENTIC_DEFAULT_STORE_LIMITS)
+  ).rejects.toMatchObject({
+    ...rejected,
+    message: expect.stringContaining('The processed keys to publish'),
+  });
+  expect(db.manifests()).toHaveLength(0);
+  await publisher.close();
+});
 
 for (const dialect of Object.keys(configs) as PublicationDialect[]) {
   it(`${dialect} keeps generated publication names within 63 ASCII bytes`, () => {

@@ -5,6 +5,13 @@ import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgenticRunKeySchema, digestAgenticState } from './state.js';
 import type { AgenticRunSnapshot } from './state.js';
 import type { AgenticProbeContext, ExperimentalAgenticProbe } from './probe.js';
+import { boundedAgenticRows } from './rows.js';
+import { AgenticStateError } from './state-errors.js';
+import {
+  AGENTIC_DEFAULT_STORE_LIMITS,
+  AGENTIC_MAX_STORE_LIMITS,
+  type AgenticStoreLimits,
+} from './store-limits.js';
 
 const Digest = z.string().regex(/^[a-f0-9]{64}$/);
 const Version = z
@@ -52,6 +59,7 @@ export type AgenticPublicationContext = Omit<
   AgenticProbeContext,
   'signal' | 'maxRows' | 'maxBytes'
 >;
+type AgenticPublicationLimits = Readonly<Pick<AgenticStoreLimits, 'maxRows' | 'maxBatchBytes'>>;
 export interface AgenticPublicationClaim {
   version: number;
   fence: string;
@@ -66,7 +74,9 @@ export interface AgenticPublisher {
     rows: readonly JsonValue[],
     processedKeys: readonly JsonValue[],
     claim: AgenticPublicationClaim,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    /** The run's effective store bounds. Built-in publishers default to 1,000 rows and 1 MiB. */
+    limits?: AgenticPublicationLimits
   ): Promise<AgenticPublicationIntent>;
   inspect(
     intent: AgenticPublicationIntent,
@@ -78,6 +88,31 @@ export interface AgenticPublisher {
     signal?: AbortSignal
   ): Promise<AgenticPublicationReceipt>;
   close(): Promise<void>;
+}
+
+/** Keep direct publisher calls within the same maximum bounds as coordinated runs. */
+export function validateAgenticPublicationRows(
+  rows: readonly JsonValue[],
+  processedKeys: readonly JsonValue[],
+  limits: AgenticPublicationLimits = AGENTIC_DEFAULT_STORE_LIMITS
+): void {
+  const { maxRows, maxBatchBytes } = limits;
+  if (
+    !Number.isSafeInteger(maxRows) ||
+    maxRows < 1 ||
+    maxRows > AGENTIC_MAX_STORE_LIMITS.maxRows ||
+    !Number.isSafeInteger(maxBatchBytes) ||
+    maxBatchBytes < 1 ||
+    maxBatchBytes > AGENTIC_MAX_STORE_LIMITS.maxBatchBytes
+  ) {
+    throw new AgenticStateError('limit', {
+      reason: 'invalid_store_limits',
+      message: 'Publication requires valid store row and byte limits.',
+    });
+  }
+  const bounds = { maxRows, maxBatchBytes };
+  boundedAgenticRows(rows, 'The rows to publish', bounds);
+  boundedAgenticRows(processedKeys, 'The processed keys to publish', bounds);
 }
 
 export function agenticPublicationData(run: AgenticRunSnapshot): {

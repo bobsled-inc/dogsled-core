@@ -610,7 +610,7 @@ async function executeOwnedAgenticRun(
         runSignal,
         reusedCompletion,
         options.signal,
-        checkpointLimits
+        limits
       );
     }
     if (incremental && snapshot.publication === 'confirmed' && !snapshot.cursors_committed) {

@@ -7,6 +7,12 @@ import { resolveRunner, type PostgresIntegration } from '@bobsled-inc/connection
 import { createDefaultAgenticStateStore, executeAgenticRun } from '../../../src/agentic/index.js';
 import { createSqlAgenticPublisher } from '../../../src/agentic/sql-publisher.js';
 import { publicationNames, publicationType } from '../../../src/agentic/sql-publication-dialect.js';
+import { AGENTIC_ROW_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
+import {
+  fullPublicationPayload,
+  publicationPayload,
+  publishPayload,
+} from '../../support/publication-payload.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 
 // Run against a dedicated database with DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres.
@@ -84,6 +90,30 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
       stages,
     };
   }
+  it('commits 10,000 rows and a 16 MiB payload', async () => {
+    const f = await setup();
+    try {
+      const context = f.context();
+      await f.publisher.preflight(context);
+      // Start with a populated target so the processed-key stage is also exercised.
+      await publishPayload(f.publisher, context, publicationPayload(context, 1));
+      const payload = fullPublicationPayload(context);
+      const receipt = await publishPayload(f.publisher, context, payload, AGENTIC_ROW_STORE_LIMITS);
+      expect(receipt.committed_version).toBe(2);
+      const expectedBytes = payload.rows.reduce(
+        (total, row) => total + Buffer.byteLength(row.assessment),
+        0
+      );
+      const [row] = await f.inspect(
+        `SELECT COUNT(*) AS n, SUM(OCTET_LENGTH(assessment)) AS bytes FROM ${f.names.target}`
+      );
+      expect(Number(row?.n)).toBe(10_000);
+      expect(Number(row?.bytes)).toBe(expectedBytes);
+    } finally {
+      await f.publisher.close();
+    }
+  }, 60_000);
+
   it('replaces explicit keys and keeps untouched rows and provenance across reopen', async () => {
     const f = await setup();
     f.host.executeAgent = async ({ assignment }) => ({
