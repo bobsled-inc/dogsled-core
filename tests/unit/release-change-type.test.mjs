@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   CHANGE_TYPES,
+  autoReleaseBumpForChangeType,
+  changeTypeForPullRequest,
+  highestBump,
   parseChangeType,
   releaseBumpForChangeType,
 } from '../../scripts/release/change-type.mjs';
@@ -46,12 +49,76 @@ describe('release change types', () => {
     expect(releaseBumpForChangeType(changeType)).toBe(bump);
   });
 
+  it.each([
+    ['major', 'major'],
+    ['minor', 'minor'],
+    ['patch', 'patch'],
+    ['performance', 'patch'],
+    ['dependencies', 'patch'],
+    ['internal', 'patch'],
+    ['documentation', 'patch'],
+    ['tests', 'patch'],
+    ['skip-release', null],
+  ])('automatically releases %s as %s', (changeType, bump) => {
+    expect(autoReleaseBumpForChangeType(changeType)).toBe(bump);
+  });
+
+  it('maps every accepted change type for automatic releases', () => {
+    for (const changeType of CHANGE_TYPES)
+      expect(() => autoReleaseBumpForChangeType(changeType)).not.toThrow();
+    expect(() => autoReleaseBumpForChangeType('feature')).toThrow('Unsupported change type');
+  });
+
+  it.each([
+    [[], null],
+    [[null, null], null],
+    [[null, 'patch'], 'patch'],
+    [['patch', 'minor', null], 'minor'],
+    [['major', 'patch', 'minor'], 'major'],
+  ])('takes the highest of %j as %s', (bumps, expected) => {
+    expect(highestBump(bumps)).toBe(expected);
+  });
+
+  it('rejects an unknown bump', () => {
+    expect(() => highestBump(['patch', 'feature'])).toThrow('Unsupported release bump');
+  });
+
   it('parses exactly one selected checkbox', () => {
     expect(parseChangeType(bodyFor('minor'))).toBe('minor');
   });
 
   it('rejects missing selections', () => {
     expect(() => parseChangeType(bodyFor(null))).toThrow('Exactly one');
+    expect(() => parseChangeType('')).toThrow('empty');
+    expect(() => parseChangeType('## Summary\n\nNo type')).toThrow('not found');
+  });
+
+  it('rejects two selections', () => {
+    const body = '## Change Type\n\n- [x] `patch`\n- [X] `minor`\n\n## Notes\n';
+    expect(() => parseChangeType(body)).toThrow('Found 2: patch, minor');
+  });
+
+  it('rejects an unknown selection', () => {
+    expect(() => parseChangeType('## Change Type\n\n- [x] `feature`\n')).toThrow(
+      'Invalid change-type label: "feature"'
+    );
+  });
+
+  it('ignores checkboxes outside the Change Type section', () => {
+    const body = '## Checklist\n\n- [x] `major`\n\n## Change Type\n\n- [x] `tests`\n';
+    expect(parseChangeType(body)).toBe('tests');
+  });
+
+  it('treats Dependabot pull requests as dependency updates and parses everyone else', () => {
+    expect(changeTypeForPullRequest({ user: { login: 'dependabot[bot]' }, body: '' })).toBe(
+      'dependencies'
+    );
+    expect(
+      changeTypeForPullRequest({ user: { login: 'contributor' }, body: bodyFor('major') })
+    ).toBe('major');
+    expect(() => changeTypeForPullRequest({ user: { login: 'contributor' }, body: null })).toThrow(
+      'empty'
+    );
   });
 
   it('keeps the accepted values explicit', () => {

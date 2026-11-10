@@ -126,7 +126,23 @@ function missingAssets(run, repo, tag, release, assets) {
   return missing;
 }
 
-export function finalizeGitHubRelease({ repo, tag, commit, prerelease, assets }, run = runGh) {
+export function breakingBanner(breaking, pullRequests = '') {
+  if (breaking !== true) return null;
+  if (!/^(?:[1-9]\d*(?:,[1-9]\d*)*)?$/.test(pullRequests))
+    throw new Error('Breaking pull requests must be a comma-separated list of numbers.');
+  const source = pullRequests
+    ? ` from ${pullRequests
+        .split(',')
+        .map((number) => `#${number}`)
+        .join(', ')}`
+    : '';
+  return `> [!WARNING]\n> **Breaking:** this release contains breaking changes${source}. Read them before upgrading.\n`;
+}
+
+export function finalizeGitHubRelease(
+  { repo, tag, commit, prerelease, assets, notes = null },
+  run = runGh
+) {
   if (!REPO_PATTERN.test(repo ?? '')) throw new Error('A GitHub owner/repository is required.');
   if (!TAG_PATTERN.test(tag ?? '')) throw new Error('A release version tag is required.');
   if (!COMMIT_PATTERN.test(commit ?? '')) throw new Error('The full release commit is required.');
@@ -152,6 +168,7 @@ export function finalizeGitHubRelease({ repo, tag, commit, prerelease, assets },
       repo,
       '--verify-tag',
       '--generate-notes',
+      ...(notes ? [`--notes=${notes}`] : []),
       ...flags,
       ...expected.map((asset) => asset.spec),
     ]);
@@ -183,12 +200,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const flag = process.env.RELEASE_PRERELEASE;
   if (flag !== 'true' && flag !== 'false')
     throw new Error('RELEASE_PRERELEASE must be true or false.');
+  const breaking = process.env.RELEASE_BREAKING;
+  if (![undefined, '', 'true', 'false'].includes(breaking))
+    throw new Error('RELEASE_BREAKING must be true or false.');
   const outcome = finalizeGitHubRelease({
     repo: process.env.GH_REPO,
     tag: process.env.RELEASE_TAG,
     commit: process.env.RELEASE_COMMIT,
     prerelease: flag === 'true',
     assets: process.argv.slice(2),
+    notes: breakingBanner(breaking === 'true', process.env.RELEASE_BREAKING_PRS ?? ''),
   });
   process.stdout.write(`${JSON.stringify(outcome)}\n`);
 }

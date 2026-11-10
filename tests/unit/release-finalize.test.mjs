@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  breakingBanner,
   finalizeGitHubRelease,
   parseAssetSpecs,
 } from '../../scripts/release/finalize-github-release.mjs';
@@ -121,6 +122,30 @@ describe('idempotent GitHub release finalization', () => {
       'release-report.json',
       'sbom.json',
     ]);
+  });
+
+  it('prepends a Breaking banner to generated notes for breaking releases', () => {
+    const gh = fakeGh();
+    const notes = breakingBanner(true, '12,15');
+    expect(notes).toContain('**Breaking:** this release contains breaking changes from #12, #15.');
+    finalize(gh, { notes });
+    expect(gh.writes()).toEqual([
+      [
+        'release',
+        'create',
+        tag,
+        '--repo',
+        repo,
+        '--verify-tag',
+        '--generate-notes',
+        `--notes=${notes}`,
+        ...assets,
+      ],
+    ]);
+    expect(breakingBanner(true, '')).toContain('breaking changes. Read them');
+    expect(breakingBanner(false, '12')).toBeNull();
+    for (const invalid of ['12;rm', '#12', '0', '12,'])
+      expect(() => breakingBanner(true, invalid)).toThrow('comma-separated');
   });
 
   it('creates previews as prereleases that never become latest', () => {
