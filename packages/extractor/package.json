@@ -97,7 +97,7 @@
     "@bobsled-inc/connections": "workspace:*"
   },
   "optionalDependencies": {
-    "pg": "^8.4.0"
+    "pg": "^8.23.1"
   },
   "peerDependencies": {
     "@clickhouse/client": ">=1.0.0",
@@ -123,7 +123,7 @@
     "@clickhouse/client": "catalog:",
     "@google-cloud/bigquery": "catalog:",
     "@types/node": "catalog:dev-packages",
-    "@types/pg": "8.20.0",
+    "@types/pg": "8.23.1",
     "@typescript-eslint/eslint-plugin": "catalog:eslint",
     "@typescript-eslint/parser": "catalog:eslint",
     "eslint": "catalog:eslint",
@@ -135,7 +135,7 @@
     "typescript": "catalog:dev-packages",
     "@vitest/coverage-v8": "catalog:testing",
     "vitest": "catalog:testing",
-    "@types/ssh2": "1.15.5",
+    "@types/ssh2": "1.15.6",
     "ssh2": "1.17.0"
   },
   "description": "YAML-driven API, warehouse, file, and MCP extraction runtime for Dogsled.",
