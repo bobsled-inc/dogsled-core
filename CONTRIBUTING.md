@@ -81,7 +81,7 @@ a merge does not publish a package. Maintainers can help classify a small fix.
 The network dependency audit runs on pull requests that change `package.json`,
 `pnpm-lock.yaml` or `pnpm-workspace.yaml`, on main, the weekly schedule and
 manual dispatch, and in release artifact checks. Run `pnpm security:audit` when
-network access is available. The 21-day dependency release age remains in force, except for owner-approved
+network access is available. The 7-day dependency release age remains in force, except for owner-approved
 exact-version security-fix exemptions listed in `docs/dependency-security.md`.
 
 ## Commits and pull requests

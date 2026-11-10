@@ -147,13 +147,14 @@ catalogs:
     fast-check: 4.9.0
     vitest: 4.1.12
 
-# pnpm expresses the release-age gate in minutes. Apply the full three-week
-# delay to every package without package-level bypasses.
-minimumReleaseAge: 30240
+# pnpm expresses the release-age gate in minutes. Apply the full one-week
+# delay to every package without package-level bypasses. Lowered from 21 to 7
+# days on 2026-11-09 (owner decision): major JS projects use 1–8 days, 7 is
+# the common strict value, Yarn's default is 7, and known npm hijacks were
+# pulled within hours. Never lowered further without an owner decision.
+minimumReleaseAge: 10080
 
 # Owner-approved security-fix exemptions: exact versions only, each listed with
 # its removal date in docs/dependency-security.md. Remove an entry once that
 # version meets the release age above.
-minimumReleaseAgeExclude:
-  - body-parser@2.4.0
-  - follow-redirects@1.16.2
+minimumReleaseAgeExclude: []

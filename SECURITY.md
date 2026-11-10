@@ -75,7 +75,7 @@ every Monday at 10:17 UTC while GitHub schedules remain active, on pushes to
 `dependency_audit` is enabled. Release artifact checks run it as well. Pull
 request checks keep the network audit separate from the local development gate.
 
-Dependency updates observe a 21-day minimum release age, except for
+Dependency updates observe a 7-day minimum release age, except for
 owner-approved exact-version security-fix exemptions listed in
 `docs/dependency-security.md`. Weekly Dependabot npm
 and GitHub Actions updates use the same cooldown and group minor/patch updates.

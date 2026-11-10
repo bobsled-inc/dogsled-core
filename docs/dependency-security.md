@@ -2,7 +2,7 @@
 
 The npm release gate audits the packed package in two clean consumer projects:
 all supported optional warehouse drivers at their published minimum versions,
-and all at their latest versions allowed by the peer ranges and the three-week
+and all at their latest versions allowed by the peer ranges and the one-week
 release-age policy. It derives the driver inventory from the internal workspace
 manifests. Both installs use npm's `--before` cutoff, disable lifecycle scripts,
 and inherit no workspace overrides. The only exception is the exact-version
@@ -37,9 +37,12 @@ uploaded as a seven-day Actions artifact, and attached to the GitHub release.
 
 ## Security-fix release-age exemptions
 
-pnpm installs only versions published at least 21 days earlier
-(`minimumReleaseAge: 30240` minutes), and the clean consumer audits use the same
-cutoff. That default is never lowered. The only exception is a published
+pnpm installs only versions published at least 7 days earlier
+(`minimumReleaseAge: 10080` minutes), and the clean consumer audits use the same
+cutoff. Lowered from 21 to 7 days on 2026-11-09 (owner decision): major JS
+projects use 1--8 days, 7 is the common strict value, Yarn's default is 7, and
+known npm hijacks were pulled within hours. Never lowered further without an
+owner decision. The only exception is a published
 security fix for an advisory that affects Dogsled: the owner may exempt that
 exact version (`name@version`, never a name or pattern) in
 `minimumReleaseAgeExclude`. Before approval, check that the release comes from
@@ -50,14 +53,9 @@ removed once it meets the normal age. A structural test fails when an entry is
 not an exact version, is missing from this table, or is still present after its
 removal date.
 
-Approved by the owner on 2026-10-28. `npm audit signatures` verified the registry
-signature of every version below, and none has an install script.
-follow-redirects@1.16.2 was separately approved and signature-verified on 2026-11-02; it has no install script.
-
-| Package@version           | Advisories fixed    | Published            | Remove after         | Evidence                                                                                                                                                                                   |
-| ------------------------- | ------------------- | -------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `body-parser@2.4.0`       | GHSA-27r3-jxmh-p828 | 2026-10-22T11:39:38Z | 2026-11-12T11:39:38Z | npm trusted publishing from `expressjs/body-parser` `npm-publish.yml` at `v2.4.0` (SLSA provenance)                                                                                        |
-| `follow-redirects@1.16.2` | GHSA-mrwp-f3q8-3g9p | 2026-10-25T21:32:25Z | 2026-11-15T21:32:25Z | Same maintainers (rubenverborgh, olalonde) as earlier releases; npm registry signature verified (SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U); the package has never had provenance |
+No exemptions are active. All three previous entries (`body-parser@2.4.0`,
+`fast-uri@3.1.9`, `follow-redirects@1.16.2`) met the 7-day release age and
+were removed on 2026-11-09.
 
 ## Driver security minimums
 
@@ -134,10 +132,10 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   Dogsled's SQL Server destination hard-codes `authentication.type: 'default'`
   (SQL login), so Tedious never constructs an Azure credential. Re-reviewed on 2026-11-05: these authentication paths are unchanged.
   Azure Identity 4.14.1 now uses fixed MSAL Node ^7.1.0. It was published on
-  2026-10-29 and meets the 21-day release-age rule on 2026-11-19T22:16:07.100Z.
+  2026-10-29 and meets the 7-day release-age rule on 2026-11-05T22:16:07.100Z.
   The owner requested extending the existing exceptions to 2026-11-24 while
-  waiting for that update, which leaves working days to land it. Remove them by
-  upgrading: the upgrade is possible from 2026-11-19T22:16:07Z and must land before
+  waiting for that update. Under the 7-day policy, the upgrade is possible now
+  (age-eligible since 2026-11-05T22:16:07Z) and must land before
   2026-11-24T00:00:00Z. Do not extend them again. The package versions and allowed
   paths stay the same.
 

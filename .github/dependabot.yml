@@ -8,7 +8,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 0
     cooldown:
-      default-days: 21
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: [minor, patch]
@@ -18,7 +18,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 0
     cooldown:
-      default-days: 21
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: [minor, patch]
