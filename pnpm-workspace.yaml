@@ -65,6 +65,8 @@ overrides:
   toml: 5.0.1
   # GHSA-4p3w-j4w9-5jqw: fixed date parsing.
   moment: 2.31.0
+  # GHSA-xcx6-jx8p-x3h5: fixed MSAL Node authorization-code flow.
+  '@azure/identity': 4.14.1
   # GHSA-hxh3-vqpv-xpqv: fixed SDK server dependency.
   hono: 4.13.11
   # GHSA-p498-v437-472g: fixed development filesystem dependency.

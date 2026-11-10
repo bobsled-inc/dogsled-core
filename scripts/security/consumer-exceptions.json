@@ -11,32 +11,5 @@
     "parentVersions": {
       "@databricks/sql": ["2.0.0", "2.2.0", "2.3.0", "2.4.0"]
     }
-  },
-  {
-    "advisory": "GHSA-xcx6-jx8p-x3h5",
-    "package": "@azure/msal-node",
-    "versions": ["6.0.1"],
-    "path": "snowflake-sdk>@azure/identity>@azure/msal-node",
-    "owner": "security/release maintainers",
-    "status": "not_applicable",
-    "expiry": "2026-11-24T00:00:00Z",
-    "reason": "The advisory affects the MSAL authorization-code flow. Snowflake workload identity uses DefaultAzureCredential, whose chain never calls acquireTokenByCode; its broker and VS Code credentials need an Azure Identity plugin, and Dogsled registers none. Tedious loads Azure Identity but never constructs an Azure credential, because Dogsled's SQL Server destination hard-codes authentication type 'default'. Re-reviewed on 2026-11-05. Azure Identity 4.14.1 uses fixed msal-node ^7.1.0 and becomes age-eligible on 2026-11-19T22:16:07.100Z. Remove it by upgrading: the upgrade is possible from 2026-11-19T22:16:07Z and must land before 2026-11-24T00:00:00Z. Do not extend it again. See docs/dependency-security.md.",
-    "parentVersions": {
-      "snowflake-sdk": ["3.4.0"],
-      "@azure/identity": ["4.13.3", "4.14.0"]
-    }
-  },
-  {
-    "advisory": "GHSA-xcx6-jx8p-x3h5",
-    "package": "@azure/msal-node",
-    "versions": ["6.0.1"],
-    "path": "tedious>@azure/identity>@azure/msal-node",
-    "owner": "security/release maintainers",
-    "status": "not_applicable",
-    "expiry": "2026-11-24T00:00:00Z",
-    "reason": "The advisory affects the MSAL authorization-code flow. Snowflake workload identity uses DefaultAzureCredential, whose chain never calls acquireTokenByCode; its broker and VS Code credentials need an Azure Identity plugin, and Dogsled registers none. Tedious loads Azure Identity but never constructs an Azure credential, because Dogsled's SQL Server destination hard-codes authentication type 'default'. Re-reviewed on 2026-11-05. Azure Identity 4.14.1 uses fixed msal-node ^7.1.0 and becomes age-eligible on 2026-11-19T22:16:07.100Z. Remove it by upgrading: the upgrade is possible from 2026-11-19T22:16:07Z and must land before 2026-11-24T00:00:00Z. Do not extend it again. See docs/dependency-security.md.",
-    "parentVersions": {
-      "@azure/identity": ["4.13.3", "4.14.0"]
-    }
   }
 ]
