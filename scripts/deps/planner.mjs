@@ -284,3 +284,109 @@ export function formatHealthReport({
 
   return lines.join('\n');
 }
+
+// ---------------------------------------------------------------------------
+// Slack message building with prompt-injection safety
+// ---------------------------------------------------------------------------
+
+const NPM_NAME_RE = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
+const GHSA_RE = /^GHSA-[\w-]+$/;
+const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[\w.]+)?$/;
+
+const SAFE_FILE_PATHS = new Set([
+  'scripts/security/consumer-exceptions.json',
+  'pnpm-workspace.yaml',
+  'docs/dependency-security.md',
+]);
+
+/**
+ * Validate and sanitize a value for inclusion in a Slack message.
+ * Returns the value unchanged if it passes, or null if it fails.
+ */
+export function validateNpmName(name) {
+  return typeof name === 'string' && NPM_NAME_RE.test(name) ? name : null;
+}
+
+export function validateVersion(version) {
+  return typeof version === 'string' && SEMVER_RE.test(version) ? version : null;
+}
+
+export function validateGhsaId(id) {
+  return typeof id === 'string' && GHSA_RE.test(id) ? id : null;
+}
+
+export function validateFilePath(filePath) {
+  return SAFE_FILE_PATHS.has(filePath) ? filePath : null;
+}
+
+/**
+ * Build a Slack instruction for Husky for a single actionable finding.
+ * Uses ONLY validated values and fixed template text. No free-text fields
+ * from the registry or audit output (advisory titles, descriptions, notes,
+ * reasons) ever reach the message.
+ *
+ * @param {object} finding  A classified finding or expiry result
+ * @param {string|null} huskyId  HUSKY_SLACK_USER_ID or null
+ * @returns {string|null} The message text, or null if validation fails
+ */
+export function buildHuskyInstruction(finding, huskyId) {
+  const mention = huskyId ? `<@${huskyId}> ` : '';
+
+  switch (finding.kind) {
+    case 'stale-exception': {
+      const pkg = validateNpmName(finding.package);
+      const version = validateVersion(finding.version);
+      const advisory = validateGhsaId(finding.advisory);
+      if (!pkg || !version || !advisory) return null;
+
+      const parentLines = [];
+      for (const [parent, info] of Object.entries(finding.staleParents ?? {})) {
+        const parentName = validateNpmName(parent);
+        const actual = validateVersion(info.actual);
+        const lastReviewed = validateVersion(info.reviewed?.at(-1));
+        if (!parentName || !actual) continue;
+        parentLines.push(`add \`${parentName}\` \`${actual}\` to \`parentVersions\``);
+        if (lastReviewed) {
+          parentLines.push(
+            `In the PR body, link the diff \`${parentName}@${lastReviewed}...${actual}\` and ask the owner to re-confirm reachability.`
+          );
+        }
+      }
+      if (parentLines.length === 0) return null;
+
+      return [
+        `${mention}Open a PR in bobsled-inc/dogsled-core: ${parentLines[0]} of the \`${advisory}\` / \`${pkg}\` \`${version}\` exception in \`scripts/security/consumer-exceptions.json\`.`,
+        ...parentLines.slice(1),
+        'Change Type `dependencies`.',
+      ].join(' ');
+    }
+
+    case 'expired-exemption': {
+      const pkg = validateNpmName(finding.package);
+      const version = validateVersion(finding.version);
+      if (!pkg || !version) return null;
+
+      return `${mention}Open a PR removing \`${pkg}@${version}\` from \`minimumReleaseAgeExclude\` in \`pnpm-workspace.yaml\` and its docs row in \`docs/dependency-security.md\`. Change Type \`dependencies\`.`;
+    }
+
+    case 'deadline-warning': {
+      const source = finding.source === 'audit-ci' ? 'audit-ci' : 'consumer-exception';
+      const label =
+        (finding.advisory ? validateGhsaId(finding.advisory) : null) ??
+        finding.key?.replace(/[^\w|>@./-]/g, '') ??
+        'unknown';
+      return `${mention}Deadline in ${finding.daysLeft} day(s): ${source} entry \`${label}\` expires ${finding.expiry}. Decide whether to extend or fix before it blocks a release.`;
+    }
+
+    case 'new-finding': {
+      const pkg = validateNpmName(finding.package);
+      const advisory = validateGhsaId(finding.advisory);
+      if (!pkg || !advisory) return null;
+      const prefix = finding.isLookahead ? '(look-ahead) ' : '';
+      return `${mention}${prefix}New consumer audit finding: \`${pkg}\` \`${advisory}\`. No matching exception exists. Write an exception or fix before the next release.`;
+    }
+
+    default:
+      return null;
+  }
+}

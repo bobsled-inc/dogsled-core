@@ -23,7 +23,12 @@ import { parseArgs } from 'node:util';
 import { parse as parseYaml } from 'yaml';
 
 import { parseReleaseAgeExemptions } from '../security/consumer-policy.mjs';
-import { findExpiredExemptions, findUpcomingDeadlines, formatHealthReport } from './planner.mjs';
+import {
+  buildHuskyInstruction,
+  findExpiredExemptions,
+  findUpcomingDeadlines,
+  formatHealthReport,
+} from './planner.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -157,61 +162,35 @@ async function main() {
   }
 }
 
-async function sendSlackAlerts({ expiredExemptions, deadlines, consumerFindings, consumerPassed }) {
+async function sendSlackAlerts({ expiredExemptions, deadlines, consumerFindings }) {
   const slackUrl = process.env.SLACK_DEPS_WEBHOOK_URL;
-  const stale = consumerFindings.filter((f) => f.kind === 'stale-exception');
-  const newFindings = consumerFindings.filter((f) => f.kind === 'new-finding');
+  const huskyId = process.env.HUSKY_SLACK_USER_ID || null;
 
-  const hasAlerts =
-    expiredExemptions.length > 0 ||
-    deadlines.length > 0 ||
-    stale.length > 0 ||
-    newFindings.length > 0;
-
-  if (!hasAlerts) return;
+  const allFindings = [...expiredExemptions, ...deadlines, ...consumerFindings];
+  if (allFindings.length === 0) return;
 
   if (!slackUrl) {
     process.stdout.write('SLACK_DEPS_WEBHOOK_URL is not set; skipping Slack notification.\n');
     return;
   }
 
-  const lines = ['*Daily release health check*\n'];
-
-  for (const e of expiredExemptions) {
-    lines.push(`Expired exemption: \`${e.package}@${e.version}\` (aged out ${e.agedOutAt})`);
+  // Post one message per actionable finding so Husky can act on each
+  let sent = 0;
+  for (const finding of allFindings) {
+    const text = buildHuskyInstruction(finding, huskyId);
+    if (!text) continue;
+    try {
+      await fetch(slackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      sent++;
+    } catch (error) {
+      process.stdout.write(`Slack message failed: ${error.message}\n`);
+    }
   }
-
-  for (const d of deadlines) {
-    const label = d.advisory ?? d.key ?? '';
-    lines.push(`Deadline in ${d.daysLeft}d: ${d.source} ${label} expires ${d.expiry}`);
-  }
-
-  for (const s of stale) {
-    const prefix = s.isLookahead ? '(look-ahead) ' : '';
-    const parents = Object.entries(s.staleParents)
-      .map(
-        ([parent, info]) =>
-          `add \`"${info.actual}"\` to \`${parent}\` (reviewed: ${info.reviewed.join(', ')})`
-      )
-      .join('; ');
-    lines.push(`${prefix}Stale exception: \`${s.package}\` (${s.advisory}) — ${parents}`);
-  }
-
-  for (const f of newFindings) {
-    const prefix = f.isLookahead ? '(look-ahead) ' : '';
-    lines.push(`${prefix}New consumer finding: \`${f.package}\` ${f.advisory} via \`${f.path}\``);
-  }
-
-  try {
-    await fetch(slackUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: lines.join('\n') }),
-    });
-    process.stdout.write('Slack notification sent.\n');
-  } catch (error) {
-    process.stdout.write(`Slack notification failed: ${error.message}\n`);
-  }
+  process.stdout.write(`Sent ${sent} Slack message(s).\n`);
 }
 
 main().catch((error) => {
