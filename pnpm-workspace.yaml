@@ -156,5 +156,4 @@ minimumReleaseAge: 30240
 # version meets the release age above.
 minimumReleaseAgeExclude:
   - body-parser@2.4.0
-  - fast-uri@3.1.9
   - follow-redirects@1.16.2
