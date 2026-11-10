@@ -90,6 +90,43 @@ if (mode === 'execute') {
   });
 }
 
+async function sendSlackAlerts(plan) {
+  const slackUrl = process.env.SLACK_DEPS_WEBHOOK_URL;
+  const alertItems = plan.actions.filter(
+    (a) => a.kind === 'no-fix' || a.kind === 'deadline-warning' || a.kind === 'consumer-alert'
+  );
+  if (alertItems.length === 0) return;
+  if (!slackUrl) {
+    process.stdout.write('SLACK_DEPS_WEBHOOK_URL is not set; skipping Slack notification.\n');
+    return;
+  }
+  const lines = ['*Dependency maintenance bot*\n'];
+  for (const a of alertItems) {
+    if (a.kind === 'no-fix') {
+      lines.push(`No fix for \`${a.package}\` (${a.ghsaId}, ${a.severity}): ${a.reason}`);
+    } else if (a.kind === 'deadline-warning') {
+      lines.push(
+        `Deadline in ${a.daysLeft} day(s): ${a.source} ${a.advisory ?? a.key ?? ''} expires ${a.expiry}`
+      );
+    } else if (a.kind === 'consumer-alert') {
+      const prefix = a.isLookahead ? '(look-ahead) ' : '';
+      lines.push(
+        `${prefix}Consumer audit: unhandled \`${a.package}\` (${a.advisory}) via ${a.path}`
+      );
+    }
+  }
+  try {
+    await fetch(slackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: lines.join('\n') }),
+    });
+    process.stdout.write('Slack notification sent.\n');
+  } catch (error) {
+    process.stdout.write(`Slack notification failed: ${error.message}\n`);
+  }
+}
+
 async function main() {
   const config = readWorkspaceConfig(repoRoot);
   const auditCiAllowlist = readAuditCiConfig(repoRoot);
@@ -218,8 +255,41 @@ async function main() {
   const outputDir = flags.output;
   mkdirSync(outputDir, { recursive: true });
   const planPath = path.join(outputDir, 'plan.json');
+
+  // Merge consumer audit actions if consumer-check ran (both dry-run and prepare)
+  const consumerActionsPath = path.join(outputDir, 'consumer-actions.json');
+  if (existsSync(consumerActionsPath)) {
+    const consumerActions = JSON.parse(readFileSync(consumerActionsPath, 'utf8'));
+    if (consumerActions.length > 0) {
+      process.stdout.write(
+        `Merging ${consumerActions.length} consumer audit action(s) into plan.\n`
+      );
+      plan.actions.push(...consumerActions);
+      plan.summary.updateException = consumerActions.filter(
+        (a) => a.kind === 'update-exception'
+      ).length;
+      plan.summary.consumerAlert = consumerActions.filter(
+        (a) => a.kind === 'consumer-alert'
+      ).length;
+    }
+  }
+
   writeFileSync(planPath, JSON.stringify(plan, null, 2));
   process.stdout.write(`\nPlan written to ${planPath}\n`);
+
+  // Re-render summary with consumer actions included
+  if (plan.summary.updateException || plan.summary.consumerAlert) {
+    const fullSummary = formatPlanSummary(plan, advisorySource);
+    process.stdout.write('\n');
+    process.stdout.write(fullSummary);
+    process.stdout.write('\n');
+    if (stepSummaryPath) {
+      writeFileSync(stepSummaryPath, fullSummary);
+    }
+  }
+
+  // Send Slack for alertable items in any mode (dry-run or prepare)
+  await sendSlackAlerts(plan);
 
   if (mode === 'dry-run') {
     process.stdout.write('Dry-run mode: no patches or PRs will be created.\n');
@@ -229,27 +299,6 @@ async function main() {
   }
 
   if (mode === 'prepare') {
-    // Merge consumer audit actions if the consumer-check ran first
-    const consumerActionsPath = path.join(outputDir, 'consumer-actions.json');
-    if (existsSync(consumerActionsPath)) {
-      const consumerActions = JSON.parse(readFileSync(consumerActionsPath, 'utf8'));
-      if (consumerActions.length > 0) {
-        process.stdout.write(
-          `Merging ${consumerActions.length} consumer audit action(s) into plan.\n`
-        );
-        plan.actions.push(...consumerActions);
-        // Re-count
-        plan.summary.updateException = consumerActions.filter(
-          (a) => a.kind === 'update-exception'
-        ).length;
-        plan.summary.consumerAlert = consumerActions.filter(
-          (a) => a.kind === 'consumer-alert'
-        ).length;
-        // Re-write plan.json with merged actions
-        writeFileSync(planPath, JSON.stringify(plan, null, 2));
-      }
-    }
-
     process.stdout.write('Preparing patches...\n');
     const prepared = prepareActions(plan, repoRoot, outputDir);
     const withPatch = prepared.filter((p) => !p.empty);

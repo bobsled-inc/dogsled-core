@@ -157,11 +157,11 @@ registry, and compares the publish date to `minimumReleaseAge` in `pnpm-workspac
 
 The repository variable `DEPS_BOT` controls behavior:
 
-| Value          | Effect                                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------------------------ |
-| `off` or unset | The workflow exits immediately.                                                                              |
-| `dry-run`      | The planner runs and writes its full plan to the step summary. No PRs are opened.                            |
-| `on`           | The planner runs, PRs are created, and Slack is notified for unfixable advisories and approaching deadlines. |
+| Value          | Effect                                                                                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `off` or unset | The workflow exits immediately.                                                                                                                             |
+| `dry-run`      | The planner and consumer audit (with look-ahead) run. The full plan is written to the step summary and Slack is notified for alerts, but no PRs are opened. |
+| `on`           | Same as dry-run, plus PRs are created for bumps, exemptions, removals, and stale consumer exceptions.                                                       |
 
 ### Actions
 

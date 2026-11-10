@@ -62,16 +62,16 @@ jobs:
           permission-vulnerability-alerts: read
 
       - name: Build workspace
-        if: steps.mode.outputs.mode == 'on'
+        if: steps.mode.outputs.mode != 'off'
         run: pnpm build
         timeout-minutes: 15
 
       - name: Setup SQLite
-        if: steps.mode.outputs.mode == 'on'
+        if: steps.mode.outputs.mode != 'off'
         run: pnpm run setup:sqlite
 
       - name: Run consumer audit with look-ahead
-        if: steps.mode.outputs.mode == 'on'
+        if: steps.mode.outputs.mode != 'off'
         run: >-
           node scripts/deps/consumer-check.mjs
           --output "$RUNNER_TEMP/deps-plan"
