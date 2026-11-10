@@ -257,9 +257,10 @@ A store can declare `limits` with `maxRows`, `maxBatchBytes` and `maxCheckpointB
 reads them once for each run, so a later change to them does not reach a run in progress. It
 bounds each input batch and the run's output by them and tells the host through `maxRows` and
 `maxBytes`. Without `limits`, a store gets 1,000 rows, 1 MiB per batch and 16 MiB per
-checkpoint, which also allows 262,144 JSON values, one for every 64 bytes. These defaults are the
-most a supplied store can declare, and `applyAgenticCheckpoint` holds a run to them: a larger one
-fails with `limit` and the reason `too_many_rows` or `snapshot_too_large`. `AgenticRunSnapshotSchema`
+checkpoint, which also allows 262,144 JSON values, one for every 64 bytes. These defaults cap
+unbranded declarations. A wrapper can forward a Dogsled row store's original `limits` object
+to keep its higher limits. `applyAgenticCheckpoint` holds a run to the defaults and reports
+`limit` with the reason `too_many_rows` or `snapshot_too_large` for a larger run. `AgenticRunSnapshotSchema`
 accepts what the largest store holds, so a store that validates with the schema alone must check
 its own limits too: `agenticCheckpointLimitError(snapshot, limits)` returns the `limit` error for a
 run that does not fit them, or the defaults without `limits`, and undefined for one that does. A store that declares less bounds the input it is given, and its checkpoints
@@ -513,10 +514,12 @@ cannot open that run to take it over. Remove the setting, finish the run, then a
 
 A warehouse `checkpoint_store` keeps using the [warehouse store](#warehouse-checkpoints), which
 rewrites the whole run as one document on every checkpoint. A library host opts a run into rows by
-supplying this store:
+supplying this store. Import both Model Spec entry points from the same Dogsled installation to
+share the checkpoint verification cache.
 
 ```typescript
-import { createWarehouseRowStore } from '@bobsled-inc/model-spec/agentic';
+import { createWarehouseRowStore } from '@bobsled-inc/dogsled/model-spec/agentic';
+import { runProject } from '@bobsled-inc/dogsled/model-spec/project';
 
 const stateStore = createWarehouseRowStore(integration, {
   schema: 'track_checkpoints',
@@ -531,6 +534,9 @@ await runProject(projectDirectory, { agentic: { host, stateStore } });
 take what `createWarehouseCheckpointStore` takes, such as `customRunners`, `tokenProvider` and
 `signal`. A supplied store comes first in [the selection](#where-state-is-stored), so it also applies
 to a project that configures `checkpoint_store`. Other engines are rejected.
+
+The built-in SQL publishers accept up to 1,000 output rows and 1,000 processed keys per
+publication. For larger publications, supply `agentic.publisher`.
 
 The three tables live in the given schema, shared by every run, so the store creates no tables per
 run. Ownership is the same fenced lease, and each statement has the same
@@ -856,8 +862,9 @@ they gain little from this.
 Only these two commands take this path. The others happen a fixed number of times per run and
 take the complete check. So does anything the path cannot prove: it can only accept, so the
 complete check decides every refusal and reports it in the same words. Reads, resumes and the
-ownership checks around publication are unchanged. The verified record lives in one loaded
-copy of this package. Across two bundled copies a store's result counts as a copy.
+ownership checks around publication are unchanged. The verification cache belongs to one loaded
+instance of Model Spec. A receipt from a separately bundled copy requires a full comparison or
+validation of its contents.
 
 ### Why a proved command is valid
 

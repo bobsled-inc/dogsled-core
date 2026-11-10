@@ -75,6 +75,7 @@ describe('declared store limits', () => {
     ['above the checkpoint ceiling', { maxCheckpointBytes: 16 * 1024 * 1024 + 1 }],
     ['zero', { maxRows: 0 }],
     ['fractional', { maxBatchBytes: 1.5 }],
+    ['non-numeric', { maxRows: Symbol() as unknown as number }],
   ])('rejects a declaration %s', (_, limits) => {
     expect(() => resolveAgenticStoreLimits(limited(limits))).toThrow(
       expect.objectContaining({ code: 'limit', reason: 'invalid_store_limits' })
@@ -147,6 +148,7 @@ describe('declared store limits', () => {
 const duckDbAvailable = await isDuckDbAvailable();
 
 describe('limits the row store declares', () => {
+  const brand = Symbol.for('@bobsled-inc/model-spec/agentic-row-store-limits');
   const warehouse = (engine: string) =>
     createWarehouseRowStore(checkpointIntegrations.find((item) => item.source_type === engine)!, {
       schema: 'checkpoints',
@@ -164,9 +166,9 @@ describe('limits the row store declares', () => {
       },
       { schema: 'agentic_checkpoints' }
     );
-    expect(resolveAgenticStoreLimits(duckdb)).toBe(AGENTIC_ROW_STORE_LIMITS);
-    expect(resolveAgenticStoreLimits(warehouse('postgres'))).toBe(AGENTIC_ROW_STORE_LIMITS);
-    expect(resolveAgenticStoreLimits(warehouse('snowflake'))).toBe(AGENTIC_ROW_STORE_LIMITS);
+    expect(resolveAgenticStoreLimits(duckdb)).toEqual(AGENTIC_ROW_STORE_LIMITS);
+    expect(resolveAgenticStoreLimits(warehouse('postgres'))).toEqual(AGENTIC_ROW_STORE_LIMITS);
+    expect(resolveAgenticStoreLimits(warehouse('snowflake'))).toEqual(AGENTIC_ROW_STORE_LIMITS);
     expect(resolveAgenticStoreLimits(createLocalAgenticStateStore(project()))).toEqual(
       AGENTIC_DEFAULT_STORE_LIMITS
     );
@@ -182,12 +184,47 @@ describe('limits the row store declares', () => {
     expect(AGENTIC_MAX_STORE_LIMITS).toBe(AGENTIC_ROW_STORE_LIMITS);
   });
 
-  it('lets only the row store go past the defaults', () => {
-    expect(resolveAgenticStoreLimits({ limits: AGENTIC_ROW_STORE_LIMITS })).toBe(
-      AGENTIC_ROW_STORE_LIMITS
+  it('keeps a copy without the brand at the default ceiling', () => {
+    const limits = Object.freeze({ ...AGENTIC_ROW_STORE_LIMITS });
+    expect(() => resolveAgenticStoreLimits({ limits })).toThrow(
+      expect.objectContaining({
+        code: 'limit',
+        reason: 'invalid_store_limits',
+        message: expect.stringContaining('the allowed range is 1 to 1000'),
+      })
     );
-    // A wrapper that passes a row store's declaration on keeps it; a copy is a declaration of its own.
-    expect(() => resolveAgenticStoreLimits({ limits: { ...AGENTIC_ROW_STORE_LIMITS } })).toThrow(
+  });
+
+  it('accepts a separately branded declaration and returns a frozen copy', () => {
+    expect(Object.isFrozen(AGENTIC_ROW_STORE_LIMITS)).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(AGENTIC_ROW_STORE_LIMITS, brand)).toMatchObject({
+      value: true,
+      enumerable: false,
+    });
+    const declared = Object.defineProperty({ ...AGENTIC_ROW_STORE_LIMITS }, brand, { value: true });
+    const limits = resolveAgenticStoreLimits({ limits: declared });
+    expect(limits).toEqual(AGENTIC_ROW_STORE_LIMITS);
+    expect(limits).not.toBe(declared);
+    expect(Object.isFrozen(limits)).toBe(true);
+  });
+
+  it.each(['maxRows', 'maxBatchBytes', 'maxCheckpointBytes'] as const)(
+    'rejects a branded declaration above the absolute %s ceiling',
+    (field) => {
+      const limits = Object.defineProperty(
+        { ...AGENTIC_ROW_STORE_LIMITS, [field]: AGENTIC_MAX_STORE_LIMITS[field] + 1 },
+        brand,
+        { value: true }
+      );
+      expect(() => resolveAgenticStoreLimits({ limits })).toThrow(
+        expect.objectContaining({ code: 'limit', reason: 'invalid_store_limits' })
+      );
+    }
+  );
+
+  it('requires an own brand on the declaration', () => {
+    const limits = Object.create(AGENTIC_ROW_STORE_LIMITS) as AgenticStoreLimits;
+    expect(() => resolveAgenticStoreLimits({ limits })).toThrow(
       expect.objectContaining({ code: 'limit', reason: 'invalid_store_limits' })
     );
   });

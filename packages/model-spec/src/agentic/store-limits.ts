@@ -3,8 +3,8 @@ import { AgenticStateError } from './state-errors.js';
 
 /**
  * What one state store can hold. The run loop bounds input with these values, and the store
- * rejects a larger checkpoint. Supplied stores can declare at most the defaults. Only the row
- * store declares more, on the engines where it was measured: see docs/agentic-state.md.
+ * rejects a larger checkpoint. The defaults cap unbranded declarations. The row store declares
+ * more on the engines measured in docs/agentic-state.md.
  */
 export interface AgenticStoreLimits {
   /** Rows in one input batch and assignments in one run. */
@@ -16,6 +16,7 @@ export interface AgenticStoreLimits {
 }
 
 const MiB = 1024 * 1024;
+const ROW_STORE_LIMITS_BRAND = Symbol.for('@bobsled-inc/model-spec/agentic-row-store-limits');
 
 /** A store that declares nothing, the file store and the warehouse store hold this much. */
 export const AGENTIC_DEFAULT_STORE_LIMITS: Readonly<AgenticStoreLimits> = Object.freeze({
@@ -29,11 +30,13 @@ export const AGENTIC_DEFAULT_STORE_LIMITS: Readonly<AgenticStoreLimits> = Object
  * this size resumed in seconds on DuckDB and PostgreSQL and in under a minute on Snowflake, and fit
  * in the memory measured there.
  */
-export const AGENTIC_ROW_STORE_LIMITS: Readonly<AgenticStoreLimits> = Object.freeze({
-  maxRows: 10_000,
-  maxBatchBytes: 16 * MiB,
-  maxCheckpointBytes: 128 * MiB,
-});
+export const AGENTIC_ROW_STORE_LIMITS: Readonly<AgenticStoreLimits> = Object.freeze(
+  Object.defineProperty(
+    { maxRows: 10_000, maxBatchBytes: 16 * MiB, maxCheckpointBytes: 128 * MiB },
+    ROW_STORE_LIMITS_BRAND,
+    { value: true, enumerable: false }
+  )
+);
 
 /** The most any store declares, and so what the snapshot schema accepts. */
 export const AGENTIC_MAX_STORE_LIMITS: Readonly<AgenticStoreLimits> = AGENTIC_ROW_STORE_LIMITS;
@@ -46,20 +49,21 @@ export function agenticCheckpointValues(limits: Pick<AgenticStoreLimits, 'maxChe
   return Math.floor(limits.maxCheckpointBytes / 64);
 }
 
-/** Declarations that may go past the defaults. Only Dogsled's own stores hold these objects, so
- * a wrapper that passes a store's declaration on keeps it, and a copy does not. */
-const measured = new WeakSet<object>([AGENTIC_ROW_STORE_LIMITS]);
-
 /**
- * Supplied stores that declare nothing keep the historic limits. Dogsled's own declarations are
- * frozen and returned as they are. Any other is read once into a frozen copy, so that a getter or
- * a later change cannot give a run more than was checked.
+ * The row-store brand selects the higher ceiling across separately loaded bundles. An ordinary
+ * copy drops the brand and keeps the defaults as its ceiling. Read each limit once into a frozen
+ * copy so that a getter or later change cannot give a run more than was checked.
  */
 export function resolveAgenticStoreLimits(store: {
   limits?: AgenticStoreLimits;
 }): AgenticStoreLimits {
   const declared = store.limits ?? AGENTIC_DEFAULT_STORE_LIMITS;
-  if (measured.has(declared) || declared === AGENTIC_DEFAULT_STORE_LIMITS) return declared;
+  if (declared === AGENTIC_DEFAULT_STORE_LIMITS) return declared;
+  const brand = Object.getOwnPropertyDescriptor(declared, ROW_STORE_LIMITS_BRAND);
+  const ceilings =
+    brand?.value === true && !brand.enumerable
+      ? AGENTIC_MAX_STORE_LIMITS
+      : AGENTIC_DEFAULT_STORE_LIMITS;
   const limits: AgenticStoreLimits = {
     maxRows: declared.maxRows,
     maxBatchBytes: declared.maxBatchBytes,
@@ -67,11 +71,12 @@ export function resolveAgenticStoreLimits(store: {
   };
   for (const name of ['maxRows', 'maxBatchBytes', 'maxCheckpointBytes'] as const) {
     const value = limits[name];
-    const ceiling = AGENTIC_DEFAULT_STORE_LIMITS[name];
+    const ceiling = ceilings[name];
     if (!Number.isSafeInteger(value) || value < 1 || value > ceiling) {
+      const valueLabel = typeof value === 'number' ? value : 'a non-numeric value';
       throw new AgenticStateError('limit', {
         reason: 'invalid_store_limits',
-        message: `The state store declares ${name} ${value}; the allowed range is 1 to ${ceiling}.`,
+        message: `The state store declares ${name} ${valueLabel}; the allowed range is 1 to ${ceiling}.`,
       });
     }
   }

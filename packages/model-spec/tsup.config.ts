@@ -18,7 +18,7 @@ export default defineConfig([
     format: ['esm'],
     dts: true,
     clean: true,
-    splitting: false,
+    splitting: true,
     // Externalize all @bobsled-inc/* workspace deps. Required because
     // @bobsled-inc/models uses `import.meta.url` to locate its marts/ data
     // directory at runtime — bundling it inline into dist/index.js would
