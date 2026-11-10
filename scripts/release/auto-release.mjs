@@ -158,3 +158,27 @@ export function notifySummary({ pullRequests, bump, breaking }, version, repoUrl
   if (breaking.length > 0) lines.push('Breaking');
   return lines.join('\n');
 }
+
+const MAX_NOTIFY_PRS = 50;
+const MAX_NOTIFY_TEXT = 300;
+
+function truncate(text, max = MAX_NOTIFY_TEXT) {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+export function notifyOneLine(pullRequests) {
+  if (pullRequests.length === 1) return truncate(pullRequests[0].title);
+  if (pullRequests.length > 1)
+    return truncate(`${pullRequests.length} changes, including "${pullRequests[0].title}"`);
+  return '';
+}
+
+export function notifyPullRequests(pullRequests) {
+  return JSON.stringify(
+    pullRequests.slice(0, MAX_NOTIFY_PRS).map(({ number, title, changeType }) => ({
+      number,
+      title: truncate(title),
+      changeType,
+    }))
+  );
+}

@@ -9,6 +9,8 @@ import {
   createGitHubReader,
   decideMergedPullRequest,
   mergeDecisionSummary,
+  notifyOneLine,
+  notifyPullRequests,
   notifySummary,
   resolveAutoRelease,
 } from './auto-release.mjs';
@@ -145,7 +147,11 @@ function updateVersions(version) {
   stampVersion(version, dogsledPackage.packageJsonPath);
 }
 
-function prepareRelease(bump, changeType, breakingPrs = [], notify = '') {
+function prepareRelease(
+  bump,
+  changeType,
+  { breakingPrs = [], notifyText = '', prs = '[]', oneLine = '' } = {}
+) {
   if (!['patch', 'minor', 'major'].includes(bump)) {
     throw new Error(`Release bump must be patch, minor, or major; found "${bump}".`);
   }
@@ -162,7 +168,9 @@ function prepareRelease(bump, changeType, breakingPrs = [], notify = '') {
     prerelease: false,
     breaking: bump === 'major',
     breaking_prs: breakingPrs.join(','),
-    notify_summary: notify || `Release v${version}? (${bump}, ${changeType})`,
+    notify_summary: notifyText || `Release v${version}? (${bump}, ${changeType})`,
+    notify_prs: prs,
+    notify_one_line: oneLine || `${bump} release (${changeType})`,
   });
   process.stdout.write(`Prepared ${bump} release v${version}.\n`);
 }
@@ -182,8 +190,13 @@ async function prepareAutoRelease() {
     writeGithubOutput({ release: false, previous_version: previousVersion });
     return;
   }
-  const notify = notifySummary(plan, version, repoUrl);
-  prepareRelease(plan.bump, 'auto', plan.breaking, notify);
+  const notifyText = notifySummary(plan, version, repoUrl);
+  prepareRelease(plan.bump, 'auto', {
+    breakingPrs: plan.breaking,
+    notifyText,
+    prs: notifyPullRequests(plan.pullRequests),
+    oneLine: notifyOneLine(plan.pullRequests),
+  });
 }
 
 async function decideMerge() {
@@ -291,7 +304,15 @@ export async function runVersionCommand(command) {
       process.env.RELEASE_VERSION
     );
     updateVersions(version);
-    writeGithubOutput({ release: true, version, tag: `v${version}`, prerelease: true });
+    writeGithubOutput({
+      release: true,
+      version,
+      tag: `v${version}`,
+      prerelease: true,
+      notify_prs: '[]',
+      notify_one_line: `preview release v${version}`,
+      notify_summary: `Release v${version}? (preview)`,
+    });
     process.stdout.write(`Prepared preview release v${version}.\n`);
   } else if (command === 'stamp-version') {
     const version = process.env.RELEASE_VERSION;
@@ -305,6 +326,9 @@ export async function runVersionCommand(command) {
       version,
       tag: `v${version}`,
       prerelease: isPreviewVersion(version),
+      notify_prs: '[]',
+      notify_one_line: `bootstrap release v${version}`,
+      notify_summary: `Release v${version}? (bootstrap)`,
     });
     process.stdout.write(`Prepared bootstrap release v${version} without a version bump.\n`);
   } else if (command === 'verify-candidate') {
@@ -324,6 +348,9 @@ export async function runVersionCommand(command) {
       version,
       tag: `v${version}`,
       prerelease: isPreviewVersion(version),
+      notify_prs: '[]',
+      notify_one_line: `retry release v${version}`,
+      notify_summary: `Release v${version}? (retry)`,
     });
     process.stdout.write(`Verified retry for v${version}.\n`);
   } else {
