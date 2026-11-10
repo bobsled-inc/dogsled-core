@@ -1,0 +1,48 @@
+name: Release on merge
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  decide:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' &&
+      (vars.AUTO_RELEASE == 'on' || vars.AUTO_RELEASE == 'dry-run')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Decide the release with trusted main code
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTO_RELEASE: ${{ vars.AUTO_RELEASE }}
+          MERGE_SHA: ${{ github.sha }}
+        run: node scripts/release/version.mjs decide-merge
+      - name: Dispatch Release in auto mode
+        if: steps.decide.outputs.dispatch == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run release.yml --ref main -f mode=auto
+      - name: Explain a failed dispatch
+        if: failure() && steps.decide.outputs.dispatch == 'true'
+        run: printf '%s\n' 'Release was not dispatched. A maintainer can run the Release workflow from main with mode auto.' >> "$GITHUB_STEP_SUMMARY"

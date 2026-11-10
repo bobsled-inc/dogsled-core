@@ -74,9 +74,13 @@ The public metadata-only policy job runs in the base context with permission to
 label and comment on PRs; it never checks out or executes the submitted code.
 The required `pr-metadata` workflow checks Change Type on every PR and DCO sign-offs once the public repository is live.
 
-Select exactly one Change Type in the PR template. It describes release impact;
-a merge does not publish a package. Maintainers can help classify a small fix.
-[Release guidance](docs/releases.md) explains protected manual publishing.
+Select exactly one Change Type in the PR template. Every merge into `main`
+releases a new version that a maintainer approves before publication. The Change
+Type sets the bump: `minor` and `major` release that increment; everything else
+releases a patch. `skip-release` is a rare escape hatch for changes that must
+not publish. A revert of released code is `patch`; a revert of unreleased code
+is `skip-release`. Maintainers can help classify a small fix.
+[Release guidance](docs/releases.md) explains releases.
 
 The network dependency audit runs on pull requests that change `package.json`,
 `pnpm-lock.yaml` or `pnpm-workspace.yaml`, on main, the weekly schedule and
@@ -96,8 +100,6 @@ These apply to everyone, maintainers included.
   can read it. Fill in the template and select exactly one Change Type.
 - **Commits:** one logical change per commit, an imperative subject line, a body
   that explains why, and a DCO sign-off (`git commit -s`).
-- **Changelog:** add an entry under "Unreleased" in `CHANGELOG.md` for any change
-  users will notice.
 
 ## AI-assisted contributions
 

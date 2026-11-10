@@ -1,5 +1,7 @@
 # Changelog
 
+Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/dogsled-core/releases).
+
 ## Unreleased
 
 - Agentic runs on the row store with more than 1,000 output rows failed at publication in v0.1.11 and v0.1.12 after all model calls had been made. The built-in publishers now publish up to the row store's limits of 10,000 rows and 16 MiB.

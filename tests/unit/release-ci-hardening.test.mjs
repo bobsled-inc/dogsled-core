@@ -23,8 +23,20 @@ const commit = (message = 'Fix\n\nSigned-off-by: Example Contributor <author@exa
 });
 
 describe('release approval and metadata checks', () => {
-  it('requires approval before the remote version tag is created', () => {
-    expect(release.jobs.tag.environment).toBe('npm-release');
+  it('gates every release on parallel checks and approval before pushing the tag', () => {
+    expect(release.jobs.approve.environment).toBe('release-approval');
+    expect(release.jobs.tag.environment).toBe('release-tag');
+    expect(release.jobs.publish.environment).toBe('npm-release');
+    expect(release.jobs['release-checks-ok'].needs).toEqual(
+      expect.arrayContaining([
+        'release-checks',
+        'release-unit',
+        'release-packed-catalog',
+        'release-audit',
+      ])
+    );
+    expect(release.jobs.approve.needs).toContain('release-checks-ok');
+    expect(release.jobs.tag.needs).toContain('approve');
     expect(release.jobs.publish.needs).toContain('tag');
   });
 

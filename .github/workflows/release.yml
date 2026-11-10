@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Create a release, retry an immutable tag, or perform first-time restricted publication
+        description: Create a release (auto derives the bump from merged pull requests), retry an immutable tag, or perform first-time restricted publication
         required: true
         default: new
         type: choice
-        options: [new, preview, retry, bootstrap]
+        options: [new, auto, preview, retry, bootstrap]
       bump:
-        description: Version increment for new releases; major under 0.x advances the minor
+        description: Version increment for new releases (auto ignores it); major under 0.x advances the minor
         required: true
         default: patch
         type: choice
@@ -30,19 +30,29 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   NEXT_TELEMETRY_DISABLED: '1'
+  NPM_CONFIG_FETCH_TIMEOUT: '60000'
+  NPM_CONFIG_FETCH_RETRIES: '4'
+  NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: '60000'
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Phase 1: version decision (fast, gates everything else)
+  # ---------------------------------------------------------------------------
   prepare:
     if: github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     permissions:
       contents: read
+      pull-requests: read
     outputs:
+      release: ${{ steps.plan.outputs.release }}
+      breaking: ${{ steps.plan.outputs.breaking }}
+      breaking_prs: ${{ steps.plan.outputs.breaking_prs }}
       version: ${{ steps.plan.outputs.version }}
       tag: ${{ steps.plan.outputs.tag }}
-      commit: ${{ steps.candidate.outputs.commit }}
       prerelease: ${{ steps.plan.outputs.prerelease }}
+      notify_summary: ${{ steps.plan.outputs.notify_summary }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -62,6 +72,10 @@ jobs:
           node-version-file: .nvmrc
           package-manager-cache: false
       - run: pnpm install --frozen-lockfile
+        timeout-minutes: 10
+      # PR #58 adds `pnpm deps:expiries --fail-within 0` here as the first
+      # release check, so an upcoming exemption expiry fails fast before the
+      # parallel jobs start.
       - name: Require reviewed package access settings
         run: |
           node --input-type=module <<'JS'
@@ -72,25 +86,164 @@ jobs:
       - name: Plan immutable version
         id: plan
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_MODE: ${{ inputs.mode }}
           RELEASE_BUMP: ${{ inputs.bump }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           case "$RELEASE_MODE" in
             new) node scripts/release/version.mjs prepare-manual ;;
+            auto) node scripts/release/version.mjs prepare-auto ;;
             preview) node scripts/release/version.mjs prepare-preview ;;
             retry) node scripts/release/version.mjs verify-retry ;;
             bootstrap) node scripts/release/version.mjs prepare-bootstrap ;;
             *) exit 1 ;;
           esac
+
+  # ---------------------------------------------------------------------------
+  # Phase 2: parallel release checks (mirror ci.yml without cache)
+  # ---------------------------------------------------------------------------
+
+  # Mirrors ci.yml `checks`: build, types, lint, structural, security guards.
+  release-checks:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.prepare.outputs.release == 'true'
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.mode == 'retry' && needs.prepare.outputs.tag || github.sha }}
+          fetch-depth: ${{ inputs.mode == 'retry' && 0 || 1 }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+        timeout-minutes: 10
       - run: pnpm run setup:sqlite
       - run: pnpm security:fast
-      - run: pnpm precommit
-      - run: pnpm test:packed-catalog -- --skip-build
-      - name: Create immutable release tag
+      - name: Check committed skill and plugin output before builds
+        run: pnpm skills:check
+      - name: Build
+        run: pnpm build
+        timeout-minutes: 10
+      - name: Verify bundled third-party notices
+        run: node scripts/release/third-party-notices.mjs --check
+      - name: Check types, lint, docs, and formatting
+        run: pnpm check
+        timeout-minutes: 15
+      - name: Structural tests
+        run: pnpm test:structural
+        timeout-minutes: 3
+
+  # Mirrors ci.yml `unit`: four partitions, each builds its own closure.
+  release-unit:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.prepare.outputs.release == 'true'
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: [model, graph, dogsled, rest]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.mode == 'retry' && needs.prepare.outputs.tag || github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+        timeout-minutes: 10
+      - run: pnpm run setup:sqlite
+      - name: Run unit-test partition and its build closure
+        env:
+          UNIT_LEG: ${{ matrix.leg }}
+        run: pnpm "test:unit:ci:$UNIT_LEG"
+
+  # Validates the packed tarball can be imported and queried.
+  release-packed-catalog:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.prepare.outputs.release == 'true'
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.mode == 'retry' && needs.prepare.outputs.tag || github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+        timeout-minutes: 10
+      - name: Build
+        run: pnpm build
+        timeout-minutes: 10
+      - name: Test the packed catalog, retrying once after a registry stall
+        timeout-minutes: 20
+        run: |
+          for attempt in 1 2; do
+            if timeout 10m pnpm test:packed-catalog -- --skip-build; then exit 0; fi
+            echo "::warning::Packed-catalog attempt $attempt failed."
+          done
+          exit 1
+
+  # Creates the release tag, builds and audits the tarball, and uploads the
+  # release artifact.  Runs in parallel with the check and unit jobs.
+  release-audit:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.prepare.outputs.release == 'true'
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      commit: ${{ steps.candidate.outputs.commit }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.mode == 'retry' && needs.prepare.outputs.tag || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+        timeout-minutes: 10
+      - name: Stamp the release version into the package manifest
         if: inputs.mode != 'retry'
         env:
-          RELEASE_TAG: ${{ steps.plan.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: node scripts/release/version.mjs stamp-version
+      - name: Create immutable release tag
+        if: inputs.mode != 'retry' && inputs.mode != 'bootstrap'
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -100,27 +253,106 @@ jobs:
           fi
           git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
       - name: Install reviewed SBOM generator
+        timeout-minutes: 5
         run: npm install --global @cyclonedx/cdxgen@12.8.0 --ignore-scripts --registry=https://registry.npmjs.org/
       - name: Verify reviewed release tarball
+        timeout-minutes: 15
         run: pnpm security:release --execute --out "$RUNNER_TEMP/npm-release"
       - name: Preserve the verified release commit and tag
         id: candidate
         env:
-          RELEASE_TAG: ${{ steps.plan.outputs.tag }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
           git bundle create "$RUNNER_TEMP/npm-release/release.bundle" "refs/tags/$RELEASE_TAG"
           printf 'commit=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: npm-release-${{ steps.plan.outputs.version }}
+          name: npm-release-${{ needs.prepare.outputs.version }}
           path: ${{ runner.temp }}/npm-release
           if-no-files-found: error
           retention-days: 7
 
+  # ---------------------------------------------------------------------------
+  # Phase 3: gate — all release checks must pass before approval
+  # ---------------------------------------------------------------------------
+  release-checks-ok:
+    if: >-
+      always() && github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.prepare.outputs.release == 'true'
+    needs: [prepare, release-checks, release-unit, release-packed-catalog, release-audit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      commit: ${{ needs.release-audit.outputs.commit }}
+    steps:
+      - name: Require every release check
+        env:
+          CHECKS: ${{ needs.release-checks.result }}
+          UNIT: ${{ needs.release-unit.result }}
+          PACKED: ${{ needs.release-packed-catalog.result }}
+          AUDIT: ${{ needs.release-audit.result }}
+        run: |
+          test "$CHECKS" = success
+          test "$UNIT" = success
+          test "$PACKED" = success
+          test "$AUDIT" = success
+
+  # ---------------------------------------------------------------------------
+  # Phase 4: approval, tag, publish, finalize
+  # ---------------------------------------------------------------------------
+  notify:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.release-checks-ok.result == 'success' &&
+      needs.prepare.outputs.release == 'true'
+    needs: [prepare, release-checks-ok]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Notify Slack that a release awaits approval
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_RELEASE_WEBHOOK_URL }}
+          NOTIFY_SUMMARY: ${{ needs.prepare.outputs.notify_summary }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK" ]; then
+            printf '%s\n' 'Slack notification skipped: SLACK_RELEASE_WEBHOOK_URL is not set.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          text="${NOTIFY_SUMMARY}
+          Approve with the GitHub app message in this channel."
+          payload="$(jq -n --arg text "$text" '{text: $text}')"
+          curl -fsS --retry 2 -X POST -H 'Content-Type: application/json' -d "$payload" "$SLACK_WEBHOOK" 2>/dev/null || {
+            printf '%s\n' 'Slack notification failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+          }
+
+  approve:
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.release-checks-ok.result == 'success' &&
+      needs.prepare.outputs.release == 'true'
+    needs: [prepare, release-checks-ok, notify]
+    environment: release-approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Release summary
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_BREAKING: ${{ needs.prepare.outputs.breaking }}
+        run: |
+          printf '### Approving release %s\n\n' "$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RELEASE_BREAKING" = "true" ]; then
+            printf '> [!WARNING]\n> This release contains breaking changes.\n\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf 'Review the **prepare** job summary for the full pull request table before approving.\n' >> "$GITHUB_STEP_SUMMARY"
+
   tag:
-    if: github.repository == 'bobsled-inc/dogsled-core' && inputs.mode != 'retry'
-    needs: prepare
-    environment: npm-release
+    if: >-
+      github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main' &&
+      inputs.mode != 'retry' && needs.prepare.outputs.release == 'true'
+    needs: [prepare, release-checks-ok, approve]
+    environment: release-tag
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -139,7 +371,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
-          RELEASE_COMMIT: ${{ needs.prepare.outputs.commit }}
+          RELEASE_COMMIT: ${{ needs.release-checks-ok.outputs.commit }}
           RELEASE_MODE: ${{ inputs.mode }}
         run: |
           git -c core.hooksPath=/dev/null fetch "$RUNNER_TEMP/npm-release/release.bundle" "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
@@ -151,9 +383,11 @@ jobs:
   publish:
     if: >-
       !cancelled() && github.repository == 'bobsled-inc/dogsled-core' &&
-      needs.prepare.result == 'success' &&
+      needs.prepare.result == 'success' && needs.approve.result == 'success' &&
+      needs.release-checks-ok.result == 'success' &&
+      needs.prepare.outputs.release == 'true' &&
       (needs.tag.result == 'success' || (inputs.mode == 'retry' && needs.tag.result == 'skipped'))
-    needs: [prepare, tag]
+    needs: [prepare, release-checks-ok, approve, tag]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: npm-release
@@ -210,7 +444,7 @@ jobs:
     if: >-
       !cancelled() && github.repository == 'bobsled-inc/dogsled-core' &&
       needs.prepare.result == 'success' && needs.publish.result == 'success'
-    needs: [prepare, publish]
+    needs: [prepare, release-checks-ok, publish]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -233,8 +467,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
-          RELEASE_COMMIT: ${{ needs.prepare.outputs.commit }}
+          RELEASE_COMMIT: ${{ needs.release-checks-ok.outputs.commit }}
           RELEASE_PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+          RELEASE_BREAKING: ${{ needs.prepare.outputs.breaking }}
+          RELEASE_BREAKING_PRS: ${{ needs.prepare.outputs.breaking_prs }}
         run: |
           node scripts/release/finalize-github-release.mjs \
             "$RUNNER_TEMP/npm-release/release-report.json#npm release artifact report" \

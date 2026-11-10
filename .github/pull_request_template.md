@@ -24,10 +24,9 @@ Maintainers can skip the first two items; the rest apply to everyone.
 ## Change Type
 
 > [!TIP]
-> Select **exactly one** change type. It records the PR's intended impact and
-> helps maintainers choose the increment for a manual release. `internal`,
-> `documentation`, `tests`, `dependencies`, and `performance` produce a patch;
-> use `skip-release` when no package should be published.
+> Select **exactly one** change type. Every merge releases: `minor` and `major`
+> release that increment; everything else releases a patch. Use `skip-release`
+> only when the change must not publish. Reverting released code is `patch`.
 
 - [ ] `patch` - 🐛 Bug Fix
 - [ ] `minor` - ✨ Enhancement

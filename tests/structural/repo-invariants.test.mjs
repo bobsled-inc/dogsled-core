@@ -925,8 +925,13 @@ describe('release and dependency policy guardrails', () => {
 
   it('requires release environment approval before pushing an immutable tag', () => {
     const workflow = readFileSync(path.join(repoRoot, '.github/workflows/release.yml'), 'utf8');
+    match(workflow, /^  release-checks-ok:\n/m);
+    const approveJob = workflow.split('\n  approve:\n')[1].split('\n  tag:\n')[0];
+    match(approveJob, /^    environment: release-approval$/m);
+    match(approveJob, /release-checks-ok/);
     const tagJob = workflow.split('\n  tag:\n')[1].split('\n  publish:\n')[0];
-    match(tagJob, /^    environment: npm-release$/m);
+    match(tagJob, /^    environment: release-tag$/m);
+    match(tagJob, /github\.ref == 'refs\/heads\/main'/);
     match(tagJob, /git -c core.hooksPath=\/dev\/null push origin/);
   });
 
