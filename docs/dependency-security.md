@@ -146,85 +146,55 @@ strings, so remote values cannot set precision specifiers. It requires no
 exception at the high threshold. No generic package-name or severity exception
 is used. New dependency paths and expired exceptions block the release.
 
-## Daily dependency maintenance bot
+## Daily release health check
 
 A scheduled GitHub Actions workflow (`dependency-maintenance.yml`) runs once a day
-at 06:17 UTC. It reads open Dependabot alerts (through a GitHub App token) or falls
-back to `pnpm audit --json`, checks each advisory's fixed version against the npm
-registry, and compares the publish date to `minimumReleaseAge` in `pnpm-workspace.yaml`.
+at 06:17 UTC. It checks for expired exemptions, approaching deadlines, and consumer
+audit failures, and fails the job when something needs attention.
 
-### Modes
+### What it checks
 
-The repository variable `DEPS_BOT` controls behavior:
+- **Expired exemptions**: versions in `minimumReleaseAgeExclude` that have reached
+  the release-age policy and should be removed.
+- **Approaching deadlines**: `audit-ci` allowlist entries and consumer-exception
+  review deadlines within seven days.
+- **Consumer audit** (same code `security:release` uses): builds the packed tarball,
+  installs it in clean consumer projects with every supported driver combination, and
+  audits the resulting trees. Runs twice:
+  - **Current cutoff**: catches failures that would block a release today.
+  - **3-day look-ahead**: catches driver or transitive versions about to age into the
+    release window, before they break a release.
 
-| Value          | Effect                                                                                                                                                      |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `off` or unset | The workflow exits immediately.                                                                                                                             |
-| `dry-run`      | The planner and consumer audit (with look-ahead) run. The full plan is written to the step summary and Slack is notified for alerts, but no PRs are opened. |
-| `on`           | Same as dry-run, plus PRs are created for bumps, exemptions, removals, and stale consumer exceptions.                                                       |
+### Consumer finding classification
 
-### Actions
-
-For each open advisory the bot decides one of:
-
-- **Bump** (fix is at least `minimumReleaseAge` old): open a PR that pins the fixed
-  version in the catalog or package.json, adds an override for transitive packages,
-  and refreshes the lockfile.
-- **Exempt** (fix is younger): open an exemption PR with the exact `name@version` in
-  `minimumReleaseAgeExclude`, a docs table row, an override if transitive, and
-  publisher/provenance evidence in the PR body. Labeled for owner approval.
-- **No fix**: Slack ping (if `SLACK_DEPS_WEBHOOK_URL` is set) and a step-summary entry.
-
-The bot also handles clean-up:
-
-- **Expired exemptions**: removes entries whose version reached the release-age policy.
-- **Unneeded overrides**: for each, tests removal with `pnpm install --lockfile-only`
-  and proposes removal when the resolved version stays at or above the pin.
-- **Approaching deadlines**: pings Slack and adds a step-summary entry for `audit-ci`
-  and consumer-exception expiries within seven days.
-
-### Consumer audit
-
-When `DEPS_BOT` is `on`, the bot also runs the same consumer audit that
-`security:release` uses: it builds the packed tarball, installs it in clean
-consumer projects with every supported driver combination, and audits the
-resulting trees. It runs this twice:
-
-- **Current cutoff**: the same release-age cutoff a release would use today.
-- **3-day look-ahead**: the cutoff shifted forward three days, catching driver
-  or transitive versions that are about to age into the release window.
-
-Unhandled findings are classified:
+Unhandled consumer audit findings are classified:
 
 - **Stale exception**: a consumer exception exists for the same advisory, package,
   version and path, but its `parentVersions` does not include the version the
   consumer tree now resolves. This happens when an optional driver publishes a new
-  version that pulls in the same transitive tree. The bot opens a PR adding the new
-  parent version to the exception, with a diff link and an owner checklist asking to
-  re-confirm the reachability reasoning. The PR is labeled for owner approval.
+  version that pulls in the same transitive tree. The step summary and Slack message
+  name the exact exception and parent version to add, so a person can fix it quickly.
 - **New finding**: no matching exception exists at all. A Slack ping and step-summary
-  entry are produced, but no PR. A person writes the exception or fix.
-
-### PR mechanics
-
-- One PR per action, on branch `deps-bot/<kind>/<pkg>-<version>`.
-- Skipped if an open PR for that branch already exists.
-- The bot never merges PRs and never changes `minimumReleaseAge`.
+  entry are produced. A person writes the exception or fix.
 
 ### Settings
 
-The workflow requires:
+The repository variable `RELEASE_HEALTH` controls behavior:
 
-- A GitHub App installed on the repository with Contents write, Pull Requests write,
-  and Dependabot Alerts read permissions.
-- Repository secrets `DEPS_BOT_APP_ID` and `DEPS_BOT_APP_PRIVATE_KEY`.
-- Optional secret `SLACK_DEPS_WEBHOOK_URL` for Slack notifications.
-- Repository variable `DEPS_BOT` set to `dry-run` or `on`.
+| Value          | Effect                                                           |
+| -------------- | ---------------------------------------------------------------- |
+| `off` or unset | The workflow exits immediately.                                  |
+| `on`           | Full health check runs. Job fails on expired or unhandled items. |
+
+The workflow also uses:
+
+- Optional secret `SLACK_DEPS_WEBHOOK_URL` for Slack notifications (skipped when unset).
+- No GitHub App token or write permissions. The check is read-only.
 
 ### Code
 
-The bot scripts live in `scripts/deps/`:
+The scripts live in `scripts/deps/`:
 
-- `planner.mjs` — pure planner (inputs to actions), no I/O.
-- `io.mjs` — file reads, API calls, subprocess execution.
-- `run.mjs` — CLI entry point and orchestration.
+- `planner.mjs` — pure functions (classification, expiry, formatting), no I/O.
+- `health-check.mjs` — CLI entry point: reads config, checks expiries, writes report.
+- `consumer-check.mjs` — builds tarball, runs consumer audit, classifies findings.

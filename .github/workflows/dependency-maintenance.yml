@@ -1,4 +1,4 @@
-name: Dependency maintenance
+name: Daily release health check
 
 on:
   schedule:
@@ -12,26 +12,24 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  plan:
+  health-check:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: read
-    outputs:
-      has_actions: ${{ steps.check.outputs.has_actions }}
     steps:
-      - name: Check bot mode
+      - name: Check mode
         id: mode
         env:
-          DEPS_BOT: ${{ vars.DEPS_BOT }}
+          RELEASE_HEALTH: ${{ vars.RELEASE_HEALTH }}
         run: |
-          mode="${DEPS_BOT:-off}"
+          mode="${RELEASE_HEALTH:-off}"
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           if [ "$mode" = "off" ]; then
-            echo "DEPS_BOT is off or unset; exiting."
+            echo "RELEASE_HEALTH is off or unset; exiting."
             exit 0
           fi
-          echo "DEPS_BOT=$mode"
+          echo "RELEASE_HEALTH=$mode"
 
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: steps.mode.outputs.mode != 'off'
@@ -51,16 +49,6 @@ jobs:
         if: steps.mode.outputs.mode != 'off'
         run: pnpm install --frozen-lockfile
 
-      - name: Mint read-only GitHub App token
-        id: app-token
-        if: steps.mode.outputs.mode != 'off' && vars.DEPS_BOT_APP_ID != ''
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.DEPS_BOT_APP_ID }}
-          private-key: ${{ secrets.DEPS_BOT_APP_PRIVATE_KEY }}
-          permission-contents: read
-          permission-vulnerability-alerts: read
-
       - name: Build workspace
         if: steps.mode.outputs.mode != 'off'
         run: pnpm build
@@ -74,81 +62,14 @@ jobs:
         if: steps.mode.outputs.mode != 'off'
         run: >-
           node scripts/deps/consumer-check.mjs
-          --output "$RUNNER_TEMP/deps-plan"
+          --output "$RUNNER_TEMP/health-check"
           --lookahead-days 3
         timeout-minutes: 20
 
-      - name: Run dependency planner
+      - name: Run health check
         if: steps.mode.outputs.mode != 'off'
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || '' }}
-        run: |
-          effective_mode="${{ steps.mode.outputs.mode }}"
-          if [ "$effective_mode" = "on" ]; then
-            effective_mode="prepare"
-          fi
-          node scripts/deps/run.mjs \
-            --mode "$effective_mode" \
-            --output "$RUNNER_TEMP/deps-plan"
-
-      - name: Check plan for actions
-        id: check
-        if: steps.mode.outputs.mode != 'off'
-        run: |
-          plan="$RUNNER_TEMP/deps-plan/plan.json"
-          has_actions="false"
-          if [ -f "$plan" ]; then
-            count=$(node -e "const p=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write(String(p.actions?.length??0))" "$plan")
-            if [ "$count" -gt 0 ]; then
-              has_actions="true"
-            fi
-            echo "Plan has $count action(s)."
-          else
-            echo "No plan file found."
-          fi
-          echo "has_actions=$has_actions" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: steps.mode.outputs.mode != 'off' && steps.check.outputs.has_actions == 'true'
-        with:
-          name: deps-plan
-          path: ${{ runner.temp }}/deps-plan/
-          retention-days: 1
-          if-no-files-found: error
-
-  act:
-    needs: plan
-    if: needs.plan.outputs.has_actions == 'true' && vars.DEPS_BOT == 'on'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version-file: .nvmrc
-
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: deps-plan
-          path: ${{ runner.temp }}/deps-plan
-
-      - name: Mint write GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
-        with:
-          app-id: ${{ secrets.DEPS_BOT_APP_ID }}
-          private-key: ${{ secrets.DEPS_BOT_APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-          permission-vulnerability-alerts: read
-
-      - name: Create dependency PRs
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           SLACK_DEPS_WEBHOOK_URL: ${{ secrets.SLACK_DEPS_WEBHOOK_URL }}
-        run: node scripts/deps/run.mjs --mode execute --input "$RUNNER_TEMP/deps-plan"
+        run: >-
+          node scripts/deps/health-check.mjs
+          --output "$RUNNER_TEMP/health-check"

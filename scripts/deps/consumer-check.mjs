@@ -1,22 +1,23 @@
 #!/usr/bin/env node
 
 /**
- * Consumer audit wrapper for the dependency maintenance bot.
+ * Consumer audit wrapper for the daily release health check.
  *
  * Builds the packed tarball, runs the consumer audit at the current cutoff
  * and again with a 3-day look-ahead, classifies unhandled findings as
- * stale-exception or new-finding, and writes the resulting actions to the
- * output directory.
+ * stale-exception or new-finding, and writes results to the output directory.
  *
  * Usage:
- *   node scripts/deps/consumer-check.mjs --output /tmp/deps-plan [--lookahead-days 3]
+ *   node scripts/deps/consumer-check.mjs --output /tmp/health-check [--lookahead-days 3]
  *
  * The output directory receives:
- *   consumer-actions.json   Array of plan actions
- *   consumer-report.json    Full audit results
+ *   consumer-findings.json   Classified findings array
+ *   consumer-report.json     Audit pass/fail summary
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
@@ -24,17 +25,13 @@ import { auditPackedConsumers } from '../security/consumer-audit.mjs';
 import { explainPaths, validateConsumerExceptions } from '../security/consumer-policy.mjs';
 import { stageDogsledPackage } from '../release/stage-package.mjs';
 import { repoRoot } from '../security/lib.mjs';
-import { buildConsumerAuditActions } from './planner.mjs';
-
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
-import os from 'node:os';
+import { classifyConsumerFindings } from './planner.mjs';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const { values: flags } = parseArgs({
   options: {
-    output: { type: 'string', default: '/tmp/deps-plan' },
+    output: { type: 'string', default: '/tmp/health-check' },
     'lookahead-days': { type: 'string', default: '3' },
   },
   strict: false,
@@ -48,7 +45,7 @@ async function main() {
 
   // --- Build the packed tarball ---
   process.stdout.write('Staging and packing the Dogsled tarball...\n');
-  const stageRoot = mkdtempSync(path.join(os.tmpdir(), 'deps-bot-stage-'));
+  const stageRoot = mkdtempSync(path.join(os.tmpdir(), 'health-check-stage-'));
   const stageDir = path.join(stageRoot, 'package');
   let tarball;
   try {
@@ -104,54 +101,60 @@ async function main() {
 
   // --- Classify findings ---
   const now = Date.now();
-  const allActions = [];
+  const allFindings = [];
 
   for (const result of currentReport.results) {
     const unhandled = result.findings.filter((f) => f.disposition === 'unhandled');
     if (unhandled.length === 0) continue;
-
     const parentVersionMap = buildParentVersionMap(
       unhandled,
       path.join(outputDir, 'consumer-current', result.mode)
     );
-    allActions.push(
-      ...buildConsumerAuditActions(unhandled, parentVersionMap, exceptions, false, now)
+    allFindings.push(
+      ...classifyConsumerFindings(unhandled, parentVersionMap, exceptions, false, now)
     );
   }
 
   for (const result of lookaheadReport.results) {
     const unhandled = result.findings.filter((f) => f.disposition === 'unhandled');
     if (unhandled.length === 0) continue;
-
     const parentVersionMap = buildParentVersionMap(
       unhandled,
       path.join(outputDir, 'consumer-lookahead', result.mode)
     );
-    allActions.push(
-      ...buildConsumerAuditActions(unhandled, parentVersionMap, exceptions, true, now)
+    allFindings.push(
+      ...classifyConsumerFindings(unhandled, parentVersionMap, exceptions, true, now)
     );
   }
 
   // --- Write results ---
-  writeFileSync(path.join(outputDir, 'consumer-actions.json'), JSON.stringify(allActions, null, 2));
+  writeFileSync(
+    path.join(outputDir, 'consumer-findings.json'),
+    JSON.stringify(allFindings, null, 2)
+  );
   writeFileSync(
     path.join(outputDir, 'consumer-report.json'),
     JSON.stringify(
       {
-        current: { passed: currentReport.passed, resultCount: currentReport.results.length },
+        current: {
+          passed: currentReport.passed,
+          resultCount: currentReport.results.length,
+        },
         lookahead: {
           passed: lookaheadReport.passed,
           resultCount: lookaheadReport.results.length,
         },
-        actions: allActions.length,
+        findings: allFindings.length,
       },
       null,
       2
     )
   );
 
+  const stale = allFindings.filter((f) => f.kind === 'stale-exception').length;
+  const newCount = allFindings.filter((f) => f.kind === 'new-finding').length;
   process.stdout.write(
-    `Consumer audit complete: ${allActions.length} action(s) (${allActions.filter((a) => a.kind === 'update-exception').length} stale, ${allActions.filter((a) => a.kind === 'consumer-alert').length} new).\n`
+    `Consumer audit complete: ${allFindings.length} finding(s) (${stale} stale, ${newCount} new).\n`
   );
 
   if (!currentReport.passed) {
@@ -162,7 +165,7 @@ async function main() {
 
 /**
  * Extract actual parent versions from the explanations evidence for each
- * unhandled finding. Returns a map: "advisory:package:version:path" -> { parent: actualVersion }.
+ * unhandled finding.
  */
 function buildParentVersionMap(findings, evidenceDir) {
   const map = {};
@@ -185,7 +188,7 @@ function buildParentVersionMap(findings, evidenceDir) {
       }
     }
   } catch {
-    /* evidence may be unavailable; classification still works without versions */
+    /* evidence may be unavailable */
   }
   return map;
 }
