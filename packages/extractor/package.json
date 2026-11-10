@@ -39,6 +39,11 @@
       "types": "./dist/extractor/index.d.ts",
       "import": "./dist/extractor/index.js",
       "default": "./dist/extractor/index.js"
+    },
+    "./sftp": {
+      "types": "./dist/sftp/index.d.ts",
+      "import": "./dist/sftp/index.js",
+      "default": "./dist/sftp/index.js"
     }
   },
   "typesVersions": {

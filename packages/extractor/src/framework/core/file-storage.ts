@@ -281,6 +281,22 @@ export interface FileStorageClient {
   close(): Promise<void>;
 }
 
+export interface ExpectedRemoteFile {
+  size: number;
+  mtimeSeconds: number;
+}
+
+export interface DownloadProgress {
+  /** Indexes of the fixed-size read chunks already written to the target. */
+  completedChunks: Set<number>;
+  /** Set by the client: completed chunks only count for the same file, pin and target. */
+  boundTo?: string;
+}
+
 export interface DownloadFileOptions {
   signal?: AbortSignal;
+  /** SFTP only: fail with SFTP_FILE_CHANGED unless the remote file still has this size and mtime. */
+  expected?: ExpectedRemoteFile;
+  /** SFTP only, requires `expected`: pass the same object and target to resume after a retryable failure. */
+  progress?: DownloadProgress;
 }

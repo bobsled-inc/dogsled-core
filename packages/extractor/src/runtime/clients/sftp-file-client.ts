@@ -15,6 +15,7 @@ import type {
 import type {
   DownloadedFile,
   DownloadFileOptions,
+  ExpectedRemoteFile,
   FileStorageClient,
   ListedFile,
   ListFilesOptions,
@@ -148,6 +149,12 @@ async function writeAll(out: FileHandle, chunk: Buffer, position: number): Promi
       throw Object.assign(new Error('Local write made no progress'), { code: 'EIO' });
     }
     written += bytesWritten;
+  }
+}
+
+function assertPinned(attrs: Stats | undefined, expected: ExpectedRemoteFile): void {
+  if (attrs?.size !== expected.size || attrs?.mtime !== expected.mtimeSeconds) {
+    throw sftpError('SFTP_FILE_CHANGED', 'download');
   }
 }
 
@@ -341,8 +348,11 @@ export class SftpFileStorageClient implements FileStorageClient {
     options?: DownloadFileOptions
   ): Promise<DownloadedFile> {
     assertSafeProviderPath(file.path);
+    const { signal, expected, progress } = options ?? {};
+    if (progress && !expected) {
+      throw new ExtractorConfigError('SFTP download progress requires expected');
+    }
     await mkdir(path.dirname(targetPath), { recursive: true });
-    const signal = options?.signal;
     const realBase = await this.resolveRealBase(signal);
     const remotePath = remoteJoin(this.connection.base_directory, file.path);
     let realPath: string;
@@ -358,9 +368,23 @@ export class SftpFileStorageClient implements FileStorageClient {
     if (!isInside(realBase, realPath)) {
       throw new ExtractorDataError(`SFTP file ${file.path} resolves outside base_directory`);
     }
+    if (progress) {
+      const boundTo = JSON.stringify([
+        realPath,
+        path.resolve(targetPath),
+        expected?.size,
+        expected?.mtimeSeconds,
+      ]);
+      if (progress.completedChunks.size > 0 && progress.boundTo !== boundTo) {
+        throw new ExtractorConfigError(
+          `SFTP download progress belongs to another file or target: ${file.path}`
+        );
+      }
+      progress.boundTo = boundTo;
+    }
     try {
       // Download the resolved path so a later symlink swap cannot redirect the read.
-      await this.readRanges(realPath, targetPath, file.size, signal);
+      await this.readRanges(realPath, targetPath, file.size, options);
     } catch (error) {
       throw this.fileError(error, file.path);
     }
@@ -370,29 +394,35 @@ export class SftpFileStorageClient implements FileStorageClient {
   /**
    * Bounded ranged reader: up to read_concurrency READs in flight, each under the idle
    * timeout, written at their offsets. The size comes from FSTAT or the listing; when
-   * neither has it, one sequential read runs until EOF.
+   * neither has it, one sequential read runs until EOF. With `expected` the FSTATs at
+   * open and after the last READ must match it, and an early EOF fails; `progress` skips
+   * chunks an earlier attempt already wrote.
    */
   private async readRanges(
     remotePath: string,
     targetPath: string,
     listedSize: number | undefined,
-    signal?: AbortSignal
+    options: DownloadFileOptions = {}
   ): Promise<void> {
+    const { signal, expected, progress } = options;
+    const completed = progress?.completedChunks;
     const handle = await this.run<Buffer>(
       'open',
       (done) => this.sftp.open(remotePath, 'r', done),
       signal
     );
-    const out = await open(targetPath, 'w');
+    // A resume keeps the chunks earlier attempts wrote.
+    const out = await open(targetPath, completed?.size ? 'r+' : 'w');
     try {
-      const attrs = await this.run<Stats>(
-        'fstat',
-        (done) => this.sftp.fstat(handle, done),
-        signal
-      ).catch((error: unknown) => {
-        if (sftpStatus(error) === undefined) throw error;
-        return undefined;
-      });
+      const fstat = () =>
+        this.run<Stats>('fstat', (done) => this.sftp.fstat(handle, done), signal).catch(
+          (error: unknown) => {
+            if (sftpStatus(error) === undefined) throw error;
+            return undefined;
+          }
+        );
+      const attrs = await fstat();
+      if (expected) assertPinned(attrs, expected);
       const size = attrs?.size ?? listedSize;
       let next = 0;
       let stop = false;
@@ -422,15 +452,19 @@ export class SftpFileStorageClient implements FileStorageClient {
               ? offset + READ_CHUNK_BYTES
               : Math.min(offset + READ_CHUNK_BYTES, size);
           next = end;
+          const chunk = offset / READ_CHUNK_BYTES;
+          if (completed?.has(chunk)) continue;
           // Servers may answer with fewer bytes than asked; read the rest of the range.
           while (offset < end) {
             const bytesRead = await readAt(offset, end - offset);
             if (bytesRead === 0) {
+              if (expected) throw sftpError('SFTP_FILE_CHANGED', 'download');
               stop = true; // EOF: the file is shorter than expected (or size was unknown)
               return;
             }
             offset += bytesRead;
           }
+          completed?.add(chunk);
         }
       };
       const guarded = () =>
@@ -443,6 +477,7 @@ export class SftpFileStorageClient implements FileStorageClient {
       const results = await Promise.allSettled(Array.from({ length: workers }, guarded));
       const failed = results.find((result) => result.status === 'rejected');
       if (failed) throw failed.reason;
+      if (expected) assertPinned(await fstat(), expected);
     } finally {
       await out.close();
       await this.run<void>('close', (done) => this.sftp.close(handle, done), signal).catch(

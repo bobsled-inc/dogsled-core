@@ -68,6 +68,7 @@ export default defineConfig([
       'core/index': 'src/framework/core/index.ts',
       'framework-runtime/index': 'src/framework/runtime/index.ts',
       'extractor/index': 'src/framework/extractor/index.ts',
+      'sftp/index': 'src/runtime/sftp.ts',
     },
     format: ['esm'],
     dts: true,

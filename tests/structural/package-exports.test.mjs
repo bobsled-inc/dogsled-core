@@ -1,5 +1,6 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
@@ -51,6 +52,7 @@ const CONSUMER_SUBPATHS = {
     './model-spec/schemas',
     './project-index',
     './blueprint-aliases',
+    './sftp',
   ],
 };
 
@@ -109,6 +111,27 @@ describe('package exports maps', () => {
         ).toHaveProperty([subpath]);
       }
     }
+  });
+
+  it('loads the SFTP client from the built package without a static ssh2 import', async () => {
+    const dogsled = packages.find((pkg) => pkg.name === '@bobsled-inc/dogsled');
+    const entry = path.join(dogsled.dir, dogsled.packageJson.exports['./sftp'].import);
+    if (!existsSync(entry)) {
+      return;
+    }
+    const sftp = await import(pathToFileURL(entry).href);
+    expect(Object.keys(sftp).sort()).toEqual([
+      'DogsledRuntimeError',
+      'ExtractorConfigError',
+      'ExtractorDataError',
+      'SFTP_ERROR_CODES',
+      'SftpFileStorageClient',
+    ]);
+    expect(sftp.SFTP_ERROR_CODES).toContain('SFTP_FILE_CHANGED');
+    const extractor = packages.find((pkg) => pkg.name === '@bobsled-inc/extractor');
+    const bundle = readFileSync(path.join(extractor.dir, 'dist/sftp/index.js'), 'utf8');
+    expect(bundle).toContain('import("ssh2")');
+    expect(bundle).not.toMatch(/^import .*["']ssh2["']/m);
   });
 
   // When the packages are built, every declared target must exist on disk.

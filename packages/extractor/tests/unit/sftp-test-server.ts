@@ -47,6 +47,12 @@ export interface TestSftpServerOptions {
   clientKey?: TestKey;
   stallReads?: boolean;
   dropOnRead?: boolean;
+  /** Drop the connection on the first READ at or past this file offset. */
+  dropAtOffset?: number;
+  /** Answer EOF to every READ at or past this file offset, while FSTAT stays unchanged. */
+  eofAtOffset?: number;
+  /** Runs before a READ is served, for changing the file while it is being read. */
+  beforeRead?: (readNumber: number) => void | Promise<void>;
   readDelayMs?: number;
   /** Entries per READDIR reply (default: the whole directory). */
   readdirBatchSize?: number;
@@ -61,6 +67,8 @@ export interface TestSftpServerOptions {
   omitSize?: boolean;
   /** Leave `mode` out of every attrs reply, as some servers do. */
   omitMode?: boolean;
+  /** Leave `mtime` out of every attrs reply. */
+  omitMtime?: boolean;
   /** Refuse every OPENDIR with permission denied. */
   denyOpendir?: boolean;
   /** Refuse every STAT with permission denied, like `sftp-server -P stat`. */
@@ -69,13 +77,22 @@ export interface TestSftpServerOptions {
 
 export interface TestSftpServer {
   port: number;
-  stats: { reads: number; inFlightReads: number; maxInFlightReads: number };
+  stats: {
+    reads: number;
+    inFlightReads: number;
+    maxInFlightReads: number;
+    readOffsets: number[];
+  };
   close(): Promise<void>;
 }
 
 function attrsOf(
   stats: import('node:fs').Stats,
-  { omitSize = false, omitMode = false }: { omitSize?: boolean; omitMode?: boolean } = {}
+  {
+    omitSize = false,
+    omitMode = false,
+    omitMtime = false,
+  }: { omitSize?: boolean; omitMode?: boolean; omitMtime?: boolean } = {}
 ) {
   return {
     ...(omitMode ? {} : { mode: stats.mode }),
@@ -83,7 +100,7 @@ function attrsOf(
     gid: stats.gid,
     ...(omitSize ? {} : { size: stats.size }),
     atime: Math.floor(stats.atimeMs / 1000),
-    mtime: Math.floor(stats.mtimeMs / 1000),
+    ...(omitMtime ? {} : { mtime: Math.floor(stats.mtimeMs / 1000) }),
   };
 }
 
@@ -208,7 +225,11 @@ function serveSftp(
     })
     .on('READ', (reqid, handle, offset, length) => {
       stats.reads += 1;
-      if (options.dropOnRead) {
+      stats.readOffsets.push(offset);
+      if (
+        options.dropOnRead ||
+        (options.dropAtOffset !== undefined && offset >= options.dropAtOffset)
+      ) {
         // Simulate a network drop: kill the TCP socket without an SSH disconnect.
         (connection as unknown as { _sock: { destroy(): void } })._sock.destroy();
         return;
@@ -216,10 +237,15 @@ function serveSftp(
       if (options.stallReads) return;
       stats.inFlightReads += 1;
       stats.maxInFlightReads = Math.max(stats.maxInFlightReads, stats.inFlightReads);
+      const readNumber = stats.reads;
       setTimeout(async () => {
+        await options.beforeRead?.(readNumber);
         stats.inFlightReads -= 1;
         const entry = handles.get(handle.readUInt32BE(0));
         if (!entry?.fd) return sftp.status(reqid, STATUS_CODE.FAILURE);
+        if (options.eofAtOffset !== undefined && offset >= options.eofAtOffset) {
+          return sftp.status(reqid, STATUS_CODE.EOF);
+        }
         const buffer = Buffer.alloc(length);
         const { bytesRead } = await entry.fd.read(buffer, 0, length, offset);
         if (bytesRead === 0) return sftp.status(reqid, STATUS_CODE.EOF);
@@ -235,7 +261,7 @@ function serveSftp(
 }
 
 export async function startTestSftpServer(options: TestSftpServerOptions): Promise<TestSftpServer> {
-  const stats = { reads: 0, inFlightReads: 0, maxInFlightReads: 0 };
+  const stats = { reads: 0, inFlightReads: 0, maxInFlightReads: 0, readOffsets: [] as number[] };
   const password = Buffer.from(options.password ?? 'secret');
   const clientKey: ParsedKey | undefined = options.clientKey
     ? (utils.parseKey(options.clientKey.privateKey) as ParsedKey)

@@ -57,6 +57,7 @@ import { createRequire as __createRequire } from 'node:module'; const require = 
       'compat/model-spec-project': 'src/compat/model-spec-project.ts',
       'compat/model-spec-schemas': 'src/compat/model-spec-schemas.ts',
       'compat/project-index': 'src/compat/project-index.ts',
+      'compat/sftp': 'src/compat/sftp.ts',
     },
     format: ['esm'],
     dts: true,

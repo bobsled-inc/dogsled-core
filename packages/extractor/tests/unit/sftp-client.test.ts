@@ -1,5 +1,15 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, open, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  open,
+  readFile,
+  rm,
+  symlink,
+  truncate,
+  utimes,
+  writeFile,
+} from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
 import { connect as tcpConnect, createServer } from 'node:net';
 import type { AddressInfo } from 'node:net';
@@ -12,7 +22,11 @@ import type { SFTPWrapper } from 'ssh2';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { withPrivateHostAllowlist } from '../../src/framework/core/index.js';
-import type { SftpHostKeyPin, ListedFile } from '../../src/framework/core/index.js';
+import type {
+  DownloadProgress,
+  ListedFile,
+  SftpHostKeyPin,
+} from '../../src/framework/core/index.js';
 import { SftpFileStorageClient } from '../../src/runtime/clients/sftp-file-client.js';
 import { ExtractorConfigError, ExtractorDataError } from '../../src/runtime/errors.js';
 import { SFTP_ERROR_CODES } from '../../src/runtime/index.js';
@@ -145,6 +159,7 @@ describe('SFTP client against a real ssh2 server', () => {
   it('exports every structured error code', () => {
     expect(SFTP_ERROR_CODES).toContain('SFTP_HOST_KEY_MISMATCH');
     expect(SFTP_ERROR_CODES).toContain('SFTP_CONNECTION_LOST');
+    expect(SFTP_ERROR_CODES).toContain('SFTP_FILE_CHANGED');
   });
 
   it('negotiates the pinned RSA key when the server also offers Ed25519', async () => {
@@ -526,6 +541,201 @@ describe('SFTP client against a real ssh2 server', () => {
     await expectSftpCode(listAll(client, controller.signal), 'SFTP_CANCELLED');
     expect(Date.now() - started).toBeLessThan(2_000);
   });
+});
+
+describe('SFTP pinned downloads', () => {
+  const CHUNK_BYTES = 65_536;
+  const MTIME = 1_700_000_000;
+  const content = Buffer.from(
+    Array.from({ length: CHUNK_BYTES * 5 + 123 }, (_, index) => index % 251)
+  );
+  const pinned = { size: content.length, mtimeSeconds: MTIME };
+  let fixture = 0;
+
+  /** A fresh remote file with a known mtime, plus a local target nobody else uses. */
+  async function pinnedFile() {
+    fixture += 1;
+    await mkdir(path.join(root, 'pinned'), { recursive: true });
+    const name = `p${fixture}.csv`;
+    const remote = path.join(root, 'pinned', name);
+    await writeFile(remote, content);
+    await utimes(remote, MTIME, MTIME);
+    return { name, remote, target: path.join(workDir, `pinned-${fixture}.out`) };
+  }
+
+  const pinnedConnect = (port: number, readConcurrency = 4) =>
+    connect(port, [pin(ed25519)], { baseDirectory: '/pinned', readConcurrency });
+
+  it('downloads every byte when the file still matches the pin', async () => {
+    const { name, target } = await pinnedFile();
+    const server = await serve();
+    const client = await pinnedConnect(server.port);
+    const downloaded = await client.download(file(name, content.length), target, {
+      expected: pinned,
+    });
+    expect(downloaded.bytes_downloaded).toBe(content.length);
+    expect((await readFile(target)).equals(content)).toBe(true);
+  });
+
+  it.each([
+    ['size', { size: content.length - 1, mtimeSeconds: MTIME }],
+    ['mtime', { size: content.length, mtimeSeconds: MTIME + 1 }],
+  ])('refuses a %s mismatch at open without reading', async (_field, expected) => {
+    const { name, target } = await pinnedFile();
+    const server = await serve();
+    const client = await pinnedConnect(server.port);
+    const error = await expectSftpCode(
+      client.download(file(name, content.length), target, { expected }),
+      'SFTP_FILE_CHANGED'
+    );
+    expect(error.retryable).toBe(false);
+    expect(server.stats.reads).toBe(0);
+  });
+
+  it.each([{ omitSize: true }, { omitMtime: true }])(
+    'fails instead of skipping the check when FSTAT lacks a field: %o',
+    async (omit) => {
+      const { name, target } = await pinnedFile();
+      const server = await serve(omit);
+      const client = await pinnedConnect(server.port);
+      await expectSftpCode(
+        client.download(file(name, content.length), target, { expected: pinned }),
+        'SFTP_FILE_CHANGED'
+      );
+      expect(server.stats.reads).toBe(0);
+    }
+  );
+
+  it('fails when the file changes during the read', async () => {
+    const { name, remote, target } = await pinnedFile();
+    const server = await serve({
+      beforeRead: (readNumber) =>
+        readNumber === 1 ? utimes(remote, MTIME + 60, MTIME + 60) : undefined,
+    });
+    const client = await pinnedConnect(server.port);
+    await expectSftpCode(
+      client.download(file(name, content.length), target, { expected: pinned }),
+      'SFTP_FILE_CHANGED'
+    );
+  });
+
+  it('fails on a short read instead of returning a partial file', async () => {
+    const { name, remote, target } = await pinnedFile();
+    const server = await serve({
+      beforeRead: (readNumber) =>
+        readNumber === 1 ? truncate(remote, CHUNK_BYTES + 10) : undefined,
+    });
+    const client = await pinnedConnect(server.port);
+    await expectSftpCode(
+      client.download(file(name, content.length), target, { expected: pinned }),
+      'SFTP_FILE_CHANGED'
+    );
+  });
+
+  it('fails on an early EOF even when the final FSTAT still matches', async () => {
+    const { name, target } = await pinnedFile();
+    const server = await serve({ eofAtOffset: CHUNK_BYTES * 2 });
+    const client = await pinnedConnect(server.port);
+    await expectSftpCode(
+      client.download(file(name, content.length), target, { expected: pinned }),
+      'SFTP_FILE_CHANGED'
+    );
+  });
+
+  it('resumes on a new client, byte-exact, re-reading only the missing chunks', async () => {
+    const { name, target } = await pinnedFile();
+    const progress: DownloadProgress = { completedChunks: new Set() };
+    const options = { expected: pinned, progress };
+    const dropping = await serve({ dropAtOffset: CHUNK_BYTES * 3 });
+    const first = await pinnedConnect(dropping.port, 1);
+    const error = await expectSftpCode(
+      downloadWith(first, name, target, options),
+      'SFTP_CONNECTION_LOST'
+    );
+    expect(error.retryable).toBe(true);
+    expect([...progress.completedChunks].sort()).toEqual([0, 1, 2]);
+
+    const healthy = await serve();
+    const second = await pinnedConnect(healthy.port);
+    const downloaded = await downloadWith(second, name, target, options);
+    expect(downloaded.bytes_downloaded).toBe(content.length);
+    expect((await readFile(target)).equals(content)).toBe(true);
+    // ssh2 may split one chunk into several READs, so compare chunks, not requests.
+    const rereadChunks = new Set(
+      healthy.stats.readOffsets.map((offset) => Math.floor(offset / CHUNK_BYTES))
+    );
+    expect([...rereadChunks].sort()).toEqual([3, 4, 5]);
+  });
+
+  it('runs the pin checks again on a resumed attempt', async () => {
+    const { name, remote, target } = await pinnedFile();
+    const progress: DownloadProgress = { completedChunks: new Set() };
+    const options = { expected: pinned, progress };
+    const dropping = await serve({ dropAtOffset: CHUNK_BYTES * 2 });
+    await expectSftpCode(
+      downloadWith(await pinnedConnect(dropping.port, 1), name, target, options),
+      'SFTP_CONNECTION_LOST'
+    );
+    await utimes(remote, MTIME + 60, MTIME + 60);
+    const healthy = await serve();
+    await expectSftpCode(
+      downloadWith(await pinnedConnect(healthy.port), name, target, options),
+      'SFTP_FILE_CHANGED'
+    );
+    expect(healthy.stats.reads).toBe(0);
+  });
+
+  it('refuses progress without a pin', async () => {
+    const { name, target } = await pinnedFile();
+    const server = await serve();
+    const client = await pinnedConnect(server.port);
+    await expect(
+      client.download(file(name, content.length), target, {
+        progress: { completedChunks: new Set() },
+      })
+    ).rejects.toThrow(ExtractorConfigError);
+    expect(server.stats.reads).toBe(0);
+  });
+
+  it('refuses progress that belongs to another target', async () => {
+    const { name, target } = await pinnedFile();
+    const progress: DownloadProgress = { completedChunks: new Set() };
+    const options = { expected: pinned, progress };
+    const dropping = await serve({ dropAtOffset: CHUNK_BYTES });
+    await expectSftpCode(
+      downloadWith(await pinnedConnect(dropping.port, 1), name, target, options),
+      'SFTP_CONNECTION_LOST'
+    );
+    const healthy = await serve();
+    const client = await pinnedConnect(healthy.port);
+    await expect(downloadWith(client, name, `${target}.other`, options)).rejects.toThrow(
+      ExtractorConfigError
+    );
+    expect(healthy.stats.reads).toBe(0);
+  });
+
+  it('leaves an unpinned download alone when the file changes or ends early', async () => {
+    const { name, remote, target } = await pinnedFile();
+    const server = await serve({
+      beforeRead: async (readNumber) => {
+        if (readNumber !== 1) return;
+        await utimes(remote, MTIME + 60, MTIME + 60);
+        await truncate(remote, CHUNK_BYTES + 10);
+      },
+    });
+    const client = await pinnedConnect(server.port, 1);
+    const downloaded = await client.download(file(name, content.length), target);
+    expect(downloaded.bytes_downloaded).toBe(CHUNK_BYTES + 10);
+  });
+
+  function downloadWith(
+    client: SftpFileStorageClient,
+    name: string,
+    target: string,
+    options: { expected: typeof pinned; progress: DownloadProgress }
+  ) {
+    return client.download(file(name, content.length), target, options);
+  }
 });
 
 describe('SFTP client request handling', () => {

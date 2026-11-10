@@ -165,6 +165,11 @@
       "types": "./dist/compat/ontology.d.ts",
       "import": "./dist/compat/ontology.js",
       "default": "./dist/compat/ontology.js"
+    },
+    "./sftp": {
+      "types": "./dist/compat/sftp.d.ts",
+      "import": "./dist/compat/sftp.js",
+      "default": "./dist/compat/sftp.js"
     }
   },
   "files": [
