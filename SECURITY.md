@@ -78,8 +78,9 @@ request checks keep the network audit separate from the local development gate.
 Dependency updates observe a 7-day minimum release age, except for
 owner-approved exact-version security-fix exemptions listed in
 `docs/dependency-security.md`. Weekly Dependabot npm
-and GitHub Actions updates use the same cooldown and group minor/patch updates.
-Each ecosystem allows up to five open version-update PRs. Audit exceptions
+and GitHub Actions updates use the same cooldown, group minor/patch updates and
+ignore semver-major bumps. npm allows up to two open version-update PRs;
+GitHub Actions allows one. Audit exceptions
 identify an exact
 advisory and dependency path, explain reachability, and set a review deadline.
 
