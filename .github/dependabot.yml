@@ -1,8 +1,8 @@
 version: 2
 # Weekly grouped minor/patch version updates. Major updates stay manual.
-# Dependabot security-update PRs are enabled in repository settings until the
-# dependency bot (separate task) is live; turn them off at that point because
-# they ignore the cooldown.
+# Dependabot security-update PRs stay enabled in repository settings. When a
+# fix version is younger than the 7-day release age, its PR goes green once the
+# version is old enough, or the owner adds an exemption if it is urgent.
 updates:
   - package-ecosystem: npm
     directory: /
