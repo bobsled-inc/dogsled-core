@@ -12,7 +12,8 @@
 // Validation (contract-mandated patterns)
 // ---------------------------------------------------------------------------
 
-const NPM_NAME_RE = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
+// S3c: lowercase only, matching Husky's regex (no uppercase legacy names)
+const NPM_NAME_RE = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 const GHSA_RE = /^GHSA(-[23456789cfghjmpqrvwx]{4}){3}$/;
 const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[\w.]+)?$/;
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -64,6 +65,7 @@ export function validateFinding(finding) {
         !validateNpmName(finding.parentPackage) ||
         !validateVersion(finding.parentVersion) ||
         !Array.isArray(finding.reviewedParentVersions) ||
+        finding.reviewedParentVersions.length > 20 ||
         finding.reviewedParentVersions.some((v) => !validateVersion(v)) ||
         !validateFile(finding.file)
       )
@@ -81,6 +83,8 @@ export function validateFinding(finding) {
 
     case 'deadline_soon':
       if (!validateIsoDate(finding.due) || !validateFile(finding.file)) return null;
+      // S3a: must have at least one of advisory or package
+      if (!finding.advisory && !finding.package) return null;
       if (finding.advisory && !validateGhsaId(finding.advisory)) return null;
       if (finding.package && !validateNpmName(finding.package)) return null;
       return finding;
@@ -223,17 +227,25 @@ export function buildContractFindings(expiries, consumerResults) {
   const candidates = [];
 
   for (const entry of expiries) {
-    // Expired or warning release-age exemptions
-    if (
-      entry.source === 'release-age exemption' &&
-      (entry.status === 'expired' || entry.status === 'warning')
-    ) {
-      const match = entry.label?.match(/^((?:@[\w.-]+\/)?[\w.-]+)@(\d[\w.-]*)$/);
-      if (match) {
+    // N8: release-age exemptions — only truly expired → expired_exemption;
+    // warning (grace phase) → deadline_soon so Husky doesn't try to remove
+    // an entry that isn't yet removable.
+    if (entry.source === 'release-age exemption') {
+      const match = entry.label?.match(
+        /^((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(\d[\w.-]*)$/
+      );
+      if (match && entry.status === 'expired') {
         candidates.push({
           kind: 'expired_exemption',
           package: match[1],
           version: match[2],
+          file: SOURCE_TO_FILE[entry.source],
+        });
+      } else if (match && entry.status === 'warning') {
+        candidates.push({
+          kind: 'deadline_soon',
+          package: match[1],
+          due: entry.date?.split('T')[0] ?? entry.date,
           file: SOURCE_TO_FILE[entry.source],
         });
       }
@@ -303,7 +315,7 @@ export function buildContractFindings(expiries, consumerResults) {
           version: result.version,
           parentPackage: parent,
           parentVersion: info.actual,
-          reviewedParentVersions: [...info.reviewed],
+          reviewedParentVersions: [...info.reviewed].slice(0, 20),
           file: 'scripts/security/consumer-exceptions.json',
         });
       }

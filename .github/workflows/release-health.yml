@@ -137,3 +137,8 @@ jobs:
             -H "Content-Type: application/json" \
             -d @"$report" \
             "$HUSKY_ORIGIN/api/health/report"
+
+      - name: Note when HUSKY_ORIGIN is unset
+        if: vars.HUSKY_ORIGIN == ''
+        run: |
+          echo '> **Note:** `HUSKY_ORIGIN` is not set. The health report was uploaded as an artifact but not sent to Husky.' >> "$GITHUB_STEP_SUMMARY"

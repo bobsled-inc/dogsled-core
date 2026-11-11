@@ -142,6 +142,35 @@ describe('validateFinding', () => {
     expect(validateFinding(f)).toBe(f);
   });
 
+  it('S3a: rejects deadline_soon with neither advisory nor package', () => {
+    expect(
+      validateFinding({
+        kind: 'deadline_soon',
+        due: '2026-11-20',
+        file: 'audit-ci.json',
+      })
+    ).toBeNull();
+  });
+
+  it('S3b: rejects stale_parent with more than 20 reviewedParentVersions', () => {
+    expect(
+      validateFinding({
+        kind: 'stale_parent',
+        advisory: 'GHSA-c475-qrg2-pj4r',
+        package: 'basic-ftp',
+        version: '5.3.1',
+        parentPackage: '@databricks/sql',
+        parentVersion: '2.3.0',
+        reviewedParentVersions: Array.from({ length: 21 }, (_, i) => `1.0.${i}`),
+        file: 'scripts/security/consumer-exceptions.json',
+      })
+    ).toBeNull();
+  });
+
+  it('S3c: rejects uppercase npm names (matching Husky)', () => {
+    expect(validateNpmName('JSONStream')).toBeNull();
+  });
+
   it('rejects disallowed file', () => {
     expect(
       validateFinding({
@@ -309,6 +338,48 @@ describe('buildContractFindings', () => {
     );
     expect(findings).toHaveLength(1);
     expect(findings[0].kind).toBe('expired_exemption');
+    expect(validateFinding(findings[0])).toBeTruthy();
+  });
+
+  it('N8: warning release-age exemption emits deadline_soon, not expired_exemption', () => {
+    const { findings } = buildContractFindings(
+      [
+        {
+          source: 'release-age exemption',
+          label: 'fast-uri@3.1.9',
+          date: '2026-11-09T23:05:26Z',
+          status: 'warning',
+          daysLeft: 0,
+        },
+      ],
+      []
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].kind).toBe('deadline_soon');
+    expect(findings[0].package).toBe('fast-uri');
+    expect(validateFinding(findings[0])).toBeTruthy();
+  });
+
+  it('S3b: caps reviewedParentVersions at 20', () => {
+    const { findings } = buildContractFindings(
+      [],
+      [
+        {
+          kind: 'stale-exception',
+          advisory: 'GHSA-c475-qrg2-pj4r',
+          package: 'basic-ftp',
+          version: '5.3.1',
+          staleParents: {
+            '@databricks/sql': {
+              reviewed: Array.from({ length: 25 }, (_, i) => `1.0.${i}`),
+              actual: '2.3.0',
+            },
+          },
+        },
+      ]
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].reviewedParentVersions.length).toBe(20);
     expect(validateFinding(findings[0])).toBeTruthy();
   });
 
@@ -516,5 +587,11 @@ describe('release-health.yml workflow', () => {
 
   it('uses !cancelled() so report runs even when audit fails (B2)', () => {
     expect(workflow).toContain('!cancelled()');
+  });
+
+  it('N9: writes a step-summary note when HUSKY_ORIGIN is unset', () => {
+    const reportJob = workflow.split('\n  report:')[1];
+    expect(reportJob).toContain("vars.HUSKY_ORIGIN == ''");
+    expect(reportJob).toContain('GITHUB_STEP_SUMMARY');
   });
 });
