@@ -92,7 +92,6 @@ async function main() {
     runId,
     runUrl,
     findings,
-    truncated,
   };
 
   const reportPath = path.join(outputDir, 'health-report.json');
@@ -100,7 +99,7 @@ async function main() {
   process.stdout.write(`Report written to ${reportPath}\n`);
 
   // --- Step summary (L3: include dropped count and truncation) ---
-  const summary = formatStepSummary(report, dropped);
+  const summary = formatStepSummary(report, dropped, truncated);
   process.stdout.write('\n');
   process.stdout.write(summary);
   process.stdout.write('\n');
@@ -124,7 +123,7 @@ async function main() {
   }
 }
 
-function formatStepSummary(report, dropped = 0) {
+function formatStepSummary(report, dropped = 0, truncated = false) {
   const lines = [];
   lines.push('# Daily release health check');
   lines.push('');
@@ -136,7 +135,7 @@ function formatStepSummary(report, dropped = 0) {
 
   const parts = [`**${report.findings.length} finding(s)**`];
   if (dropped > 0) parts.push(`${dropped} dropped (failed validation)`);
-  if (report.truncated) parts.push('truncated to 50');
+  if (truncated) parts.push('truncated to 50');
   lines.push(`${parts.join(', ')}.`);
   lines.push('');
   lines.push('| Kind | Package | Details |');
