@@ -1,0 +1,150 @@
+name: Daily release health check
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  audit:
+    if: github.repository == 'bobsled-inc/dogsled-core'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      has_findings: ${{ steps.check.outputs.has_findings }}
+    steps:
+      - name: Check mode
+        id: mode
+        env:
+          RELEASE_HEALTH: ${{ vars.RELEASE_HEALTH }}
+        run: |
+          mode="${RELEASE_HEALTH:-off}"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          if [ "$mode" = "off" ]; then
+            echo "RELEASE_HEALTH is off or unset; exiting."
+            exit 0
+          fi
+          echo "RELEASE_HEALTH=$mode"
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        if: steps.mode.outputs.mode != 'off'
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: steps.mode.outputs.mode != 'off'
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.mode.outputs.mode != 'off'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.mode.outputs.mode != 'off'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace
+        if: steps.mode.outputs.mode != 'off'
+        run: pnpm build
+        timeout-minutes: 15
+
+      - name: Setup SQLite
+        if: steps.mode.outputs.mode != 'off'
+        run: pnpm run setup:sqlite
+
+      - name: Run consumer audit with look-ahead
+        if: steps.mode.outputs.mode != 'off'
+        run: >-
+          node scripts/deps/consumer-check.mjs
+          --output "$RUNNER_TEMP/health-check"
+          --lookahead-days 3
+        timeout-minutes: 20
+
+      - name: Run health check
+        if: steps.mode.outputs.mode != 'off'
+        run: >-
+          node scripts/deps/health-check.mjs
+          --output "$RUNNER_TEMP/health-check"
+
+      - name: Check for findings
+        id: check
+        if: steps.mode.outputs.mode != 'off' && !cancelled()
+        run: |
+          report="$RUNNER_TEMP/health-check/health-report.json"
+          has_findings="false"
+          if [ -f "$report" ]; then
+            count=$(node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.findings?.length??0))" "$report")
+            if [ "$count" -gt 0 ]; then
+              has_findings="true"
+            fi
+            echo "Report has $count finding(s)."
+          fi
+          echo "has_findings=$has_findings" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.mode.outputs.mode != 'off' && !cancelled()
+        with:
+          name: health-report
+          path: ${{ runner.temp }}/health-check/health-report.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+  report:
+    needs: audit
+    if: >-
+      !cancelled() &&
+      needs.audit.outputs.mode == 'on' &&
+      needs.audit.outputs.has_findings == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: health-report
+          path: ${{ runner.temp }}/health-check
+
+      - name: POST report to Husky
+        if: vars.HUSKY_ORIGIN != ''
+        env:
+          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/health-check/health-report.json"
+          if [ ! -f "$report" ]; then
+            echo "No report to send."
+            exit 0
+          fi
+          token=$(curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=husky" \
+            | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>process.stdout.write(JSON.parse(d).value))")
+          status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
+            -o /tmp/husky-response.txt -w '%{http_code}' \
+            -X POST \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            -d @"$report" \
+            "$HUSKY_ORIGIN/api/health/report")
+          echo "Husky responded $status"
+          cat /tmp/husky-response.txt || true
+          if [ "$status" -ge 400 ]; then
+            echo "> **Warning:** Husky rejected the report with HTTP $status." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Note when HUSKY_ORIGIN is unset
+        if: vars.HUSKY_ORIGIN == ''
+        run: |
+          echo '> **Note:** `HUSKY_ORIGIN` is not set. The health report was uploaded as an artifact but not sent to Husky.' >> "$GITHUB_STEP_SUMMARY"

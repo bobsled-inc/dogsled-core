@@ -86,7 +86,10 @@ The network dependency audit runs on pull requests that change `package.json`,
 `pnpm-lock.yaml` or `pnpm-workspace.yaml`, on main, the weekly schedule and
 manual dispatch, and in release artifact checks. Run `pnpm security:audit` when
 network access is available. The 7-day dependency release age remains in force, except for owner-approved
-exact-version security-fix exemptions listed in `docs/dependency-security.md`.
+exact-version security-fix exemptions listed in `docs/dependency-security.md`. A daily health check
+monitors expired exemptions, approaching deadlines, and consumer audit findings; see
+the [health check section](docs/dependency-security.md#daily-release-health-check) in
+the dependency security guide.
 
 ## Commits and pull requests
 

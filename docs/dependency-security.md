@@ -145,3 +145,80 @@ The `tedious > sprintf-js` advisory is moderate. Tedious uses literal format
 strings, so remote values cannot set precision specifiers. It requires no
 exception at the high threshold. No generic package-name or severity exception
 is used. New dependency paths and expired exceptions block the release.
+
+## Daily release health check
+
+A scheduled GitHub Actions workflow (`release-health.yml`) runs once a day
+at 06:17 UTC. It checks for expired exemptions, approaching deadlines, and consumer
+audit failures, and fails the job when something needs attention.
+
+### What it checks
+
+- **Expired exemptions**: versions in `minimumReleaseAgeExclude` whose documented
+  removal date has passed and should be removed.
+- **Approaching deadlines**: `audit-ci` allowlist entries and consumer-exception
+  review deadlines within seven days.
+- **Consumer audit** (same code `security:release` uses): builds the packed tarball,
+  installs it in clean consumer projects with every supported driver combination, and
+  audits the resulting trees. Runs twice:
+  - **Current cutoff**: catches failures that would block a release today.
+  - **3-day look-ahead**: catches driver or transitive versions about to age into the
+    release window, before they break a release.
+
+### Consumer finding classification
+
+Unhandled consumer audit findings are classified:
+
+- **Stale exception**: a consumer exception exists for the same advisory, package,
+  version and path, but its `parentVersions` does not include the version the
+  consumer tree now resolves. This happens when an optional driver publishes a new
+  version that pulls in the same transitive tree. The report names the exact
+  exception and parent version to add.
+- **New finding**: no matching exception exists at all. The report includes the
+  advisory, package, version and severity. A person writes the exception or fix.
+
+### Settings
+
+The repository variable `RELEASE_HEALTH` controls behavior:
+
+| Value          | Effect                                                           |
+| -------------- | ---------------------------------------------------------------- |
+| `off` or unset | The workflow exits immediately.                                  |
+| `on`           | Full health check runs. Job fails on expired or unhandled items. |
+
+The workflow also uses:
+
+- Variable `HUSKY_ORIGIN`: the base URL for the Husky API. When unset, the report
+  is written to the step summary and uploaded as an artifact, but no POST is made.
+- No Slack tokens or GitHub App tokens. The audit job that runs third-party code
+  has `contents: read` only. A separate report job holds `id-token: write` to
+  mint the Husky OIDC token, and runs no third-party code. Slack posting is
+  handled by Husky on its side.
+
+### Husky hand-off
+
+The health check builds a `health-report.json` in the Husky contract schema (v1):
+typed findings with only validated fields (npm package names, semver versions,
+GHSA IDs, ISO dates, and a fixed file-path allow list). No free text from the
+registry or audit output ever reaches the report.
+
+When `HUSKY_ORIGIN` is set, the workflow requests a GitHub OIDC token with audience
+`husky` and POSTs the report to `${HUSKY_ORIGIN}/api/health/report`. Husky verifies
+the token, posts Slack messages, and opens fix PRs for stale exceptions and expired
+exemptions. A person still reviews and merges, and exception changes need owner
+approval.
+
+The report content is built by the audit job, which runs third-party dependency
+code (install, build, consumer installs). The report job POSTs it as-is. This means
+a malicious dependency could forge report content. The risk is bounded by Husky's
+schema validation (strict field patterns, fixed file-path allow list), the 50-finding
+cap, the fact that fix PRs open as drafts, and the CODEOWNERS requirement on the
+target files in core's main branch ruleset.
+
+### Code
+
+The scripts live in `scripts/deps/`:
+
+- `planner.mjs` — pure functions (classification, validation, contract findings builder).
+- `health-check.mjs` — CLI entry: reads expiries, builds report, POSTs to Husky.
+- `consumer-check.mjs` — builds tarball, runs consumer audit, classifies findings.
