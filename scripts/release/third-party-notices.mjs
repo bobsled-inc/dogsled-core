@@ -17,6 +17,11 @@ const COPYRIGHT_FALLBACKS = {
     copyright: 'Copyright 2023 Vercel, Inc.',
     source: 'https://github.com/vercel/ai/blob/fc81a9e75f7d48fc2c02b6c77fd6c204664624bc/LICENSE',
   },
+  '@ai-sdk/provider-utils@4.0.64': {
+    license: 'Apache-2.0',
+    copyright: 'Copyright 2023 Vercel, Inc.',
+    source: 'https://github.com/vercel/ai/blob/fc81a9e75f7d48fc2c02b6c77fd6c204664624bc/LICENSE',
+  },
 };
 const METAFILES = [
   { file: 'packages/ai/dist/metafile-esm.json', cwd: 'packages/ai' },
