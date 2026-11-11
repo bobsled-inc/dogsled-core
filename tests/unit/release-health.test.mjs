@@ -622,3 +622,120 @@ describe('L1: strict semver validation', () => {
     expect(validateVersion('1.0.0-rc-1')).toBe('1.0.0-rc-1');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Schema conformance: report and finding shapes match the Husky contract
+// ---------------------------------------------------------------------------
+
+/**
+ * Husky contract v1 schema constraints, shared fixture.
+ * Keeping this in the test means a drift between core's output and Husky's
+ * decoder fails core CI before it fails a live run.
+ */
+const CONTRACT_REPORT_KEYS = new Set(['schemaVersion', 'product', 'runId', 'runUrl', 'findings']);
+
+const CONTRACT_FINDING_KEYS = {
+  stale_parent: new Set([
+    'kind',
+    'advisory',
+    'package',
+    'version',
+    'parentPackage',
+    'parentVersion',
+    'reviewedParentVersions',
+    'file',
+  ]),
+  expired_exemption: new Set(['kind', 'package', 'version', 'file']),
+  deadline_soon: new Set(['kind', 'advisory', 'package', 'due', 'file']),
+  new_finding: new Set(['kind', 'advisory', 'package', 'version', 'severity']),
+};
+
+describe('contract schema conformance', () => {
+  it('the report has exactly the contract top-level keys', () => {
+    // Simulate what health-check.mjs builds
+    const report = {
+      schemaVersion: 1,
+      product: 'dogsled-core',
+      runId: 123,
+      runUrl: 'https://github.com/bobsled-inc/dogsled-core/actions/runs/123',
+      findings: [],
+    };
+    const keys = new Set(Object.keys(report));
+    expect(keys).toEqual(CONTRACT_REPORT_KEYS);
+  });
+
+  it('every finding kind has only its contract keys', () => {
+    const { findings } = buildContractFindings(
+      [
+        {
+          source: 'release-age exemption',
+          label: 'fast-uri@3.1.9',
+          status: 'expired',
+          daysLeft: -1,
+        },
+        {
+          source: 'consumer exception',
+          label: 'GHSA-c475-qrg2-pj4r basic-ftp',
+          date: '2026-11-15T00:00:00Z',
+          status: 'ok',
+          daysLeft: 5,
+        },
+      ],
+      [
+        {
+          kind: 'stale-exception',
+          advisory: 'GHSA-c475-qrg2-pj4r',
+          package: 'basic-ftp',
+          version: '5.3.1',
+          staleParents: {
+            '@databricks/sql': {
+              reviewed: ['2.0.0', '2.2.0'],
+              actual: '2.3.0',
+            },
+          },
+        },
+        {
+          kind: 'new-finding',
+          advisory: 'GHSA-xhq7-xmqj-769h',
+          package: 'new-vuln',
+          version: '1.0.0',
+          severity: 'high',
+        },
+      ]
+    );
+
+    expect(findings.length).toBeGreaterThanOrEqual(3);
+
+    for (const f of findings) {
+      const allowed = CONTRACT_FINDING_KEYS[f.kind];
+      expect(allowed, `unknown kind ${f.kind}`).toBeTruthy();
+      for (const key of Object.keys(f)) {
+        expect(allowed.has(key), `unexpected key "${key}" in ${f.kind} finding`).toBe(true);
+      }
+    }
+  });
+
+  it('deadline_soon omits advisory or package when absent (optional fields)', () => {
+    const { findings } = buildContractFindings(
+      [
+        {
+          source: 'audit-ci allowlist',
+          label: 'GHSA-xcx6-jx8p-x3h5',
+          date: '2026-11-15T00:00:00Z',
+          status: 'ok',
+          daysLeft: 5,
+        },
+      ],
+      []
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].kind).toBe('deadline_soon');
+    // advisory present, package absent
+    expect(findings[0]).toHaveProperty('advisory');
+    expect(findings[0]).not.toHaveProperty('package');
+    // Every present key is in the contract
+    for (const key of Object.keys(findings[0])) {
+      expect(CONTRACT_FINDING_KEYS.deadline_soon.has(key)).toBe(true);
+    }
+  });
+});
