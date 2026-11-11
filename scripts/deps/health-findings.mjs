@@ -15,7 +15,9 @@
 // S3c: lowercase only, matching Husky's regex (no uppercase legacy names)
 const NPM_NAME_RE = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 const GHSA_RE = /^GHSA(-[23456789cfghjmpqrvwx]{4}){3}$/;
-const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[\w.]+)?$/;
+// L1: match Husky's strict semver (no leading zeros, no _ in prerelease)
+const SEMVER_RE =
+  /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)?$/;
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SEVERITY_VALUES = new Set(['info', 'low', 'moderate', 'high', 'critical']);
 
@@ -353,7 +355,8 @@ export function buildContractFindings(expiries, consumerResults) {
     }
   }
 
-  return { findings: findings.slice(0, 50), dropped };
+  const truncated = findings.length > 50;
+  return { findings: findings.slice(0, 50), dropped, truncated };
 }
 
 function dedupeKey(finding) {

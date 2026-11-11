@@ -189,8 +189,8 @@ function buildParentVersionMap(findings, evidenceDir) {
         }
       }
     }
-  } catch {
-    /* evidence may be unavailable */
+  } catch (error) {
+    process.stdout.write(`Could not read explanations from ${evidenceDir}: ${error.message}\n`);
   }
   return map;
 }

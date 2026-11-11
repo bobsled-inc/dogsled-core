@@ -594,4 +594,31 @@ describe('release-health.yml workflow', () => {
     expect(reportJob).toContain("vars.HUSKY_ORIGIN == ''");
     expect(reportJob).toContain('GITHUB_STEP_SUMMARY');
   });
+
+  it('L3: writes step-summary warning on Husky 4xx', () => {
+    const reportJob = workflow.split('\n  report:')[1];
+    expect(reportJob).toContain('400');
+    expect(reportJob).toContain('GITHUB_STEP_SUMMARY');
+    expect(reportJob).toContain('rejected the report');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// L1: strict semver matching Husky's pattern
+// ---------------------------------------------------------------------------
+
+describe('L1: strict semver validation', () => {
+  it('rejects leading zeros', () => {
+    expect(validateVersion('01.0.0')).toBeNull();
+    expect(validateVersion('1.02.0')).toBeNull();
+  });
+
+  it('rejects underscore in prerelease', () => {
+    expect(validateVersion('1.0.0-beta_1')).toBeNull();
+  });
+
+  it('accepts valid prerelease', () => {
+    expect(validateVersion('1.0.0-beta.1')).toBe('1.0.0-beta.1');
+    expect(validateVersion('1.0.0-rc-1')).toBe('1.0.0-rc-1');
+  });
 });

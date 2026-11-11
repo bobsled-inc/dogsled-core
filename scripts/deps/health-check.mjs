@@ -68,7 +68,7 @@ async function main() {
   }
 
   // --- Build contract findings ---
-  const { findings, dropped } = buildContractFindings(expiries, consumerResults);
+  const { findings, dropped, truncated } = buildContractFindings(expiries, consumerResults);
   process.stdout.write(
     `Contract findings: ${findings.length} valid` +
       (dropped > 0 ? `, ${dropped} dropped (failed validation)` : '') +
@@ -92,14 +92,15 @@ async function main() {
     runId,
     runUrl,
     findings,
+    truncated,
   };
 
   const reportPath = path.join(outputDir, 'health-report.json');
   writeFileSync(reportPath, JSON.stringify(report, null, 2));
   process.stdout.write(`Report written to ${reportPath}\n`);
 
-  // --- Step summary ---
-  const summary = formatStepSummary(report);
+  // --- Step summary (L3: include dropped count and truncation) ---
+  const summary = formatStepSummary(report, dropped);
   process.stdout.write('\n');
   process.stdout.write(summary);
   process.stdout.write('\n');
@@ -123,20 +124,25 @@ async function main() {
   }
 }
 
-function formatStepSummary(report) {
+function formatStepSummary(report, dropped = 0) {
   const lines = [];
   lines.push('# Daily release health check');
   lines.push('');
 
-  if (report.findings.length === 0) {
+  if (report.findings.length === 0 && dropped === 0) {
     lines.push('All checks passed. No findings.');
     return lines.join('\n');
   }
 
-  lines.push(`**${report.findings.length} finding(s)** reported to Husky.`);
+  const parts = [`**${report.findings.length} finding(s)**`];
+  if (dropped > 0) parts.push(`${dropped} dropped (failed validation)`);
+  if (report.truncated) parts.push('truncated to 50');
+  lines.push(`${parts.join(', ')}.`);
   lines.push('');
   lines.push('| Kind | Package | Details |');
   lines.push('| --- | --- | --- |');
+
+  const today = new Date().toISOString().split('T')[0];
 
   for (const f of report.findings) {
     switch (f.kind) {
@@ -150,11 +156,13 @@ function formatStepSummary(report) {
           `| expired_exemption | \`${f.package}@${f.version}\` | Remove from \`${f.file}\` |`
         );
         break;
-      case 'deadline_soon':
-        lines.push(
-          `| deadline_soon | \`${f.package}\` | ${f.advisory ?? ''} due ${f.due} in \`${f.file}\` |`
-        );
+      case 'deadline_soon': {
+        const isPast = f.due < today;
+        const label = f.package ? `\`${f.package}\`` : (f.advisory ?? '');
+        const timing = isPast ? `expired ${f.due}` : `due ${f.due}`;
+        lines.push(`| deadline_soon | ${label} | ${f.advisory ?? ''} ${timing} in \`${f.file}\` |`);
         break;
+      }
       case 'new_finding':
         lines.push(
           `| new_finding | \`${f.package}@${f.version}\` | ${f.advisory} (${f.severity}) |`
@@ -162,6 +170,14 @@ function formatStepSummary(report) {
         break;
     }
   }
+
+  if (dropped > 0) {
+    lines.push('');
+    lines.push(
+      `> **Warning:** ${dropped} finding(s) failed validation and were dropped from the report.`
+    );
+  }
+
   lines.push('');
   return lines.join('\n');
 }

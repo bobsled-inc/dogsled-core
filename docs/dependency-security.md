@@ -208,6 +208,13 @@ the token, posts Slack messages, and opens fix PRs for stale exceptions and expi
 exemptions. A person still reviews and merges, and exception changes need owner
 approval.
 
+The report content is built by the audit job, which runs third-party dependency
+code (install, build, consumer installs). The report job POSTs it as-is. This means
+a malicious dependency could forge report content. The risk is bounded by Husky's
+schema validation (strict field patterns, fixed file-path allow list), the 50-finding
+cap, the fact that fix PRs open as drafts, and the CODEOWNERS requirement on the
+target files in core's main branch ruleset.
+
 ### Code
 
 The scripts live in `scripts/deps/`:
