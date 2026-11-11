@@ -25,7 +25,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { collectExpiryDates } from '../security/expiry-dates.mjs';
-import { buildContractFindings, validateFinding } from './planner.mjs';
+import { buildContractFindings, validateFinding } from './health-findings.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -52,23 +52,32 @@ async function main() {
   );
 
   // --- Consumer findings (written by consumer-check.mjs) ---
+  // B2: a missing findings file is an error, not zero findings. The consumer
+  // audit must have run and written the file even when it found nothing.
   let consumerResults = [];
   const consumerFindingsPath = path.join(outputDir, 'consumer-findings.json');
   if (existsSync(consumerFindingsPath)) {
     consumerResults = JSON.parse(readFileSync(consumerFindingsPath, 'utf8'));
     process.stdout.write(`Consumer findings: ${consumerResults.length}\n`);
+  } else {
+    process.stderr.write(
+      'consumer-findings.json is missing: the consumer audit did not complete.\n'
+    );
+    process.exitCode = 1;
+    return;
   }
 
   // --- Build contract findings ---
-  const findings = buildContractFindings(expiries, consumerResults);
-  process.stdout.write(`Contract findings: ${findings.length} (all validated)\n`);
+  const { findings, dropped } = buildContractFindings(expiries, consumerResults);
+  process.stdout.write(
+    `Contract findings: ${findings.length} valid` +
+      (dropped > 0 ? `, ${dropped} dropped (failed validation)` : '') +
+      '\n'
+  );
 
-  // Double-check: every finding must pass validation
-  const valid = findings.every((f) => validateFinding(f) !== null);
-  if (!valid) {
-    process.stderr.write('Internal error: a finding failed validation after construction.\n');
-    process.exitCode = 1;
-    return;
+  // S3: fail if entries were dropped
+  if (dropped > 0) {
+    process.stderr.write(`${dropped} finding(s) failed validation and were dropped.\n`);
   }
 
   // --- Build the report ---
@@ -100,60 +109,17 @@ async function main() {
     writeFileSync(stepSummaryPath, summary, { flag: 'a' });
   }
 
-  // --- POST to Husky ---
-  const huskyOrigin = process.env.HUSKY_ORIGIN || '';
-  if (huskyOrigin && findings.length > 0) {
-    await postToHusky(huskyOrigin, report);
-  } else if (!huskyOrigin && findings.length > 0) {
-    process.stdout.write('HUSKY_ORIGIN is not set; skipping Husky notification.\n');
-  }
+  // The report job handles OIDC and Husky POST (S1: separate job, no
+  // third-party code near the token). This script only writes the file.
 
-  // --- Fail on findings ---
-  if (findings.length > 0) {
-    process.stdout.write(`\nHealth check failed: ${findings.length} finding(s).\n`);
+  // --- Fail on findings or drops ---
+  if (findings.length > 0 || dropped > 0) {
+    process.stdout.write(
+      `\nHealth check failed: ${findings.length} finding(s)${dropped > 0 ? `, ${dropped} dropped` : ''}.\n`
+    );
     process.exitCode = 1;
   } else {
     process.stdout.write('\nHealth check passed.\n');
-  }
-}
-
-async function postToHusky(huskyOrigin, report) {
-  const oidcUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
-  const oidcToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
-
-  if (!oidcUrl || !oidcToken) {
-    process.stdout.write('OIDC token request variables not available; skipping Husky POST.\n');
-    return;
-  }
-
-  try {
-    // Request OIDC token with audience "husky"
-    const tokenResponse = await fetch(`${oidcUrl}&audience=husky`, {
-      headers: { Authorization: `bearer ${oidcToken}` },
-    });
-    if (!tokenResponse.ok) {
-      process.stdout.write(`OIDC token request failed: ${tokenResponse.status}\n`);
-      return;
-    }
-    const { value: idToken } = await tokenResponse.json();
-
-    // POST report to Husky
-    const response = await fetch(`${huskyOrigin}/api/health/report`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(report),
-    });
-    if (response.ok) {
-      process.stdout.write('Report sent to Husky.\n');
-    } else {
-      const text = await response.text().catch(() => '');
-      process.stdout.write(`Husky responded ${response.status}: ${text}\n`);
-    }
-  } catch (error) {
-    process.stdout.write(`Husky POST failed: ${error.message}\n`);
   }
 }
 

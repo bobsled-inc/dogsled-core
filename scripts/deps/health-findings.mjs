@@ -15,12 +15,11 @@
 const NPM_NAME_RE = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
 const GHSA_RE = /^GHSA(-[23456789cfghjmpqrvwx]{4}){3}$/;
 const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[\w.]+)?$/;
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}/;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SEVERITY_VALUES = new Set(['info', 'low', 'moderate', 'high', 'critical']);
 
 export const ALLOWED_FILES = new Set([
   'pnpm-workspace.yaml',
-  'docs/dependency-security.md',
   'scripts/security/consumer-exceptions.json',
   'audit-ci.json',
 ]);
@@ -81,13 +80,9 @@ export function validateFinding(finding) {
       return finding;
 
     case 'deadline_soon':
-      if (
-        !validateNpmName(finding.package) ||
-        !validateIsoDate(finding.due) ||
-        !validateFile(finding.file)
-      )
-        return null;
+      if (!validateIsoDate(finding.due) || !validateFile(finding.file)) return null;
       if (finding.advisory && !validateGhsaId(finding.advisory)) return null;
+      if (finding.package && !validateNpmName(finding.package)) return null;
       return finding;
 
     case 'new_finding':
@@ -131,6 +126,9 @@ export function classifyConsumerFinding(finding, exceptions, now = Date.now()) {
 
 /**
  * Classify a batch of unhandled consumer audit findings.
+ *
+ * S2: when a stale exception has no resolved parent versions (missing
+ * explanations), it falls through to new_finding so it is never silent.
  */
 export function classifyConsumerFindings(
   findings,
@@ -159,16 +157,30 @@ export function classifyConsumerFindings(
           staleParents[parent] = { reviewed, actual };
         }
       }
-      results.push({
-        kind: 'stale-exception',
-        advisory: finding.advisory,
-        package: finding.package,
-        version: finding.version,
-        path: finding.path,
-        exception: result.exception,
-        staleParents,
-        isLookahead,
-      });
+      // S2: if no parent version was resolved, fall through to new_finding
+      if (Object.keys(staleParents).length > 0) {
+        results.push({
+          kind: 'stale-exception',
+          advisory: finding.advisory,
+          package: finding.package,
+          version: finding.version,
+          path: finding.path,
+          exception: result.exception,
+          staleParents,
+          isLookahead,
+        });
+      } else {
+        results.push({
+          kind: 'new-finding',
+          advisory: finding.advisory,
+          package: finding.package,
+          version: finding.version,
+          path: finding.path,
+          severity: finding.severity,
+          isLookahead,
+          note: 'Matched a stale exception but could not resolve parent versions.',
+        });
+      }
     } else {
       results.push({
         kind: 'new-finding',
@@ -188,9 +200,6 @@ export function classifyConsumerFindings(
 // Contract findings builder
 // ---------------------------------------------------------------------------
 
-/**
- * Map source names from collectExpiryDates to contract file paths.
- */
 const SOURCE_TO_FILE = {
   'release-age exemption': 'pnpm-workspace.yaml',
   'audit-ci allowlist': 'audit-ci.json',
@@ -200,50 +209,94 @@ const SOURCE_TO_FILE = {
 /**
  * Build the contract-schema findings array from expiry data and consumer
  * classification results. Every field is validated; invalid entries are
- * silently dropped.
+ * counted and returned in `dropped`.
  *
- * @param {Array} expiries       From collectExpiryDates()
+ * S3: dropped entries are counted.
+ * S4: package is optional for deadline_soon.
+ * S5: deduplicates across all sources by kind + key fields.
+ *
+ * @param {Array} expiries        From collectExpiryDates()
  * @param {Array} consumerResults From classifyConsumerFindings()
- * @returns {Array} Contract-schema findings (max 50)
+ * @returns {{ findings: Array, dropped: number }}
  */
 export function buildContractFindings(expiries, consumerResults) {
-  const findings = [];
+  const candidates = [];
 
   for (const entry of expiries) {
+    // Expired or warning release-age exemptions
     if (
       entry.source === 'release-age exemption' &&
       (entry.status === 'expired' || entry.status === 'warning')
     ) {
-      const match = entry.label?.match(/^((?:@[\w.-]+\/)?[\w.-]+)@([\d][\w.-]*)$/);
-      if (!match) continue;
-      const f = {
-        kind: 'expired_exemption',
-        package: match[1],
-        version: match[2],
-        file: SOURCE_TO_FILE[entry.source],
-      };
-      if (validateFinding(f)) findings.push(f);
+      const match = entry.label?.match(/^((?:@[\w.-]+\/)?[\w.-]+)@(\d[\w.-]*)$/);
+      if (match) {
+        candidates.push({
+          kind: 'expired_exemption',
+          package: match[1],
+          version: match[2],
+          file: SOURCE_TO_FILE[entry.source],
+        });
+      }
     }
 
+    // Deadlines within 7 days (S4: handle each source properly)
     if (entry.daysLeft > 0 && entry.daysLeft <= 7) {
-      const advisory = entry.label?.match(/^(GHSA(?:-[\w]+){3})/)?.[1] ?? null;
+      const file = SOURCE_TO_FILE[entry.source];
+      if (!file) continue;
+
+      if (entry.source === 'audit-ci allowlist') {
+        // Label is the GHSA ID (key before |)
+        const advisory =
+          entry.label?.match(/^(GHSA(?:-[23456789cfghjmpqrvwx]{4}){3})/)?.[1] ?? null;
+        candidates.push({
+          kind: 'deadline_soon',
+          ...(advisory ? { advisory } : {}),
+          due: entry.date?.split('T')[0] ?? entry.date,
+          file,
+        });
+      } else if (entry.source === 'consumer exception') {
+        // Label is "GHSA-xxx package-name"
+        const advisory =
+          entry.label?.match(/^(GHSA(?:-[23456789cfghjmpqrvwx]{4}){3})/)?.[1] ?? null;
+        const pkg =
+          entry.label?.match(
+            /^GHSA(?:-[\w]+){3}\s+((?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*)$/
+          )?.[1] ?? null;
+        candidates.push({
+          kind: 'deadline_soon',
+          ...(advisory ? { advisory } : {}),
+          ...(pkg ? { package: pkg } : {}),
+          due: entry.date?.split('T')[0] ?? entry.date,
+          file,
+        });
+      }
+    }
+
+    // Expired audit-ci or consumer-exception entries (docs: "fails on expired items")
+    if (
+      entry.source !== 'release-age exemption' &&
+      (entry.status === 'expired' || entry.status === 'warning')
+    ) {
+      const file = SOURCE_TO_FILE[entry.source];
+      if (!file) continue;
+      const advisory = entry.label?.match(/^(GHSA(?:-[23456789cfghjmpqrvwx]{4}){3})/)?.[1] ?? null;
       const pkg =
-        entry.label?.match(/(?:^|[\s])(@?[a-z0-9][\w./-]*)(?:@[\d][\w.-]*)?$/)?.[1] ?? null;
-      const f = {
+        entry.label?.match(/(?:^|\s)((?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*)$/)?.[1] ?? null;
+      candidates.push({
         kind: 'deadline_soon',
         ...(advisory ? { advisory } : {}),
-        package: pkg ?? entry.label?.split('@')[0],
+        ...(pkg ? { package: pkg } : {}),
         due: entry.date?.split('T')[0] ?? entry.date,
-        file: SOURCE_TO_FILE[entry.source] ?? 'scripts/security/consumer-exceptions.json',
-      };
-      if (validateFinding(f)) findings.push(f);
+        file,
+      });
     }
   }
 
+  // Consumer findings
   for (const result of consumerResults) {
     if (result.kind === 'stale-exception') {
       for (const [parent, info] of Object.entries(result.staleParents ?? {})) {
-        const f = {
+        candidates.push({
           kind: 'stale_parent',
           advisory: result.advisory,
           package: result.package,
@@ -252,20 +305,56 @@ export function buildContractFindings(expiries, consumerResults) {
           parentVersion: info.actual,
           reviewedParentVersions: [...info.reviewed],
           file: 'scripts/security/consumer-exceptions.json',
-        };
-        if (validateFinding(f)) findings.push(f);
+        });
       }
     } else if (result.kind === 'new-finding') {
-      const f = {
+      // N4: do not invent severity; drop if missing
+      if (!result.severity) continue;
+      candidates.push({
         kind: 'new_finding',
         advisory: result.advisory,
         package: result.package,
         version: result.version,
-        severity: result.severity ?? 'high',
-      };
-      if (validateFinding(f)) findings.push(f);
+        severity: result.severity,
+      });
     }
   }
 
-  return findings.slice(0, 50);
+  // S5: deduplicate across all sources
+  const deduped = [];
+  const seenKeys = new Set();
+  for (const f of candidates) {
+    const key = dedupeKey(f);
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    deduped.push(f);
+  }
+
+  // S3: validate and count drops
+  const findings = [];
+  let dropped = 0;
+  for (const f of deduped) {
+    if (validateFinding(f)) {
+      findings.push(f);
+    } else {
+      dropped++;
+    }
+  }
+
+  return { findings: findings.slice(0, 50), dropped };
+}
+
+function dedupeKey(finding) {
+  switch (finding.kind) {
+    case 'stale_parent':
+      return `stale_parent:${finding.advisory}:${finding.package}:${finding.version}:${finding.parentPackage}`;
+    case 'expired_exemption':
+      return `expired_exemption:${finding.package}:${finding.version}`;
+    case 'deadline_soon':
+      return `deadline_soon:${finding.advisory ?? ''}:${finding.package ?? ''}:${finding.file}`;
+    case 'new_finding':
+      return `new_finding:${finding.advisory}:${finding.package}:${finding.version}`;
+    default:
+      return JSON.stringify(finding);
+  }
 }

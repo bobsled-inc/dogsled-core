@@ -154,8 +154,8 @@ audit failures, and fails the job when something needs attention.
 
 ### What it checks
 
-- **Expired exemptions**: versions in `minimumReleaseAgeExclude` that have reached
-  the release-age policy and should be removed.
+- **Expired exemptions**: versions in `minimumReleaseAgeExclude` whose documented
+  removal date has passed and should be removed.
 - **Approaching deadlines**: `audit-ci` allowlist entries and consumer-exception
   review deadlines within seven days.
 - **Consumer audit** (same code `security:release` uses): builds the packed tarball,
@@ -190,8 +190,10 @@ The workflow also uses:
 
 - Variable `HUSKY_ORIGIN`: the base URL for the Husky API. When unset, the report
   is written to the step summary and uploaded as an artifact, but no POST is made.
-- No Slack tokens, GitHub App tokens, or write permissions. The check is read-only.
-  Slack posting is handled by Husky on its side.
+- No Slack tokens or GitHub App tokens. The audit job that runs third-party code
+  has `contents: read` only. A separate report job holds `id-token: write` to
+  mint the Husky OIDC token, and runs no third-party code. Slack posting is
+  handled by Husky on its side.
 
 ### Husky hand-off
 

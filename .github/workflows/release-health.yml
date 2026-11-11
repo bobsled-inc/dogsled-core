@@ -12,12 +12,15 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  health-check:
+  audit:
+    if: github.repository == 'bobsled-inc/dogsled-core'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: read
-      id-token: write
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      has_findings: ${{ steps.check.outputs.has_findings }}
     steps:
       - name: Check mode
         id: mode
@@ -69,16 +72,68 @@ jobs:
 
       - name: Run health check
         if: steps.mode.outputs.mode != 'off'
-        env:
-          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
         run: >-
           node scripts/deps/health-check.mjs
           --output "$RUNNER_TEMP/health-check"
 
+      - name: Check for findings
+        id: check
+        if: steps.mode.outputs.mode != 'off' && !cancelled()
+        run: |
+          report="$RUNNER_TEMP/health-check/health-report.json"
+          has_findings="false"
+          if [ -f "$report" ]; then
+            count=$(node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write(String(r.findings?.length??0))" "$report")
+            if [ "$count" -gt 0 ]; then
+              has_findings="true"
+            fi
+            echo "Report has $count finding(s)."
+          fi
+          echo "has_findings=$has_findings" >> "$GITHUB_OUTPUT"
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: steps.mode.outputs.mode != 'off' && always()
+        if: steps.mode.outputs.mode != 'off' && !cancelled()
         with:
           name: health-report
           path: ${{ runner.temp }}/health-check/health-report.json
           retention-days: 7
           if-no-files-found: ignore
+
+  report:
+    needs: audit
+    if: >-
+      !cancelled() &&
+      needs.audit.outputs.mode == 'on' &&
+      needs.audit.outputs.has_findings == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: health-report
+          path: ${{ runner.temp }}/health-check
+
+      - name: POST report to Husky
+        if: vars.HUSKY_ORIGIN != ''
+        env:
+          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/health-check/health-report.json"
+          if [ ! -f "$report" ]; then
+            echo "No report to send."
+            exit 0
+          fi
+          token=$(curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=husky" \
+            | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>process.stdout.write(JSON.parse(d).value))")
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            -X POST \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" \
+            -d @"$report" \
+            "$HUSKY_ORIGIN/api/health/report"

@@ -25,7 +25,7 @@ import { auditPackedConsumers } from '../security/consumer-audit.mjs';
 import { explainPaths, validateConsumerExceptions } from '../security/consumer-policy.mjs';
 import { stageDogsledPackage } from '../release/stage-package.mjs';
 import { repoRoot } from '../security/lib.mjs';
-import { classifyConsumerFindings } from './planner.mjs';
+import { classifyConsumerFindings } from './health-findings.mjs';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -157,9 +157,11 @@ async function main() {
     `Consumer audit complete: ${allFindings.length} finding(s) (${stale} stale, ${newCount} new).\n`
   );
 
+  // B2: exit 0 after writing findings. health-check.mjs owns the job failure.
   if (!currentReport.passed) {
-    process.stdout.write('Current consumer audit has unhandled findings.\n');
-    process.exitCode = 1;
+    process.stdout.write(
+      'Current consumer audit has unhandled findings (health-check will report them).\n'
+    );
   }
 }
 
