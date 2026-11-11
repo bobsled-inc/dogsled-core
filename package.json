@@ -23,6 +23,7 @@
     "test:packed-catalog": "node ./scripts/ci/test-packed-catalog.mjs",
     "docs:ci": "node ./scripts/ci/validate-docs.mjs && node ./scripts/docs/cli-reference.mjs --check",
     "file-size:ci": "node ./scripts/ci/check-file-sizes.mjs",
+    "deps:expiries": "node ./scripts/deps-expiries.mjs",
     "security:audit": "audit-ci --config ./audit-ci.json",
     "guard:privacy": "node ./scripts/guards/privacy.mjs",
     "security:fast": "node ./scripts/security/secretlint-tracked.mjs && node ./scripts/security/fast.mjs && node ./scripts/guards/privacy.mjs && vitest run --config ./vitest.security.config.mjs",

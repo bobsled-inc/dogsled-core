@@ -26,6 +26,7 @@ import {
 } from '../../scripts/ci/shared.mjs';
 import { BUNDLED_EXTERNAL_PACKAGE_NAMES } from '../../scripts/release/package-set.mjs';
 import { parseReleaseAgeExemptions } from '../../scripts/security/consumer-policy.mjs';
+import { expiryStatus, EXEMPTION_GRACE_DAYS } from '../../scripts/security/expiry-dates.mjs';
 
 const REQUIRED_SCRIPTS = ['build', 'typecheck', 'lint', 'test:unit'];
 
@@ -916,9 +917,17 @@ describe('release and dependency policy guardrails', () => {
     }
     deepStrictEqual([...removeAfter.keys()].sort(), [...exemptions].sort());
     for (const [spec, removal] of removeAfter) {
+      const status = expiryStatus(removal, EXEMPTION_GRACE_DAYS);
+      if (status === 'warning') {
+        console.warn(
+          `WARNING: ${spec} met the release age on ${removal}; ` +
+            `remove its exemption within ${EXEMPTION_GRACE_DAYS} days.`
+        );
+      }
       ok(
-        Date.now() < Date.parse(removal),
-        `${spec} met the release age on ${removal}; remove its exemption.`
+        status !== 'expired',
+        `${spec} met the release age on ${removal} and the ${EXEMPTION_GRACE_DAYS}-day ` +
+          `grace period has passed; remove its exemption.`
       );
     }
   });

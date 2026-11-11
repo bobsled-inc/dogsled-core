@@ -58,9 +58,12 @@ exact version (`name@version`, never a name or pattern) in
 the package's usual publisher, that its registry signature verifies (and its
 provenance, where the package publishes one), that it has no install scripts,
 and that its diff matches the release notes. Each entry is listed here and
-removed once it meets the normal age. A structural test fails when an entry is
-not an exact version, is missing from this table, or is still present after its
-removal date.
+removed once it meets the normal age. A structural test warns when an entry
+reaches its removal date and fails after a 3-day grace period, so the cleanup
+PR can land before CI turns red. `pnpm deps:expiries` lists all upcoming
+expiry dates across exemptions, `audit-ci.json` and consumer exceptions; it
+runs early in the Release workflow to fail fast. A structural test also fails
+when an entry is not an exact version or is missing from this table.
 
 No exemptions are active. All three previous entries (`body-parser@2.4.0`,
 `fast-uri@3.1.9`, `follow-redirects@1.16.2`) met the 7-day release age and
