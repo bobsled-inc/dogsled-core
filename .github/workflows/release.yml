@@ -53,6 +53,8 @@ jobs:
       tag: ${{ steps.plan.outputs.tag }}
       prerelease: ${{ steps.plan.outputs.prerelease }}
       notify_summary: ${{ steps.plan.outputs.notify_summary }}
+      notify_prs: ${{ steps.plan.outputs.notify_prs }}
+      notify_one_line: ${{ steps.plan.outputs.notify_one_line }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -307,22 +309,68 @@ jobs:
     needs: [prepare, release-checks-ok]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      notified: ${{ steps.husky.outputs.notified }}
     steps:
-      - name: Notify Slack that a release awaits approval
+      - name: Notify Husky that a release awaits approval
+        id: husky
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_RELEASE_WEBHOOK_URL }}
-          NOTIFY_SUMMARY: ${{ needs.prepare.outputs.notify_summary }}
+          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_BREAKING: ${{ needs.prepare.outputs.breaking }}
+          NOTIFY_ONE_LINE: ${{ needs.prepare.outputs.notify_one_line }}
+          NOTIFY_PRS: ${{ needs.prepare.outputs.notify_prs }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ -z "$SLACK_WEBHOOK" ]; then
-            printf '%s\n' 'Slack notification skipped: SLACK_RELEASE_WEBHOOK_URL is not set.' >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$HUSKY_ORIGIN" ]; then
+            printf '%s\n' 'Husky notification skipped: HUSKY_ORIGIN is not configured.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          text="${NOTIFY_SUMMARY}
-          Approve with the GitHub app message in this channel."
-          payload="$(jq -n --arg text "$text" '{text: $text}')"
-          curl -fsS --retry 2 -X POST -H 'Content-Type: application/json' -d "$payload" "$SLACK_WEBHOOK" 2>/dev/null || {
-            printf '%s\n' 'Slack notification failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+          token="$(curl --silent --fail --header "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=husky" | jq --raw-output '.value')" || {
+            printf '%s\n' 'Failed to obtain OIDC token for Husky (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           }
+          payload="$(jq --null-input \
+            --arg version "$RELEASE_VERSION" \
+            --arg summary "$NOTIFY_ONE_LINE" \
+            --argjson breaking "$([ "$RELEASE_BREAKING" = "true" ] && echo true || echo false)" \
+            --argjson prs "${NOTIFY_PRS:-[]}" \
+            --argjson runId "$RUN_ID" \
+            --arg runUrl "$RUN_URL" \
+            '{
+              schemaVersion: 1,
+              product: "dogsled-core",
+              status: "awaiting_approval",
+              version: $version,
+              runId: $runId,
+              runUrl: $runUrl,
+              summary: $summary,
+              breaking: $breaking,
+              pullRequests: $prs
+            }')" || {
+            printf '%s\n' 'Husky payload build failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          response="$(
+            curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+              --header "Authorization: Bearer $token" \
+              --header "Content-Type: application/json; charset=utf-8" \
+              --data "$payload" \
+              "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null
+          )" || {
+            printf '%s\n' 'Husky notification failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          if jq --exit-status '.ok' <<< "$response" > /dev/null 2>&1; then
+            printf 'notified=true\n' >> "$GITHUB_OUTPUT"
+          else
+            printf 'Husky rejected the notification: %s\n' "$(jq --raw-output '.error // "unknown"' <<< "$response" 2>/dev/null)" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   approve:
     if: >-
@@ -474,3 +522,59 @@ jobs:
           node scripts/release/finalize-github-release.mjs \
             "$RUNNER_TEMP/npm-release/release-report.json#npm release artifact report" \
             "$RUNNER_TEMP/npm-release/sbom.json#CycloneDX SBOM"
+
+  # ---------------------------------------------------------------------------
+  # Phase 6: update the Husky release message with the outcome
+  # ---------------------------------------------------------------------------
+  release-status:
+    if: >-
+      always() && github.repository == 'bobsled-inc/dogsled-core' &&
+      needs.notify.outputs.notified == 'true'
+    needs: [prepare, notify, approve, tag, publish, finalize]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Report release outcome to Husky
+        env:
+          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.tag }}
+        run: |
+          token="$(curl --silent --fail --header "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=husky" | jq --raw-output '.value')" || {
+            printf '%s\n' 'Failed to obtain OIDC token for Husky (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          }
+          if [ "$PUBLISH_RESULT" = "success" ]; then
+            status="released"
+          else
+            status="not_released"
+          fi
+          payload="$(jq --null-input \
+            --arg version "$RELEASE_VERSION" \
+            --arg status "$status" \
+            --argjson runId "$RUN_ID" \
+            --arg runUrl "$RUN_URL" \
+            --arg releaseUrl "$RELEASE_URL" \
+            '{
+              schemaVersion: 1,
+              product: "dogsled-core",
+              status: $status,
+              version: $version,
+              runId: $runId,
+              runUrl: $runUrl,
+              releaseUrl: $releaseUrl
+            }')"
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            --header "Authorization: Bearer $token" \
+            --header "Content-Type: application/json; charset=utf-8" \
+            --data "$payload" \
+            "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null || {
+            printf '%s\n' 'Husky status update failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+          }

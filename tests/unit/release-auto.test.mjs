@@ -14,6 +14,8 @@ import {
   decideMergedPullRequest,
   mergeDecisionSummary,
   mergedPullRequestForCommit,
+  notifyOneLine,
+  notifyPullRequests,
   notifySummary,
   resolveAutoRelease,
 } from '../../scripts/release/auto-release.mjs';
@@ -363,6 +365,51 @@ describe('automatic release decisions', () => {
       // The injected key=value lines are safely inside the block, not outside it
       const afterClose = written.split(delimiter).at(-1);
       expect(afterClose.trim()).toBe('');
+    } finally {
+      process.env.GITHUB_OUTPUT = origEnv;
+      rmSync(outputDir, { recursive: true, force: true });
+    }
+  });
+
+  it('caps the notify PR list at 50 entries and titles at 300 characters', () => {
+    const longTitle = 'A'.repeat(400);
+    const prs = Array.from({ length: 60 }, (_, index) => ({
+      number: index + 1,
+      title: index === 0 ? longTitle : `PR ${index + 1}`,
+      changeType: 'patch',
+      bump: 'patch',
+    }));
+    const json = JSON.parse(notifyPullRequests(prs));
+    expect(json).toHaveLength(50);
+    expect(json[0].title).toHaveLength(300);
+    expect(json[0].title.endsWith('…')).toBe(true);
+    const oneLine = notifyOneLine(prs);
+    expect(oneLine.length).toBeLessThanOrEqual(300);
+  });
+
+  it('produces valid notify outputs for every prepare mode', () => {
+    const outputDir = mkdtempSync(path.join(os.tmpdir(), 'ghoutput-'));
+    const outputFile = path.join(outputDir, 'GITHUB_OUTPUT');
+    const origEnv = process.env.GITHUB_OUTPUT;
+    try {
+      for (const mode of ['manual', 'auto', 'preview', 'bootstrap', 'retry']) {
+        writeFileSync(outputFile, '');
+        process.env.GITHUB_OUTPUT = outputFile;
+        const values = {
+          release: 'true',
+          version: '0.1.8',
+          tag: 'v0.1.8',
+          notify_prs: mode === 'auto' ? '[{"number":1,"title":"x","changeType":"patch"}]' : '[]',
+          notify_one_line: `${mode} release`,
+          notify_summary: `Release v0.1.8? (${mode})`,
+        };
+        writeGithubOutput(values);
+        const written = readFileSync(outputFile, 'utf8');
+        expect(written).toContain('notify_prs=');
+        const prsMatch = written.match(/notify_prs=(.+)/);
+        expect(prsMatch).not.toBeNull();
+        expect(() => JSON.parse(prsMatch[1])).not.toThrow();
+      }
     } finally {
       process.env.GITHUB_OUTPUT = origEnv;
       rmSync(outputDir, { recursive: true, force: true });

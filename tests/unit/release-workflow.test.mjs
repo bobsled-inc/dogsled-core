@@ -338,25 +338,67 @@ describe('release on merge trigger', () => {
     expect(dispatch.run).toBe('gh workflow run release.yml --ref main -f mode=auto');
   });
 
-  it('sends a structured Slack notification with PR titles when a release awaits approval', () => {
+  it('notifies Husky with an OIDC token and a jq-built payload, and updates on completion', () => {
     const notify = workflow.jobs.notify;
     expect(notify.needs).toContain('release-checks-ok');
     expect(notify.if).toContain("needs.prepare.outputs.release == 'true'");
+    expect(notify.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
+    expect(notify.outputs.notified).toBe('${{ steps.husky.outputs.notified }}');
     const step = notify.steps[0];
-    expect(step.env.SLACK_WEBHOOK).toBe('${{ secrets.SLACK_RELEASE_WEBHOOK_URL }}');
-    expect(step.env.NOTIFY_SUMMARY).toBe('${{ needs.prepare.outputs.notify_summary }}');
+    expect(step.env.HUSKY_ORIGIN).toBe('${{ vars.HUSKY_ORIGIN }}');
+    expect(step.env.NOTIFY_PRS).toBe('${{ needs.prepare.outputs.notify_prs }}');
+    expect(step.env.NOTIFY_ONE_LINE).toBe('${{ needs.prepare.outputs.notify_one_line }}');
+    expect(step.env.RELEASE_TAG).toBeUndefined();
+    expect(step.run).toContain('audience=husky');
+    expect(step.run).toContain('/api/releases/notify');
+    expect(step.run).toMatch(/status.*"awaiting_approval"/);
+    expect(step.run).toContain('jq --null-input');
+    expect(step.run).toContain('NOTIFY_PRS:-[]');
     expect(step.run).toContain('exit 0');
-    expect(step.run).toContain('curl');
-    expect(step.run).toContain('Approve with the GitHub app');
-    expect(step.run).toContain('NOTIFY_SUMMARY');
-    expect(step.run).not.toContain('RUN_URL');
-    expect(workflow.jobs.prepare.outputs.notify_summary).toBe(
-      '${{ steps.plan.outputs.notify_summary }}'
+    expect(step.run).not.toContain('${{');
+    const status = workflow.jobs['release-status'];
+    expect(status.if).toContain('always()');
+    expect(status.if).toContain("needs.notify.outputs.notified == 'true'");
+    expect(status.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
+    expect(status.needs).toEqual(
+      expect.arrayContaining(['prepare', 'notify', 'publish', 'finalize'])
     );
+    const updateStep = status.steps[0];
+    expect(updateStep.run).toContain('/api/releases/notify');
+    expect(updateStep.run).toContain('audience=husky');
+    expect(updateStep.run).toMatch(/status="released"/);
+    expect(updateStep.run).toMatch(/status="not_released"/);
+    expect(updateStep.run).toMatch(/PUBLISH_RESULT.*=.*"success".*\n\s*status="released"/);
+    expect(updateStep.env.PUBLISH_RESULT).toBe('${{ needs.publish.result }}');
+    expect(updateStep.env.FINALIZE_RESULT).toBeUndefined();
+  });
+
+  it('holds no Slack secrets and builds all Husky payloads with jq', () => {
     const releaseSource = readFileSync(
       new URL('../../.github/workflows/release.yml', import.meta.url),
       'utf8'
     );
-    expect(releaseSource).not.toMatch(/SLACK.*pull_request/);
+    expect(releaseSource).not.toMatch(
+      /SLACK_BOT_TOKEN|SLACK_RELEASE_CHANNEL_ID|SLACK_RELEASE_WEBHOOK_URL|GIPHY_API_KEY/
+    );
+    expect(releaseSource).not.toMatch(/hooks\.slack\.com|slack\.com\/api/);
+    expect(releaseSource).not.toMatch(/chat\.postMessage|chat\.update/);
+    for (const job of [workflow.jobs.notify, workflow.jobs['release-status']]) {
+      const step = job.steps[0];
+      expect(step.run).toContain('jq');
+      expect(step.run).not.toContain('${{');
+    }
+  });
+
+  it('requests id-token write only on the notify and release-status jobs', () => {
+    for (const [name, job] of Object.entries(workflow.jobs)) {
+      if (name === 'notify' || name === 'release-status') {
+        expect(job.permissions?.['id-token']).toBe('write');
+      } else if (name === 'publish') {
+        expect(job.permissions?.['id-token']).toBe('write');
+      } else if (job.permissions) {
+        expect(job.permissions['id-token']).toBeUndefined();
+      }
+    }
   });
 });
