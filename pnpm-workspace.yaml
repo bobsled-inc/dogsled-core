@@ -51,7 +51,8 @@ overrides:
   # GHSA-238p-pmpm-9mq7: prototype-pollution rendering gadget.
   katex: 0.18.9
   # GHSA-866g-f22w-33x8: bound provider response consumption.
-  '@ai-sdk/provider-utils@4': 4.0.56
+  # Raised to 4.0.64 to include exports required by ai >=6.0.322.
+  '@ai-sdk/provider-utils@4': 4.0.64
   # GHSA-3f6p-5ww8-9rcr: keep optional driver tests on fixed code.
   mysql2: 3.24.4
   # GHSA-jqcg-44mw-7w3h: fixed Express proxy address parsing.

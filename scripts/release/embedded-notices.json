@@ -1,9 +1,9 @@
 {
-  "@ai-sdk/provider-utils@4.0.56": {
+  "@ai-sdk/provider-utils@4.0.64": {
     "files": {
       "src/secure-json-parse.ts": "4fd335b4e8fb2f5c11a10a37342c96a4ba0f4dbeb1ad122675326b3c9e878cbb",
-      "dist/index.js.map": "c0da097518a3bc1482cef6d87c50c839c939445f93657d07659b6b2188c9eafd",
-      "dist/index.mjs.map": "d53eba1147cc4054608937ddcaec7d447512a54bc5cc23c67a8036cbd433b177"
+      "dist/index.js.map": "31b11ad92f02f9386d50530c76bbb3a005edebca38a4752487877f39e82fd93d",
+      "dist/index.mjs.map": "e95b722f69691a2371dac8e3e873eac3e567561e0890ab03a282e0f6ea67cfd7"
     },
     "licenses": ["BSD-3-Clause", "ISC"],
     "notices": [
