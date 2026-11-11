@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Check mode
         id: mode
@@ -69,10 +70,15 @@ jobs:
       - name: Run health check
         if: steps.mode.outputs.mode != 'off'
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_HEALTH_CHANNEL_ID: ${{ vars.SLACK_HEALTH_CHANNEL_ID }}
-          SLACK_RELEASE_CHANNEL_ID: ${{ vars.SLACK_RELEASE_CHANNEL_ID }}
-          HUSKY_SLACK_USER_ID: ${{ vars.HUSKY_SLACK_USER_ID }}
+          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
         run: >-
           node scripts/deps/health-check.mjs
           --output "$RUNNER_TEMP/health-check"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.mode.outputs.mode != 'off' && always()
+        with:
+          name: health-report
+          path: ${{ runner.temp }}/health-check/health-report.json
+          retention-days: 7
+          if-no-files-found: ignore

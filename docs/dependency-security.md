@@ -148,7 +148,7 @@ is used. New dependency paths and expired exceptions block the release.
 
 ## Daily release health check
 
-A scheduled GitHub Actions workflow (`dependency-maintenance.yml`) runs once a day
+A scheduled GitHub Actions workflow (`release-health.yml`) runs once a day
 at 06:17 UTC. It checks for expired exemptions, approaching deadlines, and consumer
 audit failures, and fails the job when something needs attention.
 
@@ -172,10 +172,10 @@ Unhandled consumer audit findings are classified:
 - **Stale exception**: a consumer exception exists for the same advisory, package,
   version and path, but its `parentVersions` does not include the version the
   consumer tree now resolves. This happens when an optional driver publishes a new
-  version that pulls in the same transitive tree. The step summary and Slack message
-  name the exact exception and parent version to add, so a person can fix it quickly.
-- **New finding**: no matching exception exists at all. A Slack ping and step-summary
-  entry are produced. A person writes the exception or fix.
+  version that pulls in the same transitive tree. The report names the exact
+  exception and parent version to add.
+- **New finding**: no matching exception exists at all. The report includes the
+  advisory, package, version and severity. A person writes the exception or fix.
 
 ### Settings
 
@@ -188,35 +188,28 @@ The repository variable `RELEASE_HEALTH` controls behavior:
 
 The workflow also uses:
 
-- Secret `SLACK_BOT_TOKEN`: the "Dogsled Github Alerts" bot token (same bot the app
-  repo uses). Slack notifications are skipped when unset.
-- Variable `SLACK_HEALTH_CHANNEL_ID`: the Slack channel for health check messages.
-  Falls back to `SLACK_RELEASE_CHANNEL_ID` when unset.
-- Variable `HUSKY_SLACK_USER_ID`: when set, each actionable Slack message starts
-  with a mention so the org's agent can open fix PRs automatically. When unset, the
-  same text is posted without the mention for a person to act on.
-- No GitHub App token or write permissions. The check is read-only.
+- Variable `HUSKY_ORIGIN`: the base URL for the Husky API. When unset, the report
+  is written to the step summary and uploaded as an artifact, but no POST is made.
+- No Slack tokens, GitHub App tokens, or write permissions. The check is read-only.
+  Slack posting is handled by Husky on its side.
 
 ### Husky hand-off
 
-When the health check finds an actionable item (stale exception or expired exemption),
-it posts a separate Slack message per finding via the Slack Web API
-(`chat.postMessage`) with a precise PR instruction: which file to change, which value
-to add or remove, and which Change Type to use. If `HUSKY_SLACK_USER_ID` is set, the
-message tags the org's agent so it can open the PR. A person still reviews and merges,
-and exception changes need owner approval.
+The health check builds a `health-report.json` in the Husky contract schema (v1):
+typed findings with only validated fields (npm package names, semver versions,
+GHSA IDs, ISO dates, and a fixed file-path allow list). No free text from the
+registry or audit output ever reaches the report.
 
-Messages contain only validated values (npm package names, semver versions, GHSA IDs,
-and fixed file paths). Advisory titles, descriptions, and other free-text fields from
-the registry or audit output are never included.
-
-**Open question:** does Husky act on messages posted by the "Dogsled Github Alerts"
-bot? If not, a person forwards the relevant message to Husky.
+When `HUSKY_ORIGIN` is set, the workflow requests a GitHub OIDC token with audience
+`husky` and POSTs the report to `${HUSKY_ORIGIN}/api/health/report`. Husky verifies
+the token, posts Slack messages, and opens fix PRs for stale exceptions and expired
+exemptions. A person still reviews and merges, and exception changes need owner
+approval.
 
 ### Code
 
 The scripts live in `scripts/deps/`:
 
-- `planner.mjs` — pure functions (classification, expiry, message building), no I/O.
-- `health-check.mjs` — CLI entry point: reads config, checks expiries, writes report.
+- `planner.mjs` — pure functions (classification, validation, contract findings builder).
+- `health-check.mjs` — CLI entry: reads expiries, builds report, POSTs to Husky.
 - `consumer-check.mjs` — builds tarball, runs consumer audit, classifies findings.

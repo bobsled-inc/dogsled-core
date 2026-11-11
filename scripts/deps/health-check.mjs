@@ -3,32 +3,29 @@
 /**
  * Daily release health check.
  *
- * Reads workspace config and consumer audit results, checks for expired
- * exemptions and approaching deadlines, classifies consumer findings,
- * writes a step summary, sends Slack alerts, and fails the job when
- * something is unhandled or expired.
+ * Reads expiry data, consumer audit findings, builds a health report in the
+ * Husky contract schema, uploads it as an artifact, and POSTs it to Husky
+ * via OIDC. Fails the job when findings exist.
  *
  * Usage:
  *   node scripts/deps/health-check.mjs [--output /tmp/health-check]
  *
  * Environment:
- *   RELEASE_HEALTH          off | on (default off)
- *   GITHUB_STEP_SUMMARY     Path to write the step summary
- *   SLACK_DEPS_WEBHOOK_URL  Optional Slack incoming webhook
+ *   HUSKY_ORIGIN                     Base URL for Husky (skip POST when unset)
+ *   ACTIONS_ID_TOKEN_REQUEST_URL     GitHub Actions OIDC endpoint
+ *   ACTIONS_ID_TOKEN_REQUEST_TOKEN   GitHub Actions OIDC request token
+ *   GITHUB_RUN_ID                    Current workflow run ID
+ *   GITHUB_SERVER_URL                GitHub server URL
+ *   GITHUB_REPOSITORY                owner/repo
+ *   GITHUB_STEP_SUMMARY              Path to write the step summary
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { parse as parseYaml } from 'yaml';
 
-import { parseReleaseAgeExemptions } from '../security/consumer-policy.mjs';
-import {
-  buildHuskyInstruction,
-  findExpiredExemptions,
-  findUpcomingDeadlines,
-  formatHealthReport,
-} from './planner.mjs';
+import { collectExpiryDates } from '../security/expiry-dates.mjs';
+import { buildContractFindings, validateFinding } from './planner.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -43,174 +40,164 @@ async function main() {
   const outputDir = flags.output;
   mkdirSync(outputDir, { recursive: true });
 
-  // --- Read workspace config ---
-  const workspace = parseYaml(readFileSync(path.join(repoRoot, 'pnpm-workspace.yaml'), 'utf8'));
-  const releaseAgeMinutes = workspace.minimumReleaseAge;
-  const exemptions = parseReleaseAgeExemptions(workspace.minimumReleaseAgeExclude);
-
-  process.stdout.write(
-    `Release-age policy: ${releaseAgeMinutes} minutes (${Math.round(releaseAgeMinutes / 60 / 24)} days)\n`
-  );
-  process.stdout.write(`Exemptions: ${exemptions.length}\n`);
-
-  // --- Read audit-ci and consumer exceptions ---
-  const auditCiConfig = JSON.parse(readFileSync(path.join(repoRoot, 'audit-ci.json'), 'utf8'));
-  const auditCiAllowlist = auditCiConfig.allowlist ?? [];
-
-  const consumerExceptions = JSON.parse(
-    readFileSync(path.join(repoRoot, 'scripts', 'security', 'consumer-exceptions.json'), 'utf8')
-  );
-
-  // --- Fetch packuments for exemption age checks ---
-  const exemptionPackageNames = new Set(exemptions.map((e) => e.name));
-  process.stdout.write(
-    `Fetching packuments for ${exemptionPackageNames.size} exemption package(s)...\n`
-  );
-  const packuments = new Map();
-  for (const name of exemptionPackageNames) {
-    try {
-      const url = `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`;
-      const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (response.ok) packuments.set(name, await response.json());
-    } catch {
-      process.stdout.write(`Could not fetch packument for ${name}; skipping.\n`);
-    }
-  }
-
-  // --- Check expiries and deadlines ---
   const now = Date.now();
-  const expiredExemptions = findExpiredExemptions(exemptions, packuments, releaseAgeMinutes, now);
-  const deadlines = findUpcomingDeadlines(auditCiAllowlist, consumerExceptions, 7, now);
 
-  // --- Read consumer findings (written by consumer-check.mjs) ---
-  let consumerFindings = [];
-  let consumerPassed = true;
-  let lookaheadPassed = true;
+  // --- Expiry data (reuse #58's collectExpiryDates) ---
+  process.stdout.write('Collecting expiry dates...\n');
+  const expiries = collectExpiryDates(repoRoot, now);
+  const expired = expiries.filter((e) => e.status === 'expired' || e.status === 'warning');
+  const deadlines = expiries.filter((e) => e.daysLeft > 0 && e.daysLeft <= 7);
+  process.stdout.write(
+    `Expiries: ${expired.length} expired/warning, ${deadlines.length} within 7 days\n`
+  );
+
+  // --- Consumer findings (written by consumer-check.mjs) ---
+  let consumerResults = [];
   const consumerFindingsPath = path.join(outputDir, 'consumer-findings.json');
-  const consumerReportPath = path.join(outputDir, 'consumer-report.json');
-
   if (existsSync(consumerFindingsPath)) {
-    consumerFindings = JSON.parse(readFileSync(consumerFindingsPath, 'utf8'));
-    process.stdout.write(
-      `Consumer findings: ${consumerFindings.length} (${consumerFindings.filter((f) => f.kind === 'stale-exception').length} stale, ${consumerFindings.filter((f) => f.kind === 'new-finding').length} new)\n`
-    );
-  }
-  if (existsSync(consumerReportPath)) {
-    const report = JSON.parse(readFileSync(consumerReportPath, 'utf8'));
-    consumerPassed = report.current?.passed ?? true;
-    lookaheadPassed = report.lookahead?.passed ?? true;
+    consumerResults = JSON.parse(readFileSync(consumerFindingsPath, 'utf8'));
+    process.stdout.write(`Consumer findings: ${consumerResults.length}\n`);
   }
 
-  // --- Build and write the report ---
-  const report = formatHealthReport({
-    timestamp: new Date(now).toISOString(),
-    releaseAgeMinutes,
-    expiredExemptions,
-    deadlines,
-    consumerFindings,
-    consumerPassed,
-    lookaheadPassed,
-  });
+  // --- Build contract findings ---
+  const findings = buildContractFindings(expiries, consumerResults);
+  process.stdout.write(`Contract findings: ${findings.length} (all validated)\n`);
 
+  // Double-check: every finding must pass validation
+  const valid = findings.every((f) => validateFinding(f) !== null);
+  if (!valid) {
+    process.stderr.write('Internal error: a finding failed validation after construction.\n');
+    process.exitCode = 1;
+    return;
+  }
+
+  // --- Build the report ---
+  const repo = process.env.GITHUB_REPOSITORY ?? 'bobsled-inc/dogsled-core';
+  const runId = Number(process.env.GITHUB_RUN_ID) || 0;
+  const serverUrl = process.env.GITHUB_SERVER_URL ?? 'https://github.com';
+  const runUrl = runId ? `${serverUrl}/${repo}/actions/runs/${runId}` : '';
+
+  const report = {
+    schemaVersion: 1,
+    product: 'dogsled-core',
+    runId,
+    runUrl,
+    findings,
+  };
+
+  const reportPath = path.join(outputDir, 'health-report.json');
+  writeFileSync(reportPath, JSON.stringify(report, null, 2));
+  process.stdout.write(`Report written to ${reportPath}\n`);
+
+  // --- Step summary ---
+  const summary = formatStepSummary(report);
   process.stdout.write('\n');
-  process.stdout.write(report);
+  process.stdout.write(summary);
   process.stdout.write('\n');
 
   const stepSummaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (stepSummaryPath) {
-    writeFileSync(stepSummaryPath, report, { flag: 'a' });
+    writeFileSync(stepSummaryPath, summary, { flag: 'a' });
   }
 
-  writeFileSync(
-    path.join(outputDir, 'health-report.json'),
-    JSON.stringify(
-      {
-        timestamp: new Date(now).toISOString(),
-        expiredExemptions,
-        deadlines,
-        consumerFindings,
-        consumerPassed,
-        lookaheadPassed,
-      },
-      null,
-      2
-    )
-  );
+  // --- POST to Husky ---
+  const huskyOrigin = process.env.HUSKY_ORIGIN || '';
+  if (huskyOrigin && findings.length > 0) {
+    await postToHusky(huskyOrigin, report);
+  } else if (!huskyOrigin && findings.length > 0) {
+    process.stdout.write('HUSKY_ORIGIN is not set; skipping Husky notification.\n');
+  }
 
-  // --- Slack alerts ---
-  await sendSlackAlerts({
-    expiredExemptions,
-    deadlines,
-    consumerFindings,
-    consumerPassed,
-  });
-
-  // --- Fail if anything is unhandled or expired ---
-  const hasFailures =
-    expiredExemptions.length > 0 ||
-    !consumerPassed ||
-    consumerFindings.some((f) => f.kind === 'new-finding' && !f.isLookahead);
-
-  if (hasFailures) {
-    process.stdout.write('\nHealth check failed: see findings above.\n');
+  // --- Fail on findings ---
+  if (findings.length > 0) {
+    process.stdout.write(`\nHealth check failed: ${findings.length} finding(s).\n`);
     process.exitCode = 1;
   } else {
     process.stdout.write('\nHealth check passed.\n');
   }
 }
 
-const CHANNEL_ID_RE = /^[A-Z0-9]+$/;
+async function postToHusky(huskyOrigin, report) {
+  const oidcUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
+  const oidcToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
 
-async function sendSlackAlerts({ expiredExemptions, deadlines, consumerFindings }) {
-  const botToken = process.env.SLACK_BOT_TOKEN || '';
-  const channelId =
-    process.env.SLACK_HEALTH_CHANNEL_ID || process.env.SLACK_RELEASE_CHANNEL_ID || '';
-  const huskyId = process.env.HUSKY_SLACK_USER_ID || null;
-
-  const allFindings = [...expiredExemptions, ...deadlines, ...consumerFindings];
-  if (allFindings.length === 0) return;
-
-  if (!botToken) {
-    process.stdout.write('SLACK_BOT_TOKEN is not set; skipping Slack notifications.\n');
-    return;
-  }
-  if (!CHANNEL_ID_RE.test(channelId)) {
-    process.stdout.write('SLACK_HEALTH_CHANNEL_ID / SLACK_RELEASE_CHANNEL_ID is not configured.\n');
+  if (!oidcUrl || !oidcToken) {
+    process.stdout.write('OIDC token request variables not available; skipping Husky POST.\n');
     return;
   }
 
-  let sent = 0;
-  for (const finding of allFindings) {
-    const text = buildHuskyInstruction(finding, huskyId);
-    if (!text) continue;
-    try {
-      const response = await fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${botToken}`,
-          'Content-Type': 'application/json; charset=utf-8',
-        },
-        body: JSON.stringify({
-          channel: channelId,
-          text,
-          unfurl_links: false,
-          unfurl_media: false,
-        }),
-      });
-      const result = await response.json();
-      if (!result.ok) {
-        process.stdout.write(`Slack rejected message: ${result.error}\n`);
-      } else {
-        sent++;
-      }
-    } catch (error) {
-      process.stdout.write(`Slack message failed: ${error.message}\n`);
+  try {
+    // Request OIDC token with audience "husky"
+    const tokenResponse = await fetch(`${oidcUrl}&audience=husky`, {
+      headers: { Authorization: `bearer ${oidcToken}` },
+    });
+    if (!tokenResponse.ok) {
+      process.stdout.write(`OIDC token request failed: ${tokenResponse.status}\n`);
+      return;
+    }
+    const { value: idToken } = await tokenResponse.json();
+
+    // POST report to Husky
+    const response = await fetch(`${huskyOrigin}/api/health/report`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(report),
+    });
+    if (response.ok) {
+      process.stdout.write('Report sent to Husky.\n');
+    } else {
+      const text = await response.text().catch(() => '');
+      process.stdout.write(`Husky responded ${response.status}: ${text}\n`);
+    }
+  } catch (error) {
+    process.stdout.write(`Husky POST failed: ${error.message}\n`);
+  }
+}
+
+function formatStepSummary(report) {
+  const lines = [];
+  lines.push('# Daily release health check');
+  lines.push('');
+
+  if (report.findings.length === 0) {
+    lines.push('All checks passed. No findings.');
+    return lines.join('\n');
+  }
+
+  lines.push(`**${report.findings.length} finding(s)** reported to Husky.`);
+  lines.push('');
+  lines.push('| Kind | Package | Details |');
+  lines.push('| --- | --- | --- |');
+
+  for (const f of report.findings) {
+    switch (f.kind) {
+      case 'stale_parent':
+        lines.push(
+          `| stale_parent | \`${f.package}@${f.version}\` | Add \`${f.parentPackage}@${f.parentVersion}\` to parentVersions (${f.advisory}) |`
+        );
+        break;
+      case 'expired_exemption':
+        lines.push(
+          `| expired_exemption | \`${f.package}@${f.version}\` | Remove from \`${f.file}\` |`
+        );
+        break;
+      case 'deadline_soon':
+        lines.push(
+          `| deadline_soon | \`${f.package}\` | ${f.advisory ?? ''} due ${f.due} in \`${f.file}\` |`
+        );
+        break;
+      case 'new_finding':
+        lines.push(
+          `| new_finding | \`${f.package}@${f.version}\` | ${f.advisory} (${f.severity}) |`
+        );
+        break;
     }
   }
-  process.stdout.write(`Sent ${sent} Slack message(s).\n`);
+  lines.push('');
+  return lines.join('\n');
 }
 
 main().catch((error) => {
