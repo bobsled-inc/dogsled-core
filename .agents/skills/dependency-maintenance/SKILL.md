@@ -109,7 +109,8 @@ Start each saved proof with the command and end it with the real exit code:
 { echo "$ pnpm install --frozen-lockfile"; pnpm install --frozen-lockfile; echo "exit=$?"; } 2>&1 | tee "$PROOF_DIR/frozen-install.txt"
 ```
 
-Save failing commands the same way. List only proof files you actually wrote.
+Keep the full output, with no `tail` or `head` before `tee`. Save failing
+commands the same way. List only proof files you actually wrote.
 
 ## Pull requests
 
