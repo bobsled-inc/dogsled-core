@@ -30,11 +30,16 @@ describe('rename branch isolation', () => {
       if (name === 'prepare') continue;
       expect([job.needs].flat()).toContain('prepare');
     }
+    // Jobs that run after failures (!cancelled()) must still require a successful prepare.
+    for (const job of ['publish', 'finalize'])
+      expect(release.jobs[job].if).toContain("needs.prepare.result == 'success'");
   });
 
   it('runs the release health audit and its Husky report on main only', () => {
     const health = workflow('release-health.yml');
     expect(health.jobs.audit.if).toContain(MAIN_ONLY);
     expect(health.jobs.report.needs).toBe('audit');
+    // A skipped audit has empty outputs, so the report (and Husky) is skipped too.
+    expect(health.jobs.report.if).toContain("needs.audit.outputs.mode == 'on'");
   });
 });
