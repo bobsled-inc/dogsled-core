@@ -263,6 +263,31 @@ function scan(root, rules, profile, only) {
   return { files, moves, perRule, samples };
 }
 
+/**
+ * Remaining matches per category (content replacements plus path moves) in a
+ * checkout, as `--check` would count them. Used to tell an unrenamed, a fully
+ * renamed and a partly renamed branch apart.
+ */
+export function categoryCounts(root, profile = 'toolkit') {
+  const rules = rulesForProfile(profile);
+  const counts = Object.fromEntries(rules.map((rule) => [rule.category, 0]));
+  const byId = new Map(rules.map((rule) => [rule.id, rule.category]));
+  const pathCategories = [
+    ...new Set(rules.filter((r) => r.kind === 'path').map((r) => r.category)),
+  ];
+  for (const file of listFiles(root)) {
+    if (!BINARY.test(file) && !isCompatPath(file)) {
+      const text = readFileSync(path.join(root, file), 'utf8');
+      for (const [id, count] of Object.entries(renameText(text, { file, rules, profile }).counts))
+        counts[byId.get(id)] += count;
+    }
+    if (isUnmovablePath(file)) continue;
+    for (const category of pathCategories)
+      if (transformPath(file, selectRules(category, profile), profile)) counts[category] += 1;
+  }
+  return counts;
+}
+
 function dryRun(root, rules, profile, maxSamples, only) {
   const { files, moves, perRule, samples } = scan(root, rules, profile, only);
   const total = Object.values(perRule).reduce((sum, n) => sum + n, 0);

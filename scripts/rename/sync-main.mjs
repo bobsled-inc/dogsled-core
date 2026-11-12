@@ -1,28 +1,30 @@
 #!/usr/bin/env node
 
 /**
- * Catch the rename branch up with main through a mirror of renamed main.
+ * Catch the rename branch up with main.
  *
  *   node scripts/rename/sync-main.mjs [--main origin/main] [--mirror sync/main-renamed]
  *                                     [--mirror-sha <sha>] [--root <dir>]
  *
  * Run it on a fresh sync branch cut from rename/bobsled-core, with a clean
- * worktree. It:
- *   1. renames `--main` in a temporary worktree with this repository's rename
- *      tool and takes the resulting tree;
- *   2. records it as a mirror commit whose parents are the previous mirror and
- *      main (`git commit-tree`), and points the `--mirror` branch at it;
- *   3. merges the mirror into the current branch.
+ * worktree. It first looks at how far the branch is renamed, by counting
+ * what each rename category still matches here and in the last merged main:
  *
- * Because the previous mirror is an ancestor of both sides, the merge base is
- * the previously synced renamed main, so only main's real changes come in and
- * design-PR edits on the branch never conflict with the rename itself. The
- * first run has no mirror yet: it seeds one from the main commit the branch
- * last merged (renamed) and records it with `git merge -s ours`, which changes
- * no files.
+ * - unrenamed (no category applied yet; design PRs may have landed): a plain
+ *   `git merge` of main. Nothing is renamed.
+ * - fully renamed (every category that matches in main matches nothing here):
+ *   merge a mirror of renamed main. The mirror is main renamed in a throwaway
+ *   worktree, recorded with `git commit-tree` (parents: previous mirror, main),
+ *   so the merge base is the previously synced renamed main and design-PR
+ *   edits never conflict with the rename. The first fully renamed sync seeds
+ *   the mirror from the last merged main, renamed, recorded with
+ *   `git merge -s ours` (no file changes; true because the branch is fully
+ *   renamed).
+ * - partly renamed: refuse. The mechanical rename PRs land back to back, with
+ *   no main sync between them.
  *
- * Push the mirror branch after the sync PR merges, and put the mirror SHA in
- * the PR body. If the branch is lost, pass the last mirror SHA with --mirror-sha.
+ * Push the mirror branch after the sync PR merges and put its SHA in the PR
+ * body. If the branch is lost, pass the last mirror SHA with --mirror-sha.
  */
 
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -31,7 +33,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseCliArgs } from './rename.mjs';
+import { categoryCounts, parseCliArgs } from './rename.mjs';
 
 const RENAME_SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'rename.mjs');
 
@@ -68,17 +70,64 @@ function commitTree(root, tree, parents, message) {
   return git(root, ['commit-tree', tree, ...parents.flatMap((p) => ['-p', p]), '-m', message]);
 }
 
+function countsAt(root, commit) {
+  const worktree = mkdtempSync(path.join(os.tmpdir(), 'bobsled-sync-state-'));
+  try {
+    git(root, ['worktree', 'add', '--quiet', '--detach', worktree, commit]);
+    return categoryCounts(worktree);
+  } finally {
+    tryGit(root, ['worktree', 'remove', '--force', worktree]);
+    rmSync(worktree, { recursive: true, force: true });
+  }
+}
+
+/**
+ * 'unrenamed', 'renamed' or 'partial', judged against the last merged main:
+ * a category counts as applied when it matches there but no longer here.
+ */
+export function renameState(root, base) {
+  const before = countsAt(root, base);
+  const now = categoryCounts(root);
+  const relevant = Object.keys(before).filter((category) => before[category] > 0);
+  const applied = relevant.filter((category) => now[category] === 0);
+  const remaining = relevant.filter((category) => now[category] > 0);
+  const state = applied.length === 0 ? 'unrenamed' : remaining.length === 0 ? 'renamed' : 'partial';
+  return { state, applied, remaining };
+}
+
+function mergeCommit(root, commit, message) {
+  const merge = spawnSync('git', ['merge', '--no-ff', '-m', message, commit], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  return merge.status === 0;
+}
+
 export function syncMain({ root, main = 'origin/main', mirror = 'sync/main-renamed', mirrorSha }) {
   if (git(root, ['status', '--porcelain'])) throw new Error('The worktree must be clean.');
   const mainSha = git(root, ['rev-parse', '--verify', `${main}^{commit}`]);
+  const short = mainSha.slice(0, 12);
+  const base = git(root, ['merge-base', 'HEAD', mainSha]);
+  if (base === mainSha) return { mode: 'none', merged: false, main: mainSha };
+  const { state, applied, remaining } = renameState(root, base);
+  if (state === 'partial')
+    throw new Error(
+      'The branch is partly renamed (applied: ' +
+        `${applied.join(', ')}; still to apply: ${remaining.join(', ')}). ` +
+        'Finish the mechanical rename PRs first; they land back to back, with no main sync between them.'
+    );
   let previous =
     mirrorSha ??
     tryGit(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${mirror}`]) ??
     tryGit(root, ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${mirror}`]);
+  if (state === 'unrenamed') {
+    if (previous) throw new Error(`A mirror exists (${previous}) but the branch is not renamed.`);
+    const merged = mergeCommit(root, mainSha, `Sync main ${short}`);
+    return { mode: 'plain', merged, conflicts: !merged, main: mainSha };
+  }
   let seeded = null;
   if (!previous) {
-    // First sync: the branch already holds main's last merged commit, renamed.
-    const base = git(root, ['merge-base', 'HEAD', mainSha]);
+    // First sync after the full rename: the branch holds the last merged main, renamed.
     previous = commitTree(
       root,
       renamedTree(root, base),
@@ -92,32 +141,16 @@ export function syncMain({ root, main = 'origin/main', mirror = 'sync/main-renam
   if (tryGit(root, ['merge-base', '--is-ancestor', previous, 'HEAD']) === null)
     throw new Error(`Mirror ${previous} is not merged into this branch; pass --mirror-sha.`);
   if (tryGit(root, ['merge-base', '--is-ancestor', mainSha, previous]) !== null)
-    return { mirror: previous, seeded, merged: false, main: mainSha };
+    return { mode: 'mirror', mirror: previous, seeded, merged: false, main: mainSha };
   const next = commitTree(
     root,
     renamedTree(root, mainSha),
     [previous, mainSha],
-    `Renamed main ${mainSha.slice(0, 12)}`
+    `Renamed main ${short}`
   );
   git(root, ['update-ref', `refs/heads/${mirror}`, next]);
-  const merge = spawnSync(
-    'git',
-    [
-      'merge',
-      '--no-ff',
-      '-m',
-      `Sync main ${mainSha.slice(0, 12)} (mirror ${next.slice(0, 12)})`,
-      next,
-    ],
-    { cwd: root, encoding: 'utf8' }
-  );
-  return {
-    mirror: next,
-    seeded,
-    merged: merge.status === 0,
-    conflicts: merge.status !== 0,
-    main: mainSha,
-  };
+  const merged = mergeCommit(root, next, `Sync main ${short} (mirror ${next.slice(0, 12)})`);
+  return { mode: 'mirror', mirror: next, seeded, merged, conflicts: !merged, main: mainSha };
 }
 
 function main() {
@@ -130,12 +163,13 @@ function main() {
     mirror: args.mirror ?? 'sync/main-renamed',
     mirrorSha: typeof args['mirror-sha'] === 'string' ? args['mirror-sha'] : undefined,
   });
-  if (result.seeded) process.stdout.write(`Seeded the mirror at ${result.seeded}.\n`);
   if (!result.merged && !result.conflicts) {
-    process.stdout.write(`Main ${result.main} is already synced (mirror ${result.mirror}).\n`);
+    process.stdout.write(`Main ${result.main} is already synced.\n`);
     return;
   }
-  process.stdout.write(`Mirror of renamed main: ${result.mirror}\n`);
+  if (result.seeded) process.stdout.write(`Seeded the mirror at ${result.seeded}.\n`);
+  if (result.mode === 'mirror') process.stdout.write(`Mirror of renamed main: ${result.mirror}\n`);
+  else process.stdout.write('The branch is not renamed yet: plain merge of main.\n');
   if (result.conflicts) {
     process.stderr.write(
       "The merge has conflicts. For each file, apply only main's own change:\n" +
@@ -146,8 +180,17 @@ function main() {
     return;
   }
   process.stdout.write(
-    'Merged. Next: node scripts/rename/rename.mjs --check, pnpm install, regenerate, guard, tests.\n'
+    result.mode === 'mirror'
+      ? 'Merged. Next: node scripts/rename/rename.mjs --check, pnpm install, regenerate, guard, tests.\n'
+      : 'Merged. Next: pnpm install, guard, tests.\n'
   );
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    process.stderr.write(`${error.message}\n`);
+    process.exitCode = 1;
+  }
+}

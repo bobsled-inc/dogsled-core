@@ -3,7 +3,7 @@ import { lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync 
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { KEEP_LIST, maskedKeepList, RULES, selectRules } from '../../scripts/rename/mapping.mjs';
 import { syncMain } from '../../scripts/rename/sync-main.mjs';
@@ -356,16 +356,15 @@ describe('rename mapping', () => {
     }
   }, 30_000);
 
-  it('catches up twice through the renamed-main mirror without undoing design edits', () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), 'rename-sync-'));
+  describe('catch-up with main (sync-main.mjs)', () => {
     const identity = {
       GIT_AUTHOR_NAME: 'test',
       GIT_AUTHOR_EMAIL: 'test@example.com',
       GIT_COMMITTER_NAME: 'test',
       GIT_COMMITTER_EMAIL: 'test@example.com',
     };
-    const saved = Object.fromEntries(Object.keys(identity).map((k) => [k, process.env[k]]));
-    Object.assign(process.env, identity);
+    const saved = {};
+    let root;
     const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
     const write = (file, text) => {
       mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -376,15 +375,25 @@ describe('rename mapping', () => {
       git('add', '-A');
       git('commit', '-q', '-m', message);
     };
-    const renameAll = () =>
+    const rename = (...selection) =>
       execFileSync(process.execPath, [
         path.join(repoRoot, 'scripts/rename/rename.mjs'),
         '--apply',
-        '--all',
+        ...selection,
         '--root',
         root,
       ]);
-    try {
+    const onMain = (change) => {
+      git('switch', '-q', 'main');
+      change();
+      commitAll('main change');
+      git('switch', '-q', 'rename');
+    };
+
+    beforeEach(() => {
+      for (const key of Object.keys(identity)) saved[key] = process.env[key];
+      Object.assign(process.env, identity);
+      root = mkdtempSync(path.join(os.tmpdir(), 'rename-sync-'));
       git('init', '-q', '-b', 'main');
       write(
         'packages/dogsled/src/warehouse-row-state.ts',
@@ -392,10 +401,45 @@ describe('rename mapping', () => {
       );
       write('packages/dogsled/src/b.ts', "export const b = 'dogsled run';\n");
       commitAll('main 0');
-      // The rename branch: full rename, then a design PR moves the old name
-      // into legacy-names.ts.
       git('switch', '-q', '-c', 'rename');
-      renameAll();
+    });
+
+    afterEach(() => {
+      for (const [key, value] of Object.entries(saved))
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      rmSync(root, { recursive: true, force: true });
+    });
+
+    it('merges main as it is while the branch is not renamed yet', () => {
+      // A design PR (readers first) may already be on the branch.
+      write('packages/dogsled/src/legacy-names.ts', "export const OLD = 'dogsled.model.run';\n");
+      commitAll('design');
+      onMain(() =>
+        write('packages/dogsled/src/c.ts', 'export const s = process.env.DOGSLED_NEW;\n')
+      );
+      const result = syncMain({ root, main: 'main' });
+      expect(result).toMatchObject({ mode: 'plain', merged: true });
+      expect(read('packages/dogsled/src/c.ts')).toBe('export const s = process.env.DOGSLED_NEW;\n');
+      expect(read('packages/dogsled/src/b.ts')).toBe("export const b = 'dogsled run';\n");
+      expect(git('branch', '--list', 'sync/main-renamed')).toBe('');
+      expect(syncMain({ root, main: 'main' }).merged).toBe(false);
+    }, 60_000);
+
+    it('refuses while the branch is only partly renamed', () => {
+      rename('--rules', 'BC-01');
+      commitAll('rename BC-01 only');
+      onMain(() =>
+        write('packages/dogsled/src/c.ts', 'export const s = process.env.DOGSLED_NEW;\n')
+      );
+      const head = git('rev-parse', 'HEAD');
+      expect(() => syncMain({ root, main: 'main' })).toThrow(/partly renamed.*back to back/);
+      expect(git('rev-parse', 'HEAD')).toBe(head);
+      expect(git('branch', '--list', 'sync/main-renamed')).toBe('');
+    }, 60_000);
+
+    it('merges renamed main through the mirror once fully renamed, keeping design edits', () => {
+      rename('--all');
       commitAll('rename');
       write(
         'packages/bobsled-core/src/legacy-names.ts',
@@ -408,23 +452,19 @@ describe('rename mapping', () => {
       commitAll('design');
       const design = read('packages/bobsled-core/src/warehouse-row-state.ts');
 
-      git('switch', '-q', 'main');
-      write('packages/dogsled/src/c.ts', "export const c = 'dogsled';\n");
-      commitAll('main 1');
-      git('switch', '-q', 'rename');
+      onMain(() => write('packages/dogsled/src/c.ts', "export const c = 'dogsled';\n"));
       const first = syncMain({ root, main: 'main' });
-      expect(first).toMatchObject({ merged: true });
+      expect(first).toMatchObject({ mode: 'mirror', merged: true });
       expect(first.seeded).toBeTruthy();
       expect(read('packages/bobsled-core/src/c.ts')).toBe("export const c = 'bobsled';\n");
       expect(read('packages/bobsled-core/src/warehouse-row-state.ts')).toBe(design);
 
-      git('switch', '-q', 'main');
-      write('packages/dogsled/src/b.ts', "export const b = 'dogsled run --all';\n");
-      write('packages/dogsled/src/d.ts', "export const d = 'dogsled';\n");
-      commitAll('main 2');
-      git('switch', '-q', 'rename');
+      onMain(() => {
+        write('packages/dogsled/src/b.ts', "export const b = 'dogsled run --all';\n");
+        write('packages/dogsled/src/d.ts', "export const d = 'dogsled';\n");
+      });
       const second = syncMain({ root, main: 'main' });
-      expect(second).toMatchObject({ merged: true, seeded: null });
+      expect(second).toMatchObject({ mode: 'mirror', merged: true, seeded: null });
       expect(git('rev-parse', `${second.mirror}^1`)).toBe(first.mirror);
       expect(read('packages/bobsled-core/src/b.ts')).toBe(
         "export const b = 'bobsled run --all';\n"
@@ -433,13 +473,8 @@ describe('rename mapping', () => {
       expect(read('packages/bobsled-core/src/warehouse-row-state.ts')).toBe(design);
       expect(read('packages/bobsled-core/src/legacy-names.ts')).toContain('__dogsled_cursors');
       expect(syncMain({ root, main: 'main' }).merged).toBe(false);
-    } finally {
-      for (const [key, value] of Object.entries(saved))
-        if (value === undefined) delete process.env[key];
-        else process.env[key] = value;
-      rmSync(root, { recursive: true, force: true });
-    }
-  }, 60_000);
+    }, 90_000);
+  });
 
   it('refuses --apply without a rule selection', () => {
     const result = spawnSync(process.execPath, ['scripts/rename/rename.mjs', '--apply'], {
