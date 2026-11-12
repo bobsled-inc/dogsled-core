@@ -13,6 +13,10 @@
  * Rules run in order, most specific first; later rules see rewritten text.
  * Every rule matches only old spellings, so applying all rules twice changes
  * nothing the second time (tests/unit/rename-mapping.test.mjs checks this).
+ * Files in COMPAT_PATHS and lines marked `rename:keep` are never rewritten:
+ * they hold the old names that stored-data readers must keep accepting.
+ * Running a subset of rules (--rules) gives the same text as the full run
+ * limited to those rules: unselected rules mask their matches.
  *
  * "design" in a note means the rule only renames the spelling; a design PR
  * adds the reader that still accepts stored old names.
@@ -30,6 +34,19 @@ export const SELF_PATHS = [
   'scripts/guards/old-names-baseline.json',
   'tests/unit/guard-old-names.test.mjs',
 ];
+
+// Compatibility readers: old names that stored data still uses (saved formats,
+// Blueprint keys, warehouse names, old settings). The rename never touches
+// these files; keep each package's old names in one legacy-names.ts. Mark any
+// other deliberate old name with a `rename:keep` comment on the same line.
+export const COMPAT_PATHS = [
+  '**/legacy-names.ts',
+  '**/legacy-names.test.ts',
+  '**/legacy-names.*.test.ts',
+  'examples/old-formats/**',
+];
+
+export const KEEP_LINE_MARKER = 'rename:keep';
 
 // Preview tooling runs in dogsled-core until the export, so its repository
 // check must keep the current repository name.
@@ -91,7 +108,15 @@ export const KEEP_LIST = [
     paths: ['scripts/security/policy.mjs'],
     note: 'Dogsled-operated hosts stay blocked by the runtime network policy (D7)',
   },
-  { pattern: '_DOGSLED_LIVE', note: 'app-owned live database name (D7), not a Core name' },
+  {
+    pattern: '(?:dogsled${WORD_SEPARATOR})?app',
+    paths: ['scripts/guards/privacy.mjs'],
+    note: 'privacy guard still catches "proprietary Dogsled app" wording (D7)',
+  },
+  {
+    pattern: /(?<![_A-Za-z0-9])_DOGSLED_LIVE\b/g,
+    note: 'app-owned live database name (D7), not a Core name; bounded so __dogsled_live_* Core names still rename',
+  },
   {
     pattern: 'dogsled-logo.png',
     note: 'Explorer logo: the Explorer PR replaces it with a text-only "Bobsled Core" wordmark (step-3 answer)',
@@ -154,7 +179,23 @@ export const HANDLED_BY_DESIGN = [
   },
   {
     item: 'Managed destination type',
-    note: 'exact list {bobsled_managed, dogsled_managed}, not a prefix, to skip bobsled_managed_snowflake (BC-11)',
+    note: 'exact list {bobsled_managed, dogsled_managed}, not a prefix, to skip bobsled_managed_snowflake; move the list and both strip prefixes from runner/config/schema.ts into legacy-names.ts before any BC-11 apply (no rule renames the prefix constant) (BC-11)',
+  },
+  {
+    item: 'Existing readers to move into legacy-names.ts first (step-5 PR 2/3)',
+    note: 'model-spec agentic/warehouse-row-state.ts LEGACY_CURSORS_TABLE (__dogsled_cursors), protocol legacy-blueprint-aliases.ts alias table, runner/config/schema.ts managed types; until then a BC-11/BC-14 apply rewrites them',
+  },
+  {
+    item: 'Reserved warehouse prefixes',
+    note: 'reserve both _dogsled_ and _bobsled_ (and _track_) in the agentic and staging checks; in legacy-names.ts (BC-14, C15)',
+  },
+  {
+    item: 'Old-formats showcase',
+    note: 'examples/old-formats/** is in COMPAT_PATHS; invert it by hand (dogsled_* becomes the old column) in the design PR',
+  },
+  {
+    item: 'Export exclude list',
+    note: 'add scripts/rename/, scripts/guards/old-names-*, preview-publish.yml and scripts/release/preview.mjs to public-export-exclude.txt when the export tool lands (step-5 PR 1), with a test',
   },
   {
     item: 'Old DOGSLED_* settings',
@@ -259,7 +300,7 @@ export const RULES = [
     category: 'BC-01',
     kind: 'content',
     match: /(['"])packages\1,\s*(['"])dogsled\2/g,
-    replace: "'packages', 'bobsled-core'",
+    replace: '$1packages$1, $2bobsled-core$2',
     note: 'path.join segments (explorer dogsled-cli.ts, runtime/workspace.ts).',
   },
   {
@@ -276,7 +317,7 @@ export const RULES = [
     kind: 'content',
     match: '"dogsled": "./bin/cli.mjs"',
     replace: '"bobsled": "./bin/cli.mjs"',
-    include: ['packages/dogsled/package.json'],
+    include: ['packages/dogsled/package.json', 'packages/bobsled-core/package.json'],
   },
   {
     id: 'pkg-skills-entry',
@@ -408,7 +449,7 @@ export const RULES = [
     kind: 'content',
     match:
       /\bDOGSLED_(RAW|MULTI_CONN_DB(?:_OVERRIDE)?|MULTI_CONN_WH|MULTI_CONN_ROLE|AI_WH|LOADER)\b(?!_)/g,
-    replace: 'BOBSLED_$1',
+    replace: 'BOBSLED_CORE_$1',
     note: 'Example warehouse object names in docs/examples, not settings.',
   },
 
@@ -417,7 +458,7 @@ export const RULES = [
     id: 'wh-prefix-lower',
     category: 'BC-14',
     kind: 'content',
-    match: /(_{1,2})dogsled_/g,
+    match: /(?<![A-Za-z0-9])(_{1,2})dogsled_/g,
     replace: '$1bobsled_',
     note: 'All _dogsled_* and __dogsled_* names (loaded_at, run_id, evidence, confidence, reason, agentic tables, cp/pub/stg/uq/win/cursor/new/old/live/source/models/custom/xwh_locks). design: takeover.',
   },
@@ -425,17 +466,9 @@ export const RULES = [
     id: 'wh-prefix-upper',
     category: 'BC-14',
     kind: 'content',
-    match: /(_{1,2})DOGSLED_/g,
+    match: /(?<![A-Za-z0-9])(_{1,2})DOGSLED_/g,
     replace: '$1BOBSLED_',
     note: 'Snowflake uppercase forms.',
-  },
-  {
-    id: 'wh-prefix-check',
-    category: 'BC-14',
-    kind: 'content',
-    match: "startsWith('_dogsled_')",
-    replace: "startsWith('_bobsled_')",
-    note: 'Already covered by wh-prefix-lower; listed so design PR adds both prefixes to the reserved check.',
   },
 
   // BC-15 labels, properties, fields, user agent
@@ -499,14 +532,6 @@ export const RULES = [
     match: /\bdogsled_(destination_kind|snowflake_warehouse|databricks_workspace)\b/g,
     replace: 'bobsled_$1',
   },
-  {
-    id: 'managed-prefix-const',
-    category: 'BC-11',
-    kind: 'content',
-    match: "DOGSLED_MANAGED_TYPE_PREFIX = 'dogsled_'",
-    replace: "BOBSLED_CORE_MANAGED_TYPE_PREFIX = 'bobsled_'",
-    note: 'design: accept dogsled_ and bobsled_ managed types.',
-  },
 
   // BC-12 saved formats
   {
@@ -532,6 +557,14 @@ export const RULES = [
     match: /\bdogsled\.model\.run\b/g,
     replace: 'bobsled.model.run',
     note: 'design: reader accepts track./dogsled./bobsled.',
+  },
+  {
+    id: 'manifest-node-kinds',
+    category: 'BC-12',
+    kind: 'content',
+    match: /\bdogsled\.(runner\.run_resource|entity_graph\.run)\b/g,
+    replace: 'bobsled.$1',
+    note: 'Stored pipeline-manifest node kinds. design: readers accept track./dogsled./bobsled.',
   },
   {
     id: 'manifest-default-command',
@@ -590,7 +623,7 @@ export const RULES = [
     category: 'BC-10',
     kind: 'content',
     match: /(['"])DOGSLED\1/g,
-    replace: "'BOBSLED'",
+    replace: '$1BOBSLED$1',
     include: ['packages/model-spec/**'],
     note: 'design: DOGSLED read natively, TRACK stays foreign.',
   },
@@ -789,7 +822,7 @@ export const RULES = [
     id: 'identifier-camel-inner',
     category: 'BC-05',
     kind: 'content',
-    match: /([A-Za-z0-9])Dogsled(?=[A-Z_\b]|\b)/g,
+    match: /([A-Za-z0-9])Dogsled(?=[A-Z_]|\b)/g,
     replace: '$1Bobsled',
     note: 'openDogsledProject -> openBobsledProject, ExplorerDogsledCommand -> ExplorerBobsledCommand.',
   },
@@ -827,6 +860,14 @@ export const RULES = [
   },
 
   // BC-08 broad env and constant prefix (after specials; leading-underscore names are not hit)
+  {
+    id: 'const-inner-upper',
+    category: 'BC-08',
+    kind: 'content',
+    match: /(?<=[A-Z0-9]_)DOGSLED_/g,
+    replace: 'BOBSLED_CORE_',
+    note: 'Old name inside a longer constant (MAX_DOGSLED_CONFIG_BYTES); never a bare BOBSLED_*.',
+  },
   {
     id: 'env-prefix',
     category: 'BC-08',
@@ -973,7 +1014,9 @@ export function selectRules(selector, profile) {
 /** Keep-list entries that contain an old name, for masking in the given profile. */
 export function maskedKeepList(profile = 'toolkit') {
   return KEEP_LIST.filter(
-    (k) => /dogsled/i.test(k.pattern) && (!k.profiles || k.profiles.includes(profile))
+    (k) =>
+      /dogsled/i.test(k.pattern instanceof RegExp ? k.pattern.source : k.pattern) &&
+      (!k.profiles || k.profiles.includes(profile))
   );
 }
 

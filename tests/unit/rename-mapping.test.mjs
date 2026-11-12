@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { lstatSync, readFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { KEEP_LIST, maskedKeepList, RULES, selectRules } from '../../scripts/rename/mapping.mjs';
 import {
   globToRegExp,
+  isProtectedPath,
   isSelfPath,
   renameText,
   transformPath,
@@ -15,6 +17,14 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const rename = (text, file = 'docs/example.md') => renameText(text, { file, rules: RULES }).text;
+const BINARY = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|pdf|wasm|zip|gz|tgz)$/i;
+const trackedTextFiles = () =>
+  execFileSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8' })
+    .split('\n')
+    .filter((file) => file && file !== 'pnpm-lock.yaml' && !isProtectedPath(file))
+    .filter((file) => !BINARY.test(file))
+    .filter((file) => lstatSync(path.join(repoRoot, file), { throwIfNoEntry: false })?.isFile())
+    .map((file) => ({ file, text: readFileSync(path.join(repoRoot, file), 'utf8') }));
 
 describe('rename mapping', () => {
   it('has unique, well-formed rules', () => {
@@ -62,6 +72,16 @@ describe('rename mapping', () => {
       'return `bobsled_${slugForPipelineName(name)}`;',
     ],
     ["graph_id: 'track_orders'", "graph_id: 'bobsled_orders'"],
+    ["kind: 'dogsled.runner.run_resource'", "kind: 'bobsled.runner.run_resource'"],
+    ["kind: 'dogsled.entity_graph.run'", "kind: 'bobsled.entity_graph.run'"],
+    ['const MAX_DOGSLED_CONFIG_BYTES = 1;', 'const MAX_BOBSLED_CORE_CONFIG_BYTES = 1;'],
+    ['CI_DOGSLED_TOKEN', 'CI_BOBSLED_CORE_TOKEN'],
+    [
+      'table __dogsled_live_x and _DOGSLED_LOADED_AT',
+      'table __bobsled_live_x and _BOBSLED_LOADED_AT',
+    ],
+    ['"vendor": "DOGSLED"', '"vendor": "BOBSLED"'],
+    ['USE DATABASE DOGSLED_RAW;', 'USE DATABASE BOBSLED_CORE_RAW;'],
     ['raw.replace(/\\bdogsled\\b/g, cli)', 'raw.replace(/\\bbobsled\\b/g, cli)'],
   ])('renames %s', (input, expected) => {
     expect(rename(input)).toBe(expected);
@@ -105,6 +125,15 @@ describe('rename mapping', () => {
     );
   });
 
+  it('keeps the app wording in the privacy guard and the bounded app database name', () => {
+    const fragment = String.raw`proprietary)${'${WORD_SEPARATOR}'}(?:dogsled${'${WORD_SEPARATOR}'})?app`;
+    expect(rename(fragment, 'scripts/guards/privacy.mjs')).toBe(fragment);
+    expect(rename('SELECT * FROM _DOGSLED_LIVE.x')).toBe('SELECT * FROM _DOGSLED_LIVE.x');
+    expect(rename("osi.json: 'DOGSLED'", 'packages/model-spec/src/a.ts')).toBe(
+      "osi.json: 'BOBSLED'"
+    );
+  });
+
   it('keeps the preview tooling pointed at the current repository', () => {
     const guard = "github.repository == 'bobsled-inc/dogsled-core'";
     expect(rename(guard, '.github/workflows/preview-publish.yml')).toBe(guard);
@@ -145,6 +174,8 @@ describe('rename mapping', () => {
       '+++ b/packages/dogsled/src/a.ts',
       '@@ -1 +1 @@',
       "-const name = 'dogsled';",
+      '-dogsled run',
+      '+dogsled run --all',
       '+const name = DOGSLED_PACKAGE_NAME;',
       'diff --git a/scripts/rename/mapping.mjs b/scripts/rename/mapping.mjs',
       '+// dogsled stays here',
@@ -155,6 +186,8 @@ describe('rename mapping', () => {
       '+++ b/packages/bobsled-core/src/a.ts',
       '@@ -1 +1 @@',
       "-const name = 'bobsled';",
+      '-bobsled run',
+      '+bobsled run --all',
       '+const name = BOBSLED_CORE_PACKAGE_NAME;',
       'diff --git a/scripts/rename/mapping.mjs b/scripts/rename/mapping.mjs',
       '+// dogsled stays here',
@@ -177,22 +210,106 @@ describe('rename mapping', () => {
   });
 
   it('is idempotent on every tracked text file, so catch-up replays are safe', () => {
-    const files = execFileSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8' })
-      .split('\n')
-      .filter((file) => file && file !== 'pnpm-lock.yaml' && !isSelfPath(file))
-      .filter((file) => !/\.(png|jpe?g|gif|ico|webp|woff2?|ttf|pdf|wasm|zip|gz|tgz)$/i.test(file))
-      .filter((file) => lstatSync(path.join(repoRoot, file), { throwIfNoEntry: false })?.isFile());
     const notIdempotent = [];
-    for (const file of files) {
-      const once = renameText(readFileSync(path.join(repoRoot, file), 'utf8'), {
-        file,
-        rules: RULES,
-      });
+    for (const { file, text } of trackedTextFiles()) {
+      const once = renameText(text, { file, rules: RULES });
       const twice = renameText(once.text, { file, rules: RULES });
       if (twice.text !== once.text) notIdempotent.push(file);
     }
     expect(notIdempotent).toEqual([]);
   }, 60_000);
+
+  it('creates no bare BOBSLED_* names (D2): only BOBSLED_CORE_* or warehouse prefixes', () => {
+    const bare = [];
+    for (const { file, text } of trackedTextFiles()) {
+      if (!text.includes('DOGSLED')) continue;
+      const before = new Set(text.match(/BOBSLED_[A-Z0-9_]*/g) ?? []);
+      const after = renameText(text, { file, rules: RULES }).text;
+      for (const match of after.matchAll(/BOBSLED_[A-Z0-9_]*/g)) {
+        const token = match[0];
+        if (token.startsWith('BOBSLED_CORE_') || before.has(token)) continue;
+        let start = match.index;
+        while (after[start - 1] === '_') start--;
+        const underscores = match.index - start;
+        const warehousePrefix =
+          underscores >= 1 && underscores <= 2 && !/[A-Za-z0-9]/.test(after[start - 1] ?? '');
+        if (!warehousePrefix)
+          bare.push(`${file}: ${after.slice(start - 4, match.index + token.length)}`);
+      }
+    }
+    expect(bare).toEqual([]);
+  }, 60_000);
+
+  it('gives the same result for a subset run followed by the full run as for the full run', () => {
+    expect(rename('@bobsled-inc/dogsled')).toBe('@bobsled-inc/bobsled-core');
+    const only = (text, selector) => renameText(text, { rules: selectRules(selector) }).text;
+    expect(only('npm install @bobsled-inc/dogsled', 'BC-04')).toBe(
+      'npm install @bobsled-inc/dogsled'
+    );
+    expect(only('see packages/dogsled/src', 'BC-04')).toBe('see packages/dogsled/src');
+    expect(only('run dogsled extract', 'BC-04')).toBe('run bobsled extract');
+    expect(only('dogsled_connection_ref: wh', 'BC-21')).toBe('dogsled_connection_ref: wh');
+    expect(
+      transformPath('plugins/dogsled-core/skills/dogsled-init/SKILL.md', selectRules('BC-01'))
+    ).toBeNull();
+    const categories = [...new Set(RULES.map((rule) => rule.category))];
+    const sample = trackedTextFiles()
+      .filter(({ text }) => /dogsled|track_/i.test(text))
+      .filter((_, index) => index % 10 === 0);
+    const mismatches = [];
+    for (const { file, text } of sample) {
+      const full = renameText(text, { file, rules: RULES }).text;
+      for (const category of categories) {
+        const partial = renameText(text, { file, rules: selectRules(category) }).text;
+        if (renameText(partial, { file, rules: RULES }).text !== full)
+          mismatches.push(`${category} ${file}`);
+      }
+    }
+    expect(mismatches).toEqual([]);
+  }, 60_000);
+
+  it('never rewrites compatibility readers or lines marked rename:keep, even with --apply --all', () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'rename-compat-'));
+    try {
+      const legacy = [
+        "export const RUN_KINDS = ['track.model.run', 'dogsled.model.run', 'bobsled.model.run'];",
+        "export const OLD_COLUMNS = ['_dogsled_loaded_at', '_dogsled_run_id'];",
+        "export const LEGACY_CURSORS_TABLE = '__dogsled_cursors';",
+        "export const OLD_SETTINGS = ['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];",
+        '',
+      ].join('\n');
+      const reader = [
+        "const OLD_KIND = 'dogsled.model.run'; // rename:keep",
+        "const NEW_KIND = 'dogsled.model.run';",
+        '',
+      ].join('\n');
+      const files = {
+        'packages/model-spec/src/legacy-names.ts': legacy,
+        'packages/model-spec/tests/unit/legacy-names.test.ts': legacy,
+        'examples/old-formats/dogsled.yml': 'dogsled_connection_ref: wh\n',
+        'packages/model-spec/src/reader.ts': reader,
+      };
+      for (const [file, text] of Object.entries(files)) {
+        mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+        writeFileSync(path.join(root, file), text);
+      }
+      execFileSync('git', ['init', '-q'], { cwd: root });
+      execFileSync('git', ['add', '.'], { cwd: root });
+      const result = spawnSync(
+        process.execPath,
+        [path.join(repoRoot, 'scripts/rename/rename.mjs'), '--apply', '--all', '--root', root],
+        { encoding: 'utf8' }
+      );
+      expect(result.status).toBe(0);
+      for (const file of Object.keys(files).slice(0, 3))
+        expect(readFileSync(path.join(root, file), 'utf8')).toBe(files[file]);
+      expect(readFileSync(path.join(root, 'packages/model-spec/src/reader.ts'), 'utf8')).toBe(
+        "const OLD_KIND = 'dogsled.model.run'; // rename:keep\nconst NEW_KIND = 'bobsled.model.run';\n"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }, 30_000);
 
   it('refuses --apply without a rule selection', () => {
     const result = spawnSync(process.execPath, ['scripts/rename/rename.mjs', '--apply'], {

@@ -12,11 +12,14 @@
  *   node scripts/rename/rename.mjs --patch in.patch --out out.patch
  *
  * Options: --root <dir> (default: git top level), --profile toolkit|app
- * (default: toolkit), --samples <n> (dry-run samples per rule, default 3).
+ * (default: toolkit), --samples <n> (dry-run samples per rule, default 3),
+ * --only <glob,...> (limit to some files, e.g. one file after a merge conflict).
  *
- * Keep-list entries that contain "dogsled" are masked before the rules run and
- * restored afterwards, so no rule can rewrite them. The tool never touches its
- * own files or the old-name guard (SELF_PATHS in mapping.mjs).
+ * Never rewritten: keep-list names that contain "dogsled" (masked), lines that
+ * contain `rename:keep`, the compatibility readers (COMPAT_PATHS), and the
+ * tool and guard themselves (SELF_PATHS). With --rules, the rules that are not
+ * selected still run in order but only mask their matches, so a subset run
+ * gives the same text as the full run limited to the selected rules.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -25,9 +28,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  contentRules,
+  COMPAT_PATHS,
+  KEEP_LINE_MARKER,
   maskedKeepList,
-  pathRules,
+  rulesForProfile,
   SELF_PATHS,
   selectRules,
   SPECIAL_ATTENTION,
@@ -71,14 +75,52 @@ export function ruleApplies(rule, file) {
 }
 
 export const isSelfPath = (file) => matchesAny(file, SELF_PATHS);
+export const isCompatPath = (file) => matchesAny(file, COMPAT_PATHS);
+/** Files the rename never rewrites or moves. */
+export const isProtectedPath = (file) => isSelfPath(file) || isCompatPath(file);
+
+// ─── Masking ──────────────────────────────────────────────────────────────────
+// Masked text becomes \uE000<n>\uE001 (private-use characters, never \w) and is
+// restored after the rules ran.
+
+function createMask() {
+  const saved = [];
+  return {
+    hide: (value) => `\uE000${saved.push(value) - 1}\uE001`,
+    restore(text) {
+      let current = text;
+      for (let pass = 0; pass < 4 && current.includes('\uE000'); pass++)
+        current = current.replace(/\uE000(\d+)\uE001/g, (_, i) => saved[Number(i)]);
+      return current;
+    },
+  };
+}
+
+function maskPattern(text, pattern, mask) {
+  if (pattern instanceof RegExp)
+    return text.replace(
+      new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`),
+      (m) => mask.hide(m)
+    );
+  return text.split(pattern).join(mask.hide(pattern));
+}
+
+const patternLength = (p) => (p instanceof RegExp ? p.source.length : p.length);
+
+/** Ordered rules for the profile, with a flag for the selected ones. */
+function plan(selectedRules, profile) {
+  const ids = new Set(selectedRules.map((rule) => rule.id));
+  return rulesForProfile(profile).map((rule) => ({ rule, selected: ids.has(rule.id) }));
+}
 
 // ─── Content ──────────────────────────────────────────────────────────────────
 
-function applyRule(text, rule) {
+function applyRule(text, rule, mask) {
   let count = 0;
   if (rule.match instanceof RegExp) {
     const next = text.replace(new RegExp(rule.match.source, rule.match.flags), (...args) => {
       count++;
+      if (mask) return mask.hide(args[0]);
       const groups = args.slice(
         1,
         args.findIndex((arg) => typeof arg === 'number')
@@ -88,46 +130,59 @@ function applyRule(text, rule) {
     return { text: next, count };
   }
   const parts = text.split(rule.match);
-  return { text: parts.join(rule.replace), count: parts.length - 1 };
+  return { text: parts.join(mask ? mask.hide(rule.match) : rule.replace), count: parts.length - 1 };
 }
 
 /**
- * Rename one file's text. Returns { text, counts } with counts per rule id.
- * `file` is the repo-relative path used for include/exclude and keep paths.
+ * Rename one file's text with the selected `rules`. Returns { text, counts }
+ * with counts per selected rule id. `file` is the repo-relative path used for
+ * include/exclude and keep paths.
  */
 export function renameText(text, { file = '', rules, profile = 'toolkit' }) {
-  const keep = maskedKeepList(profile).filter((k) => !k.paths || matchesAny(file, k.paths));
-  const saved = [];
-  let current = text;
+  const mask = createMask();
+  let current = text.replace(new RegExp(`^.*${KEEP_LINE_MARKER}.*$`, 'gm'), (line) =>
+    mask.hide(line)
+  );
+  const keep = maskedKeepList(profile)
+    .filter((k) => !k.paths || matchesAny(file, k.paths))
+    .sort((a, b) => patternLength(b.pattern) - patternLength(a.pattern));
   // Longest first, so `dogsled\.it` is masked before `dogsled.it`.
-  for (const entry of [...keep].sort((a, b) => b.pattern.length - a.pattern.length)) {
-    current = current.split(entry.pattern).join(`\u0000${saved.push(entry.pattern) - 1}\u0000`);
-  }
+  for (const entry of keep) current = maskPattern(current, entry.pattern, mask);
   const counts = {};
-  for (const rule of contentRules(rules)) {
-    if (!ruleApplies(rule, file)) continue;
-    const result = applyRule(current, rule);
+  for (const { rule, selected } of plan(rules, profile)) {
+    if (rule.kind !== 'content' || !ruleApplies(rule, file)) continue;
+    const result = applyRule(current, rule, selected ? null : mask);
     if (result.count > 0) {
-      counts[rule.id] = (counts[rule.id] ?? 0) + result.count;
+      if (selected) counts[rule.id] = (counts[rule.id] ?? 0) + result.count;
       current = result.text;
     }
   }
-  current = current.replace(/\u0000(\d+)\u0000/g, (_, index) => saved[Number(index)]);
-  return { text: current, counts };
+  return { text: mask.restore(current), counts };
 }
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
-/** New path for a file, or null when no path rule matches. */
-export function transformPath(file, rules) {
+/** New path for a file under the selected rules, or null when nothing moves. */
+export function transformPath(file, rules, profile = 'toolkit') {
+  const mask = createMask();
   let current = file;
-  for (const rule of pathRules(rules)) {
+  for (const { rule, selected } of plan(rules, profile)) {
+    if (rule.kind !== 'path') continue;
     if (rule.match instanceof RegExp) {
-      current = current.replace(new RegExp(rule.match.source, rule.match.flags), rule.replace);
+      current = current.replace(new RegExp(rule.match.source, rule.match.flags), (...args) => {
+        if (!selected) return mask.hide(args[0]);
+        const groups = args.slice(
+          1,
+          args.findIndex((arg) => typeof arg === 'number')
+        );
+        return rule.replace.replace(/\$(\d)/g, (_, n) => groups[Number(n) - 1] ?? '');
+      });
     } else if (current === rule.match || current.startsWith(`${rule.match}/`)) {
-      current = rule.replace + current.slice(rule.match.length);
+      current =
+        (selected ? rule.replace : mask.hide(rule.match)) + current.slice(rule.match.length);
     }
   }
+  current = mask.restore(current);
   return current === file ? null : current;
 }
 
@@ -136,7 +191,8 @@ export function transformPath(file, rules) {
 /** Translate a unified diff (git format-patch output) through the rules. */
 export function translatePatch(patchText, rules, profile = 'toolkit') {
   let file = '';
-  const movePath = (p) => (p === '/dev/null' ? p : (transformPath(p, rules) ?? p));
+  const movePath = (p) =>
+    p === '/dev/null' || isProtectedPath(p) ? p : (transformPath(p, rules, profile) ?? p);
   return patchText
     .split('\n')
     .map((line) => {
@@ -149,7 +205,11 @@ export function translatePatch(patchText, rules, profile = 'toolkit') {
       if (side) return side[2] ? `${side[1]}${side[2]}/${movePath(side[3])}` : line;
       const rename = line.match(/^(rename (?:from|to) )(.+)$/);
       if (rename) return `${rename[1]}${movePath(rename[2])}`;
-      if (isSelfPath(file)) return line;
+      if (isProtectedPath(file)) return line;
+      // Diff lines: rename after the ' ', '+' or '-' marker, so a removed line
+      // that starts with an old name matches like it does in the file.
+      if (/^[ +-]/.test(line))
+        return line[0] + renameText(line.slice(1), { file, rules, profile }).text;
       return renameText(line, { file, rules, profile }).text;
     })
     .join('\n');
@@ -157,14 +217,15 @@ export function translatePatch(patchText, rules, profile = 'toolkit') {
 
 // ─── Repository modes ─────────────────────────────────────────────────────────
 
-function listFiles(root) {
+function listFiles(root, only) {
   return execFileSync('git', ['ls-files', '-z'], {
     cwd: root,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   })
     .split('\0')
-    .filter((file) => file && !SKIP_FILES.has(file) && !isSelfPath(file))
+    .filter((file) => file && !SKIP_FILES.has(file) && !isProtectedPath(file))
+    .filter((file) => !only || matchesAny(file, only))
     .filter((file) => {
       // Regular files only: symlinks and deleted files are left alone.
       const full = path.join(root, file);
@@ -172,13 +233,15 @@ function listFiles(root) {
     });
 }
 
-function scan(root, rules, profile) {
+function scan(root, rules, profile, only) {
   const files = [];
   const moves = [];
   const perRule = {};
   const samples = {};
-  const keptNames = maskedKeepList(profile).map((entry) => entry.pattern);
-  for (const file of listFiles(root)) {
+  const keptNames = maskedKeepList(profile)
+    .map((entry) => entry.pattern)
+    .filter((pattern) => typeof pattern === 'string');
+  for (const file of listFiles(root, only)) {
     // Binary files move with their folder but their bytes are never rewritten.
     if (!BINARY.test(file)) {
       const text = readFileSync(path.join(root, file), 'utf8');
@@ -189,15 +252,15 @@ function scan(root, rules, profile) {
         (samples[id] ??= []).push(file);
       }
     }
-    const to = transformPath(file, rules);
+    const to = transformPath(file, rules, profile);
     if (to && !keptNames.some((name) => path.basename(file) === name))
       moves.push({ from: file, to });
   }
   return { files, moves, perRule, samples };
 }
 
-function dryRun(root, rules, profile, maxSamples) {
-  const { files, moves, perRule, samples } = scan(root, rules, profile);
+function dryRun(root, rules, profile, maxSamples, only) {
+  const { files, moves, perRule, samples } = scan(root, rules, profile, only);
   const total = Object.values(perRule).reduce((sum, n) => sum + n, 0);
   const out = [
     `Dry run: ${total} replacements in ${files.length} files, ${moves.length} path moves.`,
@@ -222,8 +285,8 @@ function dryRun(root, rules, profile, maxSamples) {
   process.stdout.write(`${out.join('\n')}\n`);
 }
 
-function apply(root, rules, profile) {
-  const { files, moves, perRule } = scan(root, rules, profile);
+function apply(root, rules, profile, only) {
+  const { files, moves, perRule } = scan(root, rules, profile, only);
   for (const { file, text } of files) writeFileSync(path.join(root, file), text);
   const conflicts = [];
   for (const { from, to } of moves) {
@@ -251,8 +314,8 @@ function apply(root, rules, profile) {
   );
 }
 
-function check(root, rules, profile) {
-  const { perRule, samples, moves } = scan(root, rules, profile);
+function check(root, rules, profile, only) {
+  const { perRule, samples, moves } = scan(root, rules, profile, only);
   let total = moves.length;
   for (const [id, count] of Object.entries(perRule)) {
     total += count;
@@ -286,13 +349,14 @@ function main() {
     throw new Error('--apply needs --rules <ids|categories> or --all.');
   }
   const rules = selectRules(args.all ? 'all' : args.rules, profile);
+  const only = typeof args.only === 'string' ? args.only.split(',') : undefined;
   if (args.patch) {
     const translated = translatePatch(readFileSync(args.patch, 'utf8'), rules, profile);
     if (args.out) writeFileSync(args.out, translated);
     else process.stdout.write(translated);
-  } else if (args.check) check(root, rules, profile);
-  else if (args.apply) apply(root, rules, profile);
-  else dryRun(root, rules, profile, Number(args.samples ?? 3));
+  } else if (args.check) check(root, rules, profile, only);
+  else if (args.apply) apply(root, rules, profile, only);
+  else dryRun(root, rules, profile, Number(args.samples ?? 3), only);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
