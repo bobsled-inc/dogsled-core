@@ -53,8 +53,9 @@ Step-by-step fixes are in [references/playbooks.md](references/playbooks.md).
   `pnpm deps:expiries`-style expiry checks plus the consumer audit at today's
   cutoff and again 3 days ahead, then reports four finding kinds:
   `expired_exemption`, `deadline_soon`, `stale_parent` and `new_finding`.
-  The report goes to the maintainers' automation, which may open draft fix PRs
-  for `stale_parent` and `expired_exemption`. People review and merge.
+  The report goes to the maintainers' automation, which may open a draft fix PR
+  for any finding kind. People review and merge; deadline, exception,
+  compatibility and security-reachability judgments need explicit human approval.
 - **Release gate.** The Release workflow runs `pnpm deps:expiries --fail-within 0`
   first, checks third-party notices, and runs `pnpm security:release --execute`
   (workspace audit, packed tarball checks, SBOM, consumer audit).

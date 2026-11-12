@@ -40,8 +40,8 @@ Meaning: one of these is due within 7 days, or is overdue:
 - a consumer-exception review deadline
   (`file: scripts/security/consumer-exceptions.json`).
 
-No automatic fix. A maintainer decides. Run `pnpm deps:expiries` to see every
-date.
+Automation may prepare a draft repair, but a maintainer decides whether any
+deadline or policy change is valid. Run `pnpm deps:expiries` to see every date.
 
 - **Exemption in grace:** follow "Expired exemption" now. The cleanup is safe as
   soon as the version is 7 days old.
@@ -126,8 +126,8 @@ ranges at `>=2.0.0 <3` and keep the reviewed exception on 2.x.
 ## New advisory (`new_finding`)
 
 Meaning: a high or critical advisory with no matching exception. The finding
-names `advisory`, `package`, `version` and `severity`. There is no automatic
-fix. A maintainer decides; an exception needs owner approval.
+names `advisory`, `package`, `version` and `severity`. Automation may prepare a
+draft repair, but a maintainer decides; an exception needs owner approval.
 
 1. Reproduce with the consumer audit (see "Stale parent", step 1) and find the
    paths in `/tmp/health-check/consumer-current/<floor|latest>/`. For the

@@ -204,9 +204,9 @@ registry or audit output ever reaches the report.
 
 When `HUSKY_ORIGIN` is set, the workflow requests a GitHub OIDC token with audience
 `husky` and POSTs the report to `${HUSKY_ORIGIN}/api/health/report`. Husky verifies
-the token, posts Slack messages, and opens fix PRs for stale exceptions and expired
-exemptions. A person still reviews and merges, and exception changes need owner
-approval.
+the token, posts maintainer messages, and may open a draft fix PR for any finding
+kind. A person still reviews and merges; deadline, exception, compatibility and
+security-reachability judgments need explicit human approval.
 
 The report content is built by the audit job, which runs third-party dependency
 code (install, build, consumer installs). The report job POSTs it as-is. This means
