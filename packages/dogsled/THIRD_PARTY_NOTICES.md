@@ -4211,7 +4211,7 @@ Apache License
    limitations under the License.
 ```
 
-## tslib@2.8.1
+## tslib@2.9.1
 
 Declared license: 0BSD
 
