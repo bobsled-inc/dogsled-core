@@ -8,7 +8,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 6
     cooldown:
       default-days: 7
     labels:
@@ -17,7 +17,59 @@ updates:
       - dependency-name: '*'
         update-types: [version-update:semver-major]
     groups:
-      minor-and-patch:
+      ai:
+        patterns:
+          - '@ai-sdk/*'
+          - '@openrouter/ai-sdk-provider'
+          - ai
+        update-types: [minor, patch]
+      data-and-cloud:
+        patterns:
+          - '@aws-sdk/*'
+          - '@smithy/*'
+          - '@google-cloud/*'
+          - '@clickhouse/client'
+          - '@databricks/sql'
+          - '@polyglot-sql/sdk'
+          - '@turbopuffer/turbopuffer'
+          - '@types/pg'
+          - pg
+          - snowflake-sdk
+        update-types: [minor, patch]
+      frontend:
+        patterns:
+          - '@tailwindcss/*'
+          - '@types/react'
+          - '@types/react-dom'
+          - highlight.js
+          - mermaid
+          - next
+          - react
+          - react-dom
+          - react-test-renderer
+          - tailwindcss
+        update-types: [minor, patch]
+      lint-and-security:
+        patterns:
+          - '@secretlint/*'
+          - '@typescript-eslint/*'
+          - eslint
+          - fast-check
+          - globals
+          - prettier
+          - secretlint
+          - semver
+        update-types: [minor, patch]
+      build-and-types:
+        patterns:
+          - '@types/*'
+          - playwright
+          - tsx
+          - turbo
+        update-types: [minor, patch]
+      runtime-other:
+        patterns:
+          - '*'
         update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /

@@ -890,12 +890,31 @@ describe('release and dependency policy guardrails', () => {
     const dependabot = readFileSync(path.join(repoRoot, '.github', 'dependabot.yml'), 'utf8');
     deepStrictEqual(
       [...dependabot.matchAll(/open-pull-requests-limit:\s*(\d+)/g)].map((match) => match[1]),
-      ['2', '1']
+      ['6', '1']
     );
     deepStrictEqual(
       [...dependabot.matchAll(/default-days:\s*(\d+)/g)].map((match) => match[1]),
       ['7', '7']
     );
+  });
+
+  it('keeps npm updates in ordered reviewable groups', () => {
+    const dependabot = parseYaml(
+      readFileSync(path.join(repoRoot, '.github', 'dependabot.yml'), 'utf8')
+    );
+    const npm = dependabot.updates.find((entry) => entry['package-ecosystem'] === 'npm');
+    deepStrictEqual(Object.keys(npm.groups), [
+      'ai',
+      'data-and-cloud',
+      'frontend',
+      'lint-and-security',
+      'build-and-types',
+      'runtime-other',
+    ]);
+    for (const group of Object.values(npm.groups)) {
+      deepStrictEqual(group['update-types'], ['minor', 'patch']);
+    }
+    deepStrictEqual(npm.groups['runtime-other'].patterns, ['*']);
   });
 
   it('limits release-age exemptions to documented exact versions until their removal date', () => {
