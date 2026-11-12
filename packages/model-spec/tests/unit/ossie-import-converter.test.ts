@@ -354,6 +354,8 @@ describe('Ossie import converter', () => {
       },
     });
     const customers = result.files.find((file) => file.document.name === 'customers')?.document;
+    const idColumn = (customers?.['schema'] as { columns: Record<string, unknown>[] }).columns[0];
+    expect(idColumn).not.toHaveProperty('ai_context');
     expect(customers).toMatchObject({
       ai_context: { owner: 'sales' },
       schema: {
@@ -361,7 +363,7 @@ describe('Ossie import converter', () => {
           {
             name: 'id',
             is_time: true,
-            ai_context: { synonyms: ['customer_key'] },
+            synonyms: ['customer_key'],
           },
         ],
       },
