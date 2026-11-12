@@ -498,14 +498,14 @@ expr: "DATE_TRUNC('day', ORDERED_AT)"
 expr: "COALESCE(PHONE, 'N/A')"
 
 # Arithmetic and casting
-expr: "CAST(AMOUNT / 100.0 AS NUMERIC(16, 2))"
+expr: 'CAST(AMOUNT / 100.0 AS NUMERIC(16, 2))'
 
 # CASE expressions
 expr: "CASE WHEN STATUS = 'active' THEN 1 ELSE 0 END"
 
 # Window functions, including frames and explicit null placement
-expr: "ROW_NUMBER() OVER (PARTITION BY CUSTOMER_ID ORDER BY CREATED_AT DESC NULLS LAST)"
-expr: "SUM(AMOUNT) OVER (PARTITION BY CUSTOMER_ID ORDER BY ORDER_DATE ROWS UNBOUNDED PRECEDING)"
+expr: 'ROW_NUMBER() OVER (PARTITION BY CUSTOMER_ID ORDER BY CREATED_AT DESC NULLS LAST)'
+expr: 'SUM(AMOUNT) OVER (PARTITION BY CUSTOMER_ID ORDER BY ORDER_DATE ROWS UNBOUNDED PRECEDING)'
 ```
 
 The canonical argument order stays the same across warehouses:
@@ -833,7 +833,7 @@ materialization:
   type: incremental
   strategy: merge
   unique_key: order_id
-  incremental_filter: "created_at > DATEADD(day, -3, CURRENT_DATE)"
+  incremental_filter: 'created_at > DATEADD(day, -3, CURRENT_DATE)'
 
 # Ephemeral — inlined as CTE, no DDL emitted
 materialization:

@@ -107,8 +107,7 @@ export function detectPagination(
   if (nextUrlKey) {
     const actualField = responsePropsByLower.get(nextUrlKey)!;
     const propSchema = responseSchema?.properties?.[actualField] as
-      | OpenAPIV3.SchemaObject
-      | undefined;
+      OpenAPIV3.SchemaObject | undefined;
     if (!propSchema || propSchema.type === 'string') {
       return {
         type: 'next_url',

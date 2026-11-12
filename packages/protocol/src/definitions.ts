@@ -193,10 +193,7 @@ export interface BatchMessage {
  * - `cache_hit_summary`: emitted at end-of-run summarizing cache hits/misses
  */
 export type DocumentLogEvent =
-  | 'extraction_started'
-  | 'extraction_completed'
-  | 'mode_resolved'
-  | 'cache_hit_summary';
+  'extraction_started' | 'extraction_completed' | 'mode_resolved' | 'cache_hit_summary';
 
 export interface LogMessage {
   _v: ProtocolVersion;
@@ -312,12 +309,7 @@ export interface ReplaceMessage {
 
 /** Data messages emitted on stdout. */
 export type StdoutMessage =
-  | SchemaMessage
-  | RecordMessage
-  | StateMessage
-  | BatchMessage
-  | LineageMessage
-  | ReplaceMessage;
+  SchemaMessage | RecordMessage | StateMessage | BatchMessage | LineageMessage | ReplaceMessage;
 
 // ── Failure reasons ──
 

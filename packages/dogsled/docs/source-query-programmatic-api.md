@@ -134,9 +134,7 @@ import {
 // 1. Provide source definitions in memory (no sources/*.yml needed).
 //    Build these from your own config, or load them with
 //    loadApiResourceEntries(projectRoot) and filter the result.
-const apiResourceEntries: ApiResourceEntry[] = [
-  /* ...resolved api_resource source entries... */
-];
+const apiResourceEntries: ApiResourceEntry[] = [/* ...resolved api_resource source entries... */];
 
 const engine = new LazyQueryEngine({
   projectRoot: '/tmp/ephemeral-project', // only used for the scratch temp dir

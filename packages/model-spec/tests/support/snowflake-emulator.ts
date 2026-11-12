@@ -56,7 +56,7 @@ const memory: DuckDbIntegration = {
 /** Decodes every Snowflake string literal in `sql` and hands it to `rewrite`. */
 function mapLiterals(sql: string, rewrite: (text: string) => string): string {
   let out = '';
-  for (let index = 0; index < sql.length; ) {
+  for (let index = 0; index < sql.length;) {
     const char = sql[index]!;
     if (char === '"') {
       const end = sql.indexOf('"', index + 1);

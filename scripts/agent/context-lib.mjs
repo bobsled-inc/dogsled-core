@@ -140,7 +140,7 @@ export function normalizeRepoPath(repoRoot, candidate) {
 export function parseNameStatus(output) {
   const tokens = output.split('\0').filter(Boolean);
   const paths = [];
-  for (let index = 0; index < tokens.length; ) {
+  for (let index = 0; index < tokens.length;) {
     const status = tokens[index++];
     if (!status) continue;
     if (status.startsWith('R') || status.startsWith('C')) {

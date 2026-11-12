@@ -46,14 +46,7 @@ interface SetupCatalog {
 }
 
 type SetupPhase =
-  | 'loading'
-  | 'welcome'
-  | 'goal'
-  | 'preset'
-  | 'sources'
-  | 'destination'
-  | 'schedule'
-  | 'summary';
+  'loading' | 'welcome' | 'goal' | 'preset' | 'sources' | 'destination' | 'schedule' | 'summary';
 
 export default function SetupPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);

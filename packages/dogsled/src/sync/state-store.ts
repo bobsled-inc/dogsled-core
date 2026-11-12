@@ -91,8 +91,7 @@ export interface SyncActionIdempotencyClaim {
  *   must skip execution to avoid a duplicate external side effect.
  */
 export type SyncActionIdempotencyClaimResult =
-  | { status: 'claimed' }
-  | { status: 'already_succeeded'; target_record_id?: string };
+  { status: 'claimed' } | { status: 'already_succeeded'; target_record_id?: string };
 
 export interface SyncStateStore {
   acquireLease(syncName: string, ttlSeconds: number): Promise<Lease>;
