@@ -13,7 +13,7 @@ env:
 
 jobs:
   audit:
-    if: github.repository == 'bobsled-inc/dogsled-core'
+    if: github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, rename/bobsled-core]
   pull_request:
-    branches: [main]
+    branches: [main, rename/bobsled-core]
   schedule:
     - cron: '17 10 * * 1'
   workflow_dispatch:

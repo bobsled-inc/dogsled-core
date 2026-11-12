@@ -303,7 +303,7 @@ jobs:
   # ---------------------------------------------------------------------------
   notify:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' &&
+      github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main' &&
       needs.release-checks-ok.result == 'success' &&
       needs.prepare.outputs.release == 'true'
     needs: [prepare, release-checks-ok]
@@ -529,7 +529,7 @@ jobs:
   release-status:
     if: >-
       always() && github.repository == 'bobsled-inc/dogsled-core' &&
-      needs.notify.outputs.notified == 'true'
+      github.ref == 'refs/heads/main' && needs.notify.outputs.notified == 'true'
     needs: [prepare, notify, approve, tag, publish, finalize]
     runs-on: ubuntu-latest
     timeout-minutes: 5
