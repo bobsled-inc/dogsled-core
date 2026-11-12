@@ -36,15 +36,20 @@ export const SELF_PATHS = [
 ];
 
 // Compatibility readers: old names that stored data still uses (saved formats,
-// Blueprint keys, warehouse names, old settings). The rename never touches
-// these files; keep each package's old names in one legacy-names.ts. Mark any
-// other deliberate old name with a `rename:keep` comment on the same line.
+// Blueprint keys, warehouse names, old settings). The rename never rewrites
+// the contents of these files, but they still move with their folder; keep
+// each package's old names in one legacy-names.ts. Mark any other deliberate
+// old name (for example in examples/old-formats/showcase.mjs) with a
+// `rename:keep` comment on the same line.
 export const COMPAT_PATHS = [
   '**/legacy-names.ts',
   '**/legacy-names.test.ts',
   '**/legacy-names.*.test.ts',
-  'examples/old-formats/**',
+  'examples/old-formats/fixtures/**',
 ];
+
+// Files whose old names are themselves the fixture (an old-format project).
+export const NO_MOVE_PATHS = ['examples/old-formats/fixtures/**'];
 
 export const KEEP_LINE_MARKER = 'rename:keep';
 
@@ -191,7 +196,7 @@ export const HANDLED_BY_DESIGN = [
   },
   {
     item: 'Old-formats showcase',
-    note: 'examples/old-formats/** is in COMPAT_PATHS; invert it by hand (dogsled_* becomes the old column) in the design PR',
+    note: 'showcase.mjs and README.md are renamed like any other file; the design PR inverts the showcase (dogsled_* becomes the old spelling), marks its deliberate old names rename:keep, and puts any old-format fixture project under examples/old-formats/fixtures/ (COMPAT_PATHS, NO_MOVE_PATHS)',
   },
   {
     item: 'Export exclude list',
@@ -458,7 +463,7 @@ export const RULES = [
     id: 'wh-prefix-lower',
     category: 'BC-14',
     kind: 'content',
-    match: /(?<![A-Za-z0-9])(_{1,2})dogsled_/g,
+    match: /(?:(?<![A-Za-z0-9])|(?<=\\n))(_{1,2})dogsled_/g,
     replace: '$1bobsled_',
     note: 'All _dogsled_* and __dogsled_* names (loaded_at, run_id, evidence, confidence, reason, agentic tables, cp/pub/stg/uq/win/cursor/new/old/live/source/models/custom/xwh_locks). design: takeover.',
   },
@@ -466,7 +471,7 @@ export const RULES = [
     id: 'wh-prefix-upper',
     category: 'BC-14',
     kind: 'content',
-    match: /(?<![A-Za-z0-9])(_{1,2})DOGSLED_/g,
+    match: /(?:(?<![A-Za-z0-9])|(?<=\\n))(_{1,2})DOGSLED_/g,
     replace: '$1BOBSLED_',
     note: 'Snowflake uppercase forms.',
   },
@@ -886,6 +891,14 @@ export const RULES = [
     replace: 'bobsled_$1',
     exclude: [],
     note: 'dogsled_workspace, dogsled_multi_conn_*, dogsled_slot, dogsled_pub, dogsled_internal_id, dogsled_test in Core fixtures.',
+  },
+  {
+    id: 'snake-inner',
+    category: 'BC-21',
+    kind: 'content',
+    match: /(?<=[a-z0-9]_)dogsled(?=_)/g,
+    replace: 'bobsled',
+    note: 'Old name inside a lowercase snake identifier (run_dogsled_with_npx).',
   },
 
   {

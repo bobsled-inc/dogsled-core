@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 import {
   COMPAT_PATHS,
   KEEP_LINE_MARKER,
+  NO_MOVE_PATHS,
   maskedKeepList,
   rulesForProfile,
   SELF_PATHS,
@@ -76,8 +77,10 @@ export function ruleApplies(rule, file) {
 
 export const isSelfPath = (file) => matchesAny(file, SELF_PATHS);
 export const isCompatPath = (file) => matchesAny(file, COMPAT_PATHS);
-/** Files the rename never rewrites or moves. */
+/** Files whose contents the rename never rewrites (they still move, see NO_MOVE_PATHS). */
 export const isProtectedPath = (file) => isSelfPath(file) || isCompatPath(file);
+/** Files the rename never moves: its own files and old-format fixtures. */
+export const isUnmovablePath = (file) => isSelfPath(file) || matchesAny(file, NO_MOVE_PATHS);
 
 // ─── Masking ──────────────────────────────────────────────────────────────────
 // Masked text becomes \uE000<n>\uE001 (private-use characters, never \w) and is
@@ -192,7 +195,7 @@ export function transformPath(file, rules, profile = 'toolkit') {
 export function translatePatch(patchText, rules, profile = 'toolkit') {
   let file = '';
   const movePath = (p) =>
-    p === '/dev/null' || isProtectedPath(p) ? p : (transformPath(p, rules, profile) ?? p);
+    p === '/dev/null' || isUnmovablePath(p) ? p : (transformPath(p, rules, profile) ?? p);
   return patchText
     .split('\n')
     .map((line) => {
@@ -224,7 +227,7 @@ function listFiles(root, only) {
     maxBuffer: 64 * 1024 * 1024,
   })
     .split('\0')
-    .filter((file) => file && !SKIP_FILES.has(file) && !isProtectedPath(file))
+    .filter((file) => file && !SKIP_FILES.has(file) && !isSelfPath(file))
     .filter((file) => !only || matchesAny(file, only))
     .filter((file) => {
       // Regular files only: symlinks and deleted files are left alone.
@@ -242,8 +245,9 @@ function scan(root, rules, profile, only) {
     .map((entry) => entry.pattern)
     .filter((pattern) => typeof pattern === 'string');
   for (const file of listFiles(root, only)) {
-    // Binary files move with their folder but their bytes are never rewritten.
-    if (!BINARY.test(file)) {
+    // Binary files and compatibility readers move with their folder, but their
+    // contents are never rewritten.
+    if (!BINARY.test(file) && !isCompatPath(file)) {
       const text = readFileSync(path.join(root, file), 'utf8');
       const result = renameText(text, { file, rules, profile });
       if (result.text !== text) files.push({ file, text: result.text });
@@ -253,7 +257,7 @@ function scan(root, rules, profile, only) {
       }
     }
     const to = transformPath(file, rules, profile);
-    if (to && !keptNames.some((name) => path.basename(file) === name))
+    if (to && !isUnmovablePath(file) && !keptNames.some((name) => path.basename(file) === name))
       moves.push({ from: file, to });
   }
   return { files, moves, perRule, samples };
@@ -297,6 +301,8 @@ function apply(root, rules, profile, only) {
     mkdirSync(path.dirname(path.join(root, to)), { recursive: true });
     execFileSync('git', ['mv', from, to], { cwd: root, stdio: 'pipe' });
   }
+  const moved = moves.filter(({ from, to }) => !conflicts.includes(`${from} -> ${to}`));
+  if (moved.length > 0) moveGuardPaths(root, moved);
   const total = Object.values(perRule).reduce((sum, n) => sum + n, 0);
   process.stdout.write(
     `Applied ${total} replacements in ${files.length} files and ${moves.length - conflicts.length} path moves.\n`
@@ -312,6 +318,20 @@ function apply(root, rules, profile, only) {
   process.stdout.write(
     'Next: pnpm install (lockfile), regenerate generated catalogs, run the old-name guard.\n'
   );
+}
+
+/**
+ * The old-name guard's allow list names exact files (exceptions, file-limited
+ * keep entries). It is a SELF_PATHS file, so its contents are not renamed, but
+ * its paths must follow the files they point at, or the exceptions go stale.
+ */
+export function moveGuardPaths(root, moved) {
+  const allowList = path.join(root, 'scripts/guards/old-names-allow.json');
+  if (!existsSync(allowList)) return;
+  let text = readFileSync(allowList, 'utf8');
+  for (const { from, to } of moved)
+    text = text.split(JSON.stringify(from)).join(JSON.stringify(to));
+  writeFileSync(allowList, text);
 }
 
 function check(root, rules, profile, only) {
