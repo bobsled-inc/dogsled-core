@@ -5,8 +5,11 @@
  * only need project metadata do not load the Resource execution runtime.
  */
 export {
+  CUSTOM_TOKEN_EXPIRY_BUFFER_MS,
   lookupResource,
   queryResource,
+  resolveCustomTokenAuthorization,
+  sharesCustomToken,
   planQueryFanOut,
   queryResourceFanOut,
   QueryFanOutError,
@@ -15,6 +18,10 @@ export {
 export type {
   AuthorizeBillableResource,
   BillableResourceAuthorizationContext,
+  CustomTokenAuthorization,
+  CustomTokenGrant,
+  CustomTokenStore,
+  CustomTokenStoreRequest,
   LookupResourceLimits,
   LookupResourceOptions,
   PrefixedQueryOperator,
@@ -36,6 +43,7 @@ export type {
   QueryFanOutPlanNode,
   QueryResourceFanOutOptions,
   QueryResourceFanOutResult,
+  ResolveCustomTokenAuthorizationOptions,
 } from '@bobsled-inc/extractor/resources';
 
 export { getResourceCapabilities, isLookupOnlyApiResource } from '@bobsled-inc/extractor/extractor';

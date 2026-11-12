@@ -120,6 +120,47 @@ export function toExtractorHttpRuntimeError(
   });
 }
 
+const TOKEN_REJECTION_STATUSES: ReadonlySet<number> = new Set([400, 401, 403]);
+
+/**
+ * Classify a failure to obtain request credentials. Only a token endpoint that
+ * refused the credentials (400, 401, 403) is an authentication failure; a
+ * throttled or failing endpoint keeps its status and stays retryable.
+ */
+export function toExtractorAuthRuntimeError(
+  cause: unknown,
+  signal?: AbortSignal
+): DogsledRuntimeError {
+  if (cause instanceof DogsledRuntimeError) return cause;
+  const error = asError(cause);
+  if (signal?.aborted || error.name === 'AbortError' || error.name === 'TimeoutError') {
+    return toExtractorHttpRuntimeError(error, signal);
+  }
+  const status = (error as ErrorWithProviderStatus).status;
+  const providerStatusValue =
+    typeof status === 'number' && Number.isInteger(status) ? status : undefined;
+  if (providerStatusValue !== undefined && !TOKEN_REJECTION_STATUSES.has(providerStatusValue)) {
+    return toExtractorRuntimeError({
+      kind: 'provider',
+      code: 'EXTRACTOR_HTTP_AUTH_PROVIDER_FAILURE',
+      operation: 'extractor.http.request',
+      retryable: providerStatusValue === 429 || providerStatusValue >= 500,
+      providerStatus: providerStatusValue,
+      cause: error,
+    });
+  }
+  if (providerStatusValue === undefined && error instanceof TypeError) {
+    return toExtractorHttpRuntimeError(error, signal);
+  }
+  return toExtractorRuntimeError({
+    kind: 'auth',
+    code: 'EXTRACTOR_HTTP_AUTH_FAILURE',
+    operation: 'extractor.http.request',
+    retryable: false,
+    cause: error,
+  });
+}
+
 export function toExtractorMcpRuntimeError(
   cause: unknown,
   signal?: AbortSignal

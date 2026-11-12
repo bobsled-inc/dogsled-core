@@ -15,6 +15,7 @@ import {
   type OutputFieldDefinition,
 } from '../framework/core/index.js';
 import type { AuthorizeBillableResource } from './billable-authorization.js';
+import type { CustomTokenStore } from '../framework/runtime/index.js';
 import {
   EMPTY_FAN_OUT_CONTEXT,
   buildTargetedFanOutContext,
@@ -57,6 +58,8 @@ export interface LookupResourceOptions {
   signal?: AbortSignal;
   limits?: LookupResourceLimits;
   authorizeBillable?: AuthorizeBillableResource;
+  /** Host store that shares minted custom tokens across workers. */
+  customTokenStore?: CustomTokenStore;
 }
 
 export async function lookupResource(params: LookupResourceOptions): Promise<JsonObject[]> {
@@ -141,6 +144,7 @@ export async function lookupResource(params: LookupResourceOptions): Promise<Jso
           declaredSecretNames: params.declaredSecretNames,
         }
       : {}),
+    ...(params.customTokenStore ? { customTokenStore: params.customTokenStore } : {}),
   });
 
   try {

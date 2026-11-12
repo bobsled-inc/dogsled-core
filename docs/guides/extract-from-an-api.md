@@ -217,6 +217,11 @@ variable with `${{ env.NAME }}`.
 | `custom-token`                                 | `token_url` (HTTPS), optional `token_request`, `token_response_path`, `token_prefix`, `token_ttl_seconds` |
 | `aws-sigv4`                                    | `region`, `service`, `access_key_id`, `secret_access_key`, optional `session_token`                       |
 
+A `custom-token` request that gets 429, 500, 502, 503 or 504 is retried with the
+transport's `retry` backoff and `Retry-After` handling, within 30 seconds. A token
+endpoint that answers 400, 401 or 403 fails as an authentication error at once. Any
+other failed token request keeps its HTTP status, and 429 and 5xx stay retryable.
+
 ## Pagination types
 
 | Type          | How it gets the next page                          | Fields                                                                          |

@@ -7,6 +7,7 @@ import { executeWebhookAction } from './transports/webhook.js';
 
 import type { Action } from './action-registry.js';
 import type { IntegrationSpec } from '@bobsled-inc/extractor/extractor';
+import type { CustomTokenStore } from '@bobsled-inc/extractor/runtime';
 
 export type ActionErrorCode =
   | 'validation_error'
@@ -99,6 +100,8 @@ export interface ExecuteOptions {
   limits?: ActionExecutionLimits;
   /** Replace transport details with a stable message for server responses. */
   safeErrors?: boolean;
+  /** Host store that shares minted custom tokens across workers. */
+  customTokenStore?: CustomTokenStore;
 }
 
 export type ValidationResult =

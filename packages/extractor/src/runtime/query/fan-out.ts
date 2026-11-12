@@ -396,6 +396,7 @@ export async function queryResourceFanOut<TRecord = Record<string, unknown>>(
           mcpPrefetchCursor: false,
           mcpConnectWithCallerSignal: true,
           onResolvedSecret: addRedactionValue,
+          ...(options.customTokenStore ? { customTokenStore: options.customTokenStore } : {}),
           fanOutBoundInputNames: targetEdge
             ? targetEdge.bindings.map((binding) => binding.input)
             : Object.keys(targetInput),
@@ -619,6 +620,7 @@ export async function queryResourceFanOut<TRecord = Record<string, unknown>>(
           mcpPrefetchCursor: false,
           mcpConnectWithCallerSignal: true,
           onResolvedSecret: addRedactionValue,
+          ...(options.customTokenStore ? { customTokenStore: options.customTokenStore } : {}),
           ...(incomingEdge
             ? { fanOutBoundInputNames: incomingEdge.bindings.map((binding) => binding.input) }
             : resource.name === root.name

@@ -24,7 +24,7 @@ import { getIntegrationsDir } from '@bobsled-inc/integrations';
 import { formatSpecValidationMessage } from '@bobsled-inc/protocol';
 
 import type { ApiIntegrationSpec, IntegrationSpec } from '@bobsled-inc/extractor/extractor';
-import type { InterpolationMappedValues } from '@bobsled-inc/extractor/runtime';
+import type { CustomTokenStore, InterpolationMappedValues } from '@bobsled-inc/extractor/runtime';
 
 import type { Action } from '../action-registry.js';
 import type { ActionResult, ExecuteOptions } from '../action-executor.js';
@@ -86,6 +86,7 @@ export interface ApiTransportDeps {
       declaredSecretNames?: readonly string[];
       env?: Record<string, string | undefined>;
       onResolvedSecret?: (value: string) => void;
+      customTokenStore?: CustomTokenStore;
     }
   ) => ApiClientLike;
   loadIntegration?: (name: string) => HttpApiActionIntegration;
@@ -345,6 +346,7 @@ export async function executeApiAction(
         declaredSecretNames: options.declaredSecretNames,
       }),
       onResolvedSecret: (value) => sentValues.add(value),
+      ...(options?.customTokenStore ? { customTokenStore: options.customTokenStore } : {}),
     });
     let response: Awaited<ReturnType<ApiClientLike['request']>>;
     try {

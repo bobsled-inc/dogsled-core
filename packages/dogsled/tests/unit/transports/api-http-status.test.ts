@@ -407,6 +407,33 @@ describe('executeApiAction through the real ExtractorClient', () => {
     }
   );
 
+  it('classifies an exhausted throttled custom-token mint as a retryable rate limit', async () => {
+    const tokenUrl = 'https://auth.example.com/custom-token-throttled';
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      if (String(url) === tokenUrl) {
+        return new Response('', { status: 429, headers: { 'retry-after': '0' } });
+      }
+      return new Response('{}', { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await executeApiAction(makeAction(), inputs, {
+      resolvedIntegration: makeIntegration({
+        auth: { type: 'custom-token', token_url: tokenUrl },
+        retry: { max_retries: 2 },
+      }),
+      safeErrors: true,
+    });
+
+    expect(result.error).toMatchObject({
+      code: 'rate_limited',
+      retryable: true,
+      provider_status: 429,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls.every(([url]) => String(url) === tokenUrl)).toBe(true);
+  });
+
   it('classifies an integration request deadline as a retryable timeout', async () => {
     vi.stubGlobal('fetch', hangUntilAborted());
 
