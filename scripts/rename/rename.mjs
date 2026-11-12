@@ -236,14 +236,22 @@ function listFiles(root, only) {
     });
 }
 
+/**
+ * Whether the rename may move this file: not its own files, not old-format
+ * fixtures, and not a file whose name is on the keep list (the Explorer logo).
+ * Shared by the moves and the per-category state counts.
+ */
+export function isMovable(file, profile = 'toolkit') {
+  if (isUnmovablePath(file)) return false;
+  const base = path.basename(file);
+  return !maskedKeepList(profile).some((entry) => entry.pattern === base);
+}
+
 function scan(root, rules, profile, only) {
   const files = [];
   const moves = [];
   const perRule = {};
   const samples = {};
-  const keptNames = maskedKeepList(profile)
-    .map((entry) => entry.pattern)
-    .filter((pattern) => typeof pattern === 'string');
   for (const file of listFiles(root, only)) {
     // Binary files and compatibility readers move with their folder, but their
     // contents are never rewritten.
@@ -257,8 +265,7 @@ function scan(root, rules, profile, only) {
       }
     }
     const to = transformPath(file, rules, profile);
-    if (to && !isUnmovablePath(file) && !keptNames.some((name) => path.basename(file) === name))
-      moves.push({ from: file, to });
+    if (to && isMovable(file, profile)) moves.push({ from: file, to });
   }
   return { files, moves, perRule, samples };
 }
@@ -281,7 +288,7 @@ export function categoryCounts(root, profile = 'toolkit') {
       for (const [id, count] of Object.entries(renameText(text, { file, rules, profile }).counts))
         counts[byId.get(id)] += count;
     }
-    if (isUnmovablePath(file)) continue;
+    if (!isMovable(file, profile)) continue;
     for (const category of pathCategories)
       if (transformPath(file, selectRules(category, profile), profile)) counts[category] += 1;
   }

@@ -30,6 +30,8 @@ Do this after every main release, at least weekly, and always right before a pre
 - **Fully renamed** (every category that matches in main matches nothing on the branch): the branch merges a **mirror of renamed main**. The mirror is a chain of commits whose trees are main after the full rename, built with `git commit-tree` (parents: previous mirror, main). Each sync's merge base is therefore the previously synced renamed main, so only main's real changes come in, and design-PR edits (for example a reader moved into `legacy-names.ts`) never conflict with the rename. The first fully renamed sync seeds the mirror from the last merged main, renamed, and records it with `git merge -s ours`, which changes no files.
 - **Partly renamed**: refused. The mechanical rename PRs (the `--rules` category PRs) land back to back, with no main sync between them. Sync right before the first one and right after the last one.
 
+Known limit: a category counts as applied once it matches nothing on the branch. If a design PR moves the last few occurrences of a small category (BC-18, BC-19 and BC-22 have only a handful) into `legacy-names.ts` or `rename:keep` lines, an unrenamed branch reads as partly renamed and syncs are refused. That fails safe; if it happens, record the applied categories explicitly or add an override, rather than forcing the sync.
+
 Steps:
 
 1. `git fetch origin && git switch -c sync/main-<short-sha> origin/rename/bobsled-core`

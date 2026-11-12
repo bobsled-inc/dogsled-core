@@ -6,9 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { KEEP_LIST, maskedKeepList, RULES, selectRules } from '../../scripts/rename/mapping.mjs';
-import { syncMain } from '../../scripts/rename/sync-main.mjs';
+import { renameState, syncMain } from '../../scripts/rename/sync-main.mjs';
 import {
   globToRegExp,
+  isMovable,
   isProtectedPath,
   isSelfPath,
   renameText,
@@ -436,6 +437,17 @@ describe('rename mapping', () => {
       expect(() => syncMain({ root, main: 'main' })).toThrow(/partly renamed.*back to back/);
       expect(git('rev-parse', 'HEAD')).toBe(head);
       expect(git('branch', '--list', 'sync/main-renamed')).toBe('');
+    }, 60_000);
+
+    it('reads a fully renamed branch that keeps the Explorer logo as renamed', () => {
+      write('apps/explorer/public/dogsled-logo.png', 'png');
+      commitAll('logo');
+      const base = git('rev-parse', 'HEAD');
+      rename('--all');
+      commitAll('rename');
+      expect(isMovable('apps/explorer/public/dogsled-logo.png')).toBe(false);
+      expect(read('apps/explorer/public/dogsled-logo.png')).toBe('png');
+      expect(renameState(root, base).state).toBe('renamed');
     }, 60_000);
 
     it('merges renamed main through the mirror once fully renamed, keeping design edits', () => {
