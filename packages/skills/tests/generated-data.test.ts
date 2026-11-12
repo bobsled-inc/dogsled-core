@@ -36,4 +36,9 @@ describe('Dogsled Skills generated-data.ts drift guard', () => {
     expect(manifest.skills.length).toBeGreaterThan(0);
     expect(manifest.catalogs.length).toBeGreaterThan(0);
   });
+
+  it('keeps the dependency-maintenance skill out of shipped manifests', () => {
+    const { manifest } = buildManifest();
+    expect(manifest.skills.map(({ name }) => name)).not.toContain('dependency-maintenance');
+  });
 });
