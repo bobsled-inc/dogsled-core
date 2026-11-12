@@ -6,10 +6,14 @@ import { publicationPolicy } from './publication-policy.mjs';
 export async function publishWithIntegrity(
   request,
   run = spawnSync,
-  { wait = waitForMetadata, delays = [1000, 3000, 7000, 15000, 30000, 60000] } = {}
+  {
+    wait = waitForMetadata,
+    delays = [1000, 3000, 7000, 15000, 30000, 60000],
+    policy = publicationPolicy,
+  } = {}
 ) {
   const { tarball, packageName, version, access, integrity } = request;
-  const { provenance, distTag } = publicationPolicy(request);
+  const { provenance, distTag } = policy(request);
   if (typeof integrity !== 'string' || !integrity.startsWith('sha512-'))
     throw new Error('Reviewed SHA-512 integrity is required.');
   return withRegistryReadAuth(request, async (readEnv) => {
