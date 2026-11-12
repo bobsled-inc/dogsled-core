@@ -3,20 +3,16 @@ import { type QueryResourceResult, type QueryValue } from '@bobsled-inc/extracto
 import { queryIntegrationResource } from './query-integration-resource.js';
 
 export type MongoEqFilter<TValue extends QueryValue = QueryValue> =
-  | TValue
-  | { eq?: TValue; $eq?: TValue };
+  TValue | { eq?: TValue; $eq?: TValue };
 
 export type MongoContainsFilter<TValue extends QueryValue = QueryValue> =
-  | TValue
-  | { contains?: TValue; $contains?: TValue };
+  TValue | { contains?: TValue; $contains?: TValue };
 
 export type MongoGteFilter<TValue extends QueryValue = QueryValue> =
-  | TValue
-  | { gte?: TValue; $gte?: TValue };
+  TValue | { gte?: TValue; $gte?: TValue };
 
 export type MongoLteFilter<TValue extends QueryValue = QueryValue> =
-  | TValue
-  | { lte?: TValue; $lte?: TValue };
+  TValue | { lte?: TValue; $lte?: TValue };
 
 export interface QuerySourceCapabilities<
   TSupportsFilters extends boolean = boolean,
@@ -53,8 +49,8 @@ type QuerySourceModeOptions<
 > = TCapabilities['filters'] extends true
   ? TCapabilities['search'] extends true
     ? // NOTE: `search?: never` only blocks explicit string values (not `search: undefined`).
-        // True mutual exclusion requires exactOptionalPropertyTypes: true, which is off project-wide.
-        { filter?: TFilter; search?: never } | { search?: string; filter?: never }
+      // True mutual exclusion requires exactOptionalPropertyTypes: true, which is off project-wide.
+      { filter?: TFilter; search?: never } | { search?: string; filter?: never }
     : { filter?: TFilter }
   : TCapabilities['search'] extends true
     ? { search?: string }

@@ -531,8 +531,7 @@ export async function runDatabaseLoader(
       const results = await Promise.allSettled(pending);
       pendingLoads.set(stream, []);
       const failed = results.find((r) => r.status === 'rejected') as
-        | PromiseRejectedResult
-        | undefined;
+        PromiseRejectedResult | undefined;
       if (failed) {
         throw failed.reason instanceof Error ? failed.reason : new Error(String(failed.reason));
       }

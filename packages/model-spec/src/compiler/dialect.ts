@@ -35,17 +35,10 @@ export type CanonicalDialect = (typeof CANONICAL_DIALECTS)[number];
 export type SupportedDialect = (typeof SUPPORTED_DIALECTS)[number];
 
 export type DialectIdentifierStyle =
-  | 'double_quote_upper'
-  | 'double_quote_lower'
-  | 'backtick_lower'
-  | 'backtick_preserve';
+  'double_quote_upper' | 'double_quote_lower' | 'backtick_lower' | 'backtick_preserve';
 export type DialectFqnStyle = 'schema_table' | 'database_table' | 'database_schema_table';
 export type FuzzyAlgorithmCapability =
-  | 'jaro_winkler'
-  | 'edit_distance'
-  | 'soundex'
-  | 'metaphone'
-  | 'token_cosine';
+  'jaro_winkler' | 'edit_distance' | 'soundex' | 'metaphone' | 'token_cosine';
 export type DialectCapability =
   | 'qualify'
   | 'selectStarExcept'

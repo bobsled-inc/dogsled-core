@@ -22,11 +22,7 @@ import { validateLlmResolution, type LlmResolutionInput } from './llm-response-v
 import { normalizeMentionSurface } from './surface-hygiene.js';
 
 export type ResolutionMethod =
-  | 'exact_match'
-  | 'llm_disambiguation'
-  | 'compromise_ner'
-  | 'unresolved'
-  | 'schema_violation';
+  'exact_match' | 'llm_disambiguation' | 'compromise_ner' | 'unresolved' | 'schema_violation';
 
 export interface MentionRow {
   mention_id: string;

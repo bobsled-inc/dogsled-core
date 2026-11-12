@@ -1,11 +1,7 @@
 export type TrustTier = 'bronze' | 'silver' | 'gold';
 
 export type SemanticRole =
-  | 'entity_id'
-  | 'measure'
-  | 'event_timestamp'
-  | 'time_dimension'
-  | 'categorical';
+  'entity_id' | 'measure' | 'event_timestamp' | 'time_dimension' | 'categorical';
 
 export type JoinType = 'left' | 'inner' | 'cross' | 'full';
 

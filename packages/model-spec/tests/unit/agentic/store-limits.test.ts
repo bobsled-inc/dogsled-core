@@ -150,9 +150,12 @@ const duckDbAvailable = await isDuckDbAvailable();
 describe('limits the row store declares', () => {
   const brand = Symbol.for('@bobsled-inc/model-spec/agentic-row-store-limits');
   const warehouse = (engine: string) =>
-    createWarehouseRowStore(checkpointIntegrations.find((item) => item.source_type === engine)!, {
-      schema: 'checkpoints',
-    });
+    createWarehouseRowStore(
+      checkpointIntegrations.find((item) => item.source_type === engine)!,
+      {
+        schema: 'checkpoints',
+      }
+    );
 
   it('raises them on every row store engine, and keeps the file store at the defaults', () => {
     const duckdb = createDuckDbCheckpointStore(

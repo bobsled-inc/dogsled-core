@@ -1,10 +1,5 @@
 export type RelationshipReviewFlag =
-  | 'auto_merge'
-  | 'agent_applied'
-  | 'agent_review'
-  | 'eval_sample'
-  | 'human_review'
-  | 'unresolved';
+  'auto_merge' | 'agent_applied' | 'agent_review' | 'eval_sample' | 'human_review' | 'unresolved';
 export const RELATIONSHIP_AGENT_REVIEW_THRESHOLD = 0.75;
 
 export interface RelationshipEvidenceRow {
@@ -14,11 +9,7 @@ export interface RelationshipEvidenceRow {
   left_entity_id: string;
   right_entity_id: string;
   evidence_kind:
-    | 'profile_join'
-    | 'mention_link'
-    | 'llm_extraction'
-    | 'review_decision'
-    | 'truthset';
+    'profile_join' | 'mention_link' | 'llm_extraction' | 'review_decision' | 'truthset';
   evidence_ref: string | null;
   source_document_id: string | null;
   source_document_version_id: string | null;

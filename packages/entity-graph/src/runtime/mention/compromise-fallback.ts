@@ -81,8 +81,7 @@ async function loadCompromise(): Promise<(text: string) => CompromiseDoc> {
     // is active).
     const moduleName = 'compromise';
     const mod = (await import(/* @vite-ignore */ moduleName)) as unknown as
-      | CompromiseModule
-      | ((t: string) => CompromiseDoc);
+      CompromiseModule | ((t: string) => CompromiseDoc);
     if (typeof mod === 'function') {
       cachedCompromise = mod;
       return cachedCompromise;
