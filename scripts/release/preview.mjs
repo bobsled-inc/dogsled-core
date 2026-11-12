@@ -37,6 +37,7 @@ import { publishWithIntegrity } from './registry-integrity.mjs';
 export const PREVIEW_PACKAGE_NAME = '@bobsled-inc/bobsled-core-preview';
 export const PREVIEW_REPOSITORY = 'bobsled-inc/dogsled-core';
 export const PREVIEW_REF = 'refs/heads/rename/bobsled-core';
+export const BOOTSTRAP_VERSION = '0.1.0-preview.1';
 const DELEGATED_HELP_COMMANDS = ['extract', 'load', 'model', 'entity-graph', 'embed'];
 
 /** Previews of the new package line: 0.1.0-preview.N with N >= 1. */
@@ -196,8 +197,11 @@ export function stagePreview(gateDir, outDir) {
 }
 
 /** Restricted, preview dist-tag, no provenance: the repository is private. */
-export function previewPolicy({ access, visibility, version }) {
+export function previewPolicy({ access, visibility, version, bootstrap = false }) {
   assertPreviewVersion(version);
+  // The one-time token only creates the package; later previews use trusted publishing.
+  if (bootstrap && version !== BOOTSTRAP_VERSION)
+    throw new Error(`Bootstrap publishes only ${BOOTSTRAP_VERSION}.`);
   if (visibility !== 'private' || access !== 'restricted')
     throw new Error('Previews publish restricted from the private repository only.');
   return { provenance: false, distTag: 'preview' };
@@ -222,6 +226,12 @@ export async function publishPreview(
     throw new Error('The preview tarball path escapes the artifact directory.');
   if (sha256(tarball) !== report.sha256 || sha512(tarball) !== report.sha512)
     throw new Error('The preview tarball changed after staging.');
+  // Read the identity from the tarball itself, not only from the report.
+  const packed = JSON.parse(
+    execFileSync('tar', ['-xzOf', tarball, 'package/package.json'], { encoding: 'utf8' })
+  );
+  if (packed.name !== PREVIEW_PACKAGE_NAME || packed.version !== report.version)
+    throw new Error('The preview tarball does not contain the reviewed package name and version.');
   const request = {
     tarball,
     packageName: PREVIEW_PACKAGE_NAME,

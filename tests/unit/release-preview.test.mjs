@@ -36,15 +36,15 @@ afterEach(() => {
   while (temp.length) rmSync(temp.pop(), { recursive: true, force: true });
 });
 
-function packFixture() {
+function packFixture({ name = '@bobsled-inc/dogsled', version = '0.1.0-preview.1' } = {}) {
   const root = tempDir();
   const pkg = path.join(root, 'pkg');
   mkdirSync(path.join(pkg, 'node_modules', 'bundled'), { recursive: true });
   writeFileSync(
     path.join(pkg, 'package.json'),
     JSON.stringify({
-      name: '@bobsled-inc/dogsled',
-      version: '0.1.0-preview.1',
+      name,
+      version,
       bin: { dogsled: './cli.mjs' },
       dependencies: { bundled: '1.0.0' },
       bundleDependencies: ['bundled'],
@@ -56,14 +56,15 @@ function packFixture() {
     JSON.stringify({ name: 'bundled', version: '1.0.0' })
   );
   writeFileSync(path.join(pkg, 'node_modules', 'bundled', 'index.js'), 'export {};\n');
-  const name = execFileSync('npm', ['pack', '--ignore-scripts', '--pack-destination', root], {
-    cwd: pkg,
-    encoding: 'utf8',
-  })
+  const tarballName = execFileSync(
+    'npm',
+    ['pack', '--ignore-scripts', '--pack-destination', root],
+    { cwd: pkg, encoding: 'utf8' }
+  )
     .trim()
     .split('\n')
     .at(-1);
-  return path.join(root, name);
+  return path.join(root, tarballName);
 }
 
 describe('preview package', () => {
@@ -78,6 +79,10 @@ describe('preview package', () => {
     expect(previewPolicy(base)).toEqual({ provenance: false, distTag: 'preview' });
     expect(() => previewPolicy({ ...base, visibility: 'public' })).toThrow();
     expect(() => previewPolicy({ ...base, access: 'public' })).toThrow();
+    expect(() => previewPolicy({ ...base, bootstrap: true })).toThrow(/Bootstrap publishes only/);
+    expect(previewPolicy({ ...base, version: '0.1.0-preview.1', bootstrap: true }).distTag).toBe(
+      'preview'
+    );
   });
 
   it('repacks a gated tarball changing only the package name', () => {
@@ -117,35 +122,49 @@ describe('preview package', () => {
     expect(publish).not.toHaveBeenCalled();
   });
 
-  it('publishes the reviewed tarball and rejects a changed one', async () => {
-    const out = tempDir();
-    const tarball = path.join(out, 'preview.tgz');
-    writeFileSync(tarball, 'tarball bytes');
-    const bytes = readFileSync(tarball);
-    const report = {
-      package: PREVIEW_PACKAGE_NAME,
-      version: '0.1.0-preview.3',
-      tarball: 'preview.tgz',
-      sha256: createHash('sha256').update(bytes).digest('hex'),
-      sha512: `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
-      passed: true,
+  it('publishes the reviewed tarball and rejects a changed or mislabelled one', async () => {
+    const stage = (tarballPath, version) => {
+      const out = path.dirname(tarballPath);
+      const bytes = readFileSync(tarballPath);
+      writeFileSync(
+        path.join(out, 'preview-report.json'),
+        JSON.stringify({
+          package: PREVIEW_PACKAGE_NAME,
+          version,
+          tarball: path.basename(tarballPath),
+          sha256: createHash('sha256').update(bytes).digest('hex'),
+          sha512: `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
+          passed: true,
+        })
+      );
+      return out;
     };
-    writeFileSync(path.join(out, 'preview-report.json'), JSON.stringify(report));
     const publish = vi.fn(async () => ({ alreadyPublished: false }));
+    const good = packFixture({ name: PREVIEW_PACKAGE_NAME, version: '0.1.0-preview.1' });
+    const out = stage(good, '0.1.0-preview.1');
     await publishPreview(out, { env: actionsEnv, publish, bootstrap: true });
     const [request, , options] = publish.mock.calls[0];
     expect(request).toMatchObject({
       packageName: PREVIEW_PACKAGE_NAME,
-      version: '0.1.0-preview.3',
+      version: '0.1.0-preview.1',
       access: 'restricted',
       visibility: 'private',
       bootstrap: true,
-      integrity: report.sha512,
     });
     expect(options.policy).toBe(previewPolicy);
-    writeFileSync(tarball, 'tampered');
+
+    const wrongName = packFixture({
+      name: '@bobsled-inc/bobsled-core',
+      version: '0.1.0-preview.2',
+    });
+    await expect(
+      publishPreview(stage(wrongName, '0.1.0-preview.2'), { env: actionsEnv, publish })
+    ).rejects.toThrow(/reviewed package name and version/);
+
+    writeFileSync(good, 'tampered');
     await expect(publishPreview(out, { env: actionsEnv, publish })).rejects.toThrow(/changed/);
-  });
+    expect(publish).toHaveBeenCalledTimes(1);
+  }, 30_000);
 });
 
 describe('preview-publish workflow', () => {

@@ -17,7 +17,7 @@ on:
         default: true
         type: boolean
       bootstrap:
-        description: First publish only - use the one-time NPM_BOOTSTRAP_TOKEN instead of trusted publishing
+        description: First publish only (0.1.0-preview.1) - use the one-time NPM_BOOTSTRAP_TOKEN instead of trusted publishing
         required: true
         default: false
         type: boolean
