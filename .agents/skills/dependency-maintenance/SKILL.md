@@ -100,6 +100,18 @@ and keeps each install's npm evidence under `consumer-current/` and
 `health-report.json` the daily job sends; it exits non-zero when it has findings.
 Raise `--lookahead-days` to prove a fix against a future cutoff.
 
+## Saving proof
+
+`.npmrc` sets `loglevel=warn`, so a successful `pnpm install` can print nothing.
+Start each saved proof with the command and end it with the real exit code:
+
+```bash
+{ echo "$ pnpm install --frozen-lockfile"; pnpm install --frozen-lockfile; echo "exit=$?"; } 2>&1 | tee "$PROOF_DIR/frozen-install.txt"
+```
+
+Keep the full output, with no `tail` or `head` before `tee`. Save failing
+commands the same way. List only proof files you actually wrote.
+
 ## Pull requests
 
 Follow `.github/pull_request_template.md` and the `pr-template` skill. State the
