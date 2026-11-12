@@ -6,6 +6,11 @@ import { AgenticModelSpecSchema, getModelOutputColumns } from '../agentic/model.
 import { SourceSpecSchema, TransformSpecSchema } from '../compiler/schemas.js';
 import { MetricSpecSchema } from '../entities/metric.js';
 import { RelationshipSpecSchema } from '../entities/relationship.js';
+import {
+  aiContextSynonyms,
+  mergeSynonyms,
+  withAiContextSynonyms,
+} from '../entities/semantic-metadata.js';
 import { readOssieProfile } from '../ossie/profiles.js';
 import { logicalTypeForSqlType } from '../ossie/types.js';
 import { assertNoDiscardedKeys } from '../ossie/translate.js';
@@ -121,6 +126,15 @@ function warn(
   reference = objectReference()
 ): void {
   result.diagnostics.push(diagnostic(code, path, message, 'warning', reference, remedy));
+}
+
+/** Ossie keeps synonyms in ai_context, so native synonyms are merged into it. */
+function ossieAiContext(aiContext: unknown, synonyms: unknown): unknown {
+  return withAiContextSynonyms(aiContext, mergeSynonyms(synonyms, aiContextSynonyms(aiContext)));
+}
+
+function aiContextProperty(aiContext: unknown): { ai_context?: unknown } {
+  return aiContext === undefined ? {} : { ai_context: aiContext };
 }
 
 function parseDataset(kind: 'source' | 'model', value: unknown, index: number): NativeDataset {
@@ -421,9 +435,11 @@ function outputFields(
       nullable,
       semantic_expression: semanticExpression,
       is_time: isTime,
-      ai_context: aiContext,
+      ai_context: nativeAiContext,
+      synonyms,
       ...nativeMetadata
     } = column;
+    const aiContext = ossieAiContext(nativeAiContext, synonyms);
     const payload: Record<string, unknown> = {
       ...(typeof type === 'string' ? { sql_type: type } : {}),
       ...(dataset.kind === 'model' && !dataset.catalogOnlyReason && typeof expr === 'string'
@@ -520,6 +536,7 @@ function outputDataset(
       name: _name,
       description: _description,
       ai_context: _aiContext,
+      synonyms: _synonyms,
       table: _table,
       schema: _schema,
       interchange: _interchange,
@@ -574,6 +591,7 @@ function outputDataset(
         columns: _columns,
         interchange: _interchange,
         ai_context: _aiContext,
+        synonyms: _synonyms,
         ...build
       } = dataset.document;
       if (version === '0.2.0.dev0') {
@@ -598,9 +616,9 @@ function outputDataset(
     ...(dataset.document['description'] !== undefined
       ? { description: dataset.document['description'] }
       : {}),
-    ...(dataset.document['ai_context'] !== undefined
-      ? { ai_context: dataset.document['ai_context'] }
-      : {}),
+    ...aiContextProperty(
+      ossieAiContext(dataset.document['ai_context'], dataset.document['synonyms'])
+    ),
     ...(primaryKey.length ? { primary_key: primaryKey } : {}),
     fields,
     ...(customExtensions.length ? { custom_extensions: customExtensions } : {}),
@@ -691,7 +709,6 @@ function outputMetrics(
           extension_version: '2',
           datasets: names,
           expression,
-          ...(metric['synonyms'] !== undefined ? { synonyms: metric['synonyms'] } : {}),
           ...(metric['tags'] !== undefined ? { tags: metric['tags'] } : {}),
         })
       );
@@ -728,7 +745,7 @@ function outputMetrics(
       ...(version === '0.2.0.dev0' && metric['datatype'] !== undefined
         ? { datatype: metric['datatype'] }
         : {}),
-      ...(metric['ai_context'] !== undefined ? { ai_context: metric['ai_context'] } : {}),
+      ...aiContextProperty(ossieAiContext(metric['ai_context'], metric['synonyms'])),
       ...(customExtensions.length ? { custom_extensions: customExtensions } : {}),
     });
   }

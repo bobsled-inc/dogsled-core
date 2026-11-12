@@ -4,6 +4,7 @@ import { FieldMetadataSchema } from '@bobsled-inc/protocol';
 import { SourceSpecSchema, TransformSpecSchema } from '../compiler/schemas.js';
 import { MetricSpecSchema } from '../entities/metric.js';
 import { RelationshipSpecSchema } from '../entities/relationship.js';
+import { aiContextSynonyms, mergeSynonyms } from '../entities/semantic-metadata.js';
 import { CommandError } from '../errors.js';
 import { tryParseExpr } from '../compiler/expr/parser.js';
 import { walkExpr } from '../compiler/expr/walker.js';
@@ -54,6 +55,10 @@ export const fieldExtensionSchema = fieldMetadata.extend({
   not_null: z.boolean().optional(),
 });
 
+function synonymsProperty(...lists: readonly unknown[]): { synonyms?: string[] } {
+  const synonyms = mergeSynonyms(...lists);
+  return synonyms.length ? { synonyms } : {};
+}
 function fail(where: string, message: string): never {
   throw new CommandError(`${where}: ${message}`, 2);
 }
@@ -144,6 +149,7 @@ function fieldFor(
     ...metadata,
     name: field.name,
     ...(field.description !== undefined ? { description: field.description } : {}),
+    ...synonymsProperty(aiContextSynonyms(field.ai_context)),
     ...(sql_type ? { type: sql_type } : {}),
     ...(derived
       ? { expr: build_expression, ...(keys.includes(field.name) ? { primary_key: true } : {}) }
@@ -211,6 +217,7 @@ export function translateOssieDocument(
         type: 'model',
         name: dataset.name,
         description: dataset.description,
+        ...synonymsProperty(build['synonyms'], aiContextSynonyms(dataset.ai_context)),
         grain: extension['grain'],
         columns,
       };
@@ -257,6 +264,7 @@ export function translateOssieDocument(
         type: 'source',
         name: dataset.name,
         description: dataset.description,
+        ...synonymsProperty(settings['synonyms'], aiContextSynonyms(dataset.ai_context)),
         schema: { columns },
         ...(sourceType === 'warehouse_table' ? { table: dataset.source } : {}),
       };
@@ -312,8 +320,6 @@ export function translateOssieDocument(
       models.add(node.table);
     });
     if (!models.size) fail(where, 'Metric expression must explicitly reference dataset.field');
-    const ai = metric.ai_context;
-    const synonyms = ai && typeof ai === 'object' && 'synonyms' in ai ? ai.synonyms : undefined;
     entries.push({
       kind: 'metric',
       document: parse(
@@ -325,8 +331,8 @@ export function translateOssieDocument(
           description: metric.description,
           models: [...models],
           expression: ansi.expression,
-          synonyms,
           ...extension,
+          ...synonymsProperty(extension['synonyms'], aiContextSynonyms(metric.ai_context)),
         },
         where
       ),

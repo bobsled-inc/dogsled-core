@@ -1,5 +1,9 @@
 import { InterchangeSchema } from '../interchange/storage.js';
-import { AiContextSchema, SemanticFieldMetadataSchema } from '../entities/semantic-metadata.js';
+import {
+  AiContextSchema,
+  SemanticFieldMetadataSchema,
+  SynonymsSchema,
+} from '../entities/semantic-metadata.js';
 /**
  * Zod schemas for source and transform spec files.
  *
@@ -254,6 +258,7 @@ const BaseSourceFields = {
   type: z.literal('source'),
   description: z.string().optional(),
   ai_context: AiContextSchema.optional(),
+  synonyms: SynonymsSchema.optional(),
   trust_tier: TrustTierSchema.default('bronze'),
   quality: SourceQualitySchema.optional(),
   schema: z
@@ -518,6 +523,7 @@ const DerivedColumnSchema = z
       .min(1, 'Expression is required')
       .refine((v) => !dangerousExprRegex.test(v), dangerousExprMsg),
     description: z.string().optional(),
+    synonyms: SynonymsSchema.optional(),
     type: z.string().optional(),
     dimension: z.number().int().positive().optional(),
     embedded_from: FieldMetadataSchema.shape.embedded_from,
@@ -737,6 +743,7 @@ export const TransformSpecSchema = z
     }),
     description: z.string().min(1, 'Description is required'),
     ai_context: AiContextSchema.optional(),
+    synonyms: SynonymsSchema.optional(),
     grain: z.union([
       z.string().regex(identifierRegex, identifierMsg),
       z.array(z.string().regex(identifierRegex, identifierMsg)),
