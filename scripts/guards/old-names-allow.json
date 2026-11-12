@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "keep": [
+    {
+      "pattern": "Dogsled Cloud",
+      "note": "The hosted app keeps the Dogsled brand (D7); the Hosted runs page names it."
+    },
+    { "pattern": "dogsled.it", "note": "App domain (D7)." },
+    {
+      "pattern": "dogsled\\.it",
+      "note": "Escaped app domain in the privacy guard and its tests (D7)."
+    },
+    {
+      "pattern": "dogsledai.com",
+      "files": [
+        "scripts/guards/privacy.mjs",
+        "scripts/guards/privacy-exceptions.json",
+        "tests/unit/guard-privacy.test.mjs",
+        "tests/unit/security-runtime-policy.test.mjs"
+      ],
+      "note": "App domain blocked by the runtime policy and privacy guard (D7)."
+    },
+    {
+      "pattern": "dogsledai\\.com",
+      "files": ["scripts/security/policy.mjs"],
+      "note": "App domain blocked by the runtime network policy (D7)."
+    },
+    {
+      "pattern": "dogsled\\.(?:co|ai|cloud|com|it)",
+      "files": ["scripts/security/policy.mjs"],
+      "note": "Dogsled-operated hosts blocked by the runtime network policy (D7)."
+    },
+    {
+      "pattern": "_DOGSLED_LIVE",
+      "note": "App-owned live database name (D7)."
+    },
+    {
+      "pattern": "@dogsled/",
+      "note": "Dogsled app workspace scope named in comments (D7)."
+    },
+    {
+      "pattern": "dogsled-logo.png",
+      "note": "Explorer logo until the Explorer PR switches to a text wordmark."
+    },
+    {
+      "pattern": "'bobsled-inc/dogsled-core'",
+      "files": [
+        ".github/workflows/preview-publish.yml",
+        "scripts/release/preview.mjs",
+        "tests/unit/release-preview.test.mjs"
+      ],
+      "note": "Preview publishing runs in dogsled-core until the export."
+    },
+    { "pattern": "bobsled-dogsled", "note": "Vercel team and project slug." }
+  ],
+  "exceptions": []
+}
