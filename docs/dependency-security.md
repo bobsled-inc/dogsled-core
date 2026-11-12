@@ -85,7 +85,10 @@ Dogsled checks installed versions before loading these SDKs in its default
 adapters, queries and connectivity checks. A missing, unverifiable, prerelease
 or older driver fails before connection creation. Injected test adapters remain
 credential-free. Databricks 1.x is no longer supported. Install 2.x before using
-that integration. Native addons still require their usual platform installation.
+that integration. Databricks 3.0.0 supports only selected Node 22, 24 and 26
+patch ranges, while Dogsled supports every Node version from 24 onward, so the
+optional peer range stays below 3. Native addons still require their usual
+platform installation.
 
 Snowflake 3.4.0 became age-eligible on 2026-10-21T11:25:23.294Z and requires
 `toml ^5.0.0`. This floor fixes the older TOML advisories
