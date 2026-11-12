@@ -51,12 +51,29 @@ Secrets in `dogsled.yml` must be environment references (`$NAME`). Each destinat
 | `databricks`      | `server_hostname`, `http_path`, `catalog`, `schema`, and `credentials_access_token` or `oauth_client_id` + `oauth_client_secret`                                                                                                         |
 | `clickhouse`      | `host`, `port`, `database`, `username`, `password`, `ssl`, `vector_index`                                                                                                                                                                |
 | `turbopuffer`     | `api_key`, `region`, `namespace_prefix`, `distance_metric`, `full_text_columns`                                                                                                                                                          |
-| `local`           | `format` (`parquet`, `jsonl`, `csv`)                                                                                                                                                                                                     |
-| `gcs`, `s3`       | `bucket`, `prefix`, `format`                                                                                                                                                                                                             |
+| `local`           | `format` (`parquet`, `jsonl`, `csv`), `stream_subfolder`, `utc_timestamps`                                                                                                                                                               |
+| `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`, `utc_timestamps`                                                                                                                                                                       |
 | `dogsled_managed` | `dogsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/dogsled-cloud.md))                                                                                                                                  |
 
 Every destination also accepts `load_strategy`, `schema_behavior` and
 `table_prefix`.
+
+The file destinations `local`, `gcs` and `s3` write each stream to
+`<prefix><stream>/<stream>-<n>.<ext>`. Two optional fields change that:
+
+- `stream_subfolder` adds a folder inside each stream's folder, so a file lands at
+  `<prefix><stream>/<stream_subfolder>/<stream>-<n>.<ext>`. With
+  `stream_subfolder: data/2026-11-20`, the stream `orders` writes
+  `orders/data/2026-11-20/orders-0.parquet`. It takes a relative path of up to 256
+  characters. Each segment holds letters, digits, dots, dashes, equals signs or
+  underscores, and is never `.` or `..`. It can also be an environment placeholder.
+- `utc_timestamps: true` writes timestamp columns to Parquet as UTC-adjusted
+  (`TIMESTAMPTZ`) instead of without a time zone. Every instant stays the same;
+  only the Parquet logical type changes. It needs `format: parquet`. A Parquet batch
+  column that is already time-zone aware, or that holds nanoseconds, is written as it
+  came, and so is a timestamp nested inside a list or struct.
+
+Leave both out and the output is unchanged.
 
 ### Pipelines
 

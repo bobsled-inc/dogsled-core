@@ -84,6 +84,8 @@ export async function runFileLoader(
   const stderr = dependencies.stderr ?? process.stderr;
   const logger = createLogger(stderr, rawConfig.logFormat);
   const formatDef = getFormatDef(rawConfig.format);
+  const streamSubfolder = rawConfig.streamSubfolder ? `${rawConfig.streamSubfolder}/` : '';
+  const utcTimestamps = rawConfig.utcTimestamps === true;
 
   const providedTempRoot = dependencies.tempRootDir ? path.resolve(dependencies.tempRootDir) : null;
 
@@ -129,7 +131,7 @@ export async function runFileLoader(
   ): Promise<void> => {
     const safeStream = sanitizeStreamName(stream);
     const outputIndex = nextOutputIndex(outputIndexes, safeStream);
-    const destinationPath = `${safeStream}/${safeStream}-${outputIndex}${formatDef.extension}`;
+    const destinationPath = `${safeStream}/${streamSubfolder}${safeStream}-${outputIndex}${formatDef.extension}`;
     const tempOutputPath = path.join(
       outputRootDir,
       buildTempFileName(safeStream, outputIndex, formatDef.extension)
@@ -139,7 +141,11 @@ export async function runFileLoader(
     let convertMs = 0;
 
     try {
-      if (!cleanupSource && canDirectlyPublishSource(rawConfig.format, sourceEncoding)) {
+      if (
+        !cleanupSource &&
+        !utcTimestamps &&
+        canDirectlyPublishSource(rawConfig.format, sourceEncoding)
+      ) {
         await fs.copyFile(sourcePath, tempOutputPath);
         publishSourcePath = tempOutputPath;
         removeTempOutput = true;
@@ -152,6 +158,7 @@ export async function runFileLoader(
             format: rawConfig.format,
             sourceEncoding,
             columns: schemas.get(stream)?.columns,
+            ...(utcTimestamps ? { utcTimestamps: true } : {}),
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);

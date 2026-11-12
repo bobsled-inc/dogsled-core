@@ -6,8 +6,11 @@ import { normalizeDestinationBlueprint } from './legacy-blueprint.js';
 import {
   EnvPlaceholderSchema,
   isSchemaBehavior,
+  isValidStreamSubfolder,
+  normalizeStreamSubfolder,
   PlatformConfigSchema,
   SCHEMA_BEHAVIORS,
+  STREAM_SUBFOLDER_RULE,
 } from '@bobsled-inc/protocol';
 // `/schema` keeps Dogsled's configuration surface safe for server-side / Lambda
 // consumers. The embedder root re-exports
@@ -317,14 +320,45 @@ const TurbopufferDestinationSchema = z
   })
   .strict();
 
+/**
+ * Opt-in folder added inside each stream's folder on file destinations, so a
+ * file lands at `<prefix><stream>/<stream_subfolder>/<stream>-<n>.<ext>`.
+ * Omitted by default, which keeps `<prefix><stream>/<stream>-<n>.<ext>`.
+ */
+const StreamSubfolderSchema = z
+  .string()
+  .refine(
+    (value) =>
+      EnvPlaceholderSchema.safeParse(value).success ||
+      isValidStreamSubfolder(normalizeStreamSubfolder(value)),
+    `${STREAM_SUBFOLDER_RULE}, or an environment variable placeholder`
+  );
+
+const FileDestinationFields = {
+  stream_subfolder: StreamSubfolderSchema.optional(),
+  /** Opt-in: write timestamp columns as UTC-adjusted. Parquet output only. */
+  utc_timestamps: z.boolean().optional(),
+} as const;
+
+const utcTimestampsNeedParquet = {
+  check: (destination: { format: string; utc_timestamps?: boolean | undefined }) =>
+    destination.utc_timestamps !== true || destination.format === 'parquet',
+  options: {
+    message: 'utc_timestamps applies to parquet output only',
+    path: ['utc_timestamps'],
+  },
+};
+
 // File destinations require an explicit format (no implicit default).
 const LocalDestinationSchema = z
   .object({
     type: z.literal('local'),
     format: DestinationFormatSchema,
+    ...FileDestinationFields,
     ...SharedDestinationFields,
   })
-  .strict();
+  .strict()
+  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
 
 const GcsDestinationSchema = z
   .object({
@@ -332,9 +366,11 @@ const GcsDestinationSchema = z
     bucket: z.string(),
     prefix: z.string().optional(),
     format: DestinationFormatSchema,
+    ...FileDestinationFields,
     ...SharedDestinationFields,
   })
-  .strict();
+  .strict()
+  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
 
 const S3DestinationSchema = z
   .object({
@@ -342,9 +378,11 @@ const S3DestinationSchema = z
     bucket: z.string(),
     prefix: z.string().optional(),
     format: DestinationFormatSchema,
+    ...FileDestinationFields,
     ...SharedDestinationFields,
   })
-  .strict();
+  .strict()
+  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
 
 /**
  * Host-managed destination — orchestrator-resolved type.

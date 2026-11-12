@@ -152,6 +152,10 @@ export interface PipelineOptions {
   resource?: string[];
   s3Bucket?: string;
   s3Prefix?: string;
+  /** Folder added inside each stream's folder on local, gcs and s3 destinations. */
+  streamSubfolder?: string;
+  /** Write Parquet timestamp columns as UTC-adjusted on local, gcs and s3 destinations. */
+  utcTimestamps?: boolean;
   startDate?: string;
   endDate?: string;
   sfAccount?: string;

@@ -108,6 +108,20 @@ export function buildStreamOverrideCliArgs(options: {
 
 type DestinationLike = DestinationConfig | NamedDestination;
 
+function buildFileDestinationCliArgs(
+  destination: { stream_subfolder?: string | undefined; utc_timestamps?: boolean | undefined },
+  resolveValue: (value: string) => string
+): string[] {
+  const args: string[] = [];
+  if (destination.stream_subfolder) {
+    args.push('--stream-subfolder', resolveValue(destination.stream_subfolder));
+  }
+  if (destination.utc_timestamps === true) {
+    args.push('--utc-timestamps');
+  }
+  return args;
+}
+
 export function serializeDestinationsJson(destinations: NamedDestination[]): string {
   return JSON.stringify(destinations);
 }
@@ -169,6 +183,7 @@ function buildRawDestinationCliArgs(
       if (destination.prefix) {
         args.push('--s3-prefix', resolveValue(destination.prefix));
       }
+      args.push(...buildFileDestinationCliArgs(destination, resolveValue));
       break;
     case 'snowflake':
       validateSnowflakePipelineAuth({
@@ -281,6 +296,7 @@ function buildRawDestinationCliArgs(
       if (destination.format) {
         args.push('--format', resolveValue(destination.format));
       }
+      args.push(...buildFileDestinationCliArgs(destination, resolveValue));
       break;
     case 'gcs':
       if (destination.format) {
@@ -290,6 +306,7 @@ function buildRawDestinationCliArgs(
       if (destination.prefix) {
         args.push('--gcs-prefix', resolveValue(destination.prefix));
       }
+      args.push(...buildFileDestinationCliArgs(destination, resolveValue));
       break;
     case 'dogsled_managed':
       // Orchestrator-resolved intent type — must be expanded into a
