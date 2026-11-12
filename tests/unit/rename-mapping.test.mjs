@@ -89,6 +89,8 @@ describe('rename mapping', () => {
       '/\\.dogsled\\.it\\b/'
     );
     expect(rename('Email security@dogsledai.com', 'SECURITY.md')).toBe('Email security@bobsled.co');
+    const policy = String.raw`(?:bobsled\.(?:co|ai|cloud)|dogsledai\.com|dogsled\.(?:co|ai|cloud|com|it))`;
+    expect(rename(policy, 'scripts/security/policy.mjs')).toBe(policy);
   });
 
   it('keeps the preview tooling pointed at the current repository', () => {

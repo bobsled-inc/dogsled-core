@@ -86,6 +86,11 @@ export const KEEP_LIST = [
     pattern: '@dogsled/',
     note: 'Dogsled app workspace scope (e.g. @dogsled/lakehouse-execution) named in comments (D7)',
   },
+  {
+    pattern: 'dogsled\\.(?:co|ai|cloud|com|it)',
+    paths: ['scripts/security/policy.mjs'],
+    note: 'Dogsled-operated hosts stay blocked by the runtime network policy (D7)',
+  },
   { pattern: '_DOGSLED_LIVE', note: 'app-owned live database name (D7), not a Core name' },
   {
     pattern: 'dogsled-logo.png',
