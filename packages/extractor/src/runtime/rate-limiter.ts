@@ -9,6 +9,7 @@ import {
   safeFetch,
   sanitizeUrlForError,
 } from '../framework/core/index.js';
+import { DEFAULT_RETRY_BACKOFF, retryDelayMs } from './retry-delay.js';
 
 export interface RateLimiterOptions {
   requestsPerSecond: number;
@@ -23,9 +24,7 @@ export const DEFAULT_RATE_LIMIT: RateLimiterOptions = {
   requestsPerSecond: 10,
   burst: 20,
   retryOn: [429, 503],
-  maxRetries: 3,
-  backoff: 'exponential',
-  retryAfterHeader: true,
+  ...DEFAULT_RETRY_BACKOFF,
 };
 
 export class RateLimitTimeoutError extends Error {
@@ -195,27 +194,7 @@ export class RateLimiter {
   }
 
   private getRetryDelay(response: Response | undefined, attempt: number): number {
-    // Check Retry-After header
-    if (this.options.retryAfterHeader && response) {
-      const retryAfter = response.headers.get('retry-after');
-      if (retryAfter) {
-        const seconds = Number(retryAfter);
-        if (!Number.isNaN(seconds)) {
-          return Math.min(seconds * 1000, 300_000); // Cap at 5 minutes
-        }
-        // Parse HTTP date
-        const date = Date.parse(retryAfter);
-        if (!Number.isNaN(date)) {
-          return Math.min(Math.max(0, date - Date.now()), 300_000); // Cap at 5 minutes
-        }
-      }
-    }
-
-    // Fallback to backoff strategy
-    if (this.options.backoff === 'exponential') {
-      return Math.min(1000 * 2 ** attempt, 30_000);
-    }
-    return 1000;
+    return retryDelayMs(this.options, response, attempt);
   }
 }
 

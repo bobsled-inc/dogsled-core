@@ -1,6 +1,7 @@
 import { serializeErrorCause } from '@bobsled-inc/protocol';
 
 import type { AuthorizeBillableResource } from '../billable-authorization.js';
+import type { CustomTokenStore } from '../../framework/runtime/index.js';
 import type { IntegrationSpec, ResourceSpec } from '../../types/index.js';
 import type { QueryResourceOptions } from './index.js';
 
@@ -268,6 +269,8 @@ export interface QueryResourceFanOutOptions {
   correlationId?: string;
   /** A caller may plan once and execute that exact public contract. */
   plan?: QueryFanOutPlan;
+  /** Host store that shares minted custom tokens across workers. */
+  customTokenStore?: CustomTokenStore;
 }
 
 export interface QueryResourceFanOutResult<TRecord = Record<string, unknown>> {

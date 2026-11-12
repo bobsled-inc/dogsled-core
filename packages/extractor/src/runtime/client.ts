@@ -1,7 +1,7 @@
 import {
   applyHttpAuth,
   buildOperationRequest,
-  invalidateRuntimeAuthCache,
+  invalidateRejectedRuntimeAuth,
   interpolateString,
   mergeIntegrationOperation,
 } from '../framework/runtime/index.js';
@@ -18,12 +18,18 @@ import {
 import { RateLimiter } from './rate-limiter.js';
 import {
   ExtractorDataError,
+  toExtractorAuthRuntimeError,
   toExtractorHttpRuntimeError,
   toExtractorRuntimeError,
 } from './errors.js';
+import { resolveRetryBackoffPolicy, type RetryBackoffPolicy } from './retry-delay.js';
 
 import type { HttpTransportConfig } from '../framework/core/index.js';
-import type { InterpolationContext, ResolvedApiConfig } from '../framework/runtime/index.js';
+import type {
+  CustomTokenStore,
+  InterpolationContext,
+  ResolvedApiConfig,
+} from '../framework/runtime/index.js';
 import type { ApiIntegrationSpec, HttpApiResourceSpec } from '../types/index.js';
 
 type OperationSpecLike = Pick<HttpApiResourceSpec, 'api' | 'input'>;
@@ -52,6 +58,8 @@ export interface ClientOptions {
   beforeRequestAttempt?: () => void;
   /** @internal Registers resolved authentication values for safe error redaction. */
   onResolvedSecret?: (value: string) => void;
+  /** Host store that shares minted custom tokens across workers. */
+  customTokenStore?: CustomTokenStore;
 }
 
 export interface RequestOptions {
@@ -96,6 +104,8 @@ export class ExtractorClient {
   private readonly rateLimiter: RateLimiter;
   private readonly beforeRequestAttempt?: () => void;
   private readonly onResolvedSecret?: (value: string) => void;
+  private readonly customTokenStore?: CustomTokenStore;
+  private readonly tokenRetry: RetryBackoffPolicy;
 
   constructor(options: ClientOptions) {
     if (
@@ -120,6 +130,8 @@ export class ExtractorClient {
     this.stateDir = options.stateDir;
     this.beforeRequestAttempt = options.beforeRequestAttempt;
     this.onResolvedSecret = options.onResolvedSecret;
+    this.customTokenStore = options.customTokenStore;
+    this.tokenRetry = resolveRetryBackoffPolicy(this.integration.transport.retry);
 
     const rl = this.integration.transport.rate_limit;
     const rt = this.integration.transport.retry;
@@ -229,6 +241,8 @@ export class ExtractorClient {
       integrationName: this.integration.name,
       stateDir: this.stateDir,
       signal: options.signal,
+      ...(this.customTokenStore ? { customTokenStore: this.customTokenStore } : {}),
+      tokenRetry: this.tokenRetry,
     };
 
     options.signal?.throwIfAborted();
@@ -241,13 +255,7 @@ export class ExtractorClient {
       for (const value of authedRequest.resolvedSecrets ?? []) this.onResolvedSecret?.(value);
       for (const value of Object.values(authedRequest.headers)) this.onResolvedSecret?.(value);
     } catch (error) {
-      throw toExtractorRuntimeError({
-        kind: 'auth',
-        code: 'EXTRACTOR_HTTP_AUTH_FAILURE',
-        operation: 'extractor.http.request',
-        retryable: false,
-        cause: error instanceof Error ? error : new Error(String(error)),
-      });
+      throw toExtractorAuthRuntimeError(error, options.signal);
     }
     options.signal?.throwIfAborted();
     let response = await this.doFetch(
@@ -259,8 +267,8 @@ export class ExtractorClient {
 
     if (response.status === 401 && authedRequest.auth && authedRequest.auth.type !== 'none') {
       await response.body?.cancel().catch(() => undefined);
-      invalidateRuntimeAuthCache(authedRequest.authCacheIdentity);
       try {
+        await invalidateRejectedRuntimeAuth(authedRequest.authCacheIdentity, this.customTokenStore);
         authedRequest = await applyHttpAuth({
           ...baseRequest,
           beforeRequestAttempt: this.beforeRequestAttempt,
@@ -268,13 +276,7 @@ export class ExtractorClient {
         for (const value of authedRequest.resolvedSecrets ?? []) this.onResolvedSecret?.(value);
         for (const value of Object.values(authedRequest.headers)) this.onResolvedSecret?.(value);
       } catch (error) {
-        throw toExtractorRuntimeError({
-          kind: 'auth',
-          code: 'EXTRACTOR_HTTP_AUTH_FAILURE',
-          operation: 'extractor.http.request',
-          retryable: false,
-          cause: error instanceof Error ? error : new Error(String(error)),
-        });
+        throw toExtractorAuthRuntimeError(error, options.signal);
       }
       options.signal?.throwIfAborted();
       response = await this.doFetch(

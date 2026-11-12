@@ -1,5 +1,6 @@
 import type { AuthConfig } from '../../core/index.js';
 import type { AuthHandler } from '../http-client.js';
+import type { CustomTokenStore } from './custom-token-store.js';
 
 import { apiKeyAuthHandler } from './api-key.js';
 import { awsSigV4AuthHandler } from './aws-sigv4.js';
@@ -15,6 +16,8 @@ import { clearTokenCache, invalidateTokenCache, oauth2AuthHandler } from './oaut
 export interface RuntimeAuthCacheIdentity {
   handler: 'oauth2' | 'custom-token';
   key: string;
+  /** Token read from a host-supplied custom-token store. */
+  sharedToken?: string;
 }
 
 export function getAuthHandler(authType: AuthConfig['type']): AuthHandler {
@@ -62,4 +65,23 @@ export function invalidateRuntimeAuthCache(identity: RuntimeAuthCacheIdentity | 
       throw new Error(`Unknown auth cache handler: ${JSON.stringify(_exhaustive)}`);
     }
   }
+}
+
+/**
+ * Drop the credential a provider rejected. A token read from a host store is
+ * removed only while it is still the stored value, so a newer token minted by
+ * another worker survives.
+ */
+export async function invalidateRejectedRuntimeAuth(
+  identity: RuntimeAuthCacheIdentity | undefined,
+  customTokenStore: CustomTokenStore | undefined
+): Promise<void> {
+  if (identity?.handler === 'custom-token' && identity.sharedToken !== undefined) {
+    if (!customTokenStore) {
+      throw new Error('A shared custom token was rejected without its token store');
+    }
+    await customTokenStore.invalidate(identity.key, identity.sharedToken);
+    return;
+  }
+  invalidateRuntimeAuthCache(identity);
 }

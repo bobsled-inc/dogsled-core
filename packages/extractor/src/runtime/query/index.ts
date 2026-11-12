@@ -17,6 +17,7 @@ import {
 } from '../../framework/core/index.js';
 import { appendSearchValue } from '../../framework/query/index.js';
 import type { AuthorizeBillableResource } from '../billable-authorization.js';
+import type { CustomTokenStore } from '../../framework/runtime/index.js';
 import {
   EMPTY_FAN_OUT_CONTEXT,
   buildTargetedFanOutContext,
@@ -115,6 +116,8 @@ export interface QueryResourceOptions {
   skipUnboundedPageLimit?: boolean;
   /** Required approval callback for a billable Resource. Calls fail closed when absent or denied. */
   authorizeBillable?: AuthorizeBillableResource;
+  /** Host store that shares minted custom tokens across workers. */
+  customTokenStore?: CustomTokenStore;
 }
 
 export interface QueryRateLimitInfo {
@@ -310,6 +313,7 @@ export async function queryResource<TRecord = Record<string, unknown>>(
     ...(options.rateLimiter ? { rateLimiter: options.rateLimiter } : {}),
     beforeRequestAttempt: options.beforeRequestAttempt,
     onResolvedSecret: options.onResolvedSecret,
+    ...(options.customTokenStore ? { customTokenStore: options.customTokenStore } : {}),
   });
 
   try {

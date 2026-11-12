@@ -2,9 +2,12 @@ import type { AuthConfig, HttpMethod } from '../core/index.js';
 import type { InterpolationContext } from './interpolate.js';
 import { interpolateValue } from './interpolate.js';
 
+import type { CustomTokenStore } from './auth-handlers/custom-token-store.js';
+import type { RetryBackoffPolicy } from '../../runtime/retry-delay.js';
 import {
   clearRuntimeAuthCaches,
   getAuthHandler,
+  invalidateRejectedRuntimeAuth,
   invalidateRuntimeAuthCache,
   type RuntimeAuthCacheIdentity,
 } from './auth-handlers/index.js';
@@ -26,6 +29,10 @@ export interface HttpRequest {
   signal?: AbortSignal;
   /** Called immediately before an authentication-provider request. */
   beforeRequestAttempt?: () => void;
+  /** Host store that shares minted custom tokens across workers. */
+  customTokenStore?: CustomTokenStore;
+  /** Backoff for retryable token-endpoint statuses; the transport retry policy. */
+  tokenRetry?: RetryBackoffPolicy;
 }
 
 export interface HttpResponse {
@@ -46,6 +53,10 @@ export interface ApplyAuthParams {
   signal?: AbortSignal;
   /** Called immediately before an authentication-provider request. */
   beforeRequestAttempt?: () => void;
+  /** Host store that shares minted custom tokens across workers. */
+  customTokenStore?: CustomTokenStore;
+  /** Backoff for retryable token-endpoint statuses; the transport retry policy. */
+  tokenRetry?: RetryBackoffPolicy;
 }
 
 export interface ApplyAuthResult {
@@ -83,6 +94,8 @@ export async function applyHttpAuth(request: HttpRequest): Promise<HttpRequest> 
     integrationName: request.integrationName,
     signal: request.signal,
     beforeRequestAttempt: request.beforeRequestAttempt,
+    ...(request.customTokenStore ? { customTokenStore: request.customTokenStore } : {}),
+    ...(request.tokenRetry ? { tokenRetry: request.tokenRetry } : {}),
   });
 
   return {
@@ -95,4 +108,10 @@ export async function applyHttpAuth(request: HttpRequest): Promise<HttpRequest> 
   };
 }
 
-export { clearRuntimeAuthCaches, invalidateRuntimeAuthCache };
+export { clearRuntimeAuthCaches, invalidateRejectedRuntimeAuth, invalidateRuntimeAuthCache };
+export {
+  CUSTOM_TOKEN_EXPIRY_BUFFER_MS,
+  type CustomTokenGrant,
+  type CustomTokenStore,
+  type CustomTokenStoreRequest,
+} from './auth-handlers/custom-token-store.js';
