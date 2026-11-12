@@ -299,8 +299,9 @@ export const RULES = [
     category: 'BC-01',
     kind: 'content',
     match: 'leg: [model, graph, dogsled, rest]',
-    replace: 'leg: [model, graph, bobsled-core, rest]',
+    replace: 'leg: [model, graph, bobsled, rest]',
     include: ['.github/workflows/*.yml'],
+    note: 'Must match the test:unit:ci:bobsled script name and the legs in repo-invariants.',
   },
   {
     id: 'path-pkg-dir',

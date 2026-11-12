@@ -93,6 +93,18 @@ describe('rename mapping', () => {
     expect(rename(policy, 'scripts/security/policy.mjs')).toBe(policy);
   });
 
+  it('keeps the CI unit legs and their scripts in step', () => {
+    expect(rename('leg: [model, graph, dogsled, rest]', '.github/workflows/ci.yml')).toBe(
+      'leg: [model, graph, bobsled, rest]'
+    );
+    expect(rename('"test:unit:ci:dogsled": "x"', 'package.json')).toBe(
+      '"test:unit:ci:bobsled": "x"'
+    );
+    expect(rename("const legs = ['model', 'graph', 'dogsled', 'rest'];", 'tests/a.mjs')).toBe(
+      "const legs = ['model', 'graph', 'bobsled', 'rest'];"
+    );
+  });
+
   it('keeps the preview tooling pointed at the current repository', () => {
     const guard = "github.repository == 'bobsled-inc/dogsled-core'";
     expect(rename(guard, '.github/workflows/preview-publish.yml')).toBe(guard);
