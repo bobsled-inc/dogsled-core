@@ -489,7 +489,7 @@ importers:
         specifier: '>=1.0.0'
         version: 1.18.2
       '@databricks/sql':
-        specifier: '>=2.0.0'
+        specifier: '>=2.0.0 <3'
         version: 2.2.0(encoding@0.1.13)
       '@google-cloud/bigquery':
         specifier: '>=8.1.1'

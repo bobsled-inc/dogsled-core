@@ -135,6 +135,9 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   check command and connections runner pass only host, path and token.
   Regression tests assert those exact options and the absence of `proxy`. The
   PAC/FTP path cannot receive input through these adapters. Review by 2026-11-20.
+  Databricks SQL 3.0.0 keeps that proxy path but its `engines` excludes Node.js
+  24.0 through 24.22.0, which Dogsled supports, so the optional peer ranges are
+  capped at `>=2.0.0 <3` until maintainers decide to support 3.x.
 - Snowflake and Tedious > Azure Identity > MSAL Node: GHSA-xcx6-jx8p-x3h5 is
   resolved. Azure Identity 4.14.1 (published 2026-10-29, age-eligible since
   2026-11-05) uses fixed MSAL Node ^7.1.0. A workspace override pins it and

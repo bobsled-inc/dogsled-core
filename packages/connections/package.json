@@ -44,7 +44,7 @@
   "peerDependencies": {
     "@aws-sdk/rds-signer": ">=3.0.0",
     "@clickhouse/client": ">=1.0.0",
-    "@databricks/sql": ">=2.0.0",
+    "@databricks/sql": ">=2.0.0 <3",
     "@duckdb/node-api": "^1.4.4-r.3",
     "@google-cloud/bigquery": ">=8.1.1",
     "google-auth-library": ">=9.0.0",
