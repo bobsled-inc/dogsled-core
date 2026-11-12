@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { readFileSync } from 'node:fs';
 
-import { loadAllowList, scanFile } from '../../scripts/guards/old-names.mjs';
+import { loadAllowList, scanFile, staleExceptions } from '../../scripts/guards/old-names.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const allow = loadAllowList();
@@ -32,8 +32,50 @@ describe('old-name guard', () => {
     expect(count('packages/bobsled-core/src/a.ts', 'bobsled_api and Bobsled Core')).toEqual({
       'dogsled-word': 0,
       'old-warehouse-prefix': 0,
+      'track-config': 0,
+      'track-env': 0,
+      'track-kind': 0,
       'dogsled-path': 0,
     });
+  });
+
+  it('watches Track-era config, settings and kinds', () => {
+    const counts = count(
+      'docs/a.md',
+      "track.yml in .track/state, TRACK_PIPELINE_COMMAND, kind: 'track.model.run'; tracking and track_total_hits"
+    );
+    expect([counts['track-config'], counts['track-env'], counts['track-kind']]).toEqual([2, 1, 1]);
+  });
+
+  it('reports exceptions that no longer match as stale (a kept old name was deleted)', () => {
+    const allowList = loadAllowList({
+      version: 1,
+      keep: [],
+      exceptions: [
+        {
+          path: 'src/legacy-names.ts',
+          patternId: 'dogsled-word',
+          pattern: "'dogsled\\.model\\.run'",
+          reason: 'Run kind reader.',
+        },
+        {
+          path: 'src/gone.ts',
+          patternId: 'dogsled-word',
+          pattern: 'dogsled',
+          reason: 'File removed.',
+        },
+      ],
+    });
+    const files = { 'src/legacy-names.ts': "export const KINDS = ['bobsled.model.run'];" };
+    const stale = staleExceptions(allowList, (file) => files[file] ?? null);
+    expect(stale.map((entry) => entry.path)).toEqual(['src/legacy-names.ts', 'src/gone.ts']);
+    files['src/legacy-names.ts'] =
+      "export const KINDS = ['dogsled.model.run', 'bobsled.model.run'];";
+    expect(staleExceptions(allowList, (file) => files[file] ?? null)).toHaveLength(1);
+  });
+
+  it('has no stale exceptions in the committed allow list', () => {
+    expect(staleExceptions(allow)).toEqual([]);
   });
 
   it('allows the keep list, and file-limited entries only in their files', () => {

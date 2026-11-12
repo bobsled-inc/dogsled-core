@@ -3,6 +3,9 @@
   "patterns": {
     "dogsled-word": 11997,
     "old-warehouse-prefix": 717,
+    "track-config": 0,
+    "track-env": 0,
+    "track-kind": 0,
     "dogsled-path": 707
   },
   "areas": {

@@ -5,7 +5,10 @@
       "pattern": "Dogsled Cloud",
       "note": "The hosted app keeps the Dogsled brand (D7); the Hosted runs page names it."
     },
-    { "pattern": "dogsled.it", "note": "App domain (D7)." },
+    {
+      "pattern": "dogsled.it",
+      "note": "App domain (D7)."
+    },
     {
       "pattern": "dogsled\\.it",
       "note": "Escaped app domain in the privacy guard and its tests (D7)."
@@ -51,7 +54,41 @@
       ],
       "note": "Preview publishing runs in dogsled-core until the export."
     },
-    { "pattern": "bobsled-dogsled", "note": "Vercel team and project slug." }
+    {
+      "pattern": "bobsled-dogsled",
+      "note": "Vercel team and project slug."
+    }
   ],
-  "exceptions": []
+  "exceptions": [
+    {
+      "path": "examples/old-formats/showcase.mjs",
+      "patternId": "track-config",
+      "pattern": "'track\\.yml'",
+      "reason": "Old-formats showcase: a track.yml project must still be rejected."
+    },
+    {
+      "path": "examples/old-formats/showcase.mjs",
+      "patternId": "track-kind",
+      "pattern": "'track\\.pipeline\\.dag'",
+      "reason": "Old-formats showcase: the Track manifest kind must still be rejected."
+    },
+    {
+      "path": "packages/dogsled/tests/unit/runner/pipeline-manifest/manifest-schema.test.ts",
+      "patternId": "track-env",
+      "pattern": "TRACK_(?:LANGGRAPH|PIPELINE)_[A-Z_]*",
+      "reason": "Track-era name that Core must keep reading or rejecting (old-format test); moves with the package folder in step 5."
+    },
+    {
+      "path": "packages/dogsled/tests/unit/runner/pipeline-manifest/manifest-schema.test.ts",
+      "patternId": "track-kind",
+      "pattern": "track\\.(?:runner\\.run_resource|pipeline\\.dag)",
+      "reason": "Track-era name that Core must keep reading or rejecting (old-format test); moves with the package folder in step 5."
+    },
+    {
+      "path": "packages/project-index/tests/unit/scan.test.ts",
+      "patternId": "track-config",
+      "pattern": "'track\\.yml'",
+      "reason": "Project scan test: a track.yml file must not be treated as a project config."
+    }
+  ]
 }

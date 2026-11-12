@@ -11,6 +11,10 @@
  *   node scripts/guards/old-names.mjs --update   # write today's counts as the baseline
  *   node scripts/guards/old-names.mjs --strict   # fail on any finding (end of step 5)
  *
+ * Exceptions in old-names-allow.json double as a must-keep list: --ratchet and
+ * --strict also fail when an exception matches nothing, because that means a
+ * compatibility reader lost an old name it has to keep accepting.
+ *
  * CI runs the report-only mode until the last rename PR switches it to --strict.
  */
 
@@ -46,7 +50,14 @@ export const SELF_PATHS = new Set([
   'tests/unit/rename-mapping.test.mjs',
 ]);
 
-export const PATTERN_IDS = ['dogsled-word', 'old-warehouse-prefix', 'dogsled-path'];
+export const PATTERN_IDS = [
+  'dogsled-word',
+  'old-warehouse-prefix',
+  'track-config',
+  'track-env',
+  'track-kind',
+  'dogsled-path',
+];
 
 /** Validates old-names-allow.json: keep-list entries plus exact per-file exceptions. */
 export function loadAllowList(data = JSON.parse(readFileSync(ALLOW_PATH, 'utf8'))) {
@@ -97,6 +108,10 @@ function patternsFor(keep) {
   return [
     { id: 'dogsled-word', scan: outsideKeep(/dogsled/gi) },
     { id: 'old-warehouse-prefix', scan: outsideKeep(/\b_{1,2}(?:track|dogsled)_[a-z0-9_]+/gi) },
+    // Track-era names: Core must keep rejecting them, never start writing them again.
+    { id: 'track-config', scan: outsideKeep(/\btrack\.ya?ml\b|\.track\//g) },
+    { id: 'track-env', scan: outsideKeep(/\bTRACK_[A-Z0-9_]+/g) },
+    { id: 'track-kind', scan: outsideKeep(/\btrack\.(?:model|pipeline|runner|entity_graph)\./g) },
   ];
 }
 
@@ -110,6 +125,27 @@ export function scanFile(file, lines, allow = loadAllowList()) {
   const pathHit = /dogsled/i.test(file) && !allow.keep.some((k) => file.includes(k.pattern));
   results.set('dogsled-path', pathHit ? [{ file, line: 0, column: 0 }] : []);
   return results;
+}
+
+/**
+ * Exceptions that match nothing. Each exception guards an old name that must
+ * stay (a compatibility reader); a stale one means that name was deleted.
+ */
+export function staleExceptions(allow = loadAllowList(), read = readRepoFile) {
+  return allow.exceptions.filter((entry) => {
+    const text = read(entry.path);
+    if (text === null) return true;
+    const regex = new RegExp(entry.pattern);
+    return !text.split('\n').some((line) => regex.test(line));
+  });
+}
+
+function readRepoFile(file) {
+  try {
+    return readFileSync(path.join(repoRoot, file), 'utf8');
+  } catch {
+    return null;
+  }
 }
 
 export function runScan(allow = loadAllowList()) {
@@ -135,24 +171,29 @@ export function runScan(allow = loadAllowList()) {
   return { patterns, areas, findings };
 }
 
-function report({ patterns, areas, findings }, baseline) {
+function report({ patterns, areas, findings }, baseline, mode, stale) {
   const total = Object.values(patterns).reduce((sum, n) => sum + n, 0);
   const files = new Set(findings.map((f) => f.file)).size;
-  const lines = [`Old-name guard (report only): ${total} findings in ${files} files.`, ''];
+  const lines = [`Old-name guard (${mode}): ${total} findings in ${files} files.`, ''];
   lines.push('| Pattern | Count | Baseline |', '| --- | --- | --- |');
   for (const [id, count] of Object.entries(patterns))
     lines.push(`| ${id} | ${count} | ${baseline?.patterns?.[id] ?? '-'} |`);
   lines.push('', '| Area | Count | Baseline |', '| --- | --- | --- |');
   for (const [area, count] of Object.entries(areas).sort((a, b) => b[1] - a[1]))
     lines.push(`| ${area} | ${count} | ${baseline?.areas?.[area] ?? '-'} |`);
+  lines.push('', `Stale exceptions (a kept old name was removed): ${stale.length}`);
+  for (const entry of stale) lines.push(`- ${entry.patternId} ${entry.path}: ${entry.reason}`);
   return lines.join('\n');
 }
 
 function main() {
   const args = parseArgs();
-  const result = runScan();
+  const allow = loadAllowList();
+  const result = runScan(allow);
+  const stale = staleExceptions(allow);
   const baseline = readBaseline(BASELINE_PATH);
-  const text = report(result, baseline);
+  const mode = args.strict ? 'strict' : args.ratchet ? 'ratchet' : 'report only';
+  const text = report(result, baseline, mode, stale);
   process.stdout.write(`${text}\n`);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${text}\n`);
   if (args.list) {
@@ -161,6 +202,12 @@ function main() {
   if (args.update) {
     writeBaseline(BASELINE_PATH, { version: 1, patterns: result.patterns, areas: result.areas });
     process.stdout.write('Baseline updated.\n');
+  }
+  if ((args.ratchet || args.strict) && stale.length > 0) {
+    process.stderr.write(
+      'Stale exceptions: a compatibility reader lost an old name it must keep.\n'
+    );
+    process.exitCode = 1;
   }
   if (args.ratchet) {
     if (!baseline) throw new Error('No baseline; run with --update first.');
