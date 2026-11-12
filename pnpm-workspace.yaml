@@ -121,11 +121,11 @@ catalogs:
   dev-packages:
     '@types/node': 25.9.9
     commander: 14.0.3
-    globals: 17.3.0
+    globals: 17.14.0
     husky: 9.1.7
     lint-staged: 16.4.0
     node-sql-parser: 5.4.0
-    prettier: 3.8.1
+    prettier: 3.9.10
     tsx: 4.23.15
     turbo: 2.11.10
     typescript: 6.0.2
@@ -133,21 +133,21 @@ catalogs:
   duckdb:
     '@duckdb/node-api': 1.4.4-r.4
   eslint:
-    '@typescript-eslint/eslint-plugin': 8.58.0
-    '@typescript-eslint/parser': 8.58.0
-    eslint: 10.2.0
+    '@typescript-eslint/eslint-plugin': 8.72.1
+    '@typescript-eslint/parser': 8.72.1
+    eslint: 10.14.0
   mcp:
     '@modelcontextprotocol/sdk': 1.32.0
   security:
-    '@secretlint/secretlint-rule-preset-recommend': 13.0.2
+    '@secretlint/secretlint-rule-preset-recommend': 13.1.0
     audit-ci: 7.1.0
-    secretlint: 13.0.2
+    secretlint: 13.1.0
   sqlite:
     '@types/better-sqlite3': 7.6.13
     better-sqlite3: 12.11.1
   testing:
     '@vitest/coverage-v8': 4.1.12
-    fast-check: 4.9.0
+    fast-check: 4.10.2
     vitest: 4.1.12
 
 # pnpm expresses the release-age gate in minutes. Apply the full one-week
