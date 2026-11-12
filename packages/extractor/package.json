@@ -135,7 +135,7 @@
     "typescript": "catalog:dev-packages",
     "@vitest/coverage-v8": "catalog:testing",
     "vitest": "catalog:testing",
-    "@types/ssh2": "1.15.5",
+    "@types/ssh2": "1.15.6",
     "ssh2": "1.17.0"
   },
   "description": "YAML-driven API, warehouse, file, and MCP extraction runtime for Dogsled.",
