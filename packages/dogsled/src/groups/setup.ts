@@ -21,6 +21,7 @@ import { doctorSetup } from '../setup/doctor.js';
 import { SetupAnswersSchema } from '../setup/types.js';
 
 import type { GlobalOptions } from '../types/index.js';
+import { resolveSetupAnswersPath } from '../setup/answers-path.js';
 
 function buildOutputOptions(
   opts: { json?: boolean; verbose?: boolean; quiet?: boolean },
@@ -122,7 +123,7 @@ export function createSetupGroup(): Command {
         cmd: Command
       ) => {
         const outputOpts = buildOutputOptions(opts, cmd.optsWithGlobals<GlobalOptions>());
-        const answersPath = path.resolve(opts.answers);
+        const answersPath = resolveSetupAnswersPath(opts.answers);
         const answers = existsSync(answersPath)
           ? parseSetupAnswersFile(answersPath)
           : SetupAnswersSchema.parse({
@@ -198,7 +199,7 @@ export function createSetupGroup(): Command {
         cmd: Command
       ) => {
         const outputOpts = buildOutputOptions(opts, cmd.optsWithGlobals<GlobalOptions>());
-        const answers = parseSetupAnswersFile(path.resolve(opts.answers));
+        const answers = parseSetupAnswersFile(resolveSetupAnswersPath(opts.answers));
         const files = await renderSetupFiles(answers);
         const { written, preserved } = writeRenderedSetupFiles(files, path.resolve(opts.outDir));
 

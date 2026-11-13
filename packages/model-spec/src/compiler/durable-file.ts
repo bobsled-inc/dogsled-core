@@ -3,13 +3,14 @@ import * as fs from 'node:fs';
 import path from 'node:path';
 import { hostname } from 'node:os';
 import { randomUUID } from 'node:crypto';
+import { localStateDirName } from '@bobsled-inc/connections';
 
 export const MAX_STATE_FILE_BYTES = 16 * 1024 * 1024;
 
 export function ensureStateDirectory(project: string): string {
   const root = fs.realpathSync(project);
   let directory = root;
-  for (const segment of ['.dogsled', 'model-spec']) {
+  for (const segment of [localStateDirName(root), 'model-spec']) {
     const parent = directory;
     directory = path.join(parent, segment);
     try {

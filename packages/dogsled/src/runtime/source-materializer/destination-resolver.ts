@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { sourceNameOf } from './load-specs.js';
 import { IDENTIFIER_PATTERN, validateIdentifier } from './sql-utils.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 export interface ResolvedDestination {
   kind: 'bigquery' | 'snowflake' | 'duckdb' | 'ducklake' | 'in_memory';
@@ -54,7 +55,7 @@ function stringField(config: Record<string, unknown>, field: string): string | u
 
 async function readProjectDefault(root: string): Promise<Record<string, unknown> | undefined> {
   try {
-    const text = await readFile(join(root, '.dogsled', 'config.yml'), 'utf8');
+    const text = await readFile(join(localStateDir(root), 'config.yml'), 'utf8');
     return ProjectConfigSchema.parse(YAML.parse(text)).default_destination;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
@@ -207,7 +208,7 @@ export async function resolveDestinationFor(
     const configuredCatalogUrl = stringField(defaults, 'catalogUrl');
     const catalogUrl = configuredCatalogUrl
       ? resolveDuckLakeCatalogUrl(configuredCatalogUrl, args.projectRoot)
-      : `ducklake:${join(args.projectRoot, '.dogsled', 'lake', 'catalog.ducklake')}`;
+      : `ducklake:${join(localStateDir(args.projectRoot), 'lake', 'catalog.ducklake')}`;
     const configuredDataPath = stringField(defaults, 'dataPath');
     const config: DatabaseDestConfig = {
       dest: 'ducklake',

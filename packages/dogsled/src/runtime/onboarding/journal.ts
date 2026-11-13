@@ -6,6 +6,7 @@ import { CommandError } from '@bobsled-inc/protocol';
 import { Cell, StepId, type Checkpoint } from './schema.js';
 import { readBounded, writeLocal } from './files.js';
 import { inspectOnboarding } from './state.js';
+import { localStateDirName } from '@bobsled-inc/connections';
 export const Journal = z.object({
   version: z.literal(1),
   tutorial: z.string().optional(),
@@ -30,7 +31,7 @@ export async function readJournal(
   tutorial ??= await resolveTutorial(root);
   try {
     const journal = Journal.parse(
-      JSON.parse(await readBounded(root, '.dogsled/onboarding/journal.json'))
+      JSON.parse(await readBounded(root, `${localStateDirName(root)}/onboarding/journal.json`))
     );
     requireIdentity(tutorial, journal.tutorial);
     return journal;
@@ -58,7 +59,7 @@ export async function recordHistory(
   journal.history = journal.history.slice(-30);
   await writeLocal(
     root,
-    '.dogsled/onboarding/journal.json',
+    `${localStateDirName(root)}/onboarding/journal.json`,
     JSON.stringify(Journal.parse(journal))
   );
 }
@@ -91,7 +92,7 @@ export async function reviewChapter(
   journal.reviews[step] = checkpointId(current.evidence);
   await writeLocal(
     root,
-    '.dogsled/onboarding/journal.json',
+    `${localStateDirName(root)}/onboarding/journal.json`,
     JSON.stringify(Journal.parse(journal))
   );
   return journal;

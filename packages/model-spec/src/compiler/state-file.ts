@@ -11,6 +11,7 @@ import {
 import { nodeFs } from './node-fs.js';
 import type { FileSystem } from './types.js';
 import type { RunState } from './state.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 const SelectStateColumnSchema = z
   .object({
@@ -67,11 +68,11 @@ const RunStateSchema = z
   .passthrough();
 
 export const localBaselines = new WeakMap<RunState, RunState>();
-const STATE_DIR = '.dogsled/model-spec';
+const stateDir = (dir: string) => path.join(localStateDir(dir), 'model-spec');
 const STATE_FILE = 'run-state.json';
 
 export function loadState(dir: string, fsImpl: FileSystem = nodeFs): RunState {
-  const current = readStateFile(path.join(dir, STATE_DIR, STATE_FILE), fsImpl);
+  const current = readStateFile(path.join(stateDir(dir), STATE_FILE), fsImpl);
   if (current !== undefined) {
     localBaselines.set(current, structuredClone(current));
     return current;
@@ -135,9 +136,9 @@ function readStateFile(filePath: string, fsImpl: FileSystem): RunState | undefin
 
 export function saveState(dir: string, state: RunState, fsImpl: FileSystem = nodeFs): void {
   if (fsImpl !== nodeFs) {
-    const stateDir = path.join(dir, STATE_DIR);
-    fsImpl.mkdirSync(stateDir, { recursive: true });
-    const filePath = path.join(stateDir, STATE_FILE);
+    const stateDirectory = stateDir(dir);
+    fsImpl.mkdirSync(stateDirectory, { recursive: true });
+    const filePath = path.join(stateDirectory, STATE_FILE);
     fsImpl.writeFileSync(`${filePath}.tmp`, JSON.stringify(state, null, 2) + '\n', 'utf-8');
     fsImpl.renameSync(`${filePath}.tmp`, filePath);
     return;

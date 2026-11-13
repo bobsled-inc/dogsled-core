@@ -6,6 +6,7 @@ import { recordHistory } from './journal.js';
 import { createHash } from 'node:crypto';
 import { Checkpoint, Evidence, type OnboardingState, type StepId } from './schema.js';
 import { inputFiles, readBounded, writeLocal, databaseFingerprint } from './files.js';
+import { localStateDirName } from '@bobsled-inc/connections';
 
 export async function inputHash(
   root: string,
@@ -44,7 +45,7 @@ export async function saveAttempt(
   requireStep(tutorial, step);
   await writeLocal(
     root,
-    `.dogsled/onboarding/${step}.attempt.json`,
+    `${localStateDirName(root)}/onboarding/${step}.attempt.json`,
     JSON.stringify({
       status,
       tutorial: tutorial.id,
@@ -76,7 +77,7 @@ export async function inspectOnboarding(
     let evidence: Checkpoint | undefined;
     try {
       evidence = Checkpoint.parse(
-        JSON.parse(await readBounded(root, `.dogsled/onboarding/${step.id}.json`))
+        JSON.parse(await readBounded(root, `${localStateDirName(root)}/onboarding/${step.id}.json`))
       );
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
@@ -84,7 +85,9 @@ export async function inspectOnboarding(
     let attempt: z.infer<typeof Attempt> | undefined;
     try {
       attempt = Attempt.parse(
-        JSON.parse(await readBounded(root, `.dogsled/onboarding/${step.id}.attempt.json`))
+        JSON.parse(
+          await readBounded(root, `${localStateDirName(root)}/onboarding/${step.id}.attempt.json`)
+        )
       );
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
@@ -129,11 +132,11 @@ export async function saveCheckpoint(
   });
   await writeLocal(
     root,
-    `.dogsled/onboarding/${step}.json`,
+    `${localStateDirName(root)}/onboarding/${step}.json`,
     `${JSON.stringify(record, null, 2)}\n`
   );
   await recordHistory(root, record, tutorial);
 }
 export async function writeArtifact(root: string, html: string): Promise<string> {
-  return writeLocal(root, '.dogsled/onboarding/index.html', html);
+  return writeLocal(root, `${localStateDirName(root)}/onboarding/index.html`, html);
 }

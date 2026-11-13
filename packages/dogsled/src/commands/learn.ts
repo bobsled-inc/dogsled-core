@@ -11,6 +11,7 @@ import { waitForProcess } from '../runtime/process.js';
 import type { GlobalOptions, OutputOptions } from '../types/index.js';
 import { LESSONS } from './lessons.js';
 import type { Lesson } from './lessons.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 function createChalk(options: OutputOptions): typeof chalk {
   if (options.noColor || process.env['NO_COLOR'] !== undefined) {
@@ -79,7 +80,7 @@ function packageJsonHasWorkspaces(path: string): boolean {
 
 function getProgressPath(): string {
   const root = findProjectRoot();
-  return join(root, '.dogsled', 'tutor-lab', '.dogsled-tutor-progress.json');
+  return join(localStateDir(root), 'tutor-lab', '.dogsled-tutor-progress.json');
 }
 
 function readProgress(): ProgressFile {
@@ -134,7 +135,7 @@ function resolveLessonCwd(lesson: Lesson): string {
     case 'entity':
       return join(root, 'workspace', 'entity-graph-demo');
     case 'lab': {
-      const labDir = join(root, '.dogsled', 'tutor-lab');
+      const labDir = join(localStateDir(root), 'tutor-lab');
       mkdirSync(labDir, { recursive: true });
       return labDir;
     }

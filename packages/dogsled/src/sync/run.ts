@@ -37,6 +37,7 @@ import type {
   SqlRunnerModule,
 } from '@bobsled-inc/connections';
 import type { SyncSpec } from './spec.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 export interface RunSyncOptions {
   spec: SyncSpec;
@@ -216,7 +217,7 @@ export async function runSync(options: RunSyncOptions): Promise<SyncRunSummary> 
   const dialect: SyncSqlDialect = sourceType;
   const store: SyncStateStore =
     options.stateStore ??
-    new FileSyncStateStore(options.stateDir ?? join(projectRoot, '.dogsled', 'sync-state'));
+    new FileSyncStateStore(options.stateDir ?? join(localStateDir(projectRoot), 'sync-state'));
 
   let lease = dryRun
     ? undefined
