@@ -24,8 +24,9 @@ describe('destination spellings in pipeline config', () => {
       type: MANAGED_DESTINATION_TYPE,
       [BLUEPRINT_CONNECTION_REF_KEY]: 'warehouse-prod',
     });
-    for (const other of REFS.filter((key) => key !== BLUEPRINT_CONNECTION_REF_KEY))
+    for (const other of REFS.filter((key) => key !== BLUEPRINT_CONNECTION_REF_KEY)) {
       expect(result).not.toHaveProperty(other);
+    }
   });
 
   it.each(REFS)('strips %s on concrete destinations', (ref) => {

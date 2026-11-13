@@ -12,8 +12,9 @@ export const BLUEPRINT_SOURCE_KIND_KEY = 'dogsled_source_kind';
 export const MANAGED_DESTINATION_TYPE = 'dogsled_managed';
 
 function aliasesTo(spellings: readonly string[], current: string): Record<string, string> {
-  if (!spellings.includes(current))
+  if (!spellings.includes(current)) {
     throw new Error(`Blueprint spelling ${current} is missing from legacy-names.ts.`);
+  }
   return Object.fromEntries(
     spellings.filter((spelling) => spelling !== current).map((spelling) => [spelling, current])
   );

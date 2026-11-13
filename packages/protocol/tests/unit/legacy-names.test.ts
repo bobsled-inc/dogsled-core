@@ -61,8 +61,9 @@ describe('Blueprint spellings Core reads', () => {
 
   it('treats only the exact managed types as managed, never a prefix match', () => {
     for (const type of MANAGED_TYPES) expect(isManagedDestinationType(type)).toBe(true);
-    for (const type of ['bobsled_managed_snowflake', 'dogsled_managed_x', 'snowflake', 3])
+    for (const type of ['bobsled_managed_snowflake', 'dogsled_managed_x', 'snowflake', 3]) {
       expect(isManagedDestinationType(type)).toBe(false);
+    }
   });
 
   it.each(
@@ -189,10 +190,11 @@ describe('Blueprint spellings Core reads', () => {
       document,
       deprecations: [],
     });
-    for (const key of SOURCE_KIND_SPELLINGS)
+    for (const key of SOURCE_KIND_SPELLINGS) {
       expect(
         normalizeLegacyBlueprintKeys({ [key]: 'user-data' }, { kind: 'destination' }).document
       ).toEqual({ [key]: 'user-data' });
+    }
   });
 
   it.each([null, undefined, 3, 'data', []])('preserves non-object input %s', (document) => {

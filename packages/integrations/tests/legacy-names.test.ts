@@ -24,8 +24,9 @@ describe.each([
       dogsled_unrelated: true,
       bobsled_unrelated: true,
     });
-    for (const key of [ref, kind, otherRef, 'dogsled_unrelated', 'bobsled_unrelated'])
+    for (const key of [ref, kind, otherRef, 'dogsled_unrelated', 'bobsled_unrelated']) {
       expect(result).not.toHaveProperty(key);
+    }
   });
 
   it('rejects conflicting duplicates before stripping either key', () => {

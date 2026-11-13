@@ -140,8 +140,9 @@ function stripDestinationExtensionKeys(input: unknown): unknown {
     if (
       !isManagedDestination &&
       BLUEPRINT_EXTENSION_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
-    )
+    ) {
       continue;
+    }
     out[key] = value;
   }
   return out;
