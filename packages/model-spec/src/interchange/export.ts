@@ -3,6 +3,7 @@ import { exportOntologyDocuments } from '../ontology/conversion.js';
 import { z } from 'zod';
 
 import { AgenticModelSpecSchema, getModelOutputColumns } from '../agentic/model.js';
+import { discardedKeyPaths } from '../compiler/discarded-keys.js';
 import { SourceSpecSchema, TransformSpecSchema } from '../compiler/schemas.js';
 import { MetricSpecSchema } from '../entities/metric.js';
 import { RelationshipSpecSchema } from '../entities/relationship.js';
@@ -13,7 +14,6 @@ import {
 } from '../entities/semantic-metadata.js';
 import { readOssieProfile } from '../ossie/profiles.js';
 import { logicalTypeForSqlType } from '../ossie/types.js';
-import { assertNoDiscardedKeys } from '../ossie/translate.js';
 import { InterchangeSchema, type OssieCustomExtension } from './storage.js';
 import {
   assertBounded,
@@ -137,10 +137,23 @@ function aiContextProperty(aiContext: unknown): { ai_context?: unknown } {
   return aiContext === undefined ? {} : { ai_context: aiContext };
 }
 
-function parseDataset(kind: 'source' | 'model', value: unknown, index: number): NativeDataset {
+/**
+ * Native schemas strip keys they do not use, such as a type on a union branch column, and
+ * loadProject only warns about them. Export leaves them out too and warns once per dataset,
+ * folding array positions so one repeated key is listed once.
+ */
+function ignoredProperties(raw: Record<string, unknown>, parsed: unknown): string[] {
+  return [
+    ...new Set(discardedKeyPaths(raw, parsed).map((path) => path.replace(/\[\d+\]/g, '[*]'))),
+  ].sort();
+}
+
+function parseDataset(
+  kind: 'source' | 'model',
+  value: unknown
+): NativeDataset & { ignoredProperties: string[] } {
   assertBounded(value);
   const raw = record(value);
-  const path = `project#${kind === 'source' ? 'sources' : 'models'}.${index}`;
   let parsed: unknown;
   let outputColumns: readonly unknown[];
   if (kind === 'source') {
@@ -156,7 +169,6 @@ function parseDataset(kind: 'source' | 'model', value: unknown, index: number): 
     parsed = model;
     outputColumns = getModelOutputColumns(model);
   }
-  assertNoDiscardedKeys(raw, parsed, path);
   const document = record(parsed);
   const name = String(document['name']);
   const reference =
@@ -174,6 +186,7 @@ function parseDataset(kind: 'source' | 'model', value: unknown, index: number): 
     path: `project#datasets.${name}`,
     document,
     outputColumns,
+    ignoredProperties: ignoredProperties(raw, parsed),
     ...(catalogOnlyReason ? { catalogOnlyReason } : {}),
   };
 }
@@ -194,23 +207,37 @@ function isSelectedDatasetInput(
   );
 }
 
-function parseProject(request: ExportOssieDocumentRequest): {
+function parseProject(
+  request: ExportOssieDocumentRequest,
+  result: ConversionResult
+): {
   datasets: NativeDataset[];
   metrics: Record<string, unknown>[];
   relationships: Record<string, unknown>[];
 } {
   const datasets = [
-    ...request.project.sources.flatMap((value, index) =>
+    ...request.project.sources.flatMap((value) =>
       isSelectedDatasetInput('source', value, request.selection)
-        ? [parseDataset('source', value, index)]
+        ? [parseDataset('source', value)]
         : []
     ),
-    ...request.project.models.flatMap((value, index) =>
+    ...request.project.models.flatMap((value) =>
       isSelectedDatasetInput('model', value, request.selection)
-        ? [parseDataset('model', value, index)]
+        ? [parseDataset('model', value)]
         : []
     ),
   ].sort((left, right) => left.reference.localeCompare(right.reference));
+  for (const { ignoredProperties: paths, name, path } of datasets) {
+    if (!paths.length) continue;
+    warn(
+      result,
+      'native_property_ignored',
+      path,
+      `Dogsled ignores ${paths.join(', ')} on ${name}, so the export leaves ${paths.length === 1 ? 'it' : 'them'} out.`,
+      'Remove the property from the Blueprint, or move it to a supported property.',
+      objectReference(name)
+    );
+  }
   const references = new Set<string>();
   for (const dataset of datasets) {
     if (references.has(dataset.reference)) {
@@ -911,7 +938,7 @@ export function exportOssieDocument(request: ExportOssieDocumentRequest): Conver
         'Remove --all or remove the explicit selectors.'
       );
     }
-    const project = parseProject(request);
+    const project = parseProject(request, result);
     const selected = selectedDatasets(project.datasets, request.selection);
     const selectedReferences = new Set(selected.map((dataset) => dataset.reference));
     const selectedNames = new Set<string>();
