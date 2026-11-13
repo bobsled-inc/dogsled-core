@@ -116,6 +116,20 @@
     ],
     "notices": []
   },
+  "eventsource-parser@3.0.6": {
+    "license": "MIT",
+    "source": "https://github.com/rexxars/eventsource-parser/blob/v3.0.6/LICENSE",
+    "tarballIntegrity": "sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==",
+    "files": {},
+    "licenses": [],
+    "packageDocuments": [
+      {
+        "name": "Reviewed upstream package LICENSE",
+        "text": "MIT License\n\nCopyright (c) 2025 Espen Hovlandsdal <espen@hovlandsdal.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+      }
+    ],
+    "notices": []
+  },
   "@opentelemetry/api@1.9.1": {
     "files": {
       "build/esm/version.js": "6f5e43026e803452354d35f78dbb3e2e268a7ce481776dada5367a680f085478",
