@@ -211,7 +211,7 @@ export function createAgenticRowWrite(
 export function splitAgenticRowText(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
   const parts: string[] = [];
-  for (let start = 0; start < text.length;) {
+  for (let start = 0; start < text.length; ) {
     let end = Math.min(text.length, start + maxChars);
     const last = text.charCodeAt(end - 1);
     if (end < text.length && end - start > 1 && last >= 0xd800 && last <= 0xdbff) end--;
@@ -249,7 +249,7 @@ export function walkAgenticWrites(
   if (byId.size !== infos.length) return corrupt();
   const committed = new Set<string>();
   let newer = revision + 1;
-  for (let id = head; id !== '';) {
+  for (let id = head; id !== ''; ) {
     const info = byId.get(id);
     if (!info || committed.has(id) || info.revision >= newer) return corrupt();
     committed.add(id);
