@@ -84,6 +84,7 @@ export async function runFileLoader(
   const stderr = dependencies.stderr ?? process.stderr;
   const logger = createLogger(stderr, rawConfig.logFormat);
   const formatDef = getFormatDef(rawConfig.format);
+  const streamSubfolder = rawConfig.streamSubfolder ? `${rawConfig.streamSubfolder}/` : '';
 
   const providedTempRoot = dependencies.tempRootDir ? path.resolve(dependencies.tempRootDir) : null;
 
@@ -129,7 +130,7 @@ export async function runFileLoader(
   ): Promise<void> => {
     const safeStream = sanitizeStreamName(stream);
     const outputIndex = nextOutputIndex(outputIndexes, safeStream);
-    const destinationPath = `${safeStream}/${safeStream}-${outputIndex}${formatDef.extension}`;
+    const destinationPath = `${safeStream}/${streamSubfolder}${safeStream}-${outputIndex}${formatDef.extension}`;
     const tempOutputPath = path.join(
       outputRootDir,
       buildTempFileName(safeStream, outputIndex, formatDef.extension)

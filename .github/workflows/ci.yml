@@ -51,6 +51,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Check committed skill and plugin output before builds
         run: pnpm skills:check
+      - name: Check committed built-in integration sources before builds
+        run: pnpm --filter @bobsled-inc/integrations check:sources
       - name: Dependency vulnerability audit
         if: >-
           ${{ github.event_name == 'schedule' ||
@@ -65,6 +67,8 @@ jobs:
       - name: Build
         run: pnpm build
         timeout-minutes: 10
+      - name: Verify the build did not change committed generated integration files
+        run: git diff --exit-code -- packages/integrations/src/builtin-sources packages/integrations/src/catalog/generated-data.ts packages/integrations/src/validation/generated-data.ts
       - name: Verify bundled third-party notices
         run: node scripts/release/third-party-notices.mjs --check
       - name: Check types, lint, docs, and formatting

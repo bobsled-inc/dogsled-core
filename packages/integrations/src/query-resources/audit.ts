@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import { resolveVia, SourceSchema } from '@bobsled-inc/extractor/core';
 import type {
   ApiIntegrationSpec,
@@ -8,13 +6,7 @@ import type {
 } from '@bobsled-inc/extractor/extractor';
 import type { Source } from '@bobsled-inc/extractor/core';
 
-import {
-  getResourcePath,
-  getSourceDir,
-  listSourceDirs,
-  listResourceFiles,
-  readYamlFile,
-} from '../loader.js';
+import { listSourceDirs, listResourceFiles, readResourceYaml, readSourceYaml } from '../loader.js';
 import { ResourceSpecSchema, SourceSpecSchema } from '../validate.js';
 import { analyzeGeneratedFilters } from './audit-candidates.js';
 import { collectHttpParamBodyInputRefs } from './audit-input-refs.js';
@@ -67,14 +59,15 @@ export function auditQueryResources(): QueryResourceAuditReport {
   const entries: QueryResourceAuditEntry[] = [];
 
   for (const integrationName of listSourceDirs()) {
-    const sourceDir = getSourceDir(integrationName);
     const source = SourceSchema.parse(
-      SourceSpecSchema.parse(readYamlFile(join(sourceDir, 'source.yml')))
+      SourceSpecSchema.parse(readSourceYaml(integrationName, 'source.yml'))
     );
 
     for (const resourceName of listResourceFiles(integrationName)) {
-      const resourcePath = getResourcePath(integrationName, resourceName);
-      const rawResource = readYamlFile(resourcePath) as Record<string, unknown>;
+      const rawResource = readResourceYaml(integrationName, resourceName) as Record<
+        string,
+        unknown
+      >;
       const resource = {
         ...ResourceSpecSchema.parse(rawResource),
         integration: integrationName,

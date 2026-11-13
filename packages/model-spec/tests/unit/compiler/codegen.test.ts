@@ -956,7 +956,7 @@ describe('generateSelectSql — flatten_json', () => {
       dialect: 'duckdb',
       expectedSnippets: [
         "JOIN UNNEST(t0.data -> '$.workspaces') AS ws ON TRUE",
-        "JOIN UNNEST(ws -> '$.members') AS mem ON TRUE",
+        "JOIN UNNEST(ws -> 'members') AS mem ON TRUE",
         "CAST((mem ->> '$.id') AS TEXT) AS member_id",
       ],
     },

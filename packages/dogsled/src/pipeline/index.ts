@@ -971,6 +971,17 @@ function resolveNamedDestination(
   }
 }
 
+function fileDestinationOptions(
+  destination: { stream_subfolder?: string | undefined },
+  env: NodeJS.ProcessEnv
+): Pick<PipelineOptions, 'streamSubfolder'> {
+  return {
+    ...(destination.stream_subfolder
+      ? { streamSubfolder: resolveValue(destination.stream_subfolder, env)! }
+      : {}),
+  };
+}
+
 function resolveSingleDestinationOptions(
   destination: DestinationConfig,
   env: NodeJS.ProcessEnv,
@@ -1136,6 +1147,7 @@ function resolveSingleDestinationOptions(
       return {
         dest: 'local',
         format: resolveValue(destination.format, env)!,
+        ...fileDestinationOptions(destination, env),
         ...loadStrategyOption,
         ...schemaBehaviorOption,
       };
@@ -1145,6 +1157,7 @@ function resolveSingleDestinationOptions(
         format: resolveValue(destination.format, env)!,
         gcsBucket: resolveValue(destination.bucket, env)!,
         ...(destination.prefix ? { gcsPrefix: resolveValue(destination.prefix, env)! } : {}),
+        ...fileDestinationOptions(destination, env),
         ...loadStrategyOption,
         ...schemaBehaviorOption,
       };
@@ -1154,6 +1167,7 @@ function resolveSingleDestinationOptions(
         format: resolveValue(destination.format, env)!,
         s3Bucket: resolveValue(destination.bucket, env)!,
         ...(destination.prefix ? { s3Prefix: resolveValue(destination.prefix, env)! } : {}),
+        ...fileDestinationOptions(destination, env),
         ...loadStrategyOption,
         ...schemaBehaviorOption,
       };

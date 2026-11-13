@@ -152,6 +152,8 @@ export interface PipelineOptions {
   resource?: string[];
   s3Bucket?: string;
   s3Prefix?: string;
+  /** Folder added inside each stream's folder on local, gcs and s3 destinations. */
+  streamSubfolder?: string;
   startDate?: string;
   endDate?: string;
   sfAccount?: string;

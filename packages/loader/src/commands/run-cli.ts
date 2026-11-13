@@ -270,6 +270,7 @@ export function buildConfigInput(options: Record<string, unknown>): Record<strin
         outputDir: options.outputDir,
         gcsBucket: options.gcsBucket,
         gcsPrefix: options.gcsPrefix,
+        streamSubfolder: options.streamSubfolder,
         bufferSize: options.bufferSize,
         logFormat: options.logFormat,
       });
@@ -283,6 +284,7 @@ export function buildConfigInput(options: Record<string, unknown>): Record<strin
         s3Region: options.s3Region,
         s3RoleArn: options.s3RoleArn,
         s3ExternalId: options.s3ExternalId,
+        streamSubfolder: options.streamSubfolder,
         bufferSize: options.bufferSize,
         logFormat: options.logFormat,
       });
@@ -396,6 +398,15 @@ export function buildConfigInput(options: Record<string, unknown>): Record<strin
         streamTables: options.streamTable,
         vectorDimension: options.vectorDimension,
         vectorColumns: parseStringListOption(options.vectorColumns),
+      });
+    case 'local':
+      return resolveNestedPlaceholders({
+        dest,
+        format: options.format,
+        outputDir: options.outputDir,
+        streamSubfolder: options.streamSubfolder,
+        bufferSize: options.bufferSize,
+        logFormat: options.logFormat,
       });
     default:
       return resolveNestedPlaceholders({

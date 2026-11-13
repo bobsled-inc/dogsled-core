@@ -646,14 +646,14 @@ export function generateSelectSql(
  * window semantics we deliberately emitted.
  *
  * `transpile(sql, d, d)` is run for validation and formatting, not to change
- * meaning, but its round trip can rewrite these constructs in ways that change
+ * meaning, but its round trip rewrites three constructs in ways that change
  * results:
  *
- * - `NULLS LAST` inside a window ORDER BY is dropped on BigQuery and MySQL,
- *   and inside a WINDOW clause on MySQL. Null placement decides which row
- *   `ROW_NUMBER() = 1` returns, so losing it changes `dedupe` and `qualify`
- *   results. Older transpiler releases also dropped it on more dialects.
- * - The frame `EXCLUDE` clause was dropped by older transpiler releases.
+ * - `NULLS LAST` inside a window ORDER BY is dropped on BigQuery, DuckDB and
+ *   MySQL, and inside a WINDOW clause on Snowflake, Postgres, Redshift, DuckDB
+ *   and MySQL. Null placement decides which row `ROW_NUMBER() = 1` returns, so
+ *   losing it changes `dedupe` and `qualify` results.
+ * - The frame `EXCLUDE` clause is dropped.
  * - `QUALIFY` is rewritten into a wrapping subquery for Postgres-family
  *   targets, and the rewrite moves `LIMIT` inside the subquery, so rows are
  *   taken before the window filter rather than after. On a fixture of three

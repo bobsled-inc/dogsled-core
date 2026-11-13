@@ -1,6 +1,6 @@
 # @bobsled-inc/loader — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-12 -->
 
 Reads Dogsled protocol messages from stdin and loads data into destinations (files or databases).
 
@@ -85,6 +85,7 @@ These destinations should fail fast with user-facing validation errors when `vec
 - **local**: Moves converted file into output directory
 - **gcs**: Dynamic import of `@google-cloud/storage` (optional peer dep)
 - **Path safety**: Destination paths normalized and reject traversal outside configured root/prefix
+- **Stream subfolder**: Opt-in `streamSubfolder` (`--stream-subfolder`, `stream_subfolder`) places files at `<stream>/<subfolder>/<stream>-<n>.<ext>`. Its rule is `isValidStreamSubfolder` in `@bobsled-inc/protocol`, shared with the `dogsled.yml` schema. Unset, the path is exactly `<stream>/<stream>-<n>.<ext>`
 
 ## Format Notes
 

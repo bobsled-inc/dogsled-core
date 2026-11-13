@@ -1,6 +1,6 @@
 # @bobsled-inc/protocol — Agent Guide
 
-<!-- last-reviewed: 2026-08-28 -->
+<!-- last-reviewed: 2026-11-12 -->
 
 Shared Dogsled protocol message types plus metadata-safe configuration contracts.
 Packages that only validate manifests or configuration should depend on this
@@ -10,28 +10,29 @@ package instead of a connection runtime.
 
 ## What This Package Exports
 
-| Export                                           | When to use it                                                                                     |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `SchemaMessage`                                  | Emit before records for a stream — declares columns, key properties, load_strategy, cursor_field   |
-| `RecordMessage`                                  | Emit one per extracted row                                                                         |
-| `StateMessage`                                   | Emit after flushing records — incremental bookmark for a stream                                    |
-| `BatchMessage`                                   | Reference extractor-created JSONL or Parquet files (skip JS-level parsing)                         |
-| `ReplaceMessage`                                 | Replace a slice of a stream's rows (`key` in `values`) before the slice's new rows are written     |
-| `LogMessage`                                     | Structured log entry (stderr only)                                                                 |
-| `MetricMessage`                                  | Extraction run metrics (stderr only)                                                               |
-| `StdoutMessage`                                  | Union of SCHEMA, RECORD, STATE, BATCH, LINEAGE, REPLACE — data channel                             |
-| `StderrMessage`                                  | Union of LOG, METRIC — control channel                                                             |
-| `SchemaColumn`                                   | Column definition (name, type, optional `primary_key`; vector columns also require `dimension`)    |
-| `ColumnType`                                     | `'string' \| 'integer' \| 'number' \| 'boolean' \| 'timestamp' \| 'array' \| 'object' \| 'vector'` |
-| `COLUMN_TYPES` / `COLUMN_TYPE_SET`               | Canonical tuple and O(1) membership set                                                            |
-| `LoadStrategy`                                   | `'append' \| 'merge' \| 'full_refresh'`                                                            |
-| `LOAD_STRATEGIES` / `LOAD_STRATEGY_SET`          | Canonical tuple and O(1) membership set                                                            |
-| `isLoadStrategy`                                 | Type guard narrowing string to `LoadStrategy`                                                      |
-| `BatchEncoding`                                  | Encoding metadata for batch files (format + optional compression)                                  |
-| `CommandError`                                   | CLI error class with `exitCode` (default 2) — use for all user-facing errors                       |
-| `EnvPlaceholderSchema`                           | Require `$VARNAME` or `${{ env.VARNAME }}` for secret-valued configuration                         |
-| `ModelConnectionSchema` / `PlatformConfigSchema` | Validate shared model roles and platform metadata without loading connection drivers               |
-| `validateSqlIdentifier` / `isValidSqlIdentifier` | Validate unquoted identifiers, optionally dot-qualified; bind SQL values separately                |
+| Export                                           | When to use it                                                                                                 |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `SchemaMessage`                                  | Emit before records for a stream — declares columns, key properties, load_strategy, cursor_field               |
+| `RecordMessage`                                  | Emit one per extracted row                                                                                     |
+| `StateMessage`                                   | Emit after flushing records — incremental bookmark for a stream                                                |
+| `BatchMessage`                                   | Reference extractor-created JSONL or Parquet files (skip JS-level parsing)                                     |
+| `ReplaceMessage`                                 | Replace a slice of a stream's rows (`key` in `values`) before the slice's new rows are written                 |
+| `LogMessage`                                     | Structured log entry (stderr only)                                                                             |
+| `MetricMessage`                                  | Extraction run metrics (stderr only)                                                                           |
+| `StdoutMessage`                                  | Union of SCHEMA, RECORD, STATE, BATCH, LINEAGE, REPLACE — data channel                                         |
+| `StderrMessage`                                  | Union of LOG, METRIC — control channel                                                                         |
+| `SchemaColumn`                                   | Column definition (name, type, optional `primary_key`; vector columns also require `dimension`)                |
+| `ColumnType`                                     | `'string' \| 'integer' \| 'number' \| 'boolean' \| 'timestamp' \| 'array' \| 'object' \| 'vector'`             |
+| `COLUMN_TYPES` / `COLUMN_TYPE_SET`               | Canonical tuple and O(1) membership set                                                                        |
+| `LoadStrategy`                                   | `'append' \| 'merge' \| 'full_refresh'`                                                                        |
+| `LOAD_STRATEGIES` / `LOAD_STRATEGY_SET`          | Canonical tuple and O(1) membership set                                                                        |
+| `isLoadStrategy`                                 | Type guard narrowing string to `LoadStrategy`                                                                  |
+| `BatchEncoding`                                  | Encoding metadata for batch files (format + optional compression)                                              |
+| `CommandError`                                   | CLI error class with `exitCode` (default 2) — use for all user-facing errors                                   |
+| `EnvPlaceholderSchema`                           | Require `$VARNAME` or `${{ env.VARNAME }}` for secret-valued configuration                                     |
+| `ModelConnectionSchema` / `PlatformConfigSchema` | Validate shared model roles and platform metadata without loading connection drivers                           |
+| `validateSqlIdentifier` / `isValidSqlIdentifier` | Validate unquoted identifiers, optionally dot-qualified; bind SQL values separately                            |
+| `isValidStreamSubfolder`                         | Validate the folder a file destination adds inside each stream's folder; the loader and `dogsled.yml` share it |
 
 ## Protocol Rules
 

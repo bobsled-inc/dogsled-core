@@ -6,15 +6,7 @@
  * snapshot and while checking that snapshot for drift in tests.
  */
 
-import { join } from 'node:path';
-
-import {
-  getResourcePath,
-  getSourceDir,
-  listResourceFiles,
-  listSourceDirs,
-  readYamlFile,
-} from '../loader.js';
+import { listResourceFiles, listSourceDirs, readResourceYaml, readSourceYaml } from '../loader.js';
 import {
   INTEGRATION_VALIDATION_CATALOG_SCHEMA_VERSION,
   type IntegrationValidationAuthSetup,
@@ -133,9 +125,8 @@ function buildSource(name: string): IntegrationValidationSource | undefined {
   let sourceRaw: unknown;
   let metaRaw: unknown;
   try {
-    const sourceDir = getSourceDir(name);
-    sourceRaw = readYamlFile(join(sourceDir, 'source.yml'));
-    metaRaw = readYamlFile(join(sourceDir, 'meta.yml'));
+    sourceRaw = readSourceYaml(name, 'source.yml');
+    metaRaw = readSourceYaml(name, 'meta.yml');
   } catch {
     return undefined;
   }
@@ -152,7 +143,7 @@ function buildSource(name: string): IntegrationValidationSource | undefined {
   const resources: IntegrationValidationResource[] = [];
   for (const resourceName of listResourceFiles(name)) {
     try {
-      const resource = buildResource(readYamlFile(getResourcePath(name, resourceName)));
+      const resource = buildResource(readResourceYaml(name, resourceName));
       if (resource) resources.push(resource);
     } catch {
       // Malformed source YAML is rejected by the integration validation suite;

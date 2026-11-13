@@ -203,6 +203,9 @@ function buildRawLoadArgs(options: PipelineOptions): string[] {
   if (options.s3Prefix) {
     args.push('--s3-prefix', options.s3Prefix);
   }
+  if (options.streamSubfolder) {
+    args.push('--stream-subfolder', options.streamSubfolder);
+  }
   if (options.bufferSize) {
     args.push('--buffer-size', String(options.bufferSize));
   }

@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { type Command, Option } from 'commander';
 import YAML from 'yaml';
 import { CommandError, formatSpecValidationMessage } from '@bobsled-inc/protocol';
-import { findAction, getIntegrationsDir, loadActions } from '@bobsled-inc/integrations';
+import { findAction, loadBuiltInActions } from '@bobsled-inc/integrations';
 import { resolveProjectIndex } from '@bobsled-inc/project-index';
 import { buildFqName, quoteIdentifier, quoteLiteral } from '@bobsled-inc/model-spec';
 import {
@@ -210,7 +210,7 @@ async function activateHandler(syncName: string, options: ActivateOptions): Prom
   const rawAction = options.actionName
     ? (() => {
         const result = findAction(
-          loadActions(getIntegrationsDir(), resolveProjectIndex(process.cwd())),
+          loadBuiltInActions(resolveProjectIndex(process.cwd())),
           options.actionName
         );
         if (result.kind === 'found') return result.action.spec;
