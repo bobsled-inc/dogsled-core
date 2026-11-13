@@ -44,7 +44,7 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "tsx scripts/generate-catalog-manifest.ts && tsx scripts/generate-validation-catalog.ts && tsup",
+    "build": "tsx scripts/generate-builtin-sources.ts && tsx scripts/generate-catalog-manifest.ts && tsx scripts/generate-validation-catalog.ts && tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --cache",
     "audit:query-resources": "tsx scripts/audit-query-resources.ts",
@@ -52,6 +52,7 @@
     "render:query-capabilities": "tsx scripts/render-query-capabilities.ts",
     "render:query-table": "tsx scripts/render-query-table.ts",
     "render:catalog": "tsx scripts/render-catalog.ts",
+    "generate:sources": "tsx scripts/generate-builtin-sources.ts",
     "generate:catalog": "tsx scripts/generate-catalog-manifest.ts",
     "generate:validation-catalog": "tsx scripts/generate-validation-catalog.ts",
     "test": "vitest run",

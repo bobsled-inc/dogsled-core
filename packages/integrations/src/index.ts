@@ -1,13 +1,9 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-
 import {
   clearCache as clearLoaderCache,
-  readYamlFile,
   listSourceDirs,
-  getSourceDir,
   listResourceFiles,
-  getResourcePath,
+  readResourceYaml,
+  readSourceYaml,
 } from './loader.js';
 import { clearQueryResourceCatalogCache } from './query-resources/catalog.js';
 import { MetaSpecSchema, SourceSpecSchema, ResourceSpecSchema } from './validate.js';
@@ -210,9 +206,8 @@ function deriveSourceType(spec: Record<string, unknown>): SourceType {
 
 export function listSources(): SourceSummary[] {
   return listSourceDirs().map((name) => {
-    const dir = getSourceDir(name);
-    const meta = MetaSpecSchema.parse(readYamlFile(join(dir, 'meta.yml')));
-    const spec = readYamlFile(join(dir, 'source.yml')) as Record<string, unknown>;
+    const meta = MetaSpecSchema.parse(readSourceYaml(name, 'meta.yml'));
+    const spec = readSourceYaml(name, 'source.yml') as Record<string, unknown>;
     const resourceNames = listResourceFiles(name);
     const sourceType = deriveSourceType(spec);
     return {
@@ -232,9 +227,8 @@ export function listIntegrations(): IntegrationSummary[] {
 }
 
 export function getSource(name: string): Source {
-  const dir = getSourceDir(name);
-  const meta = MetaSpecSchema.parse(readYamlFile(join(dir, 'meta.yml')));
-  const spec = SourceSpecSchema.parse(readYamlFile(join(dir, 'source.yml')));
+  const meta = MetaSpecSchema.parse(readSourceYaml(name, 'meta.yml'));
+  const spec = SourceSpecSchema.parse(readSourceYaml(name, 'source.yml'));
   const resourceNames = listResourceFiles(name);
   return {
     name,
@@ -261,11 +255,7 @@ export function getResources(sourceName: string): IntegrationResource[] {
 }
 
 export function getResource(sourceName: string, resourceName: string): IntegrationResource {
-  const resourcePath = getResourcePath(sourceName, resourceName);
-  if (!existsSync(resourcePath)) {
-    throw new Error(`Resource "${resourceName}" not found for source "${sourceName}"`);
-  }
-  const resource = ResourceSpecSchema.parse(readYamlFile(resourcePath));
+  const resource = ResourceSpecSchema.parse(readResourceYaml(sourceName, resourceName));
   return { source_name: sourceName, integration_name: sourceName, resource };
 }
 

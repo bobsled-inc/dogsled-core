@@ -17,15 +17,7 @@
  * so the walker can safely use hand-rolled type guards.
  */
 
-import { join } from 'node:path';
-
-import {
-  getResourcePath,
-  getSourceDir,
-  listResourceFiles,
-  listSourceDirs,
-  readYamlFile,
-} from '../loader.js';
+import { listResourceFiles, listSourceDirs, readResourceYaml, readSourceYaml } from '../loader.js';
 
 import {
   CATALOG_MANIFEST_SCHEMA_VERSION,
@@ -460,10 +452,14 @@ function parseSource(raw: unknown): ParsedSource | undefined {
   return { transports, default_transport, auth_env_vars };
 }
 
-function loadResourceFile(path: string, fallbackVia: string): LoadedResourceFile | undefined {
+function loadResourceFile(
+  sourceName: string,
+  resourceName: string,
+  fallbackVia: string
+): LoadedResourceFile | undefined {
   let parsed: unknown;
   try {
-    parsed = readYamlFile(path);
+    parsed = readResourceYaml(sourceName, resourceName);
   } catch {
     return undefined;
   }
@@ -494,13 +490,11 @@ function inferSourceType(defaultTransport: string, transports: string[]): Catalo
 }
 
 function buildCatalogSource(sourceName: string): CatalogSource | undefined {
-  const sourceDir = getSourceDir(sourceName);
-
   let metaRaw: unknown;
   let sourceRaw: unknown;
   try {
-    metaRaw = readYamlFile(join(sourceDir, 'meta.yml'));
-    sourceRaw = readYamlFile(join(sourceDir, 'source.yml'));
+    metaRaw = readSourceYaml(sourceName, 'meta.yml');
+    sourceRaw = readSourceYaml(sourceName, 'source.yml');
   } catch {
     return undefined;
   }
@@ -528,8 +522,7 @@ function buildCatalogSource(sourceName: string): CatalogSource | undefined {
   // CatalogResource with two variants.
   const byEntity = new Map<string, LoadedResourceFile[]>();
   for (const resourceName of listResourceFiles(sourceName)) {
-    const resourcePath = getResourcePath(sourceName, resourceName);
-    const loaded = loadResourceFile(resourcePath, defaultTransport);
+    const loaded = loadResourceFile(sourceName, resourceName, defaultTransport);
     if (!loaded) continue;
     const bucket = byEntity.get(loaded.entity) ?? [];
     bucket.push(loaded);

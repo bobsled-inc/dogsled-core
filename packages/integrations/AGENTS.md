@@ -1,6 +1,6 @@
 # @bobsled-inc/integrations — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-13 -->
 
 YAML source library for API and MCP specs. Each source defines transport config, metadata, and per-resource endpoint specs consumed by the extractor.
 
@@ -64,15 +64,16 @@ The test suite (`validate-all.test.ts`) enforces these automatically:
 - **`meta.yml openapi_url` may be either an HTTPS URL or an integration-relative spec file** when a curated verify subset is needed for stable offline drift checks
 - **Do not duplicate extractor schemas** — `src/validate.ts` re-exports from the extractor package
 - **YAML cache**: `loader.ts` caches parsed YAML for CLI processes. Clear the cache in tests or long-running processes
+- **Built-in sources are embedded**: the loader reads `src/builtin-sources/generated-data.ts`, never `sources/` relative to its own file, because app bundlers move the compiled loader. After editing `sources/`, run `pnpm --filter @bobsled-inc/integrations generate:sources` (the build runs it first). Path helpers such as `getIntegrationsDir()` return a private per-process temp copy
 
 ## Key Source Files
 
-| File              | Purpose                                                   |
-| ----------------- | --------------------------------------------------------- |
-| `src/index.ts`    | Public API: listing, loading, searching sources           |
-| `src/loader.ts`   | Filesystem access, YAML parsing, cache, safe path helpers |
-| `src/validate.ts` | Zod schemas (re-exports from extractor)                   |
-| `src/types.ts`    | SourceSummary, Source, SourceResource types               |
+| File              | Purpose                                                        |
+| ----------------- | -------------------------------------------------------------- |
+| `src/index.ts`    | Public API: listing, loading, searching sources                |
+| `src/loader.ts`   | Embedded source access, YAML parsing, cache, safe path helpers |
+| `src/validate.ts` | Zod schemas (re-exports from extractor)                        |
+| `src/types.ts`    | SourceSummary, Source, SourceResource types                    |
 
 ## Development
 

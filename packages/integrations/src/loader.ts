@@ -1,12 +1,25 @@
-import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
-import { join, dirname, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve, sep } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCES_DIR = join(__dirname, '..', 'sources');
+import { BUILT_IN_SOURCE_FILES } from './builtin-sources/generated-data.js';
+
+// Built-in sources are embedded in the code (see `scripts/generate-builtin-sources.ts`).
+// Never locate them relative to this file: bundlers move it, and the old
+// `<this file>/../sources` lookup then fails with `Source "<name>" not found`.
+const NAME_CONTAINMENT_ROOT = resolve(sep, 'sources');
 const MAX_YAML_BYTES = 256 * 1024;
 const MAX_YAML_ALIASES = 50;
+const TEMP_ROOTS_KEY = Symbol.for('@bobsled-inc/integrations/materialized-sources');
 type SourceSpecSubdirectory = 'resources' | 'actions';
 
 // Cache is process-scoped and unbounded — appropriate for short-lived CLI processes.
@@ -16,6 +29,8 @@ type SourceSpecSubdirectory = 'resources' | 'actions';
 const yamlCache = new Map<string, unknown>();
 const subdirSpecIndexCache = new Map<string, Map<string, string>>();
 const entityIndexCache = new Map<string, Map<string, EntityVariantEntry[]>>();
+let builtInSourceNames: Set<string> | undefined;
+let materializedRoot: string | undefined;
 
 /**
  * One variant of a resource grouped by its canonical entity name. For
@@ -32,12 +47,62 @@ export interface EntityVariantEntry {
   via: string | undefined;
 }
 
+function sourceNames(): Set<string> {
+  if (!builtInSourceNames) {
+    builtInSourceNames = new Set(
+      Object.keys(BUILT_IN_SOURCE_FILES)
+        .filter((key) => key.includes('/'))
+        .map((key) => key.slice(0, key.indexOf('/')))
+    );
+  }
+  return builtInSourceNames;
+}
+
+function registerTemporaryRoot(root: string): void {
+  const registry = globalThis as unknown as Record<symbol, Set<string> | undefined>;
+  let roots = registry[TEMP_ROOTS_KEY];
+  if (!roots) {
+    const created = new Set<string>();
+    registry[TEMP_ROOTS_KEY] = created;
+    process.once('exit', () => {
+      for (const path of created) rmSync(path, { recursive: true, force: true });
+    });
+    roots = created;
+  }
+  roots.add(root);
+}
+
+/**
+ * Directory holding a private copy of the built-in sources, for callers that
+ * need real files (subprocesses, file-based action loading). Written once per
+ * process to `<fresh mkdtemp folder>/sources` and removed when the process exits.
+ */
+function builtInSourcesRoot(): string {
+  if (materializedRoot !== undefined && existsSync(materializedRoot)) return materializedRoot;
+
+  const parent = mkdtempSync(join(tmpdir(), 'dogsled-integrations-'));
+  const root = join(parent, 'sources');
+  try {
+    for (const [key, content] of Object.entries(BUILT_IN_SOURCE_FILES)) {
+      const target = join(root, ...key.split('/'));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, content, { flag: 'wx' });
+    }
+  } catch (error) {
+    rmSync(parent, { recursive: true, force: true });
+    throw error;
+  }
+  registerTemporaryRoot(parent);
+  materializedRoot = root;
+  return root;
+}
+
 export function getIntegrationsDir(): string {
   return getSourcesDir();
 }
 
 export function getSourcesDir(): string {
-  return SOURCES_DIR;
+  return builtInSourcesRoot();
 }
 
 /** Validate that a name contains no path separators or traversal sequences. */
@@ -47,11 +112,21 @@ export function assertSafeName(name: string, label: string): void {
   }
 
   // Defense-in-depth: verify the resolved path stays within the sources directory.
-  const root = resolve(SOURCES_DIR);
-  const resolved = resolve(SOURCES_DIR, name);
-  if (!resolved.startsWith(root + sep)) {
+  const resolved = resolve(NAME_CONTAINMENT_ROOT, name);
+  if (!resolved.startsWith(NAME_CONTAINMENT_ROOT + sep)) {
     throw new Error(`Invalid ${label}: "${name}"`);
   }
+}
+
+function parseYamlContent(content: string, label: string): unknown {
+  if (Buffer.byteLength(content, 'utf-8') > MAX_YAML_BYTES) {
+    throw new Error(`YAML file exceeds ${MAX_YAML_BYTES} byte safety limit: ${label}`);
+  }
+  return parseYaml(content, {
+    maxAliasCount: MAX_YAML_ALIASES,
+    prettyErrors: false,
+    uniqueKeys: true,
+  });
 }
 
 /**
@@ -67,23 +142,46 @@ export function readYamlFile(filePath: string): unknown {
     throw new Error(`YAML file exceeds ${MAX_YAML_BYTES} byte safety limit: ${filePath}`);
   }
 
-  const content = readFileSync(filePath, 'utf-8');
-  const parsed: unknown = parseYaml(content, {
-    maxAliasCount: MAX_YAML_ALIASES,
-    prettyErrors: false,
-    uniqueKeys: true,
-  });
+  const parsed = parseYamlContent(readFileSync(filePath, 'utf-8'), filePath);
   yamlCache.set(filePath, parsed);
   return parsed;
 }
 
-export function listSourceDirs(): string[] {
-  if (!existsSync(SOURCES_DIR)) return [];
+function builtInLabel(key: string): string {
+  return `sources/${key}`;
+}
 
-  return readdirSync(SOURCES_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !d.name.startsWith('_'))
-    .map((d) => d.name)
-    .sort();
+function readBuiltInYaml(key: string): unknown {
+  const cacheKey = `builtin:${key}`;
+  if (yamlCache.has(cacheKey)) return yamlCache.get(cacheKey);
+
+  const content = Object.hasOwn(BUILT_IN_SOURCE_FILES, key)
+    ? BUILT_IN_SOURCE_FILES[key]
+    : undefined;
+  if (content === undefined) {
+    throw new Error(`Built-in source file not found: ${builtInLabel(key)}`);
+  }
+  const parsed = parseYamlContent(content, builtInLabel(key));
+  yamlCache.set(cacheKey, parsed);
+  return parsed;
+}
+
+/** Read `meta.yml` or `source.yml` of a built-in source without touching the filesystem. */
+export function readSourceYaml(sourceName: string, fileName: 'meta.yml' | 'source.yml'): unknown {
+  assertSafeName(sourceName, 'source name');
+  if (!sourceNames().has(sourceName)) {
+    throw new Error(`Source "${sourceName}" not found`);
+  }
+  return readBuiltInYaml(`${sourceName}/${fileName}`);
+}
+
+/** Read a built-in resource spec by its `name:` without touching the filesystem. */
+export function readResourceYaml(sourceName: string, resourceName: string): unknown {
+  return readBuiltInYaml(resourceKey(sourceName, resourceName));
+}
+
+export function listSourceDirs(): string[] {
+  return [...sourceNames()].filter((name) => !name.startsWith('_')).sort();
 }
 
 export function listIntegrationDirs(): string[] {
@@ -92,42 +190,31 @@ export function listIntegrationDirs(): string[] {
 
 export function getSourceDir(name: string): string {
   assertSafeName(name, 'source name');
-  const resolved = join(SOURCES_DIR, name);
-  if (!existsSync(resolved)) {
+  if (!sourceNames().has(name)) {
     throw new Error(`Source "${name}" not found`);
   }
-  return resolved;
+  return join(builtInSourcesRoot(), name);
 }
 
 export function getIntegrationDir(name: string): string {
   return getSourceDir(name);
 }
 
-function listYamlFilesRecursive(directory: string): string[] {
-  if (!existsSync(directory)) return [];
-
-  const files: string[] = [];
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...listYamlFilesRecursive(path));
-    } else if (entry.isFile() && entry.name.endsWith('.yml')) {
-      files.push(path);
-    }
-  }
-
-  return files.sort();
+function listBuiltInYamlKeys(prefix: string): string[] {
+  return Object.keys(BUILT_IN_SOURCE_FILES)
+    .filter((key) => key.startsWith(`${prefix}/`) && key.endsWith('.yml'))
+    .sort();
 }
 
-function readSpecName(filePath: string, label: string): string {
-  const data = readYamlFile(filePath);
+function readSpecName(key: string, label: string): string {
+  const data = readBuiltInYaml(key);
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
-    throw new Error(`${label} spec must be a YAML object: ${filePath}`);
+    throw new Error(`${label} spec must be a YAML object: ${builtInLabel(key)}`);
   }
 
   const name = (data as Record<string, unknown>)['name'];
   if (typeof name !== 'string' || name.length === 0) {
-    throw new Error(`${label} spec must define a non-empty name: ${filePath}`);
+    throw new Error(`${label} spec must define a non-empty name: ${builtInLabel(key)}`);
   }
   assertSafeName(name, `${label} name`);
   return name;
@@ -142,18 +229,17 @@ function buildSubdirSpecIndex(
   const cached = subdirSpecIndexCache.get(cacheKey);
   if (cached) return cached;
 
-  const directory = join(SOURCES_DIR, sourceName, subdirectory);
   const byName = new Map<string, string>();
 
-  for (const filePath of listYamlFilesRecursive(directory)) {
-    const name = readSpecName(filePath, subdirectory.slice(0, -1));
+  for (const key of listBuiltInYamlKeys(`${sourceName}/${subdirectory}`)) {
+    const name = readSpecName(key, subdirectory.slice(0, -1));
     const existing = byName.get(name);
     if (existing) {
       throw new Error(
-        `Duplicate ${subdirectory.slice(0, -1)} name "${name}" in source "${sourceName}": ${existing} and ${filePath}`
+        `Duplicate ${subdirectory.slice(0, -1)} name "${name}" in source "${sourceName}": ${builtInLabel(existing)} and ${builtInLabel(key)}`
       );
     }
-    byName.set(name, filePath);
+    byName.set(name, key);
   }
 
   subdirSpecIndexCache.set(cacheKey, byName);
@@ -172,21 +258,26 @@ export function listActionFiles(sourceName: string): string[] {
   return listSourceSubdirFiles(sourceName, 'actions');
 }
 
-export function getResourcePath(sourceName: string, resourceName: string): string {
+function resourceKey(sourceName: string, resourceName: string): string {
   assertSafeName(resourceName, 'resource name');
-  const resourcePath = buildSubdirSpecIndex(sourceName, 'resources').get(resourceName);
-  if (!resourcePath) {
+  const key = buildSubdirSpecIndex(sourceName, 'resources').get(resourceName);
+  if (!key) {
     throw new Error(`Resource "${resourceName}" not found for source "${sourceName}"`);
   }
-  return resourcePath;
+  return key;
+}
+
+export function getResourcePath(sourceName: string, resourceName: string): string {
+  const key = resourceKey(sourceName, resourceName);
+  return join(builtInSourcesRoot(), ...key.split('/'));
 }
 
 /**
  * Build (or fetch from cache) a Map of canonical `entity` names to the list of
  * variants that share that entity for a single source. Used by Dogsled to resolve
  * pipeline `resources: [<entity>]` references against the right transport
- * variant (e.g. `issues` + `via: mcp` → `issues_mcp`). Reads YAML directly via
- * `readYamlFile` rather than the heavier Zod parsing path, so this stays cheap
+ * variant (e.g. `issues` + `via: mcp` → `issues_mcp`). Reads the embedded YAML directly
+ * rather than the heavier Zod parsing path, so this stays cheap
  * to call once per validation pass.
  */
 function buildEntityIndex(sourceName: string): Map<string, EntityVariantEntry[]> {
@@ -194,11 +285,10 @@ function buildEntityIndex(sourceName: string): Map<string, EntityVariantEntry[]>
   const cached = entityIndexCache.get(sourceName);
   if (cached) return cached;
 
-  const directory = join(SOURCES_DIR, sourceName, 'resources');
   const byEntity = new Map<string, EntityVariantEntry[]>();
 
-  for (const filePath of listYamlFilesRecursive(directory)) {
-    const data = readYamlFile(filePath);
+  for (const key of listBuiltInYamlKeys(`${sourceName}/resources`)) {
+    const data = readBuiltInYaml(key);
     if (!data || typeof data !== 'object' || Array.isArray(data)) continue;
     const obj = data as Record<string, unknown>;
     const name = obj['name'];
