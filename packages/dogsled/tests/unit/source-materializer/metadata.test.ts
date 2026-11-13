@@ -76,7 +76,8 @@ describe('metadata helpers', () => {
     const runner = fakeRunner();
     await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'duckdb' });
     expect(runner.calls.some((sql) => /CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS/i.test(sql))).toBe(true);
-    expect(runner.calls[0]).toContain('"analytics"."_dogsled_source_metadata"');
+    const create = runner.calls.find((sql: string) => sql.startsWith('CREATE TABLE'));
+    expect(create).toContain('"analytics"."_dogsled_source_metadata"');
   });
 
   it('ensureMetadataTable adds cursor and snapshot columns additively', async () => {
@@ -101,9 +102,11 @@ describe('metadata helpers', () => {
   it('uses BigQuery identifiers and scalar types for BigQuery metadata', async () => {
     const runner = fakeRunner();
     await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
-    expect(runner.calls[0]).toContain('`analytics`.`_dogsled_source_metadata`');
-    expect(runner.calls[0]).toContain('source_name  STRING');
-    expect(runner.calls[0]).toContain('record_count INT64');
+    // An earlier table name adds a catalog probe first once the rename applies.
+    const create = runner.calls.find((sql: string) => sql.startsWith('CREATE TABLE'));
+    expect(create).toContain('`analytics`.`_dogsled_source_metadata`');
+    expect(create).toContain('source_name  STRING');
+    expect(create).toContain('record_count INT64');
   });
 
   it('readMetadataRow returns undefined when no row exists', async () => {
