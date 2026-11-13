@@ -28,6 +28,7 @@ export {
   getAction,
   listActions,
   loadActions,
+  loadBuiltInActions,
   type Action,
   type ActionFilter,
   type ActionLookupResult,

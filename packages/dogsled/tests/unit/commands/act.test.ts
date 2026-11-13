@@ -9,16 +9,12 @@ const projectIndex = vi.hoisted(() => ({
   issues: [],
 }));
 
-vi.mock('@bobsled-inc/integrations', () => ({
-  getIntegrationsDir: vi.fn(() => '/bundled/integrations'),
-}));
-
 vi.mock('@bobsled-inc/project-index', () => ({
   resolveProjectIndex: vi.fn(() => projectIndex),
 }));
 
 vi.mock('../../../src/lib/action-registry.js', () => ({
-  loadActions: vi.fn(),
+  loadBuiltInActions: vi.fn(),
   findAction: vi.fn(),
   filterActions: vi.fn(),
 }));
@@ -48,7 +44,7 @@ import { resolveProjectIndex } from '@bobsled-inc/project-index';
 import { registerActCommand } from '../../../src/commands/act.js';
 import { executeAction } from '../../../src/lib/action-executor.js';
 import { resolveActionProjectRoot } from '../../../src/lib/action-paths.js';
-import { filterActions, findAction, loadActions } from '../../../src/lib/action-registry.js';
+import { filterActions, findAction, loadBuiltInActions } from '../../../src/lib/action-registry.js';
 import * as fmt from '../../../src/lib/output/formatter.js';
 
 import type { Action } from '../../../src/lib/action-registry.js';
@@ -126,7 +122,7 @@ describe('act command', () => {
       verbose: false,
       noColor: true,
     });
-    vi.mocked(loadActions).mockReturnValue([makeAction()]);
+    vi.mocked(loadBuiltInActions).mockReturnValue([makeAction()]);
     vi.mocked(filterActions).mockReturnValue([makeAction()]);
     vi.mocked(findAction).mockReturnValue({
       kind: 'found',
@@ -191,7 +187,7 @@ describe('act command', () => {
     await runActCommand(['salesforce/upsert_contact', '--input', 'email=alice@example.com']);
 
     expect(resolveProjectIndex).toHaveBeenCalledWith('/project-root');
-    expect(loadActions).toHaveBeenCalledWith('/bundled/integrations', projectIndex);
+    expect(loadBuiltInActions).toHaveBeenCalledWith(projectIndex);
     expect(executeAction).toHaveBeenCalledWith(
       makeAction(),
       { email: 'alice@example.com' },

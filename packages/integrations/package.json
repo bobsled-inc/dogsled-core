@@ -53,6 +53,7 @@
     "render:query-table": "tsx scripts/render-query-table.ts",
     "render:catalog": "tsx scripts/render-catalog.ts",
     "generate:sources": "tsx scripts/generate-builtin-sources.ts",
+    "check:sources": "tsx scripts/generate-builtin-sources.ts --check",
     "generate:catalog": "tsx scripts/generate-catalog-manifest.ts",
     "generate:validation-catalog": "tsx scripts/generate-validation-catalog.ts",
     "test": "vitest run",

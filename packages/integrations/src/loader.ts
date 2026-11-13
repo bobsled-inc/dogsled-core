@@ -1,17 +1,9 @@
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 
 import { BUILT_IN_SOURCE_FILES } from './builtin-sources/generated-data.js';
+import { materializeBuiltInSources } from './builtin-sources/materialize.js';
 
 // Built-in sources are embedded in the code (see `scripts/generate-builtin-sources.ts`).
 // Never locate them relative to this file: bundlers move it, and the old
@@ -19,7 +11,6 @@ import { BUILT_IN_SOURCE_FILES } from './builtin-sources/generated-data.js';
 const NAME_CONTAINMENT_ROOT = resolve(sep, 'sources');
 const MAX_YAML_BYTES = 256 * 1024;
 const MAX_YAML_ALIASES = 50;
-const TEMP_ROOTS_KEY = Symbol.for('@bobsled-inc/integrations/materialized-sources');
 type SourceSpecSubdirectory = 'resources' | 'actions';
 
 // Cache is process-scoped and unbounded — appropriate for short-lived CLI processes.
@@ -30,7 +21,6 @@ const yamlCache = new Map<string, unknown>();
 const subdirSpecIndexCache = new Map<string, Map<string, string>>();
 const entityIndexCache = new Map<string, Map<string, EntityVariantEntry[]>>();
 let builtInSourceNames: Set<string> | undefined;
-let materializedRoot: string | undefined;
 
 /**
  * One variant of a resource grouped by its canonical entity name. For
@@ -58,51 +48,16 @@ function sourceNames(): Set<string> {
   return builtInSourceNames;
 }
 
-function registerTemporaryRoot(root: string): void {
-  const registry = globalThis as unknown as Record<symbol, Set<string> | undefined>;
-  let roots = registry[TEMP_ROOTS_KEY];
-  if (!roots) {
-    const created = new Set<string>();
-    registry[TEMP_ROOTS_KEY] = created;
-    process.once('exit', () => {
-      for (const path of created) rmSync(path, { recursive: true, force: true });
-    });
-    roots = created;
-  }
-  roots.add(root);
-}
-
-/**
- * Directory holding a private copy of the built-in sources, for callers that
- * need real files (subprocesses, file-based action loading). Written once per
- * process to `<fresh mkdtemp folder>/sources` and removed when the process exits.
- */
-function builtInSourcesRoot(): string {
-  if (materializedRoot !== undefined && existsSync(materializedRoot)) return materializedRoot;
-
-  const parent = mkdtempSync(join(tmpdir(), 'dogsled-integrations-'));
-  const root = join(parent, 'sources');
-  try {
-    for (const [key, content] of Object.entries(BUILT_IN_SOURCE_FILES)) {
-      const target = join(root, ...key.split('/'));
-      mkdirSync(dirname(target), { recursive: true });
-      writeFileSync(target, content, { flag: 'wx' });
-    }
-  } catch (error) {
-    rmSync(parent, { recursive: true, force: true });
-    throw error;
-  }
-  registerTemporaryRoot(parent);
-  materializedRoot = root;
-  return root;
-}
-
 export function getIntegrationsDir(): string {
   return getSourcesDir();
 }
 
+/**
+ * Folder with a real copy of the built-in sources, for callers that need files
+ * on disk. Prefer the lookup functions, which read the embedded data directly.
+ */
 export function getSourcesDir(): string {
-  return builtInSourcesRoot();
+  return materializeBuiltInSources();
 }
 
 /** Validate that a name contains no path separators or traversal sequences. */
@@ -180,6 +135,44 @@ export function readResourceYaml(sourceName: string, resourceName: string): unkn
   return readBuiltInYaml(resourceKey(sourceName, resourceName));
 }
 
+/**
+ * Raw text of a top-level file of a built-in source (for example `integration.yml`),
+ * or `undefined` when the source or file does not exist.
+ */
+export function readBuiltInSourceFile(sourceName: string, fileName: string): string | undefined {
+  if (/[/\\]/.test(sourceName) || /[/\\]/.test(fileName)) return undefined;
+  const key = `${sourceName}/${fileName}`;
+  return Object.hasOwn(BUILT_IN_SOURCE_FILES, key) ? BUILT_IN_SOURCE_FILES[key] : undefined;
+}
+
+/** Built-in action spec files (`<source>/actions/*.yml`, top level only), in load order. */
+export function listBuiltInActionFiles(): Array<{
+  integration: string;
+  label: string;
+  content: string;
+}> {
+  return [...sourceNames()]
+    .filter((name) => !name.startsWith('_'))
+    .sort()
+    .flatMap((integration) =>
+      Object.keys(BUILT_IN_SOURCE_FILES)
+        .filter((key) => {
+          const rest = key.slice(`${integration}/actions/`.length);
+          return (
+            key.startsWith(`${integration}/actions/`) &&
+            !rest.includes('/') &&
+            rest.endsWith('.yml')
+          );
+        })
+        .sort()
+        .map((key) => ({
+          integration,
+          label: builtInLabel(key),
+          content: BUILT_IN_SOURCE_FILES[key] as string,
+        }))
+    );
+}
+
 export function listSourceDirs(): string[] {
   return [...sourceNames()].filter((name) => !name.startsWith('_')).sort();
 }
@@ -193,7 +186,7 @@ export function getSourceDir(name: string): string {
   if (!sourceNames().has(name)) {
     throw new Error(`Source "${name}" not found`);
   }
-  return join(builtInSourcesRoot(), name);
+  return join(materializeBuiltInSources(), name);
 }
 
 export function getIntegrationDir(name: string): string {
@@ -269,7 +262,7 @@ function resourceKey(sourceName: string, resourceName: string): string {
 
 export function getResourcePath(sourceName: string, resourceName: string): string {
   const key = resourceKey(sourceName, resourceName);
-  return join(builtInSourcesRoot(), ...key.split('/'));
+  return join(materializeBuiltInSources(), ...key.split('/'));
 }
 
 /**

@@ -63,8 +63,9 @@ The test suite (`validate-all.test.ts`) enforces these automatically:
 - **No secrets in YAML** — integration docs should reference env-var setup only (e.g., `$MY_TOKEN`)
 - **`meta.yml openapi_url` may be either an HTTPS URL or an integration-relative spec file** when a curated verify subset is needed for stable offline drift checks
 - **Do not duplicate extractor schemas** — `src/validate.ts` re-exports from the extractor package
-- **YAML cache**: `loader.ts` caches parsed YAML for CLI processes. Clear the cache in tests or long-running processes
-- **Built-in sources are embedded**: the loader reads `src/builtin-sources/generated-data.ts`, never `sources/` relative to its own file, because app bundlers move the compiled loader. After editing `sources/`, run `pnpm --filter @bobsled-inc/integrations generate:sources` (the build runs it first). Path helpers such as `getIntegrationsDir()` return a private per-process temp copy
+- **YAML cache**: `loader.ts` caches parsed YAML for CLI processes. Clear the cache in tests or long-running processes. Clearing it does not pick up edited YAML: lookups read the embedded snapshot until you regenerate it
+- **Built-in sources are embedded**: the loader reads `src/builtin-sources/generated-data.ts`, never `sources/` relative to its own file, because app bundlers move the compiled loader. After editing `sources/`, run `pnpm --filter @bobsled-inc/integrations generate:sources` and commit the result. CI runs `check:sources` before building and fails on a stale snapshot. Only `.yml` and `.md` files are embedded
+- **Lookups never touch the filesystem**: `getSource`, resources, query specs, `listActions`, `getAction` and `loadBuiltInActions` read the embedded data. Only path helpers (`getSourcesDir()`, `getIntegrationsDir()`, `getSourceDir()`, `getResourcePath()`) write a copy, shared per user and content version under the temp directory, so use them only for subprocesses and file copies
 
 ## Key Source Files
 

@@ -9,6 +9,8 @@
  * `packages/integrations/sources/`.
  */
 
+export const BUILT_IN_SOURCES_SHA256 = "a06b46cb325aaecb45682dbcebdacd0eaf6236e83f97bb002e7c6e426ddfd866";
+
 export const BUILT_IN_SOURCE_FILES: Readonly<Record<string, string>> = {
   "_template/meta.yml": "display_name: Template\ncategory: developer-tools\ntags: [example]\ndocs_url: https://docs.example.com\nauth_setup:\n  - env: TEMPLATE_API_TOKEN\n    description: API token for authentication\n",
   "_template/resources/example.yml": "type: resource\nname: example\ndescription: Example resource - replace with actual endpoint\napi:\n  endpoint: /v1/examples\n  method: GET\ninput: {}\noutput:\n  id:\n    type: string\n    path: $.id\n    description: Unique identifier\nextract:\n  record_path: $.data\n  table:\n    primary_key:\n      - id\n",

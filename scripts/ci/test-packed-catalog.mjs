@@ -119,23 +119,19 @@ try {
     stdio: 'inherit',
   });
 
+  // Built-in integrations must resolve once an app bundler moves the code and
+  // no sources/ folder exists anywhere (the `Source "bobsled_api" not found` incident).
+  // The smoke asserts the packed integration sources exist, then deletes them.
+  await runBundledIntegrationsSmoke(installDir);
+
   const installedNodeModules = path.join(installDir, 'node_modules');
-  const removedSourceTrees = removeInstalledDirectories(installedNodeModules, (candidate) => {
+  removeInstalledDirectories(installedNodeModules, (candidate) => {
     return (
       path.basename(candidate) === 'sources' &&
       path.basename(path.dirname(candidate)) === 'integrations' &&
       path.basename(path.dirname(path.dirname(candidate))) === '@bobsled-inc'
     );
   });
-  if (removedSourceTrees === 0) {
-    throw new Error(
-      'Expected the packed install to contain integration source YAML before isolation'
-    );
-  }
-
-  // Built-in integrations must resolve once an app bundler moves the code and
-  // no sources/ folder exists anywhere (the `Source "bobsled_api" not found` incident).
-  await runBundledIntegrationsSmoke(installDir);
 
   const blockedPackageNames = new Set([
     'connections',

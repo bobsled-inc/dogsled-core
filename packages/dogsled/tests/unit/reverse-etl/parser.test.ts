@@ -20,8 +20,7 @@ vi.mock('@bobsled-inc/integrations', async () => {
   );
   return {
     ...actual,
-    getIntegrationsDir: vi.fn(() => '/bundled-integrations'),
-    loadActions: vi.fn((_integrationsDir: string, projectActions?: unknown) => {
+    loadBuiltInActions: vi.fn((projectActions?: unknown) => {
       if (projectActions && integrationMocks.projectActionsError) {
         throw integrationMocks.projectActionsError;
       }

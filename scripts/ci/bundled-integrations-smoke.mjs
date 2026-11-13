@@ -1,9 +1,20 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { parse as parseYaml } from 'yaml';
+
+import { DOGSLED_PACKAGE_NAME } from '../release/package-set.mjs';
 import { repoRoot } from './shared.mjs';
 
 // esbuild already ships with tsup (pinned by the workspace override), so the
@@ -13,67 +24,136 @@ function loadEsbuild() {
   return createRequire(fromIntegrations.resolve('tsup'))('esbuild');
 }
 
-function findSourceTrees(root) {
-  const found = [];
-  function visit(directory) {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const entryPath = path.join(directory, entry.name);
-      if (entry.name === 'sources') found.push(entryPath);
-      else visit(entryPath);
-    }
-  }
-  visit(root);
-  return found;
+function yamlFilesUnder(directory) {
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return yamlFilesUnder(entryPath);
+    return entry.isFile() && entry.name.endsWith('.yml') ? [entryPath] : [];
+  });
+}
+
+function specName(filePath) {
+  return parseYaml(readFileSync(filePath, 'utf8')).name;
+}
+
+/** What the packed `sources/` folder says the bundle must resolve, read before it is deleted. */
+function expectedCatalog(sourcesDir) {
+  const sources = readdirSync(sourcesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
+    .map((entry) => entry.name)
+    .sort();
+  const actionsDir = (name) => path.join(sourcesDir, name, 'actions');
+  return {
+    sources,
+    resources: Object.fromEntries(
+      sources.map((name) => [
+        name,
+        yamlFilesUnder(path.join(sourcesDir, name, 'resources'))
+          .map(specName)
+          .sort(),
+      ])
+    ),
+    meta: Object.fromEntries(
+      sources.map((name) => [
+        name,
+        parseYaml(readFileSync(path.join(sourcesDir, name, 'meta.yml'), 'utf8')),
+      ])
+    ),
+    actions: sources
+      .flatMap((name) =>
+        existsSync(actionsDir(name))
+          ? readdirSync(actionsDir(name), { withFileTypes: true })
+              .filter((entry) => entry.isFile() && entry.name.endsWith('.yml'))
+              .map((entry) => `${name}/${specName(path.join(actionsDir(name), entry.name))}`)
+          : []
+      )
+      .sort(),
+  };
 }
 
 const SMOKE_SCRIPT = `
-const bundlePath = process.argv[1];
-const { integrations, actions } = await import(bundlePath);
-const bobsled = integrations.getSource('bobsled_api');
-if (bobsled.name !== 'bobsled_api') throw new Error('bobsled_api did not resolve');
-const names = integrations.listSources().map((source) => source.name);
-if (names.length < 50) throw new Error('Expected the built-in catalog, found ' + names.length + ' sources');
+import { readFileSync, readdirSync } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
+
+const [bundleUrl, expectedPath, tempDir] = process.argv.slice(1);
+const expected = JSON.parse(readFileSync(expectedPath, 'utf8'));
+const { integrations, actions } = await import(bundleUrl);
+const same = (label, actual, wanted) => {
+  if (!isDeepStrictEqual(actual, wanted)) {
+    throw new Error(label + ' differs: ' + JSON.stringify(actual) + ' vs ' + JSON.stringify(wanted));
+  }
+};
+
+same('bobsled_api source name', integrations.getSource('bobsled_api').name, 'bobsled_api');
+same('source names', integrations.listSources().map((source) => source.name), expected.sources);
 let resourceCount = 0;
-for (const name of names) {
+for (const name of expected.sources) {
   const source = integrations.getSource(name);
-  const resources = integrations.getResources(name);
-  if (resources.length !== source.resource_names.length) throw new Error('Resources missing for ' + name);
-  resourceCount += resources.length;
+  same(name + ' resource names', [...source.resource_names].sort(), expected.resources[name]);
+  same(
+    name + ' resources',
+    integrations.getResources(name).map((entry) => entry.resource.name).sort(),
+    expected.resources[name]
+  );
+  for (const [key, value] of Object.entries(expected.meta[name])) {
+    same(name + ' meta.' + key, source.meta[key], value);
+  }
+  resourceCount += expected.resources[name].length;
 }
 const queryable = integrations.listQueryResources();
 if (queryable.length === 0) throw new Error('No queryable resources resolved');
 for (const summary of queryable) {
-  integrations.loadQueryableResourceSpecs(summary.integration, summary.resource, { includeBillable: true });
+  integrations.loadQueryableResourceSpecs(summary.integration, summary.resource, {
+    includeBillable: true,
+  });
 }
 const builtInActions = actions.listActions();
-if (builtInActions.length === 0) throw new Error('No built-in actions resolved');
-for (const action of builtInActions) {
-  actions.getAction(action.integration, action.name);
-}
+same('actions', builtInActions.map((action) => action.qualifiedName).sort(), expected.actions);
+for (const action of builtInActions) actions.getAction(action.integration, action.name);
+same('temporary files written by lookups', readdirSync(tempDir), []);
 process.stdout.write(
-  'Bundled integrations: ' + names.length + ' sources, ' + resourceCount + ' resources, ' +
-  queryable.length + ' queryable, ' + builtInActions.length + ' actions\\n'
+  'Bundled integrations: ' + expected.sources.length + ' sources, ' + resourceCount +
+    ' resources, ' + queryable.length + ' queryable, ' + builtInActions.length +
+    ' actions, no temporary files\\n'
 );
 `;
 
 /**
  * Bundle the installed Dogsled package the way an app bundler (Nitro on Vercel)
- * does: inline every module into one file in a nested `_libs/@bobsled-inc/`
- * folder unlike the package layout, delete every `sources/` folder in the install
- * (including any an app might have copied next to the bundle), then resolve
- * every built-in integration, query resource and action from the bundle.
+ * does: inline every module into one file in a nested `_libs/` folder unlike the
+ * package layout, delete the packed integrations `sources/` folder, then check
+ * that the bundle resolves exactly the sources, resources, metadata and actions
+ * that folder contained, and that lookups write nothing to the temp directory.
  */
 export async function runBundledIntegrationsSmoke(installDir) {
+  const packageDir = path.join(installDir, 'node_modules', ...DOGSLED_PACKAGE_NAME.split('/'));
+  const sourcesDir = path.join(
+    packageDir,
+    'node_modules',
+    '@bobsled-inc',
+    'integrations',
+    'sources'
+  );
+  if (!existsSync(sourcesDir)) {
+    throw new Error(`Expected packed integration sources at ${sourcesDir}`);
+  }
+  const expectedPath = path.join(installDir, 'bundled-integrations-expected.json');
+  writeFileSync(expectedPath, JSON.stringify(expectedCatalog(sourcesDir)));
+
   const functionDir = path.join(installDir, 'bundled-function');
   const entryPath = path.join(installDir, 'bundled-integrations-entry.mjs');
-  const bundlePath = path.join(functionDir, '_libs', '@bobsled-inc', 'dogsled+integrations.mjs');
+  const bundlePath = path.join(
+    functionDir,
+    '_libs',
+    `${DOGSLED_PACKAGE_NAME.replace('/', '+')}+integrations.mjs`
+  );
   mkdirSync(path.dirname(bundlePath), { recursive: true });
   writeFileSync(
     entryPath,
     [
-      "export * as integrations from '@bobsled-inc/dogsled/integrations';",
-      "export * as actions from '@bobsled-inc/dogsled/actions';",
+      `export * as integrations from '${DOGSLED_PACKAGE_NAME}/integrations';`,
+      `export * as actions from '${DOGSLED_PACKAGE_NAME}/actions';`,
       '',
     ].join('\n')
   );
@@ -93,13 +173,29 @@ export async function runBundledIntegrationsSmoke(installDir) {
     },
   });
 
-  for (const directory of findSourceTrees(installDir)) {
-    rmSync(directory, { recursive: true, force: true });
+  rmSync(sourcesDir, { recursive: true, force: true });
+  for (const candidate of [
+    path.join(functionDir, 'sources'),
+    path.join(functionDir, '_libs', 'sources'),
+  ]) {
+    if (existsSync(candidate)) throw new Error(`Unexpected copied sources at ${candidate}`);
   }
 
-  execFileSync(
-    process.execPath,
-    ['--input-type=module', '--eval', SMOKE_SCRIPT, pathToFileURL(bundlePath).href],
-    { cwd: functionDir, stdio: 'inherit' }
-  );
+  const tempDir = mkdtempSync(path.join(installDir, 'bundled-tmp-'));
+  try {
+    execFileSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        SMOKE_SCRIPT,
+        pathToFileURL(bundlePath).href,
+        expectedPath,
+        tempDir,
+      ],
+      { cwd: functionDir, stdio: 'inherit', env: { ...process.env, TMPDIR: tempDir } }
+    );
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 }
