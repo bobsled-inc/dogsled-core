@@ -404,7 +404,7 @@ export class MySqlDestination implements DatabaseDestination {
             `SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
             [safeSchema, safeTable, from]
           )) as Array<{ COLUMN_TYPE: string; IS_NULLABLE: string; COLUMN_DEFAULT: string | null }>;
-          if (!column) return;
+          if (!column) throw new Error(`column ${from} not found`);
           const fallback =
             column.COLUMN_DEFAULT == null || column.COLUMN_DEFAULT === 'NULL'
               ? ''

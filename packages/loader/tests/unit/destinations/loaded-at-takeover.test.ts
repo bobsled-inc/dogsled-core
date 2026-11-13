@@ -8,6 +8,7 @@ import { SYSTEM_COLUMNS, SYSTEM_COLUMN_NAMES } from '../../../src/runtime/destin
 import { DuckDbDestination } from '../../../src/runtime/destinations/duckdb.js';
 import {
   fillLegacyLoadedAt,
+  loadedAtFilledNote,
   planLoadedAtTakeover,
   takeOverLegacyLoadedAt,
 } from '../../../src/runtime/destinations/loaded-at-takeover.js';
@@ -127,6 +128,20 @@ describe('loaded-at takeover plan', () => {
       expect(warn).toHaveBeenCalledWith('loaded_at_column_fill_failed', expect.anything());
     }
   );
+
+  it('names the comment text Core looks for when the mark cannot be written', async () => {
+    await expect(
+      fillLegacyLoadedAt(
+        { fillFrom: LEGACY },
+        {
+          table: 't',
+          current: CURRENT,
+          fill: () => Promise.resolve(),
+          marker: { done: async () => false, mark: () => Promise.reject(new Error('no ALTER')) },
+        }
+      )
+    ).rejects.toThrow(loadedAtFilledNote(CURRENT));
+  });
 });
 
 describe('loaded-at takeover on DuckDB', () => {

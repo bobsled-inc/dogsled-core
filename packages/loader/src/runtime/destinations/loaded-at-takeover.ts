@@ -152,7 +152,7 @@ export async function fillLegacyLoadedAt(
     throw new CommandError(
       `Could not ${step} ${from} into ${options.current} on ${options.table}; nothing was loaded into this table. ` +
         (step === 'mark the copy of'
-          ? 'The values are copied; let Core set a column comment on the earlier column (or set it by hand), then run again.'
+          ? `The values are copied. Let Core set a column comment on ${from} (or set one by hand that contains "${note}"), then run again.`
           : 'The next run tries again.'),
       1
     );

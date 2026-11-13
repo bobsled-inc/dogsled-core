@@ -130,20 +130,27 @@ async function tableExists(runner: SqlRunnerModule, ref: string): Promise<boolea
  * cursors, ETags and snapshot leases survive. Never drops a table: when both
  * exist the current one wins and the earlier one is left alone.
  */
-const settledMetadataSchemas = new WeakMap<SqlRunnerModule, Set<string>>();
+const settledByRunner = new WeakMap<SqlRunnerModule, Set<string>>();
+/** Destinations settled in this process, so a query on a new connection adds no probe. */
+const settledDestinations = new Set<string>();
 
 export async function adoptLegacyMetadataTable(args: {
   runner: SqlRunnerModule;
   schema: string;
   dialect: MetadataDialect;
+  /** Names the warehouse (never a credential). With it, a schema is settled once per process;
+   * without it, once per connection. */
+  destination?: string | undefined;
 }): Promise<string | undefined> {
   if (args.dialect === 'duckdb' && args.schema === 'temp') return undefined;
   const legacy = LEGACY_METADATA_TABLES.filter((name) => name !== METADATA_TABLE);
   if (legacy.length === 0) return undefined;
-  // Settled once per connection and schema, so later queries add no catalog probe.
-  const settled = settledMetadataSchemas.get(args.runner) ?? new Set<string>();
-  settledMetadataSchemas.set(args.runner, settled);
-  const key = `${args.dialect}:${args.schema}`;
+  let settled = settledDestinations;
+  if (args.destination === undefined) {
+    settled = settledByRunner.get(args.runner) ?? new Set<string>();
+    settledByRunner.set(args.runner, settled);
+  }
+  const key = JSON.stringify([args.dialect, args.destination ?? '', args.schema]);
   if (settled.has(key)) return undefined;
   settled.add(key);
   if (await tableExists(args.runner, metaTableRef(args.schema, args.dialect))) return undefined;
@@ -170,6 +177,7 @@ export async function ensureMetadataTable(args: {
   runner: SqlRunnerModule;
   schema: string;
   dialect: MetadataDialect;
+  destination?: string | undefined;
 }): Promise<void> {
   await adoptLegacyMetadataTable(args);
   const ref = metaTableRef(args.schema, args.dialect);
