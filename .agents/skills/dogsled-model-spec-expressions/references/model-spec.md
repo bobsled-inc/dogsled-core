@@ -51,17 +51,17 @@ expr: "STATUS = 'active'"
 expr: "STATUS != 'deleted'"
 
 # Range
-expr: "AMOUNT > 100"
-expr: "AMOUNT BETWEEN 10 AND 1000"
-expr: "AMOUNT NOT BETWEEN 10 AND 1000"
+expr: 'AMOUNT > 100'
+expr: 'AMOUNT BETWEEN 10 AND 1000'
+expr: 'AMOUNT NOT BETWEEN 10 AND 1000'
 
 # Set membership
 expr: "STATUS IN ('active', 'pending', 'shipped')"
 expr: "STATUS NOT IN ('deleted', 'archived')"
 
 # Null checks
-expr: "EMAIL IS NOT NULL"
-expr: "PHONE IS NULL"
+expr: 'EMAIL IS NOT NULL'
+expr: 'PHONE IS NULL'
 
 # Pattern matching
 expr: "NAME LIKE '%smith%'"
@@ -96,9 +96,9 @@ expr: >-
 ## CAST Expressions
 
 ```yaml
-expr: "CAST(PRICE / 100.0 AS NUMERIC(16, 2))"
-expr: "CAST(CREATED_AT AS DATE)"
-expr: "CAST(ID AS VARCHAR)"
+expr: 'CAST(PRICE / 100.0 AS NUMERIC(16, 2))'
+expr: 'CAST(CREATED_AT AS DATE)'
+expr: 'CAST(ID AS VARCHAR)'
 ```
 
 ## raw_sql() Escape Hatch
@@ -669,7 +669,7 @@ expr: ID
 expr: LOWER(EMAIL)
 
 # Arithmetic with cast
-expr: "CAST(PRICE / 100.0 AS NUMERIC(16, 2))"
+expr: 'CAST(PRICE / 100.0 AS NUMERIC(16, 2))'
 
 # Date truncation
 expr: "date_trunc('month', ORDER_DATE)"
@@ -690,7 +690,7 @@ expr: stg_orders.CUSTOMER_ID
 expr: "datediff('day', CREATED_AT, CURRENT_DATE)"
 
 # Safe division
-expr: "div0(REVENUE, COST)"
+expr: 'div0(REVENUE, COST)'
 
 # Quoted semicolons are literal data
 expr: "listagg(t0.company_id, '; ')"
@@ -701,11 +701,11 @@ expr: "case when t0.name is null then 'Name missing; review required' else null 
 
 ```yaml
 # Statement separator outside a quoted literal
-expr: "SELECT 1; DROP TABLE users"
+expr: 'SELECT 1; DROP TABLE users'
 # ^ Rejected by validation
 
 # DDL keywords at start
-expr: "DROP TABLE users"
+expr: 'DROP TABLE users'
 # ^ Rejected by validation
 
 # Missing quotes around string literal
@@ -718,7 +718,7 @@ expr: "date_trunc(ORDER_DATE, 'month')"
 # The transpiler expects unit first, then expression
 
 # Using double quotes for strings
-expr: "STATUS = \"active\""
+expr: 'STATUS = "active"'
 # ^ Use single quotes: STATUS = 'active'
 ```
 

@@ -188,11 +188,9 @@ describe('source catalog migration invariants', () => {
         for (const [fieldName, filter] of Object.entries(filters as Record<string, unknown>)) {
           if (!filter || typeof filter !== 'object') continue;
           const bind = (filter as Record<string, unknown>)['bind'] as
-            | Record<string, unknown>
-            | undefined;
+            Record<string, unknown> | undefined;
           const compile = (filter as Record<string, unknown>)['compile'] as
-            | Record<string, Record<string, unknown>>
-            | undefined;
+            Record<string, Record<string, unknown>> | undefined;
           for (const operator of Object.keys(bind ?? {})) {
             const compiled = compile?.[operator];
             expect(

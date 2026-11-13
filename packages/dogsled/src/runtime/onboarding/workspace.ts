@@ -129,8 +129,7 @@ export async function projectWorkspace(
   // Connect API resources to raw sources only when an explicit ETL destination and table agree.
   for (const config of records.filter((r) => /^dogsled\.ya?ml$/.test(r.path))) {
     const destinations = config.value['destinations'] as
-      | Record<string, { schema?: string }>
-      | undefined;
+      Record<string, { schema?: string }> | undefined;
     const pipelines = config.value['pipelines'];
     if (!pipelines || typeof pipelines !== 'object') continue;
     for (const pipeline of Object.values(pipelines)) {

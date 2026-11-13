@@ -153,7 +153,7 @@ async function replayInGroups(
 ): Promise<AgenticRunSnapshot> {
   const { commands } = scenario;
   let snapshot = validateAgenticReceipt(await session.create(scenario.initial), scenario.initial);
-  for (let index = 0; index < commands.length; ) {
+  for (let index = 0; index < commands.length;) {
     let end = index;
     while (end < commands.length && isAttempt(commands[end]!)) end++;
     if (end - index > 1) {

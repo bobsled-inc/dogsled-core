@@ -482,13 +482,11 @@ export function resolveResolutionSpec(
   // Map deterministic rules
   const deterministicRules: DeterministicRule[] = raw.deterministic_rules.map((r) => ({
     name: r.name,
-    conditions: r.conditions.map(
-      (c): DeterministicCondition => ({
-        field: c.field,
-        operator: c.operator,
-        bothNotNull: c.both_not_null,
-      })
-    ),
+    conditions: r.conditions.map((c): DeterministicCondition => ({
+      field: c.field,
+      operator: c.operator,
+      bothNotNull: c.both_not_null,
+    })),
     action: r.action,
     confidence: r.confidence,
   }));
@@ -499,30 +497,24 @@ export function resolveResolutionSpec(
     scoring = {
       method: 'fellegi_sunter',
       prior: raw.scoring.prior,
-      comparisons: raw.scoring.comparisons.map(
-        (c): FellegiSunterComparison => ({
-          field: c.field,
-          levels: c.levels.map(
-            (l): FellegiSunterLevel => ({
-              op: l.op,
-              ...(l.gte !== undefined ? { gte: l.gte } : {}),
-              m: l.m,
-              u: l.u,
-            })
-          ),
-        })
-      ),
+      comparisons: raw.scoring.comparisons.map((c): FellegiSunterComparison => ({
+        field: c.field,
+        levels: c.levels.map((l): FellegiSunterLevel => ({
+          op: l.op,
+          ...(l.gte !== undefined ? { gte: l.gte } : {}),
+          m: l.m,
+          u: l.u,
+        })),
+      })),
     };
   } else if (raw.scoring) {
     scoring = {
       method: 'weighted_features',
-      features: raw.scoring.features.map(
-        (f): ScoringFeature => ({
-          field: f.field,
-          algorithm: f.algorithm,
-          weight: f.weight,
-        })
-      ),
+      features: raw.scoring.features.map((f): ScoringFeature => ({
+        field: f.field,
+        algorithm: f.algorithm,
+        weight: f.weight,
+      })),
     };
   }
 

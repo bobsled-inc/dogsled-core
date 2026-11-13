@@ -12,13 +12,7 @@ export { LEARN_MODULES } from './learn-modules';
 export const LEARN_CURRICULUM_VERSION = '2026-05-13.v7';
 
 export type LearnStepKind =
-  | 'concept'
-  | 'surface'
-  | 'command'
-  | 'query'
-  | 'table'
-  | 'spec'
-  | 'check';
+  'concept' | 'surface' | 'command' | 'query' | 'table' | 'spec' | 'check';
 
 export interface LearnAction {
   label: string;
