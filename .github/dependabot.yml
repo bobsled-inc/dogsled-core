@@ -1,5 +1,6 @@
 version: 2
-# Weekly grouped minor/patch version updates. Major updates stay manual.
+# Weekly grouped minor/patch version updates, Mondays 06:00 UTC (just before the
+# 06:17 UTC daily release health check). Major updates stay manual.
 # Dependabot security-update PRs stay enabled in repository settings. When a
 # fix version is younger than the 7-day release age, its PR goes green once the
 # version is old enough, or the owner adds an exemption if it is urgent.
@@ -8,6 +9,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Etc/UTC
     open-pull-requests-limit: 6
     cooldown:
       default-days: 7
@@ -75,6 +79,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Etc/UTC
     open-pull-requests-limit: 1
     cooldown:
       default-days: 7

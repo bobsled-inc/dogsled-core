@@ -127,6 +127,11 @@ export function autoReleaseSummary({ tag, pullRequests, bump }, version) {
       );
   }
   lines.push('', bump ? `Result: **${bump}** release \`v${version}\`.` : 'Result: no release.');
+  if (!bump && pullRequests.length > 0)
+    lines.push(
+      '',
+      'Nothing to release: `dependencies` and `skip-release` pull requests do not release on their own. The next release lists them.'
+    );
   if (pullRequests.some((entry) => entry.changeType === 'major'))
     lines.push('', '**Breaking:** this release contains a breaking change.');
   return `${lines.join('\n')}\n`;
@@ -134,7 +139,7 @@ export function autoReleaseSummary({ tag, pullRequests, bump }, version) {
 
 export function mergeDecisionSummary(decision, autoRelease) {
   const action = !decision.bump
-    ? 'No release.'
+    ? 'No release. The next release lists this pull request.'
     : autoRelease === 'on'
       ? 'Dispatching Release in `auto` mode.'
       : 'Dry run: Release would be dispatched in `auto` mode.';

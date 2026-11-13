@@ -56,7 +56,7 @@ const AUTO_RELEASE_BUMPS = Object.freeze({
   minor: 'minor',
   major: 'major',
   performance: 'patch',
-  dependencies: 'patch',
+  dependencies: null,
   internal: 'patch',
   documentation: 'patch',
   tests: 'patch',
@@ -79,8 +79,24 @@ export function highestBump(bumps) {
   }, null);
 }
 
+const DEPENDABOT_LABEL_TYPES = new Map(
+  ['patch', 'minor', 'major'].map((changeType) => [`change-type: ${changeType}`, changeType])
+);
+
+function dependabotChangeType(labels) {
+  const names = (Array.isArray(labels) ? labels : [])
+    .map((label) => String(label?.name ?? '').toLowerCase())
+    .filter((name) => DEPENDABOT_LABEL_TYPES.has(name));
+  if (names.length > 1) {
+    throw new Error(
+      `At most one change-type label may be set on a Dependabot PR. Found ${names.length}: ${names.join(', ')}`
+    );
+  }
+  return names.length === 1 ? DEPENDABOT_LABEL_TYPES.get(names[0]) : 'dependencies';
+}
+
 export function changeTypeForPullRequest(pullRequest) {
   return pullRequest?.user?.login === 'dependabot[bot]'
-    ? 'dependencies'
+    ? dependabotChangeType(pullRequest.labels)
     : parseChangeType(pullRequest?.body ?? '');
 }

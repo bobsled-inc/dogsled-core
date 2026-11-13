@@ -37,9 +37,14 @@ uploaded as a seven-day Actions artifact, and attached to the GitHub release.
 
 ## Routine version updates
 
-Dependabot opens weekly grouped minor/patch PRs (up to 2 for npm, 1 for GitHub
-Actions) with the same 7-day cooldown. Semver-major updates are ignored and stay
-manual. Merged dependency PRs carry the `dependencies` Change Type. Dependabot
+Dependabot opens grouped minor/patch PRs weekly, on Mondays 06:00 UTC (up to 2
+for npm, 1 for GitHub Actions), with the same 7-day cooldown. That is just
+before the 06:17 UTC [daily release health check](#daily-release-health-check).
+Semver-major updates are ignored and stay
+manual. Merged dependency PRs carry the `dependencies` Change Type, which does
+not release on its own; the next release includes them. A Dependabot PR that
+must release gets one `change-type: patch`, `change-type: minor` or
+`change-type: major` label (see [releases](releases.md)). Dependabot
 security-update PRs stay enabled in repository settings. When a fix version is
 younger than the 7-day release age, its PR goes green once the version is old
 enough, or the owner adds an exemption if it is urgent.

@@ -54,7 +54,7 @@ describe('release change types', () => {
     ['minor', 'minor'],
     ['patch', 'patch'],
     ['performance', 'patch'],
-    ['dependencies', 'patch'],
+    ['dependencies', null],
     ['internal', 'patch'],
     ['documentation', 'patch'],
     ['tests', 'patch'],
@@ -119,6 +119,37 @@ describe('release change types', () => {
     expect(() => changeTypeForPullRequest({ user: { login: 'contributor' }, body: null })).toThrow(
       'empty'
     );
+  });
+
+  const dependabot = (...names) => ({
+    user: { login: 'dependabot[bot]' },
+    body: '',
+    labels: names.map((name) => ({ name })),
+  });
+
+  it.each([
+    [['dependencies'], 'dependencies'],
+    [['dependencies', 'change-type: patch'], 'patch'],
+    [['change-type: minor'], 'minor'],
+    [['Change-Type: Major', 'javascript'], 'major'],
+  ])('reads the change type of a Dependabot PR from labels %j as %s', (labels, changeType) => {
+    expect(changeTypeForPullRequest(dependabot(...labels))).toBe(changeType);
+  });
+
+  it('rejects conflicting change-type labels on a Dependabot PR', () => {
+    expect(() =>
+      changeTypeForPullRequest(dependabot('change-type: patch', 'change-type: minor'))
+    ).toThrow('At most one change-type label may be set on a Dependabot PR. Found 2');
+  });
+
+  it('ignores change-type labels on other PRs and reads their description', () => {
+    expect(
+      changeTypeForPullRequest({
+        user: { login: 'contributor' },
+        body: bodyFor('dependencies'),
+        labels: [{ name: 'change-type: major' }],
+      })
+    ).toBe('dependencies');
   });
 
   it('keeps the accepted values explicit', () => {

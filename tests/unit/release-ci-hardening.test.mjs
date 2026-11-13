@@ -40,8 +40,15 @@ describe('release approval and metadata checks', () => {
     expect(release.jobs.publish.needs).toContain('tag');
   });
 
-  it('reruns lightweight validation on body edits and checks out only trusted base validation code', () => {
-    expect(metadata.on.pull_request.types).toEqual(['opened', 'synchronize', 'reopened', 'edited']);
+  it('reruns lightweight validation on body and label edits and checks out only trusted base validation code', () => {
+    expect(metadata.on.pull_request.types).toEqual([
+      'opened',
+      'synchronize',
+      'reopened',
+      'edited',
+      'labeled',
+      'unlabeled',
+    ]);
     expect(metadata.permissions).toEqual({ contents: 'read' });
     const steps = metadata.jobs['pr-metadata'].steps;
     const checkout = steps.find((step) => step.uses?.startsWith('actions/checkout@'));
@@ -186,14 +193,23 @@ describe('release approval and metadata checks', () => {
     const directory = mkdtempSync(path.join(os.tmpdir(), 'change-type-'));
     try {
       const event = path.join(directory, 'event.json');
-      const run = (login) => {
-        writeFileSync(event, JSON.stringify({ pull_request: { user: { login }, body: '' } }));
+      const run = (login, labels = []) => {
+        writeFileSync(
+          event,
+          JSON.stringify({
+            pull_request: { user: { login }, body: '', labels: labels.map((name) => ({ name })) },
+          })
+        );
         return spawnSync(process.execPath, ['scripts/ci/validate-pr-change-type.mjs'], {
           env: { ...process.env, GITHUB_EVENT_PATH: event },
           encoding: 'utf8',
         });
       };
       expect(run('dependabot[bot]').status).toBe(0);
+      expect(run('dependabot[bot]', ['dependencies', 'change-type: minor']).status).toBe(0);
+      const conflicting = run('dependabot[bot]', ['change-type: patch', 'change-type: major']);
+      expect(conflicting.status).toBe(1);
+      expect(conflicting.stderr).toContain('At most one change-type label');
       expect(run('contributor').status).toBe(1);
     } finally {
       rmSync(directory, { recursive: true, force: true });

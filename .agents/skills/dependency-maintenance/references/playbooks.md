@@ -181,7 +181,9 @@ in the lockfile diff and each package's release notes, and look closely at:
 
 Leave risky updates for a maintainer and say why in a review comment. A
 failing check you can fix (notices, an override) gets its own small change.
-Dependabot PRs are released as `dependencies`.
+Dependabot PRs count as `dependencies` and wait for the next release. When an
+update changes behaviour or must ship now (a security fix), add exactly one
+`change-type: patch`, `change-type: minor` or `change-type: major` label.
 
 ## Stale third-party notices
 

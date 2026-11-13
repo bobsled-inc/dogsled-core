@@ -59,10 +59,12 @@ Step-by-step fixes are in [references/playbooks.md](references/playbooks.md).
 - **Release gate.** The Release workflow runs `pnpm deps:expiries --fail-within 0`
   first, checks third-party notices, and runs `pnpm security:release --execute`
   (workspace audit, packed tarball checks, SBOM, consumer audit).
-- **Dependabot.** Weekly grouped minor and patch PRs (2 npm, 1 Actions) with a
-  7-day cooldown; majors stay manual. Security-update PRs are on. A fix younger
-  than 7 days goes green once it ages in. Dependabot PRs release as
-  `dependencies`.
+- **Dependabot.** Grouped minor and patch PRs on Mondays 06:00 UTC, just before
+  the 06:17 UTC health check (2 npm, 1 Actions), with a 7-day cooldown; majors stay manual. Security-update PRs are on. A fix younger
+  than 7 days goes green once it ages in. Dependabot PRs count as
+  `dependencies`, which does not release on its own; the next release includes
+  them. To release one now, add exactly one `change-type: patch`,
+  `change-type: minor` or `change-type: major` label.
 - **Third-party notices.** `packages/dogsled/THIRD_PARTY_NOTICES.md` is generated
   from the bundled build inputs. CI and releases fail when it is stale.
 
@@ -119,5 +121,6 @@ finding, the root cause, the change, and the evidence: registry publish times,
 tarball review notes, and the commands above with their results, including the
 consumer audit at the current and look-ahead cutoffs. Change Type: `internal`
 for policy-file changes (exemptions, exceptions, audit config), `dependencies`
-for version, override or lockfile changes, `patch` when users see different
-behavior, such as a raised runtime driver minimum.
+for version, override or lockfile changes (no release until the next real
+change), `patch` when users see different behavior or the update changes code,
+such as a raised runtime driver minimum or a security fix that must ship.

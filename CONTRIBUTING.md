@@ -74,12 +74,16 @@ The public metadata-only policy job runs in the base context with permission to
 label and comment on PRs; it never checks out or executes the submitted code.
 The required `pr-metadata` workflow checks Change Type on every PR and DCO sign-offs once the public repository is live.
 
-Select exactly one Change Type in the PR template. Every merge into `main`
+Select exactly one Change Type in the PR template. A merge into `main`
 releases a new version that a maintainer approves before publication. The Change
-Type sets the bump: `minor` and `major` release that increment; everything else
-releases a patch. `skip-release` is a rare escape hatch for changes that must
-not publish. A revert of released code is `patch`; a revert of unreleased code
-is `skip-release`. Maintainers can help classify a small fix.
+Type sets the bump: `minor` and `major` release that increment; `dependencies`
+does not release on its own and ships with the next release; everything else
+releases a patch. A dependency update that also changes behaviour or code picks
+`patch`, `minor` or `major`. On a Dependabot PR, a maintainer sets this with one
+`change-type: patch`, `change-type: minor` or `change-type: major` label.
+`skip-release` is a rare escape hatch for changes that must not publish. A
+revert of released code is `patch`; a revert of unreleased code is
+`skip-release`. Maintainers can help classify a small fix.
 [Release guidance](docs/releases.md) explains releases.
 
 The network dependency audit runs on pull requests that change `package.json`,
