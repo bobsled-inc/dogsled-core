@@ -1,7 +1,7 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 11997,
+    "dogsled-word": 12007,
     "old-warehouse-prefix": 717,
     "track-config": 0,
     "track-env": 0,
@@ -13,7 +13,7 @@
     "<root>": 1478,
     ".github": 65,
     "apps/explorer": 389,
-    "docs": 1505,
+    "docs": 1507,
     "examples": 421,
     "packages/ai": 17,
     "packages/api-resource": 9,
@@ -25,14 +25,14 @@
     "packages/extractor": 558,
     "packages/integrations": 214,
     "packages/loader": 444,
-    "packages/model-spec": 1962,
+    "packages/model-spec": 1965,
     "packages/models": 19,
     "packages/project-index": 94,
     "packages/protocol": 87,
     "packages/sdk-codegen": 41,
     "packages/skills": 1111,
-    "scripts": 298,
-    "tests": 111,
+    "scripts": 301,
+    "tests": 113,
     "workspace": 30
   }
 }
