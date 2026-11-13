@@ -59,8 +59,8 @@ Step-by-step fixes are in [references/playbooks.md](references/playbooks.md).
 - **Release gate.** The Release workflow runs `pnpm deps:expiries --fail-within 0`
   first, checks third-party notices, and runs `pnpm security:release --execute`
   (workspace audit, packed tarball checks, SBOM, consumer audit).
-- **Dependabot.** Weekly grouped minor and patch PRs (2 npm, 1 Actions) with a
-  7-day cooldown; majors stay manual. Security-update PRs are on. A fix younger
+- **Dependabot.** Grouped minor and patch PRs on Mondays 06:00 UTC, just before
+  the 06:17 UTC health check (2 npm, 1 Actions), with a 7-day cooldown; majors stay manual. Security-update PRs are on. A fix younger
   than 7 days goes green once it ages in. Dependabot PRs count as
   `dependencies`, which does not release on its own; the next release includes
   them. To release one now, add exactly one `change-type: patch`,
