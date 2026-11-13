@@ -40,8 +40,15 @@ export function exportVerifiedQueries(
 ): { custom_extensions?: Array<{ vendor_name: string; data: string }> } {
   const names = new Set<string>();
   const queries = (request.project.verifiedQueries ?? [])
-    .map((value) => {
-      assertBounded(value);
+    .map((value, index) => {
+      const name =
+        value !== null && typeof value === 'object' && !Array.isArray(value)
+          ? Object.getOwnPropertyDescriptor(value, 'name')?.value
+          : undefined;
+      assertBounded(
+        value,
+        `project#verified_queries.${typeof name === 'string' && name ? name : `[${index}]`}`
+      );
       const query = VqSpecSchema.parse(value);
       if (names.has(query.name)) {
         throw new VerifiedQueryFailure(

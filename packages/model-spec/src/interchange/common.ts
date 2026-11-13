@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { parse as parseYaml, stringify } from 'yaml';
 import { CommandError } from '../errors.js';
-import { boundedJson } from './storage.js';
+import { boundedJsonProblem } from './storage.js';
 
 export const OSSIE_VENDOR = 'DOGSLED';
 export interface ConversionObjectReference {
@@ -64,13 +64,17 @@ export function parseOssieYaml(content: string, path: string): unknown {
   assertBounded(value);
   return value;
 }
-export function assertBounded(value: unknown): void {
-  if (!boundedJson(value)) {
-    throw new CommandError(
-      'Input must be bounded JSON data, without cycles or unsafe property keys',
-      2
-    );
-  }
+/**
+ * `label` names the input, such as `project#datasets.orders`, so the error says where to look.
+ */
+export function assertBounded(value: unknown, label?: string): void {
+  const problem = boundedJsonProblem(value);
+  if (!problem) return;
+  const where = [label, problem.path].filter(Boolean).join(' at ');
+  throw new CommandError(
+    `Input must be bounded JSON data, without cycles or unsafe property keys: ${where ? `${where} ` : 'the value '}${problem.reason}.`,
+    2
+  );
 }
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

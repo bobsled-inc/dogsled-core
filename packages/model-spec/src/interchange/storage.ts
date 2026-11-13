@@ -1,38 +1,72 @@
 import { z } from 'zod';
 
-/** Metadata is data only. Bound it before traversing or copying an untrusted tree. */
-export function boundedJson(value: unknown): boolean {
-  const pending: { value: unknown; depth: number }[] = [{ value, depth: 0 }];
-  const seen = new Set<object>();
+export interface BoundedJsonProblem {
+  /** Where the problem is, such as `ai_context.examples[0]`; empty for the value itself. */
+  path: string;
+  reason: string;
+}
+
+function childPath(parent: string, key: string | number): string {
+  if (typeof key === 'number') return `${parent}[${key}]`;
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(key)
+    ? parent
+      ? `${parent}.${key}`
+      : key
+    : `${parent}[${JSON.stringify(key)}]`;
+}
+
+/**
+ * Metadata is data only. Bound it before traversing or copying an untrusted tree. A YAML alias
+ * makes two places share one object; that is allowed because the node and byte limits still
+ * count every visit. Only an object that contains itself is a cycle.
+ */
+export function boundedJsonProblem(value: unknown): BoundedJsonProblem | undefined {
+  type Visit = { value: unknown; depth: number; path: string } | { leave: object };
+  const pending: Visit[] = [{ value, depth: 0, path: '' }];
+  const ancestors = new Set<object>();
   let nodes = 0;
   let bytes = 0;
   while (pending.length) {
-    const item = pending.pop();
-    if (!item || ++nodes > 100_000 || item.depth > 40) return false;
+    const item = pending.pop()!;
+    if ('leave' in item) {
+      ancestors.delete(item.leave);
+      continue;
+    }
+    if (++nodes > 100_000) return { path: item.path, reason: 'has more than 100000 values' };
+    if (item.depth > 40) return { path: item.path, reason: 'is nested more than 40 levels deep' };
     const v = item.value;
     if (typeof v === 'string') bytes += v.length;
     else if (v === null || typeof v === 'boolean') continue;
     else if (typeof v === 'number') {
-      if (!Number.isFinite(v)) return false;
+      if (!Number.isFinite(v)) return { path: item.path, reason: 'is not a finite number' };
     } else if (typeof v === 'object') {
-      if (seen.has(v)) return false;
-      seen.add(v);
+      if (ancestors.has(v)) return { path: item.path, reason: 'contains itself' };
+      const array = Array.isArray(v);
       if (
-        !Array.isArray(v) &&
+        !array &&
         Object.getPrototypeOf(v) !== Object.prototype &&
         Object.getPrototypeOf(v) !== null
       ) {
-        return false;
+        return { path: item.path, reason: 'is not plain JSON data' };
       }
+      ancestors.add(v);
+      pending.push({ leave: v });
       for (const [key, child] of Object.entries(v)) {
-        if (['__proto__', 'prototype', 'constructor'].includes(key)) return false;
+        const path = childPath(item.path, array ? Number(key) : key);
+        if (!array && ['__proto__', 'prototype', 'constructor'].includes(key)) {
+          return { path, reason: `uses the reserved key ${key}` };
+        }
         bytes += key.length;
-        pending.push({ value: child, depth: item.depth + 1 });
+        pending.push({ value: child, depth: item.depth + 1, path });
       }
-    } else return false;
-    if (bytes > 1_000_000) return false;
+    } else return { path: item.path, reason: `is a ${typeof v}, not JSON data` };
+    if (bytes > 1_000_000) return { path: item.path, reason: 'makes the data larger than 1 MB' };
   }
-  return true;
+  return undefined;
+}
+
+export function boundedJson(value: unknown): boolean {
+  return boundedJsonProblem(value) === undefined;
 }
 const metadata = z
   .record(z.string(), z.unknown())

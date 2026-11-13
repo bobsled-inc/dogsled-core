@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
 import {
   exportOssieDocument,
@@ -510,5 +511,77 @@ describe('Ossie export converter', () => {
       ok: true,
       ready: false,
     });
+  });
+  it('says a Project with no sources or models has nothing to export', () => {
+    const empty = exportOssieDocument(
+      request({
+        project: { sources: [], models: [], metrics: [], relationships: [], addresses: {} },
+      })
+    );
+    expect(empty).toMatchObject({ ok: false, files: [] });
+    expect(empty.diagnostics).toEqual([
+      expect.objectContaining({
+        code: 'native_incomplete',
+        path: 'project#datasets',
+        message: 'This Project has no sources or models, so there is nothing to export.',
+      }),
+    ]);
+  });
+  it('names every model whose columns the Blueprint does not list', () => {
+    const result = exportOssieDocument(
+      request({
+        project: {
+          ...request().project,
+          models: [
+            { ...model, include_all_columns: true },
+            { ...model, name: 'all_orders', include_all_columns: true },
+          ],
+        },
+      })
+    );
+    expect(result).toMatchObject({ ok: false, files: [] });
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        code: 'native_incomplete',
+        path: 'project#datasets.all_orders.include_all_columns',
+        message:
+          'Models all_orders (include_all_columns), completed_orders (include_all_columns) make columns that the Blueprint does not list, so Ossie export cannot describe their fields.',
+      }),
+    ]);
+  });
+  it('names the document and key when input is not plain bounded data', () => {
+    const result = exportOssieDocument(
+      request({
+        project: {
+          ...request().project,
+          models: [{ ...model, ai_context: { examples: [{ constructor: 'x' }] } }],
+        },
+      })
+    );
+    expect(result).toMatchObject({ ok: false, files: [] });
+    expect(result.diagnostics[0]?.message).toBe(
+      'Input must be bounded JSON data, without cycles or unsafe property keys: project#models.completed_orders at ai_context.examples[0].constructor uses the reserved key constructor.'
+    );
+  });
+  it('exports a model whose YAML aliases share one value in several places', () => {
+    const shared = parse(
+      `grain: &keys [order_id]\nmaterialization:\n  type: incremental\n  unique_key: *keys\n`
+    ) as { grain: string[]; materialization: { type: string; unique_key: string[] } };
+    expect(shared.materialization.unique_key).toBe(shared.grain);
+    const result = exportOssieDocument(
+      request({ project: { ...request().project, models: [{ ...model, ...shared }] } })
+    );
+    expect(result.diagnostics.filter((entry) => entry.severity === 'error')).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+  it('still rejects a value that contains itself and says where', () => {
+    const looped: Record<string, unknown> = { note: 'x' };
+    looped['again'] = looped;
+    const result = exportOssieDocument(
+      request({ project: { ...request().project, models: [{ ...model, ai_context: looped }] } })
+    );
+    expect(result.diagnostics[0]?.message).toBe(
+      'Input must be bounded JSON data, without cycles or unsafe property keys: project#models.completed_orders at ai_context.again contains itself.'
+    );
   });
 });
