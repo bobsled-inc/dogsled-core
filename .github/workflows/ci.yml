@@ -60,6 +60,8 @@ jobs:
         run: pnpm security:audit
       - run: pnpm run setup:sqlite
       - run: pnpm security:fast
+      - name: Report old Dogsled names (report-only until the rename is done)
+        run: pnpm guard:dogsled
       - name: Build
         run: pnpm build
         timeout-minutes: 10

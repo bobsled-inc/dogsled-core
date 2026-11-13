@@ -225,6 +225,9 @@ export const GUARD_SELF_REFERENCE_PATHS = new Set([
   'scripts/guards/privacy-exceptions.json',
   'tests/unit/guard-privacy.test.mjs',
   'tests/unit/security-runtime-policy.test.mjs',
+  // Old-name guard for the Bobsled Core rename: its allow list names the app domains.
+  'scripts/guards/old-names-allow.json',
+  'tests/unit/guard-old-names.test.mjs',
 ]);
 
 export function loadGuardSidecar(moduleFile = currentFile, root = repoRoot) {
