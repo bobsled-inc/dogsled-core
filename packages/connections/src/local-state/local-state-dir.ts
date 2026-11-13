@@ -145,7 +145,8 @@ async function busyReason(dir: string, options: Options): Promise<string | undef
   const marker = files.find(
     (file) => BUSY_SUFFIXES.some((suffix) => file.endsWith(suffix)) || held(file)
   );
-  if (marker) return `${path.relative(dir, marker)} shows another process is using it`;
+  if (marker)
+    return `${path.relative(dir, marker)} shows a process is using the folder or stopped mid-write`;
   if (!options.databaseInUse) return undefined;
   for (const file of files.filter((name) => /\.(duckdb|ducklake)$/.test(name))) {
     if (await options.databaseInUse(file)) {

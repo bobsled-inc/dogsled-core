@@ -173,7 +173,7 @@ describe('only Core state at a project root moves', () => {
     expect(await prepareLocalStateDir(root, { notice, referencedBy })).toBe(earlier());
     expect(read('.legacy/config.yml')).toBe('x');
     expect(notices).toEqual([
-      expect.stringMatching(/^Kept \.legacy\/: integrations\/w\.yml name it/),
+      expect.stringMatching(/^Kept \.legacy\/: integrations\/w\.yml names it/),
     ]);
     resetLocalStateDirForTests();
     expect(await prepareLocalStateDir(root, { notice, referencedBy: () => [] })).toBe(current());
@@ -183,7 +183,9 @@ describe('only Core state at a project root moves', () => {
     write('.legacy/legacy.duckdb', 'db');
     write('.legacy/legacy.duckdb.wal', 'wal');
     expect(await prepareLocalStateDir(root, { notice })).toBe(earlier());
-    expect(notices).toEqual([expect.stringMatching(/legacy\.duckdb\.wal shows another process/)]);
+    expect(notices).toEqual([
+      expect.stringMatching(/legacy\.duckdb\.wal shows a process is using/),
+    ]);
     fs.rmSync(path.join(root, '.legacy/legacy.duckdb.wal'));
     fs.mkdirSync(path.join(root, '.legacy/model-spec'));
     const lock = path.join(root, '.legacy/model-spec/agentic-a.lock');
