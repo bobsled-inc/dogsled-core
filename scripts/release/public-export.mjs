@@ -25,6 +25,8 @@ export const UNIT_LEGS = Object.freeze(['model', 'graph', 'dogsled', 'rest']);
 // The staging-only old-name guard. Its package script is found by its command
 // (the script name follows the rename), then removed with its CI step.
 const STAGING_GUARD_COMMAND = 'node ./scripts/guards/old-names.mjs';
+// The private staging branch; nothing in the public tree may name it.
+const RENAME_BRANCH = 'rename/bobsled-core';
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const policyPath = 'scripts/release/public-export-exclude.txt';
@@ -102,6 +104,8 @@ export function assertExport(root, entries, exclusions) {
   for (const entry of entries) {
     if (entry.path === policyPath) continue;
     const bytes = entryBytes(root, entry);
+    if (bytes.includes(Buffer.from(RENAME_BRANCH)))
+      throw new Error(`Retained file names the private rename branch: ${entry.path}`);
     for (const needle of needles) {
       if (bytes.includes(Buffer.from(needle))) {
         throw new Error(`Retained file references an excluded path: ${entry.path} -> ${needle}`);
@@ -212,44 +216,55 @@ export function exportCommit({ root, commit, output }) {
 }
 
 export function preparePublicScripts(root) {
+  const transformations = [];
+  let guard;
   const packageFile = path.join(root, 'package.json');
-  if (!existsSync(packageFile)) return [];
-  const source = readFileSync(packageFile);
-  const data = JSON.parse(source);
-  const guards = Object.keys(data.scripts ?? {}).filter((name) =>
-    data.scripts[name].includes(STAGING_GUARD_COMMAND)
-  );
-  if (!guards.length) return [];
-  if (guards.length !== 1 || data.scripts[guards[0]] !== STAGING_GUARD_COMMAND)
-    throw new Error('Unrecognized staging guard invocation in package.json.');
-  const [guard] = guards;
-  delete data.scripts[guard];
-  for (const [name, script] of Object.entries(data.scripts))
-    if (script.includes(guard))
-      throw new Error(`Unrecognized staging guard invocation in the ${name} script.`);
-  writeFileSync(packageFile, `${JSON.stringify(data, null, 2)}\n`);
-  const transformations = [
-    {
-      path: 'package.json',
-      sourceSha256: sha256(source),
-      reason: 'Remove the staging-only old-name guard script.',
-    },
-  ];
+  if (existsSync(packageFile)) {
+    const source = readFileSync(packageFile);
+    const data = JSON.parse(source);
+    const guards = Object.keys(data.scripts ?? {}).filter((name) =>
+      data.scripts[name].includes(STAGING_GUARD_COMMAND)
+    );
+    if (guards.length) {
+      if (guards.length !== 1 || data.scripts[guards[0]] !== STAGING_GUARD_COMMAND)
+        throw new Error('Unrecognized staging guard invocation in package.json.');
+      [guard] = guards;
+      delete data.scripts[guard];
+      for (const [name, script] of Object.entries(data.scripts))
+        if (script.includes(guard))
+          throw new Error(`Unrecognized staging guard invocation in the ${name} script.`);
+      writeFileSync(packageFile, `${JSON.stringify(data, null, 2)}\n`);
+      transformations.push({
+        path: 'package.json',
+        sourceSha256: sha256(source),
+        reason: 'Remove the staging-only old-name guard script.',
+      });
+    }
+  }
   const ciFile = path.join(root, '.github/workflows/ci.yml');
   if (!existsSync(ciFile)) return transformations;
   const ciSource = readFileSync(ciFile);
-  const step = new RegExp(`^ {6}- name: [^\\n]+\\n {8}run: pnpm ${escapeRegExp(guard)}\\n`, 'gm');
-  const text = ciSource.toString('utf8');
-  const steps = text.match(step) ?? [];
-  const next = text.replace(step, '');
-  if (steps.length > 1 || next.includes(guard))
-    throw new Error('Unrecognized staging guard step in .github/workflows/ci.yml.');
-  if (steps.length === 1) {
-    writeFileSync(ciFile, next);
+  let text = ciSource.toString('utf8');
+  const reasons = [];
+  if (guard) {
+    const step = new RegExp(`^ {6}- name: [^\\n]+\\n {8}run: pnpm ${escapeRegExp(guard)}\\n`, 'gm');
+    const steps = text.match(step) ?? [];
+    text = text.replace(step, '');
+    if (steps.length > 1 || text.includes(guard))
+      throw new Error('Unrecognized staging guard step in .github/workflows/ci.yml.');
+    if (steps.length === 1) reasons.push('Remove the staging-only old-name guard step.');
+  }
+  const mainOnly = text.replaceAll(`, ${RENAME_BRANCH}]`, ']');
+  if (mainOnly !== text) reasons.push('Run CI on main only.');
+  text = mainOnly;
+  if (text.includes(RENAME_BRANCH))
+    throw new Error('Unrecognized rename branch reference in .github/workflows/ci.yml.');
+  if (reasons.length) {
+    writeFileSync(ciFile, text);
     transformations.push({
       path: '.github/workflows/ci.yml',
       sourceSha256: sha256(ciSource),
-      reason: 'Remove the staging-only old-name guard step.',
+      reason: reasons.join(' '),
     });
   }
   return transformations;

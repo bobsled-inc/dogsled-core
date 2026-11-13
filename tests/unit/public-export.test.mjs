@@ -24,6 +24,7 @@ import {
   createPublicRootCommit,
   main,
   parseExclusions,
+  PUBLIC_ROOT_IDENTITY,
 } from '../../scripts/release/public-export.mjs';
 import { loadGuardSidecar } from '../../scripts/guards/lib.mjs';
 import { sourceFiles } from '../../scripts/ci/source-files.mjs';
@@ -475,7 +476,7 @@ describe('public scripts and root commit', () => {
       process.env.PATH = previousPath;
     }
     expect(git(output(root), ['show', '-s', '--format=%an%n%ae%n%cn%n%ce%n%s%n%P'])).toBe(
-      'Ioannis\nioannis@bobsled.co\nIoannis\nioannis@bobsled.co\nInitial commit'
+      `${PUBLIC_ROOT_IDENTITY.name}\n${PUBLIC_ROOT_IDENTITY.email}\n${PUBLIC_ROOT_IDENTITY.name}\n${PUBLIC_ROOT_IDENTITY.email}\nInitial commit`
     );
     expect(git(output(root), ['rev-list', '--count', 'HEAD'])).toBe('1');
     expect(existsSync(path.join(output(root), 'EXPORT-MANIFEST.json'))).toBe(false);
@@ -495,6 +496,7 @@ describe('public scripts and root commit', () => {
       expect.arrayContaining([
         'scripts/rename/',
         'tests/unit/rename-mapping.test.mjs',
+        'tests/unit/rename-branch-isolation.test.mjs',
         '.github/workflows/preview-publish.yml',
         'scripts/release/preview.mjs',
         'tests/unit/release-preview.test.mjs',
@@ -551,6 +553,28 @@ describe('public scripts and root commit', () => {
     ]);
     expect(existsSync(path.join(output(root), 'scripts/guards/old-names.mjs'))).toBe(false);
     expect(() => assertManifest(output(root), result.manifest)).not.toThrow();
+  });
+
+  it('runs the public CI on main only and refuses any other rename-branch reference', () => {
+    const root = fixture();
+    const ci =
+      'on:\n  push:\n    branches: [main, rename/bobsled-core]\n  pull_request:\n    branches: [main, rename/bobsled-core]\n';
+    write(root, '.github/workflows/ci.yml', ci);
+    const result = exportCommit({ root, commit: commit(root), output: output(root) });
+    expect(readFileSync(path.join(output(root), '.github/workflows/ci.yml'), 'utf8')).toBe(
+      'on:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n'
+    );
+    expect(result.manifest.transformations).toEqual([
+      expect.objectContaining({ path: '.github/workflows/ci.yml', reason: 'Run CI on main only.' }),
+    ]);
+  });
+
+  it('refuses a retained file that names the private rename branch', () => {
+    const root = fixture();
+    write(root, 'docs/notes.md', 'Merged from rename/bobsled-core.\n');
+    expect(() => exportCommit({ root, commit: commit(root), output: output(root) })).toThrow(
+      /names the private rename branch: docs\/notes\.md/
+    );
   });
 
   it('finds the staging guard by its command after the script is renamed', () => {
@@ -611,7 +635,7 @@ describe('public scripts and root commit', () => {
       const sha = createPublicRootCommit(output(root), result.manifest, result.exclusions);
       expect(sha).toMatch(/^[a-f0-9]{40}$/);
       expect(git(output(root), ['show', '-s', '--format=%an%n%ae%n%cn%n%ce%n%s%n%P'])).toBe(
-        'Ioannis\nioannis@bobsled.co\nIoannis\nioannis@bobsled.co\nInitial commit'
+        `${PUBLIC_ROOT_IDENTITY.name}\n${PUBLIC_ROOT_IDENTITY.email}\n${PUBLIC_ROOT_IDENTITY.name}\n${PUBLIC_ROOT_IDENTITY.email}\nInitial commit`
       );
       expect(git(output(root), ['rev-list', '--count', 'HEAD'])).toBe('1');
       expect(git(output(root), ['ls-files'])).toBe('README.md');

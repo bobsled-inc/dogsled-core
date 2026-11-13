@@ -1,5 +1,6 @@
 scripts/rename/ # Private staging rename and sync tooling.
 tests/unit/rename-mapping.test.mjs # Regression suite only for the private rename tooling.
+tests/unit/rename-branch-isolation.test.mjs # Private rename-branch workflow isolation suite.
 .github/workflows/preview-publish.yml # Private preview publication flow.
 scripts/release/preview.mjs # Private preview package staging and publication adapter.
 tests/unit/release-preview.test.mjs # Regression suite only for the private preview adapter.
