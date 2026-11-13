@@ -783,6 +783,10 @@ export function registerRunCommand(program: Command, runHandler: RunHandler = ru
     .option('--s3-region <region>', 'AWS region')
     .option('--s3-role-arn <arn>', 'AWS IAM role ARN for assume-role credentials')
     .option('--s3-external-id <id>', 'AWS external ID for assume-role credentials')
+    .option(
+      '--stream-subfolder <path>',
+      'Folder added inside each stream folder for local, gcs and s3 destinations (for example data/run-1)'
+    )
     .option('--db-path <path>', 'DuckDB database file path')
     .option('--ducklake-catalog-url <url>', 'DuckLake catalog URL')
     .option('--ducklake-data-path <path>', 'DuckLake data path')

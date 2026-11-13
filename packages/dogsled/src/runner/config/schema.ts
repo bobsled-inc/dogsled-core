@@ -6,8 +6,11 @@ import { normalizeDestinationBlueprint } from './legacy-blueprint.js';
 import {
   EnvPlaceholderSchema,
   isSchemaBehavior,
+  isValidStreamSubfolder,
+  normalizeStreamSubfolder,
   PlatformConfigSchema,
   SCHEMA_BEHAVIORS,
+  STREAM_SUBFOLDER_RULE,
 } from '@bobsled-inc/protocol';
 // `/schema` keeps Dogsled's configuration surface safe for server-side / Lambda
 // consumers. The embedder root re-exports
@@ -317,11 +320,30 @@ const TurbopufferDestinationSchema = z
   })
   .strict();
 
+/**
+ * Opt-in folder added inside each stream's folder on file destinations, so a
+ * file lands at `<prefix><stream>/<stream_subfolder>/<stream>-<n>.<ext>`.
+ * Omitted by default, which keeps `<prefix><stream>/<stream>-<n>.<ext>`.
+ */
+const StreamSubfolderSchema = z
+  .string()
+  .refine(
+    (value) =>
+      EnvPlaceholderSchema.safeParse(value).success ||
+      isValidStreamSubfolder(normalizeStreamSubfolder(value)),
+    `${STREAM_SUBFOLDER_RULE}, or an environment variable placeholder`
+  );
+
+const FileDestinationFields = {
+  stream_subfolder: StreamSubfolderSchema.optional(),
+} as const;
+
 // File destinations require an explicit format (no implicit default).
 const LocalDestinationSchema = z
   .object({
     type: z.literal('local'),
     format: DestinationFormatSchema,
+    ...FileDestinationFields,
     ...SharedDestinationFields,
   })
   .strict();
@@ -332,6 +354,7 @@ const GcsDestinationSchema = z
     bucket: z.string(),
     prefix: z.string().optional(),
     format: DestinationFormatSchema,
+    ...FileDestinationFields,
     ...SharedDestinationFields,
   })
   .strict();
@@ -342,6 +365,7 @@ const S3DestinationSchema = z
     bucket: z.string(),
     prefix: z.string().optional(),
     format: DestinationFormatSchema,
+    ...FileDestinationFields,
     ...SharedDestinationFields,
   })
   .strict();

@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { LOAD_STRATEGIES, SCHEMA_BEHAVIORS } from '@bobsled-inc/protocol';
+import {
+  isValidStreamSubfolder,
+  LOAD_STRATEGIES,
+  normalizeStreamSubfolder,
+  SCHEMA_BEHAVIORS,
+  STREAM_SUBFOLDER_RULE,
+} from '@bobsled-inc/protocol';
 import { OUTPUT_FORMATS } from '../runtime/formats.js';
 import {
   RESERVED_TABLE_PREFIX,
@@ -36,10 +42,23 @@ const snowflakeWorkloadIdentityToken = z
   .trim()
   .min(1);
 
+/**
+ * Opt-in folder added inside each stream's folder for file destinations, so a
+ * file lands at `<prefix><stream>/<streamSubfolder>/<stream>-<n>.<ext>`.
+ * Omitted by default, which keeps `<prefix><stream>/<stream>-<n>.<ext>`.
+ */
+const streamSubfolder = z
+  .string()
+  .trim()
+  .transform(normalizeStreamSubfolder)
+  .refine(isValidStreamSubfolder, STREAM_SUBFOLDER_RULE)
+  .optional();
+
 const LocalDestConfigSchema = z.object({
   dest: z.literal('local'),
   format: z.enum(OUTPUT_FORMATS),
   outputDir: z.string().trim().min(1).default('./output'),
+  streamSubfolder,
   bufferSize,
   logFormat,
 });
@@ -50,6 +69,7 @@ const GcsDestConfigSchema = z.object({
   outputDir: z.string().trim().min(1).default('./output'),
   gcsBucket: z.string().trim().min(1),
   gcsPrefix: z.string().trim().min(1).optional(),
+  streamSubfolder,
   bufferSize,
   logFormat,
 });
@@ -63,6 +83,7 @@ const S3DestConfigSchema = z.object({
   s3Region: z.string().trim().min(1).optional(),
   s3RoleArn: z.string().trim().min(1).optional(),
   s3ExternalId: z.string().trim().min(1).optional(),
+  streamSubfolder,
   bufferSize,
   logFormat,
 });
