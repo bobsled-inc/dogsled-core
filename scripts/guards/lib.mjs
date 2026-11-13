@@ -214,10 +214,6 @@ export function printExamples(findings, patternId, max = 10) {
 }
 
 export const GUARD_SELF_REFERENCE_PATHS = new Set([
-  // Rename tooling on rename/bobsled-core: spells old names and contacts by design.
-  'scripts/rename/mapping.mjs',
-  'scripts/rename/rename.mjs',
-  'tests/unit/rename-mapping.test.mjs',
   'scripts/guards/lib.mjs',
   'scripts/guards/old-name-exceptions.mjs',
   'scripts/guards/privacy.mjs',
@@ -225,9 +221,6 @@ export const GUARD_SELF_REFERENCE_PATHS = new Set([
   'scripts/guards/privacy-exceptions.json',
   'tests/unit/guard-privacy.test.mjs',
   'tests/unit/security-runtime-policy.test.mjs',
-  // Old-name guard for the Bobsled Core rename: its allow list names the app domains.
-  'scripts/guards/old-names-allow.json',
-  'tests/unit/guard-old-names.test.mjs',
 ]);
 
 export function loadGuardSidecar(moduleFile = currentFile, root = repoRoot) {
