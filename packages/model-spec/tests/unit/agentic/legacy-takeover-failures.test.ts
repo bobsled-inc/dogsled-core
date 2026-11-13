@@ -291,6 +291,8 @@ describe('respelling never touches user data', () => {
     const canonical = canonicalAgenticDefinition(definition);
     expect(canonical.description).toBe(definition.description);
     expect(canonical.columns[0]!.description).toBe(definition.columns[0]!.description);
-    expect(canonical.columns[0]!.name).toBe(agenticMetadataSpellings(role(reason))[0]);
+    // The same canonical spelling the row digests use, whichever generation is current.
+    const [canonicalName] = Object.keys(canonicalAgenticNames({ [otherSpelling(reason)]: 1 }));
+    expect(canonical.columns[0]!.name).toBe(canonicalName);
   });
 });
