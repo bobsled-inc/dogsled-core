@@ -186,12 +186,11 @@ export { assertDriverVersion } from './runtime/driver-version.js';
 export {
   LOCAL_DATABASE_FILE,
   LOCAL_STATE_DIR,
-  findLocalStateRoot,
+  localStateTakeoverRoot,
   localDatabaseFile,
   localStateDir,
   localStateDirName,
   prepareLocalStateDir,
-  resetLocalStateDirForTests,
   type LakeDataPathStore,
 } from './local-state/local-state-dir.js';
-export { duckDbLakeDataPathStore } from './local-state/duckdb-lake.js';
+export { duckDbFileInUse, duckDbLakeDataPathStore } from './local-state/duckdb-lake.js';

@@ -50,3 +50,20 @@ export function duckDbLakeDataPathStore(): LakeDataPathStore {
       }),
   };
 }
+
+/**
+ * Whether another process holds a DuckDB file open for writing: DuckDB locks the file, so a
+ * second writer cannot open it. Any other failure to open it does not count.
+ */
+export function duckDbFileInUse(): (file: string) => Promise<boolean> {
+  return async (file) => {
+    const driver = (await import('@duckdb/node-api')) as unknown as DuckDbDriver;
+    try {
+      const instance = await driver.DuckDBInstance.create(file);
+      instance.closeSync?.();
+      return false;
+    } catch (error) {
+      return /lock/i.test(error instanceof Error ? error.message : String(error));
+    }
+  };
+}

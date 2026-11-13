@@ -243,6 +243,11 @@ export function findDogsledProject(startDir?: string): DogsledProjectLocation | 
     : null;
 }
 
+/** Whether `dir` itself holds a root pipeline configuration file. */
+export function hasRootConfig(dir: string): boolean {
+  return CONFIG_NAMES.some((name) => fs.existsSync(path.join(dir, name)));
+}
+
 export function findDogsledConfig(startDir?: string): string | null {
   return findDogsledProject(startDir)?.configPaths[0] ?? null;
 }

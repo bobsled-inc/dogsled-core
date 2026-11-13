@@ -26,11 +26,7 @@ import { registerInitCommand } from './commands/init.js';
 import { registerSourceQueryCommand } from './commands/query-register.js';
 import { registerSyncCommand } from './commands/sync.js';
 import { registerVqCommand } from './commands/vq.js';
-import {
-  duckDbLakeDataPathStore,
-  findLocalStateRoot,
-  prepareLocalStateDir,
-} from '@bobsled-inc/connections';
+import { takeOverLocalState } from './runtime/local-state-takeover.js';
 
 declare const __CLI_VERSION__: string | undefined;
 
@@ -152,18 +148,6 @@ export function handleCliError(error: unknown): void {
   const message = error != null ? String(error) : 'An unknown error occurred';
   process.stderr.write(`${message}\n`);
   process.exitCode = 1;
-}
-
-/**
- * Takes over an earlier local state folder once, before any command or delegated subprocess
- * reads it. Never fails the command: on any problem the earlier folder is read in place.
- */
-async function takeOverLocalState(argv: readonly string[]): Promise<void> {
-  const flag = argv.indexOf('--project-root');
-  const start = flag >= 0 && argv[flag + 1] ? argv[flag + 1]! : process.cwd();
-  const root = findLocalStateRoot(start);
-  if (!root) return;
-  await prepareLocalStateDir(root, { lake: duckDbLakeDataPathStore() }).catch(() => undefined);
 }
 
 export async function runCli(argv: string[] = process.argv.slice(2)): Promise<void> {

@@ -1,18 +1,21 @@
+import { spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   LOCAL_DATABASE_FILE,
   LOCAL_STATE_DIR,
   localDatabaseFile,
   localStateDir,
+  localStateTakeoverRoot,
   prepareLocalStateDir,
   resetLocalStateDirForTests,
+  type LakeDataPathStore,
 } from '../../../src/local-state/local-state-dir.js';
-import { duckDbLakeDataPathStore } from '../../../src/local-state/duckdb-lake.js';
+import { duckDbFileInUse, duckDbLakeDataPathStore } from '../../../src/local-state/duckdb-lake.js';
 
 // Generic tests: an earlier folder name stands in, so they pass before and after the
 // Dogsled -> Bobsled rename changes the current one.
@@ -82,7 +85,11 @@ describe('local state folder takeover', () => {
     await prepareLocalStateDir(root, { notice });
     expect(read('.legacy/config.yml')).toBe('old');
     expect(read(`${LOCAL_STATE_DIR}/config.yml`)).toBe('new');
-    expect(notices).toEqual([expect.stringMatching(/\.legacy\/ is ignored/)]);
+    expect(notices).toEqual([
+      expect.stringMatching(
+        /\(last changed [\d-]+\); \.legacy\/ \(last changed [\d-]+\) is ignored/
+      ),
+    ]);
   });
 
   it('finishes a takeover that stopped after the folder moved', async () => {
@@ -135,6 +142,156 @@ describe('local state folder takeover', () => {
   );
 });
 
+describe('only Core state at a project root moves', () => {
+  const current = () => path.join(root, LOCAL_STATE_DIR);
+  const earlier = () => path.join(root, '.legacy');
+
+  it('leaves an installer folder (with bin/) and a folder without Core state where they are', async () => {
+    write('.legacy/bin/tool', '#!/bin/sh');
+    expect(await prepareLocalStateDir(root, { notice })).toBe(earlier());
+    resetLocalStateDirForTests();
+    fs.rmSync(path.join(root, '.legacy/bin'), { recursive: true });
+    write('.legacy/notes.txt', 'mine');
+    expect(await prepareLocalStateDir(root, { notice })).toBe(earlier());
+    expect(has(LOCAL_STATE_DIR)).toBe(false);
+    expect(notices).toEqual([]);
+  });
+
+  it('finds the takeover root at the nearest folder and stops at a current folder', () => {
+    write('.legacy/config.yml', 'x');
+    write('sub/deeper/file.txt', '');
+    expect(localStateTakeoverRoot(path.join(root, 'sub/deeper'))).toBe(root);
+    write(`sub/${LOCAL_STATE_DIR}/config.yml`, 'y');
+    expect(localStateTakeoverRoot(path.join(root, 'sub/deeper'))).toBeUndefined();
+  });
+
+  it('keeps the folder in place while project files name it, and says so once', async () => {
+    write('.legacy/config.yml', 'x');
+    const referencedBy = (folder: string) => (folder === '.legacy' ? ['integrations/w.yml'] : []);
+    expect(await prepareLocalStateDir(root, { notice, referencedBy })).toBe(earlier());
+    resetLocalStateDirForTests();
+    expect(await prepareLocalStateDir(root, { notice, referencedBy })).toBe(earlier());
+    expect(read('.legacy/config.yml')).toBe('x');
+    expect(notices).toEqual([
+      expect.stringMatching(/^Kept \.legacy\/: integrations\/w\.yml name it/),
+    ]);
+    resetLocalStateDirForTests();
+    expect(await prepareLocalStateDir(root, { notice, referencedBy: () => [] })).toBe(current());
+  });
+
+  it('keeps a folder another process is using: a WAL file or a live run lock', async () => {
+    write('.legacy/legacy.duckdb', 'db');
+    write('.legacy/legacy.duckdb.wal', 'wal');
+    expect(await prepareLocalStateDir(root, { notice })).toBe(earlier());
+    expect(notices).toEqual([expect.stringMatching(/legacy\.duckdb\.wal shows another process/)]);
+    fs.rmSync(path.join(root, '.legacy/legacy.duckdb.wal'));
+    fs.mkdirSync(path.join(root, '.legacy/model-spec'));
+    const lock = path.join(root, '.legacy/model-spec/agentic-a.lock');
+    fs.symlinkSync(`${os.hostname()}:${process.pid}:token`, lock);
+    resetLocalStateDirForTests();
+    expect(await prepareLocalStateDir(root, { notice })).toBe(earlier());
+    fs.unlinkSync(lock);
+    fs.symlinkSync(`${os.hostname()}:999999999:token`, lock);
+    resetLocalStateDirForTests();
+    expect(await prepareLocalStateDir(root, { notice })).toBe(current());
+  });
+
+  it('keeps a folder whose DuckDB file another process holds open', async () => {
+    fs.mkdirSync(earlier());
+    const file = path.join(earlier(), 'legacy.duckdb');
+    const holder = spawn(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `const { DuckDBInstance } = await import('@duckdb/node-api');
+         const db = await DuckDBInstance.create(${JSON.stringify(file)});
+         const c = await db.connect();
+         await c.run('CREATE TABLE t AS SELECT 1 AS x');
+         await c.run('CHECKPOINT');
+         process.stdout.write('ready\\n');
+         setInterval(() => {}, 1000);`,
+      ],
+      { cwd: path.resolve(__dirname, '../../..'), stdio: ['ignore', 'pipe', 'inherit'] }
+    );
+    try {
+      await new Promise<void>((resolve, reject) => {
+        holder.stdout!.on(
+          'data',
+          (chunk: Buffer) => chunk.toString().includes('ready') && resolve()
+        );
+        holder.on('exit', (code) => reject(new Error(`holder exited ${code}`)));
+      });
+      const options = { notice, databaseInUse: duckDbFileInUse() };
+      expect(await prepareLocalStateDir(root, options)).toBe(earlier());
+      expect(notices).toEqual([expect.stringMatching(/legacy\.duckdb is open in another process/)]);
+    } finally {
+      holder.kill('SIGKILL');
+    }
+  }, 30_000);
+
+  it('rewrites only paths into the folder in its own settings', async () => {
+    write(
+      '.legacy/config.yml',
+      `a: .legacy/legacy.duckdb\nb: ../shared/legacy.duckdb\nc: other.legacy/x\nd: ${root}/.legacy/lake/c.ducklake\n`
+    );
+    await prepareLocalStateDir(root, { notice });
+    expect(read(`${LOCAL_STATE_DIR}/config.yml`)).toBe(
+      `a: ${LOCAL_STATE_DIR}/${LOCAL_DATABASE_FILE}\nb: ../shared/legacy.duckdb\nc: other.legacy/x\nd: ${root}/${LOCAL_STATE_DIR}/lake/c.ducklake\n`
+    );
+  });
+
+  it('maps a lake data path through a link to the project, and stops on one it cannot map', async () => {
+    const link = `${root}-link`;
+    fs.symlinkSync(root, link);
+    try {
+      const paths = new Map<string, string>();
+      const lake: LakeDataPathStore = {
+        read: async (catalog) => paths.get(path.basename(catalog)),
+        write: async (catalog, value) => void paths.set(path.basename(catalog), value),
+      };
+      write('.legacy/lake/c.ducklake', '');
+      paths.set('c.ducklake', `${link}/.legacy/lake/c.ducklake.files/`);
+      expect(await prepareLocalStateDir(root, { notice, lake })).toBe(current());
+      expect(paths.get('c.ducklake')).toBe(`${link}/${LOCAL_STATE_DIR}/lake/c.ducklake.files/`);
+
+      fs.renameSync(current(), earlier());
+      resetLocalStateDirForTests();
+      notices.length = 0;
+      paths.set('c.ducklake', '/elsewhere/.legacy/lake/c.ducklake.files/');
+      expect(await prepareLocalStateDir(root, { notice, lake })).toBe(earlier());
+      expect(paths.get('c.ducklake')).toBe('/elsewhere/.legacy/lake/c.ducklake.files/');
+      expect(notices).toEqual([expect.stringMatching(/outside this project/)]);
+    } finally {
+      fs.unlinkSync(link);
+    }
+  });
+
+  it('finishes a stopped takeover only when its journal says so, and survives a failed finish', async () => {
+    write(`${LOCAL_STATE_DIR}/legacy.duckdb`, 'a user file');
+    await prepareLocalStateDir(root, { notice });
+    expect(has(`${LOCAL_STATE_DIR}/legacy.duckdb`)).toBe(true);
+    resetLocalStateDirForTests();
+    write(`${LOCAL_STATE_DIR}/.takeover.json`, '{"from":".legacy","lake":[]}');
+    fs.mkdirSync(path.join(current(), 'config.yml.takeover'));
+    write(`${LOCAL_STATE_DIR}/config.yml`, 'settings');
+    expect(await prepareLocalStateDir(root, { notice })).toBe(current());
+    expect(has(`${LOCAL_STATE_DIR}/.takeover.json`)).toBe(true);
+  });
+
+  it('takes over a lock whose owner process is gone', async () => {
+    write('.legacy/config.yml', 'x');
+    const lock = path.join(root, `${LOCAL_STATE_DIR}.takeover.lock`);
+    fs.mkdirSync(lock);
+    fs.writeFileSync(
+      path.join(lock, 'owner.json'),
+      JSON.stringify({ pid: 999999999, host: os.hostname(), token: 'gone' })
+    );
+    expect(await prepareLocalStateDir(root, { notice })).toBe(current());
+    expect(fs.existsSync(lock)).toBe(false);
+  });
+});
+
 const ducklake = await (async () => {
   try {
     const { DuckDBInstance } = await import('@duckdb/node-api');
@@ -147,7 +304,12 @@ const ducklake = await (async () => {
   }
 })();
 
-describe.skipIf(!ducklake)('a DuckLake catalog inside the folder', () => {
+// CI installs the DuckLake extension, so there a missing one fails rather than skips.
+describe.skipIf(!ducklake && !process.env['CI'])('a DuckLake catalog inside the folder', () => {
+  beforeAll(() => {
+    if (!ducklake) throw new Error('The DuckLake extension could not be installed.');
+  });
+
   it.each(['relative', 'absolute'])(
     'still reads its data after the move (%s data path)',
     async (kind) => {

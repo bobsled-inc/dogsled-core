@@ -12,6 +12,7 @@ import type { GlobalOptions, OutputOptions } from '../types/index.js';
 import { LESSONS } from './lessons.js';
 import type { Lesson } from './lessons.js';
 import { localStateDir } from '@bobsled-inc/connections';
+import { TUTOR_PROGRESS_FILE_SPELLINGS } from './legacy-names.js';
 
 function createChalk(options: OutputOptions): typeof chalk {
   if (options.noColor || process.env['NO_COLOR'] !== undefined) {
@@ -78,13 +79,24 @@ function packageJsonHasWorkspaces(path: string): boolean {
   }
 }
 
+const TUTOR_PROGRESS_FILE = '.dogsled-tutor-progress.json';
+
 function getProgressPath(): string {
   const root = findProjectRoot();
-  return join(localStateDir(root), 'tutor-lab', '.dogsled-tutor-progress.json');
+  return join(localStateDir(root), 'tutor-lab', TUTOR_PROGRESS_FILE);
+}
+
+/** The progress file to read: the current name, else one an earlier Core wrote. */
+function readableProgressPath(): string {
+  const progressPath = getProgressPath();
+  if (existsSync(progressPath)) return progressPath;
+  const dir = resolve(progressPath, '..');
+  const earlier = TUTOR_PROGRESS_FILE_SPELLINGS.map((name) => join(dir, name)).find(existsSync);
+  return earlier ?? progressPath;
 }
 
 function readProgress(): ProgressFile {
-  const progressPath = getProgressPath();
+  const progressPath = readableProgressPath();
   if (!existsSync(progressPath)) {
     return { completed: {}, skipped: {}, updatedAt: new Date().toISOString() };
   }
