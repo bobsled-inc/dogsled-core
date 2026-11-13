@@ -27,7 +27,10 @@ export async function renameLegacyMetadataColumns(
       await rename(actual, name);
     } catch (error) {
       throw new Error(
-        `Agentic target ${table} has the earlier metadata column ${actual}, and the warehouse refused to rename it to ${name}. Rename it by hand, or rebuild the target.`,
+        `Agentic target ${table} has the earlier metadata column ${actual}, and renaming it to ${name} failed. ` +
+          'If another run renamed it at the same time, run again. On Databricks (Delta), enable column ' +
+          "mapping first (ALTER TABLE … SET TBLPROPERTIES ('delta.columnMapping.mode' = 'name')). " +
+          'Otherwise rename the column by hand or rebuild the target.',
         { cause: error }
       );
     }

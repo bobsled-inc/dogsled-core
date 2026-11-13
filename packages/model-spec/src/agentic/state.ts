@@ -20,7 +20,7 @@ import { applyPublicationCheckpoint } from './publication-checkpoint.js';
 /** Versioned execution checkpoints. Stores apply commands atomically under exclusive ownership. */
 import { createHash } from 'node:crypto';
 import { canonicalize } from 'json-canonicalize';
-import { canonicalAgenticNames } from './metadata-names.js';
+import { canonicalAgenticDefinition } from './metadata-names.js';
 import { z } from 'zod';
 import {
   AgenticPublicationIntentSchema,
@@ -360,7 +360,7 @@ export function digestAgenticState(value: unknown): string {
 
 /** A definition's identity, the same whichever generation spelled its metadata columns. */
 export function agenticDefinitionIdentity(definition: unknown): string {
-  return digestAgenticState(canonicalAgenticNames(definition));
+  return digestAgenticState(canonicalAgenticDefinition(definition));
 }
 
 /**

@@ -262,18 +262,28 @@ async function adoptLegacyAgenticRowTables(
     (prefix) => prefix !== AGENTIC_TABLE_PREFIX
   );
   if (!prefixes.length) return;
-  const names = [
-    ...agenticTables(dialect).map((table) => table.name),
-    ...(dialect.setupTables ?? []),
-  ].filter((name) => name.startsWith(AGENTIC_TABLE_PREFIX));
+  const shapes = new Map(agenticTables(dialect).map((table) => [table.name, table]));
+  const names = [...shapes.keys(), ...(dialect.setupTables ?? [])].filter((name) =>
+    name.startsWith(AGENTIC_TABLE_PREFIX)
+  );
   for (const name of names) {
     for (const prefix of prefixes) {
       const legacy = `${prefix}${name.slice(AGENTIC_TABLE_PREFIX.length)}`;
       try {
         await db.run(dialect.renameTable(namespace, legacy, name));
       } catch (error) {
-        // The current table exists already: keep it, and leave the earlier one untouched.
         if (isCancellationError(error)) throw error;
+        // Where the current table exists, keep it and leave the earlier one untouched. A rename
+        // that failed for any other reason must not let setup create an empty table beside the
+        // saved state, so it stops here and the next run tries again.
+        const shape = shapes.get(name);
+        if (
+          shape &&
+          !(await dialect.hasBaseTables(db, namespace, [shape])) &&
+          (await dialect.hasBaseTables(db, namespace, [{ ...shape, name: legacy }]))
+        ) {
+          throw error;
+        }
       }
     }
   }

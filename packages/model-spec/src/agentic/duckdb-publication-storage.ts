@@ -87,28 +87,41 @@ async function schemaExists(db: Db, schema: string): Promise<boolean> {
 }
 
 /**
- * DuckDB cannot rename a schema, so the first time the current publication schema is created
- * the rows of an earlier Core generation's schema are copied into it: targets keep their
- * revision and fence, and receipts keep publication idempotent. The earlier schema stays.
+ * DuckDB cannot rename a schema, so an earlier Core generation's publication schema is copied
+ * into the current one: targets keep their revision and fence, and receipts keep publication
+ * idempotent. Only into empty tables, all of them in one transaction, so a crash leaves either
+ * nothing or everything copied and the next run decides again. The earlier schema stays.
  */
 async function copyLegacyPublicationSchema(db: Db): Promise<void> {
-  for (const legacy of LEGACY_DUCKDB_PUBLICATION_SCHEMAS) {
-    if (legacy === PUBLICATION_SCHEMA || !(await schemaExists(db, legacy))) continue;
-    for (const table of ['targets', 'stages', 'receipts']) {
-      const found = await db.query(
-        'SELECT 1 AS found FROM information_schema.tables WHERE table_catalog = current_database() AND table_schema = ? AND table_name = ? LIMIT 1',
-        [legacy, table]
-      );
-      if (found.length) {
-        await db.run(`INSERT INTO ${stageRef(table)} SELECT * FROM ${q(legacy)}.${q(table)}`);
+  const legacies = LEGACY_DUCKDB_PUBLICATION_SCHEMAS.filter((name) => name !== PUBLICATION_SCHEMA);
+  if (!legacies.length) return;
+  const [count] = await db.query(
+    `SELECT (SELECT count(*) FROM ${control}) + (SELECT count(*) FROM ${manifests}) + (SELECT count(*) FROM ${receipts}) AS n`
+  );
+  if (Number(count?.n ?? 0) > 0) return;
+  for (const legacy of legacies) {
+    if (!(await schemaExists(db, legacy))) continue;
+    await db.run('BEGIN TRANSACTION');
+    try {
+      for (const table of ['targets', 'stages', 'receipts']) {
+        const found = await db.query(
+          'SELECT 1 AS found FROM information_schema.tables WHERE table_catalog = current_database() AND table_schema = ? AND table_name = ? LIMIT 1',
+          [legacy, table]
+        );
+        if (found.length) {
+          await db.run(`INSERT INTO ${stageRef(table)} SELECT * FROM ${q(legacy)}.${q(table)}`);
+        }
       }
+      await db.run('COMMIT');
+    } catch (error) {
+      await db.run('ROLLBACK').catch(() => undefined);
+      throw error;
     }
     return;
   }
 }
 
 export async function init(db: Db): Promise<void> {
-  const fresh = !(await schemaExists(db, PUBLICATION_SCHEMA));
   await db.run(`CREATE SCHEMA IF NOT EXISTS ${q(PUBLICATION_SCHEMA)}`);
   await db.run(
     `CREATE TABLE IF NOT EXISTS ${control} (target VARCHAR PRIMARY KEY, revision BIGINT NOT NULL, fence VARCHAR NOT NULL)`
@@ -119,7 +132,7 @@ export async function init(db: Db): Promise<void> {
   await db.run(
     `CREATE TABLE IF NOT EXISTS ${receipts} (operation_id VARCHAR PRIMARY KEY, receipt VARCHAR NOT NULL)`
   );
-  if (fresh) await copyLegacyPublicationSchema(db);
+  await copyLegacyPublicationSchema(db);
 }
 export async function readReceipt(
   db: Db,

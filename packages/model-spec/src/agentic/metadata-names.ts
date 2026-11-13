@@ -53,33 +53,53 @@ export function legacyAgenticMetadataNames(name: string): string[] {
   return role === undefined ? [] : agenticMetadataSpellings(role).slice(1);
 }
 
-function mapNames(value: unknown, to: (role: AgenticMetadataRole) => string): unknown {
-  if (typeof value === 'string') {
-    const role = roleByName.get(value);
-    return role === undefined ? value : to(role);
-  }
-  if (Array.isArray(value)) return value.map((item) => mapNames(item, to));
+function mapRowKeys(value: unknown, to: (role: AgenticMetadataRole) => string): unknown {
+  if (Array.isArray(value)) return value.map((item) => mapRowKeys(item, to));
   if (value === null || typeof value !== 'object') return value;
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => {
       const role = roleByName.get(key);
-      return [role === undefined ? key : to(role), mapNames(item, to)];
+      return [role === undefined ? key : to(role), item];
     })
   );
 }
 
-/**
- * Rewrites every metadata name (object keys and exact string values) to the
- * canonical spelling that digests use. A value without metadata names is
- * returned unchanged in content.
- */
-export function canonicalAgenticNames<T>(value: T): T {
-  return mapNames(value, (role) => AGENTIC_METADATA_SPELLINGS[role][0]!) as T;
+function mapColumnNames(value: unknown, to: (role: AgenticMetadataRole) => string): unknown {
+  if (Array.isArray(value)) return value.map((item) => mapColumnNames(item, to));
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => {
+      if (key === 'name' && typeof item === 'string') {
+        const role = roleByName.get(item);
+        return [key, role === undefined ? item : to(role)];
+      }
+      return [key, mapColumnNames(item, to)];
+    })
+  );
 }
 
-/** Rewrites every metadata name to the name Core writes now. */
+const canonical = (role: AgenticMetadataRole) => AGENTIC_METADATA_SPELLINGS[role][0]!;
+const current = (role: AgenticMetadataRole) => AGENTIC_METADATA_NAMES[role];
+
+/**
+ * Rows (one or a list): the top-level metadata keys spelled the canonical way that digests use.
+ * Values, including nested user data, are never touched.
+ */
+export function canonicalAgenticNames<T>(value: T): T {
+  return mapRowKeys(value, canonical) as T;
+}
+
+/** Rows (one or a list): the top-level metadata keys spelled the way Core writes them now. */
 export function currentAgenticNames<T>(value: T): T {
-  return mapNames(value, (role) => AGENTIC_METADATA_NAMES[role]) as T;
+  return mapRowKeys(value, current) as T;
+}
+
+/**
+ * A definition or column list: every column `name` that is a metadata name, spelled the
+ * canonical way that digests use. Nothing else is touched.
+ */
+export function canonicalAgenticDefinition<T>(value: T): T {
+  return mapColumnNames(value, canonical) as T;
 }
 
 /** A row's value for one metadata role, under whichever spelling the row uses. */

@@ -6,7 +6,11 @@ import { AgenticRunKeySchema, digestAgenticState } from './state.js';
 import type { AgenticRunSnapshot } from './state.js';
 import type { AgenticProbeContext, ExperimentalAgenticProbe } from './probe.js';
 import { boundedAgenticRows } from './rows.js';
-import { AGENTIC_METADATA_NAMES, canonicalAgenticNames } from './metadata-names.js';
+import {
+  AGENTIC_METADATA_NAMES,
+  canonicalAgenticDefinition,
+  canonicalAgenticNames,
+} from './metadata-names.js';
 import { AgenticStateError } from './state-errors.js';
 import {
   AGENTIC_DEFAULT_STORE_LIMITS,
@@ -138,7 +142,7 @@ export function agenticPublicationData(run: AgenticRunSnapshot): {
 }
 /** Digest of a target's columns, the same whichever generation spelled its metadata columns. */
 export function agenticSchemaDigest(columns: unknown): string {
-  return digestAgenticState(canonicalAgenticNames(columns));
+  return digestAgenticState(canonicalAgenticDefinition(columns));
 }
 
 /** Digest of rows to publish, the same whichever generation spelled their metadata keys. */

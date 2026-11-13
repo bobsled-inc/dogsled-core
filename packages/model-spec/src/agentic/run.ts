@@ -32,7 +32,7 @@ import type { AgenticStateStore, AgenticRunSnapshot, AgenticCheckpointCommand } 
 import { createDefaultAgenticStateStore } from './default-state.js';
 import {
   AGENTIC_METADATA_NAMES,
-  canonicalAgenticNames,
+  canonicalAgenticDefinition,
   currentAgenticNames,
 } from './metadata-names.js';
 import type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
@@ -206,7 +206,9 @@ async function executeOwnedAgenticRun(
     )
   );
   const identity = agenticDefinitionIdentity(definition);
-  const comparable = digestAgenticState(comparableDefinition(canonicalAgenticNames(definition)));
+  const comparable = digestAgenticState(
+    comparableDefinition(canonicalAgenticDefinition(definition))
+  );
   const costCapUsd =
     options.maxCostUsd !== undefined ? options.maxCostUsd : (model.limits.max_cost_usd ?? null);
   if (costCapUsd !== null && !(Number.isFinite(costCapUsd) && costCapUsd > 0)) {
@@ -280,8 +282,9 @@ async function executeOwnedAgenticRun(
         digestAgenticState(snapshot.key) !== digestAgenticState(key) ||
         // Legacy runs keep their saved budget, so a changed cap must not pass silently.
         (snapshot.accounting === 'spend_cap'
-          ? digestAgenticState(comparableDefinition(canonicalAgenticNames(snapshot.definition))) !==
-            comparable
+          ? digestAgenticState(
+              comparableDefinition(canonicalAgenticDefinition(snapshot.definition))
+            ) !== comparable
           : snapshot.identity !== identity)
       ) {
         throw new AgenticStateError('conflict', {

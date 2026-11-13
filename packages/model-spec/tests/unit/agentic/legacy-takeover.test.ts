@@ -133,7 +133,7 @@ describe('agentic metadata names across generations', () => {
         () => Promise.reject(new Error('not allowed')),
         't'
       )
-    ).rejects.toThrow(/refused to rename/);
+    ).rejects.toThrow(/renaming it to .* failed/);
   });
 });
 

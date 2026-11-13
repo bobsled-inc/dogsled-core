@@ -64,8 +64,11 @@ export async function adoptLegacyWarehouseTables(
       settled.add(key);
       continue;
     }
+    // Nothing to adopt when no earlier table exists: the caller creates the current one.
+    let found = false;
     for (const name of earlier) {
       if (!(await tableExists(db, dialect, target, name))) continue;
+      found = true;
       // Snowflake and Databricks resolve an unqualified new name outside the table's schema.
       const to =
         dialect === 'snowflake' || dialect === 'databricks'
@@ -80,6 +83,7 @@ export async function adoptLegacyWarehouseTables(
       settled.add(key);
       break;
     }
+    if (!found) settled.add(key);
   }
   return adopted;
 }
