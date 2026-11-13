@@ -281,7 +281,15 @@ async function adoptLegacyAgenticRowTables(
           !(await dialect.tableExists(db, namespace, name)) &&
           (await dialect.tableExists(db, namespace, legacy))
         ) {
-          throw error;
+          throw new AgenticStateError(
+            'unavailable',
+            {
+              reason: 'takeover_rename_failed',
+              message: `Could not rename the earlier table ${legacy} to ${name}, so no new table was created beside the saved state.`,
+              hint: 'Let this role rename tables in the schema (on Snowflake it needs OWNERSHIP of them), then run again; saved runs resume.',
+            },
+            { cause: error }
+          );
         }
       }
     }

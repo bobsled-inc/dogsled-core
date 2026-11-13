@@ -121,7 +121,7 @@ describe('a row-store rename that fails on Snowflake', () => {
       const db = await earlierSnowflakeStore((from) => refuse && from === table);
       await expect(
         prepareAgenticRowTables(db as never, snowflakeRowDialect, '"S"')
-      ).rejects.toThrow(/Insufficient privileges/);
+      ).rejects.toThrow(/Could not rename the earlier table/);
       expect(db.created).toEqual([]);
       expect(db.tables.has(table)).toBe(true);
 
@@ -185,7 +185,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('takeover failures on DuckDB', () 
       },
     };
     await expect(prepareAgenticRowTables(flaky as never, duckDbRowDialect, '"s"')).rejects.toThrow(
-      /permission denied/
+      /Could not rename the earlier table/
     );
     const after = await tableNames(db);
     expect(after).not.toContain(AGENTIC_ROWS_TABLE);
