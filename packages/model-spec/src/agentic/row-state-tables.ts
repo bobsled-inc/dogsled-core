@@ -8,11 +8,14 @@ import type {
   AgenticRowTableShape,
 } from './row-state-dialect.js';
 import { AgenticStateError } from './state-errors.js';
+import { LEGACY_AGENTIC_TABLE_PREFIXES } from './legacy-names.js';
 import type { AgenticStoreLimits } from './store-limits.js';
 import type { StatementTimeoutHandling } from './warehouse-statement-limit.js';
 
 export const AGENTIC_ROW_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
+/** Every table of the row store starts with this prefix, followed by a fixed suffix. */
+export const AGENTIC_TABLE_PREFIX = '__dogsled_agentic_';
 export const AGENTIC_RUNS_TABLE = '__dogsled_agentic_runs';
 export const AGENTIC_ROWS_TABLE = '__dogsled_agentic_rows';
 export const AGENTIC_CURSORS_TABLE = '__dogsled_agentic_cursors';
@@ -244,6 +247,38 @@ async function assertAgenticRowTables(
   }
 }
 
+/**
+ * Takes over the tables an earlier Core generation created in this schema, by renaming each one
+ * whose current name is free (`__dogsled_agentic_runs` once Core writes `__bobsled_agentic_runs`,
+ * and so on), so saved runs, rows and cursors resume. Never drops a table: where both names
+ * exist the rename fails and the current table is kept. Runs only while setup is incomplete.
+ */
+async function adoptLegacyAgenticRowTables(
+  db: AgenticRowDb,
+  dialect: AgenticRowDialect,
+  namespace: string
+): Promise<void> {
+  const prefixes = LEGACY_AGENTIC_TABLE_PREFIXES.filter(
+    (prefix) => prefix !== AGENTIC_TABLE_PREFIX
+  );
+  if (!prefixes.length) return;
+  const names = [
+    ...agenticTables(dialect).map((table) => table.name),
+    ...(dialect.setupTables ?? []),
+  ].filter((name) => name.startsWith(AGENTIC_TABLE_PREFIX));
+  for (const name of names) {
+    for (const prefix of prefixes) {
+      const legacy = `${prefix}${name.slice(AGENTIC_TABLE_PREFIX.length)}`;
+      try {
+        await db.run(dialect.renameTable(namespace, legacy, name));
+      } catch (error) {
+        // The current table exists already: keep it, and leave the earlier one untouched.
+        if (isCancellationError(error)) throw error;
+      }
+    }
+  }
+}
+
 export async function prepareAgenticRowTables(
   db: AgenticRowDb,
   dialect: AgenticRowDialect,
@@ -253,6 +288,7 @@ export async function prepareAgenticRowTables(
   // One statement when setup is done already, rather than one per table, which matters when a
   // dialect has several header tables. Anything else goes on to the creation and the real check.
   if (await dialect.hasBaseTables(db, namespace, agenticTables(dialect))) return;
+  await adoptLegacyAgenticRowTables(db, dialect, namespace);
   await createAgenticRowTables(db, dialect, namespace, hasSchema);
   await assertAgenticRowTables(db, dialect, namespace);
 }

@@ -56,6 +56,10 @@ export interface AgenticRowDialect {
   nameTaken?(error: unknown): boolean;
   /** Statements to run after the tables, for an engine that needs more than them. */
   setup?(namespace: string): readonly string[];
+  /** Tables `setup` creates, which an earlier Core generation named differently too. */
+  setupTables?: readonly string[];
+  /** Renames table `from` in `namespace` to `to` if `from` exists. Fails if `to` exists. */
+  renameTable(namespace: string, from: string, to: string): string;
   /** How many tables hold run headers, as sizes of sets, newest first. A run starts in the first
    * set, in the table a hash of the run picks, and stays where it started. An engine that runs
    * updates of one table one at a time needs several, or every run queues behind every other.
@@ -151,6 +155,8 @@ export const duckDbRowDialect: AgenticRowDialect = {
   identifier: (name) => quoteIdentifier(caseName(name, 'duckdb'), 'duckdb'),
   bind: (index) => `$${index}`,
   clock: 'CAST(epoch(now()) * 1000 AS BIGINT)',
+  renameTable: (namespace, from, to) =>
+    `ALTER TABLE IF EXISTS ${namespace}.${duckDbRowDialect.identifier(from)} RENAME TO ${duckDbRowDialect.identifier(to)}`,
   createTable: (table, columns) =>
     `CREATE TABLE IF NOT EXISTS ${table} (${columns
       .map((column) => `${duckDbRowDialect.identifier(column.name)} ${types[column.type]} NOT NULL`)

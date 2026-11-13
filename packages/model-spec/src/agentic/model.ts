@@ -2,12 +2,17 @@ import { z } from 'zod';
 import { FieldMetadataSchema } from '@bobsled-inc/protocol';
 import { TransformSpecSchema } from '../compiler/schemas.js';
 import { identifierSchema } from '../compiler/shared-validators.js';
+import {
+  AGENTIC_METADATA_NAMES,
+  agenticMetadataRole,
+  usesReservedAgenticPrefix,
+} from './metadata-names.js';
 
 const metadataColumns = [
-  { name: '_dogsled_run_id', type: 'string', nullable: false },
-  { name: '_dogsled_evidence', type: 'array', nullable: true },
-  { name: '_dogsled_confidence', type: 'number', nullable: true },
-  { name: '_dogsled_reason', type: 'object', nullable: true },
+  { name: AGENTIC_METADATA_NAMES.run_id, type: 'string', nullable: false },
+  { name: AGENTIC_METADATA_NAMES.evidence, type: 'array', nullable: true },
+  { name: AGENTIC_METADATA_NAMES.confidence, type: 'number', nullable: true },
+  { name: AGENTIC_METADATA_NAMES.reason, type: 'object', nullable: true },
 ] as const;
 
 export const AgenticColumnSchema = FieldMetadataSchema.pick({
@@ -23,8 +28,13 @@ export const AgenticColumnSchema = FieldMetadataSchema.pick({
     nullable: z.boolean(),
   })
   .superRefine((column, ctx) => {
-    if (!column.name.toLowerCase().startsWith('_dogsled_')) return;
-    const reserved = metadataColumns.find((entry) => entry.name === column.name);
+    if (!usesReservedAgenticPrefix(column.name)) return;
+    // Saved definitions may carry an earlier spelling of a metadata column.
+    const role = agenticMetadataRole(column.name);
+    const reserved =
+      role === undefined || column.name !== column.name.toLowerCase()
+        ? undefined
+        : metadataColumns.find((entry) => entry.name === AGENTIC_METADATA_NAMES[role]);
     if (!reserved || reserved.type !== column.type || reserved.nullable !== column.nullable) {
       ctx.addIssue({
         code: 'custom',
@@ -55,7 +65,7 @@ export const AgenticColumnsSchema = z
   });
 
 const OutputColumnsSchema = AgenticColumnsSchema.refine(
-  (columns) => columns.every((column) => !column.name.toLowerCase().startsWith('_dogsled_')),
+  (columns) => columns.every((column) => !usesReservedAgenticPrefix(column.name)),
   'Dogsled metadata columns are reserved'
 );
 export const AgenticReferenceSchema = TransformSpecSchema.shape.source.pick({ ref: true }).strict();

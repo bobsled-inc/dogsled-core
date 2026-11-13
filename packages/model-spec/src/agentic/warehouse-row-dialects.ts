@@ -35,6 +35,8 @@ export const postgresRowDialect: AgenticRowDialect = {
   identifier: pg,
   bind: (index) => `$${index}`,
   clock: 'CAST(EXTRACT(EPOCH FROM clock_timestamp()) * 1000 AS BIGINT)',
+  renameTable: (namespace, from, to) =>
+    `ALTER TABLE IF EXISTS ${namespace}.${pg(from)} RENAME TO ${pg(to)}`,
   createTable: (table, columns, key) =>
     `CREATE TABLE IF NOT EXISTS ${table} (${columns
       .map((column) => `${pg(column.name)} ${pgTypes[column.type]} NOT NULL`)
@@ -154,6 +156,10 @@ function rowsUpdated(rows: readonly Record<string, unknown>[]): number {
  * full only about eight times.
  */
 export const snowflakeRowDialect: AgenticRowDialect = {
+  setupTables: [guardName],
+  // Snowflake resolves an unqualified new name in the session's schema, so qualify it.
+  renameTable: (namespace, from, to) =>
+    `ALTER TABLE IF EXISTS ${namespace}.${sf(from)} RENAME TO ${namespace}.${sf(to)}`,
   // Measured on a real account up to these limits. Every step that reads the whole run is many
   // statements there, and the session renews its lease between them: see docs/agentic-state.md.
   limits: AGENTIC_ROW_STORE_LIMITS,

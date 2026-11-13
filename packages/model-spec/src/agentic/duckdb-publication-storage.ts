@@ -9,6 +9,8 @@ import {
   type AgenticPublicationContext,
 } from './publication.js';
 import { PUBLICATION_SCHEMA, q, stageRef } from './duckdb-checks.js';
+import { LEGACY_DUCKDB_PUBLICATION_SCHEMAS } from './legacy-names.js';
+import { renameLegacyMetadataColumns } from './metadata-columns.js';
 
 export const control = stageRef('targets');
 export const manifests = stageRef('stages');
@@ -42,7 +44,7 @@ export function targetParts(value: string): {
   }
   const schema = parts.length === 2 ? parts[0]! : 'main';
   const table = parts.at(-1)!;
-  if (schema.toLowerCase() === PUBLICATION_SCHEMA) {
+  if ([PUBLICATION_SCHEMA, ...LEGACY_DUCKDB_PUBLICATION_SCHEMAS].includes(schema.toLowerCase())) {
     throw new Error('Publication metadata schema is reserved');
   }
   return {
@@ -76,7 +78,37 @@ export function dbFor(runner: SqlRunnerModule, signal?: AbortSignal): Db {
           : runner.query!(sql, params),
   };
 }
+async function schemaExists(db: Db, schema: string): Promise<boolean> {
+  const rows = await db.query(
+    'SELECT 1 AS found FROM information_schema.schemata WHERE catalog_name = current_database() AND schema_name = ? LIMIT 1',
+    [schema]
+  );
+  return rows.length > 0;
+}
+
+/**
+ * DuckDB cannot rename a schema, so the first time the current publication schema is created
+ * the rows of an earlier Core generation's schema are copied into it: targets keep their
+ * revision and fence, and receipts keep publication idempotent. The earlier schema stays.
+ */
+async function copyLegacyPublicationSchema(db: Db): Promise<void> {
+  for (const legacy of LEGACY_DUCKDB_PUBLICATION_SCHEMAS) {
+    if (legacy === PUBLICATION_SCHEMA || !(await schemaExists(db, legacy))) continue;
+    for (const table of ['targets', 'stages', 'receipts']) {
+      const found = await db.query(
+        'SELECT 1 AS found FROM information_schema.tables WHERE table_catalog = current_database() AND table_schema = ? AND table_name = ? LIMIT 1',
+        [legacy, table]
+      );
+      if (found.length) {
+        await db.run(`INSERT INTO ${stageRef(table)} SELECT * FROM ${q(legacy)}.${q(table)}`);
+      }
+    }
+    return;
+  }
+}
+
 export async function init(db: Db): Promise<void> {
+  const fresh = !(await schemaExists(db, PUBLICATION_SCHEMA));
   await db.run(`CREATE SCHEMA IF NOT EXISTS ${q(PUBLICATION_SCHEMA)}`);
   await db.run(
     `CREATE TABLE IF NOT EXISTS ${control} (target VARCHAR PRIMARY KEY, revision BIGINT NOT NULL, fence VARCHAR NOT NULL)`
@@ -87,6 +119,7 @@ export async function init(db: Db): Promise<void> {
   await db.run(
     `CREATE TABLE IF NOT EXISTS ${receipts} (operation_id VARCHAR PRIMARY KEY, receipt VARCHAR NOT NULL)`
   );
+  if (fresh) await copyLegacyPublicationSchema(db);
 }
 export async function readReceipt(
   db: Db,
@@ -129,6 +162,13 @@ export async function assertSchema(db: Db, context: AgenticPublicationContext): 
     [target.schema, target.table]
   );
   const expected = context.resolved.output_columns;
+  await renameLegacyMetadataColumns(
+    columns,
+    expected,
+    (name) => name,
+    (from, to) => db.run(`ALTER TABLE ${target.sql} RENAME COLUMN ${q(from)} TO ${q(to)}`),
+    target.sql
+  );
   if (
     columns.length !== expected.length ||
     columns.some((column, index) => {

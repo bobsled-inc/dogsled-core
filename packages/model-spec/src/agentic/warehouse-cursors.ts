@@ -14,6 +14,8 @@ import { AgenticCursorKeySchema, CursorRecordSchema, updateCursorRecord } from '
 import type { AgenticCursorStore, AgenticCursorKey, AgenticCursorValues } from './cursor.js';
 import type { WarehouseCheckpointOptions } from './warehouse-state.js';
 import { AgenticStateError, digestAgenticState } from './state.js';
+import { LEGACY_WAREHOUSE_CURSOR_TABLES } from './legacy-names.js';
+import { adoptLegacyWarehouseTables } from './legacy-tables.js';
 
 function isCursorContention(error: Error, dialect: string): boolean {
   const seen = new Set<Error>();
@@ -57,6 +59,9 @@ class CursorContention extends Error {
   }
 }
 
+/** The warehouse store's cursor table, one for every model in a schema. */
+export const WAREHOUSE_CURSORS_TABLE = '__dogsled_cursors';
+
 /** One table for every model. The sentinel row serializes short cursor updates, not execution. */
 export function createWarehouseAgenticCursorStore(
   integration: IntegrationFile,
@@ -69,7 +74,8 @@ export function createWarehouseAgenticCursorStore(
   const { catalog, schema } = resolveWarehouseCheckpointTarget(integration, options);
   const q = (name: string) => quoteIdentifier(caseName(name, dialect), dialect);
   const namespace = [...(catalog ? [catalog] : []), schema].map(q).join('.');
-  const table = `${namespace}.${q('__dogsled_cursors')}`;
+  const table = `${namespace}.${q(WAREHOUSE_CURSORS_TABLE)}`;
+  let adopted = false;
   const lit = (value: string) => publicationLiteral(value, dialect);
   const mutateOnce = async (
     key: AgenticCursorKey,
@@ -84,6 +90,12 @@ export function createWarehouseAgenticCursorStore(
       const db = sqlPublicationDb(runner, dialect, options.signal);
       const text = publicationType('string', dialect);
       await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
+      if (!adopted) {
+        await adoptLegacyWarehouseTables(db, dialect, { catalog, schema }, [
+          [WAREHOUSE_CURSORS_TABLE, LEGACY_WAREHOUSE_CURSOR_TABLES],
+        ]);
+        adopted = true;
+      }
       await db.run(
         `CREATE TABLE IF NOT EXISTS ${table}${publicationTableSuffix(dialect)} AS SELECT CAST('' AS ${text}) AS ${q('key')}, CAST('' AS ${text}) AS ${q('record')}, CAST('' AS ${text}) AS ${q('token')}`
       );

@@ -3,9 +3,9 @@ import { runFixture } from './state-fixture.js';
 import { resolveAgenticModel } from '../../../src/agentic/resolve.js';
 import { buildAgenticStepAssignments } from '../../../src/agentic/plan-work.js';
 import {
+  agenticDefinitionIdentity,
   AgenticRunSnapshotSchema,
   applyAgenticCheckpoint,
-  digestAgenticState,
 } from '../../../src/agentic/state.js';
 import type { AgenticRunSnapshot } from '../../../src/agentic/state.js';
 
@@ -35,7 +35,7 @@ function fixture(rows: { pair_id: string }[] = []) {
     revision: 0,
     key: { scope: 'lake', model: model.name, id: 'run' },
     definition,
-    identity: digestAgenticState(definition),
+    identity: agenticDefinitionIdentity(definition),
     started_at,
     deadline_at: new Date(
       Date.parse(started_at) + model.limits.timeout_seconds * 1000
@@ -100,7 +100,7 @@ describe('durable plan step checkpoints', () => {
           { name: 'unapproved', type: 'string', nullable: false },
         ];
       }
-      run.identity = digestAgenticState(run.definition);
+      run.identity = agenticDefinitionIdentity(run.definition);
       expect(AgenticRunSnapshotSchema.safeParse(run).success).toBe(false);
     }
   );

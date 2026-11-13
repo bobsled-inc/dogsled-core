@@ -1,5 +1,6 @@
 import type { AgenticPublicationContext, AgenticPublisher } from '../../src/agentic/publication.js';
 import { digestAgenticState } from '../../src/agentic/state.js';
+import { agenticRowsDigest, agenticSchemaDigest } from '../../src/agentic/publication.js';
 import { AGENTIC_ROW_STORE_LIMITS } from '../../src/agentic/store-limits.js';
 
 export function publicationPayload(
@@ -30,8 +31,8 @@ export function publicationPayload(
     run: { scope: 'test', model: context.resolved.model.name, id: 'boundary' },
     definition_digest: digestAgenticState(context),
     target: context.target,
-    schema_digest: digestAgenticState(context.resolved.output_columns),
-    results_digest: digestAgenticState(rows),
+    schema_digest: agenticSchemaDigest(context.resolved.output_columns),
+    results_digest: agenticRowsDigest(rows),
     processed_keys_digest: digestAgenticState(keys),
   };
   return { rows, keys, identity: { ...fields, operation_id: digestAgenticState(fields) } };

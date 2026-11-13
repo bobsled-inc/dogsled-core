@@ -9,6 +9,8 @@ import type { AgenticColumn } from './model.js';
 import type { AgenticPublicationContext, AgenticPublicationIntent } from './publication.js';
 import { AgenticPublicationReceiptSchema } from './publication.js';
 import { digestAgenticState } from './state.js';
+import { adoptLegacyWarehouseTables } from './legacy-tables.js';
+import { renameLegacyMetadataColumns } from './metadata-columns.js';
 import {
   publicationNames,
   publicationType,
@@ -58,6 +60,8 @@ export async function initPublication(
   if (names.storageNamespace !== names.namespace) {
     await db.run(`CREATE SCHEMA IF NOT EXISTS ${names.namespace}`);
   }
+  // A target published by an earlier Core generation keeps its revision, fence and receipts.
+  await adoptLegacyWarehouseTables(db, dialect, names.storageTarget, names.legacyTables);
   // Atomic CTAS creates exactly one control row; warehouse PKs are not always enforced.
   await db.run(
     `CREATE TABLE IF NOT EXISTS ${names.control}${suffix} AS SELECT CAST(0 AS ${integer}) AS ${q('revision')}, CAST('' AS ${text}) AS ${q('fence')}, CAST('' AS ${text}) AS ${q('commit_token')}`
@@ -162,6 +166,15 @@ export async function assertSqlSchema(
     );
   const columns = listed ? of(names.schema, names.table) : rows;
   const expected = context.resolved.output_columns;
+  // A target an earlier Core generation created has its metadata columns under their earlier
+  // names: rename them in place before the schema check, so its rows stay and runs resume.
+  await renameLegacyMetadataColumns(
+    columns,
+    expected,
+    (name) => caseName(name, dialect),
+    (from, to) => db.run(`ALTER TABLE ${names.target} RENAME COLUMN ${q(from)} TO ${q(to)}`),
+    names.target
+  );
   if (
     columns.length !== expected.length ||
     columns.some((column, index) => {

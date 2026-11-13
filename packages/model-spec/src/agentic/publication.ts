@@ -6,6 +6,7 @@ import { AgenticRunKeySchema, digestAgenticState } from './state.js';
 import type { AgenticRunSnapshot } from './state.js';
 import type { AgenticProbeContext, ExperimentalAgenticProbe } from './probe.js';
 import { boundedAgenticRows } from './rows.js';
+import { AGENTIC_METADATA_NAMES, canonicalAgenticNames } from './metadata-names.js';
 import { AgenticStateError } from './state-errors.js';
 import {
   AGENTIC_DEFAULT_STORE_LIMITS,
@@ -128,13 +129,23 @@ export function agenticPublicationData(run: AgenticRunSnapshot): {
       work.accepted && work.accepted.status !== 'failed'
         ? work.accepted.rows.map((row) => ({
             ...(row as Record<string, JsonValue>),
-            _dogsled_run_id: run.key.id,
+            [AGENTIC_METADATA_NAMES.run_id]: run.key.id,
           }))
         : []
     ),
     processedKeys: work.flatMap((work) => work.assignment.processed_keys),
   };
 }
+/** Digest of a target's columns, the same whichever generation spelled its metadata columns. */
+export function agenticSchemaDigest(columns: unknown): string {
+  return digestAgenticState(canonicalAgenticNames(columns));
+}
+
+/** Digest of rows to publish, the same whichever generation spelled their metadata keys. */
+export function agenticRowsDigest(rows: unknown): string {
+  return digestAgenticState(canonicalAgenticNames(rows));
+}
+
 export function createAgenticPublicationIdentity(
   run: AgenticRunSnapshot
 ): AgenticPublicationIdentity {
@@ -147,8 +158,9 @@ export function createAgenticPublicationIdentity(
     run: run.key,
     definition_digest: run.identity,
     target: definition.target,
-    schema_digest: digestAgenticState(definition.resolved.output_columns),
-    results_digest: digestAgenticState(data.rows),
+    // Canonical metadata names: a run keeps its digests across Core generations.
+    schema_digest: agenticSchemaDigest(definition.resolved.output_columns),
+    results_digest: agenticRowsDigest(data.rows),
     processed_keys_digest: digestAgenticState(data.processedKeys),
   };
   return AgenticPublicationIdentitySchema.parse({

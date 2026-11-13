@@ -20,6 +20,7 @@ import { applyPublicationCheckpoint } from './publication-checkpoint.js';
 /** Versioned execution checkpoints. Stores apply commands atomically under exclusive ownership. */
 import { createHash } from 'node:crypto';
 import { canonicalize } from 'json-canonicalize';
+import { canonicalAgenticNames } from './metadata-names.js';
 import { z } from 'zod';
 import {
   AgenticPublicationIntentSchema,
@@ -163,7 +164,7 @@ const SnapshotObjectSchema = z
       }
     }
     if (run.status === 'preparing' && run.work.length) invalid();
-    if (digestAgenticState(run.definition) !== run.identity) invalid();
+    if (agenticDefinitionIdentity(run.definition) !== run.identity) invalid();
     if (deadlineTime(run.deadline_at) <= Date.parse(run.started_at)) invalid();
     if (
       run.charged !==
@@ -355,6 +356,11 @@ export function digestAgenticState(value: unknown): string {
   return createHash('sha256')
     .update(canonicalize(value) ?? 'null')
     .digest('hex');
+}
+
+/** A definition's identity, the same whichever generation spelled its metadata columns. */
+export function agenticDefinitionIdentity(definition: unknown): string {
+  return digestAgenticState(canonicalAgenticNames(definition));
 }
 
 /**
