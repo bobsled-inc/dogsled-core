@@ -68,8 +68,8 @@ catalogs:
       specifier: 8.3.1
       version: 8.3.1
     '@polyglot-sql/sdk':
-      specifier: 0.14.0
-      version: 0.14.0
+      specifier: 0.1.13
+      version: 0.1.13
     '@turbopuffer/turbopuffer':
       specifier: 2.14.0
       version: 2.14.0
@@ -639,7 +639,7 @@ importers:
         version: 7.22.0(encoding@0.1.13)
       '@polyglot-sql/sdk':
         specifier: 'catalog:'
-        version: 0.14.0
+        version: 0.1.13
       '@smithy/signature-v4':
         specifier: catalog:aws-sdk
         version: 5.7.5
@@ -773,7 +773,7 @@ importers:
         version: link:../protocol
       '@polyglot-sql/sdk':
         specifier: 'catalog:'
-        version: 0.14.0
+        version: 0.1.13
       chalk:
         specifier: catalog:cli
         version: 5.6.2
@@ -1099,7 +1099,7 @@ importers:
         version: link:../protocol
       '@polyglot-sql/sdk':
         specifier: 'catalog:'
-        version: 0.14.0
+        version: 0.1.13
       ajv:
         specifier: 'catalog:'
         version: 8.20.0
@@ -2598,9 +2598,9 @@ packages:
     resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
     engines: {node: '>=8.0.0'}
 
-  '@polyglot-sql/sdk@0.14.0':
-    resolution: {integrity: sha512-LoiDXz7HFOVl1Vpb7Zwib/BSNjw3QR6mU2pFbTmS00zNfQyhRTcDoD6/XsOqjPjtOdWJ52oJgT/H4xWfPVyLKQ==}
-    engines: {node: '>=22', pnpm: '>=12'}
+  '@polyglot-sql/sdk@0.1.13':
+    resolution: {integrity: sha512-j6tqH/66jTQwV8JyM/4e5CGd0EwqTAC9lX4CHGKFco3qpNFtUioYt83a4fmJlO1DzEUIFfRcRzLKIrLwglukjw==}
+    engines: {node: '>=22', pnpm: '>=10'}
 
   '@rollup/rollup-android-arm-eabi@4.60.4':
     resolution: {integrity: sha512-F5QXMSiFebS9hKZj02XhWLLnRpJ3B3AROP0tWbFBSj+6kCbg5m9j5JoHKd4mmSVy5mS/IMQloYgYxCuJC0fxEQ==}
@@ -8018,7 +8018,7 @@ snapshots:
 
   '@opentelemetry/api@1.9.1': {}
 
-  '@polyglot-sql/sdk@0.14.0': {}
+  '@polyglot-sql/sdk@0.1.13': {}
 
   '@rollup/rollup-android-arm-eabi@4.60.4':
     optional: true

@@ -143,7 +143,7 @@ describe('SQL normalisation', () => {
       makeSpec({
         columns: [{ name: 'r', expr: 'RANK() OVER (ORDER BY revenue DESC NULLS LAST)' }],
       }),
-      'bigquery',
+      'duckdb',
       undefined,
       { warnings }
     );
