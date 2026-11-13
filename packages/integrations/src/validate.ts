@@ -1,4 +1,5 @@
 import {
+  BLUEPRINT_EXTENSION_KEY_PREFIXES,
   LegacyBlueprintKeyConflictError,
   normalizeLegacyBlueprintKeys,
 } from '@bobsled-inc/protocol';
@@ -82,7 +83,7 @@ const SourceTransportSchema = z
 // OpenAPI-style `x-*` keys are tolerated and stripped before strict validation,
 // mirroring the extractor's `SourceSchema` so a self-describing source.yml
 // validates identically here and at extract time.
-const SOURCE_EXTENSION_KEY_PREFIXES = ['x-', 'dogsled_'] as const;
+const SOURCE_EXTENSION_KEY_PREFIXES = ['x-', ...BLUEPRINT_EXTENSION_KEY_PREFIXES];
 
 function stripSourceExtensionKeys(input: unknown, ctx: z.RefinementCtx): unknown {
   try {

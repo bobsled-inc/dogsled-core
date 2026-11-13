@@ -60,62 +60,58 @@ export async function run(ctx) {
     DogsledConfigSchema,
     buildPipelineManifestObject,
   } = await publicApi('manifest');
-  await ctx.write('integrations/demo.yml', {
-    spec_version: '2',
-    type: 'integration',
-    name: 'bobsled_api',
-    bobsled_connection_ref: 'api-binding',
-    bobsled_source_kind: 'bobsled_api',
-    transports: [
-      { id: 'default', type: 'http', base_url: 'https://api.example.com', auth: { type: 'none' } },
-    ],
-  });
-  await ctx.write('dogsled.yml', {
-    destinations: {
-      warehouse: { type: 'bobsled_managed', bobsled_connection_ref: 'warehouse-demo' },
-    },
-    pipelines: {
-      demo: {
-        source: 'bobsled_api',
-        destination: 'warehouse',
-        resources: ['shares'],
-        schedule: 'manual',
-        runner: 'managed',
+  const transports = [
+    { id: 'default', type: 'http', base_url: 'https://api.example.com', auth: { type: 'none' } },
+  ];
+  // Blueprints written by Dash or by hand use either spelling; both are read with no warning.
+  const spellings = ['dogsled', 'bobsled']; // rename:keep
+  for (const spelling of spellings) {
+    await ctx.write('integrations/demo.yml', {
+      spec_version: '2',
+      type: 'integration',
+      name: 'bobsled_api',
+      [`${spelling}_connection_ref`]: 'api-binding',
+      [`${spelling}_source_kind`]: 'bobsled_api',
+      transports,
+    });
+    await ctx.write('dogsled.yml', {
+      destinations: {
+        warehouse: {
+          type: `${spelling}_managed`,
+          [`${spelling}_connection_ref`]: 'warehouse-demo',
+        },
       },
-    },
-  });
-  const index = scanProject(ctx.project);
-  assert.equal(index.issues.length, 0);
-  assert.equal(index.deprecations.length, 4);
-  const validation = await validateProjectPipelines({ projectRoot: ctx.project, index });
-  assert.equal(validation.status, 'valid');
-  assert.equal(
-    validation.warnings.filter((warning) => warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY'))
-      .length,
-    4
-  );
-  const accepted = await ctx.cli(['doctor', '--json']);
-  for (const key of ['bobsled_connection_ref', 'bobsled_source_kind', 'bobsled_managed']) {
-    assert.ok(
-      validation.warnings.some(
-        (warning) => warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY') && warning.includes(key)
-      )
+      pipelines: {
+        demo: {
+          source: 'bobsled_api',
+          destination: 'warehouse',
+          resources: ['shares'],
+          schedule: 'manual',
+          runner: 'managed',
+        },
+      },
+    });
+    const index = scanProject(ctx.project);
+    assert.equal(index.issues.length, 0);
+    assert.equal((index.deprecations ?? []).length, 0);
+    const validation = await validateProjectPipelines({ projectRoot: ctx.project, index });
+    assert.equal(validation.status, 'valid');
+    assert.equal(
+      validation.warnings.filter((warning) => /LEGACY_BLUEPRINT_KEY/.test(warning)).length,
+      0
     );
-    assert.ok(
-      (accepted.stdout + accepted.stderr).includes(key),
-      `CLI warning must identify ${key}`
-    );
+    const accepted = await ctx.cli(['doctor', '--json']);
+    assert.doesNotMatch(accepted.stdout + accepted.stderr, /LEGACY_BLUEPRINT_KEY/);
   }
-  assert.match(accepted.stdout + accepted.stderr, /DOGSLED_LEGACY_BLUEPRINT_KEY/);
+  const [refA, refB] = ['dogsled_connection_ref', 'bobsled_connection_ref']; // rename:keep
+  const [kindA, kindB] = ['dogsled_source_kind', 'bobsled_source_kind']; // rename:keep
   await ctx.write('integrations/demo.yml', {
     spec_version: '2',
     type: 'integration',
     name: 'bobsled_api',
-    bobsled_connection_ref: 'old',
-    dogsled_connection_ref: 'new',
-    transports: [
-      { id: 'default', type: 'http', base_url: 'https://api.example.com', auth: { type: 'none' } },
-    ],
+    [refB]: 'old',
+    [refA]: 'new',
+    transports,
   });
   const conflict = await ctx.cli(['doctor', '--json'], { expected: null });
   assert.notEqual(conflict.code, 0);
@@ -124,11 +120,9 @@ export async function run(ctx) {
     spec_version: '2',
     type: 'integration',
     name: 'bobsled_api',
-    bobsled_source_kind: 'bobsled_api',
-    dogsled_source_kind: 'other',
-    transports: [
-      { id: 'default', type: 'http', base_url: 'https://api.example.com', auth: { type: 'none' } },
-    ],
+    [kindB]: 'bobsled_api',
+    [kindA]: 'other',
+    transports,
   });
   const kindConflict = await ctx.cli(['doctor', '--json'], { expected: null });
   assert.notEqual(kindConflict.code, 0);
@@ -137,22 +131,16 @@ export async function run(ctx) {
     spec_version: '2',
     type: 'integration',
     name: 'bobsled_api',
-    bobsled_connection_ref: 'same',
-    dogsled_connection_ref: 'same',
-    bobsled_source_kind: 'bobsled_api',
-    dogsled_source_kind: 'bobsled_api',
-    transports: [
-      { id: 'default', type: 'http', base_url: 'https://api.example.com', auth: { type: 'none' } },
-    ],
+    [refB]: 'same',
+    [refA]: 'same',
+    [kindB]: 'bobsled_api',
+    [kindA]: 'bobsled_api',
+    transports,
   });
   assert.equal(scanProject(ctx.project).issues.length, 0);
   await ctx.write('dogsled.yml', {
     destinations: {
-      warehouse: {
-        type: 'dogsled_managed',
-        bobsled_connection_ref: 'old',
-        dogsled_connection_ref: 'new',
-      },
+      warehouse: { type: 'dogsled_managed', [refB]: 'old', [refA]: 'new' },
     },
     pipelines: {},
   });

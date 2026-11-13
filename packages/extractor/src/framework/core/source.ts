@@ -1,5 +1,6 @@
 import { AuthEnvVarsSchema } from '@bobsled-inc/protocol';
 import {
+  BLUEPRINT_EXTENSION_KEY_PREFIXES,
   LegacyBlueprintKeyConflictError,
   normalizeLegacyBlueprintKeys,
 } from '@bobsled-inc/protocol';
@@ -155,7 +156,7 @@ export const TransportSchema = z.union([
  * `'transport' in integration` discriminator narrowing stays correct
  * across consumers in this repo.
  */
-const SOURCE_EXTENSION_KEY_PREFIXES = ['x-', 'dogsled_'] as const;
+const SOURCE_EXTENSION_KEY_PREFIXES = ['x-', ...BLUEPRINT_EXTENSION_KEY_PREFIXES];
 
 const isSourceExtensionKey = (key: string): boolean =>
   SOURCE_EXTENSION_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));

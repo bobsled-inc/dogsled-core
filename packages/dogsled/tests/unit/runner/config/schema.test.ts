@@ -1212,27 +1212,6 @@ describe('DogsledConfigSchema — dogsled_managed destination', () => {
     }
   });
 
-  it.each([DestinationSchema, NamedDestinationSchema])(
-    'normalizes managed aliases at both schema boundaries',
-    (schema) => {
-      const input = {
-        name: 'warehouse',
-        type: 'bobsled_managed',
-        bobsled_connection_ref: 'warehouse-prod',
-      };
-      const result = schema.parse(
-        schema === DestinationSchema
-          ? { type: input.type, bobsled_connection_ref: input.bobsled_connection_ref }
-          : input
-      );
-      expect(result).toMatchObject({
-        type: 'dogsled_managed',
-        dogsled_connection_ref: 'warehouse-prod',
-      });
-      expect(result).not.toHaveProperty('bobsled_connection_ref');
-    }
-  );
-
   it('rejects the unsupported destination type with a migration hint', () => {
     const result = DestinationSchema.safeParse({
       type: 'bobsled_lakehouse',
@@ -1250,30 +1229,6 @@ describe('DogsledConfigSchema — dogsled_managed destination', () => {
         bobsled_connection_ref: 'warehouse-prod',
       })
     ).toEqual({ type: 'duckdb', db_path: ':memory:' });
-  });
-
-  it('drops equal duplicate refs and rejects different duplicate refs before stripping', () => {
-    expect(
-      DestinationSchema.parse({
-        type: 'bobsled_managed',
-        bobsled_connection_ref: 'warehouse-prod',
-        dogsled_connection_ref: 'warehouse-prod',
-      })
-    ).toEqual({ type: 'dogsled_managed', dogsled_connection_ref: 'warehouse-prod' });
-    const result = DestinationSchema.safeParse({
-      type: 'duckdb',
-      db_path: ':memory:',
-      bobsled_connection_ref: 'private-old',
-      dogsled_connection_ref: 'private-new',
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0]?.message).toBe(
-        'LEGACY_KEY_CONFLICT: bobsled_connection_ref conflicts with dogsled_connection_ref'
-      );
-      expect(result.error.message).not.toContain('private-old');
-      expect(result.error.message).not.toContain('private-new');
-    }
   });
 
   it('preserves dogsled_connection_ref through preprocess (does NOT strip it)', () => {

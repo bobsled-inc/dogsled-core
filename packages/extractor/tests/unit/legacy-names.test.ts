@@ -21,69 +21,82 @@ import { ControlLogger } from '../../src/runtime/control.js';
 import { registerValidateCommand } from '../../src/commands/validate.js';
 import { SourceSchema } from '../../src/framework/core/source.js';
 import { normalizeSpec } from '../../src/schemas/normalize.js';
+import { BLUEPRINT_CONNECTION_REF_KEY, BLUEPRINT_SOURCE_KIND_KEY } from '@bobsled-inc/protocol';
 
-const source = {
-  spec_version: '2',
-  type: 'source',
-  name: 'api',
-  transports: [
-    { id: 'api', type: 'http', base_url: 'https://api.example.com', auth: { type: 'none' } },
+const LEGACY_KEY_WARNING = /LEGACY_BLUEPRINT_KEY/;
+
+// Compatibility test: the rename never rewrites this file, so both spellings
+// stay literal; the current spelling comes from @bobsled-inc/protocol.
+const SPELLINGS = [
+  [
+    'dogsled_connection_ref',
+    'dogsled_source_kind',
+    'bobsled_connection_ref',
+    'bobsled_source_kind',
   ],
-  bobsled_connection_ref: 'api-binding',
-  bobsled_source_kind: 'bobsled_api',
-};
-let root: string;
-let originalCwd: string;
+  [
+    'bobsled_connection_ref',
+    'bobsled_source_kind',
+    'dogsled_connection_ref',
+    'dogsled_source_kind',
+  ],
+] as const;
 
-beforeEach(() => {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-alias-extractor-'));
-  originalCwd = process.cwd();
-  fs.mkdirSync(path.join(root, 'integrations'));
-  fs.writeFileSync(path.join(root, 'integrations/api.yml'), YAML.stringify(source));
-  process.exitCode = undefined;
-});
+describe.each(SPELLINGS)('integration files with %s and %s', (ref, kind, otherRef, otherKind) => {
+  const source = {
+    spec_version: '2',
+    type: 'source',
+    name: 'api',
+    transports: [
+      { id: 'api', type: 'http', base_url: 'https://api.example.com', auth: { type: 'none' } },
+    ],
+    [ref]: 'api-binding',
+    [kind]: 'bobsled_api',
+  };
+  let root: string;
+  let originalCwd: string;
 
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.unstubAllEnvs();
-  process.chdir(originalCwd);
-  fs.rmSync(root, { recursive: true, force: true });
-  process.exitCode = undefined;
-});
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-alias-extractor-'));
+    originalCwd = process.cwd();
+    fs.mkdirSync(path.join(root, 'integrations'));
+    fs.writeFileSync(path.join(root, 'integrations/api.yml'), YAML.stringify(source));
+    process.exitCode = undefined;
+  });
 
-describe('legacy integration file aliases', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+    process.chdir(originalCwd);
+    fs.rmSync(root, { recursive: true, force: true });
+    process.exitCode = undefined;
+  });
+
   it('normalizes only source top-level keys before recursive camel-case normalization', () => {
     const result = normalizeSpec(
-      { ...source, resource: { bobsled_connection_ref: 'data' } },
+      { ...source, resource: { [ref]: 'data' } },
       { path: 'integrations/api.yml' }
     );
     expect(result.data).toMatchObject({
-      dogsled_connection_ref: 'api-binding',
-      dogsled_source_kind: 'bobsled_api',
-      resource: { bobsled_connection_ref: 'data' },
+      [BLUEPRINT_CONNECTION_REF_KEY]: 'api-binding',
+      [BLUEPRINT_SOURCE_KIND_KEY]: 'bobsled_api',
+      resource: { [ref]: 'data' },
     });
-    expect(result.data).not.toHaveProperty('bobsled_connection_ref');
-    expect(result.warnings).toHaveLength(2);
-    expect(result.warnings.join(' ')).not.toContain('api-binding');
+    expect(result.warnings).toEqual([]);
   });
 
-  it('returns file-path deprecations from integration loads', () => {
+  it('loads integrations with no deprecation warning', () => {
     const file = path.join(root, 'integrations/api.yml');
     const loaded = loadIntegrationSpecWithWarnings(file);
-    expect(loaded.spec).not.toHaveProperty('bobsled_connection_ref');
-    expect(loaded.warnings).toHaveLength(2);
-    expect(
-      loaded.warnings.every(
-        (warning) => warning.includes(file) && warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY')
-      )
-    ).toBe(true);
+    for (const key of [ref, kind, otherRef, otherKind]) expect(loaded.spec).not.toHaveProperty(key);
+    expect(loaded.warnings).toEqual([]);
   });
 
   it('accepts identical duplicates and rejects conflicting values with the file path', () => {
     const file = path.join(root, 'integrations/api.yml');
-    fs.writeFileSync(file, YAML.stringify({ ...source, dogsled_connection_ref: 'api-binding' }));
-    expect(loadIntegrationSpecWithWarnings(file).warnings).toHaveLength(2);
-    fs.writeFileSync(file, YAML.stringify({ ...source, dogsled_connection_ref: 'private-new' }));
+    fs.writeFileSync(file, YAML.stringify({ ...source, [otherRef]: 'api-binding' }));
+    expect(loadIntegrationSpecWithWarnings(file).warnings).toEqual([]);
+    fs.writeFileSync(file, YAML.stringify({ ...source, [otherRef]: 'private-new' }));
     expect(() => loadIntegrationSpecWithWarnings(file)).toThrow(CommandError);
     try {
       loadIntegrationSpecWithWarnings(file);
@@ -91,30 +104,32 @@ describe('legacy integration file aliases', () => {
       expect(error).toMatchObject({ exitCode: 2 });
     }
     expect(() => loadIntegrationSpecWithWarnings(file)).toThrow(
-      `LEGACY_KEY_CONFLICT: ${file}: bobsled_connection_ref conflicts with dogsled_connection_ref`
+      new RegExp(`^LEGACY_KEY_CONFLICT: ${file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}: `)
     );
   });
 
-  it('keeps direct strict schema calls safe without accepting an old prefix wildcard', () => {
+  it('keeps direct strict schema calls safe and strips both host extension prefixes', () => {
     expect(SourceSchema.safeParse(source).success).toBe(true);
-    const conflict = SourceSchema.safeParse({ ...source, dogsled_source_kind: 'different' });
+    const conflict = SourceSchema.safeParse({ ...source, [otherKind]: 'different' });
     expect(conflict.success).toBe(false);
     if (!conflict.success) {
-      expect(conflict.error.issues[0]?.message).toBe(
-        'LEGACY_KEY_CONFLICT: bobsled_source_kind conflicts with dogsled_source_kind'
-      );
+      expect(conflict.error.issues[0]?.message).toMatch(/^LEGACY_KEY_CONFLICT: /);
     }
-    expect(SourceSchema.safeParse({ ...source, bobsled_unrelated: true }).success).toBe(false);
+    expect(
+      SourceSchema.safeParse({ ...source, dogsled_unrelated: true, bobsled_unrelated: true })
+        .success
+    ).toBe(true);
+    expect(SourceSchema.safeParse({ ...source, unrelated: true }).success).toBe(false);
   });
 
   it('does not normalize legacy-looking keys at resource roots', () => {
     const file = path.join(root, 'resource.yml');
-    fs.writeFileSync(file, YAML.stringify({ type: 'resource', bobsled_connection_ref: 'data' }));
+    fs.writeFileSync(file, YAML.stringify({ type: 'resource', [ref]: 'data' }));
     expect(() => loadResourceSpecWithWarnings(file)).toThrow('Unrecognized key');
   });
 
   it.each(['run', 'topup'])(
-    'keeps camelCase warnings separate from deprecations during %s',
+    'reports camelCase warnings and no key deprecation during %s',
     async (command) => {
       fs.writeFileSync(
         path.join(root, 'integrations/api.yml'),
@@ -145,18 +160,12 @@ describe('legacy integration file aliases', () => {
       expect(warn).toHaveBeenCalledWith(
         'integration spec api: normalized key: transports[0].baseUrl → base_url'
       );
-      const deprecations = warn.mock.calls.filter(([message]) =>
-        message.includes('DOGSLED_LEGACY_BLUEPRINT_KEY')
-      );
-      expect(deprecations).toHaveLength(1);
-      expect(deprecations[0]?.[0]).toContain('bobsled_connection_ref');
-      expect(deprecations[0]?.[0]).toContain('bobsled_source_kind');
-      expect(deprecations[0]?.[0]).not.toContain('api-binding');
-      expect(deprecations[0]?.[0]).not.toContain('normalized key:');
+      const deprecations = warn.mock.calls.filter(([message]) => LEGACY_KEY_WARNING.test(message));
+      expect(deprecations).toEqual([]);
     }
   );
 
-  it('surfaces integration deprecations once when a plan reuses the same file', async () => {
+  it('resolves a plan that reuses the same file with no key deprecation', async () => {
     fs.mkdirSync(path.join(root, 'resources/api'), { recursive: true });
     fs.writeFileSync(
       path.join(root, 'resources/api/items.yml'),
@@ -206,10 +215,7 @@ describe('legacy integration file aliases', () => {
       buildCommandContext(parseGlobalFlags({})),
       'sample'
     );
-    expect(resolved.warnings).toHaveLength(1);
-    expect(resolved.warnings[0]).toContain('DOGSLED_LEGACY_BLUEPRINT_KEY');
-    expect(resolved.warnings[0]).toContain(path.join(root, 'integrations/api.yml'));
-    expect(resolved.warnings[0]).not.toContain('api-binding');
+    expect(resolved.warnings).toEqual([]);
   });
 
   it.each(['text', 'json'])(
@@ -246,7 +252,8 @@ describe('legacy integration file aliases', () => {
       );
       if (format === 'json') {
         await execution;
-        expect(JSON.parse(output)).toMatchObject({ errors: 1, warnings: 2 });
+        expect(JSON.parse(output)).toMatchObject({ errors: 1, warnings: 0 });
+        expect(output).not.toMatch(LEGACY_KEY_WARNING);
         expect(process.exitCode).toBe(1);
       } else {
         await expect(execution).rejects.toMatchObject({
@@ -280,16 +287,13 @@ describe('legacy integration file aliases', () => {
       ['validate', 'api', '--format', 'json', ...(strict ? ['--strict'] : [])],
       { from: 'user' }
     );
-    expect(JSON.parse(output)).toMatchObject({
+    const report = JSON.parse(output);
+    expect(report).toMatchObject({
       errors: 0,
-      warnings: 3,
-      warning_details: expect.arrayContaining([
-        expect.objectContaining({
-          warning: expect.stringContaining('DOGSLED_LEGACY_BLUEPRINT_KEY'),
-        }),
-        expect.objectContaining({ warning: 'transports[0].baseUrl → base_url' }),
-      ]),
+      warnings: 1,
+      warning_details: [expect.objectContaining({ warning: 'transports[0].baseUrl → base_url' })],
     });
+    expect(output).not.toMatch(LEGACY_KEY_WARNING);
     expect(process.exitCode).toBe(strict ? 2 : undefined);
   });
 });

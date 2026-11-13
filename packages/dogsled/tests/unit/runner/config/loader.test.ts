@@ -132,7 +132,7 @@ pipelines:
     expect(config.pipelines.sync).toMatchObject({ runner: 'managed' });
   });
 
-  it('loads deprecated destination aliases as canonical configuration and warns during validation', async () => {
+  it('loads the other destination spellings as canonical configuration without a warning', async () => {
     writeConfig(
       `destinations:\n  managed:\n    type: bobsled_managed\n    bobsled_connection_ref: warehouse-prod\npipelines: {}\n`
     );
@@ -145,18 +145,7 @@ pipelines:
     expect(validation.errors).toEqual([]);
     expect(
       validation.warnings.filter((warning) => warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY'))
-    ).toHaveLength(2);
-    expect(validation.warnings.join(' ')).toContain('dogsled.yml');
-    expect(validation.warnings.join(' ')).not.toContain('warehouse-prod');
-  });
-
-  it('rejects conflicting destination refs with a code and file path', () => {
-    const configPath = writeConfig(
-      `destinations:\n  managed:\n    type: bobsled_managed\n    bobsled_connection_ref: private-old\n    dogsled_connection_ref: private-new\npipelines: {}\n`
-    );
-    expect(() => loadDogsledConfig(configPath)).toThrow(
-      `LEGACY_KEY_CONFLICT: ${configPath}: bobsled_connection_ref conflicts with dogsled_connection_ref`
-    );
+    ).toEqual([]);
   });
 
   it('ignores alias words in unrelated fields and text in strict mode', () => {

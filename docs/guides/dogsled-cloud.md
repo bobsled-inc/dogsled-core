@@ -45,24 +45,16 @@ fields. A pipeline-level
 ## Extension keys
 
 Specs may carry metadata for the orchestrator that runs them. Keys that start with
-`x-` or `dogsled_` pass validation on sources, integrations and destinations; Core
-does not read them, and on a concrete destination it drops them. Any other unknown
+`x-`, `dogsled_` or `bobsled_` pass validation on sources, integrations and destinations; <!-- rename:keep -->
+Core does not read them, and on a concrete destination it drops them. Any other unknown
 key is still an error, so typos fail.
 
-## Deprecated field names
+## Field name spellings
 
-Projects created with earlier versions of Dogsled Cloud may use these field names. Core accepts them,
-prints a `DOGSLED_LEGACY_BLUEPRINT_KEY` warning for each, and fails `--strict`
-validation:
+Blueprints may use either spelling of the host fields, and Core reads both with no warning: `dogsled_connection_ref` or `bobsled_connection_ref`, `dogsled_source_kind` or `bobsled_source_kind`, and `type: dogsled_managed` or `type: bobsled_managed`. <!-- rename:keep -->
 
-| Deprecated field or type | Current name             |
-| ------------------------ | ------------------------ |
-| `bobsled_connection_ref` | `dogsled_connection_ref` |
-| `bobsled_source_kind`    | `dogsled_source_kind`    |
-| `type: bobsled_managed`  | `type: dogsled_managed`  |
-
-If a file sets both the old and the new name to different values, validation fails
-with `LEGACY_KEY_CONFLICT`. These aliases will be removed in a later version.
+If a file sets both spellings of a field to different values, validation fails
+with `LEGACY_KEY_CONFLICT`. The retired `type: bobsled_lakehouse` is still rejected.
 
 ## Models and entity-graph pipelines
 

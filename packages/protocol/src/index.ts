@@ -11,6 +11,7 @@ export * from './state-backend-contract.js';
 export * from './sql-identifiers.js';
 export * from './stream-subfolder.js';
 export * from './legacy-blueprint-aliases.js';
+export * from './legacy-names.js';
 
 export {
   assertBacktickIdentifier,

@@ -1,6 +1,7 @@
 import {
   CommandError,
   LegacyBlueprintKeyConflictError,
+  MANAGED_DESTINATION_TYPE,
   REJECTED_LEGACY_DESTINATION_TYPES,
   formatLegacyBlueprintDeprecation,
   normalizeLegacyBlueprintKeys,
@@ -17,7 +18,7 @@ export function normalizeDestinationBlueprint(input: unknown, ctx: z.RefinementC
         ctx.addIssue({
           code: 'custom',
           path: ['type'],
-          message: 'This destination type is retired; use dogsled_managed.',
+          message: `This destination type is retired; use ${MANAGED_DESTINATION_TYPE}.`,
         });
         return z.NEVER;
       }

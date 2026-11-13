@@ -355,7 +355,7 @@ describe('SourceSchema — concrete SQL connections', () => {
     }
   });
 
-  it('accepts the deprecated connection extension key', () => {
+  it('accepts the bobsled_connection_ref spelling of the connection key', () => {
     expect(
       SourceSchema.safeParse({ ...sourceSpec, bobsled_connection_ref: 'warehouse-prod' }).success
     ).toBe(true);
