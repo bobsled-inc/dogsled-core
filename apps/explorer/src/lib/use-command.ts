@@ -39,8 +39,7 @@ export interface CommandState {
 }
 
 type CommandRequestPayload =
-  | { command: string; args: string[] }
-  | { sequence: ExplorerDogsledCommand[] };
+  { command: string; args: string[] } | { sequence: ExplorerDogsledCommand[] };
 
 export function useCommand() {
   const [state, setState] = useState<CommandState>({

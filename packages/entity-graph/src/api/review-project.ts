@@ -122,8 +122,7 @@ const MODEL_JUDGE_DECISION_SOURCE = 'agent_auto';
 const EXTERNAL_REVIEWER_DECISION_SOURCE = 'agent';
 
 type ReviewDecisionSource =
-  | typeof MODEL_JUDGE_DECISION_SOURCE
-  | typeof EXTERNAL_REVIEWER_DECISION_SOURCE;
+  typeof MODEL_JUDGE_DECISION_SOURCE | typeof EXTERNAL_REVIEWER_DECISION_SOURCE;
 
 function emptyMetrics(pairsRemaining = 0): AgentReviewMetrics {
   return {

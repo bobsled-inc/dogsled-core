@@ -42,11 +42,7 @@ export type Decision =
   | { kind: 'fail'; message: string; exitCode: 3 };
 
 type PhysicalMaterialization =
-  | 'view'
-  | 'table'
-  | 'dynamic_table'
-  | 'materialized_view'
-  | 'snapshot';
+  'view' | 'table' | 'dynamic_table' | 'materialized_view' | 'snapshot';
 
 export interface MaterializeSqlOptions {
   isFirstRun?: boolean;

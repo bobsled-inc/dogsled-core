@@ -544,8 +544,7 @@ export class SqliteDestination implements DatabaseDestination {
         );
 
         const countResult = db.prepare(`SELECT COUNT(*) AS c FROM ${quotedStaging}`).get() as
-          | { c: number }
-          | undefined;
+          { c: number } | undefined;
         const rowsAffected = countResult?.c ?? 0;
         if (rowsAffected === 0) {
           return { rowsAffected: 0 };

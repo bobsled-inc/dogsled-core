@@ -11,8 +11,7 @@ export const AGENT_TASK_RESULT_VERSION = 'entity_graph_agent_task_result.v1';
 export const LEGACY_AGENT_DECISION_BUNDLE_VERSION = 'mdm_decision_bundle.v1';
 
 export type AgentDecisionBundleVersion =
-  | typeof AGENT_DECISION_BUNDLE_VERSION
-  | typeof LEGACY_AGENT_DECISION_BUNDLE_VERSION;
+  typeof AGENT_DECISION_BUNDLE_VERSION | typeof LEGACY_AGENT_DECISION_BUNDLE_VERSION;
 
 export type AgentTaskStatus = 'ok' | 'needs_human' | 'blocked' | 'failed';
 

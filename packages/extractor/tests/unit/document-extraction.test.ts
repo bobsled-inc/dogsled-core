@@ -231,8 +231,7 @@ describe('extractDocumentResource', () => {
     expect(errors.length).toBeGreaterThanOrEqual(1);
     // Bookmark is NOT advanced for this file — that's the skip-vs-record difference.
     const bookmark = state.streams['local_docs/docs'] as
-      | { files?: Record<string, unknown> }
-      | undefined;
+      { files?: Record<string, unknown> } | undefined;
     expect(bookmark?.files?.['sample.pdf']).toBeUndefined();
   });
 
@@ -274,8 +273,7 @@ describe('extractDocumentResource', () => {
       limit: 1,
     });
     const bookmark = state.streams['local_docs/docs'] as
-      | { files?: Record<string, unknown> }
-      | undefined;
+      { files?: Record<string, unknown> } | undefined;
     expect(bookmark?.files?.['big.md']).toBeUndefined();
   });
 
@@ -288,8 +286,7 @@ describe('extractDocumentResource', () => {
     const errors = messages.filter((m) => m.type === 'RECORD' && m.stream === 'docs__parse_errors');
     expect(errors.length).toBeGreaterThanOrEqual(1);
     const bookmark = state.streams['local_docs/docs'] as
-      | { files?: Record<string, unknown> }
-      | undefined;
+      { files?: Record<string, unknown> } | undefined;
     // Oversized files don't enter the bookmark map (they're rejected before the
     // download path that writes nextFiles[file.uri]).
     expect(bookmark?.files?.['too-big.md']).toBeUndefined();

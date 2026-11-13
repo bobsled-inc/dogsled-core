@@ -63,7 +63,7 @@ function credentialSpans(text: string, patterns: readonly RegExp[]): Array<[numb
 function redactSpans(text: string, spans: ReadonlyArray<readonly [number, number]>): string {
   let redacted = '';
   let cursor = 0;
-  for (let index = 0; index < spans.length; ) {
+  for (let index = 0; index < spans.length;) {
     const start = spans[index]![0];
     let end = spans[index]![1];
     for (index += 1; index < spans.length && spans[index]![0] <= end; index += 1) {

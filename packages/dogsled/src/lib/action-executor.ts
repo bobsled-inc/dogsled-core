@@ -57,14 +57,7 @@ export interface ActionPreview {
 
 /** A request location a template sends an input to. `other` is any location Dogsled does not classify. */
 export type ActionInputLocation =
-  | 'auth'
-  | 'base_url'
-  | 'body'
-  | 'header'
-  | 'origin'
-  | 'other'
-  | 'path'
-  | 'query';
+  'auth' | 'base_url' | 'body' | 'header' | 'origin' | 'other' | 'path' | 'query';
 
 export interface ActionPreviewRequest {
   method: string;
@@ -105,8 +98,7 @@ export interface ExecuteOptions {
 }
 
 export type ValidationResult =
-  | { success: true; data: Record<string, unknown> }
-  | { success: false; error: string };
+  { success: true; data: Record<string, unknown> } | { success: false; error: string };
 
 function assertNeverTransport(value: never): never {
   throw new CommandError(`Unknown transport: ${String(value)}`);

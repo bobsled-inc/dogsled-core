@@ -54,13 +54,11 @@ export async function runSemanticTriageForResolution(
   );
   const prefixFailed = prefixResults.some((row) => row.status === 'failed');
   if (prefixFailed) {
-    const skipped = suffix.statements.map(
-      (statement): ModelExecutionResult => ({
-        modelName: `${spec.entity}:${statement.name}`,
-        status: 'skipped',
-        error: 'Skipped: upstream semantic triage prerequisite failed',
-      })
-    );
+    const skipped = suffix.statements.map((statement): ModelExecutionResult => ({
+      modelName: `${spec.entity}:${statement.name}`,
+      status: 'skipped',
+      error: 'Skipped: upstream semantic triage prerequisite failed',
+    }));
     return { executionResults: [...prefixResults, ...skipped], warnings: [] };
   }
 

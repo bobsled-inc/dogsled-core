@@ -160,9 +160,9 @@ afterEach(() => {
 
 describe('runSync reverse-ETL idempotency hook', () => {
   it('executes the action when the hook returns claimed', async () => {
-    const claim = vi.fn(
-      async (): Promise<SyncActionIdempotencyClaimResult> => ({ status: 'claimed' })
-    );
+    const claim = vi.fn(async (): Promise<SyncActionIdempotencyClaimResult> => ({
+      status: 'claimed',
+    }));
     const store = makeStore(claim);
 
     const summary = await run(store);
@@ -182,12 +182,10 @@ describe('runSync reverse-ETL idempotency hook', () => {
   });
 
   it('skips the action when the hook returns already_succeeded', async () => {
-    const claim = vi.fn(
-      async (): Promise<SyncActionIdempotencyClaimResult> => ({
-        status: 'already_succeeded',
-        target_record_id: 'ext_1',
-      })
-    );
+    const claim = vi.fn(async (): Promise<SyncActionIdempotencyClaimResult> => ({
+      status: 'already_succeeded',
+      target_record_id: 'ext_1',
+    }));
     const store = makeStore(claim);
 
     const summary = await run(store);
@@ -198,12 +196,10 @@ describe('runSync reverse-ETL idempotency hook', () => {
   });
 
   it('appends a skipped receipt and advances the checkpoint for idempotent duplicates', async () => {
-    const claim = vi.fn(
-      async (): Promise<SyncActionIdempotencyClaimResult> => ({
-        status: 'already_succeeded',
-        target_record_id: 'ext_1',
-      })
-    );
+    const claim = vi.fn(async (): Promise<SyncActionIdempotencyClaimResult> => ({
+      status: 'already_succeeded',
+      target_record_id: 'ext_1',
+    }));
     const store = makeStore(claim);
 
     await run(store);
@@ -226,11 +222,9 @@ describe('runSync reverse-ETL idempotency hook', () => {
   });
 
   it('counts idempotent duplicates as skipped, not succeeded or failed', async () => {
-    const claim = vi.fn(
-      async (): Promise<SyncActionIdempotencyClaimResult> => ({
-        status: 'already_succeeded',
-      })
-    );
+    const claim = vi.fn(async (): Promise<SyncActionIdempotencyClaimResult> => ({
+      status: 'already_succeeded',
+    }));
     const store = makeStore(claim);
 
     const summary = await run(store);
