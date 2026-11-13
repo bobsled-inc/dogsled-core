@@ -186,6 +186,8 @@ export { assertDriverVersion } from './runtime/driver-version.js';
 export {
   LOCAL_DATABASE_FILE,
   LOCAL_STATE_DIR,
+  LOCAL_STATE_GITIGNORE,
+  writeLocalStateGitignore,
   localStateTakeoverRoot,
   localDatabaseFile,
   localStateDir,

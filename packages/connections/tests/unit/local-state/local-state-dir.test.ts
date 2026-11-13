@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -8,6 +8,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import {
   LOCAL_DATABASE_FILE,
   LOCAL_STATE_DIR,
+  LOCAL_STATE_GITIGNORE,
   localDatabaseFile,
   localStateDir,
   localStateTakeoverRoot,
@@ -140,6 +141,50 @@ describe('local state folder takeover', () => {
       expect(notices).toEqual([expect.stringMatching(/using \.legacy\/ for this run/)]);
     }
   );
+});
+
+const hasGit = (() => {
+  try {
+    execFileSync('git', ['--version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+describe("Core's ignore file in the moved folder", () => {
+  it('writes one that keeps config.yml and never overwrites one that exists', async () => {
+    write('.legacy/config.yml', 'x');
+    await prepareLocalStateDir(root, { notice });
+    expect(read(`${LOCAL_STATE_DIR}/.gitignore`)).toBe(LOCAL_STATE_GITIGNORE);
+    fs.rmSync(path.join(root, LOCAL_STATE_DIR), { recursive: true });
+    resetLocalStateDirForTests();
+    write('.legacy/config.yml', 'x');
+    write('.legacy/.gitignore', 'mine\n');
+    await prepareLocalStateDir(root, { notice });
+    expect(read(`${LOCAL_STATE_DIR}/.gitignore`)).toBe('mine\n');
+  });
+
+  it.skipIf(!hasGit)('lets git stage config.yml but not local data after the move', async () => {
+    write('.gitignore', 'output/\n');
+    write('.legacy/config.yml', 'x');
+    write('.legacy/legacy.duckdb', 'db');
+    write('.legacy/sync-state/s/checkpoint.json', '{}');
+    write('.legacy/lake/c.ducklake', '');
+    await prepareLocalStateDir(root, { notice });
+    const { GIT_DIR: _dir, GIT_WORK_TREE: _tree, ...gitEnv } = process.env;
+    const git = (...args: string[]) =>
+      execFileSync('git', args, {
+        cwd: root,
+        encoding: 'utf8',
+        env: gitEnv,
+      });
+    git('init', '-q');
+    git('add', '.');
+    expect(git('diff', '--cached', '--name-only').trim().split('\n').sort()).toEqual(
+      ['.gitignore', `${LOCAL_STATE_DIR}/.gitignore`, `${LOCAL_STATE_DIR}/config.yml`].sort()
+    );
+  });
 });
 
 describe('only Core state at a project root moves', () => {

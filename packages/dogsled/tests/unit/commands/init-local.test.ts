@@ -265,6 +265,11 @@ describe('runLocalInit (DuckLake default)', () => {
       expect(gitignore.split('\n')).toEqual(
         expect.arrayContaining(['.dogsled/*', '!.dogsled/config.yml'])
       );
+      const inner = await fs.readFile(
+        path.join(workDir, projectName, '.dogsled', '.gitignore'),
+        'utf-8'
+      );
+      expect(inner.split('\n')).toEqual(['*', '!.gitignore', '!config.yml', '']);
       const readme = await fs.readFile(path.join(workDir, projectName, 'README.md'), 'utf-8');
       expect(readme).not.toContain('connection details in .dogsled/config.yml');
     }

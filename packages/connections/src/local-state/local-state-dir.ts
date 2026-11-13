@@ -29,6 +29,22 @@ const CORE_STATE_ENTRIES = new Set([
   'tmp',
   JOURNAL,
 ]);
+/**
+ * Core's own ignore file inside the folder. It mirrors what `init` writes at the project root
+ * (`<folder>/*` ignored, `<folder>/config.yml` kept), so moving the folder never makes local data
+ * stageable. Never overwrites one that exists.
+ */
+export const LOCAL_STATE_GITIGNORE = ['*', '!.gitignore', '!config.yml', ''].join('\n');
+
+/** Writes Core's ignore file into a state folder unless the folder has one. Best effort. */
+export function writeLocalStateGitignore(dir: string): void {
+  try {
+    fs.writeFileSync(path.join(dir, '.gitignore'), LOCAL_STATE_GITIGNORE, { flag: 'wx' });
+  } catch {
+    // Already there (kept as it is), or the folder is read-only.
+  }
+}
+
 /** Files that mean a process was using the folder and has not finished: it is not moved. */
 const BUSY_SUFFIXES = ['.wal', '.lock.recovery'];
 
@@ -379,6 +395,7 @@ async function move(root: string, from: string, notice: Notice, options: Options
     );
     return from;
   }
+  writeLocalStateGitignore(current);
   notice(
     `Moved ${fromName}/ to ${LOCAL_STATE_DIR}/ (one time). Update your .gitignore: ${fromName}/* becomes ${LOCAL_STATE_DIR}/*. Other files that name ${fromName}/ (scripts, .env files, SQL) need the same change.`
   );

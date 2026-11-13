@@ -9,6 +9,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
+import { writeLocalStateGitignore } from '@bobsled-inc/connections';
 import { CommandError } from '@bobsled-inc/protocol';
 
 import * as fmt from '../lib/output/formatter.js';
@@ -132,6 +133,7 @@ export async function runLocalInit(
     );
     await fs.writeFile(path.join(projectDir, 'dogsled.yml'), renderDogsledYaml(), 'utf-8');
     await fs.writeFile(path.join(projectDir, '.gitignore'), renderGitignore(), 'utf-8');
+    writeLocalStateGitignore(path.join(projectDir, '.dogsled'));
     await fs.writeFile(
       path.join(projectDir, 'README.md'),
       renderReadme(projectName, destination),
