@@ -422,7 +422,7 @@ export async function prepareLocalStateDir(
   if (references.length) {
     if (!exists(path.join(from, KEPT_NOTICED))) {
       notice(
-        `Kept ${fromName}/: ${references.join(', ')} name it in a path. Core moves it to ${LOCAL_STATE_DIR}/ once no project file does.`
+        `Kept ${fromName}/: ${references.join(', ')} ${references.length === 1 ? 'names' : 'name'} it in a path. Core moves it to ${LOCAL_STATE_DIR}/ once nothing does.`
       );
       try {
         fs.writeFileSync(path.join(from, KEPT_NOTICED), '');
