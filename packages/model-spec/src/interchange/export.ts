@@ -148,11 +148,21 @@ function ignoredProperties(raw: Record<string, unknown>, parsed: unknown): strin
   ].sort();
 }
 
+/** Names an input document for errors raised before it is parsed. */
+function inputLabel(collection: string, value: unknown, index: number): string {
+  const name =
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? Object.getOwnPropertyDescriptor(value, 'name')?.value
+      : undefined;
+  return `project#${collection}.${typeof name === 'string' && name ? name : `[${index}]`}`;
+}
+
 function parseDataset(
   kind: 'source' | 'model',
-  value: unknown
+  value: unknown,
+  index: number
 ): NativeDataset & { ignoredProperties: string[] } {
-  assertBounded(value);
+  assertBounded(value, inputLabel(kind === 'source' ? 'sources' : 'models', value, index));
   const raw = record(value);
   let parsed: unknown;
   let outputColumns: readonly unknown[];
@@ -216,14 +226,14 @@ function parseProject(
   relationships: Record<string, unknown>[];
 } {
   const datasets = [
-    ...request.project.sources.flatMap((value) =>
+    ...request.project.sources.flatMap((value, index) =>
       isSelectedDatasetInput('source', value, request.selection)
-        ? [parseDataset('source', value)]
+        ? [parseDataset('source', value, index)]
         : []
     ),
-    ...request.project.models.flatMap((value) =>
+    ...request.project.models.flatMap((value, index) =>
       isSelectedDatasetInput('model', value, request.selection)
-        ? [parseDataset('model', value)]
+        ? [parseDataset('model', value, index)]
         : []
     ),
   ].sort((left, right) => left.reference.localeCompare(right.reference));
@@ -252,14 +262,14 @@ function parseProject(
     references.add(dataset.reference);
   }
   const metrics = request.project.metrics
-    .map((value) => {
-      assertBounded(value);
+    .map((value, index) => {
+      assertBounded(value, inputLabel('metrics', value, index));
       return record(MetricSpecSchema.parse(value));
     })
     .sort((left, right) => String(left['name']).localeCompare(String(right['name'])));
   const relationships = request.project.relationships
-    .map((value) => {
-      assertBounded(value);
+    .map((value, index) => {
+      assertBounded(value, inputLabel('relationships', value, index));
       return record(RelationshipSpecSchema.parse(value));
     })
     .sort((left, right) => String(left['name']).localeCompare(String(right['name'])));
@@ -584,16 +594,6 @@ function outputDataset(
       );
     }
   } else {
-    const rejected = unsupportedBuildKeys.find((key) => key in dataset.document);
-    if (rejected) {
-      fail(
-        'native_incomplete',
-        `${dataset.path}.${rejected}`,
-        `${rejected} needs an explicit final field mapping and is not supported by Ossie export.`,
-        'Remove the output-shape setting or export after producing explicit final fields.',
-        objectReference(dataset.name)
-      );
-    }
     if (dataset.catalogOnlyReason) {
       const detail =
         dataset.catalogOnlyReason === 'agentic'
@@ -901,12 +901,38 @@ function addDependencyDiagnostics(
 }
 
 /** Convert canonical native Dogsled objects into one validated Ossie YAML document. */
+/**
+ * Ossie needs every output field listed. These settings make columns that the Blueprint does
+ * not list, so export refuses them. One error names every model, so a full-Project export
+ * shows all the changes at once.
+ */
+function rejectUnlistedColumns(selected: readonly NativeDataset[]): void {
+  const rejected = selected.flatMap((dataset) => {
+    if (dataset.kind !== 'model') return [];
+    const keys = unsupportedBuildKeys.filter((key) => key in dataset.document);
+    return keys.length ? [{ dataset, keys }] : [];
+  });
+  const first = rejected[0];
+  if (!first) return;
+  const list = rejected
+    .map(({ dataset, keys }) => `${dataset.name} (${keys.join(', ')})`)
+    .join(', ');
+  const models = rejected.length === 1 ? 'Model' : 'Models';
+  fail(
+    'native_incomplete',
+    `${first.dataset.path}.${first.keys[0]}`,
+    `${models} ${list} ${rejected.length === 1 ? 'makes' : 'make'} columns that the Blueprint does not list, so Ossie export cannot describe ${rejected.length === 1 ? 'its' : 'their'} fields.`,
+    'List every output column under columns and remove these settings, or export with selectors that leave these models out.',
+    objectReference(first.dataset.name)
+  );
+}
+
 export function exportOssieDocument(request: ExportOssieDocumentRequest): ConversionResult {
   const result: ConversionResult = { ok: false, ready: false, files: [], diagnostics: [] };
   try {
-    assertBounded(request.project.addresses);
-    assertBounded(request.selection);
-    assertBounded(request.semanticModelName);
+    assertBounded(request.project.addresses, 'addresses');
+    assertBounded(request.selection, 'selection');
+    assertBounded(request.semanticModelName, 'semanticModelName');
     const version = request.ossieVersion ?? '0.1.1';
     if (version !== '0.1.1' && version !== '0.2.0.dev0') {
       fail(
@@ -939,7 +965,16 @@ export function exportOssieDocument(request: ExportOssieDocumentRequest): Conver
       );
     }
     const project = parseProject(request, result);
+    if (!project.datasets.length) {
+      fail(
+        'native_incomplete',
+        'project#datasets',
+        'This Project has no sources or models, so there is nothing to export.',
+        'Add a source or model to the Blueprint, then export again.'
+      );
+    }
     const selected = selectedDatasets(project.datasets, request.selection);
+    rejectUnlistedColumns(selected);
     const selectedReferences = new Set(selected.map((dataset) => dataset.reference));
     const selectedNames = new Set<string>();
     for (const dataset of selected) {
@@ -975,7 +1010,7 @@ export function exportOssieDocument(request: ExportOssieDocumentRequest): Conver
       version === '0.1.1'
         ? { version, semantic_model: [semanticModel] }
         : { version, ...semanticModel };
-    assertBounded(document);
+    assertBounded(document, 'the exported Ossie document');
     readOssieProfile(document, 'export.yml');
     result.files.push(
       file(`ossie/${identity(`${version}\0${request.semanticModelName}`)}.yml`, document)
