@@ -2,7 +2,12 @@ import { createHash, randomUUID } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 
 import type { BatchEncoding, SchemaColumn, ColumnType, LoadStrategy } from '@bobsled-inc/protocol';
-import { SYSTEM_COLUMNS, enforceSchemaContract, sanitizeTableName } from './database.js';
+import {
+  SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
+  enforceSchemaContract,
+  sanitizeTableName,
+} from './database.js';
 import type {
   DatabaseDestination,
   EnsureTableOptions,
@@ -259,10 +264,7 @@ export class ElasticsearchDestination implements DatabaseDestination {
     const existingMapping = await this.getMapping(indexName);
     const existingProps = existingMapping?.mappings?.properties ?? {};
 
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
     const requestedNames = new Set(columns.map((c) => c.name));

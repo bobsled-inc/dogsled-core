@@ -4,9 +4,17 @@ import {
   sanitizeSchemaName,
   sanitizeTableName,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
+  UNIQUE_INDEX_PREFIX,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import {
+  fillLegacyLoadedAt,
+  legacyUniqueIndexNames,
+  loadedAtFillSql,
+  takeOverLegacyLoadedAt,
+} from './loaded-at-takeover.js';
 import { withRetry } from '../retry.js';
 
 import type { BatchEncoding, SchemaColumn, ColumnType } from '@bobsled-inc/protocol';
@@ -246,10 +254,7 @@ export class MsSqlDestination implements DatabaseDestination {
     if (cachedColumns) {
       const qualifiedTable = `${quoteMsSqlIdentifier(safeSchema)}.${quoteMsSqlIdentifier(safeTable)}`;
 
-      const systemColumnNames: Set<string> = new Set([
-        SYSTEM_COLUMNS.TIME_EXTRACTED,
-        SYSTEM_COLUMNS.LOADED_AT,
-      ]);
+      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
       const newColumns: SchemaColumn[] = [];
       const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
       const requestedNames = new Set(columns.map((c) => c.name));
@@ -322,10 +327,15 @@ export class MsSqlDestination implements DatabaseDestination {
 
     const qualifiedTable = `${quoteMsSqlIdentifier(safeSchema)}.${quoteMsSqlIdentifier(safeTable)}`;
 
-    const existingCols = (await this.query(
-      `SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table`,
-      [safeSchema, safeTable]
-    )) as Array<{ COLUMN_NAME: string; DATA_TYPE: string }>;
+    type ExistingColumn = { COLUMN_NAME: string; DATA_TYPE: string };
+    const readColumns = async () =>
+      (await this.query(
+        `SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table`,
+        [safeSchema, safeTable]
+      )) as ExistingColumn[];
+    const byName = (rows: ExistingColumn[]) =>
+      new Map(rows.map((row): [string, ExistingColumn] => [row.COLUMN_NAME, row]));
+    let existingCols = await readColumns();
 
     if (existingCols.length === 0) {
       const colDefs = [
@@ -350,15 +360,28 @@ export class MsSqlDestination implements DatabaseDestination {
       return;
     }
 
+    // Take over an earlier loaded-at column before any schema check
+    const takeoverColumns = byName(existingCols);
+    const takeover = await takeOverLegacyLoadedAt({
+      table: qualifiedTable,
+      existing: takeoverColumns,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      rename: async (from, to) => {
+        await this.query(
+          `EXEC sp_rename N'${safeSchema}.${safeTable}.${from}', N'${to}', N'COLUMN'`
+        );
+      },
+      reread: async () => byName(await readColumns()),
+      logger: this.logger,
+    });
+    existingCols = [...takeoverColumns].map(([name, row]) => ({ ...row, COLUMN_NAME: name }));
+
     const existingTypeMap = new Map<string, string>();
     for (const col of existingCols) {
       existingTypeMap.set(col.COLUMN_NAME, col.DATA_TYPE);
     }
 
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
     const requestedNames = new Set(columns.map((c) => c.name));
@@ -417,6 +440,14 @@ export class MsSqlDestination implements DatabaseDestination {
       const ddl = `ALTER TABLE ${qualifiedTable} ${newColumnDefs.map((d) => `ADD ${d}`).join(', ')}`;
       await withRetry(() => this.query(ddl));
     }
+    await fillLegacyLoadedAt(takeover, {
+      table: qualifiedTable,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      fill: async (from, to) => {
+        await this.query(loadedAtFillSql(qualifiedTable, quoteMsSqlIdentifier, from, to));
+      },
+      logger: this.logger,
+    });
 
     for (const conflict of columnsToWiden) {
       const newSqlType = mapMsSqlType(conflict.expectedColumnType);
@@ -447,7 +478,14 @@ export class MsSqlDestination implements DatabaseDestination {
   ): Promise<void> {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map(quoteMsSqlIdentifier).join(', ');
-    const indexName = quoteMsSqlIdentifier(`_dogsled_uq_${tableName}`);
+    const legacyIndexes = legacyUniqueIndexNames(tableName, UNIQUE_INDEX_PREFIX);
+    if (legacyIndexes.length > 0) {
+      const legacy = (await this.query(
+        `SELECT name FROM sys.indexes WHERE object_id = OBJECT_ID(N'${qualifiedTable}') AND name IN (${legacyIndexes.map((name) => `N'${name}'`).join(', ')})`
+      )) as unknown[];
+      if (legacy.length > 0) return;
+    }
+    const indexName = quoteMsSqlIdentifier(`${UNIQUE_INDEX_PREFIX}${tableName}`);
     await this.query(`CREATE UNIQUE INDEX ${indexName} ON ${qualifiedTable} (${keyColList})`).catch(
       (err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);

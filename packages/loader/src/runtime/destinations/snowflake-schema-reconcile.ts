@@ -2,10 +2,21 @@ import { withRetry, type RetryOptions } from '../retry.js';
 
 import type { ColumnType, SchemaColumn } from '@bobsled-inc/protocol';
 import type { EnsureTableOptions, SchemaComparisonResult } from './database.js';
-import { enforceSchemaContract, SYSTEM_COLUMNS } from './database.js';
+import { enforceSchemaContract, SYSTEM_COLUMN_NAMES } from './database.js';
 
 interface SnowflakeSchemaConnection {
   execute(options: { sqlText: string }): Promise<unknown>;
+}
+
+/** Column name -> data type from INFORMATION_SCHEMA.COLUMNS rows. */
+export function snowflakeColumnMap(
+  rows: ReadonlyArray<Record<string, unknown>>
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    map.set(String(row['COLUMN_NAME'] ?? ''), String(row['DATA_TYPE'] ?? ''));
+  }
+  return map;
 }
 
 /** Compare an incoming schema with Snowflake's cached or queried column map. */
@@ -16,10 +27,7 @@ export function compareSnowflakeSchema(
   normalizeType: (type: string) => string,
   reverseMapType: (type: string) => ColumnType
 ): SchemaComparisonResult {
-  const systemColumnNames = new Set([
-    SYSTEM_COLUMNS.TIME_EXTRACTED.toUpperCase(),
-    SYSTEM_COLUMNS.LOADED_AT.toUpperCase(),
-  ]);
+  const systemColumnNames = new Set(SYSTEM_COLUMN_NAMES.map((name) => name.toUpperCase()));
   const newColumns: SchemaColumn[] = [];
   const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
   const requestedNames = new Set(columns.map((column) => column.name.toUpperCase()));

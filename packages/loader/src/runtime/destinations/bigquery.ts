@@ -12,9 +12,11 @@ import {
   sanitizeSchemaName,
   sanitizeTableName,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import { takeOverLoadedAtSql } from './loaded-at-takeover.js';
 import { withRetry, type RetryOptions } from '../retry.js';
 import {
   RefreshableTokenSource,
@@ -455,10 +457,7 @@ export class BigQueryDestination implements DatabaseDestination {
       const qualifiedTable = `${quoteBqIdentifier(safeSchema)}.${quoteBqIdentifier(safeTable)}`;
 
       // Build comparison from cached types
-      const systemColumnNames: Set<string> = new Set([
-        SYSTEM_COLUMNS.TIME_EXTRACTED,
-        SYSTEM_COLUMNS.LOADED_AT,
-      ]);
+      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
       const newColumns: SchemaColumn[] = [];
       const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
       const requestedNames = new Set(columns.map((c) => c.name));
@@ -591,15 +590,32 @@ export class BigQueryDestination implements DatabaseDestination {
     if (ownershipMarker !== undefined) assertOwnedBigQueryMetadata(metadata, ownershipMarker);
     const existingFields = metadata.schema?.fields ?? [];
     const existingMap = new Map(existingFields.map((f) => [f.name, getExistingBigQueryType(f)]));
+    // Some tables refuse RENAME COLUMN (search index, row policy, partitioning on the
+    // column); the earlier column is then kept and copied into the current one.
+    const fillLoadedAt = await takeOverLoadedAtSql({
+      table: qualifiedTable,
+      existing: existingMap,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      quote: quoteBqIdentifier,
+      run: async (query) => {
+        const [job] = await this.bqRetry(() =>
+          client.createQueryJob({ query, location: this.location })
+        );
+        await this.waitForJob(job);
+      },
+      reread: async () => {
+        const [fresh] = await this.bqRetry(() => table.getMetadata());
+        return new Map(
+          (fresh.schema?.fields ?? []).map((f) => [f.name, getExistingBigQueryType(f)])
+        );
+      },
+      logger: this.logger,
+    });
 
     // Read actual partition column from table metadata — cannot be ALTERed,
     // so the physical table may differ from the resolved column
     const actualPartitionCol = metadata.timePartitioning?.field ?? SYSTEM_COLUMNS.TIME_EXTRACTED;
-    const availableCols = new Set([
-      ...columns.map((c) => c.name),
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const availableCols = new Set([...columns.map((c) => c.name), ...SYSTEM_COLUMN_NAMES]);
     if (!availableCols.has(actualPartitionCol)) {
       throw new CommandError(
         `Existing table ${qualifiedTable} is partitioned by '${actualPartitionCol}', but that column is no longer present in the incoming schema. Recreate the table or restore the partition column.`,
@@ -609,10 +625,7 @@ export class BigQueryDestination implements DatabaseDestination {
     this.partitionColumnCache.set(cacheKey, actualPartitionCol);
 
     // Build schema comparison
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
     const requestedNames = new Set(columns.map((c) => c.name));
@@ -671,6 +684,7 @@ export class BigQueryDestination implements DatabaseDestination {
       );
       await this.waitForJob(job);
     }
+    await fillLoadedAt();
 
     // Widen columns one at a time
     for (const conflict of columnsToWiden) {

@@ -34,7 +34,13 @@ export async function run(ctx) {
     );
     assert.equal(
       await postgresSql(
-        "SELECT count(*) FROM information_schema.columns WHERE table_schema='pipeline' AND (column_name LIKE '_bobsled_%' OR column_name LIKE '_track_%')"
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='pipeline' AND column_name LIKE '%loaded\\_at'"
+      ),
+      '2'
+    );
+    assert.equal(
+      await postgresSql(
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='pipeline' AND column_name LIKE '\\_track\\_%'"
       ),
       '0'
     );

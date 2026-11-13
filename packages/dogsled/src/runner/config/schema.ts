@@ -6,6 +6,7 @@ import {
 import { z } from 'zod';
 
 import { normalizeDestinationBlueprint } from './legacy-blueprint.js';
+import { RESERVED_STAGING_TABLE_PREFIXES } from './legacy-names.js';
 
 import {
   EnvPlaceholderSchema,
@@ -484,9 +485,11 @@ const ResourceTableNameSchema = z
     /^[A-Za-z_][A-Za-z0-9_]*$/,
     'table must start with a letter or underscore and contain only letters, digits, or underscores'
   )
-  .refine((value) => !value.toLowerCase().startsWith('_dogsled_stg_'), {
-    message: 'table uses the reserved loader staging prefix "_dogsled_stg_"',
-  });
+  .refine(
+    (value) =>
+      !RESERVED_STAGING_TABLE_PREFIXES.some((prefix) => value.toLowerCase().startsWith(prefix)),
+    { message: 'table uses the reserved loader staging prefix "_dogsled_stg_"' }
+  );
 
 const ResourceOverrideSchema = z
   .object({

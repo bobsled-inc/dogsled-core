@@ -1,8 +1,11 @@
 import type { SqlRunnerModule } from '@bobsled-inc/connections';
 import { CommandError, EXIT_VALIDATION } from '@bobsled-inc/protocol';
 
+import { LEGACY_METADATA_TABLES } from './legacy-names.js';
 import {
   escapeLiteral,
+  isMissingTableError,
+  quoteIdentifier,
   safeInteger,
   tableRef,
   validateIdentifier,
@@ -29,7 +32,7 @@ export interface MetadataRow {
 
 export type MetadataDialect = SqlDialect;
 
-const METADATA_TABLE = '_dogsled_source_metadata';
+export const METADATA_TABLE = '_dogsled_source_metadata';
 export const LEASE_PLACEHOLDER_LOADED_AT = '1970-01-01T00:00:00.000Z';
 
 function metaTableRef(schema: string, dialect: MetadataDialect = 'duckdb'): string {
@@ -110,11 +113,56 @@ export function isLeasePlaceholderMetadataRow(row: MetadataRow): boolean {
   );
 }
 
+async function tableExists(runner: SqlRunnerModule, ref: string): Promise<boolean> {
+  try {
+    const probe = `SELECT 1 FROM ${ref} WHERE 1 = 0`;
+    await (runner.query ? runner.query(probe) : runner.run(probe));
+    return true;
+  } catch (error) {
+    if (isMissingTableError(error)) return false;
+    throw error;
+  }
+}
+
+/**
+ * Take over an earlier metadata table (for example `_dogsled_source_metadata`
+ * once Core writes `_bobsled_source_metadata`) by renaming it in place, so
+ * cursors, ETags and snapshot leases survive. Never drops a table: when both
+ * exist the current one wins and the earlier one is left alone.
+ */
+export async function adoptLegacyMetadataTable(args: {
+  runner: SqlRunnerModule;
+  schema: string;
+  dialect: MetadataDialect;
+}): Promise<string | undefined> {
+  if (args.dialect === 'duckdb' && args.schema === 'temp') return undefined;
+  const legacy = LEGACY_METADATA_TABLES.filter((name) => name !== METADATA_TABLE);
+  if (legacy.length === 0) return undefined;
+  if (await tableExists(args.runner, metaTableRef(args.schema, args.dialect))) return undefined;
+  for (const name of legacy) {
+    const oldRef = tableRef(args.schema, name, args.dialect);
+    if (!(await tableExists(args.runner, oldRef))) continue;
+    const target =
+      args.dialect === 'snowflake'
+        ? metaTableRef(args.schema, args.dialect)
+        : quoteIdentifier(METADATA_TABLE, args.dialect);
+    try {
+      await args.runner.run(`ALTER TABLE ${oldRef} RENAME TO ${target}`);
+      return name;
+    } catch (error) {
+      if (await tableExists(args.runner, metaTableRef(args.schema, args.dialect))) return undefined;
+      throw error;
+    }
+  }
+  return undefined;
+}
+
 export async function ensureMetadataTable(args: {
   runner: SqlRunnerModule;
   schema: string;
   dialect: MetadataDialect;
 }): Promise<void> {
+  await adoptLegacyMetadataTable(args);
   const ref = metaTableRef(args.schema, args.dialect);
   const types = metadataColumnTypes(args.dialect);
   await args.runner.run(`CREATE TABLE IF NOT EXISTS ${ref} (

@@ -8,7 +8,12 @@ import type {
   SchemaColumn,
   VectorSchemaColumn,
 } from '@bobsled-inc/protocol';
-import { enforceSchemaContract, SYSTEM_COLUMNS, sanitizeTableName } from './database.js';
+import {
+  enforceSchemaContract,
+  SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
+  sanitizeTableName,
+} from './database.js';
 import type {
   DatabaseDestination,
   EnsureTableOptions,
@@ -193,11 +198,7 @@ export class TurbopufferDestination implements DatabaseDestination {
       }
     }
     const requested = new Set(columns.filter((c) => c.name !== 'id').map((c) => c.name));
-    const reserved = new Set<string>([
-      'id',
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const reserved = new Set<string>(['id', ...SYSTEM_COLUMN_NAMES]);
     const removedColumns = Object.keys(existing).filter(
       (name) => !requested.has(name) && !reserved.has(name)
     );

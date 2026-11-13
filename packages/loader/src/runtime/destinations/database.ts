@@ -11,11 +11,26 @@ import {
   SQL_IDENTIFIER_PATTERN,
   usesReservedTablePrefix,
 } from '../identifiers.js';
+import { legacyLoadedAtColumns } from './loaded-at-takeover.js';
 
 export const SYSTEM_COLUMNS = {
   TIME_EXTRACTED: '_time_extracted',
   LOADED_AT: '_dogsled_loaded_at',
 } as const;
+
+/** Prefix of the unique index the SQL destinations add for merge keys (`<prefix><table>`). */
+export const UNIQUE_INDEX_PREFIX = '_dogsled_uq_';
+
+/**
+ * Column names Core owns on a loaded table: the two it writes plus earlier
+ * loaded-at names it took over. None of them is ever a user column, so schema
+ * checks never report them as removed (and Snowflake reconcile never drops them).
+ */
+export const SYSTEM_COLUMN_NAMES: readonly string[] = Object.freeze([
+  SYSTEM_COLUMNS.TIME_EXTRACTED,
+  SYSTEM_COLUMNS.LOADED_AT,
+  ...legacyLoadedAtColumns(SYSTEM_COLUMNS.LOADED_AT),
+]);
 
 /** Reject schemas that cannot produce a valid destination table or load query. */
 export function assertNonEmptyColumns(stream: string, columns: SchemaColumn[]): void {
