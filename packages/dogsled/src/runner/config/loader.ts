@@ -79,7 +79,7 @@ import {
   validateModelWarehouseSelections,
   validateWarehouseSelections,
 } from './validate-warehouse.js';
-import { ROOT_CONFIG_FILE_SPELLINGS } from '../legacy-names.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 // Re-export the model-discovery surface for public configuration consumers and
 // runner tests.

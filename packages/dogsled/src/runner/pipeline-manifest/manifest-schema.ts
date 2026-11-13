@@ -745,19 +745,19 @@ function collectionLimitIssue(input: unknown): PipelineManifestValidationIssue |
 const CLI_VERSION_FIELD = 'dogsled_cli_version';
 
 /**
- * A manifest may name the CLI version field either way. The other spelling moves to the current
- * key unless the current key is present too, in which case strict parsing reports the extra key.
+ * A manifest may name the CLI version field in any generation's spelling. Every spelling moves to
+ * the current key when all spellings present hold the same value. Different values are left in
+ * place, and strict parsing reports the extra keys.
  */
 function respellCliVersionField(input: unknown): unknown {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) return input;
   const record = input as Record<string, unknown>;
-  for (const key of MANIFEST_SPELLINGS.cli_version_field) {
-    if (key === CLI_VERSION_FIELD || !Object.hasOwn(record, key)) continue;
-    if (Object.hasOwn(record, CLI_VERSION_FIELD)) return input;
-    const { [key]: value, ...rest } = record;
-    return { ...rest, [CLI_VERSION_FIELD]: value };
-  }
-  return input;
+  const present = MANIFEST_SPELLINGS.cli_version_field.filter((key) => Object.hasOwn(record, key));
+  if (!present.length || (present.length === 1 && present[0] === CLI_VERSION_FIELD)) return input;
+  const value = record[present[0]!];
+  if (present.some((key) => record[key] !== value)) return input;
+  const rest = Object.fromEntries(Object.entries(record).filter(([key]) => !present.includes(key)));
+  return { ...rest, [CLI_VERSION_FIELD]: value };
 }
 
 export function safeParsePipelineManifest(input: unknown): SafeParsePipelineManifestResult {

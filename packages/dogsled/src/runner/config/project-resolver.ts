@@ -34,7 +34,7 @@ import {
 } from './schema.js';
 import type { DogsledConfig } from './schema.js';
 import { BUILT_IN_VALIDATION_CATALOG, type ValidationCatalog } from '../../validation.js';
-import { ROOT_CONFIG_FILE_SPELLINGS } from '../legacy-names.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 export interface LoadProjectPipelineConfigOptions {
   projectRoot: string;

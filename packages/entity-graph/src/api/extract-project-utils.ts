@@ -21,7 +21,7 @@ import {
   type SurfaceProposalCall,
 } from '../runtime/mention/surface-proposer.js';
 import type { RelationshipLlmCall } from '../runtime/relationship/llm-extractor.js';
-import { ROOT_CONFIG_FILE_SPELLINGS } from './legacy-names.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 export type FallbackMode = 'compromise' | 'none';
 
@@ -113,17 +113,18 @@ export function requiredString(row: Record<string, unknown>, name: string, sourc
   return value;
 }
 
-function findDogsledConfig(startDir: string): string | undefined {
+/** The root configuration files of the nearest folder that has any; the project resolver merges them. */
+function findDogsledConfigs(startDir: string): string[] {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
   while (dir !== root) {
-    for (const name of new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])) {
-      const candidate = path.join(dir, name);
-      if (fs.existsSync(candidate)) return candidate;
-    }
+    const found = [...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])]
+      .map((name) => path.join(dir, name))
+      .filter((candidate) => fs.existsSync(candidate));
+    if (found.length) return found;
     dir = path.dirname(dir);
   }
-  return undefined;
+  return [];
 }
 
 function formatPlatformIssues(error: z.ZodError): string {
@@ -133,13 +134,21 @@ function formatPlatformIssues(error: z.ZodError): string {
 }
 
 export function loadPlatformResolution(cwd: string): PlatformResolution {
-  const configPath = findDogsledConfig(cwd);
-  if (!configPath) return { projectKey: path.resolve(cwd) };
-  const raw = YAML.parse(fs.readFileSync(configPath, 'utf-8')) as unknown;
-  const platformRaw =
-    raw && typeof raw === 'object' && !Array.isArray(raw)
-      ? (raw as Record<string, unknown>)['platform']
-      : undefined;
+  const configPaths = findDogsledConfigs(cwd);
+  if (!configPaths.length) return { projectKey: path.resolve(cwd) };
+  let configPath = configPaths[0]!;
+  let platformRaw: unknown;
+  for (const candidate of configPaths) {
+    const raw = YAML.parse(fs.readFileSync(candidate, 'utf-8')) as unknown;
+    platformRaw =
+      raw && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as Record<string, unknown>)['platform']
+        : undefined;
+    if (platformRaw !== undefined && platformRaw !== null) {
+      configPath = candidate;
+      break;
+    }
+  }
   if (platformRaw === undefined || platformRaw === null) {
     return { projectKey: path.resolve(configPath) };
   }

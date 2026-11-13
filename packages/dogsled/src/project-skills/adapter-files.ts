@@ -15,7 +15,11 @@ import path from 'node:path';
 
 import type { ProjectSkill } from '@bobsled-inc/skills/project';
 
+import { COPY_MARKER_SPELLINGS } from './legacy-names.js';
+
 export const COPY_MARKER_FILE = '.dogsled-project-skill.json';
+/** Every marker name a managed copy may carry, the current one first. */
+const COPY_MARKER_FILES = [...new Set([COPY_MARKER_FILE, ...COPY_MARKER_SPELLINGS])];
 
 interface ManagedCopyMarker {
   schemaVersion: 1;
@@ -54,9 +58,25 @@ export function expectedLinkTarget(adapterDirectory: string, sourceDirectory: st
   return path.relative(adapterDirectory, sourceDirectory).split(path.sep).join('/');
 }
 
+/** The marker file a copy carries, under the current name or an earlier one. */
+function markerPathOf(destination: string): string | undefined {
+  return COPY_MARKER_FILES.map((name) => path.join(destination, name)).find(
+    (markerPath) => existsSync(markerPath) && !lstatSync(markerPath).isSymbolicLink()
+  );
+}
+
+/** Removes markers under earlier names once the current one is written. */
+function dropEarlierMarkers(destination: string): void {
+  for (const name of COPY_MARKER_FILES) {
+    if (name !== COPY_MARKER_FILE && lstatIfPresent(path.join(destination, name))) {
+      unlinkSync(path.join(destination, name));
+    }
+  }
+}
+
 function readMarker(destination: string): ManagedCopyMarker | undefined {
-  const markerPath = path.join(destination, COPY_MARKER_FILE);
-  if (!existsSync(markerPath) || lstatSync(markerPath).isSymbolicLink()) return undefined;
+  const markerPath = markerPathOf(destination);
+  if (!markerPath) return undefined;
   try {
     const value = JSON.parse(readFileSync(markerPath, 'utf8')) as Partial<ManagedCopyMarker>;
     if (
@@ -113,7 +133,7 @@ export function inspectAdapterEntry(
     return { kind: 'conflict', message: 'managed copy is missing its regular SKILL.md file' };
   }
   const unexpected = readdirSync(destination).filter(
-    (name) => name !== 'SKILL.md' && name !== COPY_MARKER_FILE
+    (name) => name !== 'SKILL.md' && !COPY_MARKER_FILES.includes(name)
   );
   if (unexpected.length > 0) {
     return {
@@ -173,6 +193,7 @@ export function updateManagedCopy(
     path.join(destination, COPY_MARKER_FILE),
     `${JSON.stringify(markerFor(skill, sourceFile), null, 2)}\n`
   );
+  dropEarlierMarkers(destination);
 }
 
 export function removeManagedLink(destination: string): void {
@@ -181,6 +202,8 @@ export function removeManagedLink(destination: string): void {
 
 export function removeManagedCopy(destination: string): void {
   unlinkSync(path.join(destination, 'SKILL.md'));
-  unlinkSync(path.join(destination, COPY_MARKER_FILE));
+  for (const name of COPY_MARKER_FILES) {
+    if (lstatIfPresent(path.join(destination, name))) unlinkSync(path.join(destination, name));
+  }
   rmdirSync(destination);
 }
