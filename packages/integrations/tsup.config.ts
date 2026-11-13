@@ -12,9 +12,11 @@ export default defineConfig([
       validation: 'src/validation/index.ts',
       actions: 'src/actions-entry.ts',
     },
+    // Shared modules (the embedded built-in sources, the catalog snapshot) are
+    // emitted once as chunks instead of being copied into every entry.
     format: ['esm'],
     dts: true,
     clean: true,
-    splitting: false,
+    splitting: true,
   },
 ]);

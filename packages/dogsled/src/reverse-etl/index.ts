@@ -1,5 +1,5 @@
 import { ActionSpecSchema } from '@bobsled-inc/extractor/extractor';
-import { getIntegrationsDir, loadActions } from '@bobsled-inc/integrations';
+import { loadBuiltInActions } from '@bobsled-inc/integrations';
 import {
   duplicateIdentityIssues,
   entriesOfKind,
@@ -102,7 +102,7 @@ function actionRegistry(
 ): LoadedActionRegistry {
   try {
     return {
-      actions: loadActions(getIntegrationsDir(), project),
+      actions: loadBuiltInActions(project),
       complete: true,
     };
   } catch (error) {
@@ -112,7 +112,7 @@ function actionRegistry(
       message: formatUnknownError(error),
     });
     try {
-      return { actions: loadActions(getIntegrationsDir()), complete: false };
+      return { actions: loadBuiltInActions(), complete: false };
     } catch {
       return { actions: [], complete: false };
     }

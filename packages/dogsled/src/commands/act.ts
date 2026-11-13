@@ -1,14 +1,13 @@
 import type { Command } from 'commander';
 
 import { parseInputFlags } from '@bobsled-inc/extractor/runtime';
-import { getIntegrationsDir } from '@bobsled-inc/integrations';
 import { resolveProjectIndex } from '@bobsled-inc/project-index';
 import { CommandError } from '@bobsled-inc/protocol';
 import YAML from 'yaml';
 
 import { executeAction } from '../lib/action-executor.js';
 import { resolveActionProjectRoot } from '../lib/action-paths.js';
-import { filterActions, findAction, loadActions } from '../lib/action-registry.js';
+import { filterActions, findAction, loadBuiltInActions } from '../lib/action-registry.js';
 import * as fmt from '../lib/output/formatter.js';
 
 import type { Action } from '../lib/action-registry.js';
@@ -142,7 +141,7 @@ async function actHandler(
     localOptions.projectRoot ?? globalOptions.projectRoot
   );
   const index = resolveProjectIndex(projectRoot);
-  const actions = loadActions(getIntegrationsDir(), index);
+  const actions = loadBuiltInActions(index);
 
   if (localOptions.list) {
     emitActionList(

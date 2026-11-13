@@ -1,6 +1,3 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-
 import {
   entryFilePath,
   findNamedEntry,
@@ -20,7 +17,7 @@ import { buildOperationRequest, mergeIntegrationOperation } from '@bobsled-inc/e
 import type { HttpTransportConfig } from '@bobsled-inc/extractor/core';
 import { isSourceSpec, isSqlTransport, resolveVia } from '@bobsled-inc/extractor/core';
 import { IntegrationSpecSchema } from '@bobsled-inc/extractor/extractor';
-import { getIntegrationsDir } from '@bobsled-inc/integrations';
+import { readBuiltInSourceFile } from '@bobsled-inc/integrations';
 import { formatSpecValidationMessage } from '@bobsled-inc/protocol';
 
 import type { ApiIntegrationSpec, IntegrationSpec } from '@bobsled-inc/extractor/extractor';
@@ -189,15 +186,15 @@ function readApiIntegration(
   const local = findNamedEntry(project, 'integration', name);
   if (local) return { filePath: entryFilePath(project, local), raw: local.document };
 
-  const bundledFile = join(getIntegrationsDir(), name, 'integration.yml');
-  if (!existsSync(bundledFile)) {
+  const bundledFile = `sources/${name}/integration.yml`;
+  const bundled = readBuiltInSourceFile(name, 'integration.yml');
+  if (bundled === undefined) {
     throw new Error(`Integration "${name}" not found in local or bundled integrations.`);
   }
-  const stats = statSync(bundledFile);
-  if (stats.size > MAX_INTEGRATION_SPEC_SIZE) {
+  if (Buffer.byteLength(bundled, 'utf-8') > MAX_INTEGRATION_SPEC_SIZE) {
     throw new Error(`Integration spec ${bundledFile} exceeds maximum size of 1 MB`);
   }
-  return { filePath: bundledFile, raw: YAML.parse(readFileSync(bundledFile, 'utf-8')) as unknown };
+  return { filePath: bundledFile, raw: YAML.parse(bundled) as unknown };
 }
 
 function loadApiIntegration(
