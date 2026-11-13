@@ -97,7 +97,7 @@
     "@bobsled-inc/connections": "workspace:*"
   },
   "optionalDependencies": {
-    "pg": "^8.23.1"
+    "pg": "^8.4.0"
   },
   "peerDependencies": {
     "@clickhouse/client": ">=1.0.0",
