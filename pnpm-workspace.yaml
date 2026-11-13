@@ -5,13 +5,13 @@ packages:
 catalog:
   '@apidevtools/swagger-parser': 12.1.0
   '@ai-sdk/amazon-bedrock': 4.0.209
-  '@aws-sdk/credential-providers': 3.1017.0
-  '@aws-sdk/client-s3': 3.1017.0
-  '@clickhouse/client': 1.18.2
-  '@google-cloud/bigquery': 8.1.1
-  '@polyglot-sql/sdk': 0.1.13
-  '@turbopuffer/turbopuffer': 2.8.0
-  '@types/pg': 8.20.0
+  '@aws-sdk/credential-providers': 3.1162.0
+  '@aws-sdk/client-s3': 3.1162.0
+  '@clickhouse/client': 1.25.0
+  '@google-cloud/bigquery': 8.3.1
+  '@polyglot-sql/sdk': 0.14.0
+  '@turbopuffer/turbopuffer': 2.14.0
+  '@types/pg': 8.23.1
   ai: 6.0.323
   ajv: 8.18.0
   cron-parser: 5.5.0
@@ -103,8 +103,8 @@ catalogs:
     yaml: 2.8.3
   aws-sdk:
     '@aws-crypto/sha256-js': 5.2.0
-    '@aws-sdk/credential-providers': 3.1017.0
-    '@smithy/signature-v4': 5.4.5
+    '@aws-sdk/credential-providers': 3.1162.0
+    '@smithy/signature-v4': 5.7.5
   ai-sdk:
     '@ai-sdk/amazon-bedrock': 4.0.209
     '@ai-sdk/anthropic': 3.0.138
