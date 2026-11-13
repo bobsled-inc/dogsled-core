@@ -37,9 +37,14 @@ uploaded as a seven-day Actions artifact, and attached to the GitHub release.
 
 ## Routine version updates
 
-Dependabot opens weekly grouped minor/patch PRs (up to 2 for npm, 1 for GitHub
-Actions) with the same 7-day cooldown. Semver-major updates are ignored and stay
-manual. Merged dependency PRs carry the `dependencies` Change Type. Dependabot
+Dependabot opens grouped minor/patch PRs weekly, on Mondays 06:00 UTC (up to 2
+for npm, 1 for GitHub Actions), with the same 7-day cooldown. That is just
+before the 06:17 UTC [daily release health check](#daily-release-health-check).
+Semver-major updates are ignored and stay
+manual. Merged dependency PRs carry the `dependencies` Change Type, which does
+not release on its own; the next release includes them. A Dependabot PR that
+must release gets one `change-type: patch`, `change-type: minor` or
+`change-type: major` label (see [releases](releases.md)). Dependabot
 security-update PRs stay enabled in repository settings. When a fix version is
 younger than the 7-day release age, its PR goes green once the version is old
 enough, or the owner adds an exemption if it is urgent.
@@ -134,7 +139,9 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   agents unless `options.proxy` is supplied. The loader destination, loader
   check command and connections runner pass only host, path and token.
   Regression tests assert those exact options and the absence of `proxy`. The
-  PAC/FTP path cannot receive input through these adapters. Review by 2026-11-20.
+  PAC/FTP path cannot receive input through these adapters. Re-reviewed on
+  2026-11-13: no upstream fix path, because get-uri 8.0.1 still requires
+  basic-ftp ^5.3.1 and the fix is only in basic-ftp 6.2.1. Review by 2026-12-20.
   Databricks SQL 3.0.0 keeps that proxy path but its `engines` excludes Node.js
   24.0 through 24.22.0, which Dogsled supports, so the optional peer ranges are
   capped at `>=2.0.0 <3` until maintainers decide to support 3.x.

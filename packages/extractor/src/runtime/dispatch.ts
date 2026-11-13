@@ -24,11 +24,7 @@ import {
 import type { ExtractorState, IntegrationSpec, ResourceSpec } from '../types/index.js';
 
 export type SourceKind =
-  | 'api'
-  | 'lookup_only'
-  | 'warehouse'
-  | 'file_storage_structured'
-  | 'file_storage_document';
+  'api' | 'lookup_only' | 'warehouse' | 'file_storage_structured' | 'file_storage_document';
 
 export function classifySourceKind(
   integration: IntegrationSpec,

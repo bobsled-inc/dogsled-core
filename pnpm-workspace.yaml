@@ -4,29 +4,29 @@ packages:
 
 catalog:
   '@apidevtools/swagger-parser': 12.1.0
-  '@ai-sdk/amazon-bedrock': 4.0.96
-  '@aws-sdk/credential-providers': 3.1017.0
-  '@aws-sdk/client-s3': 3.1017.0
-  '@clickhouse/client': 1.18.2
-  '@google-cloud/bigquery': 8.1.1
-  '@polyglot-sql/sdk': 0.1.13
-  '@turbopuffer/turbopuffer': 2.8.0
-  '@types/pg': 8.20.0
-  ai: 6.0.168
-  ajv: 8.18.0
-  cron-parser: 5.5.0
+  '@ai-sdk/amazon-bedrock': 4.0.209
+  '@aws-sdk/credential-providers': 3.1163.0
+  '@aws-sdk/client-s3': 3.1163.0
+  '@clickhouse/client': 1.25.0
+  '@google-cloud/bigquery': 8.3.1
+  '@polyglot-sql/sdk': 0.14.0
+  '@turbopuffer/turbopuffer': 2.14.0
+  '@types/pg': 8.23.1
+  ai: 6.0.323
+  ajv: 8.20.0
+  cron-parser: 5.10.3
   google-auth-library: 9.15.1
-  highlight.js: 11.11.1
+  highlight.js: 11.12.0
   js-tiktoken: 1.0.21
   jsdom: 26.1.0
   json-canonicalize: 2.0.0
-  mermaid: 11.16.1
-  next: 15.5.28
+  mermaid: 11.17.2
+  next: 15.5.29
   next-themes: 0.4.6
   openapi-types: 12.1.3
-  playwright: 1.64.1
-  react-test-renderer: ^19.2.5
-  undici: 8.12.2
+  playwright: 1.65.0
+  react-test-renderer: ^19.3.1
+  undici: 8.12.4
   vite-tsconfig-paths: 6.1.1
   vitest: 4.1.12
 
@@ -98,20 +98,20 @@ allowBuilds:
 
 catalogs:
   app-packages:
-    compromise: 14.15.0
+    compromise: 14.19.0
     jsonpath-plus: 10.4.0
-    yaml: 2.8.3
+    yaml: 2.9.1
   aws-sdk:
     '@aws-crypto/sha256-js': 5.2.0
-    '@aws-sdk/credential-providers': 3.1017.0
-    '@smithy/signature-v4': 5.4.5
+    '@aws-sdk/credential-providers': 3.1163.0
+    '@smithy/signature-v4': 5.7.5
   ai-sdk:
-    '@ai-sdk/amazon-bedrock': 4.0.96
-    '@ai-sdk/anthropic': 3.0.53
-    '@ai-sdk/google': 3.0.53
-    '@ai-sdk/openai': 3.0.53
-    '@openrouter/ai-sdk-provider': 2.9.0
-    ai: 6.0.168
+    '@ai-sdk/amazon-bedrock': 4.0.209
+    '@ai-sdk/anthropic': 3.0.138
+    '@ai-sdk/google': 3.0.141
+    '@ai-sdk/openai': 3.0.137
+    '@openrouter/ai-sdk-provider': 2.10.0
+    ai: 6.0.323
     # Community fork from a different publisher: ollama-ai-provider-v2.
     # https://github.com/nordwestt/ollama-ai-provider-v2
     ollama-ai-provider: npm:ollama-ai-provider-v2@3.6.0
@@ -121,33 +121,33 @@ catalogs:
   dev-packages:
     '@types/node': 25.9.9
     commander: 14.0.3
-    globals: 17.3.0
+    globals: 17.14.0
     husky: 9.1.7
     lint-staged: 16.4.0
     node-sql-parser: 5.4.0
-    prettier: 3.8.1
+    prettier: 3.9.10
     tsx: 4.23.15
     turbo: 2.11.10
     typescript: 6.0.2
-    zod: 4.6.6
+    zod: 4.6.7
   duckdb:
     '@duckdb/node-api': 1.4.4-r.4
   eslint:
-    '@typescript-eslint/eslint-plugin': 8.58.0
-    '@typescript-eslint/parser': 8.58.0
-    eslint: 10.2.0
+    '@typescript-eslint/eslint-plugin': 8.72.1
+    '@typescript-eslint/parser': 8.72.1
+    eslint: 10.14.0
   mcp:
-    '@modelcontextprotocol/sdk': 1.32.0
+    '@modelcontextprotocol/sdk': 1.32.2
   security:
-    '@secretlint/secretlint-rule-preset-recommend': 13.0.2
+    '@secretlint/secretlint-rule-preset-recommend': 13.1.0
     audit-ci: 7.1.0
-    secretlint: 13.0.2
+    secretlint: 13.1.0
   sqlite:
     '@types/better-sqlite3': 7.6.13
     better-sqlite3: 12.11.1
   testing:
     '@vitest/coverage-v8': 4.1.12
-    fast-check: 4.9.0
+    fast-check: 4.10.2
     vitest: 4.1.12
 
 # pnpm expresses the release-age gate in minutes. Apply the full one-week

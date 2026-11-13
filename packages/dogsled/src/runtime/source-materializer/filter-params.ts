@@ -10,9 +10,7 @@ export interface SourceFilterRuntimeContext {
 }
 
 type SourceFilterParamsInput =
-  | SourceFilterRuntimeContext
-  | Record<string, SourceFilterParamValue>
-  | undefined;
+  SourceFilterRuntimeContext | Record<string, SourceFilterParamValue> | undefined;
 
 const PARAM_TEMPLATE_RE = /^\s*\$\{\{\s*(params|session)\.([A-Za-z_][A-Za-z0-9_]*)\s*\}\}\s*$/;
 

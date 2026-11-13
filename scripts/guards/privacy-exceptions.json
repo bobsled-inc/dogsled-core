@@ -26,6 +26,12 @@
     },
     {
       "rule": "email-address",
+      "files": ["scripts/release/embedded-notices.json"],
+      "values": ["espen@hovlandsdal.com"],
+      "reason": "Upstream MIT licence copyright line for eventsource-parser 3.0.6, reproduced verbatim in reviewed embedded notices."
+    },
+    {
+      "rule": "email-address",
       "files": [
         "scripts/release/embedded-notices.json",
         "packages/dogsled/THIRD_PARTY_NOTICES.md"

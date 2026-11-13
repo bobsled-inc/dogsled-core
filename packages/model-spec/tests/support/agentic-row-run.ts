@@ -176,7 +176,7 @@ async function buildAgenticRun(
     });
   };
   const steps_ = (workload.context().resolved as { steps: { step: { id: string } }[] }).steps;
-  for (let done = 0; done < options.finished; ) {
+  for (let done = 0; done < options.finished;) {
     const work = snapshot.work.findIndex((item) => !item.accepted);
     if (work === -1) {
       // Everything sealed so far is accepted: the next step's assignments come from it.

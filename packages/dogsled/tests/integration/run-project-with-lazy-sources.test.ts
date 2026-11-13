@@ -123,14 +123,12 @@ function liveIssuesEntry(mode: 'live' | 'lazy'): ApiResourceEntry {
 
 /** A `queryResource` stub that returns fixed rows and counts its invocations. */
 function fetchStub(rows: IssueRecord[]) {
-  return vi.fn(
-    async (): Promise<QueryResourceResult<IssueRecord>> => ({
-      records: rows,
-      requestCount: 1,
-      notModified: false,
-      limitReached: false,
-    })
-  );
+  return vi.fn(async (): Promise<QueryResourceResult<IssueRecord>> => ({
+    records: rows,
+    requestCount: 1,
+    notModified: false,
+    limitReached: false,
+  }));
 }
 
 describe('runProjectWithLazySources', () => {

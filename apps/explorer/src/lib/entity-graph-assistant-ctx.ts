@@ -3,11 +3,7 @@ import { type EntityGraphEntityId, type EntityGraphScenarioId } from './entity-g
 export { ENTITY_GRAPH_DEFAULT_ENTITY } from './entity-graph-constants';
 
 export type EntityGraphCtx =
-  | 'hub'
-  | 'design'
-  | 'resolve.queue'
-  | 'resolve.clusters'
-  | 'resolve.cluster_detail';
+  'hub' | 'design' | 'resolve.queue' | 'resolve.clusters' | 'resolve.cluster_detail';
 
 /**
  * One record-field comparison (A vs B) inside a selected queue pair. Matches

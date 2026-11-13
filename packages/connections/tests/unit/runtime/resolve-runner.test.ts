@@ -119,11 +119,9 @@ describe('resolveRunner — precedence: custom → built-in → fail', () => {
   });
 
   it('passes secretResolver through to the chosen factory', async () => {
-    const factory = vi.fn(
-      async (): Promise<SqlRunnerModule> => ({
-        run: async () => ({ rowCount: 0 }),
-      })
-    );
+    const factory = vi.fn(async (): Promise<SqlRunnerModule> => ({
+      run: async () => ({ rowCount: 0 }),
+    }));
     const customRunners = new CustomRunnerRegistry();
     customRunners.register('duckdb', 'memory', factory);
 
@@ -134,11 +132,9 @@ describe('resolveRunner — precedence: custom → built-in → fail', () => {
   });
 
   it('forwards the warehouse override into the factory context', async () => {
-    const factory = vi.fn(
-      async (): Promise<SqlRunnerModule> => ({
-        run: async () => ({ rowCount: 0 }),
-      })
-    );
+    const factory = vi.fn(async (): Promise<SqlRunnerModule> => ({
+      run: async () => ({ rowCount: 0 }),
+    }));
     const customRunners = new CustomRunnerRegistry();
     customRunners.register('duckdb', 'memory', factory);
 
@@ -151,9 +147,9 @@ describe('resolveRunner — precedence: custom → built-in → fail', () => {
   });
 
   it('forwards a trusted query tag into the factory context', async () => {
-    const factory = vi.fn(
-      async (): Promise<SqlRunnerModule> => ({ run: async () => ({ rowCount: 0 }) })
-    );
+    const factory = vi.fn(async (): Promise<SqlRunnerModule> => ({
+      run: async () => ({ rowCount: 0 }),
+    }));
     const customRunners = new CustomRunnerRegistry();
     customRunners.register('duckdb', 'memory', factory);
 
@@ -166,9 +162,9 @@ describe('resolveRunner — precedence: custom → built-in → fail', () => {
   });
 
   it('rejects an invalid query tag before invoking a custom factory', async () => {
-    const factory = vi.fn(
-      async (): Promise<SqlRunnerModule> => ({ run: async () => ({ rowCount: 0 }) })
-    );
+    const factory = vi.fn(async (): Promise<SqlRunnerModule> => ({
+      run: async () => ({ rowCount: 0 }),
+    }));
     const customRunners = new CustomRunnerRegistry();
     customRunners.register('duckdb', 'memory', factory);
 
@@ -183,11 +179,9 @@ describe('resolveRunner — precedence: custom → built-in → fail', () => {
     // warehouse runner through resolveRunner, so proving the provider lands in
     // the (real) factory context here is what guarantees mid-run refresh engages
     // for those paths — the runner-level refresh proof lives in runners/*.test.ts.
-    const factory = vi.fn(
-      async (): Promise<SqlRunnerModule> => ({
-        run: async () => ({ rowCount: 0 }),
-      })
-    );
+    const factory = vi.fn(async (): Promise<SqlRunnerModule> => ({
+      run: async () => ({ rowCount: 0 }),
+    }));
     const customRunners = new CustomRunnerRegistry();
     customRunners.register('duckdb', 'memory', factory);
 

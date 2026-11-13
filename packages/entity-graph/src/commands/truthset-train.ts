@@ -274,8 +274,7 @@ export async function buildTruthsetTrainResult(
     const trainingScoredLabels = labelsFromOutcomes(trainingOutcomes);
     const warnings = [...trainResult.warnings];
     let recommendedThresholds:
-      | { auto_merge: number; review: number; auto_reject: number }
-      | undefined;
+      { auto_merge: number; review: number; auto_reject: number } | undefined;
     try {
       recommendedThresholds = deps.tuneThresholds(
         trainingScoredLabels,

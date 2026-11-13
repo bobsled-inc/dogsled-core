@@ -35,8 +35,7 @@ export interface AnalyzeModelDependenciesOptions {
 }
 
 export type AnalyzeModelDependenciesResult =
-  | { ok: true; analyses: ModelDependencyAnalysis[] }
-  | { ok: false; error: string };
+  { ok: true; analyses: ModelDependencyAnalysis[] } | { ok: false; error: string };
 
 function modelRefs(model: ModelSpec, sourceEntries: SourceEntryRegistry): string[] {
   if (model.model_kind === 'agentic') {

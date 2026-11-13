@@ -13,9 +13,9 @@
       }
     ]
   },
-  "ai@6.0.168": {
+  "ai@6.0.323": {
     "files": {
-      "src/util/deep-partial.ts": "3e00972ec1a04b2bac58ea038f753d8f7bc6994a4e048b5ff7b5b228ceaffed2",
+      "src/util/deep-partial.ts": "2d4aed0da6df49925fefad5310138fd7305cdbdb7e136af026790c9924de9948",
       "src/util/value-of.ts": "aa525aac11606e158a7d6d901430fc6d9272b728a36742b32073d9f86b8ea482"
     },
     "licenses": ["MIT"],
@@ -64,12 +64,12 @@
       }
     ]
   },
-  "@openrouter/ai-sdk-provider@2.9.0": {
+  "@openrouter/ai-sdk-provider@2.10.0": {
     "files": {
-      "dist/index.js.map": "5a5bbaab96f77afa17703415b670b49fc60483da88a3e6f262ee34167b673a1f",
-      "dist/index.mjs.map": "1ef6dc51a4b4de79c0f805569ddd4b0eb57e54cecfdec3638ee7ba2565112559",
-      "dist/internal/index.js.map": "d4dcfb5375137a40276f96cbcafe49ce247e4a72f992ac98fb955d91c1b20740",
-      "dist/internal/index.mjs.map": "126ce37e30552d194eff18e3c6899b2b2094d542dd7b6a73913fdc8f2602f776"
+      "dist/index.js.map": "53e18319c05e65e693c1dc27260b5c3ba6a11c8d4186746a7a6e6fd5a590616a",
+      "dist/index.mjs.map": "9eee809068459585e8b112bfd3456262c4709801fbda152b6e4a6731e40815a4",
+      "dist/internal/index.js.map": "385761524ecb60559265b935280723cb9291f1409cd60d67aed5c8d4400c10ba",
+      "dist/internal/index.mjs.map": "97f05fa7fd746abf672c158f457f2b9e71b228316c4cc9abb573b0a884947317"
     },
     "licenses": ["BSD-3-Clause"],
     "notices": [
@@ -102,159 +102,194 @@
       }
     ]
   },
-  "@opentelemetry/api@1.9.0": {
+  "@ai-sdk/provider@3.0.8": {
+    "license": "Apache-2.0",
+    "source": "https://github.com/vercel/ai/blob/%40ai-sdk/provider%403.0.8/LICENSE",
+    "tarballIntegrity": "sha512-oGMAgGoQdBXbZqNG0Ze56CHjDZ1IDYOwGYxYjO5KLSlz5HiNQ9udIXsPZ61VWaHGZ5XW/jyjmr6t2xz2jGVwbQ==",
+    "files": {},
+    "licenses": [],
+    "packageDocuments": [
+      {
+        "name": "Reviewed upstream package LICENSE",
+        "text": "Copyright 2023 Vercel, Inc.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License."
+      }
+    ],
+    "notices": []
+  },
+  "eventsource-parser@3.0.6": {
+    "license": "MIT",
+    "source": "https://github.com/rexxars/eventsource-parser/blob/v3.0.6/LICENSE",
+    "tarballIntegrity": "sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==",
+    "files": {},
+    "licenses": [],
+    "packageDocuments": [
+      {
+        "name": "Reviewed upstream package LICENSE",
+        "text": "MIT License\n\nCopyright (c) 2025 Espen Hovlandsdal <espen@hovlandsdal.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+      }
+    ],
+    "notices": []
+  },
+  "@opentelemetry/api@1.9.1": {
     "files": {
-      "build/esm/platform/node/globalThis.js": "cf39f67e96753617891aa8d03ae15877dea433ea913fbe075b3314f99e7c14fc",
-      "build/esm/platform/node/index.js": "aad2cc309fa73ecf321664b15c1589879e8a3784561607facaca7ee2154e2411",
-      "build/esm/platform/index.js": "267c0bf48356e8014cb453a8a086a857dc1340f78fa1160cb1daf35db0f9ad80",
-      "build/esm/version.js": "357182c62aa4d3dbb27b3c6c990eab6fd8995b623e9d073f218a502f6559b72f",
-      "build/esm/internal/semver.js": "eaecf7120a7b9be0dec2e45c8263e045382e240e56a9d35f373a1f498b9f6105",
-      "build/esm/internal/global-utils.js": "05f101daf300d3273bc67b8956ad13dd7fa949a4101e17f487d9f0c81d5f5f91",
-      "build/esm/diag/ComponentLogger.js": "204246fa354e3fdf0943b91eb7af08d0afb0fa4f14e01ce21b8b270c46afcbb4",
-      "build/esm/diag/types.js": "b0fa07b774602b020c46d2cefad9883fbcda6586e6b4a625e6fd85e61694f85a",
-      "build/esm/diag/internal/logLevelLogger.js": "d6fbfb24cd7c2f3b7586188a35b1238fac74ee8b12483f201e1876e1a6af77b2",
-      "build/esm/api/diag.js": "4ef7e828ab781beeddc2a1105ce24602ea8928cb7cd4c190ae2ebfa44de10edb",
-      "build/esm/baggage/internal/baggage-impl.js": "be12d84e9e5367754445c16de3e30f5453886545f7b4eeba7b0d831c76d75546",
-      "build/esm/baggage/internal/symbol.js": "e96f26787ef4eecdc80afed3d52c6180a73ac7aa15a90a87e56e8fbf8bc9c839",
-      "build/esm/baggage/utils.js": "ed25696431e16186ab82dff1e6989f2082828df4a9f4edf4a73fbae760d865fe",
-      "build/esm/context/context.js": "5f9bfac959cdc05f99268ec18b69908e2e53fe8b91242b7bda55890b82f3f154",
-      "build/esm/diag/consoleLogger.js": "b7f2c77fc8320a62ff6f1a17baccbf80fa8393c198850dc4153f1f873f44a65d",
-      "build/esm/metrics/NoopMeter.js": "a0437a23134f5d998abcfb5742704f96112d7f9e26431699c2f0841895f18e4e",
-      "build/esm/metrics/Metric.js": "8f5ab3303db67a79ee964ba9d812e27d5920780e9af24bc1d8c859a712e47d05",
-      "build/esm/propagation/TextMapPropagator.js": "bf03e6977be1023a1bfb627110519970425efadc39ee2611b26c54f6d8dad745",
-      "build/esm/context/NoopContextManager.js": "e56511984637e699cd953e1fece4c5b068465d29e18dac6952b5add1fa2938a8",
-      "build/esm/api/context.js": "9ee263a9341ba9fe56a7a5eef20ea84a3dfa735ca5932bdf5167ce8c3211d5d7",
-      "build/esm/trace/trace_flags.js": "16f1dac75d404f90d5b8ae7636c50bdf4adc52ee251b11211197f1d275605ca5",
-      "build/esm/trace/invalid-span-constants.js": "087fdeb366e4d0aab0494883604d845e72741958c8502bffb949edd1ef6d417f",
-      "build/esm/trace/NonRecordingSpan.js": "07b4807b331a7987eeac3da0e793f42219402b8167c7b3fe2546da5d19434347",
-      "build/esm/trace/context-utils.js": "043336e921d7bef27a00f3522729a96f2d58a67d7c5cbdc9a84bbd5db49c4b9c",
-      "build/esm/trace/spancontext-utils.js": "cb55af41c044e226e0a3fbe2098946e29315c9773f7b55c136abce0445667c62",
-      "build/esm/trace/NoopTracer.js": "acfcee66c376e19265b490de8b83d858f577d7cde6b6ea4806cb7fcea9f03750",
-      "build/esm/trace/ProxyTracer.js": "0fc47b17289d37ef1db28e096ba2462a1dedcbe5273312770363fb625fe7cd5e",
-      "build/esm/trace/NoopTracerProvider.js": "4cda8cb44ae55f9bf92f7b48b57ab5968ff9511016ce06c0788546d4478807ba",
-      "build/esm/trace/ProxyTracerProvider.js": "e0a6fdee077b66f17acda3d81ce689f9843d5ba7febcc240ed3a1bd6a5ddbb6e",
-      "build/esm/trace/SamplingResult.js": "f342fdb560efd40ee8cc983a0f378b5f7c60c493aabf569c01a3136b3c9d099c",
-      "build/esm/trace/span_kind.js": "47c31acd49aaa39ed13c86d256edd2cf7caedfd6e5c17ae09d2dd14048a17191",
-      "build/esm/trace/internal/tracestate-validators.js": "df058faec64fdb53b0b5cdbb433859575ee8795418b6c8bb693a6659e202a4de",
-      "build/esm/trace/internal/tracestate-impl.js": "e51bd1ed863d584d37087fd8b096ea8658dd916ccd9e5c9bdfb669ac0a267fb3",
-      "build/esm/trace/internal/utils.js": "2b60bde7752cad81a78d64a5e94f92a1b0cf823b5c927c8daa8b1d84d7779f5c",
-      "build/esm/context-api.js": "cded91b718f148a6f465649512b03bf736a8b366452277bc2995a95cec774f98",
-      "build/esm/diag-api.js": "529e0e2a1ba1a6200f3d21bef3835a106f698e1020387a106afc7ab2ca59b1a3",
-      "build/esm/metrics/NoopMeterProvider.js": "8e6810b2e27a9b2ea542a2a98c3a7b1ddecf4f918c22aa4c83032f845837fee3",
-      "build/esm/api/metrics.js": "5f4b861e15bf89246d8777d8121e17436ef15b3880b3d82d7e7ad0f23d8f3c81",
-      "build/esm/metrics-api.js": "70bf2fb2a8b69a9de9b7554aa75bedf59d529a3aa8a8e37bd437e784d9e301b1",
-      "build/esm/propagation/NoopTextMapPropagator.js": "b2289118bb5f96ab6c3f6d6a7296b7f7a31b9652dde678558e7cecc6cd1a045f",
-      "build/esm/baggage/context-helpers.js": "f43649a3b7f2315e3f93c5a2c7324bae926d02e43d001adcd897324debcfd6e6",
-      "build/esm/api/propagation.js": "6f914f7b7c7131e502d2109eda5fac89d036b14758734622fd1ec9b7c8f38030",
-      "build/esm/propagation-api.js": "388fe9e18ba2b689a0d336b5cebbe2bd6317f16fc41fb0767f6a47255d634278",
-      "build/esm/api/trace.js": "24ba0c66d6e1547253a703d0f0b49eaa07df10f876de08b30e5347b9ac09cc97",
-      "build/esm/trace-api.js": "5a13fbf3bec87e70143129a2373b5ff6503f7984a5aed0713a55bec4c56b20e7",
-      "build/esm/index.js": "65ee113fbf337097c347ba1e2c46f2e9cce33ea630514b7348177ef295ca04c1",
-      "build/esm/platform/node/globalThis.js.map": "ab04b674a6e6a35c399db6d862d244990eb1d3a8324d1fe4ed6dd6450f969140",
-      "build/esm/platform/node/index.js.map": "a9413c69b7db6584a08657d310e876cb92e17ec7b605fea9d404fd2c93bd76fb",
-      "build/esm/platform/index.js.map": "e439e5c9f4ea67f3c84f21f5071e7acc1073a07878a284b046ce30dc713c9434",
-      "build/esm/version.js.map": "3d9f35603d5f0fcd59ce9665d63452dbd84fd1eee7aa8ffa3e47dfcf48e89bb1",
-      "build/esm/internal/semver.js.map": "1010fce6957d05722abf7ade864a937b602d9de3c5338653eeebad524bcd1359",
-      "build/esm/internal/global-utils.js.map": "e241a9044760fc5bc1858891d858897379621d712935efbc95ec62b6e52ca0ba",
-      "build/esm/diag/ComponentLogger.js.map": "66abf9a9aa3b7843996ac3ce053ae85a39ab85e9a8c1a7b9326e0c96039333b7",
-      "build/esm/diag/types.js.map": "689c116b581b83917d19b51644e93784d689ca876e6aa0f334dbf764358469ac",
-      "build/esm/diag/internal/logLevelLogger.js.map": "3da8cc3001e61d1e908283566fb293b6003c95ddf5ed5fc8cdd3b94e55b0263e",
-      "build/esm/api/diag.js.map": "14d630556f7b920bea58f667d7d57481de13c03e66bf1dbd7e80f9da921bcca7",
-      "build/esm/baggage/internal/baggage-impl.js.map": "1aaa10c79ef619f1ae33b8b9f8681e2f2250c9dc1dff72f29d86f5c884641f88",
-      "build/esm/baggage/internal/symbol.js.map": "9ceef7dd90ee19bded0fda9b916fa3356fe09b6ae7872f55c2de5b027939c204",
-      "build/esm/baggage/utils.js.map": "bc9d0523974a4f7b1cb08676c49822288db5c5b7e7d35b953897e5e7deecf7ee",
-      "build/esm/context/context.js.map": "2e35ae42010b5916bcfa27c9150fdef08bb14c77877ca311481bf32f0b9ded5a",
-      "build/esm/diag/consoleLogger.js.map": "9a62df4cf44963fd20d84db6fcccc36776bc45068e66e56f6b564a3cc620c461",
-      "build/esm/metrics/NoopMeter.js.map": "9409dcbbe199e817744371651ae79f15d6665f1ee60b61b02606cb16c54c8b45",
-      "build/esm/metrics/Metric.js.map": "412a2c42d17b73d34176dcf56adbc0241f5e07ac1330e060683f97b8230128b3",
-      "build/esm/propagation/TextMapPropagator.js.map": "e6e923a064b073dfd7db93aeb49503765ef7acfade0cc09c03c0471fb44ea0e5",
-      "build/esm/context/NoopContextManager.js.map": "fc6dd5d8cd3277e7a938502267051afff2e6405e39e34dbbc2a2ca8aeaa841b3",
-      "build/esm/api/context.js.map": "a3f33825c55e0510f66b75fe087da70c0829a381c3787a23ebf6a2a60aea83af",
-      "build/esm/trace/trace_flags.js.map": "8dfa248608962c09ea024c1290b7dd8fe536fd92b83d009b9976ad6433c56db8",
-      "build/esm/trace/invalid-span-constants.js.map": "e7aae9fd147adc7fb7ee345abd528645f94ba35bac4504d977e995faadbdb757",
-      "build/esm/trace/NonRecordingSpan.js.map": "ba0e72aeb7b8c1296a4ca14fa8057f1f40c5cc059a8fcf5e7ffbe599d6243993",
-      "build/esm/trace/context-utils.js.map": "1e3ba1d2a5291bfdebf45700416439f273ea08b8872840889f8666f29177a004",
-      "build/esm/trace/spancontext-utils.js.map": "217c18235941d5d4b003a2a2a402cd3ac9e4fc1a4c95f45161dc86187d585410",
-      "build/esm/trace/NoopTracer.js.map": "99cc89f78cd9516ea9ef08dee2e5f7792a9ce13d269e6b97c1c7ea10f8facee5",
-      "build/esm/trace/ProxyTracer.js.map": "2a700707fc007e61de25c62ff531ade2acb9061cde67f19b5ece706bae435e02",
-      "build/esm/trace/NoopTracerProvider.js.map": "8b56cd958d403fd64e485a90fbd8d67b1f4adf9b0e9cf71a1a71d28884e8b6d6",
-      "build/esm/trace/ProxyTracerProvider.js.map": "a4eaf406747d15a1edac9c7a87bc4cad2e37b55d5ab51b779beb387ec5629897",
-      "build/esm/trace/SamplingResult.js.map": "5a118562c3f1f9245e927d7efb50822e03825672c917c06f97f9d64e45824446",
-      "build/esm/trace/span_kind.js.map": "a75f853413e7e39b857bd1c2d0a8a1985c1661bcfcadcaa2f33a2da838c93f8e",
-      "build/esm/trace/status.js.map": "7e60b7b0ac441771361ae2cac0b0cd0d226c28a38faaeb735959ea27ea0ad010",
-      "build/esm/trace/internal/tracestate-validators.js.map": "eecd7ea0e3bc5815f409654667a054504126e0a4cc894dc47f3909615cbe3d06",
-      "build/esm/trace/internal/tracestate-impl.js.map": "1eb455c36ad9d1fa8a39f4dba76a18c1711e2f296c109918920c3367d15a2c2d",
-      "build/esm/trace/internal/utils.js.map": "b61126f2df1b182ac12fccb18161e44516d958a15a70f6dfc7515a03361bd2d9",
-      "build/esm/context-api.js.map": "9573c7727a60f9ba97546872662b51937539c22ccaa2db984464ea817daaf501",
-      "build/esm/diag-api.js.map": "0ee036104497521761e548ac57695870579ae0e178f8e072e156b69d24026dd5",
-      "build/esm/metrics/NoopMeterProvider.js.map": "46e6b165e59a38de8379af25196974d0103fe08c0b4cd60163f8fb0de7f874c6",
-      "build/esm/api/metrics.js.map": "33c2a997c83deb38209470736fb439ffe0fa89fc60dcf14650fc11481305bef9",
-      "build/esm/metrics-api.js.map": "b8b4eec6761ba11db50aeae2ce8d9e755b6e548d9590b9458acd23ac4f285104",
-      "build/esm/propagation/NoopTextMapPropagator.js.map": "e1f89ed8de7e1ba918dcb05cc10ed9886a73a22a6797161359e1575d8076a747",
-      "build/esm/baggage/context-helpers.js.map": "ae70529fbad6e8fdf647c4f206539292c682a88c1c8816a834f71c303652d238",
-      "build/esm/api/propagation.js.map": "5c7a0767cfe38b8c9c126462ebf5f62a317ea8abe05dfbdbb3b817d4f9c10531",
-      "build/esm/propagation-api.js.map": "19634ad84e1a9b40d302b7f965400e01b681b4bfabfec18d08d8b92a40e9343f",
-      "build/esm/api/trace.js.map": "de0961f46a6fcf2049a8be8e350e2042d8c1b4b40828882c95b451bbdcb7960b",
-      "build/esm/trace-api.js.map": "e955ff4c8c7507ebc2a4c4df9659394e89a026cbe04af1e4879e586be1702d4b",
-      "build/esm/index.js.map": "0b3fc67ec13aecf09ca0bcf0212194ca31ccb3f724c4977e53124f8549bd9276"
+      "build/esm/version.js": "6f5e43026e803452354d35f78dbb3e2e268a7ce481776dada5367a680f085478",
+      "build/esm/internal/semver.js": "f14f52d544700932493c15bbb09232f4394cc22857dce632ae7b0ba0a1dcbc36",
+      "build/esm/internal/global-utils.js": "418ac827020f1392071224d5c316d2491758660b69156b446479c7f23318a3a0",
+      "build/esm/diag/ComponentLogger.js": "7fdd6e4e2b11c4d62ec6302dd164dc8050f58e01ba1fd0c363ed3172b9b770d3",
+      "build/esm/diag/types.js": "f488c924076c7ae47c9d68b1a5c71d3c48b888b4f2c725319817dcf5a84af937",
+      "build/esm/diag/internal/logLevelLogger.js": "f7682355187f2d3fca407b0187f04371f87f7553c3c24ff0bd1a9d3b493152b9",
+      "build/esm/api/diag.js": "a3d81c3751043237b8f8d711ee429ff3ac6b23b6a19a72db37ec58d06dbbcdf9",
+      "build/esm/baggage/internal/baggage-impl.js": "bff56f4a6f14a9e5b66aac18e30e5d106a42733e6bcb0906a85b4da8f49052cf",
+      "build/esm/baggage/internal/symbol.js": "214d3c7f348785e14b455e1b624f61fe2f0560913222cca06aac0fa3a0184e20",
+      "build/esm/baggage/utils.js": "95832782a42102cd5f51bc0fb7bdd29039584428dd7de8a2eec0ba76266d6ae7",
+      "build/esm/context/context.js": "d506474bde12dd061d214cab9fad109cb514b945a1d547c24fb910a9bc87add9",
+      "build/esm/diag/consoleLogger.js": "17a99d639b3f30d7a79f43866d5f746dffbdaf58310c81a8f7f8874345aaacc8",
+      "build/esm/metrics/NoopMeter.js": "a02561fe285572a39e6974bcfce5f836999b30a41ee45d7200b893622b6c96f9",
+      "build/esm/metrics/Metric.js": "fd892a62a833f22634308115187be05877ba2c8840a7516295d6fd1fac7df928",
+      "build/esm/propagation/TextMapPropagator.js": "58f23d4875ab477655b0a550adbac19b9533f31d759b1f3ffe2823cfa6d51baa",
+      "build/esm/context/NoopContextManager.js": "8934f0a2c62ac4e989a0d774f2c1aa312775391ee747cf556a470fa91af5b9c4",
+      "build/esm/api/context.js": "af5fef71f9eeb277925b2bd3e7fed1d021b71297bb187276f1331443bdca7a06",
+      "build/esm/trace/trace_flags.js": "01c3beb793d7d95fa8d4d81431409320094110396fd96935626a2a7143cee467",
+      "build/esm/trace/invalid-span-constants.js": "18d91b3f9e6a001dc207ed97ed648462870d484ba215b5cb58b96e48c505b2a6",
+      "build/esm/trace/NonRecordingSpan.js": "fb16fd1b52330c96175a5be64759a5cc012b9efee88d7437829e70f234ac0dc1",
+      "build/esm/trace/context-utils.js": "763675875d182e0646445217fb01abda375f19b3e06719336a45997b45ca29f8",
+      "build/esm/trace/spancontext-utils.js": "2f000337c1cf9e53bb5745ae763627802cf5cce38ba2b3a6c5385a6f59e141e6",
+      "build/esm/trace/NoopTracer.js": "cf8e909eead7a183f50d932df414db987d1a9f30ded9baffdd427f0d4ae5a49d",
+      "build/esm/trace/ProxyTracer.js": "34eab6c2a3b3d268f28a20fdd86b006d5ee1fca75138e757822e5a2a48a820a7",
+      "build/esm/trace/NoopTracerProvider.js": "4c546516985352e0cac6ba0182d97f665a4ad10b11299f9d377ac1a2b982cbef",
+      "build/esm/trace/ProxyTracerProvider.js": "f7f08f474d0f795dd2d70d0055ad33f7dd1ff5a4a3abf53d1b53abd766dd9f37",
+      "build/esm/trace/SamplingResult.js": "5da2dc9a480c2110422d9a3c15163bf20030739eba7c99c9eb1cb1b19dcfe38e",
+      "build/esm/trace/span_kind.js": "9a995d23103ea4d2676733586ee190e639de5be854cda6063ae23c1975bea4ab",
+      "build/esm/trace/status.js": "1af6c0c6b993d56ef90dc2351e5fb63a8cb5218abffa658264e08900a79665be",
+      "build/esm/trace/internal/tracestate-validators.js": "55b3c18f68b06fb14157425211a3fadda247775f43370d4beb2a85cfbe60c336",
+      "build/esm/trace/internal/tracestate-impl.js": "0c11c2ecc0e51e19f43b371deb4e76518257080cccbc0c14c15e15483a96b8e4",
+      "build/esm/trace/internal/utils.js": "618fdeec47dd6e6132b6a7b42f7063c736a01da9786348715a545715983e02ee",
+      "build/esm/context-api.js": "a80b5a9032f0b57f00c844686a247a8148aec426641c36d66229b76766c44b43",
+      "build/esm/diag-api.js": "dc79e9740e9e29c0db4e9484792be7ddb1ba06a0c18b64d8099e385139d421e0",
+      "build/esm/metrics/NoopMeterProvider.js": "ac4deb270db7b4cd4a2ec5bcfd011665a8919ecc05fe75633ed54b2f4fb948ba",
+      "build/esm/api/metrics.js": "62990deaac6cf10a3964b2994888a71fde122d5493d93bd26c6a58c1c005cdc9",
+      "build/esm/metrics-api.js": "37375a066886c816d513cb4952d34b0f5b97b4739fd4a85f5b5c25bd71c6171e",
+      "build/esm/propagation/NoopTextMapPropagator.js": "611d4d366912da77092ab41588b100254d5cad2c560ba5ca6af0722666f4faf9",
+      "build/esm/baggage/context-helpers.js": "461287fee080c3ea9adf5e8ddd5deea7ab381ef363693ef3b8ea28bdd28ef7f3",
+      "build/esm/api/propagation.js": "91b96f9ca8f609108cb86f22a0b0c3385e396b4ab51379f699c24d8ef8b8ae43",
+      "build/esm/propagation-api.js": "aa7ee0e2d163531841ec3e2d988062f376e5c3c1c7b64a0a25ab2e2e00889df7",
+      "build/esm/api/trace.js": "f7726b527c2fb5a44584333ea6f18f62b04dd7dda1941c88cb03ddc56b007e5b",
+      "build/esm/trace-api.js": "fd15af91ef8e3194eeee151a5d90ade6a7bda8a37beb9045ab421287809b190b",
+      "build/esm/index.js": "7f64d111c63ee84f9fcbc48aa08505d8495447910021686571cc7b2864873bc3",
+      "build/esm/version.js.map": "4eef41c5e29e31977c0d1459477d12a30c9a5f17adc5d35e06ed146669e22c4f",
+      "build/esm/internal/semver.js.map": "a1a013c254ae0358a9432c070bdddd317eba1a1302407469ce77d5bffdf58133",
+      "build/esm/internal/global-utils.js.map": "28e0a223a700c4da1103174301b08f00b2605a1455ed22c254b975011508b6bf",
+      "build/esm/diag/ComponentLogger.js.map": "c45ee4d093acfd25e4cc41cf3cbb590b6caa4aee806ed015f80f8951f2c93321",
+      "build/esm/diag/types.js.map": "8daa23c7c6209e91170d57dd207cabc05055566cd6d94ccc314176234f747cf0",
+      "build/esm/diag/internal/logLevelLogger.js.map": "d568dd52d8cd90635d7b19b3073f82e52e73b0c149b4192fb68d10e656206b8f",
+      "build/esm/api/diag.js.map": "abcd702b74b6beaeb53f37822c9c979b7aa8f310443a5d74de50db3aa38c5fb8",
+      "build/esm/baggage/internal/baggage-impl.js.map": "b37afc06aa4394d1ce83d12b06b80c017633d38cb25b6155ed732f72e804e43e",
+      "build/esm/baggage/internal/symbol.js.map": "a1da5a119a27ecf1a99b9a5c0efa2e806a2064d98d5f0629b42f5504d816243a",
+      "build/esm/baggage/utils.js.map": "e430787bfbb05f7bd9bb5f0954bbf6e6da8eba35bd6db4fc241df917de8e288f",
+      "build/esm/context/context.js.map": "7b4b26fb932a0d59405ee907e6765d5b290c485e0d5b35f9c9b24b35b5f96394",
+      "build/esm/diag/consoleLogger.js.map": "b2e4da4b0b682f6c41771401a0b9c25208fa0da3674a879fccee0e8143fef3eb",
+      "build/esm/metrics/NoopMeter.js.map": "8bfe82ed079a3902a45d0b3a755371a8557f505c309cc10d0926ee129d415500",
+      "build/esm/metrics/Metric.js.map": "e012b90c081fca1a90cc6f2076d1c3f4c1240de3d548254f955bafcc06e391ee",
+      "build/esm/propagation/TextMapPropagator.js.map": "423ee458641ed66dc80584c2090cd8d38f8eccc6e188f3fa5c9ea86af0e3480b",
+      "build/esm/context/NoopContextManager.js.map": "4e935a228b52c3f6cccfb80bbfeda57008beaac80b1ee82c5303eed8f27099c0",
+      "build/esm/api/context.js.map": "9d2a5d2764a47643fd688a7c99b6e23fe054c2ae23a3f943a96021d7b4f8e76e",
+      "build/esm/trace/trace_flags.js.map": "6a44e4a048c4cc71f6d287b6beaaec45f19669f34ad2f9f439423effa5be62a6",
+      "build/esm/trace/invalid-span-constants.js.map": "75f0b3126f270eb30e6bc50d07aee3b7d4f6ae1c8e6224d14068b382f28f6120",
+      "build/esm/trace/NonRecordingSpan.js.map": "59c14a41068cf2323876e910939e463409956f6b9caa3684f81ce68f0d6ee916",
+      "build/esm/trace/context-utils.js.map": "1ff9255dc61af4b807733eb698e1d86a9709c09d1802430cc8b2534e3f1e6b45",
+      "build/esm/trace/spancontext-utils.js.map": "c856b8ebe2ca5fd9e797912139cb356cf4f69d158642a198cd5900033b627e2d",
+      "build/esm/trace/NoopTracer.js.map": "9c0fe344de3f1866f59a397e5a15c0622b27af7644bfb1b1b5630f66b7858097",
+      "build/esm/trace/ProxyTracer.js.map": "7ff846e78a5b02bdf44489ae834b1816ff23ba19e109dbca929ce65546efad32",
+      "build/esm/trace/NoopTracerProvider.js.map": "057dc00df6963da36238855534c0c6e2a7160081926009d11ef24d5e0dcca802",
+      "build/esm/trace/ProxyTracerProvider.js.map": "b289c42ea0a9a17c0e83a2f18df3728be53cba801b203ceca250d742e18f942f",
+      "build/esm/trace/SamplingResult.js.map": "1ee2e7d160feb75480fd07ea84ade3ed095fcb7b5567cbb00a6e09be6502c49d",
+      "build/esm/trace/span_kind.js.map": "87974493a9c54433556aac1c503d3440dbf6912a859dffe16cd24ec06d3a22f7",
+      "build/esm/trace/status.js.map": "69fffaa4fbf29cba822e960f6b85a97278fb46e9fb6c2c856a7d9efb74159431",
+      "build/esm/trace/internal/tracestate-validators.js.map": "7785d6f5b5436eac658e01e37804db4152bbbb39cce73e3e94ab6c69965ae029",
+      "build/esm/trace/internal/tracestate-impl.js.map": "96632f4f650aa13c76870b6768a512cb6a98d79bca59d03c249d1f92c005ff8c",
+      "build/esm/trace/internal/utils.js.map": "c9ef41f58dd05758beb40242fe66bfc7ace9233a4887b819a61bf2171257e77c",
+      "build/esm/context-api.js.map": "5952aeea9a97ee456d61f1cc0cc84886b8c24d6ef8e51518923d56204c05364e",
+      "build/esm/diag-api.js.map": "4898815efa97c968f849496984a38b8dc484ba1c3b2500a968d245af36cb78d4",
+      "build/esm/metrics/NoopMeterProvider.js.map": "9ad77bd12a6df373882166d629930efd467f99d2054395ba0b9d39d33c1a116f",
+      "build/esm/api/metrics.js.map": "82b0e888f02dabfdde604462a3a6569ec7f8ae025af995ec7af9ea6e1357777e",
+      "build/esm/metrics-api.js.map": "e064a64ffde623fe85528d9588f8ee4477fee722d9854e00813f3bad37e01ed9",
+      "build/esm/propagation/NoopTextMapPropagator.js.map": "a07d21600cbf4d5587f6284e842fb07234e1a0f2f73516c5bbe9bd9f3db991d1",
+      "build/esm/baggage/context-helpers.js.map": "1e72d5b05299a863e72f9001623b4b6a65508883b3be6ee3a0bc9b5df230acb6",
+      "build/esm/api/propagation.js.map": "cf9fb4744cb183823a826b230efeae4372674d1f22560b271692a91603da4fda",
+      "build/esm/propagation-api.js.map": "9468a33853c58843d89ca20a8276540bacd176527204521fbb59eddc0a0c7793",
+      "build/esm/api/trace.js.map": "1f4e3bb0449b8b78c8893df81b3fe83ae1961b9ec037712c08269eab284cdbbe",
+      "build/esm/trace-api.js.map": "3a940b9f34a7d6c29de02431c55c59405e9e1d2a29b7175bd03c360641035da9",
+      "build/esm/index.js.map": "cb6067d55f647a60fc17e8667421e98fcb560edb7b8d27565ad0741254882ecd"
     },
     "licenses": [],
     "notices": [
       {
         "name": "Reviewed input file license 1",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/** only globals that common to node and browsers are allowed */\n// eslint-disable-next-line node/no-unsupported-features/es-builtins"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n// this is autogenerated file, see scripts/version-update.js"
       },
       {
         "name": "Reviewed input file license 2",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */"
       },
       {
         "name": "Reviewed input file license 3",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n// this is autogenerated file, see scripts/version-update.js"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * Defines the available internal logging levels for the diagnostic logger, the numeric values\n * of the levels are defined to match the original values from the initial LogLevel to avoid\n * compatibility/migration issues for any implementation that assume the numeric ordering.\n */"
       },
       {
         "name": "Reviewed input file license 4",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * Defines the available internal logging levels for the diagnostic logger, the numeric values\n * of the levels are defined to match the original values from the initial LogLevel to avoid\n * compatibility/migration issues for any implementation that assume the numeric ordering.\n */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * Symbol used to make BaggageEntryMetadata an opaque type\n */"
       },
       {
         "name": "Reviewed input file license 5",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * Symbol used to make BaggageEntryMetadata an opaque type\n */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * Get a key to uniquely identify a context value\n *\n * @since 1.0.0\n */"
       },
       {
         "name": "Reviewed input file license 6",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/** Get a key to uniquely identify a context value */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * NoopMeter is a noop implementation of the {@link Meter} interface. It reuses\n * constant NoopMetrics for all of its methods.\n */"
       },
       {
         "name": "Reviewed input file license 7",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/** The Type of value. It describes how the data is reported. */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * The Type of value. It describes how the data is reported.\n *\n * @since 1.3.0\n */"
       },
       {
         "name": "Reviewed input file license 8",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * @deprecated use the one declared in @opentelemetry/sdk-trace-base instead.\n * A sampling decision that determines how a {@link Span} will be recorded\n * and collected.\n */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * @since 1.0.0\n */"
       },
       {
         "name": "Reviewed input file license 9",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n// Split module-level variable definition into separate files to allow\n// tree-shaking on each api instance."
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * @deprecated use the one declared in @opentelemetry/sdk-trace-base instead.\n * A sampling decision that determines how a {@link Span} will be recorded\n * and collected.\n *\n * @since 1.0.0\n */"
       },
       {
         "name": "Reviewed input file license 10",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n/**\n * No-op implementations of {@link TextMapPropagator}.\n */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * An enumeration of status codes.\n *\n * @since 1.0.0\n */"
       },
       {
         "name": "Reviewed input file license 11",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n/** only globals that common to node and browsers are allowed */\n// eslint-disable-next-line node/no-unsupported-features/es-builtins"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n// Split module-level variable definition into separate files to allow\n// tree-shaking on each api instance."
       },
       {
         "name": "Reviewed input file license 12",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n// this is autogenerated file, see scripts/version-update.js"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n/**\n * No-op implementations of {@link TextMapPropagator}.\n */"
       },
       {
         "name": "Reviewed input file license 13",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n/**\n * Symbol used to make BaggageEntryMetadata an opaque type\n */"
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n\n// this is autogenerated file, see scripts/version-update.js"
       },
       {
         "name": "Reviewed input file license 14",
-        "text": "/*\n * Copyright The OpenTelemetry Authors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *      https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\n// Split module-level variable definition into separate files to allow\n// tree-shaking on each api instance."
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n\n/**\n * @since 1.0.0\n */"
+      },
+      {
+        "name": "Reviewed input file license 15",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n\n/**\n * Symbol used to make BaggageEntryMetadata an opaque type\n */"
+      },
+      {
+        "name": "Reviewed input file license 16",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n\n// Split module-level variable definition into separate files to allow\n// tree-shaking on each api instance."
+      },
+      {
+        "name": "Reviewed input file license 17",
+        "text": "/*\n * Copyright The OpenTelemetry Authors\n * SPDX-License-Identifier: Apache-2.0\n */\n\n/**\n * @module @opentelemetry/api\n */"
       }
     ]
   }

@@ -2,14 +2,7 @@ export interface GraphNode {
   id: string;
   label: string;
   layer:
-    | 'dimension'
-    | 'fact'
-    | 'golden'
-    | 'mart'
-    | 'entity_graph'
-    | 'profile'
-    | 'source'
-    | 'staging';
+    'dimension' | 'fact' | 'golden' | 'mart' | 'entity_graph' | 'profile' | 'source' | 'staging';
   filePath?: string;
 }
 

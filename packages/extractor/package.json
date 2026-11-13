@@ -123,7 +123,7 @@
     "@clickhouse/client": "catalog:",
     "@google-cloud/bigquery": "catalog:",
     "@types/node": "catalog:dev-packages",
-    "@types/pg": "8.20.0",
+    "@types/pg": "8.23.1",
     "@typescript-eslint/eslint-plugin": "catalog:eslint",
     "@typescript-eslint/parser": "catalog:eslint",
     "eslint": "catalog:eslint",

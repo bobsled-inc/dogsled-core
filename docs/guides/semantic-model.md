@@ -28,6 +28,28 @@ ai_context:
 EOF
 ```
 
+## Synonyms
+
+Synonyms are other names people use for a source, model, column or metric. Write
+them in `synonyms`:
+
+```yaml
+schema:
+  columns:
+    - name: parcel_number
+      type: VARCHAR
+      synonyms: [APN, parcel id]
+```
+
+Synonyms in `ai_context.synonyms`, the Ossie location, also count. Dogsled merges
+the two lists: `synonyms` first, then `ai_context.synonyms`, without repeats that
+differ only in case or spacing. Ossie export writes the merged list to
+`ai_context.synonyms`. Ossie import moves it back to `synonyms`, so exporting again
+writes the same document.
+
+Dogsled warns about keys a source or model file declares that it does not use, such
+as a misspelled `synonym`. The file still loads.
+
 ## Metrics
 
 A metric is a named aggregate over one model.

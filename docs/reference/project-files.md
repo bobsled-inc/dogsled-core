@@ -126,11 +126,15 @@ plus either:
   model integration that caches it), `mode` (`live`, `lazy`, `extract`), `max_age`,
   `filter` and `refresh`.
 
+Sources and their columns also take `ai_context` and `synonyms`. See
+[Semantic model](../guides/semantic-model.md#synonyms).
+
 ## Models
 
 `spec_version: '0.2'`, `type: model`, `name`, `description`, `grain`, `source`,
 `columns` and `materialization` are the core fields. Columns take `name`, `expr`,
-`type`, `primary_key` and `not_null`. Other fields: `joins`, `include_all_columns`,
+`type`, `primary_key`, `not_null`, `ai_context` and `synonyms`. Models also take
+`ai_context` and `synonyms`, and `derived_columns` entries take `synonyms`. Other fields: `joins`, `include_all_columns`,
 `exclude_columns`, `distinct`, `group_by`, `where`, `having`, `qualify`, `dedupe`,
 `order_by`, `windows`, `limit`, `offset`, `derived_columns`, `flatten_json`,
 `pivot`, `unpivot`, `union`, `recurse`, `hierarchy`, `target_schema`,

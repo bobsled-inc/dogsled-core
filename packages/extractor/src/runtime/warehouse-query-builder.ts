@@ -12,14 +12,7 @@ import { escapeSqlString } from './sql-escape.js';
 import type { CursorKind } from './cursor.js';
 
 export type Dialect =
-  | 'snowflake'
-  | 'bigquery'
-  | 'postgres'
-  | 'redshift'
-  | 'mysql'
-  | 'clickhouse'
-  | 'iceberg'
-  | 'delta';
+  'snowflake' | 'bigquery' | 'postgres' | 'redshift' | 'mysql' | 'clickhouse' | 'iceberg' | 'delta';
 
 export interface ChangeTrackingConfig {
   /** Snowflake CHANGES clause information mode. */
