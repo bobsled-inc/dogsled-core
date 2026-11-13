@@ -156,6 +156,13 @@ needs Unity Catalog managed tables with catalog commits enabled; preflight check
 transaction support before agent calls. See the [publication guide](../../../packages/model-spec/docs/agentic-publication.md)
 for connection and transaction requirements.
 
+Core renames its own metadata columns in an existing agentic target when their
+names change between Core versions, so the target keeps its rows. Delta tables
+on Databricks refuse a column rename unless column mapping is on: for such a
+target, publication stops with an error that names the column. Enable column
+mapping on the target first (`ALTER TABLE … SET TBLPROPERTIES
+('delta.columnMapping.mode' = 'name')`), or rebuild the target.
+
 By default, local execution checkpoints live under `.dogsled/model-spec/`: one DuckDB file per run
 when `@duckdb/node-api` is installed, and JSON files otherwise. See
 [where state is stored](../../../packages/model-spec/docs/agentic-state.md#where-state-is-stored).
