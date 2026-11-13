@@ -217,6 +217,17 @@ function finish(dir: string): void {
   fs.rmSync(path.join(dir, JOURNAL), { force: true });
 }
 
+/** Puts the DuckDB file back under its earlier name, when a finish stopped after renaming it. */
+function unfinish(dir: string): void {
+  const [earlier] = LEGACY_LOCAL_DATABASE_FILES.filter((name) => name !== LOCAL_DATABASE_FILE);
+  if (!earlier) return;
+  for (const suffix of ['', '.wal']) {
+    const from = path.join(dir, `${LOCAL_DATABASE_FILE}${suffix}`);
+    const to = path.join(dir, `${earlier}${suffix}`);
+    if (exists(from) && !exists(to)) fs.renameSync(from, to);
+  }
+}
+
 /** Undoes the preparation in a folder that did not move: lake data paths and settings. */
 async function rollback(dir: string, options: Options): Promise<void> {
   const journalFile = path.join(dir, JOURNAL);
@@ -350,14 +361,26 @@ async function move(root: string, from: string, notice: Notice, options: Options
   try {
     finish(current);
   } catch (error) {
-    // The journal stays, so the next run finishes the move.
+    // Settings and the database file must agree, or a run would open an empty database. Move
+    // everything back and use the earlier folder; the next run tries again.
+    try {
+      unfinish(current);
+      fs.renameSync(current, from);
+      await rollback(from, options);
+    } catch {
+      // The journal stays in the moved folder, so the next run finishes the move.
+      notice(
+        `Moved ${fromName}/ to ${LOCAL_STATE_DIR}/; the rest is finished next run (${(error as Error).message}).`
+      );
+      return current;
+    }
     notice(
-      `Moved ${fromName}/ to ${LOCAL_STATE_DIR}/; the rest is finished next run (${(error as Error).message}).`
+      `Could not move ${fromName}/ to ${LOCAL_STATE_DIR}/ (${(error as Error).message}); using ${fromName}/ for this run.`
     );
-    return current;
+    return from;
   }
   notice(
-    `Moved ${fromName}/ to ${LOCAL_STATE_DIR}/ (one time). Update your .gitignore: ${fromName}/* becomes ${LOCAL_STATE_DIR}/*.`
+    `Moved ${fromName}/ to ${LOCAL_STATE_DIR}/ (one time). Update your .gitignore: ${fromName}/* becomes ${LOCAL_STATE_DIR}/*. Other files that name ${fromName}/ (scripts, .env files, SQL) need the same change.`
   );
   return current;
 }
