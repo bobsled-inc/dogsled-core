@@ -3821,7 +3821,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Declared license: MIT
 
-### LICENSE
+### Reviewed upstream package LICENSE
 
 ```text
 MIT License
