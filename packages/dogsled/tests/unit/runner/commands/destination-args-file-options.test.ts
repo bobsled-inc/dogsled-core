@@ -46,17 +46,6 @@ describe('buildDestinationCliArgs: file destination options', () => {
     ]);
   });
 
-  it('emits no new flag when utc_timestamps is false', () => {
-    expect(
-      buildDestinationCliArgs({
-        type: 's3',
-        bucket: 'example-bucket',
-        format: 'parquet',
-        utc_timestamps: false,
-      })
-    ).toEqual(['--dest', 's3', '--format', 'parquet', '--s3-bucket', 'example-bucket']);
-  });
-
   it.each([
     [
       's3',
@@ -69,13 +58,12 @@ describe('buildDestinationCliArgs: file destination options', () => {
       ['--gcs-bucket', 'example-bucket', '--gcs-prefix', 'landing/'],
     ],
     ['local', { type: 'local' as const }, []],
-  ])('emits both flags for a %s destination', (_name, destination, location) => {
+  ])('emits the flag for a %s destination', (_name, destination, location) => {
     expect(
       buildDestinationCliArgs({
         ...destination,
         format: 'parquet',
         stream_subfolder: 'data/20261120T050007Z-9f3a1c2b',
-        utc_timestamps: true,
       })
     ).toEqual([
       '--dest',
@@ -85,7 +73,6 @@ describe('buildDestinationCliArgs: file destination options', () => {
       ...location,
       '--stream-subfolder',
       'data/20261120T050007Z-9f3a1c2b',
-      '--utc-timestamps',
     ]);
   });
 

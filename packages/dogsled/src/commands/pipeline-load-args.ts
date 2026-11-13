@@ -206,9 +206,6 @@ function buildRawLoadArgs(options: PipelineOptions): string[] {
   if (options.streamSubfolder) {
     args.push('--stream-subfolder', options.streamSubfolder);
   }
-  if (options.utcTimestamps) {
-    args.push('--utc-timestamps');
-  }
   if (options.bufferSize) {
     args.push('--buffer-size', String(options.bufferSize));
   }

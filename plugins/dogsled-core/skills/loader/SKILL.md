@@ -102,14 +102,13 @@ The loader automatically adds these columns:
 
 All formats are produced via DuckDB `COPY` (except Arrow which uses IPC buffers). Arrays and objects are serialized as VARCHAR for cross-format portability.
 
-### Folders and timestamps (optional)
+### Folders (optional)
 
-`local`, `gcs` and `s3` destinations write `<prefix><stream>/<stream>-<n>.<ext>`. Two optional settings change that. Both are off by default, and without them the files are exactly the same as before.
+`local`, `gcs` and `s3` destinations write `<prefix><stream>/<stream>-<n>.<ext>`. One optional setting changes that. It is off by default, and without it the files are exactly the same as before.
 
 | `dogsled.yml` field | `load run` flag             | Effect                                                                                                                                                                           |
 | ------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `stream_subfolder`  | `--stream-subfolder <path>` | Adds a folder inside each stream's folder: `orders/<path>/orders-0.parquet`. A relative path of letters, digits, dots, dashes, equals signs and underscores, with no `.` or `..` |
-| `utc_timestamps`    | `--utc-timestamps`          | Writes timestamp columns as UTC-adjusted (`TIMESTAMPTZ`). Parquet only. The instants do not change                                                                               |
 
 ## Schema Evolution
 

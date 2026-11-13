@@ -85,7 +85,6 @@ export async function runFileLoader(
   const logger = createLogger(stderr, rawConfig.logFormat);
   const formatDef = getFormatDef(rawConfig.format);
   const streamSubfolder = rawConfig.streamSubfolder ? `${rawConfig.streamSubfolder}/` : '';
-  const utcTimestamps = rawConfig.utcTimestamps === true;
 
   const providedTempRoot = dependencies.tempRootDir ? path.resolve(dependencies.tempRootDir) : null;
 
@@ -141,11 +140,7 @@ export async function runFileLoader(
     let convertMs = 0;
 
     try {
-      if (
-        !cleanupSource &&
-        !utcTimestamps &&
-        canDirectlyPublishSource(rawConfig.format, sourceEncoding)
-      ) {
+      if (!cleanupSource && canDirectlyPublishSource(rawConfig.format, sourceEncoding)) {
         await fs.copyFile(sourcePath, tempOutputPath);
         publishSourcePath = tempOutputPath;
         removeTempOutput = true;
@@ -158,7 +153,6 @@ export async function runFileLoader(
             format: rawConfig.format,
             sourceEncoding,
             columns: schemas.get(stream)?.columns,
-            ...(utcTimestamps ? { utcTimestamps: true } : {}),
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);

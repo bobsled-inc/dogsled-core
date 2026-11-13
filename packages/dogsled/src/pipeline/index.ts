@@ -972,14 +972,13 @@ function resolveNamedDestination(
 }
 
 function fileDestinationOptions(
-  destination: { stream_subfolder?: string | undefined; utc_timestamps?: boolean | undefined },
+  destination: { stream_subfolder?: string | undefined },
   env: NodeJS.ProcessEnv
-): Pick<PipelineOptions, 'streamSubfolder' | 'utcTimestamps'> {
+): Pick<PipelineOptions, 'streamSubfolder'> {
   return {
     ...(destination.stream_subfolder
       ? { streamSubfolder: resolveValue(destination.stream_subfolder, env)! }
       : {}),
-    ...(destination.utc_timestamps === true ? { utcTimestamps: true } : {}),
   };
 }
 

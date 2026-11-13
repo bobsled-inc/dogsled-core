@@ -788,10 +788,6 @@ export function registerRunCommand(program: Command, runHandler: RunHandler = ru
       '--stream-subfolder <path>',
       'Folder added inside each stream folder for local, gcs and s3 destinations (for example data/run-1)'
     )
-    .option(
-      '--utc-timestamps',
-      'Write timestamp columns as UTC-adjusted for parquet output on local, gcs and s3 destinations'
-    )
     .option('--db-path <path>', 'DuckDB database file path')
     .option('--ducklake-catalog-url <url>', 'DuckLake catalog URL')
     .option('--ducklake-data-path <path>', 'DuckLake data path')

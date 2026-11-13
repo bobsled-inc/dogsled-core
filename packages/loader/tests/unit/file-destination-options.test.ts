@@ -64,28 +64,5 @@ describe('file destination options: stream subfolder', () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect('streamSubfolder' in result.data).toBe(false);
-    expect('utcTimestamps' in result.data).toBe(false);
-  });
-});
-
-describe('file destination options: UTC timestamps', () => {
-  it.each(fileDestinations)('accepts UTC timestamps for $dest Parquet output', (dest) => {
-    const result = parse({ ...dest, format: 'parquet', utcTimestamps: true });
-    expect(result.success).toBe(true);
-    expect(result.success && 'utcTimestamps' in result.data && result.data.utcTimestamps).toBe(
-      true
-    );
-  });
-
-  it.each(['jsonl', 'csv', 'arrow'])('rejects UTC timestamps for %s output', (format) => {
-    const result = parse({ ...fileDestinations[2], format, utcTimestamps: true });
-    expect(result.success).toBe(false);
-    expect(!result.success && JSON.stringify(result.error.issues)).toContain('parquet');
-  });
-
-  it('accepts an explicit false for any format', () => {
-    expect(parse({ ...fileDestinations[2], format: 'csv', utcTimestamps: false }).success).toBe(
-      true
-    );
   });
 });

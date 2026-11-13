@@ -54,63 +54,39 @@ const streamSubfolder = z
   .refine(isValidStreamSubfolder, STREAM_SUBFOLDER_RULE)
   .optional();
 
-/**
- * Opt-in: write timestamp columns as UTC-adjusted. Parquet output only.
- * Omitted by default, which keeps timestamps as written before.
- */
-const utcTimestamps = z.boolean().optional();
+const LocalDestConfigSchema = z.object({
+  dest: z.literal('local'),
+  format: z.enum(OUTPUT_FORMATS),
+  outputDir: z.string().trim().min(1).default('./output'),
+  streamSubfolder,
+  bufferSize,
+  logFormat,
+});
 
-const utcTimestampsNeedParquet = {
-  check: (config: { format: string; utcTimestamps?: boolean | undefined }) =>
-    config.utcTimestamps !== true || config.format === 'parquet',
-  options: {
-    message: 'utcTimestamps applies to parquet output only',
-    path: ['utcTimestamps'],
-  },
-};
+const GcsDestConfigSchema = z.object({
+  dest: z.literal('gcs'),
+  format: z.enum(OUTPUT_FORMATS),
+  outputDir: z.string().trim().min(1).default('./output'),
+  gcsBucket: z.string().trim().min(1),
+  gcsPrefix: z.string().trim().min(1).optional(),
+  streamSubfolder,
+  bufferSize,
+  logFormat,
+});
 
-const LocalDestConfigSchema = z
-  .object({
-    dest: z.literal('local'),
-    format: z.enum(OUTPUT_FORMATS),
-    outputDir: z.string().trim().min(1).default('./output'),
-    streamSubfolder,
-    utcTimestamps,
-    bufferSize,
-    logFormat,
-  })
-  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
-
-const GcsDestConfigSchema = z
-  .object({
-    dest: z.literal('gcs'),
-    format: z.enum(OUTPUT_FORMATS),
-    outputDir: z.string().trim().min(1).default('./output'),
-    gcsBucket: z.string().trim().min(1),
-    gcsPrefix: z.string().trim().min(1).optional(),
-    streamSubfolder,
-    utcTimestamps,
-    bufferSize,
-    logFormat,
-  })
-  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
-
-const S3DestConfigSchema = z
-  .object({
-    dest: z.literal('s3'),
-    format: z.enum(OUTPUT_FORMATS),
-    outputDir: z.string().trim().min(1).default('./output'),
-    s3Bucket: z.string().trim().min(1),
-    s3Prefix: z.string().trim().min(1).optional(),
-    s3Region: z.string().trim().min(1).optional(),
-    s3RoleArn: z.string().trim().min(1).optional(),
-    s3ExternalId: z.string().trim().min(1).optional(),
-    streamSubfolder,
-    utcTimestamps,
-    bufferSize,
-    logFormat,
-  })
-  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
+const S3DestConfigSchema = z.object({
+  dest: z.literal('s3'),
+  format: z.enum(OUTPUT_FORMATS),
+  outputDir: z.string().trim().min(1).default('./output'),
+  s3Bucket: z.string().trim().min(1),
+  s3Prefix: z.string().trim().min(1).optional(),
+  s3Region: z.string().trim().min(1).optional(),
+  s3RoleArn: z.string().trim().min(1).optional(),
+  s3ExternalId: z.string().trim().min(1).optional(),
+  streamSubfolder,
+  bufferSize,
+  logFormat,
+});
 
 const tablePrefix = z.string().trim().min(1).optional();
 const destinationTable = sqlIdentifier.refine(

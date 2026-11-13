@@ -271,7 +271,6 @@ export function buildConfigInput(options: Record<string, unknown>): Record<strin
         gcsBucket: options.gcsBucket,
         gcsPrefix: options.gcsPrefix,
         streamSubfolder: options.streamSubfolder,
-        utcTimestamps: options.utcTimestamps,
         bufferSize: options.bufferSize,
         logFormat: options.logFormat,
       });
@@ -286,7 +285,6 @@ export function buildConfigInput(options: Record<string, unknown>): Record<strin
         s3RoleArn: options.s3RoleArn,
         s3ExternalId: options.s3ExternalId,
         streamSubfolder: options.streamSubfolder,
-        utcTimestamps: options.utcTimestamps,
         bufferSize: options.bufferSize,
         logFormat: options.logFormat,
       });
@@ -407,7 +405,6 @@ export function buildConfigInput(options: Record<string, unknown>): Record<strin
         format: options.format,
         outputDir: options.outputDir,
         streamSubfolder: options.streamSubfolder,
-        utcTimestamps: options.utcTimestamps,
         bufferSize: options.bufferSize,
         logFormat: options.logFormat,
       });

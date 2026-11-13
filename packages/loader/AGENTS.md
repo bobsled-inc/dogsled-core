@@ -86,7 +86,6 @@ These destinations should fail fast with user-facing validation errors when `vec
 - **gcs**: Dynamic import of `@google-cloud/storage` (optional peer dep)
 - **Path safety**: Destination paths normalized and reject traversal outside configured root/prefix
 - **Stream subfolder**: Opt-in `streamSubfolder` (`--stream-subfolder`, `stream_subfolder`) places files at `<stream>/<subfolder>/<stream>-<n>.<ext>`. Its rule is `isValidStreamSubfolder` in `@bobsled-inc/protocol`, shared with the `dogsled.yml` schema. Unset, the path is exactly `<stream>/<stream>-<n>.<ext>`
-- **UTC timestamps**: Opt-in `utcTimestamps` (`--utc-timestamps`, `utc_timestamps`) is Parquet only. The writer sets `TimeZone` to `UTC`, describes the query, and casts `TIMESTAMP`, `TIMESTAMP_S` and `TIMESTAMP_MS` columns to `TIMESTAMPTZ`; `TIMESTAMP_NS` stays as written because `TIMESTAMPTZ` stops at microseconds. A Parquet batch is converted instead of copied. Unset, `convertFile` runs the one `COPY` it always ran. `duckdb-writer-utc.test.ts` pins that output to the legacy statement byte for byte, so keep it green
 
 ## Format Notes
 

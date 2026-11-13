@@ -52,7 +52,7 @@ const baseConfig = {
   logFormat: 'text',
 } as const satisfies FileDestConfig;
 
-describe('runFileLoader: stream subfolder and UTC timestamps', () => {
+describe('runFileLoader: stream subfolder', () => {
   let tempDir: string;
 
   beforeEach(async () => {
@@ -87,7 +87,7 @@ describe('runFileLoader: stream subfolder and UTC timestamps', () => {
     return { converts, published };
   }
 
-  it('keeps the legacy path and convert options when neither option is set', async () => {
+  it('keeps the legacy path and convert options when the option is not set', async () => {
     const { converts, published } = await run({ ...baseConfig }, [
       schemaLine('orders'),
       recordLine('orders', 1),
@@ -138,16 +138,7 @@ describe('runFileLoader: stream subfolder and UTC timestamps', () => {
     expect(published).toEqual(['sales_2026/data/run-1/sales_2026-0.parquet']);
   });
 
-  it('asks the writer for UTC timestamps only when the option is on', async () => {
-    const lines = [schemaLine('orders'), recordLine('orders', 1), stateLine('orders')];
-    const on = await run({ ...baseConfig, utcTimestamps: true }, lines);
-    const off = await run({ ...baseConfig, utcTimestamps: false }, lines);
-
-    expect(on.converts[0]).toMatchObject({ utcTimestamps: true });
-    expect('utcTimestamps' in (off.converts[0] ?? {})).toBe(false);
-  });
-
-  it('writes UTC-adjusted Parquet under the subfolder through the real local destination', async () => {
+  it('writes Parquet under the subfolder through the real local destination', async () => {
     const outputDir = path.join(tempDir, 'out');
     await runFileLoader(
       {
@@ -157,7 +148,6 @@ describe('runFileLoader: stream subfolder and UTC timestamps', () => {
         bufferSize: 1,
         logFormat: 'text',
         streamSubfolder: 'data/20261120T050007Z-9f3a1c2b',
-        utcTimestamps: true,
       },
       {
         input: Readable.from(
@@ -178,13 +168,7 @@ describe('runFileLoader: stream subfolder and UTC timestamps', () => {
       'orders-0.parquet'
     );
     expect((await fs.stat(file)).isFile()).toBe(true);
-    const [row] = await queryRows(
-      `SELECT logical_type FROM parquet_schema('${file}') WHERE name = 'created_at'`
-    );
-    expect(String(row?.['logical_type'])).toContain('isAdjustedToUTC=1');
-    expect(
-      await queryRows(`SELECT id, epoch_us(created_at) AS us FROM read_parquet('${file}')`)
-    ).toEqual([{ id: 1, us: Date.parse('2026-03-23T00:00:00Z') * 1000 }]);
+    expect(await queryRows(`SELECT id FROM read_parquet('${file}')`)).toEqual([{ id: 1 }]);
   });
 
   describe('Parquet batches', () => {
@@ -213,17 +197,13 @@ describe('runFileLoader: stream subfolder and UTC timestamps', () => {
       expect(published).toEqual(['orders/orders-0.parquet']);
     });
 
-    it('converts a matching Parquet batch when UTC timestamps are on', async () => {
+    it('publishes a matching Parquet batch under the subfolder without converting it', async () => {
       const { converts, published } = await run(
-        { ...baseConfig, utcTimestamps: true, streamSubfolder: 'data/run-1' },
+        { ...baseConfig, streamSubfolder: 'data/run-1' },
         batchLines('orders')
       );
 
-      expect(converts).toHaveLength(1);
-      expect(converts[0]).toMatchObject({
-        utcTimestamps: true,
-        sourceEncoding: { format: 'parquet' },
-      });
+      expect(converts).toHaveLength(0);
       expect(published).toEqual(['orders/data/run-1/orders-0.parquet']);
     });
   });

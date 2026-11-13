@@ -136,9 +136,9 @@ const within = (args: readonly string[], from: string, to: string) =>
   args.slice(args.indexOf(from), args.indexOf(to));
 
 describe('file destination options through runProjectPipeline', () => {
-  it('passes both options to the loader for a single destination', async () => {
+  it('passes the option to the loader for a single destination', async () => {
     const projectRoot = makeProject(
-      `${S3_LANDING}    stream_subfolder: data/20261120T050007Z-9f3a1c2b\n    utc_timestamps: true\n`,
+      `${S3_LANDING}    stream_subfolder: data/20261120T050007Z-9f3a1c2b\n`,
       ['landing']
     );
 
@@ -157,15 +157,14 @@ describe('file destination options through runProjectPipeline', () => {
       'landing/',
       '--stream-subfolder',
       'data/20261120T050007Z-9f3a1c2b',
-      '--utc-timestamps',
       '--table-prefix',
       'items__',
     ]);
   });
 
-  it('passes both options to every loader of a fan-out', async () => {
+  it('passes the option to every loader of a fan-out', async () => {
     const projectRoot = makeProject(
-      `${S3_LANDING}    stream_subfolder: data/run-1\n    utc_timestamps: true\n${GCS_LANDING}    stream_subfolder: data/run-1\n`,
+      `${S3_LANDING}    stream_subfolder: data/run-1\n${GCS_LANDING}    stream_subfolder: data/run-1\n`,
       ['landing', 'archive']
     );
 
@@ -174,38 +173,39 @@ describe('file destination options through runProjectPipeline', () => {
     expect(loaders).toHaveLength(2);
     const byDestination = new Map(loaders.map((args) => [args[args.indexOf('--dest') + 1], args]));
     expect(byDestination.get('s3')).toEqual(
-      expect.arrayContaining(['--stream-subfolder', 'data/run-1', '--utc-timestamps'])
+      expect.arrayContaining(['--stream-subfolder', 'data/run-1'])
     );
     expect(byDestination.get('gcs')).toEqual(
       expect.arrayContaining(['--stream-subfolder', 'data/run-1'])
     );
-    expect(byDestination.get('gcs')).not.toContain('--utc-timestamps');
   });
 
   it.each([
     ['single destination', S3_LANDING, ['landing']],
     ['fan-out', `${S3_LANDING}${GCS_LANDING}`, ['landing', 'archive']],
-  ])('adds no argument for a %s that sets neither option', async (_name, destinations, names) => {
-    const projectRoot = makeProject(destinations, names);
+  ])(
+    'adds no argument for a %s that does not set the option',
+    async (_name, destinations, names) => {
+      const projectRoot = makeProject(destinations, names);
 
-    const { loaders } = await loaderArgs(projectRoot);
+      const { loaders } = await loaderArgs(projectRoot);
 
-    for (const args of loaders) {
-      expect(args).not.toContain('--stream-subfolder');
-      expect(args).not.toContain('--utc-timestamps');
+      for (const args of loaders) {
+        expect(args).not.toContain('--stream-subfolder');
+      }
+      const s3 = loaders.find((args) => args.includes('s3'))!;
+      expect(s3.slice(s3.indexOf('--dest'))).toEqual(
+        expect.arrayContaining([
+          '--dest',
+          's3',
+          '--s3-bucket',
+          'example-bucket',
+          '--s3-prefix',
+          'landing/',
+        ])
+      );
     }
-    const s3 = loaders.find((args) => args.includes('s3'))!;
-    expect(s3.slice(s3.indexOf('--dest'))).toEqual(
-      expect.arrayContaining([
-        '--dest',
-        's3',
-        '--s3-bucket',
-        'example-bucket',
-        '--s3-prefix',
-        'landing/',
-      ])
-    );
-  });
+  );
 
   it('leaves an unset single destination argument list exactly as it was', async () => {
     const projectRoot = makeProject(S3_LANDING, ['landing']);

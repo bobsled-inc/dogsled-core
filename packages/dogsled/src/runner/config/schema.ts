@@ -336,18 +336,7 @@ const StreamSubfolderSchema = z
 
 const FileDestinationFields = {
   stream_subfolder: StreamSubfolderSchema.optional(),
-  /** Opt-in: write timestamp columns as UTC-adjusted. Parquet output only. */
-  utc_timestamps: z.boolean().optional(),
 } as const;
-
-const utcTimestampsNeedParquet = {
-  check: (destination: { format: string; utc_timestamps?: boolean | undefined }) =>
-    destination.utc_timestamps !== true || destination.format === 'parquet',
-  options: {
-    message: 'utc_timestamps applies to parquet output only',
-    path: ['utc_timestamps'],
-  },
-};
 
 // File destinations require an explicit format (no implicit default).
 const LocalDestinationSchema = z
@@ -357,8 +346,7 @@ const LocalDestinationSchema = z
     ...FileDestinationFields,
     ...SharedDestinationFields,
   })
-  .strict()
-  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
+  .strict();
 
 const GcsDestinationSchema = z
   .object({
@@ -369,8 +357,7 @@ const GcsDestinationSchema = z
     ...FileDestinationFields,
     ...SharedDestinationFields,
   })
-  .strict()
-  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
+  .strict();
 
 const S3DestinationSchema = z
   .object({
@@ -381,8 +368,7 @@ const S3DestinationSchema = z
     ...FileDestinationFields,
     ...SharedDestinationFields,
   })
-  .strict()
-  .refine(utcTimestampsNeedParquet.check, utcTimestampsNeedParquet.options);
+  .strict();
 
 /**
  * Host-managed destination — orchestrator-resolved type.

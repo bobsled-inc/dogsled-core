@@ -109,15 +109,12 @@ export function buildStreamOverrideCliArgs(options: {
 type DestinationLike = DestinationConfig | NamedDestination;
 
 function buildFileDestinationCliArgs(
-  destination: { stream_subfolder?: string | undefined; utc_timestamps?: boolean | undefined },
+  destination: { stream_subfolder?: string | undefined },
   resolveValue: (value: string) => string
 ): string[] {
   const args: string[] = [];
   if (destination.stream_subfolder) {
     args.push('--stream-subfolder', resolveValue(destination.stream_subfolder));
-  }
-  if (destination.utc_timestamps === true) {
-    args.push('--utc-timestamps');
   }
   return args;
 }

@@ -47,7 +47,7 @@ describe('file destination CLI options', () => {
   });
 
   it.each(destinations)(
-    'passes --stream-subfolder and --utc-timestamps into the $dest config',
+    'passes --stream-subfolder into the $dest config',
     async ({ dest, extra }) => {
       const { config, error } = await runWith([
         '--dest',
@@ -57,43 +57,22 @@ describe('file destination CLI options', () => {
         ...extra,
         '--stream-subfolder',
         'data/20261120T050007Z-9f3a1c2b/',
-        '--utc-timestamps',
       ]);
 
       expect(error).toBeUndefined();
       expect(config).toMatchObject({
         dest,
         streamSubfolder: 'data/20261120T050007Z-9f3a1c2b',
-        utcTimestamps: true,
       });
     }
   );
 
-  it.each(destinations)(
-    'leaves both options unset for $dest by default',
-    async ({ dest, extra }) => {
-      const { config, error } = await runWith(['--dest', dest, '--format', 'parquet', ...extra]);
+  it.each(destinations)('leaves the option unset for $dest by default', async ({ dest, extra }) => {
+    const { config, error } = await runWith(['--dest', dest, '--format', 'parquet', ...extra]);
 
-      expect(error).toBeUndefined();
-      expect(config?.dest).toBe(dest);
-      expect(config?.['streamSubfolder' as keyof LoaderConfig]).toBeUndefined();
-      expect(config?.['utcTimestamps' as keyof LoaderConfig]).toBeUndefined();
-    }
-  );
-
-  it('rejects --utc-timestamps for output that is not Parquet', async () => {
-    const { stderr, exitCode } = await runRejected([
-      '--dest',
-      's3',
-      '--format',
-      'csv',
-      '--s3-bucket',
-      'example-bucket',
-      '--utc-timestamps',
-    ]);
-
-    expect(stderr).toContain('utcTimestamps applies to parquet output only');
-    expect(exitCode).toBe(2);
+    expect(error).toBeUndefined();
+    expect(config?.dest).toBe(dest);
+    expect(config?.['streamSubfolder' as keyof LoaderConfig]).toBeUndefined();
   });
 
   it('rejects a subfolder that leaves the stream folder', async () => {
@@ -112,15 +91,14 @@ describe('file destination CLI options', () => {
     expect(exitCode).toBe(2);
   });
 
-  it('builds config input with both keys for the local destination', () => {
+  it('builds config input with the key for the local destination', () => {
     expect(
       buildConfigInput({
         dest: 'local',
         format: 'parquet',
         outputDir: './out',
         streamSubfolder: 'data/run-1',
-        utcTimestamps: true,
       })
-    ).toMatchObject({ dest: 'local', streamSubfolder: 'data/run-1', utcTimestamps: true });
+    ).toMatchObject({ dest: 'local', streamSubfolder: 'data/run-1' });
   });
 });
