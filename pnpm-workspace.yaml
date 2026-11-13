@@ -9,7 +9,7 @@ catalog:
   '@aws-sdk/client-s3': 3.1163.0
   '@clickhouse/client': 1.25.0
   '@google-cloud/bigquery': 8.3.1
-  '@polyglot-sql/sdk': 0.14.0
+  '@polyglot-sql/sdk': 0.1.13
   '@turbopuffer/turbopuffer': 2.14.0
   '@types/pg': 8.23.1
   ai: 6.0.323

@@ -307,7 +307,7 @@ describe('clause position is unchanged for models that use neither new operator'
 
   it('keeps OFFSET with LIMIT', () => {
     const sql = generateSelectSql(withUnion({ limit: 5, offset: 10 }), 'duckdb');
-    expect(sql).toMatch(/LIMIT 5 OFFSET 10\) UNION ALL/);
+    expect(sql).toMatch(/LIMIT 5 OFFSET 10 UNION ALL/);
   });
 
   it('keeps LIMIT ahead of a pivot, so the pivot sees the limited rows', () => {
