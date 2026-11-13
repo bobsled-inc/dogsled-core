@@ -214,6 +214,10 @@ export function printExamples(findings, patternId, max = 10) {
 }
 
 export const GUARD_SELF_REFERENCE_PATHS = new Set([
+  // Rename tooling on rename/bobsled-core: spells old names and contacts by design.
+  'scripts/rename/mapping.mjs',
+  'scripts/rename/rename.mjs',
+  'tests/unit/rename-mapping.test.mjs',
   'scripts/guards/lib.mjs',
   'scripts/guards/old-name-exceptions.mjs',
   'scripts/guards/privacy.mjs',
