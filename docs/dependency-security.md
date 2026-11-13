@@ -134,7 +134,9 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   agents unless `options.proxy` is supplied. The loader destination, loader
   check command and connections runner pass only host, path and token.
   Regression tests assert those exact options and the absence of `proxy`. The
-  PAC/FTP path cannot receive input through these adapters. Review by 2026-11-20.
+  PAC/FTP path cannot receive input through these adapters. Re-reviewed on
+  2026-11-13: no upstream fix path, because get-uri 8.0.1 still requires
+  basic-ftp ^5.3.1 and the fix is only in basic-ftp 6.2.1. Review by 2026-12-20.
   Databricks SQL 3.0.0 keeps that proxy path but its `engines` excludes Node.js
   24.0 through 24.22.0, which Dogsled supports, so the optional peer ranges are
   capped at `>=2.0.0 <3` until maintainers decide to support 3.x.
