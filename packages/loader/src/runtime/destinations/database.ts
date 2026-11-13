@@ -56,11 +56,7 @@ export interface EnsureTableOptions {
 }
 
 export type PartitionSource =
-  | 'explicit'
-  | 'cursor_inferred'
-  | 'fallback'
-  | 'not_supported'
-  | 'existing_table';
+  'explicit' | 'cursor_inferred' | 'fallback' | 'not_supported' | 'existing_table';
 
 /**
  * Database destination interface for loading data into a target database.

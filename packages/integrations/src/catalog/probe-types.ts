@@ -9,13 +9,7 @@
 export type CatalogProbeHttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 export type CatalogProbeRequestPhase = 'token' | 'resource';
 export type CatalogProbeFieldType =
-  | 'string'
-  | 'number'
-  | 'integer'
-  | 'boolean'
-  | 'timestamp'
-  | 'array'
-  | 'object';
+  'string' | 'number' | 'integer' | 'boolean' | 'timestamp' | 'array' | 'object';
 
 export type CatalogProbeJsonValue =
   | string

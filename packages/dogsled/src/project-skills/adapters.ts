@@ -25,13 +25,7 @@ export const PROJECT_SKILL_ADAPTERS = [
 export type ProjectSkillAdapterAgent = (typeof PROJECT_SKILL_ADAPTERS)[number]['agent'];
 export type ProjectSkillAdapterMode = 'link' | 'copy';
 export type ProjectSkillAdapterState =
-  | 'created'
-  | 'unchanged'
-  | 'updated'
-  | 'removed'
-  | 'missing'
-  | 'stale'
-  | 'conflict';
+  'created' | 'unchanged' | 'updated' | 'removed' | 'missing' | 'stale' | 'conflict';
 
 export interface ProjectSkillAdapterStatus {
   agent: ProjectSkillAdapterAgent;

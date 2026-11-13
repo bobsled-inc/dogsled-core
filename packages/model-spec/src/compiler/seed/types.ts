@@ -13,14 +13,7 @@ import { getCanonicalDialect, quoteLiteral } from '../dialect.js';
 import type { SupportedDialect } from '../dialect.js';
 
 export type SeedTypeFamily =
-  | 'text'
-  | 'integer'
-  | 'float'
-  | 'exact'
-  | 'boolean'
-  | 'date'
-  | 'timestamp'
-  | 'time';
+  'text' | 'integer' | 'float' | 'exact' | 'boolean' | 'date' | 'timestamp' | 'time';
 
 export interface SeedColumnType {
   family: SeedTypeFamily;

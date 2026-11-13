@@ -3,10 +3,7 @@ import { CommandError } from '@bobsled-inc/protocol';
 import type { ModelNode } from '../config/loader.js';
 
 export type PipelineReplicationMethod =
-  | 'full_refresh'
-  | 'incremental_append'
-  | 'incremental_merge'
-  | 'change_tracking';
+  'full_refresh' | 'incremental_append' | 'incremental_merge' | 'change_tracking';
 
 export type PipelineLoadStrategy = 'append' | 'merge' | 'full_refresh';
 export type PipelineSchemaBehavior = 'evolve' | 'strict' | 'freeze';
@@ -123,11 +120,7 @@ export interface ModelPipelineTemplateInput {
 
 /** Runtime phase carried alongside each entity-graph pipeline in the manifest. */
 export type EntityGraphPhase =
-  | 'resolve'
-  | 'cluster'
-  | 'profile'
-  | 'extract_mentions'
-  | 'extract_relationships';
+  'resolve' | 'cluster' | 'profile' | 'extract_mentions' | 'extract_relationships';
 
 /**
  * Input describing a `kind: 'entity-graph'` pipeline. Each cron tick the

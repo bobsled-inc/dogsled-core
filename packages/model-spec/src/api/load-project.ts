@@ -35,6 +35,7 @@ import {
   withEphemeralAncestors,
 } from '../compiler/index.js';
 import { expandOssieIndex } from '../ossie/index.js';
+import { ignoredKeyWarnings } from '../compiler/discarded-keys.js';
 import { registerOssieBindings, validateOssiePublishBindings } from './ossie-bindings.js';
 import { resolveSelection } from '../selection.js';
 import { loadProjectConfig, resolveConfig, type ResolvedProjectConfig } from '../config.js';
@@ -132,6 +133,12 @@ async function loadProjectUnchecked(
   // ---- 1. Project config ----
   const { config } = loadProjectConfig(cwd, { index });
   const resolved = resolveConfig({}, config);
+
+  for (const kind of ['source', 'model'] as const) {
+    for (const entry of entriesOfKind(index, kind)) {
+      warnings.push(...ignoredKeyWarnings(kind, entry.document, entryFilePath(index, entry)));
+    }
+  }
 
   // ---- 2. Source registry ----
   const registryResult = buildIndexedSourceRegistry(index);

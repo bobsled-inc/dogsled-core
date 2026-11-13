@@ -35,7 +35,7 @@ interface ChangedSpec {
 function parseChangedSpecs(raw: string): ChangedSpec[] {
   const fields = raw.endsWith('\0') ? raw.slice(0, -1).split('\0') : raw.split('\0');
   const changed: ChangedSpec[] = [];
-  for (let index = 0; index < fields.length; ) {
+  for (let index = 0; index < fields.length;) {
     const status = fields[index++];
     if (!status) continue;
     if (status.startsWith('R') || status.startsWith('C')) {

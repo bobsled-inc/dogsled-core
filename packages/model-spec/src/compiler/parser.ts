@@ -63,13 +63,7 @@ export type SourceRegistry = Map<string, string>;
 export type SourceColumnRegistry = Map<string, string[]>;
 
 export type SourceEntryColumnType =
-  | 'string'
-  | 'integer'
-  | 'number'
-  | 'boolean'
-  | 'timestamp'
-  | 'array'
-  | 'object';
+  'string' | 'integer' | 'number' | 'boolean' | 'timestamp' | 'array' | 'object';
 
 const sourceColumnTypeMap: Record<string, SourceEntryColumnType> = {
   ARRAY: 'array',

@@ -24,13 +24,7 @@ export const CATALOG_MANIFEST_SCHEMA_VERSION = 4;
 
 export type CatalogSourceType = 'api' | 'mcp' | 'db';
 export type CatalogColumnType =
-  | 'string'
-  | 'integer'
-  | 'number'
-  | 'boolean'
-  | 'timestamp'
-  | 'array'
-  | 'object';
+  'string' | 'integer' | 'number' | 'boolean' | 'timestamp' | 'array' | 'object';
 export type CatalogIncrementalStrategy = 'cursor' | 'server_filter' | 'full_refresh';
 
 export interface CatalogColumn {

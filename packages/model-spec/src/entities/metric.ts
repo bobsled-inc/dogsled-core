@@ -24,6 +24,7 @@ import {
   DatasetReferenceSchema,
   OssieLogicalDataTypeSchema,
   SemanticExpressionSchema,
+  SynonymsSchema,
 } from './semantic-metadata.js';
 
 export const MetricSpecSchema = z
@@ -56,7 +57,7 @@ export const MetricSpecSchema = z
     interchange: EntityInterchangeSchema.optional(),
 
     /** Optional free-form alternative names used for NL → metric resolution. */
-    synonyms: z.array(z.string().trim().min(1)).optional(),
+    synonyms: SynonymsSchema.optional(),
 
     /** Optional tags used by the Data Estate UI for filtering. */
     tags: z.array(z.string().trim().min(1)).optional(),
