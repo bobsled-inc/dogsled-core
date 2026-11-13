@@ -538,7 +538,7 @@ export class ClickHouseDestination implements DatabaseDestination {
             query: `SELECT comment FROM system.columns WHERE database = '${escapeStringLiteral(safeSchema)}' AND table = '${escapeStringLiteral(safeTable)}' AND name = '${escapeStringLiteral(from)}'`,
           });
           const rows = (await result.json()) as Array<{ comment: string }>;
-          return rows[0]?.comment === note;
+          return String(rows[0]?.comment ?? '').includes(note);
         },
         mark: async (from, note) => {
           await client.exec({

@@ -103,22 +103,30 @@ describe('loaded-at takeover plan', () => {
     ]);
   });
 
-  it('logs a failed fill instead of failing the load', async () => {
-    const warn = vi.fn();
-    await expect(
-      fillLegacyLoadedAt(
-        { fillFrom: LEGACY },
-        {
-          table: 't',
-          current: CURRENT,
-          fill: () => Promise.reject(new Error('streaming buffer')),
-          marker: { done: async () => false, mark: vi.fn() },
-          logger: { info: vi.fn(), warn },
-        }
-      )
-    ).resolves.toBeUndefined();
-    expect(warn).toHaveBeenCalledWith('loaded_at_column_fill_failed', expect.anything());
-  });
+  it.each([
+    ['check', { done: () => Promise.reject(new Error('catalog read failed')), mark: vi.fn() }],
+    ['copy', { done: async () => false, mark: vi.fn() }],
+    ['mark', { done: async () => false, mark: () => Promise.reject(new Error('no ALTER')) }],
+  ] as const)(
+    'stops the load when the %s step fails, before any row is written',
+    async (step, marker) => {
+      const warn = vi.fn();
+      await expect(
+        fillLegacyLoadedAt(
+          { fillFrom: LEGACY },
+          {
+            table: 't',
+            current: CURRENT,
+            fill: () =>
+              step === 'copy' ? Promise.reject(new Error('statement timeout')) : Promise.resolve(),
+            marker,
+            logger: { info: vi.fn(), warn },
+          }
+        )
+      ).rejects.toThrow(/nothing was loaded into this table/);
+      expect(warn).toHaveBeenCalledWith('loaded_at_column_fill_failed', expect.anything());
+    }
+  );
 });
 
 describe('loaded-at takeover on DuckDB', () => {
@@ -216,6 +224,17 @@ describe('loaded-at takeover on DuckDB', () => {
       ]);
     }
   );
+
+  it('case C: a failing copy stops the load, and the next run copies', async () => {
+    await prepare([
+      `CREATE TABLE main.issues (id BIGINT, title VARCHAR, _time_extracted TIMESTAMP, ${CURRENT} TIMESTAMP, ${LEGACY} VARCHAR)`,
+      `INSERT INTO main.issues VALUES (1, 'old', NULL, NULL, 'not a time')`,
+    ]);
+    await expect(ensure('strict')).rejects.toThrow(/nothing was loaded/);
+    await prepare([`UPDATE main.issues SET ${LEGACY} = '2026-01-02 00:00:00'`]);
+    await ensure('strict');
+    expect((await table()).rows.map((row) => row[CURRENT])).toEqual(['2026-01-02 00:00:00']);
+  });
 
   it('case A: leaves a table with only the current column alone', async () => {
     await prepare([

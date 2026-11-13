@@ -319,12 +319,14 @@ export class DuckLakeDestination implements DatabaseDestination {
         runStatement(conn, loadedAtFillSql(qualifiedTable, quoteIdentifier, from, to)),
       marker: {
         done: async (from, note) =>
-          (
-            await allRows(
-              conn,
-              `SELECT comment FROM duckdb_columns() WHERE database_name = '${escapeSqlString(this.attachAlias)}' AND schema_name = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}' AND column_name = '${escapeSqlString(from)}'`
-            )
-          )[0]?.['comment'] === note,
+          String(
+            (
+              await allRows(
+                conn,
+                `SELECT comment FROM duckdb_columns() WHERE database_name = '${escapeSqlString(this.attachAlias)}' AND schema_name = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}' AND column_name = '${escapeSqlString(from)}'`
+              )
+            )[0]?.['comment'] ?? ''
+          ).includes(note),
         mark: (from, note) =>
           runStatement(
             conn,

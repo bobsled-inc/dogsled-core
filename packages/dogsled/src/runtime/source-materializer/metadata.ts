@@ -130,6 +130,8 @@ async function tableExists(runner: SqlRunnerModule, ref: string): Promise<boolea
  * cursors, ETags and snapshot leases survive. Never drops a table: when both
  * exist the current one wins and the earlier one is left alone.
  */
+const settledMetadataSchemas = new WeakMap<SqlRunnerModule, Set<string>>();
+
 export async function adoptLegacyMetadataTable(args: {
   runner: SqlRunnerModule;
   schema: string;
@@ -138,6 +140,12 @@ export async function adoptLegacyMetadataTable(args: {
   if (args.dialect === 'duckdb' && args.schema === 'temp') return undefined;
   const legacy = LEGACY_METADATA_TABLES.filter((name) => name !== METADATA_TABLE);
   if (legacy.length === 0) return undefined;
+  // Settled once per connection and schema, so later queries add no catalog probe.
+  const settled = settledMetadataSchemas.get(args.runner) ?? new Set<string>();
+  settledMetadataSchemas.set(args.runner, settled);
+  const key = `${args.dialect}:${args.schema}`;
+  if (settled.has(key)) return undefined;
+  settled.add(key);
   if (await tableExists(args.runner, metaTableRef(args.schema, args.dialect))) return undefined;
   for (const name of legacy) {
     const oldRef = tableRef(args.schema, name, args.dialect);
@@ -151,6 +159,7 @@ export async function adoptLegacyMetadataTable(args: {
       return name;
     } catch (error) {
       if (await tableExists(args.runner, metaTableRef(args.schema, args.dialect))) return undefined;
+      settled.delete(key);
       throw error;
     }
   }

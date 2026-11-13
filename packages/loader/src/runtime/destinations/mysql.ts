@@ -376,7 +376,7 @@ export class MySqlDestination implements DatabaseDestination {
     }
     if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
       newColumnDefs.push(
-        `${quoteMySqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)`
+        `${quoteMySqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME(6)${takeover.fillFrom ? '' : ' DEFAULT CURRENT_TIMESTAMP(6)'}`
       );
     }
 
@@ -397,7 +397,7 @@ export class MySqlDestination implements DatabaseDestination {
               `SELECT COLUMN_COMMENT AS note FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
               [safeSchema, safeTable, from]
             )) as Array<{ note: string }>
-          )[0]?.note === note,
+          )[0]?.note?.includes(note) === true,
         mark: async (from, note) => {
           // MySQL keeps a column comment only in a full column definition, so restate it as it is.
           const [column] = (await this.query(
@@ -406,7 +406,7 @@ export class MySqlDestination implements DatabaseDestination {
           )) as Array<{ COLUMN_TYPE: string; IS_NULLABLE: string; COLUMN_DEFAULT: string | null }>;
           if (!column) return;
           const fallback =
-            column.COLUMN_DEFAULT == null
+            column.COLUMN_DEFAULT == null || column.COLUMN_DEFAULT === 'NULL'
               ? ''
               : /^current_timestamp(\(\d*\))?$/i.test(column.COLUMN_DEFAULT)
                 ? ` DEFAULT ${column.COLUMN_DEFAULT}`

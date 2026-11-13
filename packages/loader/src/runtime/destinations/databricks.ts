@@ -609,7 +609,7 @@ export class DatabricksDestination implements DatabaseDestination {
     }
     if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
       newColumnDefs.push(
-        `${quoteDatabricksIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
+        `${quoteDatabricksIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP${takeover.fillFrom ? '' : ' DEFAULT CURRENT_TIMESTAMP'}`
       );
     }
 
@@ -628,12 +628,12 @@ export class DatabricksDestination implements DatabaseDestination {
         await this.query(loadedAtFillSql(qualifiedTable, quoteDatabricksIdentifier, from, to));
       },
       marker: {
+        // DESCRIBE TABLE lists column comments in Unity Catalog and the Hive metastore alike.
         done: async (from, note) =>
-          (
-            await this.query(
-              `SELECT comment FROM system.information_schema.columns WHERE table_catalog = ${quoteDatabricksStringLiteral(this.catalog.toLowerCase())} AND table_schema = ${quoteDatabricksStringLiteral(safeSchema.toLowerCase())} AND table_name = ${quoteDatabricksStringLiteral(safeTable.toLowerCase())} AND column_name = ${quoteDatabricksStringLiteral(from)}`
-            )
-          )[0]?.['comment'] === note,
+          (await this.query(`DESCRIBE TABLE ${qualifiedTable}`)).some(
+            (row) =>
+              String(row['col_name'] ?? '') === from && String(row['comment'] ?? '').includes(note)
+          ),
         mark: async (from, note) => {
           await this.assertOwnershipBeforeMutation(safeSchema, safeTable);
           await this.query(

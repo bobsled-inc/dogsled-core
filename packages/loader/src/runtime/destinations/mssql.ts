@@ -433,7 +433,7 @@ export class MsSqlDestination implements DatabaseDestination {
     }
     if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
       newColumnDefs.push(
-        `${quoteMsSqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME2(6) DEFAULT SYSDATETIME()`
+        `${quoteMsSqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME2(6)${takeover.fillFrom ? '' : ' DEFAULT SYSDATETIME()'}`
       );
     }
 
@@ -453,7 +453,7 @@ export class MsSqlDestination implements DatabaseDestination {
             (await this.query(
               `SELECT CAST(ep.value AS NVARCHAR(4000)) AS note FROM sys.extended_properties ep JOIN sys.columns c ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE ep.name = N'MS_Description' AND ep.major_id = OBJECT_ID(N'${qualifiedTable}') AND c.name = N'${from}'`
             )) as Array<{ note: string }>
-          )[0]?.note === note,
+          )[0]?.note?.includes(note) === true,
         mark: async (from, note) => {
           const target = `@level0type = N'SCHEMA', @level0name = N'${safeSchema}', @level1type = N'TABLE', @level1name = N'${safeTable}', @level2type = N'COLUMN', @level2name = N'${from}'`;
           await this.query(

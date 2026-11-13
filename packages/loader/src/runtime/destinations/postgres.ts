@@ -513,7 +513,7 @@ export class PostgresDestination implements DatabaseDestination {
       }
       if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
         newColumnDefs.push(
-          `${quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMPTZ DEFAULT NOW()`
+          `${quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMPTZ${takeover.fillFrom ? '' : ' DEFAULT NOW()'}`
         );
       }
 
@@ -534,7 +534,9 @@ export class PostgresDestination implements DatabaseDestination {
                 `SELECT col_description(a.attrelid, a.attnum) AS note FROM pg_catalog.pg_attribute a WHERE a.attrelid = $1::regclass AND a.attname = $2`,
                 [qualifiedTable, from]
               )
-            ).rows[0]?.['note'] === note,
+            ).rows[0]?.['note']
+              ?.toString()
+              .includes(note) === true,
           mark: async (from, note) => {
             await client.query(
               `COMMENT ON COLUMN ${qualifiedTable}.${quoteIdentifier(from)} IS ${noteLiteral(note)}`
@@ -602,7 +604,10 @@ export class PostgresDestination implements DatabaseDestination {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map((k) => quoteIdentifier(k)).join(', ');
     const indexName = quoteIdentifier(`${UNIQUE_INDEX_PREFIX}${tableName}`);
-    const legacyIndexes = legacyUniqueIndexNames(tableName, UNIQUE_INDEX_PREFIX);
+    // PostgreSQL stores identifiers truncated to 63 bytes.
+    const legacyIndexes = legacyUniqueIndexNames(tableName, UNIQUE_INDEX_PREFIX).map((name) =>
+      Buffer.from(name).subarray(0, 63).toString()
+    );
     const client = existingClient ?? (await this.connectClient());
     try {
       if (legacyIndexes.length > 0) {

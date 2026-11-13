@@ -1,3 +1,5 @@
+import { CommandError } from '@bobsled-inc/protocol';
+
 import type { LoaderLogger } from '../logger.js';
 import { LEGACY_LOADED_AT_COLUMNS, LEGACY_UNIQUE_INDEX_PREFIXES } from '../legacy-names.js';
 
@@ -99,7 +101,10 @@ export async function takeOverLegacyLoadedAt<T>(
   }
 }
 
-/** The note Core leaves on the earlier column once its values are copied, so it copies once. */
+/**
+ * The note Core leaves on the earlier column (replacing any comment it had: the column is Core's
+ * own and no longer written). A marker counts when the comment contains the note.
+ */
 export function loadedAtFilledNote(current: string): string {
   return `Core copied this column into ${current}`;
 }
@@ -116,8 +121,12 @@ export interface LoadedAtFillMarker {
 /**
  * Copy earlier loaded-at values into empty current ones, once: the marker is read first and
  * written after the copy. A run that dies in between repeats the copy, which only touches rows
- * that are still empty. A failure is logged and retried on the next run instead of failing the
- * load.
+ * that are still empty.
+ *
+ * Any failure stops this table's load before a row is written. Loading anyway would let the
+ * load's own backfill (`SET <current> = CURRENT_TIMESTAMP() WHERE <current> IS NULL` on BigQuery
+ * and Snowflake) stamp every older row with the switch time, and a later copy would find nothing
+ * to copy. A marker that cannot be written fails loudly too, rather than copying on every run.
  */
 export async function fillLegacyLoadedAt(
   result: LoadedAtTakeoverResult,
@@ -130,24 +139,46 @@ export async function fillLegacyLoadedAt(
   }
 ): Promise<void> {
   if (!result.fillFrom) return;
+  const from = result.fillFrom;
   const note = loadedAtFilledNote(options.current);
-  try {
-    if (await options.marker.done(result.fillFrom, note)) return;
-    await options.fill(result.fillFrom, options.current);
-    await options.marker.mark(result.fillFrom, note);
-    options.logger?.info('loaded_at_column_filled', {
-      table: options.table,
-      from: result.fillFrom,
-      to: options.current,
-    });
-  } catch (error) {
+  const fail = (step: string, error: unknown): never => {
     options.logger?.warn('loaded_at_column_fill_failed', {
       table: options.table,
-      from: result.fillFrom,
+      from,
       to: options.current,
+      step,
       reason: reason(error),
     });
+    throw new CommandError(
+      `Could not ${step} ${from} into ${options.current} on ${options.table}; nothing was loaded into this table. ` +
+        (step === 'mark the copy of'
+          ? 'The values are copied; let Core set a column comment on the earlier column (or set it by hand), then run again.'
+          : 'The next run tries again.'),
+      1
+    );
+  };
+  let done: boolean;
+  try {
+    done = await options.marker.done(from, note);
+  } catch (error) {
+    return fail('check the copy of', error);
   }
+  if (done) return;
+  try {
+    await options.fill(from, options.current);
+  } catch (error) {
+    return fail('copy', error);
+  }
+  try {
+    await options.marker.mark(from, note);
+  } catch (error) {
+    return fail('mark the copy of', error);
+  }
+  options.logger?.info('loaded_at_column_filled', {
+    table: options.table,
+    from,
+    to: options.current,
+  });
 }
 
 /** `UPDATE` statement shared by the SQL destinations. */

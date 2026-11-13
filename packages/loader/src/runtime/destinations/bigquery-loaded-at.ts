@@ -32,7 +32,7 @@ export function takeOverBigQueryLoadedAt<F extends BigQueryField>(args: {
     reread: async () =>
       new Map((await args.readFields()).map((f) => [String(f.name), args.typeOf(f)])),
     marker: {
-      done: async (from, note) => (await field(from))?.description === note,
+      done: async (from, note) => String((await field(from))?.description ?? '').includes(note),
       mark: (from, note) =>
         args.runQuery(
           `ALTER TABLE ${args.table} ALTER COLUMN ${quoteBqIdentifier(from)} SET OPTIONS (description = '${note.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}')`

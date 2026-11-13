@@ -118,7 +118,7 @@ export function snowflakeLoadedAtMarker(args: {
       const result = await args.connection.execute({
         sqlText: `SELECT COMMENT FROM ${args.columnsView} WHERE TABLE_SCHEMA = ${literal(args.schema)} AND TABLE_NAME = ${literal(args.table)} AND COLUMN_NAME = ${literal(from)}`,
       });
-      return result.getRows()[0]?.['COMMENT'] === note;
+      return String(result.getRows()[0]?.['COMMENT'] ?? '').includes(note);
     },
     async mark(from, note) {
       await args.beforeMutation();
