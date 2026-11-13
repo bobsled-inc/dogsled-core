@@ -74,7 +74,7 @@ interface NativeDataset {
   path: string;
   document: Record<string, unknown>;
   outputColumns: readonly unknown[];
-  catalogOnlyReason?: 'agentic' | 'flatten_json';
+  catalogOnlyReason?: 'agentic' | 'flatten_json' | 'derived_columns';
 }
 
 class ExportFailure extends Error {
@@ -92,7 +92,6 @@ class ExportFailure extends Error {
 const unsupportedBuildKeys = [
   'include_all_columns',
   'exclude_columns',
-  'derived_columns',
   'pivot',
   'unpivot',
   'hierarchy',
@@ -177,7 +176,7 @@ function parseDataset(
   } else {
     const model = TransformSpecSchema.parse(raw);
     parsed = model;
-    outputColumns = getModelOutputColumns(model);
+    outputColumns = [...getModelOutputColumns(model), ...(model.derived_columns ?? [])];
   }
   const document = record(parsed);
   const name = String(document['name']);
@@ -188,7 +187,9 @@ function parseDataset(
       ? 'agentic'
       : kind === 'model' && document['flatten_json'] !== undefined
         ? 'flatten_json'
-        : undefined;
+        : kind === 'model' && document['derived_columns'] !== undefined
+          ? 'derived_columns'
+          : undefined;
   return {
     kind,
     name,
@@ -598,7 +599,7 @@ function outputDataset(
       const detail =
         dataset.catalogOnlyReason === 'agentic'
           ? 'its agent plan and execution settings'
-          : 'its flatten_json build and other execution settings';
+          : `its ${dataset.catalogOnlyReason} build and other execution settings`;
       warn(
         result,
         'catalog_only_export',
@@ -903,28 +904,55 @@ function addDependencyDiagnostics(
 /** Convert canonical native Dogsled objects into one validated Ossie YAML document. */
 /**
  * Ossie needs every output field listed. These settings make columns that the Blueprint does
- * not list, so export refuses them. One error names every model, so a full-Project export
- * shows all the changes at once.
+ * not list. A whole-Project export leaves such models out with one warning, so the rest of the
+ * Project still exports. A model the caller selects by name is refused, since leaving it out
+ * would not be what was asked for.
  */
-function rejectUnlistedColumns(selected: readonly NativeDataset[]): void {
+function withoutUnlistedColumns(
+  selected: readonly NativeDataset[],
+  selection: OssieExportSelection,
+  result: ConversionResult
+): NativeDataset[] {
   const rejected = selected.flatMap((dataset) => {
     if (dataset.kind !== 'model') return [];
     const keys = unsupportedBuildKeys.filter((key) => key in dataset.document);
     return keys.length ? [{ dataset, keys }] : [];
   });
   const first = rejected[0];
-  if (!first) return;
+  if (!first) return [...selected];
   const list = rejected
     .map(({ dataset, keys }) => `${dataset.name} (${keys.join(', ')})`)
     .join(', ');
-  const models = rejected.length === 1 ? 'Model' : 'Models';
-  fail(
-    'native_incomplete',
-    `${first.dataset.path}.${first.keys[0]}`,
-    `${models} ${list} ${rejected.length === 1 ? 'makes' : 'make'} columns that the Blueprint does not list, so Ossie export cannot describe ${rejected.length === 1 ? 'its' : 'their'} fields.`,
-    'List every output column under columns and remove these settings, or export with selectors that leave these models out.',
-    objectReference(first.dataset.name)
+  const one = rejected.length === 1;
+  const reason = `${one ? 'Model' : 'Models'} ${list} ${one ? 'makes' : 'make'} columns that the Blueprint does not list, so Ossie export cannot describe ${one ? 'its' : 'their'} fields.`;
+  const remedy =
+    'List every output column under columns and remove these settings to include them.';
+  const path = `${first.dataset.path}.${first.keys[0]}`;
+  const reference = objectReference(first.dataset.name);
+  const remaining = selected.filter(
+    (dataset) => !rejected.some((entry) => entry.dataset === dataset)
   );
+  if (!('all' in selection && selection.all === true)) {
+    fail('native_incomplete', path, reason, `${remedy} Or select other datasets.`, reference);
+  }
+  if (!remaining.length) {
+    fail(
+      'native_incomplete',
+      path,
+      `${reason} No other datasets are left to export.`,
+      remedy,
+      reference
+    );
+  }
+  warn(
+    result,
+    'native_dataset_omitted',
+    path,
+    `${reason} The export leaves ${one ? 'it' : 'them'} out.`,
+    remedy,
+    reference
+  );
+  return remaining;
 }
 
 export function exportOssieDocument(request: ExportOssieDocumentRequest): ConversionResult {
@@ -973,8 +1001,11 @@ export function exportOssieDocument(request: ExportOssieDocumentRequest): Conver
         'Add a source or model to the Blueprint, then export again.'
       );
     }
-    const selected = selectedDatasets(project.datasets, request.selection);
-    rejectUnlistedColumns(selected);
+    const selected = withoutUnlistedColumns(
+      selectedDatasets(project.datasets, request.selection),
+      request.selection,
+      result
+    );
     const selectedReferences = new Set(selected.map((dataset) => dataset.reference));
     const selectedNames = new Set<string>();
     for (const dataset of selected) {
