@@ -19,6 +19,7 @@ import type {
 import { logicalTypeForSqlType } from '../ossie/types.js';
 import { fieldExtensionSchema } from '../ossie/translate.js';
 import {
+  isOwnOssieVendor,
   assertBounded,
   diagnostic,
   errorMessage,
@@ -26,7 +27,6 @@ import {
   file,
   identity,
   parseOssieYaml,
-  OSSIE_VENDOR,
   type ConversionObjectReference,
   type ConversionResult,
 } from './common.js';
@@ -132,7 +132,7 @@ function dogsledExtension(
   path: string,
   objectReference: ConversionObjectReference
 ): Record<string, unknown> | undefined {
-  const entries = extensions(owner).filter((entry) => entry.vendor_name === OSSIE_VENDOR);
+  const entries = extensions(owner).filter((entry) => isOwnOssieVendor(entry.vendor_name));
   if (entries.length > 1) {
     fail(
       'invalid_dogsled_extension',
@@ -228,7 +228,7 @@ function parseDatasetExtension(
 function foreignExtensions(owner: {
   custom_extensions?: OssieCustomExtension[];
 }): OssieCustomExtension[] {
-  return extensions(owner).filter((entry) => entry.vendor_name !== OSSIE_VENDOR);
+  return extensions(owner).filter((entry) => !isOwnOssieVendor(entry.vendor_name));
 }
 
 function addLegacyVendorDiagnostic(

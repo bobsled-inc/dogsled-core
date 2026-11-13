@@ -13,6 +13,7 @@ import { applyPatch, findNamedItemIndex, writeYamlDocument } from './yaml-docume
 
 import type { EditFileResult, EditOptions, EditResult } from './types.js';
 import type { Document } from 'yaml';
+import { isOwnOssieVendor } from '../interchange/common.js';
 
 type RecordValue = Record<string, unknown>;
 type YamlPath = Array<string | number>;
@@ -35,7 +36,9 @@ export function ossieEditRecords(document: RecordValue): RecordValue[] {
     if (!dataset || !Array.isArray(dataset.custom_extensions)) return [];
     return dataset.custom_extensions.flatMap((item: unknown) => {
       const extension = record(item);
-      if (extension?.vendor_name !== 'DOGSLED' || typeof extension.data !== 'string') return [];
+      if (!isOwnOssieVendor(extension?.vendor_name) || typeof extension?.data !== 'string') {
+        return [];
+      }
       try {
         const data = record(JSON.parse(extension.data));
         if (!data || !['source', 'derived'].includes(String(data.kind))) return [];
@@ -53,7 +56,9 @@ function extensionAt(doc: Document.Parsed, base: YamlPath): { path: YamlPath; da
   const extensions = doc.getIn([...base, 'custom_extensions'], true);
   if (isSeq(extensions)) {
     const indices = extensions.items.flatMap((_, index) =>
-      doc.getIn([...base, 'custom_extensions', index, 'vendor_name']) === 'DOGSLED' ? [index] : []
+      isOwnOssieVendor(doc.getIn([...base, 'custom_extensions', index, 'vendor_name']))
+        ? [index]
+        : []
     );
     if (indices.length > 1) throw new Error('Multiple DOGSLED extensions on the same object');
     if (indices.length === 1) {

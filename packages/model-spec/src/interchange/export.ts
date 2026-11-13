@@ -16,6 +16,7 @@ import { readOssieProfile } from '../ossie/profiles.js';
 import { logicalTypeForSqlType } from '../ossie/types.js';
 import { InterchangeSchema, type OssieCustomExtension } from './storage.js';
 import {
+  isOwnOssieVendor,
   assertBounded,
   diagnostic,
   errorMessage,
@@ -363,7 +364,7 @@ function profileExtensions(
   path: string,
   reference: ConversionObjectReference
 ): OssieCustomExtension[] {
-  const foreign = values.filter((entry) => entry.vendor_name !== OSSIE_VENDOR);
+  const foreign = values.filter((entry) => !isOwnOssieVendor(entry.vendor_name));
   if (version === '0.2.0.dev0') return foreign;
   const kept = foreign.filter((entry) => vendors011.has(entry.vendor_name));
   for (const entry of foreign) {

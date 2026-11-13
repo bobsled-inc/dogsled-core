@@ -6,8 +6,11 @@ import YAML from 'yaml';
 import { normalizeForEachConfig } from '../runtime/for-each.js';
 
 import type { ApiResourceSpec } from '../types/index.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from './legacy-names.js';
 
-const DOGSLED_CONFIG_NAMES = ['dogsled.yml', 'dogsled.yaml'];
+const DOGSLED_CONFIG_NAMES = [
+  ...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS]),
+];
 const MAX_DOGSLED_CONFIG_BYTES = 1024 * 1024;
 
 function findDogsledConfig(startDir: string): string | undefined {

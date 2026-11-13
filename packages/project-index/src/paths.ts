@@ -1,4 +1,5 @@
 import type { ProjectFileKind } from './kinds.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from './legacy-names.js';
 
 export type ProjectFileFormat = 'yaml' | 'json' | 'markdown' | 'other';
 
@@ -10,6 +11,8 @@ export type ProjectFileFormat = 'yaml' | 'json' | 'markdown' | 'other';
 const CONVENTIONAL_ROOT_FILES: ReadonlyMap<string, ProjectFileKind> = new Map([
   ['dogsled.yml', 'pipeline_config'],
   ['dogsled.yaml', 'pipeline_config'],
+  // Every Core generation's root configuration name is read as pipeline configuration.
+  ...ROOT_CONFIG_FILE_SPELLINGS.map((name): [string, ProjectFileKind] => [name, 'pipeline_config']),
   ['model-spec.yml', 'model_spec_config'],
   ['model-spec.yaml', 'model_spec_config'],
   ['extractor.yml', 'extractor_config'],

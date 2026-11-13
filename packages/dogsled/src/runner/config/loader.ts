@@ -79,6 +79,7 @@ import {
   validateModelWarehouseSelections,
   validateWarehouseSelections,
 } from './validate-warehouse.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '../legacy-names.js';
 
 // Re-export the model-discovery surface for public configuration consumers and
 // runner tests.
@@ -89,7 +90,7 @@ export type { IntegrationsLib, ValidationCatalog } from '../../validation.js';
 // File discovery
 // ---------------------------------------------------------------------------
 
-const CONFIG_NAMES = ['dogsled.yml', 'dogsled.yaml'];
+const CONFIG_NAMES = [...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])];
 export const INTEGRATIONS_LOAD_WARNING =
   'Could not load @bobsled-inc/integrations — skipping integration validation';
 

@@ -21,6 +21,7 @@ import {
   type SurfaceProposalCall,
 } from '../runtime/mention/surface-proposer.js';
 import type { RelationshipLlmCall } from '../runtime/relationship/llm-extractor.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from './legacy-names.js';
 
 export type FallbackMode = 'compromise' | 'none';
 
@@ -116,7 +117,7 @@ function findDogsledConfig(startDir: string): string | undefined {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
   while (dir !== root) {
-    for (const name of ['dogsled.yml', 'dogsled.yaml']) {
+    for (const name of new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])) {
       const candidate = path.join(dir, name);
       if (fs.existsSync(candidate)) return candidate;
     }
