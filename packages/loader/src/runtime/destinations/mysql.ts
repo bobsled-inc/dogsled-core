@@ -16,6 +16,7 @@ import {
   fillLegacyLoadedAt,
   legacyUniqueIndexNames,
   loadedAtFillSql,
+  noteLiteral,
   takeOverLegacyLoadedAt,
 } from './loaded-at-takeover.js';
 import { withRetry } from '../retry.js';
@@ -388,6 +389,32 @@ export class MySqlDestination implements DatabaseDestination {
       current: SYSTEM_COLUMNS.LOADED_AT,
       fill: async (from, to) => {
         await this.query(loadedAtFillSql(qualifiedTable, quoteMySqlIdentifier, from, to));
+      },
+      marker: {
+        done: async (from, note) =>
+          (
+            (await this.query(
+              `SELECT COLUMN_COMMENT AS note FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+              [safeSchema, safeTable, from]
+            )) as Array<{ note: string }>
+          )[0]?.note === note,
+        mark: async (from, note) => {
+          // MySQL keeps a column comment only in a full column definition, so restate it as it is.
+          const [column] = (await this.query(
+            `SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+            [safeSchema, safeTable, from]
+          )) as Array<{ COLUMN_TYPE: string; IS_NULLABLE: string; COLUMN_DEFAULT: string | null }>;
+          if (!column) return;
+          const fallback =
+            column.COLUMN_DEFAULT == null
+              ? ''
+              : /^current_timestamp(\(\d*\))?$/i.test(column.COLUMN_DEFAULT)
+                ? ` DEFAULT ${column.COLUMN_DEFAULT}`
+                : ` DEFAULT ${noteLiteral(column.COLUMN_DEFAULT)}`;
+          await this.query(
+            `ALTER TABLE ${qualifiedTable} MODIFY COLUMN ${quoteMySqlIdentifier(from)} ${column.COLUMN_TYPE} ${column.IS_NULLABLE === 'YES' ? 'NULL' : 'NOT NULL'}${fallback} COMMENT ${noteLiteral(note)}`
+          );
+        },
       },
       logger: this.logger,
     });

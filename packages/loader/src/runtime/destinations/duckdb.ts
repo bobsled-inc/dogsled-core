@@ -28,6 +28,7 @@ import {
 import {
   fillLegacyLoadedAt,
   loadedAtFillSql,
+  noteLiteral,
   takeOverLegacyLoadedAt,
 } from './loaded-at-takeover.js';
 import type { DuckDbConnectionLike, DuckDbDatabaseLike } from '../duckdb-primitives.js';
@@ -323,6 +324,20 @@ export class DuckDbDestination implements DatabaseDestination {
       current: SYSTEM_COLUMNS.LOADED_AT,
       fill: (from, to) =>
         runStatement(conn, loadedAtFillSql(qualifiedTable, quoteIdentifier, from, to)),
+      marker: {
+        done: async (from, note) =>
+          (
+            await allRows(
+              conn,
+              `SELECT comment FROM duckdb_columns() WHERE database_name = '${escapeSqlString(catalogName)}' AND schema_name = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}' AND column_name = '${escapeSqlString(from)}'`
+            )
+          )[0]?.['comment'] === note,
+        mark: (from, note) =>
+          runStatement(
+            conn,
+            `COMMENT ON COLUMN ${qualifiedTable}.${quoteIdentifier(from)} IS ${noteLiteral(note)}`
+          ),
+      },
       logger: this.logger,
     });
 

@@ -13,6 +13,7 @@ import {
   fillLegacyLoadedAt,
   legacyUniqueIndexNames,
   loadedAtFillSql,
+  noteLiteral,
   takeOverLegacyLoadedAt,
 } from './loaded-at-takeover.js';
 import { withRetry } from '../retry.js';
@@ -445,6 +446,20 @@ export class MsSqlDestination implements DatabaseDestination {
       current: SYSTEM_COLUMNS.LOADED_AT,
       fill: async (from, to) => {
         await this.query(loadedAtFillSql(qualifiedTable, quoteMsSqlIdentifier, from, to));
+      },
+      marker: {
+        done: async (from, note) =>
+          (
+            (await this.query(
+              `SELECT CAST(ep.value AS NVARCHAR(4000)) AS note FROM sys.extended_properties ep JOIN sys.columns c ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE ep.name = N'MS_Description' AND ep.major_id = OBJECT_ID(N'${qualifiedTable}') AND c.name = N'${from}'`
+            )) as Array<{ note: string }>
+          )[0]?.note === note,
+        mark: async (from, note) => {
+          const target = `@level0type = N'SCHEMA', @level0name = N'${safeSchema}', @level1type = N'TABLE', @level1name = N'${safeTable}', @level2type = N'COLUMN', @level2name = N'${from}'`;
+          await this.query(
+            `IF EXISTS (SELECT 1 FROM sys.extended_properties ep JOIN sys.columns c ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE ep.name = N'MS_Description' AND ep.major_id = OBJECT_ID(N'${qualifiedTable}') AND c.name = N'${from}') EXEC sp_updateextendedproperty @name = N'MS_Description', @value = N${noteLiteral(note)}, ${target} ELSE EXEC sp_addextendedproperty @name = N'MS_Description', @value = N${noteLiteral(note)}, ${target}`
+          );
+        },
       },
       logger: this.logger,
     });

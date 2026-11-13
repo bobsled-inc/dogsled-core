@@ -2,7 +2,9 @@ import { withRetry, type RetryOptions } from '../retry.js';
 
 import type { ColumnType, SchemaColumn } from '@bobsled-inc/protocol';
 import type { EnsureTableOptions, SchemaComparisonResult } from './database.js';
-import { enforceSchemaContract, SYSTEM_COLUMN_NAMES } from './database.js';
+import { enforceSchemaContract, SYSTEM_COLUMNS, SYSTEM_COLUMN_NAMES } from './database.js';
+import { noteLiteral, takeOverLoadedAtSql, type LoadedAtFillMarker } from './loaded-at-takeover.js';
+import type { LoaderLogger } from '../logger.js';
 
 interface SnowflakeSchemaConnection {
   execute(options: { sqlText: string }): Promise<unknown>;
@@ -93,4 +95,72 @@ export async function reconcileRemovedSnowflakeColumns(
     }, retryOptions('drop_column'));
     columnCache.delete(removedColumn.toUpperCase());
   }
+}
+
+/**
+ * Marks the loaded-at copy done with a comment on the earlier column, read back from
+ * INFORMATION_SCHEMA (metadata only, no scan of the table).
+ */
+export function snowflakeLoadedAtMarker(args: {
+  connection: {
+    execute(options: { sqlText: string }): Promise<{ getRows(): Record<string, unknown>[] }>;
+  };
+  columnsView: string;
+  schema: string;
+  table: string;
+  qualifiedTable: string;
+  quoteIdentifier: (identifier: string) => string;
+  beforeMutation: () => Promise<void>;
+}): LoadedAtFillMarker {
+  const literal = (value: string) => `'${value.replaceAll("'", "''")}'`;
+  return {
+    async done(from, note) {
+      const result = await args.connection.execute({
+        sqlText: `SELECT COMMENT FROM ${args.columnsView} WHERE TABLE_SCHEMA = ${literal(args.schema)} AND TABLE_NAME = ${literal(args.table)} AND COLUMN_NAME = ${literal(from)}`,
+      });
+      return result.getRows()[0]?.['COMMENT'] === note;
+    },
+    async mark(from, note) {
+      await args.beforeMutation();
+      await args.connection.execute({
+        sqlText: `ALTER TABLE ${args.qualifiedTable} ALTER COLUMN ${args.quoteIdentifier(from)} COMMENT ${noteLiteral(note)}`,
+      });
+    },
+  };
+}
+
+const quoteUpper = (identifier: string) => `"${identifier.toUpperCase().replace(/"/g, '""')}"`;
+
+/** The loaded-at takeover on Snowflake (see loaded-at-takeover.ts), marked with a comment. */
+export function takeOverSnowflakeLoadedAt(args: {
+  connection: {
+    execute(options: { sqlText: string }): Promise<{ getRows(): Record<string, unknown>[] }>;
+  };
+  database: string;
+  schema: string;
+  table: string;
+  qualifiedTable: string;
+  existing: Map<string, string>;
+  reread(): Promise<Map<string, string>>;
+  beforeMutation: () => Promise<void>;
+  logger?: LoaderLogger | undefined;
+}): Promise<() => Promise<void>> {
+  return takeOverLoadedAtSql({
+    table: args.qualifiedTable,
+    existing: args.existing,
+    current: SYSTEM_COLUMNS.LOADED_AT.toUpperCase(),
+    quote: quoteUpper,
+    run: (sqlText) => args.beforeMutation().then(() => args.connection.execute({ sqlText })),
+    reread: args.reread,
+    marker: snowflakeLoadedAtMarker({
+      connection: args.connection,
+      columnsView: `${quoteUpper(args.database)}.INFORMATION_SCHEMA.COLUMNS`,
+      schema: args.schema,
+      table: args.table,
+      qualifiedTable: args.qualifiedTable,
+      quoteIdentifier: quoteUpper,
+      beforeMutation: args.beforeMutation,
+    }),
+    logger: args.logger,
+  });
 }

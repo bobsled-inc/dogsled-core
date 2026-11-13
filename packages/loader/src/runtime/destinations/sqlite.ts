@@ -11,6 +11,7 @@ import {
   SYSTEM_COLUMNS,
   SYSTEM_COLUMN_NAMES,
   UNIQUE_INDEX_PREFIX,
+  LOADED_AT_COPIES_TABLE,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
@@ -418,6 +419,32 @@ export class SqliteDestination implements DatabaseDestination {
       current: SYSTEM_COLUMNS.LOADED_AT,
       fill: async (from, to) => {
         db.exec(loadedAtFillSql(qualifiedTable, quoteIdentifier, from, to));
+      },
+      marker: {
+        // SQLite has no column comments: Core keeps its own record of finished copies.
+        done: async (from, note) => {
+          const exists = db
+            .prepare(
+              `SELECT 1 FROM ${quoteIdentifier(safeSchema)}.sqlite_master WHERE type = 'table' AND name = ?`
+            )
+            .all(LOADED_AT_COPIES_TABLE);
+          if (!exists.length) return false;
+          return (
+            db
+              .prepare(
+                `SELECT 1 FROM ${quoteIdentifier(safeSchema)}.${quoteIdentifier(LOADED_AT_COPIES_TABLE)} WHERE table_name = ? AND column_name = ? AND note = ?`
+              )
+              .all(safeTable, from, note).length > 0
+          );
+        },
+        mark: async (from, note) => {
+          db.exec(
+            `CREATE TABLE IF NOT EXISTS ${quoteIdentifier(safeSchema)}.${quoteIdentifier(LOADED_AT_COPIES_TABLE)} (table_name TEXT NOT NULL, column_name TEXT NOT NULL, note TEXT NOT NULL)`
+          );
+          db.prepare(
+            `INSERT INTO ${quoteIdentifier(safeSchema)}.${quoteIdentifier(LOADED_AT_COPIES_TABLE)} VALUES (?, ?, ?)`
+          ).run(safeTable, from, note);
+        },
       },
       logger: this.logger,
     });

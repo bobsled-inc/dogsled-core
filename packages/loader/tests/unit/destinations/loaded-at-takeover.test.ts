@@ -78,6 +78,31 @@ describe('loaded-at takeover plan', () => {
     expect([...existing.keys()]).toEqual([CURRENT]);
   });
 
+  it('copies once: reads the marker first, writes it only after the copy', async () => {
+    const calls: string[] = [];
+    let done = false;
+    const options = {
+      table: 't',
+      current: CURRENT,
+      fill: async () => void calls.push('fill'),
+      marker: {
+        done: async () => (calls.push('done?'), done),
+        mark: async (_from: string, note: string) => {
+          calls.push(`mark ${note}`);
+          done = true;
+        },
+      },
+    };
+    await fillLegacyLoadedAt({ fillFrom: LEGACY }, options);
+    await fillLegacyLoadedAt({ fillFrom: LEGACY }, options);
+    expect(calls).toEqual([
+      'done?',
+      'fill',
+      `mark Core copied this column into ${CURRENT}`,
+      'done?',
+    ]);
+  });
+
   it('logs a failed fill instead of failing the load', async () => {
     const warn = vi.fn();
     await expect(
@@ -87,6 +112,7 @@ describe('loaded-at takeover plan', () => {
           table: 't',
           current: CURRENT,
           fill: () => Promise.reject(new Error('streaming buffer')),
+          marker: { done: async () => false, mark: vi.fn() },
           logger: { info: vi.fn(), warn },
         }
       )
@@ -166,7 +192,21 @@ describe('loaded-at takeover on DuckDB', () => {
         `INSERT INTO main.issues VALUES (3, 'both', NULL, TIMESTAMP '2026-03-02', TIMESTAMP '2026-01-03')`,
       ]);
       await ensure(behavior);
+      // The copy is marked done on the earlier column: a later run neither scans nor copies.
+      await prepare([`UPDATE main.issues SET ${CURRENT} = NULL WHERE id = 3`]);
       await ensure(behavior);
+      expect(
+        await queryPersistentDb(
+          dbPath,
+          `SELECT ${CURRENT}::VARCHAR AS v FROM main.issues WHERE id = 3`
+        )
+      ).toEqual([{ v: null }]);
+      await prepare([`UPDATE main.issues SET ${CURRENT} = TIMESTAMP '2026-03-02' WHERE id = 3`]);
+      const comment = await queryPersistentDb(
+        dbPath,
+        `SELECT comment FROM duckdb_columns() WHERE table_name = 'issues' AND column_name = '${LEGACY}'`
+      );
+      expect(comment).toEqual([{ comment: `Core copied this column into ${CURRENT}` }]);
       const result = await table();
       expect(result.columns).toEqual(['id', 'title', '_time_extracted', CURRENT, LEGACY]);
       expect(result.rows.map((row) => [row['id'], row[CURRENT], row[LEGACY]])).toEqual([
@@ -254,6 +294,10 @@ describe.skipIf(!hasSqlite)('loaded-at takeover on SQLite', () => {
       { id: 1, v: '2026-01-02' },
       { id: 2, v: '2026-01-03' },
     ]);
+    // Done is recorded in Core's own table (SQLite has no comments); a later run copies nothing.
+    await sql(`UPDATE issues SET ${CURRENT} = NULL WHERE id = 2`);
+    await ensure();
+    expect(await sql(`SELECT ${CURRENT} AS v FROM issues WHERE id = 2`)).toEqual([{ v: null }]);
   });
 
   it('keeps using an earlier unique merge index instead of adding a second one', async () => {

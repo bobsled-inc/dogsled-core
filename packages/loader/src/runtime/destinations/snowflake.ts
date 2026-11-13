@@ -8,10 +8,10 @@ import {
   sanitizeTableName,
   reverseMapDbType,
 } from './database.js';
-import { takeOverLoadedAtSql } from './loaded-at-takeover.js';
 import { isRetryableError, withRetry } from '../retry.js';
 import {
   snowflakeColumnMap,
+  takeOverSnowflakeLoadedAt,
   compareSnowflakeSchema,
   enforceContract,
   reconcileRemovedSnowflakeColumns,
@@ -947,13 +947,15 @@ export class SnowflakeDestination implements DatabaseDestination {
 
     // Table exists — take over an earlier loaded-at column, then enforce the schema contract
     const existingMap = snowflakeColumnMap(existingRows);
-    const fillLoadedAt = await takeOverLoadedAtSql({
-      table: qualifiedTable,
+    const fillLoadedAt = await takeOverSnowflakeLoadedAt({
+      connection: conn,
+      database: this.database,
+      schema: metadataSchema,
+      table: metadataTable,
+      qualifiedTable,
       existing: existingMap,
-      current: SYSTEM_COLUMNS.LOADED_AT.toUpperCase(),
-      quote: quoteSnowflakeIdentifier,
-      run: (sqlText) => assertOwnershipBeforeMutation().then(() => conn.execute({ sqlText })),
       reread: async () => snowflakeColumnMap((await readColumns()).getRows()),
+      beforeMutation: assertOwnershipBeforeMutation,
       logger: this.logger,
     });
 

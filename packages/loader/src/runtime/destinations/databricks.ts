@@ -627,6 +627,20 @@ export class DatabricksDestination implements DatabaseDestination {
         await this.assertOwnershipBeforeMutation(safeSchema, safeTable);
         await this.query(loadedAtFillSql(qualifiedTable, quoteDatabricksIdentifier, from, to));
       },
+      marker: {
+        done: async (from, note) =>
+          (
+            await this.query(
+              `SELECT comment FROM system.information_schema.columns WHERE table_catalog = ${quoteDatabricksStringLiteral(this.catalog.toLowerCase())} AND table_schema = ${quoteDatabricksStringLiteral(safeSchema.toLowerCase())} AND table_name = ${quoteDatabricksStringLiteral(safeTable.toLowerCase())} AND column_name = ${quoteDatabricksStringLiteral(from)}`
+            )
+          )[0]?.['comment'] === note,
+        mark: async (from, note) => {
+          await this.assertOwnershipBeforeMutation(safeSchema, safeTable);
+          await this.query(
+            `ALTER TABLE ${qualifiedTable} ALTER COLUMN ${quoteDatabricksIdentifier(from)} COMMENT ${quoteDatabricksStringLiteral(note)}`
+          );
+        },
+      },
       logger: this.logger,
     });
 

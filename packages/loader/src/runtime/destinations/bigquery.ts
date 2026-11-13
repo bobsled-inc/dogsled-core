@@ -16,7 +16,7 @@ import {
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
-import { takeOverLoadedAtSql } from './loaded-at-takeover.js';
+import { takeOverBigQueryLoadedAt } from './bigquery-loaded-at.js';
 import { withRetry, type RetryOptions } from '../retry.js';
 import {
   RefreshableTokenSource,
@@ -590,25 +590,18 @@ export class BigQueryDestination implements DatabaseDestination {
     if (ownershipMarker !== undefined) assertOwnedBigQueryMetadata(metadata, ownershipMarker);
     const existingFields = metadata.schema?.fields ?? [];
     const existingMap = new Map(existingFields.map((f) => [f.name, getExistingBigQueryType(f)]));
-    // Some tables refuse RENAME COLUMN (search index, row policy, partitioning on the
-    // column); the earlier column is then kept and copied into the current one.
-    const fillLoadedAt = await takeOverLoadedAtSql({
+    const fillLoadedAt = await takeOverBigQueryLoadedAt({
       table: qualifiedTable,
       existing: existingMap,
-      current: SYSTEM_COLUMNS.LOADED_AT,
-      quote: quoteBqIdentifier,
-      run: async (query) => {
+      runQuery: async (query) => {
         const [job] = await this.bqRetry(() =>
           client.createQueryJob({ query, location: this.location })
         );
         await this.waitForJob(job);
       },
-      reread: async () => {
-        const [fresh] = await this.bqRetry(() => table.getMetadata());
-        return new Map(
-          (fresh.schema?.fields ?? []).map((f) => [f.name, getExistingBigQueryType(f)])
-        );
-      },
+      readFields: async () =>
+        (await this.bqRetry(() => table.getMetadata()))[0].schema?.fields ?? [],
+      typeOf: getExistingBigQueryType,
       logger: this.logger,
     });
 

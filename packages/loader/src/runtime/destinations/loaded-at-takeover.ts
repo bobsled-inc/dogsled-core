@@ -99,9 +99,25 @@ export async function takeOverLegacyLoadedAt<T>(
   }
 }
 
+/** The note Core leaves on the earlier column once its values are copied, so it copies once. */
+export function loadedAtFilledNote(current: string): string {
+  return `Core copied this column into ${current}`;
+}
+
 /**
- * Copy earlier loaded-at values into empty current ones. Idempotent; a failure
- * is logged and retried on the next run instead of failing the load.
+ * Metadata-only proof that the copy is done: a column comment where the warehouse has one,
+ * else Core's own marker. Never a scan of the data.
+ */
+export interface LoadedAtFillMarker {
+  done(from: string, note: string): Promise<boolean>;
+  mark(from: string, note: string): Promise<void>;
+}
+
+/**
+ * Copy earlier loaded-at values into empty current ones, once: the marker is read first and
+ * written after the copy. A run that dies in between repeats the copy, which only touches rows
+ * that are still empty. A failure is logged and retried on the next run instead of failing the
+ * load.
  */
 export async function fillLegacyLoadedAt(
   result: LoadedAtTakeoverResult,
@@ -109,12 +125,16 @@ export async function fillLegacyLoadedAt(
     table: string;
     current: string;
     fill(from: string, to: string): Promise<void>;
+    marker: LoadedAtFillMarker;
     logger?: LoaderLogger | undefined;
   }
 ): Promise<void> {
   if (!result.fillFrom) return;
+  const note = loadedAtFilledNote(options.current);
   try {
+    if (await options.marker.done(result.fillFrom, note)) return;
     await options.fill(result.fillFrom, options.current);
+    await options.marker.mark(result.fillFrom, note);
     options.logger?.info('loaded_at_column_filled', {
       table: options.table,
       from: result.fillFrom,
@@ -162,6 +182,7 @@ export async function takeOverLoadedAtSql<T>(options: {
   quote(identifier: string): string;
   run(sql: string): Promise<unknown>;
   reread(): Promise<Map<string, T>>;
+  marker: LoadedAtFillMarker;
   logger?: LoaderLogger | undefined;
 }): Promise<() => Promise<void>> {
   const { table, current, quote, run, logger } = options;
@@ -182,6 +203,12 @@ export async function takeOverLoadedAtSql<T>(options: {
       fill: async (from, to) => {
         await run(loadedAtFillSql(table, quote, from, to));
       },
+      marker: options.marker,
       logger,
     });
+}
+
+/** SQL string literal with single quotes doubled (the note is Core's own text). */
+export function noteLiteral(note: string): string {
+  return `'${note.replaceAll("'", "''")}'`;
 }

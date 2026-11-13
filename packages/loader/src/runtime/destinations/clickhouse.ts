@@ -13,7 +13,7 @@ import {
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
-import { fillLegacyLoadedAt, takeOverLegacyLoadedAt } from './loaded-at-takeover.js';
+import { fillLegacyLoadedAt, noteLiteral, takeOverLegacyLoadedAt } from './loaded-at-takeover.js';
 import { readJsonlRecords } from '../jsonl.js';
 import { withRetry } from '../retry.js';
 
@@ -531,6 +531,20 @@ export class ClickHouseDestination implements DatabaseDestination {
         await client.exec({
           query: `ALTER TABLE ${qualifiedTable} UPDATE ${quoteIdentifier(to)} = ${quoteIdentifier(from)} WHERE ${quoteIdentifier(to)} IS NULL AND ${quoteIdentifier(from)} IS NOT NULL SETTINGS mutations_sync = 2`,
         });
+      },
+      marker: {
+        done: async (from, note) => {
+          const result = await client.query({
+            query: `SELECT comment FROM system.columns WHERE database = '${escapeStringLiteral(safeSchema)}' AND table = '${escapeStringLiteral(safeTable)}' AND name = '${escapeStringLiteral(from)}'`,
+          });
+          const rows = (await result.json()) as Array<{ comment: string }>;
+          return rows[0]?.comment === note;
+        },
+        mark: async (from, note) => {
+          await client.exec({
+            query: `ALTER TABLE ${qualifiedTable} COMMENT COLUMN ${quoteIdentifier(from)} ${noteLiteral(note)}`,
+          });
+        },
       },
       logger: this.logger,
     });

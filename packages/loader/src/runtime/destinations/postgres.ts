@@ -16,6 +16,7 @@ import {
   fillLegacyLoadedAt,
   legacyUniqueIndexNames,
   loadedAtFillSql,
+  noteLiteral,
   takeOverLegacyLoadedAt,
 } from './loaded-at-takeover.js';
 import { serializeVectorValue } from './pgvector.js';
@@ -525,6 +526,20 @@ export class PostgresDestination implements DatabaseDestination {
         current: SYSTEM_COLUMNS.LOADED_AT,
         fill: async (from, to) => {
           await client.query(loadedAtFillSql(qualifiedTable, quoteIdentifier, from, to));
+        },
+        marker: {
+          done: async (from, note) =>
+            (
+              await client.query(
+                `SELECT col_description(a.attrelid, a.attnum) AS note FROM pg_catalog.pg_attribute a WHERE a.attrelid = $1::regclass AND a.attname = $2`,
+                [qualifiedTable, from]
+              )
+            ).rows[0]?.['note'] === note,
+          mark: async (from, note) => {
+            await client.query(
+              `COMMENT ON COLUMN ${qualifiedTable}.${quoteIdentifier(from)} IS ${noteLiteral(note)}`
+            );
+          },
         },
         logger: this.logger,
       });
