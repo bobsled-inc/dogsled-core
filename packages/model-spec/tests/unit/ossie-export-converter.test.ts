@@ -462,6 +462,7 @@ describe('Ossie export converter', () => {
           ...request().project,
           models: [{ ...model, include_all_columns: true }],
         },
+        selection: { selectors: [{ kind: 'model', name: 'completed_orders' }] },
       })
     );
     expect(unsupported).toMatchObject({ ok: false, ready: false, files: [] });
@@ -527,7 +528,7 @@ describe('Ossie export converter', () => {
       }),
     ]);
   });
-  it('names every model whose columns the Blueprint does not list', () => {
+  it('leaves models with unlisted columns out of a whole-Project export and names them', () => {
     const result = exportOssieDocument(
       request({
         project: {
@@ -539,15 +540,55 @@ describe('Ossie export converter', () => {
         },
       })
     );
-    expect(result).toMatchObject({ ok: false, files: [] });
-    expect(result.diagnostics).toEqual([
+    expect(result).toMatchObject({ ok: true });
+    const omitted = result.diagnostics.filter((entry) => entry.code === 'native_dataset_omitted');
+    expect(omitted).toEqual([
       expect.objectContaining({
-        code: 'native_incomplete',
+        severity: 'warning',
         path: 'project#datasets.all_orders.include_all_columns',
         message:
-          'Models all_orders (include_all_columns), completed_orders (include_all_columns) make columns that the Blueprint does not list, so Ossie export cannot describe their fields.',
+          'Models all_orders (include_all_columns), completed_orders (include_all_columns) make columns that the Blueprint does not list, so Ossie export cannot describe their fields. The export leaves them out.',
       }),
     ]);
+    const content = result.files[0]?.content ?? '';
+    expect(content).toContain('name: raw_orders');
+    expect(content).not.toContain('completed_orders');
+  });
+  it('refuses when every dataset has unlisted columns', () => {
+    const result = exportOssieDocument(
+      request({
+        project: {
+          ...request().project,
+          sources: [],
+          relationships: [],
+          metrics: [],
+          models: [{ ...model, include_all_columns: true }],
+        },
+      })
+    );
+    expect(result).toMatchObject({ ok: false, files: [] });
+    expect(result.diagnostics.at(-1)?.message).toContain('No other datasets are left to export.');
+  });
+  it('exports a model with derived columns as its finished dataset', () => {
+    const derived = {
+      ...model,
+      derived_columns: [
+        { name: 'amount_cents', expr: 'amount * 100', type: 'BIGINT', description: 'Cents' },
+      ],
+    };
+    const result = exportOssieDocument(
+      request({ project: { ...request().project, models: [derived] } })
+    );
+    expect(result).toMatchObject({ ok: true });
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'catalog_only_export',
+        message: expect.stringContaining('its derived_columns build'),
+      })
+    );
+    const content = result.files[0]?.content ?? '';
+    expect(content).toContain('name: amount_cents');
+    expect(content).toContain('description: Cents');
   });
   it('names the document and key when input is not plain bounded data', () => {
     const result = exportOssieDocument(
