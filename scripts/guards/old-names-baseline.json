@@ -1,7 +1,7 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 242,
+    "dogsled-word": 251,
     "old-warehouse-prefix": 34,
     "track-config": 6,
     "track-env": 0,
@@ -23,6 +23,6 @@
     "packages/protocol": 14,
     "packages/skills": 6,
     "scripts": 2,
-    "tests": 1
+    "tests": 10
   }
 }

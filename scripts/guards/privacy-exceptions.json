@@ -42,13 +42,13 @@
     {
       "rule": "email-address",
       "files": ["SECURITY.md"],
-      "values": ["security@dogsledai.com"],
+      "values": ["security@bobsled.co"],
       "reason": "Public vulnerability reporting contact."
     },
     {
       "rule": "email-address",
       "files": ["CODE_OF_CONDUCT.md", "SUPPORT.md"],
-      "values": ["maintainers@dogsledai.com"],
+      "values": ["maintainers@bobsled.co"],
       "reason": "Public Code of Conduct and other private non-security contact."
     },
     {

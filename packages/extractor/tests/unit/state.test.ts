@@ -263,8 +263,8 @@ describe('state', () => {
     // A bare lookup without partition must not return either partitioned bookmark
     expect(getStreamBookmark(state, 'github', 'commits')).toBeUndefined();
     expect(Object.keys(state.streams).sort()).toEqual([
-      'github/commits#owner=bobsled-inc::repo=demo-repo',
       'github/commits#owner=bobsled-inc::repo=bobsled',
+      'github/commits#owner=bobsled-inc::repo=demo-repo',
     ]);
   });
 

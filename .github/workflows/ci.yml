@@ -63,7 +63,7 @@ jobs:
       - run: pnpm run setup:sqlite
       - run: pnpm security:fast
       - name: Report old Bobsled Core names (report-only until the rename is done)
-        run: pnpm guard:bobsled
+        run: pnpm guard:rename
       - name: Build
         run: pnpm build
         timeout-minutes: 10
