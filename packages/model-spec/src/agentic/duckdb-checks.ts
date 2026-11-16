@@ -3,7 +3,7 @@ import { generateExpectationSql } from '../compiler/expect/codegen.js';
 import { quoteIdentifier, buildFqName, type SupportedDialect } from '../compiler/dialect.js';
 import type { AgenticPublicationContext } from './publication.js';
 
-export const PUBLICATION_SCHEMA = '_dogsled_agentic_publication';
+export const PUBLICATION_SCHEMA = '_bobsled_agentic_publication';
 export const q = (value: string): string => quoteIdentifier(value, 'duckdb');
 export const stageRef = (stage: string): string => `${q(PUBLICATION_SCHEMA)}.${q(stage)}`;
 

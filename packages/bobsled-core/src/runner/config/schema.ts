@@ -488,7 +488,7 @@ const ResourceTableNameSchema = z
   .refine(
     (value) =>
       !RESERVED_STAGING_TABLE_PREFIXES.some((prefix) => value.toLowerCase().startsWith(prefix)),
-    { message: 'table uses the reserved loader staging prefix "_dogsled_stg_"' }
+    { message: 'table uses the reserved loader staging prefix "_bobsled_stg_"' }
   );
 
 const ResourceOverrideSchema = z

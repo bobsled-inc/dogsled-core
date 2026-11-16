@@ -14,6 +14,7 @@ import { buildSetupDescribePayload } from '../setup/catalog.js';
 import {
   getCoworkAssetsDir,
   installCoworkAssets,
+  renderIntoExistingSpellings,
   renderSetupFiles,
   writeRenderedSetupFiles,
 } from '../setup/render.js';
@@ -200,8 +201,9 @@ export function createSetupGroup(): Command {
       ) => {
         const outputOpts = buildOutputOptions(opts, cmd.optsWithGlobals<GlobalOptions>());
         const answers = parseSetupAnswersFile(resolveSetupAnswersPath(opts.answers));
-        const files = await renderSetupFiles(answers);
-        const { written, preserved } = writeRenderedSetupFiles(files, path.resolve(opts.outDir));
+        const outDir = path.resolve(opts.outDir);
+        const files = renderIntoExistingSpellings(await renderSetupFiles(answers), outDir);
+        const { written, preserved } = writeRenderedSetupFiles(files, outDir);
 
         if (outputOpts.json) {
           fmt.output(

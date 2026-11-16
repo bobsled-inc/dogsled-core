@@ -67,7 +67,7 @@ const ownedTableColumns = [
   { COLUMN_NAME: 'ID', DATA_TYPE: 'NUMBER' },
   { COLUMN_NAME: 'TITLE', DATA_TYPE: 'TEXT' },
   { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-  { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+  { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
 ];
 
 const ownedMarker = 'marker-A';
@@ -842,7 +842,7 @@ describe('SnowflakeDestination', () => {
     expect(sql).toContain('"ID" NUMBER(38,0)');
     expect(sql).toContain('"TITLE" VARCHAR');
     expect(sql).toContain('"_TIME_EXTRACTED" TIMESTAMP_TZ');
-    expect(sql).toContain('"_DOGSLED_LOADED_AT" TIMESTAMP_TZ');
+    expect(sql).toContain('"_BOBSLED_LOADED_AT" TIMESTAMP_TZ');
   });
 
   it('ensureTable() rejects empty columns before emitting SQL', async () => {
@@ -1029,7 +1029,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'STALE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1097,7 +1097,7 @@ describe('SnowflakeDestination', () => {
       existingColumns: [
         { COLUMN_NAME: 'ID', DATA_TYPE: 'NUMBER' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1128,7 +1128,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'STALE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1224,7 +1224,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'STALE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1315,7 +1315,7 @@ describe('SnowflakeDestination', () => {
       existingColumns: [
         { COLUMN_NAME: 'ID', DATA_TYPE: 'NUMBER' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1336,7 +1336,7 @@ describe('SnowflakeDestination', () => {
       requireUppercaseMetadataPredicates: true,
       existingColumns: [
         { COLUMN_NAME: '_time_extracted', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_dogsled_loaded_at', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_bobsled_loaded_at', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1365,7 +1365,7 @@ describe('SnowflakeDestination', () => {
     expect(sql[replaceIndex]).toContain('"ID" NUMBER(38,0)');
     expect(sql[replaceIndex]).toContain('"TITLE" VARCHAR');
     expect(sql[replaceIndex]).toContain('"_TIME_EXTRACTED" TIMESTAMP_TZ');
-    expect(sql[replaceIndex]).toContain('"_DOGSLED_LOADED_AT" TIMESTAMP_TZ');
+    expect(sql[replaceIndex]).toContain('"_BOBSLED_LOADED_AT" TIMESTAMP_TZ');
     expect(sql[replaceIndex]).toContain('COPY GRANTS');
     expect(copyIndex).toBeGreaterThan(replaceIndex);
   });
@@ -1378,7 +1378,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'STALE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
       clusteringKey: 'LINEAR("STALE")',
     });
@@ -1396,7 +1396,7 @@ describe('SnowflakeDestination', () => {
     expect(replacement).toContain('"ID" NUMBER(38,0)');
     expect(replacement).toContain('"TITLE" VARCHAR');
     expect(replacement).toContain('"_TIME_EXTRACTED" TIMESTAMP_TZ');
-    expect(replacement).toContain('"_DOGSLED_LOADED_AT" TIMESTAMP_TZ');
+    expect(replacement).toContain('"_BOBSLED_LOADED_AT" TIMESTAMP_TZ');
     expect(replacement).toContain('COPY GRANTS');
     expect(sql.some((statement) => statement.includes('DROP COLUMN'))).toBe(false);
     expect(sql.some((statement) => statement.includes('CLUSTER BY ("ID")'))).toBe(true);
@@ -1410,7 +1410,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'NUMBER' },
         { COLUMN_NAME: 'TITLE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
       clusteringKey: 'LINEAR("ID")',
     });
@@ -1435,7 +1435,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'STALE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1461,7 +1461,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'STALE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1485,7 +1485,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'AMOUNT', DATA_TYPE: 'NUMBER' },
         { COLUMN_NAME: 'STALE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1534,7 +1534,7 @@ describe('SnowflakeDestination', () => {
       existingColumns: [
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1558,7 +1558,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'ID', DATA_TYPE: 'TEXT' }, // was NUMBER, now TEXT = conflict
         { COLUMN_NAME: 'TITLE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1592,7 +1592,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'TITLE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'UPDATED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
     });
     const { dest } = await createDest(conn);
@@ -1622,7 +1622,7 @@ describe('SnowflakeDestination', () => {
         { COLUMN_NAME: 'TITLE', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'UPDATED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
         { COLUMN_NAME: '_TIME_EXTRACTED', DATA_TYPE: 'TIMESTAMP_TZ' },
-        { COLUMN_NAME: '_DOGSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
+        { COLUMN_NAME: '_BOBSLED_LOADED_AT', DATA_TYPE: 'TIMESTAMP_TZ' },
       ],
       clusteringKey: 'LINEAR("UPDATED_AT", "ID")',
     });
@@ -1713,7 +1713,7 @@ describe('SnowflakeDestination', () => {
     const updateCall = vi
       .mocked(conn.execute)
       .mock.calls.find((call) =>
-        call[0].sqlText.includes('SET "_DOGSLED_LOADED_AT" = CURRENT_TIMESTAMP()')
+        call[0].sqlText.includes('SET "_BOBSLED_LOADED_AT" = CURRENT_TIMESTAMP()')
       );
     expect(updateCall).toBeDefined();
   });
@@ -1952,7 +1952,7 @@ describe('SnowflakeDestination', () => {
     execute.mockImplementation(({ sqlText }) => {
       if (
         sqlText.includes('COPY INTO') &&
-        sqlText.includes('_DOGSLED_STG_') &&
+        sqlText.includes('_BOBSLED_STG_') &&
         stagingCopyAttempts++ === 0
       ) {
         return Promise.reject(
@@ -2063,11 +2063,11 @@ describe('SnowflakeDestination', () => {
     const createStagingCall = calls.find(
       (c) =>
         c[0].sqlText.includes('CREATE OR REPLACE TRANSIENT TABLE') &&
-        c[0].sqlText.includes('_DOGSLED_STG_')
+        c[0].sqlText.includes('_BOBSLED_STG_')
     );
     expect(createStagingCall).toBeDefined();
     // Should have UUID suffix (32 hex chars after the table name)
-    expect(createStagingCall![0].sqlText).toMatch(/_DOGSLED_STG_ISSUES_[0-9a-f]{32}/i);
+    expect(createStagingCall![0].sqlText).toMatch(/_BOBSLED_STG_ISSUES_[0-9a-f]{32}/i);
   });
 
   it('loadAndFinalize("merge") staging table DDL has proper column types', async () => {
@@ -2083,20 +2083,20 @@ describe('SnowflakeDestination', () => {
     const createStagingCall = calls.find(
       (c) =>
         c[0].sqlText.includes('CREATE OR REPLACE TRANSIENT TABLE') &&
-        c[0].sqlText.includes('_DOGSLED_STG_')
+        c[0].sqlText.includes('_BOBSLED_STG_')
     );
     const sql = createStagingCall![0].sqlText;
     expect(sql).toContain('"ID" NUMBER(38,0)');
     expect(sql).toContain('"TITLE" VARCHAR');
     expect(sql).toContain('"_TIME_EXTRACTED" TIMESTAMP_TZ');
-    expect(sql).toContain('"_DOGSLED_LOADED_AT" TIMESTAMP_TZ');
+    expect(sql).toContain('"_BOBSLED_LOADED_AT" TIMESTAMP_TZ');
   });
 
   it('loadAndFinalize("merge") staging table is dropped even on error', async () => {
     const conn = createMockConnection({ connected: true });
     // Make the COPY INTO for staging fail
     vi.mocked(conn.execute).mockImplementation(({ sqlText }) => {
-      if (sqlText.includes('COPY INTO') && sqlText.includes('_DOGSLED_STG_')) {
+      if (sqlText.includes('COPY INTO') && sqlText.includes('_BOBSLED_STG_')) {
         return Promise.reject(new Error('COPY failed'));
       }
       return Promise.resolve(createMockStatementResult());
@@ -2132,7 +2132,7 @@ describe('SnowflakeDestination', () => {
     expect(sql).not.toMatch(/UPDATE SET[^W]*"ID" = S\."ID"/);
     // System columns should be in UPDATE SET
     expect(sql).toContain('"_TIME_EXTRACTED" = S."_TIME_EXTRACTED"');
-    expect(sql).toContain('"_DOGSLED_LOADED_AT" = S."_DOGSLED_LOADED_AT"');
+    expect(sql).toContain('"_BOBSLED_LOADED_AT" = S."_BOBSLED_LOADED_AT"');
   });
 
   it('loadAndFinalize("merge") INSERT includes all columns', async () => {
@@ -2149,7 +2149,7 @@ describe('SnowflakeDestination', () => {
     const sql = mergeCall![0].sqlText;
     // INSERT should include all columns
     expect(sql).toMatch(
-      /INSERT\s*\([^)]*"ID"[^)]*"TITLE"[^)]*"_TIME_EXTRACTED"[^)]*"_DOGSLED_LOADED_AT"/
+      /INSERT\s*\([^)]*"ID"[^)]*"TITLE"[^)]*"_TIME_EXTRACTED"[^)]*"_BOBSLED_LOADED_AT"/
     );
   });
 
@@ -2217,7 +2217,7 @@ describe('SnowflakeDestination', () => {
 
     const calls = vi.mocked(conn.execute).mock.calls;
     const dropCall = calls.find(
-      (c) => c[0].sqlText.includes('DROP TABLE IF EXISTS') && c[0].sqlText.includes('_DOGSLED_STG_')
+      (c) => c[0].sqlText.includes('DROP TABLE IF EXISTS') && c[0].sqlText.includes('_BOBSLED_STG_')
     );
     expect(dropCall).toBeDefined();
   });
@@ -2236,8 +2236,8 @@ describe('SnowflakeDestination', () => {
     expect(removeCall).toBeDefined();
     // For merge, uploads go to the staging table's internal stage (Snowflake
     // blocks cross-table stage access), so the cleanup REMOVE targets
-    // `@%_DOGSLED_STG_<table>_<uuid>/data.jsonl`, not `@%<table>/…`.
-    expect(removeCall![0].sqlText).toMatch(/REMOVE @%_DOGSLED_STG_issues_[a-f0-9]+\/data\.jsonl/);
+    // `@%_BOBSLED_STG_<table>_<uuid>/data.jsonl`, not `@%<table>/…`.
+    expect(removeCall![0].sqlText).toMatch(/REMOVE @%_BOBSLED_STG_issues_[a-f0-9]+\/data\.jsonl/);
   });
 
   it('loadAndFinalize("merge") requires at least one key column', async () => {
@@ -2549,7 +2549,7 @@ describe('SnowflakeDestination', () => {
 
   // ── System columns ──
 
-  it('system columns _time_extracted and _dogsled_loaded_at are TIMESTAMP_TZ', async () => {
+  it('system columns _time_extracted and _bobsled_loaded_at are TIMESTAMP_TZ', async () => {
     const { dest, conn } = await createDest();
     await dest.initialize();
     await dest.ensureTable('test_schema', 'issues', issueColumns);
@@ -2558,7 +2558,7 @@ describe('SnowflakeDestination', () => {
     const createCall = calls.find((c) => c[0].sqlText.includes('CREATE TABLE'));
     const sql = createCall![0].sqlText;
     expect(sql).toContain('"_TIME_EXTRACTED" TIMESTAMP_TZ');
-    expect(sql).toContain('"_DOGSLED_LOADED_AT" TIMESTAMP_TZ');
+    expect(sql).toContain('"_BOBSLED_LOADED_AT" TIMESTAMP_TZ');
   });
 });
 

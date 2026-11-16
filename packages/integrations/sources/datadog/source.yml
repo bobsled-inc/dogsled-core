@@ -24,6 +24,6 @@ transports:
       burst: 10
     headers:
       Accept: application/json
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
       DD-APPLICATION-KEY: ${{ env.DATADOG_APPLICATION_KEY }}
 default_transport: default

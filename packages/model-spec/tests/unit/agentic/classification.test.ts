@@ -90,9 +90,9 @@ it('preserves choices through checkpoint resume and rejects duplicate groups bef
         ...request.assignment.group_key,
         choice: 'same',
         confidence: 0.8,
-        _dogsled_evidence: null,
-        _dogsled_confidence: 0.8,
-        _dogsled_reason: null,
+        _bobsled_evidence: null,
+        _bobsled_confidence: 0.8,
+        _bobsled_reason: null,
       },
     ],
   }));

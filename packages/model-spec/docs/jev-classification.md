@@ -43,7 +43,7 @@ columns:
 
 Use between 2 and 255 choices. Each description must be a nonempty string. Each group must contain exactly one row. Output columns must be the grouping keys, `choice`, and `confidence`. Grouping keys must include any materialization keys.
 
-The adapter copies keys from Dogsled's assignment. It does not ask Jev to generate them. Jev's confidence is also stored in `_dogsled_confidence`. Evidence and reason metadata are null. Confidence is the provider's estimate, not proof of correctness. A valid `uncertain` choice counts as completed work.
+The adapter copies keys from Dogsled's assignment. It does not ask Jev to generate them. Jev's confidence is also stored in `_bobsled_confidence`. Evidence and reason metadata are null. Confidence is the provider's estimate, not proof of correctness. A valid `uncertain` choice counts as completed work.
 
 This version supports map steps only. It does not support skills, tools, source callbacks, reduce steps, multiple questions, scoring, embeddings, or generated explanations. TypeSafe profiles cannot be used for normal text generation. Model dimension and per-profile dollar budgets are unsupported; use the agentic model token and time limits.
 

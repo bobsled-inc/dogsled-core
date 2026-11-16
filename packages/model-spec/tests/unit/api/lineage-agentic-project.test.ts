@@ -81,10 +81,10 @@ it('preserves the mixed DAG and exposes agentic columns as an opaque provenance 
   const names = [
     'pair_id',
     'assessment',
-    '_dogsled_run_id',
-    '_dogsled_evidence',
-    '_dogsled_confidence',
-    '_dogsled_reason',
+    '_bobsled_run_id',
+    '_bobsled_evidence',
+    '_bobsled_confidence',
+    '_bobsled_reason',
   ];
   expect(group.columnLineage.filter((entry) => entry.model === 'pair_assessments')).toEqual(
     names.map((column) => ({ model: 'pair_assessments', column, upstream: [], isComplete: false }))
@@ -108,7 +108,7 @@ it('supports exact agentic selection and exact downstream passthrough selection'
   const downstream = await lineageProject(root, { models: ['advice'] });
   expect(downstream.byIntegration[0]?.models.map((node) => node.name)).toEqual(['advice']);
   expect(downstream.byIntegration[0]?.columnLineage.map((entry) => entry.column)).toContain(
-    '_dogsled_run_id'
+    '_bobsled_run_id'
   );
   expect(downstream.byIntegration[0]?.columnLineage.some((entry) => entry.column === '*')).toBe(
     false

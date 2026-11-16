@@ -39,9 +39,9 @@ export async function executeAgent(request) {
       issue_category,
       resolution_type,
       evidence_summary: evidence_summary.slice(0, 180),
-      _dogsled_evidence: [{ source: input.ref, reference, retrieved_at: input.retrieved_at, support_excerpt: evidence_summary.slice(0, 400) }],
-      _dogsled_confidence: null,
-      _dogsled_reason: null,
+      _bobsled_evidence: [{ source: input.ref, reference, retrieved_at: input.retrieved_at, support_excerpt: evidence_summary.slice(0, 400) }],
+      _bobsled_confidence: null,
+      _bobsled_reason: null,
     }],
     usage,
   };

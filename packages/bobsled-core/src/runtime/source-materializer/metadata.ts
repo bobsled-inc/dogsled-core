@@ -32,7 +32,7 @@ export interface MetadataRow {
 
 export type MetadataDialect = SqlDialect;
 
-export const METADATA_TABLE = '_dogsled_source_metadata';
+export const METADATA_TABLE = '_bobsled_source_metadata';
 export const LEASE_PLACEHOLDER_LOADED_AT = '1970-01-01T00:00:00.000Z';
 
 function metaTableRef(schema: string, dialect: MetadataDialect = 'duckdb'): string {
@@ -125,7 +125,7 @@ async function tableExists(runner: SqlRunnerModule, ref: string): Promise<boolea
 }
 
 /**
- * Take over an earlier metadata table (for example `_dogsled_source_metadata`
+ * Take over an earlier metadata table (for example `_bobsled_source_metadata`
  * once Core writes `_bobsled_source_metadata`) by renaming it in place, so
  * cursors, ETags and snapshot leases survive. Never drops a table: when both
  * exist the current one wins and the earlier one is left alone.

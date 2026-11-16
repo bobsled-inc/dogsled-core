@@ -71,7 +71,7 @@ function fixture() {
   );
   writeFileSync(
     join(root, 'models/advice.yml'),
-    stringify(derived('advice', 'pair_assessments', ['pair_id', 'assessment', '_dogsled_run_id']))
+    stringify(derived('advice', 'pair_assessments', ['pair_id', 'assessment', '_bobsled_run_id']))
   );
   const model = parse(
     readFileSync(new URL('../../fixtures/agentic/prepared-pairs.yml', import.meta.url), 'utf8')
@@ -123,9 +123,9 @@ function fixture() {
           {
             pair_id: 'p1',
             assessment: 'review',
-            _dogsled_evidence: null,
-            _dogsled_confidence: null,
-            _dogsled_reason: null,
+            _bobsled_evidence: null,
+            _bobsled_confidence: null,
+            _bobsled_reason: null,
           },
         ],
       };
@@ -625,7 +625,7 @@ describe('mixed agentic dispatch probe', () => {
       expect.objectContaining({
         pair_id: 'p1',
         assessment: 'review',
-        _dogsled_run_id: expect.any(String),
+        _bobsled_run_id: expect.any(String),
       }),
     ]);
     expect(f.events).toEqual(['derived', 'prepare', 'agent', 'publish', 'downstream']);
@@ -636,7 +636,7 @@ describe('mixed agentic dispatch probe', () => {
     expect(Object.keys(result.state.models)).toEqual(['lake.undecided_pairs', 'lake.advice']);
     expect(f.host.publish).toHaveBeenCalledWith(
       expect.anything(),
-      [expect.objectContaining({ _dogsled_run_id: expect.any(String) })],
+      [expect.objectContaining({ _bobsled_run_id: expect.any(String) })],
       [{ pair_id: 'p1' }]
     );
     for (const call of f.run.mock.calls) expect(call).toHaveLength(1);
@@ -653,7 +653,7 @@ describe('mixed agentic dispatch probe', () => {
     expect(compile.ok).toBe(true);
     expect(
       compile.byIntegration[0]?.agenticPlans?.[0]?.outputColumns.map((column) => column.name)
-    ).toContain('_dogsled_run_id');
+    ).toContain('_bobsled_run_id');
     expect(compile.byIntegration[0]?.results).toHaveLength(2);
     expect((await validateProject(f.root)).ok).toBe(true);
     await runProject(f.root, { ...f.options, models: ['+pair_assessments'] });
@@ -702,9 +702,9 @@ describe('mixed agentic dispatch probe', () => {
             {
               pair_id: kind === 'foreign key' ? 'foreign' : 'p1',
               assessment: kind === 'malformed' ? 123 : 'review',
-              _dogsled_evidence: null,
-              _dogsled_confidence: kind === 'metadata' ? 2 : null,
-              _dogsled_reason: null,
+              _bobsled_evidence: null,
+              _bobsled_confidence: kind === 'metadata' ? 2 : null,
+              _bobsled_reason: null,
             },
           ],
         };
@@ -850,9 +850,9 @@ describe('mixed agentic dispatch probe', () => {
         {
           pair_id: assignment.group_key.pair_id!,
           assessment: 'same',
-          _dogsled_evidence: null,
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         },
       ],
     }));

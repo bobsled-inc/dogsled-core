@@ -212,7 +212,7 @@ describe('DuckLakeDestination', () => {
       id: 'BIGINT',
       title: 'VARCHAR',
       _time_extracted: 'TIMESTAMP',
-      _dogsled_loaded_at: 'TIMESTAMP',
+      _bobsled_loaded_at: 'TIMESTAMP',
     });
   });
 
@@ -250,7 +250,7 @@ describe('DuckLakeDestination', () => {
     expect(
       connection.runLog.some((sql) =>
         sql.startsWith(
-          'INSERT INTO "lake"."main"."issues" ("id", "title", "_time_extracted", "_dogsled_loaded_at")'
+          'INSERT INTO "lake"."main"."issues" ("id", "title", "_time_extracted", "_bobsled_loaded_at")'
         )
       )
     ).toBe(true);
@@ -281,7 +281,7 @@ describe('DuckLakeDestination', () => {
     ).toBe(true);
     expect(
       connection.runLog.some((sql) =>
-        sql.startsWith('MERGE INTO "lake"."main"."issues" USING temp.main."_dogsled_stg_issues_')
+        sql.startsWith('MERGE INTO "lake"."main"."issues" USING temp.main."_bobsled_stg_issues_')
       )
     ).toBe(true);
   });
@@ -348,7 +348,7 @@ describe('DuckLakeDestination', () => {
 
     expect(
       connection.runLog.some((sql) =>
-        sql.startsWith('DROP TABLE IF EXISTS temp.main."_dogsled_stg_issues_')
+        sql.startsWith('DROP TABLE IF EXISTS temp.main."_bobsled_stg_issues_')
       )
     ).toBe(true);
   });

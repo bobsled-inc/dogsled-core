@@ -15,10 +15,10 @@ import type { StatementTimeoutHandling } from './warehouse-statement-limit.js';
 export const AGENTIC_ROW_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Every table of the row store starts with this prefix, followed by a fixed suffix. */
-export const AGENTIC_TABLE_PREFIX = '__dogsled_agentic_';
-export const AGENTIC_RUNS_TABLE = '__dogsled_agentic_runs';
-export const AGENTIC_ROWS_TABLE = '__dogsled_agentic_rows';
-export const AGENTIC_CURSORS_TABLE = '__dogsled_agentic_cursors';
+export const AGENTIC_TABLE_PREFIX = '__bobsled_agentic_';
+export const AGENTIC_RUNS_TABLE = '__bobsled_agentic_runs';
+export const AGENTIC_ROWS_TABLE = '__bobsled_agentic_rows';
+export const AGENTIC_CURSORS_TABLE = '__bobsled_agentic_cursors';
 
 const text = (name: string): AgenticRowColumn => ({ name, type: 'text' });
 const integer = (name: string): AgenticRowColumn => ({ name, type: 'integer' });
@@ -249,7 +249,7 @@ async function assertAgenticRowTables(
 
 /**
  * Takes over the tables an earlier Core generation created in this schema, by renaming each one
- * whose current name is free (`__dogsled_agentic_runs` once Core writes `__bobsled_agentic_runs`,
+ * whose current name is free (`__bobsled_agentic_runs` once Core writes `__bobsled_agentic_runs`,
  * and so on), so saved runs, rows and cursors resume. Never drops a table: where both names
  * exist the rename fails and the current table is kept. Runs only while setup is incomplete.
  */

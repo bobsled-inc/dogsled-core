@@ -100,7 +100,7 @@ const runFile = (handle: StoreHandle, key: Parameters<typeof digestAgenticState>
   },
 });
 const emulators = new WeakMap<StoreHandle, SnowflakeEmulator>();
-const rowTable = (name: string) => `"MEMORY"."CHECKPOINTS"."__DOGSLED_AGENTIC_${name}"`;
+const rowTable = (name: string) => `"MEMORY"."CHECKPOINTS"."__BOBSLED_AGENTIC_${name}"`;
 /** The header table of `key`, which the store must find without being told. */
 const headerTable = (key: Parameters<typeof digestAgenticState>[0]) =>
   `"MEMORY"."CHECKPOINTS"."${agenticHeaderTableName(
@@ -185,7 +185,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
     expireLease: (handle) =>
       sql(
         project(handle),
-        'UPDATE agentic_checkpoints.__dogsled_agentic_runs SET lease_expires = 0'
+        'UPDATE agentic_checkpoints.__bobsled_agentic_runs SET lease_expires = 0'
       ),
   });
 
@@ -198,11 +198,11 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
     withRetention: (handle, retentionMs) =>
       createDefaultAgenticStateStore(project(handle), { retentionMs }),
     damage: (handle, key) =>
-      runOn(runFile(handle, key), [`UPDATE __dogsled_agentic_rows SET data = '{"damaged":true}'`]),
+      runOn(runFile(handle, key), [`UPDATE __bobsled_agentic_rows SET data = '{"damaged":true}'`]),
     replaceRowsTable: (handle, key) =>
-      runOn(runFile(handle, key), asView('__dogsled_agentic_rows')),
+      runOn(runFile(handle, key), asView('__bobsled_agentic_rows')),
     addComputedColumn: (handle, key) =>
-      runOn(runFile(handle, key), computedColumn('__dogsled_agentic_rows')),
+      runOn(runFile(handle, key), computedColumn('__bobsled_agentic_rows')),
     plantLowerMacro: (handle, key) => runOn(runFile(handle, key), lowerMacro),
   });
 
@@ -214,20 +214,20 @@ describe.skipIf(!(await isDuckDbAvailable()))('DuckDB', () => {
     expireLease: (handle) =>
       sql(
         project(handle),
-        'UPDATE agentic_checkpoints.__dogsled_agentic_runs SET lease_expires = 0'
+        'UPDATE agentic_checkpoints.__bobsled_agentic_runs SET lease_expires = 0'
       ),
     withRetention: (handle, retentionMs) => shared(project(handle), retentionMs),
     damage: (handle) =>
       sql(
         project(handle),
-        `UPDATE agentic_checkpoints.__dogsled_agentic_rows SET data = '{"damaged":true}'`
+        `UPDATE agentic_checkpoints.__bobsled_agentic_rows SET data = '{"damaged":true}'`
       ),
     replaceRowsTable: (handle) =>
-      runOn(integration(project(handle)), asView('agentic_checkpoints.__dogsled_agentic_rows')),
+      runOn(integration(project(handle)), asView('agentic_checkpoints.__bobsled_agentic_rows')),
     addComputedColumn: (handle) =>
       runOn(
         integration(project(handle)),
-        computedColumn('agentic_checkpoints.__dogsled_agentic_rows')
+        computedColumn('agentic_checkpoints.__bobsled_agentic_rows')
       ),
     plantLowerMacro: (handle) => runOn(integration(project(handle)), lowerMacro),
   });

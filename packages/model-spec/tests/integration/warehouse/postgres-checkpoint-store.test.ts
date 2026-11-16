@@ -163,7 +163,7 @@ describe.skipIf(
     const runner = await resolveRunner(integration);
     try {
       await session.create(snapshot);
-      const table = `__dogsled_cp_${digestAgenticState(snapshot.key).slice(0, 48)}_p`;
+      const table = `__bobsled_cp_${digestAgenticState(snapshot.key).slice(0, 48)}_p`;
       await runner.run(`UPDATE "${schema}"."${table}" SET "data" = 'invalid-base64'`);
       await expect(session.read()).rejects.toMatchObject({ code: 'corrupt' });
     } finally {
@@ -219,8 +219,8 @@ describe.skipIf(
     const first = await store.acquire(key);
     const runner = await resolveRunner(integration);
     try {
-      const table = `__dogsled_cp_${digestAgenticState(key).slice(0, 48)}_c`;
-      if (typeof table !== 'string' || !/^__dogsled_cp_[a-f0-9]{48}_c$/.test(table)) {
+      const table = `__bobsled_cp_${digestAgenticState(key).slice(0, 48)}_c`;
+      if (typeof table !== 'string' || !/^__bobsled_cp_[a-f0-9]{48}_c$/.test(table)) {
         throw new Error('Missing test control table');
       }
       await runner.run(`UPDATE "${schema}"."${table}" SET "expires" = 0`);

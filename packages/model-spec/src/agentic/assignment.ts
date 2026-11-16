@@ -308,7 +308,7 @@ function assignmentEvidenceSources(work: AgentAssignment): Set<string> {
   // Saved input evidence can be cited without granting fresh access to its source.
   for (const row of inputs.flatMap((input) => input.rows)) {
     if (row === null || typeof row !== 'object' || Array.isArray(row)) continue;
-    const prior = AgenticJudgmentSchema.shape._dogsled_evidence.safeParse(
+    const prior = AgenticJudgmentSchema.shape._bobsled_evidence.safeParse(
       agenticMetadataValue(row, 'evidence')
     );
     if (prior.success && prior.data) {
@@ -341,7 +341,7 @@ function assignmentRowSchema(work: AgentAssignment) {
       });
     });
     const evidence = variants.length === 1 ? variants[0]! : z.union(variants);
-    fields['_dogsled_evidence'] = z.array(evidence).min(1).max(256).nullable();
+    fields['_bobsled_evidence'] = z.array(evidence).min(1).max(256).nullable();
   }
   if (work.classification) {
     fields['choice'] = z.enum(Object.keys(work.classification.choices));
@@ -439,7 +439,7 @@ function parseOutcome(work: AgentAssignment, value: unknown): AgentAssignmentOut
       const identity = keyIdentity(data, work.output.grain);
       if (grain.has(identity)) issue('Output rows must be unique at the declared grain');
       grain.add(identity);
-      const evidence = data['_dogsled_evidence'];
+      const evidence = data['_bobsled_evidence'];
       if (Array.isArray(evidence)) {
         for (const entry of evidence) {
           const prepared = inputs.find((input) => input.ref === entry.source);

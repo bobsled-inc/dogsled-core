@@ -60,7 +60,7 @@ class CursorContention extends Error {
 }
 
 /** The warehouse store's cursor table, one for every model in a schema. */
-export const WAREHOUSE_CURSORS_TABLE = '__dogsled_cursors';
+export const WAREHOUSE_CURSORS_TABLE = '__bobsled_cursors';
 
 /** One table for every model. The sentinel row serializes short cursor updates, not execution. */
 export function createWarehouseAgenticCursorStore(

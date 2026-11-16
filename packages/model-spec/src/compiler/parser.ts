@@ -479,7 +479,7 @@ function qualifiedApiSourceAlias(sourceRef: string): string {
   const encoded = [...normalizeSourceRef(sourceRef)]
     .map((character) => character.codePointAt(0)!.toString(16).padStart(4, '0'))
     .join('');
-  return `__dogsled_source_${encoded}`;
+  return `__bobsled_source_${encoded}`;
 }
 
 export type SourceRegistryResult =

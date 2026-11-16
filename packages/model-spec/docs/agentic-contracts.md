@@ -274,14 +274,14 @@ and `runProject` results use it.
 ## Reserved metadata
 
 Executor rows contain the three nullable judgment fields below. Dogsled supplies
-`_dogsled_run_id` only after acceptance. An executor cannot return that field.
+`_bobsled_run_id` only after acceptance. An executor cannot return that field.
 
 | Column                | Contract                                                                        |
 | --------------------- | ------------------------------------------------------------------------------- |
-| `_dogsled_run_id`     | Non-null string assigned by Dogsled; untouched rows retain their original value |
-| `_dogsled_evidence`   | Null or a nonempty array of evidence objects                                    |
-| `_dogsled_confidence` | Null or a number from 0 to 1; not a calibrated probability                      |
-| `_dogsled_reason`     | Null or `{ summary, supporting_factors, conflicting_factors }`                  |
+| `_bobsled_run_id`     | Non-null string assigned by Dogsled; untouched rows retain their original value |
+| `_bobsled_evidence`   | Null or a nonempty array of evidence objects                                    |
+| `_bobsled_confidence` | Null or a number from 0 to 1; not a calibrated probability                      |
+| `_bobsled_reason`     | Null or `{ summary, supporting_factors, conflicting_factors }`                  |
 
 Evidence contains `source`, `reference`, nullable `support_excerpt`, and
 `retrieved_at`. A record or document reference need not be a URL. Sources must

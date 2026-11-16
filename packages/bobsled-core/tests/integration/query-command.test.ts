@@ -1207,7 +1207,7 @@ schema:
     expect(mixed.rows).toEqual([{ customer_id: 7n, contact_id: 11n }]);
     expect(mixed.receipts).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/source=customers .*target=in_memory .*table=temp\.__dogsled_live_/),
+        expect.stringMatching(/source=customers .*target=in_memory .*table=temp\.__bobsled_live_/),
         expect.stringMatching(/source=contacts .*target=duckdb .*action=reused/),
       ])
     );
@@ -1231,7 +1231,7 @@ schema:
     });
     try {
       const metadata = await runner.query?.(
-        'SELECT source_name FROM analytics._dogsled_source_metadata ORDER BY source_name'
+        'SELECT source_name FROM analytics._bobsled_source_metadata ORDER BY source_name'
       );
       const liveTables = await runner.query?.(
         "SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'analytics' AND table_name = 'customers'"

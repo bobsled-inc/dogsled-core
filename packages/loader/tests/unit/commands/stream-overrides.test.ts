@@ -64,7 +64,7 @@ describe('stream override parsing', () => {
       /invalid schema behavior.*evolve, strict, freeze/
     );
     expect(() => parseStreamTablePair('issues:raw.issues')).toThrow(/invalid table name/);
-    expect(() => parseStreamTablePair('issues:_dogsled_stg_issues')).toThrow(/reserved/);
+    expect(() => parseStreamTablePair('issues:_bobsled_stg_issues')).toThrow(/reserved/);
     expect(() => parseStreamTableOwnershipMarkerPair('issues: marker')).toThrow(/marker/);
     expect(() => parseStreamTableOwnershipMarkerPair(`issues:${'x'.repeat(257)}`)).toThrow(
       /256 characters/

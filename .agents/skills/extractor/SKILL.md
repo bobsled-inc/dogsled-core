@@ -208,7 +208,7 @@ pagination:
   type: link_header
 headers:
   Accept: application/vnd.github.v3+json
-  User-Agent: dogsled-extractor/0.1
+  User-Agent: bobsled-core-extractor/0.1
 ```
 
 ### Resource (with incremental sync)

@@ -639,9 +639,9 @@ export class ClickHouseDestination implements DatabaseDestination {
     }
 
     const suffix = randomUUID().replaceAll('-', '').slice(0, 16);
-    const stagingTable = `_dogsled_stg_${safeTable}_${suffix}`;
+    const stagingTable = `_bobsled_stg_${safeTable}_${suffix}`;
     const qualifiedStaging = `${quoteIdentifier(safeSchema)}.${quoteIdentifier(stagingTable)}`;
-    const winnersTable = `_dogsled_win_${safeTable}_${suffix}`;
+    const winnersTable = `_bobsled_win_${safeTable}_${suffix}`;
     const qualifiedWinners = `${quoteIdentifier(safeSchema)}.${quoteIdentifier(winnersTable)}`;
 
     try {

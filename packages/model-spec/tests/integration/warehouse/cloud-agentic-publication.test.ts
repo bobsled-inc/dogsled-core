@@ -81,9 +81,9 @@ describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () 
             {
               pair_id: assignment.input.rows[0]!.pair_id,
               assessment: "first ' finding",
-              _dogsled_evidence: null,
-              _dogsled_confidence: null,
-              _dogsled_reason: null,
+              _bobsled_evidence: null,
+              _bobsled_confidence: null,
+              _bobsled_reason: null,
             },
           ],
         })
@@ -152,8 +152,8 @@ describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () 
         ).publication
       ).toBe('confirmed');
       expect(
-        await inspect(`SELECT pair_id, assessment, _dogsled_run_id FROM ${names.target}`)
-      ).toEqual([{ pair_id: 'p1', assessment: "first ' finding", _dogsled_run_id: 'first' }]);
+        await inspect(`SELECT pair_id, assessment, _bobsled_run_id FROM ${names.target}`)
+      ).toEqual([{ pair_id: 'p1', assessment: "first ' finding", _bobsled_run_id: 'first' }]);
       expect(Number((await inspect(`SELECT COUNT(*) AS n FROM ${names.receipts}`))[0]?.n)).toBe(2);
 
       if (integration.source_type === 'snowflake') {

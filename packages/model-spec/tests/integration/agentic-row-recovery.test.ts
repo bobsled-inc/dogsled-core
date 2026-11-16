@@ -97,8 +97,8 @@ const once = (pattern: RegExp, fault: 'lose_before' | 'lose_after'): Fault => {
     return fault;
   };
 };
-const headerUpdate = /^UPDATE .*__dogsled_agentic_runs.* SET "revision"/;
-const rowInsert = /^INSERT INTO .*__dogsled_agentic_rows/;
+const headerUpdate = /^UPDATE .*__bobsled_agentic_runs.* SET "revision"/;
+const rowInsert = /^INSERT INTO .*__bobsled_agentic_rows/;
 
 describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statements', () => {
   let map: AgenticStoreScenario;
@@ -141,10 +141,10 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
         await runner.close?.();
       }
     };
-    const expire = () => sql(`UPDATE ${schema}.__dogsled_agentic_runs SET lease_expires = 0`);
+    const expire = () => sql(`UPDATE ${schema}.__bobsled_agentic_runs SET lease_expires = 0`);
     const rows = async () =>
       Number(
-        (await sql(`SELECT count(*) AS n FROM ${schema}.__dogsled_agentic_rows`))[0]!.n as bigint
+        (await sql(`SELECT count(*) AS n FROM ${schema}.__bobsled_agentic_rows`))[0]!.n as bigint
       );
     return { open, sql, expire, rows };
   }
@@ -342,7 +342,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const session = await open(plan.key);
     await replay(session, plan, 2);
     // Another writer moved the header without this session seeing it.
-    await sql(`UPDATE ${schema}.__dogsled_agentic_runs SET token = 'elsewhere'`);
+    await sql(`UPDATE ${schema}.__bobsled_agentic_runs SET token = 'elsewhere'`);
     await expect(session.checkpoint(plan.commands[2]!)).rejects.toMatchObject({
       code: 'lease_lost',
     });
@@ -366,7 +366,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const { open, sql } = await fixture();
     const session = await open(map.key);
     const [row] = await sql(
-      `SELECT retain_until - CAST(epoch(now()) * 1000 AS BIGINT) AS remaining FROM ${schema}.__dogsled_agentic_runs`
+      `SELECT retain_until - CAST(epoch(now()) * 1000 AS BIGINT) AS remaining FROM ${schema}.__bobsled_agentic_runs`
     );
     const days = Number(row!.remaining as bigint) / 86_400_000;
     expect(days).toBeGreaterThan(29.9);
@@ -383,10 +383,10 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
       await replay(session, scenario, 2);
       await session.release();
     }
-    await sql(`UPDATE ${schema}.__dogsled_agentic_runs SET retain_until = 0`);
+    await sql(`UPDATE ${schema}.__bobsled_agentic_runs SET retain_until = 0`);
     const rowsOf = async (scope: string) => {
       const [row] = await sql(
-        `SELECT count(*) AS n FROM ${schema}.__dogsled_agentic_rows WHERE run_hash IN (SELECT run_hash FROM ${schema}.__dogsled_agentic_runs WHERE scope = '${scope}')`
+        `SELECT count(*) AS n FROM ${schema}.__bobsled_agentic_rows WHERE run_hash IN (SELECT run_hash FROM ${schema}.__bobsled_agentic_runs WHERE scope = '${scope}')`
       );
       return Number(row!.n as bigint);
     };
@@ -394,10 +394,10 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     expect(before).toBeGreaterThan(0);
     // The purge has seen both runs as expired. A resume wins one before the purge's claim lands.
     faults.before = async (statement, db) => {
-      if (!/^UPDATE .*__dogsled_agentic_runs.* SET "lease_owner"/.test(statement)) return;
+      if (!/^UPDATE .*__bobsled_agentic_runs.* SET "lease_owner"/.test(statement)) return;
       delete faults.before;
       await db.run(
-        `UPDATE ${schema}.__dogsled_agentic_runs SET lease_owner = 'resume', lease_expires = CAST(epoch(now()) * 1000 AS BIGINT) + 60000 WHERE scope = '${map.key.scope}'`
+        `UPDATE ${schema}.__bobsled_agentic_runs SET lease_owner = 'resume', lease_expires = CAST(epoch(now()) * 1000 AS BIGINT) + 60000 WHERE scope = '${map.key.scope}'`
       );
     };
     const other = await open({ ...map.key, id: 'other', scope: 'third' });
@@ -405,7 +405,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     expect(faults.before).toBeUndefined();
     expect(await rowsOf(map.key.scope)).toBe(before);
     const headers = await sql(
-      `SELECT scope, lease_owner FROM ${schema}.__dogsled_agentic_runs ORDER BY scope`
+      `SELECT scope, lease_owner FROM ${schema}.__bobsled_agentic_runs ORDER BY scope`
     );
     // The resumed run stays, the other expired run is gone, and the new run has its header.
     expect(headers).toEqual([
@@ -420,19 +420,19 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     await replay(first, map, 2);
     await first.release();
     await new Promise((resolve) => setTimeout(resolve, 20));
-    faults.next = once(/^DELETE FROM .*__dogsled_agentic_runs/, 'lose_before');
+    faults.next = once(/^DELETE FROM .*__bobsled_agentic_runs/, 'lose_before');
     await expect(open({ ...map.key, id: 'other' })).rejects.toThrow('Synthetic');
     // The rows are gone and the header is still there, under the purge's own lease.
     await expire();
     const other = await open({ ...map.key, id: 'other' });
     await other.release();
-    const headers = await sql(`SELECT run_id FROM ${schema}.__dogsled_agentic_runs`);
+    const headers = await sql(`SELECT run_id FROM ${schema}.__bobsled_agentic_runs`);
     expect(headers.map((row) => row.run_id)).toEqual(['other']);
   });
 
   it.each([
-    ['its rows and left the header', /^DELETE FROM .*__dogsled_agentic_runs/],
-    ['nothing yet', /^DELETE FROM .*__dogsled_agentic_rows/],
+    ['its rows and left the header', /^DELETE FROM .*__bobsled_agentic_runs/],
+    ['nothing yet', /^DELETE FROM .*__bobsled_agentic_rows/],
   ])('reads a run as new after a purge that deleted %s', async (_, stoppedAt) => {
     const { open, expire } = await fixture();
     const first = await open(map.key, { retentionMs: 1 });
@@ -453,8 +453,8 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
   });
 
   describe('what a load reads', () => {
-    const rowsTable = `${schema}.__dogsled_agentic_rows`;
-    const runsTable = `${schema}.__dogsled_agentic_runs`;
+    const rowsTable = `${schema}.__bobsled_agentic_rows`;
+    const runsTable = `${schema}.__bobsled_agentic_runs`;
     /** Rows that no header reaches, added where a running session cannot sweep them. */
     const plant = (count: number, data: string) =>
       `INSERT INTO ${rowsTable} SELECT first(run_hash), 'off-chain-' || i, '', 0, 'planted', 'attempt', 0, 0, 1, ${data} FROM ${rowsTable}, range(${count}) AS r(i) GROUP BY i`;
@@ -681,7 +681,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const { open } = await fixture();
     const session = await open(plan.key);
     const before = await replay(session, plan, 2);
-    faults.next = once(/^SELECT .* FROM .*__dogsled_agentic_rows/, 'lose_before');
+    faults.next = once(/^SELECT .* FROM .*__bobsled_agentic_rows/, 'lose_before');
     const failure = await session.read().catch((error: unknown) => error);
     expect(failure).toMatchObject({ message: 'Synthetic failure before the statement' });
     expect(await session.read()).toEqual(before);
@@ -692,7 +692,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const { open, sql } = await fixture();
     const session = await open(plan.key);
     await replay(session, plan, 3);
-    await sql(`DELETE FROM ${schema}.__dogsled_agentic_rows WHERE kind = 'attempt'`);
+    await sql(`DELETE FROM ${schema}.__bobsled_agentic_rows WHERE kind = 'attempt'`);
     await expect(session.read()).rejects.toMatchObject({ code: 'corrupt' });
     await session.release();
   });
@@ -702,7 +702,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const session = await open(plan.key);
     await replay(session, plan, 2);
     await sql(
-      `UPDATE ${schema}.__dogsled_agentic_rows SET data = replace(data, 'p1', 'p9') WHERE kind = 'assignment'`
+      `UPDATE ${schema}.__bobsled_agentic_rows SET data = replace(data, 'p1', 'p9') WHERE kind = 'assignment'`
     );
     await expect(session.read()).rejects.toMatchObject({ code: 'corrupt' });
     await session.release();
@@ -713,7 +713,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const session = await open(map.key);
     await replay(session, map, 1);
     await sql(
-      `UPDATE ${schema}.__dogsled_agentic_rows SET data = replace(data, 'original-evidence', 'edited-evidence') WHERE kind = 'assignment'`
+      `UPDATE ${schema}.__bobsled_agentic_rows SET data = replace(data, 'original-evidence', 'edited-evidence') WHERE kind = 'assignment'`
     );
     await expect(session.read()).rejects.toMatchObject({ code: 'corrupt' });
     await session.release();
@@ -913,7 +913,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     let landed: number | undefined;
     faults.before = async (sql, db) => {
       if (!delayed || landed !== undefined) return;
-      if (/^SELECT .*__dogsled_agentic_runs/.test(sql)) read = true;
+      if (/^SELECT .*__bobsled_agentic_runs/.test(sql)) read = true;
       else if (read && rowInsert.test(sql)) {
         landed = (await db.query(delayed.sql, delayed.params)).length;
       }

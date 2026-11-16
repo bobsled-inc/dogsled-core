@@ -77,7 +77,7 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
         await inspect(
           `SELECT table_name FROM information_schema.tables WHERE table_schema = '${schema}'`
         )
-      ).filter((row) => /^_dogsled_pub_[a-f0-9]{48}$/.test(String(row.table_name))).length;
+      ).filter((row) => /^_bobsled_pub_[a-f0-9]{48}$/.test(String(row.table_name))).length;
     return {
       ...fixture,
       context,
@@ -125,9 +125,9 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
         {
           pair_id: assignment.input.rows[0]!.pair_id,
           assessment: "first ' finding",
-          _dogsled_evidence: null,
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         },
       ],
     });
@@ -141,10 +141,10 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
     f.host.prepare = async () => [{ pair_id: 'p0' }];
     expect((await run('replacement')).publication).toBe('confirmed');
     expect(
-      await f.inspect(`SELECT pair_id, _dogsled_run_id FROM ${f.target} ORDER BY pair_id`)
+      await f.inspect(`SELECT pair_id, _bobsled_run_id FROM ${f.target} ORDER BY pair_id`)
     ).toEqual([
-      { pair_id: 'p0', _dogsled_run_id: 'replacement' },
-      { pair_id: 'p1', _dogsled_run_id: 'first' },
+      { pair_id: 'p0', _bobsled_run_id: 'replacement' },
+      { pair_id: 'p1', _bobsled_run_id: 'first' },
     ]);
     f.host.executeAgent = async ({ assignment }) => ({
       contract_version: 2,
@@ -154,8 +154,8 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
       rows: [],
     });
     expect((await run('second')).publication).toBe('confirmed');
-    expect(await f.inspect(`SELECT pair_id, assessment, _dogsled_run_id FROM ${f.target}`)).toEqual(
-      [{ pair_id: 'p1', assessment: "first ' finding", _dogsled_run_id: 'first' }]
+    expect(await f.inspect(`SELECT pair_id, assessment, _bobsled_run_id FROM ${f.target}`)).toEqual(
+      [{ pair_id: 'p1', assessment: "first ' finding", _bobsled_run_id: 'first' }]
     );
     await f.publisher.close();
   });
@@ -235,9 +235,9 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
         {
           pair_id: assignment.input.rows[0]!.pair_id,
           assessment: 'existing finding',
-          _dogsled_evidence: null,
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         },
       ],
     });
@@ -277,7 +277,7 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
       );
     await f.inspect(`CREATE TABLE ${f.target} (${columns.join(', ')})`);
     await f.inspect(
-      `INSERT INTO ${f.target} (pair_id, assessment, _dogsled_run_id) VALUES ('p0', 'Valid finding', 'earlier')`
+      `INSERT INTO ${f.target} (pair_id, assessment, _bobsled_run_id) VALUES ('p0', 'Valid finding', 'earlier')`
     );
     f.host.prepare = async () => [];
     // PostgreSQL rejects regular expressions on nondeterministic collations; a stage copy
@@ -305,11 +305,11 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
       );
     await f.inspect(`CREATE TABLE ${f.target} (${columns.join(', ')})`);
     await f.inspect(
-      `INSERT INTO ${f.target} (pair_id, assessment, _dogsled_run_id, _dogsled_reason) VALUES ('p0', 'kept', 'earlier', '{"summary": "a"}'::json)`
+      `INSERT INTO ${f.target} (pair_id, assessment, _bobsled_run_id, _bobsled_reason) VALUES ('p0', 'kept', 'earlier', '{"summary": "a"}'::json)`
     );
     f.host.prepare = async () => [];
     // PostgreSQL json has no equality operator; the staged jsonb copy does.
-    f.model.tests = [{ type: 'unique', column: '_dogsled_reason' }];
+    f.model.tests = [{ type: 'unique', column: '_bobsled_reason' }];
     const result = await executeAgenticRun(f.host, f.context(), {
       run: { id: 'json', mode: 'start' },
       projectDirectory: f.directory,

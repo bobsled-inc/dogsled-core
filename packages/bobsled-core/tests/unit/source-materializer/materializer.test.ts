@@ -214,7 +214,7 @@ function createPartialHarness(
   });
   const runner = {
     run: vi.fn(async (sql: string) => {
-      if (/UPDATE .*_dogsled_source_metadata/i.test(sql)) {
+      if (/UPDATE .*_bobsled_source_metadata/i.test(sql)) {
         for (const [key, row] of metadataRows.entries()) {
           if (key === 'canonical') continue;
           metadataRows.set(key, {
@@ -1341,7 +1341,7 @@ describe('materializeSource live primary-key dedup', () => {
         tempRootDir: await tempRoot('mat-live-'),
         target: 'duckdb' as const,
         schema: 'temp',
-        table: '__dogsled_live_issues_0',
+        table: '__bobsled_live_issues_0',
         destination,
         readRow: vi.fn().mockResolvedValue(undefined),
         tableExists: vi.fn().mockResolvedValue(false),
@@ -1373,7 +1373,7 @@ describe('materializeSource live primary-key dedup', () => {
     );
     expect(destination.loadAndFinalize).toHaveBeenCalledWith(
       'temp',
-      '__dogsled_live_issues_0',
+      '__bobsled_live_issues_0',
       expect.any(String),
       expect.any(Array),
       'full_refresh',

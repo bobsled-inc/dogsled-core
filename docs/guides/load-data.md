@@ -167,7 +167,7 @@ Override it for one run with `--load-strategy`, or for one stream with
 New columns in the source are added to the table. `--schema-behavior` (or
 `--stream-schema-behavior`) changes that: `evolve` (the default) adds columns,
 `strict` fails when the schema changed, and `freeze` keeps the table as it is.
-Every loaded table also gets `_time_extracted` and `_dogsled_loaded_at` columns.
+Every loaded table also gets `_time_extracted` and `_bobsled_loaded_at` columns.
 
 Other useful flags: `--table-prefix` (for example `stripe__`), `--stream-table
 stream:table` to rename one table, and `--dry-run` to print the strategy for each

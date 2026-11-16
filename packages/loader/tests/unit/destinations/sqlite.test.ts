@@ -76,7 +76,7 @@ describe.skipIf(!hasSqlite)('SqliteDestination', () => {
     const columnNames = rows.map((r) => r['name']);
     const columnTypes = rows.map((r) => r['type']);
 
-    expect(columnNames).toEqual(['id', 'title', '_time_extracted', '_dogsled_loaded_at']);
+    expect(columnNames).toEqual(['id', 'title', '_time_extracted', '_bobsled_loaded_at']);
     expect(columnTypes).toEqual(['INTEGER', 'TEXT', 'TEXT', 'TEXT']);
   });
 
@@ -92,7 +92,7 @@ describe.skipIf(!hasSqlite)('SqliteDestination', () => {
 
     const rows = queryDb(dbPath, `PRAGMA table_info(issues)`);
     const columnNames = rows.map((r) => r['name']);
-    expect(columnNames).toEqual(['id', 'title', '_time_extracted', '_dogsled_loaded_at', 'status']);
+    expect(columnNames).toEqual(['id', 'title', '_time_extracted', '_bobsled_loaded_at', 'status']);
   });
 
   it('ensureTable() on type change throws error for non-widenable types', async () => {
@@ -177,7 +177,7 @@ describe.skipIf(!hasSqlite)('SqliteDestination', () => {
     ]);
   });
 
-  it('loadAndFinalize() append sets _time_extracted and _dogsled_loaded_at', async () => {
+  it('loadAndFinalize() append sets _time_extracted and _bobsled_loaded_at', async () => {
     const dest = new SqliteDestination({ dbPath });
     await dest.initialize();
     await dest.ensureTable('main', 'issues', issueColumns);
@@ -188,9 +188,9 @@ describe.skipIf(!hasSqlite)('SqliteDestination', () => {
     await dest.loadAndFinalize('main', 'issues', jsonlPath, issueColumns, 'append', []);
     await dest.close();
 
-    const rows = queryDb(dbPath, `SELECT _time_extracted, _dogsled_loaded_at FROM issues`);
+    const rows = queryDb(dbPath, `SELECT _time_extracted, _bobsled_loaded_at FROM issues`);
     expect(rows[0]?.['_time_extracted']).toBe('2026-01-01T12:00:00Z');
-    expect(rows[0]?.['_dogsled_loaded_at']).toBeTruthy();
+    expect(rows[0]?.['_bobsled_loaded_at']).toBeTruthy();
   });
 
   it('loadAndFinalize() full_refresh truncates and reloads', async () => {
@@ -429,7 +429,7 @@ describe.skipIf(!hasSqlite)('SqliteDestination', () => {
     // Verify no staging tables remain
     const tables = queryDb(
       dbPath,
-      `SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '_dogsled_stg_%'`
+      `SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '_bobsled_stg_%'`
     );
     expect(tables).toEqual([]);
   });

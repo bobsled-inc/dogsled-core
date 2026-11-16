@@ -36,6 +36,6 @@ transports:
       burst: 2
     headers:
       Accept: application/json
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
       Xero-Tenant-Id: ${{ env.XERO_TENANT_ID }}
 default_transport: default

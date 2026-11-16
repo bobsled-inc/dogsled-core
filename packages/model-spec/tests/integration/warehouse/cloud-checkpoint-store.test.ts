@@ -82,7 +82,7 @@ describe.skipIf(!integrationPath && !schema)('cloud checkpoint store', () => {
       try {
         for (const suffix of ['p', 'c']) {
           await runner.run(
-            `DROP TABLE IF EXISTS ${namespace}.${q(`__dogsled_cp_${digestAgenticState(key).slice(0, 48)}_${suffix}`)}`
+            `DROP TABLE IF EXISTS ${namespace}.${q(`__bobsled_cp_${digestAgenticState(key).slice(0, 48)}_${suffix}`)}`
           );
         }
       } finally {

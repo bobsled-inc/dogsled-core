@@ -60,7 +60,7 @@ export async function run(ctx) {
   const result = await ctx.cli(
     [
       'query',
-      "INSTALL ducklake; LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n, sum(amount) AS total, count(_dogsled_loaded_at) AS stamped FROM lake.bronze.orders",
+      "INSTALL ducklake; LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n, sum(amount) AS total, count(_bobsled_loaded_at) AS stamped FROM lake.bronze.orders",
       '--db-path',
       'query.duckdb',
     ],

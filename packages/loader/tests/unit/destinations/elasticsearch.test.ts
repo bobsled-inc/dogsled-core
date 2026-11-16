@@ -247,7 +247,7 @@ describe('ElasticsearchDestination', () => {
       existingMapping: {
         id: { type: 'long' },
         _time_extracted: { type: 'date' },
-        _dogsled_loaded_at: { type: 'date' },
+        _bobsled_loaded_at: { type: 'date' },
       },
     });
     const { dest } = await createDest(client);
@@ -425,12 +425,12 @@ describe('ElasticsearchDestination.deleteRows', () => {
       size: 500,
       _source: false,
       runtime_mappings: {
-        dogsled_replace_key: {
+        bobsled_replace_key: {
           type: 'keyword',
           script: { params: { field: 'document_id' } },
         },
       },
-      query: { terms: { dogsled_replace_key: ['a"1', 'b'] } },
+      query: { terms: { bobsled_replace_key: ['a"1', 'b'] } },
     });
     expect(request).toHaveBeenCalledWith(
       expect.objectContaining({ url: 'http://localhost:9200/_bulk?refresh=true' })
@@ -449,9 +449,9 @@ describe('ElasticsearchDestination.deleteRows', () => {
 
     expect(searches).toHaveLength(2);
     expect(
-      (searches[0]!.query as { terms: Record<string, string[]> }).terms.dogsled_replace_key
+      (searches[0]!.query as { terms: Record<string, string[]> }).terms.bobsled_replace_key
     ).toHaveLength(500);
-    expect(searches[1]!.query).toEqual({ terms: { dogsled_replace_key: ['v500'] } });
+    expect(searches[1]!.query).toEqual({ terms: { bobsled_replace_key: ['v500'] } });
   });
 
   it('is a no-op when the index does not exist', async () => {

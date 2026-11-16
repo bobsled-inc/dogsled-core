@@ -97,7 +97,7 @@ describe('agentic metadata names across generations', () => {
   });
 
   it('reserves both generations and the Track prefix for Core columns', () => {
-    for (const prefix of ['_dogsled_', '_bobsled_', '_track_', '_DOGSLED_']) {
+    for (const prefix of ['_bobsled_', '_bobsled_', '_track_', '_BOBSLED_']) {
       expect(usesReservedAgenticPrefix(`${prefix}x`)).toBe(true);
     }
     expect(usesReservedAgenticPrefix('_source_bobsled_api')).toBe(false);

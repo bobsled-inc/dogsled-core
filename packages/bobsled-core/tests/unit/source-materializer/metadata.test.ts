@@ -16,7 +16,7 @@ function fakeRunner(rows: MetadataRow[] = []) {
 
   function handleSql(sql: string): { rows: MetadataRow[]; rowCount: number } {
     calls.push(sql);
-    if (/SELECT.*FROM.*_dogsled_source_metadata/is.test(sql)) {
+    if (/SELECT.*FROM.*_bobsled_source_metadata/is.test(sql)) {
       const sourceMatch = /source_name\s*=\s*'([^']+)'/i.exec(sql);
       const filterMatch = /filter_hash\s*=\s*'([^']+)'/i.exec(sql);
       const kindMatch =
@@ -77,7 +77,7 @@ describe('metadata helpers', () => {
     await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'duckdb' });
     expect(runner.calls.some((sql) => /CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS/i.test(sql))).toBe(true);
     const create = runner.calls.find((sql: string) => sql.startsWith('CREATE TABLE'));
-    expect(create).toContain('"analytics"."_dogsled_source_metadata"');
+    expect(create).toContain('"analytics"."_bobsled_source_metadata"');
   });
 
   it('ensureMetadataTable adds cursor and snapshot columns additively', async () => {
@@ -104,7 +104,7 @@ describe('metadata helpers', () => {
     await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
     // An earlier table name adds a catalog probe first once the rename applies.
     const create = runner.calls.find((sql: string) => sql.startsWith('CREATE TABLE'));
-    expect(create).toContain('`analytics`.`_dogsled_source_metadata`');
+    expect(create).toContain('`analytics`.`_bobsled_source_metadata`');
     expect(create).toContain('source_name  STRING');
     expect(create).toContain('record_count INT64');
   });

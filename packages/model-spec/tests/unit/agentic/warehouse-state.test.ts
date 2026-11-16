@@ -82,7 +82,7 @@ describe.each(checkpointIntegrations)(
       expect(result.deadlineAt).toBe(unlimited ? null : new Date(restartedAt + 1000).toISOString());
       expect(result.chargedTokens).toBe(unlimited ? 4 : 104);
       const tableNames = run.mock.calls.flatMap(([sql]) =>
-        [...sql.matchAll(/__dogsled_cp_[a-f0-9]{48}_[cp]/gi)].map((match) => match[0])
+        [...sql.matchAll(/__bobsled_cp_[a-f0-9]{48}_[cp]/gi)].map((match) => match[0])
       );
       expect(new Set(tableNames).size).toBe(2);
       for (const name of tableNames) {

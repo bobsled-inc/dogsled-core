@@ -55,9 +55,9 @@ function request() {
 }
 const row = {
   pair_id: 'a',
-  _dogsled_evidence: null,
-  _dogsled_confidence: null,
-  _dogsled_reason: null,
+  _bobsled_evidence: null,
+  _bobsled_confidence: null,
+  _bobsled_reason: null,
 };
 const usage = { inputTokens: 100, outputTokens: 50, totalTokens: 150 };
 
@@ -177,10 +177,10 @@ test('the provider cannot author an evidence retrieval date', async () => {
     const wire = z.toJSONSchema(options.schema, { io: 'input' });
     const json = JSON.stringify(wire);
     assert.ok(!json.includes('retrieved_at'));
-    return { ok: true, value: { rows: [{ ...row, _dogsled_evidence: [evidence] }] }, usage };
+    return { ok: true, value: { rows: [{ ...row, _bobsled_evidence: [evidence] }] }, usage };
   })(req);
   assert.equal(result.status, 'succeeded');
-  assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, req.assignment.input.retrieved_at);
+  assert.equal(result.rows[0]._bobsled_evidence[0].retrieved_at, req.assignment.input.retrieved_at);
 });
 
 test('an invented provider date is rejected rather than saved', async () => {
@@ -192,7 +192,7 @@ test('an invented provider date is rejected rather than saved', async () => {
       rows: [
         {
           ...row,
-          _dogsled_evidence: [
+          _bobsled_evidence: [
             {
               source: 'prepared',
               reference: 'a',
@@ -216,7 +216,7 @@ test('evidence without a saved host date fails rather than inventing a date', as
       rows: [
         {
           ...row,
-          _dogsled_evidence: [{ source: 'prepared', reference: 'a', support_excerpt: null }],
+          _bobsled_evidence: [{ source: 'prepared', reference: 'a', support_excerpt: null }],
         },
       ],
     },
@@ -251,13 +251,13 @@ test('named reduce inputs stay separate and evidence uses the matching host date
     assert.equal(prompt.inputs.empty.complete, true);
     const answer = {
       ...row,
-      _dogsled_evidence: [{ source: 'second', reference: 'a', support_excerpt: null }],
+      _bobsled_evidence: [{ source: 'second', reference: 'a', support_excerpt: null }],
     };
     return { ok: true, value: { rows: [answer] }, usage };
   });
   const result = await execute(req);
   assert.equal(result.status, 'succeeded');
-  assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, timestamp);
+  assert.equal(result.rows[0]._bobsled_evidence[0].retrieved_at, timestamp);
 });
 
 test('a rejected key is an auth failure that is not billed or retried', async () => {

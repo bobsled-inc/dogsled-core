@@ -38,11 +38,11 @@ Condensed checklist:
 ## Key Behaviors
 
 - **Two loader paths**: `runFileLoader` (local/gcs/s3) and `runDatabaseLoader` (duckdb/bigquery)
-- **System columns**: `_time_extracted` (set by extractor), `_dogsled_loaded_at` (set by loader at merge time). Constants in `database.ts` as `SYSTEM_COLUMNS`
+- **System columns**: `_time_extracted` (set by extractor), `_bobsled_loaded_at` (set by loader at merge time). Constants in `database.ts` as `SYSTEM_COLUMNS`
 - **Load strategies**: append (insert), merge (staging + MERGE by key_properties), full_refresh (truncate-on-first-flush)
 - **Per-stream strategy resolution**: CLI `--load-strategy` overrides all > SCHEMA `load_strategy` per-stream > fallback `append`
 - **Schema evolution**: New columns auto-added via ALTER TABLE; type conflicts error
-- **Staging table pattern**: Prefix `_dogsled_stg_` unified across all destinations
+- **Staging table pattern**: Prefix `_bobsled_stg_` unified across all destinations
 - **RECORD enrichment**: `_time_extracted` added in `run.ts` before buffering
 - **BATCH passthrough**: Points at extractor-created files; skips JS-level parsing
 - **STATE forwarding**: Forwarded to stdout after flushing buffered records

@@ -82,7 +82,7 @@ const note = {
   ending: 'unknown',
   support_excerpt: 'identity',
   article_text: 'A story about identity.',
-  _dogsled_run_id: 'tv-test',
+  _bobsled_run_id: 'tv-test',
 };
 it('rejects invented article evidence, unsupported labels and missing evidence for an ending', async () => {
   const root = await project();
@@ -212,7 +212,7 @@ const passageNote = {
   in_shortlist: true,
   revision_id: 20,
   article_text: 'A story about identity.',
-  _dogsled_run_id: 'tv-test',
+  _bobsled_run_id: 'tv-test',
   fit: 'supported',
   explanation: 'The passage supports the criterion.',
   passage_ids: ['p1'],

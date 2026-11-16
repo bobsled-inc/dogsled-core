@@ -69,7 +69,7 @@ There is no file lock or destination-side claim. Two concurrent `dogsled model r
 
 Operator guidance: serialize publish runs per model in CI, CRON, and workflow schedulers.
 
-Roadmap: a destination-side `_dogsled_xwh_locks` table plus stale-lock recovery command.
+Roadmap: a destination-side `_bobsled_xwh_locks` table plus stale-lock recovery command.
 
 ### Single Destination Per Model
 

@@ -2,7 +2,7 @@ import { CommandError } from '@bobsled-inc/protocol';
 
 import { LEGACY_OWNERSHIP_LABELS } from '../legacy-names.js';
 
-export const OWNERSHIP_LABEL = 'dogsled_temp_dataset';
+export const OWNERSHIP_LABEL = 'bobsled_temp_dataset';
 
 /** The label Core writes, then earlier labels it still accepts as proof of ownership. */
 export const OWNERSHIP_LABELS: readonly string[] = [

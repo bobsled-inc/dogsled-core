@@ -584,7 +584,7 @@ export class MsSqlDestination implements DatabaseDestination {
         return { rowsAffected: 0 };
       }
 
-      const stagingName = `_dogsled_stg_${safeTable}`;
+      const stagingName = `_bobsled_stg_${safeTable}`;
       const quotedStaging = `${quoteMsSqlIdentifier(this.schema)}.${quoteMsSqlIdentifier(stagingName)}`;
 
       const stagingColDefs = [

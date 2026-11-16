@@ -34,7 +34,7 @@ export const executeAgent = createExecutor(async (_connection, options) => {
   const value = options.schema.parse({ rows: [{
     pair_id: pair.pair_id, assessment, reason: 'Prepared synthetic evidence only.',
     evidence: pair.prepared_evidence,
-    _dogsled_evidence: null, _dogsled_confidence: null, _dogsled_reason: null,
+    _bobsled_evidence: null, _bobsled_confidence: null, _bobsled_reason: null,
   }] });
   return { ok: true, value, usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 }, tokenUsage: 150, costUsd: 0 };
 });
@@ -68,9 +68,9 @@ export const executeAgent = createLoopExecutor(async (_connection, options) => {
   return { ok: true, usage: { inputTokens: 120, outputTokens: 60, totalTokens: 180 },
     value: { decision: { action: 'finish', rows: [{ pair_id: pair.pair_id,
       assessment, reason: 'Checked scoped source rows.', evidence: pair.prepared_evidence,
-      _dogsled_evidence: [{ source: 'undecided_pairs', reference: pair.pair_id,
+      _bobsled_evidence: [{ source: 'undecided_pairs', reference: pair.pair_id,
         support_excerpt: null, observation: 1 }],
-      _dogsled_confidence: null, _dogsled_reason: null,
+      _bobsled_confidence: null, _bobsled_reason: null,
     }] } } };
 });
 `;

@@ -125,7 +125,7 @@ export async function loadSnowflakeAndFinalize(
   let stagingName: string | undefined;
   let qualifiedStaging: string | undefined;
   if (strategy === 'merge') {
-    stagingName = `_DOGSLED_STG_${safeTable}_${randomUUID().replaceAll('-', '')}`;
+    stagingName = `_BOBSLED_STG_${safeTable}_${randomUUID().replaceAll('-', '')}`;
     qualifiedStaging = `${context.quoteIdentifier(safeSchema)}.${context.quoteIdentifier(stagingName)}`;
     const stagingColDefs = [
       ...columns.map((c) => `${context.quoteIdentifier(c.name)} ${context.mapColumnType(c)}`),
@@ -187,9 +187,9 @@ export async function loadSnowflakeAndFinalize(
   const userColList = columns.map((c) => context.quoteIdentifier(c.name)).join(', ');
   const allColList = `${userColList}, ${context.quoteIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)}, ${context.quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)}`;
   // Parquet COPY INTO relies on MATCH_BY_COLUMN_NAME and cannot inject CURRENT_TIMESTAMP()
-  // for _dogsled_loaded_at in a single statement. The follow-up UPDATE backfills any NULLs.
+  // for _bobsled_loaded_at in a single statement. The follow-up UPDATE backfills any NULLs.
   // NOTE: COPY + UPDATE are not atomic in a single transaction here — if UPDATE fails after
-  // COPY succeeded, retried runs may leave _dogsled_loaded_at NULL until the next load flushes
+  // COPY succeeded, retried runs may leave _bobsled_loaded_at NULL until the next load flushes
   // them. The WHERE clause is idempotent (only touches NULL rows) so retries converge.
   const setLoadedAtSql = (qualifiedName: string) =>
     `UPDATE ${qualifiedName} SET ${context.quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} = CURRENT_TIMESTAMP() WHERE ${context.quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} IS NULL`;

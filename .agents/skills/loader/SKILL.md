@@ -85,7 +85,7 @@ The loader resolves strategy per-stream with this priority:
 ### Merge Strategy Detail
 
 1. Records buffered to temp JSONL file
-2. Loaded into `_dogsled_stg_<stream>` staging table
+2. Loaded into `_bobsled_stg_<stream>` staging table
 3. `MERGE INTO <stream> USING <staging>` on `key_properties`
 4. Matched rows: UPDATE all non-key columns
 5. Unmatched rows: INSERT
@@ -98,7 +98,7 @@ The loader automatically adds these columns:
 | Column               | Source                     | Description                                     |
 | -------------------- | -------------------------- | ----------------------------------------------- |
 | `_time_extracted`    | Extractor (RECORD message) | When the record was extracted from the API      |
-| `_dogsled_loaded_at` | Loader (at merge time)     | When the record was loaded into the destination |
+| `_bobsled_loaded_at` | Loader (at merge time)     | When the record was loaded into the destination |
 
 ## Output Formats (File Destinations)
 

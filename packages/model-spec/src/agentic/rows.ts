@@ -124,9 +124,9 @@ function judgmentSchema(evidenceSources?: readonly string[]) {
       : AgenticEvidenceSchema.extend({ source: z.enum(evidenceSources) });
   return z
     .object({
-      _dogsled_evidence: z.array(evidence).min(1).max(256).nullable(),
-      _dogsled_confidence: z.number().min(0).max(1).nullable(),
-      _dogsled_reason: AgenticReasonSchema.nullable(),
+      _bobsled_evidence: z.array(evidence).min(1).max(256).nullable(),
+      _bobsled_confidence: z.number().min(0).max(1).nullable(),
+      _bobsled_reason: AgenticReasonSchema.nullable(),
     })
     .strict();
 }

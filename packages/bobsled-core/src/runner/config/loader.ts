@@ -938,6 +938,9 @@ export async function validateBobsledConfig(
 ): Promise<ValidationResult> {
   const errors: ValidationIssue[] = [];
   const warnings: string[] = [];
+  // Label whole-config issues with the root file this project actually uses.
+  const rootFile =
+    CONFIG_NAMES.find((name) => fs.existsSync(path.join(projectRoot, name))) ?? 'bobsled.yml';
   const invalid = (): ValidationResult => ({
     valid: false,
     errors,
@@ -966,7 +969,7 @@ export async function validateBobsledConfig(
     modelPipelines = resolveModelPipelines(config);
     entityGraphPipelines = resolveEntityGraphPipelines(config);
   } catch (e) {
-    errors.push({ path: 'bobsled.yml', message: (e as Error).message });
+    errors.push({ path: rootFile, message: (e as Error).message });
     return invalid();
   }
 
@@ -977,7 +980,7 @@ export async function validateBobsledConfig(
       if (!(destinationName in config.destinations)) {
         const available = Object.keys(config.destinations).join(', ');
         errors.push({
-          path: `bobsled.yml:pipelines.${pipeline.name}`,
+          path: `${rootFile}:pipelines.${pipeline.name}`,
           message: `Destination "${destinationName}" not found in top-level destinations map. Available: ${available}`,
         });
       }
@@ -987,7 +990,7 @@ export async function validateBobsledConfig(
       const destination = destinationName ? config.destinations[destinationName] : undefined;
       if (pipeline.destinationNames.length !== 1 || destination?.type !== 'bobsled_managed') {
         errors.push({
-          path: `bobsled.yml:pipelines.${pipeline.name}.destination_warehouse`,
+          path: `${rootFile}:pipelines.${pipeline.name}.destination_warehouse`,
           message:
             'destination_warehouse is only supported with a singular destination whose type is "bobsled_managed".',
         });
@@ -1004,7 +1007,7 @@ export async function validateBobsledConfig(
           ))
       ) {
         errors.push({
-          path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.table_ownership_marker`,
+          path: `${rootFile}:pipelines.${pipeline.name}.resources.${resource.name}.table_ownership_marker`,
           message: 'table_ownership_marker requires one supported warehouse destination',
         });
       }
@@ -1024,7 +1027,7 @@ export async function validateBobsledConfig(
     );
     if (unsupported.length > 0) {
       errors.push({
-        path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
+        path: `${rootFile}:pipelines.${pipeline.name}.resources`,
         message:
           `Per-resource load_strategy/table overrides require database destinations; ` +
           `file destination(s) [${fileDestinations.join(', ')}] cannot apply overrides on ` +

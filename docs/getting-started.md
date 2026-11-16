@@ -150,7 +150,7 @@ order_id	customer	amount
 ```
 
 Dogsled adds two columns to every loaded table: `_time_extracted` and
-`_dogsled_loaded_at`.
+`_bobsled_loaded_at`.
 
 ## Build a model
 

@@ -360,10 +360,10 @@ describe('Ossie export converter', () => {
     expect(document.datasets[0]?.fields.map((field) => field.name)).toEqual([
       'order_id',
       'summary',
-      '_dogsled_run_id',
-      '_dogsled_evidence',
-      '_dogsled_confidence',
-      '_dogsled_reason',
+      '_bobsled_run_id',
+      '_bobsled_evidence',
+      '_bobsled_confidence',
+      '_bobsled_reason',
     ]);
     expect(document.datasets[0]?.custom_extensions ?? []).toEqual([]);
     expect(result.files[0]?.content).not.toContain('build_expression');

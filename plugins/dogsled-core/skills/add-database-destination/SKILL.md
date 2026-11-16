@@ -108,8 +108,8 @@ export interface DatabaseDestination {
 Key shared utilities from `database.ts`:
 
 - `SYSTEM_COLUMNS.TIME_EXTRACTED` = `"_time_extracted"` — set by extractor, arrives in JSONL
-- `SYSTEM_COLUMNS.LOADED_AT` = `"_dogsled_loaded_at"` — set by destination at load time (CURRENT_TIMESTAMP or equivalent)
-- `sanitizeTableName(name)` — validates `[A-Za-z_][A-Za-z0-9_]*`, rejects `_dogsled_stg_` prefix
+- `SYSTEM_COLUMNS.LOADED_AT` = `"_bobsled_loaded_at"` — set by destination at load time (CURRENT_TIMESTAMP or equivalent)
+- `sanitizeTableName(name)` — validates `[A-Za-z_][A-Za-z0-9_]*`, rejects `_bobsled_stg_` prefix
 - `sanitizeSchemaName(name)` — same validation for schema names
 - `buildClusterColumns(columns, options)` — builds up to 4 cluster columns from cursor_field + key_properties
 
@@ -215,7 +215,7 @@ This method is called before every `loadAndFinalize()`. It must be idempotent.
 1. Query `information_schema.columns` (or equivalent) for existing columns
 2. If table does not exist:
    - Build column definitions from `columns` array using the type mapping function
-   - Add system columns: `_time_extracted TIMESTAMP` and `_dogsled_loaded_at TIMESTAMP`
+   - Add system columns: `_time_extracted TIMESTAMP` and `_bobsled_loaded_at TIMESTAMP`
    - Execute `CREATE TABLE IF NOT EXISTS`
    - Populate the column cache
 3. If table exists:
@@ -231,16 +231,16 @@ This method is called before every `loadAndFinalize()`. It must be idempotent.
 
 #### 3g: `loadAndFinalize()` — Load data with strategy-specific logic
 
-This method receives a `filePath` pointing to a JSONL file containing records with all data columns plus `_time_extracted`. The `_dogsled_loaded_at` column is NOT in the JSONL — it must be set by the destination at load time.
+This method receives a `filePath` pointing to a JSONL file containing records with all data columns plus `_time_extracted`. The `_bobsled_loaded_at` column is NOT in the JSONL — it must be set by the destination at load time.
 
 **Three strategy branches:**
 
 ##### Append strategy (`strategy === 'append'`)
 
-Straightforward INSERT from the JSONL file into the target table. Set `_dogsled_loaded_at` to `CURRENT_TIMESTAMP` (or equivalent) during the INSERT.
+Straightforward INSERT from the JSONL file into the target table. Set `_bobsled_loaded_at` to `CURRENT_TIMESTAMP` (or equivalent) during the INSERT.
 
 ```sql
-INSERT INTO <target> (<col_list>, _dogsled_loaded_at)
+INSERT INTO <target> (<col_list>, _bobsled_loaded_at)
 SELECT <data_cols>, CURRENT_TIMESTAMP FROM <staged_data>
 ```
 
@@ -262,10 +262,10 @@ This ensures that multi-flush full_refresh runs don't lose data from earlier flu
 The most complex path. Uses a staging table + MERGE statement with dedup and time guard.
 
 1. **Validate**: `keyColumns.length > 0` — throw if empty
-2. **Create staging table** with a unique name: `_dogsled_stg_<table>_<random_hex>`
+2. **Create staging table** with a unique name: `_bobsled_stg_<table>_<random_hex>`
    - Load JSONL data into staging
    - **Dedup within the batch** using `ROW_NUMBER() OVER (PARTITION BY <key_cols> ORDER BY _time_extracted DESC NULLS LAST) = 1`
-   - Set `_dogsled_loaded_at = CURRENT_TIMESTAMP` in the staging SELECT
+   - Set `_bobsled_loaded_at = CURRENT_TIMESTAMP` in the staging SELECT
 3. **Execute MERGE**:
 
    ```sql
@@ -289,7 +289,7 @@ The most complex path. Uses a staging table + MERGE statement with dedup and tim
 **BigQuery-specific MERGE patterns** (reference for cloud warehouses):
 
 - Match target rows on key columns only. Never add a partition-column range derived from the staging batch to the ON clause: `_time_extracted` changes every load and cursor or `partition_by` values can move forward, so the key's existing row falls outside the range and is inserted again as a duplicate
-- `_dogsled_loaded_at` as tiebreaker in QUALIFY dedup (for cross-batch ordering)
+- `_bobsled_loaded_at` as tiebreaker in QUALIFY dedup (for cross-batch ordering)
 - Staging table expiration (1-hour TTL) as safety net if cleanup fails
 
 #### 3h: `close()` — Release resources
@@ -490,7 +490,7 @@ Create `packages/loader/tests/unit/destinations/<name>.test.ts` following the Du
 10. Staging table is dropped even on error
 11. `close()` is idempotent
 12. JSONL with missing fields results in NULL
-13. `_dogsled_loaded_at` is populated for append and merge
+13. `_bobsled_loaded_at` is populated for append and merge
 14. `_time_extracted` is populated correctly
 15. Merge: older timestamp does not overwrite newer data (time guard test)
 16. `deleteRows()` deletes matching rows with bound values, batches, and is a no-op for a missing table
@@ -551,17 +551,17 @@ Every table gets two system columns added by `ensureTable()`:
 | Column               | Source      | Value                                              |
 | -------------------- | ----------- | -------------------------------------------------- |
 | `_time_extracted`    | Extractor   | Timestamp when the record was extracted (in JSONL) |
-| `_dogsled_loaded_at` | Destination | `CURRENT_TIMESTAMP` at load time (NOT in JSONL)    |
+| `_bobsled_loaded_at` | Destination | `CURRENT_TIMESTAMP` at load time (NOT in JSONL)    |
 
 ### Staging Table Naming
 
-Merge strategy staging tables use the prefix `_dogsled_stg_` followed by the table name and a random hex suffix:
+Merge strategy staging tables use the prefix `_bobsled_stg_` followed by the table name and a random hex suffix:
 
 ```
-_dogsled_stg_<table>_<16-hex-chars>
+_bobsled_stg_<table>_<16-hex-chars>
 ```
 
-`sanitizeTableName()` rejects any user table name starting with `_dogsled_stg_` to prevent collisions.
+`sanitizeTableName()` rejects any user table name starting with `_bobsled_stg_` to prevent collisions.
 
 ### Identifier Sanitization
 

@@ -375,11 +375,11 @@ export class DuckDbDestination implements DatabaseDestination {
     const dataCols = [...columns.map((c) => c.name), SYSTEM_COLUMNS.TIME_EXTRACTED];
     const dataColList = dataCols.map(quoteIdentifier).join(', ');
 
-    // All target columns including _dogsled_loaded_at (set via CURRENT_TIMESTAMP in SELECT)
+    // All target columns including _bobsled_loaded_at (set via CURRENT_TIMESTAMP in SELECT)
     const allCols = [...dataCols, SYSTEM_COLUMNS.LOADED_AT];
     const colList = allCols.map(quoteIdentifier).join(', ');
 
-    // Build typed read_json expression (excludes _dogsled_loaded_at — not in JSONL)
+    // Build typed read_json expression (excludes _bobsled_loaded_at — not in JSONL)
     const escapedPath = escapeSqlString(filePath);
     const typedColumns = [
       ...columns.map(
@@ -392,7 +392,7 @@ export class DuckDbDestination implements DatabaseDestination {
         ? `read_parquet('${escapedPath}')`
         : `read_json('${escapedPath}', format = 'newline_delimited', auto_detect = false, columns = {${typedColumns.join(', ')}})`;
 
-    // DuckDB: set _dogsled_loaded_at via CURRENT_TIMESTAMP in SELECT (free — no extra query).
+    // DuckDB: set _bobsled_loaded_at via CURRENT_TIMESTAMP in SELECT (free — no extra query).
     // DuckDB cannot use column DEFAULT because function-based defaults corrupt persistent files.
     const selectWithLoadedAt = `${dataColList}, CURRENT_TIMESTAMP AS ${quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)}`;
 
@@ -430,11 +430,11 @@ export class DuckDbDestination implements DatabaseDestination {
     }
 
     // 16 hex chars = 64 bits of entropy — short enough for DuckDB identifiers, collision-resistant.
-    const stagingName = `_dogsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
+    const stagingName = `_bobsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
     const stagingTable = tempMainTableRef(stagingName);
 
     try {
-      // Create TEMP staging table with deduped data + _dogsled_loaded_at
+      // Create TEMP staging table with deduped data + _bobsled_loaded_at
       const keyColList = keyColumns.map(quoteIdentifier).join(', ');
       await runStatement(
         conn,

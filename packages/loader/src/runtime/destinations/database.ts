@@ -15,14 +15,14 @@ import { legacyLoadedAtColumns } from './loaded-at-takeover.js';
 
 export const SYSTEM_COLUMNS = {
   TIME_EXTRACTED: '_time_extracted',
-  LOADED_AT: '_dogsled_loaded_at',
+  LOADED_AT: '_bobsled_loaded_at',
 } as const;
 
 /** SQLite has no column comments; this table records finished loaded-at copies there. */
-export const LOADED_AT_COPIES_TABLE = '_dogsled_loaded_at_copies';
+export const LOADED_AT_COPIES_TABLE = '_bobsled_loaded_at_copies';
 
 /** Prefix of the unique index the SQL destinations add for merge keys (`<prefix><table>`). */
-export const UNIQUE_INDEX_PREFIX = '_dogsled_uq_';
+export const UNIQUE_INDEX_PREFIX = '_bobsled_uq_';
 
 /**
  * Column names Core owns on a loaded table: the two it writes plus earlier

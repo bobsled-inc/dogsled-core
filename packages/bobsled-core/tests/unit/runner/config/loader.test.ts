@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 import { CommandError } from '@bobsled-inc/protocol';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -720,6 +721,19 @@ describe('validateBobsledConfig', () => {
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
   });
+
+  it.each(['bobsled.yml', ROOT_CONFIG_FILE_SPELLINGS[0]!])(
+    'labels config issues with the root file the project uses (%s)',
+    async (name) => {
+      fs.writeFileSync(path.join(projectRoot, name), 'pipelines: {}\n');
+
+      const result = await validateBobsledConfig(makeConfig({ destinations: {} }), projectRoot);
+
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ path: `${name}:pipelines.github` })
+      );
+    }
+  );
 
   it('validates a project-local custom API matrix against its resource inputs', async () => {
     const customCatalog: IntegrationsLib = {

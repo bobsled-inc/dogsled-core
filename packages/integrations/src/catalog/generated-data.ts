@@ -42,7 +42,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.airtable.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -350,7 +350,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://amplitude.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -632,7 +632,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.apollo.io",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -917,7 +917,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://app.asana.com/api/1.0",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -1662,7 +1662,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.BAMBOOHR_SUBDOMAIN }}.bamboohr.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -2597,7 +2597,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.BOBSLED_API_HOST }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor",
+            "User-Agent": "bobsled-core-extractor",
             "sled-client-id": "${{ env.BOBSLED_CLIENT_ID }}"
           },
           "optional_headers": {
@@ -2769,7 +2769,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.brex.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -3500,7 +3500,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.calendly.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -4589,7 +4589,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.CHARGEBEE_SITE }}.chargebee.com/api/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -5985,7 +5985,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://circleci.com/api/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -6494,7 +6494,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.clickup.com/api",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -7797,7 +7797,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.close.com/api/v1",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -8157,7 +8157,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.cloudflare.com/client/v4",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -8800,7 +8800,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.CONFLUENCE_SITE }}.atlassian.net",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -9542,7 +9542,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.customer.io",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -10226,7 +10226,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.datadoghq.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor",
+            "User-Agent": "bobsled-core-extractor",
             "DD-APPLICATION-KEY": "${{ env.DATADOG_APPLICATION_KEY }}"
           },
           "auth": {
@@ -11253,7 +11253,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://graph.facebook.com/${{ env.FACEBOOK_API_VERSION }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -11702,7 +11702,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://graph.facebook.com/${{ env.FACEBOOK_API_VERSION }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -12129,7 +12129,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.FIELDROUTES_SUBDOMAIN }}.fieldroutes.com/api",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -14070,7 +14070,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.FRESHDESK_DOMAIN }}.freshdesk.com/api/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -14737,7 +14737,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.FRESHSALES_DOMAIN }}.myfreshworks.com/crm/sales/api",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -15189,7 +15189,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api2.frontapp.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -15789,7 +15789,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.github.com",
           "headers": {
             "Accept": "application/vnd.github+json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -15802,7 +15802,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.github.com",
           "headers": {
             "Accept": "application/vnd.github+json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -18853,7 +18853,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "id": "default",
           "base_url": "https://gitlab.com/api/v4",
           "headers": {
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -19037,7 +19037,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.gong.io/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -19407,7 +19407,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://googleads.googleapis.com/${{ env.GOOGLE_ADS_API_VERSION }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor",
+            "User-Agent": "bobsled-core-extractor",
             "developer-token": "${{ env.GOOGLE_ADS_DEVELOPER_TOKEN }}"
           },
           "auth": {
@@ -19739,7 +19739,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://analyticsdata.googleapis.com/v1beta",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -20259,7 +20259,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://www.googleapis.com/webmasters/v3",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -20498,7 +20498,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://sheets.googleapis.com/v4",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -20866,7 +20866,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://harvest.greenhouse.io/v1",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -21396,7 +21396,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.helpscout.net/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -21725,7 +21725,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "id": "default",
           "base_url": "https://api.hubapi.com",
           "headers": {
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -23841,7 +23841,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://graph.facebook.com/${{ env.FACEBOOK_API_VERSION }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -24187,7 +24187,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.intercom.io",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -25146,7 +25146,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.JIRA_SITE }}.atlassian.net",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -27222,7 +27222,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://a.klaviyo.com/api",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor",
+            "User-Agent": "bobsled-core-extractor",
             "revision": "2026-01-15"
           },
           "auth": {
@@ -28428,7 +28428,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://app.launchdarkly.com/api/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -28882,7 +28882,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.lever.co/v1",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -29210,7 +29210,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "id": "graphql",
           "base_url": "https://api.linear.app",
           "headers": {
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -31412,7 +31412,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.linkedin.com/rest",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor",
+            "User-Agent": "bobsled-core-extractor",
             "X-Restli-Protocol-Version": "2.0.0",
             "Linkedin-Version": "${{ env.LINKEDIN_API_VERSION }}"
           },
@@ -31778,7 +31778,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.MAILCHIMP_SERVER_PREFIX }}.api.mailchimp.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -32037,7 +32037,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.MARKETO_MUNCHKIN_ID }}.mktorest.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "custom-token",
@@ -32455,7 +32455,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://mixpanel.com/api/2.0",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -32812,7 +32812,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.monday.com/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -33160,7 +33160,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.notion.com",
           "headers": {
             "Notion-Version": "2022-06-28",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -33926,7 +33926,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.outreach.io/api/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor",
+            "User-Agent": "bobsled-core-extractor",
             "Content-Type": "application/vnd.api+json"
           },
           "auth": {
@@ -34324,7 +34324,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.pagerduty.com",
           "headers": {
             "Accept": "application/vnd.pagerduty+json;version=2",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -35008,7 +35008,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.pinterest.com/v5",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -35344,7 +35344,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.pipedrive.com/v1",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -36377,7 +36377,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.POSTHOG_HOST }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -37301,7 +37301,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "id": "default",
           "base_url": "https://api.usepylon.com",
           "headers": {
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -38270,7 +38270,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://quickbooks.api.intuit.com/v3/company/${{ env.QUICKBOOKS_COMPANY_ID }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -38766,7 +38766,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://v3.recurly.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -39024,7 +39024,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.SALESFORCE_DOMAIN }}/services/data/${{ env.SALESFORCE_API_VERSION }}",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -40441,7 +40441,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.segmentapis.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -40848,7 +40848,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.sendgrid.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -41258,7 +41258,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://sentry.io",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -42558,7 +42558,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.SERVICENOW_INSTANCE }}.service-now.com/api/now",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -43113,7 +43113,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.SHOPIFY_STORE }}.myshopify.com/admin/api/2026-04",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -44398,7 +44398,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "id": "default",
           "base_url": "https://slack.com/api",
           "headers": {
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -45051,7 +45051,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "id": "default",
           "base_url": "https://server.smartlead.ai",
           "headers": {
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -45530,7 +45530,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://adsapi.snapchat.com/v1",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -46029,7 +46029,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "id": "default",
           "base_url": "https://api.stripe.com",
           "headers": {
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -48482,7 +48482,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://business-api.tiktok.com/open_api/v1.3",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "api-key",
@@ -48839,7 +48839,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.twilio.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "basic",
@@ -49587,7 +49587,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.x.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -50001,7 +50001,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.typeform.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -50316,7 +50316,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.vantage.sh/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -52923,7 +52923,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "headers": {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -54589,7 +54589,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.xero.com/api.xro/2.0",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor",
+            "User-Agent": "bobsled-core-extractor",
             "Xero-Tenant-Id": "${{ env.XERO_TENANT_ID }}"
           },
           "auth": {
@@ -55233,7 +55233,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://${{ env.ZENDESK_SUBDOMAIN }}.zendesk.com/api/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "bearer",
@@ -55848,7 +55848,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://api.zoom.us/v2",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",
@@ -56240,7 +56240,7 @@ export const CATALOG_MANIFEST: CatalogManifest = {
           "base_url": "https://rest.zuora.com",
           "headers": {
             "Accept": "application/json",
-            "User-Agent": "dogsled-extractor"
+            "User-Agent": "bobsled-core-extractor"
           },
           "auth": {
             "type": "oauth2",

@@ -56,12 +56,12 @@ export interface ContentionRunResult {
 }
 
 const kindOf = (sql: string): string => {
-  if (/^\s*UPDATE\b[^;]*__dogsled_agentic_runs/i.test(sql)) return 'header_update';
-  if (/^\s*INSERT\b[^;]*__dogsled_agentic_rows/i.test(sql)) return 'row_insert';
+  if (/^\s*UPDATE\b[^;]*__bobsled_agentic_runs/i.test(sql)) return 'header_update';
+  if (/^\s*INSERT\b[^;]*__bobsled_agentic_rows/i.test(sql)) return 'row_insert';
   return /^\s*(\w+)/.exec(sql)?.[1]?.toLowerCase() ?? 'other';
 };
 const isCommit = (sql: string): boolean =>
-  /^\s*UPDATE\b[^;]*__dogsled_agentic_runs[^;]*\bSET\s+"?revision"?\s*=/i.test(sql);
+  /^\s*UPDATE\b[^;]*__bobsled_agentic_runs[^;]*\bSET\s+"?revision"?\s*=/i.test(sql);
 
 /** A registry that times every statement of runners made by `base`. */
 export function timedRunners(

@@ -143,7 +143,7 @@ export function planDeployedModelExecution(
   const sourceBindings = analysis.closure.sources.map((ref, index): DeployedModelSourceBinding => {
     const entry = getSourceEntry(definitions.sourceEntries.entryRegistry, ref);
     if (!entry) throw new CommandError(`Missing source binding for "${ref}".`, 2);
-    const internalTable = `sources.__dogsled_source_${index + 1}`;
+    const internalTable = `sources.__bobsled_source_${index + 1}`;
     const runtimeEntry = { ...entry, fqRef: internalTable } as SourceRegistryEntry;
     const key = normalizeSourceRef(ref);
     for (const registryKey of runtimeSources.keys()) {
@@ -169,7 +169,7 @@ export function planDeployedModelExecution(
     entryRegistry: runtimeEntries,
     // Intentional fixed runtime contract. See the module note above.
     dialect: 'duckdb',
-    targetSchema: '__dogsled_models',
+    targetSchema: '__bobsled_models',
     selectOnly: true,
     inlineDeps: true,
   });

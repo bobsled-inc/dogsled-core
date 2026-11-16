@@ -106,9 +106,9 @@ function row(work: AgenticRunSnapshot['work'][number], key: Record<string, unkno
   ]);
   return {
     ...Object.fromEntries(columns),
-    _dogsled_evidence: null,
-    _dogsled_confidence: null,
-    _dogsled_reason: null,
+    _bobsled_evidence: null,
+    _bobsled_confidence: null,
+    _bobsled_reason: null,
   };
 }
 
@@ -414,9 +414,9 @@ const finished = (state: AgenticRunSnapshot, work: number, id: string, rows: unk
 };
 const output = (pair_id: unknown, fields: Record<string, unknown>) => ({
   pair_id,
-  _dogsled_evidence: null,
-  _dogsled_confidence: null,
-  _dogsled_reason: null,
+  _bobsled_evidence: null,
+  _bobsled_confidence: null,
+  _bobsled_reason: null,
   ...fields,
 });
 function everyObject(value: unknown): object[] {
@@ -888,7 +888,7 @@ describe('a run on verified state', () => {
       };
       await budget.settle(await budget.reserve(100), usage);
       const pair = assignment.processed_keys[0]!.pair_id;
-      const answer = output(pair, { assessment: 'A result.', _dogsled_reason: reason });
+      const answer = output(pair, { assessment: 'A result.', _bobsled_reason: reason });
       returned.push(answer);
       return {
         contract_version: 2,
@@ -910,11 +910,11 @@ describe('a run on verified state', () => {
     const session = await store.acquire({ scope: 'lake', model: f.model.name, id: 'owned' });
     const saved = (await session.read())!;
     expect(saved.work[0]!.accepted).toMatchObject({
-      rows: [{ _dogsled_reason: { supporting_factors: ['One'] } }],
+      rows: [{ _bobsled_reason: { supporting_factors: ['One'] } }],
     });
     // Everything a host receives is its own to change, saved state is not.
-    const [first] = result.rows as { _dogsled_reason: typeof reason }[];
-    first!._dogsled_reason.supporting_factors.push('Host note.');
+    const [first] = result.rows as { _bobsled_reason: typeof reason }[];
+    first!._bobsled_reason.supporting_factors.push('Host note.');
     (result.processedKeys[0] as { pair_id: string }).pair_id = 'changed';
     expect(saved.work[0]!.assignment.processed_keys).toEqual([{ pair_id: 'p0' }]);
     expect(AgenticRunSnapshotSchema.parse(structuredClone(saved)).revision).toBe(saved.revision);

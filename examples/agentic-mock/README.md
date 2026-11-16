@@ -25,7 +25,7 @@ dogsled query "SELECT COUNT(*) AS assignments FROM pair_assessments" --db-path d
 
 DuckDB runs use durable local checkpoint files; warehouse checkpoint tables are
 reserved for the supported remote SQL stores. The DuckDB publication adapter keeps
-its metadata in `_dogsled_agentic_publication`. The automated script injects the
+its metadata in `_bobsled_agentic_publication`. The automated script injects the
 crash and checks accepted-call counts, persisted rows, and both metadata stores.
 
 The `@bobsled-inc/bobsled-core/ai/test-stubs` export is unstable and test-only. Use it

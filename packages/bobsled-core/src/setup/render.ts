@@ -1,17 +1,20 @@
 import { collectEnvironmentReferences } from '@bobsled-inc/protocol';
-import { cpSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { stringify } from 'yaml';
 
 import { CommandError, EXIT_VALIDATION } from '@bobsled-inc/protocol';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 import { PROJECT_GUIDE_MAX_FILE_BYTES } from '../project-skills/index.js';
 import { SetupAnswersSchema } from './types.js';
 import { recommendSetup } from './recommend.js';
 import { starterProjectSkillFile } from './project-skills.js';
 import { buildAgentGuide, formatDestination } from './agent-guide.js';
+import { SETUP_ANSWERS_FILE } from './answers-path.js';
+import { SETUP_ANSWERS_FILE_SPELLINGS } from './legacy-names.js';
 
 import type {
   RenderedSetupFile,
@@ -22,6 +25,8 @@ import type {
 } from './types.js';
 
 export { writeRenderedSetupFiles } from './render-files.js';
+
+const ROOT_CONFIG_FILE = 'bobsled.yml';
 
 const PERMISSION_ERROR_CODES = new Set(['EACCES', 'EPERM', 'EROFS']);
 
@@ -247,7 +252,7 @@ export async function renderSetupFiles(answersInput: SetupAnswers): Promise<Rend
   }
 
   return [
-    { path: 'bobsled.yml', content: bobsledConfig },
+    { path: ROOT_CONFIG_FILE, content: bobsledConfig },
     { path: 'README.md', content: buildReadme(recommended.repoName, recommended) + '\n' },
     {
       path: 'AGENTS.md',
@@ -261,13 +266,41 @@ export async function renderSetupFiles(answersInput: SetupAnswers): Promise<Rend
       content: buildSecretChecklist(recommended.credentialRefs) + '\n',
     },
     { path: 'docs/cowork-troubleshooting.md', content: buildTroubleshooting() + '\n' },
-    { path: 'bobsled.setup.answers.yml', content: stringify(normalizedAnswers) },
+    { path: SETUP_ANSWERS_FILE, content: stringify(normalizedAnswers) },
     { path: 'bobsled.setup.summary.md', content: buildSummary(recommended) + '\n' },
     {
       path: 'dogsled.dashboard.state.json',
       content: buildDashboardState(normalizedAnswers, recommended) + '\n',
     },
   ];
+}
+
+/** The file to write instead of `current`: an existing file under an earlier spelling, newest first. */
+function existingSpelling(outDir: string, current: string, spellings: readonly string[]): string {
+  if (existsSync(path.join(outDir, current))) return current;
+  return [...spellings].reverse().find((name) => existsSync(path.join(outDir, name))) ?? current;
+}
+
+/**
+ * Point the rendered root config and answers file at the names the target directory already uses,
+ * so re-running setup in a project from an earlier Core generation rewrites its files in place
+ * instead of adding a second root config next to them.
+ */
+export function renderIntoExistingSpellings(
+  files: RenderedSetupFile[],
+  outDir: string
+): RenderedSetupFile[] {
+  const targets = new Map([
+    [ROOT_CONFIG_FILE, existingSpelling(outDir, ROOT_CONFIG_FILE, ROOT_CONFIG_FILE_SPELLINGS)],
+    [
+      SETUP_ANSWERS_FILE,
+      existingSpelling(outDir, SETUP_ANSWERS_FILE, SETUP_ANSWERS_FILE_SPELLINGS),
+    ],
+  ]);
+  return files.map((file) => {
+    const target = targets.get(file.path);
+    return target && target !== file.path ? { ...file, path: target } : file;
+  });
 }
 
 function getPackageRoot(): string {

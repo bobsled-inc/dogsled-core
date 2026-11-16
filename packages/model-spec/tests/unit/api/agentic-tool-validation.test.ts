@@ -146,9 +146,9 @@ it('dispatches a warehouse assignment with a scoped live source tool', async () 
             {
               pair_id: 'p1',
               assessment: 'spec',
-              _dogsled_evidence: null,
-              _dogsled_confidence: null,
-              _dogsled_reason: null,
+              _bobsled_evidence: null,
+              _bobsled_confidence: null,
+              _bobsled_reason: null,
             },
           ],
         };

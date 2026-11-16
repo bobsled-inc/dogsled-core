@@ -40,10 +40,10 @@ export function publicationWarehouse(
   const row = (pair_id: string, assessment = 'old'): Row => ({
     pair_id,
     assessment,
-    _dogsled_run_id: 'saved',
-    _dogsled_evidence: null,
-    _dogsled_confidence: null,
-    _dogsled_reason: null,
+    _bobsled_run_id: 'saved',
+    _bobsled_evidence: null,
+    _bobsled_confidence: null,
+    _bobsled_reason: null,
   });
   tables.set(target, [row('a'), row('b'), row('c')]);
   const read = (name: string) => tables.get(name) ?? [];
