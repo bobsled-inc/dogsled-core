@@ -261,7 +261,7 @@ describe('workspace package conventions', () => {
       workspacePackages
         .filter((pkg) => pkg.packageJson.bin !== undefined)
         .map((pkg) => ({ name: pkg.name, bin: pkg.packageJson.bin })),
-      [{ name: '@bobsled-inc/bobsled-core', bin: { dogsled: './bin/cli.mjs' } }]
+      [{ name: '@bobsled-inc/bobsled-core', bin: { bobsled: './bin/cli.mjs' } }]
     );
   });
 
@@ -994,7 +994,7 @@ describe('release and dependency policy guardrails', () => {
 
     match(
       archiveScript,
-      /pnpm --config\.inject-workspace-packages=true deploy --filter @bobsled-inc\/dogsled --prod/
+      /pnpm --config\.inject-workspace-packages=true deploy --filter @bobsled-inc\/bobsled-core --prod/
     );
     doesNotMatch(archiveScript, /pnpm deploy --legacy/);
   });
@@ -1299,7 +1299,7 @@ describe('workflow guardrails', () => {
   it('unit matrix partitions every workspace package exactly once, including future packages', () => {
     const scripts = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')).scripts;
     const ci = parseYaml(readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8'));
-    const legs = ['model', 'graph', 'dogsled', 'rest'];
+    const legs = ['model', 'graph', 'bobsled', 'rest'];
     deepStrictEqual(ci.jobs.unit.strategy.matrix.leg, legs);
     deepStrictEqual(ci.jobs.unit.strategy['fail-fast'], false);
     const actual = [];

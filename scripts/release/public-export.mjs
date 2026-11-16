@@ -20,7 +20,7 @@ export const PUBLIC_ROOT_IDENTITY = Object.freeze({
   email: 'ioannis@bobsled.co',
 });
 
-export const UNIT_LEGS = Object.freeze(['model', 'graph', 'dogsled', 'rest']);
+export const UNIT_LEGS = Object.freeze(['model', 'graph', 'bobsled', 'rest']);
 
 // The staging-only old-name guard. Its package script is found by its command
 // (the script name follows the rename), then removed with its CI step.
