@@ -19,7 +19,7 @@ import {
 import { duckDbFileInUse, duckDbLakeDataPathStore } from '../../../src/local-state/duckdb-lake.js';
 
 // Generic tests: an earlier folder name stands in, so they pass before and after the
-// Bobsled Core -> Bobsled rename changes the current one.
+// Core name rename changes the current one.
 vi.mock('../../../src/local-state/legacy-names.js', () => ({
   LEGACY_LOCAL_STATE_DIRS: ['.legacy'],
   LEGACY_LOCAL_DATABASE_FILES: ['legacy.duckdb'],

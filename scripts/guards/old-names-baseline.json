@@ -1,7 +1,7 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 240,
+    "dogsled-word": 242,
     "old-warehouse-prefix": 34,
     "track-config": 6,
     "track-env": 0,
@@ -12,7 +12,7 @@
     ".github": 3,
     "<root>": 12,
     "docs": 31,
-    "examples": 3,
+    "examples": 5,
     "packages/bobsled-core": 89,
     "packages/connections": 3,
     "packages/extractor": 6,

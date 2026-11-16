@@ -160,6 +160,6 @@ describe('buildDestinationCliArgs — managed destination intent', () => {
         type: 'bobsled_managed',
         bobsled_connection_ref: 'warehouse-prod',
       })
-    ).toThrow('A "bobsled_managed" destination only runs in Dogsled Cloud.');
+    ).toThrow('A "bobsled_managed" destination only runs on a hosted orchestrator.');
   });
 });

@@ -61,7 +61,7 @@ More:
 - [Explorer](guides/explorer.md): the local web app.
 - [Tutorial and examples](guides/learn-and-examples.md): `bobsled learn` and the
   example projects.
-- [Dogsled Cloud and Core](guides/hosted-runs.md): fields that only Dogsled Cloud
+- [Hosted runs](guides/hosted-runs.md): fields that only a hosted orchestrator
   reads.
 
 ## Reference

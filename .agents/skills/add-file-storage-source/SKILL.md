@@ -189,7 +189,7 @@ A destination with `type: bobsled_managed` uses `bobsled_connection_ref` to name
 connection supplied by an orchestrator. Core validates these fields but cannot
 load into a managed destination. For local execution, use a concrete destination
 such as DuckDB or BigQuery. Author the `documents` resource and optional `embedding:`
-block as above. See [Dogsled Cloud and Core](../../../docs/guides/hosted-runs.md).
+block as above. See [Hosted runs](../../../docs/guides/hosted-runs.md).
 
 ## Next step — feed the entity graph
 

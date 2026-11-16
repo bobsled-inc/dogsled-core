@@ -41,7 +41,7 @@ Managed destinations use `type: bobsled_managed` and `bobsled_connection_ref` to
 name a connection supplied by an orchestrator. Core validates these hooks but
 cannot load into a managed destination. For local execution, configure a concrete
 destination and run the work with `bobsled entity-graph build`.
-See [Dogsled Cloud and Core](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/hosted-runs.md).
+See [Hosted runs](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/hosted-runs.md).
 
 ## Shape
 

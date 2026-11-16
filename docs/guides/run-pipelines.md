@@ -114,8 +114,8 @@ Settings apply in this order: destination, then pipeline, then resource.
 
 `bobsled.yml` destinations accept these `type` values: `duckdb`, `bigquery`,
 `snowflake`, `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`,
-`local`, `gcs` and `s3`, plus `bobsled_managed`, which only Dogsled Cloud can run
-(see [Dogsled Cloud and Core](hosted-runs.md)). For DuckLake, SQLite and the other
+`local`, `gcs` and `s3`, plus `bobsled_managed`, which only a hosted orchestrator can run
+(see [Hosted runs](hosted-runs.md)). For DuckLake, SQLite and the other
 `load run` destinations, pipe `extract run` into `load run` instead. The fields of
 each type are in the [project file reference](../reference/project-files.md#destinations).
 
@@ -135,7 +135,7 @@ pipelines:
     schedule: daily
 ```
 
-These pipelines are instructions for an orchestrator such as Dogsled Cloud.
+These pipelines are instructions for a hosted orchestrator.
 `runner validate` checks them, and `runner run` explains how to run them yourself:
 `bobsled model run --integration <connection>` builds the same models.
 

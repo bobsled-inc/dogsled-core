@@ -82,7 +82,7 @@ export async function run(ctx) {
       if (heading) await page.getByRole('heading', { name: heading, exact: true }).waitFor();
       const text = await page.locator('body').innerText();
       assert.match(text, /Bobsled Core Explorer/);
-      assert.doesNotMatch(text, /\bTrack\b/);
+      assert.doesNotMatch(text, /\b(?:Track|Dogsled)\b/); // rename:keep
       if (route === '/integrations') {
         await page.locator('a[href^="/integrations/"]').nth(9).waitFor();
         assert.ok((await page.locator('a[href^="/integrations/"]').count()) >= 10);

@@ -17,7 +17,7 @@ import { queryPersistentDb } from '../../helpers/duckdb.js';
 import type { SchemaColumn } from '@bobsled-inc/protocol';
 
 // The takeover is generic: these tests stand in an earlier name, so they pass
-// before and after the Bobsled Core -> Bobsled rename flips the current column.
+// before and after the Core name rename flips the current column.
 vi.mock('../../../src/runtime/legacy-names.js', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   LEGACY_LOADED_AT_COLUMNS: ['_legacy_loaded_at'],

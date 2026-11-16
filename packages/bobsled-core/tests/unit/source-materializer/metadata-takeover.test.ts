@@ -8,7 +8,7 @@ import {
 } from '../../../src/runtime/source-materializer/metadata.js';
 
 // Generic takeover test: an earlier name stands in, so this passes before and
-// after the Bobsled Core -> Bobsled rename changes the current table name.
+// after the Core name rename changes the current table name.
 vi.mock('../../../src/runtime/source-materializer/legacy-names.js', () => ({
   LEGACY_METADATA_TABLES: ['_legacy_source_metadata'],
 }));

@@ -24,7 +24,7 @@ import { createAgenticRowSchema } from '../../../src/agentic/rows.js';
 import { agenticDefinitionIdentity } from '../../../src/agentic/state.js';
 
 // Generic takeover tests: earlier table names are stand-ins, so they pass before and after the
-// Bobsled Core -> Bobsled rename flips the current names. Metadata spellings use the real list.
+// Core name rename flips the current names. Metadata spellings use the real list.
 vi.mock('../../../src/agentic/legacy-names.js', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   LEGACY_AGENTIC_TABLE_PREFIXES: ['__legacy_agentic_'],

@@ -423,7 +423,7 @@ pipelines:
         { projectRoot, pipelineName: 'github' },
         { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
-    ).rejects.toThrow('A "bobsled_managed" destination only runs in Dogsled Cloud.');
+    ).rejects.toThrow('A "bobsled_managed" destination only runs on a hosted orchestrator.');
     expect(spawn).not.toHaveBeenCalled();
   });
 

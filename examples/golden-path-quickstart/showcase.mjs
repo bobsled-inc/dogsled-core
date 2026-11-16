@@ -139,7 +139,7 @@ export async function run(ctx) {
     assert.equal(Number(JSON.parse(loaded.stdout).rows[0].n), 100);
     api.assertAuth();
     for (const output of ctx.outputs)
-      assert.doesNotMatch(output.stdout + output.stderr, /\b(?:Track|Bobsled)\b/);
+      assert.doesNotMatch(output.stdout + output.stderr, /\b(?:Track|Dogsled)\b/); // rename:keep
   } finally {
     await api.close();
   }

@@ -1,17 +1,17 @@
-# Dogsled Cloud and Core
+# Hosted runs
 
-Dogsled Cloud is the hosted product built on Bobsled Core. It runs the same project
-files and adds a web app and an AI assistant for building and running pipelines.
-Cloud also provides scheduling, background agents, access control, and audit for teams.
-In Cloud, a project is called a Blueprint.
+A hosted orchestrator can run the same project files as Bobsled Core. Dogsled Cloud
+is one: it adds a web app and an AI assistant for building and running pipelines, plus
+scheduling, background agents, access control and audit for teams. A hosted project is
+called a Blueprint.
 
 A Blueprint uses the file formats described in these docs. A few fields only mean
-something to an orchestrator such as Cloud. Core validates them and leaves them
-alone, and refuses to run anything that depends on them. This page lists them.
+something to a hosted orchestrator. Core validates them and leaves them alone, and
+refuses to run anything that depends on them. This page lists them.
 
 ## Managed destinations
 
-In Cloud, a destination can point at a connection that Cloud manages instead of
+On a host, a destination can point at a connection that the host manages instead of
 naming a warehouse. For example, in the `shop` project from
 [Run pipelines](run-pipelines.md), the `warehouse` destination in `bobsled.yml`
 could be:
@@ -23,7 +23,7 @@ destinations:
     bobsled_connection_ref: analytics-prod
 ```
 
-`bobsled_connection_ref` names the connection in Cloud. `runner validate` accepts
+`bobsled_connection_ref` names the connection on the host. `runner validate` accepts
 this destination, but Core cannot load into it:
 
 ```bash
@@ -33,7 +33,7 @@ bobsled runner run shop_files || echo "exit code $?"
 
 ```text
 ✓ Configuration is valid
-A "bobsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Bobsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".
+A "bobsled_managed" destination only runs on a hosted orchestrator. To run this pipeline with Bobsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".
 exit code 2
 ```
 

@@ -8,7 +8,7 @@ export const SNOWFLAKE_ACCESS_TOKEN_ENV = 'BOBSLED_CORE_SNOWFLAKE_ACCESS_TOKEN';
 export const SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN_ENV =
   'BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN';
 export const MANAGED_DESTINATION_CORE_ERROR =
-  'A "bobsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Bobsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".';
+  'A "bobsled_managed" destination only runs on a hosted orchestrator. To run this pipeline with Bobsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".';
 
 export interface SnowflakePipelineAuthOptions {
   workloadIdentityToken?: string;
