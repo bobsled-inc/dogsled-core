@@ -231,8 +231,11 @@ describe('LazyQueryEngine', () => {
       await lazyQuery(fake.runner);
 
       expect(fake.tableDdl).toEqual([]);
-      // The engine and the metadata store each read the schema once per query.
-      expect(fake.metadataReads).toHaveLength(4);
+      // One schema read per query: the engine ensures the table and tells the
+      // metadata store, so the store does not read it again.
+      expect(fake.metadataReads).toHaveLength(2);
+      // No dataset DDL either: CREATE SCHEMA runs only when the dataset is missing.
+      expect(fake.runner.run).not.toHaveBeenCalledWith(expect.stringMatching(/CREATE SCHEMA/));
       expect(fake.runner.run).toHaveBeenCalledWith(expect.stringMatching(/^MERGE /));
     });
   });

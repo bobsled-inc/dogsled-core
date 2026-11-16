@@ -576,6 +576,41 @@ describe('BigQueryDestination', () => {
     expect(ddlCount()).toBe(2);
   });
 
+  it('ensureTable() rejects widenings BigQuery cannot apply before any DDL', async () => {
+    const table = createMockTable({
+      exists: true,
+      metadata: {
+        schema: {
+          fields: [
+            { name: 'id', type: 'INT64' },
+            { name: 'amount', type: 'INT64' },
+            { name: 'code', type: 'INT64' },
+            { name: '_time_extracted', type: 'TIMESTAMP' },
+            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+          ],
+        },
+      },
+    });
+    const dataset = createMockDataset({ exists: true, tables: new Map([['orders', table]]) });
+    const client = createMockClient(dataset);
+    const dest = new BigQueryDestination({ datasetId: 'test_ds', client, stagingFormat: 'jsonl' });
+
+    // integer -> string is a loader-safe widening, but BigQuery's SET DATA TYPE
+    // rejects INT64 -> STRING, which would also undo the added `status` column.
+    await expect(
+      dest.ensureTable('test_ds', 'orders', [
+        { name: 'id', type: 'integer', primary_key: true },
+        { name: 'amount', type: 'number' },
+        { name: 'code', type: 'string' },
+        { name: 'status', type: 'string' },
+      ])
+    ).rejects.toThrow(
+      'Schema change conflict on `test_ds`.`orders`.code: BigQuery cannot change existing type INT64 to STRING'
+    );
+    expect(client.createQueryJob).not.toHaveBeenCalled();
+    expect(table.setMetadata).not.toHaveBeenCalled();
+  });
+
   it('ensureTable() re-fetches metadata before setMetadata when schema evolves', async () => {
     // Reproduces the bug where ALTER TABLE invalidates the etag in the
     // previously-fetched metadata, causing setMetadata to fail with 412

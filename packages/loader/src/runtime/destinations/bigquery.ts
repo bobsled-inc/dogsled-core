@@ -434,6 +434,20 @@ export class BigQueryDestination implements DatabaseDestination {
     addColumnDefs: string[],
     columnsToWiden: SchemaComparisonResult['typeConflicts']
   ): Promise<void> {
+    // Of the loader's safe widenings, BigQuery's SET DATA TYPE accepts only
+    // INT64 -> FLOAT64. Fail on the others before any DDL, so a rejected
+    // statement never takes the added columns down with it.
+    const unsupported = columnsToWiden.find(
+      (conflict) =>
+        normalizeBqType(conflict.existingType) !== 'INT64' ||
+        mapBigQueryType(conflict.expectedColumnType) !== 'FLOAT64'
+    );
+    if (unsupported) {
+      throw new Error(
+        `Schema change conflict on ${qualifiedTable}.${unsupported.column}: ` +
+          `BigQuery cannot change existing type ${unsupported.existingType} to ${unsupported.expectedType}`
+      );
+    }
     const actions = [
       ...addColumnDefs.map((def) => `ADD COLUMN ${def}`),
       ...columnsToWiden.map(

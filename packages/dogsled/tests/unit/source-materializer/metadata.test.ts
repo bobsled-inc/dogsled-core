@@ -10,6 +10,7 @@ import {
   DuckDBMetadataStore,
   InMemoryMetadataStore,
 } from '../../../src/runtime/source-materializer/metadata-store.js';
+import { BIGQUERY_UPDATE_RETRY_DELAY_MS } from '../../../src/runtime/source-materializer/metadata-table.js';
 
 function fakeRunner(rows: MetadataRow[] = []) {
   const calls: string[] = [];
@@ -133,6 +134,106 @@ describe('metadata helpers', () => {
     await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
     expect(runner.query).toHaveBeenCalledTimes(1);
     expect(runner.run).not.toHaveBeenCalled();
+  });
+
+  describe('BigQuery metadata table setup', () => {
+    const ALL_COLUMNS = [
+      'source_name',
+      'filter_hash',
+      'loaded_at',
+      'record_count',
+      'etag',
+      'cursor_field',
+      'cursor_type',
+      'cursor_value',
+      'snapshot_kind',
+      'snapshot_variant',
+      'row_count',
+      'in_progress_until',
+    ];
+    const rateLimited = () =>
+      new Error(
+        'Exceeded rate limits: too many table update operations for this table. For more information, see https://cloud.google.com/bigquery/docs/troubleshoot-quotas'
+      );
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('creates a missing dataset, then the table, only when the dataset is not found', async () => {
+      const runner = {
+        run: vi.fn(async () => undefined),
+        query: vi.fn(async () => {
+          throw new Error('Not found: Dataset my-project:analytics was not found in location US');
+        }),
+      };
+      await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
+      expect(runner.run.mock.calls.map(([sql]) => sql)).toEqual([
+        'CREATE SCHEMA IF NOT EXISTS `analytics`',
+        expect.stringMatching(/^CREATE TABLE IF NOT EXISTS `analytics`.`_dogsled_source_metadata`/),
+      ]);
+    });
+
+    it('propagates schema read errors other than a missing dataset', async () => {
+      const runner = {
+        run: vi.fn(async () => undefined),
+        query: vi.fn(async () => {
+          throw new Error('Access Denied: Dataset my-project:analytics: Permission denied');
+        }),
+      };
+      await expect(
+        ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' })
+      ).rejects.toThrow('Access Denied');
+      expect(runner.run).not.toHaveBeenCalled();
+    });
+
+    it('succeeds without retrying when a concurrent process finished the table', async () => {
+      let columns: string[] = [];
+      const runner = {
+        run: vi.fn(async () => {
+          columns = ALL_COLUMNS; // another process created it in the meantime
+          throw rateLimited();
+        }),
+        query: vi.fn(async () => columns.map((column_name) => ({ column_name }))),
+      };
+      await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
+      expect(runner.run).toHaveBeenCalledTimes(1);
+      expect(runner.query).toHaveBeenCalledTimes(2);
+    });
+
+    it('retries the remaining DDL once after the rate limit', async () => {
+      vi.useFakeTimers();
+      const runner = {
+        run: vi
+          .fn<(sql: string) => Promise<undefined>>()
+          .mockRejectedValueOnce(rateLimited())
+          .mockResolvedValue(undefined),
+        query: vi.fn(async () => ALL_COLUMNS.slice(0, 5).map((column_name) => ({ column_name }))),
+      };
+      const done = ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
+      await vi.advanceTimersByTimeAsync(BIGQUERY_UPDATE_RETRY_DELAY_MS);
+      await done;
+      expect(runner.run).toHaveBeenCalledTimes(2);
+      expect(runner.run.mock.calls[1]![0]).toBe(runner.run.mock.calls[0]![0]);
+      expect(runner.run.mock.calls[1]![0]).toMatch(
+        /^ALTER TABLE .* ADD COLUMN IF NOT EXISTS cursor_field/
+      );
+    });
+
+    it('fails when the retry is rate limited too', async () => {
+      vi.useFakeTimers();
+      const runner = {
+        run: vi.fn(async () => {
+          throw rateLimited();
+        }),
+        query: vi.fn(async () => [] as Array<{ column_name: string }>),
+      };
+      const done = ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
+      const assertion = expect(done).rejects.toThrow('Exceeded rate limits');
+      await vi.advanceTimersByTimeAsync(BIGQUERY_UPDATE_RETRY_DELAY_MS);
+      await assertion;
+      expect(runner.run).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('readMetadataRow returns undefined when no row exists', async () => {
@@ -307,7 +408,8 @@ describe('metadata helpers', () => {
       {
         source_name: 'issues',
         filter_hash: 'abc',
-        loaded_at: { value: '2026-04-22T12:00:00.123Z' } as unknown as string,
+        // PreciseDate.toISOString() pads to nanoseconds.
+        loaded_at: { value: '2026-04-22T12:00:00.123456000Z' } as unknown as string,
         record_count: 42,
         in_progress_until: { value: '2026-04-22T12:01:00.000Z' } as unknown as string,
       },

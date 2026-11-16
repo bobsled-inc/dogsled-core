@@ -42,6 +42,8 @@ export interface MaterializeOneSourceArgs {
    * fetched rows into the temp table with no persisted metadata.
    */
   isTransientLive: boolean;
+  /** The caller already ensured the metadata table in this destination's schema. */
+  metadataTableEnsured?: boolean;
   /** Optional partial-materialization limit forwarded to `materializeSource`. */
   queryLimit?: number;
   /** Canonical (non-limit) table name when partial materialization renamed the table. */
@@ -69,6 +71,7 @@ export async function materializeOneSource(args: MaterializeOneSourceArgs): Prom
     : new DuckDBMetadataStore({
         runner,
         dialect: destination.sqlRunnerKind,
+        ...(args.metadataTableEnsured ? { ensuredSchemas: [destination.schema] } : {}),
       });
   const refreshLeaseCallbacks =
     metadataStore && destination.sqlRunnerKind !== 'bigquery'

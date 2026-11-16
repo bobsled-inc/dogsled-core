@@ -1,13 +1,8 @@
 import type { SqlRunnerModule } from '@bobsled-inc/connections';
 import { CommandError, EXIT_VALIDATION } from '@bobsled-inc/protocol';
 
-import {
-  escapeLiteral,
-  safeInteger,
-  tableRef,
-  validateIdentifier,
-  type SqlDialect,
-} from './sql-utils.js';
+import { metaTableRef } from './metadata-table.js';
+import { escapeLiteral, safeInteger, validateIdentifier, type SqlDialect } from './sql-utils.js';
 
 export type CursorType = 'string' | 'number' | 'integer' | 'timestamp' | 'lsn';
 export type SnapshotKind = 'canonical' | 'limited';
@@ -31,12 +26,7 @@ export type MetadataDialect = SqlDialect;
 
 export { ensureMetadataTable } from './metadata-table.js';
 
-const METADATA_TABLE = '_dogsled_source_metadata';
 export const LEASE_PLACEHOLDER_LOADED_AT = '1970-01-01T00:00:00.000Z';
-
-function metaTableRef(schema: string, dialect: MetadataDialect = 'duckdb'): string {
-  return tableRef(schema, METADATA_TABLE, dialect);
-}
 
 function timestampLiteral(value: string, dialect: MetadataDialect = 'duckdb'): string {
   const escaped = escapeLiteral(value);

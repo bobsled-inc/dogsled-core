@@ -3,11 +3,14 @@ import { CommandError } from '@bobsled-inc/protocol';
 
 import { quoteIdentifier, tableRef, type SqlDialect } from './sql-utils.js';
 
-const METADATA_TABLE = '_dogsled_source_metadata';
+export const METADATA_TABLE = '_dogsled_source_metadata';
 
-function metaTableRef(schema: string, dialect: SqlDialect): string {
+export function metaTableRef(schema: string, dialect: SqlDialect = 'duckdb'): string {
   return tableRef(schema, METADATA_TABLE, dialect);
 }
+
+/** Wait before the one retry after BigQuery rejects metadata-table DDL for its update rate. */
+export const BIGQUERY_UPDATE_RETRY_DELAY_MS = 2_000;
 
 function metadataColumnTypes(dialect: SqlDialect): {
   stringType: string;
@@ -41,18 +44,19 @@ function additiveMetadataColumns(dialect: SqlDialect): Array<[string, string]> {
   ];
 }
 
-// BigQuery allows only about five table metadata updates per table every ten
-// seconds, and a no-op `CREATE TABLE IF NOT EXISTS` or `ADD COLUMN IF NOT
-// EXISTS` still counts as one. Read the current columns first, then create the
-// table whole or add only the missing columns in a single ALTER, and skip DDL
-// entirely when the table is already complete.
-async function ensureBigQueryMetadataTable(args: {
-  runner: SqlRunnerModule;
-  schema: string;
-}): Promise<void> {
-  const ref = metaTableRef(args.schema, 'bigquery');
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isBigQueryUpdateLimitError(error: unknown): boolean {
+  return /exceeded rate limits|exceeded quota for table update|concurrent update/i.test(
+    errorMessage(error)
+  );
+}
+
+function bigQueryMetadataColumns(): Array<[string, string]> {
   const types = metadataColumnTypes('bigquery');
-  const columns: Array<[string, string]> = [
+  return [
     ['source_name', types.stringType],
     ['filter_hash', types.stringType],
     ['loaded_at', types.timestampType],
@@ -60,26 +64,72 @@ async function ensureBigQueryMetadataTable(args: {
     ['etag', types.stringType],
     ...additiveMetadataColumns('bigquery'),
   ];
-  if (!args.runner.query) {
+}
+
+/** The metadata table's column names, or `undefined` when the dataset does not exist. */
+async function readBigQueryMetadataColumns(
+  runner: SqlRunnerModule,
+  schema: string
+): Promise<Set<string> | undefined> {
+  if (!runner.query) {
     throw new CommandError('SQL runner does not support query execution', 1);
   }
-  const existingRows = await args.runner.query(
-    `SELECT column_name FROM ${quoteIdentifier(args.schema, 'bigquery')}.INFORMATION_SCHEMA.COLUMNS WHERE table_name = '${METADATA_TABLE}'`
-  );
-  const existing = new Set(existingRows.map((row) => String(row.column_name).toLowerCase()));
-  if (existing.size === 0) {
-    await args.runner.run(
-      `CREATE TABLE IF NOT EXISTS ${ref} (${columns.map(([name, type]) => `${name} ${type}`).join(', ')})`
+  try {
+    const rows = await runner.query(
+      `SELECT column_name FROM ${quoteIdentifier(schema, 'bigquery')}.INFORMATION_SCHEMA.COLUMNS WHERE table_name = '${METADATA_TABLE}'`
     );
-    return;
+    return new Set(rows.map((row) => String(row.column_name).toLowerCase()));
+  } catch (error) {
+    if (/not found: dataset/i.test(errorMessage(error))) return undefined;
+    throw error;
   }
+}
+
+function bigQueryMetadataDdl(schema: string, existing: Set<string> | undefined): string[] {
+  const ref = metaTableRef(schema, 'bigquery');
+  const columns = bigQueryMetadataColumns();
+  const create = `CREATE TABLE IF NOT EXISTS ${ref} (${columns.map(([name, type]) => `${name} ${type}`).join(', ')})`;
+  if (existing === undefined) {
+    return [`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(schema, 'bigquery')}`, create];
+  }
+  if (existing.size === 0) return [create];
   const missing = columns.filter(([name]) => !existing.has(name));
-  if (missing.length === 0) return;
-  await args.runner.run(
+  if (missing.length === 0) return [];
+  return [
     `ALTER TABLE ${ref} ${missing
       .map(([name, type]) => `ADD COLUMN IF NOT EXISTS ${name} ${type}`)
-      .join(', ')}`
+      .join(', ')}`,
+  ];
+}
+
+// BigQuery allows only about five table metadata updates per table every ten
+// seconds, and a no-op `CREATE TABLE IF NOT EXISTS` or `ADD COLUMN IF NOT
+// EXISTS` still counts as one. Read the current columns first, then create the
+// dataset and table only when missing, or add only the missing columns in a
+// single ALTER, and skip DDL entirely when the table is already complete.
+async function ensureBigQueryMetadataTable(args: {
+  runner: SqlRunnerModule;
+  schema: string;
+}): Promise<void> {
+  const statements = bigQueryMetadataDdl(
+    args.schema,
+    await readBigQueryMetadataColumns(args.runner, args.schema)
   );
+  try {
+    for (const sql of statements) await args.runner.run(sql);
+  } catch (error) {
+    if (!isBigQueryUpdateLimitError(error)) throw error;
+    // Other processes may be setting up the same table at the same moment.
+    // Re-read: if they finished it, there is nothing left to do; otherwise
+    // wait out part of the rate window and try once more.
+    const remaining = bigQueryMetadataDdl(
+      args.schema,
+      await readBigQueryMetadataColumns(args.runner, args.schema)
+    );
+    if (remaining.length === 0) return;
+    await new Promise((resolve) => setTimeout(resolve, BIGQUERY_UPDATE_RETRY_DELAY_MS));
+    for (const sql of remaining) await args.runner.run(sql);
+  }
 }
 
 export async function ensureMetadataTable(args: {
