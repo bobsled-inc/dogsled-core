@@ -1,16 +1,8 @@
 import type { SqlRunnerModule } from '@bobsled-inc/connections';
 import { CommandError, EXIT_VALIDATION } from '@bobsled-inc/protocol';
 
-import { LEGACY_METADATA_TABLES } from './legacy-names.js';
-import {
-  escapeLiteral,
-  isMissingTableError,
-  quoteIdentifier,
-  safeInteger,
-  tableRef,
-  validateIdentifier,
-  type SqlDialect,
-} from './sql-utils.js';
+import { metaTableRef } from './metadata-table.js';
+import { escapeLiteral, safeInteger, validateIdentifier, type SqlDialect } from './sql-utils.js';
 
 export type CursorType = 'string' | 'number' | 'integer' | 'timestamp' | 'lsn';
 export type SnapshotKind = 'canonical' | 'limited';
@@ -32,31 +24,9 @@ export interface MetadataRow {
 
 export type MetadataDialect = SqlDialect;
 
-export const METADATA_TABLE = '_bobsled_source_metadata';
+export { METADATA_TABLE, adoptLegacyMetadataTable, ensureMetadataTable } from './metadata-table.js';
+
 export const LEASE_PLACEHOLDER_LOADED_AT = '1970-01-01T00:00:00.000Z';
-
-function metaTableRef(schema: string, dialect: MetadataDialect = 'duckdb'): string {
-  return tableRef(schema, METADATA_TABLE, dialect);
-}
-
-function metadataColumnTypes(dialect: MetadataDialect): {
-  stringType: string;
-  timestampType: string;
-  integerType: string;
-} {
-  if (dialect === 'bigquery') {
-    return {
-      stringType: 'STRING',
-      timestampType: 'TIMESTAMP',
-      integerType: 'INT64',
-    };
-  }
-  return {
-    stringType: 'VARCHAR',
-    timestampType: 'TIMESTAMP',
-    integerType: 'BIGINT',
-  };
-}
 
 function timestampLiteral(value: string, dialect: MetadataDialect = 'duckdb'): string {
   const escaped = escapeLiteral(value);
@@ -87,6 +57,15 @@ function normalizeLoadedAt(value: unknown): string {
   // DuckDB, SQLite — strip the trailing `Z` when storing TIMESTAMP, so a
   // timezone-less round-trip means UTC by contract, not local time.
   if (value instanceof Date) return value.toISOString();
+  // The BigQuery client returns TIMESTAMP columns as BigQueryTimestamp objects
+  // whose `value` is an ISO-8601 string.
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { value?: unknown }).value === 'string'
+  ) {
+    return normalizeLoadedAt((value as { value: string }).value);
+  }
   const text = String(value);
   const match = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(\.\d+)?$/.exec(text);
   if (!match) {
@@ -111,97 +90,6 @@ export function isLeasePlaceholderMetadataRow(row: MetadataRow): boolean {
     row.cursor_type === undefined &&
     row.cursor_value === undefined
   );
-}
-
-async function tableExists(runner: SqlRunnerModule, ref: string): Promise<boolean> {
-  try {
-    const probe = `SELECT 1 FROM ${ref} WHERE 1 = 0`;
-    await (runner.query ? runner.query(probe) : runner.run(probe));
-    return true;
-  } catch (error) {
-    if (isMissingTableError(error)) return false;
-    throw error;
-  }
-}
-
-/**
- * Take over an earlier metadata table (for example `_bobsled_source_metadata`
- * once Core writes `_bobsled_source_metadata`) by renaming it in place, so
- * cursors, ETags and snapshot leases survive. Never drops a table: when both
- * exist the current one wins and the earlier one is left alone.
- */
-const settledByRunner = new WeakMap<SqlRunnerModule, Set<string>>();
-/** Destinations settled in this process, so a query on a new connection adds no probe. */
-const settledDestinations = new Set<string>();
-
-export async function adoptLegacyMetadataTable(args: {
-  runner: SqlRunnerModule;
-  schema: string;
-  dialect: MetadataDialect;
-  /** Names the warehouse (never a credential). With it, a schema is settled once per process;
-   * without it, once per connection. */
-  destination?: string | undefined;
-}): Promise<string | undefined> {
-  if (args.dialect === 'duckdb' && args.schema === 'temp') return undefined;
-  const legacy = LEGACY_METADATA_TABLES.filter((name) => name !== METADATA_TABLE);
-  if (legacy.length === 0) return undefined;
-  let settled = settledDestinations;
-  if (args.destination === undefined) {
-    settled = settledByRunner.get(args.runner) ?? new Set<string>();
-    settledByRunner.set(args.runner, settled);
-  }
-  const key = JSON.stringify([args.dialect, args.destination ?? '', args.schema]);
-  if (settled.has(key)) return undefined;
-  settled.add(key);
-  if (await tableExists(args.runner, metaTableRef(args.schema, args.dialect))) return undefined;
-  for (const name of legacy) {
-    const oldRef = tableRef(args.schema, name, args.dialect);
-    if (!(await tableExists(args.runner, oldRef))) continue;
-    const target =
-      args.dialect === 'snowflake'
-        ? metaTableRef(args.schema, args.dialect)
-        : quoteIdentifier(METADATA_TABLE, args.dialect);
-    try {
-      await args.runner.run(`ALTER TABLE ${oldRef} RENAME TO ${target}`);
-      return name;
-    } catch (error) {
-      if (await tableExists(args.runner, metaTableRef(args.schema, args.dialect))) return undefined;
-      settled.delete(key);
-      throw error;
-    }
-  }
-  return undefined;
-}
-
-export async function ensureMetadataTable(args: {
-  runner: SqlRunnerModule;
-  schema: string;
-  dialect: MetadataDialect;
-  destination?: string | undefined;
-}): Promise<void> {
-  await adoptLegacyMetadataTable(args);
-  const ref = metaTableRef(args.schema, args.dialect);
-  const types = metadataColumnTypes(args.dialect);
-  await args.runner.run(`CREATE TABLE IF NOT EXISTS ${ref} (
-    source_name  ${types.stringType},
-    filter_hash  ${types.stringType},
-    loaded_at    ${types.timestampType},
-    record_count ${types.integerType},
-    etag         ${types.stringType}
-  )`);
-  await args.runner.run(`ALTER TABLE ${ref} ADD COLUMN IF NOT EXISTS etag ${types.stringType}`);
-  const additiveColumns: Array<[string, string]> = [
-    ['cursor_field', types.stringType],
-    ['cursor_type', types.stringType],
-    ['cursor_value', types.stringType],
-    ['snapshot_kind', types.stringType],
-    ['snapshot_variant', types.stringType],
-    ['row_count', types.integerType],
-    ['in_progress_until', types.timestampType],
-  ];
-  for (const [name, type] of additiveColumns) {
-    await args.runner.run(`ALTER TABLE ${ref} ADD COLUMN IF NOT EXISTS ${name} ${type}`);
-  }
 }
 
 export async function readMetadataRow(args: {
