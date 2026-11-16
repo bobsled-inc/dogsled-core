@@ -33,7 +33,7 @@ for (const costMode of ['observe','enforce']) for (const mode of ['returned','th
  let calls=0; let actualCostMode;
  const execute=createExecutor(async (_connection,options,budgetOptions)=>{
   calls++; actualCostMode=budgetOptions.costBudgetMode; assert.equal(options.maxRetries,0); assert.equal(options.maxOutputTokens,4096);
-  assert.ok(!JSON.stringify(options.schema).includes('_dogsled_evidence'));
+  assert.ok(!JSON.stringify(options.schema).includes('_bobsled_evidence'));
   if(mode==='format') return {ok:false,error:'provider_error',message:'No object generated: could not parse the response.'};
   if(mode==='thrown') throw new Error('Connection refused secret-fixture-value');
   if(mode==='schema') return {ok:true,value:{rows:'invalid'},usage:{inputTokens:2,outputTokens:1,totalTokens:3}};
@@ -58,8 +58,8 @@ for (const change of [{}, {fit:'unknown',passage_ids:[]}, {passage_ids:['p99']},
   assert.equal(result.status,'succeeded');
   assert.equal(result.rows[0].support_excerpt, candidate.fit==='unknown'?'':'Factions compete for power.');
   if(candidate.fit!=='unknown') {
-   assert.equal(result.rows[0]._dogsled_evidence[0].support_excerpt,'Factions compete for power.');
-   assert.ok(result.rows[0]._dogsled_evidence[0].reference.includes('p2'));
+   assert.equal(result.rows[0]._bobsled_evidence[0].support_excerpt,'Factions compete for power.');
+   assert.ok(result.rows[0]._bobsled_evidence[0].reference.includes('p2'));
   }
  }
 }

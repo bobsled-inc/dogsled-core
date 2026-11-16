@@ -118,7 +118,7 @@ describe('Snowflake row dialect', () => {
 
   it('creates the guard with exactly one row in one statement', () => {
     expect(dialect.setup!('"DB"."S"')).toEqual([
-      `CREATE TABLE IF NOT EXISTS "DB"."S"."__DOGSLED_AGENTIC_GUARD" AS SELECT CAST('' AS VARCHAR) AS "TOKEN"`,
+      `CREATE TABLE IF NOT EXISTS "DB"."S"."__BOBSLED_AGENTIC_GUARD" AS SELECT CAST('' AS VARCHAR) AS "TOKEN"`,
     ]);
   });
 
@@ -130,7 +130,7 @@ describe('Snowflake row dialect', () => {
     expect(lines[0]).toMatch(/^DECLARE no_guard EXCEPTION \(-20001, '.+'\); matches INTEGER;$/);
     expect(lines.slice(1, 3)).toEqual(['BEGIN', 'BEGIN TRANSACTION;']);
     expect(lines[3]).toMatch(
-      /^UPDATE "DB"\."S"\."__DOGSLED_AGENTIC_GUARD" SET "TOKEN" = '[-\w]+';$/
+      /^UPDATE "DB"\."S"\."__BOBSLED_AGENTIC_GUARD" SET "TOKEN" = '[-\w]+';$/
     );
     expect(lines.slice(4)).toEqual([
       'IF (SQLROWCOUNT <> 1) THEN RAISE no_guard; END IF;',
@@ -185,7 +185,7 @@ describe('Snowflake row dialect', () => {
       ['hash', 'hash']
     );
     const lines = script(db.run.mock.calls[0]![0]).split('\n');
-    expect(lines[3]).toMatch(/^UPDATE "DB"\."S"\."__DOGSLED_AGENTIC_GUARD" SET /);
+    expect(lines[3]).toMatch(/^UPDATE "DB"\."S"\."__BOBSLED_AGENTIC_GUARD" SET /);
     expect(lines[5]).toBe(
       `matches := (SELECT COUNT(*) FROM (SELECT "KEY_HASH" FROM ${table} WHERE "KEY_HASH" = 'hash' UNION ALL SELECT "KEY_HASH" FROM ${other} WHERE "KEY_HASH" = 'hash'));`
     );
@@ -295,7 +295,7 @@ describe('Snowflake row dialect', () => {
 describe('the base table check', () => {
   const shape = [
     {
-      name: '__dogsled_agentic_cursors',
+      name: '__bobsled_agentic_cursors',
       columns: [
         { name: 'key_hash', type: 'text' as const },
         { name: 'version', type: 'integer' as const },
@@ -306,10 +306,10 @@ describe('the base table check', () => {
   const namespace = '"DB"."S"';
   const snowflakeRows = () =>
     [
-      { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'KEY_HASH', data_type: 'TEXT' },
-      { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'VERSION', data_type: 'NUMBER' },
-      { table_name: '__DOGSLED_AGENTIC_CURSORS', column_name: 'ACTIVE', data_type: 'BOOLEAN' },
-      { table_name: '__DOGSLED_AGENTIC_GUARD', column_name: 'TOKEN', data_type: 'TEXT' },
+      { table_name: '__BOBSLED_AGENTIC_CURSORS', column_name: 'KEY_HASH', data_type: 'TEXT' },
+      { table_name: '__BOBSLED_AGENTIC_CURSORS', column_name: 'VERSION', data_type: 'NUMBER' },
+      { table_name: '__BOBSLED_AGENTIC_CURSORS', column_name: 'ACTIVE', data_type: 'BOOLEAN' },
+      { table_name: '__BOBSLED_AGENTIC_GUARD', column_name: 'TOKEN', data_type: 'TEXT' },
     ].map((row) => ({
       ...row,
       // What the driver reads back: numbers as text, and so a null number as the text NULL.
@@ -337,7 +337,7 @@ describe('the base table check', () => {
     expect(sql).toContain("t.table_type = 'BASE TABLE'");
     // Only the store's tables and its guard, which can share the schema with others.
     expect(sql).toContain('AND c.table_name IN (?, ?)');
-    expect(params).toEqual(['S', '__DOGSLED_AGENTIC_CURSORS', '__DOGSLED_AGENTIC_GUARD']);
+    expect(params).toEqual(['S', '__BOBSLED_AGENTIC_CURSORS', '__BOBSLED_AGENTIC_GUARD']);
   });
 
   it.each([
@@ -383,7 +383,7 @@ describe('the base table check', () => {
       domain_name: null,
       trusted: true,
     };
-    const table = { table_name: '__dogsled_agentic_cursors', ...plain };
+    const table = { table_name: '__bobsled_agentic_cursors', ...plain };
     return [
       { ...table, column_name: 'key_hash', data_type: 'text' },
       { ...table, column_name: 'version', data_type: 'bigint' },
@@ -397,7 +397,7 @@ describe('the base table check', () => {
     const [sql, params] = db.query.mock.calls[0]!;
     expect(sql).toContain("t.table_type = 'BASE TABLE'");
     expect(sql).toContain('AND c.table_name IN ($2)');
-    expect(params).toEqual(['s', '__dogsled_agentic_cursors']);
+    expect(params).toEqual(['s', '__bobsled_agentic_cursors']);
   });
 
   it('asks PostgreSQL about everything that would run as the role that writes', async () => {

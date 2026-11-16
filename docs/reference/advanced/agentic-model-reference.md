@@ -169,13 +169,13 @@ Dogsled adds four columns to the published table:
 
 | Column                | Meaning                                                                           |
 | --------------------- | --------------------------------------------------------------------------------- |
-| `_dogsled_run_id`     | Run that produced this row; set by Dogsled after acceptance                       |
-| `_dogsled_evidence`   | Null or a nonempty list of evidence observations                                  |
-| `_dogsled_confidence` | Null or a number from 0 to 1; not a calibrated probability                        |
-| `_dogsled_reason`     | Null or an object with `summary`, `supporting_factors`, and `conflicting_factors` |
+| `_bobsled_run_id`     | Run that produced this row; set by Dogsled after acceptance                       |
+| `_bobsled_evidence`   | Null or a nonempty list of evidence observations                                  |
+| `_bobsled_confidence` | Null or a number from 0 to 1; not a calibrated probability                        |
+| `_bobsled_reason`     | Null or an object with `summary`, `supporting_factors`, and `conflicting_factors` |
 
 The executor supplies the three nullable judgment fields, including explicit null
-when unknown. It must not return `_dogsled_run_id`. Evidence contains `source`,
+when unknown. It must not return `_bobsled_run_id`. Evidence contains `source`,
 `reference`, nullable `support_excerpt`, and `retrieved_at`. Sources must refer to
 supplied input, permitted context, retained evidence, or declared tools.
 Retrieval times come from actual observations. Shape validation does not prove

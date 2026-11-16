@@ -22,7 +22,7 @@ export async function executeAgent(request) {
       {
         pair_id: pair.pair_id,
         assessment: 'insufficient_evidence',
-        _dogsled_evidence: [
+        _bobsled_evidence: [
           {
             source: assignment.input.ref,
             reference: pair.pair_id,
@@ -30,8 +30,8 @@ export async function executeAgent(request) {
             support_excerpt: pair.evidence,
           },
         ],
-        _dogsled_confidence: 0.9,
-        _dogsled_reason: null,
+        _bobsled_confidence: 0.9,
+        _bobsled_reason: null,
       },
     ],
   });

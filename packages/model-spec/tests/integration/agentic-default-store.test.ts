@@ -381,7 +381,7 @@ describe.skipIf(!duckdb)('default local store', { timeout: 60_000 }, () => {
       const runner = await buildDuckDbRunner(duckDbStateFile(cursorFile(root)));
       try {
         await runner.run(
-          `INSERT INTO __dogsled_agentic_cursors VALUES ('${digestAgenticState(cursorKey)}', '${scope}', '${model}', '${target}', -1, '')`
+          `INSERT INTO __bobsled_agentic_cursors VALUES ('${digestAgenticState(cursorKey)}', '${scope}', '${model}', '${target}', -1, '')`
         );
       } finally {
         await runner.close?.();
@@ -743,7 +743,7 @@ describe.skipIf(!duckdb)('default local store', { timeout: 60_000 }, () => {
       const runner = await buildDuckDbRunner(integration(file));
       try {
         const rows = await runner.query!(
-          'SELECT run_id, summary FROM checkpoints.__dogsled_agentic_runs'
+          'SELECT run_id, summary FROM checkpoints.__bobsled_agentic_runs'
         );
         expect(rows).toHaveLength(1);
         expect(rows[0]!.run_id).toBe(key.id);

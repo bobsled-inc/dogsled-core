@@ -85,7 +85,7 @@ describe('PostgresDestination', () => {
               { column_name: 'id', data_type: 'BIGINT' },
               { column_name: 'title', data_type: 'TEXT' },
               { column_name: '_time_extracted', data_type: 'TIMESTAMP WITH TIME ZONE' },
-              { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMP WITH TIME ZONE' },
+              { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMP WITH TIME ZONE' },
             ],
           });
         }
@@ -224,7 +224,7 @@ describe('PostgresDestination', () => {
     expect(createSql).toContain('"id" BIGINT');
     expect(createSql).toContain('"title" TEXT');
     expect(createSql).toContain('"_time_extracted" TIMESTAMPTZ');
-    expect(createSql).toContain('"_dogsled_loaded_at" TIMESTAMPTZ DEFAULT NOW()');
+    expect(createSql).toContain('"_bobsled_loaded_at" TIMESTAMPTZ DEFAULT NOW()');
   });
 
   it('ensureTable() adds missing columns via ALTER TABLE', async () => {
@@ -232,7 +232,7 @@ describe('PostgresDestination', () => {
       existingColumns: [
         { column_name: 'id', data_type: 'BIGINT' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMPTZ' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMPTZ' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMPTZ' },
       ],
     });
     const pool = createMockPool(client);
@@ -252,7 +252,7 @@ describe('PostgresDestination', () => {
         { column_name: 'id', data_type: 'TEXT' },
         { column_name: 'title', data_type: 'TEXT' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMPTZ' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMPTZ' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMPTZ' },
       ],
     });
     const pool = createMockPool(client);
@@ -342,7 +342,7 @@ describe('PostgresDestination', () => {
 
   // ── loadAndFinalize: append ──
 
-  it('loadAndFinalize("append") inserts records with NOW() for _dogsled_loaded_at', async () => {
+  it('loadAndFinalize("append") inserts records with NOW() for _bobsled_loaded_at', async () => {
     const client = createMockClient();
     client.query.mockResolvedValue(createMockQueryResult({ rowCount: 1 }));
     const pool = createMockPool(client);
@@ -470,9 +470,9 @@ describe('PostgresDestination', () => {
     const queries = client.query.mock.calls.map((c) => (typeof c[0] === 'string' ? c[0] : ''));
     const createTempSql = queries.find((q) => q.includes('CREATE TEMP TABLE'));
     expect(createTempSql).toBeDefined();
-    // Should NOT contain "analytics"."_dogsled_stg_issues" — just the name
+    // Should NOT contain "analytics"."_bobsled_stg_issues" — just the name
     expect(createTempSql).not.toContain('"analytics"');
-    expect(createTempSql).toContain('"_dogsled_stg_issues"');
+    expect(createTempSql).toContain('"_bobsled_stg_issues"');
   });
 
   it('loadAndFinalize("merge") uses NULLS LAST in ROW_NUMBER for safe dedup', async () => {
@@ -523,7 +523,7 @@ describe('PostgresDestination', () => {
     const client = createMockClient();
     client.query.mockImplementation(async (sql: string) => {
       // Fail on the INSERT INTO staging
-      if (typeof sql === 'string' && sql.includes('INSERT INTO "_dogsled_stg_')) {
+      if (typeof sql === 'string' && sql.includes('INSERT INTO "_bobsled_stg_')) {
         throw new Error('insert failure');
       }
       return createMockQueryResult();
@@ -542,7 +542,7 @@ describe('PostgresDestination', () => {
     expect(queries.some((q) => q.includes('DROP TABLE IF EXISTS'))).toBe(true);
   });
 
-  it('loadAndFinalize("merge") updates _time_extracted and _dogsled_loaded_at on conflict', async () => {
+  it('loadAndFinalize("merge") updates _time_extracted and _bobsled_loaded_at on conflict', async () => {
     const client = createMockClient();
     client.query.mockResolvedValue(createMockQueryResult({ rowCount: 1 }));
     const pool = createMockPool(client);
@@ -558,7 +558,7 @@ describe('PostgresDestination', () => {
     const mergeSql = queries.find((q) => q.includes('ON CONFLICT'));
     expect(mergeSql).toBeDefined();
     expect(mergeSql).toContain('"_time_extracted" = S."_time_extracted"');
-    expect(mergeSql).toContain('"_dogsled_loaded_at" = NOW()');
+    expect(mergeSql).toContain('"_bobsled_loaded_at" = NOW()');
   });
 
   // ── Type mapping ──

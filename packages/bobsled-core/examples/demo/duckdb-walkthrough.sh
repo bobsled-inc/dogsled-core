@@ -340,7 +340,7 @@ if [ "$MODE" = "synthetic" ]; then
   step "Append strategy — insert 3 issues"
   explain "Protocol flow: SCHEMA message declares the stream, then RECORD messages carry data."
   explain "Each RECORD includes 'time_extracted' — the timestamp the extractor pulled it."
-  explain "The loader adds '_dogsled_loaded_at' automatically when writing to the DB."
+  explain "The loader adds '_bobsled_loaded_at' automatically when writing to the DB."
   explain "Strategy: append — all records are INSERTed. No dedup, no upsert."
   echo ""
 
@@ -375,7 +375,7 @@ if [ "$MODE" = "synthetic" ]; then
 
   ISSUES=$(qualify "issues")
   query "SELECT id, title, status, priority FROM ${ISSUES} ORDER BY id"
-  query "SELECT id, title, _time_extracted, _dogsled_loaded_at FROM ${ISSUES} ORDER BY id"
+  query "SELECT id, title, _time_extracted, _bobsled_loaded_at FROM ${ISSUES} ORDER BY id"
 
   # ── Merge ──
   step "Merge strategy — upsert with overlapping primary keys"

@@ -1,6 +1,6 @@
 /**
  * Takes over warehouse tables that an earlier Core generation created, by
- * renaming them in place on first use (`__dogsled_cursors` once Core writes
+ * renaming them in place on first use (`__bobsled_cursors` once Core writes
  * `__bobsled_cursors`, and so on). Never drops a table: when the current name
  * exists already, the earlier table is left alone.
  */

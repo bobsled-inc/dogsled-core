@@ -23,7 +23,7 @@ export function checkAssessment(row: Record<string, unknown>): void {
       2
     );
   };
-  if (!row['_dogsled_run_id'] || !row['revision_id']) fail();
+  if (!row['_bobsled_run_id'] || !row['revision_id']) fail();
   if (row['passage_ids'] !== undefined) {
     try {
       const passages = Passages.parse(decode(row['input_passages']));

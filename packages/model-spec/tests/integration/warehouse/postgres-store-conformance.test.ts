@@ -48,7 +48,7 @@ function open(create: (schema: string) => StoreHandle['store']): StoreHandle {
   return handle;
 }
 const tableFor = (key: Parameters<typeof digestAgenticState>[0]) =>
-  `__dogsled_cp_${digestAgenticState(key).slice(0, 48)}`;
+  `__bobsled_cp_${digestAgenticState(key).slice(0, 48)}`;
 
 describe.skipIf(!enabled)('PostgreSQL', () => {
   describeAgenticStoreConformance({
@@ -76,7 +76,7 @@ describe.skipIf(!enabled)('PostgreSQL', () => {
     open: async () => open((schema) => rows(schema, undefined, undefined, true)),
     openLarge: async () => open((schema) => rows(schema, undefined, 600_000, true)),
     expireLease: (handle) =>
-      sql(`UPDATE "${schemas.get(handle)}"."__dogsled_agentic_runs" SET "lease_expires" = 0`),
+      sql(`UPDATE "${schemas.get(handle)}"."__bobsled_agentic_runs" SET "lease_expires" = 0`),
   });
   describeAgenticStoreConformance({
     name: 'PostgreSQL row layout',
@@ -84,18 +84,18 @@ describe.skipIf(!enabled)('PostgreSQL', () => {
     open: async () => open((schema) => rows(schema)),
     openLarge: async () => open((schema) => rows(schema, undefined, 600_000)),
     expireLease: (handle) =>
-      sql(`UPDATE "${schemas.get(handle)}"."__dogsled_agentic_runs" SET "lease_expires" = 0`),
+      sql(`UPDATE "${schemas.get(handle)}"."__bobsled_agentic_runs" SET "lease_expires" = 0`),
     withRetention: (handle, retentionMs) => rows(schemas.get(handle)!, retentionMs),
     damage: (handle) =>
-      sql(`UPDATE "${schemas.get(handle)}"."__dogsled_agentic_rows" SET "data" = '{"damaged":1}'`),
+      sql(`UPDATE "${schemas.get(handle)}"."__bobsled_agentic_rows" SET "data" = '{"damaged":1}'`),
     replaceRowsTable: async (handle) => {
-      const table = `"${schemas.get(handle)}"."__dogsled_agentic_rows"`;
+      const table = `"${schemas.get(handle)}"."__bobsled_agentic_rows"`;
       await sql(`ALTER TABLE ${table} RENAME TO kept_rows`);
       await sql(`CREATE VIEW ${table} AS SELECT * FROM "${schemas.get(handle)}".kept_rows`);
     },
     addComputedColumn: (handle) =>
       sql(
-        `ALTER TABLE "${schemas.get(handle)}"."__dogsled_agentic_rows" ADD COLUMN computed TEXT GENERATED ALWAYS AS (repeat('x', 10)) STORED`
+        `ALTER TABLE "${schemas.get(handle)}"."__bobsled_agentic_rows" ADD COLUMN computed TEXT GENERATED ALWAYS AS (repeat('x', 10)) STORED`
       ),
   });
 });

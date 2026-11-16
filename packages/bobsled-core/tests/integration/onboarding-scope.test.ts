@@ -60,7 +60,7 @@ it('checks every finalist and real watchlist decisions against DuckDB tables', a
     await runner.run(`CREATE SCHEMA analytics;
    CREATE TABLE analytics.watch_next AS SELECT id, 'Series ' || id AS name FROM range(1,4) t(id);
    CREATE TABLE analytics.article_inputs AS SELECT id AS show_id, 10 AS revision_id, 'A story about identity.' AS article_text FROM analytics.watch_next;
-   CREATE TABLE analytics.show_notes AS SELECT show_id, revision_id, 'identity' AS theme, 'unknown' AS ending, 'unknown' AS fit, 'identity' AS support_excerpt, 'test' AS _dogsled_run_id FROM analytics.article_inputs;
+   CREATE TABLE analytics.show_notes AS SELECT show_id, revision_id, 'identity' AS theme, 'unknown' AS ending, 'unknown' AS fit, 'identity' AS support_excerpt, 'test' AS _bobsled_run_id FROM analytics.article_inputs;
    CREATE TABLE analytics.recommendations AS SELECT id, name, 'unknown' AS fit, 'The preference needs more evidence.' AS reason FROM analytics.watch_next;
    CREATE TABLE analytics.watchlist_matches AS SELECT 'watch-1' AS watch_id, 'candidate-1' AS candidate_id, 1 AS show_id, 'reviewed' AS match_method, 'Year and country agree after review.' AS evidence, 'accepted' AS review_status UNION ALL SELECT 'watch-2', NULL, NULL, NULL, 'Year missing; cannot choose between remakes.', 'unresolved';`);
     const read = async (_root: string, sql: string) => ({ rows: await runner.query(sql) });
@@ -95,7 +95,7 @@ it('checks a passage-ID pilot, preserves chapter state, and verifies the remaini
         '[{"id":"p1","text":"Factions compete for power."}]' AS passages FROM analytics.watch_next;
       CREATE TABLE analytics.show_notes AS SELECT show_id, revision_id, ['p1'] AS passage_ids,
         'supported' AS fit, 'The passage describes faction struggles.' AS explanation,
-        article_text AS support_excerpt, 'pilot-run' AS _dogsled_run_id FROM analytics.article_inputs WHERE show_id=1;
+        article_text AS support_excerpt, 'pilot-run' AS _bobsled_run_id FROM analytics.article_inputs WHERE show_id=1;
       CREATE VIEW analytics.recommendations AS SELECT w.id,w.name,n.fit,n.explanation AS reason
         FROM analytics.watch_next w LEFT JOIN analytics.show_notes n ON w.id=n.show_id;`);
     const read = async (_root: string, sql: string) => ({ rows: await runner.query(sql) });
@@ -109,8 +109,8 @@ it('checks a passage-ID pilot, preserves chapter state, and verifies the remaini
       FROM analytics.article_inputs WHERE show_id IN (2,3)`);
     expect((await verifyOnboarding(root, 'transform', read)).tables[0]?.totalRows).toBe(3);
     expect(
-      (await runner.query('SELECT _dogsled_run_id FROM analytics.show_notes WHERE show_id=1'))[0]?.[
-        '_dogsled_run_id'
+      (await runner.query('SELECT _bobsled_run_id FROM analytics.show_notes WHERE show_id=1'))[0]?.[
+        '_bobsled_run_id'
       ]
     ).toBe('pilot-run');
     await runner.run("UPDATE analytics.show_notes SET passage_ids=['p99'] WHERE show_id=2");

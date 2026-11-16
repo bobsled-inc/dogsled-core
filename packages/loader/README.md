@@ -409,7 +409,7 @@ users                full_refresh    ["id"]               —               ["id
 | Column               | Type      | Description                          |
 | -------------------- | --------- | ------------------------------------ |
 | `_time_extracted`    | TIMESTAMP | When the extractor pulled the record |
-| `_dogsled_loaded_at` | TIMESTAMP | When the loader wrote the record     |
+| `_bobsled_loaded_at` | TIMESTAMP | When the loader wrote the record     |
 
 ## BigQuery Auto-Optimization
 

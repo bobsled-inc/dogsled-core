@@ -35,7 +35,7 @@ it.skipIf(!warehouseEnabled('duckdb'))(
       try {
         expect(
           await runner.query!(
-            'SELECT count(*)::INTEGER AS n FROM _dogsled_agentic_publication.cursors'
+            'SELECT count(*)::INTEGER AS n FROM _bobsled_agentic_publication.cursors'
           )
         ).toEqual([{ n: 2 }]);
       } finally {

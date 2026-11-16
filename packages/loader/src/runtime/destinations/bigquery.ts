@@ -332,7 +332,7 @@ export class BigQueryDestination implements DatabaseDestination {
     const outputPath = parquetPath === jsonlPath ? `${jsonlPath}.parquet` : parquetPath;
 
     // Augment user columns with _time_extracted so DuckDB types it as TIMESTAMP
-    // in the Parquet output. _dogsled_loaded_at is NOT in the JSONL — it's set
+    // in the Parquet output. _bobsled_loaded_at is NOT in the JSONL — it's set
     // by the database at load time, so we must not include it here.
     const allColumns: SchemaColumn[] | undefined = columns
       ? [...columns, { name: SYSTEM_COLUMNS.TIME_EXTRACTED, type: 'timestamp' }]
@@ -860,7 +860,7 @@ export class BigQueryDestination implements DatabaseDestination {
       throw new Error('merge strategy requires at least one key column');
     }
 
-    const stagingName = `_dogsled_stg_${safeTable}_${randomUUID().replaceAll('-', '')}`;
+    const stagingName = `_bobsled_stg_${safeTable}_${randomUUID().replaceAll('-', '')}`;
     const stagingTable = dataset.table(stagingName);
     const qualifiedStaging = `${quoteBqIdentifier(safeSchema)}.${quoteBqIdentifier(stagingName)}`;
 
@@ -983,9 +983,9 @@ export class BigQueryDestination implements DatabaseDestination {
 
       const insertVals = allCols.map((c) => `S.${quoteBqIdentifier(c)}`).join(', ');
 
-      // Select data columns from staging + CURRENT_TIMESTAMP() for _dogsled_loaded_at
+      // Select data columns from staging + CURRENT_TIMESTAMP() for _bobsled_loaded_at
       const dataColList = dataCols.map(quoteBqIdentifier).join(', ');
-      // Tiebreaker: _dogsled_loaded_at provides cross-batch ordering (newer batches win).
+      // Tiebreaker: _bobsled_loaded_at provides cross-batch ordering (newer batches win).
       // Within a single batch, CURRENT_TIMESTAMP() is constant so ties remain non-deterministic.
       const usingClause = `USING (SELECT ${dataColList}, CURRENT_TIMESTAMP() AS ${quoteBqIdentifier(SYSTEM_COLUMNS.LOADED_AT)} FROM ${qualifiedStaging} QUALIFY ROW_NUMBER() OVER (PARTITION BY ${keyColList} ORDER BY ${quoteBqIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED)} DESC NULLS LAST, ${quoteBqIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DESC NULLS LAST) = 1) S`;
 
@@ -1003,7 +1003,7 @@ export class BigQueryDestination implements DatabaseDestination {
           client.createQueryJob({
             query: mergeSql,
             location: this.location,
-            labels: { dogsled_stream: safeTable, dogsled_strategy: strategy },
+            labels: { bobsled_stream: safeTable, bobsled_strategy: strategy },
           }),
         {
           onRetry: (attempt, delay, error) => {

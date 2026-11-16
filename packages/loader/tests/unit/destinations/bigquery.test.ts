@@ -87,13 +87,13 @@ describe('BigQueryDestination', () => {
     const table = createMockTable({
       metadata: {
         type: 'TABLE',
-        labels: { dogsled_temp_dataset: marker },
+        labels: { bobsled_temp_dataset: marker },
         schema: {
           fields: [
             { name: 'id', type: 'INT64' },
             { name: 'title', type: 'STRING' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
       },
@@ -108,11 +108,11 @@ describe('BigQueryDestination', () => {
     await dest.initialize();
     await dest.ensureTable('test_ds', 'issues', issueColumns, { tableOwnershipMarker: marker });
     expect(vi.mocked(client.createQueryJob).mock.calls[0]?.[0].query).toContain(
-      'OPTIONS(labels=[("dogsled_temp_dataset", "temp-dataset-019a")])'
+      'OPTIONS(labels=[("bobsled_temp_dataset", "temp-dataset-019a")])'
     );
 
     vi.mocked(table.getMetadata).mockResolvedValue([
-      { type: 'TABLE', labels: { dogsled_temp_dataset: 'someone-else' }, schema: { fields: [] } },
+      { type: 'TABLE', labels: { bobsled_temp_dataset: 'someone-else' }, schema: { fields: [] } },
     ]);
     await expect(
       dest.ensureTable('test_ds', 'issues', issueColumns, { tableOwnershipMarker: marker })
@@ -142,7 +142,7 @@ describe('BigQueryDestination', () => {
       metadata: {
         type: 'EXTERNAL',
         externalDataConfiguration: {},
-        labels: { dogsled_temp_dataset: marker },
+        labels: { bobsled_temp_dataset: marker },
         schema: { fields: [] },
       },
     });
@@ -162,7 +162,7 @@ describe('BigQueryDestination', () => {
     const table = createMockTable({
       metadata: {
         type: 'TABLE',
-        labels: { dogsled_temp_dataset: marker },
+        labels: { bobsled_temp_dataset: marker },
         schema: { fields: [{ name: 'different', type: 'STRING' }] },
       },
     });
@@ -199,7 +199,7 @@ describe('BigQueryDestination', () => {
             { name: 'id', type: 'INT64' },
             { name: 'embedding', type: 'FLOAT', mode: 'REPEATED' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
       },
@@ -266,7 +266,7 @@ describe('BigQueryDestination', () => {
     expect(query).toContain('INT64');
     expect(query).toContain('STRING');
     expect(query).toContain('_time_extracted');
-    expect(query).toContain('_dogsled_loaded_at');
+    expect(query).toContain('_bobsled_loaded_at');
   });
 
   it('loadFromUri loads GCS URIs via LOAD DATA INTO, never table.load', async () => {
@@ -404,7 +404,7 @@ describe('BigQueryDestination', () => {
             { name: 'title', type: 'STRING' },
             { name: 'updated_at', type: 'TIMESTAMP' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
         clustering: { fields: ['id'] },
@@ -449,7 +449,7 @@ describe('BigQueryDestination', () => {
             { name: 'id', type: 'INT64' },
             { name: 'title', type: 'STRING' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
         clustering: { fields: ['id'] },
@@ -482,7 +482,7 @@ describe('BigQueryDestination', () => {
             { name: 'id', type: 'INT64' },
             { name: 'title', type: 'STRING' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
       },
@@ -522,7 +522,7 @@ describe('BigQueryDestination', () => {
           { name: 'id', type: 'INT64' },
           { name: 'title', type: 'STRING' },
           { name: '_time_extracted', type: 'TIMESTAMP' },
-          { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+          { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
         ],
       },
       clustering: { fields: ['id'] },
@@ -585,7 +585,7 @@ describe('BigQueryDestination', () => {
             { name: 'id', type: 'INT64' },
             { name: 'title', type: 'STRING' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
       },
@@ -792,7 +792,7 @@ describe('BigQueryDestination', () => {
     await expect(dest.cancel()).resolves.toBeUndefined();
   });
 
-  it('loadAndFinalize("append") runs UPDATE to backfill _dogsled_loaded_at', async () => {
+  it('loadAndFinalize("append") runs UPDATE to backfill _bobsled_loaded_at', async () => {
     const table = createMockTable({ exists: true, loadOutputRows: '5' });
     const dataset = createMockDataset({
       exists: true,
@@ -805,11 +805,11 @@ describe('BigQueryDestination', () => {
 
     await dest.loadAndFinalize('test_ds', 'issues', '/tmp/data.jsonl', issueColumns, 'append', []);
 
-    // Should have called dataset.createQueryJob with UPDATE to backfill _dogsled_loaded_at
+    // Should have called dataset.createQueryJob with UPDATE to backfill _bobsled_loaded_at
     const queryJobCalls = vi.mocked(dataset.createQueryJob).mock.calls;
     const updateCall = queryJobCalls.find((c) => c[0].query.includes('UPDATE'));
     expect(updateCall).toBeDefined();
-    expect(updateCall![0].query).toContain('_dogsled_loaded_at');
+    expect(updateCall![0].query).toContain('_bobsled_loaded_at');
     expect(updateCall![0].query).toContain('IS NULL');
   });
 
@@ -967,7 +967,7 @@ describe('BigQueryDestination', () => {
 
     // Should have called dataset.table for staging table (uses UUID suffix)
     const tableCalls = vi.mocked(dataset.table).mock.calls;
-    const stagingCall = tableCalls.find((c) => /^_dogsled_stg_issues_[a-f0-9]{32}$/.test(c[0]));
+    const stagingCall = tableCalls.find((c) => /^_bobsled_stg_issues_[a-f0-9]{32}$/.test(c[0]));
     expect(stagingCall).toBeDefined();
 
     // Should have run MERGE query
@@ -976,7 +976,7 @@ describe('BigQueryDestination', () => {
     expect(mergeCall).toBeDefined();
     expect(mergeCall![0].query).toContain('QUALIFY ROW_NUMBER()');
     expect(mergeCall![0].query).toContain('CURRENT_TIMESTAMP()');
-    expect(mergeCall![0].query).toContain('_dogsled_loaded_at');
+    expect(mergeCall![0].query).toContain('_bobsled_loaded_at');
 
     // Should have run DROP TABLE for staging
     const dropCall = queryJobCalls.find((c) => c[0].query.includes('DROP TABLE'));
@@ -1298,7 +1298,7 @@ describe('BigQueryDestination', () => {
       .mock.calls.find((c) => c[0].query.includes('MERGE'))![0].query;
     expect(sql).toContain('`title` = S.`title`');
     expect(sql).toContain('`_time_extracted` = S.`_time_extracted`');
-    expect(sql).toContain('`_dogsled_loaded_at` = S.`_dogsled_loaded_at`');
+    expect(sql).toContain('`_bobsled_loaded_at` = S.`_bobsled_loaded_at`');
   });
 
   it('merge: INSERT VALUES includes all columns', async () => {
@@ -1320,9 +1320,9 @@ describe('BigQueryDestination', () => {
     const sql = vi
       .mocked(client.createQueryJob)
       .mock.calls.find((c) => c[0].query.includes('MERGE'))![0].query;
-    expect(sql).toContain('INSERT (`id`, `title`, `_time_extracted`, `_dogsled_loaded_at`)');
+    expect(sql).toContain('INSERT (`id`, `title`, `_time_extracted`, `_bobsled_loaded_at`)');
     expect(sql).toContain(
-      'VALUES (S.`id`, S.`title`, S.`_time_extracted`, S.`_dogsled_loaded_at`)'
+      'VALUES (S.`id`, S.`title`, S.`_time_extracted`, S.`_bobsled_loaded_at`)'
     );
   });
 
@@ -1368,11 +1368,11 @@ describe('BigQueryDestination', () => {
     ]);
 
     const tableCalls = vi.mocked(dataset.table).mock.calls;
-    const stagingCall = tableCalls.find((c) => /^_dogsled_stg_issues_[a-f0-9]{32}$/.test(c[0]));
+    const stagingCall = tableCalls.find((c) => /^_bobsled_stg_issues_[a-f0-9]{32}$/.test(c[0]));
     expect(stagingCall).toBeDefined();
   });
 
-  it('loadAndFinalize("full_refresh") runs UPDATE to backfill _dogsled_loaded_at', async () => {
+  it('loadAndFinalize("full_refresh") runs UPDATE to backfill _bobsled_loaded_at', async () => {
     const table = createMockTable({ exists: true, loadOutputRows: '10' });
     const dataset = createMockDataset({
       exists: true,
@@ -1395,7 +1395,7 @@ describe('BigQueryDestination', () => {
     const queryJobCalls = vi.mocked(dataset.createQueryJob).mock.calls;
     const updateCall = queryJobCalls.find((c) => c[0].query.includes('UPDATE'));
     expect(updateCall).toBeDefined();
-    expect(updateCall![0].query).toContain('_dogsled_loaded_at');
+    expect(updateCall![0].query).toContain('_bobsled_loaded_at');
     expect(updateCall![0].query).toContain('IS NULL');
   });
 
@@ -1418,7 +1418,7 @@ describe('BigQueryDestination', () => {
             { name: 'id', type: 'INT64' },
             { name: 'title', type: 'STRING' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
       },
@@ -1450,7 +1450,7 @@ describe('BigQueryDestination', () => {
             { name: 'id', type: 'INT64' },
             { name: 'title', type: 'STRING' },
             { name: '_time_extracted', type: 'TIMESTAMP' },
-            { name: '_dogsled_loaded_at', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
           ],
         },
       },
@@ -1805,8 +1805,8 @@ describe('BigQueryDestination', () => {
       .mock.calls.find((c) => c[0].query.includes('MERGE'));
     expect(mergeCall).toBeDefined();
     expect(mergeCall![0].labels).toEqual({
-      dogsled_stream: 'issues',
-      dogsled_strategy: 'merge',
+      bobsled_stream: 'issues',
+      bobsled_strategy: 'merge',
     });
   });
 });
@@ -1839,7 +1839,7 @@ describe('BigQueryDestination — system column DDL', () => {
 
     expect(queries).toEqual([
       'CREATE TABLE IF NOT EXISTS `test_ds`.`issues` (`id` INT64, `title` STRING, ' +
-        '`_time_extracted` TIMESTAMP, `_dogsled_loaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP()) ' +
+        '`_time_extracted` TIMESTAMP, `_bobsled_loaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP()) ' +
         'PARTITION BY DATE(`_time_extracted`)',
     ]);
   });
@@ -1852,7 +1852,7 @@ describe('BigQueryDestination — system column DDL', () => {
     ]);
 
     expect(queries).toEqual([
-      'ALTER TABLE `test_ds`.`issues` ADD COLUMN `_dogsled_loaded_at` TIMESTAMP',
+      'ALTER TABLE `test_ds`.`issues` ADD COLUMN `_bobsled_loaded_at` TIMESTAMP',
     ]);
   });
 
@@ -1867,7 +1867,7 @@ describe('BigQueryDestination — system column DDL', () => {
 
     expect(queries).toEqual([
       'ALTER TABLE `test_ds`.`issues` ADD COLUMN `_time_extracted` TIMESTAMP, ' +
-        'ADD COLUMN `_dogsled_loaded_at` TIMESTAMP',
+        'ADD COLUMN `_bobsled_loaded_at` TIMESTAMP',
     ]);
     // The ALTER invalidates the table etag, so clustering must use fresh metadata.
     expect(table.getMetadata).toHaveBeenCalledTimes(2);

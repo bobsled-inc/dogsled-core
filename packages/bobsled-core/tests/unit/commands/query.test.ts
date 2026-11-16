@@ -141,8 +141,8 @@ describe('withMixedModeScratchTables', () => {
     const liveDestination: ResolvedDestination = {
       kind: 'in_memory',
       schema: 'temp',
-      table: '__dogsled_live_issues',
-      fullyQualified: 'temp.__dogsled_live_issues',
+      table: '__bobsled_live_issues',
+      fullyQualified: 'temp.__bobsled_live_issues',
       sqlRunnerKind: 'duckdb',
       config: {
         dest: 'duckdb',
@@ -186,13 +186,13 @@ describe('withMixedModeScratchTables', () => {
         sqlRunnerKind: 'bigquery',
       })
     );
-    expect(seen[0]?.table).toMatch(/^__dogsled_live_issues_0_scratch_/);
+    expect(seen[0]?.table).toMatch(/^__bobsled_live_issues_0_scratch_/);
     expect(seen[1]).toBe(representative);
     expect(runner.run).toHaveBeenCalledWith(
-      expect.stringMatching(/CREATE TABLE `analytics`\.`__dogsled_live_issues_0_scratch_/)
+      expect.stringMatching(/CREATE TABLE `analytics`\.`__bobsled_live_issues_0_scratch_/)
     );
     expect(runner.run).toHaveBeenCalledWith(
-      expect.stringMatching(/DROP TABLE IF EXISTS `analytics`\.`__dogsled_live_issues_0_scratch_/)
+      expect.stringMatching(/DROP TABLE IF EXISTS `analytics`\.`__bobsled_live_issues_0_scratch_/)
     );
   });
 });

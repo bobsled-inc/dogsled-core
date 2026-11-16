@@ -105,7 +105,7 @@ function countViolations(
     `  COUNT(*) AS violation_count`,
     `FROM (`,
     `  ${selectSql.replace(/\n/g, '\n  ')}`,
-    `) AS ${q('__dogsled_expect_violations', dialect)}`,
+    `) AS ${q('__bobsled_expect_violations', dialect)}`,
   ].join('\n');
 }
 
@@ -200,7 +200,7 @@ function compileExpectationSql(
       `SELECT violation_count`,
       `FROM (`,
       `  ${userSql.replace(/\n/g, '\n  ')}`,
-      `) AS ${q('__dogsled_custom', dialect)}`,
+      `) AS ${q('__bobsled_custom', dialect)}`,
     ].join('\n');
   }
 

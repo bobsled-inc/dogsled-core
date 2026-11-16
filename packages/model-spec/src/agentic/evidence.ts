@@ -22,7 +22,7 @@ export function combineAgenticEvidence(
       entries.set(identity, entry);
     }
   }
-  return AgenticJudgmentSchema.shape._dogsled_evidence.parse(
+  return AgenticJudgmentSchema.shape._bobsled_evidence.parse(
     entries.size ? [...entries.values()] : null
   );
 }

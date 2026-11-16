@@ -143,9 +143,9 @@ export function createJevExecutor(options: {
             ...assignment.group_key,
             choice: result.choice,
             confidence: result.confidence,
-            _dogsled_evidence: null,
-            _dogsled_confidence: result.confidence,
-            _dogsled_reason: null,
+            _bobsled_evidence: null,
+            _bobsled_confidence: result.confidence,
+            _bobsled_reason: null,
           },
         ],
       });

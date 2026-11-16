@@ -28,7 +28,7 @@ for(const change of [{},{product_id:'invented'},{support_quote:'invented'},{issu
  const execute=createExecutor(async(_connection,options,budget)=>{calls++;assert.equal(options.maxRetries,0);assert.equal(budget.costBudgetMode,'enforce');return {ok:true,value:{rows:[{...row,...change}]},usage:{inputTokens:10,outputTokens:5,totalTokens:15}};});
  const outcome=await execute(request);
  assert.equal(outcome.status,Object.keys(change).length?'failed':'succeeded');
- if(outcome.status==='succeeded'){assert.equal(outcome.rows[0].analysis_mode,'model');assert.equal(outcome.rows[0].product_id,null);assert.equal(outcome.rows[0]._dogsled_evidence[0].support_excerpt,'identify the item');}
+ if(outcome.status==='succeeded'){assert.equal(outcome.rows[0].analysis_mode,'model');assert.equal(outcome.rows[0].product_id,null);assert.equal(outcome.rows[0]._bobsled_evidence[0].support_excerpt,'identify the item');}
  const again=await execute({...request,assignment:{...assignment,attempt_id:'2'}});assert.equal(again.status,'failed');assert.equal(again.error.retryable,false);assert.equal(calls,1);
 }
 const fail=createExecutor(async()=>{throw new Error('private provider response');});

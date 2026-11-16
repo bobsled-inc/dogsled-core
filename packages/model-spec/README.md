@@ -1709,9 +1709,9 @@ inputs accordingly when a group requires unchanged context rows.
 Storage follows the execution configuration:
 
 - Local file checkpoints share one `agentic_cursors` index in `.bobsled/model-spec/run-state.json`.
-- The default DuckDB publisher shares one `_dogsled_agentic_publication.cursors`
+- The default DuckDB publisher shares one `_bobsled_agentic_publication.cursors`
   table across models when no separate checkpoint store is supplied.
-- A configured warehouse checkpoint store shares one `__dogsled_cursors` table in
+- A configured warehouse checkpoint store shares one `__bobsled_cursors` table in
   its system schema. PostgreSQL, Snowflake, BigQuery, and Databricks are supported.
   Databricks requires catalog-managed transactions, as for publication.
 - Library hosts can supply `agentic.cursorStore`, or expose `cursors` on their

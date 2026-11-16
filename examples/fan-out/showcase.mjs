@@ -38,7 +38,7 @@ export async function run(ctx) {
     assert.equal(Number((await ctx.sql('SELECT count(*) AS n FROM customers')).rows[0].n), 200);
     assert.equal(await postgresSql('SELECT count(*) FROM fanout.customers'), '200');
     assert.equal(
-      await postgresSql('SELECT count(_dogsled_loaded_at) FROM fanout.customers'),
+      await postgresSql('SELECT count(_bobsled_loaded_at) FROM fanout.customers'),
       '200'
     );
     const files = (await readdir(path.join(ctx.project, 'archive'), { recursive: true })).filter(

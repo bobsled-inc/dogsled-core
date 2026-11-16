@@ -66,9 +66,9 @@ function category(sql: string): string {
   // Every store creates its schema; those requests are counted separately.
   const area = /^create schema/.test(text)
     ? 'schema'
-    : /__dogsled_cp_/.test(text)
+    : /__bobsled_cp_/.test(text)
       ? 'checkpoint'
-      : /__dogsled_cursors/.test(text)
+      : /__bobsled_cursors/.test(text)
         ? 'cursor'
         : 'publication';
   const kind = /^(create|drop) /.test(text)
@@ -111,7 +111,7 @@ export function agenticWarehouse(
   // One checkpoint transport per run: each run key has its own control and payload tables.
   const checkpoints = new Map<string, ReturnType<typeof checkpointTransport>>();
   const checkpoint = (sql: string) => {
-    const table = /__dogsled_cp_([a-f0-9]{48})_/i.exec(sql)![1]!.toLowerCase();
+    const table = /__bobsled_cp_([a-f0-9]{48})_/i.exec(sql)![1]!.toLowerCase();
     if (!checkpoints.has(table)) checkpoints.set(table, checkpointTransport(0, false));
     return checkpoints.get(table)!.runner;
   };

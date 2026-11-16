@@ -169,9 +169,9 @@ export async function planScenario(): Promise<AgenticStoreScenario> {
       rows: assignment.processed_keys.map(({ pair_id }) => ({
         pair_id: String(pair_id),
         assessment: `Résumé 🛷 for ${String(pair_id)}: "quoted" \\ back'slash`,
-        _dogsled_evidence: null,
-        _dogsled_confidence: null,
-        _dogsled_reason: null,
+        _bobsled_evidence: null,
+        _bobsled_confidence: null,
+        _bobsled_reason: null,
       })),
     };
   };

@@ -288,11 +288,11 @@ the snapshot from its rows. Commands, snapshots and the store interfaces are unc
 
 | Table                       | One row per                  | Holds                                                             |
 | --------------------------- | ---------------------------- | ----------------------------------------------------------------- |
-| `__dogsled_agentic_runs`    | Run                          | Identity, revision, ownership, newest write, small fields as JSON |
-| `__dogsled_agentic_rows`    | Assignment or attempt update | Immutable content; the definition and input batch are stored once |
-| `__dogsled_agentic_cursors` | Cursor key                   | The cursor record and a version for compare-and-swap              |
+| `__bobsled_agentic_runs`    | Run                          | Identity, revision, ownership, newest write, small fields as JSON |
+| `__bobsled_agentic_rows`    | Assignment or attempt update | Immutable content; the definition and input batch are stored once |
+| `__bobsled_agentic_cursors` | Cursor key                   | The cursor record and a version for compare-and-swap              |
 
-Writes in `__dogsled_agentic_rows` form a chain: each names its `parent`, and its `write_id` is a
+Writes in `__bobsled_agentic_rows` form a chain: each names its `parent`, and its `write_id` is a
 digest of its parent, revision, operation ID and content. The header's `head` names the newest
 committed write. A read walks back from `head`, verifies each digest, and never fetches anything
 else. A long value spans several rows of one write. Before it reads any content, a load checks how
@@ -548,19 +548,19 @@ yet, so a role scoped to one pre-created schema is enough. Rows hold the same da
 store, so apply the same access policies.
 
 Runs in progress stay in the store that started them. A host that opts in must not resume them from
-this store, which would not find them. Each cursor key takes its value from `__dogsled_cursors` in
+this store, which would not find them. Each cursor key takes its value from `__bobsled_cursors` in
 that schema when the row store first sees the key, and never reads it again once the value has
 landed. A key that an unfinished run still holds there fails with `cursor_held_elsewhere` and writes
 nothing: this store cannot open that run to take it over. Finish the run from the previous store
 first. A damaged record stops the key rather than starting it again from the beginning. So does a
 role that cannot read the old table on PostgreSQL. Snowflake reports a table the role cannot see
 exactly as it reports one that does not exist, so **on Snowflake the role must hold `SELECT` on
-`__DOGSLED_CURSORS` wherever the old store ran**. Without it, a key starts from empty.
+`__BOBSLED_CURSORS` wherever the old store ran**. Without it, a key starts from empty.
 
 A carried value goes in as a bound update after the key's first row, never inside it. That first row
 has version -1 until the value lands. If a process stops in between, the next use of the key reads
 the old value again, so an empty row can never pass for a key with no progress. Do not drop
-`__dogsled_cursors` while any cursor row has version -1: that key would start from empty.
+`__bobsled_cursors` while any cursor row has version -1: that key would start from empty.
 
 |                           | PostgreSQL                        | Snowflake                                                   |
 | ------------------------- | --------------------------------- | ----------------------------------------------------------- |
@@ -572,7 +572,7 @@ the old value again, so an empty row can never pass for a key with no progress. 
 | Largest `INSERT` (`data`) | 4 Mi characters, 256 rows         | 256 Ki characters, 128 rows, under the 1 MB statement limit |
 
 Snowflake standard tables enforce no keys, so the first row for a run or cursor key goes through a
-single script. It updates the one row of `__DOGSLED_AGENTIC_GUARD`, which makes concurrent scripts
+single script. It updates the one row of `__BOBSLED_AGENTIC_GUARD`, which makes concurrent scripts
 take turns, then counts the key's rows and inserts only if there are none. This happens once per
 run and once per key. If the guard has lost its row, the script stops before it adds anything, and
 the store reports `corrupt` with the reason `state_table_replaced`. A statement that Snowflake
@@ -580,7 +580,7 @@ refuses because too many others wait for the same table lock never ran, so the s
 for about 15 seconds at most.
 
 Because updates of one table queue, Snowflake keeps run headers in a fixed set of tables,
-`__DOGSLED_AGENTIC_RUNS_8_0` to `__DOGSLED_AGENTIC_RUNS_8_7`, and PostgreSQL and DuckDB keep the one
+`__BOBSLED_AGENTIC_RUNS_8_0` to `__BOBSLED_AGENTIC_RUNS_8_7`, and PostgreSQL and DuckDB keep the one
 table. The dialect names the size, and the run's hash picks the table, so two runs in different
 tables never wait for each other's header update. Setup and the base table check cover every table,
 and one statement looks for expired runs in all of them, so no table depends on a run happening to
@@ -804,7 +804,7 @@ with the same database or catalog as the model output.
 Final output still uses the model's configured destination.
 
 Without a configured checkpoint store, warehouse publication keeps its existing
-target-schema default. DuckDB keeps its separate `_dogsled_agentic_publication`
+target-schema default. DuckDB keeps its separate `_bobsled_agentic_publication`
 schema. Hosts that supply their own publisher control its storage location;
 `createSqlAgenticPublisher` accepts `systemSchema` for built-in warehouse publishers.
 

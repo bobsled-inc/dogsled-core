@@ -69,7 +69,7 @@ describe('assignment output contract', () => {
     expect(schema.accepts({ rows: [row('pairs')] })).toBe(false);
     const valid = {
       ...row('pairs'),
-      _dogsled_evidence: [{ ...citation('pairs'), retrieved_at: task.input.retrieved_at }],
+      _bobsled_evidence: [{ ...citation('pairs'), retrieved_at: task.input.retrieved_at }],
     };
     expect(schema.accepts({ rows: [valid] })).toBe(true);
     expect(schema.accepts({ rows: [row('web_fetch')] })).toBe(true);
@@ -139,9 +139,9 @@ describe('assignment output contract', () => {
       pair_id: 'pair-1',
       choice: 'same',
       confidence: 0.8,
-      _dogsled_evidence: null,
-      _dogsled_confidence: null,
-      _dogsled_reason: null,
+      _bobsled_evidence: null,
+      _bobsled_confidence: null,
+      _bobsled_reason: null,
     };
     expect(schema.accepts({ rows: [classification] })).toBe(true);
     for (const rows of [
@@ -172,9 +172,9 @@ describe('assignment output contract', () => {
     );
     const value = {
       ...keys,
-      _dogsled_evidence: null,
-      _dogsled_confidence: null,
-      _dogsled_reason: null,
+      _bobsled_evidence: null,
+      _bobsled_confidence: null,
+      _bobsled_reason: null,
     };
     expect(schema.accepts({ rows: [value] })).toBe(true);
     expect(schema.accepts({ rows: [{ ...value, item_id: '7' }] })).toBe(false);
@@ -248,9 +248,9 @@ describe('assignment output contract', () => {
 const row = (source: string) => ({
   pair_id: 'pair-1',
   assessment: 'uncertain',
-  _dogsled_evidence: [citation(source)],
-  _dogsled_confidence: null,
-  _dogsled_reason: null,
+  _bobsled_evidence: [citation(source)],
+  _bobsled_confidence: null,
+  _bobsled_reason: null,
 });
 
 describe('assignment output evidence schema', () => {
@@ -295,9 +295,9 @@ describe('assignment output evidence schema', () => {
         ...assignment().input,
         columns: [
           ...assignment().input.columns,
-          { name: '_dogsled_evidence', type: 'array', nullable: true },
+          { name: '_bobsled_evidence', type: 'array', nullable: true },
         ],
-        rows: [{ pair_id: 'pair-1', _dogsled_evidence: [citation('prior_tool')] }],
+        rows: [{ pair_id: 'pair-1', _bobsled_evidence: [citation('prior_tool')] }],
       },
     });
     expect(createAgentAssignmentRowSchema(task).safeParse(row('prior_tool')).success).toBe(true);
@@ -307,8 +307,8 @@ describe('assignment output evidence schema', () => {
 
   it('continues to accept missing evidence as null and reject empty evidence', () => {
     const schema = createAgentAssignmentRowSchema(work());
-    expect(schema.safeParse({ ...row('pairs'), _dogsled_evidence: null }).success).toBe(true);
-    expect(schema.safeParse({ ...row('pairs'), _dogsled_evidence: [] }).success).toBe(false);
+    expect(schema.safeParse({ ...row('pairs'), _bobsled_evidence: null }).success).toBe(true);
+    expect(schema.safeParse({ ...row('pairs'), _bobsled_evidence: [] }).success).toBe(false);
   });
 
   it('uses named input references rather than their aliases', () => {

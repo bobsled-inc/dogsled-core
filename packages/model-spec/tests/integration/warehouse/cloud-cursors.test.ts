@@ -42,7 +42,7 @@ it.skipIf(!integrationPath && !schema)(
             : undefined;
     const q = (name: string) =>
       quoteIdentifier(caseName(name, integration.source_type), integration.source_type);
-    const table = [...(catalog ? [catalog] : []), schema, '__dogsled_cursors'].map(q).join('.');
+    const table = [...(catalog ? [catalog] : []), schema, '__bobsled_cursors'].map(q).join('.');
     const key = { scope: 'cursor-integration-test', model: randomUUID(), target: 'cursor-test' };
     const signature = 'a'.repeat(64);
     const store = createWarehouseAgenticCursorStore(integration, { schema });

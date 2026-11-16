@@ -2,7 +2,7 @@ import { agenticMetadataRole, isAgenticMetadataName } from './metadata-names.js'
 
 /**
  * Renames metadata columns of an existing agentic target that an earlier Core
- * generation created (for example `_dogsled_reason` once Core writes
+ * generation created (for example `_bobsled_reason` once Core writes
  * `_bobsled_reason`), position by position, so the strict schema check that
  * follows sees the current names. Only a column whose current name is a
  * metadata column of the same role is renamed; anything else is left for the

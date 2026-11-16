@@ -39,7 +39,7 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
    ```bash
    dogsled pipeline --integration shop_api --resource customers --destinations-json "$(cat destinations.json)" --output-dir archive --log-format json
    dogsled query 'SELECT count(*) AS n FROM customers' --db-path data.duckdb
-   docker compose exec postgres psql -U postgres -d showcase -c 'SELECT count(*), count(_dogsled_loaded_at) FROM fanout.customers'
+   docker compose exec postgres psql -U postgres -d showcase -c 'SELECT count(*), count(_bobsled_loaded_at) FROM fanout.customers'
    ```
 
    Expect zero failed streams and 200 rows in each destination, including the

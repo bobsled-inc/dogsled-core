@@ -64,7 +64,7 @@ it('requires explicit mode and rejects SQL expressions and reserved metadata', (
   for (const patch of [
     { execution: undefined },
     { execution: { mode: 'python' } },
-    { columns: [{ name: '_dogsled_reason', type: 'object', nullable: true }] },
+    { columns: [{ name: '_bobsled_reason', type: 'object', nullable: true }] },
     { columns: [{ name: 'pair_id', type: 'string', nullable: false, expr: 'pair_id' }] },
     { columns: [{ name: 'pair_id', type: 'string' }] },
     { source: { ref: 'later' } },
@@ -100,11 +100,11 @@ it('preserves existing database execution settings and rejects ambiguous names',
 it('rejects changed types for reserved metadata read from earlier models', async () => {
   const { AgenticColumnsSchema } = await import('../../../src/agentic/index.js');
   expect(
-    AgenticColumnsSchema.safeParse([{ name: '_dogsled_run_id', type: 'number', nullable: true }])
+    AgenticColumnsSchema.safeParse([{ name: '_bobsled_run_id', type: 'number', nullable: true }])
       .success
   ).toBe(false);
   expect(
-    AgenticColumnsSchema.safeParse([{ name: '_dogsled_custom', type: 'string', nullable: false }])
+    AgenticColumnsSchema.safeParse([{ name: '_bobsled_custom', type: 'string', nullable: false }])
       .success
   ).toBe(false);
 });

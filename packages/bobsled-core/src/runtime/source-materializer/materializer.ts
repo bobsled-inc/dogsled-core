@@ -103,7 +103,7 @@ type LoadedQuerySpecs = NonNullable<ReturnType<typeof loadQueryableResourceSpecs
 
 const LOADER_SYSTEM_COLUMNS: SchemaColumn[] = [
   { name: '_time_extracted', type: 'timestamp' },
-  { name: '_dogsled_loaded_at', type: 'timestamp' },
+  { name: '_bobsled_loaded_at', type: 'timestamp' },
 ];
 
 interface FetchRecordsResult {
@@ -368,7 +368,7 @@ async function invalidatePartialVariants(
     return;
   }
   await args.runner.run(
-    `UPDATE ${tableRef(args.schema, '_dogsled_source_metadata', args.dialect)} SET loaded_at = ${timestampLiteral(
+    `UPDATE ${tableRef(args.schema, '_bobsled_source_metadata', args.dialect)} SET loaded_at = ${timestampLiteral(
       '1970-01-01T00:00:00.000Z',
       args.dialect
     )} WHERE source_name = '${escapeLiteral(sourceName)}' AND filter_hash = '${escapeLiteral(

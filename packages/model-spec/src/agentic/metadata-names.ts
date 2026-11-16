@@ -10,10 +10,10 @@
 import { AGENTIC_METADATA_SPELLINGS, RESERVED_AGENTIC_COLUMN_PREFIXES } from './legacy-names.js';
 
 export const AGENTIC_METADATA_NAMES = Object.freeze({
-  run_id: '_dogsled_run_id',
-  evidence: '_dogsled_evidence',
-  confidence: '_dogsled_confidence',
-  reason: '_dogsled_reason',
+  run_id: '_bobsled_run_id',
+  evidence: '_bobsled_evidence',
+  confidence: '_bobsled_confidence',
+  reason: '_bobsled_reason',
 } as const);
 
 export type AgenticMetadataRole = keyof typeof AGENTIC_METADATA_NAMES;

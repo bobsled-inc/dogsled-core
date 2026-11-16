@@ -72,7 +72,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
       const session = await store().acquire((await mapScenario()).key);
       await session.release();
       const connection = await db();
-      const table = `${namespace}."__DOGSLED_AGENTIC_CURSORS"`;
+      const table = `${namespace}."__BOBSLED_AGENTIC_CURSORS"`;
       await Promise.all(
         Array.from({ length: 8 }, () =>
           snowflakeRowDialect.insertIfAbsent(
@@ -90,7 +90,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
     it('keeps the text of a first row exact through both levels of quoting', async () => {
       const { emulator, store, db } = await open();
       await (await store().acquire((await mapScenario()).key)).release();
-      const table = `${namespace}."__DOGSLED_AGENTIC_CURSORS"`;
+      const table = `${namespace}."__BOBSLED_AGENTIC_CURSORS"`;
       const record = `{"a":"it's","b":"C:\\\\new\\n","c":"line\nbreak","d":"\t語"}`;
       await snowflakeRowDialect.insertIfAbsent(
         await db(),
@@ -105,12 +105,12 @@ describe.skipIf(!(await isDuckDbAvailable()))('the warehouse row store on an emu
     it('stops at an empty guard table rather than insert without its lock', async () => {
       const { emulator, store } = await open();
       await (await store().acquire((await mapScenario()).key)).release();
-      await emulator.sql(`DELETE FROM ${namespace}."__DOGSLED_AGENTIC_GUARD"`);
+      await emulator.sql(`DELETE FROM ${namespace}."__BOBSLED_AGENTIC_GUARD"`);
       await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toMatchObject({
         code: 'corrupt',
         reason: 'state_table_replaced',
       });
-      expect(await emulator.sql(`SELECT * FROM ${namespace}."__DOGSLED_AGENTIC_CURSORS"`)).toEqual(
+      expect(await emulator.sql(`SELECT * FROM ${namespace}."__BOBSLED_AGENTIC_CURSORS"`)).toEqual(
         []
       );
     });

@@ -70,7 +70,7 @@ derived model:
 
 `planDeployedModelExecution` does the same analysis for one target model and
 also returns a self-contained DuckDB SELECT plus source bindings. Every source
-binding has a request-local `sources.__dogsled_source_N` table, so two
+binding has a request-local `sources.__bobsled_source_N` table, so two
 Connections can safely use the same source name. `entry` is the original
 deployed source used to fetch rows. `runtimeEntry` is the same source bound to
 the internal table for Dogsled's query-time runner.
@@ -261,7 +261,7 @@ per-reference read modes:
 - **`live`** — re-read the warehouse table fresh on every call. Never cached.
 - **`lazy`** — stage once, reuse the staged snapshot within `maxAge`, re-stage
   when it ages out. Keyed by `(sourceName, currentFilterHash)` in the engine's
-  generic `_dogsled_source_metadata` table — the exact table lazy API sources
+  generic `_bobsled_source_metadata` table — the exact table lazy API sources
   already use, so a host that already runs lazy API sources on its DuckLake reuses
   it as-is. With no `maxAge`, a `lazy` leaf is reused indefinitely once staged.
 

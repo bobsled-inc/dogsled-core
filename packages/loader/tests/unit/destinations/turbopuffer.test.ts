@@ -194,7 +194,7 @@ describe('TurbopufferDestination', () => {
           tags: { type: 'string', filterable: false },
           body_embedding: { type: '[3]f32', ann: true },
           _time_extracted: { type: 'datetime' },
-          _dogsled_loaded_at: { type: 'datetime' },
+          _bobsled_loaded_at: { type: 'datetime' },
         }),
       })
     );

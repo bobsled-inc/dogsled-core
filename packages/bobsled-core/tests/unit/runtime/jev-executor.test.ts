@@ -102,7 +102,7 @@ describe('Jev executor', () => {
         id: 'one',
         choice: 'same',
         confidence: 0.8,
-        _dogsled_reason: null,
+        _bobsled_reason: null,
       });
     }
     const [url, init] = f.fetch.mock.calls[0]!;

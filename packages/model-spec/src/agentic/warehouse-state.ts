@@ -28,7 +28,7 @@ import { LEGACY_CHECKPOINT_TABLE_PREFIXES } from './legacy-names.js';
 import { adoptLegacyWarehouseTables } from './legacy-tables.js';
 
 /** Prefix of the two tables that hold one run's checkpoint (`<prefix><hash>_c`, `_p`). */
-export const CHECKPOINT_TABLE_PREFIX = '__dogsled_cp_';
+export const CHECKPOINT_TABLE_PREFIX = '__bobsled_cp_';
 
 interface Confirmed {
   id: string;

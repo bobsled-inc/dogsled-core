@@ -66,7 +66,7 @@ describe('catalog-only API resource probe', () => {
     const executor = vi.fn(async (request: ProbeApiResourceExecutorRequest) => {
       expect(request.method).toBe('POST');
       expect(request.headers['Notion-Version']).toBe('2022-06-28');
-      expect(request.headers['User-Agent']).toBe('dogsled-extractor');
+      expect(request.headers['User-Agent']).toBe('bobsled-core-extractor');
       expect(request.headers['Content-Type']).toBe('application/json');
       expect(request.headers.Authorization).toBe(`Bearer ${notionSecrets.NOTION_API_TOKEN}`);
       expect(JSON.parse(request.body ?? '')).toEqual({

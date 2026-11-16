@@ -32,7 +32,7 @@ vi.mock('@bobsled-inc/connections', async (importOriginal) => {
       return {
         ...runner,
         query: async (...queryArgs: Parameters<NonNullable<typeof runner.query>>) => {
-          if (queryArgs[0].startsWith('INSERT INTO "_dogsled_agentic_publication"."receipts"')) {
+          if (queryArgs[0].startsWith('INSERT INTO "_bobsled_agentic_publication"."receipts"')) {
             hasReceipt = true;
           }
           return runner.query!(...queryArgs);
@@ -112,9 +112,9 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         {
           pair_id: assignment.input.rows[0]!.pair_id,
           assessment: "first ' finding",
-          _dogsled_evidence: null,
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         },
       ],
     });
@@ -135,8 +135,8 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
     });
     expect((await run('second')).publication).toBe('confirmed');
     expect(
-      await f.inspect('SELECT pair_id, assessment, _dogsled_run_id FROM main.pair_assessments')
-    ).toEqual([{ pair_id: 'p1', assessment: "first ' finding", _dogsled_run_id: 'first' }]);
+      await f.inspect('SELECT pair_id, assessment, _bobsled_run_id FROM main.pair_assessments')
+    ).toEqual([{ pair_id: 'p1', assessment: "first ' finding", _bobsled_run_id: 'first' }]);
     await f.publisher.close();
   });
   it('leaves an absent target absent on empty input and creates an empty table for processed zero findings', async () => {
@@ -219,7 +219,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         "SELECT table_name FROM information_schema.tables WHERE table_name = 'pair_assessments'"
       )
     ).toEqual([]);
-    expect(await f.inspect('SELECT validated FROM _dogsled_agentic_publication.stages')).toEqual([
+    expect(await f.inspect('SELECT validated FROM _bobsled_agentic_publication.stages')).toEqual([
       { validated: false },
     ]);
     const stages = await f.inspect(
@@ -253,7 +253,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
       })
     ).rejects.toThrow();
     expect(
-      await f.inspect('SELECT COUNT(*) AS n FROM _dogsled_agentic_publication.receipts')
+      await f.inspect('SELECT COUNT(*) AS n FROM _bobsled_agentic_publication.receipts')
     ).toEqual([{ n: 1n }]);
     await f.publisher.close();
     const reopened = await createDuckDbAgenticPublisher(f.integration);
@@ -264,7 +264,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
     });
     expect(resumed.publication).toBe('confirmed');
     expect(f.host.executeAgent).toHaveBeenCalledTimes(2);
-    expect(await f.inspect('SELECT revision FROM _dogsled_agentic_publication.targets')).toEqual([
+    expect(await f.inspect('SELECT revision FROM _bobsled_agentic_publication.targets')).toEqual([
       { revision: 1n },
     ]);
     await reopened.close();
@@ -305,7 +305,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         publisher: f.publisher,
       })
     ).rejects.toThrow('Stale');
-    expect(await f.inspect('SELECT revision FROM _dogsled_agentic_publication.targets')).toEqual([
+    expect(await f.inspect('SELECT revision FROM _bobsled_agentic_publication.targets')).toEqual([
       { revision: 1n },
     ]);
     await other.close();
@@ -342,7 +342,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
     await write('models/agentic.yml', f.model);
     await write(
       'models/advice.yml',
-      derived('advice', 'pair_assessments', ['pair_id', 'assessment', '_dogsled_run_id'])
+      derived('advice', 'pair_assessments', ['pair_id', 'assessment', '_bobsled_run_id'])
     );
     await f.inspect("CREATE TABLE main.raw_pairs AS SELECT 'p0' AS pair_id");
     f.host.prepare = async () => f.inspect('SELECT pair_id FROM main.undecided_pairs LIMIT 1001');
@@ -354,9 +354,9 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
       const row = {
         pair_id: 'p0',
         assessment: 'review',
-        _dogsled_evidence: null,
-        _dogsled_reason: null,
-        _dogsled_confidence: null,
+        _bobsled_evidence: null,
+        _bobsled_reason: null,
+        _bobsled_confidence: null,
       };
       // Simulate an output tool refusing duplicate rows while the same agent is active.
       expect(wire({ rows: [row, row] })).toBe(false);
@@ -375,7 +375,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
     });
     expect(result.ok, JSON.stringify(result)).toBe(true);
     expect(await f.inspect('SELECT * FROM main.advice')).toEqual([
-      { pair_id: 'p0', assessment: 'review', _dogsled_run_id: 'mixed' },
+      { pair_id: 'p0', assessment: 'review', _bobsled_run_id: 'mixed' },
     ]);
     const resumed = await runProject(f.directory, {
       agentic: { run: { id: 'mixed', mode: 'resume' }, host: f.host, publisher: f.publisher },
@@ -398,9 +398,9 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         {
           pair_id: "key ' ; --",
           assessment: 'quoted',
-          _dogsled_evidence: null,
-          _dogsled_reason: null,
-          _dogsled_confidence: null,
+          _bobsled_evidence: null,
+          _bobsled_reason: null,
+          _bobsled_confidence: null,
         },
       ],
     });
@@ -415,7 +415,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
     await f.publisher.claim('main.pair_assessments');
     await f.publisher.claim('"MAIN"."PAIR_ASSESSMENTS"');
     expect(
-      await f.inspect('SELECT COUNT(*) AS n FROM _dogsled_agentic_publication.targets')
+      await f.inspect('SELECT COUNT(*) AS n FROM _bobsled_agentic_publication.targets')
     ).toEqual([{ n: 2n }]);
   });
 
@@ -472,7 +472,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
           )
         ).toEqual([]);
         expect(
-          await f.inspect('SELECT COUNT(*) AS n FROM _dogsled_agentic_publication.receipts')
+          await f.inspect('SELECT COUNT(*) AS n FROM _bobsled_agentic_publication.receipts')
         ).toEqual([{ n: 0n }]);
       } else {
         expect((await executeAgenticRun(f.host, f.context(), options)).publication).toBe(
@@ -490,7 +490,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
           })
         ).publication
       ).toBe('confirmed');
-      expect(await f.inspect('SELECT revision FROM _dogsled_agentic_publication.targets')).toEqual([
+      expect(await f.inspect('SELECT revision FROM _bobsled_agentic_publication.targets')).toEqual([
         { revision: 1n },
       ]);
       await reopened.close();
@@ -511,9 +511,9 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         {
           pair_id: assignment.group_key.pair_id,
           assessment: 'allow',
-          _dogsled_evidence: null,
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         },
       ],
     });
@@ -529,7 +529,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
         "SELECT table_name FROM information_schema.tables WHERE table_name = 'pair_assessments'"
       )
     ).toEqual([]);
-    expect(await f.inspect('SELECT validated FROM _dogsled_agentic_publication.stages')).toEqual([
+    expect(await f.inspect('SELECT validated FROM _bobsled_agentic_publication.stages')).toEqual([
       { validated: false },
     ]);
   });
@@ -550,7 +550,7 @@ describe.skipIf(!warehouseEnabled('duckdb'))('file-backed agentic publication', 
     ).rejects.toThrow();
     expect(f.host.executeAgent).not.toHaveBeenCalled();
     expect(
-      await f.inspect('SELECT COUNT(*) AS n FROM _dogsled_agentic_publication.stages')
+      await f.inspect('SELECT COUNT(*) AS n FROM _bobsled_agentic_publication.stages')
     ).toEqual([{ n: 0n }]);
   });
 });

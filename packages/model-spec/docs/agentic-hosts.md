@@ -146,7 +146,7 @@ Return one of the contract's explicit outcomes:
 
 Bind the outcome to the exact attempt ID. Preserve grouping/replacement keys,
 output grain, types, and nullability. Include the three nullable judgment metadata
-fields and leave `_dogsled_run_id` to Dogsled. `parseAgentAssignmentOutcome` checks
+fields and leave `_bobsled_run_id` to Dogsled. `parseAgentAssignmentOutcome` checks
 these rules, but durable acceptance still belongs to the coordinator. A result
 that arrives after ownership loss or cancellation must not become accepted work.
 

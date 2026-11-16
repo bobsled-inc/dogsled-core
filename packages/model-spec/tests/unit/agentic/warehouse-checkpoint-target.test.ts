@@ -57,7 +57,7 @@ describe('checkpoint database target', () => {
       }),
       query: vi.fn(async (sql: string, params?: SqlParams) => {
         statements.push(sql);
-        if (sql.includes('__DOGSLED_CURSORS')) {
+        if (sql.includes('__BOBSLED_CURSORS')) {
           return sql.startsWith('SELECT "TOKEN"') ? [{ TOKEN: '' }] : [];
         }
         return transport.runner.query!(sql, params);
@@ -86,9 +86,9 @@ describe('checkpoint database target', () => {
     ]);
     expect(statements.some((sql) => sql.startsWith('EXECUTE IMMEDIATE'))).toBe(true);
     expect(statements.some((sql) => sql.startsWith('INSERT INTO'))).toBe(true);
-    expect(statements.some((sql) => sql.includes('__DOGSLED_CURSORS'))).toBe(true);
+    expect(statements.some((sql) => sql.includes('__BOBSLED_CURSORS'))).toBe(true);
     for (const sql of statements) {
-      for (const match of sql.matchAll(/"__DOGSLED_(?:CP_[A-F0-9]{48}_[CP]|CURSORS)"/g)) {
+      for (const match of sql.matchAll(/"__BOBSLED_(?:CP_[A-F0-9]{48}_[CP]|CURSORS)"/g)) {
         expect(sql.slice(0, match.index).endsWith(`${namespace}.`)).toBe(true);
       }
       expect(sql).not.toContain('"TEST".');

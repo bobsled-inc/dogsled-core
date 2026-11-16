@@ -8,7 +8,7 @@ const queries: Record<StepId, { name: string; sql: string }[]> = {
   ],
   load: ['shows', 'episodes'].map((name) => ({
     name: `Raw ${name}`,
-    sql: `SELECT * EXCLUDE (_time_extracted, _dogsled_loaded_at), count(*) OVER () AS _total_rows FROM raw.${name} LIMIT 500`,
+    sql: `SELECT * EXCLUDE (_time_extracted, _bobsled_loaded_at), count(*) OVER () AS _total_rows FROM raw.${name} LIMIT 500`,
   })),
   model: [
     {

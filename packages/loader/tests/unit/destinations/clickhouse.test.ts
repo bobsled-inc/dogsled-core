@@ -141,7 +141,7 @@ describe('ClickHouseDestination', () => {
       expect(createStatement).toContain('`id` Nullable(Int64)');
       expect(createStatement).toContain('`title` Nullable(String)');
       expect(createStatement).toContain('`_time_extracted` Nullable(DateTime64(3))');
-      expect(createStatement).toContain('`_dogsled_loaded_at` Nullable(DateTime64(3))');
+      expect(createStatement).toContain('`_bobsled_loaded_at` Nullable(DateTime64(3))');
       expect(createStatement).toContain('MergeTree()');
       await dest.close();
     });
@@ -229,7 +229,7 @@ describe('ClickHouseDestination', () => {
           { name: 'title', type: 'String' },
           { name: 'embedding', type: 'Array(Float32)' },
           { name: '_time_extracted', type: 'DateTime64(3)' },
-          { name: '_dogsled_loaded_at', type: 'DateTime64(3)' },
+          { name: '_bobsled_loaded_at', type: 'DateTime64(3)' },
         ],
       });
       const { dest } = await createDest(client);
@@ -249,7 +249,7 @@ describe('ClickHouseDestination', () => {
         existingColumns: [
           { name: 'id', type: 'Int64' },
           { name: '_time_extracted', type: 'DateTime64(3)' },
-          { name: '_dogsled_loaded_at', type: 'DateTime64(3)' },
+          { name: '_bobsled_loaded_at', type: 'DateTime64(3)' },
         ],
       });
       const { dest } = await createDest(client);
@@ -270,7 +270,7 @@ describe('ClickHouseDestination', () => {
           { name: 'id', type: 'Nullable(String)' },
           { name: 'title', type: 'Nullable(String)' },
           { name: '_time_extracted', type: 'Nullable(DateTime64(3))' },
-          { name: '_dogsled_loaded_at', type: 'Nullable(DateTime64(3))' },
+          { name: '_bobsled_loaded_at', type: 'Nullable(DateTime64(3))' },
         ],
       });
       const { dest } = await createDest(client);
@@ -290,7 +290,7 @@ describe('ClickHouseDestination', () => {
           { name: 'title', type: 'String' },
           { name: 'updated_at', type: 'DateTime64(3)' },
           { name: '_time_extracted', type: 'DateTime64(3)' },
-          { name: '_dogsled_loaded_at', type: 'DateTime64(3)' },
+          { name: '_bobsled_loaded_at', type: 'DateTime64(3)' },
         ],
         sortingKey: 'id',
       });
@@ -341,7 +341,7 @@ describe('ClickHouseDestination', () => {
             id: 1,
             title: 'Bug',
             _time_extracted: '2026-01-01T00:00:00Z',
-            _dogsled_loaded_at: expect.any(String),
+            _bobsled_loaded_at: expect.any(String),
           }),
         ],
         format: 'JSONEachRow',
@@ -396,7 +396,7 @@ describe('ClickHouseDestination', () => {
       const execCalls = client.exec.mock.calls.map(([opts]) => opts.query as string);
 
       const createStaging = execCalls.find(
-        (sql: string) => sql.includes('CREATE TABLE') && sql.includes('_dogsled_stg_')
+        (sql: string) => sql.includes('CREATE TABLE') && sql.includes('_bobsled_stg_')
       );
       expect(createStaging).toBeDefined();
 
@@ -411,7 +411,7 @@ describe('ClickHouseDestination', () => {
       expect(insertStatement).toBeDefined();
 
       const dropStaging = execCalls.find(
-        (sql: string) => sql.includes('DROP TABLE IF EXISTS') && sql.includes('_dogsled_stg_')
+        (sql: string) => sql.includes('DROP TABLE IF EXISTS') && sql.includes('_bobsled_stg_')
       );
       expect(dropStaging).toBeDefined();
 
@@ -459,17 +459,17 @@ describe('ClickHouseDestination', () => {
 
       const execCalls = client.exec.mock.calls.map(([opts]) => opts.query as string);
       const winners = execCalls.find(
-        (sql) => sql.includes('_dogsled_win_') && sql.startsWith('CREATE TABLE')
+        (sql) => sql.includes('_bobsled_win_') && sql.startsWith('CREATE TABLE')
       );
       expect(winners).toContain('LIMIT 1 BY `id`');
       expect(winners).toContain('ORDER BY `_time_extracted` DESC NULLS LAST');
-      expect(winners).toContain('WHERE (`id`) IN (SELECT `id` FROM `test_schema`.`_dogsled_stg_');
+      expect(winners).toContain('WHERE (`id`) IN (SELECT `id` FROM `test_schema`.`_bobsled_stg_');
       expect(winners).toContain('D.`_time_extracted` >= T.`_time_extracted`');
       expect(winners).toContain('SETTINGS join_use_nulls = 1');
       const del = execCalls.find((sql) => sql.includes('DELETE WHERE'));
-      expect(del).toContain('FROM `test_schema`.`_dogsled_win_');
+      expect(del).toContain('FROM `test_schema`.`_bobsled_win_');
       const ins = execCalls.find((sql) => sql.startsWith('INSERT INTO `test_schema`.`issues`'));
-      expect(ins).toContain('FROM `test_schema`.`_dogsled_win_');
+      expect(ins).toContain('FROM `test_schema`.`_bobsled_win_');
       await dest.close();
     });
 
@@ -493,8 +493,8 @@ describe('ClickHouseDestination', () => {
       const drops = client.exec.mock.calls
         .map(([opts]) => opts.query as string)
         .filter((sql) => sql.startsWith('DROP TABLE IF EXISTS'));
-      expect(drops.some((sql) => sql.includes('_dogsled_stg_'))).toBe(true);
-      expect(drops.some((sql) => sql.includes('_dogsled_win_'))).toBe(true);
+      expect(drops.some((sql) => sql.includes('_bobsled_stg_'))).toBe(true);
+      expect(drops.some((sql) => sql.includes('_bobsled_win_'))).toBe(true);
     });
 
     it('merge requires key columns', async () => {
@@ -589,7 +589,7 @@ describe('ClickHouseDestination', () => {
 
       const stagingInsertCalls = client.insert.mock.calls
         .map(([opts]) => opts)
-        .filter((opts) => opts.table.includes('_dogsled_stg_'));
+        .filter((opts) => opts.table.includes('_bobsled_stg_'));
 
       expect(stagingInsertCalls.length).toBe(2);
 

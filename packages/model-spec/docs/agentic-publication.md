@@ -203,9 +203,9 @@ New rows and processed keys are bounded by what the run's state store holds, as 
 input is: see [row store limits](agentic-state.md#row-store-limits).
 The host must also enforce a database disk quota. There is no automatic expiry.
 
-DuckDB stores private tables in `_dogsled_agentic_publication`. The other adapters
+DuckDB stores private tables in `_bobsled_agentic_publication`. The other adapters
 store private tables beside the target by default, with names that start with
-`_dogsled_pub_`. A configured checkpoint schema overrides that schema name within
+`_bobsled_pub_`. A configured checkpoint schema overrides that schema name within
 the output database/catalog; see [warehouse checkpoints](agentic-state.md#warehouse-checkpoints).
 This keeps BigQuery data in the selected dataset and Databricks data in the selected
 catalog and schema. Stage names use bounded operation digests.

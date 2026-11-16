@@ -88,7 +88,7 @@ const HTTP_TIMEOUT_MS = (DEFAULT_TIMEOUT_SECONDS + 5) * 1_000;
 
 /** Number of rows per yielded batch from execute(). */
 const BATCH_SIZE = 10_000;
-const DEFAULT_QUERY_TAG = 'dogsled-extractor';
+const DEFAULT_QUERY_TAG = 'bobsled-core-extractor';
 const MAX_QUERY_TAG_LENGTH = 256;
 
 // ---------------------------------------------------------------------------

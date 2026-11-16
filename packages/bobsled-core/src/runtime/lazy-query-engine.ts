@@ -449,7 +449,7 @@ function transientLiveDestination(
   index: number
 ): ResolvedDestination {
   const suffix = randomUUID().replace(/-/g, '_');
-  const table = `__dogsled_live_${destination.table}_${index}_${suffix}`;
+  const table = `__bobsled_live_${destination.table}_${index}_${suffix}`;
   return {
     kind: 'in_memory',
     schema: 'temp',
@@ -503,7 +503,7 @@ export async function withMixedModeScratchTables<T>(args: {
         runner: args.runner,
         dialect: args.representative.sqlRunnerKind,
         schema: args.representative.schema,
-        baseName: `__dogsled_live_${args.representative.table}_${index}`,
+        baseName: `__bobsled_live_${args.representative.table}_${index}`,
         ttlSeconds: 900,
         columns: entry.columns as SchemaColumn[],
       },
@@ -530,7 +530,7 @@ function isTransientLiveDestination(
   return (
     entry.mode === 'live' &&
     ((destination.kind === 'in_memory' && destination.schema === 'temp') ||
-      destination.table.startsWith('__dogsled_live_'))
+      destination.table.startsWith('__bobsled_live_'))
   );
 }
 

@@ -88,7 +88,7 @@ export function registerInitCommand(program: Command): void {
             },
             headers: {
               Accept: 'application/json',
-              'User-Agent': 'dogsled-extractor/0.1',
+              'User-Agent': 'bobsled-core-extractor/0.1',
             },
           },
         };

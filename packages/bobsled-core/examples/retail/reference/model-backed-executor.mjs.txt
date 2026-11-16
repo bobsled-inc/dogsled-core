@@ -47,8 +47,8 @@ export function createExecutor(call = generateStructured, { maxOutputTokens = 20
       const response = schema.parse(result.value);
       const rows = response.rows.map(row => {
         if (!row.support_quote.trim() || !row.evidence_summary.trim() || !source.conversation.includes(row.support_quote)) throw new Error('Evidence must quote supplied text');
-        return { ...row, analysis_mode:'model', _dogsled_confidence:null, _dogsled_reason:null,
-          _dogsled_evidence:[{source:input.ref,reference:source.ticket_id,retrieved_at:input.retrieved_at,support_excerpt:row.support_quote}] };
+        return { ...row, analysis_mode:'model', _bobsled_confidence:null, _bobsled_reason:null,
+          _bobsled_evidence:[{source:input.ref,reference:source.ticket_id,retrieved_at:input.retrieved_at,support_excerpt:row.support_quote}] };
       });
       return parseAgentAssignmentOutcome(assignment, {contract_version:2,attempt_id:assignment.attempt_id,status:'succeeded',rows,usage});
     } catch { return failed(assignment, usage, 'validation', 'invalid_output'); }

@@ -93,7 +93,7 @@ describe('PgCompatibleWarehouseClient.execute', () => {
 
     await iterator.return(undefined);
 
-    expect(client.query).toHaveBeenCalledWith('CLOSE _dogsled_cursor');
+    expect(client.query).toHaveBeenCalledWith('CLOSE _bobsled_cursor');
     expect(client.query).toHaveBeenCalledWith('ROLLBACK');
     expect(client.query).not.toHaveBeenCalledWith('COMMIT');
     expect(client.release).toHaveBeenCalledTimes(1);
@@ -115,7 +115,7 @@ describe('PgCompatibleWarehouseClient.execute', () => {
     }
 
     expect(batches).toEqual([[{ id: 1 }]]);
-    expect(client.query).toHaveBeenCalledWith('CLOSE _dogsled_cursor');
+    expect(client.query).toHaveBeenCalledWith('CLOSE _bobsled_cursor');
     expect(client.query).toHaveBeenCalledWith('COMMIT');
     expect(client.query).not.toHaveBeenCalledWith('ROLLBACK');
     expect(client.release).toHaveBeenCalledTimes(1);

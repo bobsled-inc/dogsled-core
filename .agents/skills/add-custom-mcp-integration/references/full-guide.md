@@ -92,7 +92,7 @@ transports:
       requests_per_second: 5
       burst: 10
     headers:
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
 default_transport: default
 ```
 

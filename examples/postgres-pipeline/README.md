@@ -36,7 +36,7 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
    docker compose exec postgres psql -U postgres -d showcase -c 'SELECT count(*) FROM pipeline.staff; SELECT count(*) FROM pipeline.departments'
    ```
 
-   Expect 200 staff and 10 departments, both with `_dogsled_loaded_at`, and no
+   Expect 200 staff and 10 departments, both with `_bobsled_loaded_at`, and no
    retired system-column prefixes. All records are synthetic.
 
 5. Use the committed integration, sources, models and expectation runner:

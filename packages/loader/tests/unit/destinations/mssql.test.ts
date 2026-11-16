@@ -96,7 +96,7 @@ describe('MsSqlDestination', () => {
     expect(createStatement).toContain('[id] BIGINT');
     expect(createStatement).toContain('[title] NVARCHAR(4000)');
     expect(createStatement).toContain('[_time_extracted] DATETIME2(6)');
-    expect(createStatement).toContain('[_dogsled_loaded_at] DATETIME2(6)');
+    expect(createStatement).toContain('[_bobsled_loaded_at] DATETIME2(6)');
   });
 
   it('ensureTable() adds missing columns with ALTER TABLE', async () => {
@@ -104,7 +104,7 @@ describe('MsSqlDestination', () => {
       existingColumns: [
         { COLUMN_NAME: 'id', DATA_TYPE: 'BIGINT' },
         { COLUMN_NAME: '_time_extracted', DATA_TYPE: 'DATETIME2' },
-        { COLUMN_NAME: '_dogsled_loaded_at', DATA_TYPE: 'DATETIME2' },
+        { COLUMN_NAME: '_bobsled_loaded_at', DATA_TYPE: 'DATETIME2' },
       ],
     });
     const { dest } = await createDestination(createMockPool(connection));
@@ -124,7 +124,7 @@ describe('MsSqlDestination', () => {
         { COLUMN_NAME: 'id', DATA_TYPE: 'NVARCHAR' },
         { COLUMN_NAME: 'title', DATA_TYPE: 'NVARCHAR' },
         { COLUMN_NAME: '_time_extracted', DATA_TYPE: 'DATETIME2' },
-        { COLUMN_NAME: '_dogsled_loaded_at', DATA_TYPE: 'DATETIME2' },
+        { COLUMN_NAME: '_bobsled_loaded_at', DATA_TYPE: 'DATETIME2' },
       ],
     });
     const { dest } = await createDestination(createMockPool(connection));

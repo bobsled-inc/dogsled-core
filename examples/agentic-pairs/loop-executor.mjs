@@ -44,7 +44,7 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
       ...(Number.isFinite(remaining) ? [AbortSignal.timeout(remaining)] : []),
     ]);
     const row = createAgenticRowSchema(assignment.output.columns, true).out.extend({
-      _dogsled_evidence: z
+      _bobsled_evidence: z
         .array(
           AgenticEvidenceSchema.omit({ retrieved_at: true }).extend({
             observation: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
@@ -209,8 +209,8 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
         try {
           const rows = decision.rows.map((value) => ({
             ...value,
-            _dogsled_evidence:
-              value._dogsled_evidence?.map((entry) => {
+            _bobsled_evidence:
+              value._bobsled_evidence?.map((entry) => {
                 const { observation, ...evidence } = entry;
                 const saved =
                   observation === 0

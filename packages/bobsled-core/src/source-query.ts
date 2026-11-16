@@ -67,7 +67,7 @@ export { createRunnerDuckDbDestination } from './runtime/source-materializer/run
 // Freshness-aware wrapper over the brick. `materializeWarehouseLeaf` gives a
 // warehouse leaf the same `live`/`lazy` read semantics an api_resource leaf has:
 // `live` always re-reads, `lazy` reuses a staged snapshot within `maxAge` via the
-// generic `_dogsled_source_metadata` freshness table. The read mode is a
+// generic `_bobsled_source_metadata` freshness table. The read mode is a
 // per-reference call argument (not a source-entry field), and the `maxRows` OOM
 // ceiling bounds every (re)stage. A host application drives this directly to cache a foreign warehouse table next to its
 // live/lazy `sources.*` tables before resolving a mixed model that joins them.

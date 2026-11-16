@@ -246,8 +246,8 @@ function generateTableDdl(
  * A naive `DROP TABLE` fails on the second run with
  *   `cannot drop table ... because other objects depend on it`
  * once a MV exists, because Postgres tracks MV dependencies in pg_depend by
- * relation OID. The swap below builds a fresh `__dogsled_new` table, renames
- * it into place, then drops the renamed-aside `__dogsled_old` with CASCADE.
+ * relation OID. The swap below builds a fresh `__bobsled_new` table, renames
+ * it into place, then drops the renamed-aside `__bobsled_old` with CASCADE.
  *
  * CASCADE is safe in the Model Spec DAG context: dependent MVs are themselves
  * Dogsled-managed models that run *after* this table in topological order
@@ -261,8 +261,8 @@ function generatePostgresTableSwapDdl(
   dialect: SupportedDialect
 ): string[] {
   const baseName = caseName(modelName, dialect);
-  const newName = `${baseName}__dogsled_new`;
-  const oldName = `${baseName}__dogsled_old`;
+  const newName = `${baseName}__bobsled_new`;
+  const oldName = `${baseName}__bobsled_old`;
   const newFqName = withSwappedTableName(fqName, newName, dialect);
   const oldFqName = withSwappedTableName(fqName, oldName, dialect);
   const quotedOriginal = quoteIdentifier(baseName, dialect);

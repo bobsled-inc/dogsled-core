@@ -99,12 +99,12 @@ describe('materializeSql', () => {
       // Swap-rename avoids `DROP TABLE` while a downstream materialized_view
       // references this table (Postgres pg_depend would otherwise block the drop).
       expect(result).toEqual([
-        'DROP TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched__dogsled_new";',
-        'DROP TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched__dogsled_old" CASCADE;',
-        `CREATE TABLE "my_schema"."pg_stg_orders_enriched__dogsled_new" AS (\n${SELECT_SQL}\n);`,
-        'ALTER TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched" RENAME TO "pg_stg_orders_enriched__dogsled_old";',
-        'ALTER TABLE "my_schema"."pg_stg_orders_enriched__dogsled_new" RENAME TO "pg_stg_orders_enriched";',
-        'DROP TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched__dogsled_old" CASCADE;',
+        'DROP TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched__bobsled_new";',
+        'DROP TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched__bobsled_old" CASCADE;',
+        `CREATE TABLE "my_schema"."pg_stg_orders_enriched__bobsled_new" AS (\n${SELECT_SQL}\n);`,
+        'ALTER TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched" RENAME TO "pg_stg_orders_enriched__bobsled_old";',
+        'ALTER TABLE "my_schema"."pg_stg_orders_enriched__bobsled_new" RENAME TO "pg_stg_orders_enriched";',
+        'DROP TABLE IF EXISTS "my_schema"."pg_stg_orders_enriched__bobsled_old" CASCADE;',
       ]);
     });
 
@@ -154,10 +154,10 @@ describe('materializeSql', () => {
       // First-run incremental shares the table-materialization path, so it must
       // also avoid dropping the live table while downstream MVs depend on it.
       expect(result).toHaveLength(6);
-      expect(result[0]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__dogsled_new";');
-      expect(result[2]).toContain('CREATE TABLE "my_schema"."test_model__dogsled_new"');
+      expect(result[0]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__bobsled_new";');
+      expect(result[2]).toContain('CREATE TABLE "my_schema"."test_model__bobsled_new"');
       expect(result[4]).toContain('RENAME TO "test_model"');
-      expect(result[5]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__dogsled_old" CASCADE;');
+      expect(result[5]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__bobsled_old" CASCADE;');
     });
   });
 
@@ -807,18 +807,18 @@ describe('materializeSql', () => {
       const spec = makeSpec({ materialization: 'table' });
       const result = materializeSql(SELECT_SQL, spec, 'my_schema', 'pgvector');
       expect(result).toHaveLength(6);
-      expect(result[2]).toContain('CREATE TABLE "my_schema"."test_model__dogsled_new"');
+      expect(result[2]).toContain('CREATE TABLE "my_schema"."test_model__bobsled_new"');
       expect(result[4]).toContain('RENAME TO "test_model"');
-      expect(result[5]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__dogsled_old" CASCADE;');
+      expect(result[5]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__bobsled_old" CASCADE;');
     });
 
     it('redshift: table materialization uses postgres swap-rename path', () => {
       const spec = makeSpec({ materialization: 'table' });
       const result = materializeSql(SELECT_SQL, spec, 'my_schema', 'redshift');
       expect(result).toHaveLength(6);
-      expect(result[2]).toContain('CREATE TABLE "my_schema"."test_model__dogsled_new"');
+      expect(result[2]).toContain('CREATE TABLE "my_schema"."test_model__bobsled_new"');
       expect(result[4]).toContain('RENAME TO "test_model"');
-      expect(result[5]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__dogsled_old" CASCADE;');
+      expect(result[5]).toBe('DROP TABLE IF EXISTS "my_schema"."test_model__bobsled_old" CASCADE;');
     });
 
     it('pgvector: view materialization uses CREATE OR REPLACE VIEW', () => {

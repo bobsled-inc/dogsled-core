@@ -7,7 +7,7 @@ import { LEGACY_PUBLICATION_TABLE_PREFIXES } from './legacy-names.js';
 export type PublicationDialect = 'postgres' | 'snowflake' | 'bigquery' | 'databricks';
 
 /** Prefix of the publication metadata and stage tables Core creates. */
-export const PUBLICATION_TABLE_PREFIX = '_dogsled_pub_';
+export const PUBLICATION_TABLE_PREFIX = '_bobsled_pub_';
 export function publicationNames(
   target: string,
   dialect: PublicationDialect,

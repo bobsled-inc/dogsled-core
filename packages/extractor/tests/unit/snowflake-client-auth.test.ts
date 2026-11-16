@@ -337,7 +337,7 @@ describe('Snowflake query tags', () => {
         parameters: { QUERY_TAG: string };
       };
       expect(taggedBody.parameters.QUERY_TAG).toBe('managed:run-42');
-      expect(fallbackBody.parameters.QUERY_TAG).toBe('dogsled-extractor');
+      expect(fallbackBody.parameters.QUERY_TAG).toBe('bobsled-core-extractor');
     } finally {
       fetchSpy.mockRestore();
     }

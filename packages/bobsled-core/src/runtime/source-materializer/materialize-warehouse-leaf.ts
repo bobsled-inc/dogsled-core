@@ -7,7 +7,7 @@
  *
  *   - `live`  → always re-read the warehouse table fresh (never cached).
  *   - `lazy`  → stage once, reuse within `maxAge`, re-stage when stale, keyed by
- *               `(sourceName, filterHash)` in the generic `_dogsled_source_metadata`
+ *               `(sourceName, filterHash)` in the generic `_bobsled_source_metadata`
  *               table. Identical reuse semantics to a lazy API source.
  *
  * Crucially, the read mode is a **per-reference call argument**, not a field on

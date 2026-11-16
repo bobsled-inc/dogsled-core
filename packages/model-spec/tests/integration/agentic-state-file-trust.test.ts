@@ -53,7 +53,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
       const file = join(directory(), 'state.duckdb');
       await sql(file, [
         'CREATE SCHEMA checkpoints',
-        `CREATE VIEW checkpoints.__dogsled_agentic_${name} AS ${header}`,
+        `CREATE VIEW checkpoints.__bobsled_agentic_${name} AS ${header}`,
       ]);
       await expect(checkpoints(file).acquire(map.key)).rejects.toMatchObject({
         code: 'corrupt',
@@ -88,9 +88,9 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
       'CREATE SCHEMA checkpoints',
       ...['a', 'b', 'c'].map((name) => `CREATE TABLE checkpoints.decoy_${name} (x INTEGER)`),
       ...['runs', 'rows', 'cursors'].map(
-        (name) => `CREATE VIEW checkpoints.__dogsled_agentic_${name} AS ${header}`
+        (name) => `CREATE VIEW checkpoints.__bobsled_agentic_${name} AS ${header}`
       ),
-      `CREATE MACRO lower(x) AS replace(x, 'decoy_a', '__dogsled_agentic_runs')`,
+      `CREATE MACRO lower(x) AS replace(x, 'decoy_a', '__bobsled_agentic_runs')`,
     ]);
     await expect(checkpoints(file).acquire(map.key)).rejects.toMatchObject({ code: 'corrupt' });
   });
@@ -116,7 +116,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     const file = join(directory(), 'state.duckdb');
     const first = await checkpoints(file).acquire(map.key);
     await first.release();
-    await sql(file, [change.replace('%t', 'checkpoints.__dogsled_agentic_rows')]);
+    await sql(file, [change.replace('%t', 'checkpoints.__bobsled_agentic_rows')]);
     await expect(checkpoints(file).acquire(map.key)).rejects.toMatchObject({
       code: 'corrupt',
       reason: 'state_table_replaced',
@@ -127,7 +127,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     const file = join(directory(), 'state.duckdb');
     const first = await checkpoints(file).acquire(map.key);
     await first.release();
-    const rows = 'checkpoints.__dogsled_agentic_rows';
+    const rows = 'checkpoints.__bobsled_agentic_rows';
     await sql(file, [
       `DROP TABLE ${rows}`,
       `CREATE TABLE ${rows} (run_hash VARCHAR NOT NULL, write_id VARCHAR NOT NULL, parent VARCHAR NOT NULL, revision BIGINT NOT NULL, operation_id VARCHAR NOT NULL, kind VARCHAR NOT NULL, item BIGINT NOT NULL, part BIGINT NOT NULL, parts BIGINT NOT NULL, data VARCHAR GENERATED ALWAYS AS (repeat('x', 9)))`,
@@ -146,7 +146,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     const file = join(directory(), 'state.duckdb');
     const first = await checkpoints(file).acquire(map.key);
     await first.release();
-    await sql(file, [change.replace('%t', 'checkpoints.__dogsled_agentic_rows')]);
+    await sql(file, [change.replace('%t', 'checkpoints.__bobsled_agentic_rows')]);
     await expect(checkpoints(file).acquire(map.key)).rejects.toMatchObject({
       code: 'corrupt',
       reason: 'state_table_replaced',
@@ -157,7 +157,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     const file = join(directory(), 'state.duckdb');
     const first = await checkpoints(file).acquire(map.key);
     await first.release();
-    const cursors = 'checkpoints.__dogsled_agentic_cursors';
+    const cursors = 'checkpoints.__bobsled_agentic_cursors';
     await sql(file, [
       `DROP TABLE ${cursors}`,
       `CREATE TABLE ${cursors} (key_hash VARCHAR NOT NULL, scope VARCHAR NOT NULL, model VARCHAR NOT NULL, target VARCHAR NOT NULL, version BIGINT NOT NULL CHECK (version < 0), record VARCHAR NOT NULL)`,
@@ -180,10 +180,10 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
 
   it.each([
     ['a stored macro', 'CREATE MACRO length(x) AS 0'],
-    ['an index', 'CREATE INDEX extra ON checkpoints.__dogsled_agentic_rows (write_id)'],
+    ['an index', 'CREATE INDEX extra ON checkpoints.__bobsled_agentic_rows (write_id)'],
     [
       'a nullable column',
-      'ALTER TABLE checkpoints.__dogsled_agentic_rows ALTER kind DROP NOT NULL',
+      'ALTER TABLE checkpoints.__bobsled_agentic_rows ALTER kind DROP NOT NULL',
     ],
   ])('finds %s added between two operations on a checkpoint file', async (_, change) => {
     const file = join(directory(), 'state.duckdb');
@@ -211,7 +211,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     const store = createDuckDbCheckpointStore(duckDbStateFile(file), { schema: 'other' });
     await sql(file, [
       'CREATE SCHEMA other',
-      `CREATE VIEW other.__dogsled_agentic_runs AS ${header}`,
+      `CREATE VIEW other.__bobsled_agentic_runs AS ${header}`,
     ]);
     await expect(store.acquire(map.key)).rejects.toMatchObject({ code: 'corrupt' });
   });
@@ -227,7 +227,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
 
   it('refuses a cursor read from a file with a planted view', async () => {
     const file = join(directory(), 'cursors.duckdb');
-    await sql(file, ['CREATE VIEW __dogsled_agentic_cursors AS SELECT 1 AS record']);
+    await sql(file, ['CREATE VIEW __bobsled_agentic_cursors AS SELECT 1 AS record']);
     await expect(
       readAgenticRowCursor(duckDbOperationBackend(file, 'main'), cursorKey)
     ).rejects.toMatchObject({ code: 'corrupt' });
@@ -244,8 +244,8 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
       `.bobsled/model-spec/agentic-state/run-${digestAgenticState(map.key)}.duckdb`
     );
     await sql(file, [
-      'DROP TABLE __dogsled_agentic_runs',
-      `CREATE VIEW __dogsled_agentic_runs AS ${header}`,
+      'DROP TABLE __bobsled_agentic_runs',
+      `CREATE VIEW __bobsled_agentic_runs AS ${header}`,
     ]);
     await expect(store.acquire(map.key)).rejects.toMatchObject({ code: 'corrupt' });
   });
@@ -261,8 +261,8 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
       `.bobsled/model-spec/agentic-state/run-${digestAgenticState(map.key)}.duckdb`
     );
     await sql(file, [
-      'DROP TABLE __dogsled_agentic_runs',
-      `CREATE VIEW __dogsled_agentic_runs AS ${header}`,
+      'DROP TABLE __bobsled_agentic_runs',
+      `CREATE VIEW __bobsled_agentic_runs AS ${header}`,
     ]);
     const old = new Date(Date.now() - 60_000);
     fs.utimesSync(file, old, old);

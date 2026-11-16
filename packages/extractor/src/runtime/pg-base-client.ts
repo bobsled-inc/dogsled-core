@@ -332,7 +332,7 @@ export abstract class PgCompatibleWarehouseClient implements WarehouseClient {
   ): AsyncGenerator<Record<string, unknown>[]> {
     const pool = await this.getPool();
     const client = await pool.connect();
-    const cursorName = '_dogsled_cursor';
+    const cursorName = '_bobsled_cursor';
     let inTransaction = false;
     let cursorOpen = false;
 

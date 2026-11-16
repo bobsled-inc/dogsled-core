@@ -93,7 +93,7 @@ describe('DuckDbDestination', () => {
       { column_name: 'id', data_type: 'BIGINT' },
       { column_name: 'title', data_type: 'VARCHAR' },
       { column_name: '_time_extracted', data_type: 'TIMESTAMP' },
-      { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMP' },
+      { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMP' },
     ]);
   });
 
@@ -117,7 +117,7 @@ describe('DuckDbDestination', () => {
       'id',
       'title',
       '_time_extracted',
-      '_dogsled_loaded_at',
+      '_bobsled_loaded_at',
       'status',
     ]);
   });
@@ -413,7 +413,7 @@ describe('DuckDbDestination', () => {
     // Verify no staging tables remain
     const tables = await queryPersistentDb(
       dbPath,
-      `SELECT table_name FROM information_schema.tables WHERE table_name LIKE '_dogsled_stg_%'`
+      `SELECT table_name FROM information_schema.tables WHERE table_name LIKE '_bobsled_stg_%'`
     );
     expect(tables).toEqual([]);
 
@@ -444,7 +444,7 @@ describe('DuckDbDestination', () => {
     expect(rows).toEqual([{ id: BigInt(1), title: null }]);
   });
 
-  it('_dogsled_loaded_at is populated with a recent timestamp after loading', async () => {
+  it('_bobsled_loaded_at is populated with a recent timestamp after loading', async () => {
     const dest = new DuckDbDestination({ dbPath });
     await dest.initialize();
     await dest.ensureTable('main', 'issues', issueColumns);
@@ -457,9 +457,9 @@ describe('DuckDbDestination', () => {
     await dest.loadAndFinalize('main', 'issues', jsonlPath, issueColumns, 'append', []);
     await dest.close();
 
-    const rows = await queryPersistentDb(dbPath, 'SELECT "_dogsled_loaded_at" FROM main.issues');
+    const rows = await queryPersistentDb(dbPath, 'SELECT "_bobsled_loaded_at" FROM main.issues');
     expect(rows.length).toBe(1);
-    const loadedAt = rows[0]!['_dogsled_loaded_at'];
+    const loadedAt = rows[0]!['_bobsled_loaded_at'];
     expect(loadedAt).toBeInstanceOf(Date);
     // Verify it's distinct from _time_extracted (it's set by the loader, not the extractor)
     const teRows = await queryPersistentDb(dbPath, 'SELECT "_time_extracted" FROM main.issues');
@@ -467,7 +467,7 @@ describe('DuckDbDestination', () => {
     expect((loadedAt as Date).getTime()).not.toBe(timeExtracted.getTime());
   });
 
-  it('_dogsled_loaded_at is populated for merge strategy', async () => {
+  it('_bobsled_loaded_at is populated for merge strategy', async () => {
     const dest = new DuckDbDestination({ dbPath });
     await dest.initialize();
     await dest.ensureTable('main', 'issues', issueColumns);
@@ -480,9 +480,9 @@ describe('DuckDbDestination', () => {
     await dest.loadAndFinalize('main', 'issues', jsonlPath, issueColumns, 'merge', ['id']);
     await dest.close();
 
-    const rows = await queryPersistentDb(dbPath, 'SELECT "_dogsled_loaded_at" FROM main.issues');
+    const rows = await queryPersistentDb(dbPath, 'SELECT "_bobsled_loaded_at" FROM main.issues');
     expect(rows.length).toBe(1);
-    expect(rows[0]!['_dogsled_loaded_at']).toBeInstanceOf(Date);
+    expect(rows[0]!['_bobsled_loaded_at']).toBeInstanceOf(Date);
   });
 
   it('_time_extracted is populated correctly', async () => {
@@ -726,6 +726,6 @@ describe('sanitizeTableName', () => {
   });
 
   it('rejects reserved staging prefixes', () => {
-    expect(() => sanitizeTableName('_dogsled_stg_test')).toThrow(/reserved prefix/);
+    expect(() => sanitizeTableName('_bobsled_stg_test')).toThrow(/reserved prefix/);
   });
 });
