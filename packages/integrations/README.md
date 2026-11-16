@@ -2,7 +2,7 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Pre-built API integration configs for the `Bobsled Core` extractor. Each integration contains spec and resource YAML specs ready for use.
+Pre-built API integration configs for the Bobsled Core extractor. Each integration contains spec and resource YAML specs ready for use.
 
 ## Using an integration
 

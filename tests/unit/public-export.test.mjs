@@ -555,6 +555,41 @@ describe('public scripts and root commit', () => {
     expect(() => assertManifest(output(root), result.manifest)).not.toThrow();
   });
 
+  it('removes the strict guard step too', () => {
+    const root = fixture('scripts/guards/old-names.mjs # Staging guard.\n');
+    write(
+      root,
+      'package.json',
+      JSON.stringify({ scripts: { 'guard:rename': 'node ./scripts/guards/old-names.mjs' } })
+    );
+    write(
+      root,
+      '.github/workflows/ci.yml',
+      [
+        'jobs:',
+        '  checks:',
+        '    steps:',
+        '      - name: Check that no old names remain (strict)',
+        '        run: pnpm guard:rename --strict',
+        '      - name: Build',
+        '        run: pnpm build',
+        '',
+      ].join('\n')
+    );
+    write(root, 'scripts/guards/old-names.mjs', 'Private guard\n');
+    exportCommit({ root, commit: commit(root), output: output(root) });
+    expect(readFileSync(path.join(output(root), '.github/workflows/ci.yml'), 'utf8')).toBe(
+      [
+        'jobs:',
+        '  checks:',
+        '    steps:',
+        '      - name: Build',
+        '        run: pnpm build',
+        '',
+      ].join('\n')
+    );
+  });
+
   it('runs the public CI on main only and refuses any other rename-branch reference', () => {
     const root = fixture();
     const ci =

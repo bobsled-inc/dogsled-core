@@ -344,7 +344,7 @@ jobs:
             --arg runUrl "$RUN_URL" \
             '{
               schemaVersion: 1,
-              product: "dogsled-core",
+              product: "bobsled-core",
               status: "awaiting_approval",
               version: $version,
               runId: $runId,
@@ -564,7 +564,7 @@ jobs:
             --arg releaseUrl "$RELEASE_URL" \
             '{
               schemaVersion: 1,
-              product: "dogsled-core",
+              product: "bobsled-core",
               status: $status,
               version: $version,
               runId: $runId,

@@ -19,7 +19,7 @@ tags: [explorer, mdm, duckdb, file-lock, nextjs, cli]
 Explorer’s MDM review flow mixed two different access patterns against the same demo database:
 
 - `runMdmSql()` dynamically imported the scenario runner and kept its DuckDB connection open for queue and cluster reads.
-- `/api/mdm/decide` then spawned `dogsled mdm review decide`, which needs write access to persist the decision and advance downstream tables.
+- `/api/mdm/decide` then spawned `bobsled mdm review decide`, which needs write access to persist the decision and advance downstream tables.
 
 In practice that meant a user could inspect a pair, click a decision, and get a generic API failure even though the pair ID and decision were valid. The problem was intermittent because it depended on whether the long-lived Next.js process had already touched the runner module for that scenario.
 
@@ -32,7 +32,7 @@ In practice that meant a user could inspect a pair, click a decision, and get a 
 
 ## Root Cause
 
-The demo runner is intentionally cached for repeated reads, but that same cache became a liability on write operations. DuckDB enforces file locking, so a previously imported runner module could keep the database open long enough for `dogsled mdm review decide` to fail acquiring its write lock.
+The demo runner is intentionally cached for repeated reads, but that same cache became a liability on write operations. DuckDB enforces file locking, so a previously imported runner module could keep the database open long enough for `bobsled mdm review decide` to fail acquiring its write lock.
 
 The issue was not specific to one scenario; it applied to any Explorer MDM workspace that uses the shared runner helper.
 
@@ -43,7 +43,7 @@ Teach the Explorer write path to explicitly release the cached runner connection
 Key changes:
 
 - Add `closeMdmRunnerConnection()` in `apps/explorer/src/lib/mdm-workspace.ts` (now [`entity-graph-workspace.ts`](../../../apps/explorer/src/lib/entity-graph-workspace.ts)) to call an optional `close()` export on the dynamically imported runner.
-- Call that helper at the start of `apps/explorer/src/app/api/mdm/decide/route.ts` (now [`entity-graph/decide/route.ts`](../../../apps/explorer/src/app/api/entity-graph/decide/route.ts)) before spawning `dogsled mdm review decide`.
+- Call that helper at the start of `apps/explorer/src/app/api/mdm/decide/route.ts` (now [`entity-graph/decide/route.ts`](../../../apps/explorer/src/app/api/entity-graph/decide/route.ts)) before spawning `bobsled mdm review decide`.
 - Reuse the same release step before follow-up cluster/profile/survivorship refresh commands so the full decision pipeline can reacquire the database cleanly.
 
 This keeps read-heavy Explorer pages fast while making the write path deterministic.

@@ -194,7 +194,7 @@ export function resolveCliInvocation(
   }
 
   throw new CommandError(
-    `Unable to locate the ${target} CLI for the unified bobsled CLI. Reinstall bobsled or run it from the repository workspace.`
+    `Unable to locate the ${target} CLI for the unified bobsled CLI. Reinstall Bobsled Core or run it from the repository workspace.`
   );
 }
 
@@ -242,6 +242,6 @@ export function resolveBobsledModelRunInvocation(
   }
 
   throw new CommandError(
-    'Unable to locate the Bobsled Core model run child CLI. Reinstall bobsled or run it from the repository workspace.'
+    'Unable to locate the Bobsled Core model run child CLI. Reinstall Bobsled Core or run it from the repository workspace.'
   );
 }

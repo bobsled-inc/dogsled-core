@@ -15,7 +15,7 @@
  * --strict also fail when an exception matches nothing, because that means a
  * compatibility reader lost an old name it has to keep accepting.
  *
- * CI runs the report-only mode until the last rename PR switches it to --strict.
+ * CI runs --strict: the rename is done, so every old name left is an exception.
  */
 
 import { appendFileSync, readFileSync } from 'node:fs';

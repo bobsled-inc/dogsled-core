@@ -22,7 +22,7 @@ The root packages (`@bobsled-inc/integrations` and `@bobsled-inc/models`) use mo
 
 ## Investigation
 
-1. **Direct imports worked in CLI** — `listIntegrations()` always returns fresh data when called from a `dogsled` CLI command because the process exits after each invocation.
+1. **Direct imports worked in CLI** — `listIntegrations()` always returns fresh data when called from a `bobsled` CLI command because the process exits after each invocation.
 2. **Hot reload didn't help** — Next.js hot module replacement reloads page components but not deep `node_modules` or workspace package singletons.
 3. **Checked if Next.js had its own caching** — `fetch()` caching and `unstable_cache` are irrelevant here since the data comes from filesystem reads via workspace packages, not HTTP.
 

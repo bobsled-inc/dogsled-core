@@ -2,7 +2,7 @@
 
 ## Problem
 
-`extractResource()` in `packages/extractor/src/commands/extract.ts` emitted the Dogsled protocol STATE message unconditionally, even when the caller passed `skipState: true`. The `skipState` flag was only guarding the durable-state persistence path, not the emission itself.
+`extractResource()` in `packages/extractor/src/commands/extract.ts` emitted the Bobsled Core protocol STATE message unconditionally, even when the caller passed `skipState: true`. The `skipState` flag was only guarding the durable-state persistence path, not the emission itself.
 
 The billable plan runner (`extract-plan.ts`) calls `extractResource` once per seed input row with `skipState: true`. Without the guard, a plan with N seed rows emitted N STATE messages interspersed with its RECORD messages. A test expecting `['SCHEMA', 'RECORD', 'RECORD']` received `['SCHEMA', 'RECORD', 'STATE', 'RECORD', 'STATE']`.
 

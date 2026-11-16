@@ -75,8 +75,8 @@ const nextConfig = {
 **3. `eslint.config.mjs`** — Disable the monorepo's import extension rule:
 
 ```javascript
-// Disable dogsled/import-extension rule — Next.js bundler handles resolution
-{ rules: { 'dogsled/import-extension': 'off' } }
+// Disable bobsled/import-extension rule — Next.js bundler handles resolution
+{ rules: { 'bobsled/import-extension': 'off' } }
 ```
 
 The monorepo enforces `.js` extensions on all imports for Node.js ESM compatibility. Next.js bundler resolves imports without extensions, so this rule produces false errors.

@@ -1,28 +1,12 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 251,
-    "old-warehouse-prefix": 34,
-    "track-config": 6,
+    "dogsled-word": 0,
+    "old-warehouse-prefix": 0,
+    "track-config": 0,
     "track-env": 0,
-    "track-kind": 5,
+    "track-kind": 0,
     "dogsled-path": 0
   },
-  "areas": {
-    ".github": 3,
-    "<root>": 12,
-    "docs": 31,
-    "examples": 5,
-    "packages/bobsled-core": 89,
-    "packages/connections": 3,
-    "packages/extractor": 6,
-    "packages/integrations": 5,
-    "packages/loader": 21,
-    "packages/model-spec": 72,
-    "packages/project-index": 17,
-    "packages/protocol": 14,
-    "packages/skills": 6,
-    "scripts": 2,
-    "tests": 10
-  }
+  "areas": {}
 }

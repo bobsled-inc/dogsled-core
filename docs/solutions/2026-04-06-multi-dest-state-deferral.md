@@ -2,7 +2,7 @@
 
 ## Problem
 
-`dogsled pipeline` historically coupled extraction and loading in a single stream. That meant extractor state advanced as soon as extraction finished. With multi-destination fan-out, that behavior is unsafe: one destination can fail after another succeeds, and PostgreSQL CDC has an external side effect in replication-slot advancement that cannot be rolled back by just restoring `state.json`.
+`bobsled pipeline` historically coupled extraction and loading in a single stream. That meant extractor state advanced as soon as extraction finished. With multi-destination fan-out, that behavior is unsafe: one destination can fail after another succeeds, and PostgreSQL CDC has an external side effect in replication-slot advancement that cannot be rolled back by just restoring `state.json`.
 
 ## Solution
 
@@ -10,7 +10,7 @@ Split state advancement into two phases for the multi-destination path:
 
 1. Run the extractor with `--no-state-write` so it still emits `STATE` messages but does not persist bookmarks or advance CDC slots.
 2. Capture the extractor stdout protocol to a temp JSONL file and replay that file into all loaders in parallel.
-3. Only after every loader exits successfully, run `dogsled extract commit-state --integration <name> --capture-file ...` to merge captured `STATE` messages into durable state and advance PostgreSQL CDC slots.
+3. Only after every loader exits successfully, run `bobsled extract commit-state --integration <name> --capture-file ...` to merge captured `STATE` messages into durable state and advance PostgreSQL CDC slots.
 
 This keeps retries correct for normal incremental bookmarks and preserves the existing CDC ordering guarantee of "save bookmark before advancing slot", but now only after all destinations have confirmed success.
 

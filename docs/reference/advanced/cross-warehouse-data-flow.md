@@ -115,7 +115,7 @@ Customers with data-residency constraints should place the shared staging URI an
 
 ## What Bobsled Core Does Not Do
 
-- Bobsled Core never sends source rows to Bobsled Core cloud or another third party.
+- Bobsled Core never sends source rows to a hosted service or any other third party.
 - Bobsled Core does not aggregate customer metadata.
 - Bobsled Core does not persist source rows beyond the publish lifecycle, except for warehouse-native UNLOAD files left in the operator-controlled staging URI.
 - Bobsled Core does not manage cloud IAM, Snowflake storage integrations, Databricks external locations, or BigQuery bucket policy.

@@ -22,7 +22,7 @@ bash scripts/prepare-claude-code-review.sh
 That script:
 
 - installs workspace deps
-- builds the latest unified `Bobsled Core` CLI from the current checkout
+- builds the latest unified `bobsled` CLI from the current checkout
 - creates a fresh `.runtime/customer-resolution` workdir
 - loads seeds and runs resolution up to the review queue
 - exports:

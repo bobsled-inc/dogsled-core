@@ -69,9 +69,6 @@ function scanToolLinks(line, tool) {
     .map((match) => ({ column: match.index + 1 }));
 }
 
-// The repository this tree lives in today, and its public name after the flip.
-const PUBLIC_REPOS = new Set(['dogsled-core', 'bobsled-core']); // rename:keep
-
 export const PRIVACY_RULES = [
   {
     id: 'email-address',
@@ -193,7 +190,7 @@ export const PRIVACY_RULES = [
     description: 'Company repositories other than the public release repository',
     scan(line) {
       return [...line.matchAll(/github\.com\/bobsled-inc\/([a-z0-9._-]+)/gi)]
-        .filter((match) => !PUBLIC_REPOS.has(match[1].toLowerCase().replace(/\.git$/, '')))
+        .filter((match) => match[1].toLowerCase().replace(/\.git$/, '') !== 'bobsled-core')
         .map((match) => ({ column: match.index + 1 }));
     },
   },

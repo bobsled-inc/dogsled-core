@@ -105,10 +105,10 @@ describe('old-name guard', () => {
     expect(guard('--strict').status).toBe(findings > 0 ? 1 : 0);
   }, 30_000);
 
-  it('runs report-only in CI until the rename is done', () => {
+  it('runs strict in CI now that the rename is done', () => {
     const ci = parse(readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8'));
     const scripts = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')).scripts;
-    const step = ci.jobs.checks.steps.find((s) => s.run === 'pnpm guard:rename');
+    const step = ci.jobs.checks.steps.find((s) => s.run === 'pnpm guard:rename --strict');
     expect(step).toBeDefined();
     expect(scripts['guard:rename']).toBe('node ./scripts/guards/old-names.mjs');
   });

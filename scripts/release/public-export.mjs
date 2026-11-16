@@ -247,7 +247,10 @@ export function preparePublicScripts(root) {
   let text = ciSource.toString('utf8');
   const reasons = [];
   if (guard) {
-    const step = new RegExp(`^ {6}- name: [^\\n]+\\n {8}run: pnpm ${escapeRegExp(guard)}\\n`, 'gm');
+    const step = new RegExp(
+      `^ {6}- name: [^\\n]+\\n {8}run: pnpm ${escapeRegExp(guard)}(?: --strict)?\\n`,
+      'gm'
+    );
     const steps = text.match(step) ?? [];
     text = text.replace(step, '');
     if (steps.length > 1 || text.includes(guard))
