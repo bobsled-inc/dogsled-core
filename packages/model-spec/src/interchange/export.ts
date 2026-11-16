@@ -89,6 +89,12 @@ class ExportFailure extends Error {
   }
 }
 
+/**
+ * A whole-Project export is bigger than any one input, so the finished document gets its own,
+ * larger limit. Callers that store the result should allow at least this much.
+ */
+export const OSSIE_EXPORT_MAX_BYTES = 10_000_000;
+export const OSSIE_EXPORT_MAX_NODES = 1_000_000;
 const unsupportedBuildKeys = [
   'include_all_columns',
   'exclude_columns',
@@ -1041,7 +1047,10 @@ export function exportOssieDocument(request: ExportOssieDocumentRequest): Conver
       version === '0.1.1'
         ? { version, semantic_model: [semanticModel] }
         : { version, ...semanticModel };
-    assertBounded(document, 'the exported Ossie document');
+    assertBounded(document, 'the exported Ossie document', {
+      maxBytes: OSSIE_EXPORT_MAX_BYTES,
+      maxNodes: OSSIE_EXPORT_MAX_NODES,
+    });
     readOssieProfile(document, 'export.yml');
     result.files.push(
       file(`ossie/${identity(`${version}\0${request.semanticModelName}`)}.yml`, document)

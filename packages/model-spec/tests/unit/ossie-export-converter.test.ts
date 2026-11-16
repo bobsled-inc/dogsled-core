@@ -137,6 +137,29 @@ function request(overrides: Partial<ExportOssieDocumentRequest> = {}): ExportOss
   };
 }
 
+function projectWithLongDescriptions(
+  count: number,
+  length: number
+): ExportOssieDocumentRequest['project'] {
+  const models = Array.from({ length: count }, (_, index) => ({
+    ...model,
+    name: `completed_orders_${index}`,
+    description: 'x'.repeat(length),
+  }));
+  return {
+    ...request().project,
+    models,
+    metrics: [],
+    relationships: [],
+    addresses: {
+      ...request().project.addresses,
+      ...Object.fromEntries(
+        models.map((entry) => [entry.name, `ANALYTICS.MART.${entry.name.toUpperCase()}`])
+      ),
+    },
+  };
+}
+
 describe('Ossie export converter', () => {
   it('exports standard Ossie 0.1.1 by default and reports native losses', () => {
     const result = exportOssieDocument(request());
@@ -614,6 +637,21 @@ describe('Ossie export converter', () => {
     );
     expect(result.diagnostics.filter((entry) => entry.severity === 'error')).toEqual([]);
     expect(result.ok).toBe(true);
+  });
+  it('exports a Project whose document is larger than 1 MB, up to the 10 MB export limit', () => {
+    const project = projectWithLongDescriptions(40, 50_000);
+    const result = exportOssieDocument(request({ project }));
+    expect(result.diagnostics.filter((entry) => entry.severity === 'error')).toEqual([]);
+    expect(result.ok).toBe(true);
+    expect(Buffer.byteLength(result.files[0]?.content ?? '', 'utf8')).toBeGreaterThan(2_000_000);
+  });
+  it('refuses an export document larger than 10 MB and says so', () => {
+    const project = projectWithLongDescriptions(12, 900_000);
+    const result = exportOssieDocument(request({ project }));
+    expect(result).toMatchObject({ ok: false, files: [] });
+    expect(result.diagnostics.find((entry) => entry.severity === 'error')?.message).toMatch(
+      /the exported Ossie document at .+ makes the data larger than 10 MB\.$/u
+    );
   });
   it('still rejects a value that contains itself and says where', () => {
     const looped: Record<string, unknown> = { note: 'x' };

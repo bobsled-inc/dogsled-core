@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { parse as parseYaml, stringify } from 'yaml';
 import { CommandError } from '../errors.js';
-import { boundedJsonProblem } from './storage.js';
+import { boundedJsonProblem, type BoundedJsonLimits } from './storage.js';
 
 export const OSSIE_VENDOR = 'DOGSLED';
 export interface ConversionObjectReference {
@@ -67,8 +67,8 @@ export function parseOssieYaml(content: string, path: string): unknown {
 /**
  * `label` names the input, such as `project#datasets.orders`, so the error says where to look.
  */
-export function assertBounded(value: unknown, label?: string): void {
-  const problem = boundedJsonProblem(value);
+export function assertBounded(value: unknown, label?: string, limits?: BoundedJsonLimits): void {
+  const problem = boundedJsonProblem(value, limits);
   if (!problem) return;
   const where = [label, problem.path].filter(Boolean).join(' at ');
   throw new CommandError(

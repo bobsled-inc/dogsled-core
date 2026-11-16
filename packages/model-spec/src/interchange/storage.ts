@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+export interface BoundedJsonLimits {
+  /** Most string bytes, keys included. Default 1_000_000. */
+  maxBytes?: number;
+  /** Most values visited. Default 100_000. */
+  maxNodes?: number;
+}
+
 export interface BoundedJsonProblem {
   /** Where the problem is, such as `ai_context.examples[0]`; empty for the value itself. */
   path: string;
@@ -20,7 +27,10 @@ function childPath(parent: string, key: string | number): string {
  * makes two places share one object; that is allowed because the node and byte limits still
  * count every visit. Only an object that contains itself is a cycle.
  */
-export function boundedJsonProblem(value: unknown): BoundedJsonProblem | undefined {
+export function boundedJsonProblem(
+  value: unknown,
+  { maxBytes = 1_000_000, maxNodes = 100_000 }: BoundedJsonLimits = {}
+): BoundedJsonProblem | undefined {
   type Visit = { value: unknown; depth: number; path: string } | { leave: object };
   const pending: Visit[] = [{ value, depth: 0, path: '' }];
   const ancestors = new Set<object>();
@@ -32,7 +42,7 @@ export function boundedJsonProblem(value: unknown): BoundedJsonProblem | undefin
       ancestors.delete(item.leave);
       continue;
     }
-    if (++nodes > 100_000) return { path: item.path, reason: 'has more than 100000 values' };
+    if (++nodes > maxNodes) return { path: item.path, reason: `has more than ${maxNodes} values` };
     if (item.depth > 40) return { path: item.path, reason: 'is nested more than 40 levels deep' };
     const v = item.value;
     if (typeof v === 'string') bytes += v.length;
@@ -60,7 +70,9 @@ export function boundedJsonProblem(value: unknown): BoundedJsonProblem | undefin
         pending.push({ value: child, depth: item.depth + 1, path });
       }
     } else return { path: item.path, reason: `is a ${typeof v}, not JSON data` };
-    if (bytes > 1_000_000) return { path: item.path, reason: 'makes the data larger than 1 MB' };
+    if (bytes > maxBytes) {
+      return { path: item.path, reason: `makes the data larger than ${maxBytes / 1_000_000} MB` };
+    }
   }
   return undefined;
 }
