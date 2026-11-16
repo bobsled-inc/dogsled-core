@@ -1,4 +1,8 @@
-import { AuthEnvVarsSchema } from '@bobsled-inc/protocol';
+import {
+  AuthEnvVarsSchema,
+  BLUEPRINT_EXTENSION_KEY_PREFIXES,
+  isManagedDestinationType,
+} from '@bobsled-inc/protocol';
 import { z } from 'zod';
 
 import { normalizeDestinationBlueprint } from './legacy-blueprint.js';
@@ -105,19 +109,16 @@ const SharedDestinationFields = {
  * `[k: string]: unknown` index signature from `.passthrough()`) and
  * existing discriminated-union narrowing keeps working.
  */
-/**
- * Type literal prefix for orchestrator-resolved destination types.
- *
- * A `type: dogsled_<offering>` value is NOT a real warehouse — it's an
+/*
+ * A managed destination type (an exact list in @bobsled-inc/protocol
+ * legacy-names.ts, never a prefix) is NOT a real warehouse — it's an
  * intent the host application expands into a concrete
  * warehouse-native destination block before Dogsled CLI runs. For these
- * types the orchestrator's own `dogsled_*` fields (e.g.
+ * types the orchestrator's own host fields (e.g.
  * `dogsled_connection_ref`) ARE the schema, so the strip step below
  * preserves them for the matching managed-destination schema
  * branch. `x-*` extension keys are always stripped regardless of type.
  */
-const DOGSLED_MANAGED_TYPE_PREFIX = 'dogsled_';
-
 function stripDestinationExtensionKeys(input: unknown): unknown {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     return input;
@@ -132,12 +133,16 @@ function stripDestinationExtensionKeys(input: unknown): unknown {
   //     an orchestrator extension), but PRESERVED for managed types
   //     (where `dogsled_connection_ref` and friends ARE the schema).
   const type = obj['type'];
-  const isManagedDestination =
-    typeof type === 'string' && type.startsWith(DOGSLED_MANAGED_TYPE_PREFIX);
+  const isManagedDestination = isManagedDestinationType(type);
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (key.startsWith('x-')) continue;
-    if (!isManagedDestination && key.startsWith('dogsled_')) continue;
+    if (
+      !isManagedDestination &&
+      BLUEPRINT_EXTENSION_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
+    ) {
+      continue;
+    }
     out[key] = value;
   }
   return out;

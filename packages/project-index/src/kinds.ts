@@ -1,4 +1,4 @@
-import { LEGACY_BLUEPRINT_KEY_ALIASES } from '@bobsled-inc/protocol';
+import { BLUEPRINT_KEY_SPELLINGS } from '@bobsled-inc/protocol';
 
 /**
  * Declared file types a Dogsled project can contain.
@@ -99,10 +99,8 @@ const INTEGRATION_ONLY_FIELDS = [
   'transports',
   'default_transport',
   'auth_env_vars',
-  'dogsled_source_kind',
-  'dogsled_connection_ref',
-  ...Object.keys(LEGACY_BLUEPRINT_KEY_ALIASES),
-] as const;
+  ...BLUEPRINT_KEY_SPELLINGS.flat(),
+];
 
 function specVersionOf(document: Readonly<Record<string, unknown>>): string | undefined {
   const version = document['spec_version'];

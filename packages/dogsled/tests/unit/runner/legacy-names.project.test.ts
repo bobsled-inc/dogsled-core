@@ -14,9 +14,13 @@ import {
 
 let projectRoot: string;
 
-function files(legacy: boolean) {
-  const ref = legacy ? 'bobsled_connection_ref' : 'dogsled_connection_ref';
-  const kind = legacy ? 'bobsled_source_kind' : 'dogsled_source_kind';
+// Compatibility test: the rename never rewrites this file, so both spellings
+// stay literal. Avoid importing names that the rename changes.
+type Spelling = 'dogsled' | 'bobsled';
+
+function files(spelling: Spelling) {
+  const ref = `${spelling}_connection_ref`;
+  const kind = `${spelling}_source_kind`;
   return {
     'integrations/api.yml': {
       spec_version: '2',
@@ -37,7 +41,7 @@ function files(legacy: boolean) {
       type: 'pipeline_config',
       destinations: {
         warehouse: {
-          type: legacy ? 'bobsled_managed' : 'dogsled_managed',
+          type: `${spelling}_managed`,
           [ref]: 'warehouse-prod',
         },
       },
@@ -54,8 +58,8 @@ function files(legacy: boolean) {
   };
 }
 
-function writeProject(legacy: boolean): void {
-  for (const [name, document] of Object.entries(files(legacy))) {
+function writeProject(spelling: Spelling): void {
+  for (const [name, document] of Object.entries(files(spelling))) {
     const file = path.join(projectRoot, name);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, YAML.stringify(document));
@@ -70,59 +74,38 @@ afterEach(() => {
 });
 
 describe('reconciler-style Blueprint compatibility', () => {
-  it('indexes, validates, resolves, and compiles old and canonical projects identically', async () => {
-    writeProject(true);
-    const legacyIndex = scanProject(projectRoot);
-    expect(legacyIndex.issues).toEqual([]);
-    expect(legacyIndex.deprecations).toHaveLength(4);
-    const legacyValidation = await validateProjectPipelines({ projectRoot, index: legacyIndex });
-    expect(legacyValidation.status).toBe('valid');
-    expect(legacyValidation.issues).toEqual([]);
-    expect(
-      legacyValidation.warnings.filter((warning) =>
-        warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY')
-      )
-    ).toHaveLength(4);
-    const legacyResolved = await resolveProjectPipelines({ projectRoot, index: legacyIndex });
-    const legacyManifest = await generateProjectManifest({
-      projectRoot,
-      index: legacyIndex,
-      dogsledVersion: 'test-version',
-    });
-
-    writeProject(false);
-    const canonicalIndex = scanProject(projectRoot);
-    expect(canonicalIndex.issues).toEqual([]);
-    expect(canonicalIndex.deprecations ?? []).toEqual([]);
-    expect(legacyIndex.entries.map(({ document }) => document)).toEqual(
-      canonicalIndex.entries.map(({ document }) => document)
+  async function compile(spelling: Spelling) {
+    writeProject(spelling);
+    const index = scanProject(projectRoot);
+    expect(index.issues).toEqual([]);
+    expect(index.deprecations ?? []).toEqual([]);
+    const validation = await validateProjectPipelines({ projectRoot, index });
+    expect(validation.status).toBe('valid');
+    expect(validation.issues).toEqual([]);
+    expect(validation.warnings.filter((warning) => /LEGACY_BLUEPRINT_KEY/.test(warning))).toEqual(
+      []
     );
-    const canonicalValidation = await validateProjectPipelines({
-      projectRoot,
-      index: canonicalIndex,
-    });
-    expect(canonicalValidation.status).toBe('valid');
-    expect(
-      canonicalValidation.warnings.filter((warning) =>
-        warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY')
-      )
-    ).toEqual([]);
-    const canonicalResolved = await resolveProjectPipelines({ projectRoot, index: canonicalIndex });
-    expect(legacyResolved.config).toEqual(canonicalResolved.config);
-    expect(legacyResolved.extractPipelines).toEqual(canonicalResolved.extractPipelines);
-    const canonicalManifest = await generateProjectManifest({
-      projectRoot,
-      index: canonicalIndex,
-      dogsledVersion: 'test-version',
-    });
-    expect(legacyManifest).toEqual(canonicalManifest);
+    return {
+      documents: index.entries.map(({ document }) => document),
+      resolved: await resolveProjectPipelines({ projectRoot, index }),
+      manifest: await generateProjectManifest({ projectRoot, index }),
+    };
+  }
+
+  it('indexes, validates, resolves and compiles Dogsled and Bobsled spellings identically, with no warning', async () => {
+    const dogsled = await compile('dogsled');
+    const bobsled = await compile('bobsled');
+    expect(bobsled.documents).toEqual(dogsled.documents);
+    expect(bobsled.resolved.config).toEqual(dogsled.resolved.config);
+    expect(bobsled.resolved.extractPipelines).toEqual(dogsled.resolved.extractPipelines);
+    expect(bobsled.manifest).toEqual(dogsled.manifest);
   });
 
   it.each(['integrations/api.yml', 'config/pipelines.yml'] as const)(
     'rejects conflicting regenerated keys in %s',
     async (name) => {
       writeProject(true);
-      const document = files(true)[name];
+      const document = files('bobsled')[name];
       if (name === 'integrations/api.yml') {
         fs.writeFileSync(
           path.join(projectRoot, name),

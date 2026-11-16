@@ -1,18 +1,55 @@
+import {
+  BLUEPRINT_KEY_SPELLINGS,
+  MANAGED_DESTINATION_TYPE_SPELLINGS,
+  RETIRED_DESTINATION_TYPES,
+} from './legacy-names.js';
+
 export const DOGSLED_LEGACY_BLUEPRINT_KEY = 'DOGSLED_LEGACY_BLUEPRINT_KEY';
 export const LEGACY_KEY_CONFLICT = 'LEGACY_KEY_CONFLICT';
 
-export const LEGACY_BLUEPRINT_KEY_ALIASES = Object.freeze({
-  bobsled_connection_ref: 'dogsled_connection_ref',
-  bobsled_source_kind: 'dogsled_source_kind',
-} as const);
+export const BLUEPRINT_CONNECTION_REF_KEY = 'dogsled_connection_ref';
+export const BLUEPRINT_SOURCE_KIND_KEY = 'dogsled_source_kind';
+export const MANAGED_DESTINATION_TYPE = 'dogsled_managed';
 
-export const LEGACY_DESTINATION_TYPE_ALIASES = Object.freeze({
-  bobsled_managed: 'dogsled_managed',
-} as const);
+function aliasesTo(spellings: readonly string[], current: string): Record<string, string> {
+  if (!spellings.includes(current)) {
+    throw new Error(`Blueprint spelling ${current} is missing from legacy-names.ts.`);
+  }
+  return Object.fromEntries(
+    spellings.filter((spelling) => spelling !== current).map((spelling) => [spelling, current])
+  );
+}
 
-export const REJECTED_LEGACY_DESTINATION_TYPES = Object.freeze({
-  bobsled_lakehouse: 'dogsled_managed',
-} as const);
+function keyAliases(): Readonly<Record<string, string>> {
+  const current = [BLUEPRINT_CONNECTION_REF_KEY, BLUEPRINT_SOURCE_KIND_KEY];
+  return Object.freeze(
+    Object.assign(
+      {},
+      ...current.map((key) => {
+        const spellings = BLUEPRINT_KEY_SPELLINGS.find((group) => group.includes(key));
+        if (!spellings) throw new Error(`Blueprint key ${key} is missing from legacy-names.ts.`);
+        return aliasesTo(spellings, key);
+      })
+    )
+  );
+}
+
+/** Other spellings of the Blueprint keys, each mapped to the current one. Accepted without a warning. */
+export const LEGACY_BLUEPRINT_KEY_ALIASES: Readonly<Record<string, string>> = keyAliases();
+
+/** Other spellings of the managed destination type, mapped to the current one. */
+export const LEGACY_DESTINATION_TYPE_ALIASES: Readonly<Record<string, string>> = Object.freeze(
+  aliasesTo(MANAGED_DESTINATION_TYPE_SPELLINGS, MANAGED_DESTINATION_TYPE)
+);
+
+export const REJECTED_LEGACY_DESTINATION_TYPES: Readonly<Record<string, string>> = Object.freeze(
+  Object.fromEntries(RETIRED_DESTINATION_TYPES.map((type) => [type, MANAGED_DESTINATION_TYPE]))
+);
+
+/** True for every accepted spelling of the managed destination type (an exact list, not a prefix). */
+export function isManagedDestinationType(type: unknown): boolean {
+  return typeof type === 'string' && MANAGED_DESTINATION_TYPE_SPELLINGS.includes(type);
+}
 
 export interface LegacyBlueprintDeprecation {
   readonly code: typeof DOGSLED_LEGACY_BLUEPRINT_KEY;
@@ -81,14 +118,13 @@ export function normalizeLegacyBlueprintKeys(
     if (!isRecord(input)) return input;
     const result = { ...input };
     for (const [oldKey, newKey] of Object.entries(LEGACY_BLUEPRINT_KEY_ALIASES)) {
-      if (destination && newKey !== 'dogsled_connection_ref') continue;
+      if (destination && newKey !== BLUEPRINT_CONNECTION_REF_KEY) continue;
       if (!Object.hasOwn(input, oldKey)) continue;
       if (Object.hasOwn(input, newKey) && !equalValues(input[oldKey], input[newKey])) {
         throw new LegacyBlueprintKeyConflictError(path, oldKey, newKey);
       }
       result[newKey] = input[oldKey];
       delete result[oldKey];
-      deprecations.push({ code: DOGSLED_LEGACY_BLUEPRINT_KEY, path, oldKey, newKey });
     }
     const type = input['type'];
     if (
@@ -96,10 +132,7 @@ export function normalizeLegacyBlueprintKeys(
       typeof type === 'string' &&
       Object.hasOwn(LEGACY_DESTINATION_TYPE_ALIASES, type)
     ) {
-      const newKey =
-        LEGACY_DESTINATION_TYPE_ALIASES[type as keyof typeof LEGACY_DESTINATION_TYPE_ALIASES];
-      result['type'] = newKey;
-      deprecations.push({ code: DOGSLED_LEGACY_BLUEPRINT_KEY, path, oldKey: type, newKey });
+      result['type'] = LEGACY_DESTINATION_TYPE_ALIASES[type];
     }
     return result;
   }
