@@ -7,9 +7,18 @@ import {
   sanitizeSchemaName,
   sanitizeTableName,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
+  UNIQUE_INDEX_PREFIX,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import {
+  fillLegacyLoadedAt,
+  legacyUniqueIndexNames,
+  loadedAtFillSql,
+  noteLiteral,
+  takeOverLegacyLoadedAt,
+} from './loaded-at-takeover.js';
 import { withRetry } from '../retry.js';
 
 import type { BatchEncoding, SchemaColumn, ColumnType } from '@bobsled-inc/protocol';
@@ -185,10 +194,7 @@ export class MySqlDestination implements DatabaseDestination {
       const qualifiedTable = `${quoteMySqlIdentifier(safeSchema)}.${quoteMySqlIdentifier(safeTable)}`;
 
       // Build comparison from cached types
-      const systemColumnNames: Set<string> = new Set([
-        SYSTEM_COLUMNS.TIME_EXTRACTED,
-        SYSTEM_COLUMNS.LOADED_AT,
-      ]);
+      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
       const newColumns: SchemaColumn[] = [];
       const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
       const requestedNames = new Set(columns.map((c) => c.name));
@@ -261,10 +267,15 @@ export class MySqlDestination implements DatabaseDestination {
 
     const qualifiedTable = `${quoteMySqlIdentifier(safeSchema)}.${quoteMySqlIdentifier(safeTable)}`;
 
-    const existingCols = (await this.query(
-      `SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
-      [safeSchema, safeTable]
-    )) as Array<{ COLUMN_NAME: string; DATA_TYPE: string; COLUMN_TYPE: string }>;
+    type ExistingColumn = { COLUMN_NAME: string; DATA_TYPE: string; COLUMN_TYPE: string };
+    const readColumns = async () =>
+      (await this.query(
+        `SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+        [safeSchema, safeTable]
+      )) as ExistingColumn[];
+    const byName = (rows: ExistingColumn[]) =>
+      new Map(rows.map((row): [string, ExistingColumn] => [row.COLUMN_NAME, row]));
+    let existingCols = await readColumns();
 
     if (existingCols.length === 0) {
       const colDefs = [
@@ -289,6 +300,22 @@ export class MySqlDestination implements DatabaseDestination {
       return;
     }
 
+    // Take over an earlier loaded-at column before any schema check
+    const takeoverColumns = byName(existingCols);
+    const takeover = await takeOverLegacyLoadedAt({
+      table: qualifiedTable,
+      existing: takeoverColumns,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      rename: async (from, to) => {
+        await this.query(
+          `ALTER TABLE ${qualifiedTable} RENAME COLUMN ${quoteMySqlIdentifier(from)} TO ${quoteMySqlIdentifier(to)}`
+        );
+      },
+      reread: async () => byName(await readColumns()),
+      logger: this.logger,
+    });
+    existingCols = [...takeoverColumns].map(([name, row]) => ({ ...row, COLUMN_NAME: name }));
+
     // Build existing type map for comparison
     const existingTypeMap = new Map<string, string>();
     for (const col of existingCols) {
@@ -296,10 +323,7 @@ export class MySqlDestination implements DatabaseDestination {
     }
 
     // Build schema comparison
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
     const requestedNames = new Set(columns.map((c) => c.name));
@@ -352,7 +376,7 @@ export class MySqlDestination implements DatabaseDestination {
     }
     if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
       newColumnDefs.push(
-        `${quoteMySqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)`
+        `${quoteMySqlIdentifier(SYSTEM_COLUMNS.LOADED_AT)} DATETIME(6)${takeover.fillFrom ? '' : ' DEFAULT CURRENT_TIMESTAMP(6)'}`
       );
     }
 
@@ -360,6 +384,40 @@ export class MySqlDestination implements DatabaseDestination {
       const ddl = `ALTER TABLE ${qualifiedTable} ${newColumnDefs.map((d) => `ADD COLUMN ${d}`).join(', ')}`;
       await this.query(ddl);
     }
+    await fillLegacyLoadedAt(takeover, {
+      table: qualifiedTable,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      fill: async (from, to) => {
+        await this.query(loadedAtFillSql(qualifiedTable, quoteMySqlIdentifier, from, to));
+      },
+      marker: {
+        done: async (from, note) =>
+          (
+            (await this.query(
+              `SELECT COLUMN_COMMENT AS note FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+              [safeSchema, safeTable, from]
+            )) as Array<{ note: string }>
+          )[0]?.note?.includes(note) === true,
+        mark: async (from, note) => {
+          // MySQL keeps a column comment only in a full column definition, so restate it as it is.
+          const [column] = (await this.query(
+            `SELECT COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+            [safeSchema, safeTable, from]
+          )) as Array<{ COLUMN_TYPE: string; IS_NULLABLE: string; COLUMN_DEFAULT: string | null }>;
+          if (!column) throw new Error(`column ${from} not found`);
+          const fallback =
+            column.COLUMN_DEFAULT == null || column.COLUMN_DEFAULT === 'NULL'
+              ? ''
+              : /^current_timestamp(\(\d*\))?$/i.test(column.COLUMN_DEFAULT)
+                ? ` DEFAULT ${column.COLUMN_DEFAULT}`
+                : ` DEFAULT ${noteLiteral(column.COLUMN_DEFAULT)}`;
+          await this.query(
+            `ALTER TABLE ${qualifiedTable} MODIFY COLUMN ${quoteMySqlIdentifier(from)} ${column.COLUMN_TYPE} ${column.IS_NULLABLE === 'YES' ? 'NULL' : 'NOT NULL'}${fallback} COMMENT ${noteLiteral(note)}`
+          );
+        },
+      },
+      logger: this.logger,
+    });
 
     // Widen columns one at a time
     for (const conflict of columnsToWiden) {
@@ -402,7 +460,14 @@ export class MySqlDestination implements DatabaseDestination {
           : quoteMySqlIdentifier(k)
       )
       .join(', ');
-    const indexName = quoteMySqlIdentifier(`_dogsled_uq_${tableName}`);
+    const legacyIndexes = legacyUniqueIndexNames(tableName, UNIQUE_INDEX_PREFIX);
+    if (legacyIndexes.length > 0) {
+      const legacy = (await this.query(
+        `SHOW INDEX FROM ${qualifiedTable} WHERE Key_name IN (${legacyIndexes.map((name) => `'${name}'`).join(', ')})`
+      )) as unknown[];
+      if (legacy.length > 0) return;
+    }
+    const indexName = quoteMySqlIdentifier(`${UNIQUE_INDEX_PREFIX}${tableName}`);
     await this.query(`CREATE UNIQUE INDEX ${indexName} ON ${qualifiedTable} (${keyColList})`).catch(
       (err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);

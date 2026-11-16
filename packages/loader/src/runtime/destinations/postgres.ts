@@ -7,9 +7,18 @@ import {
   sanitizeSchemaName,
   sanitizeTableName,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
+  UNIQUE_INDEX_PREFIX,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import {
+  fillLegacyLoadedAt,
+  legacyUniqueIndexNames,
+  loadedAtFillSql,
+  noteLiteral,
+  takeOverLegacyLoadedAt,
+} from './loaded-at-takeover.js';
 import { serializeVectorValue } from './pgvector.js';
 import { withRetry } from '../retry.js';
 
@@ -273,10 +282,7 @@ export class PostgresDestination implements DatabaseDestination {
       const qualifiedTable = `${quoteIdentifier(safeSchema)}.${quoteIdentifier(safeTable)}`;
 
       // Build comparison from cached types
-      const systemColumnNames: Set<string> = new Set([
-        SYSTEM_COLUMNS.TIME_EXTRACTED,
-        SYSTEM_COLUMNS.LOADED_AT,
-      ]);
+      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
       const newColumns: SchemaColumn[] = [];
       const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
       const requestedNames = new Set(columns.map((c) => c.name));
@@ -355,19 +361,21 @@ export class PostgresDestination implements DatabaseDestination {
 
     const client = await this.connectClient();
     try {
-      const result = await withRetry(() =>
-        client.query(
-          `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2`,
-          [safeSchema, safeTable]
-        )
-      );
-
-      const existingMap = new Map(
-        result.rows.map((row) => [
-          String(row['column_name']),
-          normalizePostgresType(String(row['data_type'])),
-        ])
-      );
+      const readColumns = async () => {
+        const result = await withRetry(() =>
+          client.query(
+            `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2`,
+            [safeSchema, safeTable]
+          )
+        );
+        return new Map(
+          result.rows.map((row) => [
+            String(row['column_name']),
+            normalizePostgresType(String(row['data_type'])),
+          ])
+        );
+      };
+      const existingMap = await readColumns();
 
       if (existingMap.size === 0) {
         const colDefs = [
@@ -447,12 +455,21 @@ export class PostgresDestination implements DatabaseDestination {
         return;
       }
 
-      // Build schema comparison
+      // Take over an earlier loaded-at column, then build the schema comparison
       await this.assertOwnedTable(safeSchema, safeTable, client);
-      const systemColumnNames: Set<string> = new Set([
-        SYSTEM_COLUMNS.TIME_EXTRACTED,
-        SYSTEM_COLUMNS.LOADED_AT,
-      ]);
+      const takeover = await takeOverLegacyLoadedAt({
+        table: qualifiedTable,
+        existing: existingMap,
+        current: SYSTEM_COLUMNS.LOADED_AT,
+        rename: async (from, to) => {
+          await client.query(
+            `ALTER TABLE ${qualifiedTable} RENAME COLUMN ${quoteIdentifier(from)} TO ${quoteIdentifier(to)}`
+          );
+        },
+        reread: readColumns,
+        logger: this.logger,
+      });
+      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
       const newColumns: SchemaColumn[] = [];
       const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
       const requestedNames = new Set(columns.map((c) => c.name));
@@ -496,7 +513,7 @@ export class PostgresDestination implements DatabaseDestination {
       }
       if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
         newColumnDefs.push(
-          `${quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMPTZ DEFAULT NOW()`
+          `${quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMPTZ${takeover.fillFrom ? '' : ' DEFAULT NOW()'}`
         );
       }
 
@@ -504,6 +521,30 @@ export class PostgresDestination implements DatabaseDestination {
         const ddl = `ALTER TABLE ${qualifiedTable} ${newColumnDefs.map((d) => `ADD COLUMN ${d}`).join(', ')}`;
         await withRetry(() => client.query(ddl));
       }
+      await fillLegacyLoadedAt(takeover, {
+        table: qualifiedTable,
+        current: SYSTEM_COLUMNS.LOADED_AT,
+        fill: async (from, to) => {
+          await client.query(loadedAtFillSql(qualifiedTable, quoteIdentifier, from, to));
+        },
+        marker: {
+          done: async (from, note) =>
+            (
+              await client.query(
+                `SELECT col_description(a.attrelid, a.attnum) AS note FROM pg_catalog.pg_attribute a WHERE a.attrelid = $1::regclass AND a.attname = $2`,
+                [qualifiedTable, from]
+              )
+            ).rows[0]?.['note']
+              ?.toString()
+              .includes(note) === true,
+          mark: async (from, note) => {
+            await client.query(
+              `COMMENT ON COLUMN ${qualifiedTable}.${quoteIdentifier(from)} IS ${noteLiteral(note)}`
+            );
+          },
+        },
+        logger: this.logger,
+      });
 
       // Widen columns one at a time
       for (const conflict of columnsToWiden) {
@@ -562,9 +603,22 @@ export class PostgresDestination implements DatabaseDestination {
   ): Promise<void> {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map((k) => quoteIdentifier(k)).join(', ');
-    const indexName = quoteIdentifier(`_dogsled_uq_${tableName}`);
+    const indexName = quoteIdentifier(`${UNIQUE_INDEX_PREFIX}${tableName}`);
+    // PostgreSQL stores identifiers truncated to 63 bytes.
+    const legacyIndexes = legacyUniqueIndexNames(tableName, UNIQUE_INDEX_PREFIX).map((name) =>
+      Buffer.from(name).subarray(0, 63).toString()
+    );
     const client = existingClient ?? (await this.connectClient());
     try {
+      if (legacyIndexes.length > 0) {
+        const legacy = await withRetry(() =>
+          client.query(
+            `SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid WHERE i.indrelid = $1::regclass AND c.relname = ANY($2::text[])`,
+            [qualifiedTable, legacyIndexes]
+          )
+        );
+        if (legacy.rows.length > 0) return;
+      }
       await withRetry(() =>
         client.query(
           `CREATE UNIQUE INDEX IF NOT EXISTS ${indexName} ON ${qualifiedTable} (${keyColList})`

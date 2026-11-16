@@ -18,9 +18,16 @@ import {
   sanitizeSchemaName,
   sanitizeTableName,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import {
+  fillLegacyLoadedAt,
+  loadedAtFillSql,
+  noteLiteral,
+  takeOverLegacyLoadedAt,
+} from './loaded-at-takeover.js';
 
 import type { DuckDbConnectionLike, DuckDbDatabaseLike } from '../duckdb-primitives.js';
 import type { LoaderLogger } from '../logger.js';
@@ -141,10 +148,7 @@ export class DuckLakeDestination implements DatabaseDestination {
     columns: SchemaColumn[],
     existingMap: Map<string, string>
   ): SchemaComparisonResult {
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
 
@@ -218,10 +222,16 @@ export class DuckLakeDestination implements DatabaseDestination {
       return;
     }
 
-    const existingCols = await allRows(
-      conn,
-      `SELECT column_name, data_type FROM information_schema.columns WHERE table_catalog = '${escapeSqlString(this.attachAlias)}' AND table_schema = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}'`
-    );
+    const readColumns = () =>
+      allRows(
+        conn,
+        `SELECT column_name, data_type FROM information_schema.columns WHERE table_catalog = '${escapeSqlString(this.attachAlias)}' AND table_schema = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}'`
+      );
+    const toColumnMap = (rows: Awaited<ReturnType<typeof readColumns>>) =>
+      new Map<string, string>(
+        rows.map((row): [string, string] => [String(row['column_name']), String(row['data_type'])])
+      );
+    const existingCols = await readColumns();
 
     if (existingCols.length === 0) {
       const clusterCols = buildClusterColumns(columns, options);
@@ -250,12 +260,19 @@ export class DuckLakeDestination implements DatabaseDestination {
       return;
     }
 
-    const existingMap = new Map<string, string>(
-      existingCols.map((row): [string, string] => [
-        String(row['column_name']),
-        String(row['data_type']),
-      ])
-    );
+    const existingMap = toColumnMap(existingCols);
+    const takeover = await takeOverLegacyLoadedAt({
+      table: qualifiedTable,
+      existing: existingMap,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      rename: (from, to) =>
+        runStatement(
+          conn,
+          `ALTER TABLE ${qualifiedTable} RENAME COLUMN ${quoteIdentifier(from)} TO ${quoteIdentifier(to)}`
+        ),
+      reread: async () => toColumnMap(await readColumns()),
+      logger: this.logger,
+    });
 
     const comparison = this.buildComparison(columns, existingMap);
     const { columnsToAdd, columnsToWiden } = enforceSchemaContract(
@@ -295,6 +312,29 @@ export class DuckLakeDestination implements DatabaseDestination {
         `ALTER TABLE ${qualifiedTable} ADD COLUMN ${quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP`
       );
     }
+    await fillLegacyLoadedAt(takeover, {
+      table: qualifiedTable,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      fill: (from, to) =>
+        runStatement(conn, loadedAtFillSql(qualifiedTable, quoteIdentifier, from, to)),
+      marker: {
+        done: async (from, note) =>
+          String(
+            (
+              await allRows(
+                conn,
+                `SELECT comment FROM duckdb_columns() WHERE database_name = '${escapeSqlString(this.attachAlias)}' AND schema_name = '${escapeSqlString(safeSchema)}' AND table_name = '${escapeSqlString(safeTable)}' AND column_name = '${escapeSqlString(from)}'`
+              )
+            )[0]?.['comment'] ?? ''
+          ).includes(note),
+        mark: (from, note) =>
+          runStatement(
+            conn,
+            `COMMENT ON COLUMN ${qualifiedTable}.${quoteIdentifier(from)} IS ${noteLiteral(note)}`
+          ),
+      },
+      logger: this.logger,
+    });
 
     const colTypes = new Map(existingMap);
     for (const col of columnsToAdd) {

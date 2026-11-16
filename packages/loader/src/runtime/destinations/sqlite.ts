@@ -9,9 +9,18 @@ import {
   sanitizeSchemaName,
   sanitizeTableName,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
+  UNIQUE_INDEX_PREFIX,
+  LOADED_AT_COPIES_TABLE,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import {
+  fillLegacyLoadedAt,
+  legacyUniqueIndexNames,
+  loadedAtFillSql,
+  takeOverLegacyLoadedAt,
+} from './loaded-at-takeover.js';
 
 import type { BatchEncoding, SchemaColumn, ColumnType, LoadStrategy } from '@bobsled-inc/protocol';
 import type {
@@ -262,10 +271,7 @@ export class SqliteDestination implements DatabaseDestination {
     columns: SchemaColumn[],
     existingMap: Map<string, string>
   ): SchemaComparisonResult {
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
 
@@ -334,9 +340,18 @@ export class SqliteDestination implements DatabaseDestination {
     }
 
     // Cold path: query table_info for existing columns (schema-qualified)
-    const existingCols = db
-      .prepare(`PRAGMA ${quoteIdentifier(safeSchema)}.table_info(${quoteIdentifier(safeTable)})`)
-      .all() as Array<{ name: string; type: string }>;
+    const readColumns = () =>
+      db
+        .prepare(`PRAGMA ${quoteIdentifier(safeSchema)}.table_info(${quoteIdentifier(safeTable)})`)
+        .all() as Array<{ name: string; type: string }>;
+    const toColumnMap = (rows: Array<{ name: string; type: string }>) =>
+      new Map<string, string>(
+        rows.map((row): [string, string] => [
+          String(row.name),
+          normalizeSqliteType(String(row.type)),
+        ])
+      );
+    const existingCols = readColumns();
 
     if (existingCols.length === 0) {
       const colDefs = [
@@ -360,13 +375,20 @@ export class SqliteDestination implements DatabaseDestination {
       return;
     }
 
-    // Table exists — build comparison
-    const existingMap = new Map<string, string>(
-      existingCols.map((row): [string, string] => [
-        String(row.name),
-        normalizeSqliteType(String(row.type)),
-      ])
-    );
+    // Table exists — take over an earlier loaded-at column, then build the comparison
+    const existingMap = toColumnMap(existingCols);
+    const takeover = await takeOverLegacyLoadedAt({
+      table: qualifiedTable,
+      existing: existingMap,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      rename: async (from, to) => {
+        db.exec(
+          `ALTER TABLE ${qualifiedTable} RENAME COLUMN ${quoteIdentifier(from)} TO ${quoteIdentifier(to)}`
+        );
+      },
+      reread: async () => toColumnMap(readColumns()),
+      logger: this.logger,
+    });
 
     const comparison = this.buildComparison(columns, existingMap);
     const { columnsToAdd } = enforceSchemaContract(
@@ -392,6 +414,40 @@ export class SqliteDestination implements DatabaseDestination {
         `ALTER TABLE ${qualifiedTable} ADD COLUMN ${quoteIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TEXT`
       );
     }
+    await fillLegacyLoadedAt(takeover, {
+      table: qualifiedTable,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      fill: async (from, to) => {
+        db.exec(loadedAtFillSql(qualifiedTable, quoteIdentifier, from, to));
+      },
+      marker: {
+        // SQLite has no column comments: Core keeps its own record of finished copies.
+        done: async (from, note) => {
+          const exists = db
+            .prepare(
+              `SELECT 1 FROM ${quoteIdentifier(safeSchema)}.sqlite_master WHERE type = 'table' AND name = ?`
+            )
+            .all(LOADED_AT_COPIES_TABLE);
+          if (!exists.length) return false;
+          return (
+            db
+              .prepare(
+                `SELECT 1 FROM ${quoteIdentifier(safeSchema)}.${quoteIdentifier(LOADED_AT_COPIES_TABLE)} WHERE table_name = ? AND column_name = ? AND note = ?`
+              )
+              .all(safeTable, from, note).length > 0
+          );
+        },
+        mark: async (from, note) => {
+          db.exec(
+            `CREATE TABLE IF NOT EXISTS ${quoteIdentifier(safeSchema)}.${quoteIdentifier(LOADED_AT_COPIES_TABLE)} (table_name TEXT NOT NULL, column_name TEXT NOT NULL, note TEXT NOT NULL)`
+          );
+          db.prepare(
+            `INSERT INTO ${quoteIdentifier(safeSchema)}.${quoteIdentifier(LOADED_AT_COPIES_TABLE)} VALUES (?, ?, ?)`
+          ).run(safeTable, from, note);
+        },
+      },
+      logger: this.logger,
+    });
 
     // Populate cache
     const colTypes = new Map(existingMap);
@@ -414,7 +470,16 @@ export class SqliteDestination implements DatabaseDestination {
   ): void {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map((k) => quoteIdentifier(k)).join(', ');
-    const indexName = quoteIdentifier(`_dogsled_uq_${tableName}`);
+    const legacyIndexes = new Set(legacyUniqueIndexNames(tableName, UNIQUE_INDEX_PREFIX));
+    if (legacyIndexes.size > 0) {
+      const indexes = db
+        .prepare(`PRAGMA index_list(${quoteIdentifier(tableName)})`)
+        .all() as Array<{
+        name: string;
+      }>;
+      if (indexes.some((index) => legacyIndexes.has(String(index.name)))) return;
+    }
+    const indexName = quoteIdentifier(`${UNIQUE_INDEX_PREFIX}${tableName}`);
     // SQLite CREATE INDEX ON clause takes bare table name, not schema-qualified
     db.exec(
       `CREATE UNIQUE INDEX IF NOT EXISTS ${indexName} ON ${quoteIdentifier(tableName)} (${keyColList})`

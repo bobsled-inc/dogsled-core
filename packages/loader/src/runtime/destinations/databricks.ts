@@ -12,9 +12,16 @@ import {
   sanitizeTableName,
   validateColumnName,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import {
+  fillLegacyLoadedAt,
+  loadedAtFillSql,
+  takeOverLegacyLoadedAt,
+} from './loaded-at-takeover.js';
+import { OWNERSHIP_LABEL, OWNERSHIP_LABELS } from './bigquery-ownership.js';
 import { withRetry } from '../retry.js';
 
 import type { BatchEncoding, SchemaColumn, ColumnType } from '@bobsled-inc/protocol';
@@ -346,9 +353,15 @@ export class DatabricksDestination implements DatabaseDestination {
         2
       );
     }
-    const rows = await this.query(`SHOW TBLPROPERTIES ${qualifiedTable} ('dogsled_temp_dataset')`);
-    const value = rows[0]?.['value'] ?? rows[0]?.['VALUE'];
-    if (value !== marker) {
+    let owned = false;
+    for (const property of OWNERSHIP_LABELS) {
+      const rows = await this.query(`SHOW TBLPROPERTIES ${qualifiedTable} ('${property}')`);
+      if ((rows[0]?.['value'] ?? rows[0]?.['VALUE']) === marker) {
+        owned = true;
+        break;
+      }
+    }
+    if (!owned) {
       throw new CommandError(
         `Databricks table ${qualifiedTable} is not owned by the requested dataset; refusing to mutate it.`,
         2
@@ -408,10 +421,7 @@ export class DatabricksDestination implements DatabaseDestination {
         this.tableOwnershipMarkers.set(cacheKey, marker);
       }
       // Build comparison from cached types
-      const systemColumnNames: Set<string> = new Set([
-        SYSTEM_COLUMNS.TIME_EXTRACTED,
-        SYSTEM_COLUMNS.LOADED_AT,
-      ]);
+      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
       const newColumns: SchemaColumn[] = [];
       const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
       const requestedNames = new Set(columns.map((c) => c.name));
@@ -508,7 +518,7 @@ export class DatabricksDestination implements DatabaseDestination {
       const ownershipProperties =
         marker === undefined
           ? ''
-          : ` TBLPROPERTIES ('dogsled_temp_dataset' = ${quoteDatabricksStringLiteral(marker)})`;
+          : ` TBLPROPERTIES ('${OWNERSHIP_LABEL}' = ${quoteDatabricksStringLiteral(marker)})`;
       const ddl = `CREATE TABLE IF NOT EXISTS ${qualifiedTable} (${colDefs.join(', ')})${clusterClause}${ownershipProperties}`;
       await withRetry(() => this.query(ddl));
       if (marker !== undefined) {
@@ -537,12 +547,23 @@ export class DatabricksDestination implements DatabaseDestination {
     }
 
     const existingMap = await this.getExistingColumns(safeSchema, safeTable);
+    // Delta renames need column mapping; without it the earlier column is kept and copied.
+    const takeover = await takeOverLegacyLoadedAt({
+      table: qualifiedTable,
+      existing: existingMap,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      rename: async (from, to) => {
+        await this.assertOwnershipBeforeMutation(safeSchema, safeTable);
+        await this.query(
+          `ALTER TABLE ${qualifiedTable} RENAME COLUMN ${quoteDatabricksIdentifier(from)} TO ${quoteDatabricksIdentifier(to)}`
+        );
+      },
+      reread: () => this.getExistingColumns(safeSchema, safeTable),
+      logger: this.logger,
+    });
 
     // Build schema comparison
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
     const requestedNames = new Set(columns.map((c) => c.name));
@@ -588,7 +609,7 @@ export class DatabricksDestination implements DatabaseDestination {
     }
     if (!existingMap.has(SYSTEM_COLUMNS.LOADED_AT)) {
       newColumnDefs.push(
-        `${quoteDatabricksIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
+        `${quoteDatabricksIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP${takeover.fillFrom ? '' : ' DEFAULT CURRENT_TIMESTAMP'}`
       );
     }
 
@@ -599,6 +620,29 @@ export class DatabricksDestination implements DatabaseDestination {
         return this.query(ddl);
       });
     }
+    await fillLegacyLoadedAt(takeover, {
+      table: qualifiedTable,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      fill: async (from, to) => {
+        await this.assertOwnershipBeforeMutation(safeSchema, safeTable);
+        await this.query(loadedAtFillSql(qualifiedTable, quoteDatabricksIdentifier, from, to));
+      },
+      marker: {
+        // DESCRIBE TABLE lists column comments in Unity Catalog and the Hive metastore alike.
+        done: async (from, note) =>
+          (await this.query(`DESCRIBE TABLE ${qualifiedTable}`)).some(
+            (row) =>
+              String(row['col_name'] ?? '') === from && String(row['comment'] ?? '').includes(note)
+          ),
+        mark: async (from, note) => {
+          await this.assertOwnershipBeforeMutation(safeSchema, safeTable);
+          await this.query(
+            `ALTER TABLE ${qualifiedTable} ALTER COLUMN ${quoteDatabricksIdentifier(from)} COMMENT ${quoteDatabricksStringLiteral(note)}`
+          );
+        },
+      },
+      logger: this.logger,
+    });
 
     // Widen columns one at a time
     for (const conflict of columnsToWiden) {

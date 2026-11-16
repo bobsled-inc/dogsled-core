@@ -693,6 +693,7 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
   }
 
   const createSqlRunnerImpl = args.createSqlRunnerImpl ?? createSqlRunnerFor;
+
   const runMaterializedQuery = async (): Promise<RunQueryResult> => {
     const runner = serializeSqlRunner(await createSqlRunnerImpl({ destination: representative }));
     const receipts: string[] = [];
@@ -711,6 +712,8 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
           runner,
           schema: destination.schema,
           dialect: destination.sqlRunnerKind,
+          // Each query opens a new connection: the takeover is settled per warehouse instead.
+          destination: destinationIdentity(destination),
         });
       }
 

@@ -10,6 +10,8 @@ import {
 } from './database.js';
 import { isRetryableError, withRetry } from '../retry.js';
 import {
+  snowflakeColumnMap,
+  takeOverSnowflakeLoadedAt,
   compareSnowflakeSchema,
   enforceContract,
   reconcileRemovedSnowflakeColumns,
@@ -820,13 +822,15 @@ export class SnowflakeDestination implements DatabaseDestination {
     }
 
     // Check if table exists by querying INFORMATION_SCHEMA
-    const existingResult = await withRetry(
-      () =>
-        conn.execute({
-          sqlText: `SELECT COLUMN_NAME, DATA_TYPE FROM ${quoteSnowflakeIdentifier(this.database)}.INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${metadataSchema}' AND TABLE_NAME = '${metadataTable}' ORDER BY ORDINAL_POSITION`,
-        }),
-      this.retryOpts('check_table_exists')
-    );
+    const readColumns = () =>
+      withRetry(
+        () =>
+          conn.execute({
+            sqlText: `SELECT COLUMN_NAME, DATA_TYPE FROM ${quoteSnowflakeIdentifier(this.database)}.INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${metadataSchema}' AND TABLE_NAME = '${metadataTable}' ORDER BY ORDINAL_POSITION`,
+          }),
+        this.retryOpts('check_table_exists')
+      );
+    const existingResult = await readColumns();
     this.throwIfCancelled();
     const existingRows = existingResult.getRows();
 
@@ -941,13 +945,19 @@ export class SnowflakeDestination implements DatabaseDestination {
     );
     this.clusterCache.set(cacheKey, currentClustering);
 
-    // Table exists — build comparison and enforce schema contract
-    const existingMap = new Map<string, string>();
-    for (const row of existingRows) {
-      const colName = String(row['COLUMN_NAME'] ?? '');
-      const colType = String(row['DATA_TYPE'] ?? '');
-      existingMap.set(colName, colType);
-    }
+    // Table exists — take over an earlier loaded-at column, then enforce the schema contract
+    const existingMap = snowflakeColumnMap(existingRows);
+    const fillLoadedAt = await takeOverSnowflakeLoadedAt({
+      connection: conn,
+      database: this.database,
+      schema: metadataSchema,
+      table: metadataTable,
+      qualifiedTable,
+      existing: existingMap,
+      reread: async () => snowflakeColumnMap((await readColumns()).getRows()),
+      beforeMutation: assertOwnershipBeforeMutation,
+      logger: this.logger,
+    });
 
     const comparison = compareSnowflakeSchema(
       columns,
@@ -1020,6 +1030,7 @@ export class SnowflakeDestination implements DatabaseDestination {
         });
       }, this.retryOpts('alter_table'));
     }
+    await fillLoadedAt();
 
     // Widen columns one at a time
     for (const conflict of columnsToWiden) {

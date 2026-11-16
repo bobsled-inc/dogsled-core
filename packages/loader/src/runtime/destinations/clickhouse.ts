@@ -7,11 +7,13 @@ import {
   resolvePartitionColumn,
   resolvePartitionSource,
   SYSTEM_COLUMNS,
+  SYSTEM_COLUMN_NAMES,
   sanitizeSchemaName,
   sanitizeTableName,
   enforceSchemaContract,
   reverseMapDbType,
 } from './database.js';
+import { fillLegacyLoadedAt, noteLiteral, takeOverLegacyLoadedAt } from './loaded-at-takeover.js';
 import { readJsonlRecords } from '../jsonl.js';
 import { withRetry } from '../retry.js';
 
@@ -280,10 +282,7 @@ export class ClickHouseDestination implements DatabaseDestination {
 
     const cachedColumns = this.columnCache.get(cacheKey);
     if (cachedColumns) {
-      const systemColumnNames: Set<string> = new Set([
-        SYSTEM_COLUMNS.TIME_EXTRACTED,
-        SYSTEM_COLUMNS.LOADED_AT,
-      ]);
+      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
       const newColumns: SchemaColumn[] = [];
       const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
       const requestedNames = new Set(columns.map((c) => c.name));
@@ -357,11 +356,14 @@ export class ClickHouseDestination implements DatabaseDestination {
       })
     );
 
-    const existingResult = await client.query({
-      query: `SELECT name, type FROM system.columns WHERE database = '${escapeStringLiteral(safeSchema)}' AND table = '${escapeStringLiteral(safeTable)}'`,
-    });
-    const existingRows = (await existingResult.json()) as Array<{ name: string; type: string }>;
-    const existingMap = new Map<string, string>(existingRows.map((row) => [row.name, row.type]));
+    const readColumns = async () => {
+      const existingResult = await client.query({
+        query: `SELECT name, type FROM system.columns WHERE database = '${escapeStringLiteral(safeSchema)}' AND table = '${escapeStringLiteral(safeTable)}'`,
+      });
+      const existingRows = (await existingResult.json()) as Array<{ name: string; type: string }>;
+      return new Map<string, string>(existingRows.map((row) => [row.name, row.type]));
+    };
+    const existingMap = await readColumns();
 
     if (existingMap.size === 0) {
       // ORDER BY defines the sparse primary index and sort order
@@ -430,10 +432,19 @@ export class ClickHouseDestination implements DatabaseDestination {
       return;
     }
 
-    const systemColumnNames: Set<string> = new Set([
-      SYSTEM_COLUMNS.TIME_EXTRACTED,
-      SYSTEM_COLUMNS.LOADED_AT,
-    ]);
+    const takeover = await takeOverLegacyLoadedAt({
+      table: qualifiedTable,
+      existing: existingMap,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      rename: async (from, to) => {
+        await client.exec({
+          query: `ALTER TABLE ${qualifiedTable} RENAME COLUMN ${quoteIdentifier(from)} TO ${quoteIdentifier(to)}`,
+        });
+      },
+      reread: readColumns,
+      logger: this.logger,
+    });
+    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
     const newColumns: SchemaColumn[] = [];
     const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
     const requestedNames = new Set(columns.map((c) => c.name));
@@ -512,6 +523,31 @@ export class ClickHouseDestination implements DatabaseDestination {
         })
       );
     }
+    await fillLegacyLoadedAt(takeover, {
+      table: qualifiedTable,
+      current: SYSTEM_COLUMNS.LOADED_AT,
+      fill: async (from, to) => {
+        // ClickHouse updates are mutations; wait for this one so the next load sees it.
+        await client.exec({
+          query: `ALTER TABLE ${qualifiedTable} UPDATE ${quoteIdentifier(to)} = ${quoteIdentifier(from)} WHERE ${quoteIdentifier(to)} IS NULL AND ${quoteIdentifier(from)} IS NOT NULL SETTINGS mutations_sync = 2`,
+        });
+      },
+      marker: {
+        done: async (from, note) => {
+          const result = await client.query({
+            query: `SELECT comment FROM system.columns WHERE database = '${escapeStringLiteral(safeSchema)}' AND table = '${escapeStringLiteral(safeTable)}' AND name = '${escapeStringLiteral(from)}'`,
+          });
+          const rows = (await result.json()) as Array<{ comment: string }>;
+          return String(rows[0]?.comment ?? '').includes(note);
+        },
+        mark: async (from, note) => {
+          await client.exec({
+            query: `ALTER TABLE ${qualifiedTable} COMMENT COLUMN ${quoteIdentifier(from)} ${noteLiteral(note)}`,
+          });
+        },
+      },
+      logger: this.logger,
+    });
 
     for (const conflict of columnsToWiden) {
       const newSqlType = mapClickHouseType(conflict.expectedColumnType);

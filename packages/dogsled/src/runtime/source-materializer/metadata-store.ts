@@ -10,10 +10,10 @@ import {
   type MetadataDialect,
   type MetadataRow,
   type SnapshotKind,
+  METADATA_TABLE,
 } from './metadata.js';
 import { escapeLiteral, isMissingTableError, tableRef, validateIdentifier } from './sql-utils.js';
 
-const METADATA_TABLE = '_dogsled_source_metadata';
 const DEFAULT_LEASE_SECONDS = 60;
 const MAX_ETAG_LENGTH = 256;
 
