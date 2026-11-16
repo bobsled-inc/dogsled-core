@@ -4,7 +4,7 @@ packages:
 
 catalog:
   '@apidevtools/swagger-parser': 12.1.0
-  '@ai-sdk/amazon-bedrock': 4.0.209
+  '@ai-sdk/amazon-bedrock': 4.0.211
   '@aws-sdk/credential-providers': 3.1163.0
   '@aws-sdk/client-s3': 3.1163.0
   '@clickhouse/client': 1.25.0
@@ -12,7 +12,7 @@ catalog:
   '@polyglot-sql/sdk': 0.1.13
   '@turbopuffer/turbopuffer': 2.14.0
   '@types/pg': 8.23.1
-  ai: 6.0.323
+  ai: 6.0.326
   ajv: 8.20.0
   cron-parser: 5.10.4
   google-auth-library: 9.15.1
@@ -106,12 +106,12 @@ catalogs:
     '@aws-sdk/credential-providers': 3.1163.0
     '@smithy/signature-v4': 5.7.5
   ai-sdk:
-    '@ai-sdk/amazon-bedrock': 4.0.209
-    '@ai-sdk/anthropic': 3.0.138
-    '@ai-sdk/google': 3.0.141
-    '@ai-sdk/openai': 3.0.137
+    '@ai-sdk/amazon-bedrock': 4.0.211
+    '@ai-sdk/anthropic': 3.0.140
+    '@ai-sdk/google': 3.0.143
+    '@ai-sdk/openai': 3.0.139
     '@openrouter/ai-sdk-provider': 2.10.0
-    ai: 6.0.323
+    ai: 6.0.326
     # Community fork from a different publisher: ollama-ai-provider-v2.
     # https://github.com/nordwestt/ollama-ai-provider-v2
     ollama-ai-provider: npm:ollama-ai-provider-v2@3.6.0
