@@ -8,6 +8,8 @@ export type {
 export {
   exportOssieDocument,
   exportOssieDocuments,
+  OSSIE_EXPORT_MAX_BYTES,
+  OSSIE_EXPORT_MAX_NODES,
   type ExportOssieDocumentRequest,
   type ExportOssieOptions,
   type NativeInterchangeInput,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 
 import {
   exportOssieDocument,
@@ -133,6 +134,29 @@ function request(overrides: Partial<ExportOssieDocumentRequest> = {}): ExportOss
     semanticModelName: 'sales',
     selection: { all: true },
     ...overrides,
+  };
+}
+
+function projectWithLongDescriptions(
+  count: number,
+  length: number
+): ExportOssieDocumentRequest['project'] {
+  const models = Array.from({ length: count }, (_, index) => ({
+    ...model,
+    name: `completed_orders_${index}`,
+    description: 'x'.repeat(length),
+  }));
+  return {
+    ...request().project,
+    models,
+    metrics: [],
+    relationships: [],
+    addresses: {
+      ...request().project.addresses,
+      ...Object.fromEntries(
+        models.map((entry) => [entry.name, `ANALYTICS.MART.${entry.name.toUpperCase()}`])
+      ),
+    },
   };
 }
 
@@ -461,6 +485,7 @@ describe('Ossie export converter', () => {
           ...request().project,
           models: [{ ...model, include_all_columns: true }],
         },
+        selection: { selectors: [{ kind: 'model', name: 'completed_orders' }] },
       })
     );
     expect(unsupported).toMatchObject({ ok: false, ready: false, files: [] });
@@ -510,5 +535,132 @@ describe('Ossie export converter', () => {
       ok: true,
       ready: false,
     });
+  });
+  it('says a Project with no sources or models has nothing to export', () => {
+    const empty = exportOssieDocument(
+      request({
+        project: { sources: [], models: [], metrics: [], relationships: [], addresses: {} },
+      })
+    );
+    expect(empty).toMatchObject({ ok: false, files: [] });
+    expect(empty.diagnostics).toEqual([
+      expect.objectContaining({
+        code: 'native_incomplete',
+        path: 'project#datasets',
+        message: 'This Project has no sources or models, so there is nothing to export.',
+      }),
+    ]);
+  });
+  it('leaves models with unlisted columns out of a whole-Project export and names them', () => {
+    const result = exportOssieDocument(
+      request({
+        project: {
+          ...request().project,
+          models: [
+            { ...model, include_all_columns: true },
+            { ...model, name: 'all_orders', include_all_columns: true },
+          ],
+        },
+      })
+    );
+    expect(result).toMatchObject({ ok: true });
+    const omitted = result.diagnostics.filter((entry) => entry.code === 'native_dataset_omitted');
+    expect(omitted).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        path: 'project#datasets.all_orders.include_all_columns',
+        message:
+          'Models all_orders (include_all_columns), completed_orders (include_all_columns) make columns that the Blueprint does not list, so Ossie export cannot describe their fields. The export leaves them out.',
+      }),
+    ]);
+    const content = result.files[0]?.content ?? '';
+    expect(content).toContain('name: raw_orders');
+    expect(content).not.toContain('completed_orders');
+  });
+  it('refuses when every dataset has unlisted columns', () => {
+    const result = exportOssieDocument(
+      request({
+        project: {
+          ...request().project,
+          sources: [],
+          relationships: [],
+          metrics: [],
+          models: [{ ...model, include_all_columns: true }],
+        },
+      })
+    );
+    expect(result).toMatchObject({ ok: false, files: [] });
+    expect(result.diagnostics.at(-1)?.message).toContain('No other datasets are left to export.');
+  });
+  it('exports a model with derived columns as its finished dataset', () => {
+    const derived = {
+      ...model,
+      derived_columns: [
+        { name: 'amount_cents', expr: 'amount * 100', type: 'BIGINT', description: 'Cents' },
+      ],
+    };
+    const result = exportOssieDocument(
+      request({ project: { ...request().project, models: [derived] } })
+    );
+    expect(result).toMatchObject({ ok: true });
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'catalog_only_export',
+        message: expect.stringContaining('its derived_columns build'),
+      })
+    );
+    const content = result.files[0]?.content ?? '';
+    expect(content).toContain('name: amount_cents');
+    expect(content).toContain('description: Cents');
+  });
+  it('names the document and key when input is not plain bounded data', () => {
+    const result = exportOssieDocument(
+      request({
+        project: {
+          ...request().project,
+          models: [{ ...model, ai_context: { examples: [{ constructor: 'x' }] } }],
+        },
+      })
+    );
+    expect(result).toMatchObject({ ok: false, files: [] });
+    expect(result.diagnostics[0]?.message).toBe(
+      'Input must be bounded JSON data, without cycles or unsafe property keys: project#models.completed_orders at ai_context.examples[0].constructor uses the reserved key constructor.'
+    );
+  });
+  it('exports a model whose YAML aliases share one value in several places', () => {
+    const shared = parse(
+      `grain: &keys [order_id]\nmaterialization:\n  type: incremental\n  unique_key: *keys\n`
+    ) as { grain: string[]; materialization: { type: string; unique_key: string[] } };
+    expect(shared.materialization.unique_key).toBe(shared.grain);
+    const result = exportOssieDocument(
+      request({ project: { ...request().project, models: [{ ...model, ...shared }] } })
+    );
+    expect(result.diagnostics.filter((entry) => entry.severity === 'error')).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+  it('exports a Project whose document is larger than 1 MB, up to the 10 MB export limit', () => {
+    const project = projectWithLongDescriptions(40, 50_000);
+    const result = exportOssieDocument(request({ project }));
+    expect(result.diagnostics.filter((entry) => entry.severity === 'error')).toEqual([]);
+    expect(result.ok).toBe(true);
+    expect(Buffer.byteLength(result.files[0]?.content ?? '', 'utf8')).toBeGreaterThan(2_000_000);
+  });
+  it('refuses an export document larger than 10 MB and says so', () => {
+    const project = projectWithLongDescriptions(12, 900_000);
+    const result = exportOssieDocument(request({ project }));
+    expect(result).toMatchObject({ ok: false, files: [] });
+    expect(result.diagnostics.find((entry) => entry.severity === 'error')?.message).toMatch(
+      /the exported Ossie document at .+ makes the data larger than 10 MB\.$/u
+    );
+  });
+  it('still rejects a value that contains itself and says where', () => {
+    const looped: Record<string, unknown> = { note: 'x' };
+    looped['again'] = looped;
+    const result = exportOssieDocument(
+      request({ project: { ...request().project, models: [{ ...model, ai_context: looped }] } })
+    );
+    expect(result.diagnostics[0]?.message).toBe(
+      'Input must be bounded JSON data, without cycles or unsafe property keys: project#models.completed_orders at ai_context.again contains itself.'
+    );
   });
 });
