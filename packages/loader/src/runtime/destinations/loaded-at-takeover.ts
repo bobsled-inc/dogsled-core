@@ -20,9 +20,7 @@ import { LEGACY_LOADED_AT_COLUMNS, LEGACY_UNIQUE_INDEX_PREFIXES } from '../legac
  */
 
 export type LoadedAtTakeoverPlan =
-  | { action: 'none' }
-  | { action: 'rename'; from: string }
-  | { action: 'fill'; from: string };
+  { action: 'none' } | { action: 'rename'; from: string } | { action: 'fill'; from: string };
 
 /** Earlier loaded-at names that differ from the column Core writes now. */
 export function legacyLoadedAtColumns(current: string): string[] {
