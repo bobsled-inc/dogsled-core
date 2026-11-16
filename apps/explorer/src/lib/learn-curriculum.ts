@@ -1,5 +1,5 @@
 import { LEARN_MODULES } from './learn-modules';
-import type { ExplorerDogsledCommand } from './command-links';
+import type { ExplorerBobsledCommand } from './command-links';
 import type { EntityGraphTableSuffix } from './learn-entity-graph-atlas';
 
 export { ENTITY_GRAPH_TABLE_ATLAS, isEntityGraphTableSuffix } from './learn-entity-graph-atlas';
@@ -26,7 +26,7 @@ export interface LearnStep {
   title: string;
   body: string;
   cliLessonId?: string;
-  command?: ExplorerDogsledCommand;
+  command?: ExplorerBobsledCommand;
   sql?: string;
   tableSuffix?: EntityGraphTableSuffix;
   action?: LearnAction;

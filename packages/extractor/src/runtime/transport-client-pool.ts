@@ -105,7 +105,7 @@ export class TransportClientPool {
       process.emitWarning(
         `${failures.length} transport client cleanup operation(s) failed: ${failures.join('; ')}`,
         {
-          type: 'DogsledExtractorWarning',
+          type: 'BobsledExtractorWarning',
         }
       );
     }

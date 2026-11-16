@@ -251,7 +251,7 @@ describe('stampVersion', () => {
     tempDir = mkdtempSync(path.join(os.tmpdir(), 'stamp-version-test-'));
     const pkgPath = path.join(tempDir, 'package.json');
     const original = {
-      name: '@bobsled-inc/dogsled',
+      name: '@bobsled-inc/bobsled-core',
       version: '0.62.0',
       description: 'CLI',
       private: false,

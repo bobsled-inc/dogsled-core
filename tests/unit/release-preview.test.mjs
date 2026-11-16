@@ -36,7 +36,7 @@ afterEach(() => {
   while (temp.length) rmSync(temp.pop(), { recursive: true, force: true });
 });
 
-function packFixture({ name = '@bobsled-inc/dogsled', version = '0.1.0-preview.1' } = {}) {
+function packFixture({ name = '@bobsled-inc/bobsled-core', version = '0.1.0-preview.1' } = {}) {
   const root = tempDir();
   const pkg = path.join(root, 'pkg');
   mkdirSync(path.join(pkg, 'node_modules', 'bundled'), { recursive: true });

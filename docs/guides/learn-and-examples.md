@@ -14,7 +14,7 @@ checkout:
 git clone https://github.com/bobsled-inc/dogsled-core.git
 cd dogsled-core
 pnpm run setup
-node packages/dogsled/bin/cli.mjs learn --cli "node $PWD/packages/dogsled/bin/cli.mjs"
+node packages/bobsled-core/bin/cli.mjs learn --cli "node $PWD/packages/bobsled-core/bin/cli.mjs"
 ```
 
 `--cli` tells the tutorial how to run `dogsled`; leave it out if `dogsled` is on your

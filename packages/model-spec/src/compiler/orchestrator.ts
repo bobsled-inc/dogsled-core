@@ -3,7 +3,7 @@
  * handles ephemeral CTE tracking, and collects results/errors.
  *
  * Used by the `@bobsled-inc/model-spec` compile command and exposed
- * through `@bobsled-inc/dogsled`'s subprocess delegation.
+ * through `@bobsled-inc/bobsled-core`'s subprocess delegation.
  */
 
 import { AgenticModelSpecSchema, getModelOutputColumns } from '../agentic/model.js';

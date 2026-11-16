@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawnDogsledCommand, validateCommand } from '../../../lib/dogsled-cli.js';
+import { spawnBobsledCommand, validateCommand } from '../../../lib/dogsled-cli.js';
 import { isPlainObject } from '../../../lib/guards.js';
 import { shellQuote } from '../../../lib/pipeline-export-content.js';
 
@@ -9,7 +9,7 @@ const MAX_ARGS = 20;
 const MAX_ARG_LENGTH = 500;
 const MAX_SEQUENCE_LENGTH = 12;
 
-interface DogsledInvocation {
+interface BobsledInvocation {
   command: string;
   args: string[];
 }
@@ -45,7 +45,7 @@ function matchesBlockedPrefix(arg: string, prefixes: readonly string[]): boolean
   return prefixes.some((prefix) => arg === prefix || arg.startsWith(`${prefix}=`));
 }
 
-function isDogsledInvocation(value: unknown): value is DogsledInvocation {
+function isBobsledInvocation(value: unknown): value is BobsledInvocation {
   return (
     isPlainObject(value) &&
     typeof value.command === 'string' &&
@@ -55,7 +55,7 @@ function isDogsledInvocation(value: unknown): value is DogsledInvocation {
   );
 }
 
-function validateDogsledInvocation(invocation: DogsledInvocation): string | null {
+function validateBobsledInvocation(invocation: BobsledInvocation): string | null {
   if (!validateCommand(invocation.command)) {
     return `Invalid or disallowed command: ${invocation.command}`;
   }
@@ -89,18 +89,18 @@ function validateDogsledInvocation(invocation: DogsledInvocation): string | null
   return null;
 }
 
-function formatDogsledInvocation(invocation: DogsledInvocation): string {
+function formatBobsledInvocation(invocation: BobsledInvocation): string {
   return ['dogsled', invocation.command, ...invocation.args.map(shellQuote)].join(' ');
 }
 
-async function streamDogsledInvocation(
-  child: ReturnType<typeof spawnDogsledCommand>,
-  invocation: DogsledInvocation,
+async function streamBobsledInvocation(
+  child: ReturnType<typeof spawnBobsledCommand>,
+  invocation: BobsledInvocation,
   send: (eventData: Record<string, unknown>) => void,
   showCommandPreamble: boolean
 ): Promise<number> {
   if (showCommandPreamble) {
-    send({ stream: 'stderr', data: `$ ${formatDogsledInvocation(invocation)}` });
+    send({ stream: 'stderr', data: `$ ${formatBobsledInvocation(invocation)}` });
   }
 
   let stdoutBuf = '';
@@ -141,12 +141,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
   }
 
-  let invocations: DogsledInvocation[];
+  let invocations: BobsledInvocation[];
   if (Array.isArray(body.sequence)) {
     if (body.sequence.length === 0 || body.sequence.length > MAX_SEQUENCE_LENGTH) {
       return NextResponse.json({ error: 'Invalid sequence payload' }, { status: 400 });
     }
-    if (!body.sequence.every((entry) => isDogsledInvocation(entry))) {
+    if (!body.sequence.every((entry) => isBobsledInvocation(entry))) {
       return NextResponse.json({ error: 'Invalid sequence payload' }, { status: 400 });
     }
     invocations = body.sequence;
@@ -162,14 +162,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid command payload' }, { status: 400 });
     }
     const candidate = { command: body.command, args };
-    if (!isDogsledInvocation(candidate)) {
+    if (!isBobsledInvocation(candidate)) {
       return NextResponse.json({ error: 'Invalid command payload' }, { status: 400 });
     }
     invocations = [candidate];
   }
 
   for (const invocation of invocations) {
-    const validationError = validateDogsledInvocation(invocation);
+    const validationError = validateBobsledInvocation(invocation);
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
   try {
     const encoder = new TextEncoder();
     let closed = false;
-    let activeChild: ReturnType<typeof spawnDogsledCommand> | null = null;
+    let activeChild: ReturnType<typeof spawnBobsledCommand> | null = null;
     let stepTimeoutHandle: NodeJS.Timeout | null = null;
     let killGraceHandle: NodeJS.Timeout | null = null;
 
@@ -230,7 +230,7 @@ export async function POST(request: Request) {
               return;
             }
 
-            activeChild = spawnDogsledCommand(invocation.command, invocation.args);
+            activeChild = spawnBobsledCommand(invocation.command, invocation.args);
             stepTimeoutHandle = setTimeout(() => {
               timedOut = true;
               send({
@@ -240,7 +240,7 @@ export async function POST(request: Request) {
               terminate();
             }, COMMAND_TIMEOUT_MS);
 
-            const code = await streamDogsledInvocation(
+            const code = await streamBobsledInvocation(
               activeChild,
               invocation,
               send,

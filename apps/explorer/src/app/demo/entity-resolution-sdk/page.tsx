@@ -23,11 +23,11 @@ const FEATURES = [
   ],
   [
     'Typed SDK codegen',
-    '`dogsled sdk generate --lang ts` emits a `tsc --noEmit`-clean SDK with branded IDs, strict per-entity filter shapes, an `EntityQueryBuilder`, and a `createDogsledClient()` factory.',
+    '`dogsled sdk generate --lang ts` emits a `tsc --noEmit`-clean SDK with branded IDs, strict per-entity filter shapes, an `EntityQueryBuilder`, and a `createBobsledClient()` factory.',
   ],
   [
     'Executor-backed runtime',
-    'Generated SDKs do not embed a database driver. The consumer passes a `DogsledEntityExecutor` so the SDK stays pure transformation and app code owns execution context.',
+    'Generated SDKs do not embed a database driver. The consumer passes a `BobsledEntityExecutor` so the SDK stays pure transformation and app code owns execution context.',
   ],
 ] as const;
 
@@ -83,7 +83,7 @@ const STEPS: ReadonlyArray<{
     step: '4',
     title: 'Generate the typed SDK',
     description:
-      'Reads the IR via `inventoryEntityGraph()`, emits branded IDs + `Profile` interfaces + `FindFilter` shapes + `EntityQueryBuilder` + `createDogsledClient()` into the consumer repo.',
+      'Reads the IR via `inventoryEntityGraph()`, emits branded IDs + `Profile` interfaces + `FindFilter` shapes + `EntityQueryBuilder` + `createBobsledClient()` into the consumer repo.',
     code: 'dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json',
     language: 'bash',
     href: null,
@@ -92,7 +92,7 @@ const STEPS: ReadonlyArray<{
     step: '5',
     title: 'Wire the executor and query',
     description:
-      'Provide a `DogsledEntityExecutor` (one `find(request)` function) and call the typed surface. The executor can bridge to Dogsled MCP `readSource`, a warehouse runner, or an app API.',
+      'Provide a `BobsledEntityExecutor` (one `find(request)` function) and call the typed surface. The executor can bridge to Dogsled MCP `readSource`, a warehouse runner, or an app API.',
     code: null,
     language: 'plaintext',
     href: null,
@@ -108,16 +108,16 @@ const STEPS: ReadonlyArray<{
   },
 ] as const;
 
-const APP_CODE = `import { createDogsledClient, type DogsledEntityExecutor } from './generated/dogsled-sdk';
+const APP_CODE = `import { createBobsledClient, type BobsledEntityExecutor } from './generated/dogsled-sdk';
 
-const executor: DogsledEntityExecutor = {
+const executor: BobsledEntityExecutor = {
   async find(request) {
     // Bridge to Dogsled MCP readSource, a warehouse runner, or an app API.
-    return queryDogsledEntityGraph(request);
+    return queryBobsledEntityGraph(request);
   },
 };
 
-const dogsled = createDogsledClient(executor);
+const dogsled = createBobsledClient(executor);
 
 const acme = await dogsled.entity.customer
   .findBy({ domain: 'acme.com' })
@@ -236,7 +236,7 @@ export default function EntityGraphSdkDemoOverviewPage() {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             Generated SDKs ship without a database driver. App code provides a{' '}
             <code className="rounded bg-muted px-1 font-mono text-[12px]">
-              DogsledEntityExecutor
+              BobsledEntityExecutor
             </code>
             and calls <code className="rounded bg-muted px-1 font-mono text-[12px]">findBy()</code>,{' '}
             <code className="rounded bg-muted px-1 font-mono text-[12px]">withDocuments()</code>,{' '}

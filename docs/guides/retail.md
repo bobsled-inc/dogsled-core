@@ -32,11 +32,11 @@ stock, join by `product_id`, and leave ambiguous support product identity null.
 Findings are analytical advice, not automatic customer or inventory actions.
 
 For full setup, local certificate instructions and chapter commands, see the
-[bundled walkthrough](../../packages/dogsled/examples/retail/README.md).
+[bundled walkthrough](../../packages/bobsled-core/examples/retail/README.md).
 
 Chapter 3 also introduces customer ontologies. Follow `SalesLine → Product → Supplier`
-in the [ontology](../../packages/dogsled/examples/retail/context/retail.ontology.yml)
-and inspect its [data mapping](../../packages/dogsled/examples/retail/context/retail.mapping.yml).
+in the [ontology](../../packages/bobsled-core/examples/retail/context/retail.ontology.yml)
+and inspect its [data mapping](../../packages/bobsled-core/examples/retail/context/retail.mapping.yml).
 The ontology explains why a sales line is not a unit sold; the semantic models
 supply the quantities, filters and calculations. Use `dogsled ontology describe
 retail --concept SalesLine --yaml` and `dogsled ontology validate --strict` before

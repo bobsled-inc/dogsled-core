@@ -8,7 +8,7 @@ export default defineConfig([
     // `@bobsled-inc/integrations`.
     entry: {
       index: 'src/index.ts',
-      dogsled: 'src/dogsled.ts',
+      bobsled: 'src/bobsled.ts',
       'project/index': 'src/project/index.ts',
     },
     format: ['esm'],

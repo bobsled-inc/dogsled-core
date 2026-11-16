@@ -1,4 +1,4 @@
-import { buildDuckDbRunner } from '@bobsled-inc/dogsled/connections';
+import { buildDuckDbRunner } from '@bobsled-inc/bobsled-core/connections';
 
 const runner = await buildDuckDbRunner({
   spec_version: '1',

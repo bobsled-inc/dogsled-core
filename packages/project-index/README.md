@@ -1,6 +1,6 @@
 # @bobsled-inc/project-index
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Type-based discovery for Dogsled project files. Dogsled scans a project once,
 reads each YAML file's top-level `type` and each Markdown file's front matter

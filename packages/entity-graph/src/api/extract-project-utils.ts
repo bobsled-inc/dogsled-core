@@ -114,7 +114,7 @@ export function requiredString(row: Record<string, unknown>, name: string, sourc
 }
 
 /** The root configuration files of the nearest folder that has any; the project resolver merges them. */
-function findDogsledConfigs(startDir: string): string[] {
+function findBobsledConfigs(startDir: string): string[] {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
   while (dir !== root) {
@@ -134,7 +134,7 @@ function formatPlatformIssues(error: z.ZodError): string {
 }
 
 export function loadPlatformResolution(cwd: string): PlatformResolution {
-  const configPaths = findDogsledConfigs(cwd);
+  const configPaths = findBobsledConfigs(cwd);
   if (!configPaths.length) return { projectKey: path.resolve(cwd) };
   let configPath = configPaths[0]!;
   let platformRaw: unknown;

@@ -129,4 +129,4 @@ authorize refunds, customer messages, replacements or inventory changes.
 
 ## Chapter commands and templates
 
-{{include: packages/dogsled/examples/retail/README.md}}
+{{include: packages/bobsled-core/examples/retail/README.md}}

@@ -192,7 +192,7 @@ DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS=1     # allow OAuth token endpoint on private 
 | `Model "..." sets publish: ... but source "..." uses oauth auth` | Published source uses short-lived OAuth credentials             | Switch to long-lived credentials such as Snowflake `rsa_key` or Databricks `pat`           |
 | `Model "..." can publish only warehouse_table sources`           | A source is an API extractor instead of a warehouse table       | Extract the API into a warehouse first, then reference the warehouse table                 |
 | `cross-warehouse target ... schema drifted`                      | Destination table no longer matches the model columns           | Update the model or set incremental `on_schema_change: full_refresh`                       |
-| `cross-warehouse models require a publisher`                     | Programmatic `runProject` call did not inject the publisher     | Use the Dogsled CLI or inject `publishCrossWarehouse` from `@bobsled-inc/dogsled`          |
+| `cross-warehouse models require a publisher`                     | Programmatic `runProject` call did not inject the publisher     | Use the Dogsled CLI or inject `publishCrossWarehouse` from `@bobsled-inc/bobsled-core`     |
 
 ## Operational Notes
 

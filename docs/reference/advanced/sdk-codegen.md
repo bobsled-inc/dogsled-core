@@ -57,8 +57,8 @@ The Python emitter is available as a library export from `@bobsled-inc/sdk-codeg
 ```text
 generated/dogsled-sdk/
 ├── index.ts          # Re-exports everything below.
-├── runtime.ts        # EntityFindRequest, EntityQueryBuilder, DogsledEntityExecutor.
-├── client.ts         # createDogsledClient(executor) factory.
+├── runtime.ts        # EntityFindRequest, EntityQueryBuilder, BobsledEntityExecutor.
+├── client.ts         # createBobsledClient(executor) factory.
 └── entities/
     ├── _quality.ts   # EntityQuality interface — imported by every entity.
     ├── customer.ts   # CustomerId + CustomerProfile.
@@ -83,18 +83,18 @@ The SDK does not open warehouse connections itself. Give it an executor that kno
 
 ```ts
 import {
-  createDogsledClient,
+  createBobsledClient,
   type EntityFindRequest,
-  type DogsledEntityExecutor,
+  type BobsledEntityExecutor,
 } from './generated/dogsled-sdk/index.js';
 
-const executor: DogsledEntityExecutor = {
+const executor: BobsledEntityExecutor = {
   async find(request) {
     return runEntityGraphQuery(request);
   },
 };
 
-const dogsled = createDogsledClient(executor);
+const dogsled = createBobsledClient(executor);
 
 const result = await dogsled.entity.customer.findBy({ domain: 'acme.com' }).withDocuments().first();
 ```
@@ -115,7 +115,7 @@ The builder methods are:
 The single function your app code provides:
 
 ```ts
-interface DogsledEntityExecutor {
+interface BobsledEntityExecutor {
   find<TProfile, TFilter extends object, TDocument = unknown>(
     request: EntityFindRequest<TFilter>
   ): Promise<Array<EntityFindResult<TProfile, TDocument>>>;
@@ -177,10 +177,10 @@ A practical executor against the local `entity_graph.__entity_profile` and `__do
 import type {
   EntityFindRequest,
   EntityFindResult,
-  DogsledEntityExecutor,
+  BobsledEntityExecutor,
 } from './generated/dogsled-sdk/index.js';
 
-export const duckdbExecutor: DogsledEntityExecutor = {
+export const duckdbExecutor: BobsledEntityExecutor = {
   async find(request) {
     const filterSql = buildFilterClause(request.filter); // your helper
     const limitSql = request.limit ? `LIMIT ${request.limit}` : '';
@@ -249,11 +249,11 @@ owners keep control over SQL runner choice, permission filtering, and serving-ta
 If your app already serves an MCP `read_source` surface (see [MCP `read_source`](mcp-read-source.md)), the executor can bridge entity queries through it:
 
 ```ts
-import { DogsledMcpServer, readSource } from '@bobsled-inc/dogsled/mcp';
+import { BobsledMcpServer, readSource } from '@bobsled-inc/bobsled-core/mcp';
 
-const server = new DogsledMcpServer();
+const server = new BobsledMcpServer();
 
-export const mcpExecutor = (principal): DogsledEntityExecutor => ({
+export const mcpExecutor = (principal): BobsledEntityExecutor => ({
   async find(request) {
     const profileRows = await readSource(
       { server, principal, fetcher: profileFetcher },
@@ -368,7 +368,7 @@ There's a wall-clock budget on generation: the 10-entity production-shape fixtur
 **v1 model:** SDKs are generated **into the consumer repo**. They live alongside your source so you vendor, lint, type-check, and version them like any other code asset. Published packages are out of scope for v1.
 
 `@bobsled-inc/sdk-codegen` is an internal workspace embedded in
-`@bobsled-inc/dogsled`; it is not published or installed independently.
+`@bobsled-inc/bobsled-core`; it is not published or installed independently.
 Repository tooling may import its workspace entrypoints, while external
 consumers should use documented Dogsled APIs and CLI commands.
 

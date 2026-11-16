@@ -1,5 +1,5 @@
 {
-  "name": "dogsled",
+  "name": "bobsled-core",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
     "lint:ci": "node ./scripts/ci/run-eslint-with-guidance.mjs",
     "lint:fix": "pnpm_config_verify_deps_before_run=false turbo run lint:fix",
     "test": "pnpm_config_verify_deps_before_run=false turbo run test",
-    "test:unit": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=2 --filter='!@bobsled-inc/dogsled' && pnpm --filter @bobsled-inc/dogsled test:unit",
+    "test:unit": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=2 --filter='!@bobsled-inc/bobsled-core' && pnpm --filter @bobsled-inc/bobsled-core test:unit",
     "test:structural": "vitest run --config ./vitest.structural.config.mjs",
     "test:packed-catalog": "node ./scripts/ci/test-packed-catalog.mjs",
     "docs:ci": "node ./scripts/ci/validate-docs.mjs && node ./scripts/docs/cli-reference.mjs --check",
@@ -57,8 +57,8 @@
     "e2e:outsider": "node scripts/e2e/outsider.mjs",
     "test:unit:ci:model": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/model-spec'",
     "test:unit:ci:graph": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/entity-graph' --filter='@bobsled-inc/extractor' --filter='@bobsled-inc/sdk-codegen' --filter='@bobsled-inc/explorer'",
-    "test:unit:ci:dogsled": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/dogsled'",
-    "test:unit:ci:rest": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='!@bobsled-inc/model-spec' --filter='!@bobsled-inc/entity-graph' --filter='!@bobsled-inc/extractor' --filter='!@bobsled-inc/sdk-codegen' --filter='!@bobsled-inc/explorer' --filter='!@bobsled-inc/dogsled'",
+    "test:unit:ci:bobsled": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='@bobsled-inc/bobsled-core'",
+    "test:unit:ci:rest": "pnpm_config_verify_deps_before_run=false turbo run test:unit --log-order=stream --concurrency=100% --filter='!@bobsled-inc/model-spec' --filter='!@bobsled-inc/entity-graph' --filter='!@bobsled-inc/extractor' --filter='!@bobsled-inc/sdk-codegen' --filter='!@bobsled-inc/explorer' --filter='!@bobsled-inc/bobsled-core'",
     "skills:check": "pnpm --filter @bobsled-inc/skills check:generated"
   },
   "pnpm": {

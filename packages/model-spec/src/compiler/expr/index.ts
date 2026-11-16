@@ -30,8 +30,8 @@ export {
 export type { ExpressionFunctionManifest, ExpressionFunctionManifestEntry } from './registry.js';
 
 export type {
-  DogsledExpr,
-  DogsledExprKind,
+  BobsledExpr,
+  BobsledExprKind,
   BinaryOp,
   UnaryOp,
   ArithmeticOp,

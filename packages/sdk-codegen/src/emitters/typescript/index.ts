@@ -148,7 +148,7 @@ export interface EntityMatchResult {
   matched_rule?: string;
 }
 
-export interface DogsledEntityExecutor {
+export interface BobsledEntityExecutor {
   find<TProfile, TFilter extends object, TDocument = unknown>(
     request: EntityFindRequest<TFilter>
   ): Promise<Array<EntityFindResult<TProfile, TDocument>>>;
@@ -171,7 +171,7 @@ export class EntityQueryBuilder<
   private readonly pageCursor?: string;
 
   constructor(
-    private readonly executor: DogsledEntityExecutor,
+    private readonly executor: BobsledEntityExecutor,
     private readonly entity: string,
     private readonly filter: TFilter,
     options: {
@@ -287,7 +287,7 @@ function emitClient(ir: SdkIr): string {
         .join('\n');
       // Strict shape — no `extends Record<string, unknown>` so users can't
       // accidentally pass unsupported keys. The runtime EntityQueryBuilder
-      // / EntityFindRequest / DogsledEntityExecutor type parameters now use
+      // / EntityFindRequest / BobsledEntityExecutor type parameters now use
       // `TFilter extends object` (non-primitive) instead of `extends
       // Record<string, unknown>` so these strict per-entity FindFilter
       // interfaces still satisfy the bound.
@@ -318,7 +318,7 @@ ${attrs || '  // (no profile attrs declared)'}
       const matchMethod = entity.capabilities.match
         ? `,
     match(record, options = {}) {
-      if (!executor.match) throw new Error('DogsledEntityExecutor.match is not implemented.');
+      if (!executor.match) throw new Error('BobsledEntityExecutor.match is not implemented.');
       return executor.match({
         entity: ${JSON.stringify(entity.name)},
         record,
@@ -326,7 +326,7 @@ ${attrs || '  // (no profile attrs declared)'}
       });
     }`
         : '';
-      return `function create${typeName}EntityClient(executor: DogsledEntityExecutor): ${typeName}EntityClient {
+      return `function create${typeName}EntityClient(executor: BobsledEntityExecutor): ${typeName}EntityClient {
   return {
     findBy(filter) {
       return new EntityQueryBuilder<${profileTypeName(entity)}, ${typeName}FindFilter, ${documentType}, ${relationshipTypeName(entity)}>(
@@ -337,7 +337,7 @@ ${attrs || '  // (no profile attrs declared)'}
       );
     },
     get(id) {
-      if (!executor.get) throw new Error('DogsledEntityExecutor.get is not implemented.');
+      if (!executor.get) throw new Error('BobsledEntityExecutor.get is not implemented.');
       return executor.get<${profileTypeName(entity)}>({
         entity: ${JSON.stringify(entity.name)},
         id,
@@ -348,13 +348,13 @@ ${attrs || '  // (no profile attrs declared)'}
     })
     .join('\n\n');
 
-  const dogsledClientFields = ir.entities
+  const bobsledClientFields = ir.entities
     .map(
       (entity) =>
         `    ${tsPropertyName(entity.name)}: ${toPascalIdentifier(entity.name)}EntityClient;`
     )
     .join('\n');
-  const dogsledClientFactories = ir.entities
+  const bobsledClientFactories = ir.entities
     .map(
       (entity) =>
         `      ${tsPropertyName(entity.name)}: create${toPascalIdentifier(entity.name)}EntityClient(executor),`
@@ -367,7 +367,7 @@ ${ir.entities
   .join('\n')}
 } as const;`;
 
-  return `import { EntityQueryBuilder, type DogsledEntityExecutor${anyMatch ? ', type EntityMatchOptions, type EntityMatchResult' : ''} } from './runtime.js';
+  return `import { EntityQueryBuilder, type BobsledEntityExecutor${anyMatch ? ', type EntityMatchOptions, type EntityMatchResult' : ''} } from './runtime.js';
 ${typeImports}
 ${relationshipImports}
 
@@ -379,16 +379,16 @@ ${entityClients}
 
 ${factoryFunctions}
 
-export interface DogsledClient {
+export interface BobsledClient {
   entity: {
-${dogsledClientFields}
+${bobsledClientFields}
   };
 }
 
-export function createDogsledClient(executor: DogsledEntityExecutor): DogsledClient {
+export function createBobsledClient(executor: BobsledEntityExecutor): BobsledClient {
   return {
     entity: {
-${dogsledClientFactories}
+${bobsledClientFactories}
     },
   };
 }

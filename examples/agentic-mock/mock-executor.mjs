@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, writeFileSync } from 'node:fs';
-import { AlwaysOkBudgetLedger, mockStructuredOk } from '@bobsled-inc/dogsled/ai/test-stubs';
+import { AlwaysOkBudgetLedger, mockStructuredOk } from '@bobsled-inc/bobsled-core/ai/test-stubs';
 import {
   AgentAssignmentSchema,
   parseAgentAssignmentOutcome,
-} from '@bobsled-inc/dogsled/model-spec/agentic';
+} from '@bobsled-inc/bobsled-core/model-spec/agentic';
 const ledger = new AlwaysOkBudgetLedger();
 export async function executeAgent(request) {
   request.signal.throwIfAborted();

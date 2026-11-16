@@ -365,7 +365,7 @@ describe('reviewed transitive advisory consumer exceptions', () => {
       at
     ).passed;
   }
-  const dogsled = ['@bobsled-inc/dogsled', '0.62.0'];
+  const dogsled = ['@bobsled-inc/bobsled-core', '0.62.0'];
   const sdk = ['@modelcontextprotocol/sdk', '1.32.0'];
   it.each([
     ['GHSA-xjj6-f33q-929c', 'undici', '8.11.2', [dogsled]],

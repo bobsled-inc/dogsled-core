@@ -1,6 +1,6 @@
 # @bobsled-inc/ai
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Provider-neutral AI primitives for Dogsled. The package resolves configured model
 roles, enforces call and daily budgets, and exposes structured generation,
@@ -9,13 +9,13 @@ streaming, and embedding helpers.
 ## Install
 
 ```bash
-npm install @bobsled-inc/dogsled
+npm install @bobsled-inc/bobsled-core
 ```
 
 ## Usage
 
 ```typescript
-import { generateStructured, resolveModelConnection } from '@bobsled-inc/dogsled/ai';
+import { generateStructured, resolveModelConnection } from '@bobsled-inc/bobsled-core/ai';
 
 const connection = resolveModelConnection('default', config);
 

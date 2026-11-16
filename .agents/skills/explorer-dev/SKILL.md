@@ -56,7 +56,7 @@ Every server-side call to `@bobsled-inc/integrations` or `@bobsled-inc/models` M
 
 ### CLI Subprocess Spawning
 
-`lib/dogsled-cli.ts` discovers workspace root via `pnpm-workspace.yaml`, resolves Dogsled CLI from `packages/dogsled/dist/index.js` or falls back to `npx tsx packages/dogsled/src/index.ts`. Sets `DOGSLED_BUNDLED_INTEGRATIONS_DIR` and `NO_COLOR=1`.
+`lib/dogsled-cli.ts` discovers workspace root via `pnpm-workspace.yaml`, resolves Dogsled CLI from `packages/bobsled-core/dist/index.js` or falls back to `npx tsx packages/bobsled-core/src/index.ts`. Sets `DOGSLED_BUNDLED_INTEGRATIONS_DIR` and `NO_COLOR=1`.
 
 ### Command Security
 

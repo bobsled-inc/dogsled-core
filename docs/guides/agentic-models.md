@@ -78,7 +78,7 @@ Dogsled does not call a model provider by itself. An executor does:
   models that pick one fixed choice per row, with a `typesafe` model role.
 
 The [agentic-pairs example](../../examples/agentic-pairs/) contains a reference
-executor that calls the model role's provider through `@bobsled-inc/dogsled/ai`, and
+executor that calls the model role's provider through `@bobsled-inc/bobsled-core/ai`, and
 a loop executor for `agent_loop` steps.
 
 ## Run and resume

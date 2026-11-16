@@ -22,16 +22,16 @@ This is the **outbound** MCP surface: Dogsled-as-server, agent-as-client. (Dogsl
 - One read tool: `read_source`. Returns rows + citations.
 - Fail-closed default: every call requires a `principal`.
 - Single explicit escape hatch (`--allow-unfiltered` AND `DOGSLED_MCP_ALLOW_UNFILTERED=1`) for single-tenant / public-data demos.
-- Public subpath: `import { ... } from '@bobsled-inc/dogsled/mcp'`.
+- Public subpath: `import { ... } from '@bobsled-inc/bobsled-core/mcp'`.
 
 Richer tools (`search_documents`, `get_document`, `search_entity_context`, `traverse_entity_context`) are planned on a later milestone — they are not shipped on `main` yet.
 
 ## Quickstart
 
 ```ts
-import { DogsledMcpServer, readSource } from '@bobsled-inc/dogsled/mcp';
+import { BobsledMcpServer, readSource } from '@bobsled-inc/bobsled-core/mcp';
 
-const server = new DogsledMcpServer({ allowedSourceTables: new Set(['support_docs__chunks']) });
+const server = new BobsledMcpServer({ allowedSourceTables: new Set(['support_docs__chunks']) });
 
 server.registerPermissionAdapter({
   name: 'source-acl',
@@ -112,9 +112,9 @@ When a registered adapter filters the returned rows, the response reports `{ "en
 The default is to reject every request without a principal:
 
 ```ts
-import { DogsledMcpServer } from '@bobsled-inc/dogsled/mcp';
+import { BobsledMcpServer } from '@bobsled-inc/bobsled-core/mcp';
 
-const server = new DogsledMcpServer();
+const server = new BobsledMcpServer();
 server.requirePrincipal(null);
 // throws CommandError(2):
 //   PermissionsNotConfigured: every MCP tool call requires a principal. ...
@@ -130,7 +130,7 @@ For a single-tenant demo / public-data preview / local dev, both of these must b
 2. Set the environment variable `DOGSLED_MCP_ALLOW_UNFILTERED=1`.
 
 ```ts
-const server = new DogsledMcpServer({
+const server = new BobsledMcpServer({
   allowUnfiltered: true,
   allowedSourceTables: new Set(['support_docs__chunks']),
 });
@@ -165,7 +165,7 @@ A fetcher is a single async function. Three responsibilities:
 3. **Return** `{ rows, next_cursor? }`. Each row is a `Record<string, unknown>` shaped like the underlying table; the server attaches a `Citation` automatically for document/chunk tables.
 
 ```ts
-import type { RowFetcher } from '@bobsled-inc/dogsled/mcp';
+import type { RowFetcher } from '@bobsled-inc/bobsled-core/mcp';
 
 let warnedUnfiltered = false;
 const warn = (message: string) => process.stderr.write(`[warn] ${message}\n`);

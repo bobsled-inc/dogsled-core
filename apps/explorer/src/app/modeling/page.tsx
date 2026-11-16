@@ -75,7 +75,7 @@ const TOC = [
   { id: 'cli-reference', label: 'CLI Reference' },
 ];
 
-export default function DogsledModelingPage() {
+export default function BobsledModelingPage() {
   return (
     <div className="mx-auto flex max-w-6xl gap-8 p-6">
       <div className="min-w-0 flex-1">

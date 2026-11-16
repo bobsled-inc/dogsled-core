@@ -9,7 +9,7 @@ import { CommandError } from '../errors.js';
 import { tryParseExpr } from '../compiler/expr/parser.js';
 import { walkExpr } from '../compiler/expr/walker.js';
 import {
-  dogsledExtension,
+  bobsledExtension,
   validateOssieDocument,
   type OssieDataset,
   type OssieField,
@@ -119,7 +119,7 @@ function fieldFor(
 ): Record<string, unknown> {
   const extension = parse(
     fieldExtensionSchema,
-    dogsledExtension(field, where, false, vendor),
+    bobsledExtension(field, where, false, vendor),
     where
   );
   const { build_expression, sql_type, ...metadata } = extension;
@@ -164,7 +164,7 @@ export function translateOssieDocument(
   vendor = 'DOGSLED'
 ): TranslatedOssieDocument {
   const doc = validateOssieDocument(document, filePath);
-  if (Object.keys(dogsledExtension(doc, filePath, false, vendor)).length) {
+  if (Object.keys(bobsledExtension(doc, filePath, false, vendor)).length) {
     fail(
       filePath,
       'Document-level DOGSLED execution settings are unsupported; use dataset extensions'
@@ -180,7 +180,7 @@ export function translateOssieDocument(
       fail(where, 'Duplicate dataset name');
     }
     datasets.set(dataset.name, dataset);
-    const extension = dogsledExtension(dataset, where, true, vendor);
+    const extension = bobsledExtension(dataset, where, true, vendor);
     if (extension['extension_version'] !== '1') {
       fail(where, 'Unsupported DOGSLED extension_version; expected "1"');
     }
@@ -291,7 +291,7 @@ export function translateOssieDocument(
   }
   for (const metric of doc.metrics ?? []) {
     const where = `${filePath}#metrics.${metric.name}`;
-    const extension = dogsledExtension(metric, where, false, vendor);
+    const extension = bobsledExtension(metric, where, false, vendor);
     onlyKeys(extension, new Set(['tags']), where);
     const expressions = metric.expression.dialects;
     const ansi = expressions.find((e) => e.dialect === 'ANSI_SQL');
@@ -342,7 +342,7 @@ export function translateOssieDocument(
   }
   for (const relationship of doc.relationships ?? []) {
     const where = `${filePath}#relationships.${relationship.name}`;
-    const extension = dogsledExtension(relationship, where, false, vendor);
+    const extension = bobsledExtension(relationship, where, false, vendor);
     onlyKeys(extension, new Set(['join_type', 'description', 'tags']), where);
     if (!derivedNames.has(relationship.from) || !derivedNames.has(relationship.to)) {
       fail(where, 'Dogsled relationships require derived datasets in this document');

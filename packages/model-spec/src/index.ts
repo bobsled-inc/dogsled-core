@@ -26,7 +26,7 @@ import { registerSeedCommand } from './commands/seed.js';
 import { registerTestCommand } from './commands/test.js';
 import { registerValidateCommand } from './commands/validate.js';
 import * as out from './output.js';
-import { CommandError, DogsledRuntimeError } from './errors.js';
+import { CommandError, BobsledRuntimeError } from './errors.js';
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -62,7 +62,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.a
     if (err instanceof CommandError) {
       out.error(err.message);
       process.exitCode = err.exitCode;
-    } else if (err instanceof DogsledRuntimeError && err.cause instanceof CommandError) {
+    } else if (err instanceof BobsledRuntimeError && err.cause instanceof CommandError) {
       out.error(err.cause.message);
       process.exitCode = err.cause.exitCode;
     } else if (err instanceof Error) {

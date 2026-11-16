@@ -7,7 +7,7 @@ file, and reruns an incremental merge after adding ten orders. It asserts 110
 unique dates and total revenue of 50600 units after the second run.
 
 For a manual walkthrough, copy this directory to a new folder, install
-`@bobsled-inc/dogsled` locally, then run:
+`@bobsled-inc/bobsled-core` locally, then run:
 
 ```bash
 dogsled model seed load --dialect duckdb --schema main --runner ./runner.mjs --json

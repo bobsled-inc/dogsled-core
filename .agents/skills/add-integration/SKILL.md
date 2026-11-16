@@ -54,7 +54,7 @@ If it exists, ask the user whether to regenerate/update or abort.
 ### Step 3: Generate YAMLs from OpenAPI
 
 ```bash
-cd packages/dogsled && pnpm dev extract generate <openapi_url> --directory /tmp/integration-staging --integration <name>
+cd packages/bobsled-core && pnpm dev extract generate <openapi_url> --directory /tmp/integration-staging --integration <name>
 ```
 
 Read all generated files in `/tmp/integration-staging/`.

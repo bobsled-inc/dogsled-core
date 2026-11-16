@@ -26,8 +26,8 @@ Read the local docs and schemas before editing config:
 - `docs/reference/project-files.md`
 - `packages/connections/src/schemas/model.ts`
 - `packages/ai/AGENTS.md`
-- `packages/dogsled/src/commands/doctor.ts`
-- `packages/dogsled/src/commands/ai.ts`
+- `packages/bobsled-core/src/commands/doctor.ts`
+- `packages/bobsled-core/src/commands/ai.ts`
 
 Use provider role names in config and code. Do not hardcode provider model IDs into pipeline resources when a stable role can be referenced instead.
 
@@ -150,7 +150,7 @@ For schema, command, or AI package changes:
 ```bash
 pnpm --filter @bobsled-inc/ai typecheck
 pnpm --filter @bobsled-inc/ai test:unit
-pnpm --filter @bobsled-inc/dogsled typecheck
-pnpm --filter @bobsled-inc/dogsled test:unit
+pnpm --filter @bobsled-inc/bobsled-core typecheck
+pnpm --filter @bobsled-inc/bobsled-core test:unit
 pnpm precommit
 ```

@@ -61,7 +61,7 @@ The built-in executor reserves the assignment token allowance and records return
 For a library host:
 
 ```ts
-import { createAgenticHost, createJevExecutor } from '@bobsled-inc/dogsled/agentic';
+import { createAgenticHost, createJevExecutor } from '@bobsled-inc/bobsled-core/agentic';
 
 const executeAgent = createJevExecutor({ secretResolver });
 const host = createAgenticHost({

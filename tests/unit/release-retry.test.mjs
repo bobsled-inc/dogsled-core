@@ -18,8 +18,8 @@ function repository() {
   git('init', '-q', '-b', 'main');
   git('config', 'user.name', 'Release Test');
   git('config', 'user.email', 'release@example.test');
-  mkdirSync(path.join(root, 'packages/dogsled'), { recursive: true });
-  const manifest = path.join(root, 'packages/dogsled/package.json');
+  mkdirSync(path.join(root, 'packages/bobsled-core'), { recursive: true });
+  const manifest = path.join(root, 'packages/bobsled-core/package.json');
   writeFileSync(manifest, '{"version":"0.1.0"}');
   git('add', '.');
   git('commit', '-qm', 'Reviewed base');
@@ -66,7 +66,7 @@ describe('retry release ancestry', () => {
     expect(tag.status).toBe(0);
     writeFileSync(
       r.manifest,
-      JSON.stringify({ name: '@bobsled-inc/dogsled', version: '0.1.0', private: false })
+      JSON.stringify({ name: '@bobsled-inc/bobsled-core', version: '0.1.0', private: false })
     );
     const output = path.join(r.root, 'outputs');
     const preview = spawnSync(

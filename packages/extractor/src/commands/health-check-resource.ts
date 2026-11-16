@@ -14,7 +14,7 @@ const DOGSLED_CONFIG_NAMES = [
 const MAX_DOGSLED_CONFIG_BYTES = 1024 * 1024;
 
 /** The root configuration files of the nearest folder that has any; the project resolver merges them. */
-function findDogsledConfigs(startDir: string): string[] {
+function findBobsledConfigs(startDir: string): string[] {
   let dir = path.resolve(startDir);
 
   while (true) {
@@ -35,7 +35,7 @@ export function readScopedHealthResource(
   startDir: string,
   integrationName: string
 ): string | undefined {
-  for (const configPath of findDogsledConfigs(startDir)) {
+  for (const configPath of findBobsledConfigs(startDir)) {
     const resource = readScopedHealthResourceFrom(configPath, integrationName);
     if (resource) return resource;
   }

@@ -1,6 +1,6 @@
 # Migration — Bundler-safe project validation
 
-**Date:** 2026-08-28 · **Affected package:** `@bobsled-inc/dogsled`
+**Date:** 2026-08-28 · **Affected package:** `@bobsled-inc/bobsled-core`
 
 Dogsled's project compiler now carries its built-in source-validation metadata as generated
 JavaScript. `resolveProjectPipelines()` and `generateProjectManifest()` no longer discover the
@@ -12,7 +12,7 @@ Server applications should continue to import the project compiler from Dogsled'
 surface:
 
 ```typescript
-import { generateProjectManifest } from '@bobsled-inc/dogsled/manifest';
+import { generateProjectManifest } from '@bobsled-inc/bobsled-core/manifest';
 
 const manifest = await generateProjectManifest({ projectRoot });
 ```
@@ -25,8 +25,8 @@ The built-in metadata is the default. Hosts with a separate catalog can inject t
 lightweight interface:
 
 ```typescript
-import { generateProjectManifest } from '@bobsled-inc/dogsled/manifest';
-import type { ValidationCatalog } from '@bobsled-inc/dogsled/validation';
+import { generateProjectManifest } from '@bobsled-inc/bobsled-core/manifest';
+import type { ValidationCatalog } from '@bobsled-inc/bobsled-core/validation';
 
 const validationCatalog: ValidationCatalog = createHostCatalog();
 const manifest = await generateProjectManifest({ projectRoot, validationCatalog });

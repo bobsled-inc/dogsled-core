@@ -1,15 +1,15 @@
-export interface ExplorerDogsledCommand {
+export interface ExplorerBobsledCommand {
   command: string;
   args: string[];
 }
 
 export interface ExplorerCommandSequence {
-  sequence: ExplorerDogsledCommand[];
+  sequence: ExplorerBobsledCommand[];
 }
 
-export type ExplorerCommand = ExplorerDogsledCommand | ExplorerCommandSequence;
+export type ExplorerCommand = ExplorerBobsledCommand | ExplorerCommandSequence;
 
-export function isExplorerDogsledCommand(value: unknown): value is ExplorerDogsledCommand {
+export function isExplorerBobsledCommand(value: unknown): value is ExplorerBobsledCommand {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -29,7 +29,7 @@ export function isExplorerCommandSequence(value: unknown): value is ExplorerComm
     'sequence' in value &&
     Array.isArray(value.sequence) &&
     value.sequence.length > 0 &&
-    value.sequence.every((entry) => isExplorerDogsledCommand(entry))
+    value.sequence.every((entry) => isExplorerBobsledCommand(entry))
   );
 }
 
@@ -41,7 +41,7 @@ export function buildTerminalHref(command: ExplorerCommand): string {
   return `/terminal?cmd=${encodeCommandParam(command)}`;
 }
 
-function getCommands(command: ExplorerCommand): ExplorerDogsledCommand[] {
+function getCommands(command: ExplorerCommand): ExplorerBobsledCommand[] {
   return isExplorerCommandSequence(command) ? command.sequence : [command];
 }
 
@@ -141,7 +141,7 @@ export function getIntegrationsFromExplorerCommand(command: ExplorerCommand): st
   return Array.from(new Set(integrations));
 }
 
-export function formatExplorerCommandForHistory(command: ExplorerCommand): ExplorerDogsledCommand {
+export function formatExplorerCommandForHistory(command: ExplorerCommand): ExplorerBobsledCommand {
   if (!isExplorerCommandSequence(command)) {
     return command;
   }

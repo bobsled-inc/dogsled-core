@@ -28,5 +28,5 @@ reserved for the supported remote SQL stores. The DuckDB publication adapter kee
 its metadata in `_dogsled_agentic_publication`. The automated script injects the
 crash and checks accepted-call counts, persisted rows, and both metadata stores.
 
-The `@bobsled-inc/dogsled/ai/test-stubs` export is unstable and test-only. Use it
+The `@bobsled-inc/bobsled-core/ai/test-stubs` export is unstable and test-only. Use it
 for deterministic examples and tests; it is not a supported production model API.

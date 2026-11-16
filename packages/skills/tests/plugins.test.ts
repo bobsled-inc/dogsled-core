@@ -50,7 +50,7 @@ describe('installable Dogsled plugin', () => {
           .sort()
       );
       expect(readFileSync(join(plugin, 'skills/dogsled-tutorials/SKILL.md'), 'utf8')).toContain(
-        'https://github.com/bobsled-inc/dogsled-core/blob/main/packages/dogsled/examples/tv-night/DESIGN.md'
+        'https://github.com/bobsled-inc/dogsled-core/blob/main/packages/bobsled-core/examples/tv-night/DESIGN.md'
       );
       const requiredReferences = {
         'etl-migration/SKILL.md': [

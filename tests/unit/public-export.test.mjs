@@ -375,7 +375,7 @@ if (args[0] === 'build' || args[0].startsWith('test:unit')) {
       const hashes = readFileSync(path.join(root, 'hashes'), 'utf8').trim().split('\n');
       deepStrictEqual(hashes.length, 2);
       deepStrictEqual(hashes[0], hashes[1]);
-      for (const leg of ['model', 'graph', 'dogsled', 'rest']) {
+      for (const leg of ['model', 'graph', 'bobsled', 'rest']) {
         verifyExport(root, manifest, [], leg);
         ok(readFileSync(path.join(root, 'commands'), 'utf8').includes(`test:unit:ci:${leg}`));
       }

@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import type { FileResourceSpec } from '../framework/extractor/index.js';
 import { FileStorageSourceTypeValues } from '../framework/core/index.js';
@@ -211,7 +211,7 @@ export async function extractFileStorageResource({
         // Connection-level failures (lost SFTP session, timeout, cancel) affect every
         // later file too. Skipping them would report success with partial data.
         // Checked before the signal so a cancel keeps its structured code.
-        if (error instanceof DogsledRuntimeError) throw error;
+        if (error instanceof BobsledRuntimeError) throw error;
         if (signal?.aborted) signal.throwIfAborted();
         // A private Blob resource selects one known object. Skipping a failed
         // download or parse would turn a missing/revoked attachment into a

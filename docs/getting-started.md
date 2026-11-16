@@ -15,20 +15,20 @@ You need Node.js 24 or later and npm.
 
 ## Install Dogsled
 
-Create a folder and install the `@bobsled-inc/dogsled` package into it:
+Create a folder and install the `@bobsled-inc/bobsled-core` package into it:
 
 ```bash
 mkdir dogsled-quickstart
 cd dogsled-quickstart
 npm init -y > /dev/null
-npm install @bobsled-inc/dogsled
+npm install @bobsled-inc/bobsled-core
 npx dogsled --version
 ```
 
 Dogsled installs into the folder's `node_modules`, so you run it with `npx dogsled`.
 Installing Dogsled into each project keeps its version and warehouse drivers with
 the project. You can also install it globally with
-`npm install -g @bobsled-inc/dogsled` and run `dogsled` directly; then install any
+`npm install -g @bobsled-inc/bobsled-core` and run `dogsled` directly; then install any
 warehouse drivers globally too.
 Warehouse drivers are optional: you install them later, next to Dogsled, only for the
 warehouses you use. See [Load data](guides/load-data.md#install-a-warehouse-driver).

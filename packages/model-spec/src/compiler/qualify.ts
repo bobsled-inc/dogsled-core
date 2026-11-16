@@ -27,7 +27,7 @@ import { caseName, quoteColumnAlias } from './dialect.js';
 import { mapExpr, parseExprField } from './expr/index.js';
 
 import type { SupportedDialect } from './dialect.js';
-import type { DogsledExpr } from './expr/index.js';
+import type { BobsledExpr } from './expr/index.js';
 
 const QUALIFY_ALIAS_PREFIX = '__bms_qualify_';
 const QUALIFY_SUBQUERY_ALIAS = '__bms_qualified';
@@ -43,7 +43,7 @@ export interface QualifyEmulationPlan {
 
 export interface PlanQualifyOptions {
   /** Emits an expression through codegen's own pipeline (flatten, named windows). */
-  emit: (expr: DogsledExpr) => string;
+  emit: (expr: BobsledExpr) => string;
   dialect: SupportedDialect;
   modelName: string;
 }
@@ -74,7 +74,7 @@ export function planQualifyEmulation(
   }
 
   const selectItems: string[] = [];
-  const rewritten = mapExpr(ast, (node): DogsledExpr => {
+  const rewritten = mapExpr(ast, (node): BobsledExpr => {
     if (node.kind !== 'window') return node;
     const alias = `${QUALIFY_ALIAS_PREFIX}${selectItems.length}`;
     selectItems.push(`${options.emit(node)} AS ${caseName(alias, options.dialect)}`);

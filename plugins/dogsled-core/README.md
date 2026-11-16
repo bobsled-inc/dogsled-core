@@ -50,7 +50,7 @@ The setup skill can install the CLI for you. To install it yourself, use Node.js
 24 or newer and run these commands in your data project:
 
 ```bash
-npm install @bobsled-inc/dogsled
+npm install @bobsled-inc/bobsled-core
 npx dogsled --help
 ```
 

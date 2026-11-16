@@ -1,5 +1,5 @@
 /**
- * Recursive-descent parser for DogsledExpr DSL.
+ * Recursive-descent parser for BobsledExpr DSL.
  *
  * Precedence (lowest → highest):
  *   1. OR
@@ -17,7 +17,7 @@ import type { Token } from './tokenizer.js';
 import { tokenize } from './tokenizer.js';
 import { expressionSyntaxVariants } from '../sql-expression-syntax.js';
 import type {
-  DogsledExpr,
+  BobsledExpr,
   BinaryOp,
   CaseWhen,
   FrameBound,
@@ -34,7 +34,7 @@ import type {
 // Result types
 // ---------------------------------------------------------------------------
 
-export type ParseResult = { ok: true; expr: DogsledExpr } | { ok: false; error: string };
+export type ParseResult = { ok: true; expr: BobsledExpr } | { ok: false; error: string };
 
 /** Interval units every supported target accepts. */
 const INTERVAL_UNITS = new Set(['YEAR', 'MONTH', 'WEEK', 'DAY', 'HOUR', 'MINUTE', 'SECOND']);
@@ -143,7 +143,7 @@ class Parser {
   // Entry point
   // -------------------------------------------------------------------------
 
-  parse(): DogsledExpr {
+  parse(): BobsledExpr {
     const expr = this.parseExpr();
     if (!this.isAtEnd()) {
       throw new ParseError(
@@ -169,7 +169,7 @@ class Parser {
     }
   }
 
-  private parseExpr(): DogsledExpr {
+  private parseExpr(): BobsledExpr {
     return this.withDepthGuard(() => {
       let left = this.parseAnd();
       while (this.isKeyword('OR')) {
@@ -185,7 +185,7 @@ class Parser {
   // 2. AND
   // -------------------------------------------------------------------------
 
-  private parseAnd(): DogsledExpr {
+  private parseAnd(): BobsledExpr {
     let left = this.parseNot();
     while (this.isKeyword('AND')) {
       this.advance();
@@ -199,7 +199,7 @@ class Parser {
   // 3. NOT (prefix)
   // -------------------------------------------------------------------------
 
-  private parseNot(): DogsledExpr {
+  private parseNot(): BobsledExpr {
     if (this.isKeyword('NOT')) {
       return this.withDepthGuard(() => {
         this.advance();
@@ -222,7 +222,7 @@ class Parser {
   // 4. Comparison
   // -------------------------------------------------------------------------
 
-  private parseComparison(): DogsledExpr {
+  private parseComparison(): BobsledExpr {
     let left = this.parseAddSub();
 
     // IS [NOT] NULL
@@ -322,7 +322,7 @@ class Parser {
   // 5. Addition / subtraction / string concat
   // -------------------------------------------------------------------------
 
-  private parseAddSub(): DogsledExpr {
+  private parseAddSub(): BobsledExpr {
     let left = this.parseMulDiv();
     while (this.check('Operator')) {
       const opVal = this.peek().value;
@@ -338,7 +338,7 @@ class Parser {
   // 6. Multiplication / division / modulo
   // -------------------------------------------------------------------------
 
-  private parseMulDiv(): DogsledExpr {
+  private parseMulDiv(): BobsledExpr {
     let left = this.parseUnary();
     while (this.check('Operator') || this.check('Star')) {
       const tok = this.peek();
@@ -356,7 +356,7 @@ class Parser {
   // 7. Unary minus
   // -------------------------------------------------------------------------
 
-  private parseUnary(): DogsledExpr {
+  private parseUnary(): BobsledExpr {
     if (this.check('Operator', '-')) {
       this.advance();
       const operand = this.parseUnary();
@@ -374,7 +374,7 @@ class Parser {
   // 8. Primary
   // -------------------------------------------------------------------------
 
-  private parsePrimary(): DogsledExpr {
+  private parsePrimary(): BobsledExpr {
     const tok = this.peek();
 
     // Parenthesized expression or scalar subquery (SELECT ...)
@@ -448,7 +448,7 @@ class Parser {
   // Identifier-starting expressions
   // -------------------------------------------------------------------------
 
-  private parseIdentifierExpr(): DogsledExpr {
+  private parseIdentifierExpr(): BobsledExpr {
     // `INTERVAL 7 DAY` / `INTERVAL '7' DAY`. Recognised by shape rather than by
     // reserving the word, so a column named `interval` stays usable.
     if (this.isWord('INTERVAL') && this.startsIntervalLiteral()) {
@@ -496,7 +496,7 @@ class Parser {
     return { kind: 'column_ref', column: name.value };
   }
 
-  private parseJsonPathChain(base: DogsledExpr): DogsledExpr {
+  private parseJsonPathChain(base: BobsledExpr): BobsledExpr {
     const steps: JsonPathStep[] = [];
 
     while (true) {
@@ -580,11 +580,11 @@ class Parser {
   // CASE expression
   // -------------------------------------------------------------------------
 
-  private parseCaseExpr(): DogsledExpr {
+  private parseCaseExpr(): BobsledExpr {
     this.expect('Keyword', 'CASE');
 
     // Determine simple vs searched CASE
-    let operand: DogsledExpr | undefined;
+    let operand: BobsledExpr | undefined;
     if (!this.isKeyword('WHEN') && !this.isKeyword('END')) {
       // Simple CASE: CASE expr WHEN ...
       operand = this.parseExpr();
@@ -599,7 +599,7 @@ class Parser {
       whens.push({ condition, result });
     }
 
-    let elseExpr: DogsledExpr | undefined;
+    let elseExpr: BobsledExpr | undefined;
     if (this.isKeyword('ELSE')) {
       this.advance();
       elseExpr = this.parseExpr();
@@ -619,7 +619,7 @@ class Parser {
   // CAST expression
   // -------------------------------------------------------------------------
 
-  private parseCastExpr(): DogsledExpr {
+  private parseCastExpr(): BobsledExpr {
     this.expect('Keyword', 'CAST');
     this.expect('LParen');
     const expr = this.parseExpr();
@@ -629,7 +629,7 @@ class Parser {
     return { kind: 'cast', expr, targetType };
   }
 
-  private parseShorthandCast(expr: DogsledExpr): DogsledExpr {
+  private parseShorthandCast(expr: BobsledExpr): BobsledExpr {
     this.expect('Operator', '::');
     const targetType = this.parseTypeRef();
     return { kind: 'cast', expr, targetType, shorthand: true };
@@ -674,7 +674,7 @@ class Parser {
   // raw_sql() pseudo-function
   // -------------------------------------------------------------------------
 
-  private parseRawSqlPseudoFunction(): DogsledExpr {
+  private parseRawSqlPseudoFunction(): BobsledExpr {
     this.expect('Keyword', 'RAW_SQL');
     this.expect('LParen');
 
@@ -739,7 +739,7 @@ class Parser {
   // Window expression: fn(...) OVER (...)
   // -------------------------------------------------------------------------
 
-  private parseWindowExpr(fn: FunctionCallExpr): DogsledExpr {
+  private parseWindowExpr(fn: FunctionCallExpr): BobsledExpr {
     this.expect('Keyword', 'OVER');
 
     // Check if this is a named window reference (OVER identifier)
@@ -755,7 +755,7 @@ class Parser {
 
     this.expect('LParen');
 
-    let partitionBy: DogsledExpr[] | undefined;
+    let partitionBy: BobsledExpr[] | undefined;
     let orderBy: WindowOrderByItem[] | undefined;
     let frame: WindowFrameSpec | { kind: 'raw_sql'; sql: string } | undefined;
 
@@ -806,7 +806,7 @@ class Parser {
   // EXISTS (SELECT ...)
   // -------------------------------------------------------------------------
 
-  private parseExistsExpr(): DogsledExpr {
+  private parseExistsExpr(): BobsledExpr {
     this.expect('Keyword', 'EXISTS');
     this.expect('LParen');
     const subquerySql = this.extractBalancedSubquery();
@@ -870,7 +870,7 @@ class Parser {
     return unit.kind === 'Keyword' || unit.kind === 'Identifier';
   }
 
-  private parseIntervalLiteral(): DogsledExpr {
+  private parseIntervalLiteral(): BobsledExpr {
     this.advance(); // consume INTERVAL
     const negative = this.peek().value === '-';
     if (negative) this.advance();
@@ -1060,8 +1060,8 @@ class Parser {
   // -------------------------------------------------------------------------
 
   /** Parse a comma-separated list of expressions. */
-  private parseExprList(): DogsledExpr[] {
-    const list: DogsledExpr[] = [];
+  private parseExprList(): BobsledExpr[] {
+    const list: BobsledExpr[] = [];
     list.push(this.parseExpr());
     while (this.match('Comma')) {
       list.push(this.parseExpr());
@@ -1092,7 +1092,7 @@ class ParseError extends Error {
  * returns AST. If it fails or doesn't consume all input, returns
  * `{ kind: 'raw_sql', sql: input }`.
  */
-export function parseExprField(input: string): DogsledExpr {
+export function parseExprField(input: string): BobsledExpr {
   // Preserve native quoting and comments in a complete raw_sql() field. The DSL
   // tokenizer deliberately does not recognize every warehouse's literal syntax.
   const raw = /^\s*raw_sql\s*\(([\s\S]*)\)\s*$/i.exec(input);

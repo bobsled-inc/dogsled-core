@@ -27,7 +27,7 @@ interface DuckDbInstance {
 }
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../../..');
-const requireFromTrack = createRequire(join(repoRoot, 'packages/dogsled/package.json'));
+const requireFromTrack = createRequire(join(repoRoot, 'packages/bobsled-core/package.json'));
 const { DuckDBInstance } = requireFromTrack('@duckdb/node-api') as {
   DuckDBInstance: { create(path: string): Promise<DuckDbInstance> };
 };

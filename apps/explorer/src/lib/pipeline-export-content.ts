@@ -15,7 +15,7 @@ export function renderPipelineCommand(args: string[], multiline = false): string
 }
 
 export function generateCliCommands(config: PipelineConfig): string {
-  const lines = ['# Install Dogsled CLI', 'npm install -g @bobsled-inc/dogsled', ''];
+  const lines = ['# Install Dogsled CLI', 'npm install -g @bobsled-inc/bobsled-core', ''];
   for (const integration of config.selectedIntegrations) {
     lines.push(`# Extract + Load ${integration.replace(/_/g, ' ')} data`);
     lines.push(

@@ -1,6 +1,6 @@
 # Model Spec
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Declarative data modeling and entity resolution that compiles to warehouse SQL.
 
@@ -12,7 +12,7 @@ YAML specs  ──>  Model Spec compiler  ──>  CREATE VIEW / TABLE / MERGE S
 
 > **CLI:** Use `dogsled model <command>` / `dogsled model <command>` for data modeling and `dogsled entity-graph <command>` / `dogsled entity-graph <command>` for entity graph workflows. The standalone package binary here is `model` for modeling only. Standalone Entity Graph commands now live in the `@bobsled-inc/entity-graph` package and its `entity-graph` binary.
 >
-> **Install note:** The `dogsled entity-graph` examples below use the unified CLI from `@bobsled-inc/dogsled`. The standalone compiler package does not install a separate Entity Graph command.
+> **Install note:** The `dogsled entity-graph` examples below use the unified CLI from `@bobsled-inc/bobsled-core`. The standalone compiler package does not install a separate Entity Graph command.
 
 ## Why Model Spec?
 
@@ -25,7 +25,7 @@ Data warehouses accumulate complexity. Hundreds of tables, thousands of relation
 
 ## Install
 
-Install `@bobsled-inc/dogsled`; this code ships inside it.
+Install `@bobsled-inc/bobsled-core`; this code ships inside it.
 
 ## Quick Start
 

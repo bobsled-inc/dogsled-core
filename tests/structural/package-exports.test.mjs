@@ -35,7 +35,7 @@ import { listWorkspacePackages } from '../../scripts/ci/shared.mjs';
 // update this list to match — its `@bobsled-inc/<pkg>/<subpath>` import sites
 // are the source of truth.
 const CONSUMER_SUBPATHS = {
-  '@bobsled-inc/dogsled': [
+  '@bobsled-inc/bobsled-core': [
     '.',
     './pipeline',
     './project-skills',
@@ -114,14 +114,14 @@ describe('package exports maps', () => {
   });
 
   it('loads the SFTP client from the built package without a static ssh2 import', async () => {
-    const dogsled = packages.find((pkg) => pkg.name === '@bobsled-inc/dogsled');
+    const dogsled = packages.find((pkg) => pkg.name === '@bobsled-inc/bobsled-core');
     const entry = path.join(dogsled.dir, dogsled.packageJson.exports['./sftp'].import);
     if (!existsSync(entry)) {
       return;
     }
     const sftp = await import(pathToFileURL(entry).href);
     expect(Object.keys(sftp).sort()).toEqual([
-      'DogsledRuntimeError',
+      'BobsledRuntimeError',
       'ExtractorConfigError',
       'ExtractorDataError',
       'SFTP_ERROR_CODES',

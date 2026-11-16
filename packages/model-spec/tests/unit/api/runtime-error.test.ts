@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   CommandError,
-  DogsledRuntimeError,
+  BobsledRuntimeError,
   loadProject,
   validateProject,
 } from '../../../src/api/index.js';
@@ -57,8 +57,8 @@ describe('model-spec runtime failure boundary', () => {
       retryable: false,
       message: 'Dogsled could not validate the request.',
     });
-    expect((result as DogsledRuntimeError).cause).toBeInstanceOf(CommandError);
-    expect((result as DogsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
+    expect((result as BobsledRuntimeError).cause).toBeInstanceOf(CommandError);
+    expect((result as BobsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
   });
 
   it('wraps a native filesystem error from a real project load', async () => {
@@ -75,7 +75,7 @@ describe('model-spec runtime failure boundary', () => {
       retryable: false,
       message: 'Dogsled could not complete the operation.',
     });
-    expect((result as DogsledRuntimeError).cause).toMatchObject({ code: 'ENOTDIR' });
+    expect((result as BobsledRuntimeError).cause).toMatchObject({ code: 'ENOTDIR' });
   });
 
   it('wraps public metadata validation failures with the validate operation', async () => {
@@ -91,7 +91,7 @@ describe('model-spec runtime failure boundary', () => {
       project: projectWithMetadata({ metrics: new Map([['orders_total', metric]]) }),
     }).catch((error) => error);
 
-    expect(result).toBeInstanceOf(DogsledRuntimeError);
+    expect(result).toBeInstanceOf(BobsledRuntimeError);
     expect(result).toMatchObject({
       kind: 'validation',
       code: 'MODEL_PROJECT_VALIDATE_VALIDATION_FAILED',
@@ -99,7 +99,7 @@ describe('model-spec runtime failure boundary', () => {
       retryable: false,
       message: 'Dogsled could not validate the request.',
     });
-    expect((result as DogsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
+    expect((result as BobsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
   });
 
   it('keeps an operational metadata failure out of the validation class', async () => {
@@ -130,7 +130,7 @@ describe('model-spec runtime failure boundary', () => {
       retryable: false,
       message: 'Dogsled could not complete the operation.',
     });
-    expect((result as DogsledRuntimeError).cause).toMatchObject({
+    expect((result as BobsledRuntimeError).cause).toMatchObject({
       message: 'metadata registry read failed',
     });
   });

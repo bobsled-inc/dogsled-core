@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { buildTerminalHref } from '@/lib/command-links';
 import {
   buildPipelineRunArgs,
-  generateDogsledYml,
+  generateBobsledYml,
   isPipelineConfig,
   type PipelineConfig,
 } from '@/lib/pipelineExport';
@@ -820,7 +820,7 @@ export default function NewPipelinePage() {
                 <button
                   type="button"
                   onClick={() => {
-                    void navigator.clipboard.writeText(generateDogsledYml(config)).catch(() => {});
+                    void navigator.clipboard.writeText(generateBobsledYml(config)).catch(() => {});
                   }}
                   className="text-[10px] text-primary hover:underline"
                 >
@@ -836,7 +836,7 @@ export default function NewPipelinePage() {
             </div>
 
             <pre className="max-h-96 overflow-auto rounded-2xl border border-border bg-card p-4 font-mono text-[11px] whitespace-pre-wrap">
-              {generateDogsledYml(config)}
+              {generateBobsledYml(config)}
             </pre>
           </div>
 

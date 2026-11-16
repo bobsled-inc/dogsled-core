@@ -142,18 +142,18 @@ relies on; breaking it requires a coordinated migration.
 ## Error model
 
 `loadProject` and `validateProject` normalize boundary failures into the typed
-`DogsledRuntimeError` exported by the project entry point. Validation failures
+`BobsledRuntimeError` exported by the project entry point. Validation failures
 have `kind: 'validation'`, and their `cause` retains the original
 `CommandError` when callers need its exit code or detailed message. Catch the
 typed error instead of assuming every failure is a `CommandError`:
 
 ```ts
-import { CommandError, DogsledRuntimeError, loadProject } from '@bobsled-inc/model-spec/project';
+import { CommandError, BobsledRuntimeError, loadProject } from '@bobsled-inc/model-spec/project';
 
 try {
   await loadProject(cwd);
 } catch (error) {
-  if (error instanceof DogsledRuntimeError) {
+  if (error instanceof BobsledRuntimeError) {
     if (error.kind === 'validation' && error.cause instanceof CommandError) {
       console.error(error.cause.message);
     } else {

@@ -317,7 +317,7 @@ Managed/background agents that cannot invoke a shell use the public Dogsled
 runner API instead of trying to call the loader CLI directly:
 
 ```typescript
-import { runProjectPipeline } from '@bobsled-inc/dogsled/pipeline';
+import { runProjectPipeline } from '@bobsled-inc/bobsled-core/pipeline';
 
 await runProjectPipeline({
   projectRoot: '/srv/project',

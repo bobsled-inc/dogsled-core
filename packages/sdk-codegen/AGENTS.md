@@ -23,7 +23,7 @@ not independently published by this workflow.
 - TypeScript output supports TypeScript 5.0 through 5.4.
 - Python output supports Python 3.10+ and Pydantic v2.
 - Python emission remains library-only until its CLI distribution plan is active.
-- The consumer supplies `DogsledEntityExecutor`; generated clients stay transport-free.
+- The consumer supplies `BobsledEntityExecutor`; generated clients stay transport-free.
 
 ## Verify
 

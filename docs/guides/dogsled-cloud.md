@@ -65,7 +65,7 @@ or `dogsled entity-graph build`. See [Run pipelines](run-pipelines.md).
 ## Embedding Dogsled in a host
 
 A host application can use Core as a library. The package exports, among others,
-`@bobsled-inc/dogsled/pipeline` (run pipelines), `/manifest` (a portable pipeline
+`@bobsled-inc/bobsled-core/pipeline` (run pipelines), `/manifest` (a portable pipeline
 manifest for an orchestrator), `/project-index` (classify project files),
 `/model-spec/project` (run models), `/source-query`, `/project-skills` and
 `/connections`.

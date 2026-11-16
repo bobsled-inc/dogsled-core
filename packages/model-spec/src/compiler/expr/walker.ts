@@ -1,14 +1,14 @@
 /**
- * AST walker utilities for DogsledExpr trees.
+ * AST walker utilities for BobsledExpr trees.
  *
  * - `walkExpr` — depth-first visitor (pre-order).
  * - `mapExpr` — bottom-up transform that rebuilds the tree with transformed children.
  */
 
-import type { DogsledExpr, FrameBound, WindowFrameSpec } from './types.js';
+import type { BobsledExpr, FrameBound, WindowFrameSpec } from './types.js';
 
 /** Walk offset expressions inside a frame bound. */
-function walkFrameBound(bound: FrameBound, visitor: (node: DogsledExpr) => void): void {
+function walkFrameBound(bound: FrameBound, visitor: (node: BobsledExpr) => void): void {
   if (typeof bound !== 'string') {
     walkExpr(bound.offset, visitor);
   }
@@ -17,7 +17,7 @@ function walkFrameBound(bound: FrameBound, visitor: (node: DogsledExpr) => void)
 /** Map offset expressions inside a frame bound. */
 function mapFrameBound(
   bound: FrameBound,
-  transform: (node: DogsledExpr) => DogsledExpr
+  transform: (node: BobsledExpr) => BobsledExpr
 ): FrameBound {
   if (typeof bound === 'string') return bound;
   return { offset: mapExpr(bound.offset, transform), direction: bound.direction };
@@ -26,7 +26,7 @@ function mapFrameBound(
 /** Map offset expressions inside a structured window frame. */
 function mapWindowFrame(
   frame: WindowFrameSpec,
-  transform: (node: DogsledExpr) => DogsledExpr
+  transform: (node: BobsledExpr) => BobsledExpr
 ): WindowFrameSpec {
   const start = mapFrameBound(frame.start, transform);
   const end = frame.end !== undefined ? mapFrameBound(frame.end, transform) : undefined;
@@ -36,7 +36,7 @@ function mapWindowFrame(
 }
 
 /** Visit every node in the AST depth-first, calling `visitor` on each. */
-export function walkExpr(expr: DogsledExpr, visitor: (node: DogsledExpr) => void): void {
+export function walkExpr(expr: BobsledExpr, visitor: (node: BobsledExpr) => void): void {
   visitor(expr);
 
   switch (expr.kind) {
@@ -124,16 +124,16 @@ export function walkExpr(expr: DogsledExpr, visitor: (node: DogsledExpr) => void
     default: {
       // Exhaustive check — TypeScript will error if a variant is unhandled
       const _exhaustive: never = expr;
-      throw new Error(`Unknown expr kind: ${(_exhaustive as DogsledExpr).kind}`);
+      throw new Error(`Unknown expr kind: ${(_exhaustive as BobsledExpr).kind}`);
     }
   }
 }
 
 /** Transform nodes bottom-up, rebuilding the tree with transformed children. */
 export function mapExpr(
-  expr: DogsledExpr,
-  transform: (node: DogsledExpr) => DogsledExpr
-): DogsledExpr {
+  expr: BobsledExpr,
+  transform: (node: BobsledExpr) => BobsledExpr
+): BobsledExpr {
   switch (expr.kind) {
     // Leaf nodes — transform directly
     case 'column_ref':
@@ -242,7 +242,7 @@ export function mapExpr(
 
     default: {
       const _exhaustive: never = expr;
-      throw new Error(`Unknown expr kind: ${(_exhaustive as DogsledExpr).kind}`);
+      throw new Error(`Unknown expr kind: ${(_exhaustive as BobsledExpr).kind}`);
     }
   }
 }

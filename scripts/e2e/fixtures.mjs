@@ -12,7 +12,7 @@ export async function copyProject(ctx, url) {
   await mkdir(path.join(ctx.project, 'node_modules/@bobsled-inc'), { recursive: true });
   await symlink(
     path.dirname(path.dirname(cliPath)),
-    path.join(ctx.project, 'node_modules/@bobsled-inc/dogsled'),
+    path.join(ctx.project, 'node_modules/@bobsled-inc/bobsled-core'),
     'dir'
   );
 }

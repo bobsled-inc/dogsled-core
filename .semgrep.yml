@@ -36,7 +36,7 @@ rules:
     paths:
       exclude:
         - packages/entity-graph/src/api/external-reviewer-client.ts
-        - packages/dogsled/src/commands/learn.ts
+        - packages/bobsled-core/src/commands/learn.ts
 
   - id: dogsled-dynamic-code-execution
     languages: [javascript, typescript]

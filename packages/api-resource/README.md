@@ -1,6 +1,6 @@
 # @bobsled-inc/api-resource
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Dependency-light request planning shared by Dogsled extraction and its
 catalog-only API resource probe.

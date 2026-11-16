@@ -23,7 +23,7 @@ The default walkthrough does not require Bedrock, embedding, or API credentials.
 If you are running from a source checkout without a standalone `dogsled` binary, `walkthrough.sh` uses the repo-local CLI automatically. You can also set `DOGSLED_CLI` explicitly:
 
 ```bash
-DOGSLED_CLI="node ../../packages/dogsled/dist/index.js" ./walkthrough.sh
+DOGSLED_CLI="node ../../packages/bobsled-core/dist/index.js" ./walkthrough.sh
 ```
 
 ## Manual Commands

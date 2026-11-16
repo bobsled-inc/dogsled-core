@@ -51,8 +51,8 @@ describe('automatic release range', () => {
   const releaseCommit = (name, version, tag) => {
     git(['checkout', '-q', '--detach']);
     writeFileSync(
-      path.join(root, 'packages/dogsled/package.json'),
-      `${JSON.stringify({ name: '@bobsled-inc/dogsled', version }, null, 2)}\n`
+      path.join(root, 'packages/bobsled-core/package.json'),
+      `${JSON.stringify({ name: '@bobsled-inc/bobsled-core', version }, null, 2)}\n`
     );
     git(['commit', '-q', '-am', `Release ${tag}`]);
     sha[name] = git(['rev-parse', 'HEAD']);
@@ -82,10 +82,10 @@ describe('automatic release range', () => {
       ).trim();
     git = run;
     git(['init', '-q', '-b', 'main']);
-    mkdirSync(path.join(root, 'packages/dogsled'), { recursive: true });
+    mkdirSync(path.join(root, 'packages/bobsled-core'), { recursive: true });
     writeFileSync(
-      path.join(root, 'packages/dogsled/package.json'),
-      `${JSON.stringify({ name: '@bobsled-inc/dogsled', version: '0.1.0' }, null, 2)}\n`
+      path.join(root, 'packages/bobsled-core/package.json'),
+      `${JSON.stringify({ name: '@bobsled-inc/bobsled-core', version: '0.1.0' }, null, 2)}\n`
     );
     commit('initial', 'Initial');
     git(['tag', '-a', 'v0.1.0', '-m', 'v0.1.0']);

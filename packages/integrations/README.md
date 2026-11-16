@@ -1,6 +1,6 @@
 # @bobsled-inc/integrations
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Pre-built API integration configs for the `Dogsled` extractor. Each integration contains spec and resource YAML specs ready for use.
 
@@ -95,7 +95,7 @@ the `search` option.
 
 Billable Resources are not added to this convenience catalog. A server must load the validated
 Integration and Resource from its project, then call `queryResource()` from
-`@bobsled-inc/dogsled/resources` with an `authorizeBillable` callback. This keeps paid calls,
+`@bobsled-inc/bobsled-core/resources` with an `authorizeBillable` callback. This keeps paid calls,
 including Exa web search, blocked until the host app gives explicit approval.
 
 ### 1. Discover queryable resources

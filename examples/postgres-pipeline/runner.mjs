@@ -1,4 +1,4 @@
-import { resolveRunner } from '@bobsled-inc/dogsled/connections';
+import { resolveRunner } from '@bobsled-inc/bobsled-core/connections';
 async function withRunner(method, sql) {
   const runner = await resolveRunner({
     spec_version: '1',

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { spawnDogsledCommand, collectOutput } from '@/lib/dogsled-cli';
+import { spawnBobsledCommand, collectOutput } from '@/lib/dogsled-cli';
 
 export async function GET() {
   try {
-    const child = spawnDogsledCommand('setup', ['describe', '--json']);
+    const child = spawnBobsledCommand('setup', ['describe', '--json']);
     const { stdout, stderr, code } = await collectOutput(child);
 
     if (code !== 0) {

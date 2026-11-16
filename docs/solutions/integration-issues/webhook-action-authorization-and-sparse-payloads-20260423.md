@@ -48,7 +48,7 @@ The fix split the behavior by transport:
 Relevant code:
 
 - [packages/extractor/src/framework/extractor/action.ts](../../../packages/extractor/src/framework/extractor/action.ts)
-- [packages/dogsled/src/lib/transports/webhook.ts](../../../packages/dogsled/src/lib/transports/webhook.ts)
+- [packages/bobsled-core/src/lib/transports/webhook.ts](../../../packages/bobsled-core/src/lib/transports/webhook.ts)
 
 ## Prevention
 

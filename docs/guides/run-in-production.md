@@ -45,14 +45,14 @@ Install Dogsled into the project repository with an exact version, together with
 the driver for your warehouse, and commit both npm files:
 
 ```bash
-npm install --save-exact @bobsled-inc/dogsled@<version> @google-cloud/bigquery@<version>
+npm install --save-exact @bobsled-inc/bobsled-core@<version> @google-cloud/bigquery@<version>
 git add package.json package-lock.json
 ```
 
 `npm ci` then installs exactly what the lockfile lists on every run. Upgrade
 Dogsled with a pull request that changes the version, so that the validation job
 below checks the project against the new version before it reaches production.
-Do not use an unpinned `npx @bobsled-inc/dogsled` in production. Other warehouses
+Do not use an unpinned `npx @bobsled-inc/bobsled-core` in production. Other warehouses
 need other drivers, for example `snowflake-sdk` for Snowflake; see the
 [driver table](load-data.md#install-a-warehouse-driver).
 

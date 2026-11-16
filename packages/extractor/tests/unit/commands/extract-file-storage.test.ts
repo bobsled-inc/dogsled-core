@@ -1,4 +1,4 @@
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -65,7 +65,7 @@ function commandArgs(state: ExtractorState) {
 describe('runFileStorageResourceExtraction runtime errors', () => {
   it('reports the stable error code without raw provider text in public fields', async () => {
     mocks.extract.mockRejectedValueOnce(
-      new DogsledRuntimeError({
+      new BobsledRuntimeError({
         kind: 'provider',
         code: 'SFTP_CONNECTION_LOST',
         operation: 'extractor.sftp.download',
@@ -140,11 +140,12 @@ it.skipIf(process.platform === 'win32')(
     await mkdir(join(root, 'bin'));
     await mkdir(join(root, 'dist'));
     await copyFile(
-      new URL('../../../../dogsled/bin/cli.mjs', import.meta.url),
+      new URL('../../../../bobsled-core/bin/cli.mjs', import.meta.url),
       join(root, 'bin/cli.mjs')
     );
     const command = new URL('../../../src/commands/extract-file-storage.ts', import.meta.url).href;
-    const runtime = new URL('../../../../dogsled/src/runtime/process.ts', import.meta.url).href;
+    const runtime = new URL('../../../../bobsled-core/src/runtime/process.ts', import.meta.url)
+      .href;
     const extractStub = `export async function extractFileStorageResource({signal}) {
     await new Promise((resolve, reject) => {
       const keepAlive = setInterval(() => {}, 1000);

@@ -1,7 +1,7 @@
 import { CommandError } from '@bobsled-inc/protocol';
 
 import { classifyProjectFile, visibleDeclaredTypeOf, visiblyOssie } from './classify.js';
-import { isDogsledFileType, SINGLETON_PROJECT_FILE_KINDS } from './kinds.js';
+import { isBobsledFileType, SINGLETON_PROJECT_FILE_KINDS } from './kinds.js';
 import {
   compareProjectPaths,
   conventionalSkillPackageDirectory,
@@ -364,7 +364,7 @@ function isInConfiguredObjectFolder(index: ProjectIndex, issuePath: string): boo
   );
 }
 
-function isInDogsledFolder(index: ProjectIndex, issuePath: string): boolean {
+function isInBobsledFolder(index: ProjectIndex, issuePath: string): boolean {
   return isInConventionalObjectFolder(issuePath) || isInConfiguredObjectFolder(index, issuePath);
 }
 
@@ -387,17 +387,17 @@ export function isBlockingProjectIndexIssue(
 ): boolean {
   if (issue.kind === 'ossie') return true;
   if (ALWAYS_BLOCKING_CODES.has(issue.code)) return true;
-  if (issue.kind !== undefined && isDogsledFileType(issue.kind)) return true;
+  if (issue.kind !== undefined && isBobsledFileType(issue.kind)) return true;
   if (issue.code === 'symlink') {
     return (
       conventionalProjectFileKind(issue.path) !== undefined ||
       issue.path.split('/')[0] === PROJECT_SKILLS_FOLDER ||
       (['yaml', 'json'].includes(projectFileFormat(issue.path)) &&
-        isInDogsledFolder(index, issue.path))
+        isInBobsledFolder(index, issue.path))
     );
   }
-  if (issue.declaredType !== undefined && isDogsledFileType(issue.declaredType)) return true;
-  return isInDogsledFolder(index, issue.path);
+  if (issue.declaredType !== undefined && isBobsledFileType(issue.declaredType)) return true;
+  return isInBobsledFolder(index, issue.path);
 }
 
 /** Throw a `ProjectIndexError` listing the issues that stop Dogsled loaders. */

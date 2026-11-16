@@ -14,7 +14,7 @@ import {
   notifySummary,
   resolveAutoRelease,
 } from './auto-release.mjs';
-import { DOGSLED_PACKAGE_NAME } from './package-set.mjs';
+import { BOBSLED_CORE_PACKAGE_NAME } from './package-set.mjs';
 
 export function incrementVersion(version, bump) {
   const match = version.match(/^(\d+)\.(\d+)\.(\d+)$/);
@@ -89,8 +89,8 @@ export function releaseBaseVersion(packageVersion, tags) {
 
 function publishablePackages() {
   const packages = listWorkspacePackages().filter((pkg) => pkg.packageJson.private !== true);
-  if (packages.length !== 1 || packages[0].name !== DOGSLED_PACKAGE_NAME) {
-    throw new Error(`Expected ${DOGSLED_PACKAGE_NAME} to be the one publishable package.`);
+  if (packages.length !== 1 || packages[0].name !== BOBSLED_CORE_PACKAGE_NAME) {
+    throw new Error(`Expected ${BOBSLED_CORE_PACKAGE_NAME} to be the one publishable package.`);
   }
   return packages;
 }
@@ -143,8 +143,8 @@ export function stampVersion(version, packageJsonPath) {
 }
 
 function updateVersions(version) {
-  const [dogsledPackage] = publishablePackages();
-  stampVersion(version, dogsledPackage.packageJsonPath);
+  const [bobsledPackage] = publishablePackages();
+  stampVersion(version, bobsledPackage.packageJsonPath);
 }
 
 function prepareRelease(
@@ -229,10 +229,10 @@ function verifyVersionOnlyCommit(commit, parent, git) {
   const changed = git(['diff-tree', '--no-commit-id', '--name-only', '-r', commit])
     .split(/\r?\n/)
     .filter(Boolean);
-  if (changed.length !== 1 || changed[0] !== 'packages/dogsled/package.json')
-    throw new Error('Retry release may change only packages/dogsled/package.json.');
-  const before = JSON.parse(git(['show', `${parent}:packages/dogsled/package.json`]));
-  const after = JSON.parse(git(['show', `${commit}:packages/dogsled/package.json`]));
+  if (changed.length !== 1 || changed[0] !== 'packages/bobsled-core/package.json')
+    throw new Error('Retry release may change only packages/bobsled-core/package.json.');
+  const before = JSON.parse(git(['show', `${parent}:packages/bobsled-core/package.json`]));
+  const after = JSON.parse(git(['show', `${commit}:packages/bobsled-core/package.json`]));
   assertReleaseVersion(after.version);
   const version = after.version;
   delete before.version;

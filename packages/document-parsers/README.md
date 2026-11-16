@@ -1,6 +1,6 @@
 # @bobsled-inc/document-parsers
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Deterministic document parsing, chunking, and identity helpers used by Dogsled
 ingestion. The default registry supports text, Markdown, HTML, PDF, DOCX, PPTX,
@@ -8,7 +8,7 @@ and email documents.
 
 ## Install
 
-Install `@bobsled-inc/dogsled`; this code ships inside it.
+Install `@bobsled-inc/bobsled-core`; this code ships inside it.
 
 ## Usage
 

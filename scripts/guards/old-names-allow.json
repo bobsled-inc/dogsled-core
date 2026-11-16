@@ -73,13 +73,13 @@
       "reason": "Old-formats showcase: the Track manifest kind must still be rejected."
     },
     {
-      "path": "packages/dogsled/tests/unit/runner/pipeline-manifest/manifest-schema.test.ts",
+      "path": "packages/bobsled-core/tests/unit/runner/pipeline-manifest/manifest-schema.test.ts",
       "patternId": "track-env",
       "pattern": "TRACK_(?:LANGGRAPH|PIPELINE)_[A-Z_]*",
       "reason": "Track-era name that Core must keep reading or rejecting (old-format test); moves with the package folder in step 5."
     },
     {
-      "path": "packages/dogsled/tests/unit/runner/pipeline-manifest/manifest-schema.test.ts",
+      "path": "packages/bobsled-core/tests/unit/runner/pipeline-manifest/manifest-schema.test.ts",
       "patternId": "track-kind",
       "pattern": "track\\.(?:runner\\.run_resource|pipeline\\.dag)",
       "reason": "Track-era name that Core must keep reading or rejecting (old-format test); moves with the package folder in step 5."

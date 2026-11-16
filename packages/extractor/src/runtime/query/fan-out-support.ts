@@ -1,4 +1,4 @@
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { isSourceSpec, resolveVia, sanitizeUrlForError } from '../../framework/core/index.js';
 import { ExtractorConfigError, ExtractorDataError } from '../errors.js';
@@ -302,7 +302,7 @@ export function queryFanOutErrorFrom(
       correlationId: nestedFanOutError.correlationId ?? params.correlationId,
     });
   }
-  const runtime = error instanceof DogsledRuntimeError ? error : undefined;
+  const runtime = error instanceof BobsledRuntimeError ? error : undefined;
   const record = error as { status?: unknown; retryable?: unknown } | null;
   const status =
     runtime?.providerStatus ?? (typeof record?.status === 'number' ? record.status : undefined);

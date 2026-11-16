@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const root = fileURLToPath(new URL('../../', import.meta.url));
 export const cliPath = path.resolve(
-  process.env.DOGSLED_E2E_CLI ?? path.join(root, 'packages/dogsled/bin/cli.mjs')
+  process.env.DOGSLED_E2E_CLI ?? path.join(root, 'packages/bobsled-core/bin/cli.mjs')
 );
 const require = createRequire(cliPath);
 
@@ -32,7 +32,7 @@ export function jsonLines(text) {
 }
 
 export async function publicApi(subpath) {
-  return import(pathToFileURL(require.resolve(`@bobsled-inc/dogsled/${subpath}`)).href);
+  return import(pathToFileURL(require.resolve(`@bobsled-inc/bobsled-core/${subpath}`)).href);
 }
 
 export async function command(executable, args, options = {}) {

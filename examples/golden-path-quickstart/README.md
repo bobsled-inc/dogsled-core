@@ -5,7 +5,7 @@ This example initializes the default DuckLake project, extracts three fictional
 and verifies 25 orders worth 3250 units. No account or API key is needed.
 
 From the repository root, run `pnpm e2e:golden-path-quickstart`. For a manual run,
-install `@bobsled-inc/dogsled` in a new directory and run:
+install `@bobsled-inc/bobsled-core` in a new directory and run:
 
 ```bash
 dogsled init my-project

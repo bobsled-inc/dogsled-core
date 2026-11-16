@@ -22,7 +22,7 @@ pnpm --filter @bobsled-inc/entity-graph exec entity-graph resolve profile compan
 pnpm --filter @bobsled-inc/entity-graph exec entity-graph survivorship refresh company --runner ./runner.duckdb.js
 ```
 
-The `dogsled` binary (`packages/dogsled`) wraps both — `dogsled model seed load ...` and `dogsled entity-graph resolve run ...` work identically when installed.
+The `dogsled` binary (`packages/bobsled-core`) wraps both — `dogsled model seed load ...` and `dogsled entity-graph resolve run ...` work identically when installed.
 
 ## Agent review walkthrough
 

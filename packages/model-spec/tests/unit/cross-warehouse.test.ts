@@ -4,13 +4,13 @@ import * as path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import { loadProject, runProject, validateProject } from '../../src/api/index.js';
 
 let tmpDir = '';
 
 async function expectLoadFailure(projectDir: string, message: RegExp): Promise<void> {
-  const error = await loadProject(projectDir).catch((value) => value as DogsledRuntimeError);
+  const error = await loadProject(projectDir).catch((value) => value as BobsledRuntimeError);
   expect(error).toMatchObject({
     kind: 'validation',
     message: 'Dogsled could not validate the request.',

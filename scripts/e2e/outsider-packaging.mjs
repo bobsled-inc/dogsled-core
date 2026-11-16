@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { cliPath, command, context } from './harness.mjs';
 import { postgres, postgresSql, stopServices } from './services.mjs';
 
-const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'dogsled'];
+const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'bobsled-core'];
 
 export const globalPrefix = process.env.DOGSLED_E2E_GLOBAL_PREFIX ?? '/global';
 export const userPgConsumer = process.env.DOGSLED_E2E_USER_PG_CONSUMER ?? '/consumer-pg';
@@ -41,7 +41,7 @@ export async function verifyGlobalInstall(prefix = globalPrefix) {
   const empty = emptyPackageDirectories(path.join(installed, 'node_modules'));
   assert.deepEqual(empty, [], 'A global install left dependency folders empty');
   const ctx = await context('global-install');
-  const bin = path.join(prefix, 'bin', 'dogsled');
+  const bin = path.join(prefix, 'bin', 'bobsled');
   const run = (args, options = {}) =>
     command(bin, args, { cwd: ctx.project, env: ctx.env, ...options });
   try {

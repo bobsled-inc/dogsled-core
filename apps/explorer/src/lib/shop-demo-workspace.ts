@@ -227,7 +227,7 @@ export async function compileShopModel(modelName: string): Promise<string> {
     throw new Error('Invalid model name');
   }
   const repoRoot = getWorkspaceRoot();
-  const entrypoint = path.join(repoRoot, 'packages/dogsled/src/index.ts');
+  const entrypoint = path.join(repoRoot, 'packages/bobsled-core/src/index.ts');
   const child = spawn(
     'pnpm',
     ['exec', 'tsx', entrypoint, 'model', 'compile', modelName, '--integration', 'duckdb'],

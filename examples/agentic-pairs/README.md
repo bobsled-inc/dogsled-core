@@ -39,7 +39,7 @@ The live run sends only the supplied synthetic records to the provider. It makes
 three paid calls on a successful fresh run. Model output can differ between runs.
 
 ```bash
-npx @bobsled-inc/dogsled model run +pair_decisions --integration local \
+npx @bobsled-inc/bobsled-core model run +pair_decisions --integration local \
   --agent-executor ./executor.mjs \
   --agent-run-id proof-1 \
   --json
@@ -55,7 +55,7 @@ to continue. Add `--agent-max-cost <usd>` for a dollar cap as well.
 Use the same run ID and add `--agent-resume`.
 
 ```bash
-npx @bobsled-inc/dogsled model run +pair_decisions --integration local \
+npx @bobsled-inc/bobsled-core model run +pair_decisions --integration local \
   --agent-executor ./executor.mjs \
   --agent-run-id proof-1 \
   --agent-resume --json

@@ -9,16 +9,16 @@ exposes to it.
 
 ## Public package entry points
 
-Install the published `@bobsled-inc/dogsled` package. Its subpaths expose the
+Install the published `@bobsled-inc/bobsled-core` package. Its subpaths expose the
 host factory, project runner, and contracts without requiring consumers to
 install private workspace packages:
 
-| Import                                    | Purpose                                                              |
-| ----------------------------------------- | -------------------------------------------------------------------- |
-| `@bobsled-inc/dogsled/agentic`            | `createAgenticHost`, `createJevExecutor`, host options               |
-| `@bobsled-inc/dogsled/model-spec/agentic` | Model/assignment schemas, executor types, state and publication APIs |
-| `@bobsled-inc/dogsled/model-spec/project` | `loadProject`, `buildSecretResolver`, `runProject`                   |
-| `@bobsled-inc/dogsled/ai`                 | Provider-neutral generation helpers for custom executors             |
+| Import                                         | Purpose                                                              |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| `@bobsled-inc/bobsled-core/agentic`            | `createAgenticHost`, `createJevExecutor`, host options               |
+| `@bobsled-inc/bobsled-core/model-spec/agentic` | Model/assignment schemas, executor types, state and publication APIs |
+| `@bobsled-inc/bobsled-core/model-spec/project` | `loadProject`, `buildSecretResolver`, `runProject`                   |
+| `@bobsled-inc/bobsled-core/ai`                 | Provider-neutral generation helpers for custom executors             |
 
 Inside this repository, model-spec code uses the owning workspace's public
 `@bobsled-inc/model-spec/agentic` entry point. Do not import across package source
@@ -31,12 +31,12 @@ module must export `executeAgent`; use the reference module from the example as 
 starting point. Model profiles remain application-supplied configuration.
 
 ```typescript
-import { createAgenticHost } from '@bobsled-inc/dogsled/agentic';
+import { createAgenticHost } from '@bobsled-inc/bobsled-core/agentic';
 import {
   buildSecretResolver,
   loadProject,
   runProject,
-} from '@bobsled-inc/dogsled/model-spec/project';
+} from '@bobsled-inc/bobsled-core/model-spec/project';
 import { executeAgent } from './executor.mjs';
 
 const projectDirectory = '/srv/pair-project';
@@ -262,7 +262,7 @@ From this repository, run the relevant focused suites:
 
 ```bash
 pnpm --filter @bobsled-inc/model-spec exec vitest run tests/unit/agentic
-pnpm --filter @bobsled-inc/dogsled exec vitest run tests/unit/runtime/agentic-host.test.ts
+pnpm --filter @bobsled-inc/bobsled-core exec vitest run tests/unit/runtime/agentic-host.test.ts
 ```
 
 Run `npm test` in the installed pair example for its executor tests. These use
