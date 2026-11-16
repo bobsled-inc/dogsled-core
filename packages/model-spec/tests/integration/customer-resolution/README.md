@@ -96,7 +96,7 @@ Latest unified CLI path from the current checkout:
 bash scripts/install-and-run-latest-cli.sh
 ```
 
-That script installs workspace dependencies, builds the current `Bobsled Core` CLI, and runs the same end-to-end example through `bobsled model ...` instead of the source-only `tsx` shortcut.
+That script installs workspace dependencies, builds the current `bobsled` CLI, and runs the same end-to-end example through `bobsled model ...` instead of the source-only `tsx` shortcut.
 
 ## BigQuery
 

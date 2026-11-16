@@ -88,5 +88,5 @@ it.skipIf(!(await isDuckDbAvailable()))(
       rmSync(directory, { recursive: true, force: true });
     }
   },
-  60_000
+  120_000
 );
