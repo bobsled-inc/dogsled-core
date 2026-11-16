@@ -101,9 +101,38 @@ describe('metadata helpers', () => {
   it('uses BigQuery identifiers and scalar types for BigQuery metadata', async () => {
     const runner = fakeRunner();
     await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
-    expect(runner.calls[0]).toContain('`analytics`.`_dogsled_source_metadata`');
-    expect(runner.calls[0]).toContain('source_name  STRING');
-    expect(runner.calls[0]).toContain('record_count INT64');
+    expect(runner.calls[0]).toBe(
+      "SELECT column_name FROM `analytics`.INFORMATION_SCHEMA.COLUMNS WHERE table_name = '_dogsled_source_metadata'"
+    );
+    expect(runner.calls[1]).toContain('`analytics`.`_dogsled_source_metadata`');
+    expect(runner.calls[1]).toContain('source_name STRING');
+    expect(runner.calls[1]).toContain('record_count INT64');
+    expect(runner.calls[1]).toContain('in_progress_until TIMESTAMP');
+    expect(runner.calls).toHaveLength(2);
+  });
+
+  it('skips BigQuery metadata DDL when every column already exists', async () => {
+    const columns = [
+      'source_name',
+      'filter_hash',
+      'loaded_at',
+      'record_count',
+      'etag',
+      'cursor_field',
+      'cursor_type',
+      'cursor_value',
+      'snapshot_kind',
+      'snapshot_variant',
+      'row_count',
+      'in_progress_until',
+    ];
+    const runner = {
+      run: vi.fn(async () => undefined),
+      query: vi.fn(async () => columns.map((column_name) => ({ column_name }))),
+    };
+    await ensureMetadataTable({ runner, schema: 'analytics', dialect: 'bigquery' });
+    expect(runner.query).toHaveBeenCalledTimes(1);
+    expect(runner.run).not.toHaveBeenCalled();
   });
 
   it('readMetadataRow returns undefined when no row exists', async () => {
@@ -267,6 +296,28 @@ describe('metadata helpers', () => {
     ).resolves.toEqual(
       expect.objectContaining({
         loaded_at: '2026-04-22T12:00:00.000Z',
+      })
+    );
+  });
+
+  it('reads BigQuery TIMESTAMP objects returned by the BigQuery client', async () => {
+    // @google-cloud/bigquery returns TIMESTAMP columns as BigQueryTimestamp
+    // objects with an ISO-8601 `value`, not strings or Dates.
+    const runner = fakeRunner([
+      {
+        source_name: 'issues',
+        filter_hash: 'abc',
+        loaded_at: { value: '2026-04-22T12:00:00.123Z' } as unknown as string,
+        record_count: 42,
+        in_progress_until: { value: '2026-04-22T12:01:00.000Z' } as unknown as string,
+      },
+    ]);
+    await expect(
+      readMetadataRow({ runner, schema: 'analytics', sourceName: 'issues', dialect: 'bigquery' })
+    ).resolves.toEqual(
+      expect.objectContaining({
+        loaded_at: '2026-04-22T12:00:00.123Z',
+        in_progress_until: '2026-04-22T12:01:00.000Z',
       })
     );
   });

@@ -423,6 +423,32 @@ export class BigQueryDestination implements DatabaseDestination {
     assertOwnedBigQueryMetadata(metadata, marker);
   }
 
+  /**
+   * Apply every added and widened column in one ALTER TABLE. BigQuery allows only
+   * about five metadata updates per table every ten seconds, so one statement per
+   * column can fail a load with "too many table update operations".
+   */
+  private async alterTableOnce(
+    client: BigQueryClientLike,
+    qualifiedTable: string,
+    addColumnDefs: string[],
+    columnsToWiden: SchemaComparisonResult['typeConflicts']
+  ): Promise<void> {
+    const actions = [
+      ...addColumnDefs.map((def) => `ADD COLUMN ${def}`),
+      ...columnsToWiden.map(
+        (conflict) =>
+          `ALTER COLUMN ${quoteBqIdentifier(conflict.column)} SET DATA TYPE ${mapBigQueryType(conflict.expectedColumnType)}`
+      ),
+    ];
+    if (actions.length === 0) return;
+    const ddl = `ALTER TABLE ${qualifiedTable} ${actions.join(', ')}`;
+    const [job] = await this.bqRetry(() =>
+      client.createQueryJob({ query: ddl, location: this.location })
+    );
+    await this.waitForJob(job);
+  }
+
   async ensureTable(
     schemaName: string,
     tableName: string,
@@ -494,25 +520,12 @@ export class BigQueryDestination implements DatabaseDestination {
         qualifiedTable
       );
 
-      if (columnsToAdd.length > 0) {
-        const newColumnDefs = columnsToAdd.map(
-          (col) => `ADD COLUMN ${quoteBqIdentifier(col.name)} ${mapBigQueryType(col)}`
-        );
-        const ddl = `ALTER TABLE ${qualifiedTable} ${newColumnDefs.join(', ')}`;
-        const [job] = await this.bqRetry(() =>
-          client.createQueryJob({ query: ddl, location: this.location })
-        );
-        await this.waitForJob(job);
-      }
-
-      for (const conflict of columnsToWiden) {
-        const newSqlType = mapBigQueryType(conflict.expectedColumnType);
-        const widenDdl = `ALTER TABLE ${qualifiedTable} ALTER COLUMN ${quoteBqIdentifier(conflict.column)} SET DATA TYPE ${newSqlType}`;
-        const [job] = await this.bqRetry(() =>
-          client.createQueryJob({ query: widenDdl, location: this.location })
-        );
-        await this.waitForJob(job);
-      }
+      await this.alterTableOnce(
+        client,
+        qualifiedTable,
+        columnsToAdd.map((col) => `${quoteBqIdentifier(col.name)} ${mapBigQueryType(col)}`),
+        columnsToWiden
+      );
 
       // Update cache after changes
       for (const col of columnsToAdd) {
@@ -663,24 +676,7 @@ export class BigQueryDestination implements DatabaseDestination {
       newColumnDefs.push(`${quoteBqIdentifier(SYSTEM_COLUMNS.LOADED_AT)} TIMESTAMP`);
     }
 
-    // Batch all new columns into a single ALTER TABLE statement
-    if (newColumnDefs.length > 0) {
-      const ddl = `ALTER TABLE ${qualifiedTable} ${newColumnDefs.map((d) => `ADD COLUMN ${d}`).join(', ')}`;
-      const [job] = await this.bqRetry(() =>
-        client.createQueryJob({ query: ddl, location: this.location })
-      );
-      await this.waitForJob(job);
-    }
-
-    // Widen columns one at a time
-    for (const conflict of columnsToWiden) {
-      const newSqlType = mapBigQueryType(conflict.expectedColumnType);
-      const widenDdl = `ALTER TABLE ${qualifiedTable} ALTER COLUMN ${quoteBqIdentifier(conflict.column)} SET DATA TYPE ${newSqlType}`;
-      const [job] = await this.bqRetry(() =>
-        client.createQueryJob({ query: widenDdl, location: this.location })
-      );
-      await this.waitForJob(job);
-    }
+    await this.alterTableOnce(client, qualifiedTable, newColumnDefs, columnsToWiden);
 
     // Update column cache
     const columnMap = new Map<string, string>(existingMap);

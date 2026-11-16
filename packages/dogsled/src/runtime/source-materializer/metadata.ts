@@ -29,30 +29,13 @@ export interface MetadataRow {
 
 export type MetadataDialect = SqlDialect;
 
+export { ensureMetadataTable } from './metadata-table.js';
+
 const METADATA_TABLE = '_dogsled_source_metadata';
 export const LEASE_PLACEHOLDER_LOADED_AT = '1970-01-01T00:00:00.000Z';
 
 function metaTableRef(schema: string, dialect: MetadataDialect = 'duckdb'): string {
   return tableRef(schema, METADATA_TABLE, dialect);
-}
-
-function metadataColumnTypes(dialect: MetadataDialect): {
-  stringType: string;
-  timestampType: string;
-  integerType: string;
-} {
-  if (dialect === 'bigquery') {
-    return {
-      stringType: 'STRING',
-      timestampType: 'TIMESTAMP',
-      integerType: 'INT64',
-    };
-  }
-  return {
-    stringType: 'VARCHAR',
-    timestampType: 'TIMESTAMP',
-    integerType: 'BIGINT',
-  };
 }
 
 function timestampLiteral(value: string, dialect: MetadataDialect = 'duckdb'): string {
@@ -84,6 +67,15 @@ function normalizeLoadedAt(value: unknown): string {
   // DuckDB, SQLite — strip the trailing `Z` when storing TIMESTAMP, so a
   // timezone-less round-trip means UTC by contract, not local time.
   if (value instanceof Date) return value.toISOString();
+  // The BigQuery client returns TIMESTAMP columns as BigQueryTimestamp objects
+  // whose `value` is an ISO-8601 string.
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { value?: unknown }).value === 'string'
+  ) {
+    return normalizeLoadedAt((value as { value: string }).value);
+  }
   const text = String(value);
   const match = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(\.\d+)?$/.exec(text);
   if (!match) {
@@ -108,35 +100,6 @@ export function isLeasePlaceholderMetadataRow(row: MetadataRow): boolean {
     row.cursor_type === undefined &&
     row.cursor_value === undefined
   );
-}
-
-export async function ensureMetadataTable(args: {
-  runner: SqlRunnerModule;
-  schema: string;
-  dialect: MetadataDialect;
-}): Promise<void> {
-  const ref = metaTableRef(args.schema, args.dialect);
-  const types = metadataColumnTypes(args.dialect);
-  await args.runner.run(`CREATE TABLE IF NOT EXISTS ${ref} (
-    source_name  ${types.stringType},
-    filter_hash  ${types.stringType},
-    loaded_at    ${types.timestampType},
-    record_count ${types.integerType},
-    etag         ${types.stringType}
-  )`);
-  await args.runner.run(`ALTER TABLE ${ref} ADD COLUMN IF NOT EXISTS etag ${types.stringType}`);
-  const additiveColumns: Array<[string, string]> = [
-    ['cursor_field', types.stringType],
-    ['cursor_type', types.stringType],
-    ['cursor_value', types.stringType],
-    ['snapshot_kind', types.stringType],
-    ['snapshot_variant', types.stringType],
-    ['row_count', types.integerType],
-    ['in_progress_until', types.timestampType],
-  ];
-  for (const [name, type] of additiveColumns) {
-    await args.runner.run(`ALTER TABLE ${ref} ADD COLUMN IF NOT EXISTS ${name} ${type}`);
-  }
 }
 
 export async function readMetadataRow(args: {
