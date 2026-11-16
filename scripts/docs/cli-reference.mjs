@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const check = process.argv.includes('--check');
 const page = path.join(root, 'docs', 'reference', 'cli.md');
-Object.assign(process.env, { NO_COLOR: '1', DOGSLED_OUTPUT_FORMAT: 'text' });
+Object.assign(process.env, { NO_COLOR: '1', BOBSLED_CORE_OUTPUT_FORMAT: 'text' });
 
 const programs = new Map();
 for (const [name, entry] of [

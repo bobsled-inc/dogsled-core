@@ -45,32 +45,32 @@ function fail(message: string): never {
 }
 
 function readConfig(): SmokeConfig {
-  const projectId = process.env['DOGSLED_XWH_BIGQUERY_PROJECT_ID'];
+  const projectId = process.env['BOBSLED_CORE_XWH_BIGQUERY_PROJECT_ID'];
   if (!projectId) {
     fail(
       [
-        'DOGSLED_XWH_BIGQUERY_PROJECT_ID is required.',
+        'BOBSLED_CORE_XWH_BIGQUERY_PROJECT_ID is required.',
         'Authenticate with ADC first, for example:',
         '  gcloud auth application-default login',
         'Then run:',
-        '  DOGSLED_XWH_BIGQUERY_PROJECT_ID=<project> pnpm --filter @bobsled-inc/bobsled-core smoke:cross-warehouse:bigquery',
+        '  BOBSLED_CORE_XWH_BIGQUERY_PROJECT_ID=<project> pnpm --filter @bobsled-inc/bobsled-core smoke:cross-warehouse:bigquery',
       ].join('\n')
     );
   }
 
   const suffix = randomUUID().replaceAll('-', '').slice(0, 10);
-  const datasetId = process.env['DOGSLED_XWH_BIGQUERY_DATASET'] ?? `track_xwh_smoke_${suffix}`;
+  const datasetId = process.env['BOBSLED_CORE_XWH_BIGQUERY_DATASET'] ?? `track_xwh_smoke_${suffix}`;
   const tableId = `orders_${suffix}`;
-  validateBqIdentifier(datasetId, 'DOGSLED_XWH_BIGQUERY_DATASET');
+  validateBqIdentifier(datasetId, 'BOBSLED_CORE_XWH_BIGQUERY_DATASET');
   validateBqIdentifier(tableId, 'generated BigQuery table');
-  validateBqPathPart(projectId, 'DOGSLED_XWH_BIGQUERY_PROJECT_ID');
+  validateBqPathPart(projectId, 'BOBSLED_CORE_XWH_BIGQUERY_PROJECT_ID');
 
   return {
     projectId,
-    location: process.env['DOGSLED_XWH_BIGQUERY_LOCATION'] ?? 'US',
+    location: process.env['BOBSLED_CORE_XWH_BIGQUERY_LOCATION'] ?? 'US',
     datasetId,
     tableId,
-    shouldDropDataset: process.env['DOGSLED_XWH_BIGQUERY_DATASET'] === undefined,
+    shouldDropDataset: process.env['BOBSLED_CORE_XWH_BIGQUERY_DATASET'] === undefined,
   };
 }
 
@@ -241,9 +241,9 @@ function assertRows(rows: Record<string, unknown>[]): void {
 async function main(): Promise<void> {
   step('Reading smoke test configuration');
   const config = readConfig();
-  detail(`DOGSLED_XWH_BIGQUERY_PROJECT_ID: ${config.projectId}`);
-  detail(`DOGSLED_XWH_BIGQUERY_LOCATION: ${config.location}`);
-  detail(`DOGSLED_XWH_BIGQUERY_DATASET: ${config.datasetId}`);
+  detail(`BOBSLED_CORE_XWH_BIGQUERY_PROJECT_ID: ${config.projectId}`);
+  detail(`BOBSLED_CORE_XWH_BIGQUERY_LOCATION: ${config.location}`);
+  detail(`BOBSLED_CORE_XWH_BIGQUERY_DATASET: ${config.datasetId}`);
   detail(`Generated BigQuery table: ${config.tableId}`);
   detail(
     `GOOGLE_APPLICATION_CREDENTIALS set: ${process.env['GOOGLE_APPLICATION_CREDENTIALS'] ? 'yes' : 'no'}`
@@ -304,7 +304,7 @@ async function main(): Promise<void> {
     info('Cross-warehouse BigQuery + DuckDB smoke passed.');
   } finally {
     await cleanupBigQuery(config);
-    if (process.env['DOGSLED_XWH_KEEP_SMOKE_ARTIFACTS'] === '1') {
+    if (process.env['BOBSLED_CORE_XWH_KEEP_SMOKE_ARTIFACTS'] === '1') {
       info(`Kept local artifacts in ${tmpDir}`);
     } else {
       step('Removing local temporary workspace');

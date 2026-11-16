@@ -53,7 +53,7 @@ In default Project mode, Dogsled merges typed pipeline fragments by pipeline and
 
 ## Output Modes
 
-All commands support `--json`, `--verbose`, `--quiet`. JSON mode auto-activates in CI, non-TTY, or `DOGSLED_OUTPUT_FORMAT=json`. When adding JSON output for an agent-consumable command result or export, also add equivalent `--yaml` output. Do not apply this to JSONL protocol streams, structured logs/events, or fixed external API contracts unless a YAML consumer is explicitly needed.
+All commands support `--json`, `--verbose`, `--quiet`. JSON mode auto-activates in CI, non-TTY, or `BOBSLED_CORE_OUTPUT_FORMAT=json`. When adding JSON output for an agent-consumable command result or export, also add equivalent `--yaml` output. Do not apply this to JSONL protocol streams, structured logs/events, or fixed external API contracts unless a YAML consumer is explicitly needed.
 
 **Always use `fmt.*` functions** from `lib/output/formatter.ts` — never `console.log` or `console.error`.
 
@@ -92,11 +92,11 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 ## Vector And Embed Notes
 
 - Protocol `vector` columns require a `dimension`; the embedder derives it from the selected model
-- Smoke tests can set `DOGSLED_EMBED_STUB=1` to avoid live OpenAI calls while preserving vector dimensions
+- Smoke tests can set `BOBSLED_CORE_EMBED_STUB=1` to avoid live OpenAI calls while preserving vector dimensions
 - Destination choice matters for embedding workflows; consult `packages/loader/README.md` and `packages/loader/AGENTS.md` before enabling vectors downstream
 - Shared model roles live under `platform.models` in `dogsled.yml`; use `dogsled doctor --json` to validate config and `dogsled ai test --connection <role> --json` for provider probes
 - `dogsled ai test` should pass a stable project key into `@bobsled-inc/ai` so `platform.budget.ai_cost_daily_usd` can be enforced without mixing projects
-- Use `DOGSLED_AI_TEST_STUB=1` only for command wiring tests; it does not verify provider credentials, pricing, or model availability
+- Use `BOBSLED_CORE_AI_TEST_STUB=1` only for command wiring tests; it does not verify provider credentials, pricing, or model availability
 
 ## Build & Distribution
 

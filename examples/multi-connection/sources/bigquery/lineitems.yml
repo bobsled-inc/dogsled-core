@@ -3,7 +3,7 @@ name: lineitems
 type: source
 source_type: warehouse_table
 connection: bigquery
-table: dogsled_multi_conn_raw.lineitems
+table: multi_conn_raw.lineitems
 schema:
   columns:
     - name: l_orderkey

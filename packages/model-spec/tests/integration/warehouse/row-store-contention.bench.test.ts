@@ -53,7 +53,7 @@ type Engine = {
   integration: () => IntegrationFile;
 };
 const engines: Engine[] = [
-  ...(enabled && env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
+  ...(enabled && env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
     ? [{ engine: 'postgres' as const, integration: postgresIntegration }]
     : []),
   ...(snowflake ? [{ engine: 'snowflake' as const, integration: () => snowflake }] : []),
@@ -102,7 +102,7 @@ async function measure(engine: Engine, scenario: Scenario) {
   const q = (name: string) =>
     quoteIdentifier(caseName(name, integration.source_type), integration.source_type);
   const database = integration.source_type === 'snowflake' ? integration.connection.database : null;
-  const prefix = env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA ?? 'bench';
+  const prefix = env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA ?? 'bench';
   const schema = `${prefix}_contention_${randomUUID().replaceAll('-', '')}`;
   // PostgreSQL truncates a longer name, which could cut the random part off what gets dropped.
   if (engine.engine === 'postgres' && Buffer.byteLength(schema) > 63) {

@@ -32,9 +32,13 @@ for (const command of [
   ['entity-graph', 'status'],
   ['embed', 'run'],
 ]) {
-  const help = execFileSync(process.execPath, [process.env.DOGSLED_E2E_CLI, ...command, '--help'], {
-    encoding: 'utf8',
-  });
+  const help = execFileSync(
+    process.execPath,
+    [process.env.BOBSLED_CORE_E2E_CLI, ...command, '--help'],
+    {
+      encoding: 'utf8',
+    }
+  );
   assert.match(
     help,
     new RegExp(`^Usage: dogsled ${command.join(' ')}\\b`, 'm'),

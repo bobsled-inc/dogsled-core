@@ -43,7 +43,7 @@ function call(source_table: string, id = 1) {
 }
 describe('MCP CLI warehouse boundary', () => {
   it('denies declared-source reads without an adapter even with a principal', async () => {
-    vi.stubEnv('DOGSLED_MCP_ALLOW_UNFILTERED', undefined);
+    vi.stubEnv('BOBSLED_CORE_MCP_ALLOW_UNFILTERED', undefined);
     state.lines = [call('safe.docs__chunks')];
     const output = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     await runMcpServe({ transport: 'stdio', runner: 'synthetic-runner', principalId: 'test-user' });
@@ -54,7 +54,7 @@ describe('MCP CLI warehouse boundary', () => {
     expect(state.close).toHaveBeenCalledOnce();
   });
   it('restricts explicitly unfiltered reads to project declarations', async () => {
-    vi.stubEnv('DOGSLED_MCP_ALLOW_UNFILTERED', '1');
+    vi.stubEnv('BOBSLED_CORE_MCP_ALLOW_UNFILTERED', '1');
     state.lines = [call('other.secret'), call('safe.docs__chunks', 2)];
     const output = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     await runMcpServe({ transport: 'stdio', runner: 'synthetic-runner', allowUnfiltered: true });

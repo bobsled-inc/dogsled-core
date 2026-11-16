@@ -112,7 +112,7 @@ function historicalManifest(warehouse?: string) {
     JSON.stringify(generatedManifest(warehouse))
       .replaceAll('dogsled.', 'track.')
       .replaceAll('dogsled_cli_version', 'track_cli_version')
-      .replaceAll('DOGSLED_PIPELINE_', 'TRACK_PIPELINE_')
+      .replaceAll('BOBSLED_CORE_PIPELINE_', 'TRACK_PIPELINE_')
       .replaceAll('"default_command":"dogsled"', '"default_command":"track"')
   );
 }
@@ -147,9 +147,9 @@ describe('persisted pipeline manifest validation', () => {
     expect(parsed.command_contract).toEqual({
       ...currentCommandContract,
       default_command: 'dogsled',
-      command_env: 'DOGSLED_PIPELINE_COMMAND',
-      cwd_env: 'DOGSLED_PIPELINE_CWD',
-      timeout_seconds_env: 'DOGSLED_PIPELINE_TIMEOUT_SECONDS',
+      command_env: 'BOBSLED_CORE_PIPELINE_COMMAND',
+      cwd_env: 'BOBSLED_CORE_PIPELINE_CWD',
+      timeout_seconds_env: 'BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS',
     });
   });
 

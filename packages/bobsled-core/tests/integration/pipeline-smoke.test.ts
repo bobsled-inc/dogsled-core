@@ -70,7 +70,7 @@ describe('pipeline smoke', () => {
       ],
       project.projectDir,
       {
-        DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+        BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
         NODE_EXTRA_CA_CERTS: project.caCertPath,
       }
     );
@@ -179,8 +179,8 @@ describe('pipeline smoke', () => {
       ],
       project.projectDir,
       {
-        DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
-        DOGSLED_EMBED_STUB: '1',
+        BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+        BOBSLED_CORE_EMBED_STUB: '1',
         NODE_EXTRA_CA_CERTS: project.caCertPath,
       }
     );

@@ -315,5 +315,5 @@ prints the full graph.
 
 A model can join sources from different warehouses. `execution.engine` names the
 integration that runs the join; Dogsled copies the other inputs into it first.
-`DOGSLED_XWH_STAGING_FORMAT` (`jsonl` or `parquet`) and
-`DOGSLED_XWH_SOURCE_TIMEOUT_S` control that copy.
+`BOBSLED_CORE_XWH_STAGING_FORMAT` (`jsonl` or `parquet`) and
+`BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S` control that copy.

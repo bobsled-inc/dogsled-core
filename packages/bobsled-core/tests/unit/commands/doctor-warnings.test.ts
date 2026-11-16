@@ -7,7 +7,7 @@ vi.mock('../../../src/runner/commands/validation.js', () => ({
   validateCliProjectPipelines: vi.fn().mockResolvedValue({
     valid: true,
     errors: [],
-    warnings: ['DOGSLED_LEGACY_BLUEPRINT_KEY: legacy_field is deprecated'],
+    warnings: ['BOBSLED_CORE_LEGACY_BLUEPRINT_KEY: legacy_field is deprecated'],
     project: { config: {} },
   }),
 }));
@@ -27,7 +27,7 @@ it('preserves validation warnings in doctor JSON without failing a valid project
         checks: expect.arrayContaining([
           expect.objectContaining({
             status: 'warn',
-            message: 'DOGSLED_LEGACY_BLUEPRINT_KEY: legacy_field is deprecated',
+            message: 'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY: legacy_field is deprecated',
           }),
         ]),
       }),

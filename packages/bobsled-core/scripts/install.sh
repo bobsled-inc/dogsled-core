@@ -2,12 +2,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -z "${HOME:-}" ] && [ -z "${DOGSLED_INSTALL_ROOT:-}" ]; then
-  echo "Error: HOME is not set and DOGSLED_INSTALL_ROOT is not specified." >&2
+if [ -z "${HOME:-}" ] && [ -z "${BOBSLED_CORE_INSTALL_ROOT:-}" ]; then
+  echo "Error: HOME is not set and BOBSLED_CORE_INSTALL_ROOT is not specified." >&2
   exit 1
 fi
-INSTALL_ROOT="${DOGSLED_INSTALL_ROOT:-$HOME/.dogsled}"
-INSTALL_DIR="${DOGSLED_INSTALL_DIR:-$INSTALL_ROOT/bin}"
+INSTALL_ROOT="${BOBSLED_CORE_INSTALL_ROOT:-$HOME/.dogsled}"
+INSTALL_DIR="${BOBSLED_CORE_INSTALL_DIR:-$INSTALL_ROOT/bin}"
 APP_DIR="$INSTALL_ROOT/dogsled"
 BINARY="dogsled"
 
@@ -15,7 +15,7 @@ BINARY="dogsled"
 RESOLVED_ROOT="$(cd "$INSTALL_ROOT" 2>/dev/null && pwd -P || echo "$INSTALL_ROOT")"
 case "$RESOLVED_ROOT" in
   /|/etc|/usr|/var|/tmp|/bin|/sbin|/lib|/opt|/System)
-    echo "Error: DOGSLED_INSTALL_ROOT points to a system directory: $INSTALL_ROOT" >&2
+    echo "Error: BOBSLED_CORE_INSTALL_ROOT points to a system directory: $INSTALL_ROOT" >&2
     exit 1
     ;;
 esac

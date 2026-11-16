@@ -24,7 +24,7 @@ folder, and an unrelated npm package is called `dogsled`. A run needs three
 things:
 
 - **The project files.** Keep them in a Git repository, for example
-  `example-org/my-dogsled-project`, together with a `package.json` and
+  `example-org/my-bobsled-project`, together with a `package.json` and
   `package-lock.json` that pin the Dogsled version.
 - **Credentials**, as environment variables. Project files name the variables;
   the scheduler sets their values.
@@ -85,7 +85,7 @@ has the full rules.
 
 An API's `base_url` must use HTTPS. Dogsled refuses loopback and private
 addresses, such as an API inside your own network, unless the run sets
-`DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`; see
+`BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`; see
 [Network safety](../reference/environment-variables.md#network-safety).
 
 ## GitHub Actions
@@ -139,7 +139,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      STATE_PREFIX: gs://example-dogsled-state/my-dogsled-project
+      STATE_PREFIX: gs://example-bobsled-state/my-bobsled-project
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -400,7 +400,7 @@ the objects once, before the first scheduled run:
 ```bash
 echo '{"streams":{}}' > state.json
 echo '{"models":{}}' > run-state.json
-gcloud storage cp state.json run-state.json gs://example-dogsled-state/my-dogsled-project/
+gcloud storage cp state.json run-state.json gs://example-bobsled-state/my-bobsled-project/
 ```
 
 The restore step fails if an object is missing, so a run never starts from the
@@ -434,19 +434,19 @@ two variables on the `runner run` step:
 - name: Extract and load
   env:
     HELPDESK_TOKEN: ${{ secrets.HELPDESK_TOKEN }}
-    DOGSLED_STATE_BACKEND: https://state.example.com/v1/state/my-dogsled-project
-    DOGSLED_STATE_AUTH_ENV: STATE_TOKEN
+    BOBSLED_CORE_STATE_BACKEND: https://state.example.com/v1/state/my-bobsled-project
+    BOBSLED_CORE_STATE_AUTH_ENV: STATE_TOKEN
     STATE_TOKEN: ${{ secrets.STATE_TOKEN }}
   run: npx --no-install dogsled runner run helpdesk_tickets
 ```
 
 Dogsled sends `GET` to that URL before extracting and `PUT` with the whole state
 after it, with `Authorization: Bearer` and the value of the variable named in
-`DOGSLED_STATE_AUTH_ENV`. The server returns the state as JSON, or `404` if there is
+`BOBSLED_CORE_STATE_AUTH_ENV`. The server returns the state as JSON, or `404` if there is
 none yet. Dogsled treats `404` as empty state, so a wrong URL makes the run read
 everything again rather than fail. It returns an `ETag` header; Dogsled sends it back in `If-Match`, and the
 server answers `412` if another run wrote in between. The URL must be a public
-HTTPS address unless you set `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`. Dogsled
+HTTPS address unless you set `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`. Dogsled
 Core does not include such a server: you run it yourself. With this backend,
 Dogsled saves the cursor itself as described above, so you cannot hold it back
 after a failed run. The backend holds only the extraction cursors: keep
@@ -516,7 +516,7 @@ On a server that keeps its files between runs, `.extractor/state.json` and
 `.dogsled/model-spec/run-state.json` stay on disk, and you do not need to copy
 them. Back them up with the rest of the server.
 
-Put the commands in a script in the project, `run-dogsled.sh`:
+Put the commands in a script in the project, `run-bobsled.sh`:
 
 ```sh
 #!/bin/sh
@@ -537,9 +537,9 @@ Description=Dogsled pipelines
 [Service]
 Type=oneshot
 User=dogsled
-WorkingDirectory=/srv/my-dogsled-project
+WorkingDirectory=/srv/my-bobsled-project
 EnvironmentFile=/etc/dogsled/production.env
-ExecStart=/bin/sh run-dogsled.sh
+ExecStart=/bin/sh run-bobsled.sh
 TimeoutStartSec=2h
 ```
 
@@ -570,7 +570,7 @@ overlap:
 
 ```text
 PATH=/usr/local/bin:/usr/bin:/bin
-17 6 * * * cd /srv/my-dogsled-project && flock -n /run/lock/dogsled.lock sh -c 'set -a; . /etc/dogsled/production.env; set +a; exec sh run-dogsled.sh'
+17 6 * * * cd /srv/my-bobsled-project && flock -n /run/lock/dogsled.lock sh -c 'set -a; . /etc/dogsled/production.env; set +a; exec sh run-bobsled.sh'
 ```
 
 ### A container
@@ -610,11 +610,11 @@ environment variables by the platform:
 docker run --rm -e HELPDESK_TOKEN \
   -v dogsled-extract-state:/project/.extractor \
   -v dogsled-model-state:/project/.dogsled/model-spec \
-  my-dogsled-project runner run helpdesk_tickets
+  my-bobsled-project runner run helpdesk_tickets
 docker run --rm \
   -v dogsled-extract-state:/project/.extractor \
   -v dogsled-model-state:/project/.dogsled/model-spec \
-  my-dogsled-project model run --integration warehouse --json
+  my-bobsled-project model run --integration warehouse --json
 ```
 
 A container starts with no state. Mount both state folders from storage that

@@ -47,7 +47,8 @@ describe('rename mapping', () => {
     ['packages/dogsled/src/index.ts', 'packages/bobsled-core/src/index.ts'],
     ['Run `dogsled extract --help`.', 'Run `bobsled extract --help`.'],
     ['export DOGSLED_MATCH_KEY_SECRET=x', 'export BOBSLED_CORE_MATCH_KEY_SECRET=x'],
-    ['DOGSLED_<OFFERING>_CREDENTIALS_*', 'BOBSLED_CORE_<OFFERING>_CREDENTIALS_*'],
+    ['DOGSLED_<OFFERING>_CREDENTIALS_*', 'DOGSLED_<OFFERING>_CREDENTIALS_*'],
+    ['DOGSLED_<OFFERING>_HOST', 'BOBSLED_CORE_<OFFERING>_HOST'],
     ['Use the dogsled-init skill.', 'Use the bobsled-init skill.'],
     ['plugins/dogsled-core/skills', 'plugins/bobsled-core/skills'],
     [
@@ -115,6 +116,87 @@ describe('rename mapping', () => {
     expect(rename('Email security@dogsledai.com', 'SECURITY.md')).toBe('Email security@bobsled.co');
     const policy = String.raw`(?:bobsled\.(?:co|ai|cloud)|dogsledai\.com|dogsled\.(?:co|ai|cloud|com|it))`;
     expect(rename(policy, 'scripts/security/policy.mjs')).toBe(policy);
+  });
+
+  it('renames every shape of the package folder and name that PR 4 met, within BC-01', () => {
+    const bc01 = (text, file = 'tests/a.mjs') =>
+      renameText(text, { file, rules: selectRules(['BC-01']) }).text;
+    expect(bc01(String.raw`/but @bobsled-inc\/dogsled installs pg/`)).toBe(
+      String.raw`/but @bobsled-inc\/bobsled-core installs pg/`
+    );
+    expect(bc01("new URL('../../../../dogsled/src/runtime/process.ts', import.meta.url)")).toBe(
+      "new URL('../../../../bobsled-core/src/runtime/process.ts', import.meta.url)"
+    );
+    expect(bc01("const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'dogsled'];")).toBe(
+      "const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'bobsled-core'];"
+    );
+    expect(
+      bc01("path.join(installDir, 'node_modules', '@bobsled-inc',\n      'dogsled',\n      'x')")
+    ).toBe(
+      "path.join(installDir, 'node_modules', '@bobsled-inc',\n      'bobsled-core',\n      'x')"
+    );
+    expect(bc01("join(dir, '..',\n  '..',\n  'dogsled',\n  'examples')")).toBe(
+      "join(dir, '..',\n  '..',\n  'bobsled-core',\n  'examples')"
+    );
+    expect(bc01("  ['dogsled', 'dogsled/dist/index.js'],")).toBe(
+      "  ['dogsled', 'bobsled-core/dist/index.js'],"
+    );
+    expect(bc01('"test:unit:ci:dogsled": "x"', 'package.json')).toBe('"test:unit:ci:bobsled": "x"');
+    expect(bc01("const bin = path.join(prefix, 'bin', 'dogsled');")).toBe(
+      "const bin = path.join(prefix, 'bin', 'bobsled');"
+    );
+    expect(bc01("[{ name: 'x', bin: { dogsled: './bin/cli.mjs' } }]")).toBe(
+      "[{ name: 'x', bin: { bobsled: './bin/cli.mjs' } }]"
+    );
+    expect(
+      bc01('elif command -v dogsled >/dev/null 2>&1; then\n  DOGSLED_CMD=(dogsled)', 'a.sh')
+    ).toBe('elif command -v bobsled >/dev/null 2>&1; then\n  DOGSLED_CMD=(bobsled)');
+    expect(bc01('      dogsled: bobsledPlugin,')).toBe('      bobsled: bobsledPlugin,');
+    expect(bc01('/* eslint-disable dogsled/no-console */')).toBe(
+      '/* eslint-disable bobsled/no-console */'
+    );
+    expect(bc01("Object.freeze(['model', 'graph', 'dogsled', 'rest'])")).toBe(
+      "Object.freeze(['model', 'graph', 'bobsled', 'rest'])"
+    );
+  });
+
+  it('reproduces PR 5: neutral example and user-declared names, and the golden schema', () => {
+    const pr5 = (text, file = 'docs/a.md') =>
+      renameText(text, { file, rules: selectRules(['BC-08', 'BC-20', 'BC-21']) }).text;
+    expect(pr5('DOGSLED_MULTI_CONN_DB.RAW and DOGSLED_MULTI_CONN_WH')).toBe(
+      'MULTI_CONN_DB.RAW and MULTI_CONN_WH'
+    );
+    expect(pr5('dataset: dogsled_multi_conn_staging, key ~/.ssh/dogsled_multi_conn.p8')).toBe(
+      'dataset: multi_conn_staging, key ~/.ssh/multi_conn.p8'
+    );
+    expect(pr5('DOGSLED_RAW and DOGSLED_AI_WH')).toBe('BOBSLED_CORE_RAW and BOBSLED_CORE_AI_WH');
+    expect(pr5('token: ${{ env.DOGSLED_REVIEWER_TOKEN }} and DOGSLED_MC_SF_ACCOUNT')).toBe(
+      'token: ${{ env.REVIEWER_TOKEN }} and MC_SF_ACCOUNT'
+    );
+    expect(
+      pr5('DOGSLED_BLOB_URL DOGSLED_BLOB_ORIGIN DOGSLED_RUN_TOKEN DOGSLED_DEST_EXPLICIT')
+    ).toBe('BLOB_URL BLOB_ORIGIN RUN_TOKEN DEST_EXPLICIT');
+    expect(pr5('the `DOGSLED_<OFFERING>_CREDENTIALS_*` env-var convention')).toBe(
+      'the `DOGSLED_<OFFERING>_CREDENTIALS_*` env-var convention'
+    );
+    expect(pr5("generateSql(spec, 'DOGSLED_WORKSPACE', dialect)", 'a.test.ts')).toBe(
+      "generateSql(spec, 'BOBSLED_CORE_WORKSPACE', dialect)"
+    );
+    expect(pr5('CREATE OR REPLACE VIEW "dogsled_workspace"."stg"', 'a.sql')).toBe(
+      'CREATE OR REPLACE VIEW "bobsled_core_workspace"."stg"'
+    );
+    expect(pr5('"x\\ndogsled_source_kind"', 'packages/skills/src/generated-data.ts')).toBe(
+      '"x\\ndogsled_source_kind"'
+    );
+  });
+
+  it('never reads the n of a \\n escape as an identifier character', () => {
+    expect(
+      renameText('openDogsledProject()', { file: 'a.ts', rules: selectRules(['BC-05']) }).text
+    ).toBe('openBobsledProject()');
+    expect(
+      renameText(String.raw`"a\nDogsled b"`, { file: 'a.ts', rules: selectRules(['BC-05']) }).text
+    ).toBe(String.raw`"a\nDogsled b"`);
   });
 
   it('keeps the CI unit legs and their scripts in step', () => {

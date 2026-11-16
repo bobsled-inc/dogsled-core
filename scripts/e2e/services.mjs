@@ -11,7 +11,8 @@ export function postgresContainerName() {
   return container;
 }
 export async function postgres() {
-  if (process.env.DOGSLED_E2E_POSTGRES_PORT) return Number(process.env.DOGSLED_E2E_POSTGRES_PORT);
+  if (process.env.BOBSLED_CORE_E2E_POSTGRES_PORT)
+    return Number(process.env.BOBSLED_CORE_E2E_POSTGRES_PORT);
   if (postgresPort) return postgresPort;
   container = `dogsled-e2e-${randomUUID()}`;
   await command(
@@ -56,7 +57,7 @@ export async function postgres() {
   throw new Error('Postgres did not become ready within 30 seconds');
 }
 export async function postgresSql(sql) {
-  if (process.env.DOGSLED_E2E_POSTGRES_PORT) {
+  if (process.env.BOBSLED_CORE_E2E_POSTGRES_PORT) {
     const { resolveRunner } = await publicApi('connections');
     const runner = await resolveRunner({
       spec_version: '1',
@@ -65,7 +66,7 @@ export async function postgresSql(sql) {
       source_type: 'postgres',
       connection: {
         host: '127.0.0.1',
-        port: Number(process.env.DOGSLED_E2E_POSTGRES_PORT),
+        port: Number(process.env.BOBSLED_CORE_E2E_POSTGRES_PORT),
         database: 'showcase',
       },
       auth: { type: 'password', user: 'postgres', password: 'unused-local-only' },
@@ -197,7 +198,7 @@ export async function mockApi(ctx, datasets, options = {}) {
     SHOWCASE_API_AUTHORITY: `127.0.0.1:${server.address().port}`,
     SHOWCASE_API_TOKEN: token,
     NODE_EXTRA_CA_CERTS: cert,
-    DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+    BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
   });
   return {
     requests,

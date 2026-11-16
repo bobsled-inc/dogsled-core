@@ -28,7 +28,7 @@ const snowflake = enabled ? await snowflakeIntegration() : undefined;
 const available: RowLimitsStore[] = [
   'duckdb-run-file',
   'duckdb-shared',
-  ...(env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
+  ...(env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
     ? (['postgres-rows'] as const)
     : []),
   ...(snowflake ? (['snowflake-rows'] as const) : []),
@@ -96,7 +96,7 @@ describe.skipIf(!enabled)('row store at large run sizes', () => {
         `${store} ${shape}: %s assignments`,
         async (assignments) => {
           const directory = mkdtempSync(join(tmpdir(), 'row-limits-'));
-          const prefix = env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA ?? 'bench';
+          const prefix = env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA ?? 'bench';
           const schema = `${prefix}_limits_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
           try {
             const phases: Partial<Record<RowLimitsPhase, RowLimitsPhaseResult>> = {};

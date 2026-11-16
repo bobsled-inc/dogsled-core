@@ -5,10 +5,10 @@ set -euo pipefail
 # needed to execute them and creates a distributable zip in the output directory.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOGSLED_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-REPO_ROOT="$(cd "$DOGSLED_DIR/../.." && pwd)"
+BOBSLED_CORE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$BOBSLED_CORE_DIR/../.." && pwd)"
 
-VERSION="$(node -p "require('$DOGSLED_DIR/package.json').version")"
+VERSION="$(node -p "require('$BOBSLED_CORE_DIR/package.json').version")"
 ZIP_NAME="dogsled-v${VERSION}.zip"
 STAGING_DIR=$(mktemp -d -t dogsled-pack.XXXXXX)
 trap 'rm -rf "$STAGING_DIR"' EXIT
@@ -144,7 +144,7 @@ pnpm --config.inject-workspace-packages=true deploy --filter @bobsled-inc/bobsle
 
 echo "▸ Staging curated runtime package…"
 cp -R "$DEPLOY_DIR/node_modules" "$PACKAGE_DIR/"
-cp -R "$DOGSLED_DIR/dist" "$PACKAGE_DIR/"
+cp -R "$BOBSLED_CORE_DIR/dist" "$PACKAGE_DIR/"
 cp "$SCRIPT_DIR/launcher.sh" "$PACKAGE_DIR/dogsled"
 cp "$SCRIPT_DIR/install.sh" "$PACKAGE_DIR/install.sh"
 chmod +x "$PACKAGE_DIR/dogsled" "$PACKAGE_DIR/install.sh"
@@ -214,7 +214,7 @@ if [ -n "$DUCKDB_PKG" ]; then
 fi
 
 echo "▸ Staging bundled examples…"
-cp -R "$DOGSLED_DIR/examples" "$PACKAGE_DIR/examples"
+cp -R "$BOBSLED_CORE_DIR/examples" "$PACKAGE_DIR/examples"
 
 echo "▸ Staging bundled integrations…"
 INTEGRATIONS_SRC="${REPO_ROOT}/packages/integrations/integrations"

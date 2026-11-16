@@ -4403,7 +4403,8 @@ Options:
   --section <name>  Jump to a named section (e.g. "Phase 4")
   --goto <n>        Jump to lesson number N
   --auto            Auto-advance on success (1.5s delay)
-  --cli <cmd>       Override CLI binary (default: DOGSLED_CLI env or "dogsled")
+  --cli <cmd>       Override CLI binary (default: BOBSLED_CORE_CLI env or
+                    "bobsled")
   -h, --help        display help for command
 ```
 

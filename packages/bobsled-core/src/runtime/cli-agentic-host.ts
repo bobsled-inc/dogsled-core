@@ -58,7 +58,7 @@ export async function createCliAgenticHost(options: {
         index: projectLocation.index,
       }).config.platform
     : undefined;
-  const tokenCommand = process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+  const tokenCommand = process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
   return createAgenticHost({
     project,
     executeAgent,

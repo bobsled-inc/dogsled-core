@@ -242,9 +242,9 @@ ${via ? `    via: ${via}\n` : ''}    resources: [${resources.join(', ')}]
       kind: 'dogsled.pipeline.dag',
       version: 7,
       command_contract: {
-        command_env: 'DOGSLED_PIPELINE_COMMAND',
-        cwd_env: 'DOGSLED_PIPELINE_CWD',
-        timeout_seconds_env: 'DOGSLED_PIPELINE_TIMEOUT_SECONDS',
+        command_env: 'BOBSLED_CORE_PIPELINE_COMMAND',
+        cwd_env: 'BOBSLED_CORE_PIPELINE_CWD',
+        timeout_seconds_env: 'BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS',
       },
     });
     expect(first.pipelines).toHaveLength(1);

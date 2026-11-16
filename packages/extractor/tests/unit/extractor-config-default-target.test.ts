@@ -11,7 +11,7 @@ describe('extractor config — default_load', () => {
     const result = ExtractorConfigSchema.safeParse({
       default_load: {
         integration: 'snowflake_warehouse',
-        overrides: { role: 'LOADER_ROLE', database: 'DOGSLED_RAW' },
+        overrides: { role: 'LOADER_ROLE', database: 'BOBSLED_CORE_RAW' },
         defaults: { load_strategy: 'merge', schema_behavior: 'evolve', buffer_size: 50000 },
       },
     });

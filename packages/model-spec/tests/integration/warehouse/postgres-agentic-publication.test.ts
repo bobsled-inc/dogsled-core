@@ -15,9 +15,9 @@ import {
 } from '../../support/publication-payload.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 
-// Run against a dedicated database with DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres.
+// Run against a dedicated database with BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres.
 // Each test creates and drops its own random schema.
-const enabled = process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').some((name) =>
+const enabled = process.env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').some((name) =>
   ['postgres', 'all'].includes(name.trim())
 );
 describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
@@ -27,8 +27,8 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
   });
   async function setup() {
     for (const name of ['HOST', 'DATABASE', 'USER', 'PASSWORD']) {
-      if (!process.env[`DOGSLED_MODEL_SPEC_POSTGRES_${name}`]) {
-        throw new Error(`DOGSLED_MODEL_SPEC_POSTGRES_${name} is required`);
+      if (!process.env[`BOBSLED_CORE_MODEL_SPEC_POSTGRES_${name}`]) {
+        throw new Error(`BOBSLED_CORE_MODEL_SPEC_POSTGRES_${name} is required`);
       }
     }
     const integration: PostgresIntegration = {
@@ -37,14 +37,14 @@ describe.skipIf(!enabled)('PostgreSQL agentic publication', () => {
       name: 'lake',
       source_type: 'postgres',
       connection: {
-        host: process.env.DOGSLED_MODEL_SPEC_POSTGRES_HOST!,
-        port: Number(process.env.DOGSLED_MODEL_SPEC_POSTGRES_PORT ?? 5432),
-        database: process.env.DOGSLED_MODEL_SPEC_POSTGRES_DATABASE!,
+        host: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_HOST!,
+        port: Number(process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PORT ?? 5432),
+        database: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_DATABASE!,
       },
       auth: {
         type: 'password',
-        user: process.env.DOGSLED_MODEL_SPEC_POSTGRES_USER!,
-        password: process.env.DOGSLED_MODEL_SPEC_POSTGRES_PASSWORD!,
+        user: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_USER!,
+        password: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PASSWORD!,
       },
     };
     const inspect = async (sql: string) => {

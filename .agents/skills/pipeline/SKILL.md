@@ -39,7 +39,7 @@ For a configured pipeline, use the safe command ladder and destination precautio
 dogsled runner run <pipeline> --resource <resource>
 ```
 
-An `embed:` block enriches selected text fields between extraction and loading. Use environment placeholders for credentials, validate stream/field names against resource output, enforce model dimensions and cost budgets, and confirm the destination supports vector columns. Use `DOGSLED_EMBED_STUB=1` only for wiring tests that intentionally avoid a provider call.
+An `embed:` block enriches selected text fields between extraction and loading. Use environment placeholders for credentials, validate stream/field names against resource output, enforce model dimensions and cost budgets, and confirm the destination supports vector columns. Use `BOBSLED_CORE_EMBED_STUB=1` only for wiring tests that intentionally avoid a provider call.
 
 After running, verify destination row counts, schema, table/load strategy, vector dimensions when applicable, and state behavior. Never interpret a limited extractor preview as a state-advancing acceptance run.
 

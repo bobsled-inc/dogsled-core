@@ -2,28 +2,28 @@
 
 These Vitest suites exercise `view`, `table`, and `incremental` merge materializations against real warehouses.
 
-They are skipped unless `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE` is set:
+They are skipped unless `BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE` is set:
 
-- `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=duckdb`
-- `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=snowflake`
-- `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=bigquery`
-- `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=all`
+- `BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=duckdb`
+- `BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=snowflake`
+- `BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=bigquery`
+- `BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=all`
 
 When a warehouse is enabled, missing credentials are a hard failure inside the worker instead of a silent skip.
 
 Snowflake env:
 
-- `DOGSLED_MODEL_SPEC_SNOWFLAKE_ACCOUNT`
-- `DOGSLED_MODEL_SPEC_SNOWFLAKE_USER`
-- `DOGSLED_MODEL_SPEC_SNOWFLAKE_PAT`
-- `DOGSLED_MODEL_SPEC_SNOWFLAKE_ROLE`
-- `DOGSLED_MODEL_SPEC_SNOWFLAKE_WAREHOUSE`
-- `DOGSLED_MODEL_SPEC_SNOWFLAKE_DATABASE`
+- `BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_ACCOUNT`
+- `BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_USER`
+- `BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_PAT`
+- `BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_ROLE`
+- `BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_WAREHOUSE`
+- `BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_DATABASE`
 
 BigQuery env:
 
-- `DOGSLED_MODEL_SPEC_BIGQUERY_PROJECT`
-- `DOGSLED_MODEL_SPEC_BIGQUERY_LOCATION` (optional, defaults to `US`)
+- `BOBSLED_CORE_MODEL_SPEC_BIGQUERY_PROJECT`
+- `BOBSLED_CORE_MODEL_SPEC_BIGQUERY_LOCATION` (optional, defaults to `US`)
 
 BigQuery uses Application Default Credentials, so CI should configure `GOOGLE_APPLICATION_CREDENTIALS` through Workload Identity Federation before the tests run.
 
@@ -45,17 +45,17 @@ from `packages/model-spec` run:
 pnpm exec vitest run tests/integration/warehouse/cloud-row-store.test.ts
 ```
 
-Each test creates its own schema, named after `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA` with a random
+Each test creates its own schema, named after `BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA` with a random
 suffix, and drops only that one. The role therefore needs to create schemas in the database. With
 another engine's integration the suite is skipped. It takes about 35 minutes, including a run at the
 row store's limit.
 
-Set `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1` to run the same suite on a store with experimental
+Set `BOBSLED_CORE_MODEL_SPEC_GROUP_COMMIT=1` to run the same suite on a store with experimental
 [group commit](../../../docs/agentic-group-commit.md) instead, including its own cases. The
 PostgreSQL and emulator suites run both every time.
 
 A host that opens Snowflake through its own runner factory should prove it here before it switches.
-Set `DOGSLED_MODEL_SPEC_CHECKPOINT_RUNNERS` to the absolute path of an ES module that exports a
+Set `BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_RUNNERS` to the absolute path of an ES module that exports a
 `CustomRunnerRegistry` as `customRunners`, and both this suite and the benchmark below connect
 through it. The module runs as test code, so point it only at code you trust.
 
@@ -76,9 +76,9 @@ sizes with `CHECKPOINT_BENCHMARK_PUBLICATION=1` took about 26 minutes. See the
 
 ## Agentic publication
 
-The PostgreSQL suite uses `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres`. Set
-`DOGSLED_MODEL_SPEC_POSTGRES_HOST`, `DOGSLED_MODEL_SPEC_POSTGRES_DATABASE`, `DOGSLED_MODEL_SPEC_POSTGRES_USER`, and
-`DOGSLED_MODEL_SPEC_POSTGRES_PASSWORD`. Set `DOGSLED_MODEL_SPEC_POSTGRES_PORT` if the port is not 5432.
+The PostgreSQL suite uses `BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres`. Set
+`BOBSLED_CORE_MODEL_SPEC_POSTGRES_HOST`, `BOBSLED_CORE_MODEL_SPEC_POSTGRES_DATABASE`, `BOBSLED_CORE_MODEL_SPEC_POSTGRES_USER`, and
+`BOBSLED_CORE_MODEL_SPEC_POSTGRES_PASSWORD`. Set `BOBSLED_CORE_MODEL_SPEC_POSTGRES_PORT` if the port is not 5432.
 Use a dedicated test database. Each test creates and drops a random schema.
 
 The cloud suite tests Snowflake, BigQuery, or Databricks with the same lifecycle:
@@ -87,8 +87,8 @@ then remove one processed key without changing another key.
 
 Set these variables before running the cloud suite:
 
-- `DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION`: absolute path to an external integration YAML file.
-- `DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA`: existing dedicated test namespace. Use
+- `BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION`: absolute path to an external integration YAML file.
+- `BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA`: existing dedicated test namespace. Use
   `database.schema` for Snowflake, `project.dataset` for BigQuery, or
   `catalog.schema` for Databricks.
 
@@ -111,13 +111,13 @@ credentialed CI job to run this proof for each cloud database.
 
 ## Warehouse checkpoints
 
-Run the PostgreSQL checkpoint suite with the same `DOGSLED_MODEL_SPEC_POSTGRES_*` variables and
-`DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres`. It creates and drops random test schemas.
+Run the PostgreSQL checkpoint suite with the same `BOBSLED_CORE_MODEL_SPEC_POSTGRES_*` variables and
+`BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres`. It creates and drops random test schemas.
 
 For Snowflake, BigQuery, or Databricks, set:
 
-- `DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION`: external integration YAML path.
-- `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA`: dedicated schema name inside the integration's database or catalog.
+- `BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_INTEGRATION`: external integration YAML path.
+- `BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA`: dedicated schema name inside the integration's database or catalog.
 
 Then run `cloud-checkpoint-store.test.ts`. It creates and drops only the exact
 run tables for a random test execution. It does not drop the configured schema.

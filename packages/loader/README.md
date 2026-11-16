@@ -122,7 +122,7 @@ extract:
 load:
   overrides:
     role: LOADER_ROLE
-    database: DOGSLED_RAW
+    database: BOBSLED_CORE_RAW
   defaults:
     load_strategy: merge
     schema_behavior: evolve
@@ -164,7 +164,7 @@ name: orders_load
 integration: snowflake_prod # required -- references integrations/<handle>.yml
 overrides: # optional -- narrow integration defaults for this load
   role: LOADER_ROLE
-  database: DOGSLED_RAW
+  database: BOBSLED_CORE_RAW
   schema: PUBLIC
 defaults: # optional -- per-load behaviour
   load_strategy: merge

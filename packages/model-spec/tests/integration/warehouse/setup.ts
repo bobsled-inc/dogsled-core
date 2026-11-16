@@ -2,19 +2,19 @@ type WarehouseName = 'snowflake' | 'bigquery' | 'duckdb';
 
 const REQUIRED_ENV: Record<WarehouseName, string[]> = {
   snowflake: [
-    'DOGSLED_MODEL_SPEC_SNOWFLAKE_ACCOUNT',
-    'DOGSLED_MODEL_SPEC_SNOWFLAKE_USER',
-    'DOGSLED_MODEL_SPEC_SNOWFLAKE_PAT',
-    'DOGSLED_MODEL_SPEC_SNOWFLAKE_ROLE',
-    'DOGSLED_MODEL_SPEC_SNOWFLAKE_WAREHOUSE',
-    'DOGSLED_MODEL_SPEC_SNOWFLAKE_DATABASE',
+    'BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_ACCOUNT',
+    'BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_USER',
+    'BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_PAT',
+    'BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_ROLE',
+    'BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_WAREHOUSE',
+    'BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_DATABASE',
   ],
-  bigquery: ['DOGSLED_MODEL_SPEC_BIGQUERY_PROJECT'],
+  bigquery: ['BOBSLED_CORE_MODEL_SPEC_BIGQUERY_PROJECT'],
   duckdb: [],
 };
 
 export function warehouseEnabled(name: WarehouseName): boolean {
-  const raw = process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE;
+  const raw = process.env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE;
   if (!raw) return false;
   const requested = raw
     .split(',')

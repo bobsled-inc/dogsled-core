@@ -365,9 +365,9 @@ CHECKPOINT_BENCHMARK=1 pnpm --filter @bobsled-inc/model-spec exec vitest run \
   tests/integration/warehouse/row-store-contention.bench.test.ts
 ```
 
-It runs on PostgreSQL with `DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres` and the settings in
+It runs on PostgreSQL with `BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE=postgres` and the settings in
 `tests/integration/warehouse/README.md`, and on Snowflake with
-`DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION` and `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA`. Settings:
+`BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_INTEGRATION` and `BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA`. Settings:
 `CHECKPOINT_BENCHMARK_RUNS` (default `1,4,8,16`), `CHECKPOINT_BENCHMARK_ASSIGNMENTS` (per run,
 default `100`), `CHECKPOINT_BENCHMARK_SAMPLES` (default `3`), `CHECKPOINT_BENCHMARK_MODEL_MS`
 (default `0`), `CHECKPOINT_BENCHMARK_HEADER_TABLES` (the size of the Snowflake header set to measure,

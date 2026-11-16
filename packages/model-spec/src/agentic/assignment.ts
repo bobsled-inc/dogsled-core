@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DOGSLED_RUNTIME_ERROR_KINDS } from '@bobsled-inc/protocol';
+import { BOBSLED_CORE_RUNTIME_ERROR_KINDS } from '@bobsled-inc/protocol';
 import { identifierSchema } from '../compiler/shared-validators.js';
 import {
   AgenticColumnsSchema,
@@ -283,7 +283,7 @@ export const AgentAssignmentOutcomeSchema = AgenticJsonSchema.pipe(
         status: z.literal('failed'),
         error: z
           .object({
-            kind: z.enum(DOGSLED_RUNTIME_ERROR_KINDS),
+            kind: z.enum(BOBSLED_CORE_RUNTIME_ERROR_KINDS),
             code: identifierSchema,
             retryable: z.boolean(),
           })

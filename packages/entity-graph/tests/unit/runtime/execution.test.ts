@@ -74,7 +74,7 @@ describe('Entity Graph execution helpers', () => {
   });
 
   it('materializes match-key secret placeholders only for execution', async () => {
-    vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', "runtime's secret");
+    vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', "runtime's secret");
     const executedSql: string[] = [];
     const runner = {
       run: vi.fn(async (sql: string) => {
@@ -106,7 +106,7 @@ describe('Entity Graph execution helpers', () => {
         statements: [{ name: 'hash', sql: `SELECT '${MATCH_KEY_SECRET_RUNTIME_TOKEN}'` }],
       })
     ).toThrow(
-      'Entity graph execution requires a dialect to materialize DOGSLED_MATCH_KEY_SECRET placeholders.'
+      'Entity graph execution requires a dialect to materialize BOBSLED_CORE_MATCH_KEY_SECRET placeholders.'
     );
   });
 });

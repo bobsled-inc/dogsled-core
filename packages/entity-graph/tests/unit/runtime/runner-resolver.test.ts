@@ -158,18 +158,18 @@ describe('resolveEntityGraphRunner', () => {
     expect(mocks.createTokenCommandProvider).toHaveBeenCalledWith('mint-token.sh');
   });
 
-  it('falls back to DOGSLED_CREDENTIALS_TOKEN_COMMAND (standalone / Cloud Run path)', async () => {
+  it('falls back to BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND (standalone / Cloud Run path)', async () => {
     mocks.createTokenCommandProvider.mockClear();
     const secretResolver = { get: vi.fn() };
     const interpolated = { ...integration.integration, connection: {} };
     mocks.buildSecretResolver.mockResolvedValue(secretResolver);
     mocks.interpolateSecrets.mockResolvedValue(interpolated);
     mocks.resolveRunner.mockResolvedValue({ run: vi.fn(), close: vi.fn() });
-    process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'] = 'env-mint.sh';
+    process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'] = 'env-mint.sh';
     try {
       await resolveEntityGraphRunner({ cwd: '/project', integration });
     } finally {
-      delete process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+      delete process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
     }
 
     const call = mocks.resolveRunner.mock.calls.at(-1);

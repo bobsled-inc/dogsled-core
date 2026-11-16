@@ -54,14 +54,14 @@ export interface McpUnfilteredCheckInput {
 
 export function checkMcpUnfilteredInProduction(input: McpUnfilteredCheckInput = {}): DoctorFinding {
   const env = input.env ?? process.env;
-  const allowUnfiltered = env['DOGSLED_MCP_ALLOW_UNFILTERED'] === '1';
+  const allowUnfiltered = env['BOBSLED_CORE_MCP_ALLOW_UNFILTERED'] === '1';
   const isProd = env['NODE_ENV'] === 'production';
   if (allowUnfiltered && isProd) {
     return {
       check: 'mcp_unfiltered_in_production',
       severity: 'fail',
       summary:
-        'DOGSLED_MCP_ALLOW_UNFILTERED=1 is set in production. ' +
+        'BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 is set in production. ' +
         'The MCP server runs without permission enforcement; connect only public / single-tenant data.',
       details: { allow_unfiltered: true, node_env: env['NODE_ENV'] },
     };
@@ -71,7 +71,7 @@ export function checkMcpUnfilteredInProduction(input: McpUnfilteredCheckInput = 
       check: 'mcp_unfiltered_in_production',
       severity: 'warn',
       summary:
-        'DOGSLED_MCP_ALLOW_UNFILTERED=1 is set outside production. ' +
+        'BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 is set outside production. ' +
         'Acceptable for local / single-tenant development; ensure NODE_ENV is not promoted to production with this flag still set.',
       details: { allow_unfiltered: true, node_env: env['NODE_ENV'] },
     };

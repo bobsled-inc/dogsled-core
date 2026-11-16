@@ -93,4 +93,4 @@ Key design decisions:
 
 - OWASP Command Injection (OS Command Injection)
 - The Dogsled CLI itself has SSRF protections (`isPrivateHost()` in extractor) — defense in depth
-- `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS` is an intentional escape hatch for VPN-hosted APIs
+- `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS` is an intentional escape hatch for VPN-hosted APIs

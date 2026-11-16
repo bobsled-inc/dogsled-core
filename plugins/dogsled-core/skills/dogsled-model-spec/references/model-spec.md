@@ -64,9 +64,9 @@ dogsled model run customer_event_revenue --full-refresh    # clear run state bef
 
 **Environment flags**:
 
-- `DOGSLED_XWH_STAGING_FORMAT=parquet` — streaming fallback stages source rows as Parquet (preserves Decimal/Timestamp/Binary fidelity that JSONL loses). Default `jsonl`.
-- `DOGSLED_XWH_SOURCE_TIMEOUT_S=14400` — abort source streaming after N seconds. Default unset.
-- `DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS=1` — allow OAuth token endpoints on private/loopback hosts (escape hatch for internal IdPs behind VPN). Default off (SSRF guard rejects).
+- `BOBSLED_CORE_XWH_STAGING_FORMAT=parquet` — streaming fallback stages source rows as Parquet (preserves Decimal/Timestamp/Binary fidelity that JSONL loses). Default `jsonl`.
+- `BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S=14400` — abort source streaming after N seconds. Default unset.
+- `BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS=1` — allow OAuth token endpoints on private/loopback hosts (escape hatch for internal IdPs behind VPN). Default off (SSRF guard rejects).
 
 Set `cross_warehouse_staging.uri` on the publish target integration to enable native source UNLOAD into a shared Parquet staging location. Sources without UNLOAD support automatically use streaming fallback.
 

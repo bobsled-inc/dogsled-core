@@ -99,7 +99,7 @@ name: main_warehouse
 integration: snowflake_prod
 overrides:
   role: LOADER_ROLE
-  database: DOGSLED_RAW
+  database: BOBSLED_CORE_RAW
   schema: RAW
 defaults:
   load_strategy: merge
@@ -331,7 +331,7 @@ describe('targetToLoaderConfig — Snowflake', () => {
         account: 'acct1',
         username: 'svc_user',
         warehouse: 'WH1',
-        database: 'DOGSLED_RAW',
+        database: 'BOBSLED_CORE_RAW',
         targetSchema: 'RAW',
         role: 'LOADER_ROLE',
         privateKeyPath: '/secrets/sf.p8',
@@ -587,7 +587,7 @@ describe('targetToLoaderConfig — new-shape Snowflake', () => {
         account: 'acct1',
         username: 'svc_user',
         warehouse: 'WH1',
-        database: 'DOGSLED_RAW',
+        database: 'BOBSLED_CORE_RAW',
         targetSchema: 'RAW',
         role: 'LOADER_ROLE',
         privateKeyPath: '/secrets/sf.p8',

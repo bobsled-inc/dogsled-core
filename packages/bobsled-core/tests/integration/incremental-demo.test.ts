@@ -54,9 +54,9 @@ describe('incremental-demo e2e', () => {
       },
     ]);
 
-    priorAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    priorAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     priorTlsUnauthorized = process.env['NODE_TLS_REJECT_UNAUTHORIZED'];
-    process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+    process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
     projectRoot = await mkdtemp(join(tmpdir(), 'dogsled-incremental-demo-'));
@@ -67,7 +67,7 @@ describe('incremental-demo e2e', () => {
   afterEach(async () => {
     await server.close();
     await rm(projectRoot, { recursive: true, force: true });
-    restoreEnv('DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS', priorAllowPrivateHosts);
+    restoreEnv('BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS', priorAllowPrivateHosts);
     restoreEnv('NODE_TLS_REJECT_UNAUTHORIZED', priorTlsUnauthorized);
   });
 

@@ -25,8 +25,8 @@ describe.skipIf(!warehouseEnabled('bigquery'))('warehouse materializations — B
 
   it('runs view, table, and incremental merge materializations', async () => {
     if (!harness) throw new Error('harness not initialized');
-    const projectId = process.env.DOGSLED_MODEL_SPEC_BIGQUERY_PROJECT;
-    if (!projectId) throw new Error('Missing DOGSLED_MODEL_SPEC_BIGQUERY_PROJECT');
+    const projectId = process.env.BOBSLED_CORE_MODEL_SPEC_BIGQUERY_PROJECT;
+    if (!projectId) throw new Error('Missing BOBSLED_CORE_MODEL_SPEC_BIGQUERY_PROJECT');
 
     await runMaterializationProject(harness);
 

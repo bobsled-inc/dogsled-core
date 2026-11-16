@@ -189,13 +189,13 @@ itself: your application passes an executor that runs the requests. See
 - `dogsled entity-graph serve` starts a read-only HTTP API on 127.0.0.1 with
   `/healthz`, `/entities/<entity>` (search) and `/entities/<entity>/<id>`. It does not
   check who is calling, so it binds to loopback only; `--allow-remote` also needs
-  `DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE=1`. `--allow-writes` enables match writes.
+  `BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE=1`. `--allow-writes` enables match writes.
 - `dogsled mcp serve --transport stdio --principal-id <id> --runner ./runner.mjs
 --dialect duckdb --schema entity_graph` serves the tools `entity_search`,
   `entity_get`, `entity_match`, `entity_relationships`, `entity_explain` and
   `read_source` (document and chunk rows with citations) to an MCP client. Every call
   runs as the principal you pass; unfiltered reads need both `--allow-unfiltered`
-  and `DOGSLED_MCP_ALLOW_UNFILTERED=1`. See [MCP read_source](../reference/advanced/mcp-read-source.md).
+  and `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`. See [MCP read_source](../reference/advanced/mcp-read-source.md).
 
 ## Everything else in the entity graph
 

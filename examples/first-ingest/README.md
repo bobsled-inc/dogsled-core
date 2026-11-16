@@ -20,10 +20,10 @@ The GitHub sample uses unauthenticated public API access, so it is rate limited 
 
 The default walkthrough does not require Bedrock, embedding, or API credentials.'s connection-free path is extract/load/query only; embeddings can be layered on later when a supported embedder config is present.
 
-If you are running from a source checkout without a standalone `dogsled` binary, `walkthrough.sh` uses the repo-local CLI automatically. You can also set `DOGSLED_CLI` explicitly:
+If you are running from a source checkout without a standalone `dogsled` binary, `walkthrough.sh` uses the repo-local CLI automatically. You can also set `BOBSLED_CORE_CLI` explicitly:
 
 ```bash
-DOGSLED_CLI="node ../../packages/bobsled-core/dist/index.js" ./walkthrough.sh
+BOBSLED_CORE_CLI="node ../../packages/bobsled-core/dist/index.js" ./walkthrough.sh
 ```
 
 ## Manual Commands

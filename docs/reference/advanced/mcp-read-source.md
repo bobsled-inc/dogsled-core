@@ -21,7 +21,7 @@ This is the **outbound** MCP surface: Dogsled-as-server, agent-as-client. (Dogsl
 
 - One read tool: `read_source`. Returns rows + citations.
 - Fail-closed default: every call requires a `principal`.
-- Single explicit escape hatch (`--allow-unfiltered` AND `DOGSLED_MCP_ALLOW_UNFILTERED=1`) for single-tenant / public-data demos.
+- Single explicit escape hatch (`--allow-unfiltered` AND `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`) for single-tenant / public-data demos.
 - Public subpath: `import { ... } from '@bobsled-inc/bobsled-core/mcp'`.
 
 Richer tools (`search_documents`, `get_document`, `search_entity_context`, `traverse_entity_context`) are planned on a later milestone — they are not shipped on `main` yet.
@@ -127,14 +127,14 @@ This is intentional. Production deployments that connect non-public data should 
 For a single-tenant demo / public-data preview / local dev, both of these must be set:
 
 1. Construct the server with `allowUnfiltered: true`.
-2. Set the environment variable `DOGSLED_MCP_ALLOW_UNFILTERED=1`.
+2. Set the environment variable `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`.
 
 ```ts
 const server = new BobsledMcpServer({
   allowUnfiltered: true,
   allowedSourceTables: new Set(['support_docs__chunks']),
 });
-// AND set DOGSLED_MCP_ALLOW_UNFILTERED=1 in the environment.
+// AND set BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 in the environment.
 ```
 
 If only one of the two is set, the constructor throws `CommandError(2)`. The asymmetry is deliberate: a one-flag escape hatch is easy to set by accident; a flag-and-env-var escape hatch is not.
@@ -213,9 +213,9 @@ The CLI / SDK layers wrap these into `CommandError` so consumers get a clean err
 
 `dogsled doctor` includes:
 
-| Check                          | What it verifies                                                                           |
-| ------------------------------ | ------------------------------------------------------------------------------------------ |
-| `mcp_unfiltered_in_production` | Flags when `DOGSLED_MCP_ALLOW_UNFILTERED=1` is set in CI / production-shaped environments. |
+| Check                          | What it verifies                                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `mcp_unfiltered_in_production` | Flags when `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1` is set in CI / production-shaped environments. |
 
 Run before deploying:
 

@@ -94,7 +94,7 @@ standardize:
 - Source refs and model names are better than raw table refs because they carry YAML metadata.
 - Model Spec model `references` can produce target-backed FK hit rates. Source/direct table profiles usually emit only name-only FK guesses.
 - Empty target key samples should not be treated as FK evidence.
-- Prefer `--json` for agent workflows and `DOGSLED_OUTPUT_FORMAT=json` in CI.
+- Prefer `--json` for agent workflows and `BOBSLED_CORE_OUTPUT_FORMAT=json` in CI.
 
 ## Quality Gates
 

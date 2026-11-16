@@ -7,9 +7,9 @@ import { postgres, postgresSql, stopServices } from './services.mjs';
 
 const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'bobsled-core'];
 
-export const globalPrefix = process.env.DOGSLED_E2E_GLOBAL_PREFIX ?? '/global';
-export const userPgConsumer = process.env.DOGSLED_E2E_USER_PG_CONSUMER ?? '/consumer-pg';
-export const userPgVersion = process.env.DOGSLED_E2E_USER_PG_VERSION;
+export const globalPrefix = process.env.BOBSLED_CORE_E2E_GLOBAL_PREFIX ?? '/global';
+export const userPgConsumer = process.env.BOBSLED_CORE_E2E_USER_PG_CONSUMER ?? '/consumer-pg';
+export const userPgVersion = process.env.BOBSLED_CORE_E2E_USER_PG_VERSION;
 
 function readJson(file) {
   return JSON.parse(readFileSync(file, 'utf8'));
@@ -173,7 +173,10 @@ export async function verifyShippedAssets(cli = cliPath) {
 }
 
 export function verifyUserPgInstall(consumer = userPgConsumer, version = userPgVersion) {
-  assert.ok(version, 'DOGSLED_E2E_USER_PG_VERSION must name the pg version the project installed');
+  assert.ok(
+    version,
+    'BOBSLED_CORE_E2E_USER_PG_VERSION must name the pg version the project installed'
+  );
   assert.equal(readJson(path.join(consumer, 'node_modules/pg/package.json')).version, version);
   const nested = path.join(consumer, ...PACKAGE_PATH, 'node_modules', 'pg');
   assert.equal(existsSync(nested), false, `Dogsled installed a second pg at ${nested}`);
@@ -204,7 +207,7 @@ export async function verifyUserPgExtraction(consumer = userPgConsumer) {
     APP_DB_HOST: '127.0.0.1',
     APP_DB_USER: 'postgres',
     APP_DB_PASSWORD: 'unused-local-only',
-    DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+    BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
   });
   await ctx.write(
     'integrations/app_db.yml',

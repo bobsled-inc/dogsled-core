@@ -98,14 +98,14 @@ const postgres = (): PostgresIntegration => ({
   name: 'lake',
   source_type: 'postgres',
   connection: {
-    host: env.DOGSLED_MODEL_SPEC_POSTGRES_HOST!,
-    port: Number(env.DOGSLED_MODEL_SPEC_POSTGRES_PORT ?? 5432),
-    database: env.DOGSLED_MODEL_SPEC_POSTGRES_DATABASE!,
+    host: env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_HOST!,
+    port: Number(env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PORT ?? 5432),
+    database: env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_DATABASE!,
   },
   auth: {
     type: 'password',
-    user: env.DOGSLED_MODEL_SPEC_POSTGRES_USER!,
-    password: env.DOGSLED_MODEL_SPEC_POSTGRES_PASSWORD!,
+    user: env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_USER!,
+    password: env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PASSWORD!,
   },
 });
 

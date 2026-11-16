@@ -11,7 +11,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-beforeEach(() => vi.stubEnv('DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1'));
+beforeEach(() => vi.stubEnv('BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1'));
 describe('agent source Exa catalog bridge', () => {
   it('denies unpaid requests and maps an authorized bounded search without exposing credentials', async () => {
     vi.stubEnv('EXA_API_KEY', 'synthetic-exa-test-key');

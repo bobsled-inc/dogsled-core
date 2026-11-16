@@ -21,7 +21,7 @@ import type { z } from 'zod';
 import { SAFE_NAME_RE, getErrorMessage } from '../framework/core/index.js';
 import {
   CommandError,
-  DOGSLED_LEGACY_BLUEPRINT_KEY,
+  BOBSLED_CORE_LEGACY_BLUEPRINT_KEY,
   LegacyBlueprintKeyConflictError,
   formatSpecValidationMessage,
   type SpecValidationKind,
@@ -205,7 +205,7 @@ export function buildCommandContext(globalFlags: GlobalFlags): CommandContext {
   assertPathContained(cwd, config.output_dir, 'output_dir');
   assertPathContained(cwd, config.batch_dir, 'batch_dir');
 
-  const bundledDir = process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'];
+  const bundledDir = process.env['BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR'];
 
   return {
     cwd,
@@ -319,7 +319,7 @@ export function integrationSpecWarningMessages(
   const messages: string[] = [];
   const deprecations: string[] = [];
   for (const warning of warnings) {
-    if (warning.startsWith(`${DOGSLED_LEGACY_BLUEPRINT_KEY}:`)) {
+    if (warning.startsWith(`${BOBSLED_CORE_LEGACY_BLUEPRINT_KEY}:`)) {
       deprecations.push(warning);
     } else {
       messages.push(`integration spec ${name}: normalized key: ${warning}`);
@@ -331,7 +331,7 @@ export function integrationSpecWarningMessages(
 
 /** The shipped `source.yml` that `filePath` really is, if it is one. */
 function bundledSourcePath(filePath: string, name: string): string | undefined {
-  const bundledDir = process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'];
+  const bundledDir = process.env['BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR'];
   if (!bundledDir || path.basename(filePath) !== 'source.yml') return undefined;
   const expected = path.join(bundledDir, name, 'source.yml');
   return fs.existsSync(expected) && fs.realpathSync(filePath) === fs.realpathSync(expected)

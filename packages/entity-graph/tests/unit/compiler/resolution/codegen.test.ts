@@ -1125,7 +1125,7 @@ describe('generateStandardizeSql', () => {
     'mysql',
     'redshift',
   ] as const)('emits privacy hash transforms for %s', (dialect) => {
-    vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', 'unit-secret');
+    vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', 'unit-secret');
     try {
       const hashSpec: ResolvedResolutionSpec = {
         ...SPEC,

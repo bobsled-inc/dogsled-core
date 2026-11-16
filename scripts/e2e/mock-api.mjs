@@ -10,7 +10,7 @@ for (const key of [
   'SHOWCASE_API_AUTHORITY',
   'SHOWCASE_API_TOKEN',
   'NODE_EXTRA_CA_CERTS',
-  'DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS',
+  'BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS',
 ]) {
   const value = ctx.env[key].replaceAll("'", "'\\''");
   process.stdout.write(`export ${key}='${value}'\n`);

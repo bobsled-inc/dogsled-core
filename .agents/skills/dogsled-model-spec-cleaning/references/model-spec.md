@@ -23,7 +23,7 @@ Use this skill when authoring staging models, applying profiler cleaning suggest
 | `normalize_postal(col)`            | Normalize postal codes; US ZIP+4 reduces to ZIP5.                                       |
 | `fingerprint(col)`                 | Build sorted/deduped entity-resolution blocking keys.                                   |
 | `sha256(col)`                      | Terminal SHA-256 digest for non-keyed hashed values.                                    |
-| `hmac_sha256(col)`                 | Terminal keyed match digest using `DOGSLED_MATCH_KEY_SECRET`.                           |
+| `hmac_sha256(col)`                 | Terminal keyed match digest using `BOBSLED_CORE_MATCH_KEY_SECRET`.                      |
 | `parse_number(col)`                | Parse formatted currency/number strings.                                                |
 | `parse_date(col, format)`          | Parse strings to dates/timestamps (`us`, `eu`, `iso8601`, etc.).                        |
 
@@ -47,7 +47,7 @@ Run `dogsled model profile suggest cleaning <table> --integration <handle> --jso
 
 Model Spec expressions run inside-out. Prefer: trim/null handling → type-specific cleanup → case normalization → whitespace collapse. Convenience wrappers already encode this ordering for company, email, phone, domain, and state use cases. Hashing transforms are terminal: apply `sha256` or `hmac_sha256` last, and do not feed hashed outputs into fuzzy comparators or display fields.
 
-`hmac_sha256` intentionally emits the same portable nested keyed SHA-256 construction on every warehouse, not RFC-2104 HMAC. Set `DOGSLED_MATCH_KEY_SECRET` in the runtime environment before compiling or running specs that use it. The generated digest only interoperates with parties using the same Dogsled transform and secret.
+`hmac_sha256` intentionally emits the same portable nested keyed SHA-256 construction on every warehouse, not RFC-2104 HMAC. Set `BOBSLED_CORE_MATCH_KEY_SECRET` in the runtime environment before compiling or running specs that use it. The generated digest only interoperates with parties using the same Dogsled transform and secret.
 
 ## Entity Graph Standardize
 

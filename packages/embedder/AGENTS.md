@@ -65,8 +65,8 @@ Output controls:
 - For reusable project workflows, check in an embed config file and compose `extract | embed | load`
 - For one-off composed runs, `dogsled pipeline --embed-config-json` is supported; Dogsled rewrites validated config JSON to a `0600` temp file before spawning the embedder
 - Choose destinations that support protocol `vector` columns before enabling embeddings downstream
-- For CI and smoke tests, set `DOGSLED_EMBED_STUB=1` to emit zero vectors with the correct dimension
-- `DOGSLED_EMBEDDER_TMP_DIR` overrides the temp directory used for rewritten batch files
+- For CI and smoke tests, set `BOBSLED_CORE_EMBED_STUB=1` to emit zero vectors with the correct dimension
+- `BOBSLED_CORE_EMBEDDER_TMP_DIR` overrides the temp directory used for rewritten batch files
 
 ## Package Layout
 

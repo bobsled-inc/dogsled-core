@@ -82,7 +82,7 @@ generic MCP extractor.
   (`AbsoluteHttpsUrlSchema`). At runtime, `createStreamableHttpTransport`
   in `@bobsled-inc/extractor` blocks private/loopback/metadata hosts and
   runs DNS pre-resolution to mitigate DNS rebinding. The only escape
-  hatch is the `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` process env var
+  hatch is the `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` process env var
   (local dev), which is **not** settable from YAML.
 
 ## File layout
@@ -162,7 +162,7 @@ transports:
 > blocked at `createStreamableHttpTransport` time, with a DNS
 > pre-resolution check against the same allowlist. HTTPS is enforced by
 > `AbsoluteHttpsUrlSchema`. The only escape hatch is
-> `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`, settable only in the
+> `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`, settable only in the
 > process environment (never from YAML).
 
 ## Step 2 — Write `meta.yml`
@@ -716,7 +716,7 @@ dogsled extract run linear_mcp --resource cycles --limit 5
 - **Private host blocked.** A `url` resolving to a private IP / localhost
   / cloud-metadata host is rejected at runtime: `MCP HTTP URL
 "<host>" targets a private or internal host`. Use
-  `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` for local dev only.
+  `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` for local dev only.
 - **`MISSING_AUTH_SETUP` from `verify`.** Every `${{ env.X }}` reference
   in the source must appear in `auth_env_vars`. Add it.
 - **`Transport "X" not found in source "Y"`.** A resource's `via:` (or

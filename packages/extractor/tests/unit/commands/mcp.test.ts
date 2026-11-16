@@ -258,10 +258,10 @@ describe('MCP authoring helpers', () => {
     program.exitOverride();
     registerMcpCommand(program);
 
-    const originalBundledDir = process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'];
+    const originalBundledDir = process.env['BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR'];
     let output = '';
     const originalWrite = process.stdout.write;
-    process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'] = bundledDir;
+    process.env['BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR'] = bundledDir;
     process.stdout.write = ((chunk: string | Uint8Array) => {
       output += chunk.toString();
       return true;
@@ -272,9 +272,9 @@ describe('MCP authoring helpers', () => {
       });
     } finally {
       if (originalBundledDir === undefined) {
-        delete process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'];
+        delete process.env['BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR'];
       } else {
-        process.env['DOGSLED_BUNDLED_INTEGRATIONS_DIR'] = originalBundledDir;
+        process.env['BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR'] = originalBundledDir;
       }
       process.stdout.write = originalWrite;
     }

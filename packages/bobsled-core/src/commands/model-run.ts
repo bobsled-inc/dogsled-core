@@ -374,10 +374,10 @@ function requireValue(args: string[], index: number, flag: string): string {
 
 function shouldAutoActivateJson(options: ParsedModelRunArgs): boolean {
   // Mirrors the Dogsled-wide convention: JSON mode auto-activates in CI,
-  // when stdout is not a TTY, or when DOGSLED_OUTPUT_FORMAT=json is set.
+  // when stdout is not a TTY, or when BOBSLED_CORE_OUTPUT_FORMAT=json is set.
   // --yaml or explicit --json take precedence and disable auto-activation.
   if (options.json || options.yaml) return false;
-  if (process.env['DOGSLED_OUTPUT_FORMAT'] === 'json') return true;
+  if (process.env['BOBSLED_CORE_OUTPUT_FORMAT'] === 'json') return true;
   if (process.env['CI']) return true;
   if (process.stdout && process.stdout.isTTY === false) return true;
   return false;
@@ -461,13 +461,13 @@ Run models in dependency order.
     // Argument-parse failures happen before `options` is available, so the
     // full `shouldAutoActivateJson` heuristic can't run. Honor explicit
     // --json / --yaml flags from argv first; otherwise mirror the auto-
-    // activation inputs (CI, non-TTY stdout, DOGSLED_OUTPUT_FORMAT=json)
+    // activation inputs (CI, non-TTY stdout, BOBSLED_CORE_OUTPUT_FORMAT=json)
     // so machine consumers always get a structured envelope, never opaque
     // stderr.
     const explicitYaml = args.includes('--yaml');
     const explicitJson = args.includes('--json');
     const autoJson =
-      process.env['DOGSLED_OUTPUT_FORMAT'] === 'json' ||
+      process.env['BOBSLED_CORE_OUTPUT_FORMAT'] === 'json' ||
       Boolean(process.env['CI']) ||
       (process.stdout && process.stdout.isTTY === false);
     return emitFatalError(error, {
@@ -540,7 +540,7 @@ Run models in dependency order.
       // Keep model SQL and cross-warehouse publish on the same managed-token
       // path as loader destinations. runProject turns this command into one
       // refreshable provider shared by all warehouse runners.
-      credentialsTokenCommand: process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'],
+      credentialsTokenCommand: process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'],
       crossWarehousePublisher: publishCrossWarehouse,
       // Route runProject's lifecycle callbacks through the formatter so
       // --quiet, --verbose, --json all behave consistently across Dogsled CLI.

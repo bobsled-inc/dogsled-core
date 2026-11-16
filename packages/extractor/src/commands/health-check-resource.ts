@@ -8,18 +8,18 @@ import { normalizeForEachConfig } from '../runtime/for-each.js';
 import type { ApiResourceSpec } from '../types/index.js';
 import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
-const DOGSLED_CONFIG_NAMES = [
+const BOBSLED_CORE_CONFIG_NAMES = [
   ...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS]),
 ];
-const MAX_DOGSLED_CONFIG_BYTES = 1024 * 1024;
+const MAX_BOBSLED_CORE_CONFIG_BYTES = 1024 * 1024;
 
 /** The root configuration files of the nearest folder that has any; the project resolver merges them. */
 function findBobsledConfigs(startDir: string): string[] {
   let dir = path.resolve(startDir);
 
   while (true) {
-    const found = DOGSLED_CONFIG_NAMES.map((name) => path.join(dir, name)).filter((candidate) =>
-      fs.existsSync(candidate)
+    const found = BOBSLED_CORE_CONFIG_NAMES.map((name) => path.join(dir, name)).filter(
+      (candidate) => fs.existsSync(candidate)
     );
     if (found.length) return found;
 
@@ -48,7 +48,7 @@ function readScopedHealthResourceFrom(
 ): string | undefined {
   try {
     const stats = fs.statSync(configPath);
-    if (stats.size > MAX_DOGSLED_CONFIG_BYTES) {
+    if (stats.size > MAX_BOBSLED_CORE_CONFIG_BYTES) {
       return undefined;
     }
 

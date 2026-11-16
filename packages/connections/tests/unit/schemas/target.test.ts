@@ -19,7 +19,7 @@ describe('TargetFileSchema', () => {
       ...minimalValid,
       overrides: {
         role: 'LOADER_ROLE',
-        database: 'DOGSLED_RAW',
+        database: 'BOBSLED_CORE_RAW',
         schema: 'RAW',
         warehouse: 'LOAD_WH',
         catalog: 'main',

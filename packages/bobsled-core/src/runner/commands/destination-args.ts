@@ -4,8 +4,9 @@ import { CommandError, parseEnvPlaceholder } from '@bobsled-inc/protocol';
 
 import type { DestinationConfig, NamedDestination } from '../config/schema.js';
 
-export const SNOWFLAKE_ACCESS_TOKEN_ENV = 'DOGSLED_SNOWFLAKE_ACCESS_TOKEN';
-export const SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN_ENV = 'DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN';
+export const SNOWFLAKE_ACCESS_TOKEN_ENV = 'BOBSLED_CORE_SNOWFLAKE_ACCESS_TOKEN';
+export const SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN_ENV =
+  'BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN';
 export const MANAGED_DESTINATION_CORE_ERROR =
   'A "dogsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Dogsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".';
 

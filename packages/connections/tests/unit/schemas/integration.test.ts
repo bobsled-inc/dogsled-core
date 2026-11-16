@@ -30,7 +30,7 @@ describe('IntegrationFileSchema — discriminated union', () => {
       connection: {
         account_identifier: '${{ env.SF_ACCOUNT }}',
         warehouse: 'COMPUTE_WH',
-        role: 'DOGSLED_AI_ROLE',
+        role: 'BOBSLED_CORE_AI_ROLE',
       },
       auth: { type: 'rsa_key', private_key_path: '/tmp/sf.pem' },
     });
@@ -99,8 +99,8 @@ describe('IntegrationFileSchema — discriminated union', () => {
       source_type: 'snowflake',
       connection: {
         account_identifier: 'xt12345',
-        warehouse: 'DOGSLED_AI_WH',
-        role: 'DOGSLED_AI_ROLE',
+        warehouse: 'BOBSLED_CORE_AI_WH',
+        role: 'BOBSLED_CORE_AI_ROLE',
       },
       auth: { type: 'sledhouse_oidc', data_source_slug: 'acme_sf' },
     });

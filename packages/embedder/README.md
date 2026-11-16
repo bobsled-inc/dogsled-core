@@ -76,7 +76,7 @@ For reusable repo-local configs, prefer checking in a file like `embedder.json` 
 Use the stub mode to exercise the pipeline without calling OpenAI:
 
 ```bash
-DOGSLED_EMBED_STUB=1 \
+BOBSLED_CORE_EMBED_STUB=1 \
 dogsled extract run --integration github issues \
   | dogsled embed --config ./embedder.json \
   | dogsled load run --dest duckdb --db-path ./dev.duckdb

@@ -15,7 +15,7 @@ import { createMcpGroup } from './groups/mcp.js';
 import { createSetupGroup } from './groups/setup.js';
 import { createSkillGroup } from './groups/skill.js';
 import { createRunnerGroup } from './runner/index.js';
-import { CommandError } from '@bobsled-inc/protocol';
+import { CommandError, warnLegacySettings } from '@bobsled-inc/protocol';
 import { createGroup, maybeRunDelegatedCommand } from './runtime/delegation.js';
 
 // Direct-import commands (no subprocess overhead)
@@ -38,14 +38,14 @@ const cliVersion = typeof __CLI_VERSION__ !== 'undefined' ? __CLI_VERSION__ : '0
 //
 // Priority (highest → lowest):
 //   1. Explicit --json flag on the command line
-//   2. DOGSLED_OUTPUT_FORMAT env var ("json" | "text")
+//   2. BOBSLED_CORE_OUTPUT_FORMAT env var ("json" | "text")
 //   3. CI=1 env var → JSON
 //   4. Non-TTY stdout → JSON
 //   5. Default: text (--json false)
 // ---------------------------------------------------------------------------
 
 export function resolveJsonDefault(): boolean {
-  const envFormat = process.env['DOGSLED_OUTPUT_FORMAT']?.toLowerCase();
+  const envFormat = process.env['BOBSLED_CORE_OUTPUT_FORMAT']?.toLowerCase();
   if (envFormat === 'json') return true;
   if (envFormat === 'text') return false;
   if (process.env['CI'] === '1' || process.env['CI'] === 'true') return true;
@@ -152,6 +152,7 @@ export function handleCliError(error: unknown): void {
 
 export async function runCli(argv: string[] = process.argv.slice(2)): Promise<void> {
   try {
+    warnLegacySettings();
     await takeOverLocalState(argv);
     const delegation = await maybeRunDelegatedCommand(argv);
     if (delegation.handled) {

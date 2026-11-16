@@ -37,7 +37,7 @@ Inspect:
 - `integrations[].column_lineage[]` for output-column upstream refs
 - `isComplete` for opaque expressions or reshape operations
 
-In CI, non-TTY, or when `DOGSLED_OUTPUT_FORMAT=json` is set, JSON emits automatically without `--json`.
+In CI, non-TTY, or when `BOBSLED_CORE_OUTPUT_FORMAT=json` is set, JSON emits automatically without `--json`.
 
 Lineage includes explicit expressions, `include_all_columns` passthrough when source schemas are known, join predicates for joined-table outputs, and filter predicates for all output columns.
 

@@ -173,12 +173,12 @@ dogsled model run <name> --full-refresh   # clear run state for this run
 ```
 
 ```bash
-DOGSLED_XWH_STAGING_FORMAT=parquet      # streaming fallback writes Parquet chunks instead of JSONL
-DOGSLED_XWH_SOURCE_TIMEOUT_S=14400      # abort source streaming after N seconds
-DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS=1     # allow OAuth token endpoint on private hosts
+BOBSLED_CORE_XWH_STAGING_FORMAT=parquet      # streaming fallback writes Parquet chunks instead of JSONL
+BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S=14400      # abort source streaming after N seconds
+BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS=1     # allow OAuth token endpoint on private hosts
 ```
 
-`DOGSLED_XWH_STAGING_FORMAT` affects only the streaming fallback. Native UNLOAD always writes Parquet.
+`BOBSLED_CORE_XWH_STAGING_FORMAT` affects only the streaming fallback. Native UNLOAD always writes Parquet.
 
 ## Troubleshooting
 

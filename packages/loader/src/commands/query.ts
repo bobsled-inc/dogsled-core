@@ -128,7 +128,7 @@ type OutputMode = 'json' | 'yaml' | 'text';
 
 function detectOutputMode(yamlFlag: boolean): OutputMode {
   if (yamlFlag) return 'yaml';
-  const envFormat = process.env['DOGSLED_OUTPUT_FORMAT']?.toLowerCase();
+  const envFormat = process.env['BOBSLED_CORE_OUTPUT_FORMAT']?.toLowerCase();
   if (envFormat === 'json') return 'json';
   if (envFormat === 'text') return 'text';
   if (process.env['CI'] === '1' || process.env['CI'] === 'true') return 'json';

@@ -56,7 +56,7 @@ Streaming fallback:
 
 - Local temp directory under `${TMPDIR}/Dogsled-xwh-<safe_model_name>-XXXXXX`
 - Mode `0700` on POSIX, best-effort `chmod`
-- JSONL chunks by default, or Parquet chunks when `DOGSLED_XWH_STAGING_FORMAT=parquet`
+- JSONL chunks by default, or Parquet chunks when `BOBSLED_CORE_XWH_STAGING_FORMAT=parquet`
 - Removed in `finally`; SIGINT/SIGTERM handlers also remove the directory before re-raising the signal
 
 Encryption at rest depends on the host. Managed cloud runners and customer infrastructure should provide disk encryption. Dogsled does not encrypt fallback chunks at the application layer.

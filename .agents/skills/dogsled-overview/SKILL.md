@@ -70,7 +70,7 @@ If a user asks for something _not_ in this list (e.g. federation / query-in-plac
 ## Anatomy of a typical Dogsled project
 
 ```text
-my-dogsled-project/
+my-bobsled-project/
   AGENTS.md            # Project guide (optional): what the data means, what is queryable, vocabulary, conventions, caveats
   dogsled.yml            # Optional default orchestration file
   extractor.yml        # Extractor settings: state and batch folders, load defaults

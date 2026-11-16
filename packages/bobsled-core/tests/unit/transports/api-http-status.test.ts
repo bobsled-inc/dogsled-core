@@ -104,7 +104,7 @@ function hangUntilAborted() {
 
 describe('executeApiAction through the real ExtractorClient', () => {
   beforeEach(() => {
-    vi.stubEnv('DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1');
+    vi.stubEnv('BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1');
   });
 
   afterEach(() => {

@@ -18,7 +18,7 @@ node packages/bobsled-core/bin/cli.mjs learn --cli "node $PWD/packages/bobsled-c
 ```
 
 `--cli` tells the tutorial how to run `dogsled`; leave it out if `dogsled` is on your
-`PATH`, or set `DOGSLED_CLI`. Other options:
+`PATH`, or set `BOBSLED_CORE_CLI`. Other options:
 
 - `--list` shows every section and your progress.
 - `--section "Model Spec"` or `--goto 25` jumps ahead.

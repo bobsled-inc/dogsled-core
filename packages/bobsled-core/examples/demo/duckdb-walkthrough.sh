@@ -39,11 +39,11 @@ if [ -x "$SCRIPT_DIR/dogsled" ]; then
   DOGSLED="$SCRIPT_DIR/dogsled"
 elif [ -x "$SCRIPT_DIR/../../bin/cli.mjs" ]; then
   DOGSLED="$SCRIPT_DIR/../../bin/cli.mjs"
-elif command -v dogsled >/dev/null 2>&1; then
-  DOGSLED="dogsled"
-elif npx --no-install dogsled --version >/dev/null 2>&1; then
-  run_dogsled_with_npx() { npx --no-install dogsled "$@"; }
-  DOGSLED="run_dogsled_with_npx"
+elif command -v bobsled >/dev/null 2>&1; then
+  DOGSLED="bobsled"
+elif npx --no-install bobsled --version >/dev/null 2>&1; then
+  run_bobsled_with_npx() { npx --no-install bobsled "$@"; }
+  DOGSLED="run_bobsled_with_npx"
 else
   echo "Error: dogsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder."
   exit 1
@@ -61,7 +61,7 @@ LOG_FORMAT="${LOG_FORMAT:-text}"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --dest)        DEST="$2"; DOGSLED_DEST_EXPLICIT=1; shift 2 ;;
+    --dest)        DEST="$2"; DEST_EXPLICIT=1; shift 2 ;;
     --bq-project)  BQ_PROJECT="$2"; shift 2 ;;
     --bq-dataset)  BQ_DATASET="$2"; shift 2 ;;
     --bq-location) BQ_LOCATION="$2"; shift 2 ;;
@@ -209,11 +209,11 @@ validate_dest() {
       echo -e "  ${RED}BigQuery requires --bq-project and --bq-dataset${RESET}"
       echo ""
       echo -e "  ${BOLD}Option 1: CLI flags${RESET}"
-      echo -e "    ${YELLOW}./duckdb-walkthrough.sh ${MODE} --dest bigquery --bq-project my-project --bq-dataset dogsled_test${RESET}"
+      echo -e "    ${YELLOW}./duckdb-walkthrough.sh ${MODE} --dest bigquery --bq-project my-project --bq-dataset bobsled_test${RESET}"
       echo ""
       echo -e "  ${BOLD}Option 2: env vars${RESET}"
       echo -e "    ${YELLOW}export BQ_PROJECT=my-project${RESET}"
-      echo -e "    ${YELLOW}export BQ_DATASET=dogsled_test${RESET}"
+      echo -e "    ${YELLOW}export BQ_DATASET=bobsled_test${RESET}"
       echo -e "    ${YELLOW}./duckdb-walkthrough.sh ${MODE} --dest bigquery${RESET}"
       echo ""
       echo -e "  ${BOLD}Auth:${RESET}"
@@ -301,7 +301,7 @@ if [ -z "$MODE" ] || [ "$MODE" = "help" ]; then
   echo -e "  ${BOLD}Examples:${RESET}"
   echo -e "    ${YELLOW}./duckdb-walkthrough.sh synthetic${RESET}"
   echo -e "    ${YELLOW}NOTION_API_TOKEN=ntn_xxx ./duckdb-walkthrough.sh notion${RESET}"
-  echo -e "    ${YELLOW}./duckdb-walkthrough.sh notion --dest bigquery --bq-project my-proj --bq-dataset dogsled_test${RESET}"
+  echo -e "    ${YELLOW}./duckdb-walkthrough.sh notion --dest bigquery --bq-project my-proj --bq-dataset bobsled_test${RESET}"
   echo -e "    ${YELLOW}GITHUB_READ_TOKEN=ghp_xxx ./duckdb-walkthrough.sh github${RESET}"
   echo ""
   exit 0
@@ -519,7 +519,7 @@ if [ "$MODE" = "notion" ]; then
   fi
 
   # ── Interactive destination picker (unless --dest was passed) ──
-  if [ "$DEST" = "duckdb" ] && [ -z "${DOGSLED_DEST_EXPLICIT:-}" ]; then
+  if [ "$DEST" = "duckdb" ] && [ -z "${DEST_EXPLICIT:-}" ]; then
     echo ""
     echo -e "  ${BOLD}Where do you want to load your Notion data?${RESET}"
     echo ""
@@ -709,7 +709,7 @@ if [ "$MODE" = "notion" ]; then
   echo ""
   if [ "$DEST" = "duckdb" ]; then
     echo -e "  ${DIM}Try loading to BigQuery instead:${RESET}"
-    echo -e "    ${YELLOW}./duckdb-walkthrough.sh notion --dest bigquery --bq-project my-proj --bq-dataset dogsled_test${RESET}"
+    echo -e "    ${YELLOW}./duckdb-walkthrough.sh notion --dest bigquery --bq-project my-proj --bq-dataset bobsled_test${RESET}"
   else
     echo -e "  ${DIM}Try loading to DuckDB instead:${RESET}"
     echo -e "    ${YELLOW}./duckdb-walkthrough.sh notion${RESET}"

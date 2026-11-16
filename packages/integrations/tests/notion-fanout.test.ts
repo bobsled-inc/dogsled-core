@@ -44,7 +44,7 @@ function listResponse(results: unknown[], nextCursor: string | null = null): Res
 }
 
 describe('Notion pages-to-blocks live fan-out', () => {
-  beforeEach(() => vi.stubEnv('DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1'));
+  beforeEach(() => vi.stubEnv('BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1'));
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();

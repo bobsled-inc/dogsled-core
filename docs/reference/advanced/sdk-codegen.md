@@ -361,7 +361,7 @@ pnpm exec tsc --noEmit
 
 The SDK integration suite validates generated output against the repository's supported TypeScript version. Broader TypeScript-version and Python `pyright` compatibility checks are deferred until the public repository has a dedicated compatibility matrix again.
 
-There's a wall-clock budget on generation: the 10-entity production-shape fixture must complete in **60 seconds** of warm-cache CI runtime. Override with `DOGSLED_SDK_BUDGET_MS` if you run on a slower box; the SDK integration suite gates the unmodified default.
+There's a wall-clock budget on generation: the 10-entity production-shape fixture must complete in **60 seconds** of warm-cache CI runtime. Override with `BOBSLED_CORE_SDK_BUDGET_MS` if you run on a slower box; the SDK integration suite gates the unmodified default.
 
 ## Distribution
 

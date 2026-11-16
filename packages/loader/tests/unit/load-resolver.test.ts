@@ -89,7 +89,7 @@ describe('resolveLoadFromResource — precedence', () => {
         resourceName: 'orders',
         resourceLoad: {
           integration: 'snowflake_prod',
-          overrides: { database: 'DOGSLED_RAW', role: 'LOADER_ROLE' },
+          overrides: { database: 'BOBSLED_CORE_RAW', role: 'LOADER_ROLE' },
           defaults: { load_strategy: 'merge' },
         },
         defaultLoad: {
@@ -101,7 +101,7 @@ describe('resolveLoadFromResource — precedence', () => {
       project
     );
     expect(result.dest).toBe('snowflake');
-    expect((result as { database: string }).database).toBe('DOGSLED_RAW');
+    expect((result as { database: string }).database).toBe('BOBSLED_CORE_RAW');
   });
 
   it('falls back to default_load when resource.load is absent', async () => {

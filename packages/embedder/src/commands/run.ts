@@ -243,7 +243,7 @@ export async function runEmbedCommand(
       : config;
 
   const embedFn =
-    env['DOGSLED_EMBED_STUB'] === '1'
+    env['BOBSLED_CORE_EMBED_STUB'] === '1'
       ? async (texts: string[]) => ({
           vectors: texts.map(() => Array.from({ length: dimensions }, () => 0)),
           tokensUsed: 0,
@@ -260,7 +260,7 @@ export async function runEmbedCommand(
     dimensions,
     batchSize: 100,
     embedFn,
-    tmpDir: env['DOGSLED_EMBEDDER_TMP_DIR'],
+    tmpDir: env['BOBSLED_CORE_EMBEDDER_TMP_DIR'],
     logOptions: dependencies.logOptions,
   });
 }

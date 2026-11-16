@@ -3,7 +3,7 @@ name: customers
 type: source
 source_type: warehouse_table
 connection: bigquery
-table: dogsled_multi_conn_raw.customers
+table: multi_conn_raw.customers
 schema:
   columns:
     - name: c_custkey

@@ -451,9 +451,9 @@ Run `dogsled doctor --json` before and after a chunker config change to confirm.
 
 `dogsled doctor` runs this check for this surface today:
 
-| Check                          | What it verifies                                           |
-| ------------------------------ | ---------------------------------------------------------- |
-| `mcp_unfiltered_in_production` | `DOGSLED_MCP_ALLOW_UNFILTERED=1` is not set in production. |
+| Check                          | What it verifies                                                |
+| ------------------------------ | --------------------------------------------------------------- |
+| `mcp_unfiltered_in_production` | `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1` is not set in production. |
 
 Structured output includes the check names above. User-facing docs and runbooks should describe those names directly rather than relying on internal runner prefixes.
 

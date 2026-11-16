@@ -1,4 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
+import {
+  LEGACY_CORE_SETTING_PREFIX,
+  unmatchedLegacySettings,
+  warnLegacySettings,
+} from '@bobsled-inc/protocol';
 
 import {
   isPrivateHost,
@@ -13,20 +18,20 @@ import {
 } from '../../../src/framework/core/ssrf.js';
 
 describe('SSRF Protection', () => {
-  // The test setup sets DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1 which disables private host checks.
+  // The test setup sets BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1 which disables private host checks.
   // We need to unset it for these security tests.
   let originalValue: string | undefined;
 
   beforeAll(() => {
-    originalValue = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    originalValue = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
   });
 
   afterAll(() => {
     if (originalValue !== undefined) {
-      process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalValue;
+      process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalValue;
     } else {
-      delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+      delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     }
   });
 
@@ -132,8 +137,29 @@ describe('SSRF Protection', () => {
       }
     });
 
+    it('ignores the earlier Core name of the private-host opt-in, warns about it, and honours the current name', () => {
+      const old = `${LEGACY_CORE_SETTING_PREFIX}EXTRACTOR_ALLOW_PRIVATE_HOSTS`;
+      const current = 'BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS';
+      process.env[old] = '1';
+      try {
+        expect(isPrivateHost('127.0.0.1')).toBe(true);
+        expect(unmatchedLegacySettings()).toContainEqual([old, current]);
+        const warn = vi.fn();
+        warnLegacySettings(warn);
+        expect(warn).toHaveBeenCalledWith(
+          `Warning: ${old} is set but ignored; Core reads ${current}. Rename the setting.`
+        );
+        process.env[current] = '1';
+        expect(unmatchedLegacySettings()).not.toContainEqual([old, current]);
+        expect(isPrivateHost('127.0.0.1')).toBe(false);
+      } finally {
+        delete process.env[old];
+        delete process.env[current];
+      }
+    });
+
     it('never allows cloud metadata or link-local addresses through the legacy opt-in', () => {
-      process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+      process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
       try {
         expect(isPrivateHost('169.254.169.254')).toBe(true);
         expect(isPrivateHost('metadata.google.internal')).toBe(true);
@@ -142,7 +168,7 @@ describe('SSRF Protection', () => {
         expect(isPrivateHost('fd00:ec2::254')).toBe(true);
         expect(isPrivateHost('127.0.0.1')).toBe(false);
       } finally {
-        delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+        delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
       }
     });
 

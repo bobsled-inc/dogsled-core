@@ -57,7 +57,7 @@ export interface RowFetchRequest {
    * Principal forwarded from the MCP request. Backends MUST apply ACL
    * filtering against this — the type contract makes that non-skippable
    *. `null` is reserved for runs explicitly
-   * authorized via `--allow-unfiltered` AND `DOGSLED_MCP_ALLOW_UNFILTERED=1`
+   * authorized via `--allow-unfiltered` AND `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`
    * (per `requirePrincipal()`); fetchers receiving `null` MUST emit a WARN
    * log on first call.
    */

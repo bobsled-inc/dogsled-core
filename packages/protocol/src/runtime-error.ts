@@ -1,6 +1,6 @@
 import type { JsonObject } from './definitions.js';
 
-export const DOGSLED_RUNTIME_ERROR_KINDS = [
+export const BOBSLED_CORE_RUNTIME_ERROR_KINDS = [
   'auth',
   'validation',
   'provider',
@@ -9,9 +9,9 @@ export const DOGSLED_RUNTIME_ERROR_KINDS = [
   'internal',
 ] as const;
 
-export type BobsledRuntimeErrorKind = (typeof DOGSLED_RUNTIME_ERROR_KINDS)[number];
+export type BobsledRuntimeErrorKind = (typeof BOBSLED_CORE_RUNTIME_ERROR_KINDS)[number];
 
-export const DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<BobsledRuntimeErrorKind, string> = {
+export const BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<BobsledRuntimeErrorKind, string> = {
   auth: 'Dogsled could not authenticate with the provider.',
   validation: 'Dogsled could not validate the request.',
   provider: 'The provider could not complete the operation.',
@@ -102,7 +102,7 @@ export class BobsledRuntimeError extends Error {
   readonly publicMessage: string;
 
   constructor(options: BobsledRuntimeErrorOptions) {
-    const publicMessage = DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES[options.kind];
+    const publicMessage = BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES[options.kind];
     super(publicMessage, { cause: options.cause });
     this.name = 'BobsledRuntimeError';
     this.kind = options.kind;

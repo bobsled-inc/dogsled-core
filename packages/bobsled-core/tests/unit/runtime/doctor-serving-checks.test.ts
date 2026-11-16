@@ -9,16 +9,16 @@ import {
 } from '../../../src/runtime/doctor/serving-checks.js';
 
 describe('checkMcpUnfilteredInProduction', () => {
-  it('fails when both DOGSLED_MCP_ALLOW_UNFILTERED=1 and NODE_ENV=production', () => {
+  it('fails when both BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 and NODE_ENV=production', () => {
     const f = checkMcpUnfilteredInProduction({
-      env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1', NODE_ENV: 'production' },
+      env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1', NODE_ENV: 'production' },
     });
     expect(f.severity).toBe('fail');
   });
 
   it('warns when allow-unfiltered is set outside production', () => {
     const f = checkMcpUnfilteredInProduction({
-      env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1', NODE_ENV: 'development' },
+      env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1', NODE_ENV: 'development' },
     });
     expect(f.severity).toBe('warn');
   });

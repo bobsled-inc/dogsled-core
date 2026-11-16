@@ -199,7 +199,7 @@ dogsled extract commit-state --integration helpdesk --capture-file capture.jsonl
 
 To start again from the beginning, add `--full-refresh` to `extract run`. To keep
 state somewhere other than the local file, for example a shared HTTPS endpoint, pass
-`--state-backend` or set `DOGSLED_STATE_BACKEND`.
+`--state-backend` or set `BOBSLED_CORE_STATE_BACKEND`.
 
 ## Authentication types
 

@@ -18,7 +18,7 @@ Options:
 | `--secrets <path>`          | YAML secret overlay used when constructing the integration runner.                                                             |
 | `--sample-size <rows>`      | Number of rows to sample. Defaults to `500`; maximum is `100000`.                                                              |
 | `--confidence-min <number>` | Keep only inferences, candidates, and suggestions at or above this confidence. Accepts values from `0` to `1`, including `.5`. |
-| `--json`                    | Emit one JSONL-compatible payload. Auto-activates in CI, non-TTY output, or `DOGSLED_OUTPUT_FORMAT=json`.                      |
+| `--json`                    | Emit one JSONL-compatible payload. Auto-activates in CI, non-TTY output, or `BOBSLED_CORE_OUTPUT_FORMAT=json`.                 |
 | `--quiet`                   | Suppress human status logs. JSON mode also suppresses human logs.                                                              |
 
 ## What The Profiler Queries

@@ -29,7 +29,7 @@ example directory. See the [user guide](../../docs/guides/agentic-models.md) for
 authoring, the YAML reference, and operational guidance.
 
 ```bash
-npm install /absolute/path/to/bobsled-inc-dogsled-VERSION.tgz
+npm install /absolute/path/to/bobsled-inc-bobsled-VERSION.tgz
 node seed.mjs
 ```
 

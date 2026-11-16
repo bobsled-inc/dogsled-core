@@ -117,7 +117,7 @@ export async function runMcpServe(options: McpServeOptions): Promise<void> {
   if (!options.allowUnfiltered && !principalId) {
     throw new CommandError(
       'mcp serve requires --principal-id <id> (default principal applied to every tool call). ' +
-        'Pass --allow-unfiltered AND set DOGSLED_MCP_ALLOW_UNFILTERED=1 to opt into unfiltered reads ' +
+        'Pass --allow-unfiltered AND set BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 to opt into unfiltered reads ' +
         'while the per-request principal override lands in Drop 7.',
       2
     );

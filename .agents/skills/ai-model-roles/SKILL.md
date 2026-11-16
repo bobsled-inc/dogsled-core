@@ -103,7 +103,7 @@ Expected behavior:
 If live provider credentials are unavailable but the command path must be tested, use:
 
 ```bash
-DOGSLED_AI_TEST_STUB=1 dogsled ai test --connection <role> --json
+BOBSLED_CORE_AI_TEST_STUB=1 dogsled ai test --connection <role> --json
 ```
 
 Stub mode validates config loading and role resolution only. It does not verify credentials, provider availability, pricing, or real token usage.

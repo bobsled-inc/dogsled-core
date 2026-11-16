@@ -250,7 +250,7 @@ export async function runProjectWithLazySources(
   // publish run share the same refreshable credential cache.
   const credentialsTokenCommand =
     args.runProjectOptions?.credentialsTokenCommand ??
-    process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+    process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
   const tokenProvider =
     args.runProjectOptions?.tokenProvider ??
     (credentialsTokenCommand ? createTokenCommandProvider(credentialsTokenCommand) : undefined);

@@ -53,7 +53,7 @@ destinations:
     auth_env_vars: [SNOWFLAKE_OIDC_TOKEN]
     type: snowflake
     account: MY_ACCOUNT
-    username: DOGSLED_LOADER
+    username: BOBSLED_CORE_LOADER
     credentials_access_token: $SNOWFLAKE_OIDC_TOKEN
     warehouse: INGEST_WH
     database: ANALYTICS

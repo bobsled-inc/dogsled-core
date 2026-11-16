@@ -5,11 +5,11 @@ import { createDuckDbWriter } from '@bobsled-inc/loader';
 import { CommandError, type BatchEncoding, type SchemaColumn } from '@bobsled-inc/protocol';
 
 export function resolveStagingFormat(): 'jsonl' | 'parquet' {
-  const raw = process.env['DOGSLED_XWH_STAGING_FORMAT'];
+  const raw = process.env['BOBSLED_CORE_XWH_STAGING_FORMAT'];
   if (raw === 'parquet') return 'parquet';
   if (raw === 'jsonl' || raw === undefined || raw === '') return 'jsonl';
   throw new CommandError(
-    `DOGSLED_XWH_STAGING_FORMAT must be 'jsonl' or 'parquet'; got '${raw}'.`,
+    `BOBSLED_CORE_XWH_STAGING_FORMAT must be 'jsonl' or 'parquet'; got '${raw}'.`,
     2
   );
 }
@@ -62,7 +62,7 @@ export function encodingFor(format: 'jsonl' | 'parquet'): BatchEncoding {
 }
 
 export function resolveSourceTimeoutMs(): number | null {
-  const raw = process.env['DOGSLED_XWH_SOURCE_TIMEOUT_S'];
+  const raw = process.env['BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S'];
   if (!raw) return null;
   const seconds = Number(raw);
   if (!Number.isFinite(seconds) || seconds <= 0) return null;
@@ -79,7 +79,7 @@ export function formatMs(ms: number): string {
 
 export function sourceTimeoutError(ref: string, timeoutMs: number): CommandError {
   return new CommandError(
-    `Source ${ref} exceeded DOGSLED_XWH_SOURCE_TIMEOUT_S (${Math.round(timeoutMs / 1000)}s).`,
+    `Source ${ref} exceeded BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S (${Math.round(timeoutMs / 1000)}s).`,
     1
   );
 }

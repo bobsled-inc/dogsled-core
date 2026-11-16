@@ -90,7 +90,7 @@ schema:
     expect(entries[0]?.mode).toBe('lazy');
     expect(warningSpy).toHaveBeenCalledWith(
       expect.stringContaining('mode: cache'),
-      expect.objectContaining({ code: 'DOGSLED_SOURCE_MODE_CACHE_DEPRECATED' })
+      expect.objectContaining({ code: 'BOBSLED_CORE_SOURCE_MODE_CACHE_DEPRECATED' })
     );
     warningSpy.mockRestore();
   });

@@ -120,7 +120,7 @@ export function importVerifiedQueries(
   if (!owned.length) return;
   if (owned.length !== 1) {
     throw new VerifiedQueryFailure(
-      'invalid_dogsled_extension',
+      'invalid_bobsled_extension',
       path,
       'Use only one semantic-model DOGSLED extension.'
     );
@@ -132,7 +132,7 @@ export function importVerifiedQueries(
     payload = queryExtension.parse(raw);
   } catch {
     throw new VerifiedQueryFailure(
-      'invalid_dogsled_extension',
+      'invalid_bobsled_extension',
       path,
       'Expected DOGSLED extension_version "2" and valid verified_queries.'
     );

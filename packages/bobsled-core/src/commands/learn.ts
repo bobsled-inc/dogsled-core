@@ -726,7 +726,7 @@ export function registerLearnCommand(program: Command): void {
     .option('--section <name>', 'Jump to a named section (e.g. "Phase 4")')
     .option('--goto <n>', 'Jump to lesson number N', parseInt)
     .option('--auto', 'Auto-advance on success (1.5s delay)')
-    .option('--cli <cmd>', 'Override CLI binary (default: DOGSLED_CLI env or "dogsled")')
+    .option('--cli <cmd>', 'Override CLI binary (default: BOBSLED_CORE_CLI env or "bobsled")')
     .action(
       async (opts: {
         list?: boolean;
@@ -738,7 +738,7 @@ export function registerLearnCommand(program: Command): void {
       }) => {
         const globalOpts = program.opts<GlobalOptions>();
         const outputOpts = fmt.toOutputOptions(globalOpts);
-        const cli = opts.cli ?? process.env['DOGSLED_CLI'] ?? 'dogsled';
+        const cli = opts.cli ?? process.env['BOBSLED_CORE_CLI'] ?? 'bobsled';
 
         // --reset
         if (opts.reset) {

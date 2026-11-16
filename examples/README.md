@@ -40,7 +40,7 @@ server for the examples that need one.
 `pnpm e2e:outsider` packs the CLI and installs the tarball in a clean Linux container
 with no npm token or workspace, then runs the showcases against that install
 (Explorer is not part of the package, so its check is skipped there). Set
-`DOGSLED_E2E_CLI` to the absolute path of an installed `bin/cli.mjs` to test another
+`BOBSLED_CORE_E2E_CLI` to the absolute path of an installed `bin/cli.mjs` to test another
 installation.
 
 ## More examples

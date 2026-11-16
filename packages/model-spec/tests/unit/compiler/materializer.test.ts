@@ -264,26 +264,26 @@ describe('materializeSql', () => {
       const selectSql =
         'SELECT t0.id AS id, t0.updated_at AS updated_at FROM dogsled_managed.raw_projects AS t0 ' +
         "WHERE (updated_at > (SELECT COALESCE(MAX(updated_at), CAST('1970-01-01' AS TIMESTAMP)) " +
-        'FROM `ci-dogsled-tech-andyup`.`dogsled_managed`.`linear_projects_enriched`))';
+        'FROM `ci-bobsled-tech-andyup`.`dogsled_managed`.`linear_projects_enriched`))';
       const result = materializeSql(
         selectSql,
         spec,
         'dogsled_managed',
         'bigquery',
         { isFirstRun: false },
-        'ci-dogsled-tech-andyup'
+        'ci-bobsled-tech-andyup'
       );
 
       // Target is aliased, so the self-join is unambiguous.
       expect(result[0]).toContain(
-        'MERGE INTO `ci-dogsled-tech-andyup`.`dogsled_managed`.`linear_projects_enriched` AS target'
+        'MERGE INTO `ci-bobsled-tech-andyup`.`dogsled_managed`.`linear_projects_enriched` AS target'
       );
       expect(result[0]).toContain('ON target.id = __source.id');
       // The key must be qualified by the alias, never by the fully-qualified name.
       expect(result[0]).not.toContain('`linear_projects_enriched`.id = __source.id');
       // The self-reference inside the USING subquery still carries its backticks.
       expect(result[0]).toContain(
-        'FROM `ci-dogsled-tech-andyup`.`dogsled_managed`.`linear_projects_enriched`'
+        'FROM `ci-bobsled-tech-andyup`.`dogsled_managed`.`linear_projects_enriched`'
       );
     });
   });

@@ -170,7 +170,7 @@ const SCHEME_RE = /^([a-zA-Z][a-zA-Z0-9+.-]*):\/\//;
 
 /**
  * Raw check for loopback or private/link-local hostnames. Unlike `isPrivateHost` in
- * framework/core/shared, this does NOT honour `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS` —
+ * framework/core/shared, this does NOT honour `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS` —
  * the opt-in escape hatch for private hosts should not also whitelist cleartext-http
  * bearer tokens to public endpoints.
  */
@@ -221,7 +221,7 @@ export interface ResolveStateStoreOptions {
 
   /**
    * Explicit `--state-auth-env <VAR>` flag, if set.
-   * Falls back to the `DOGSLED_STATE_AUTH_ENV` env var when absent.
+   * Falls back to the `BOBSLED_CORE_STATE_AUTH_ENV` env var when absent.
    */
   stateAuthEnv?: string;
 
@@ -239,14 +239,14 @@ export interface ResolveStateStoreOptions {
 /**
  * Resolve the extraction `StateStore` honouring (in precedence order):
  * 1. `--state-backend` flag
- * 2. `DOGSLED_STATE_BACKEND` env var
+ * 2. `BOBSLED_CORE_STATE_BACKEND` env var
  * 3. local file backend rooted at `defaultStateDir`
  *
- * Auth token env-var comes from `--state-auth-env` flag or `DOGSLED_STATE_AUTH_ENV` env var.
+ * Auth token env-var comes from `--state-auth-env` flag or `BOBSLED_CORE_STATE_AUTH_ENV` env var.
  */
 export function resolveStateStore(options: ResolveStateStoreOptions): StateStore {
-  const backendUrl = options.stateBackend ?? process.env.DOGSLED_STATE_BACKEND;
-  const authTokenEnv = options.stateAuthEnv ?? process.env.DOGSLED_STATE_AUTH_ENV;
+  const backendUrl = options.stateBackend ?? process.env.BOBSLED_CORE_STATE_BACKEND;
+  const authTokenEnv = options.stateAuthEnv ?? process.env.BOBSLED_CORE_STATE_AUTH_ENV;
 
   if (!backendUrl) {
     return new FileStateStore(options.defaultStateDir);
@@ -282,13 +282,13 @@ export function createStateStore(url: string, options: CreateStateStoreOptions =
   }
 
   // SSRF guard: reject private/loopback/link-local hosts unless the operator has
-  // explicitly opted in via DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1 (the same
+  // explicitly opted in via BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1 (the same
   // escape hatch the extractor uses for VPN warehouse endpoints).
   const parsedUrl = new URL(spec.url);
   if (isPrivateHost(parsedUrl.hostname)) {
     throw new ExtractorConfigError(
       `State backend URL "${spec.url}" resolves to a private host (${parsedUrl.hostname}). ` +
-        `Set DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1 to allow this (intended for VPN / on-prem setups).`
+        `Set BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1 to allow this (intended for VPN / on-prem setups).`
     );
   }
 
@@ -309,7 +309,7 @@ export function createStateStore(url: string, options: CreateStateStoreOptions =
   // Refuse to transmit a bearer token over cleartext HTTP to a non-loopback/non-private host.
   // Loopback is OK for local dev/test; public-internet http is never acceptable with creds.
   // Use a raw loopback/private check here rather than isPrivateHost() because the latter is
-  // short-circuited by DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS (the operator opting in to private
+  // short-circuited by BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS (the operator opting in to private
   // hosts doesn't mean they want creds leaked to *public* http endpoints).
   if (authToken && parsedUrl.protocol === 'http:' && !isLoopbackOrPrivate(parsedUrl.hostname)) {
     throw new ExtractorConfigError(

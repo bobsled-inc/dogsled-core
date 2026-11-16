@@ -20,7 +20,7 @@ describe('file storage declarations', () => {
     });
     server.listen(0, '127.0.0.1');
     await once(server, 'listening');
-    vi.stubEnv('DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1');
+    vi.stubEnv('BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1');
     vi.stubEnv('TEST_S3_ID', 'local-id');
     vi.stubEnv('TEST_S3_KEY', 'local-key');
     vi.stubEnv('TEST_S3_SESSION', 'local-session-canary');

@@ -57,11 +57,11 @@ request through one role:
 dogsled ai test --connection default_embedding_v1
 ```
 
-Set `DOGSLED_AI_TEST_STUB=1` to check the configuration without calling the
+Set `BOBSLED_CORE_AI_TEST_STUB=1` to check the configuration without calling the
 provider: the command then returns zero vectors and no cost.
 
 ```bash
-DOGSLED_AI_TEST_STUB=1 dogsled ai test --connection default_embedding_v1 --json
+BOBSLED_CORE_AI_TEST_STUB=1 dogsled ai test --connection default_embedding_v1 --json
 ```
 
 ```text

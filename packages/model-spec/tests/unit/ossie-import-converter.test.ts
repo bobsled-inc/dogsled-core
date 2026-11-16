@@ -258,7 +258,7 @@ describe('Ossie import converter', () => {
       ],
     });
     expect(malformedExtension).toMatchObject({ ok: false, ready: false, files: [] });
-    expect(malformedExtension.diagnostics.at(-1)?.code).toBe('invalid_dogsled_extension');
+    expect(malformedExtension.diagnostics.at(-1)?.code).toBe('invalid_bobsled_extension');
 
     const invalidKind = importOssieDocuments({
       documents: [
@@ -283,7 +283,7 @@ describe('Ossie import converter', () => {
       ],
     });
     expect(unsafeExtension).toMatchObject({ ok: false, ready: false, files: [] });
-    expect(unsafeExtension.diagnostics.at(-1)?.code).toBe('invalid_dogsled_extension');
+    expect(unsafeExtension.diagnostics.at(-1)?.code).toBe('invalid_bobsled_extension');
   });
 
   it.each([
@@ -313,7 +313,7 @@ describe('Ossie import converter', () => {
 
     expect(result).toMatchObject({ ok: false, ready: false, files: [] });
     expect(result.diagnostics.at(-1)).toMatchObject({
-      code: 'invalid_dogsled_extension',
+      code: 'invalid_bobsled_extension',
       severity: 'error',
     });
     expect(result.diagnostics.at(-1)?.message).toContain('bounded JSON object');

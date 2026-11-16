@@ -78,32 +78,32 @@ describe('loadAllIntegrations target field adaptation', () => {
   it('resolves env-template target database, schema, and warehouse fields when env vars are set', async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-integrations-'));
     const previous = {
-      database: process.env.DOGSLED_MODEL_SPEC_TEST_DATABASE,
-      schema: process.env.DOGSLED_MODEL_SPEC_TEST_SCHEMA,
-      warehouse: process.env.DOGSLED_MODEL_SPEC_TEST_WAREHOUSE,
+      database: process.env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE,
+      schema: process.env.BOBSLED_CORE_MODEL_SPEC_TEST_SCHEMA,
+      warehouse: process.env.BOBSLED_CORE_MODEL_SPEC_TEST_WAREHOUSE,
     };
     try {
-      process.env.DOGSLED_MODEL_SPEC_TEST_DATABASE = 'DEMO_DB';
-      process.env.DOGSLED_MODEL_SPEC_TEST_SCHEMA = 'ANALYTICS';
-      process.env.DOGSLED_MODEL_SPEC_TEST_WAREHOUSE = 'TRANSFORM_WH';
+      process.env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE = 'DEMO_DB';
+      process.env.BOBSLED_CORE_MODEL_SPEC_TEST_SCHEMA = 'ANALYTICS';
+      process.env.BOBSLED_CORE_MODEL_SPEC_TEST_WAREHOUSE = 'TRANSFORM_WH';
       fs.mkdirSync(path.join(tmpDir, 'integrations'), { recursive: true });
       fs.writeFileSync(
         path.join(tmpDir, 'integrations', 'snowflake.yml'),
         `spec_version: '1'
-auth_env_vars: [DOGSLED_MODEL_SPEC_TEST_ACCOUNT, DOGSLED_MODEL_SPEC_TEST_DATABASE, DOGSLED_MODEL_SPEC_TEST_PAT, DOGSLED_MODEL_SPEC_TEST_SCHEMA, DOGSLED_MODEL_SPEC_TEST_USER, DOGSLED_MODEL_SPEC_TEST_WAREHOUSE]
+auth_env_vars: [BOBSLED_CORE_MODEL_SPEC_TEST_ACCOUNT, BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE, BOBSLED_CORE_MODEL_SPEC_TEST_PAT, BOBSLED_CORE_MODEL_SPEC_TEST_SCHEMA, BOBSLED_CORE_MODEL_SPEC_TEST_USER, BOBSLED_CORE_MODEL_SPEC_TEST_WAREHOUSE]
 type: integration
 name: snowflake
 source_type: snowflake
 connection:
-  account_identifier: \${{ env.DOGSLED_MODEL_SPEC_TEST_ACCOUNT }}
-  warehouse: \${{ env.DOGSLED_MODEL_SPEC_TEST_WAREHOUSE }}
-  user: \${{ env.DOGSLED_MODEL_SPEC_TEST_USER }}
+  account_identifier: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_ACCOUNT }}
+  warehouse: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_WAREHOUSE }}
+  user: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_USER }}
   role: DEMO_ROLE
-  database: \${{ env.DOGSLED_MODEL_SPEC_TEST_DATABASE }}
-  schema: \${{ env.DOGSLED_MODEL_SPEC_TEST_SCHEMA }}
+  database: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE }}
+  schema: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_SCHEMA }}
 auth:
   type: pat
-  token: \${{ env.DOGSLED_MODEL_SPEC_TEST_PAT }}
+  token: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_PAT }}
 `,
         'utf-8'
       );
@@ -114,23 +114,23 @@ auth:
       expect(snowflake?.targetSchema).toBe('ANALYTICS');
       expect(snowflake?.targetWarehouse).toBe('TRANSFORM_WH');
     } finally {
-      restoreEnv('DOGSLED_MODEL_SPEC_TEST_DATABASE', previous.database);
-      restoreEnv('DOGSLED_MODEL_SPEC_TEST_SCHEMA', previous.schema);
-      restoreEnv('DOGSLED_MODEL_SPEC_TEST_WAREHOUSE', previous.warehouse);
+      restoreEnv('BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE', previous.database);
+      restoreEnv('BOBSLED_CORE_MODEL_SPEC_TEST_SCHEMA', previous.schema);
+      restoreEnv('BOBSLED_CORE_MODEL_SPEC_TEST_WAREHOUSE', previous.warehouse);
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 
   it('throws CommandError(2) when an explicit env template cannot be resolved', async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-integrations-'));
-    const previous = process.env.DOGSLED_MODEL_SPEC_TEST_DATABASE;
+    const previous = process.env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE;
     try {
-      delete process.env.DOGSLED_MODEL_SPEC_TEST_DATABASE;
+      delete process.env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE;
       fs.mkdirSync(path.join(tmpDir, 'integrations'), { recursive: true });
       fs.writeFileSync(
         path.join(tmpDir, 'integrations', 'snowflake.yml'),
         `spec_version: '1'
-auth_env_vars: [DOGSLED_MODEL_SPEC_TEST_DATABASE]
+auth_env_vars: [BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE]
 type: integration
 name: snowflake
 source_type: snowflake
@@ -139,7 +139,7 @@ connection:
   warehouse: TRANSFORM_WH
   user: demo
   role: DEMO_ROLE
-  database: \${{ env.DOGSLED_MODEL_SPEC_TEST_DATABASE }}
+  database: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE }}
   schema: ANALYTICS
 auth:
   type: pat
@@ -151,10 +151,10 @@ auth:
       await expect(loadAllIntegrations(tmpDir, 'integrations')).rejects.toThrow(CommandError);
       await expect(loadAllIntegrations(tmpDir, 'integrations')).rejects.toMatchObject({
         exitCode: 2,
-        message: expect.stringContaining('DOGSLED_MODEL_SPEC_TEST_DATABASE'),
+        message: expect.stringContaining('BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE'),
       });
     } finally {
-      restoreEnv('DOGSLED_MODEL_SPEC_TEST_DATABASE', previous);
+      restoreEnv('BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE', previous);
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });

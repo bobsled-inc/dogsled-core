@@ -4,7 +4,7 @@ import type {
   SupportedDialect,
 } from '@bobsled-inc/model-spec';
 import {
-  MATCH_KEY_SECRET_RUNTIME_TOKEN,
+  hasMatchKeySecretPlaceholder,
   executeSqlStatements,
   materializeMatchKeySecretPlaceholders,
 } from '@bobsled-inc/model-spec';
@@ -40,9 +40,9 @@ export function toEntityGraphExecutionStatements(
   return orderedStatements.map((stmt, index) => {
     const modelName = `${entity}:${stmt.name}`;
     const previousStatement = orderedStatements[index - 1];
-    if (stmt.sql.includes(MATCH_KEY_SECRET_RUNTIME_TOKEN) && plan.dialect == null) {
+    if (hasMatchKeySecretPlaceholder(stmt.sql) && plan.dialect == null) {
       throw new CommandError(
-        'Entity graph execution requires a dialect to materialize DOGSLED_MATCH_KEY_SECRET placeholders.',
+        'Entity graph execution requires a dialect to materialize BOBSLED_CORE_MATCH_KEY_SECRET placeholders.',
         2
       );
     }

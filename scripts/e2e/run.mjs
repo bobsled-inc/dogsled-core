@@ -93,7 +93,7 @@ async function main(argv) {
   let skipped = 0;
   try {
     for (const scenario of scenarios) {
-      if (scenario.id === 'S17' && process.env.DOGSLED_E2E_OUTSIDER === '1') {
+      if (scenario.id === 'S17' && process.env.BOBSLED_CORE_E2E_OUTSIDER === '1') {
         process.stdout.write(
           JSON.stringify({
             scenario: 'S17',
@@ -133,7 +133,7 @@ async function main(argv) {
     await stopServices();
   }
   if (!selected.length && !leg)
-    assertScenarioResults(passed, skipped, process.env.DOGSLED_E2E_OUTSIDER === '1');
+    assertScenarioResults(passed, skipped, process.env.BOBSLED_CORE_E2E_OUTSIDER === '1');
   process.stdout.write(`Showcases passed: ${passed}; not applicable: ${skipped}\n`);
 
   if (resultsPath) {

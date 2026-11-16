@@ -175,7 +175,7 @@ describe('CLI protocol', () => {
       ],
       projectDir,
       {
-        DOGSLED_BUNDLED_INTEGRATIONS_DIR: bundledDir,
+        BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR: bundledDir,
         NODE_EXTRA_CA_CERTS: path.join(projectDir, 'fake-ca.pem'),
       }
     );

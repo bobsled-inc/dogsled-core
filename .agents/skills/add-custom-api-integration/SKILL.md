@@ -109,7 +109,7 @@ token request; a token is never reused for a different `resource`.
 
 > **SSRF:** `base_url` and every request go through the extractor's public-host
 > enforcement — private/loopback/metadata hosts are blocked. The only escape
-> hatch is the `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` process env var, which
+> hatch is the `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` process env var, which
 > is **not** settable from YAML. `base_url` must be HTTPS.
 
 ### Step 2 — Write `meta.yml`

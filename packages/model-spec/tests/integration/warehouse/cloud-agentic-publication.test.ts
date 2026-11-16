@@ -17,14 +17,14 @@ import { AGENTIC_ROW_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
 import { fullPublicationPayload, publishPayload } from '../../support/publication-payload.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 
-const integrationPath = process.env.DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION;
-const namespace = process.env.DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA;
+const integrationPath = process.env.BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION;
+const namespace = process.env.BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA;
 
 describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () => {
   it('replaces processed keys and recovers a committed receipt after reopen', async () => {
     if (!integrationPath || !namespace) {
       throw new Error(
-        'Set both DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION and DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA'
+        'Set both BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION and BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA'
       );
     }
     const integration = IntegrationFileSchema.parse(

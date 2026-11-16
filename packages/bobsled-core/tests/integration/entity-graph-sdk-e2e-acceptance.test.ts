@@ -52,7 +52,7 @@ async function runDoctorCommand(input: {
   const oldExitCode = process.exitCode;
   const oldEnv = {
     NODE_ENV: process.env['NODE_ENV'],
-    DOGSLED_MCP_ALLOW_UNFILTERED: process.env['DOGSLED_MCP_ALLOW_UNFILTERED'],
+    BOBSLED_CORE_MCP_ALLOW_UNFILTERED: process.env['BOBSLED_CORE_MCP_ALLOW_UNFILTERED'],
   };
   const oldWrite = process.stdout.write;
   let stdout = '';
@@ -211,7 +211,7 @@ describe('Entity graph SDK — end-to-end acceptance (programmatic seams)', () =
       writeFileSync(join(cwd, 'dogsled.yml'), 'pipelines: {}\n');
       const result = await runDoctorCommand({
         cwd,
-        env: { NODE_ENV: 'production', DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+        env: { NODE_ENV: 'production', BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
       });
       expect(result.exitCode).toBe(2);
       const parsed = JSON.parse(result.stdout) as {

@@ -645,8 +645,8 @@ describe('ExtractorClient', () => {
   });
 
   it('blocks private-host redirects inside the redirect loop', async () => {
-    const originalAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    const originalAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     try {
       const fetchMock = vi.fn().mockResolvedValueOnce(
         new Response(null, {
@@ -688,7 +688,7 @@ describe('ExtractorClient', () => {
       ).rejects.toThrow('private/internal host');
     } finally {
       if (originalAllowPrivateHosts !== undefined) {
-        process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
+        process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
       }
     }
   });

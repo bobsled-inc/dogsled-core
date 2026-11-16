@@ -48,7 +48,7 @@ export interface ResolveFormatOptions {
 /**
  * Resolve the CLI output format with the documented priority cascade:
  *  1. Explicit `--json` / `--yaml` flag.
- *  2. `DOGSLED_OUTPUT_FORMAT` env var (`json` / `yaml` / `text` / `human`).
+ *  2. `BOBSLED_CORE_OUTPUT_FORMAT` env var (`json` / `yaml` / `text` / `human`).
  *  3. `CI=1` / `CI=true` env var → JSON (auto-detect for CI runners).
  *  4. Non-TTY stdout → JSON.
  *  5. Default: `human`.
@@ -57,7 +57,7 @@ export function resolveOutputFormat(opts: ResolveFormatOptions = {}): OutputForm
   if (opts.json) return 'json';
   if (opts.yaml) return 'yaml';
   const env = opts.env ?? process.env;
-  const envFormat = env['DOGSLED_OUTPUT_FORMAT']?.toLowerCase();
+  const envFormat = env['BOBSLED_CORE_OUTPUT_FORMAT']?.toLowerCase();
   if (envFormat === 'json') return 'json';
   if (envFormat === 'yaml') return 'yaml';
   if (envFormat === 'text' || envFormat === 'human') return 'human';

@@ -163,7 +163,7 @@ export function isPrivateHost(hostname: string): boolean {
   if (scopedPrivateHostAllowlist.getStore()?.has(normalized)) {
     return false;
   }
-  if (process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] === '1') {
+  if (process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] === '1') {
     return false;
   }
 

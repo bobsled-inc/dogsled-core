@@ -190,7 +190,7 @@ Every outcome includes the contract version, attempt ID and usage. Outcomes are:
 | `insufficient_evidence` | Completed domain outcome with rows, possibly empty, and a fixed reason object  |
 | `failed`                | Execution failure with no rows; error kind, code and retryability are explicit |
 
-Failure kinds reuse `DOGSLED_RUNTIME_ERROR_KINDS`. Error payloads exclude raw provider
+Failure kinds reuse `BOBSLED_CORE_RUNTIME_ERROR_KINDS`. Error payloads exclude raw provider
 messages and causes. Hosts render the shared public messages and keep any private
 diagnostics out of saved results. Cancellation and timeout remain failures that
 prevent publication; they cannot be converted into successful empty results.

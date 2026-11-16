@@ -178,7 +178,7 @@ For Entity Graph commands, see:
 1. Keep warehouse access read-only. `src/profiler/profile.ts` owns `COUNT(*)`, bounded sample SQL, confidence filtering, and target sample orchestration.
 2. Keep inference modules pure under `src/profiler/inferences/`; they accept sampled rows and return deterministic confidence/evidence payloads.
 3. Use named contracts from `src/profiler/types.ts` for report, row, FK target, anomaly, and cleaning payloads.
-4. Preserve output discipline: `--json`, CI/non-TTY, and `DOGSLED_OUTPUT_FORMAT=json` must emit machine-readable output and suppress human logs. If the JSON output is an agent-consumable command result or export, add equivalent `--yaml` output too.
+4. Preserve output discipline: `--json`, CI/non-TTY, and `BOBSLED_CORE_OUTPUT_FORMAT=json` must emit machine-readable output and suppress human logs. If the JSON output is an agent-consumable command result or export, add equivalent `--yaml` output too.
 5. Add focused coverage in `tests/unit/profiler/` and `tests/cli/profile.test.ts`.
 
 ### Add shared helpers for Entity Graph
