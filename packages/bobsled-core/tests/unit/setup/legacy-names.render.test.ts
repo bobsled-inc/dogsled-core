@@ -6,7 +6,10 @@ import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createSetupGroup } from '../../../src/groups/setup.js';
-import { SETUP_ANSWERS_FILE_SPELLINGS } from '../../../src/setup/legacy-names.js';
+import {
+  SETUP_ANSWERS_FILE_SPELLINGS,
+  SETUP_DASHBOARD_STATE_FILE_SPELLINGS,
+} from '../../../src/setup/legacy-names.js';
 
 const ANSWERS_YAML = `project:
   repo_name: example
@@ -107,5 +110,20 @@ describe('setup render in a project from an earlier Core generation', () => {
     expect(paths).toContain('bobsled.yml');
     expect(paths).toContain('bobsled.setup.answers.yml');
     expect(existsSync(path.join(root, OLD_ROOT))).toBe(false);
+  });
+
+  it('rewrites whichever dashboard state file the project already has', async () => {
+    for (const [index, existing] of SETUP_DASHBOARD_STATE_FILE_SPELLINGS.entries()) {
+      const other = SETUP_DASHBOARD_STATE_FILE_SPELLINGS[1 - index]!;
+      const root = createRoot({ 'bobsled.setup.answers.yml': ANSWERS_YAML, [existing]: '{}\n' });
+
+      const paths = await render(root);
+
+      expect(paths).toContain(existing);
+      expect(paths).not.toContain(other);
+      expect(existsSync(path.join(root, other))).toBe(false);
+      expect(readFileSync(path.join(root, existing), 'utf-8')).not.toBe('{}\n');
+      vi.restoreAllMocks();
+    }
   });
 });
