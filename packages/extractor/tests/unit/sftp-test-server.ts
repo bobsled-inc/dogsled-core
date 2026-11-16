@@ -24,20 +24,26 @@ export interface TestKey {
 }
 
 export function generateTestKey(type: TestKeyType): TestKey {
-  const pair =
-    type === 'rsa'
-      ? utils.generateKeyPairSync('rsa', { bits: 2048 })
-      : type === 'ecdsa'
-        ? utils.generateKeyPairSync('ecdsa', { bits: 256 })
-        : utils.generateKeyPairSync('ed25519');
-  const [algorithm, publicKey] = pair.public.split(' ') as [string, string];
-  const fingerprint =
-    'SHA256:' +
-    createHash('sha256')
-      .update(Buffer.from(publicKey, 'base64'))
-      .digest('base64')
-      .replace(/=+$/, '');
-  return { privateKey: pair.private, publicKey, algorithm, fingerprint };
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const pair =
+      type === 'rsa'
+        ? utils.generateKeyPairSync('rsa', { bits: 2048 })
+        : type === 'ecdsa'
+          ? utils.generateKeyPairSync('ecdsa', { bits: 256 })
+          : utils.generateKeyPairSync('ed25519');
+    // ssh2 can truncate leading zero bytes from generated Ed25519 public keys.
+    // Never pass its parse error through as a ParsedKey during server setup.
+    if (utils.parseKey(pair.private) instanceof Error) continue;
+    const [algorithm, publicKey] = pair.public.split(' ') as [string, string];
+    const fingerprint =
+      'SHA256:' +
+      createHash('sha256')
+        .update(Buffer.from(publicKey, 'base64'))
+        .digest('base64')
+        .replace(/=+$/, '');
+    return { privateKey: pair.private, publicKey, algorithm, fingerprint };
+  }
+  throw new Error('Unable to generate a parseable SFTP test key after 8 attempts');
 }
 
 export interface TestSftpServerOptions {
