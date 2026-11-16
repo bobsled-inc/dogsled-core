@@ -13,6 +13,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { INLINED_AI_DEPENDENCY_NAMES } from '../release/package-set.mjs';
+import { runBundledIntegrationsSmoke } from './bundled-integrations-smoke.mjs';
 import { stageDogsledPackage } from '../release/stage-package.mjs';
 
 const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'dogsled-packed-catalog-'));
@@ -118,19 +119,19 @@ try {
     stdio: 'inherit',
   });
 
+  // Built-in integrations must resolve once an app bundler moves the code and
+  // no sources/ folder exists anywhere (the `Source "bobsled_api" not found` incident).
+  // The smoke asserts the packed integration sources exist, then deletes them.
+  await runBundledIntegrationsSmoke(installDir);
+
   const installedNodeModules = path.join(installDir, 'node_modules');
-  const removedSourceTrees = removeInstalledDirectories(installedNodeModules, (candidate) => {
+  removeInstalledDirectories(installedNodeModules, (candidate) => {
     return (
       path.basename(candidate) === 'sources' &&
       path.basename(path.dirname(candidate)) === 'integrations' &&
       path.basename(path.dirname(path.dirname(candidate))) === '@bobsled-inc'
     );
   });
-  if (removedSourceTrees === 0) {
-    throw new Error(
-      'Expected the packed install to contain integration source YAML before isolation'
-    );
-  }
 
   const blockedPackageNames = new Set([
     'connections',

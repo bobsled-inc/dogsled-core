@@ -9,6 +9,7 @@ export * from './runtime-error.js';
 export * from './spec-validation-error.js';
 export * from './state-backend-contract.js';
 export * from './sql-identifiers.js';
+export * from './stream-subfolder.js';
 export * from './legacy-blueprint-aliases.js';
 
 export {

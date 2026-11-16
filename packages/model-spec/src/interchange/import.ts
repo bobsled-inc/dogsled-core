@@ -7,6 +7,7 @@ import {
 } from '../compiler/schemas.js';
 import { MetricSpecSchema } from '../entities/metric.js';
 import { RelationshipSpecSchema } from '../entities/relationship.js';
+import { nativeSynonymProperties } from '../entities/semantic-metadata.js';
 import { readOssieProfile } from '../ossie/profiles.js';
 import type {
   OssieDataset,
@@ -480,7 +481,7 @@ function convertFields(
       ...(extension.kind === 'derived' && build_expression ? { expr: build_expression } : {}),
       semantic_expression: field.expression,
       ...(field.dimension?.is_time !== undefined ? { is_time: field.dimension.is_time } : {}),
-      ...(field.ai_context !== undefined ? { ai_context: field.ai_context } : {}),
+      ...nativeSynonymProperties(field.ai_context),
     };
   });
   for (const column of schema?.columns ?? []) {
@@ -738,8 +739,7 @@ function convertMetric(
     expression,
     ...(metric.datatype !== undefined ? { datatype: metric.datatype } : {}),
     semantic_expression: metric.expression,
-    ...(metric.ai_context !== undefined ? { ai_context: metric.ai_context } : {}),
-    ...(extension.synonyms ? { synonyms: extension.synonyms } : {}),
+    ...nativeSynonymProperties(metric.ai_context, extension.synonyms),
     ...(extension.tags ? { tags: extension.tags } : {}),
     ...(interchange ? { interchange } : {}),
   };
@@ -966,7 +966,7 @@ function convertSemanticModel(
         type: 'source',
         name: dataset.name,
         ...(dataset.description !== undefined ? { description: dataset.description } : {}),
-        ...(dataset.ai_context !== undefined ? { ai_context: dataset.ai_context } : {}),
+        ...nativeSynonymProperties(dataset.ai_context, extension.settings['synonyms']),
         source_type: sourceType,
         ...(connection ? { connection } : {}),
         schema: { columns: convertedFields.columns },
@@ -999,7 +999,7 @@ function convertSemanticModel(
         type: 'model',
         name: dataset.name,
         ...(dataset.description !== undefined ? { description: dataset.description } : {}),
-        ...(dataset.ai_context !== undefined ? { ai_context: dataset.ai_context } : {}),
+        ...nativeSynonymProperties(dataset.ai_context, build['synonyms']),
         ...(extension.grain !== undefined ? { grain: extension.grain } : {}),
         columns: convertedFields.columns,
         ...(interchange ? { interchange } : {}),

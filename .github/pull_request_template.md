@@ -24,9 +24,11 @@ Maintainers can skip the first two items; the rest apply to everyone.
 ## Change Type
 
 > [!TIP]
-> Select **exactly one** change type. Every merge releases: `minor` and `major`
-> release that increment; everything else releases a patch. Use `skip-release`
-> only when the change must not publish. Reverting released code is `patch`.
+> Select **exactly one** change type. `minor` and `major` release that
+> increment; `dependencies` waits for the next release; everything else releases
+> a patch. A dependency update that changes behaviour or code is `patch`,
+> `minor` or `major`. Use `skip-release` only when the change must not publish.
+> Reverting released code is `patch`.
 
 - [ ] `patch` - 🐛 Bug Fix
 - [ ] `minor` - ✨ Enhancement

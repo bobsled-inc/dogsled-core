@@ -36,9 +36,7 @@ export type QueryResourceAuditReasonCode =
   | 'no_safe_query_or_search_candidate';
 
 export type QueryResourceAuditBlockerReason =
-  | 'input_not_scalar'
-  | 'output_not_scalar'
-  | 'incompatible_scalar_types';
+  'input_not_scalar' | 'output_not_scalar' | 'incompatible_scalar_types';
 
 export interface QueryResourceCandidateFilter {
   field: string;
@@ -50,10 +48,7 @@ export interface QueryResourceCandidateFilter {
 }
 
 export type QueryResourceSearchDialect =
-  | 'front_q_query_object'
-  | 'jira_jql'
-  | 'provider_search'
-  | 'servicenow_sysparm_query';
+  'front_q_query_object' | 'jira_jql' | 'provider_search' | 'servicenow_sysparm_query';
 
 export interface QueryResourceCandidateSearch {
   input: string;

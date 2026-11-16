@@ -15,6 +15,8 @@ packages/model-spec/tests/integration/customer-resolution/review/**
 CHANGELOG.md
 # Generated catalog manifest — see scripts/generate-catalog-manifest.ts
 packages/integrations/src/catalog/generated-data.ts
+# Embedded built-in source files — see scripts/generate-builtin-sources.ts
+packages/integrations/src/builtin-sources/generated-data.ts
 # Generated skills manifest — see packages/skills/scripts/build-manifest.ts
 packages/skills/src/generated-data.ts
 

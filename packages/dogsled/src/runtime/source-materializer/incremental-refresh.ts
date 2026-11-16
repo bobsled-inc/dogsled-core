@@ -12,10 +12,7 @@ type IncrementalQueryableResource = {
 };
 
 export type IncrementalFallbackReason =
-  | 'null_cursor'
-  | 'cursor_regression'
-  | 'schema_drift'
-  | 'missing_keys';
+  'null_cursor' | 'cursor_regression' | 'schema_drift' | 'missing_keys';
 
 export interface IncrementalRefreshArgs {
   strategy?: 'merge' | 'append';

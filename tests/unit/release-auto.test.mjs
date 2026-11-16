@@ -208,6 +208,96 @@ describe('automatic release range', () => {
     expect(autoReleaseSummary(plan, '0.1.1')).toContain('Result: no release.');
   });
 
+  const dependabotPr = (number, labels = ['dependencies']) =>
+    merged(number, 'patch', {
+      title: `Bump group ${number}`,
+      user: { login: 'dependabot[bot]' },
+      body: '',
+      labels: labels.map((name) => ({ name })),
+    });
+
+  it('does not release when only dependency and skip-release pull requests are pending', async () => {
+    const plan = await resolveAutoRelease({
+      previousVersion: '0.1.1',
+      git,
+      listPullRequests: lookup({
+        [sha.internal]: [dependabotPr(2)],
+        [sha.merge]: [merged(3, 'dependencies')],
+        [sha.docs1]: [merged(4, 'skip-release')],
+        [sha.docs2]: [merged(4, 'skip-release')],
+        [sha.revert]: [dependabotPr(5)],
+      }),
+    });
+    expect(plan.pullRequests.map(({ changeType, bump }) => [changeType, bump])).toEqual([
+      ['dependencies', null],
+      ['dependencies', null],
+      ['skip-release', null],
+      ['dependencies', null],
+    ]);
+    expect(plan.bump).toBeNull();
+    const summary = autoReleaseSummary(plan, '0.1.1');
+    expect(summary).toContain('Result: no release.');
+    expect(summary).toContain('Nothing to release');
+  });
+
+  it('releases pending dependency pull requests with the next real change and lists them all', async () => {
+    const plan = await resolveAutoRelease({
+      previousVersion: '0.1.1',
+      git,
+      listPullRequests: lookup({
+        [sha.internal]: [dependabotPr(2)],
+        [sha.merge]: [merged(3, 'dependencies')],
+        [sha.docs1]: [merged(4, 'internal')],
+        [sha.docs2]: [merged(4, 'internal')],
+        [sha.revert]: [merged(5, 'skip-release')],
+      }),
+    });
+    expect(plan.bump).toBe('patch');
+    expect(plan.pullRequests.map((entry) => entry.number)).toEqual([2, 3, 4, 5]);
+    const summary = autoReleaseSummary(plan, '0.1.2');
+    expect(summary).toContain('| #2 | Bump group 2 | `dependencies` | none |');
+    expect(summary).toContain('| #3 | Change 3 | `dependencies` | none |');
+    expect(summary).toContain('| #4 | Change 4 | `internal` | patch |');
+    expect(summary).toContain('Result: **patch** release `v0.1.2`.');
+    expect(summary).not.toContain('Nothing to release');
+    const notify = notifySummary(plan, '0.1.2', 'https://github.com/example/repo');
+    for (const number of [2, 3, 4])
+      expect(notify).toContain(`<https://github.com/example/repo/pull/${number}|#${number}>`);
+    expect(JSON.parse(notifyPullRequests(plan.pullRequests))).toEqual([
+      { number: 2, title: 'Bump group 2', changeType: 'dependencies' },
+      { number: 3, title: 'Change 3', changeType: 'dependencies' },
+      { number: 4, title: 'Change 4', changeType: 'internal' },
+      { number: 5, title: 'Change 5', changeType: 'skip-release' },
+    ]);
+  });
+
+  it('uses the change-type label of a Dependabot pull request and rejects conflicting labels', async () => {
+    const pending = {
+      [sha.internal]: [dependabotPr(2, ['dependencies', 'change-type: minor'])],
+      [sha.merge]: [merged(3, 'dependencies')],
+      [sha.docs1]: [merged(4, 'skip-release')],
+      [sha.docs2]: [merged(4, 'skip-release')],
+      [sha.revert]: [dependabotPr(5)],
+    };
+    const plan = await resolveAutoRelease({
+      previousVersion: '0.1.1',
+      git,
+      listPullRequests: lookup(pending),
+    });
+    expect(plan.pullRequests[0]).toMatchObject({ number: 2, changeType: 'minor', bump: 'minor' });
+    expect(plan.bump).toBe('minor');
+    await expect(
+      resolveAutoRelease({
+        previousVersion: '0.1.1',
+        git,
+        listPullRequests: lookup({
+          ...pending,
+          [sha.internal]: [dependabotPr(2, ['change-type: patch', 'change-type: minor'])],
+        }),
+      })
+    ).rejects.toThrow('PR #2: At most one change-type label may be set on a Dependabot PR.');
+  });
+
   it('fails without guessing when a commit has no merged pull request or an invalid type', async () => {
     await expect(
       resolveAutoRelease({
@@ -259,8 +349,21 @@ describe('automatic release decisions', () => {
     expect(
       decideMergedPullRequest(mergeSha, [
         merged(8, 'patch', { user: { login: 'dependabot[bot]' }, body: '' }),
-      ]).changeType
-    ).toBe('dependencies');
+      ])
+    ).toMatchObject({ changeType: 'dependencies', bump: null });
+    expect(
+      decideMergedPullRequest(mergeSha, [
+        merged(8, 'patch', {
+          user: { login: 'dependabot[bot]' },
+          body: '',
+          labels: [{ name: 'dependencies' }, { name: 'change-type: minor' }],
+        }),
+      ])
+    ).toMatchObject({ changeType: 'minor', bump: 'minor' });
+    expect(decideMergedPullRequest(mergeSha, [merged(9, 'dependencies')])).toMatchObject({
+      changeType: 'dependencies',
+      bump: null,
+    });
     expect(() =>
       decideMergedPullRequest(mergeSha, [{ ...merged(7, 'patch'), merged_at: null }])
     ).toThrow('found 0');

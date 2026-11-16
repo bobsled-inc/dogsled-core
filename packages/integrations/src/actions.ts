@@ -6,7 +6,7 @@ import { entriesOfKind, entryFilePath, type ProjectIndex } from '@bobsled-inc/pr
 import { formatSpecValidationMessage } from '@bobsled-inc/protocol';
 import YAML from 'yaml';
 
-import { getIntegrationsDir } from './loader.js';
+import { listBuiltInActionFiles } from './loader.js';
 
 import type { InputFieldDefinition } from '@bobsled-inc/extractor/core';
 import type { ActionSpec, ActionTransport } from '@bobsled-inc/extractor/extractor';
@@ -109,42 +109,42 @@ function projectActionSpecs(
   });
 }
 
-/**
- * Loads bundled and project-local action specs into a single registry view.
- * `projectActions` is a project index, whose actions are every `type: action`
- * file wherever it lives, identified by its declared `integration` and `name`;
- * or a directory of action specs.
- */
-export function loadActions(
-  integrationsDir: string,
-  projectActions?: string | ProjectIndex
+function directoryActionSpecs(
+  integrationsDir: string
+): Array<{ filePath: string; action: Action }> {
+  if (!existsSync(integrationsDir)) return [];
+  return readdirSync(integrationsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
+    .map((entry) => entry.name)
+    .sort()
+    .flatMap((integrationName) =>
+      listYamlFiles(join(integrationsDir, integrationName, 'actions')).map((filePath) => ({
+        filePath,
+        action: parseActionFile(filePath, integrationName),
+      }))
+    );
+}
+
+function builtInActionSpecs(): Array<{ filePath: string; action: Action }> {
+  return listBuiltInActionFiles().map(({ integration, label, content }) => {
+    if (Buffer.byteLength(content, 'utf-8') > MAX_ACTION_SPEC_SIZE) {
+      throw new Error(`Action spec ${label} exceeds maximum size of 1 MB`);
+    }
+    return {
+      filePath: label,
+      action: parseActionDocument(YAML.parse(content) as unknown, label, integration),
+    };
+  });
+}
+
+function collectActions(
+  bundled: Array<{ filePath: string; action: Action }>,
+  projectActions: string | ProjectIndex | undefined
 ): Action[] {
   const actions: Action[] = [];
   const seen = new Map<string, string>();
 
-  if (existsSync(integrationsDir)) {
-    const integrationDirs = readdirSync(integrationsDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
-      .map((entry) => entry.name)
-      .sort();
-
-    for (const integrationName of integrationDirs) {
-      const actionFiles = listYamlFiles(join(integrationsDir, integrationName, 'actions'));
-      for (const filePath of actionFiles) {
-        const action = parseActionFile(filePath, integrationName);
-        const existing = seen.get(action.qualifiedName);
-        if (existing) {
-          throw new Error(
-            `Action "${action.qualifiedName}" is defined multiple times: ${existing}, ${filePath}`
-          );
-        }
-        seen.set(action.qualifiedName, filePath);
-        actions.push(action);
-      }
-    }
-  }
-
-  for (const { filePath, action } of projectActionSpecs(projectActions)) {
+  for (const { filePath, action } of [...bundled, ...projectActionSpecs(projectActions)]) {
     const existing = seen.get(action.qualifiedName);
     if (existing) {
       throw new Error(
@@ -156,6 +156,27 @@ export function loadActions(
   }
 
   return actions.sort((left, right) => left.qualifiedName.localeCompare(right.qualifiedName));
+}
+
+/**
+ * Loads action specs from an integrations directory plus project-local actions
+ * into a single registry view. `projectActions` is a project index, whose
+ * actions are every `type: action` file wherever it lives, identified by its
+ * declared `integration` and `name`; or a directory of action specs.
+ */
+export function loadActions(
+  integrationsDir: string,
+  projectActions?: string | ProjectIndex
+): Action[] {
+  return collectActions(directoryActionSpecs(integrationsDir), projectActions);
+}
+
+/**
+ * Same as `loadActions`, with Dogsled's built-in actions read from the data
+ * embedded in the package, so no files or temporary folders are needed.
+ */
+export function loadBuiltInActions(projectActions?: string | ProjectIndex): Action[] {
+  return collectActions(builtInActionSpecs(), projectActions);
 }
 
 /** Finds an action by fully qualified name, or by bare name when it is unambiguous. */
@@ -202,7 +223,7 @@ export function filterActions(actions: Action[], filter: ActionFilter): Action[]
 }
 
 export function listActions(integrationName?: string): Action[] {
-  const actions = loadActions(getIntegrationsDir());
+  const actions = loadBuiltInActions();
   return integrationName ? filterActions(actions, { integration: integrationName }) : actions;
 }
 

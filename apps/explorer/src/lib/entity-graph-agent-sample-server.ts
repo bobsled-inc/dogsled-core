@@ -51,11 +51,7 @@ export interface AgentReviewCandidate {
 }
 
 export type RedactedAgentReviewFieldState =
-  | 'exact_match'
-  | 'different'
-  | 'record_a_missing'
-  | 'record_b_missing'
-  | 'both_missing';
+  'exact_match' | 'different' | 'record_a_missing' | 'record_b_missing' | 'both_missing';
 
 export interface AgentReviewPromptCompareField {
   key: string;

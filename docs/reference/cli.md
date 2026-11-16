@@ -800,6 +800,7 @@ Options:
   --s3-region <region>                                AWS region
   --s3-role-arn <arn>                                 AWS IAM role ARN for assume-role credentials
   --s3-external-id <id>                               AWS external ID for assume-role credentials
+  --stream-subfolder <path>                           Folder added inside each stream folder for local, gcs and s3 destinations (for example data/run-1)
   --db-path <path>                                    DuckDB database file path
   --ducklake-catalog-url <url>                        DuckLake catalog URL
   --ducklake-data-path <path>                         DuckLake data path

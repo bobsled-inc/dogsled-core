@@ -638,16 +638,16 @@ materialization:
 
 ```yaml
 # Right — top-level peers of materialization
-target_schema: ANALYTICS      # Optional, overrides default
-target_database: PROD_DW      # Optional, overrides default
+target_schema: ANALYTICS # Optional, overrides default
+target_database: PROD_DW # Optional, overrides default
 materialization:
   type: table
 
 # Wrong — rejected with [MISPLACED_TARGET_SCHEMA]
 materialization:
   type: table
-  target_schema: ANALYTICS    # ❌ silently ignored historically; now hard error
-  target_database: PROD_DW    # ❌
+  target_schema: ANALYTICS # ❌ silently ignored historically; now hard error
+  target_database: PROD_DW # ❌
 ```
 
 Why: nesting them under `materialization:` used to validate cleanly and then fail at pipeline runtime. The compiler now rejects this placement at parse time with a fix-suggesting message.
@@ -659,20 +659,20 @@ Why: nesting them under `materialization:` used to validate cleanly and then fai
 materialization:
   type: incremental
   strategy: merge
-  unique_key: order_id                              # Required for merge
+  unique_key: order_id # Required for merge
   incremental_filter: "created_at > DATEADD('day', -3, CURRENT_DATE)"
 
 # Delete+Insert — requires unique_key
 materialization:
   type: incremental
   strategy: delete_insert
-  unique_key: [order_id, line_item_id]              # Can be composite
+  unique_key: [order_id, line_item_id] # Can be composite
 
 # Append — requires incremental_filter (prevents full duplication)
 materialization:
   type: incremental
   strategy: append
-  incremental_filter: "created_at > DATEADD('day', -1, CURRENT_DATE)"  # Required
+  incremental_filter: "created_at > DATEADD('day', -1, CURRENT_DATE)" # Required
 ```
 
 ### Incremental Validation Rules
@@ -959,7 +959,7 @@ name: 1_bad_name
 # ^ Must start with letter or underscore
 
 # Missing description on model
-spec_version: "0.2"
+spec_version: '0.2'
 name: my_model
 type: model
 grain: id
@@ -980,7 +980,7 @@ materialization:
 # SQL injection in expression
 columns:
   - name: BAD
-    expr: "ID; DROP TABLE users"
+    expr: 'ID; DROP TABLE users'
 # ^ Statement separators outside quoted literals are rejected
 ```
 

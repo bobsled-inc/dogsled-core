@@ -466,4 +466,49 @@ describe('Ossie export converter', () => {
     expect(unsupported).toMatchObject({ ok: false, ready: false, files: [] });
     expect(unsupported.diagnostics[0]?.message).toContain('include_all_columns');
   });
+  it('leaves out properties Dogsled ignores and warns once per dataset', () => {
+    const unionModel = {
+      ...model,
+      name: 'all_orders',
+      union: [
+        {
+          ref: 'warehouse.raw_orders',
+          columns: [
+            { name: 'order_id', expr: 'order_id', type: 'BIGINT' },
+            { name: 'amount', expr: 'amount', type: 'DECIMAL(18,2)' },
+          ],
+        },
+      ],
+    };
+    const nullableSource = {
+      ...source,
+      schema: {
+        columns: source.schema.columns.map((column) => ({ ...column, nullable: false })),
+      },
+    };
+    const exportRequest = request({
+      ossieVersion: '0.2.0.dev0',
+      project: {
+        ...request().project,
+        sources: [nullableSource],
+        models: [model, unionModel],
+        addresses: { ...request().project.addresses, all_orders: 'ANALYTICS.MART.ALL_ORDERS' },
+      },
+    });
+    const result = exportOssieDocument(exportRequest);
+
+    expect(result).toMatchObject({ ok: true, ready: true });
+    const ignored = result.diagnostics.filter((entry) => entry.code === 'native_property_ignored');
+    expect(ignored.map((entry) => [entry.severity, entry.path])).toEqual([
+      ['warning', 'project#datasets.all_orders'],
+      ['warning', 'project#datasets.raw_orders'],
+    ]);
+    expect(ignored[0]?.message).toContain('union[*].columns[*].type');
+    expect(ignored[1]?.message).toContain('schema.columns[*].nullable');
+    expect(result.files[0]?.content).not.toContain('nullable');
+    expect(exportOssieDocument({ ...exportRequest, strict: true })).toMatchObject({
+      ok: true,
+      ready: false,
+    });
+  });
 });

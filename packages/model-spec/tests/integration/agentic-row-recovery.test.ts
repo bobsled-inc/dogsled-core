@@ -933,7 +933,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('recovery between the two statemen
     const grouped = await open(plan.key, { groupCommit: true });
     let snapshot = await grouped.create(plan.initial);
     // Every run of attempt commands goes as one group.
-    for (let index = 0; index < plan.commands.length; ) {
+    for (let index = 0; index < plan.commands.length;) {
       let end = index;
       while (end < plan.commands.length && /_attempt$/.test(plan.commands[end]!.type)) end++;
       if (end - index > 1) {

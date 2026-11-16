@@ -1,10 +1,7 @@
 import { inflateRawSync } from 'node:zlib';
 
 type ZipReadErrorCode =
-  | 'corrupt_input'
-  | 'encrypted_input'
-  | 'file_too_large'
-  | 'unsupported_format';
+  'corrupt_input' | 'encrypted_input' | 'file_too_large' | 'unsupported_format';
 
 export class ZipReadError extends Error {
   readonly code: ZipReadErrorCode;

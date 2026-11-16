@@ -428,9 +428,7 @@ Edit `packages/loader/src/commands/check.ts`:
 
 ```typescript
 async function check<Name>(
-  options: {
-    /* connection params */
-  },
+  options: {/* connection params */},
   dependencies: CheckDependencies = {}
 ): Promise<void> {
   const stderr = dependencies.stderr ?? process.stderr;

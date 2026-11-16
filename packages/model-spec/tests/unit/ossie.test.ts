@@ -57,6 +57,18 @@ describe('pinned Ossie authoring translator', () => {
     });
     expect(result.origins[0]?.document).toBe(doc);
   });
+  it('reads dataset and field ai_context synonyms as native synonyms', () => {
+    const doc = fixture();
+    const dataset = doc.datasets[0]! as Record<string, unknown>;
+    dataset['ai_context'] = { synonyms: ['purchases', 'Purchases'] };
+    (dataset['fields'] as Array<Record<string, unknown>>)[0]!['ai_context'] = {
+      synonyms: ['order number'],
+    };
+    expect(translateOssieDocument(doc, 'sales.yml').entries[0]?.document).toMatchObject({
+      synonyms: ['purchases'],
+      columns: [{ name: 'id', synonyms: ['order number'] }],
+    });
+  });
   it('keeps standard metadata and foreign extensions in the authored document', () => {
     const doc = fixture();
     doc.datasets[0]!.custom_extensions.push({ vendor_name: 'OTHER', data: 'opaque payload' });

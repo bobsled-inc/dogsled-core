@@ -8,7 +8,7 @@ import {
   loadIndexedIntegrations,
   resolveRunner,
 } from '@bobsled-inc/connections';
-import { findAction, getIntegrationsDir, loadActions } from '@bobsled-inc/integrations';
+import { findAction, loadBuiltInActions } from '@bobsled-inc/integrations';
 import { resolveProjectIndex, type ProjectIndex } from '@bobsled-inc/project-index';
 import { CommandError } from '@bobsled-inc/protocol';
 import { randomUUID } from 'node:crypto';
@@ -118,7 +118,7 @@ export function resolveAction(
   index?: ProjectIndex
 ): Action {
   if (injected) return injected;
-  const actions = loadActions(getIntegrationsDir(), resolveProjectIndex(projectRoot, index));
+  const actions = loadBuiltInActions(resolveProjectIndex(projectRoot, index));
   const result = findAction(actions, spec.target.action);
   if (result.kind === 'found') {
     return result.action;

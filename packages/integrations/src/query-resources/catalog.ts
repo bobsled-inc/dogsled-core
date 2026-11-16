@@ -1,6 +1,3 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { collectBoundInputNames } from '@bobsled-inc/extractor';
 import { isSqlTransport, resolveVia, SourceSchema } from '@bobsled-inc/extractor/core';
 import { QUERY_SCALAR_FIELD_TYPES } from '@bobsled-inc/extractor/extractor';
@@ -9,11 +6,10 @@ import { ZodError } from 'zod';
 
 import {
   assertSafeName,
-  getSourceDir,
-  getResourcePath,
   listSourceDirs,
   listResourceFiles,
-  readYamlFile,
+  readResourceYaml,
+  readSourceYaml,
 } from '../loader.js';
 import { MetaSpecSchema, ResourceSpecSchema, SourceSpecSchema } from '../validate.js';
 import { getTypedWrapperBinding } from './typed-wrapper-bindings.js';
@@ -121,14 +117,11 @@ export function loadQueryableResourceSpecs(
   assertSafeName(sourceName, 'source name');
   assertSafeName(resourceName, 'resource name');
 
-  const sourceDir = getSourceDir(sourceName);
-  const resourcePath = getResourcePath(sourceName, resourceName);
-  if (!existsSync(resourcePath)) {
-    throw new Error(`Resource "${resourceName}" not found for source "${sourceName}"`);
-  }
+  const rawSource = readSourceYaml(sourceName, 'source.yml');
+  const rawResource = readResourceYaml(sourceName, resourceName);
 
-  const spec = SourceSpecSchema.parse(readYamlFile(join(sourceDir, 'source.yml')));
-  const meta = MetaSpecSchema.parse(readYamlFile(join(sourceDir, 'meta.yml')));
+  const spec = SourceSpecSchema.parse(rawSource);
+  const meta = MetaSpecSchema.parse(readSourceYaml(sourceName, 'meta.yml'));
   const source = SourceSchema.parse({
     ...spec,
     auth_env_vars: [
@@ -139,7 +132,7 @@ export function loadQueryableResourceSpecs(
     ],
   });
   const resource = {
-    ...ResourceSpecSchema.parse(readYamlFile(resourcePath)),
+    ...ResourceSpecSchema.parse(rawResource),
     integration: sourceName,
   };
   const integration = toLegacyApiIntegration(source, getResourceVia(resource));

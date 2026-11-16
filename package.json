@@ -90,7 +90,7 @@
     "turbo": "catalog:dev-packages",
     "vitest": "catalog:testing",
     "playwright": "catalog:",
-    "semver": "7.8.5"
+    "semver": "7.8.6"
   },
   "description": "Extract, load and model data with YAML project files.",
   "keywords": [

@@ -3,19 +3,25 @@
 Dogsled publishes `@bobsled-inc/dogsled` with 15 workspace packages embedded in its tarball.
 Only `packages/dogsled/package.json` advances its version.
 
-## Every merge releases
+## Merges release
 
 The [Release on merge workflow](../.github/workflows/release-on-merge.yml) runs on every push to `main`.
 It reads the merged pull request's Change Type through the GitHub API, using trusted scripts from the merge commit on `main`.
 It never checks out the pull request head and uses no secrets.
-Every merge produces a release; the Change Type sets the bump size:
+The Change Type decides whether a merge releases and sets the bump size:
 
-| Change Type                                                                  | Release                                                                        |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `major`                                                                      | Major. Under `0.x` this advances the minor; the notes carry a Breaking banner. |
-| `minor`                                                                      | Minor                                                                          |
-| `patch`, `performance`, `dependencies`, `internal`, `documentation`, `tests` | Patch                                                                          |
-| `skip-release`                                                               | None (rare escape hatch)                                                       |
+| Change Type                                                  | Release                                                                        |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `major`                                                      | Major. Under `0.x` this advances the minor; the notes carry a Breaking banner. |
+| `minor`                                                      | Minor                                                                          |
+| `patch`, `performance`, `internal`, `documentation`, `tests` | Patch                                                                          |
+| `dependencies`                                               | None on its own. The next release includes and lists it.                       |
+| `skip-release`                                               | None (rare escape hatch)                                                       |
+
+A dependency update that also changes behaviour or code picks `patch`, `minor` or `major`, not `dependencies`.
+Dependabot pull requests have no Change Type section and count as `dependencies`.
+To release one, a maintainer adds exactly one label before merging: `change-type: patch`, `change-type: minor` or `change-type: major`.
+Two such labels fail the `pr-metadata` check and the release decision.
 
 The `AUTO_RELEASE` repository variable controls the trigger:
 
@@ -40,12 +46,12 @@ A revert of released code is `patch`. A revert of unreleased code is `skip-relea
 4. The tag job pushes the verified tag from the `release-tag` environment, which is limited to `main` and needs no approval.
 5. Publication runs in `npm-release`. Verify registry integrity, provenance, the GitHub release report and SBOM, and a clean install without credentials.
 
-| Mode      | Inputs                                                                                                                                       |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `new`     | Choose `bump: patch`, `minor`, or `major`. Under `0.x`, major advances the minor. A `1.0.0` release requires a reviewed manifest transition. |
-| `auto`    | None. The increment comes from the pull requests merged since the last stable tag; with every one `skip-release`, nothing is released.       |
-| `preview` | Supply a new `0.x.y-preview.N`. The workflow uses npm's `preview` dist-tag and creates a GitHub prerelease.                                  |
-| `retry`   | Supply an existing stable or preview version. The tag, manifest, and reviewed candidate must agree.                                          |
+| Mode      | Inputs                                                                                                                                               |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new`     | Choose `bump: patch`, `minor`, or `major`. Under `0.x`, major advances the minor. A `1.0.0` release requires a reviewed manifest transition.         |
+| `auto`    | None. The increment comes from the pull requests merged since the last stable tag; with only `dependencies` and `skip-release`, nothing is released. |
+| `preview` | Supply a new `0.x.y-preview.N`. The workflow uses npm's `preview` dist-tag and creates a GitHub prerelease.                                          |
+| `retry`   | Supply an existing stable or preview version. The tag, manifest, and reviewed candidate must agree.                                                  |
 
 After the version decision, four parallel job groups run the same checks as CI without cache:
 `release-checks` (build, types, lint, structural), `release-unit` (four test partitions),

@@ -35,8 +35,7 @@ export interface CaseWhen {
 }
 
 export type JsonPathStep =
-  | { readonly kind: 'key'; readonly name: string }
-  | { readonly kind: 'index'; readonly n: number };
+  { readonly kind: 'key'; readonly name: string } | { readonly kind: 'index'; readonly n: number };
 
 // ---------------------------------------------------------------------------
 // AST node variants

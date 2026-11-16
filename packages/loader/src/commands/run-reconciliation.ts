@@ -124,8 +124,7 @@ export function resolveDryRunOptions(
 export async function resolveRunConfig(options: Record<string, unknown>): Promise<LoaderConfig> {
   const requested = requestedReconcileSchema(options);
   const cliOwnershipMarkers = options.streamTableOwnershipMarker as
-    | Record<string, string>
-    | undefined;
+    Record<string, string> | undefined;
   const hasCliOwnershipMarkers =
     cliOwnershipMarkers !== undefined && Object.keys(cliOwnershipMarkers).length > 0;
   const targetConfig = await resolveTargetConfig(

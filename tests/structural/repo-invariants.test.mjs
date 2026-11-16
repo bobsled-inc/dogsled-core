@@ -898,6 +898,19 @@ describe('release and dependency policy guardrails', () => {
     );
   });
 
+  it('runs Dependabot version updates on Mondays at 06:00 UTC', () => {
+    const dependabot = parseYaml(
+      readFileSync(path.join(repoRoot, '.github', 'dependabot.yml'), 'utf8')
+    );
+    deepStrictEqual(
+      dependabot.updates.map((entry) => [entry['package-ecosystem'], entry.schedule]),
+      ['npm', 'github-actions'].map((ecosystem) => [
+        ecosystem,
+        { interval: 'weekly', day: 'monday', time: '06:00', timezone: 'Etc/UTC' },
+      ])
+    );
+  });
+
   it('keeps npm updates in ordered reviewable groups', () => {
     const dependabot = parseYaml(
       readFileSync(path.join(repoRoot, '.github', 'dependabot.yml'), 'utf8')
