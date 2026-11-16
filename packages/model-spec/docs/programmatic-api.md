@@ -2,7 +2,7 @@
 
 Every Model Spec CLI verb is available as a library function. Hosts that want to drive
 `compile` / `run` / `validate` / `test` / `lineage` / `seed` pipelines without
-shelling out to the `dogsled model` CLI can import the same orchestrators the CLI itself
+shelling out to the `bobsled model` CLI can import the same orchestrators the CLI itself
 uses. Layer 1 primitives (`compileAll`, `buildModelRegistry`, `generateSql`,
 `TransformSpecSchema`, ...) stay frozen — hand-rolled flows like the host application
 app's `data-model-compilation-service.ts` keep working byte-for-byte.
@@ -142,18 +142,18 @@ relies on; breaking it requires a coordinated migration.
 ## Error model
 
 `loadProject` and `validateProject` normalize boundary failures into the typed
-`DogsledRuntimeError` exported by the project entry point. Validation failures
+`BobsledRuntimeError` exported by the project entry point. Validation failures
 have `kind: 'validation'`, and their `cause` retains the original
 `CommandError` when callers need its exit code or detailed message. Catch the
 typed error instead of assuming every failure is a `CommandError`:
 
 ```ts
-import { CommandError, DogsledRuntimeError, loadProject } from '@bobsled-inc/model-spec/project';
+import { CommandError, BobsledRuntimeError, loadProject } from '@bobsled-inc/model-spec/project';
 
 try {
   await loadProject(cwd);
 } catch (error) {
-  if (error instanceof DogsledRuntimeError) {
+  if (error instanceof BobsledRuntimeError) {
     if (error.kind === 'validation' && error.cause instanceof CommandError) {
       console.error(error.cause.message);
     } else {

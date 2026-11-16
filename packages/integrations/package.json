@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "packages/integrations"
   },
   "engines": {
@@ -83,9 +83,9 @@
     "@vitest/coverage-v8": "catalog:testing",
     "vitest": "catalog:testing"
   },
-  "description": "Bundled source and action integration specifications for Dogsled.",
+  "description": "Bundled source and action integration specifications for Bobsled Core.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
@@ -94,8 +94,8 @@
     "connectors",
     "sources"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   }
 }

@@ -96,7 +96,7 @@ ages into the `latest` consumer tree. The finding names `parentPackage`,
 
 4. Decide:
    - **(a) Add the version.** Only if the reason still holds in the new
-     tarball and the new parent remains inside Dogsled's supported Node,
+     tarball and the new parent remains inside Bobsled Core's supported Node,
      module, platform and API contracts. Add `parentVersion` to `parentVersions` in
      `scripts/security/consumer-exceptions.json` and to the version list in the
      matching "Reviewed exceptions" paragraph of `docs/dependency-security.md`.
@@ -119,7 +119,7 @@ ages into the `latest` consumer tree. The finding names `parentPackage`,
 
 Worked example: `@databricks/sql` 3.0.0 entered the `latest` tree because both
 peer ranges were `>=2.0.0`. Its proxy path was unchanged, but its `engines`
-allowed only selected Node 22, 24 and 26 patch lines while Dogsled supported
+allowed only selected Node 22, 24 and 26 patch lines while Bobsled Core supported
 every Node version from 24 onward. So the fix was (b): cap both optional peer
 ranges at `>=2.0.0 <3` and keep the reviewed exception on 2.x.
 
@@ -162,20 +162,20 @@ draft repair, but a maintainer decides; an exception needs owner approval.
 
 ## Reviewing a Dependabot PR
 
-Grouped minor and patch PRs can still break Dogsled. Read the changed versions
+Grouped minor and patch PRs can still break Bobsled Core. Read the changed versions
 in the lockfile diff and each package's release notes, and look closely at:
 
 - a Node `engines` floor above the supported range, or holes that exclude a Node
-  version Dogsled supports, in `.nvmrc` and the package `engines` fields;
+  version Bobsled Core supports, in `.nvmrc` and the package `engines` fields;
 - ESM or CommonJS changes, new `exports` maps or removed entry points;
 - new, removed or narrower `peerDependencies`, or dependencies that become
   peers;
-- removed or renamed APIs that Dogsled imports (search with `git grep`);
+- removed or renamed APIs that Bobsled Core imports (search with `git grep`);
 - new native binaries, `preinstall`, `install` or `postinstall` scripts
   (`npm view <name>@<version> scripts --json`);
 - licence changes, which also change the third-party notices;
 - packages bundled into the published build, which change
-  `packages/dogsled/THIRD_PARTY_NOTICES.md`;
+  `packages/bobsled-core/THIRD_PARTY_NOTICES.md`;
 - the security pins: an update that conflicts with an `overrides` entry fails
   the install or build (see "Override bump").
 
@@ -192,7 +192,7 @@ because a bundled package version changed.
 
 1. Check out the PR branch, then run `pnpm install --frozen-lockfile`,
    `pnpm build` and `node scripts/release/third-party-notices.mjs`. Review
-   the diff of `packages/dogsled/THIRD_PARTY_NOTICES.md`: only the changed
+   the diff of `packages/bobsled-core/THIRD_PARTY_NOTICES.md`: only the changed
    packages should move.
 2. If generation fails:
    - `No license text for <id>`: the package ships no licence file. Confirm

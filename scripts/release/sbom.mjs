@@ -26,8 +26,8 @@ export function mergeBundledComponents(sbom, packages) {
       sbom.components.push(component);
     }
     component.properties ??= [];
-    if (!component.properties.some((property) => property.name === 'dogsled:inlined'))
-      component.properties.push({ name: 'dogsled:inlined', value: 'true' });
+    if (!component.properties.some((property) => property.name === 'bobsled:inlined'))
+      component.properties.push({ name: 'bobsled:inlined', value: 'true' });
     const parent = sbom.metadata?.component?.['bom-ref'];
     if (parent) {
       sbom.dependencies ??= [];

@@ -115,7 +115,7 @@ export function assertLiveModeSupported(substrate: CacheSubstrate): { warn?: str
       return {
         warn:
           `Substrate "${substrate.kind}" uses idempotent-writes semantics for mode: live ` +
-          `(staging-table + atomic INSERT/SELECT). dogsled doctor will WARN; behavior is ` +
+          `(staging-table + atomic INSERT/SELECT). bobsled doctor will WARN; behavior is ` +
           `correct but slightly different from session-scoped transactional substrates.`,
       };
     case 'lww':

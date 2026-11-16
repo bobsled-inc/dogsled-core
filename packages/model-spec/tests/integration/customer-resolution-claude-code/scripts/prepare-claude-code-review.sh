@@ -73,7 +73,7 @@ fi
 cat >"$WORKDIR/review/CLAUDE_CODE_REVIEW_TASK.md" <<EOF
 # Claude Code Review Task
 
-You are reviewing exported Entity Graph candidate pairs for the Dogsled customer-resolution demo.
+You are reviewing exported Entity Graph candidate pairs for the Bobsled Core customer-resolution demo.
 
 ## Files
 

@@ -1,27 +1,27 @@
 # @bobsled-inc/integrations
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Pre-built API integration configs for the `Dogsled` extractor. Each integration contains spec and resource YAML specs ready for use.
+Pre-built API integration configs for the `Bobsled Core` extractor. Each integration contains spec and resource YAML specs ready for use.
 
 ## Using an integration
 
 ```bash
 # List available integrations
-dogsled integrations list
+bobsled integrations list
 
 # Filter by category
-dogsled integrations list --category developer-tools
+bobsled integrations list --category developer-tools
 
 # View integration details
-dogsled integrations show github
+bobsled integrations show github
 
 # View a specific resource spec
-dogsled integrations show github repos
+bobsled integrations show github repos
 
 # Scaffold into your project
-dogsled integrations init github
-dogsled integrations init github --resources repos,issues
+bobsled integrations init github
+bobsled integrations init github --resources repos,issues
 ```
 
 ## Adding an integration
@@ -29,7 +29,7 @@ dogsled integrations init github --resources repos,issues
 1. Find the OpenAPI spec (or write YAML by hand)
 2. Generate specs:
    ```bash
-   dogsled extract generate <spec_url> --integration <name> --directory /tmp/staging
+   bobsled extract generate <spec_url> --integration <name> --directory /tmp/staging
    ```
 3. Review generated files, resolve all `# REVIEW:` markers
 4. Create `meta.yml` with display info and auth setup
@@ -78,7 +78,7 @@ const queryable = listQueryResources();
 const capabilities = buildQueryCapabilitiesManifest();
 const githubIssues = getQuerySpec('github', 'issues');
 const openIssues = await queryResources.github.issues.list({
-  input: { owner: 'bobsled-inc', repo: 'dogsled-core' },
+  input: { owner: 'bobsled-inc', repo: 'bobsled-core' },
   filter: { state: 'open', updated_at: { $gte: '2026-04-01T00:00:00Z' } },
   limit: 25,
 });
@@ -95,7 +95,7 @@ the `search` option.
 
 Billable Resources are not added to this convenience catalog. A server must load the validated
 Integration and Resource from its project, then call `queryResource()` from
-`@bobsled-inc/dogsled/resources` with an `authorizeBillable` callback. This keeps paid calls,
+`@bobsled-inc/bobsled-core/resources` with an `authorizeBillable` callback. This keeps paid calls,
 including Exa web search, blocked until the host app gives explicit approval.
 
 ### 1. Discover queryable resources
@@ -296,7 +296,7 @@ MongoDB is a trademark of MongoDB, Inc. This project is not affiliated with or e
 
 ## Updating an integration
 
-1. Regenerate from OpenAPI: `dogsled extract generate <spec_url> --integration <name> --directory /tmp/staging`
+1. Regenerate from OpenAPI: `bobsled extract generate <spec_url> --integration <name> --directory /tmp/staging`
 2. Diff generated files against existing
 3. Merge changes, keeping manual customizations
 4. Run tests to validate

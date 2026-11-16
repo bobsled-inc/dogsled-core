@@ -1,4 +1,4 @@
-import { buildDuckDbRunner } from '@bobsled-inc/dogsled/connections';
+import { buildDuckDbRunner } from '@bobsled-inc/bobsled-core/connections';
 async function withRunner(method, sql) {
   const runner = await buildDuckDbRunner({
     spec_version: '1',

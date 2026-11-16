@@ -16,14 +16,14 @@ import { digestAgenticState } from '../../../src/agentic/state.js';
 import { caseName, quoteIdentifier } from '../../../src/compiler/dialect.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 
-const integrationPath = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION;
-const schema = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA;
+const integrationPath = process.env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_INTEGRATION;
+const schema = process.env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA;
 
 describe.skipIf(!integrationPath && !schema)('cloud checkpoint store', () => {
   it('retains accepted results and fences concurrent owners', async () => {
     if (!integrationPath || !schema) {
       throw new Error(
-        'Set DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION and DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA'
+        'Set BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_INTEGRATION and BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA'
       );
     }
     const integration = IntegrationFileSchema.parse(
@@ -63,7 +63,7 @@ describe.skipIf(!integrationPath && !schema)('cloud checkpoint store', () => {
         run: { id, scope, mode: 'resume' },
       });
       expect(calls).not.toHaveBeenCalled();
-      await expect(access(join(directory, '.dogsled/model-spec'))).rejects.toMatchObject({
+      await expect(access(join(directory, '.bobsled/model-spec'))).rejects.toMatchObject({
         code: 'ENOENT',
       });
     } finally {
@@ -82,7 +82,7 @@ describe.skipIf(!integrationPath && !schema)('cloud checkpoint store', () => {
       try {
         for (const suffix of ['p', 'c']) {
           await runner.run(
-            `DROP TABLE IF EXISTS ${namespace}.${q(`__dogsled_cp_${digestAgenticState(key).slice(0, 48)}_${suffix}`)}`
+            `DROP TABLE IF EXISTS ${namespace}.${q(`__bobsled_cp_${digestAgenticState(key).slice(0, 48)}_${suffix}`)}`
           );
         }
       } finally {

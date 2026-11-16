@@ -3,7 +3,7 @@ name: orders
 type: source
 source_type: warehouse_table
 connection: bigquery
-table: dogsled_multi_conn_raw.orders
+table: multi_conn_raw.orders
 schema:
   columns:
     - name: o_orderkey

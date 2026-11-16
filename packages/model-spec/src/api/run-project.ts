@@ -1,6 +1,6 @@
 import type { AgenticRunOptions } from '../agentic/run.js';
 /**
- * `runProject` — Layer 3 orchestrator for `dogsled model run`.
+ * `runProject` — Layer 3 orchestrator for `bobsled model run`.
  *
  * Accepts a Model Spec project directory (or pre-loaded `LoadedProject`) and executes
  * every referenced integration's materialized models via its resolved runner.
@@ -118,13 +118,13 @@ export interface RunProjectOptions {
   /**
    * Shell command that prints a fresh `{"access_token","expires_at"}` token —
    * the SAME `credentials_token_command` the loader consumes. Converted to a
-   * {@link tokenProvider} when one isn't supplied directly. Used by the Dogsled
-   * CLI to forward `credentials_token_command` from dogsled.yml to model runs.
+   * {@link tokenProvider} when one isn't supplied directly. Used by the Bobsled Core
+   * CLI to forward `credentials_token_command` from bobsled.yml to model runs.
    */
   credentialsTokenCommand?: string;
   /**
    * Pipeline-level warehouse selector for the run. Custom runners receive the
-   * stable selector unchanged; Dogsled's built-in Snowflake runner resolves it
+   * stable selector unchanged; Bobsled Core's built-in Snowflake runner resolves it
    * through `connection.warehouses` when that map is declared. One per run —
    * warehouse selection is pipeline-grained only. Does not affect
    * dynamic-table DDL (`targetWarehouse`).
@@ -137,7 +137,7 @@ export interface RunProjectOptions {
   queryTag?: string;
   /**
    * Optional host-provided publisher for models that set `publish:`.
-   * `@bobsled-inc/model-spec` stays loader-free; the Dogsled CLI injects the
+   * `@bobsled-inc/model-spec` stays loader-free; the Bobsled Core CLI injects the
    * implementation that stages foreign sources and writes the target warehouse.
    */
   crossWarehousePublisher?: (
@@ -148,8 +148,8 @@ export interface RunProjectOptions {
   project?: LoadedProject;
   /**
    * Prior `RunState` supplied in-memory. Presence (not truthiness — `{ models: {} }`
-   * is a valid value meaning "first run") flips Dogsled into programmatic mode:
-   * `.dogsled/model-spec/run-state.json` is neither read nor written. The new state is returned
+   * is a valid value meaning "first run") flips Bobsled Core into programmatic mode:
+   * `.bobsled/model-spec/run-state.json` is neither read nor written. The new state is returned
    * on `result.state` for the caller to persist.
    *
    * Combined with `fullRefresh: true`, the supplied state is preserved on the
@@ -281,7 +281,7 @@ interface IntegrationPlan {
    * schema-drift failure (`planSchemaChange` with `on_schema_change: fail`).
    *
    * Surfaced as failed `ModelExecutionResult` rows in the per-integration
-   * result so `dogsled model run --json` consumers see the suggested DROP
+   * result so `bobsled model run --json` consumers see the suggested DROP
    * statement in the per-model `error` field instead of losing it to a
    * top-level `CommandError`. The caller is still responsible for translating
    * a non-empty `planFailures` into exit code 3.
@@ -404,14 +404,14 @@ export async function runProject(
   const secretResolver =
     opts.secretResolver ?? (await buildSecretResolver(project.cwd, opts.secrets));
   // Refreshable managed credential — provider wins over the command string,
-  // which in turn wins over the `DOGSLED_CREDENTIALS_TOKEN_COMMAND` env var. The
-  // env fallback is how the standalone `dogsled model run` subprocess + the Cloud
+  // which in turn wins over the `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND` env var. The
+  // env fallback is how the standalone `bobsled model run` subprocess + the Cloud
   // Run Jobs executor receive the SAME `credentials_token_command` the loader
-  // gets from dogsled.yml, without threading a flag through every CLI verb. Built
+  // gets from bobsled.yml, without threading a flag through every CLI verb. Built
   // once per run and shared by every integration's runner. Undefined leaves the
   // runners on their static credentials (behaviour unchanged).
   const credentialsTokenCommand =
-    opts.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+    opts.credentialsTokenCommand ?? process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
   const tokenProvider: BigQueryTokenProvider | undefined =
     opts.tokenProvider ??
     (credentialsTokenCommand ? createTokenCommandProvider(credentialsTokenCommand) : undefined);
@@ -426,7 +426,7 @@ export async function runProject(
   // half-applied state across integrations.
   if (plans.some((p) => p.publishedModels.length > 0) && !opts.crossWarehousePublisher) {
     throw new CommandError(
-      'cross-warehouse models require a publisher (Dogsled CLI provides this; programmatic callers must inject).',
+      'cross-warehouse models require a publisher (Bobsled Core CLI provides this; programmatic callers must inject).',
       2
     );
   }
@@ -1024,7 +1024,7 @@ function buildIntegrationPlan(
         });
       } else {
         // Surface the DROP-statement-bearing message as a per-model failure so
-        // `dogsled model run --json` consumers see it in `execution_results[].error`.
+        // `bobsled model run --json` consumers see it in `execution_results[].error`.
         // The integration is marked failed and the model is skipped from the plan;
         // downstream models that depend on it will fail at execution time, which
         // is the existing safety contract.

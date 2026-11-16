@@ -81,11 +81,11 @@ export function validateOssieDocument(document: unknown, filePath: string): Ossi
   return documentSchema.parse(document);
 }
 
-export function dogsledExtension(
+export function bobsledExtension(
   value: { custom_extensions?: { vendor_name: string; data: string }[] },
   where: string,
   required = false,
-  vendor = 'DOGSLED'
+  vendor = 'BOBSLED'
 ): Record<string, unknown> {
   const entries = value.custom_extensions?.filter((e) => e.vendor_name === vendor) ?? [];
   if (entries.length > 1) throw new CommandError(`${where}: duplicate ${vendor} extensions`, 2);

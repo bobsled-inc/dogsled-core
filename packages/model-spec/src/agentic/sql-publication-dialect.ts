@@ -36,9 +36,9 @@ export function publicationNames(
     systemSchema === undefined
       ? namespace
       : [...normalized.slice(0, -2), caseName(systemSchema, dialect)].map(q).join('.');
-  const prefix = `_dogsled_pub_${digestAgenticState(sql).slice(0, 24)}`;
+  const prefix = `_bobsled_pub_${digestAgenticState(sql).slice(0, 24)}`;
   const ref = (name: string) => `${storageNamespace}.${q(name)}`;
-  if (normalized.at(-1)!.toLowerCase().startsWith('_dogsled_pub_')) {
+  if (normalized.at(-1)!.toLowerCase().startsWith('_bobsled_pub_')) {
     throw new Error('Publication metadata names are reserved');
   }
   return {
@@ -52,11 +52,11 @@ export function publicationNames(
     manifests: ref(`${prefix}_stages`),
     receipts: ref(`${prefix}_receipts`),
     // PostgreSQL identifiers are limited to 63 bytes. Keep 192 bits of the digest.
-    stage: (id: string, suffix = '') => ref(`_dogsled_pub_${id.slice(0, 48)}${suffix}`),
+    stage: (id: string, suffix = '') => ref(`_bobsled_pub_${id.slice(0, 48)}${suffix}`),
     /** Schema and table names of a stage as the information schema lists them. */
     stageTable: (id: string, suffix = '') => ({
       schema: systemSchema === undefined ? normalized.at(-2)! : caseName(systemSchema, dialect),
-      table: caseName(`_dogsled_pub_${id.slice(0, 48)}${suffix}`, dialect),
+      table: caseName(`_bobsled_pub_${id.slice(0, 48)}${suffix}`, dialect),
     }),
   };
 }

@@ -15,7 +15,7 @@ function getRepoRoot(): string {
 
 async function runTrack(args: string[]): Promise<void> {
   const repoRoot = getRepoRoot();
-  const entrypoint = path.join(repoRoot, 'packages/dogsled/src/index.ts');
+  const entrypoint = path.join(repoRoot, 'packages/bobsled-core/src/index.ts');
   const child = spawn('pnpm', ['exec', 'tsx', entrypoint, 'model', ...args], {
     cwd: getWorkspaceRoot(),
     stdio: 'inherit',
@@ -26,7 +26,7 @@ async function runTrack(args: string[]): Promise<void> {
     child.once('close', (code) => resolve(code ?? 1));
   });
   if (exitCode !== 0) {
-    throw new Error(`Command failed: dogsled model ${args.join(' ')}`);
+    throw new Error(`Command failed: bobsled model ${args.join(' ')}`);
   }
 }
 

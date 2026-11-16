@@ -1,10 +1,10 @@
 # Import and export OSI semantic models
 
-Dogsled supports importing and exporting semantic models in the
+Bobsled Core supports importing and exporting semantic models in the
 [Open Semantic Interchange (OSI) format](https://github.com/apache/ossie/tree/main/core-spec).
 The [Apache Ossie project](https://ossie.apache.org/) maintains the specification.
 
-Dogsled converts between OSI YAML and native source and model YAML. Dogsled uses native
+Bobsled Core converts between OSI YAML and native source and model YAML. Bobsled Core uses native
 files for editing, validation, compilation, and execution. Conversion does not
 connect to a warehouse or create connections.
 
@@ -17,7 +17,7 @@ Import accepts YAML for two pinned profiles:
 
 The development profile can change before release. Pinning makes conversion
 reproducible; it does not make other snapshots compatible. Import reads legacy
-DOGSLED extension version `1` and the complete version `2` contract. New exports
+BOBSLED extension version `1` and the complete version `2` contract. New exports
 will write version `2` only.
 
 ## Import
@@ -25,26 +25,26 @@ will write version `2` only.
 Preview a conversion first:
 
 ```sh
-dogsled model ossie import sales.yml --json
+bobsled model ossie import sales.yml --json
 ```
 
 Import several files as one atomic batch:
 
 ```sh
-dogsled model ossie import customers.yml orders.yml products.yml --json
+bobsled model ossie import customers.yml orders.yml products.yml --json
 ```
 
-Datasets without a DOGSLED kind import as sources. Valid DOGSLED metadata can
+Datasets without a BOBSLED kind import as sources. Valid BOBSLED metadata can
 declare a source or derived model. No kind map or companion file is needed. To
 write the result:
 
 ```sh
-dogsled model ossie import sales.yml --out ../imported-sales --yaml
+bobsled model ossie import sales.yml --out ../imported-sales --yaml
 ```
 
 The output directory must be new. Conversion never merges into or overwrites an
 existing project. Import writes ordinary source, model, metric, and relationship
-files. Folder names are suggestions; Dogsled discovers files by their declared
+files. Folder names are suggestions; Bobsled Core discovers files by their declared
 type.
 
 The report contains `ok`, `ready`, `files`, and `diagnostics`:
@@ -56,13 +56,13 @@ The report contains `ok`, `ready`, `files`, and `diagnostics`:
 | `ok: true, ready: true`  | The converted files pass native schema validation. Dependencies, credentials and warehouse execution still need normal project validation. |
 
 Plain OSI becomes a native source draft pointing to the dataset’s `source`
-address. Dogsled does not invent a connection, exact physical type, grain, parent
+address. Bobsled Core does not invent a connection, exact physical type, grain, parent
 model, or build expression. The API host can supply connection and physical schema
 context. Otherwise, import returns the draft with exact diagnostics. An OSI
 `expression` describes a semantic output; it is never copied into the native build
 `expr` automatically.
 
-A complete DOGSLED version `2` document can supply the native settings. Partial
+A complete BOBSLED version `2` document can supply the native settings. Partial
 extensions produce incomplete drafts. Malformed YAML, unsupported extension
 versions, duplicate native identities, and unsupported output transforms are
 fatal errors and produce no files.
@@ -70,13 +70,13 @@ fatal errors and produce no files.
 Use one default connection when it is safe for every unresolved source:
 
 ```sh
-dogsled model ossie import sales.yml --connection warehouse
+bobsled model ossie import sales.yml --connection warehouse
 ```
 
 Bind datasets separately when a document uses several connections:
 
 ```sh
-dogsled model ossie import sales.yml \
+bobsled model ossie import sales.yml \
   --bind raw_orders=warehouse \
   --bind raw_customers=crm
 ```
@@ -87,36 +87,36 @@ With several input files, qualify an ambiguous dataset name:
 --bind sales.yml#raw_orders=warehouse
 ```
 
-Map handles from imported DOGSLED data to local handles:
+Map handles from imported BOBSLED data to local handles:
 
 ```sh
-dogsled model ossie import sales.yml --map-connection dbt_prod=warehouse
+bobsled model ossie import sales.yml --map-connection dbt_prod=warehouse
 ```
 
-`--project` checks that supplied handles exist in a Dogsled project. It does not
-open a warehouse connection. Import never reads credentials. Run normal Dogsled
+`--project` checks that supplied handles exist in a Bobsled Core project. It does not
+open a warehouse connection. Import never reads credentials. Run normal Bobsled Core
 validation after reviewing and placing the generated files in the project.
 
 Use `--strict` when known meaning loss must block readiness and file writes. The
 report still contains a safe preview. JSON is the default report format; `--yaml`
 and `--human` contain the same result and diagnostics.
 
-Standard metrics and relationships become native Dogsled files when their dataset
+Standard metrics and relationships become native Bobsled Core files when their dataset
 references are clear. Plain relationships use `many_to_one` and default to an
 `inner` join with a diagnostic. Dataset, field, metric, and relationship foreign
 extensions stay on their native owner as inert `interchange.ossie` data.
-Verified queries in the DOGSLED extension become native files (see
+Verified queries in the BOBSLED extension become native files (see
 [Verified queries](#verified-queries)). Other semantic-model-level data and
 `unique_keys` are not preserved and produce diagnostics.
 
 ## Export
 
-The CLI reads the Dogsled project and resolves model output addresses through the
+The CLI reads the Bobsled Core project and resolves model output addresses through the
 same integration and target settings as compilation. No address flag or YAML
 map is needed:
 
 ```sh
-dogsled model ossie export \
+bobsled model ossie export \
   model:orders \
   source:warehouse.raw_orders \
   --name sales \
@@ -124,11 +124,11 @@ dogsled model ossie export \
 ```
 
 The default output is OSI `0.1.1`. It contains standard OSI data and no
-DOGSLED extensions. Use the draft round-trip profile when another Dogsled project
+BOBSLED extensions. Use the draft round-trip profile when another Bobsled Core project
 must recreate the native build settings:
 
 ```sh
-dogsled model ossie export \
+bobsled model ossie export \
   model:orders \
   source:warehouse.raw_orders \
   --name sales \
@@ -155,7 +155,7 @@ an error instead of a guessed address.
 
 Export does not include dependencies automatically. Select every model/source you
 intend to exchange. In `0.2.0.dev0`, an unselected derived dependency remains in
-the DOGSLED build data and produces `export_dependency_not_selected`. Metrics and
+the BOBSLED build data and produces `export_dependency_not_selected`. Metrics and
 relationships are included only when all their referenced datasets are selected.
 A partially selected metric or relationship is omitted with
 `export_object_partially_selected`.
@@ -168,8 +168,8 @@ warnings explain its limits.
 Keep each source's configured table address complete and correct for the target
 warehouse, as you do for compilation. Export does not check whether a table
 exists. Ephemeral models and live models without a publish destination use
-`dogsled://models/<name>`. API sources use `dogsled://sources/<connection>/<name>`.
-These references need Dogsled project context.
+`bobsled://models/<name>`. API sources use `bobsled://sources/<connection>/<name>`.
+These references need Bobsled Core project context.
 
 Agentic models and models that use `flatten_json` export as catalog-only datasets.
 The export keeps the resolved finished-table address, declared output fields,
@@ -185,7 +185,7 @@ those as unsupported rather than silently omitting a selected model.
 OSI always treats the `from` side of a relationship as the many side. Export
 keeps `many_to_one`, reverses `one_to_many`, and projects `one_to_one` and
 `many_to_many` as many-to-one. The last two produce
-`relationship_cardinality_projected`. DOGSLED version `2` data preserves the
+`relationship_cardinality_projected`. BOBSLED version `2` data preserves the
 exact native cardinality in the draft profile.
 
 ## Example mapping
@@ -210,7 +210,7 @@ columns:
 ```
 
 The export includes the finished address in `source` and moves build details to
-DOGSLED extensions. JSON strings occur only in the exchanged OSI file:
+BOBSLED extensions. JSON strings occur only in the exchanged OSI file:
 
 ```yaml
 version: 0.2.0.dev0
@@ -228,10 +228,10 @@ datasets:
             - dialect: ANSI_SQL
               expression: id
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"BIGINT","build_expression":"id"}'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"2","kind":"derived","grain":["id"],"build":{"source":{"ref":"warehouse.raw_orders"},"materialization":{"type":"table"}}}'
 ```
 
@@ -240,12 +240,12 @@ datasets:
 | Model/source name and description                                                   | Standard dataset name and description                      |
 | Resolved output address                                                             | Standard dataset `source`                                  |
 | Column name and description                                                         | Standard field name and description                        |
-| Exact native type, when declared                                                    | DOGSLED field `sql_type`, plus standard logical `datatype` |
-| Build formula                                                                       | DOGSLED field `build_expression`                           |
+| Exact native type, when declared                                                    | BOBSLED field `sql_type`, plus standard logical `datatype` |
+| Build formula                                                                       | BOBSLED field `build_expression`                           |
 | Derived primary-key flags                                                           | Standard dataset `primary_key`                             |
-| Native grain                                                                        | DOGSLED dataset `grain`                                    |
-| Source connection, resource settings and field metadata                             | DOGSLED source/field settings                              |
-| Parent, joins, filters, aggregation, sorting, unions, variables and materialization | DOGSLED dataset `build`, using native schema keys          |
+| Native grain                                                                        | BOBSLED dataset `grain`                                    |
+| Source connection, resource settings and field metadata                             | BOBSLED source/field settings                              |
+| Parent, joins, filters, aggregation, sorting, unions, variables and materialization | BOBSLED dataset `build`, using native schema keys          |
 | Wildcard outputs, later derived columns, pivot/unpivot, hierarchy and recursion     | Rejected until final-output mapping is supported           |
 | JSON flattening                                                                     | Finished dataset only; build omitted with a warning        |
 | Agentic models                                                                      | Finished dataset only; agent plan omitted with a warning   |
@@ -254,12 +254,12 @@ The default `0.1.1` profile omits the JSON extensions and logical datatypes beca
 that released schema cannot carry them. Diagnostics report the lost connection,
 physical types, derived build data, exact metric ownership, and relationship
 behavior. The `0.2.0.dev0` profile writes logical types as standard OSI data and
-keeps exact physical types in DOGSLED `sql_type`.
+keeps exact physical types in BOBSLED `sql_type`.
 
 ## Verified queries
 
 OSI `0.2.0.dev0` exports verified queries in one semantic-model-level
-`custom_extensions` entry with `vendor_name: DOGSLED`. Its JSON data has this shape:
+`custom_extensions` entry with `vendor_name: BOBSLED`. Its JSON data has this shape:
 
 ```json
 {
@@ -288,7 +288,7 @@ Export includes a query only when every dataset it refers to is selected:
 - A query with no tokens is included only with `--all`.
 - Tokens inside SQL strings and comments are not references.
 
-Import checks the DOGSLED extension and writes one native file per query under
+Import checks the BOBSLED extension and writes one native file per query under
 `verified_queries/`. It does not run the queries. Source bindings and connection
 aliases apply to real tokens; strings and comments stay unchanged. A query that
 refers to a dataset outside the document, or whose tokens are rebound to more than
@@ -297,7 +297,7 @@ definition or a duplicate name fails the whole import, with no partial files.
 Imported queries become runnable native files. Review their SQL and questions
 before running them or giving the project to an agent.
 
-The default OSI `0.1.1` profile cannot carry DOGSLED extensions, so export leaves
+The default OSI `0.1.1` profile cannot carry BOBSLED extensions, so export leaves
 verified queries out and warns. With `--strict`, that blocks the export. Query
 extensions from other vendors are never turned into native queries.
 
@@ -309,7 +309,7 @@ execute them. Import does not create a shared companion file.
 
 The native model owns mapped values. Changing a description changes the export;
 deleting it does not restore an old imported description. Export regenerates
-DOGSLED build settings from the current native file. Foreign extension `data`
+BOBSLED build settings from the current native file. Foreign extension `data`
 strings are retained as strings, not interpreted or rewritten.
 
 Each field with foreign extensions has an origin ID and an explicit current field
@@ -321,9 +321,9 @@ the extension data. Never guess ownership from field order or a similar name.
 
 This is not a lossless round trip: YAML comments, whitespace, ordering and arbitrary
 semantic meaning are not guaranteed. Supported owner extensions are retained, but
-Dogsled cannot prove that foreign expressions remain meaningful after structural
+Bobsled Core cannot prove that foreign expressions remain meaningful after structural
 edits. Foreign semantic-model-level extensions are not retained. The supported
-DOGSLED verified-query extension is restored as native files.
+BOBSLED verified-query extension is restored as native files.
 
 ## SDK and agent workflow
 
@@ -331,7 +331,7 @@ DOGSLED verified-query extension is restored as native files.
 import {
   exportOssieDocument,
   importOssieDocuments,
-} from '@bobsled-inc/dogsled/model-spec/interchange';
+} from '@bobsled-inc/bobsled-core/model-spec/interchange';
 
 const imported = importOssieDocuments({
   documents: [{ path: 'sales.yml', content: yamlText }],
@@ -358,7 +358,7 @@ const exported = exportOssieDocument({
     models,
     metrics,
     relationships,
-    // The host resolves these from the normal Dogsled project settings.
+    // The host resolves these from the normal Bobsled Core project settings.
     addresses: {
       'warehouse.raw_orders': 'ANALYTICS.RAW.RAW_ORDERS',
       orders: 'ANALYTICS.MART.ORDERS',
@@ -394,7 +394,7 @@ existing import directories, and existing export files.
 
 ## Move a project from raw OSI files
 
-Raw OSI documents are exchange inputs, not the recommended Dogsled authoring
+Raw OSI documents are exchange inputs, not the recommended Bobsled Core authoring
 format. Convert an existing document into a new directory, review every diagnostic,
 and repair any incomplete native files. Then replace the raw document with the
 generated source, model, metric, and relationship files. Validate, compile, and run
@@ -403,7 +403,7 @@ definitions together because they describe the same objects.
 
 Import preserves unrecognized vendor extensions as inert foreign data and does not
 interpret them as native settings. Diagnostics identify metadata that needs
-review. Exports write native `DOGSLED` settings and can retain imported foreign
+review. Exports write native `BOBSLED` settings and can retain imported foreign
 entries as opaque metadata.
 
 See the [customer ontology guide](../../../docs/guides/customer-ontologies.md) for business concepts and mappings.

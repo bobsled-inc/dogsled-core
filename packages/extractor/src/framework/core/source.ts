@@ -138,15 +138,15 @@ export const TransportSchema = z.union([
 
 /**
  * Reserved prefixes for orchestrator-specific extension keys at the top
- * level of a source / integration / resource spec. Dogsled ignores these
- * fields — the orchestrator wrapping Dogsled (e.g. an internal control
+ * level of a source / integration / resource spec. Bobsled Core ignores these
+ * fields — the orchestrator wrapping Bobsled Core (e.g. an internal control
  * plane, a SaaS scheduler, or a CI runner) reads them. Standalone
- * Dogsled CLI users won't author them; the prefix is the signal that
+ * Bobsled Core CLI users won't author them; the prefix is the signal that
  * "this field is for some other tool."
  *
  * - `x-*`     — generic, OpenAPI-style extension namespace.
- * - `dogsled_*` — fields used by a host application's managed ELT
- *               adapter (e.g. `dogsled_connection_ref` linking the
+ * - `bobsled_*` — fields used by a host application's managed ELT
+ *               adapter (e.g. `bobsled_connection_ref` linking the
  *               source to a host-managed connection row).
  *
  * We preprocess these out of the input BEFORE the strict schema runs.
@@ -155,7 +155,7 @@ export const TransportSchema = z.union([
  * `'transport' in integration` discriminator narrowing stays correct
  * across consumers in this repo.
  */
-const SOURCE_EXTENSION_KEY_PREFIXES = ['x-', 'dogsled_'] as const;
+const SOURCE_EXTENSION_KEY_PREFIXES = ['x-', 'bobsled_'] as const;
 
 const isSourceExtensionKey = (key: string): boolean =>
   SOURCE_EXTENSION_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));
@@ -188,7 +188,7 @@ export const SourceSchema = z.preprocess(
       // valid for existing ones.
       type: z.enum(['integration', 'source']),
       // Self-describing source kinds — authored purely in YAML, no bundled
-      // connector module. The only Dogsled-CLI-visible source_type values on a
+      // connector module. The only Bobsled Core-CLI-visible source_type values on a
       // v2 source (warehouse/file/legacy specs use their own schemas):
       //
       //   - `custom_api`  — REST / GraphQL APIs (inline `http` transport).
@@ -207,7 +207,7 @@ export const SourceSchema = z.preprocess(
       default_transport: SpecNameSchema.optional(),
       // Empty transports[] is permitted so orchestrator-managed bundles
       // that exist purely as semantic-model metadata (Model Spec sources, no
-      // ETL) can omit the transport block entirely. Standalone Dogsled
+      // ETL) can omit the transport block entirely. Standalone Bobsled Core
       // CLI users still need ≥1 transport in practice — resources
       // reference one via `via:`, and `resolveVia` throws if the
       // referenced id is missing. Defaults to [] when omitted.

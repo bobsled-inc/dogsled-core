@@ -1,7 +1,7 @@
 import { CommandError } from '@bobsled-inc/protocol';
 
 import { classifyProjectFile, visibleDeclaredTypeOf, visiblyOssie } from './classify.js';
-import { isDogsledFileType, SINGLETON_PROJECT_FILE_KINDS } from './kinds.js';
+import { isBobsledFileType, SINGLETON_PROJECT_FILE_KINDS } from './kinds.js';
 import {
   compareProjectPaths,
   conventionalSkillPackageDirectory,
@@ -48,7 +48,7 @@ function sortByPath<T extends { readonly path: string }>(items: T[]): T[] {
 
 /**
  * An issue for a file the index could not classify, carrying the type the
- * file's leading text visibly declares, so a typed Dogsled file that is too
+ * file's leading text visibly declares, so a typed Bobsled Core file that is too
  * large or not UTF-8 still stops the loaders that need it.
  */
 export function unclassifiedFileIssue(
@@ -281,7 +281,7 @@ const INCOMPLETE_SCAN_CODES: ReadonlySet<ProjectIndexIssueCode> = new Set([
 ]);
 
 /**
- * `model-spec.yml` and `extractor.yml` keys that name a folder of Dogsled objects,
+ * `model-spec.yml` and `extractor.yml` keys that name a folder of Bobsled Core objects,
  * with the camelCase aliases the extractor configuration accepts.
  */
 const OBJECT_FOLDER_KEYS = [
@@ -323,8 +323,8 @@ function configuredFolder(value: unknown): string | undefined {
 }
 
 /**
- * Folders the project's own Model Spec and extractor configurations name for Dogsled
- * objects. Dogsled read them strictly before type-based discovery, so a problem
+ * Folders the project's own Model Spec and extractor configurations name for Bobsled Core
+ * objects. Bobsled Core read them strictly before type-based discovery, so a problem
  * inside one still stops loading.
  */
 export function configuredObjectFolders(index: ProjectIndex): readonly string[] {
@@ -364,19 +364,19 @@ function isInConfiguredObjectFolder(index: ProjectIndex, issuePath: string): boo
   );
 }
 
-function isInDogsledFolder(index: ProjectIndex, issuePath: string): boolean {
+function isInBobsledFolder(index: ProjectIndex, issuePath: string): boolean {
   return isInConventionalObjectFolder(issuePath) || isInConfiguredObjectFolder(index, issuePath);
 }
 
 /**
- * Whether an issue stops Dogsled loaders. Duplicate configurations, ambiguous
+ * Whether an issue stops Bobsled Core loaders. Duplicate configurations, ambiguous
  * sources, duplicate identities, invalid paths, and incomplete scans always do.
- * A problem with one file stops them when the file declares a type Dogsled loads,
- * or lives in a folder Dogsled loaded objects from before type-based discovery:
+ * A problem with one file stops them when the file declares a type Bobsled Core loads,
+ * or lives in a folder Bobsled Core loaded objects from before type-based discovery:
  * a conventional folder, or one the project's `model-spec.yml` or `extractor.yml`
- * configures. Dogsled never follows a symbolic link. A link stops loaders where
- * Dogsled read or rejected links before: a root configuration file such as
- * `dogsled.yml`, a YAML file in one of those folders, or anything under
+ * configures. Bobsled Core never follows a symbolic link. A link stops loaders where
+ * Bobsled Core read or rejected links before: a root configuration file such as
+ * `bobsled.yml`, a YAML file in one of those folders, or anything under
  * `skills/`. Problems with other files (documentation front matter, templated
  * YAML, files owned by other tools, other links) are reported but do not stop
  * loading.
@@ -387,20 +387,20 @@ export function isBlockingProjectIndexIssue(
 ): boolean {
   if (issue.kind === 'ossie') return true;
   if (ALWAYS_BLOCKING_CODES.has(issue.code)) return true;
-  if (issue.kind !== undefined && isDogsledFileType(issue.kind)) return true;
+  if (issue.kind !== undefined && isBobsledFileType(issue.kind)) return true;
   if (issue.code === 'symlink') {
     return (
       conventionalProjectFileKind(issue.path) !== undefined ||
       issue.path.split('/')[0] === PROJECT_SKILLS_FOLDER ||
       (['yaml', 'json'].includes(projectFileFormat(issue.path)) &&
-        isInDogsledFolder(index, issue.path))
+        isInBobsledFolder(index, issue.path))
     );
   }
-  if (issue.declaredType !== undefined && isDogsledFileType(issue.declaredType)) return true;
-  return isInDogsledFolder(index, issue.path);
+  if (issue.declaredType !== undefined && isBobsledFileType(issue.declaredType)) return true;
+  return isInBobsledFolder(index, issue.path);
 }
 
-/** Throw a `ProjectIndexError` listing the issues that stop Dogsled loaders. */
+/** Throw a `ProjectIndexError` listing the issues that stop Bobsled Core loaders. */
 export function assertValidProjectIndex(index: ProjectIndex): void {
   const blocking = index.issues.filter((issue) => isBlockingProjectIndexIssue(index, issue));
   if (blocking.length > 0) throw new ProjectIndexError(blocking);

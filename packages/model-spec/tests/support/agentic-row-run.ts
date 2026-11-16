@@ -261,7 +261,7 @@ export async function writeDuckDbRun(
   options: { project: string; runId: string; finished: number }
 ): Promise<AgenticRunSnapshot> {
   const run = await buildAgenticRun(workload, duckDbRowDialect, options);
-  const directory = join(options.project, '.dogsled/model-spec/agentic-state');
+  const directory = join(options.project, '.bobsled/model-spec/agentic-state');
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const file = join(directory, `run-${digestAgenticState(run.key)}.duckdb`);
   const runner = await buildDuckDbRunner(duckDbStateFile(file), { isolated: true });

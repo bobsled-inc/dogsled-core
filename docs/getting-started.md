@@ -5,45 +5,45 @@ small CSV file into a local DuckDB database, build a model on top of it, and the
 add a second source from a public API. It takes about ten minutes and needs no
 account, API key, or warehouse.
 
-To set up your own data with an agent, use the `dogsled-get-started` skill. It
+To set up your own data with an agent, use the `bobsled-get-started` skill. It
 guides connections, sources, pipelines and models in a new or existing project.
-The `dogsled-tutorials` skill is the separate entry point for example lessons.
+The `bobsled-tutorials` skill is the separate entry point for example lessons.
 
 For a guided experience with your coding agent and a local data explorer, try [TV Night](guides/tv-night.md). Connect to TVmaze, build your ETL and models, then improve your TV recommendations together.
 
 You need Node.js 24 or later and npm.
 
-## Install Dogsled
+## Install Bobsled Core
 
-Create a folder and install the `@bobsled-inc/dogsled` package into it:
+Create a folder and install the `@bobsled-inc/bobsled-core` package into it:
 
 ```bash
-mkdir dogsled-quickstart
-cd dogsled-quickstart
+mkdir bobsled-quickstart
+cd bobsled-quickstart
 npm init -y > /dev/null
-npm install @bobsled-inc/dogsled
-npx dogsled --version
+npm install @bobsled-inc/bobsled-core
+npx bobsled --version
 ```
 
-Dogsled installs into the folder's `node_modules`, so you run it with `npx dogsled`.
-Installing Dogsled into each project keeps its version and warehouse drivers with
+Bobsled Core installs into the folder's `node_modules`, so you run it with `npx bobsled`.
+Installing Bobsled Core into each project keeps its version and warehouse drivers with
 the project. You can also install it globally with
-`npm install -g @bobsled-inc/dogsled` and run `dogsled` directly; then install any
+`npm install -g @bobsled-inc/bobsled-core` and run `bobsled` directly; then install any
 warehouse drivers globally too.
-Warehouse drivers are optional: you install them later, next to Dogsled, only for the
+Warehouse drivers are optional: you install them later, next to Bobsled Core, only for the
 warehouses you use. See [Load data](guides/load-data.md#install-a-warehouse-driver).
 
 ## Create a project
 
 ```bash
-npx dogsled init shop --duckdb
+npx bobsled init shop --duckdb
 cd shop
 ```
 
-`init` creates a project folder with a `dogsled.yml`, a `.dogsled/` folder for local
+`init` creates a project folder with a `bobsled.yml`, a `.bobsled/` folder for local
 settings and data, and empty `integrations/` and `sources/` folders. `--duckdb`
-makes a single DuckDB file, `.dogsled/dogsled.duckdb`, the default destination.
-Without the flag, Dogsled uses a [DuckLake](https://ducklake.select/) catalog.
+makes a single DuckDB file, `.bobsled/bobsled.duckdb`, the default destination.
+Without the flag, Bobsled Core uses a [DuckLake](https://ducklake.select/) catalog.
 
 ## Add some data
 
@@ -60,7 +60,7 @@ order_id,customer,amount,ordered_at
 
 ## Describe the source
 
-Dogsled reads data through an _integration_ (how to connect) and one or more
+Bobsled Core reads data through an _integration_ (how to connect) and one or more
 _resources_ (what to read). The built-in `local` source type reads files from a
 folder.
 
@@ -105,18 +105,18 @@ output:
 Check both files:
 
 ```bash
-npx dogsled extract validate local_files
+npx bobsled extract validate local_files
 ```
 
 ## Extract and load
 
-`dogsled extract run` reads the resource and writes records to standard output.
-`dogsled load run` reads those records and writes them to a destination. Pipe one
+`bobsled extract run` reads the resource and writes records to standard output.
+`bobsled load run` reads those records and writes them to a destination. Pipe one
 into the other:
 
 ```bash
-npx dogsled extract run --integration local_files orders --log-format pretty \
-  | npx dogsled load run --dest duckdb --db-path .dogsled/dogsled.duckdb --target-schema raw
+npx bobsled extract run --integration local_files orders --log-format pretty \
+  | npx bobsled load run --dest duckdb --db-path .bobsled/bobsled.duckdb --target-schema raw
 ```
 
 ```text
@@ -136,8 +136,8 @@ to standard output so that a scheduler can store where the extraction stopped. T
 Query the new `raw.orders` table:
 
 ```bash
-npx dogsled query "SELECT order_id, customer, amount FROM raw.orders ORDER BY order_id" \
-  --db-path .dogsled/dogsled.duckdb
+npx bobsled query "SELECT order_id, customer, amount FROM raw.orders ORDER BY order_id" \
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -149,14 +149,14 @@ order_id	customer	amount
 5	grace	15.75
 ```
 
-Dogsled adds two columns to every loaded table: `_time_extracted` and
-`_dogsled_loaded_at`.
+Bobsled Core adds two columns to every loaded table: `_time_extracted` and
+`_bobsled_loaded_at`.
 
 ## Build a model
 
-A model is a YAML file that Dogsled compiles to SQL for your warehouse. Models read
+A model is a YAML file that Bobsled Core compiles to SQL for your warehouse. Models read
 from _sources_: tables that already exist in the warehouse. To build one, you tell
-Dogsled which database to run in, which table to read, and what to compute.
+Bobsled Core which database to run in, which table to read, and what to compute.
 
 Create `integrations/warehouse.yml`. It points the models at the DuckDB file and
 puts their output in an `analytics` schema:
@@ -170,7 +170,7 @@ connection:
   schema: analytics
 auth:
   type: file
-  path: .dogsled/dogsled.duckdb
+  path: .bobsled/bobsled.duckdb
 ```
 
 Create `sources/orders.yml`. Sources and models use `spec_version: '0.2'`, while
@@ -217,9 +217,9 @@ materialization:
 Validate the model, look at the SQL it compiles to, then run it:
 
 ```bash
-npx dogsled model validate --integration warehouse
-npx dogsled model compile --integration warehouse
-npx dogsled model run --integration warehouse
+npx bobsled model validate --integration warehouse
+npx bobsled model compile --integration warehouse
+npx bobsled model run --integration warehouse
 ```
 
 ```text
@@ -237,8 +237,8 @@ SELECT customer AS customer, COUNT(*) AS order_count, SUM(amount) AS total_amoun
 Query the model:
 
 ```bash
-npx dogsled query "SELECT * FROM analytics.customer_revenue ORDER BY total_amount DESC" \
-  --db-path .dogsled/dogsled.duckdb
+npx bobsled query "SELECT * FROM analytics.customer_revenue ORDER BY total_amount DESC" \
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -295,11 +295,11 @@ extract:
 Extract, load and query it the same way:
 
 ```bash
-npx dogsled extract validate jsonplaceholder
-npx dogsled extract run --integration jsonplaceholder users --quiet \
-  | npx dogsled load run --dest duckdb --db-path .dogsled/dogsled.duckdb --target-schema raw
-npx dogsled query "SELECT id, name, city FROM raw.users ORDER BY id LIMIT 3" \
-  --db-path .dogsled/dogsled.duckdb
+npx bobsled extract validate jsonplaceholder
+npx bobsled extract run --integration jsonplaceholder users --quiet \
+  | npx bobsled load run --dest duckdb --db-path .bobsled/bobsled.duckdb --target-schema raw
+npx bobsled query "SELECT id, name, city FROM raw.users ORDER BY id LIMIT 3" \
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -313,18 +313,18 @@ id	name	city
 
 ## Check the project
 
-`dogsled doctor` checks the files in the project and reports problems:
+`bobsled doctor` checks the files in the project and reports problems:
 
 ```bash
-npx dogsled doctor
+npx bobsled doctor
 ```
 
 ## What you built
 
 ```text
 shop/
-  dogsled.yml                     project settings
-  .dogsled/dogsled.duckdb         the local warehouse
+  bobsled.yml                     project settings
+  .bobsled/bobsled.duckdb         the local warehouse
   data/orders.csv                 the CSV source data
   integrations/local_files.yml    file integration
   integrations/jsonplaceholder.yml  HTTP integration
@@ -342,4 +342,4 @@ shop/
 - [Use library integrations](guides/use-library-integrations.md) starts from one of 83 ready-made integrations.
 - [Load data](guides/load-data.md) moves the same pipeline to Postgres, Snowflake or BigQuery.
 - [Build models](guides/build-models.md) covers views, incremental models, seeds and tests.
-- [Run pipelines](guides/run-pipelines.md) puts extract and load into `dogsled.yml`.
+- [Run pipelines](guides/run-pipelines.md) puts extract and load into `bobsled.yml`.

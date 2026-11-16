@@ -13,7 +13,7 @@ import { mapScenario } from '../../support/agentic-store-scenario.js';
 import { postgresIntegration as integration } from '../../support/row-store-integrations.js';
 
 const enabled =
-  process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres');
+  process.env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres');
 async function sql<T extends Record<string, unknown>>(statement: string): Promise<T[]> {
   const runner = await resolveRunner(integration());
   try {
@@ -61,7 +61,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     await store().cursors!.begin({ ...key, target: 'main.other' }, signature, 'other');
     // The state a crash leaves between the first row and its record.
     await sql(
-      `INSERT INTO "${name}"."__dogsled_agentic_cursors" VALUES ('${digestAgenticState(key)}', '${key.scope}', '${key.model}', '${key.target}', -1, '')`
+      `INSERT INTO "${name}"."__bobsled_agentic_cursors" VALUES ('${digestAgenticState(key)}', '${key.scope}', '${key.model}', '${key.target}', -1, '')`
     );
     expect(await store().cursors!.begin(key, signature, 'new-run')).toEqual({ pairs: 5 });
   });
@@ -75,7 +75,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
       code: 'conflict',
       reason: 'cursor_held_elsewhere',
     });
-    const rows = await sql(`SELECT 1 FROM "${name}"."__dogsled_agentic_cursors"`).catch(() => []);
+    const rows = await sql(`SELECT 1 FROM "${name}"."__bobsled_agentic_cursors"`).catch(() => []);
     expect(rows).toEqual([]);
   });
 
@@ -99,7 +99,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
       )
     );
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
-    expect(await sql(`SELECT * FROM "${name}"."__dogsled_agentic_cursors"`)).toHaveLength(1);
+    expect(await sql(`SELECT * FROM "${name}"."__bobsled_agentic_cursors"`)).toHaveLength(1);
   });
 
   it('treats a write that is repeated after a lost reply as the same write', async () => {
@@ -113,7 +113,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
       const rows = {
         db: agenticRowDb(runner),
         dialect: postgresRowDialect,
-        table: `"${name}"."__dogsled_agentic_rows"`,
+        table: `"${name}"."__bobsled_agentic_rows"`,
         hash: 'h'.repeat(64),
       };
       await insertAgenticWrite(rows, write, async () => {});
@@ -121,7 +121,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     } finally {
       await runner.close?.();
     }
-    expect(await sql(`SELECT 1 FROM "${name}"."__dogsled_agentic_rows"`)).toHaveLength(1);
+    expect(await sql(`SELECT 1 FROM "${name}"."__bobsled_agentic_rows"`)).toHaveLength(1);
   });
 
   it('works for a role that can use a schema but not create one', async () => {
@@ -166,7 +166,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
       await expect(store.cursors!.begin(key, signature, 'new-run')).rejects.toThrow(
         'permission denied'
       );
-      expect(await sql(`SELECT 1 FROM "${name}"."__dogsled_agentic_cursors"`)).toEqual([]);
+      expect(await sql(`SELECT 1 FROM "${name}"."__bobsled_agentic_cursors"`)).toEqual([]);
     } finally {
       await sql(`DROP SCHEMA "${name}" CASCADE`);
       await sql(`DROP ROLE "${role}"`);
@@ -195,7 +195,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     const name = schema();
     const { key: run } = await mapScenario();
     await (await createWarehouseRowStore(integration(), { schema: name }).acquire(run)).release();
-    for (const statement of change(`"${name}"."__dogsled_agentic_rows"`, name)) {
+    for (const statement of change(`"${name}"."__bobsled_agentic_rows"`, name)) {
       await sql(statement);
     }
     await expect(
@@ -210,7 +210,7 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
     await (await createWarehouseRowStore(integration(), { schema: name }).acquire(run)).release();
     await sql(`CREATE ROLE "${role}"`);
     try {
-      await sql(`ALTER TABLE "${name}"."__dogsled_agentic_runs" OWNER TO "${role}"`);
+      await sql(`ALTER TABLE "${name}"."__bobsled_agentic_runs" OWNER TO "${role}"`);
       await expect(
         createWarehouseRowStore(integration(), { schema: name }).acquire({ ...run, id: 'next' })
       ).rejects.toMatchObject({ code: 'corrupt', reason: 'state_table_replaced' });
@@ -232,9 +232,9 @@ describe.skipIf(!enabled)('PostgreSQL row store', { timeout: 60_000 }, () => {
         WHERE n.nspname = '${name}' AND i.indisprimary ORDER BY 1`
     );
     expect(keys.map((row) => row.table_name)).toEqual([
-      '__dogsled_agentic_cursors',
-      '__dogsled_agentic_rows',
-      '__dogsled_agentic_runs',
+      '__bobsled_agentic_cursors',
+      '__bobsled_agentic_rows',
+      '__bobsled_agentic_runs',
     ]);
     expect(keys[1]!.columns).toContain('(run_hash, write_id, item, part)');
   });

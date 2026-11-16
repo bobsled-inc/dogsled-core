@@ -7,15 +7,15 @@ DOC_PROTOCOL="$ROOT_DIR/first_pdf.protocol.jsonl"
 PROTOCOL_SAMPLE="$ROOT_DIR/protocol-sample.jsonl"
 GITHUB_PROTOCOL="$ROOT_DIR/public_repos.protocol.jsonl"
 
-if [ -n "${DOGSLED_CLI:-}" ]; then
+if [ -n "${BOBSLED_CORE_CLI:-}" ]; then
   # shellcheck disable=SC2206
-  DOGSLED_CMD=(${DOGSLED_CLI})
-elif [ -f "$ROOT_DIR/../../packages/dogsled/bin/cli.mjs" ]; then
-  DOGSLED_CMD=(node "$ROOT_DIR/../../packages/dogsled/bin/cli.mjs")
-elif command -v dogsled >/dev/null 2>&1; then
-  DOGSLED_CMD=(dogsled)
+  BOBSLED_CORE_CMD=(${BOBSLED_CORE_CLI})
+elif [ -f "$ROOT_DIR/../../packages/bobsled-core/bin/cli.mjs" ]; then
+  BOBSLED_CORE_CMD=(node "$ROOT_DIR/../../packages/bobsled-core/bin/cli.mjs")
+elif command -v bobsled >/dev/null 2>&1; then
+  BOBSLED_CORE_CMD=(bobsled)
 else
-  echo "Dogsled CLI not found. Run pnpm setup, install @bobsled-inc/dogsled, or set DOGSLED_CLI."
+  echo "Bobsled Core CLI not found. Run pnpm setup, install @bobsled-inc/bobsled-core, or set BOBSLED_CORE_CLI."
   exit 1
 fi
 
@@ -25,13 +25,13 @@ run_query() {
 
   echo
   echo "$title"
-  DOGSLED_OUTPUT_FORMAT=text "${DOGSLED_CMD[@]}" query --db-path "$DB_PATH" "$sql"
+  BOBSLED_CORE_OUTPUT_FORMAT=text "${BOBSLED_CORE_CMD[@]}" query --db-path "$DB_PATH" "$sql"
 }
 
 cd "$ROOT_DIR"
 
 echo "1. Validate first-ingest specs"
-"${DOGSLED_CMD[@]}" extract validate
+"${BOBSLED_CORE_CMD[@]}" extract validate
 
 echo
 echo "2. Remove generated demo artifacts"
@@ -40,7 +40,7 @@ rm -rf "$ROOT_DIR/.extractor" "$ROOT_DIR/output" "$ROOT_DIR/batch"
 
 echo
 echo "3. Capture local document protocol sample"
-"${DOGSLED_CMD[@]}" extract run --integration local_docs first_pdf >"$DOC_PROTOCOL"
+"${BOBSLED_CORE_CMD[@]}" extract run --integration local_docs first_pdf >"$DOC_PROTOCOL"
 awk '
   /"type":"SCHEMA"/ && schemas < 4 { print; schemas += 1; next }
   /"type":"RECORD"/ && records < 4 { print; records += 1; next }
@@ -51,12 +51,12 @@ sed -n '1,12p' "$PROTOCOL_SAMPLE"
 
 echo
 echo "4. Load local PDF document streams into DuckDB"
-"${DOGSLED_CMD[@]}" load run --dest duckdb --db-path "$DB_PATH" --target-schema main <"$DOC_PROTOCOL"
+"${BOBSLED_CORE_CMD[@]}" load run --dest duckdb --db-path "$DB_PATH" --target-schema main <"$DOC_PROTOCOL"
 
 echo
 echo "5. Extract public GitHub repos and load into the same DuckDB file"
-"${DOGSLED_CMD[@]}" extract run --integration github_public public_repos --limit 5 >"$GITHUB_PROTOCOL"
-"${DOGSLED_CMD[@]}" load run --dest duckdb --db-path "$DB_PATH" --target-schema main <"$GITHUB_PROTOCOL"
+"${BOBSLED_CORE_CMD[@]}" extract run --integration github_public public_repos --limit 5 >"$GITHUB_PROTOCOL"
+"${BOBSLED_CORE_CMD[@]}" load run --dest duckdb --db-path "$DB_PATH" --target-schema main <"$GITHUB_PROTOCOL"
 
 run_query \
   "6. first_pdf__documents" \

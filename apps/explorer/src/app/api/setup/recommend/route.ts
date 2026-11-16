@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawnDogsledCommand, collectOutput } from '@/lib/dogsled-cli';
+import { spawnBobsledCommand, collectOutput } from '@/lib/bobsled-cli';
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { goal?: string };
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const child = spawnDogsledCommand('setup', ['recommend', '--goal', goal, '--json']);
+    const child = spawnBobsledCommand('setup', ['recommend', '--goal', goal, '--json']);
     const { stdout, stderr, code } = await collectOutput(child);
 
     if (code !== 0) {

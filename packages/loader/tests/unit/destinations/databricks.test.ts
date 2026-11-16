@@ -54,7 +54,7 @@ function createMockSession(
       rows = marker === undefined ? [] : [{ value: marker }];
     } else if (sql.startsWith('CREATE TABLE IF NOT EXISTS')) {
       created = true;
-      createdMarker = sql.match(/'dogsled_temp_dataset' = '([^']+)'/)?.[1];
+      createdMarker = sql.match(/'bobsled_temp_dataset' = '([^']+)'/)?.[1];
     }
 
     const operation = createMockOperation(rows);
@@ -262,7 +262,7 @@ describe('DatabricksDestination', () => {
     expect(createStatement?.sql).toContain('`title` STRING');
     expect(createStatement?.sql).toContain('`_time_extracted` TIMESTAMP');
     expect(createStatement?.sql).toContain(
-      '`_dogsled_loaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+      '`_bobsled_loaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     );
   });
 
@@ -276,7 +276,7 @@ describe('DatabricksDestination', () => {
 
     const createStatement = operations.find(({ sql }) => sql.startsWith('CREATE TABLE'));
     expect(createStatement?.sql).toContain(
-      "TBLPROPERTIES ('dogsled_temp_dataset' = 'dataset-123')"
+      "TBLPROPERTIES ('bobsled_temp_dataset' = 'dataset-123')"
     );
     expect(operations.some(({ sql }) => sql.includes('SELECT table_type'))).toBe(true);
     expect(operations.some(({ sql }) => sql.startsWith('SHOW TBLPROPERTIES'))).toBe(true);
@@ -374,7 +374,7 @@ describe('DatabricksDestination', () => {
       existingColumns: [
         { column_name: 'id', data_type: 'BIGINT' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMP' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMP' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMP' },
       ],
     });
     const { dest } = await createDestination(createMockConnection(session));
@@ -393,7 +393,7 @@ describe('DatabricksDestination', () => {
         { column_name: 'id', data_type: 'STRING' },
         { column_name: 'title', data_type: 'STRING' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMP' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMP' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMP' },
       ],
     });
     const { dest } = await createDestination(createMockConnection(session));
@@ -412,7 +412,7 @@ describe('DatabricksDestination', () => {
         { column_name: 'title', data_type: 'STRING' },
         { column_name: 'updated_at', data_type: 'TIMESTAMP' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMP' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMP' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMP' },
       ],
     });
     const { dest } = await createDestination(createMockConnection(session));
@@ -442,7 +442,7 @@ describe('DatabricksDestination', () => {
         { column_name: 'title', data_type: 'STRING' },
         { column_name: 'updated_at', data_type: 'TIMESTAMP' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMP' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMP' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMP' },
       ],
     });
     const { dest } = await createDestination(createMockConnection(session));
@@ -525,18 +525,18 @@ describe('DatabricksDestination', () => {
 
     expect(
       operations.some(({ sql }) =>
-        sql.startsWith('CREATE OR REPLACE TABLE `analytics`.`_dogsled_stg_issues_')
+        sql.startsWith('CREATE OR REPLACE TABLE `analytics`.`_bobsled_stg_issues_')
       )
     ).toBe(true);
     expect(
-      operations.some(({ sql }) => sql.startsWith('INSERT INTO `analytics`.`_dogsled_stg_issues_'))
+      operations.some(({ sql }) => sql.startsWith('INSERT INTO `analytics`.`_bobsled_stg_issues_'))
     ).toBe(true);
     expect(operations.some(({ sql }) => sql.startsWith('MERGE INTO `analytics`.`issues`'))).toBe(
       true
     );
     expect(
       operations.some(({ sql }) =>
-        sql.startsWith('DROP TABLE IF EXISTS `analytics`.`_dogsled_stg_issues_')
+        sql.startsWith('DROP TABLE IF EXISTS `analytics`.`_bobsled_stg_issues_')
       )
     ).toBe(true);
     expect(result.rowsAffected).toBe(1);

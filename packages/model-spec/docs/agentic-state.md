@@ -1,6 +1,6 @@
 # Agentic execution state and restart
 
-Dogsled saves agentic checkpoints under the project `.dogsled/model-spec` directory by default.
+Bobsled Core saves agentic checkpoints under the project `.bobsled/model-spec` directory by default.
 A supplied `AgenticStateStore` replaces all local agentic storage. Execution state
 needs no warehouse or database service. See [where state is stored](#where-state-is-stored)
 for how a run's store is chosen.
@@ -47,7 +47,7 @@ resolved profiles, targets, input contracts or limits cause a conflict.
 A repeated start with the same identity opens that run; use a new ID for new work.
 An explicit resume fails if the run is missing.
 
-Dogsled saves the definition and initial deadline before input preparation. An
+Bobsled Core saves the definition and initial deadline before input preparation. An
 explicit retry of unfinished work saves a new execution window before it continues.
 Each window has the model's full `limits.timeout_seconds` allowance, measured from
 the new invocation. This also applies when `mode: 'start'` opens an existing run.
@@ -55,7 +55,7 @@ Once preparation is sealed, the saved assignments contain the frozen input rows.
 rows and does not query the input source again. Input source changes after sealing
 do not change this run. There is no reuse between different run IDs.
 
-Before an executor call, Dogsled saves the attempt with its input estimate as a
+Before an executor call, Bobsled Core saves the attempt with its input estimate as a
 charge. It saves verified usage and an accepted result together. An interrupted
 call keeps its estimated charge. A retry starts the whole assignment with a new
 attempt ID. It does not reconnect a remote session. Accepted assignments never
@@ -77,7 +77,7 @@ await executeAgenticRun(host, context, {
 
 Set this option only for an explicit retry request. Ordinary resume and repeated
 start keep their existing behavior. The option requires `mode: 'resume'`.
-Dogsled saves the request in the execution window before it calls the executor.
+Bobsled Core saves the request in the execution window before it calls the executor.
 It permits a new attempt after an earlier terminal failure. If that attempt also
 returns a terminal failure, the invocation stops again. It does not loop.
 
@@ -117,7 +117,7 @@ publication. An accepted answer is not proof that its output was published.
 
 The values include only counts and run, model, and step identifiers. They contain
 no input rows, answers, or provider errors. The callback gets a separate value and
-cannot modify saved state. Keep it brief: Dogsled awaits it before continuing.
+cannot modify saved state. Keep it brief: Bobsled Core awaits it before continuing.
 Callback errors do not fail a run or repeat model calls. Delivery is best effort,
 not a durable event subscription. Reopening a run reports its current counts;
 hosts can use the run ID, model name, and revision to ignore repeated reports.
@@ -154,14 +154,14 @@ processes records after that cursor. Unpublished results from the old batch are 
 reused. The old checkpoint and its token charges stay recorded; the new run has its
 own allowance. Starting fresh can therefore incur additional AI costs.
 
-Dogsled first acquires exclusive ownership of the old checkpoint. A live owner blocks
-takeover. Dogsled then saves a permanent `superseded` marker before changing cursor
+Bobsled Core first acquires exclusive ownership of the old checkpoint. A live owner blocks
+takeover. Bobsled Core then saves a permanent `superseded` marker before changing cursor
 ownership with a compare-and-swap. A superseded run cannot resume or publish. If the
 process stops between these writes, another fresh start can finish the takeover.
 No checkpoint or cursor is deleted, and committed progress is not reset.
 
 If the old run has prepared or confirmed publication, its warehouse write may already
-have succeeded. Dogsled reports that the old run must be resumed to finish publication
+have succeeded. Bobsled Core reports that the old run must be resumed to finish publication
 and cursor recovery. A fresh start does not skip this check.
 
 Local, DuckDB, and warehouse cursor stores support takeover. Custom cursor stores
@@ -175,12 +175,12 @@ before fresh-start takeover is enabled.
 
 ## Where state is stored
 
-Dogsled uses the first of these that applies:
+Bobsled Core uses the first of these that applies:
 
 1. A store supplied as `stateStore`, or `agentic.stateStore` for `runProject`.
 2. `checkpoint_store` in `model-spec.yml`, which can name a warehouse or a DuckDB integration.
-3. A DuckDB file for the run under `.dogsled/model-spec/agentic-state`, when `@duckdb/node-api`
-   can be loaded. It is an optional peer dependency that the `dogsled` CLI installs.
+3. A DuckDB file for the run under `.bobsled/model-spec/agentic-state`, when `@duckdb/node-api`
+   can be loaded. It is an optional peer dependency that the `bobsled` CLI installs.
 4. The [file store](#local-files-ownership-and-retention).
 
 Steps 3 and 4 are the default store, `createDefaultAgenticStateStore(projectDirectory)`. Library
@@ -201,16 +201,16 @@ so a run has one owner either way:
 
 `runProject` accepts the same options in `agentic` alongside
 `agentic.host` and `agentic.publisher`, or the test-only
-`experimentalAgenticProbe`. If the run identity is omitted, Dogsled creates a fresh local run ID.
+`experimentalAgenticProbe`. If the run identity is omitted, Bobsled Core creates a fresh local run ID.
 Hosts that need restart must set and retain an explicit ID.
 
 A host that supplies regular `state` must also supply `agentic.stateStore` or
 configure `checkpoint_store` in `model-spec.yml`.
-Dogsled reports a configuration error if checkpoint support is missing. Regular
+Bobsled Core reports a configuration error if checkpoint support is missing. Regular
 model state remains compatible and uses its existing shape.
 
 The probe publication callback is still a test seam. Its success is not a durable
-publication receipt. On probe resume of already completed execution, Dogsled reports
+publication receipt. On probe resume of already completed execution, Bobsled Core reports
 pending publication and blocks downstream models. It does not call the publisher
 again. A host must resolve publication separately before it can use this as a
 production pipeline.
@@ -248,17 +248,17 @@ large the run is. A store that parses or copies its state stays correct and pays
 every checkpoint. See [Checkpoint cost](#checkpoint-cost).
 
 Every saved record must be durable before the method resolves. After an uncertain
-checkpoint response, Dogsled reads the saved receipt before it dispatches more work.
+checkpoint response, Bobsled Core reads the saved receipt before it dispatches more work.
 The host must retain snapshots and their contents for its declared recovery period.
 The current API uses bounded whole snapshots rather than unbounded record lists.
 A store that removes old runs sets `expiresRuns`, and must never remove one with a publication.
 Takeover then replaces a reservation whose run is gone; otherwise it reports the run `missing`.
-A store can declare `limits` with `maxRows`, `maxBatchBytes` and `maxCheckpointBytes`. Dogsled
+A store can declare `limits` with `maxRows`, `maxBatchBytes` and `maxCheckpointBytes`. Bobsled Core
 reads them once for each run, so a later change to them does not reach a run in progress. It
 bounds each input batch and the run's output by them and tells the host through `maxRows` and
 `maxBytes`. Without `limits`, a store gets 1,000 rows, 1 MiB per batch and 16 MiB per
 checkpoint, which also allows 262,144 JSON values, one for every 64 bytes. These defaults cap
-unbranded declarations. A wrapper can forward a Dogsled row store's original `limits` object
+unbranded declarations. A wrapper can forward a Bobsled Core row store's original `limits` object
 to keep its higher limits. `applyAgenticCheckpoint` holds a run to the defaults and reports
 `limit` with the reason `too_many_rows` or `snapshot_too_large` for a larger run. `AgenticRunSnapshotSchema`
 accepts what the largest store holds, so a store that validates with the schema alone must check
@@ -270,11 +270,11 @@ outcome values also use the existing agentic contract bounds: one assignment hol
 rows and 1 MiB.
 
 Use `AgenticStateError` with a safe code: `conflict`, `missing`, `corrupt`,
-`unavailable`, `limit` or `expired`. Dogsled removes other storage error messages at
+`unavailable`, `limit` or `expired`. Bobsled Core removes other storage error messages at
 the host boundary. Do not put credentials or raw provider responses in errors.
 
 A session that may still hold its lease when it reports `lease_lost` should set
-`retryAfterMs` in the error detail. Dogsled waits that many milliseconds before it
+`retryAfterMs` in the error detail. Bobsled Core waits that many milliseconds before it
 acquires again, so the session's own lease does not refuse the recovery attempt.
 Without it, recovery starts at once.
 
@@ -288,11 +288,11 @@ the snapshot from its rows. Commands, snapshots and the store interfaces are unc
 
 | Table                       | One row per                  | Holds                                                             |
 | --------------------------- | ---------------------------- | ----------------------------------------------------------------- |
-| `__dogsled_agentic_runs`    | Run                          | Identity, revision, ownership, newest write, small fields as JSON |
-| `__dogsled_agentic_rows`    | Assignment or attempt update | Immutable content; the definition and input batch are stored once |
-| `__dogsled_agentic_cursors` | Cursor key                   | The cursor record and a version for compare-and-swap              |
+| `__bobsled_agentic_runs`    | Run                          | Identity, revision, ownership, newest write, small fields as JSON |
+| `__bobsled_agentic_rows`    | Assignment or attempt update | Immutable content; the definition and input batch are stored once |
+| `__bobsled_agentic_cursors` | Cursor key                   | The cursor record and a version for compare-and-swap              |
 
-Writes in `__dogsled_agentic_rows` form a chain: each names its `parent`, and its `write_id` is a
+Writes in `__bobsled_agentic_rows` form a chain: each names its `parent`, and its `write_id` is a
 digest of its parent, revision, operation ID and content. The header's `head` names the newest
 committed write. A read walks back from `head`, verifies each digest, and never fetches anything
 else. A long value spans several rows of one write. Before it reads any content, a load checks how
@@ -364,7 +364,7 @@ A run holds what its store holds. These are the limits each store declares:
 | File store, warehouse store and supplied stores         |                                  1,000 |            1 MiB |    16 MiB, 262,144 values |
 
 The default store declares the file store's limits, because a run stays in the file store without
-DuckDB, and each run in a DuckDB file declares the row store's limits for itself. Dogsled tells the
+DuckDB, and each run in a DuckDB file declares the row store's limits for itself. Bobsled Core tells the
 host the limits as `maxRows` and `maxBytes`, so an incremental input takes batches of that size.
 One assignment still holds at most 1,000 rows and 1 MiB, which is the executor contract: a step
 that would group more rows of one input into one assignment fails with `group_too_large` before
@@ -460,7 +460,7 @@ how to run it, and `row-store-growth.bench.test.ts` for the gate that keeps it f
 
 ### Local DuckDB files
 
-Each run has its own file, `.dogsled/model-spec/agentic-state/run-<hash>.duckdb`, which stays open
+Each run has its own file, `.bobsled/model-spec/agentic-state/run-<hash>.duckdb`, which stays open
 for the session. DuckDB allows one writing process per file, and a run file has one owner, so runs
 in different processes do not contend. Commits go to DuckDB's write-ahead log, and closing the file
 merges it. Incremental cursors use `agentic-state/cursors.duckdb`, which is opened for each
@@ -473,7 +473,7 @@ once. The directory is private and run files use private permissions. Symlinks a
 
 An acquisition checks up to eight old run files and removes those that have expired. It skips any
 file with a live owner. An empty file left by a crash expires the same way. Keep
-`.dogsled/model-spec` on a local disk, as for the file store.
+`.bobsled/model-spec` on a local disk, as for the file store.
 
 ### DuckDB checkpoint store
 
@@ -499,10 +499,10 @@ and neither, on a case-insensitive file system, is another spelling of a name th
 yet.
 
 The file holds frozen inputs and results, so on a shared host put it in a directory that only its
-owner can read. Dogsled also sets the file to mode `600` when it connects, just after DuckDB
+owner can read. Bobsled Core also sets the file to mode `600` when it connects, just after DuckDB
 creates the file and before anything is saved in it. A failure is ignored, as for a file owned by
 another user or on a file system without modes. DuckDB creates its write-ahead log, `<file>.wal`,
-with the default permissions, and Dogsled cannot change that first. The log exists while an
+with the default permissions, and Bobsled Core cannot change that first. The log exists while an
 operation writes, and after a crash until the file next opens.
 
 Existing runs are not moved, so finish them before adding this setting. The store takes over each
@@ -514,15 +514,15 @@ cannot open that run to take it over. Remove the setting, finish the run, then a
 
 A warehouse `checkpoint_store` keeps using the [warehouse store](#warehouse-checkpoints), which
 rewrites the whole run as one document on every checkpoint. A library host opts a run into rows by
-supplying this store. Import both Model Spec entry points from the same Dogsled installation to
+supplying this store. Import both Model Spec entry points from the same Bobsled Core installation to
 share the checkpoint verification cache.
 
 ```typescript
-import { createWarehouseRowStore } from '@bobsled-inc/dogsled/model-spec/agentic';
-import { runProject } from '@bobsled-inc/dogsled/model-spec/project';
+import { createWarehouseRowStore } from '@bobsled-inc/bobsled-core/model-spec/agentic';
+import { runProject } from '@bobsled-inc/bobsled-core/model-spec/project';
 
 const stateStore = createWarehouseRowStore(integration, {
-  schema: 'track_checkpoints',
+  schema: 'bobsled_checkpoints',
   database: 'writable_database', // Optional. Snowflake only.
   leaseMs: 300_000, // Optional. Default: 120,000. Range: 10,000–600,000.
   retentionMs: 30 * 86_400_000, // Optional. Default: 30 days.
@@ -548,19 +548,19 @@ yet, so a role scoped to one pre-created schema is enough. Rows hold the same da
 store, so apply the same access policies.
 
 Runs in progress stay in the store that started them. A host that opts in must not resume them from
-this store, which would not find them. Each cursor key takes its value from `__dogsled_cursors` in
+this store, which would not find them. Each cursor key takes its value from `__bobsled_cursors` in
 that schema when the row store first sees the key, and never reads it again once the value has
 landed. A key that an unfinished run still holds there fails with `cursor_held_elsewhere` and writes
 nothing: this store cannot open that run to take it over. Finish the run from the previous store
 first. A damaged record stops the key rather than starting it again from the beginning. So does a
 role that cannot read the old table on PostgreSQL. Snowflake reports a table the role cannot see
 exactly as it reports one that does not exist, so **on Snowflake the role must hold `SELECT` on
-`__DOGSLED_CURSORS` wherever the old store ran**. Without it, a key starts from empty.
+`__BOBSLED_CURSORS` wherever the old store ran**. Without it, a key starts from empty.
 
 A carried value goes in as a bound update after the key's first row, never inside it. That first row
 has version -1 until the value lands. If a process stops in between, the next use of the key reads
 the old value again, so an empty row can never pass for a key with no progress. Do not drop
-`__dogsled_cursors` while any cursor row has version -1: that key would start from empty.
+`__bobsled_cursors` while any cursor row has version -1: that key would start from empty.
 
 |                           | PostgreSQL                        | Snowflake                                                   |
 | ------------------------- | --------------------------------- | ----------------------------------------------------------- |
@@ -572,7 +572,7 @@ the old value again, so an empty row can never pass for a key with no progress. 
 | Largest `INSERT` (`data`) | 4 Mi characters, 256 rows         | 256 Ki characters, 128 rows, under the 1 MB statement limit |
 
 Snowflake standard tables enforce no keys, so the first row for a run or cursor key goes through a
-single script. It updates the one row of `__DOGSLED_AGENTIC_GUARD`, which makes concurrent scripts
+single script. It updates the one row of `__BOBSLED_AGENTIC_GUARD`, which makes concurrent scripts
 take turns, then counts the key's rows and inserts only if there are none. This happens once per
 run and once per key. If the guard has lost its row, the script stops before it adds anything, and
 the store reports `corrupt` with the reason `state_table_replaced`. A statement that Snowflake
@@ -580,7 +580,7 @@ refuses because too many others wait for the same table lock never ran, so the s
 for about 15 seconds at most.
 
 Because updates of one table queue, Snowflake keeps run headers in a fixed set of tables,
-`__DOGSLED_AGENTIC_RUNS_8_0` to `__DOGSLED_AGENTIC_RUNS_8_7`, and PostgreSQL and DuckDB keep the one
+`__BOBSLED_AGENTIC_RUNS_8_0` to `__BOBSLED_AGENTIC_RUNS_8_7`, and PostgreSQL and DuckDB keep the one
 table. The dialect names the size, and the run's hash picks the table, so two runs in different
 tables never wait for each other's header update. Setup and the base table check cover every table,
 and one statement looks for expired runs in all of them, so no table depends on a run happening to
@@ -628,36 +628,36 @@ figures.
 
 ## Local files, ownership and retention
 
-This section describes the file store. `.dogsled/model-spec/run-state.json` is its state entry
+This section describes the file store. `.bobsled/model-spec/run-state.json` is its state entry
 point and also holds regular model state. Its compatible `agentic`
-extension maps hashed run keys to digest-named snapshot files in `.dogsled/model-spec`. Snapshots
+extension maps hashed run keys to digest-named snapshot files in `.bobsled/model-spec`. Snapshots
 contain the frozen definition, input, attempts, usage, results and completion.
 Reads check the digest, schema and scoped identity. Missing or damaged files cause
-an explicit error. Dogsled does not replace them with empty state.
+an explicit error. Bobsled Core does not replace them with empty state.
 
 Regular and agentic saves use a shared file lock and update the current state.
 They preserve unrelated model entries and unknown compatible fields. Each save
 synchronizes the replacement file, renames it, then synchronizes the directory.
-Agentic ownership spans execution and publication confirmation. Dogsled checks it again
+Agentic ownership spans execution and publication confirmation. Bobsled Core checks it again
 before protected state changes.
 
 Local ownership supports one host with a persistent local file system. It does
 not support network file systems or multiple hosts. Locks include the host and
-process ID. Dogsled reclaims a lock only after that process no longer exists. A
+process ID. Bobsled Core reclaims a lock only after that process no longer exists. A
 live process, a reused live process ID or an unknown host is never reclaimed.
 A crash during lock recovery fails closed: an operator must confirm that no
 writer remains before removing the recovery lock. Do not remove a live lock.
 
 State directory and artifact symlinks are rejected. Snapshot names cannot escape
-`.dogsled/model-spec`. Files use private permissions. Local limits are 100 retained runs, 16 MiB
+`.bobsled/model-spec`. Files use private permissions. Local limits are 100 retained runs, 16 MiB
 per file, 2,000 directory entries and a 256 MiB directory budget. The budget check
 includes orphan files and space for the next write. Exceeding a limit stops before
 execution or the next checkpoint.
 
 There is no automatic expiry. Referenced snapshots remain until the host removes
-that run. After a successful checkpoint, Dogsled removes the previous snapshot.
+that run. After a successful checkpoint, Bobsled Core removes the previous snapshot.
 A crash can leave an unreferenced snapshot or temporary file. For cleanup, stop
-all project writers, back up `.dogsled/model-spec`, retain every snapshot named by `run-state.json`,
+all project writers, back up `.bobsled/model-spec`, retain every snapshot named by `run-state.json`,
 and remove only unreferenced snapshot or temporary files. Do not delete active run
 records or pending-publication records that the host still needs. Deleting a run
 record or required artifact removes its ability to resume. Temporary containers
@@ -670,7 +670,7 @@ Configure a warehouse checkpoint store in the project `model-spec.yml`:
 ```yaml
 checkpoint_store:
   integration: analytics_warehouse
-  schema: track_checkpoints
+  schema: bobsled_checkpoints
   database: writable_database # Optional. Snowflake only; defaults to the integration database.
   lease_seconds: 300 # Optional. Default: 120. Range: 10–600 whole seconds.
 ```
@@ -692,7 +692,7 @@ For BigQuery, set one
 integration secret mechanism.
 
 The CLI resolves this store automatically. Library callers can use the same
-configuration or supply an `AgenticStateStore`. Dogsled still rejects supplied
+configuration or supply an `AgenticStateStore`. Bobsled Core still rejects supplied
 regular state without a supplied or configured checkpoint store. An unknown
 checkpoint integration is an error. An explicit warehouse configuration never
 falls back to local files.
@@ -724,7 +724,7 @@ separate setting. Raise `lease_seconds` to give a slow or queueing warehouse mor
 per statement. Time spent queued counts, so a statement that used to wait longer than
 the limit and then succeed now fails.
 
-The warehouse enforces the limit on sessions that Dogsled opens only for checkpoints
+The warehouse enforces the limit on sessions that Bobsled Core opens only for checkpoints
 and cursors. Model queries and publication keep the warehouse defaults.
 
 | Warehouse  | Server-side setting            |
@@ -734,7 +734,7 @@ and cursors. Model queries and publication keep the warehouse defaults.
 | BigQuery   | `jobTimeoutMs` on each job     |
 | Databricks | `STATEMENT_TIMEOUT`            |
 
-Dogsled also keeps its own deadline in case a driver ignores that setting or a
+Bobsled Core also keeps its own deadline in case a driver ignores that setting or a
 connection stops answering. It is the limit plus one twelfth of the lease, 70 seconds
 by default. Closing a connection waits at most one twelfth of the lease.
 
@@ -759,7 +759,7 @@ A statement that lands late cannot overwrite a newer owner: writes check the own
 expiry, and cursor updates compare a token. The driver's error, if there was one, stays
 available as the error's `cause` and is not printed.
 
-Dogsled then recovers in the same process. It waits one full lease, because a renewal
+Bobsled Core then recovers in the same process. It waits one full lease, because a renewal
 that landed late can extend the lease, then acquires ownership and reloads the saved
 state. It makes up to two such attempts, sharing the run's execution deadline. The
 statement may have committed before the limit was reached; the reload finds it, so the
@@ -769,22 +769,22 @@ lease, a warehouse that hangs on every attempt stops the run in about eight minu
 
 Library hosts can resolve the logical catalog/schema with
 `resolveWarehouseCheckpointTarget(integration, { database, schema })` from
-`@bobsled-inc/dogsled/model-spec/agentic`; the runtime uses the same resolver for checkpoint
+`@bobsled-inc/bobsled-core/model-spec/agentic`; the runtime uses the same resolver for checkpoint
 and cursor storage.
 
-If the warehouse session loses ownership, Dogsled cancels active assignments and
+If the warehouse session loses ownership, Bobsled Core cancels active assignments and
 closes that session. It can make up to two recovery attempts. Each attempt must
 acquire exclusive ownership and reload the saved checkpoint before doing more work.
-Dogsled reuses saved results and reconciles saved publication receipts. Work without
+Bobsled Core reuses saved results and reconciles saved publication receipts. Work without
 a saved result can run again; its previous attempt remains charged.
 Automatic lease recovery does not reset the current execution deadline, spend,
 or assignment attempt limit. A later explicit retry can open a new execution window.
 If another worker owns the run, or the warehouse still cannot grant ownership,
-Dogsled stops. It does not steal an active lease or report success for unfinished work.
+Bobsled Core stops. It does not steal an active lease or report success for unfinished work.
 
 Supplied stores can expose `AgenticStateSession.ownershipLost` to cancel active
 calls and throw `AgenticStateError('lease_lost')` to request this bounded recovery.
-Use `conflict` for conflicting state or another active owner; Dogsled does not retry
+Use `conflict` for conflicting state or another active owner; Bobsled Core does not retry
 those errors automatically. Existing stores without the optional signal continue
 to work.
 
@@ -804,7 +804,7 @@ with the same database or catalog as the model output.
 Final output still uses the model's configured destination.
 
 Without a configured checkpoint store, warehouse publication keeps its existing
-target-schema default. DuckDB keeps its separate `_dogsled_agentic_publication`
+target-schema default. DuckDB keeps its separate `_bobsled_agentic_publication`
 schema. Hosts that supply their own publisher control its storage location;
 `createSqlAgenticPublisher` accepts `systemSchema` for built-in warehouse publishers.
 

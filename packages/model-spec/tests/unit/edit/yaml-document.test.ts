@@ -17,7 +17,7 @@ describe('edit/yaml-document', () => {
   let filePath: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-edit-yaml-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-edit-yaml-'));
     filePath = path.join(tmpDir, 'raw_customers.yml');
     fs.writeFileSync(
       filePath,

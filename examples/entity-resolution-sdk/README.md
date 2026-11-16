@@ -18,42 +18,42 @@ Manual commands:
 
 ```bash
 # 1. Validate core entity specs. The local runner seeds profile tables for the demo.
-dogsled entity-graph resolve validate customer deal document --json
+bobsled entity-graph resolve validate customer deal document --json
 
 # 2. Extract document mentions, then export ambiguous rows for review.
-dogsled entity-graph mentions extract Customer \
+bobsled entity-graph mentions extract Customer \
   --runner ./runner.js \
   --schema entity_graph \
   --fallback compromise \
   --json
-dogsled entity-graph mentions review export \
+bobsled entity-graph mentions review export \
   --runner ./runner.js \
   --schema entity_graph \
   --csv \
   > ./review/document_mentions.csv
 
 # 3. Extract, review, and compact document-derived relationships.
-dogsled entity-graph relationships extract Customer \
+bobsled entity-graph relationships extract Customer \
   --runner ./runner.js \
   --schema entity_graph \
   --fallback compromise \
   --json
-dogsled entity-graph relationships review export \
+bobsled entity-graph relationships review export \
   --runner ./runner.js \
   --schema entity_graph \
   --yaml \
   > ./review/relationship_decisions.yml
 # Edit ./review/relationship_decisions.yml with confirm/reject/supersede/conflicted decisions.
-dogsled entity-graph relationships review apply ./review/relationship_decisions.yml \
+bobsled entity-graph relationships review apply ./review/relationship_decisions.yml \
   --runner ./runner.js \
   --json
-dogsled entity-graph relationships compact \
+bobsled entity-graph relationships compact \
   --runner ./runner.js \
   --schema entity_graph \
   --json
 
 # 4. Generate the app-local TypeScript SDK.
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+bobsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 
 # 5. Verify generated SDK calls against the seeded local graph.
 pnpm exec tsx src/verify.ts
@@ -62,9 +62,9 @@ pnpm exec tsx src/verify.ts
 ## App Code
 
 ```ts
-import { createDogsledClient, type DogsledEntityExecutor } from './generated/dogsled-sdk/index.js';
+import { createBobsledClient, type BobsledEntityExecutor } from './generated/bobsled-sdk/index.js';
 
-const executor: DogsledEntityExecutor = {
+const executor: BobsledEntityExecutor = {
   async find(request) {
     // request looks like:
     //   {
@@ -73,13 +73,13 @@ const executor: DogsledEntityExecutor = {
     //     includes: { documents: true, relationships: ['customer_has_deal'] },
     //     limit: 1,
     //   }
-    return queryDogsledEntityGraph(request);
+    return queryBobsledEntityGraph(request);
   },
 };
 
-const dogsled = createDogsledClient(executor);
+const bobsled = createBobsledClient(executor);
 
-const acme = await dogsled.entity.customer
+const acme = await bobsled.entity.customer
   .findBy({ domain: 'acme.com' })
   .withDocuments()
   .withRelationship('customer_has_deal')
@@ -117,7 +117,7 @@ Agents should prefer `--json` or `--yaml` when consuming this queue directly. CS
 | Document-derived relationships           | `relationships extract --fallback compromise` and compact.                |
 | Quality scoring on every result          | `acme.profile._quality.{confidence,freshness_age_seconds,...}`.           |
 | Typed app-code surface                   | Branded `CustomerId`, strict `findBy` filter shapes.                      |
-| Executor-backed SDK (no embedded driver) | The consumer-supplied `DogsledEntityExecutor`.                            |
+| Executor-backed SDK (no embedded driver) | The consumer-supplied `BobsledEntityExecutor`.                            |
 | Review queue for low-confidence mentions | `mentions review export` envelope.                                        |
 
 ## Related Guides

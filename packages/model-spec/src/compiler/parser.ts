@@ -206,7 +206,7 @@ export type SourceRegistryEntry =
 /** Maps authored "connection.name" keys to fully resolved source entries. */
 export type SourceEntryRegistry = Map<string, SourceRegistryEntry>;
 
-/** Canonical lookup key for a qualified Dogsled source reference. */
+/** Canonical lookup key for a qualified Bobsled Core source reference. */
 export function normalizeSourceRef(ref: string): string {
   return ref.trim().toLowerCase();
 }
@@ -479,7 +479,7 @@ function qualifiedApiSourceAlias(sourceRef: string): string {
   const encoded = [...normalizeSourceRef(sourceRef)]
     .map((character) => character.codePointAt(0)!.toString(16).padStart(4, '0'))
     .join('');
-  return `__dogsled_source_${encoded}`;
+  return `__bobsled_source_${encoded}`;
 }
 
 export type SourceRegistryResult =

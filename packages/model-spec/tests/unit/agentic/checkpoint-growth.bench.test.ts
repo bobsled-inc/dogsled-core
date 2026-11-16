@@ -233,11 +233,11 @@ describe('checkpoint cost as a run grows', () => {
 
   it('keeps the row store from reading the run on every checkpoint', async () => {
     const onRowStore = async (assignments: number) => {
-      const directory = mkdtempSync(join(tmpdir(), 'dogsled-growth-'));
+      const directory = mkdtempSync(join(tmpdir(), 'bobsled-growth-'));
       try {
         const result = await counted(assignments, 'map', createDefaultAgenticStateStore(directory));
         // The default store falls back to files without DuckDB, which would prove nothing here.
-        const files = readdirSync(join(directory, '.dogsled/model-spec/agentic-state'));
+        const files = readdirSync(join(directory, '.bobsled/model-spec/agentic-state'));
         expect(files.some((name) => name.endsWith('.duckdb'))).toBe(true);
         return result;
       } finally {

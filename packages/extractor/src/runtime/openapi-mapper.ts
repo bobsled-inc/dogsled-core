@@ -239,7 +239,7 @@ export function mapIntegrationSpec(
     },
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'dogsled-extractor',
+      'User-Agent': 'bobsled-core-extractor',
     },
   };
 

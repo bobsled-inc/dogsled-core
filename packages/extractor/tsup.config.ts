@@ -78,7 +78,7 @@ export default defineConfig([
     // Belt-and-suspenders shim: if a future inlining sneaks past `external`
     // (e.g. a transitive CJS dep we didn't list), Node's real `require` is
     // still defined in module scope so esbuild's `__require` fallback won't
-    // throw. Mirrors the banner Dogsled CLI's tsup config has used since the
+    // throw. Mirrors the banner Bobsled Core CLI's tsup config has used since the
     // ESM cutover.
     banner: {
       js: `import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);`,

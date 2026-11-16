@@ -4,10 +4,10 @@ import { TransformSpecSchema } from '../compiler/schemas.js';
 import { identifierSchema } from '../compiler/shared-validators.js';
 
 const metadataColumns = [
-  { name: '_dogsled_run_id', type: 'string', nullable: false },
-  { name: '_dogsled_evidence', type: 'array', nullable: true },
-  { name: '_dogsled_confidence', type: 'number', nullable: true },
-  { name: '_dogsled_reason', type: 'object', nullable: true },
+  { name: '_bobsled_run_id', type: 'string', nullable: false },
+  { name: '_bobsled_evidence', type: 'array', nullable: true },
+  { name: '_bobsled_confidence', type: 'number', nullable: true },
+  { name: '_bobsled_reason', type: 'object', nullable: true },
 ] as const;
 
 export const AgenticColumnSchema = FieldMetadataSchema.pick({
@@ -23,12 +23,12 @@ export const AgenticColumnSchema = FieldMetadataSchema.pick({
     nullable: z.boolean(),
   })
   .superRefine((column, ctx) => {
-    if (!column.name.toLowerCase().startsWith('_dogsled_')) return;
+    if (!column.name.toLowerCase().startsWith('_bobsled_')) return;
     const reserved = metadataColumns.find((entry) => entry.name === column.name);
     if (!reserved || reserved.type !== column.type || reserved.nullable !== column.nullable) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Dogsled metadata names, types and nullability are fixed',
+        message: 'Bobsled Core metadata names, types and nullability are fixed',
       });
     }
   });
@@ -55,8 +55,8 @@ export const AgenticColumnsSchema = z
   });
 
 const OutputColumnsSchema = AgenticColumnsSchema.refine(
-  (columns) => columns.every((column) => !column.name.toLowerCase().startsWith('_dogsled_')),
-  'Dogsled metadata columns are reserved'
+  (columns) => columns.every((column) => !column.name.toLowerCase().startsWith('_bobsled_')),
+  'Bobsled Core metadata columns are reserved'
 );
 export const AgenticReferenceSchema = TransformSpecSchema.shape.source.pick({ ref: true }).strict();
 export const AgenticInputSourceSchema = AgenticReferenceSchema.extend({
@@ -289,7 +289,7 @@ export function describeModelSpecIssues(data: unknown, error: z.ZodError): strin
   return issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`).join('; ');
 }
 
-/** Declared business columns plus fixed Dogsled metadata for agentic outputs. */
+/** Declared business columns plus fixed Bobsled Core metadata for agentic outputs. */
 export function getModelOutputColumns(model: ModelSpec) {
   if (model.model_kind !== 'agentic') return model.columns;
   const output = model.plan.steps.find((step) => step.id === model.output.from)!;

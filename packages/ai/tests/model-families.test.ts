@@ -18,8 +18,8 @@ describe('AI Gateway model families', () => {
     }
   });
 
-  it('keeps family, version, and retired IDs aligned with Dogsled', () => {
-    const dogSledModelIds = {
+  it('keeps family, version, and retired IDs aligned with Bobsled Core', () => {
+    const bobsledModelIds = {
       'alibaba/qwen': ['alibaba/qwen3.8-27b'],
       'anthropic/claude-opus': ['anthropic/claude-opus-5.5', 'anthropic/claude-opus-5'],
       'google/gemini-flash': ['google/gemini-3.8-flash'],
@@ -32,7 +32,7 @@ describe('AI Gateway model families', () => {
       expect([
         MODEL_FAMILIES[familyId].currentVersion,
         ...MODEL_FAMILIES[familyId].previousVersions,
-      ]).toEqual(dogSledModelIds[familyId]);
+      ]).toEqual(bobsledModelIds[familyId]);
     }
     expect(RETIRED_MODEL_IDS).toEqual([
       'anthropic/claude-sonnet-5',

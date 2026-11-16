@@ -194,7 +194,7 @@ function classifyYaml(file: ProjectFileInput): ProjectFileClassification {
         return invalid(
           file.path,
           'conflicting_format',
-          'The document contains both Ossie and Dogsled format markers.'
+          'The document contains both Ossie and Bobsled Core format markers.'
         );
       }
       return recognized(file, 'ossie', undefined, format, undefined);
@@ -231,7 +231,7 @@ function classifyYaml(file: ProjectFileInput): ProjectFileClassification {
       return invalid(
         file.path,
         'conflicting_format',
-        'The document contains both Ossie and Dogsled format markers.'
+        'The document contains both Ossie and Bobsled Core format markers.'
       );
     }
     if (format === 'json') {

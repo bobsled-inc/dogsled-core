@@ -157,7 +157,7 @@ export const PRIVACY_RULES = [
     regex: /[a-z0-9][-a-z0-9]*\.neon\.tech\b/g,
   },
   {
-    id: 'dogsled-subdomain',
+    id: 'bobsled-subdomain',
     description: 'Private application subdomains',
     regex: /[a-z0-9][-a-z0-9]*\.dogsled\.it\b/g,
   },
@@ -190,7 +190,7 @@ export const PRIVACY_RULES = [
     description: 'Company repositories other than the public release repository',
     scan(line) {
       return [...line.matchAll(/github\.com\/bobsled-inc\/([a-z0-9._-]+)/gi)]
-        .filter((match) => match[1].toLowerCase().replace(/\.git$/, '') !== 'dogsled-core')
+        .filter((match) => match[1].toLowerCase().replace(/\.git$/, '') !== 'bobsled-core')
         .map((match) => ({ column: match.index + 1 }));
     },
   },

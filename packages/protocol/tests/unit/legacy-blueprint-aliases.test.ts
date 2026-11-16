@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  DOGSLED_LEGACY_BLUEPRINT_KEY,
+  BOBSLED_CORE_LEGACY_BLUEPRINT_KEY,
   LEGACY_BLUEPRINT_KEY_ALIASES,
   LEGACY_DESTINATION_TYPE_ALIASES,
   LegacyBlueprintKeyConflictError,
@@ -12,11 +12,11 @@ import {
 describe('legacy Blueprint aliases', () => {
   it('exposes only the approved aliases and stable deprecation code', () => {
     expect(LEGACY_BLUEPRINT_KEY_ALIASES).toEqual({
-      bobsled_connection_ref: 'dogsled_connection_ref',
-      bobsled_source_kind: 'dogsled_source_kind',
+      bobsled_connection_ref: 'bobsled_connection_ref',
+      bobsled_source_kind: 'bobsled_source_kind',
     });
-    expect(LEGACY_DESTINATION_TYPE_ALIASES).toEqual({ bobsled_managed: 'dogsled_managed' });
-    expect(DOGSLED_LEGACY_BLUEPRINT_KEY).toBe('DOGSLED_LEGACY_BLUEPRINT_KEY');
+    expect(LEGACY_DESTINATION_TYPE_ALIASES).toEqual({ bobsled_managed: 'bobsled_managed' });
+    expect(BOBSLED_CORE_LEGACY_BLUEPRINT_KEY).toBe('BOBSLED_CORE_LEGACY_BLUEPRINT_KEY');
   });
 
   it('normalizes source keys without changing provider names, nested keys, or the input', () => {
@@ -32,23 +32,23 @@ describe('legacy Blueprint aliases', () => {
     });
     expect(result.document).toEqual({
       type: 'source',
-      dogsled_connection_ref: 'api',
-      dogsled_source_kind: 'bobsled_api',
+      bobsled_connection_ref: 'api',
+      bobsled_source_kind: 'bobsled_api',
       resources: document.resources,
     });
     expect(document).toHaveProperty('bobsled_connection_ref', 'api');
     expect(result.deprecations).toEqual([
       {
-        code: DOGSLED_LEGACY_BLUEPRINT_KEY,
+        code: BOBSLED_CORE_LEGACY_BLUEPRINT_KEY,
         path: 'integrations/api.yml',
         oldKey: 'bobsled_connection_ref',
-        newKey: 'dogsled_connection_ref',
+        newKey: 'bobsled_connection_ref',
       },
       {
-        code: DOGSLED_LEGACY_BLUEPRINT_KEY,
+        code: BOBSLED_CORE_LEGACY_BLUEPRINT_KEY,
         path: 'integrations/api.yml',
         oldKey: 'bobsled_source_kind',
-        newKey: 'dogsled_source_kind',
+        newKey: 'bobsled_source_kind',
       },
     ]);
     expect(
@@ -78,11 +78,11 @@ describe('legacy Blueprint aliases', () => {
       ...document,
       destinations: {
         warehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'warehouse',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'warehouse',
           options: document.destinations.warehouse.options,
         },
-        local: { type: 'local', dogsled_connection_ref: 'local' },
+        local: { type: 'local', bobsled_connection_ref: 'local' },
       },
     });
     expect(result.deprecations).toHaveLength(3);
@@ -133,14 +133,14 @@ describe('legacy Blueprint aliases', () => {
             warehouse: {
               type: 'bobsled_managed',
               bobsled_connection_ref: 'private-old',
-              dogsled_connection_ref: 'private-new',
+              bobsled_connection_ref: 'private-new',
             },
           },
         },
         { path: 'pipelines.yml', kind: 'pipeline_config' }
       )
     ).toThrow(
-      'LEGACY_KEY_CONFLICT: pipelines.yml: bobsled_connection_ref conflicts with dogsled_connection_ref'
+      'LEGACY_KEY_CONFLICT: pipelines.yml: bobsled_connection_ref conflicts with bobsled_connection_ref'
     );
   });
 
@@ -149,17 +149,17 @@ describe('legacy Blueprint aliases', () => {
       { type: 'bobsled_managed', bobsled_connection_ref: 'binding' },
       { kind: 'destination' }
     );
-    expect(document).toEqual({ type: 'dogsled_managed', dogsled_connection_ref: 'binding' });
+    expect(document).toEqual({ type: 'bobsled_managed', bobsled_connection_ref: 'binding' });
     expect(deprecations).toHaveLength(2);
     expect(formatLegacyBlueprintDeprecation(deprecations[0]!)).toBe(
-      'DOGSLED_LEGACY_BLUEPRINT_KEY: bobsled_connection_ref is deprecated; use dogsled_connection_ref'
+      'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY: bobsled_connection_ref is deprecated; use bobsled_connection_ref'
     );
     expect(() =>
       normalizeLegacyBlueprintKeys(
-        { bobsled_connection_ref: 'old', dogsled_connection_ref: 'new' },
+        { bobsled_connection_ref: 'old', bobsled_connection_ref: 'new' },
         { kind: 'destination' }
       )
-    ).toThrow('LEGACY_KEY_CONFLICT: bobsled_connection_ref conflicts with dogsled_connection_ref');
+    ).toThrow('LEGACY_KEY_CONFLICT: bobsled_connection_ref conflicts with bobsled_connection_ref');
   });
 
   it('keeps retired destinations and unrelated legacy-looking names unchanged', () => {
@@ -187,7 +187,7 @@ describe('legacy Blueprint aliases', () => {
       { path: 'integrations/api.yml', kind: 'integration' }
     );
     expect(formatLegacyBlueprintDeprecation(deprecations[0]!)).toBe(
-      'DOGSLED_LEGACY_BLUEPRINT_KEY: integrations/api.yml: bobsled_connection_ref is deprecated; use dogsled_connection_ref'
+      'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY: integrations/api.yml: bobsled_connection_ref is deprecated; use bobsled_connection_ref'
     );
   });
 });

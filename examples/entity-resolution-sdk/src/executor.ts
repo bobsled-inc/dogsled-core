@@ -1,8 +1,8 @@
 import type {
   EntityFindRequest,
   EntityFindResult,
-  DogsledEntityExecutor,
-} from '../generated/dogsled-sdk/index.js';
+  BobsledEntityExecutor,
+} from '../generated/bobsled-sdk/index.js';
 
 interface ExampleRow {
   readonly [column: string]: unknown;
@@ -55,7 +55,7 @@ function mapProfile(row: ExampleRow): ExampleRow {
   };
 }
 
-export function createExampleExecutor(runner: QueryRunner): DogsledEntityExecutor {
+export function createExampleExecutor(runner: QueryRunner): BobsledEntityExecutor {
   return {
     async find<TProfile, TFilter extends object, TDocument = unknown>(
       request: EntityFindRequest<TFilter>

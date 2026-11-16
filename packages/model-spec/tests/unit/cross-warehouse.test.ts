@@ -4,16 +4,16 @@ import * as path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import { loadProject, runProject, validateProject } from '../../src/api/index.js';
 
 let tmpDir = '';
 
 async function expectLoadFailure(projectDir: string, message: RegExp): Promise<void> {
-  const error = await loadProject(projectDir).catch((value) => value as DogsledRuntimeError);
+  const error = await loadProject(projectDir).catch((value) => value as BobsledRuntimeError);
   expect(error).toMatchObject({
     kind: 'validation',
-    message: 'Dogsled could not validate the request.',
+    message: 'Bobsled Core could not validate the request.',
   });
   expect(error.cause?.message).toMatch(message);
 }
@@ -362,7 +362,7 @@ materialization:
 `
     );
     await writeFile(
-      path.join(projectDir, '.dogsled/model-spec', 'run-state.json'),
+      path.join(projectDir, '.bobsled/model-spec', 'run-state.json'),
       JSON.stringify(
         {
           models: {
@@ -405,7 +405,7 @@ materialization:
     // DROP VIEW preDdl that the publisher must execute against the
     // destination warehouse before the new CREATE TABLE materialization runs.
     await writeFile(
-      path.join(projectDir, '.dogsled/model-spec', 'run-state.json'),
+      path.join(projectDir, '.bobsled/model-spec', 'run-state.json'),
       JSON.stringify({
         models: {
           'mart.customer_orders': {

@@ -1,6 +1,6 @@
 import type { JsonObject } from './definitions.js';
 
-export const DOGSLED_RUNTIME_ERROR_KINDS = [
+export const BOBSLED_CORE_RUNTIME_ERROR_KINDS = [
   'auth',
   'validation',
   'provider',
@@ -9,19 +9,19 @@ export const DOGSLED_RUNTIME_ERROR_KINDS = [
   'internal',
 ] as const;
 
-export type DogsledRuntimeErrorKind = (typeof DOGSLED_RUNTIME_ERROR_KINDS)[number];
+export type BobsledRuntimeErrorKind = (typeof BOBSLED_CORE_RUNTIME_ERROR_KINDS)[number];
 
-export const DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<DogsledRuntimeErrorKind, string> = {
-  auth: 'Dogsled could not authenticate with the provider.',
-  validation: 'Dogsled could not validate the request.',
+export const BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<BobsledRuntimeErrorKind, string> = {
+  auth: 'Bobsled Core could not authenticate with the provider.',
+  validation: 'Bobsled Core could not validate the request.',
   provider: 'The provider could not complete the operation.',
   timeout: 'The operation timed out.',
   cancellation: 'The operation was cancelled.',
-  internal: 'Dogsled could not complete the operation.',
+  internal: 'Bobsled Core could not complete the operation.',
 };
 
-export interface DogsledRuntimeErrorOptions {
-  kind: DogsledRuntimeErrorKind;
+export interface BobsledRuntimeErrorOptions {
+  kind: BobsledRuntimeErrorKind;
   code: string;
   operation: string;
   retryable: boolean;
@@ -88,23 +88,23 @@ function serializeErrorCauseAtDepth(
 }
 
 /**
- * Safe, stable runtime failure contract for Dogsled library boundaries.
+ * Safe, stable runtime failure contract for Bobsled Core library boundaries.
  *
  * The original Error remains available only as the native `cause`; consumers
  * use the explicit fields and never infer behavior from provider text.
  */
-export class DogsledRuntimeError extends Error {
-  readonly kind: DogsledRuntimeErrorKind;
+export class BobsledRuntimeError extends Error {
+  readonly kind: BobsledRuntimeErrorKind;
   readonly code: string;
   readonly operation: string;
   readonly retryable: boolean;
   readonly providerStatus?: number;
   readonly publicMessage: string;
 
-  constructor(options: DogsledRuntimeErrorOptions) {
-    const publicMessage = DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES[options.kind];
+  constructor(options: BobsledRuntimeErrorOptions) {
+    const publicMessage = BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES[options.kind];
     super(publicMessage, { cause: options.cause });
-    this.name = 'DogsledRuntimeError';
+    this.name = 'BobsledRuntimeError';
     this.kind = options.kind;
     this.code = options.code;
     this.operation = options.operation;

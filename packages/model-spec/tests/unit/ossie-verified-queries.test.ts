@@ -44,7 +44,7 @@ function exported(queries: unknown[] = [query], options = {}) {
     ...options,
   });
 }
-function imported(data: unknown, vendor = 'DOGSLED') {
+function imported(data: unknown, vendor = 'BOBSLED') {
   return importOssieDocuments({
     documents: [
       {
@@ -70,7 +70,7 @@ describe('OSI verified queries', () => {
     const extension = (
       result.files[0]!.document['custom_extensions'] as Array<{ vendor_name: string; data: string }>
     )[0]!;
-    expect(extension.vendor_name).toBe('DOGSLED');
+    expect(extension.vendor_name).toBe('BOBSLED');
     expect(JSON.parse(extension.data)).toEqual({
       extension_version: '2',
       verified_queries: [query],

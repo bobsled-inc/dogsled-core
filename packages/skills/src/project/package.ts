@@ -70,7 +70,7 @@ function parsePackageMetadata(
   content: Buffer,
   entrypointPath: string
 ): ProjectSkillPackageMetadata {
-  const sidecarPath = `${entrypointPath}:dogsled.yaml`;
+  const sidecarPath = `${entrypointPath}:bobsled.yaml`;
   let parsedYaml: unknown;
   try {
     parsedYaml = parseYaml(decodeUtf8(content, sidecarPath, projectSkillError), {
@@ -128,7 +128,7 @@ export function loadProjectSkillPackage(
     }
     seen.add(resourcePath);
     const content = bytesOf(resource.content);
-    if (resourcePath === 'dogsled.yaml') packageMetadataBytes = content;
+    if (resourcePath === 'bobsled.yaml') packageMetadataBytes = content;
     if (content.byteLength > maxFileBytes) {
       throw projectSkillError(
         `${entrypointPath}:${resourcePath}`,

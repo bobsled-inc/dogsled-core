@@ -46,8 +46,8 @@ const QUICK_QUERIES = [
 const STATIC_DATABASES = [{ label: 'Pipeline (pipeline.duckdb)', path: './pipeline.duckdb' }];
 
 const DB_KEY_PICKER_PREFIX = '__dbkey__';
-const QUERY_HISTORY_STORAGE_KEY = 'dogsled-explorer-query-history';
-const CONNECTION_STORAGE_KEY = 'dogsled-explorer-connections';
+const QUERY_HISTORY_STORAGE_KEY = 'bobsled-explorer-query-history';
+const CONNECTION_STORAGE_KEY = 'bobsled-explorer-connections';
 const MAX_DISPLAY_ROWS = 500;
 
 function escapeCsvValue(value: unknown): string {
@@ -223,7 +223,7 @@ export default function OperateDataPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <PageHeader
-        breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Data' }]}
+        breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Data' }]}
         title="Pipeline Data"
         description="Query DuckDB databases from extracted pipeline data. Add connections in the Connections page to query additional databases."
       />

@@ -33,10 +33,10 @@ transports:
       burst: 10
     headers:
       Accept: application/json
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
       sled-client-id: ${{ env.BOBSLED_CLIENT_ID }}
     # Signed assertion naming the human on whose behalf the host runs this
-    # request. Dogsled relays it from the caller's `x-custom-user-proof` chat
+    # request. Bobsled Core relays it from the caller's `x-custom-user-proof` chat
     # header as `CUSTOM_USER_PROOF`; omitted when the host sets nothing.
     optional_headers:
       x-bobsled-delegated-user: ${{ env.CUSTOM_USER_PROOF }}

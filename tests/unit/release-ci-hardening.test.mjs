@@ -149,10 +149,10 @@ describe('release approval and metadata checks', () => {
       pull_request: { number: 7, commits: 1, head: { sha: 'abc' } },
     };
     const request = vi.fn(async () => [commit()]);
-    const args = { event, repository: 'bobsled-inc/dogsled-core', request };
+    const args = { event, repository: 'bobsled-inc/bobsled-core', request };
     await checkDco(args);
     expect(request).toHaveBeenCalledWith(
-      '/repos/bobsled-inc/dogsled-core/pulls/7/commits?per_page=100&page=1'
+      '/repos/bobsled-inc/bobsled-core/pulls/7/commits?per_page=100&page=1'
     );
     await expect(
       checkDco({ ...args, request: async () => [{ ...commit(), sha: 'changed' }] })
@@ -185,7 +185,7 @@ describe('release approval and metadata checks', () => {
     const request = vi.fn(async (route) =>
       route.endsWith('page=1') ? Array.from({ length: 100 }, () => commit()) : [commit()]
     );
-    await checkDco({ event, repository: 'bobsled-inc/dogsled-core', request });
+    await checkDco({ event, repository: 'bobsled-inc/bobsled-core', request });
     expect(request).toHaveBeenCalledTimes(2);
   });
 
@@ -284,9 +284,9 @@ describe('reviewed release configuration', () => {
       '/LICENSE',
       '/NOTICE',
     ])
-      expect(owners.split('\n')).toContain(`${pattern} @bobsled-inc/dogsled-maintainers`);
+      expect(owners.split('\n')).toContain(`${pattern} @bobsled-inc/bobsled-core-maintainers`);
     expect([...new Set(owners.match(/@[\w-]+\/[\w-]+/g))]).toEqual([
-      '@bobsled-inc/dogsled-maintainers',
+      '@bobsled-inc/bobsled-core-maintainers',
     ]);
   });
 });

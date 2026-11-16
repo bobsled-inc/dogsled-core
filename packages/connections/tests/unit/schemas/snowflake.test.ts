@@ -7,7 +7,7 @@ describe('SnowflakeConnectionSchema', () => {
   const minimalValid = {
     account_identifier: 'xt12345.us-east-1',
     warehouse: 'COMPUTE_WH',
-    role: 'DOGSLED_AI_ROLE',
+    role: 'BOBSLED_CORE_AI_ROLE',
   };
 
   it('accepts minimum required fields', () => {
@@ -32,7 +32,7 @@ describe('SnowflakeConnectionSchema', () => {
         account_identifier_env: 'SF_ACCOUNT',
         warehouse_env: 'SF_WAREHOUSE',
         user_env: 'SF_USER',
-        role: 'DOGSLED_AI_ROLE',
+        role: 'BOBSLED_CORE_AI_ROLE',
       })
     ).toMatchObject({ account_identifier_env: 'SF_ACCOUNT' });
   });
@@ -59,7 +59,7 @@ describe('SnowflakeConnectionSchema', () => {
     expect(() =>
       SnowflakeConnectionSchema.parse({
         account_identifier: 'xt12345',
-        role: 'DOGSLED_AI_ROLE',
+        role: 'BOBSLED_CORE_AI_ROLE',
       })
     ).toThrow(/must be set/);
   });
@@ -74,7 +74,7 @@ describe('SnowflakeConnectionSchema', () => {
         account_identifier: 'xt12345.us-east-1',
         warehouse: 'COMPUTE_WH',
         warehouses: { small: 'COMPUTE_WH', large: 'BIG_WH' },
-        role: 'DOGSLED_AI_ROLE',
+        role: 'BOBSLED_CORE_AI_ROLE',
       });
       expect(parsed.warehouses).toEqual({ small: 'COMPUTE_WH', large: 'BIG_WH' });
     });
@@ -85,7 +85,7 @@ describe('SnowflakeConnectionSchema', () => {
           account_identifier: 'xt12345.us-east-1',
           warehouse: 'MISSING_WH',
           warehouses: { small: 'COMPUTE_WH', large: 'BIG_WH' },
-          role: 'DOGSLED_AI_ROLE',
+          role: 'BOBSLED_CORE_AI_ROLE',
         })
       ).toThrow(/must be one of the declared warehouses values/);
     });
@@ -96,7 +96,7 @@ describe('SnowflakeConnectionSchema', () => {
           account_identifier: 'xt12345.us-east-1',
           warehouse: 'COMPUTE_WH',
           warehouses: {},
-          role: 'DOGSLED_AI_ROLE',
+          role: 'BOBSLED_CORE_AI_ROLE',
         })
       ).toThrow(/at least one entry/);
     });
@@ -107,7 +107,7 @@ describe('SnowflakeConnectionSchema', () => {
           account_identifier: 'xt12345.us-east-1',
           warehouse: 'COMPUTE_WH',
           warehouses: { a: 'COMPUTE_WH', b: 'COMPUTE_WH' },
-          role: 'DOGSLED_AI_ROLE',
+          role: 'BOBSLED_CORE_AI_ROLE',
         })
       ).toThrow(/must not repeat warehouse names/);
     });
@@ -119,7 +119,7 @@ describe('SnowflakeConnectionSchema', () => {
         account_identifier: 'xt12345.us-east-1',
         warehouse_env: 'SF_WAREHOUSE',
         warehouses: { small: 'COMPUTE_WH', large: 'BIG_WH' },
-        role: 'DOGSLED_AI_ROLE',
+        role: 'BOBSLED_CORE_AI_ROLE',
       });
       expect(parsed.warehouses).toEqual({ small: 'COMPUTE_WH', large: 'BIG_WH' });
     });
@@ -132,7 +132,7 @@ describe('SnowflakeConnectionSchema', () => {
         account_identifier: 'xt12345.us-east-1',
         warehouse: '${{ env.SF_WAREHOUSE }}',
         warehouses: { small: 'COMPUTE_WH', large: 'BIG_WH' },
-        role: 'DOGSLED_AI_ROLE',
+        role: 'BOBSLED_CORE_AI_ROLE',
       });
       expect(parsed.warehouses).toEqual({ small: 'COMPUTE_WH', large: 'BIG_WH' });
       expect(parsed.warehouse).toBe('${{ env.SF_WAREHOUSE }}');

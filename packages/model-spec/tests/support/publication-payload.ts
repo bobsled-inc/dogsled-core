@@ -11,10 +11,10 @@ export function publicationPayload(
   const rows = keys.map((key) => ({
     ...key,
     assessment: '',
-    _dogsled_run_id: 'boundary',
-    _dogsled_evidence: null,
-    _dogsled_confidence: null,
-    _dogsled_reason: null,
+    _bobsled_run_id: 'boundary',
+    _bobsled_evidence: null,
+    _bobsled_confidence: null,
+    _bobsled_reason: null,
   }));
   if (bytes !== undefined) {
     // Make some rows wide and use UTF-8 text so a row count or character count alone is insufficient.

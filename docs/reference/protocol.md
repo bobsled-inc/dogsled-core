@@ -4,7 +4,7 @@ Extractors and loaders exchange newline-delimited JSON. Data messages go to
 standard output and control messages to standard error, so you can pipe, capture
 or replay an extraction. Every message has `"_v": 1` and a `type`.
 
-These examples are real output from `dogsled extract run`.
+These examples are real output from `bobsled extract run`.
 
 ## Data messages (standard output)
 
@@ -122,7 +122,7 @@ carries counters such as records emitted and API calls:
 ## Column types
 
 `string`, `integer`, `number`, `boolean`, `timestamp`, `array`, `object` and
-`vector` (added by `dogsled embed`).
+`vector` (added by `bobsled embed`).
 
 ## Load strategies
 
@@ -132,4 +132,4 @@ carries counters such as records emitted and API calls:
 ## Exit codes
 
 `0` success, `1` runtime failure, `2` validation failure, `3` detected drift (for
-example, `dogsled model seed diff` when the table and the CSV differ).
+example, `bobsled model seed diff` when the table and the CSV differ).

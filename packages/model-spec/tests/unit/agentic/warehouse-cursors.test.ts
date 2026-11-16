@@ -63,10 +63,10 @@ describe.each(Object.values(configs))('shared warehouse cursors: $source_type', 
     expect(await store.begin(key, 'a'.repeat(64), 'run')).toEqual({});
     expect(close).toHaveBeenCalledTimes(1);
     const sql = run.mock.calls.map((call) => call[0]).join('\n');
-    expect(sql).toMatch(/__dogsled_cursors/i);
+    expect(sql).toMatch(/__bobsled_cursors/i);
     expect(sql).toContain('previous-token');
     expect(sql).toMatch(/DELETE FROM/i);
-    expect(sql).not.toContain('__dogsled_cp_');
+    expect(sql).not.toContain('__bobsled_cp_');
     if (integration.source_type === 'snowflake') expect(sql).toContain('matches := (SELECT');
     if (integration.source_type === 'bigquery') expect(sql).toContain('ASSERT');
     if (integration.source_type === 'databricks') expect(sql).toContain('BEGIN ATOMIC');

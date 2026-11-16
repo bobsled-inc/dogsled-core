@@ -171,7 +171,7 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
     const target = dialect === 'postgres' ? 'public.result' : 'catalog.public.result';
     const names = publicationNames(target, dialect);
     const leaf = (reference: string) => reference.match(/["`]([^"`]+)["`]$/)![1]!;
-    const prefix = dialect === 'snowflake' ? '_DOGSLED_PUB_' : '_dogsled_pub_';
+    const prefix = dialect === 'snowflake' ? '_BOBSLED_PUB_' : '_bobsled_pub_';
     for (const suffix of ['', '_c', '_p']) {
       const name = leaf(names.stage('f'.repeat(128), suffix));
       expect(name.startsWith(prefix)).toBe(true);
@@ -228,10 +228,10 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
         ['a', 'new'],
       ]);
       const internalCreates = f.db.events.filter(
-        (sql) => sql.startsWith('create table') && sql.includes('_dogsled_pub_')
+        (sql) => sql.startsWith('create table') && sql.includes('_bobsled_pub_')
       );
       expect(internalCreates.length).toBeGreaterThan(3);
-      expect(internalCreates.every((sql) => sql.includes('system_store._dogsled_pub_'))).toBe(true);
+      expect(internalCreates.every((sql) => sql.includes('system_store._bobsled_pub_'))).toBe(true);
     });
     it('replaces processed keys, removes zero-result B, and keeps unprocessed C', async () => {
       const f = await prepared();
@@ -278,7 +278,7 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
       expect(f.db.receipts()).toHaveLength(1);
       // Without a target there are no retained rows, so no processed-key table is built.
       expect(f.db.events.some((sql) => /^create table .*_k \(/.test(sql))).toBe(false);
-      expect(f.db.events.some((sql) => /^create table .*_dogsled_pub_a{48} \(/.test(sql))).toBe(
+      expect(f.db.events.some((sql) => /^create table .*_bobsled_pub_a{48} \(/.test(sql))).toBe(
         true
       );
     });
@@ -485,7 +485,7 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
           const checks = queries.filter((sql) => sql.startsWith('SELECT violation_count'));
           expect(checks.length).toBeGreaterThan(0);
           expect(
-            checks.every((sql) => sql.includes(target) && !sql.includes('_dogsled_pub_'))
+            checks.every((sql) => sql.includes(target) && !sql.includes('_bobsled_pub_'))
           ).toBe(true);
         }
         expect(f.db.manifests()[0]).toMatchObject({ no_op: true, validated: true });

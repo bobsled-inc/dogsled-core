@@ -7,14 +7,14 @@ import { normalizeForEachConfig } from '../runtime/for-each.js';
 
 import type { ApiResourceSpec } from '../types/index.js';
 
-const DOGSLED_CONFIG_NAMES = ['dogsled.yml', 'dogsled.yaml'];
-const MAX_DOGSLED_CONFIG_BYTES = 1024 * 1024;
+const BOBSLED_CORE_CONFIG_NAMES = ['bobsled.yml', 'bobsled.yaml'];
+const MAX_BOBSLED_CORE_CONFIG_BYTES = 1024 * 1024;
 
-function findDogsledConfig(startDir: string): string | undefined {
+function findBobsledConfig(startDir: string): string | undefined {
   let dir = path.resolve(startDir);
 
   while (true) {
-    for (const name of DOGSLED_CONFIG_NAMES) {
+    for (const name of BOBSLED_CORE_CONFIG_NAMES) {
       const candidate = path.join(dir, name);
       if (fs.existsSync(candidate)) {
         return candidate;
@@ -33,14 +33,14 @@ export function readScopedHealthResource(
   startDir: string,
   integrationName: string
 ): string | undefined {
-  const configPath = findDogsledConfig(startDir);
+  const configPath = findBobsledConfig(startDir);
   if (!configPath) {
     return undefined;
   }
 
   try {
     const stats = fs.statSync(configPath);
-    if (stats.size > MAX_DOGSLED_CONFIG_BYTES) {
+    if (stats.size > MAX_BOBSLED_CORE_CONFIG_BYTES) {
       return undefined;
     }
 

@@ -17,16 +17,16 @@ export async function run(ctx) {
   await mkdir(preparationHome, { recursive: true });
   await command(process.execPath, [path.join(root, 'scripts/e2e/prepare-extensions.mjs')], {
     cwd: ctx.project,
-    env: isolatedEnv(preparationHome, { DOGSLED_E2E_CLI: cliPath }),
+    env: isolatedEnv(preparationHome, { BOBSLED_CORE_E2E_CLI: cliPath }),
     timeout: 240_000,
   });
   await cp(path.join(preparationHome, '.duckdb'), path.join(auditHome, '.duckdb'), {
     recursive: true,
   });
   const env = isolatedEnv(auditHome, {
-    DOGSLED_E2E_HOME: auditHome,
-    DOGSLED_E2E_CLI: cliPath,
-    DOGSLED_E2E_POSTGRES_PORT: String(port),
+    BOBSLED_CORE_E2E_HOME: auditHome,
+    BOBSLED_CORE_E2E_CLI: cliPath,
+    BOBSLED_CORE_E2E_POSTGRES_PORT: String(port),
   });
   await command(
     'strace',
@@ -60,7 +60,7 @@ export async function run(ctx) {
   ];
   assert.deepEqual(unexpected, [], 'Toolkit contacted an unconfigured address');
   const evidence =
-    process.env.DOGSLED_E2E_OUTSIDER === '1' ? '/evidence' : path.join(root, 'test-results/e2e');
+    process.env.BOBSLED_CORE_E2E_OUTSIDER === '1' ? '/evidence' : path.join(root, 'test-results/e2e');
   await mkdir(evidence, { recursive: true });
   await cp(trace, path.join(evidence, 'network-audit.trace'));
   await writeFile(

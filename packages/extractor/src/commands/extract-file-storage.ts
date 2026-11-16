@@ -1,4 +1,4 @@
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import type { FileResourceSpec, ExtractorState, IntegrationSpec } from '../types/index.js';
 import type { ControlLogger } from '../runtime/control.js';
@@ -133,7 +133,7 @@ export async function reportFileStorageFailure({
   const message = getErrorMessage(error);
   const failureReason = classifyFailureReason(error);
   const cause = serializeExtractorErrorCause(error);
-  const errorCode = error instanceof DogsledRuntimeError ? error.code : undefined;
+  const errorCode = error instanceof BobsledRuntimeError ? error.code : undefined;
   // The code rides as an attribute so it survives --quiet, which drops PROGRESS.
   await logger.log(
     'error',

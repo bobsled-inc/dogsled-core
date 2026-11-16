@@ -4,7 +4,7 @@ import { parse as parseYaml, stringify } from 'yaml';
 import { CommandError } from '../errors.js';
 import { boundedJsonProblem, type BoundedJsonLimits } from './storage.js';
 
-export const OSSIE_VENDOR = 'DOGSLED';
+export const OSSIE_VENDOR = 'BOBSLED';
 export interface ConversionObjectReference {
   documentPath: string;
   dataset?: string;

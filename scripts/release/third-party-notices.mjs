@@ -10,7 +10,7 @@ const EMBEDDED_NOTICES = JSON.parse(
   readFileSync(path.join(releaseDirectory, 'embedded-notices.json'), 'utf8')
 );
 const defaultRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-export const NOTICES_PATH = 'packages/dogsled/THIRD_PARTY_NOTICES.md';
+export const NOTICES_PATH = 'packages/bobsled-core/THIRD_PARTY_NOTICES.md';
 const COPYRIGHT_FALLBACKS = {
   '@ai-sdk/provider-utils@4.0.56': {
     license: 'Apache-2.0',
@@ -25,7 +25,7 @@ const COPYRIGHT_FALLBACKS = {
 };
 const METAFILES = [
   { file: 'packages/ai/dist/metafile-esm.json', cwd: 'packages/ai' },
-  { file: 'packages/dogsled/dist/metafile-esm.json', cwd: 'packages/dogsled' },
+  { file: 'packages/bobsled-core/dist/metafile-esm.json', cwd: 'packages/bobsled-core' },
 ];
 const compare = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const readText = (file) => readFileSync(file, 'utf8').replaceAll('\r\n', '\n').trim();

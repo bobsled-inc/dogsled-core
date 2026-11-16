@@ -39,14 +39,14 @@ describe('published inventory', () => {
     const sbom = {
       bomFormat: 'CycloneDX',
       components: [],
-      metadata: { component: { 'bom-ref': 'dogsled' } },
+      metadata: { component: { 'bom-ref': 'bobsled' } },
     };
     mergeBundledComponents(sbom, packages);
     expect(sbom.components).toHaveLength(packages.length);
     expect(sbom.components.find((component) => component.name === 'commander')).toMatchObject({
       type: 'library',
       purl: expect.stringMatching(/^pkg:npm\/commander@/),
-      properties: [{ name: 'dogsled:inlined', value: 'true' }],
+      properties: [{ name: 'bobsled:inlined', value: 'true' }],
       licenses: expect.any(Array),
     });
     mergeBundledComponents(sbom, packages);
@@ -65,12 +65,12 @@ describe('published inventory', () => {
   });
 
   it('carries the Apache Ossie notice and points to the bundled notices', () => {
-    for (const file of ['NOTICE', 'packages/dogsled/NOTICE']) {
+    for (const file of ['NOTICE', 'packages/bobsled-core/NOTICE']) {
       expect(read(file)).toContain('Apache Ossie (incubating)');
       expect(read(file)).toContain('Copyright 2026 The Apache Software Foundation');
       expect(read(file)).toContain('THIRD_PARTY_NOTICES.md');
     }
-    expect(read('packages/dogsled/scripts/pack.sh')).not.toContain('app/public');
+    expect(read('packages/bobsled-core/scripts/pack.sh')).not.toContain('app/public');
   });
 });
 

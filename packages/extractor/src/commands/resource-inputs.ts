@@ -205,8 +205,8 @@ function serializeScalar(resource: string, key: string, value: unknown): string 
 
 /**
  * Validate every entry in a per-resource inputs map against the resources that
- * are actually about to run. Dogsled's cross-validation is the authority for
- * pipelines authored in `dogsled.yml`, but `--resource-inputs-json` is reachable
+ * are actually about to run. Bobsled Core's cross-validation is the authority for
+ * pipelines authored in `bobsled.yml`, but `--resource-inputs-json` is reachable
  * when the extractor is invoked standalone, so the boundary defends itself the
  * way `validateResourceViaOverride` does.
  *

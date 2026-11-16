@@ -1,0 +1,20 @@
+destinations:
+  warehouse:
+    type: duckdb
+    db_path: .bobsled/bobsled.duckdb
+    schema: raw
+pipelines:
+  tv:
+    schedule: manual
+    source: tvmaze
+    destination: warehouse
+    resources:
+      - resource: shows
+        input_matrix:
+          axes:
+            page:
+              - 0
+          concurrency: 1
+      - episodes
+    table_prefix: ""
+    load_strategy: full_refresh

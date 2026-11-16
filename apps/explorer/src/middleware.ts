@@ -54,11 +54,11 @@ export function middleware(request: NextRequest): NextResponse {
     ) {
       return NextResponse.json({ error: 'JSON content type required' }, { status: 415 });
     }
-    if (request.headers.get('x-dogsled-explorer-token') !== launchToken) {
+    if (request.headers.get('x-bobsled-explorer-token') !== launchToken) {
       return NextResponse.json({ error: 'Explorer launch token required' }, { status: 403 });
     }
   }
   const headers = new Headers(request.headers);
-  headers.set('x-dogsled-explorer-token', launchToken);
+  headers.set('x-bobsled-explorer-token', launchToken);
   return NextResponse.next({ request: { headers } });
 }

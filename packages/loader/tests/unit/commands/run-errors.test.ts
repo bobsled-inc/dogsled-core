@@ -20,7 +20,7 @@ describe('handleRunError', () => {
       new Error(
         'Failed to load stream "issues" to snowflake: SQL compilation error:\n' +
           'error line 1 at position 56\n' +
-          'invalid identifier "TOKEN". Run `dogsled load check --dest snowflake` to diagnose connectivity issues.'
+          'invalid identifier "TOKEN". Run `bobsled load check --dest snowflake` to diagnose connectivity issues.'
       ),
       'json'
     );
@@ -32,7 +32,7 @@ describe('handleRunError', () => {
       event:
         'Failed to load stream "issues" to snowflake: SQL compilation error:\n' +
         'error line 1 at position 56\n' +
-        'invalid identifier "TOKEN". Run `dogsled load check --dest snowflake` to diagnose connectivity issues.',
+        'invalid identifier "TOKEN". Run `bobsled load check --dest snowflake` to diagnose connectivity issues.',
     });
     expect(process.exitCode).toBe(1);
   });

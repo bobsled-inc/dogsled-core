@@ -2,13 +2,13 @@
 
 <!-- last-reviewed: 2026-05-12 -->
 
-Dogsled exposes its document corpus to LLM agents through MCP (Model Context Protocol). The first tool, `read_source`, returns rows from any `<resource>__documents` or `<resource>__chunks` table along with citation metadata, gated by a required `principal`.
+Bobsled Core exposes its document corpus to LLM agents through MCP (Model Context Protocol). The first tool, `read_source`, returns rows from any `<resource>__documents` or `<resource>__chunks` table along with citation metadata, gated by a required `principal`.
 
-This is the **outbound** MCP surface: Dogsled-as-server, agent-as-client. (Dogsled-as-client, consuming Notion / Atlassian / GDrive over MCP, is a separate package — see `packages/extractor/src/runtime/mcp-*.ts`.)
+This is the **outbound** MCP surface: Bobsled Core-as-server, agent-as-client. (Bobsled Core-as-client, consuming Notion / Atlassian / GDrive over MCP, is a separate package — see `packages/extractor/src/runtime/mcp-*.ts`.)
 
 ## Read This If
 
-- You're building an agent or retrieval pipeline that needs to read documents and chunks from a Dogsled project with citations attached.
+- You're building an agent or retrieval pipeline that needs to read documents and chunks from a Bobsled Core project with citations attached.
 - You need to enforce per-principal ACLs on document reads without writing the enforcement layer yourself.
 - You're choosing between the typed SDK and MCP for a particular use case — see [Two Patterns: When to Use What](#two-patterns-when-to-use-what).
 
@@ -21,17 +21,17 @@ This is the **outbound** MCP surface: Dogsled-as-server, agent-as-client. (Dogsl
 
 - One read tool: `read_source`. Returns rows + citations.
 - Fail-closed default: every call requires a `principal`.
-- Single explicit escape hatch (`--allow-unfiltered` AND `DOGSLED_MCP_ALLOW_UNFILTERED=1`) for single-tenant / public-data demos.
-- Public subpath: `import { ... } from '@bobsled-inc/dogsled/mcp'`.
+- Single explicit escape hatch (`--allow-unfiltered` AND `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`) for single-tenant / public-data demos.
+- Public subpath: `import { ... } from '@bobsled-inc/bobsled-core/mcp'`.
 
 Richer tools (`search_documents`, `get_document`, `search_entity_context`, `traverse_entity_context`) are planned on a later milestone — they are not shipped on `main` yet.
 
 ## Quickstart
 
 ```ts
-import { DogsledMcpServer, readSource } from '@bobsled-inc/dogsled/mcp';
+import { BobsledMcpServer, readSource } from '@bobsled-inc/bobsled-core/mcp';
 
-const server = new DogsledMcpServer({ allowedSourceTables: new Set(['support_docs__chunks']) });
+const server = new BobsledMcpServer({ allowedSourceTables: new Set(['support_docs__chunks']) });
 
 server.registerPermissionAdapter({
   name: 'source-acl',
@@ -112,9 +112,9 @@ When a registered adapter filters the returned rows, the response reports `{ "en
 The default is to reject every request without a principal:
 
 ```ts
-import { DogsledMcpServer } from '@bobsled-inc/dogsled/mcp';
+import { BobsledMcpServer } from '@bobsled-inc/bobsled-core/mcp';
 
-const server = new DogsledMcpServer();
+const server = new BobsledMcpServer();
 server.requirePrincipal(null);
 // throws CommandError(2):
 //   PermissionsNotConfigured: every MCP tool call requires a principal. ...
@@ -127,14 +127,14 @@ This is intentional. Production deployments that connect non-public data should 
 For a single-tenant demo / public-data preview / local dev, both of these must be set:
 
 1. Construct the server with `allowUnfiltered: true`.
-2. Set the environment variable `DOGSLED_MCP_ALLOW_UNFILTERED=1`.
+2. Set the environment variable `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`.
 
 ```ts
-const server = new DogsledMcpServer({
+const server = new BobsledMcpServer({
   allowUnfiltered: true,
   allowedSourceTables: new Set(['support_docs__chunks']),
 });
-// AND set DOGSLED_MCP_ALLOW_UNFILTERED=1 in the environment.
+// AND set BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 in the environment.
 ```
 
 If only one of the two is set, the constructor throws `CommandError(2)`. The asymmetry is deliberate: a one-flag escape hatch is easy to set by accident; a flag-and-env-var escape hatch is not.
@@ -144,7 +144,7 @@ When unfiltered mode is active:
 - The first request emits a WARN log: `[mcp-server] running with --allow-unfiltered. Permissions are NOT enforced.`
 - The fetcher receives `principal: null` and **must** emit its own WARN on first call. This is required by the contract — if your fetcher silently passes data through with `null`, it has violated the contract.
 
-When no permission adapter is registered, the `permissions` envelope reports `{ enforced: false, reason: 'no_adapter_registered' }`, so downstream agents can see that Dogsled did not apply row-level filtering after fetch. If an adapter is registered and applies, the response reports `{ enforced: true, adapter: '<name>' }`.
+When no permission adapter is registered, the `permissions` envelope reports `{ enforced: false, reason: 'no_adapter_registered' }`, so downstream agents can see that Bobsled Core did not apply row-level filtering after fetch. If an adapter is registered and applies, the response reports `{ enforced: true, adapter: '<name>' }`.
 
 ## Two Patterns: When to Use What
 
@@ -165,7 +165,7 @@ A fetcher is a single async function. Three responsibilities:
 3. **Return** `{ rows, next_cursor? }`. Each row is a `Record<string, unknown>` shaped like the underlying table; the server attaches a `Citation` automatically for document/chunk tables.
 
 ```ts
-import type { RowFetcher } from '@bobsled-inc/dogsled/mcp';
+import type { RowFetcher } from '@bobsled-inc/bobsled-core/mcp';
 
 let warnedUnfiltered = false;
 const warn = (message: string) => process.stderr.write(`[warn] ${message}\n`);
@@ -192,7 +192,7 @@ const fetcher: RowFetcher = async ({ input, principal }) => {
 };
 ```
 
-The `__acl` table currently stores ACL evidence captured at ingest time. Today, full join-style enforcement is on the consumer: use the `principal` to filter against whatever ACL columns your sources expose, or join against `__acl` directly. Dogsled captures ACL evidence. Host applications implement enforcement, role hierarchies, and approval workflows.
+The `__acl` table currently stores ACL evidence captured at ingest time. Today, full join-style enforcement is on the consumer: use the `principal` to filter against whatever ACL columns your sources expose, or join against `__acl` directly. Bobsled Core captures ACL evidence. Host applications implement enforcement, role hierarchies, and approval workflows.
 
 ## Cursors
 
@@ -200,7 +200,7 @@ The `__acl` table currently stores ACL evidence captured at ingest time. Today, 
 
 ## Errors
 
-All errors raised at the MCP boundary follow the Dogsled exit-code taxonomy:
+All errors raised at the MCP boundary follow the Bobsled Core exit-code taxonomy:
 
 | Exit code | When                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------ |
@@ -211,16 +211,16 @@ The CLI / SDK layers wrap these into `CommandError` so consumers get a clean err
 
 ## Health Checks
 
-`dogsled doctor` includes:
+`bobsled doctor` includes:
 
 | Check                          | What it verifies                                                                           |
 | ------------------------------ | ------------------------------------------------------------------------------------------ |
-| `mcp_unfiltered_in_production` | Flags when `DOGSLED_MCP_ALLOW_UNFILTERED=1` is set in CI / production-shaped environments. |
+| `mcp_unfiltered_in_production` | Flags when `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1` is set in CI / production-shaped environments. |
 
 Run before deploying:
 
 ```bash
-dogsled doctor --json
+bobsled doctor --json
 ```
 
 ## Versioning

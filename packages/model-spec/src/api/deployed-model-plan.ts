@@ -2,13 +2,13 @@
  * File-less analysis and DuckDB planning for deployed model definitions.
  *
  * Hosts can keep committed source/model YAML in their own database, validate it
- * once, and ask Dogsled for the transitive execution closure without creating a
+ * once, and ask Bobsled Core for the transitive execution closure without creating a
  * temporary project directory. The returned SQL uses deterministic internal
  * source aliases and contains no credentials or execution controls. The host
  * owns source reads, limits, staging, execution, cancellation, and cleanup.
  *
  * This module is an intentional exception to model-spec's general multi-dialect
- * code-generation rule. A deployed plan is a fixed contract for Dogsled's
+ * code-generation rule. A deployed plan is a fixed contract for Bobsled Core's
  * query-time DuckDB runner, not portable warehouse SQL. The public API therefore
  * does not accept a dialect option.
  */
@@ -143,7 +143,7 @@ export function planDeployedModelExecution(
   const sourceBindings = analysis.closure.sources.map((ref, index): DeployedModelSourceBinding => {
     const entry = getSourceEntry(definitions.sourceEntries.entryRegistry, ref);
     if (!entry) throw new CommandError(`Missing source binding for "${ref}".`, 2);
-    const internalTable = `sources.__dogsled_source_${index + 1}`;
+    const internalTable = `sources.__bobsled_source_${index + 1}`;
     const runtimeEntry = { ...entry, fqRef: internalTable } as SourceRegistryEntry;
     const key = normalizeSourceRef(ref);
     for (const registryKey of runtimeSources.keys()) {
@@ -169,7 +169,7 @@ export function planDeployedModelExecution(
     entryRegistry: runtimeEntries,
     // Intentional fixed runtime contract. See the module note above.
     dialect: 'duckdb',
-    targetSchema: '__dogsled_models',
+    targetSchema: '__bobsled_models',
     selectOnly: true,
     inlineDeps: true,
   });

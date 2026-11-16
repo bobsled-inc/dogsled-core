@@ -1,4 +1,4 @@
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { ExtractorClient, type ClientResponse } from '../client.js';
 import { ExtractorConfigError, ExtractorDataError, ExtractorTransientError } from '../errors.js';
@@ -80,7 +80,7 @@ function getErrorCode(err: unknown): ActivationErrorCode {
   return 'unknown';
 }
 
-function getRuntimeErrorCode(err: DogsledRuntimeError): ActivationErrorCode | undefined {
+function getRuntimeErrorCode(err: BobsledRuntimeError): ActivationErrorCode | undefined {
   if (err.providerStatus !== undefined) return classifyHttpStatus(err.providerStatus);
   if (err.kind === 'auth') return 'auth_error';
   if (err.kind === 'timeout') return 'timeout';
@@ -211,7 +211,7 @@ export async function runActivateDispatcher(
                 retryable: true,
               });
             }
-            if (requestError instanceof DogsledRuntimeError) {
+            if (requestError instanceof BobsledRuntimeError) {
               const code = getRuntimeErrorCode(requestError);
               if (code === undefined) throw requestError;
               const message =

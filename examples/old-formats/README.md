@@ -10,7 +10,7 @@ and checks malformed YAML produces a structured CLI failure.
 
 The test intentionally contains retired identifiers so consumers can reproduce
 the migration. See the deprecated-field table in
-`docs/guides/dogsled-cloud.md` for the supported migration.
+`docs/guides/hosted-runs.md` for the supported migration.
 
 Known limitation: an old root configuration filename currently lacks a dedicated
 migration diagnostic. The test checks it does not crash; the missing migration

@@ -23,6 +23,6 @@ transports:
       burst: 4
     headers:
       Accept: application/json
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
       Content-Type: application/vnd.api+json
 default_transport: default

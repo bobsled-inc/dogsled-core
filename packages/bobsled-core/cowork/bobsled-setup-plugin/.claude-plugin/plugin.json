@@ -1,0 +1,7 @@
+{
+  "name": "bobsled-setup",
+  "description": "Guided Bobsled Core repo setup for Cowork using local files and local CLI execution only.",
+  "author": {
+    "name": "Bobsled Core maintainers"
+  }
+}

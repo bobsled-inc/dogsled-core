@@ -6,7 +6,7 @@ For stable entity ID semantics see [entity-graph-stable-entity-ids.md](entity-gr
 
 ## Overview
 
-When you run `lineage compile`, Dogsled joins your Model Spec column-level extraction metadata with the survivorship `source_order` configuration and writes one row per `(entity_type, attribute, source_table, source_column)` combination to `entity_graph.lineage`. Each row records:
+When you run `lineage compile`, Bobsled Core joins your Model Spec column-level extraction metadata with the survivorship `source_order` configuration and writes one row per `(entity_type, attribute, source_table, source_column)` combination to `entity_graph.lineage`. Each row records:
 
 - **Where the data came from** — `source_system`, `source_table`, `source_column`, `field_path`
 - **How it was transformed** — `transform_ref`, `transform_step`
@@ -41,21 +41,21 @@ Each lineage refresh writes a `lineage_refresh` event to `entity_graph.audit_log
 Before compiling entity lineage after a model change, inspect the model side:
 
 ```bash
-dogsled model lineage --integration <handle> --column <model.column> --json
-dogsled model lineage --integration <handle> --column <model.column> --yaml
+bobsled model lineage --integration <handle> --column <model.column> --json
+bobsled model lineage --integration <handle> --column <model.column> --yaml
 ```
 
 Then preview the entity graph rows:
 
 ```bash
 # Preview what would be written (no warehouse writes)
-dogsled entity-graph lineage compile --dry-run --json
+bobsled entity-graph lineage compile --dry-run --json
 
 # Write to entity_graph.lineage (idempotent DELETE+INSERT per entity type)
-dogsled entity-graph lineage compile --runner ./runner.js --json
+bobsled entity-graph lineage compile --runner ./runner.js --json
 
 # Limit to one spec directory
-dogsled entity-graph lineage compile --spec-dir ./entity-graph --runner ./runner.js --json
+bobsled entity-graph lineage compile --spec-dir ./entity-graph --runner ./runner.js --json
 ```
 
 The compile step uses `--contract-schema` (default: `entity_graph`) to control which schema the output table lives in. Pass `--contract-schema <name>` to target a non-default schema.
@@ -84,13 +84,13 @@ Incomplete rows still appear in query output so you can identify which attribute
 
 ```bash
 # All lineage rows for an entity type
-dogsled entity-graph lineage --entity company --runner ./runner.js --json
+bobsled entity-graph lineage --entity company --runner ./runner.js --json
 
 # One attribute
-dogsled entity-graph lineage --entity company --attribute name --runner ./runner.js --json
+bobsled entity-graph lineage --entity company --attribute name --runner ./runner.js --json
 
 # Formatted as a Markdown table
-dogsled entity-graph lineage --entity company --attribute name --runner ./runner.js --format markdown
+bobsled entity-graph lineage --entity company --attribute name --runner ./runner.js --format markdown
 ```
 
 ### SQL queries
@@ -123,7 +123,7 @@ ORDER BY entity_type, attribute;
 When lineage rows exist, `entity-graph explain --subject entity` includes a `lineage_provenance` block for each attribute:
 
 ```bash
-dogsled entity-graph explain --subject entity --entity-id <id> --runner ./runner.js --json
+bobsled entity-graph explain --subject entity --entity-id <id> --runner ./runner.js --json
 ```
 
 The block lists the upstream source columns that contributed to each resolved attribute, joining `entity_graph.lineage` with the entity's profile rows.
@@ -136,7 +136,7 @@ Before changing a Model Spec model column, extraction spec field, or survivorshi
 
 ```bash
 # Which entity attributes source from salesforce.accounts.Name?
-dogsled entity-graph lineage --runner ./runner.js --json \
+bobsled entity-graph lineage --runner ./runner.js --json \
 | jq '.rows[] | select(.source_table == "raw.salesforce.accounts" and .source_column == "Name")'
 ```
 
@@ -192,7 +192,7 @@ GROUP BY eq.trust_tier;
 
 ## Related Docs and Skills
 
-- Dogsled lineage guide: [`docs/reference/advanced/lineage-guide.md`](lineage-guide.md)
+- Bobsled Core lineage guide: [`docs/reference/advanced/lineage-guide.md`](lineage-guide.md)
 - Model Spec lineage quick start: [`packages/model-spec/docs/lineage-quickstart.md`](../../../packages/model-spec/docs/lineage-quickstart.md)
 - Entity graph authoring guide: [`docs/reference/advanced/entity-graph-authoring-guide.md`](entity-graph-authoring-guide.md)
 - Stable entity ID reference: [`docs/reference/advanced/entity-graph-stable-entity-ids.md`](entity-graph-stable-entity-ids.md)

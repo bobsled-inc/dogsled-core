@@ -18,7 +18,7 @@ import {
   EXPECTED_INTERNAL_PACKAGE_COUNT,
   INLINED_AI_DEPENDENCY_NAMES,
   INTERNAL_PACKAGE_NAMES,
-  DOGSLED_PACKAGE_NAME,
+  BOBSLED_CORE_PACKAGE_NAME,
 } from './package-set.mjs';
 
 function parseOutputDir(argv) {
@@ -154,7 +154,7 @@ export function addInternalRuntimeDependencies(manifest, packages, catalogs) {
 
 // npm treats every dependency of a bundled package as part of the bundle when
 // it is installed under the bundling package. A global install places all of
-// Dogsled's dependencies there, so the external dependencies and driver peers
+// Bobsled Core's dependencies there, so the external dependencies and driver peers
 // declared by bundled internal manifests were expected inside the tarball and
 // left empty. Bundled manifests therefore keep only edges to other bundled
 // packages. The top-level manifest already declares every external runtime
@@ -173,7 +173,7 @@ export function stripBundledManifestDependencies(manifest, bundledManifests) {
           optionalDependencies[name] === undefined
         ) {
           throw new Error(
-            `${bundled.name} needs ${name}, but ${DOGSLED_PACKAGE_NAME} does not declare it.`
+            `${bundled.name} needs ${name}, but ${BOBSLED_CORE_PACKAGE_NAME} does not declare it.`
           );
         }
       }
@@ -181,7 +181,7 @@ export function stripBundledManifestDependencies(manifest, bundledManifests) {
     for (const [name, range] of Object.entries(bundled.peerDependencies ?? {})) {
       if (optionalDependencies[name] !== undefined && optionalDependencies[name] !== range) {
         throw new Error(
-          `${bundled.name} accepts ${name} ${range}, but ${DOGSLED_PACKAGE_NAME} installs ${name} ${optionalDependencies[name]}. Declare one range so a project's own ${name} is shared.`
+          `${bundled.name} accepts ${name} ${range}, but ${BOBSLED_CORE_PACKAGE_NAME} installs ${name} ${optionalDependencies[name]}. Declare one range so a project's own ${name} is shared.`
         );
       }
     }
@@ -216,13 +216,13 @@ export function copyBundledPackageAssets(outputDir, sourceRoot = repoRoot) {
 }
 
 function validateWorkspaceContract(packages) {
-  const dogsledPackage = packages.get(DOGSLED_PACKAGE_NAME);
-  if (!dogsledPackage || dogsledPackage.packageJson.private === true) {
-    throw new Error(`${DOGSLED_PACKAGE_NAME} must be the one publishable workspace.`);
+  const bobsledPackage = packages.get(BOBSLED_CORE_PACKAGE_NAME);
+  if (!bobsledPackage || bobsledPackage.packageJson.private === true) {
+    throw new Error(`${BOBSLED_CORE_PACKAGE_NAME} must be the one publishable workspace.`);
   }
 
   const internalNames = [...packages.values()]
-    .filter((pkg) => pkg.name !== DOGSLED_PACKAGE_NAME)
+    .filter((pkg) => pkg.name !== BOBSLED_CORE_PACKAGE_NAME)
     .map((pkg) => pkg.name)
     .sort();
   if (
@@ -242,21 +242,21 @@ function validateWorkspaceContract(packages) {
     if (pkg.packageJson.publishConfig !== undefined) {
       throw new Error(`${name} must not declare npm publishConfig.`);
     }
-    if (dogsledPackage.packageJson.dependencies?.[name] !== 'workspace:*') {
-      throw new Error(`${DOGSLED_PACKAGE_NAME} must depend on internal workspace ${name}.`);
+    if (bobsledPackage.packageJson.dependencies?.[name] !== 'workspace:*') {
+      throw new Error(`${BOBSLED_CORE_PACKAGE_NAME} must depend on internal workspace ${name}.`);
     }
   }
 
-  const bundled = [...(dogsledPackage.packageJson.bundleDependencies ?? [])].sort();
+  const bundled = [...(bobsledPackage.packageJson.bundleDependencies ?? [])].sort();
   const expectedBundled = [...INTERNAL_PACKAGE_NAMES, ...BUNDLED_EXTERNAL_PACKAGE_NAMES].sort();
   if (
     bundled.length !== expectedBundled.length ||
     bundled.some((name, index) => name !== expectedBundled[index])
   ) {
-    throw new Error(`${DOGSLED_PACKAGE_NAME} must bundle the complete reviewed package set.`);
+    throw new Error(`${BOBSLED_CORE_PACKAGE_NAME} must bundle the complete reviewed package set.`);
   }
 
-  return dogsledPackage;
+  return bobsledPackage;
 }
 
 function cleanDeploymentNodeModules(outputDir) {
@@ -300,14 +300,14 @@ function cleanDeploymentNodeModules(outputDir) {
   rmSync(internalStageDir, { recursive: true, force: true });
 }
 
-export function stageDogsledPackage(outputDir, { build = true } = {}) {
+export function stageBobsledPackage(outputDir, { build = true } = {}) {
   assertSafeOutputDir(outputDir);
   const packages = workspacePackageMap();
-  const dogsledPackage = validateWorkspaceContract(packages);
+  const bobsledPackage = validateWorkspaceContract(packages);
   const catalogs = catalogVersions();
 
   if (build) {
-    execFileSync('pnpm', ['--filter', `${DOGSLED_PACKAGE_NAME}...`, 'build'], {
+    execFileSync('pnpm', ['--filter', `${BOBSLED_CORE_PACKAGE_NAME}...`, 'build'], {
       cwd: repoRoot,
       stdio: 'inherit',
     });
@@ -323,7 +323,7 @@ export function stageDogsledPackage(outputDir, { build = true } = {}) {
       '--config.inject-workspace-packages=true',
       'deploy',
       '--filter',
-      DOGSLED_PACKAGE_NAME,
+      BOBSLED_CORE_PACKAGE_NAME,
       '--prod',
       outputDir,
     ],
@@ -337,7 +337,7 @@ export function stageDogsledPackage(outputDir, { build = true } = {}) {
 
   normalizeStagedManifest(
     path.join(outputDir, 'package.json'),
-    dogsledPackage.packageJson,
+    bobsledPackage.packageJson,
     packages,
     catalogs
   );
@@ -387,11 +387,11 @@ export function stageDogsledPackage(outputDir, { build = true } = {}) {
 
   writeFileSync(manifestPath, `${JSON.stringify(stagedManifest, null, 2)}\n`);
   process.stdout.write(
-    `Staged ${DOGSLED_PACKAGE_NAME}@${dogsledPackage.packageJson.version} with ${EXPECTED_INTERNAL_PACKAGE_COUNT} bundled internal workspaces at ${outputDir}.\n`
+    `Staged ${BOBSLED_CORE_PACKAGE_NAME}@${bobsledPackage.packageJson.version} with ${EXPECTED_INTERNAL_PACKAGE_COUNT} bundled internal workspaces at ${outputDir}.\n`
   );
   return { outputDir, manifest: stagedManifest };
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
-  stageDogsledPackage(parseOutputDir(process.argv.slice(2)));
+  stageBobsledPackage(parseOutputDir(process.argv.slice(2)));
 }

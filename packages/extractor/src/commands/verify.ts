@@ -1,5 +1,5 @@
 /**
- * `dogsled extract verify` command.
+ * `bobsled extract verify` command.
  *
  * Offline verification for integrations: schema/quality checks plus
  * optional OpenAPI drift detection when an `openapi_url` is available.

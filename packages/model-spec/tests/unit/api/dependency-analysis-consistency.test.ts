@@ -4,7 +4,7 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import { analyzeDeployedModelProject } from '../../../src/api/deployed-model-plan.js';
 import { loadProject } from '../../../src/api/load-project.js';
 import { analyzeModelDependencies } from '../../../src/compiler/model-dependency-analysis.js';
@@ -164,7 +164,7 @@ describe('file and in-memory dependency analysis consistency', () => {
     const models = [model('model_a', 'model_b'), model('model_b', 'model_a')];
 
     const error = await analyzeFileProject([], models).catch(
-      (value) => value as DogsledRuntimeError
+      (value) => value as BobsledRuntimeError
     );
     expect(error).toMatchObject({ kind: 'validation' });
     expect(error.cause?.message).toMatch(/circular|cycle/i);
@@ -175,7 +175,7 @@ describe('file and in-memory dependency analysis consistency', () => {
     const models = [model('broken_model', 'missing_model')];
 
     const error = await analyzeFileProject([], models).catch(
-      (value) => value as DogsledRuntimeError
+      (value) => value as BobsledRuntimeError
     );
     expect(error).toMatchObject({ kind: 'validation' });
     expect(error.cause?.message).toMatch(/unknown/i);

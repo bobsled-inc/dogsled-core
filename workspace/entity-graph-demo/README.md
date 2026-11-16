@@ -1,6 +1,6 @@
 # Entity Graph Demo
 
-Self-contained demo workspace for the Dogsled Explorer entity graph surface. Not a production artifact — a fixture the UI and devs can drive end-to-end against DuckDB.
+Self-contained demo workspace for the Bobsled Core Explorer entity graph surface. Not a production artifact — a fixture the UI and devs can drive end-to-end against DuckDB.
 
 ## What's here
 
@@ -22,7 +22,7 @@ pnpm --filter @bobsled-inc/entity-graph exec entity-graph resolve profile compan
 pnpm --filter @bobsled-inc/entity-graph exec entity-graph survivorship refresh company --runner ./runner.duckdb.js
 ```
 
-The `dogsled` binary (`packages/dogsled`) wraps both — `dogsled model seed load ...` and `dogsled entity-graph resolve run ...` work identically when installed.
+The `bobsled` binary (`packages/bobsled-core`) wraps both — `bobsled model seed load ...` and `bobsled entity-graph resolve run ...` work identically when installed.
 
 ## Agent review walkthrough
 
@@ -31,7 +31,7 @@ Dataworks Inc`, `Vandelay Industries Group` ↔ `Vandelay Industry Grp`) that
 score inside the review band, so `resolve run` leaves them in
 `company__review_queue`. The resolution spec enables `agent_policy` with
 `model: reviewer` (resolved against `platform.models` in this directory's
-`dogsled.yml`) plus an `entity_semantics` block that shapes the judge's prompt.
+`bobsled.yml`) plus an `entity_semantics` block that shapes the judge's prompt.
 
 ```bash
 cd workspace/entity-graph-demo
@@ -65,4 +65,4 @@ contract for bringing your own agent (HTTP or command) is documented in
 
 ## Driving it from the Explorer UI
 
-`/entity-graph/resolve` calls `POST /api/entity-graph/run`. The route spawns the sequence above via the Dogsled CLI, streaming stdout/stderr over SSE. It's idempotent — every run overwrites the `entity_graph_demo.company__*` tables.
+`/entity-graph/resolve` calls `POST /api/entity-graph/run`. The route spawns the sequence above via the Bobsled Core CLI, streaming stdout/stderr over SSE. It's idempotent — every run overwrites the `entity_graph_demo.company__*` tables.

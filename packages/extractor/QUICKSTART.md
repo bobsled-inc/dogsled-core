@@ -15,7 +15,7 @@ After build, the CLI is available at `./dist/index.js`. You can run it two ways:
 **Option A: Built CLI (after `pnpm run build`)**
 
 ```bash
-alias dogsled="node $(pwd)/dist/index.js"
+alias bobsled="node $(pwd)/dist/index.js"
 ```
 
 **Option B: Dev mode with tsx (no build, runs from source)**
@@ -23,7 +23,7 @@ alias dogsled="node $(pwd)/dist/index.js"
 ```bash
 # Must use --prefix-paths so pnpm resolves deps from the package dir
 EXTRACTOR_DIR="$(pwd)"
-alias dogsled="pnpm --dir=$EXTRACTOR_DIR tsx $EXTRACTOR_DIR/src/index.ts"
+alias bobsled="pnpm --dir=$EXTRACTOR_DIR tsx $EXTRACTOR_DIR/src/index.ts"
 ```
 
 Both work from any directory. Option A is faster; Option B picks up source changes immediately.
@@ -35,7 +35,7 @@ Both work from any directory. Option A is faster; Option B picks up source chang
 ```bash
 mkdir -p /tmp/extractor-test && cd /tmp/extractor-test
 
-dogsled extract init . --integration github
+bobsled extract init . --integration github
 ```
 
 This creates:
@@ -76,7 +76,7 @@ transport:
     burst: 20
   headers:
     Accept: application/vnd.github.v3+json
-    User-Agent: dogsled-extractor/0.1
+    User-Agent: bobsled-core-extractor/0.1
 ```
 
 **resources/github/repos.yml:**
@@ -219,19 +219,19 @@ export GITHUB_TOKEN="ghp_your_token_here"
 
 ```bash
 # Validate all providers and resources
-dogsled extract validate
+bobsled extract validate
 
 # Validate a specific provider
-dogsled extract validate github
+bobsled extract validate github
 
 # Validate a specific resource
-dogsled extract validate github/issues
+bobsled extract validate github/issues
 
 # Also check that env vars are set
-dogsled extract validate --check-env
+bobsled extract validate --check-env
 
 # JSON output
-dogsled extract validate --format json
+bobsled extract validate --format json
 ```
 
 ---
@@ -240,16 +240,16 @@ dogsled extract validate --format json
 
 ```bash
 # List resources defined for the github provider
-dogsled extract discover github
+bobsled extract discover github
 
 # Also verify API connectivity
-dogsled extract discover github --check-api
+bobsled extract discover github --check-api
 
 # Probe: infer output fields from a live API response
-dogsled extract discover github --probe
+bobsled extract discover github --probe
 
 # JSON output
-dogsled extract discover github --format json
+bobsled extract discover github --format json
 ```
 
 ---
@@ -258,31 +258,31 @@ dogsled extract discover github --format json
 
 ```bash
 # Extract all resources from all providers (stdout JSONL)
-dogsled extract run
+bobsled extract run
 
 # Extract a specific resource
-dogsled extract run repos --integration github
+bobsled extract run repos --integration github
 
 # Limit records (great for testing)
-dogsled extract run issues --integration github --limit 5
+bobsled extract run issues --integration github --limit 5
 
 # Override input variables
-dogsled extract run repos --integration github --input org=octocat
+bobsled extract run repos --integration github --input org=octocat
 
 # Full refresh (ignore any saved bookmarks)
-dogsled extract run issues --integration github --full-refresh --limit 10
+bobsled extract run issues --integration github --full-refresh --limit 10
 
 # Write to files instead of stdout
-dogsled extract run repos --integration github --output file --limit 20
+bobsled extract run repos --integration github --output file --limit 20
 
 # Lint mode: validate responses + detect schema drift
-dogsled extract run repos --integration github --lint --limit 10
+bobsled extract run repos --integration github --lint --limit 10
 
 # Batch mode: write batch files instead of individual records
-dogsled extract run repos --integration github --batch --batch-size 5 --limit 20
+bobsled extract run repos --integration github --batch --batch-size 5 --limit 20
 
 # Pretty logs (human-readable stderr instead of JSON)
-dogsled extract --log-format pretty run repos --integration github --limit 5
+bobsled extract --log-format pretty run repos --integration github --limit 5
 ```
 
 **What you'll see on stdout** (JSONL):
@@ -303,7 +303,7 @@ dogsled extract --log-format pretty run repos --integration github --limit 5
 Tip: Separate data from logs:
 
 ```bash
-dogsled extract run repos --integration github --limit 5 > records.jsonl 2> logs.jsonl
+bobsled extract run repos --integration github --limit 5 > records.jsonl 2> logs.jsonl
 ```
 
 ---
@@ -312,10 +312,10 @@ dogsled extract run repos --integration github --limit 5 > records.jsonl 2> logs
 
 ```bash
 # Fetch a single issue by number
-dogsled extract lookup --integration github --resource issues --input id=1
+bobsled extract lookup --integration github --resource issues --input id=1
 
 # With overridden repo
-dogsled extract lookup --integration github --resource issues --input id=1 --input owner=octocat --input repo=hello-world
+bobsled extract lookup --integration github --resource issues --input id=1 --input owner=octocat --input repo=hello-world
 ```
 
 ---
@@ -326,23 +326,23 @@ Bookmarks live in `.extractor/state.json`, keyed by `integration/resource`. Incr
 
 ```bash
 # Durable incremental run: persists the bookmark for the next run
-dogsled extract run issues --integration github --advance-state
+bobsled extract run issues --integration github --advance-state
 
 # Preview incremental run: emits STATE but does not persist the bookmark
-dogsled extract run issues --integration github --limit 5
+bobsled extract run issues --integration github --limit 5
 
 # Top-up: backfill the last 2 hours (does NOT advance bookmark by default)
-dogsled extract topup --integration github --resource issues --since 2h
+bobsled extract topup --integration github --resource issues --since 2h
 
 # Top-up with an explicit window
-dogsled extract topup --integration github --resource issues \
+bobsled extract topup --integration github --resource issues \
   --since 2026-03-01T00:00:00Z --until 2026-03-15T00:00:00Z
 
 # Top-up and advance the bookmark
-dogsled extract topup --integration github --resource issues --since 1d --advance-state
+bobsled extract topup --integration github --resource issues --since 1d --advance-state
 
 # Limit records
-dogsled extract topup --integration github --resource issues --since 7d --limit 50
+bobsled extract topup --integration github --resource issues --since 7d --limit 50
 ```
 
 ---
@@ -384,7 +384,7 @@ rm -rf .extractor/
 Emit a Model Spec source YAML alongside extraction:
 
 ```bash
-dogsled extract run repos --integration github --limit 5 --emit-model-spec-source
+bobsled extract run repos --integration github --limit 5 --emit-model-spec-source
 ```
 
 The generated Model Spec source spec appears in the stderr log output.
@@ -395,23 +395,23 @@ The generated Model Spec source spec appears in the stderr log output.
 
 | Test                      | Command                                                                                                       |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Scaffolding works         | `dogsled extract init /tmp/test-project --integration test_api`                                               |
-| Validation passes         | `dogsled extract validate`                                                                                    |
-| Env var check             | `dogsled extract validate --check-env`                                                                        |
-| Discovery lists resources | `dogsled extract discover github`                                                                             |
-| API connectivity          | `dogsled extract discover github --check-api`                                                                 |
-| Schema probe              | `dogsled extract discover github --probe`                                                                     |
-| Extraction (limited)      | `dogsled extract run repos --integration github --limit 5`                                                    |
-| Incremental extraction    | `dogsled extract run issues --integration github --advance-state` then rerun the same command (uses bookmark) |
-| Full refresh              | `dogsled extract run issues --integration github --full-refresh --limit 5`                                    |
-| Lookup                    | `dogsled extract lookup --integration github --resource issues --input id=1`                                  |
-| Top-up                    | `dogsled extract topup --integration github --resource issues --since 1h --limit 10`                          |
-| File output               | `dogsled extract run repos --integration github --output file --limit 5`                                      |
-| Batch output              | `dogsled extract run repos --integration github --batch --limit 20`                                           |
-| Lint mode                 | `dogsled extract run repos --integration github --lint --limit 5`                                             |
-| Input overrides           | `dogsled extract run repos --integration github --input org=octocat --limit 5`                                |
-| JSON formats              | `dogsled extract validate --format json` / `dogsled extract discover github --format json`                    |
-| Pretty logs               | `dogsled extract --log-format pretty run repos --integration github --limit 3`                                |
+| Scaffolding works         | `bobsled extract init /tmp/test-project --integration test_api`                                               |
+| Validation passes         | `bobsled extract validate`                                                                                    |
+| Env var check             | `bobsled extract validate --check-env`                                                                        |
+| Discovery lists resources | `bobsled extract discover github`                                                                             |
+| API connectivity          | `bobsled extract discover github --check-api`                                                                 |
+| Schema probe              | `bobsled extract discover github --probe`                                                                     |
+| Extraction (limited)      | `bobsled extract run repos --integration github --limit 5`                                                    |
+| Incremental extraction    | `bobsled extract run issues --integration github --advance-state` then rerun the same command (uses bookmark) |
+| Full refresh              | `bobsled extract run issues --integration github --full-refresh --limit 5`                                    |
+| Lookup                    | `bobsled extract lookup --integration github --resource issues --input id=1`                                  |
+| Top-up                    | `bobsled extract topup --integration github --resource issues --since 1h --limit 10`                          |
+| File output               | `bobsled extract run repos --integration github --output file --limit 5`                                      |
+| Batch output              | `bobsled extract run repos --integration github --batch --limit 20`                                           |
+| Lint mode                 | `bobsled extract run repos --integration github --lint --limit 5`                                             |
+| Input overrides           | `bobsled extract run repos --integration github --input org=octocat --limit 5`                                |
+| JSON formats              | `bobsled extract validate --format json` / `bobsled extract discover github --format json`                    |
+| Pretty logs               | `bobsled extract --log-format pretty run repos --integration github --limit 3`                                |
 
 ---
 
@@ -419,7 +419,7 @@ The generated Model Spec source spec appears in the stderr log output.
 
 **"No providers found"** — Run from the directory containing `extractor.yml` (or `providers/`).
 
-**Auth failures** — Ensure `GITHUB_TOKEN` is exported. Use `dogsled extract validate --check-env`.
+**Auth failures** — Ensure `GITHUB_TOKEN` is exported. Use `bobsled extract validate --check-env`.
 
 **"base_url origin mismatch"** — The URL in the provider spec must be a root HTTPS origin with no trailing path.
 

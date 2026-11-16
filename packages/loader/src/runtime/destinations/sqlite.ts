@@ -414,7 +414,7 @@ export class SqliteDestination implements DatabaseDestination {
   ): void {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map((k) => quoteIdentifier(k)).join(', ');
-    const indexName = quoteIdentifier(`_dogsled_uq_${tableName}`);
+    const indexName = quoteIdentifier(`_bobsled_uq_${tableName}`);
     // SQLite CREATE INDEX ON clause takes bare table name, not schema-qualified
     db.exec(
       `CREATE UNIQUE INDEX IF NOT EXISTS ${indexName} ON ${quoteIdentifier(tableName)} (${keyColList})`
@@ -496,7 +496,7 @@ export class SqliteDestination implements DatabaseDestination {
       throw new Error('merge strategy requires at least one key column');
     }
 
-    const stagingName = `_dogsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
+    const stagingName = `_bobsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
     const quotedStaging = quoteIdentifier(stagingName);
 
     try {

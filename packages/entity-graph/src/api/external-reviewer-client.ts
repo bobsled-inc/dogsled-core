@@ -49,7 +49,7 @@ const STDERR_EXCERPT_CHARS = 300;
 const MAX_COMMAND_STDOUT_CHARS = 8 * 1024 * 1024;
 const MAX_COMMAND_STDERR_CHARS = 64 * 1024;
 
-/** `job` block of the review request: what Dogsled is asking for, and how long it will wait. */
+/** `job` block of the review request: what Bobsled Core is asking for, and how long it will wait. */
 export interface ExternalReviewJobV1 {
   entity: string;
   max_pairs: number;
@@ -57,7 +57,7 @@ export interface ExternalReviewJobV1 {
   /**
    * Optional hard cost ceiling for this review run (`agent_policy.max_cost_usd`).
    * Additive to the contract: absent unless the policy sets it. A reviewer that
-   * reports `usage.cost_usd` can use this to stop early; Dogsled also stops
+   * reports `usage.cost_usd` can use this to stop early; Bobsled Core also stops
    * dispatching batches once the reported cost reaches it.
    */
   max_cost_usd?: number;
@@ -80,7 +80,7 @@ export interface ExternalReviewContextV1 {
 }
 
 /**
- * Wire shape POSTed to the reviewer (contract §3). `pairs` is Dogsled's
+ * Wire shape POSTed to the reviewer (contract §3). `pairs` is Bobsled Core's
  * camelCase `PairContext[]` verbatim; `context.entity_semantics` is the
  * snake_case YAML shape so external agents see the documented contract.
  */
@@ -132,7 +132,7 @@ export interface ExternalReviewUsageV1 {
 
 // ---------------------------------------------------------------------------
 // Wire schemas — lenient (`z.object` strips unknown keys) toward external
-// agents; only the fields Dogsled consumes are validated.
+// agents; only the fields Bobsled Core consumes are validated.
 // ---------------------------------------------------------------------------
 
 // Lenient (`.optional()`, unknown keys stripped): an absent or partial `usage`
@@ -588,7 +588,7 @@ export async function createExternalReviewerClient(
   // Real usage, accumulated across batches from the reviewer's optional
   // `usage` block. `costCeilingReached` flips once the reported cost reaches
   // `maxCostUsd`; remaining batches are then skipped (undecided pairs stay in
-  // the queue) — the same ceiling semantics as the in-Dogsled model judge.
+  // the queue) — the same ceiling semantics as the in-Bobsled Core model judge.
   let costUsd = 0;
   let tokensUsed = 0;
   let costCeilingReached = false;

@@ -18,7 +18,7 @@ transports:
       retry_after_header: true
     headers: &a3
       Accept: application/vnd.github+json
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
   - id: graphql
     base_url: https://api.github.com
     auth: *a1

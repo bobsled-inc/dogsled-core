@@ -265,7 +265,7 @@ async function executeOwnedAgenticRun(
         } catch {
           throw new AgenticStateError('corrupt', {
             reason: 'invalid_checkpoint',
-            message: `The saved checkpoint for run "${key.id}" failed validation. It may be damaged or written by a different Dogsled version.`,
+            message: `The saved checkpoint for run "${key.id}" failed validation. It may be damaged or written by a different Bobsled Core version.`,
           });
         }
       });
@@ -587,7 +587,7 @@ async function executeOwnedAgenticRun(
         const identity = JSON.stringify(model.grain.map((name) => row[name]));
         if (grain.has(identity)) throw new Error('Agentic output has duplicate final grain');
         grain.add(identity);
-        findings.push({ ...structuredClone(row), _dogsled_run_id: key.id });
+        findings.push({ ...structuredClone(row), _bobsled_run_id: key.id });
       }
     }
     boundedAgenticRows(findings, `The output of agentic model "${model.name}"`, limits);

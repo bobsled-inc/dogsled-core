@@ -110,7 +110,7 @@ function buildDefaultTips(ctx: EntityGraphCtx): EntityGraphCtxTips {
     case 'design':
       return {
         title: 'Design',
-        summary: 'Dogsled Explorer Entity Graph Design builder',
+        summary: 'Bobsled Core Explorer Entity Graph Design builder',
         lead: 'Tune the resolution spec. Each step maps directly to YAML, so every edit stays explainable and reversible.',
         bullets: [
           'Standardize cleans fields before comparison.',
@@ -128,7 +128,7 @@ function buildDefaultTips(ctx: EntityGraphCtx): EntityGraphCtxTips {
     case 'resolve.queue':
       return {
         title: 'Queue',
-        summary: 'Dogsled Explorer Entity Graph Resolve - Queue tab',
+        summary: 'Bobsled Core Explorer Entity Graph Resolve - Queue tab',
         lead: 'Each pair sits between auto-reject and auto-merge. Help the user decide merge, not_match, or defer.',
         bullets: [
           'Feature contributions explain why a pair scored the way it did.',
@@ -147,7 +147,7 @@ function buildDefaultTips(ctx: EntityGraphCtx): EntityGraphCtxTips {
     case 'resolve.clusters':
       return {
         title: 'Clusters',
-        summary: 'Dogsled Explorer Entity Graph Resolve - Clusters tab',
+        summary: 'Bobsled Core Explorer Entity Graph Resolve - Clusters tab',
         lead: 'Clusters group records that the resolver now treats as the same entity. Trust tiers help users spot where to inspect next.',
         bullets: [
           'Larger clusters are not automatically lower quality.',
@@ -165,7 +165,7 @@ function buildDefaultTips(ctx: EntityGraphCtx): EntityGraphCtxTips {
     case 'resolve.cluster_detail':
       return {
         title: 'Cluster detail',
-        summary: 'Dogsled Explorer Entity Graph Resolve - Cluster detail',
+        summary: 'Bobsled Core Explorer Entity Graph Resolve - Cluster detail',
         lead: 'Golden record values are selected per attribute using the survivorship spec, so every winning value should be explainable.',
         bullets: [
           'Members show which source rows contribute to the cluster.',
@@ -184,8 +184,8 @@ function buildDefaultTips(ctx: EntityGraphCtx): EntityGraphCtxTips {
     default:
       return {
         title: sharedTitle,
-        summary: 'Dogsled Explorer Entity Graph hub - explain the flow',
-        lead: 'Design once, resolve continuously. Dogsled Entity Graph standardizes records, scores candidates, and surfaces golden records across sources.',
+        summary: 'Bobsled Core Explorer Entity Graph hub - explain the flow',
+        lead: 'Design once, resolve continuously. Bobsled Core Entity Graph standardizes records, scores candidates, and surfaces golden records across sources.',
         bullets: [
           'Design builds the YAML spec: sources, standardization, blocking, scoring, thresholds.',
           'Resolve runs the pipeline in DuckDB and routes ambiguous pairs to review.',

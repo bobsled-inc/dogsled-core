@@ -1,12 +1,12 @@
 # Private Blob CSV to Snowflake staging
 
-Dogsled can read one private Vercel Blob object through a fresh, object-scoped
+Bobsled Core can read one private Vercel Blob object through a fresh, object-scoped
 signed HTTPS GET URL and load its CSV records into an exact Snowflake table. The
-same project definition works with `dogsled pipeline` and a managed ETL task that
+same project definition works with `bobsled pipeline` and a managed ETL task that
 calls `runProjectPipeline`; it does not require a Blueprint deployment.
 
 The orchestrator owns attachment authorization, retention, table reservation,
-reuse, executor reconciliation, and eventual table deletion. Dogsled reads the
+reuse, executor reconciliation, and eventual table deletion. Bobsled Core reads the
 file and loads rows. The administrator creates the staging schema in the
 destination connection's existing database before a guarded load runs.
 
@@ -45,7 +45,7 @@ replication:
 output: {} # infer columns and types from the CSV
 ```
 
-`dogsled.yml`:
+`bobsled.yml`:
 
 ```yaml
 destinations:
@@ -53,7 +53,7 @@ destinations:
     auth_env_vars: [SNOWFLAKE_OIDC_TOKEN]
     type: snowflake
     account: MY_ACCOUNT
-    username: DOGSLED_LOADER
+    username: BOBSLED_CORE_LOADER
     credentials_access_token: $SNOWFLAKE_OIDC_TOKEN
     warehouse: INGEST_WH
     database: ANALYTICS
@@ -97,7 +97,7 @@ URL scoped to the saved `blob_ref`, then supplies:
 | `PRIVATE_UPLOAD_ORIGIN`     | Its trusted HTTPS origin, such as `https://example.public.blob.vercel-storage.com`                      |
 | `SNOWFLAKE_OIDC_TOKEN`      | Destination token valid for the load, or use the connection's supported refreshable token configuration |
 
-The destination credential placeholder above illustrates ordinary authored Dogsled
+The destination credential placeholder above illustrates ordinary authored Bobsled Core
 configuration. An authored pipeline supplies the same environment variables from its
 own secret manager. Neither the temporary URL nor a Blob store-wide token is
 saved in YAML or a manifest. A new ETL attempt receives a new URL; an expired
@@ -108,7 +108,7 @@ mechanism. Signed URL query parameters must stay out of logs and error output.
 
 ## Transfer and ownership behavior
 
-Dogsled uses HTTPS GET for the single object and does not require HEAD, listing,
+Bobsled Core uses HTTPS GET for the single object and does not require HEAD, listing,
 or globbing. The GET response supplies `ETag`, `Last-Modified`, and size when
 available. A missing ETag uses a content digest; a missing Last-Modified is
 null metadata. A missing Content-Length does not disable the configured byte
@@ -116,10 +116,10 @@ ceiling. Retries restart the transfer into a cleaned temporary path. Redirects
 must remain on the trusted HTTPS origin; credentials are never forwarded to an
 unapproved host. Cancellation removes the partial download and stops parsing.
 
-For a guarded Snowflake load, Dogsled requires the existing staging schema and
+For a guarded Snowflake load, Bobsled Core requires the existing staging schema and
 creates the reserved table with its ownership marker in the same `CREATE TABLE
 IF NOT EXISTS` statement. It verifies the persisted marker before modifying a
 table, including on a rebuild or retry. A missing schema, insufficient
 privileges, or an existing table with a different marker fails the load. The caller
 reconciles the previous executor before rebuilding at the same coordinates.
-Dogsled does not delete the final table.
+Bobsled Core does not delete the final table.

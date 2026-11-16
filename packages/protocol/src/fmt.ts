@@ -1,12 +1,12 @@
 /**
  * Minimal output-format primitives shared across all `@bobsled-inc/*`
  * packages. Both sdk-codegen and entity-graph (leaf packages with no
- * dependency on `@bobsled-inc/dogsled`) route their CLI output through
+ * dependency on `@bobsled-inc/bobsled-core`) route their CLI output through
  * these helpers so they never call `process.stdout.write` /
  * `process.stderr.write` directly. This preserves dependency layering:
- * Dogsled depends on protocol, never the reverse.
+ * Bobsled Core depends on protocol, never the reverse.
  *
- * Dogsled's full `lib/output/formatter.ts` (chalk-aware human formatting,
+ * Bobsled Core's full `lib/output/formatter.ts` (chalk-aware human formatting,
  * spinner control, table rendering) layers on top of these primitives.
  */
 
@@ -48,7 +48,7 @@ export interface ResolveFormatOptions {
 /**
  * Resolve the CLI output format with the documented priority cascade:
  *  1. Explicit `--json` / `--yaml` flag.
- *  2. `DOGSLED_OUTPUT_FORMAT` env var (`json` / `yaml` / `text` / `human`).
+ *  2. `BOBSLED_CORE_OUTPUT_FORMAT` env var (`json` / `yaml` / `text` / `human`).
  *  3. `CI=1` / `CI=true` env var → JSON (auto-detect for CI runners).
  *  4. Non-TTY stdout → JSON.
  *  5. Default: `human`.
@@ -57,7 +57,7 @@ export function resolveOutputFormat(opts: ResolveFormatOptions = {}): OutputForm
   if (opts.json) return 'json';
   if (opts.yaml) return 'yaml';
   const env = opts.env ?? process.env;
-  const envFormat = env['DOGSLED_OUTPUT_FORMAT']?.toLowerCase();
+  const envFormat = env['BOBSLED_CORE_OUTPUT_FORMAT']?.toLowerCase();
   if (envFormat === 'json') return 'json';
   if (envFormat === 'yaml') return 'yaml';
   if (envFormat === 'text' || envFormat === 'human') return 'human';

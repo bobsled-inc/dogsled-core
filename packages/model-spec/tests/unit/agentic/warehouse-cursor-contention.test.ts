@@ -33,7 +33,7 @@ const key = (name: string): AgenticCursorKey => ({
   model: name,
   target: `test.${name}`,
 });
-const table = '"TEST"."INTERNAL"."__DOGSLED_CURSORS"';
+const table = '"TEST"."INTERNAL"."__BOBSLED_CURSORS"';
 const literal = (value: string) =>
   value.replace(/''|\\(.)/gs, (match, escaped: string) => {
     if (match === "''") return "'";

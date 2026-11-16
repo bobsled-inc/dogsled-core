@@ -138,7 +138,7 @@ function stepInput(run: AgenticRunSnapshot, ref: string): InputData {
     for (const key of item.assignment.processed_keys) {
       markers.push({ ...item.assignment.group_key, ...(key as Row) });
     }
-    for (const row of accepted.rows) rows.push({ ...(row as Row), _dogsled_run_id: run.key.id });
+    for (const row of accepted.rows) rows.push({ ...(row as Row), _bobsled_run_id: run.key.id });
     const finished = item.attempts.find(
       (attempt) => attempt.id === accepted.attempt_id
     )?.finished_at;
@@ -150,7 +150,7 @@ function stepInput(run: AgenticRunSnapshot, ref: string): InputData {
     ref,
     columns: [
       ...resolvedStep.step.columns,
-      ...resolved.output_columns.filter((column) => column.name.startsWith('_dogsled_')),
+      ...resolved.output_columns.filter((column) => column.name.startsWith('_bobsled_')),
     ],
     rows,
     markers,

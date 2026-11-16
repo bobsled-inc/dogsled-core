@@ -1,7 +1,7 @@
 # Assess synthetic pairs with an LLM
 
-This is a small, separate Dogsled project. Its executor is local application code.
-It uses Dogsled's public AI API to make one LLM call for each prepared pair.
+This is a small, separate Bobsled Core project. Its executor is local application code.
+It uses Bobsled Core's public AI API to make one LLM call for each prepared pair.
 
 ```text
 raw_pairs                 Four synthetic pairs in a local database
@@ -22,31 +22,31 @@ The final SQL model selects the next action. It sets `merge_authorized` to
 
 ## Run the example
 
-Use Node.js 24 or later and a Dogsled build that includes the agentic executor
-options. Install a matching Dogsled tarball for the source revision you are testing.
+Use Node.js 24 or later and a Bobsled Core build that includes the agentic executor
+options. Install a matching Bobsled Core tarball for the source revision you are testing.
 Replace the path below with the path to that tarball. Run these commands from this
 example directory. See the [user guide](../../docs/guides/agentic-models.md) for
 authoring, the YAML reference, and operational guidance.
 
 ```bash
-npm install /absolute/path/to/bobsled-inc-dogsled-VERSION.tgz
+npm install /absolute/path/to/bobsled-inc-bobsled-VERSION.tgz
 node seed.mjs
 ```
 
 Set `OPENAI_API_KEY` in your shell through your normal secret manager. The
-`review` profile in `dogsled.yml` reads that variable. Do not put a key in YAML.
+`review` profile in `bobsled.yml` reads that variable. Do not put a key in YAML.
 The live run sends only the supplied synthetic records to the provider. It makes
 three paid calls on a successful fresh run. Model output can differ between runs.
 
 ```bash
-npx @bobsled-inc/dogsled model run +pair_decisions --integration local \
+npx @bobsled-inc/bobsled-core model run +pair_decisions --integration local \
   --agent-executor ./executor.mjs \
   --agent-run-id proof-1 \
   --json
 ```
 
-The `+` selector includes upstream models. Dogsled runs them before the final model. The model has
-a 30,000-token cap and a 180-second timeout. When the run reaches the cap, Dogsled
+The `+` selector includes upstream models. Bobsled Core runs them before the final model. The model has
+a 30,000-token cap and a 180-second timeout. When the run reaches the cap, Bobsled Core
 stops starting new assignments, keeps the answers it already has, and prints how
 to continue. Add `--agent-max-cost <usd>` for a dollar cap as well.
 
@@ -55,17 +55,17 @@ to continue. Add `--agent-max-cost <usd>` for a dollar cap as well.
 Use the same run ID and add `--agent-resume`.
 
 ```bash
-npx @bobsled-inc/dogsled model run +pair_decisions --integration local \
+npx @bobsled-inc/bobsled-core model run +pair_decisions --integration local \
   --agent-executor ./executor.mjs \
   --agent-run-id proof-1 \
   --agent-resume --json
 ```
 
-Dogsled uses saved input and accepted results to resume the agentic work. A call
+Bobsled Core uses saved input and accepted results to resume the agentic work. A call
 that failed before its result was saved may run again. To start new work, use
 a new run ID and omit `--agent-resume`.
 
-Keep `.dogsled/model-spec/` to retain local run state and snapshots. Keep `data/pairs.duckdb`
+Keep `.bobsled/model-spec/` to retain local run state and snapshots. Keep `data/pairs.duckdb`
 to retain the source tables and published model tables. These serve different
 purposes. Both survive a process restart while their files remain available.
 
@@ -87,16 +87,16 @@ for the remaining case.
 The seed script replaces only `main.raw_pairs`. It does not clear run state or
 published model tables. Use a new run ID after changing the input or model.
 The example uses DuckDB so you can run the proof locally. Database publication
-in Dogsled is not limited to DuckDB.
+in Bobsled Core is not limited to DuckDB.
 
 ## Evidence dates
 
-Dogsled records `input.retrieved_at` when the host returns the prepared input.
-Dogsled saves that value with the assignment and preserves it on resume.
+Bobsled Core records `input.retrieved_at` when the host returns the prepared input.
+Bobsled Core saves that value with the assignment and preserves it on resume.
 This time describes input preparation. It does not describe the age of the source records.
 
 The provider output schema omits `retrieved_at`. The executor attaches the saved
-host value after it validates the provider response. Dogsled rejects a different
+host value after it validates the provider response. Bobsled Core rejects a different
 evidence date for this input. If an older assignment has no saved date, this
 executor cannot return non-null evidence for it. It does not invent a fallback date.
 
@@ -147,13 +147,13 @@ SDK tools. Source access goes through `request.sources`. The model cannot supply
 SQL, a URL, a file path, or a shell command. Source text stays in the data history,
 even when that text contains instructions.
 
-Each LLM call reports its usage to Dogsled after it stops. The calls share one
+Each LLM call reports its usage to Bobsled Core after it stops. The calls share one
 assignment deadline. There are no hidden provider retries. Each call has a 1,024
 output-token cap, and a loop stops after 16 turns. The executor rejects a prompt
 and schema above its 32 KiB allowance. It rejects source responses above 64 KiB or
 100 rows. It fails when a limit is reached. It does not publish a partial answer.
 Provider errors, responses without usage, and invalid output permit a
-whole-assignment retry under Dogsled's shared retry limit. Cancellation, source
+whole-assignment retry under Bobsled Core's shared retry limit. Cancellation, source
 denial, and exhausted limits do not permit a retry.
 
 Resume reuses accepted assignments. It restarts an unfinished loop from its
@@ -209,10 +209,10 @@ entry in `reduce.over`. A single string remains valid for one reduce input.
 Each input must contain the same processed keys for a group. A missing group is
 an error. An accepted empty result still carries its processed keys.
 
-Dogsled runs steps in the order written. It runs assignments within each step up
+Bobsled Core runs steps in the order written. It runs assignments within each step up
 to the configured concurrency. All steps share the run's token limit, deadline,
-and call-start interval. Dogsled saves all external plan inputs before execution.
-Intermediate findings stay in run state. Dogsled publishes the selected output
+and call-start interval. Bobsled Core saves all external plan inputs before execution.
+Intermediate findings stay in run state. Bobsled Core publishes the selected output
 only after all steps succeed. Source tools can still read fresh data during an
 agent loop; they are separate from these saved plan inputs.
 
@@ -224,4 +224,4 @@ an empty earlier result because there is no value to group by.
 `combineAgenticEvidence()` is available from the public agentic API. It removes
 exact duplicate observations and preserves original dates. It does not average
 confidence or choose which finding is true. An executor can use it when it
-combines evidence; Dogsled does not turn findings into automatic corrections.
+combines evidence; Bobsled Core does not turn findings into automatic corrections.

@@ -162,7 +162,7 @@ describe('Ossie file boundary', () => {
           ...dataset,
           custom_extensions: [
             {
-              vendor_name: 'DOGSLED',
+              vendor_name: 'BOBSLED',
               data: JSON.stringify({
                 extension_version: '2',
                 kind: 'source',

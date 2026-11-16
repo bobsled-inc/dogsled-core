@@ -21,7 +21,7 @@ const input: SurfaceProposalInput = {
     },
     {
       entity_type: 'Product',
-      definition: 'A Dogsled product, product area, or rollout surface.',
+      definition: 'A Bobsled Core product, product area, or rollout surface.',
       positive_examples: ['MCP is deployed in production.'],
       negative_examples: ['Globex is a customer.'],
     },

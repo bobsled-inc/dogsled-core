@@ -86,7 +86,7 @@ export function benchmarkWorkload(
         pair_id: String(pair_id),
         cluster_id: cluster,
         assessment: `Synthetic ${assignment.step_id} result for ${String(pair_id)}.`,
-        _dogsled_evidence: [
+        _bobsled_evidence: [
           {
             source: input.ref,
             reference: `${input.ref}/${String(pair_id)}`,
@@ -94,8 +94,8 @@ export function benchmarkWorkload(
             retrieved_at: input.retrieved_at!,
           },
         ],
-        _dogsled_confidence: 0.75,
-        _dogsled_reason: {
+        _bobsled_confidence: 0.75,
+        _bobsled_reason: {
           summary: 'Synthetic summary of the supplied evidence.',
           supporting_factors: ['Matching synthetic attribute', 'Consistent synthetic history'],
           conflicting_factors: [],

@@ -42,7 +42,7 @@ export function LearnStepPanel({
             Prefilled command
           </div>
           <code className="mt-2 block overflow-x-auto text-sm text-primary">
-            dogsled {step.command.command} {step.command.args.join(' ')}
+            bobsled {step.command.command} {step.command.args.join(' ')}
           </code>
         </div>
       )}

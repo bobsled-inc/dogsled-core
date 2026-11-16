@@ -118,7 +118,7 @@ describe('runEmbedCommand', () => {
         errorOutput: errorOutput.stream,
         env: {
           OPENAI_API_KEY: 'sk-test',
-          DOGSLED_EMBED_STUB: '1',
+          BOBSLED_CORE_EMBED_STUB: '1',
         },
       }
     );
@@ -171,7 +171,7 @@ describe('runEmbedCommand', () => {
         output: createWritableBuffer().stream,
         errorOutput: errorOutput.stream,
         env: {
-          DOGSLED_EMBED_STUB: '1',
+          BOBSLED_CORE_EMBED_STUB: '1',
         },
         logOptions: {
           quiet: true,
@@ -222,7 +222,7 @@ describe('runEmbedCommand', () => {
         output: createWritableBuffer().stream,
         errorOutput: errorOutput.stream,
         env: {
-          DOGSLED_EMBED_STUB: '1',
+          BOBSLED_CORE_EMBED_STUB: '1',
         },
         logOptions: {
           verbose: true,

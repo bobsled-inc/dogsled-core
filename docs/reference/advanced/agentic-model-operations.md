@@ -8,7 +8,7 @@ location together in your deployment records.
 
 ## CLI options
 
-Run these options through `dogsled model run` or `dogsled model run`:
+Run these options through `bobsled model run` or `bobsled model run`:
 
 | Option                                 | Meaning                                                                       |
 | -------------------------------------- | ----------------------------------------------------------------------------- |
@@ -42,19 +42,19 @@ The CLI prints the command to resume.
 Use an explicit ID when you need restart recovery:
 
 ```bash
-dogsled model run +pair_assessments --integration local \
+bobsled model run +pair_assessments --integration local \
   --agent-executor ./executor.mjs --agent-run-id pairs-20260923 --json
 ```
 
 To continue saved work, keep that ID and add `--agent-resume`:
 
 ```bash
-dogsled model run +pair_assessments --integration local \
+bobsled model run +pair_assessments --integration local \
   --agent-executor ./executor.mjs --agent-run-id pairs-20260923 \
   --agent-resume --json
 ```
 
-Dogsled reuses frozen inputs and accepted results for the agentic model. An
+Bobsled Core reuses frozen inputs and accepted results for the agentic model. An
 unfinished assignment starts again, including its whole agent loop. It does not
 restore the loop's conversation or remote session. Calls that ran before a crash
 but did not save their result may run and be billed again. Upstream and downstream
@@ -75,13 +75,13 @@ work. Reusing an ID does not start a new batch. Concurrency and dispatch spacing
 can change on resume because they do not change assignment data.
 
 For an incremental model, a fresh ID can take over an unfinished batch only when
-Dogsled acquires the old checkpoint exclusively and permanently marks it superseded.
+Bobsled Core acquires the old checkpoint exclusively and permanently marks it superseded.
 It keeps the last committed cursor, reads inputs again, and does not reuse the old
 unpublished results. This can cost more than resume. A live owner blocks takeover.
 A superseded run cannot resume or publish.
 
 If the old run has prepared or confirmed publication, resume that run first.
-Its write may already have succeeded. Dogsled checks the saved receipt instead of
+Its write may already have succeeded. Bobsled Core checks the saved receipt instead of
 assuming a lost response means rollback. Do not delete state to bypass this check.
 
 ## Incremental inputs
@@ -97,7 +97,7 @@ sources:
 ```
 
 The first batch reads all selected input. Each later batch reads rows whose cursor
-is strictly greater than the last successfully published batch's cursor. Dogsled
+is strictly greater than the last successfully published batch's cursor. Bobsled Core
 freezes rows and their maximum cursor values together. The shared cursor advances
 only after publication is confirmed, even when completed assignments return no
 findings. Use a new run ID for each batch.
@@ -136,7 +136,7 @@ answer. A failed first publication can leave an empty target on some databases,
 but not partially committed new findings.
 
 Existing target columns must match names, order, types, and nullability. Output
-schema changes need an explicit rebuild or migration. Dogsled does not automatically
+schema changes need an explicit rebuild or migration. Bobsled Core does not automatically
 migrate the table.
 
 ## Storage and database support
@@ -156,7 +156,7 @@ needs Unity Catalog managed tables with catalog commits enabled; preflight check
 transaction support before agent calls. See the [publication guide](../../../packages/model-spec/docs/agentic-publication.md)
 for connection and transaction requirements.
 
-By default, local execution checkpoints live under `.dogsled/model-spec/`: one DuckDB file per run
+By default, local execution checkpoints live under `.bobsled/model-spec/`: one DuckDB file per run
 when `@duckdb/node-api` is installed, and JSON files otherwise. See
 [where state is stored](../../../packages/model-spec/docs/agentic-state.md#where-state-is-stored).
 Keep that directory on persistent local storage across restarts. Local locking supports one host, not
@@ -175,17 +175,17 @@ instead of this setting:
 ```yaml
 checkpoint_store:
   integration: analytics_warehouse
-  schema: track_checkpoints
+  schema: bobsled_checkpoints
   lease_seconds: 300
 ```
 
 The integration must exist in the project. The default lease is 120 seconds; the
 allowed range is 10–600 seconds. A longer lease can tolerate warehouse queues but
 also delays recovery after a crash. Each checkpoint statement can be queued or run
-for half the lease. After a longer one, Dogsled waits out the lease and retries up to
+for half the lease. After a longer one, Bobsled Core waits out the lease and retries up to
 twice, then stops the run with `lease_lost (statement_timeout)`, which you can resume.
 The lease does not extend the model timeout. An
-invalid configured store fails; Dogsled does not silently fall back to local files.
+invalid configured store fails; Bobsled Core does not silently fall back to local files.
 
 The checkpoint schema needs schema/table creation, SELECT, INSERT, UPDATE, and
 DELETE permissions. It contains frozen inputs, intermediate findings, accepted
@@ -194,7 +194,7 @@ Apply your normal data access, encryption, and retention policies. A configured
 checkpoint schema also names publication storage in the output database/catalog.
 Final model output still uses its configured destination.
 
-After lease loss, Dogsled cancels active work and can attempt recovery twice by
+After lease loss, Bobsled Core cancels active work and can attempt recovery twice by
 acquiring ownership and reloading saved state. It does not take a live lease from
 another worker. Shared incremental cursors follow the checkpoint configuration;
 a supplied store must provide cursor support or the host must supply a cursor store.
@@ -209,7 +209,7 @@ a full stage, including untouched rows. Host APIs can set bounded overrides.
 
 Runs saved as rows expire, in DuckDB and in the opt-in
 [warehouse row store](../../../packages/model-spec/docs/agentic-state.md#warehouse-row-store):
-Dogsled removes a run 30 days after its last write unless it is still owed publication or cursor
+Bobsled Core removes a run 30 days after its last write unless it is still owed publication or cursor
 recovery. That includes failed runs, so one resumed after that starts again. A DuckDB
 `checkpoint_store` can change the period with `retention_days`. See
 [the row layout](../../../packages/model-spec/docs/agentic-state.md#row-layout).

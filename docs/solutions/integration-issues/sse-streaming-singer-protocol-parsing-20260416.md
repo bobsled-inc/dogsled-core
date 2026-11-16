@@ -16,7 +16,7 @@ tags: [sse, streaming, singer-protocol, jsonl, subprocess, real-time, terminal-u
 
 ## Symptom
 
-The Dogsled Explorer terminal page needs to show real-time, structured output from Dogsled CLI commands. Dogsled uses the Singer protocol: data flows as JSONL on stdout (SCHEMA, RECORD, STATE, BATCH) and control messages on stderr (LOG, METRIC, PROGRESS). Without proper streaming and parsing, output either appears all at once after the command finishes, or as undifferentiated raw text.
+The Bobsled Core Explorer terminal page needs to show real-time, structured output from Dogsled CLI commands. Dogsled uses the Singer protocol: data flows as JSONL on stdout (SCHEMA, RECORD, STATE, BATCH) and control messages on stderr (LOG, METRIC, PROGRESS). Without proper streaming and parsing, output either appears all at once after the command finishes, or as undifferentiated raw text.
 
 ## Investigation
 

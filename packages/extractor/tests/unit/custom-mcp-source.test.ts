@@ -35,9 +35,9 @@ describe('custom_mcp SourceSchema', () => {
     expect(parsed.transports[0]?.type).toBe('mcp_http');
   });
 
-  it('strips the dogsled_source_kind orchestrator marker', () => {
-    const parsed = SourceSchema.parse(customMcpSource({ dogsled_source_kind: 'custom_mcp' }));
-    expect('dogsled_source_kind' in parsed).toBe(false);
+  it('strips the bobsled_source_kind orchestrator marker', () => {
+    const parsed = SourceSchema.parse(customMcpSource({ bobsled_source_kind: 'custom_mcp' }));
+    expect('bobsled_source_kind' in parsed).toBe(false);
     expect(parsed.source_type).toBe('custom_mcp');
   });
 

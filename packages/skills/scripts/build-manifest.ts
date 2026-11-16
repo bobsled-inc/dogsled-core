@@ -1,5 +1,5 @@
 /**
- * Generator script for the Dogsled skills manifest.
+ * Generator script for the Bobsled Core skills manifest.
  *
  * Walks `.agents/skills/<name>/SKILL.md`, filters to entries with
  * `exposed: true` in their YAML front-matter, resolves transclusion

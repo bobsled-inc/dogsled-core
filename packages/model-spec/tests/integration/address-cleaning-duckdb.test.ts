@@ -70,14 +70,14 @@ describe.skipIf(!duckdbAvailable)('address cleaning — DuckDB execution', () =>
        FROM (VALUES
          ('123 Example TRACK'),
          ('123 Example TRK'),
-         ('123 Example DOGSLED')
+         ('123 Example BOBSLED')
        ) AS t(street)`
     );
 
     expect(rows.map((row) => row.normalized_street)).toEqual([
       '123 example TRAK',
       '123 example TRAK',
-      '123 example dogsled',
+      '123 example bobsled',
     ]);
   });
 });

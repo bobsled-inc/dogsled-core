@@ -19,7 +19,7 @@ class LocalStorageMock {
 }
 
 const originalWindow = globalThis.window;
-const RUN_HISTORY_STORAGE_KEY = 'dogsled-explorer-run-history';
+const RUN_HISTORY_STORAGE_KEY = 'bobsled-explorer-run-history';
 
 afterEach(() => {
   if (originalWindow) {

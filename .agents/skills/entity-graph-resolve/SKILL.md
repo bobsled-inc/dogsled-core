@@ -1,33 +1,33 @@
 ---
 name: entity-graph-resolve
-description: Run the current Dogsled OSS entity graph workflow end to end. Use when executing resolve, review, cluster, profile, survivorship, truthset, or bounded model-agent routines against an existing entity graph project.
+description: Run the current Bobsled Core OSS entity graph workflow end to end. Use when executing resolve, review, cluster, profile, survivorship, truthset, or bounded model-agent routines against an existing entity graph project.
 ---
 
 # Agent-Native Entity Graph
 
-Dogsled's OSS entity graph workflow is repo-native and CLI-first. Use this skill for end-to-end execution and bounded `entity-graph agent` routines. For spec authoring and command selection, also read [`../entity-graph-authoring/SKILL.md`](../entity-graph-authoring/SKILL.md). For document mentions and SDK generation, use [`../entity-graph-sdk/SKILL.md`](../entity-graph-sdk/SKILL.md).
+Bobsled Core's OSS entity graph workflow is repo-native and CLI-first. Use this skill for end-to-end execution and bounded `entity-graph agent` routines. For spec authoring and command selection, also read [`../entity-graph-authoring/SKILL.md`](../entity-graph-authoring/SKILL.md). For document mentions and SDK generation, use [`../entity-graph-sdk/SKILL.md`](../entity-graph-sdk/SKILL.md).
 
 The expected lifecycle is:
 
 ```bash
-dogsled model seed validate
-dogsled model seed load --runner ./runner.js
-dogsled entity-graph resolve validate
-dogsled entity-graph resolve run --runner ./runner.js
-dogsled entity-graph review export company --template --runner ./runner.js --output ./review/company_queue.csv
-dogsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js
-dogsled entity-graph resolve cluster company --runner ./runner.js
-dogsled entity-graph resolve profile company --runner ./runner.js
-dogsled entity-graph survivorship run company --runner ./runner.js
-dogsled entity-graph truthset score company --runner ./runner.js
-dogsled entity-graph truthset tune company --runner ./runner.js
-dogsled entity-graph mentions extract company --runner ./runner.js --fallback compromise --json
-dogsled entity-graph mentions review export --runner ./runner.js --schema entity_graph --json
-dogsled entity-graph relationships extract company --runner ./runner.js --fallback compromise --json
-dogsled entity-graph relationships review export --runner ./runner.js --schema entity_graph --yaml
-dogsled entity-graph relationships review apply relationship_decisions.yml --runner ./runner.js --json
-dogsled entity-graph relationships compact --runner ./runner.js --schema entity_graph --json
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+bobsled model seed validate
+bobsled model seed load --runner ./runner.js
+bobsled entity-graph resolve validate
+bobsled entity-graph resolve run --runner ./runner.js
+bobsled entity-graph review export company --template --runner ./runner.js --output ./review/company_queue.csv
+bobsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js
+bobsled entity-graph resolve cluster company --runner ./runner.js
+bobsled entity-graph resolve profile company --runner ./runner.js
+bobsled entity-graph survivorship run company --runner ./runner.js
+bobsled entity-graph truthset score company --runner ./runner.js
+bobsled entity-graph truthset tune company --runner ./runner.js
+bobsled entity-graph mentions extract company --runner ./runner.js --fallback compromise --json
+bobsled entity-graph mentions review export --runner ./runner.js --schema entity_graph --json
+bobsled entity-graph relationships extract company --runner ./runner.js --fallback compromise --json
+bobsled entity-graph relationships review export --runner ./runner.js --schema entity_graph --yaml
+bobsled entity-graph relationships review apply relationship_decisions.yml --runner ./runner.js --json
+bobsled entity-graph relationships compact --runner ./runner.js --schema entity_graph --json
+bobsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 ## Operating Rules
@@ -43,17 +43,17 @@ dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
 - Run `resolve profile` after `resolve cluster` when downstream consumers need `__entity_profile` and `__entity_quality`.
 - Run `mentions extract` before `mentions review export` when downstream agents need the document-mention review queue.
 - Run `relationships extract` before `relationships review export/apply` and `relationships compact` when document-derived relationships need to become public `__entity_relationship` rows.
-- Run `dogsled sdk generate --lang ts` only after profiles are fresh; generated SDK keys match entity spec names.
+- Run `bobsled sdk generate --lang ts` only after profiles are fresh; generated SDK keys match entity spec names.
 - Use `survivorship inspect` to verify golden-record output and audit/history trails.
 - Keep truthsets in the repo and use `truthset score` plus `truthset tune` to regress threshold changes before opening a PR.
 
 ## One-shot Agent Tasks
 
-- Start with `dogsled entity-graph agent triage company --runner ./runner.js --json` to get one recommended next action without stitching multiple commands together.
-- Prefer `dogsled entity-graph agent review-batch --entity company --mode propose --runner ./runner.js --json` for unattended review proposals.
-- Use `dogsled entity-graph agent review-batch --profile ./entity-graph/agent/company_review_batch.yml --runner ./runner.js --json` when the repo already carries task policy and output paths.
-- Use `dogsled entity-graph agent review-batch --mode apply --post-apply cluster,survivorship --runner ./runner.js --json` only when the task explicitly allows writes.
-- Use `dogsled entity-graph agent truthset-regress company --runner ./runner.js --json` for one-shot threshold regression and `dogsled entity-graph agent survivorship-refresh company --runner ./runner.js --json` after clustering.
+- Start with `bobsled entity-graph agent triage company --runner ./runner.js --json` to get one recommended next action without stitching multiple commands together.
+- Prefer `bobsled entity-graph agent review-batch --entity company --mode propose --runner ./runner.js --json` for unattended review proposals.
+- Use `bobsled entity-graph agent review-batch --profile ./entity-graph/agent/company_review_batch.yml --runner ./runner.js --json` when the repo already carries task policy and output paths.
+- Use `bobsled entity-graph agent review-batch --mode apply --post-apply cluster,survivorship --runner ./runner.js --json` only when the task explicitly allows writes.
+- Use `bobsled entity-graph agent truthset-regress company --runner ./runner.js --json` for one-shot threshold regression and `bobsled entity-graph agent survivorship-refresh company --runner ./runner.js --json` after clustering.
 - Run one `entity-graph agent` task per routine invocation. Default to `--mode propose` unless the task explicitly says to apply writes.
 
 ## Artifact Layout
@@ -83,9 +83,9 @@ project/
 
 ### 2. Review
 
-- Pending queue: `dogsled entity-graph review list company --runner ./runner.js --json`
-- Pair inspection: `dogsled entity-graph review show --entity company --pair-id <pair_id> --runner ./runner.js --json`
-- Single decision: `dogsled entity-graph review decide --entity company --pair-id <pair_id> --decision merge --runner ./runner.js --json`
+- Pending queue: `bobsled entity-graph review list company --runner ./runner.js --json`
+- Pair inspection: `bobsled entity-graph review show --entity company --pair-id <pair_id> --runner ./runner.js --json`
+- Single decision: `bobsled entity-graph review decide --entity company --pair-id <pair_id> --decision merge --runner ./runner.js --json`
 
 ### 3. Survivorship
 

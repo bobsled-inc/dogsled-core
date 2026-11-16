@@ -19,5 +19,5 @@ transports:
       backoff: exponential
       retry_after_header: true
     headers:
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
 default_transport: default

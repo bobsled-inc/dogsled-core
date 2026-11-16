@@ -76,7 +76,7 @@ describe.skipIf(!CLI_READY)('model CLI (e2e)', { timeout: CLI_SUITE_TIMEOUT_MS }
       const r = run(
         ['expect', 'run', '--model', 'stg_customers', '--integration', 'snowflake'],
         writable,
-        { DOGSLED_OUTPUT_FORMAT: 'text' }
+        { BOBSLED_CORE_OUTPUT_FORMAT: 'text' }
       );
       expect(r.exitCode).toBe(0);
       expect(r.stdout).toContain('-- stg_customers: non_null CUSTOMER_ID');
@@ -186,7 +186,7 @@ describe.skipIf(!CLI_READY)('model CLI (e2e)', { timeout: CLI_SUITE_TIMEOUT_MS }
       const r = run(
         ['expect', 'run', '--model', 'stg_customers', '--integration', 'snowflake'],
         writable,
-        { DOGSLED_OUTPUT_FORMAT: 'json' }
+        { BOBSLED_CORE_OUTPUT_FORMAT: 'json' }
       );
       expect(r.exitCode).toBe(0);
       const payload = parseJsonStdout<{ command: string; ok: boolean; expectations: unknown[] }>(r);

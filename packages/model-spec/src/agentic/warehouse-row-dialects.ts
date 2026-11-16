@@ -89,7 +89,7 @@ const sfLiteral = (value: string | number | bigint | boolean): string =>
   typeof value === 'string' || typeof value === 'number'
     ? quoteLiteral(value, 'snowflake')
     : String(value).toUpperCase();
-const guardName = '__dogsled_agentic_guard';
+const guardName = '__bobsled_agentic_guard';
 const guardTable = (namespace: string): string => `${namespace}.${sf(guardName)}`;
 
 /**

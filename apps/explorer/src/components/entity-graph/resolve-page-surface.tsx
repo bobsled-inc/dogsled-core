@@ -114,7 +114,7 @@ export interface ResolveSurfaceRoutes {
   overviewHref: string;
   /** Href for switching to a different entity within the same scenario. */
   entityHref: (entityId: 'company' | 'customer' | 'location') => string;
-  /** Breadcrumb crumbs between "Dogsled" and the current page label ("Resolve"). */
+  /** Breadcrumb crumbs between "Bobsled Core" and the current page label ("Resolve"). */
   breadcrumbs?: ReadonlyArray<{ label: string; href?: string }>;
 }
 
@@ -755,7 +755,7 @@ export function ResolvePageInner({ scenarioId, entityId, routes }: ResolvePageIn
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-8">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           ...(resolvedRoutes.breadcrumbs ?? [
             { label: 'Entity Graph', href: resolvedRoutes.overviewHref },
           ]),

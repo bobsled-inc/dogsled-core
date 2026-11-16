@@ -355,7 +355,7 @@ export function Sidebar({ items = NAV_ITEMS }: SidebarProps = {}) {
             className="h-7 w-7 rounded-md"
             priority
           />
-          <span className="text-sm font-semibold tracking-tight">Dogsled Explorer</span>
+          <span className="text-sm font-semibold tracking-tight">Bobsled Core Explorer</span>
         </Link>
       </div>
 
@@ -408,7 +408,7 @@ export function Sidebar({ items = NAV_ITEMS }: SidebarProps = {}) {
 
       <div className="mt-auto hidden border-t border-border p-3 md:block">
         <ThemeToggle />
-        <div className="mt-2 text-[10px] text-muted-foreground">Dogsled Explorer v0.1</div>
+        <div className="mt-2 text-[10px] text-muted-foreground">Bobsled Core Explorer v0.1</div>
       </div>
     </aside>
   );

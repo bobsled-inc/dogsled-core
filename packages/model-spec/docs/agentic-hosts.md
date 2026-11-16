@@ -2,23 +2,23 @@
 
 <!-- last-reviewed: 2026-09-23 -->
 
-Use this guide when embedding Dogsled in an application or writing an executor.
+Use this guide when embedding Bobsled Core in an application or writing an executor.
 For model authors, start with the [user guide](../../../docs/guides/agentic-models.md).
 The host runs trusted code; the model receives only the capabilities the executor
 exposes to it.
 
 ## Public package entry points
 
-Install the published `@bobsled-inc/dogsled` package. Its subpaths expose the
+Install the published `@bobsled-inc/bobsled-core` package. Its subpaths expose the
 host factory, project runner, and contracts without requiring consumers to
 install private workspace packages:
 
 | Import                                    | Purpose                                                              |
 | ----------------------------------------- | -------------------------------------------------------------------- |
-| `@bobsled-inc/dogsled/agentic`            | `createAgenticHost`, `createJevExecutor`, host options               |
-| `@bobsled-inc/dogsled/model-spec/agentic` | Model/assignment schemas, executor types, state and publication APIs |
-| `@bobsled-inc/dogsled/model-spec/project` | `loadProject`, `buildSecretResolver`, `runProject`                   |
-| `@bobsled-inc/dogsled/ai`                 | Provider-neutral generation helpers for custom executors             |
+| `@bobsled-inc/bobsled-core/agentic`            | `createAgenticHost`, `createJevExecutor`, host options               |
+| `@bobsled-inc/bobsled-core/model-spec/agentic` | Model/assignment schemas, executor types, state and publication APIs |
+| `@bobsled-inc/bobsled-core/model-spec/project` | `loadProject`, `buildSecretResolver`, `runProject`                   |
+| `@bobsled-inc/bobsled-core/ai`                 | Provider-neutral generation helpers for custom executors             |
 
 Inside this repository, model-spec code uses the owning workspace's public
 `@bobsled-inc/model-spec/agentic` entry point. Do not import across package source
@@ -31,12 +31,12 @@ module must export `executeAgent`; use the reference module from the example as 
 starting point. Model profiles remain application-supplied configuration.
 
 ```typescript
-import { createAgenticHost } from '@bobsled-inc/dogsled/agentic';
+import { createAgenticHost } from '@bobsled-inc/bobsled-core/agentic';
 import {
   buildSecretResolver,
   loadProject,
   runProject,
-} from '@bobsled-inc/dogsled/model-spec/project';
+} from '@bobsled-inc/bobsled-core/model-spec/project';
 import { executeAgent } from './executor.mjs';
 
 const projectDirectory = '/srv/pair-project';
@@ -97,7 +97,7 @@ compatible connections and credentials. For custom input preparation, apply
 `signal`, and reject unsupported type conversions. Never truncate an input to fit.
 A host that sets `incrementalBatches: true` receives `context.incremental.batch` and
 must then return incremental rows ordered by the cursor field, including at least one
-row past the row or byte limit when more rows exist; Dogsled keeps the ordered prefix
+row past the row or byte limit when more rows exist; Bobsled Core keeps the ordered prefix
 that fits. Source adapters show the executor a `CommandError` message; keep those
 messages free of credentials and row data.
 
@@ -117,7 +117,7 @@ executor to open. The host owns their resolution and retention.
 
 Use the [direct executor](../../../examples/agentic-pairs/executor.mjs) and
 [loop executor](../../../examples/agentic-pairs/loop-executor.mjs) as working
-examples. They use Dogsled's public AI helper, disable hidden provider retries, and
+examples. They use Bobsled Core's public AI helper, disable hidden provider retries, and
 validate the complete result. Their prompt/response size limits are example-specific controls in addition
 to the model's limits. The loop uses the assignment model-call limit when a saved
 older run supplies one, then the `maxTurns` factory option, and otherwise stops
@@ -128,7 +128,7 @@ failure. `budget.reserve` and `budget.settle` remain available and are safe to k
 calling. A direct call makes one model call. A loop must bound its own turns; new
 runs send no call limits. Handle `null` tokens and deadlines as unlimited; never
 serialize numeric infinity. Do not invent measured zero usage when usage is
-missing. Report `unknown` with an `unavailable` or `interrupted` reason; Dogsled
+missing. Report `unknown` with an `unavailable` or `interrupted` reason; Bobsled Core
 then charges the attempt's input estimate. Mark provider errors and missing usage
 as retryable so one transient failure does not stop the run. `generateStructured`
 failures carry the provider's HTTP `status` when known. Report 401 and 403 as kind
@@ -146,7 +146,7 @@ Return one of the contract's explicit outcomes:
 
 Bind the outcome to the exact attempt ID. Preserve grouping/replacement keys,
 output grain, types, and nullability. Include the three nullable judgment metadata
-fields and leave `_dogsled_run_id` to Dogsled. `parseAgentAssignmentOutcome` checks
+fields and leave `_bobsled_run_id` to Bobsled Core. `parseAgentAssignmentOutcome` checks
 these rules, but durable acceptance still belongs to the coordinator. A result
 that arrives after ownership loss or cancellation must not become accepted work.
 
@@ -179,14 +179,14 @@ the attempt identity, the complete replacement-key set, multi-row grain
 uniqueness, and total data bounds. The schema does not grant tool access or prove
 that the evidence supports a claim.
 
-Dogsled saves accepted output, not the executor's internal conversation. A retry
+Bobsled Core saves accepted output, not the executor's internal conversation. A retry
 starts the assignment again. Design external work for replay and keep writes out
 of read-only source callbacks. Do not report partial work as a successful empty
 result after cancellation, timeout, malformed output, or a denied capability.
 
 The reference executors use `costBudgetMode: 'observe'`, so profile and daily
 dollar budgets do not apply to them. Use `limits.max_cost_usd` for an agentic
-dollar cap. `createAgenticHost` prices usage with Dogsled's built-in price table;
+dollar cap. `createAgenticHost` prices usage with Bobsled Core's built-in price table;
 pass `priceUsage` to supply your own prices. Provider credentials and raw errors must stay out of
 prompts, results, and checkpoints. See the
 [full assignment contract](agentic-contracts.md) for schemas and wire bounds.
@@ -201,14 +201,14 @@ response bounds. Paid sources need `allowBillableSources` approval separately.
 
 For API resources stored by your application, supply `integrationSpecLoader` to
 `createAgenticHost`. It takes the same arguments as `loadQueryableResourceSpecs`
-from Dogsled's `/integrations` subpath and returns integration/resource definitions
+from Bobsled Core's `/integrations` subpath and returns integration/resource definitions
 accepted by `queryResource`. The host owns overrides and any catalog fallback.
-A supplied loader that fails or returns no definition stops the read; Dogsled does
+A supplied loader that fails or returns no definition stops the read; Bobsled Core does
 not silently fall back to its bundled catalog.
 
 Extra host tools use `supportedTools` and the assignment's `allowed_tools`.
 When YAML omits `execution.tools`, agent loops inherit approved host defaults.
-An explicit list restricts that set; an empty list disables it. Dogsled validates
+An explicit list restricts that set; an empty list disables it. Bobsled Core validates
 names and binds the effective set into checkpoint identity. Your executor must
 expose only allowed tools and own their implementation, authorization, credentials,
 cancellation, call accounting, and audit records. There is no automatic host-tool
@@ -217,7 +217,7 @@ dispatch implementation in the factory.
 Source/tool data can contain misleading instructions. Keep it in the data channel
 of your executor and do not let it change permissions. Evidence from a host tool
 must use its declared name, a returned reference, and actual retrieval time.
-Dogsled checks shape and allowed names; the host must verify claims against its
+Bobsled Core checks shape and allowed names; the host must verify claims against its
 observations if it needs proof that a resource was fetched.
 
 Trusted source adapter errors can retain a non-enumerable `cause` for diagnosis.
@@ -235,7 +235,7 @@ null only for missing state; storage failures must throw. See the
 [supplied store contract](agentic-state.md#supplied-store-contract).
 
 For incremental inputs, provide `agentic.cursorStore` or the state store's `cursors`
-capability. Dogsled never falls back to local cursors when a supplied store lacks
+capability. Bobsled Core never falls back to local cursors when a supplied store lacks
 that capability. Custom cursor stores need atomic ownership replacement to support
 fresh-start takeover; older stores without it keep rejecting takeover.
 
@@ -262,7 +262,7 @@ From this repository, run the relevant focused suites:
 
 ```bash
 pnpm --filter @bobsled-inc/model-spec exec vitest run tests/unit/agentic
-pnpm --filter @bobsled-inc/dogsled exec vitest run tests/unit/runtime/agentic-host.test.ts
+pnpm --filter @bobsled-inc/bobsled-core exec vitest run tests/unit/runtime/agentic-host.test.ts
 ```
 
 Run `npm test` in the installed pair example for its executor tests. These use

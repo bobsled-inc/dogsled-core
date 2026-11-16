@@ -63,26 +63,26 @@ function writeProject(): void {
 const slugOnlyIntegration = [
   `spec_version: '2'`,
   `type: source`,
-  `name: dogsled_managed`,
-  `dogsled_connection_ref: dogsled_managed`,
-  `dogsled_source_kind: bigquery`,
+  `name: bobsled_managed`,
+  `bobsled_connection_ref: bobsled_managed`,
+  `bobsled_source_kind: bigquery`,
   `transports: []`,
 ].join('\n');
 
 function writeSlugOnlyIntegration(): void {
   fs.rmSync(path.join(tmpDir, 'integrations/warehouse.yml'));
-  fs.writeFileSync(path.join(tmpDir, 'integrations/dogsled_managed.yml'), slugOnlyIntegration);
+  fs.writeFileSync(path.join(tmpDir, 'integrations/bobsled_managed.yml'), slugOnlyIntegration);
 }
 
 function makeInjectedIntegration(): ResolvedIntegration {
   return {
-    handle: 'dogsled_managed',
+    handle: 'bobsled_managed',
     dialect: 'duckdb',
     targetSchema: 'injected_entity_graph',
     integration: {
       spec_version: '1',
       type: 'integration',
-      name: 'dogsled_managed',
+      name: 'bobsled_managed',
       source_type: 'duckdb',
       connection: {},
       auth: { type: 'memory' },
@@ -203,11 +203,11 @@ describe('loadEntityGraphProjectContext', () => {
 
     const context = await loadEntityGraphProjectContext({
       cwd: tmpDir,
-      integration: 'dogsled_managed',
+      integration: 'bobsled_managed',
       resolvedIntegration: makeInjectedIntegration(),
     });
 
-    expect(context.integration?.handle).toBe('dogsled_managed');
+    expect(context.integration?.handle).toBe('bobsled_managed');
     expect(context.dialect).toBe('duckdb');
     expect(context.targetSchema).toBe('injected_entity_graph');
     expect(context.specs[0]?.targetSchema).toBe('injected_entity_graph');
@@ -217,7 +217,7 @@ describe('loadEntityGraphProjectContext', () => {
     writeSlugOnlyIntegration();
 
     await expect(
-      loadEntityGraphProjectContext({ cwd: tmpDir, integration: 'dogsled_managed' })
+      loadEntityGraphProjectContext({ cwd: tmpDir, integration: 'bobsled_managed' })
     ).rejects.toThrow(/source_type/);
   });
 

@@ -305,7 +305,7 @@ export function getResourceFields(source: string, resource: string): ResourceFie
 /**
  * Return the names of fields a resource flags as good targets for embedding
  * (`embedding_candidate: true` in the integration YAML). Used by agents
- * authoring `dogsled.yml` embed blocks to surface sensible defaults.
+ * authoring `bobsled.yml` embed blocks to surface sensible defaults.
  */
 export function getEmbeddingCandidates(source: string, resource: string): string[] {
   return getResourceFields(source, resource)

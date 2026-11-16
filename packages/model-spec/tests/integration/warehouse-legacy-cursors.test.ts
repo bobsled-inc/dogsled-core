@@ -29,21 +29,21 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
     const legacy = async (record: string) => {
       await emulator.sql(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
       await emulator.sql(
-        `CREATE TABLE IF NOT EXISTS ${namespace}."__DOGSLED_CURSORS" ("KEY" VARCHAR, "RECORD" VARCHAR, "TOKEN" VARCHAR)`
+        `CREATE TABLE IF NOT EXISTS ${namespace}."__BOBSLED_CURSORS" ("KEY" VARCHAR, "RECORD" VARCHAR, "TOKEN" VARCHAR)`
       );
       await emulator.sql(
-        `INSERT INTO ${namespace}."__DOGSLED_CURSORS" VALUES ('${digestAgenticState(key)}', '${record}', 't')`
+        `INSERT INTO ${namespace}."__BOBSLED_CURSORS" VALUES ('${digestAgenticState(key)}', '${record}', 't')`
       );
     };
     const cursorRows = async () => {
       const rows = await emulator
-        .sql(`SELECT "VERSION", "RECORD" FROM ${namespace}."__DOGSLED_AGENTIC_CURSORS"`)
+        .sql(`SELECT "VERSION", "RECORD" FROM ${namespace}."__BOBSLED_AGENTIC_CURSORS"`)
         .catch(() => []);
       return rows.map((row) => ({ VERSION: Number(row.VERSION), RECORD: String(row.RECORD) }));
     };
     return { emulator, store, legacy, cursorRows };
   }
-  const landing = /^UPDATE .*__DOGSLED_AGENTIC_CURSORS.* SET "RECORD" = \?, "VERSION" = 0/;
+  const landing = /^UPDATE .*__BOBSLED_AGENTIC_CURSORS.* SET "RECORD" = \?, "VERSION" = 0/;
 
   it('reads the old value of a new key once', async () => {
     const { emulator, store, legacy } = await open();
@@ -52,7 +52,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
     expect(await cursors.begin(key, signature, 'run-1')).toEqual({ pairs: 5 });
     await cursors.commit(key, signature, 'run-1', { pairs: 7 });
     await emulator.sql(
-      `UPDATE ${namespace}."__DOGSLED_CURSORS" SET "RECORD" = '${legacyRecord(null).replace('5', '9')}'`
+      `UPDATE ${namespace}."__BOBSLED_CURSORS" SET "RECORD" = '${legacyRecord(null).replace('5', '9')}'`
     );
     expect(await store().cursors!.begin(key, signature, 'run-2')).toEqual({ pairs: 7 });
   });
@@ -86,7 +86,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
     emulator.crashBefore = landing;
     await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toThrow('connection');
     await emulator.sql(
-      `UPDATE ${namespace}."__DOGSLED_CURSORS" SET "RECORD" = '${legacyRecord('old-run')}'`
+      `UPDATE ${namespace}."__BOBSLED_CURSORS" SET "RECORD" = '${legacyRecord('old-run')}'`
     );
     await expect(store().cursors!.begin(key, signature, 'run-2')).rejects.toMatchObject({
       reason: 'cursor_held_elsewhere',
@@ -99,7 +99,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
     await legacy(legacyRecord(null));
     emulator.crashBefore = landing;
     await expect(store().cursors!.begin(key, signature, 'run-1')).rejects.toThrow('connection');
-    await emulator.sql(`DELETE FROM ${namespace}."__DOGSLED_CURSORS"`);
+    await emulator.sql(`DELETE FROM ${namespace}."__BOBSLED_CURSORS"`);
     expect(await store().cursors!.begin(key, signature, 'run-1')).toEqual({});
     expect((await cursorRows())[0]!.VERSION).toBe(1);
   });
@@ -121,7 +121,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
   it('starts empty when the old table was never created', async () => {
     const { emulator, store } = await open();
     expect(await store().cursors!.begin(key, signature, 'run-1')).toEqual({});
-    expect(emulator.statements.filter((sql) => sql.includes('__DOGSLED_CURSORS"'))).toEqual([]);
+    expect(emulator.statements.filter((sql) => sql.includes('__BOBSLED_CURSORS"'))).toEqual([]);
   });
 
   it('starts empty when the old table has no value for the key', async () => {
@@ -176,6 +176,6 @@ describe.skipIf(!(await isDuckDbAvailable()))('cursors from the warehouse store'
     await legacy(legacyRecord(null));
     emulator.statements.length = 0;
     await store().cursors!.begin(key, signature, 'run-1');
-    expect(emulator.statements.join('\n')).not.toContain('__DOGSLED_CURSORS"');
+    expect(emulator.statements.join('\n')).not.toContain('__BOBSLED_CURSORS"');
   });
 });

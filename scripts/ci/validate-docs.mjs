@@ -146,7 +146,7 @@ function validateEntityGraphSdkDocsDrift() {
     }
     if (content.includes('--allow-deletions')) {
       addViolation(
-        `${relativePath} documents --allow-deletions, but dogsled sdk generate does not ship that flag.`
+        `${relativePath} documents --allow-deletions, but bobsled sdk generate does not ship that flag.`
       );
     }
   }

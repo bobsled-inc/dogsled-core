@@ -402,7 +402,7 @@ export class MySqlDestination implements DatabaseDestination {
           : quoteMySqlIdentifier(k)
       )
       .join(', ');
-    const indexName = quoteMySqlIdentifier(`_dogsled_uq_${tableName}`);
+    const indexName = quoteMySqlIdentifier(`_bobsled_uq_${tableName}`);
     await this.query(`CREATE UNIQUE INDEX ${indexName} ON ${qualifiedTable} (${keyColList})`).catch(
       (err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);

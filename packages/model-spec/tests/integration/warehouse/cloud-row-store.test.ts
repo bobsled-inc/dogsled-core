@@ -21,7 +21,7 @@ import {
 } from '../../support/agentic-store-conformance.js';
 import { hostRunners, snowflakeIntegration } from '../../support/row-store-integrations.js';
 
-const baseSchema = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA;
+const baseSchema = process.env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA;
 const snowflake = await snowflakeIntegration();
 const runners = await hostRunners();
 
@@ -42,7 +42,7 @@ const dropSchema = (schema: string) => sql(`DROP SCHEMA IF EXISTS ${qualified(sc
 
 const schemas = new WeakMap<StoreHandle, string>();
 /** Group commit doubles a long suite, so its live proof is a separate opt-in. */
-const groupCommit = process.env.DOGSLED_MODEL_SPEC_GROUP_COMMIT === '1';
+const groupCommit = process.env.BOBSLED_CORE_MODEL_SPEC_GROUP_COMMIT === '1';
 const rows = (schema: string, retentionMs = 86_400_000, leaseMs?: number) =>
   createWarehouseRowStore(snowflake!, {
     schema,
@@ -85,18 +85,18 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
     withRetention: (handle, retentionMs) => rows(schemas.get(handle)!, retentionMs),
     damage: async (handle) => {
       await sql(
-        `UPDATE ${table(handle, '__dogsled_agentic_rows')} SET ${q('data')} = '{"damaged":1}'`
+        `UPDATE ${table(handle, '__bobsled_agentic_rows')} SET ${q('data')} = '{"damaged":1}'`
       );
     },
     replaceRowsTable: async (handle) => {
-      const rowsTable = table(handle, '__dogsled_agentic_rows');
+      const rowsTable = table(handle, '__bobsled_agentic_rows');
       const kept = table(handle, 'kept_rows');
       await sql(`ALTER TABLE ${rowsTable} RENAME TO ${kept}`);
       await sql(`CREATE VIEW ${rowsTable} AS SELECT * FROM ${kept}`);
     },
     addComputedColumn: async (handle) => {
       await sql(
-        `ALTER TABLE ${table(handle, '__dogsled_agentic_rows')} ADD COLUMN ${q('computed')} VARCHAR DEFAULT 'x'`
+        `ALTER TABLE ${table(handle, '__bobsled_agentic_rows')} ADD COLUMN ${q('computed')} VARCHAR DEFAULT 'x'`
       );
     },
   });
@@ -195,7 +195,7 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
       try {
         const session = await rows(schema).acquire({ scope: 'size', model: 'probe', id: 'run' });
         await session.release();
-        const table = `${qualified(schema)}.${q('__dogsled_agentic_rows')}`;
+        const table = `${qualified(schema)}.${q('__bobsled_agentic_rows')}`;
         // Three bytes per character: the most one statement can carry under these bounds.
         const data = '語'.repeat(snowflakeRowDialect.maxRowChars);
         await insertAgenticWrite(
@@ -246,13 +246,13 @@ describe.skipIf(!snowflake)('Snowflake row store', () => {
       try {
         const cursors = rows(schema).cursors!;
         await cursors.begin({ ...key, target: 'other' }, 'a'.repeat(64), 'run-1');
-        await sql(`DELETE FROM ${qualified(schema)}.${q('__dogsled_agentic_guard')}`);
+        await sql(`DELETE FROM ${qualified(schema)}.${q('__bobsled_agentic_guard')}`);
         await expect(cursors.begin(key, 'a'.repeat(64), 'run-2')).rejects.toMatchObject({
           code: 'corrupt',
           reason: 'state_table_replaced',
         });
         const stored = await sql(
-          `SELECT 1 FROM ${qualified(schema)}.${q('__dogsled_agentic_cursors')} WHERE ${q('target')} = 'guard-test'`
+          `SELECT 1 FROM ${qualified(schema)}.${q('__bobsled_agentic_cursors')} WHERE ${q('target')} = 'guard-test'`
         );
         expect(stored).toEqual([]);
       } finally {

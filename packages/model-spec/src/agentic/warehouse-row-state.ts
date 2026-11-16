@@ -34,7 +34,7 @@ export type WarehouseRowStoreOptions = WarehouseCheckpointOptions & {
   groupCommit?: boolean;
 };
 
-const LEGACY_CURSORS_TABLE = '__dogsled_cursors';
+const LEGACY_CURSORS_TABLE = '__bobsled_cursors';
 /** PostgreSQL truncates a longer identifier, and a bound name would then match nothing. */
 const postgresNameBytes = 63;
 
@@ -155,7 +155,7 @@ const legacyTableQuery = (engine: RowEngine, target: WarehouseTarget): string =>
     : `SELECT 1 AS found FROM ${catalogView(dialects[engine], target, 'tables')} WHERE table_schema = ? AND table_name = ? LIMIT 1`;
 
 /**
- * Reads what `__dogsled_cursors`, the warehouse store's table in this schema, holds for a key.
+ * Reads what `__bobsled_cursors`, the warehouse store's table in this schema, holds for a key.
  * A table that was never created means no earlier progress, and that has to be established: a
  * failed read must not pass for one, or the key would start again from the beginning.
  */
@@ -192,7 +192,7 @@ function legacyCursorReader(
 /**
  * Keeps agentic state as rows in `options.schema` on PostgreSQL or Snowflake. A host opts in by
  * passing it as `agentic.stateStore`: a warehouse `checkpoint_store` keeps the warehouse store.
- * A new cursor key carries over its value from `__dogsled_cursors`, the warehouse store's table
+ * A new cursor key carries over its value from `__bobsled_cursors`, the warehouse store's table
  * in the same schema. On Snowflake the store's role must hold `SELECT` on that table wherever
  * the old store ran, because Snowflake reports a table the role cannot see as missing, and the
  * key would then start from empty.

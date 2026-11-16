@@ -1,0 +1,83 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
+
+import {
+  copyExample,
+  getExamplesDir,
+  exampleNextSteps,
+  makeScriptsExecutable,
+} from '../../../src/commands/examples.js';
+
+const directories: string[] = [];
+
+function project(files: Record<string, string>): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-example-'));
+  directories.push(root);
+  for (const [file, content] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), content, { mode: 0o644 });
+  }
+  return root;
+}
+
+afterEach(() => {
+  for (const directory of directories.splice(0)) {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+describe('bobsled examples', () => {
+  it('makes copied shell scripts executable, including nested ones', () => {
+    const root = project({
+      'walkthrough.sh': '#!/bin/sh\n',
+      'scripts/run.sh': '',
+      'README.md': '',
+    });
+    makeScriptsExecutable(root);
+    expect(fs.statSync(path.join(root, 'walkthrough.sh')).mode & 0o777).toBe(0o755);
+    expect(fs.statSync(path.join(root, 'scripts/run.sh')).mode & 0o777).toBe(0o755);
+    expect(fs.statSync(path.join(root, 'README.md')).mode & 0o777).toBe(0o644);
+  });
+
+  it('suggests the walkthrough and model commands for an example that has them', () => {
+    const root = project({
+      'walkthrough.sh': '',
+      'integrations/github.yml': '',
+      'integrations/warehouse.yml': '',
+      'models/orders.yml': '',
+    });
+    expect(exampleNextSteps(root, 'demo')).toEqual([
+      'cd demo',
+      "export GITHUB_TOKEN='<your-token>'",
+      './walkthrough.sh',
+      'bobsled model validate',
+      'bobsled model compile -o ./compiled',
+      'See README.md for the full walkthrough.',
+    ]);
+  });
+
+  it('suggests extraction checks for an example without a walkthrough or models', () => {
+    const root = project({ 'integrations/s3_documents.yml': '' });
+    expect(exampleNextSteps(root, 'docs')).toEqual([
+      'cd docs',
+      "export S3_BUCKET='<your-bucket>'",
+      'bobsled extract validate s3_documents',
+      'See README.md for the full walkthrough.',
+    ]);
+  });
+});
+
+it('scaffolds TV Night without copying its teaching references', () => {
+  const target = project({});
+  copyExample('tv-night', target);
+  expect(fs.existsSync(path.join(target, 'reference'))).toBe(false);
+  expect(fs.existsSync(path.join(target, 'data/tv-night/manifest.json'))).toBe(true);
+  expect(fs.existsSync(path.join(target, 'README.md'))).toBe(true);
+  expect(fs.existsSync(path.join(target, 'models'))).toBe(false);
+  expect(fs.existsSync(path.join(getExamplesDir(), 'tv-night/reference/executor.mjs.txt'))).toBe(
+    true
+  );
+});

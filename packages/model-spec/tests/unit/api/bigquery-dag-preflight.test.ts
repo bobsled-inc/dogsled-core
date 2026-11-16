@@ -225,7 +225,7 @@ function results(result: Awaited<ReturnType<typeof runProject>>): string[] {
 
 describe('BigQuery preflight in DAG order', () => {
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-model-spec-bq-dag-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-model-spec-bq-dag-'));
   });
 
   afterEach(async () => {
@@ -753,7 +753,7 @@ describe('missingUpstreamMessage', () => {
       'include it in the selection (for example +m)'
     );
     expect(missingUpstreamMessage('m', 'u', 'ds.u', { publishedModels: ['U'] })).toContain(
-      "published after this integration's local SQL runs, so build it in a previous run (dogsled model run u) before m"
+      "published after this integration's local SQL runs, so build it in a previous run (bobsled model run u) before m"
     );
     expect(missingUpstreamMessage('m', 'u', 'ds.u', { planFailedModels: ['u'] })).toContain(
       'failed to plan in this run'

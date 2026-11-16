@@ -80,15 +80,15 @@ function scaffoldHandler(entity: string, options: ScaffoldOptions): void {
     next_commands: [
       {
         label: 'validate_resolution',
-        command: withFormatFlag(`dogsled entity-graph resolve validate ${entity}`),
+        command: withFormatFlag(`bobsled entity-graph resolve validate ${entity}`),
       },
       {
         label: 'preview_resolution_sql',
-        command: withFormatFlag(`dogsled entity-graph resolve compile ${entity}`),
+        command: withFormatFlag(`bobsled entity-graph resolve compile ${entity}`),
       },
       {
         label: 'preview_relationship_contract',
-        command: withFormatFlag(`dogsled entity-graph relationships review export`),
+        command: withFormatFlag(`bobsled entity-graph relationships review export`),
       },
     ],
   };

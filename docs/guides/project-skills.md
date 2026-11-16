@@ -1,7 +1,7 @@
 # Project guide and skills
 
 Coding agents such as Codex and Claude work better with a project when they know
-what the data means and how to use it. A Dogsled project can carry that knowledge
+what the data means and how to use it. A Bobsled Core project can carry that knowledge
 in two kinds of Markdown files:
 
 - The **Project guide**, a root `AGENTS.md` file: what the data means, which tables
@@ -9,8 +9,8 @@ in two kinds of Markdown files:
 - **Project Skills**, files under `skills/<name>/SKILL.md`: instructions for one
   task, with references to the models, resources, actions and pipelines it uses.
 
-Dogsled validates both, links skills into the folders where agents look for them,
-and reports problems in `dogsled doctor`. It never runs a skill, and neither file
+Bobsled Core validates both, links skills into the folders where agents look for them,
+and reports problems in `bobsled doctor`. It never runs a skill, and neither file
 grants access to anything. The examples continue the `shop` project from
 [Build models](build-models.md).
 
@@ -73,19 +73,19 @@ Both exclude refunds.
 - `description` (required): up to 500 characters.
 - `triggers`: up to 20 short phrases that help an agent pick the skill.
 - `references`: up to 100 links to a `model`, `resource`, `action` or `pipeline` in
-  the same project. Dogsled checks that each one exists.
+  the same project. Bobsled Core checks that each one exists.
 - Also allowed: `license`, `compatibility`, `metadata`, and `allowed-tools`
   (descriptive only; it grants nothing).
 
-A skill folder can also contain scripts, references and other files; Dogsled
+A skill folder can also contain scripts, references and other files; Bobsled Core
 inventories them with their hashes but never executes them. A Markdown file
 elsewhere in the project becomes a skill when its front matter has `type: skill`.
 
 ## Validate and inspect
 
 ```bash
-dogsled skill validate
-dogsled skill list
+bobsled skill validate
+bobsled skill list
 ```
 
 ```text
@@ -95,7 +95,7 @@ dogsled skill list
 revenue-questions  Answer questions about revenue per customer or per day.
 ```
 
-`dogsled skill show revenue-questions` prints one skill in full. Validation errors,
+`bobsled skill show revenue-questions` prints one skill in full. Validation errors,
 such as a reference to a model that does not exist, exit with code 2. Pass
 `--no-guide` to validate skills in a repository whose root `AGENTS.md` is not a
 Project guide.
@@ -103,7 +103,7 @@ Project guide.
 ## Make skills visible to agents
 
 ```bash
-dogsled skill configure
+bobsled skill configure
 ```
 
 ```text
@@ -114,12 +114,12 @@ claude  revenue-questions  link  created  .claude/skills/revenue-questions
 `configure` creates relative links from `.agents/skills/` (Codex) and
 `.claude/skills/` (Claude) to each skill. Commit the links. It never replaces a file
 or folder it did not create, and running it again changes nothing. Use
-`--copy` where symbolic links are not available, and `dogsled skill sync` after you
-change or remove a skill to refresh the copies. `dogsled doctor` reports invalid
+`--copy` where symbolic links are not available, and `bobsled skill sync` after you
+change or remove a skill to refresh the copies. `bobsled doctor` reports invalid
 skills and missing or stale links.
 
 ## Use them from code
 
-The `@bobsled-inc/dogsled/project-skills` export loads, validates and hashes the
+The `@bobsled-inc/bobsled-core/project-skills` export loads, validates and hashes the
 guide and skills for a host application: `loadProjectSkills`, `getProjectSkill`,
 `loadProjectGuide`, `validateProjectSkills` and `buildProjectSkillsManifest`.

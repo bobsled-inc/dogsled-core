@@ -17,14 +17,14 @@ import { AGENTIC_ROW_STORE_LIMITS } from '../../../src/agentic/store-limits.js';
 import { fullPublicationPayload, publishPayload } from '../../support/publication-payload.js';
 import { runFixture } from '../../unit/agentic/state-fixture.js';
 
-const integrationPath = process.env.DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION;
-const namespace = process.env.DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA;
+const integrationPath = process.env.BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION;
+const namespace = process.env.BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA;
 
 describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () => {
   it('replaces processed keys and recovers a committed receipt after reopen', async () => {
     if (!integrationPath || !namespace) {
       throw new Error(
-        'Set both DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION and DOGSLED_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA'
+        'Set both BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_INTEGRATION and BOBSLED_CORE_MODEL_SPEC_AGENTIC_PUBLICATION_SCHEMA'
       );
     }
     const integration = IntegrationFileSchema.parse(
@@ -81,9 +81,9 @@ describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () 
             {
               pair_id: assignment.input.rows[0]!.pair_id,
               assessment: "first ' finding",
-              _dogsled_evidence: null,
-              _dogsled_confidence: null,
-              _dogsled_reason: null,
+              _bobsled_evidence: null,
+              _bobsled_confidence: null,
+              _bobsled_reason: null,
             },
           ],
         })
@@ -152,8 +152,8 @@ describe.skipIf(!integrationPath && !namespace)('cloud agentic publication', () 
         ).publication
       ).toBe('confirmed');
       expect(
-        await inspect(`SELECT pair_id, assessment, _dogsled_run_id FROM ${names.target}`)
-      ).toEqual([{ pair_id: 'p1', assessment: "first ' finding", _dogsled_run_id: 'first' }]);
+        await inspect(`SELECT pair_id, assessment, _bobsled_run_id FROM ${names.target}`)
+      ).toEqual([{ pair_id: 'p1', assessment: "first ' finding", _bobsled_run_id: 'first' }]);
       expect(Number((await inspect(`SELECT COUNT(*) AS n FROM ${names.receipts}`))[0]?.n)).toBe(2);
 
       if (integration.source_type === 'snowflake') {

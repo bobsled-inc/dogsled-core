@@ -24,9 +24,9 @@ import type { LoadStrategy, SchemaBehavior } from '@bobsled-inc/protocol';
  * resource names, which are snake_case by schema, so the FIRST colon is
  * always the separator.
  *
- * These flags are public CLI surface: `dogsled load run` is invokable
+ * These flags are public CLI surface: `bobsled load run` is invokable
  * standalone, so every pair is validated here at the subprocess boundary even
- * though Dogsled already validates `dogsled.yml` before spawning the loader.
+ * though Bobsled Core already validates `bobsled.yml` before spawning the loader.
  */
 function splitPair(flag: string, shape: string, value: string): { stream: string; rest: string } {
   const colon = value.indexOf(':');

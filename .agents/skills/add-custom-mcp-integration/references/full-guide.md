@@ -1,11 +1,11 @@
 # Add a custom MCP server source (`custom_mcp`)
 
 Use this when a user wants to extract data from a remote MCP server that
-Dogsled does **not** ship a bundled connector for. A `custom_mcp` source is
+Bobsled Core does **not** ship a bundled connector for. A `custom_mcp` source is
 **fully self-describing**: you author a `source.yml` with an inline
 `mcp_http` transport (`url` + `auth`) and one declarative resource per
 tool you want to call. There is **no per-connector code module** and
-**no catalog entry required** — the YAML runs directly against Dogsled's
+**no catalog entry required** — the YAML runs directly against Bobsled Core's
 generic MCP extractor.
 
 ## When to use a different skill
@@ -25,7 +25,7 @@ generic MCP extractor.
 ## What a `custom_mcp` source is
 
 - **YAML-only.** No per-connector code, no catalog entry.
-- **One inline transport of `type: mcp_http`.** Dogsled's
+- **One inline transport of `type: mcp_http`.** Bobsled Core's
   `McpHttpTransportSchema` accepts `url` (HTTPS-only), optional `auth`,
   `headers`, `timeout_ms`, `retry`, `rate_limit`. `mcp_stdio` is
   **rejected at strict-schema time** for `custom_mcp` — the hosted
@@ -36,7 +36,7 @@ generic MCP extractor.
   custom_mcp sources may only declare mcp_http transports (got "mcp_stdio")
   ```
 
-- **One resource per tool.** Dogsled's `McpToolConfigSchema` defines the
+- **One resource per tool.** Bobsled Core's `McpToolConfigSchema` defines the
   `tool:` block — `tool_name` (required), `arguments` (optional, with
   `${{ input.X }}` / `${{ env.X }}` interpolation), `timeout_ms`. The
   outer resource declares `input:` for tool argument inputs and
@@ -45,7 +45,7 @@ generic MCP extractor.
   (`AbsoluteHttpsUrlSchema`). At runtime, `createStreamableHttpTransport`
   in `@bobsled-inc/extractor` blocks private/loopback/metadata hosts and
   runs DNS pre-resolution to mitigate DNS rebinding. The only escape
-  hatch is the `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` process env var
+  hatch is the `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` process env var
   (local dev), which is **not** settable from YAML.
 
 ## File layout
@@ -62,7 +62,7 @@ generic MCP extractor.
 
 Declare the kind, the env vars the transport interpolates, and one
 inline `mcp_http` transport. Auth is one of `none`, `bearer`, or
-`api-key` (Dogsled's `McpTransportAuthSchema` also supports `oauth2`
+`api-key` (Bobsled Core's `McpTransportAuthSchema` also supports `oauth2`
 client_credentials; if you need that, hand-author the transport — this
 skill stays focused on the simple shapes).
 
@@ -71,8 +71,8 @@ Bearer auth (most common — Linear, Notion, GitHub MCP):
 ```yaml
 spec_version: '2'
 type: source
-source_type: custom_mcp # Dogsled-visible marker
-dogsled_source_kind: custom_mcp # orchestrator / host application marker (Dogsled ignores it)
+source_type: custom_mcp # Bobsled Core-visible marker
+bobsled_source_kind: custom_mcp # orchestrator / host application marker (Bobsled Core ignores it)
 name: <source-name>
 description: <one line>
 auth_env_vars: # env vars the transport interpolates
@@ -92,7 +92,7 @@ transports:
       requests_per_second: 5
       burst: 10
     headers:
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
 default_transport: default
 ```
 
@@ -125,7 +125,7 @@ transports:
 > blocked at `createStreamableHttpTransport` time, with a DNS
 > pre-resolution check against the same allowlist. HTTPS is enforced by
 > `AbsoluteHttpsUrlSchema`. The only escape hatch is
-> `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`, settable only in the
+> `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`, settable only in the
 > process environment (never from YAML).
 
 ## Step 2 — Write `meta.yml`
@@ -241,12 +241,12 @@ a request parameter, which MCP tools do not have).
 ## Step 4 — Validate → verify → extract
 
 ```bash
-dogsled extract validate <source-name>
-dogsled extract verify <source-name>
-dogsled extract verify <source-name> --mock
+bobsled extract validate <source-name>
+bobsled extract verify <source-name>
+bobsled extract verify <source-name> --mock
 # then, with the env var exported:
 export <ENV_VAR_NAME>=...
-dogsled extract run <source-name> --resource <entity> --limit 5
+bobsled extract run <source-name> --resource <entity> --limit 5
 ```
 
 - `validate` — schema-level check (source/transport/resource shapes,
@@ -270,7 +270,7 @@ real BYO MCP server, swap the URL and tool names.
 spec_version: '2'
 type: source
 source_type: custom_mcp
-dogsled_source_kind: custom_mcp
+bobsled_source_kind: custom_mcp
 name: linear_mcp
 description: Linear team data via the public Linear MCP server.
 auth_env_vars:
@@ -383,10 +383,10 @@ Then run:
 
 ```bash
 export LINEAR_API_KEY=lin_api_...
-dogsled extract validate linear_mcp
-dogsled extract verify linear_mcp
-dogsled extract run linear_mcp --resource teams --limit 5
-dogsled extract run linear_mcp --resource cycles --limit 5
+bobsled extract validate linear_mcp
+bobsled extract verify linear_mcp
+bobsled extract run linear_mcp --resource teams --limit 5
+bobsled extract run linear_mcp --resource cycles --limit 5
 ```
 
 ## Common gotchas
@@ -400,7 +400,7 @@ dogsled extract run linear_mcp --resource cycles --limit 5
 - **Private host blocked.** A `url` resolving to a private IP / localhost
   / cloud-metadata host is rejected at runtime: `MCP HTTP URL
 "<host>" targets a private or internal host`. Use
-  `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` for local dev only.
+  `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` for local dev only.
 - **`MISSING_AUTH_SETUP` from `verify`.** Every `${{ env.X }}` reference
   in the source must appear in `auth_env_vars`. Add it.
 - **`Transport "X" not found in source "Y"`.** A resource's `via:` (or
@@ -410,7 +410,7 @@ dogsled extract run linear_mcp --resource cycles --limit 5
   `record_path: $`. If it returns `{ items: [...] }`, use
   `record_path: $.items`. If it returns `{ data: { things: [...] } }`,
   use `record_path: $.data.things`.
-- **OAuth2 MCP servers.** Dogsled's `McpTransportAuthSchema` accepts
+- **OAuth2 MCP servers.** Bobsled Core's `McpTransportAuthSchema` accepts
   `type: oauth2` with `grant_type: client_credentials`, `token_url`,
   `client_id`, `client_secret`. This skill stays focused on
   none/bearer/api-key; for OAuth2, hand-author the transport block from
@@ -426,7 +426,7 @@ dogsled extract run linear_mcp --resource cycles --limit 5
 Before handing back to the user:
 
 - [ ] `source.yml` has `source_type: custom_mcp` and
-      `dogsled_source_kind: custom_mcp`.
+      `bobsled_source_kind: custom_mcp`.
 - [ ] `transports[0].type === 'mcp_http'` and `url` is absolute HTTPS.
 - [ ] No `mcp_stdio` transports anywhere in the bundle.
 - [ ] `auth_env_vars` lists every env var the transport references.
@@ -438,8 +438,8 @@ Before handing back to the user:
 - [ ] Incremental tools set `extract.incremental` with `filter` or
       `server_filter` and a `cursor_field` that exists in `output` (the
       `cursor` strategy is HTTP-only).
-- [ ] `dogsled extract validate <source>` returns clean.
-- [ ] `dogsled extract verify <source>` returns clean.
+- [ ] `bobsled extract validate <source>` returns clean.
+- [ ] `bobsled extract verify <source>` returns clean.
 
 ## Related
 

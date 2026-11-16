@@ -293,8 +293,8 @@ Before considering the destination complete, verify all of the following:
 | Constructor validates naming rules  | Invalid bucket/container names throw synchronously at construction time                                                                           |
 | `publish()` returns a URI string    | The URI uses the provider's canonical scheme (e.g., `s3://`, `gs://`, `https://...blob.core.windows.net/`)                                        |
 | DI interface enables testing        | A `*ClientLike` interface is exported and accepted in the options, so tests never need real SDK                                                   |
-| Check command wired                 | `dogsled load check --dest <name> --<name>-bucket <b>` runs the connectivity check                                                                |
-| Run command options wired           | `dogsled load run --dest <name> --<name>-bucket <b>` parses correctly                                                                             |
+| Check command wired                 | `bobsled load check --dest <name> --<name>-bucket <b>` runs the connectivity check                                                                |
+| Run command options wired           | `bobsled load run --dest <name> --<name>-bucket <b>` parses correctly                                                                             |
 
 ## Files Modified (Complete List)
 

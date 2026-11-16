@@ -169,7 +169,7 @@ describe('UNKNOWN_MODEL_SPEC_CONFIG_KEY', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-config-hint-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-config-hint-'));
   });
 
   afterEach(() => {

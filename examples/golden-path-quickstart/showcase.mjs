@@ -8,12 +8,12 @@ import { cliPath, command, jsonLines } from '../../scripts/e2e/harness.mjs';
 export const id = 'S01';
 export async function run(ctx) {
   await ctx.cli(['init', 'readme-shop', '--duckdb']);
-  assert.match(await ctx.read('readme-shop/.dogsled/config.yml'), /dest: duckdb/);
+  assert.match(await ctx.read('readme-shop/.bobsled/config.yml'), /dest: duckdb/);
   await ctx.cli(['doctor'], { cwd: path.join(ctx.project, 'readme-shop') });
 
   await ctx.cli(['init', 'my-project']);
   const cwd = path.join(ctx.project, 'my-project');
-  assert.match(await ctx.read('my-project/.dogsled/config.yml'), /dest: ducklake/);
+  assert.match(await ctx.read('my-project/.bobsled/config.yml'), /dest: ducklake/);
   const fixture = fileURLToPath(new URL('./', import.meta.url));
   for (const name of [
     'data',
@@ -30,7 +30,7 @@ export async function run(ctx) {
   await mkdir(path.join(cwd, 'node_modules/@bobsled-inc'), { recursive: true });
   await symlink(
     path.dirname(path.dirname(cliPath)),
-    path.join(cwd, 'node_modules/@bobsled-inc/dogsled'),
+    path.join(cwd, 'node_modules/@bobsled-inc/bobsled-core'),
     'dir'
   );
   await ctx.cli(['extract', 'validate', 'local_files'], { cwd });
@@ -46,7 +46,7 @@ export async function run(ctx) {
         '--dest',
         'ducklake',
         '--ducklake-catalog-url',
-        'ducklake:.dogsled/lake/catalog.ducklake',
+        'ducklake:.bobsled/lake/catalog.ducklake',
         '--target-schema',
         'bronze',
         '--log-format',
@@ -60,7 +60,7 @@ export async function run(ctx) {
   const result = await ctx.cli(
     [
       'query',
-      "INSTALL ducklake; LOAD ducklake; ATTACH 'ducklake:.dogsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n, sum(amount) AS total, count(_dogsled_loaded_at) AS stamped FROM lake.bronze.orders",
+      "INSTALL ducklake; LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n, sum(amount) AS total, count(_bobsled_loaded_at) AS stamped FROM lake.bronze.orders",
       '--db-path',
       'query.duckdb',
     ],
@@ -73,7 +73,7 @@ export async function run(ctx) {
   const modeled = await ctx.cli(
     [
       'query',
-      "LOAD ducklake; ATTACH 'ducklake:.dogsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n FROM lake.bronze.order_summary",
+      "LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n FROM lake.bronze.order_summary",
       '--db-path',
       'query.duckdb',
     ],
@@ -117,7 +117,7 @@ export async function run(ctx) {
         '--dest',
         'ducklake',
         '--ducklake-catalog-url',
-        'ducklake:.dogsled/lake/catalog.ducklake',
+        'ducklake:.bobsled/lake/catalog.ducklake',
         '--target-schema',
         'bronze',
       ],
@@ -130,7 +130,7 @@ export async function run(ctx) {
     const loaded = await ctx.cli(
       [
         'query',
-        "LOAD ducklake; ATTACH 'ducklake:.dogsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n FROM lake.bronze.posts",
+        "LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) AS n FROM lake.bronze.posts",
         '--db-path',
         'query.duckdb',
       ],

@@ -15,8 +15,8 @@ interface Connection {
   config: Record<string, string>;
 }
 
-const CONNECTION_STORAGE_KEY = 'dogsled-explorer-connections';
-const SECRETS_STORAGE_KEY = 'dogsled-explorer-connection-secrets';
+const CONNECTION_STORAGE_KEY = 'bobsled-explorer-connections';
+const SECRETS_STORAGE_KEY = 'bobsled-explorer-connection-secrets';
 
 const CONNECTION_TYPES: {
   type: ConnectionType;
@@ -316,7 +316,7 @@ export default function ConnectionsPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
       <PageHeader
-        breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Connections' }]}
+        breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Connections' }]}
         title="Connections"
         description="Manage credentials for pipeline destinations. Saved connections can be reused in the pipeline wizard."
         actions={

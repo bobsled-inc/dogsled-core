@@ -16,7 +16,7 @@ tags: [state-management, url-params, base64, nextjs, wizard, deep-linking]
 
 ## Symptom
 
-The pipeline builder is a 6-step wizard on `/pipelines`. When the user clicks "Export" in the review step, they navigate to `/pipelines/export`. The export page needs the full pipeline configuration (selected integrations, per-integration resources, destination config, schedule) to generate dogsled.yml and CLI commands. Without state transfer, the export page shows demo data.
+The pipeline builder is a 6-step wizard on `/pipelines`. When the user clicks "Export" in the review step, they navigate to `/pipelines/export`. The export page needs the full pipeline configuration (selected integrations, per-integration resources, destination config, schedule) to generate bobsled.yml and CLI commands. Without state transfer, the export page shows demo data.
 
 Similarly, clicking "Run in Terminal" from the export page should navigate to `/terminal` and auto-execute the pipeline command. The terminal needs to know which command to run.
 

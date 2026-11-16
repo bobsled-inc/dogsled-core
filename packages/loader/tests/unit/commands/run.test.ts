@@ -716,7 +716,7 @@ describe('runDatabaseLoader: parallel loading', () => {
       'Failed to load stream "issues" to bigquery: SQL compilation error:\n' +
         'error line 1 at position 56\n' +
         'invalid identifier "TOKEN"; detail=[REDACTED]. ' +
-        'Run `dogsled load check --dest bigquery` to diagnose connectivity issues.'
+        'Run `bobsled load check --dest bigquery` to diagnose connectivity issues.'
     );
 
     expect(stderr.toString()).not.toContain('"level":"error"');
@@ -1163,7 +1163,7 @@ describe('runDatabaseLoader: checkpoint', () => {
     const stdout = new BufferingWritable();
     const stderr = new BufferingWritable();
     const tmpDir = await import('node:os').then((os) => os.tmpdir());
-    const checkpointDir = `${tmpDir}/dogsled-test-ckpt-${Date.now()}`;
+    const checkpointDir = `${tmpDir}/bobsled-test-ckpt-${Date.now()}`;
 
     try {
       const result = await runDatabaseLoader(

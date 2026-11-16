@@ -1,8 +1,8 @@
 /**
- * SQL expression AST → DogsledExpr string.
+ * SQL expression AST → BobsledExpr string.
  *
  * Walks `node-sql-parser`'s AST (Snowflake dialect) and emits expression
- * strings that Model Spec's DogsledExpr parser accepts. Strict by design: any node
+ * strings that Model Spec's BobsledExpr parser accepts. Strict by design: any node
  * shape we don't recognize throws `ModelSpecGenerationError(UNSUPPORTED_CONSTRUCT)`
  * rather than producing a `raw_sql()` fallback.
  */

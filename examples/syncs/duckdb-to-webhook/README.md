@@ -1,11 +1,11 @@
 # DuckDB To Webhook Sync
 
-This example shows the files needed for `dogsled sync`.
+This example shows the files needed for `bobsled sync`.
 
 ```bash
-dogsled sync list --json
-dogsled sync validate contacts_to_webhook --json
-dogsled sync run contacts_to_webhook --dry-run --json
+bobsled sync list --json
+bobsled sync validate contacts_to_webhook --json
+bobsled sync run contacts_to_webhook --dry-run --json
 ```
 
 Create `demo.db` with a `main.contacts_to_webhook_projection` table before running without `--dry-run`.

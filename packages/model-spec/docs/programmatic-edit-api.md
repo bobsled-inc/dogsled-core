@@ -252,7 +252,7 @@ updateVq({
 });
 ```
 
-Metadata edit functions validate the edited file shape only. Cross-file checks such as "does this metric model exist?" still belong to `dogsled model validate`.
+Metadata edit functions validate the edited file shape only. Cross-file checks such as "does this metric model exist?" still belong to `bobsled model validate`.
 
 ## Dry Runs and Validation
 
@@ -296,7 +296,7 @@ For UI workflows:
 - Use `dryRun: true` on every form preview.
 - Show `result.error` directly only to technical users; for end users, map validation errors into form fields when possible.
 - Save by calling the same function without `dryRun`.
-- Run `dogsled model validate` after a batch of edits if the UI allows several files to change.
+- Run `bobsled model validate` after a batch of edits if the UI allows several files to change.
 
 For agent workflows:
 

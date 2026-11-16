@@ -70,7 +70,7 @@ export default async function ShopDemoQueriesPage() {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-8">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           { label: 'Demo', href: '/demo/shop' },
           { label: 'Queries' },
         ]}
@@ -97,7 +97,7 @@ export default async function ShopDemoQueriesPage() {
           references in curly braces are resolved to the actual table name at query time.
         </p>
         <SyntaxBlock
-          code={`# Run a verified query directly\ndogsled model query revenue_by_month --integration duckdb`}
+          code={`# Run a verified query directly\nbobsled model query revenue_by_month --integration duckdb`}
           language="bash"
         />
       </div>

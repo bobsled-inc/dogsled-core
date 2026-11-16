@@ -56,9 +56,9 @@ function request() {
 }
 const row = {
   pair_id: 'a',
-  _dogsled_evidence: null,
-  _dogsled_confidence: null,
-  _dogsled_reason: null,
+  _bobsled_evidence: null,
+  _bobsled_confidence: null,
+  _bobsled_reason: null,
 };
 const usage = { inputTokens: 100, outputTokens: 50, totalTokens: 150 };
 
@@ -98,7 +98,7 @@ test('read then finish uses only the callback, carries data, and sums both calls
       rows: [
         {
           ...row,
-          _dogsled_evidence: [
+          _bobsled_evidence: [
             { source: 'customers', reference: 'Alice', support_excerpt: null, observation: 1 },
           ],
         },
@@ -107,7 +107,7 @@ test('read then finish uses only the callback, carries data, and sums both calls
   })(req);
   assert.equal(result.status, 'succeeded');
   assert.equal(result.usage.total_tokens, 300);
-  assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, '2026-09-14T10:00:00Z');
+  assert.equal(result.rows[0]._bobsled_evidence[0].retrieved_at, '2026-09-14T10:00:00Z');
   assert.equal(req.reservations, 2);
   assert.equal(req.settled.length, 2);
   assert.equal(reads, 1);
@@ -276,7 +276,7 @@ test('repeated source reads preserve the selected observation date', async () =>
             rows: [
               {
                 ...row,
-                _dogsled_evidence: [
+                _bobsled_evidence: [
                   {
                     source: 'customers',
                     reference: 'first',
@@ -290,8 +290,8 @@ test('repeated source reads preserve the selected observation date', async () =>
     )
   )(req);
   assert.equal(result.status, 'succeeded');
-  assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, '2026-09-14T10:00:00Z');
-  assert.equal('observation' in result.rows[0]._dogsled_evidence[0], false);
+  assert.equal(result.rows[0]._bobsled_evidence[0].retrieved_at, '2026-09-14T10:00:00Z');
+  assert.equal('observation' in result.rows[0]._bobsled_evidence[0], false);
 });
 
 test('a provider cannot attach an evidence date or cite an unread observation', async () => {
@@ -305,7 +305,7 @@ test('a provider cannot attach an evidence date or cite an unread observation', 
         rows: [
           {
             ...row,
-            _dogsled_evidence: [
+            _bobsled_evidence: [
               { source: 'customers', reference: 'invented', support_excerpt: null, ...extra },
             ],
           },
@@ -344,7 +344,7 @@ test('a fresh read of the input source uses its own host observation date', asyn
             rows: [
               {
                 ...row,
-                _dogsled_evidence: [
+                _bobsled_evidence: [
                   {
                     source: 'customers',
                     reference: 'Alice',
@@ -359,7 +359,7 @@ test('a fresh read of the input source uses its own host observation date', asyn
     )
   )(req);
   assert.equal(result.status, 'succeeded');
-  assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, '2026-09-14T10:00:00Z');
+  assert.equal(result.rows[0]._bobsled_evidence[0].retrieved_at, '2026-09-14T10:00:00Z');
 });
 
 test('transient provider and malformed response failures permit a whole-assignment retry', async () => {
@@ -452,7 +452,7 @@ test('named reduce inputs stay separate and evidence uses the matching host date
     assert.equal(prompt.inputs.empty.complete, true);
     const answer = {
       ...row,
-      _dogsled_evidence: [
+      _bobsled_evidence: [
         { source: 'second', reference: 'a', support_excerpt: null, observation: 0 },
       ],
     };
@@ -460,7 +460,7 @@ test('named reduce inputs stay separate and evidence uses the matching host date
   });
   const result = await execute(req);
   assert.equal(result.status, 'succeeded');
-  assert.equal(result.rows[0]._dogsled_evidence[0].retrieved_at, timestamp);
+  assert.equal(result.rows[0]._bobsled_evidence[0].retrieved_at, timestamp);
 });
 
 test('a provider error without usage is a retryable call failure', async () => {

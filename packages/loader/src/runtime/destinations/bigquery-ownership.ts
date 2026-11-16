@@ -1,6 +1,6 @@
 import { CommandError } from '@bobsled-inc/protocol';
 
-export const OWNERSHIP_LABEL = 'dogsled_temp_dataset';
+export const OWNERSHIP_LABEL = 'bobsled_temp_dataset';
 
 export function validateOwnershipMarker(marker: string): void {
   if (!/^[a-z0-9_-]{1,63}$/.test(marker)) {

@@ -7,14 +7,14 @@ import {
 import { ExtractorClient } from '../../src/runtime/client.js';
 import { ExtractorDataError } from '../../src/runtime/errors.js';
 import { RateLimitTimeoutError } from '../../src/runtime/rate-limiter.js';
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { makeProvider, makeResource } from '../helpers/fixtures.js';
 
-async function expectDogsledCause(promise: Promise<unknown>, message: string): Promise<void> {
-  const error = await promise.catch((value) => value as DogsledRuntimeError);
-  expect(error).toBeInstanceOf(DogsledRuntimeError);
-  expect((error as DogsledRuntimeError).cause?.message).toContain(message);
+async function expectBobsledCause(promise: Promise<unknown>, message: string): Promise<void> {
+  const error = await promise.catch((value) => value as BobsledRuntimeError);
+  expect(error).toBeInstanceOf(BobsledRuntimeError);
+  expect((error as BobsledRuntimeError).cause?.message).toContain(message);
 }
 
 describe('ExtractorClient', () => {
@@ -142,7 +142,7 @@ describe('ExtractorClient', () => {
           input: { id: { type: 'string', required: true } },
         }),
       })
-      .catch((value) => value as DogsledRuntimeError);
+      .catch((value) => value as BobsledRuntimeError);
 
     expect(error).toMatchObject({
       kind: 'validation',
@@ -159,7 +159,7 @@ describe('ExtractorClient', () => {
     });
     const error = await client
       .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
-      .catch((value) => value as DogsledRuntimeError);
+      .catch((value) => value as BobsledRuntimeError);
 
     expect(error).toMatchObject({ kind: 'auth', code: 'EXTRACTOR_HTTP_AUTH_FAILURE' });
     expect(error.cause).toEqual(
@@ -233,8 +233,8 @@ describe('ExtractorClient', () => {
       code: 'EXTRACTOR_HTTP_VALIDATION_FAILURE',
       operation: 'extractor.http.request',
     });
-    expect((error as DogsledRuntimeError).cause).toBeInstanceOf(ExtractorDataError);
-    expect((error as DogsledRuntimeError).cause?.cause).toBeInstanceOf(SyntaxError);
+    expect((error as BobsledRuntimeError).cause).toBeInstanceOf(ExtractorDataError);
+    expect((error as BobsledRuntimeError).cause?.cause).toBeInstanceOf(SyntaxError);
   });
 
   it('throws ExtractorDataError when a non-empty non-JSON response is returned', async () => {
@@ -254,7 +254,7 @@ describe('ExtractorClient', () => {
       api: { endpoint: '/items', method: 'GET' },
     });
 
-    await expectDogsledCause(
+    await expectBobsledCause(
       client.request({ operation: resource }),
       'Failed to parse JSON response'
     );
@@ -292,7 +292,7 @@ describe('ExtractorClient', () => {
       integration: makeProvider('https://api.example.com'),
     });
 
-    await expectDogsledCause(
+    await expectBobsledCause(
       client.request({
         operation: makeResource({
           api: { endpoint: '/charges', method: 'GET', response_format: 'jsonl' },
@@ -317,7 +317,7 @@ describe('ExtractorClient', () => {
       .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
       .catch((value) => value);
 
-    expect(error).toBeInstanceOf(DogsledRuntimeError);
+    expect(error).toBeInstanceOf(BobsledRuntimeError);
     expect(error).toMatchObject({
       kind: 'provider',
       code: 'EXTRACTOR_HTTP_STATUS_FAILURE',
@@ -326,8 +326,8 @@ describe('ExtractorClient', () => {
       providerStatus: 502,
       message: 'The provider could not complete the operation.',
     });
-    expect((error as DogsledRuntimeError).cause).toBeInstanceOf(Error);
-    expect((error as DogsledRuntimeError).cause?.message).toContain('private provider diagnostic');
+    expect((error as BobsledRuntimeError).cause).toBeInstanceOf(Error);
+    expect((error as BobsledRuntimeError).cause?.message).toContain('private provider diagnostic');
   });
 
   it('retains the exhausted retry status for structural provider classification', async () => {
@@ -347,7 +347,7 @@ describe('ExtractorClient', () => {
 
     const error = await client
       .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
-      .catch((value) => value as DogsledRuntimeError);
+      .catch((value) => value as BobsledRuntimeError);
 
     expect(error).toMatchObject({ kind: 'provider', providerStatus: 429 });
     expect(error.cause).toMatchObject({ status: 429 });
@@ -378,7 +378,7 @@ describe('ExtractorClient', () => {
 
       const error = await client
         .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
-        .catch((value) => value as DogsledRuntimeError);
+        .catch((value) => value as BobsledRuntimeError);
 
       expect(error).toMatchObject({ kind: 'provider', providerStatus: status });
       expect(fetchMock).toHaveBeenCalledTimes(4);
@@ -421,7 +421,7 @@ describe('ExtractorClient', () => {
         .catch((value) => value);
 
       expect(error).toMatchObject({ kind, code, operation: 'extractor.http.request' });
-      expect((error as DogsledRuntimeError).cause).toBe(expectedCause);
+      expect((error as BobsledRuntimeError).cause).toBe(expectedCause);
     }
   );
 
@@ -445,8 +445,8 @@ describe('ExtractorClient', () => {
       kind: 'validation',
       code: 'EXTRACTOR_HTTP_RESPONSE_BODY_LIMIT',
     });
-    expect((error as DogsledRuntimeError).cause).toBeInstanceOf(ResponseBodyLimitError);
-    expect((error as DogsledRuntimeError).cause).toMatchObject({ maxBytes: 64 * 1024 * 1024 });
+    expect((error as BobsledRuntimeError).cause).toBeInstanceOf(ResponseBodyLimitError);
+    expect((error as BobsledRuntimeError).cause).toMatchObject({ maxBytes: 64 * 1024 * 1024 });
   });
 
   it('applies a smaller response body limit for one request', async () => {
@@ -461,7 +461,7 @@ describe('ExtractorClient', () => {
       integration: makeProvider('https://api.example.com'),
     });
 
-    await expectDogsledCause(
+    await expectBobsledCause(
       client.request({
         operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }),
         responseBodyLimitBytes: 10,
@@ -494,7 +494,7 @@ describe('ExtractorClient', () => {
       .catch((value) => value);
 
     expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
-    expect((error as DogsledRuntimeError).cause).toMatchObject({ name: 'TimeoutError' });
+    expect((error as BobsledRuntimeError).cause).toMatchObject({ name: 'TimeoutError' });
   });
 
   it('wraps an exhausted retry deadline with its exact timeout cause', async () => {
@@ -514,7 +514,7 @@ describe('ExtractorClient', () => {
       .catch((value) => value);
 
     expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
-    expect((error as DogsledRuntimeError).cause).toBeInstanceOf(RateLimitTimeoutError);
+    expect((error as BobsledRuntimeError).cause).toBeInstanceOf(RateLimitTimeoutError);
   });
 
   it('appends query params after input templating and rejects cross-origin overrides', async () => {
@@ -551,7 +551,7 @@ describe('ExtractorClient', () => {
       expect.any(Object)
     );
 
-    await expectDogsledCause(
+    await expectBobsledCause(
       client.request({
         operation: resource,
         url: 'https://evil.example.com/items',
@@ -641,12 +641,12 @@ describe('ExtractorClient', () => {
       api: { endpoint: '/items', method: 'GET' },
     });
 
-    await expectDogsledCause(client.request({ operation: resource }), 'cross-origin redirect');
+    await expectBobsledCause(client.request({ operation: resource }), 'cross-origin redirect');
   });
 
   it('blocks private-host redirects inside the redirect loop', async () => {
-    const originalAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    const originalAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     try {
       const fetchMock = vi.fn().mockResolvedValueOnce(
         new Response(null, {
@@ -688,7 +688,7 @@ describe('ExtractorClient', () => {
       ).rejects.toThrow('private/internal host');
     } finally {
       if (originalAllowPrivateHosts !== undefined) {
-        process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
+        process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
       }
     }
   });
@@ -718,7 +718,7 @@ describe('ExtractorClient', () => {
       expect.any(Object)
     );
 
-    await expectDogsledCause(
+    await expectBobsledCause(
       client.request({
         operation: resource,
         url: 'https://evil.example.com/items',
@@ -744,7 +744,7 @@ describe('ExtractorClient', () => {
       api: { endpoint: '/items', method: 'GET' },
     });
 
-    await expectDogsledCause(client.request({ operation: resource }), 'Too many redirects');
+    await expectBobsledCause(client.request({ operation: resource }), 'Too many redirects');
   });
 
   it('redacts query-string credentials in request errors', async () => {
@@ -771,11 +771,11 @@ describe('ExtractorClient', () => {
     const error = await client.request({ operation: resource }).catch((err) => err as Error);
 
     expect(error.message).toBe('The provider could not complete the operation.');
-    expect((error as DogsledRuntimeError).cause?.message).toContain(
+    expect((error as BobsledRuntimeError).cause?.message).toContain(
       'https://business-api.tiktok.com/open_api/v1.3/oauth/advertiser/get?[redacted]'
     );
-    expect((error as DogsledRuntimeError).cause?.message).not.toContain('public-app-id');
-    expect((error as DogsledRuntimeError).cause?.message).not.toContain('super-secret');
+    expect((error as BobsledRuntimeError).cause?.message).not.toContain('public-app-id');
+    expect((error as BobsledRuntimeError).cause?.message).not.toContain('super-secret');
   });
 
   it('surfaces the API response body in request errors', async () => {
@@ -793,8 +793,8 @@ describe('ExtractorClient', () => {
     const error = await client.request({ operation: resource }).catch((err) => err as Error);
 
     expect(error.message).toBe('The provider could not complete the operation.');
-    expect((error as DogsledRuntimeError).cause?.message).toContain('401 Unauthorized');
-    expect((error as DogsledRuntimeError).cause?.message).toContain('Invalid API Key');
+    expect((error as BobsledRuntimeError).cause?.message).toContain('401 Unauthorized');
+    expect((error as BobsledRuntimeError).cause?.message).toContain('Invalid API Key');
   });
 
   it('redacts reflected outbound credentials from API error bodies', async () => {
@@ -835,10 +835,10 @@ describe('ExtractorClient', () => {
       .catch((err) => err as Error);
 
     expect(error.message).toBe('The provider could not complete the operation.');
-    expect((error as DogsledRuntimeError).cause?.message).toContain('[REDACTED]');
-    expect((error as DogsledRuntimeError).cause?.message).not.toContain('reflected-bearer-secret');
-    expect((error as DogsledRuntimeError).cause?.message).not.toContain('reflected-header-key');
-    expect((error as DogsledRuntimeError).cause?.message).not.toContain('reflected-query-secret');
+    expect((error as BobsledRuntimeError).cause?.message).toContain('[REDACTED]');
+    expect((error as BobsledRuntimeError).cause?.message).not.toContain('reflected-bearer-secret');
+    expect((error as BobsledRuntimeError).cause?.message).not.toContain('reflected-header-key');
+    expect((error as BobsledRuntimeError).cause?.message).not.toContain('reflected-query-secret');
   });
 
   it('attaches the redacted provider body to a failed response without enumerating it', async () => {
@@ -860,7 +860,7 @@ describe('ExtractorClient', () => {
 
     const error = await client
       .request({ operation: makeResource({ api: { endpoint: '/items', method: 'PUT' } }) })
-      .catch((value) => value as DogsledRuntimeError);
+      .catch((value) => value as BobsledRuntimeError);
 
     expect(error).toMatchObject({ kind: 'provider', providerStatus: 403 });
     const attached = readProviderResponseBody(error);
@@ -891,7 +891,7 @@ describe('ExtractorClient', () => {
 
     const error = await client
       .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
-      .catch((value) => value as DogsledRuntimeError);
+      .catch((value) => value as BobsledRuntimeError);
 
     expect(error).toMatchObject({ kind: 'provider', providerStatus: 429 });
     expect(JSON.parse(readProviderResponseBody(error)!)).toEqual({
@@ -913,9 +913,9 @@ describe('ExtractorClient', () => {
     const error = await client.request({ operation: resource }).catch((err) => err as Error);
 
     expect(error.message).toBe('The provider could not complete the operation.');
-    expect((error as DogsledRuntimeError).cause?.message).toContain('500 Internal Server Error');
-    expect((error as DogsledRuntimeError).cause?.message).toContain('…');
+    expect((error as BobsledRuntimeError).cause?.message).toContain('500 Internal Server Error');
+    expect((error as BobsledRuntimeError).cause?.message).toContain('…');
     // Body capped at 500 chars, so the whole message stays well under the 2000-char body.
-    expect((error as DogsledRuntimeError).cause?.message.length).toBeLessThan(700);
+    expect((error as BobsledRuntimeError).cause?.message.length).toBeLessThan(700);
   });
 });

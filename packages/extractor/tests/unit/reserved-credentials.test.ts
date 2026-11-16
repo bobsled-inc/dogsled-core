@@ -56,7 +56,7 @@ describe('reserved credentials through extract run', () => {
     output = '';
     fetch.mockClear();
     vi.stubGlobal('fetch', fetch);
-    vi.stubEnv('DOGSLED_BUNDLED_INTEGRATIONS_DIR', BUNDLED_DIR);
+    vi.stubEnv('BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR', BUNDLED_DIR);
     vi.stubEnv('SLACK_BOT_TOKEN', CANARY);
     vi.stubEnv('GITHUB_TOKEN', CANARY);
     vi.stubEnv('AWS_SECRET_ACCESS_KEY', CANARY);

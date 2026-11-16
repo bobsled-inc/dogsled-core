@@ -4,18 +4,18 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect, it } from 'vitest';
 
-it('runs the separate executor tests through Dogsled public exports', () => {
+it('runs the separate executor tests through Bobsled Core public exports', () => {
   const root = path.resolve(import.meta.dirname, '../..');
-  const directory = mkdtempSync(path.join(os.tmpdir(), 'dogsled-executor-test-'));
+  const directory = mkdtempSync(path.join(os.tmpdir(), 'bobsled-executor-test-'));
   try {
     mkdirSync(path.join(directory, 'node_modules/@bobsled-inc'), { recursive: true });
     symlinkSync(
-      path.join(root, 'packages/dogsled'),
-      path.join(directory, 'node_modules/@bobsled-inc/dogsled'),
+      path.join(root, 'packages/bobsled-core'),
+      path.join(directory, 'node_modules/@bobsled-inc/bobsled-core'),
       'dir'
     );
     symlinkSync(
-      path.join(root, 'packages/dogsled/node_modules/zod'),
+      path.join(root, 'packages/bobsled-core/node_modules/zod'),
       path.join(directory, 'node_modules/zod'),
       'dir'
     );

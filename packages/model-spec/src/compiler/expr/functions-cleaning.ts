@@ -418,17 +418,17 @@ export function emitSha256Expr(expr: string, dialect: SupportedDialect): string 
 }
 
 export function readMatchKeySecret(): string {
-  const secret = process.env.DOGSLED_MATCH_KEY_SECRET;
+  const secret = process.env.BOBSLED_CORE_MATCH_KEY_SECRET;
   if (!secret) {
     throw new CommandError(
-      'DOGSLED_MATCH_KEY_SECRET is required when hmac_sha256 standardize transforms are used.',
+      'BOBSLED_CORE_MATCH_KEY_SECRET is required when hmac_sha256 standardize transforms are used.',
       2
     );
   }
   return secret;
 }
 
-export const MATCH_KEY_SECRET_RUNTIME_TOKEN = '__DOGSLED_RUNTIME_SECRET_DOGSLED_MATCH_KEY_SECRET__';
+export const MATCH_KEY_SECRET_RUNTIME_TOKEN = '__BOBSLED_CORE_RUNTIME_SECRET_BOBSLED_CORE_MATCH_KEY_SECRET__';
 
 export function materializeMatchKeySecretPlaceholders(
   sql: string,
@@ -444,11 +444,11 @@ export function materializeMatchKeySecretPlaceholders(
  * Scrub the materialized match-key secret out of a message before it is logged
  * or surfaced. After `materializeMatchKeySecretPlaceholders` the secret is a
  * plaintext SQL literal, so a driver that echoes the failing statement in its
- * error would otherwise leak `DOGSLED_MATCH_KEY_SECRET` into stderr / CI logs.
+ * error would otherwise leak `BOBSLED_CORE_MATCH_KEY_SECRET` into stderr / CI logs.
  * No-op when the secret is unset (nothing to redact).
  */
 export function redactMatchKeySecret(message: string): string {
-  const secret = process.env.DOGSLED_MATCH_KEY_SECRET;
+  const secret = process.env.BOBSLED_CORE_MATCH_KEY_SECRET;
   if (!secret || !message.includes(secret)) return message;
   return message.split(secret).join('***');
 }
@@ -750,7 +750,7 @@ export const CLEANING_FUNCTIONS: FunctionDef[] = [
     maxArgs: 1,
     category: 'hash',
     description:
-      'Privacy-preserving keyed match hash using DOGSLED_MATCH_KEY_SECRET and a portable nested SHA-256 construction.',
+      'Privacy-preserving keyed match hash using BOBSLED_CORE_MATCH_KEY_SECRET and a portable nested SHA-256 construction.',
     examples: ['hmac_sha256(normalize_email_uid2(email))'],
     emit: allDialects((args, d) => keyedDoubleSha256(args[0]!, d)),
   },

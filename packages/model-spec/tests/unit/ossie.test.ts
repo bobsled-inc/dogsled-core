@@ -5,7 +5,7 @@ import {
   logicalTypeForSqlType,
 } from '../../src/ossie/index.js';
 
-const ext = (data: unknown) => [{ vendor_name: 'DOGSLED', data: JSON.stringify(data) }];
+const ext = (data: unknown) => [{ vendor_name: 'BOBSLED', data: JSON.stringify(data) }];
 function fixture() {
   return {
     version: '0.2.0.dev0',
@@ -130,7 +130,7 @@ describe('pinned Ossie authoring translator', () => {
           },
         });
       },
-      /Unsupported DOGSLED property/,
+      /Unsupported BOBSLED property/,
     ],
     [
       'type conflict',
@@ -165,15 +165,15 @@ describe('pinned Ossie authoring translator', () => {
     mutate(doc);
     expect(() => translateOssieDocument(doc, 'sales.yml')).toThrow(pattern);
   });
-  it('keeps schema validity distinct from Dogsled execution support', () => {
+  it('keeps schema validity distinct from Bobsled Core execution support', () => {
     const doc = fixture();
     doc.datasets[0]!.custom_extensions = [];
     expect(() => validateOssieDocument(doc, 'sales.yml')).not.toThrow();
-    expect(() => translateOssieDocument(doc, 'sales.yml')).toThrow(/DOGSLED extension required/);
+    expect(() => translateOssieDocument(doc, 'sales.yml')).toThrow(/BOBSLED extension required/);
   });
   it('uses project-local ephemeral references without inventing a table', () => {
     const doc = fixture();
-    doc.datasets[0]!.source = 'dogsled://models/orders';
+    doc.datasets[0]!.source = 'bobsled://models/orders';
     doc.datasets[0]!.custom_extensions = ext({
       extension_version: '1',
       kind: 'derived',

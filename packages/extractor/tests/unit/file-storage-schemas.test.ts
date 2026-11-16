@@ -73,7 +73,7 @@ describe('file storage schemas', () => {
         auth: { type: 'none' },
       },
       {
-        auth_env_vars: ['DOGSLED_BLOB_ORIGIN', 'DOGSLED_BLOB_URL'],
+        auth_env_vars: ['BLOB_ORIGIN', 'BLOB_URL'],
         spec_version: '1',
         type: 'integration',
         name: 'private_upload',
@@ -81,8 +81,8 @@ describe('file storage schemas', () => {
         connection: { blob_ref: 'attachment-123' },
         auth: {
           type: 'signed_url_env',
-          url_env: 'DOGSLED_BLOB_URL',
-          origin_env: 'DOGSLED_BLOB_ORIGIN',
+          url_env: 'BLOB_URL',
+          origin_env: 'BLOB_ORIGIN',
         },
       },
     ];
@@ -125,7 +125,7 @@ describe('file storage schemas', () => {
         source: { path: '/absolute/*.csv', format: 'csv' },
       },
       {
-        auth_env_vars: ['DOGSLED_BLOB_ORIGIN', 'DOGSLED_BLOB_URL'],
+        auth_env_vars: ['BLOB_ORIGIN', 'BLOB_URL'],
         spec_version: '1',
         type: 'integration',
         name: 'unsafe_private_upload',
@@ -133,12 +133,12 @@ describe('file storage schemas', () => {
         connection: { blob_ref: 'https://blob.example.test/file.csv?token=secret' },
         auth: {
           type: 'signed_url_env',
-          url_env: 'DOGSLED_BLOB_URL',
-          origin_env: 'DOGSLED_BLOB_ORIGIN',
+          url_env: 'BLOB_URL',
+          origin_env: 'BLOB_ORIGIN',
         },
       },
       {
-        auth_env_vars: ['DOGSLED_BLOB_ORIGIN', 'DOGSLED_BLOB_URL'],
+        auth_env_vars: ['BLOB_ORIGIN', 'BLOB_URL'],
         spec_version: '1',
         type: 'integration',
         name: 'glob_private_upload',
@@ -146,8 +146,8 @@ describe('file storage schemas', () => {
         connection: { blob_ref: 'attachments/*/uploaded.csv' },
         auth: {
           type: 'signed_url_env',
-          url_env: 'DOGSLED_BLOB_URL',
-          origin_env: 'DOGSLED_BLOB_ORIGIN',
+          url_env: 'BLOB_URL',
+          origin_env: 'BLOB_ORIGIN',
         },
       },
     ];

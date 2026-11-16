@@ -16,7 +16,7 @@ export {
 export {
   classifySourceDocument,
   HOST_PROJECT_FILE_KINDS,
-  isDogsledFileType,
+  isBobsledFileType,
   MARKDOWN_PROJECT_FILE_TYPES,
   PROJECT_FILE_KINDS,
   SINGLETON_PROJECT_FILE_KINDS,

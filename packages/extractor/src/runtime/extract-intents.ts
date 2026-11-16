@@ -371,7 +371,7 @@ export function isBillableResource(resource: { billing?: unknown }): resource is
 }
 
 export function billablePlanUsage(): string {
-  return 'Use "dogsled extract estimate --plan <name>" before "dogsled extract run --plan <name>".';
+  return 'Use "bobsled extract estimate --plan <name>" before "bobsled extract run --plan <name>".';
 }
 
 export async function resolveExtractIntentPlan(

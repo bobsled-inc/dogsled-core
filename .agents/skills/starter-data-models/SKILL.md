@@ -1,6 +1,6 @@
 ---
 name: starter-data-models
-description: Overview of Dogsled's curated starter data models — the canonical three-layer Model Spec bundles (bronze source, silver staging, gold mart) shipped for 23 popular integrations. Explains the suggested shape, the mechanical source+staging recipe, naming conventions, and how to adapt the gold marts to a user's actually-loaded tables. Entry point that routes to the per-integration starter-models-<integration> skills.
+description: Overview of Bobsled Core's curated starter data models — the canonical three-layer Model Spec bundles (bronze source, silver staging, gold mart) shipped for 23 popular integrations. Explains the suggested shape, the mechanical source+staging recipe, naming conventions, and how to adapt the gold marts to a user's actually-loaded tables. Entry point that routes to the per-integration starter-models-<integration> skills.
 exposed: true
 triggers:
   - starter data models
@@ -17,7 +17,7 @@ triggers:
 
 # Starter data models
 
-Dogsled ships a curated set of **starter data models** — pre-built Dogsled
+Bobsled Core ships a curated set of **starter data models** — pre-built Bobsled Core
 Model Spec (Model Spec) bundles that turn a freshly loaded integration into an
 analytics-ready warehouse with no modeling from scratch. Bundles can include
 named metrics and declared relationships alongside their models. They exist for
@@ -38,7 +38,7 @@ Offer starter data models **proactively, right after an extract+load
 pipeline for a supported source has been onboarded** and the raw tables
 have landed. The natural pitch:
 
-> "I've loaded your Stripe data into `raw`. Dogsled ships a curated set of
+> "I've loaded your Stripe data into `raw`. Bobsled Core ships a curated set of
 > Stripe analytics models — customers, charges, invoices, subscription
 > status, daily overview. Want me to stand those up on top of your
 > loaded tables?"
@@ -48,7 +48,7 @@ for X?", "are there prebuilt models for Stripe?", or "give me the
 standard analytics shape for this source".
 
 If the source is **not** one of the 23 below, there is no starter
-bundle — author models from scratch with `dogsled-author-model-spec-model` instead.
+bundle — author models from scratch with `bobsled-author-model-spec-model` instead.
 
 ## The three layers
 
@@ -62,7 +62,7 @@ slice per integration **resource** (e.g. Stripe `charges`, `customers`):
 | Gold   | `type: model` (analytics table)    | `<integration>__<name>`         | `table`         | **Yes — `starter-models-<integration>` ships these verbatim** |
 
 The per-integration skills ship the gold marts, curated Model Spec metrics, and
-relationships. `dogsled model models install <integration>` writes the semantic
+relationships. `bobsled model models install <integration>` writes the semantic
 files under `metrics/<integration>/` and `relationships/<integration>/` with
 the source, staging, and mart files. The bronze sources and silver staging
 models are derived mechanically from the integration's resource schema. The
@@ -142,7 +142,7 @@ For an integration `linear` with a resource `issues`:
 
 ## The source + staging recipe (you author these two layers)
 
-This is the deterministic recipe Dogsled uses to derive bronze and silver
+This is the deterministic recipe Bobsled Core uses to derive bronze and silver
 from an integration resource's output schema. Apply it per resource.
 
 ### Bronze source (`raw_<resource>`)
@@ -154,7 +154,7 @@ type: source
 source_type: warehouse_table
 connection: <connection> # integration name unless overridden
 table: <schema>.raw_<integration>__<resource> # default schema: raw
-description: Raw <integration> <resource> records as extracted by Dogsled.
+description: Raw <integration> <resource> records as extracted by Bobsled Core.
 trust_tier: bronze
 schema:
   columns:
@@ -246,7 +246,7 @@ A pipeline's `embed:` block adds one `<field>_embedding` column per
 configured field to the extracted stream. These columns must propagate
 through the bronze source and silver staging. Two places to mention:
 
-- **Bronze source**: the extractor's `dogsled pipeline … --emit-model-spec-source`
+- **Bronze source**: the extractor's `bobsled pipeline … --emit-model-spec-source`
   scaffold pre-fills these columns with `type: VECTOR`, `dimension`, and
   `embedded_from`. Copy the scaffold output verbatim into the
   handcrafted source YAML.
@@ -284,7 +284,7 @@ type: source
 source_type: warehouse_table
 connection: linear
 table: raw.raw_linear__issues
-description: Raw linear issues records as extracted by Dogsled.
+description: Raw linear issues records as extracted by Bobsled Core.
 trust_tier: bronze
 schema:
   columns:
@@ -348,7 +348,7 @@ materialization:
 ## Validate
 
 After authoring, compile the bundle against the target dialect
-(`dogsled model compile` or the unified CLI equivalent) to catch broken
+(`bobsled model compile` or the unified CLI equivalent) to catch broken
 `source.ref`s and missing columns before running a model pipeline. For
 materialization choices and the full Model Spec authoring grammar, see
-`dogsled-author-model-spec-model`.
+`bobsled-author-model-spec-model`.

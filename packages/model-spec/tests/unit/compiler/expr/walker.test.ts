@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mapExpr, parseExprField } from '../../../../src/compiler/expr/index.js';
-import type { DogsledExpr } from '../../../../src/compiler/expr/types.js';
+import type { BobsledExpr } from '../../../../src/compiler/expr/types.js';
 
 describe('mapExpr runtime kind-checks', () => {
   it('throws when transform changes window fn kind from function_call', () => {
@@ -9,7 +9,7 @@ describe('mapExpr runtime kind-checks', () => {
     expect(ast.kind).toBe('window');
 
     // Transform that replaces function_call nodes with a literal
-    const badTransform = (node: DogsledExpr): DogsledExpr => {
+    const badTransform = (node: BobsledExpr): BobsledExpr => {
       if (node.kind === 'function_call') {
         return { kind: 'literal_number', value: 1, raw: '1' };
       }
@@ -23,7 +23,7 @@ describe('mapExpr runtime kind-checks', () => {
 
   it('throws when transform changes window frame kind from raw_sql', () => {
     // Build a window AST with a raw_sql frame manually
-    const ast: DogsledExpr = {
+    const ast: BobsledExpr = {
       kind: 'window',
       fn: { kind: 'function_call', name: 'row_number', args: [] },
       orderBy: [{ expr: { kind: 'column_ref', column: 'x' } }],
@@ -31,7 +31,7 @@ describe('mapExpr runtime kind-checks', () => {
     };
 
     // Transform that replaces raw_sql nodes with a literal
-    const badTransform = (node: DogsledExpr): DogsledExpr => {
+    const badTransform = (node: BobsledExpr): BobsledExpr => {
       if (node.kind === 'raw_sql') {
         return { kind: 'literal_null' };
       }

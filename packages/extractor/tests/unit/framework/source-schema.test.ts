@@ -292,19 +292,19 @@ describe('ResourceSpecSchema first-class resource fields', () => {
 });
 
 describe('SourceSchema — orchestrator extension keys', () => {
-  it('accepts top-level keys with the `dogsled_` prefix and strips them', () => {
+  it('accepts top-level keys with the `bobsled_` prefix and strips them', () => {
     const result = SourceSchema.safeParse({
       ...sourceSpec,
-      dogsled_connection_ref: 'product_data',
-      dogsled_internal_id: 42,
+      bobsled_connection_ref: 'product_data',
+      bobsled_internal_id: 42,
     });
     expect(result.success).toBe(true);
     if (result.success) {
       // Extension keys are stripped before strict validation runs and
-      // do not appear on the parsed object — Dogsled itself never reads
+      // do not appear on the parsed object — Bobsled Core itself never reads
       // them, so they're invisible from the consumer's perspective.
-      expect(result.data).not.toHaveProperty('dogsled_connection_ref');
-      expect(result.data).not.toHaveProperty('dogsled_internal_id');
+      expect(result.data).not.toHaveProperty('bobsled_connection_ref');
+      expect(result.data).not.toHaveProperty('bobsled_internal_id');
     }
   });
 
@@ -342,7 +342,7 @@ describe('SourceSchema — concrete SQL connections', () => {
   ])('rejects unresolved connection strings for %s', (type) => {
     for (const connection of [
       '${{ bobsled.connection.warehouse-prod }}',
-      '${{ dogsled.connection.warehouse-prod }}',
+      '${{ bobsled.connection.warehouse-prod }}',
     ]) {
       expect(
         SourceSchema.safeParse({
@@ -364,7 +364,7 @@ describe('SourceSchema — concrete SQL connections', () => {
 
 describe('SourceSchema — metadata-only sources (no transports)', () => {
   // Orchestrator-managed bundles that exist purely as Model Spec source
-  // metadata don't need transports — Dogsled CLI never invokes them.
+  // metadata don't need transports — Bobsled Core CLI never invokes them.
   it('accepts a source with an empty transports array', () => {
     const result = SourceSchema.safeParse({
       spec_version: '2',

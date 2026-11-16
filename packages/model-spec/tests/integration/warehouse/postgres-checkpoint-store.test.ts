@@ -46,7 +46,7 @@ vi.mock('@bobsled-inc/connections', async (importOriginal) => {
 });
 
 describe.skipIf(
-  !process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
+  !process.env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
 )('warehouse checkpoints', () => {
   const dirs: string[] = [];
   const cleanups: Array<() => Promise<void>> = [];
@@ -60,8 +60,8 @@ describe.skipIf(
     const directory = await mkdtemp(join(tmpdir(), 'warehouse-checkpoint-'));
     dirs.push(directory);
     for (const name of ['HOST', 'DATABASE', 'USER', 'PASSWORD']) {
-      if (!process.env[`DOGSLED_MODEL_SPEC_POSTGRES_${name}`]) {
-        throw new Error(`DOGSLED_MODEL_SPEC_POSTGRES_${name} is required`);
+      if (!process.env[`BOBSLED_CORE_MODEL_SPEC_POSTGRES_${name}`]) {
+        throw new Error(`BOBSLED_CORE_MODEL_SPEC_POSTGRES_${name} is required`);
       }
     }
     const integration: PostgresIntegration = {
@@ -70,14 +70,14 @@ describe.skipIf(
       name: 'lake',
       source_type: 'postgres',
       connection: {
-        host: process.env.DOGSLED_MODEL_SPEC_POSTGRES_HOST!,
-        port: Number(process.env.DOGSLED_MODEL_SPEC_POSTGRES_PORT ?? 5432),
-        database: process.env.DOGSLED_MODEL_SPEC_POSTGRES_DATABASE!,
+        host: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_HOST!,
+        port: Number(process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PORT ?? 5432),
+        database: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_DATABASE!,
       },
       auth: {
         type: 'password',
-        user: process.env.DOGSLED_MODEL_SPEC_POSTGRES_USER!,
-        password: process.env.DOGSLED_MODEL_SPEC_POSTGRES_PASSWORD!,
+        user: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_USER!,
+        password: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PASSWORD!,
       },
     };
     const schema = `checkpoint_test_${randomUUID().replaceAll('-', '')}`;
@@ -163,7 +163,7 @@ describe.skipIf(
     const runner = await resolveRunner(integration);
     try {
       await session.create(snapshot);
-      const table = `__dogsled_cp_${digestAgenticState(snapshot.key).slice(0, 48)}_p`;
+      const table = `__bobsled_cp_${digestAgenticState(snapshot.key).slice(0, 48)}_p`;
       await runner.run(`UPDATE "${schema}"."${table}" SET "data" = 'invalid-base64'`);
       await expect(session.read()).rejects.toMatchObject({ code: 'corrupt' });
     } finally {
@@ -188,7 +188,7 @@ describe.skipIf(
       stateStore: createWarehouseCheckpointStore(integration, { schema }),
     });
     expect(f.host.executeAgent).not.toHaveBeenCalled();
-    await expect(access(join(directory, '.dogsled/model-spec'))).rejects.toMatchObject({
+    await expect(access(join(directory, '.bobsled/model-spec'))).rejects.toMatchObject({
       code: 'ENOENT',
     });
   });
@@ -219,8 +219,8 @@ describe.skipIf(
     const first = await store.acquire(key);
     const runner = await resolveRunner(integration);
     try {
-      const table = `__dogsled_cp_${digestAgenticState(key).slice(0, 48)}_c`;
-      if (typeof table !== 'string' || !/^__dogsled_cp_[a-f0-9]{48}_c$/.test(table)) {
+      const table = `__bobsled_cp_${digestAgenticState(key).slice(0, 48)}_c`;
+      if (typeof table !== 'string' || !/^__bobsled_cp_[a-f0-9]{48}_c$/.test(table)) {
         throw new Error('Missing test control table');
       }
       await runner.run(`UPDATE "${schema}"."${table}" SET "expires" = 0`);

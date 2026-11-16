@@ -203,7 +203,7 @@ describe.skipIf(!CLI_READY)('model profile CLI (e2e)', () => {
     const r = run(
       ['profile', 'ecom.raw_customers', '--runner', runnerPath, '--integration', 'ecom'],
       projectDir,
-      { DOGSLED_OUTPUT_FORMAT: 'json' }
+      { BOBSLED_CORE_OUTPUT_FORMAT: 'json' }
     );
 
     expect(r.exitCode).toBe(0);

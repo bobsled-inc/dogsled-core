@@ -523,7 +523,7 @@ export class PgVectorDestination implements DatabaseDestination {
   ): Promise<void> {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map((k) => quoteIdentifier(k)).join(', ');
-    const indexName = quoteIdentifier(`_dogsled_uq_${tableName}`);
+    const indexName = quoteIdentifier(`_bobsled_uq_${tableName}`);
     const client = await pool.connect();
     try {
       await withRetry(() =>
@@ -627,7 +627,7 @@ export class PgVectorDestination implements DatabaseDestination {
       throw new Error('merge strategy requires at least one key column');
     }
 
-    const stagingName = `_dogsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
+    const stagingName = `_bobsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
     const quotedStaging = quoteIdentifier(stagingName);
 
     const client = await pool.connect();

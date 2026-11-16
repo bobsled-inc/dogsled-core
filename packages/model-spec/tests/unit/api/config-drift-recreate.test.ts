@@ -9,7 +9,7 @@
  *   3. Second run, strategy changed — DROP + recreate, new strategy SQL.
  *   4. Second run, target_schema changed — DROP against PRIOR destination.
  *   5. on_schema_change: fail, columns added — existing fail message intact.
- *   6. Stale .dogsled/model-spec/run-state.json present — Dogsled ignores the file.
+ *   6. Stale .bobsled/model-spec/run-state.json present — Bobsled Core ignores the file.
  *   7. Partial failure + state-write throws — covered in programmatic-state.test.ts.
  */
 import * as fs from 'node:fs/promises';
@@ -293,9 +293,9 @@ describe('runProject — materialization config drift detection', () => {
   });
 
   it('does not spuriously recreate when prior state lacks the new config fields (upgrade path)', async () => {
-    // Spec §3: "A model that has prior state from a previous Dogsled version
+    // Spec §3: "A model that has prior state from a previous Bobsled Core version
     // (i.e. lacks the newly-tracked config fields) must NOT trigger a
-    // spurious recreate on its first run under the new Dogsled version."
+    // spurious recreate on its first run under the new Bobsled Core version."
     const projectDir = await writeIncrementalProject();
 
     // Hand-build an "old format" prior state — schemaVersion lacking the new
@@ -307,7 +307,7 @@ describe('runProject — materialization config drift detection', () => {
           materialization: 'incremental',
           specChecksum: 'old-checksum-from-prior-version',
           // No strategy / uniqueKey / incrementalFilter / onSchemaChange /
-          // targetSchema / priorFqName — older Dogsled didn't write them.
+          // targetSchema / priorFqName — older Bobsled Core didn't write them.
         },
       },
     };
@@ -321,7 +321,7 @@ describe('runProject — materialization config drift detection', () => {
 
     expect(result.ok).toBe(true);
     const sql = result.byIntegration[0]?.statements.map((s) => s.sql).join('\n') ?? '';
-    // No DROP — Dogsled must proceed as an incremental MERGE against the
+    // No DROP — Bobsled Core must proceed as an incremental MERGE against the
     // existing table even though it can't verify all config matched, because
     // "don't know" must not equal "rebuild and lose data."
     expect(sql).not.toContain('DROP TABLE IF EXISTS');

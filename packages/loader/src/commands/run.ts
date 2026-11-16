@@ -148,7 +148,7 @@ export async function runDatabaseLoader(
   }
 
   const ownedTempDir = await fs.mkdtemp(
-    path.join(providedTempRoot ?? os.tmpdir(), 'dogsled-loader-')
+    path.join(providedTempRoot ?? os.tmpdir(), 'bobsled-loader-')
   );
 
   const destination =
@@ -169,7 +169,7 @@ export async function runDatabaseLoader(
   const streamStrategies = new Map<string, LoadStrategy>();
   // Final destination table -> original protocol stream. Load execution is
   // keyed by table, but structured progress must retain the source identity so
-  // Dogsled can attribute rows when `table:` replaces the normal prefix.
+  // Bobsled Core can attribute rows when `table:` replaces the normal prefix.
   const sourceStreams = new Map<string, string>();
   const seenReconcileSchemaStreams = new Set<string>();
   const buffers = new Map<string, RecordBuffer>();
@@ -254,7 +254,7 @@ export async function runDatabaseLoader(
    *
    * A per-stream `table:` override REPLACES the whole computed name — the
    * `tablePrefix` is deliberately NOT re-applied on top of it (documented
-   * `dogsled.yml` semantics: `table: raw_stripe__subs_v2` is the final table).
+   * `bobsled.yml` semantics: `table: raw_stripe__subs_v2` is the final table).
    * Everything else in the database loader (schemas, buffers, strategies,
    * pending loads, checkpoints) is keyed by this return value, so overriding
    * here keeps that keying consistent everywhere.

@@ -208,14 +208,14 @@ async function rewriteFile(
 export async function rewriteBatch(options: RewriteBatchOptions): Promise<BatchMessage> {
   if (options.message.encoding.format === 'parquet') {
     throw new CommandError(
-      `Parquet BATCH encoding is not yet supported by dogsled embed. Set your extractor's batch format to "jsonl" or "jsonl+gzip" when using embeddings, or remove the embed config for stream "${options.message.stream}".`,
+      `Parquet BATCH encoding is not yet supported by bobsled embed. Set your extractor's batch format to "jsonl" or "jsonl+gzip" when using embeddings, or remove the embed config for stream "${options.message.stream}".`,
       EXIT_VALIDATION
     );
   }
 
   const tmpRoot =
     options.tmpDir ??
-    path.join(process.env['DOGSLED_EMBEDDER_TMP_DIR'] ?? '/tmp', `dogsled-embed-${process.pid}`);
+    path.join(process.env['BOBSLED_CORE_EMBEDDER_TMP_DIR'] ?? '/tmp', `bobsled-embed-${process.pid}`);
   const safeStream = toSafePathSegment(options.message.stream);
   const streamDir = path.join(tmpRoot, safeStream);
   mkdirSync(streamDir, { recursive: true });

@@ -1,7 +1,7 @@
 ## Incremental sync (cursors)
 
 By default a resource does a **full refresh** every run. To pull only new or
-changed records, add an `extract.incremental` block. Dogsled persists a per-stream
+changed records, add an `extract.incremental` block. Bobsled Core persists a per-stream
 **bookmark** as a `STATE` protocol message and, on the next run, uses it to ask
 the API for only the rows past the last cursor value.
 
@@ -13,7 +13,7 @@ Core rules:
   `SCHEMA` message's `cursor_field` and the `topup` backfill command only honor
   that placement.
 - `cursor_field` **must** be one of the declared `output` fields — it is the
-  column whose value Dogsled tracks as the high-water mark.
+  column whose value Bobsled Core tracks as the high-water mark.
 - After a run the bookmark advances to the largest `cursor_field` value seen and
   is emitted as a `STATE` message (`{ cursor_field, cursor_type, cursor_value }`).
   Durable runs persist it. **`--limit` runs are always preview-only and never
@@ -33,7 +33,7 @@ Choose one of four strategies via `strategy:`. Quick pick:
 
 ### `cursor` — saved cursor sent back as a request parameter (default; HTTP only)
 
-The simplest and most common case. Dogsled sends the saved cursor value back as a
+The simplest and most common case. Bobsled Core sends the saved cursor value back as a
 request parameter named by `cursor_param`, so the API returns only newer rows.
 
 | field          | required | meaning                                                          |
@@ -111,7 +111,7 @@ extract:
 Use when the cursor must be expressed as an explicit time range, or when you
 want bounded backfill windows. `since_argument` / `until_argument` /
 `filter_argument` are the **names of the request parameters** that receive the
-window bounds — Dogsled sets them directly on each request (query-string params
+window bounds — Bobsled Core sets them directly on each request (query-string params
 for `GET`, body fields for a `POST` with `request_body`, tool arguments for
 MCP). No `${{ input.X }}` wiring is required.
 
@@ -161,7 +161,7 @@ nest into `request_body`), e.g. `since_argument: filter.start_time`.
 
 ### `server_filter` — time windows routed through the `query:` block (HTTP + MCP)
 
-Same fields as `filter`, but the bounds are not sent as raw parameters. Dogsled
+Same fields as `filter`, but the bounds are not sent as raw parameters. Bobsled Core
 converts the window into `cursor_field gte <since>` / `lte <until>` and emits
 them through the resource's `query.filters` block, reusing its `bind` / `compile`
 targets. Use this when the resource already exposes a `query:` filter surface.
@@ -268,11 +268,11 @@ durations (e.g. `2h`, `1d`) are valid **only** for `timestamp` cursors.
 Each step proves a different thing — only two live runs prove resumption:
 
 ```bash
-dogsled extract validate <source>        # shape only: the incremental block parses
-dogsled extract verify <source> --mock   # request shaping only — NOT cross-run resumption
+bobsled extract validate <source>        # shape only: the incremental block parses
+bobsled extract verify <source> --mock   # request shaping only — NOT cross-run resumption
 # the two runs below need live credentials and prove the bookmark advances:
-dogsled extract run <source> --resource <r>   # first run: full fetch, records the bookmark
-dogsled extract run <source> --resource <r>   # second run: resumes from the bookmark
+bobsled extract run <source> --resource <r>   # first run: full fetch, records the bookmark
+bobsled extract run <source> --resource <r>   # second run: resumes from the bookmark
 ```
 
 `verify --mock` runs a single pass from empty state, so it confirms the

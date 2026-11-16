@@ -20,10 +20,10 @@ const onMerge = parse(onMergeSource);
 const ci = parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 
 describe('release workflow boundaries', () => {
-  it('requires a manual dispatch in dogsled-core on every job', () => {
+  it('requires a manual dispatch in bobsled-core on every job', () => {
     expect(Object.keys(workflow.on)).toEqual(['workflow_dispatch']);
     for (const job of Object.values(workflow.jobs))
-      expect(job.if).toContain("github.repository == 'bobsled-inc/dogsled-core'");
+      expect(job.if).toContain("github.repository == 'bobsled-inc/bobsled-core'");
     expect(workflow.jobs.prepare.if).toContain("github.ref == 'refs/heads/main'");
     expect(workflow.on.workflow_dispatch.inputs.mode.options).toContain('bootstrap');
   });
@@ -301,7 +301,7 @@ describe('release on merge trigger', () => {
   it('runs on push to main while auto release is enabled', () => {
     expect(onMerge.on).toEqual({ push: { branches: ['main'] } });
     expect(onMergeSource).not.toMatch(/pull_request_target|pull_request|workflow_run/);
-    expect(job.if).toContain("github.repository == 'bobsled-inc/dogsled-core'");
+    expect(job.if).toContain("github.repository == 'bobsled-inc/bobsled-core'");
     expect(job.if).toContain("(vars.AUTO_RELEASE == 'on' || vars.AUTO_RELEASE == 'dry-run')");
   });
 

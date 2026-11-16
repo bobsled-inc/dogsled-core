@@ -22,7 +22,7 @@ const event = (author_association = 'NONE') => ({
 });
 const botComment = {
   user: { login: 'github-actions[bot]', type: 'Bot' },
-  body: '<!-- dogsled-contribution-policy -->',
+  body: '<!-- bobsled-core-contribution-policy -->',
 };
 
 function api(files, comments = []) {
@@ -35,7 +35,7 @@ const apply = (request, options = {}) =>
   applyContributionPolicy({
     request,
     event: event(),
-    repository: 'bobsled-inc/dogsled-core',
+    repository: 'bobsled-inc/bobsled-core',
     ...options,
   });
 
@@ -74,12 +74,12 @@ describe('public metadata-only contribution policy', () => {
     expect(request.mock.calls.filter(([method]) => method === 'POST')).toEqual([
       [
         'POST',
-        '/repos/bobsled-inc/dogsled-core/issues/42/labels',
+        '/repos/bobsled-inc/bobsled-core/issues/42/labels',
         { labels: ['contribution-policy'] },
       ],
       [
         'POST',
-        '/repos/bobsled-inc/dogsled-core/issues/42/comments',
+        '/repos/bobsled-inc/bobsled-core/issues/42/comments',
         expect.objectContaining({ body: expect.stringContaining('/CONTRIBUTING.md') }),
       ],
     ]);
@@ -166,7 +166,7 @@ describe('public metadata-only contribution policy', () => {
       contents: 'read',
       'pull-requests': 'write',
     });
-    expect(workflow.jobs.policy.if).toContain("github.repository == 'bobsled-inc/dogsled-core'");
+    expect(workflow.jobs.policy.if).toContain("github.repository == 'bobsled-inc/bobsled-core'");
     expect(workflow.concurrency['cancel-in-progress']).toBe(false);
     const actions = workflow.jobs.policy.steps.filter((step) => step.uses);
     expect(actions).toHaveLength(1);

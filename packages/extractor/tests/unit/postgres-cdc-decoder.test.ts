@@ -244,7 +244,7 @@ describe('PgoutputDecoder', () => {
   it('rejects unsupported TRUNCATE messages', () => {
     const decoder = new PgoutputDecoder();
     expect(() => decoder.decodeMessage(Buffer.from('T', 'utf8'))).toThrow(
-      'pgoutput TRUNCATE messages are not supported in Dogsled CDC'
+      'pgoutput TRUNCATE messages are not supported in Bobsled Core CDC'
     );
   });
 

@@ -5,7 +5,7 @@
  * — the generator does not infer source schemas from the SQL.
  *
  * Failure mode is strict: any unsupported construct (subquery in FROM,
- * correlated subquery, unrecognized function name in DogsledExpr terms) throws
+ * correlated subquery, unrecognized function name in BobsledExpr terms) throws
  * a `ModelSpecGenerationError`. Callers can `try/catch` and surface the
  * `error.code` discriminant.
  */

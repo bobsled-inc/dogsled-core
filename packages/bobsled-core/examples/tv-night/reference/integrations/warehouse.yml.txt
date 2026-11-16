@@ -1,0 +1,9 @@
+spec_version: '1'
+type: integration
+name: warehouse
+source_type: duckdb
+connection:
+  schema: analytics
+auth:
+  type: file
+  path: .bobsled/bobsled.duckdb

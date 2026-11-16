@@ -1,5 +1,5 @@
 import { stringify } from 'yaml';
-import type { ExplorerCommand, ExplorerDogsledCommand } from './command-links.js';
+import type { ExplorerCommand, ExplorerBobsledCommand } from './command-links.js';
 
 export interface PipelineConfig {
   selectedIntegrations: string[];
@@ -29,7 +29,7 @@ export interface PipelineCliOptions {
   resources?: string[];
 }
 
-export function buildPipelineRunCommands(config: PipelineConfig): ExplorerDogsledCommand[] {
+export function buildPipelineRunCommands(config: PipelineConfig): ExplorerBobsledCommand[] {
   return config.selectedIntegrations.map((integration) => ({
     command: 'pipeline',
     args: buildPipelineCliArgs({
@@ -54,7 +54,7 @@ export function isPipelineConfig(value: unknown): value is PipelineConfig {
   );
 }
 
-export function generateDogsledYml(config: PipelineConfig): string {
+export function generateBobsledYml(config: PipelineConfig): string {
   const pipelines: Record<string, PipelineEntry> = {};
   for (const integration of config.selectedIntegrations) {
     pipelines[integration] = {

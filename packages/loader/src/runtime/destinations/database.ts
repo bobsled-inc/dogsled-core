@@ -14,7 +14,7 @@ import {
 
 export const SYSTEM_COLUMNS = {
   TIME_EXTRACTED: '_time_extracted',
-  LOADED_AT: '_dogsled_loaded_at',
+  LOADED_AT: '_bobsled_loaded_at',
 } as const;
 
 /** Reject schemas that cannot produce a valid destination table or load query. */

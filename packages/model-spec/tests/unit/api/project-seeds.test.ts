@@ -9,7 +9,7 @@ import { discoverProjectSeeds } from '../../../src/api/project-seeds.js';
 const roots: string[] = [];
 
 function project(): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-seeds-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-project-seeds-'));
   roots.push(root);
   return root;
 }

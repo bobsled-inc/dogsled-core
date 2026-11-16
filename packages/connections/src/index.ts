@@ -1,7 +1,7 @@
 /**
  * @bobsled-inc/connections
  *
- * Shared connection plumbing for the Dogsled monorepo: integration + target YAML
+ * Shared connection plumbing for the Bobsled Core monorepo: integration + target YAML
  * schemas, `${{ env.VAR }}` secret interpolation, per-dialect connection
  * construction, and the runner-resolution dispatcher consumed by extractor,
  * loader, and model-spec.

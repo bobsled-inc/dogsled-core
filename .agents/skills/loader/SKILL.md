@@ -14,23 +14,23 @@ triggers:
   - append merge full refresh
 ---
 
-# Dogsled loader — Data Loading Reference
+# Bobsled Core loader — Data Loading Reference
 
-Load Dogsled protocol data into analytical stores.
+Load Bobsled Core protocol data into analytical stores.
 
 ## Quick Reference
 
-**Prefer `dogsled pipeline`** for extract+load workflows — it handles subprocess orchestration automatically:
+**Prefer `bobsled pipeline`** for extract+load workflows — it handles subprocess orchestration automatically:
 
 ```bash
 # Extract + load into local parquet files
-dogsled pipeline --integration github --format parquet
+bobsled pipeline --integration github --format parquet
 
 # Extract + load into DuckDB
-dogsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
 
 # Extract + load into BigQuery
-dogsled pipeline --integration vantage costs \
+bobsled pipeline --integration vantage costs \
   --dest bigquery \
   --project-id my-project \
   --dataset-id raw \
@@ -38,25 +38,25 @@ dogsled pipeline --integration vantage costs \
   --table-prefix vantage__
 
 # Extract + load into GCS
-dogsled pipeline --integration github --dest gcs --gcs-bucket my-bucket --format parquet
+bobsled pipeline --integration github --dest gcs --gcs-bucket my-bucket --format parquet
 ```
 
 For standalone loader operations (checking connectivity, querying loaded data):
 
 ```bash
 # Check destination connectivity
-dogsled load check --dest duckdb --db-path ./data.duckdb
-dogsled load check --dest bigquery --project-id my-project --dataset-id raw
+bobsled load check --dest duckdb --db-path ./data.duckdb
+bobsled load check --dest bigquery --project-id my-project --dataset-id raw
 
 # Query loaded data
-dogsled load query "SELECT * FROM repos LIMIT 10" --db-path ./data.duckdb
-dogsled load query "SELECT * FROM raw.repos LIMIT 10" --dest bigquery --project-id my-project --dataset-id raw
+bobsled load query "SELECT * FROM repos LIMIT 10" --db-path ./data.duckdb
+bobsled load query "SELECT * FROM raw.repos LIMIT 10" --dest bigquery --project-id my-project --dataset-id raw
 ```
 
 For advanced use cases, you can pipe extract and load manually:
 
 ```bash
-dogsled extract run --integration github repos | dogsled load run --dest duckdb --db-path ./data.duckdb
+bobsled extract run --integration github repos | bobsled load run --dest duckdb --db-path ./data.duckdb
 ```
 
 ## Destinations
@@ -85,7 +85,7 @@ The loader resolves strategy per-stream with this priority:
 ### Merge Strategy Detail
 
 1. Records buffered to temp JSONL file
-2. Loaded into `_dogsled_stg_<stream>` staging table
+2. Loaded into `_bobsled_stg_<stream>` staging table
 3. `MERGE INTO <stream> USING <staging>` on `key_properties`
 4. Matched rows: UPDATE all non-key columns
 5. Unmatched rows: INSERT
@@ -98,7 +98,7 @@ The loader automatically adds these columns:
 | Column               | Source                     | Description                                     |
 | -------------------- | -------------------------- | ----------------------------------------------- |
 | `_time_extracted`    | Extractor (RECORD message) | When the record was extracted from the API      |
-| `_dogsled_loaded_at` | Loader (at merge time)     | When the record was loaded into the destination |
+| `_bobsled_loaded_at` | Loader (at merge time)     | When the record was loaded into the destination |
 
 ## Output Formats (File Destinations)
 
@@ -115,7 +115,7 @@ All formats are produced via DuckDB `COPY` (except Arrow which uses IPC buffers)
 
 `local`, `gcs` and `s3` destinations write `<prefix><stream>/<stream>-<n>.<ext>`. One optional setting changes that. It is off by default, and without it the files are exactly the same as before.
 
-| `dogsled.yml` field | `load run` flag             | Effect                                                                                                                                                                           |
+| `bobsled.yml` field | `load run` flag             | Effect                                                                                                                                                                           |
 | ------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `stream_subfolder`  | `--stream-subfolder <path>` | Adds a folder inside each stream's folder: `orders/<path>/orders-0.parquet`. A relative path of letters, digits, dots, dashes, equals signs and underscores, with no `.` or `..` |
 
@@ -160,7 +160,7 @@ table through the destination's migration tooling.
 Preview what the loader would do without actually loading:
 
 ```bash
-dogsled extract run --integration github repos | dogsled load run --dest duckdb --db-path ./data.duckdb --dry-run
+bobsled extract run --integration github repos | bobsled load run --dest duckdb --db-path ./data.duckdb --dry-run
 ```
 
 Shows the strategy table (stream name, load strategy, key properties) without writing data.

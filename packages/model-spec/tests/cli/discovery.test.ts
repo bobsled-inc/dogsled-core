@@ -34,14 +34,14 @@ describe.skipIf(!CLI_READY)('model CLI (e2e)', { timeout: CLI_SUITE_TIMEOUT_MS }
 
   describe('model lineage', () => {
     it('renders the full dependency graph', () => {
-      const r = run(['lineage'], projectDir, { DOGSLED_OUTPUT_FORMAT: 'text' });
+      const r = run(['lineage'], projectDir, { BOBSLED_CORE_OUTPUT_FORMAT: 'text' });
       expect(r.exitCode).toBe(0);
       expect(r.stdout).toContain('stg_orders');
       expect(r.stdout).toContain('fct_orders');
     });
 
     it('renders lineage for a single model', () => {
-      const r = run(['lineage', 'fct_orders'], projectDir, { DOGSLED_OUTPUT_FORMAT: 'text' });
+      const r = run(['lineage', 'fct_orders'], projectDir, { BOBSLED_CORE_OUTPUT_FORMAT: 'text' });
       expect(r.exitCode).toBe(0);
       expect(r.stdout).toContain('fct_orders');
     });

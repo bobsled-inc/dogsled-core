@@ -8,11 +8,11 @@ import { parse } from 'yaml';
 import { findGeneratedDrift } from '../scripts/check-generated.js';
 import { REPO_ROOT } from '../scripts/build-plugins.js';
 
-const skillPath = 'plugins/dogsled-core/skills/example/SKILL.md';
+const skillPath = 'plugins/bobsled-core/skills/example/SKILL.md';
 const catalogPath = '.agents/plugins/marketplace.json';
 
 function fixture(run: (root: string, expected: Record<string, string>) => void): void {
-  const root = mkdtempSync(join(tmpdir(), 'dogsled-generated-check-'));
+  const root = mkdtempSync(join(tmpdir(), 'bobsled-generated-check-'));
   const expected = { [skillPath]: 'Current skill\n', [catalogPath]: '{}\n' };
   try {
     for (const [path, content] of Object.entries(expected)) {
@@ -38,7 +38,7 @@ describe('generated skill check before builds', () => {
   it('detects missing files, including a new skill not yet generated', () => {
     fixture((root, expected) => {
       rmSync(join(root, catalogPath));
-      const newSkill = 'plugins/dogsled-core/skills/new-skill/SKILL.md';
+      const newSkill = 'plugins/bobsled-core/skills/new-skill/SKILL.md';
       expect(findGeneratedDrift(root, { ...expected, [newSkill]: 'New skill\n' })).toEqual(
         [catalogPath, newSkill].sort()
       );
@@ -47,7 +47,7 @@ describe('generated skill check before builds', () => {
 
   it('detects removed skills and unexpected non-Markdown support files', () => {
     fixture((root, expected) => {
-      const extra = 'plugins/dogsled-core/skills/example/stale.js';
+      const extra = 'plugins/bobsled-core/skills/example/stale.js';
       writeFileSync(join(root, extra), 'stale');
       expect(findGeneratedDrift(root, { [catalogPath]: expected[catalogPath]! })).toEqual(
         [skillPath, extra].sort()

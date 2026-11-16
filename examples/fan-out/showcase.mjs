@@ -38,7 +38,7 @@ export async function run(ctx) {
     assert.equal(Number((await ctx.sql('SELECT count(*) AS n FROM customers')).rows[0].n), 200);
     assert.equal(await postgresSql('SELECT count(*) FROM fanout.customers'), '200');
     assert.equal(
-      await postgresSql('SELECT count(_dogsled_loaded_at) FROM fanout.customers'),
+      await postgresSql('SELECT count(_bobsled_loaded_at) FROM fanout.customers'),
       '200'
     );
     const files = (await readdir(path.join(ctx.project, 'archive'), { recursive: true })).filter(
@@ -53,9 +53,9 @@ export async function run(ctx) {
     assert.equal(count, 200);
     assert.equal(api.requests.filter((request) => request.path === '/customers').length, 2);
     api.assertAuth();
-    const { DogsledConfigSchema } = await publicApi('manifest');
+    const { BobsledConfigSchema } = await publicApi('manifest');
     assert.equal(
-      DogsledConfigSchema.safeParse({
+      BobsledConfigSchema.safeParse({
         destinations: { lake: { type: 'ducklake', catalog_url: 'ducklake:catalog.ducklake' } },
         pipelines: {},
       }).success,

@@ -64,8 +64,8 @@ describe('ClickHouseWarehouseClient', () => {
 
   it('uses a connection-time SSRF-safe agent for ClickHouse requests', async () => {
     const { createClient } = createClientMocks([]);
-    const originalAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    const originalAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     setDnsLookupForTests(async () => ({ address: '127.0.0.1', family: 4 }));
     const client = new ClickHouseWarehouseClient(config());
 
@@ -87,9 +87,9 @@ describe('ClickHouseWarehouseClient', () => {
       ).rejects.toThrow(/private address/);
     } finally {
       if (originalAllowPrivateHosts === undefined) {
-        delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+        delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
       } else {
-        process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
+        process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
       }
     }
   });

@@ -42,9 +42,9 @@ describe('custom_api SourceSchema', () => {
     expect(parsed.transports[0]?.type).toBe('http');
   });
 
-  it('strips the dogsled_source_kind orchestrator marker', () => {
-    const parsed = SourceSchema.parse(customApiSource({ dogsled_source_kind: 'custom_api' }));
-    expect('dogsled_source_kind' in parsed).toBe(false);
+  it('strips the bobsled_source_kind orchestrator marker', () => {
+    const parsed = SourceSchema.parse(customApiSource({ bobsled_source_kind: 'custom_api' }));
+    expect('bobsled_source_kind' in parsed).toBe(false);
     expect(parsed.source_type).toBe('custom_api');
   });
 
@@ -87,15 +87,15 @@ transports:
 });
 
 describe('custom_api SSRF enforcement', () => {
-  // The shared test setup enables DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1.
+  // The shared test setup enables BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1.
   // Unset it so the public-host guard runs, mirroring production.
   let original: string | undefined;
   beforeAll(() => {
-    original = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    original = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
   });
   afterAll(() => {
-    if (original !== undefined) process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = original;
+    if (original !== undefined) process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = original;
   });
 
   it('blocks a custom_api transport pointed at a private host', async () => {

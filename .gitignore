@@ -146,7 +146,7 @@ vite.config.ts.timestamp-*
 .turbo/
 
 # Local runtime state
-.dogsled/tutor-lab/
+.bobsled/tutor-lab/
 
 # Entity Graph demo workspace runtime artifacts
 workspace/entity-graph-demo/*.db
@@ -163,8 +163,8 @@ workspace/entity-graph-demo/.runs.jsonl
 service-account*.json
 secrets.yml
 .npmrc.local
-!packages/dogsled/tests/integration/fixtures/fake-server-cert.pem
-!packages/dogsled/tests/integration/fixtures/fake-server-key.pem
+!packages/bobsled-core/tests/integration/fixtures/fake-server-cert.pem
+!packages/bobsled-core/tests/integration/fixtures/fake-server-key.pem
 
 # Local review artifacts
 docs/superpowers/
@@ -178,4 +178,4 @@ PR_DESCRIPTION.md
 test-results/
 
 # Generated offline tutorial review scenarios.
-**/.dogsled/ui-review/
+**/.bobsled/ui-review/

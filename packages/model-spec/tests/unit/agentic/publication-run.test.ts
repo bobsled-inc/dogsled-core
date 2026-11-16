@@ -45,9 +45,9 @@ function incremental({ dialect, integration }: Dialect) {
         .map(({ pair_id }) => ({
           pair_id,
           assessment: `answer ${String(pair_id)}`,
-          _dogsled_evidence: null,
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         })),
     };
   });

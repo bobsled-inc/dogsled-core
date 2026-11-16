@@ -1,10 +1,10 @@
 # @bobsled-inc/protocol
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Dogsled protocol message types shared between `@bobsled-inc/extractor` (producer) and `@bobsled-inc/loader` (consumer).
+Bobsled Core protocol message types shared between `@bobsled-inc/extractor` (producer) and `@bobsled-inc/loader` (consumer).
 
-This package is the leaf dependency of the Dogsled data pipeline — zero external dependencies.
+This package is the leaf dependency of the Bobsled Core data pipeline — zero external dependencies.
 
 ## Message Protocol
 
@@ -46,7 +46,7 @@ A single data record for a stream.
   "stream": "repos",
   "record": {
     "id": 1,
-    "name": "dogsled",
+    "name": "bobsled",
     "stargazers_count": 42,
     "created_at": "2024-01-15T00:00:00Z"
   },
@@ -138,7 +138,7 @@ Example:
 }
 ```
 
-They are typically added by `@bobsled-inc/embedder` or `dogsled embed`, then consumed by vector-aware loader destinations.
+They are typically added by `@bobsled-inc/embedder` or `bobsled embed`, then consumed by vector-aware loader destinations.
 
 ## Load Strategies
 

@@ -19,7 +19,7 @@ import { parseSdkIr, emitTypeScriptSdk, readIr } from '../../src/index.js';
  * Entity graph SDK acceptance fixture.
  *
  * End-to-end: scaffold a 3-entity DuckDB project (Customer / Document /
- * Person), invoke `dogsled sdk generate --lang ts`, assert (a) the IR is
+ * Person), invoke `bobsled sdk generate --lang ts`, assert (a) the IR is
  * the v1.0 shape, (b) one TS file per entity is emitted, (c) every
  * entity profile carries the typed `_quality: EntityQuality` field per
  * the Phase 8 contract, and (d) the wall-clock budget stays under 60s

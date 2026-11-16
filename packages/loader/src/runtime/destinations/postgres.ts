@@ -562,7 +562,7 @@ export class PostgresDestination implements DatabaseDestination {
   ): Promise<void> {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map((k) => quoteIdentifier(k)).join(', ');
-    const indexName = quoteIdentifier(`_dogsled_uq_${tableName}`);
+    const indexName = quoteIdentifier(`_bobsled_uq_${tableName}`);
     const client = existingClient ?? (await this.connectClient());
     try {
       await withRetry(() =>
@@ -611,7 +611,7 @@ export class PostgresDestination implements DatabaseDestination {
         .filter((line) => line.trim() !== '')
         .map((line) => JSON.parse(line));
 
-      // Column list: data columns + _time_extracted as params, _dogsled_loaded_at via NOW()
+      // Column list: data columns + _time_extracted as params, _bobsled_loaded_at via NOW()
       const paramCols = [
         ...columns.map((c) => quoteIdentifier(c.name)),
         quoteIdentifier(SYSTEM_COLUMNS.TIME_EXTRACTED),
@@ -666,7 +666,7 @@ export class PostgresDestination implements DatabaseDestination {
     }
 
     // Temp tables are session-scoped and don't belong to a schema
-    const stagingName = `_dogsled_stg_${safeTable}`;
+    const stagingName = `_bobsled_stg_${safeTable}`;
     const quotedStaging = quoteIdentifier(stagingName);
 
     const client = await this.connectClient();

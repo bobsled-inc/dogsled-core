@@ -28,7 +28,7 @@ export async function run(ctx) {
     assert.equal(await postgresSql('SELECT count(*) FROM pipeline.departments'), '10');
     assert.equal(
       await postgresSql(
-        "SELECT count(*) FROM information_schema.columns WHERE table_schema='pipeline' AND column_name='_dogsled_loaded_at'"
+        "SELECT count(*) FROM information_schema.columns WHERE table_schema='pipeline' AND column_name='_bobsled_loaded_at'"
       ),
       '2'
     );

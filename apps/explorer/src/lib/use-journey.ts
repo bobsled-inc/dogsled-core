@@ -18,9 +18,9 @@ interface StartJourneyOptions {
   step?: number;
 }
 
-export const JOURNEY_STORAGE_KEY = 'dogsled-explorer-journey-state';
+export const JOURNEY_STORAGE_KEY = 'bobsled-explorer-journey-state';
 
-const JOURNEY_EVENT = 'dogsled-explorer:journey-change';
+const JOURNEY_EVENT = 'bobsled-explorer:journey-change';
 const EMPTY_STATE: JourneyState = { activeJourneyId: null, journeys: {} };
 
 function isValidStep(value: unknown): value is number {

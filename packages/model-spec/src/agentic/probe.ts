@@ -58,7 +58,7 @@ export interface ExperimentalAgenticProbe {
   priceUsage?: AgenticPriceUsage;
   /**
    * The host returns incremental input ordered by cursor and may return more rows than
-   * fit. Dogsled then processes a large backlog in batches instead of failing.
+   * fit. Bobsled Core then processes a large backlog in batches instead of failing.
    */
   incrementalBatches?: boolean;
   /** Approved tools this executor provides by default. Omitted means no extra tools. */

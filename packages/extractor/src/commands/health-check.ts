@@ -4,7 +4,7 @@ import {
   getEnvironmentDeclarationError,
 } from '@bobsled-inc/protocol';
 /**
- * `dogsled extract health-check` command.
+ * `bobsled extract health-check` command.
  *
  * Quick connectivity and parsing validation for an integration.
  */

@@ -94,8 +94,8 @@ export function createWarehouseCheckpointStore(
       throwIfCancelled(options.signal);
       const key = AgenticRunKeySchema.parse(rawKey);
       const hash = digestAgenticState(key).slice(0, 48);
-      const control = `${namespace}.${q(`__dogsled_cp_${hash}_c`)}`;
-      const payloads = `${namespace}.${q(`__dogsled_cp_${hash}_p`)}`;
+      const control = `${namespace}.${q(`__bobsled_cp_${hash}_c`)}`;
+      const payloads = `${namespace}.${q(`__bobsled_cp_${hash}_p`)}`;
       let closed = false;
       // Why this session lost ownership. The first cause stays the reported one.
       let lost: AgenticStateError | undefined;

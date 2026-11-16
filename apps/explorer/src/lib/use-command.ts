@@ -5,7 +5,7 @@ import { explorerFetch } from '@/lib/explorer-fetch';
 import { useState, useCallback, useRef } from 'react';
 import { parseStdoutMessage, parseStderrMessage } from '@bobsled-inc/protocol';
 import type { StdoutMessage, StderrMessage } from '@bobsled-inc/protocol';
-import type { ExplorerDogsledCommand } from './command-links.js';
+import type { ExplorerBobsledCommand } from './command-links.js';
 
 export interface CommandOutput {
   id: number;
@@ -39,7 +39,7 @@ export interface CommandState {
 }
 
 type CommandRequestPayload =
-  { command: string; args: string[] } | { sequence: ExplorerDogsledCommand[] };
+  { command: string; args: string[] } | { sequence: ExplorerBobsledCommand[] };
 
 export function useCommand() {
   const [state, setState] = useState<CommandState>({
@@ -235,7 +235,7 @@ export function useCommand() {
   );
 
   const runSequence = useCallback(
-    async (sequence: ExplorerDogsledCommand[]) => runPayload({ sequence }),
+    async (sequence: ExplorerBobsledCommand[]) => runPayload({ sequence }),
     [runPayload]
   );
 

@@ -1,5 +1,5 @@
 /**
- * `dryRunProject` — Layer 3 orchestrator for `dogsled model dry-run`.
+ * `dryRunProject` — Layer 3 orchestrator for `bobsled model dry-run`.
  *
  * Compiles a set of draft models with `inlineDeps`, wraps each compiled SELECT
  * with a sandbox-safe envelope (parse / limit0 / sample), and executes against
@@ -22,7 +22,7 @@
  * Semantics caveat: inlining a stateful upstream materialization (incremental,
  * snapshot, dynamic_table) drops its MERGE / SCD-2 / incremental_filter
  * semantics — the upstream collapses to a one-shot SELECT. The dry-run
- * validates SQL shape, not parity with `dogsled model run`.
+ * validates SQL shape, not parity with `bobsled model run`.
  */
 
 import {

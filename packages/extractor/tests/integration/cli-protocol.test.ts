@@ -175,7 +175,7 @@ describe('CLI protocol', () => {
       ],
       projectDir,
       {
-        DOGSLED_BUNDLED_INTEGRATIONS_DIR: bundledDir,
+        BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR: bundledDir,
         NODE_EXTRA_CA_CERTS: path.join(projectDir, 'fake-ca.pem'),
       }
     );
@@ -300,7 +300,7 @@ describe('CLI protocol', () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('only supports lookup');
-    expect(result.stderr).toContain('dogsled extract lookup');
+    expect(result.stderr).toContain('bobsled extract lookup');
   });
 
   it('includes non-semantic warnings in validate JSON output', async () => {

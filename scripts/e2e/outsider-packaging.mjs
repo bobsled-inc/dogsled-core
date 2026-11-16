@@ -5,11 +5,11 @@ import { pathToFileURL } from 'node:url';
 import { cliPath, command, context } from './harness.mjs';
 import { postgres, postgresSql, stopServices } from './services.mjs';
 
-const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'dogsled'];
+const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'bobsled-core'];
 
-export const globalPrefix = process.env.DOGSLED_E2E_GLOBAL_PREFIX ?? '/global';
-export const userPgConsumer = process.env.DOGSLED_E2E_USER_PG_CONSUMER ?? '/consumer-pg';
-export const userPgVersion = process.env.DOGSLED_E2E_USER_PG_VERSION;
+export const globalPrefix = process.env.BOBSLED_CORE_E2E_GLOBAL_PREFIX ?? '/global';
+export const userPgConsumer = process.env.BOBSLED_CORE_E2E_USER_PG_CONSUMER ?? '/consumer-pg';
+export const userPgVersion = process.env.BOBSLED_CORE_E2E_USER_PG_VERSION;
 
 function readJson(file) {
   return JSON.parse(readFileSync(file, 'utf8'));
@@ -41,7 +41,7 @@ export async function verifyGlobalInstall(prefix = globalPrefix) {
   const empty = emptyPackageDirectories(path.join(installed, 'node_modules'));
   assert.deepEqual(empty, [], 'A global install left dependency folders empty');
   const ctx = await context('global-install');
-  const bin = path.join(prefix, 'bin', 'dogsled');
+  const bin = path.join(prefix, 'bin', 'bobsled');
   const run = (args, options = {}) =>
     command(bin, args, { cwd: ctx.project, env: ctx.env, ...options });
   try {
@@ -97,7 +97,7 @@ export async function verifyGlobalInstall(prefix = globalPrefix) {
     );
     assert.equal(Number(JSON.parse(result.stdout).rows[0].n), 2);
     process.stdout.write(
-      `Global install verified: dogsled ${version} on PATH extracted and loaded a CSV into DuckDB.\n`
+      `Global install verified: bobsled ${version} on PATH extracted and loaded a CSV into DuckDB.\n`
     );
     await ctx.cleanup();
   } catch (error) {
@@ -119,7 +119,7 @@ export async function verifyShippedAssets(cli = cliPath) {
       's3-documents-ingestion': ['s3_documents', 'gcs_documents'],
     };
     for (const [name, integrations] of Object.entries(examples)) {
-      assert.match(listed, new RegExp(`^  ${name} `, 'm'), `dogsled examples list omits ${name}`);
+      assert.match(listed, new RegExp(`^  ${name} `, 'm'), `bobsled examples list omits ${name}`);
       const init = await run(['examples', 'init', name]);
       assert.match(init.stdout, /See README\.md/);
       for (const integration of integrations) {
@@ -141,15 +141,15 @@ export async function verifyShippedAssets(cli = cliPath) {
     const installed = JSON.parse(
       (await run(['setup', 'install', '--dir', 'repo', '--json'])).stdout
     );
-    assert.ok(installed.copied.includes('.claude/plugins/dogsled-setup'));
+    assert.ok(installed.copied.includes('.claude/plugins/bobsled-setup'));
     assert.ok(
       existsSync(
-        path.join(ctx.project, 'repo/.claude/plugins/dogsled-setup/.claude-plugin/plugin.json')
+        path.join(ctx.project, 'repo/.claude/plugins/bobsled-setup/.claude-plugin/plugin.json')
       )
     );
     await run(['setup', 'export', '--format', 'dir', '--output', 'kit', '--json']);
     assert.ok(
-      existsSync(path.join(ctx.project, 'kit/dogsled-setup-plugin/.claude-plugin/plugin.json'))
+      existsSync(path.join(ctx.project, 'kit/bobsled-setup-plugin/.claude-plugin/plugin.json'))
     );
 
     await run(['entity-graph', 'fixtures', 'copy', 'b2b-company-master', '--output', 'fixture']);
@@ -173,17 +173,17 @@ export async function verifyShippedAssets(cli = cliPath) {
 }
 
 export function verifyUserPgInstall(consumer = userPgConsumer, version = userPgVersion) {
-  assert.ok(version, 'DOGSLED_E2E_USER_PG_VERSION must name the pg version the project installed');
+  assert.ok(version, 'BOBSLED_CORE_E2E_USER_PG_VERSION must name the pg version the project installed');
   assert.equal(readJson(path.join(consumer, 'node_modules/pg/package.json')).version, version);
   const nested = path.join(consumer, ...PACKAGE_PATH, 'node_modules', 'pg');
-  assert.equal(existsSync(nested), false, `Dogsled installed a second pg at ${nested}`);
+  assert.equal(existsSync(nested), false, `Bobsled Core installed a second pg at ${nested}`);
   const lock = readJson(path.join(consumer, 'package-lock.json'));
   for (const [location, info] of Object.entries(lock.packages)) {
     if (location.endsWith('/node_modules/pg')) {
       assert.notEqual(info.inBundle, true, `${location} is marked as bundled but is not shipped`);
     }
   }
-  process.stdout.write(`A project's own pg ${version} is shared with Dogsled.\n`);
+  process.stdout.write(`A project's own pg ${version} is shared with Bobsled Core.\n`);
 }
 
 export async function verifyUserPgExtraction(consumer = userPgConsumer) {
@@ -204,7 +204,7 @@ export async function verifyUserPgExtraction(consumer = userPgConsumer) {
     APP_DB_HOST: '127.0.0.1',
     APP_DB_USER: 'postgres',
     APP_DB_PASSWORD: 'unused-local-only',
-    DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+    BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
   });
   await ctx.write(
     'integrations/app_db.yml',

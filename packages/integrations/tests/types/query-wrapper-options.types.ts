@@ -24,7 +24,7 @@ type GithubIssuesListOptions = QuerySourceListOptions<
 const githubIssuesOptions: GithubIssuesListOptions = {
   input: {
     owner: 'bobsled-inc',
-    repo: 'dogsled',
+    repo: 'bobsled',
   },
   filter: {
     state: 'open',
@@ -37,7 +37,7 @@ void githubIssuesOptions;
 queryResources.github.issues.list({
   input: {
     owner: 'bobsled-inc',
-    repo: 'dogsled',
+    repo: 'bobsled',
   },
   filter: {
     state: 'open',
@@ -50,7 +50,7 @@ queryResources.github.issues.list({ search: 'open' });
 queryResources.github.pullRequests.list({
   input: {
     owner: 'bobsled-inc',
-    repo: 'dogsled',
+    repo: 'bobsled',
   },
   filter: {
     state: 'all',
@@ -92,7 +92,7 @@ queryResources.jira.searchIssues.list({
   input: {
     start_at: 25,
   },
-  search: 'project = DOGSLED',
+  search: 'project = BOBSLED',
 });
 
 // @ts-expect-error search-only wrappers do not accept filters

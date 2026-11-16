@@ -81,14 +81,14 @@ async function main() {
   }
 
   // --- Build the report ---
-  const repo = process.env.GITHUB_REPOSITORY ?? 'bobsled-inc/dogsled-core';
+  const repo = process.env.GITHUB_REPOSITORY ?? 'bobsled-inc/bobsled-core';
   const runId = Number(process.env.GITHUB_RUN_ID) || 0;
   const serverUrl = process.env.GITHUB_SERVER_URL ?? 'https://github.com';
   const runUrl = runId ? `${serverUrl}/${repo}/actions/runs/${runId}` : '';
 
   const report = {
     schemaVersion: 1,
-    product: 'dogsled-core',
+    product: 'bobsled-core',
     runId,
     runUrl,
     findings,

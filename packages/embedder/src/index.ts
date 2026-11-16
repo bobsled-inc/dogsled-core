@@ -36,9 +36,9 @@ export function buildProgram(): Command {
   const program = new Command();
 
   program
-    .name('dogsled embed')
+    .name('bobsled embed')
     .version(cliVersion, '-V, --version', 'Display the CLI version')
-    .description('Dogsled Embedder — enrich protocol streams with vector embeddings')
+    .description('Bobsled Core Embedder — enrich protocol streams with vector embeddings')
     .showHelpAfterError()
     .exitOverride();
 
@@ -63,7 +63,7 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<vo
         firstArg !== '--version' &&
         firstArg !== '-V');
     const effectiveArgv = shouldInjectRun ? ['run', ...argv] : argv;
-    await buildProgram().parseAsync(['node', 'dogsled embed', ...effectiveArgv]);
+    await buildProgram().parseAsync(['node', 'bobsled embed', ...effectiveArgv]);
   } catch (error) {
     if (error instanceof CommanderError) {
       process.exitCode = error.exitCode === 0 ? 0 : EXIT_VALIDATION;

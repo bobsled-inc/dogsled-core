@@ -12,13 +12,13 @@ import type { SFTPWrapper } from 'ssh2';
 
 import type { ListedFile } from '../../src/framework/core/index.js';
 
-const originalPrivateHostsValue = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+const originalPrivateHostsValue = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
 
 afterEach(() => {
   if (originalPrivateHostsValue === undefined) {
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
   } else {
-    process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalPrivateHostsValue;
+    process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalPrivateHostsValue;
   }
 });
 
@@ -145,7 +145,7 @@ describe('file storage clients', () => {
   });
 
   it('rejects cleartext public S3 endpoints even with the private-host opt-in', async () => {
-    process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+    process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
     const injected = {
       client: { send: async () => ({}) },
       ListObjectsV2Command: class {
@@ -171,7 +171,7 @@ describe('file storage clients', () => {
   });
 
   it('allows cleartext loopback S3 endpoints only with the private-host opt-in', async () => {
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     const injected = {
       client: { send: async () => ({}) },
       ListObjectsV2Command: class {
@@ -196,7 +196,7 @@ describe('file storage clients', () => {
       )
     ).rejects.toThrow('S3 endpoints must use HTTPS');
 
-    process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+    process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
     await expect(
       S3FileStorageClient.create(
         connection,

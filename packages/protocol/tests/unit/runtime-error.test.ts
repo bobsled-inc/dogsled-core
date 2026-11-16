@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   serializeErrorCause,
-  DogsledRuntimeError,
-  DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES,
+  BobsledRuntimeError,
+  BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES,
 } from '../../src/runtime-error.js';
 
-describe('DogsledRuntimeError', () => {
+describe('BobsledRuntimeError', () => {
   it('carries the stable public contract and preserves the original cause identity', () => {
     const cause = new Error('provider returned a private diagnostic');
-    const error = new DogsledRuntimeError({
+    const error = new BobsledRuntimeError({
       kind: 'provider',
       code: 'MODEL_PROJECT_LOAD_PROVIDER_FAILURE',
       operation: 'model.project.load',
@@ -19,9 +19,9 @@ describe('DogsledRuntimeError', () => {
     });
 
     expect(error).toBeInstanceOf(Error);
-    expect(error.name).toBe('DogsledRuntimeError');
-    expect(error.message).toBe(DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES.provider);
-    expect(error.publicMessage).toBe(DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES.provider);
+    expect(error.name).toBe('BobsledRuntimeError');
+    expect(error.message).toBe(BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES.provider);
+    expect(error.publicMessage).toBe(BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES.provider);
     expect(error.kind).toBe('provider');
     expect(error.code).toBe('MODEL_PROJECT_LOAD_PROVIDER_FAILURE');
     expect(error.operation).toBe('model.project.load');
@@ -38,15 +38,15 @@ describe('DogsledRuntimeError', () => {
     ['cancellation', false],
     ['internal', false],
   ] as const)('uses the stable %s public message', (kind, retryable) => {
-    const error = new DogsledRuntimeError({
+    const error = new BobsledRuntimeError({
       kind,
       code: `TEST_${kind.toUpperCase()}`,
       operation: 'test.operation',
       retryable,
     });
 
-    expect(error.message).toBe(DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES[kind]);
-    expect(error.publicMessage).toBe(DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES[kind]);
+    expect(error.message).toBe(BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES[kind]);
+    expect(error.publicMessage).toBe(BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES[kind]);
   });
 });
 

@@ -14,9 +14,9 @@ import { pathToFileURL } from 'node:url';
 
 import { INLINED_AI_DEPENDENCY_NAMES } from '../release/package-set.mjs';
 import { runBundledIntegrationsSmoke } from './bundled-integrations-smoke.mjs';
-import { stageDogsledPackage } from '../release/stage-package.mjs';
+import { stageBobsledPackage } from '../release/stage-package.mjs';
 
-const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'dogsled-packed-catalog-'));
+const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'bobsled-packed-catalog-'));
 const stageDir = path.join(temporaryRoot, 'stage');
 const packDir = path.join(temporaryRoot, 'pack');
 const installDir = path.join(temporaryRoot, 'install');
@@ -48,7 +48,7 @@ try {
   mkdirSync(packDir);
   mkdirSync(installDir);
   mkdirSync(peerGraphDir);
-  stageDogsledPackage(stageDir, { build: !skipBuild });
+  stageBobsledPackage(stageDir, { build: !skipBuild });
 
   const packOutput = execFileSync('npm', ['pack', '--pack-destination', packDir], {
     cwd: stageDir,
@@ -57,14 +57,14 @@ try {
   });
   const tarballs = readdirSync(packDir).filter((entry) => entry.endsWith('.tgz'));
   if (tarballs.length !== 1) {
-    throw new Error('Expected one packed Dogsled tarball; npm pack output was ' + packOutput);
+    throw new Error('Expected one packed Bobsled Core tarball; npm pack output was ' + packOutput);
   }
 
   writeFileSync(
     path.join(installDir, 'package.json'),
     JSON.stringify(
       {
-        name: 'dogsled-packed-catalog-smoke',
+        name: 'bobsled-packed-catalog-smoke',
         private: true,
         type: 'module',
       },
@@ -83,12 +83,12 @@ try {
     "  throw new Error('native dependency loaded during packed catalog import');",
     '};',
     "await import('@aws-sdk/client-s3');",
-    "const catalog = await import('@bobsled-inc/dogsled/integrations/catalog');",
+    "const catalog = await import('@bobsled-inc/bobsled-core/integrations/catalog');",
     "if (typeof catalog.probeApiResource !== 'function') {",
-    "  throw new Error('probeApiResource export missing from packed Dogsled package');",
+    "  throw new Error('probeApiResource export missing from packed Bobsled Core package');",
     '}',
     "if (typeof catalog.buildCatalogManifest !== 'function') {",
-    "  throw new Error('buildCatalogManifest export missing from packed Dogsled package');",
+    "  throw new Error('buildCatalogManifest export missing from packed Bobsled Core package');",
     '}',
   ].join('\n');
   execFileSync(process.execPath, ['--input-type=module', '--eval', catalogSmokeScript], {
@@ -101,7 +101,7 @@ try {
       installDir,
       'node_modules',
       '@bobsled-inc',
-      'dogsled',
+      'bobsled-core',
       'node_modules',
       '@bobsled-inc',
       'ai',
@@ -192,27 +192,27 @@ process.dlopen = () => {
 const {
   generateProjectManifest,
   resolveProjectPipelines,
-  DogsledProjectValidationError,
-} = await import('@bobsled-inc/dogsled/manifest');
-const { BUILT_IN_VALIDATION_CATALOG } = await import('@bobsled-inc/dogsled/validation');
+  BobsledProjectValidationError,
+} = await import('@bobsled-inc/bobsled-core/manifest');
+const { BUILT_IN_VALIDATION_CATALOG } = await import('@bobsled-inc/bobsled-core/validation');
 
 if (!BUILT_IN_VALIDATION_CATALOG.getIntegration('posthog').resource_names.includes('events')) {
-  throw new Error('PostHog validation metadata missing from public Dogsled surface');
+  throw new Error('PostHog validation metadata missing from public Bobsled Core surface');
 }
 if (!BUILT_IN_VALIDATION_CATALOG.getIntegration('notion').resource_names.includes('pages_rest')) {
-  throw new Error('Notion validation metadata missing from public Dogsled surface');
+  throw new Error('Notion validation metadata missing from public Bobsled Core surface');
 }
 
 function writeProject(name, source, resources, via) {
   const projectRoot = path.join(process.cwd(), name);
   mkdirSync(projectRoot);
   writeFileSync(
-    path.join(projectRoot, 'dogsled.yml'),
+    path.join(projectRoot, 'bobsled.yml'),
     [
       'destinations:',
       '  managed:',
-      '    type: dogsled_managed',
-      '    dogsled_connection_ref: dogsled-managed',
+      '    type: bobsled_managed',
+      '    bobsled_connection_ref: bobsled-managed',
       'pipelines:',
       '  managed_sync:',
       '    schedule: manual',
@@ -250,7 +250,7 @@ assert(
 );
 const posthogManifest = await generateProjectManifest({
   projectRoot: posthogRoot,
-  dogsledVersion: 'packed-test',
+  bobsledVersion: 'packed-test',
 });
 assert(posthogManifest.pipelines[0]?.kind === 'extract', 'PostHog manifest was not generated');
 assert(
@@ -277,7 +277,7 @@ assert(
 );
 const notionManifest = await generateProjectManifest({
   projectRoot: notionRoot,
-  dogsledVersion: 'packed-test',
+  bobsledVersion: 'packed-test',
 });
 assert(notionManifest.pipelines[0]?.kind === 'extract', 'Notion manifest was not generated');
 assert(
@@ -290,7 +290,7 @@ async function assertValidationFailure(projectRoot, expectedFragment) {
   try {
     await generateProjectManifest({ projectRoot });
   } catch (error) {
-    assert(error instanceof DogsledProjectValidationError, 'Expected DogsledProjectValidationError');
+    assert(error instanceof BobsledProjectValidationError, 'Expected BobsledProjectValidationError');
     assert(
       error.issues.some((issue) => issue.message.includes(expectedFragment)),
       'Validation error did not mention ' + expectedFragment
@@ -304,7 +304,7 @@ async function assertValidationFailure(projectRoot, expectedFragment) {
 // importing the manifest API would miss a later lazy runtime dependency.
 const ossieRoot = path.join(process.cwd(), 'ossie-project');
 mkdirSync(ossieRoot);
-writeFileSync(path.join(ossieRoot, 'dogsled.yml'), [
+writeFileSync(path.join(ossieRoot, 'bobsled.yml'), [
   'destinations:',
   '  warehouse:',
   '    type: duckdb',
@@ -328,12 +328,12 @@ const ossieDocument = {
       name: 'order_id',
       expression: { dialects: [{ dialect: 'ANSI_SQL', expression: 'order_id' }] },
       custom_extensions: [{
-        vendor_name: 'DOGSLED',
+        vendor_name: 'BOBSLED',
         data: JSON.stringify({ build_expression: 'order_id' }),
       }],
     }],
     custom_extensions: [{
-      vendor_name: 'DOGSLED',
+      vendor_name: 'BOBSLED',
       data: JSON.stringify({
         extension_version: '1',
         kind: 'derived',
@@ -350,13 +350,13 @@ const ossieManifest = await generateProjectManifest({ projectRoot: ossieRoot });
 assert(ossieManifest.pipelines[0]?.kind === 'models', 'Ossie model manifest was not generated');
 assert(ossieManifest.pipelines[0]?.nodes.length === 1, 'Ossie model node was not generated');
 
-const ontologyApi = await import('@bobsled-inc/dogsled/ontology');
+const ontologyApi = await import('@bobsled-inc/bobsled-core/ontology');
 const nativeOntology = {spec_version: '0.2', type: 'ontology', name: 'sales', ontology: [{concept: 'Order', type: 'EntityType'}]};
 assert(ontologyApi.parseOntologyDocument(nativeOntology).name === 'sales', 'Packed ontology parser failed');
 const ontologyExport = ontologyApi.exportOntologyDocuments([{path: 'sales.yml', document: nativeOntology}], {ossieVersion: '0.2.0.dev0'});
 assert(ontologyExport.ok && ontologyApi.importOntologyDocuments(ontologyExport.files).ok, 'Packed ontology round trip failed');
 
-const { importOssieDocuments, exportOssieDocument } = await import('@bobsled-inc/dogsled/model-spec/interchange');
+const { importOssieDocuments, exportOssieDocument } = await import('@bobsled-inc/bobsled-core/model-spec/interchange');
 const exchangeDocument = JSON.parse(JSON.stringify(ossieDocument));
 const converted = importOssieDocuments({
   documents: [{ path: 'sales.yml', content: JSON.stringify(exchangeDocument) }],
@@ -409,11 +409,11 @@ await assertValidationFailure(
     path.join(peerGraphDir, 'package.json'),
     JSON.stringify(
       {
-        name: 'dogsled-packed-peer-graph-smoke',
+        name: 'bobsled-packed-peer-graph-smoke',
         private: true,
         type: 'module',
         dependencies: {
-          '@bobsled-inc/dogsled': `file:${path.join(packDir, tarballs[0])}`,
+          '@bobsled-inc/bobsled-core': `file:${path.join(packDir, tarballs[0])}`,
           'better-auth': '1.7.1',
         },
       },
@@ -433,7 +433,7 @@ await assertValidationFailure(
   ].map((match) => match[1]);
   if (betterCallSnapshots.length !== 1) {
     throw new Error(
-      `Expected one better-call snapshot with Dogsled and better-auth, found ${betterCallSnapshots.join(', ') || 'none'}`
+      `Expected one better-call snapshot with Bobsled Core and better-auth, found ${betterCallSnapshots.join(', ') || 'none'}`
     );
   }
   if (!betterCallSnapshots[0].includes('(zod@4.')) {
@@ -442,19 +442,19 @@ await assertValidationFailure(
     );
   }
 
-  const stagedDogsledManifest = JSON.parse(
+  const stagedBobsledManifest = JSON.parse(
     readFileSync(path.join(stageDir, 'package.json'), 'utf8')
   );
   const leakedDependencies = INLINED_AI_DEPENDENCY_NAMES.filter((name) => {
     return (
-      stagedDogsledManifest.dependencies?.[name] !== undefined ||
-      stagedDogsledManifest.optionalDependencies?.[name] !== undefined ||
-      stagedDogsledManifest.peerDependencies?.[name] !== undefined
+      stagedBobsledManifest.dependencies?.[name] !== undefined ||
+      stagedBobsledManifest.optionalDependencies?.[name] !== undefined ||
+      stagedBobsledManifest.peerDependencies?.[name] !== undefined
     );
   });
   if (leakedDependencies.length > 0) {
     throw new Error(
-      `Staged Dogsled manifest leaked inlined AI dependencies: ${leakedDependencies.join(', ')}`
+      `Staged Bobsled Core manifest leaked inlined AI dependencies: ${leakedDependencies.join(', ')}`
     );
   }
 

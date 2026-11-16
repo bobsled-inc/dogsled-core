@@ -42,7 +42,7 @@ export function toEntityGraphExecutionStatements(
     const previousStatement = orderedStatements[index - 1];
     if (stmt.sql.includes(MATCH_KEY_SECRET_RUNTIME_TOKEN) && plan.dialect == null) {
       throw new CommandError(
-        'Entity graph execution requires a dialect to materialize DOGSLED_MATCH_KEY_SECRET placeholders.',
+        'Entity graph execution requires a dialect to materialize BOBSLED_CORE_MATCH_KEY_SECRET placeholders.',
         2
       );
     }

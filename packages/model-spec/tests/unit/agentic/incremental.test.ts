@@ -15,7 +15,7 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 function fixture() {
-  const dir = mkdtempSync(join(tmpdir(), 'dogsled-cursors-'));
+  const dir = mkdtempSync(join(tmpdir(), 'bobsled-cursors-'));
   dirs.push(dir);
   const f = runFixture(2);
   f.model.sources.pairs!.incremental = { cursor_field: 'updated_at' };
@@ -91,9 +91,9 @@ describe('incremental agentic batches', { timeout: 60_000 }, () => {
           ...request.assignment.group_key,
           choice: 'same',
           confidence: 0.8,
-          _dogsled_evidence: null,
-          _dogsled_confidence: 0.8,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: 0.8,
+          _bobsled_reason: null,
         },
       ],
     }));

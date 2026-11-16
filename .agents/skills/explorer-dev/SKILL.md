@@ -1,11 +1,11 @@
 ---
 name: explorer-dev
-description: Start developing on the Dogsled Explorer app. Use when working on the explorer UI, adding features, fixing bugs, or understanding the explorer architecture.
+description: Start developing on the Bobsled Core Explorer app. Use when working on the explorer UI, adding features, fixing bugs, or understanding the explorer architecture.
 ---
 
-# Explorer Dev — Dogsled Explorer Development
+# Explorer Dev — Bobsled Core Explorer Development
 
-Set up context and start working on the Dogsled Explorer app at `apps/explorer/`.
+Set up context and start working on the Bobsled Core Explorer app at `apps/explorer/`.
 
 ## Quick Reference
 
@@ -18,7 +18,7 @@ pnpm --filter @bobsled-inc/explorer lint        # Linting
 
 ## Architecture
 
-The explorer is a Next.js 15 app (App Router) at `apps/explorer/` in the monorepo. It reads integration and model data from workspace packages and spawns Dogsled CLI subprocesses.
+The explorer is a Next.js 15 app (App Router) at `apps/explorer/` in the monorepo. It reads integration and model data from workspace packages and spawns Bobsled Core CLI subprocesses.
 
 ```
 apps/explorer/src/
@@ -43,8 +43,8 @@ apps/explorer/src/
   lib/
     integrations.ts             # Wraps @bobsled-inc/integrations with clearCache()
     models.ts                   # Wraps @bobsled-inc/models with clearModelPackageCache()
-    dogsled-cli.ts                # CLI subprocess spawning + workspace discovery
-    protocol-parser.ts          # Dogsled protocol message parser
+    bobsled-cli.ts                # CLI subprocess spawning + workspace discovery
+    protocol-parser.ts          # Bobsled Core protocol message parser
     use-command.ts              # React hook for SSE command streaming
 ```
 
@@ -56,11 +56,11 @@ Every server-side call to `@bobsled-inc/integrations` or `@bobsled-inc/models` M
 
 ### CLI Subprocess Spawning
 
-`lib/dogsled-cli.ts` discovers workspace root via `pnpm-workspace.yaml`, resolves Dogsled CLI from `packages/dogsled/dist/index.js` or falls back to `npx tsx packages/dogsled/src/index.ts`. Sets `DOGSLED_BUNDLED_INTEGRATIONS_DIR` and `NO_COLOR=1`.
+`lib/bobsled-cli.ts` discovers workspace root via `pnpm-workspace.yaml`, resolves Bobsled Core CLI from `packages/bobsled-core/dist/index.js` or falls back to `npx tsx packages/bobsled-core/src/index.ts`. Sets `BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR` and `NO_COLOR=1`.
 
 ### Command Security
 
-`ALLOWED_COMMANDS` whitelist in `dogsled-cli.ts`. The `/api/command` route validates against this before spawning.
+`ALLOWED_COMMANDS` whitelist in `bobsled-cli.ts`. The `/api/command` route validates against this before spawning.
 
 ### SSE Streaming
 
@@ -68,7 +68,7 @@ Every server-side call to `@bobsled-inc/integrations` or `@bobsled-inc/models` M
 
 ### ESM Compatibility
 
-`tsconfig.json` overrides monorepo's `NodeNext` with `bundler` for Next.js. `eslint.config.mjs` disables `dogsled/import-extension` rule (no `.js` extensions needed).
+`tsconfig.json` overrides monorepo's `NodeNext` with `bundler` for Next.js. `eslint.config.mjs` disables `bobsled/import-extension` rule (no `.js` extensions needed).
 
 ### Pipeline Config Passing
 

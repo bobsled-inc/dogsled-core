@@ -20,7 +20,7 @@ export const ExtractorConfigSchema = z
     default_output: z.enum(['stdout', 'file']).default('stdout'),
     /**
      * Handle of the target file under `targets/<handle>.yml` used when a resource does not
-     * specify its own `target:` field. Read by Dogsled's orchestrator, not by the extractor itself.
+     * specify its own `target:` field. Read by Bobsled Core's orchestrator, not by the extractor itself.
      * Must be a safe snake_case identifier (prevents `..` and `/` traversal when composing
      * the filesystem path).
      */

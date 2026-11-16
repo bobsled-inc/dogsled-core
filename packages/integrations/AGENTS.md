@@ -25,22 +25,22 @@ Use the `/add-integration` skill for the full workflow. See the root AGENTS.md B
 
 Quick checklist:
 
-1. Start from the API's OpenAPI spec if available (`dogsled extract generate`)
+1. Start from the API's OpenAPI spec if available (`bobsled extract generate`)
 2. Resolve ALL `# REVIEW:` markers — specs with these markers fail validation
 3. Ensure every resource has a non-empty `description`
 4. Ensure every resource defines `primary_key` fields
 5. Wire `for_each` on child endpoints (e.g., `/campaigns/{id}/leads` needs `for_each` pointing to the parent resource)
-6. Validate: `dogsled extract validate`
-7. Run the offline gate: `dogsled extract verify <integration>`
-8. Run mock execution when the transport is HTTP: `dogsled extract verify <integration> --mock`
+6. Validate: `bobsled extract validate`
+7. Run the offline gate: `bobsled extract verify <integration>`
+8. Run mock execution when the transport is HTTP: `bobsled extract verify <integration> --mock`
 9. Run tests: `pnpm --filter @bobsled-inc/integrations test:unit`
-10. Test live when credentials are available: `dogsled extract scaffold-test`
+10. Test live when credentials are available: `bobsled extract scaffold-test`
 
 Required gate order for new or changed connectors:
 
-1. `dogsled extract validate <integration>`
-2. `dogsled extract verify <integration>`
-3. `dogsled extract verify <integration> --mock`
+1. `bobsled extract validate <integration>`
+2. `bobsled extract verify <integration>`
+3. `bobsled extract verify <integration> --mock`
 4. `pnpm --filter @bobsled-inc/integrations test:unit`
 
 **Reference integrations**: GitHub and Stripe are the most complete — copy their patterns.

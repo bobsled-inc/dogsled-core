@@ -24,6 +24,6 @@ transports:
       burst: 20
     headers:
       Accept: application/json
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
       revision: 2026-01-15
 default_transport: default

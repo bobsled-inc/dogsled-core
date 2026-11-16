@@ -13,7 +13,7 @@ env:
 jobs:
   decide:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' &&
+      github.repository == 'bobsled-inc/bobsled-core' &&
       (vars.AUTO_RELEASE == 'on' || vars.AUTO_RELEASE == 'dry-run')
     runs-on: ubuntu-latest
     timeout-minutes: 10

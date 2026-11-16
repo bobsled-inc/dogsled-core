@@ -8,7 +8,7 @@ import {
   buildPipelineRunArgs,
   isPipelineConfig,
   type PipelineConfig,
-  generateDogsledYml,
+  generateBobsledYml,
 } from '@/lib/pipelineExport';
 import { generateCliCommands } from '@/lib/pipeline-export-content';
 import {
@@ -16,10 +16,10 @@ import {
   type PipelineValidationResult,
 } from '@/lib/pipeline-validation';
 
-type ExportFormat = 'dogsled-yml' | 'cli-commands';
+type ExportFormat = 'bobsled-yml' | 'cli-commands';
 
 const EXPORT_FORMATS: Array<{ id: ExportFormat; name: string; description: string }> = [
-  { id: 'dogsled-yml', name: 'dogsled.yml', description: 'Local pipeline configuration' },
+  { id: 'bobsled-yml', name: 'bobsled.yml', description: 'Local pipeline configuration' },
   { id: 'cli-commands', name: 'CLI Commands', description: 'Commands for manual execution' },
 ];
 
@@ -35,7 +35,7 @@ const DEMO_CONFIG: PipelineConfig = {
 
 function ExportPageInner() {
   const searchParams = useSearchParams();
-  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('dogsled-yml');
+  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('bobsled-yml');
   const [copied, setCopied] = useState(false);
   const encodedConfig = searchParams.get('config');
   const { config, fromBuilder } = useMemo<{ config: PipelineConfig; fromBuilder: boolean }>(() => {
@@ -67,7 +67,7 @@ function ExportPageInner() {
   }, [encodedValidation]);
 
   const content =
-    selectedFormat === 'dogsled-yml' ? generateDogsledYml(config) : generateCliCommands(config);
+    selectedFormat === 'bobsled-yml' ? generateBobsledYml(config) : generateCliCommands(config);
 
   const handleCopy = () => {
     void navigator.clipboard

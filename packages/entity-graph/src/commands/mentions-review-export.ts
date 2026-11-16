@@ -1,7 +1,7 @@
 /**
- * `dogsled entity-graph mentions review export` CLI.
+ * `bobsled entity-graph mentions review export` CLI.
  *
- * Reuses the `dogsled model review export` envelope shape per the locked
+ * Reuses the `bobsled model review export` envelope shape per the locked
  * decision — same CSV header / row format, with mention-specific data
  * columns appended after the standard envelope. Lives as a thin wrapper
  * around an upstream review-export query the runtime emits.
@@ -349,7 +349,7 @@ export function registerMentionsReviewExportCommand(
       }) => {
         // Explicit flags always win. Beyond that, defer to
         // `resolveOutputFormat` so this command obeys the same priority
-        // cascade as every other entity-graph CLI (DOGSLED_OUTPUT_FORMAT > CI >
+        // cascade as every other entity-graph CLI (BOBSLED_CORE_OUTPUT_FORMAT > CI >
         // non-TTY > human). The only twist: this command's human-mode
         // default is CSV (model-review envelope-parity), not text — so
         // we map `human` → `csv` after the shared helper resolves.

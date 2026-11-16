@@ -51,9 +51,9 @@ async function answer(request: AgentExecutorRequest, empty = false) {
       : assignment.processed_keys.map((key) => ({
           ...key,
           assessment: assignment.step_id,
-          _dogsled_evidence: null,
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_evidence: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         })),
   };
 }
@@ -167,7 +167,7 @@ describe('authored agentic plans', { timeout: 60_000 }, () => {
         expect(Object.keys(a.inputs!)).toEqual(['names', 'phones']);
         expect(a.inputs!.names!.rows[0]).toMatchObject({
           assessment: 'names',
-          _dogsled_run_id: 'plan',
+          _bobsled_run_id: 'plan',
         });
         expect(a.inputs!.phones!.rows[0]).toMatchObject({ assessment: 'phones' });
       } else {

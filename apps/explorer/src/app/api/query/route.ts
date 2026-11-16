@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawnDogsledCommand, collectOutput, getWorkspaceRoot } from '@/lib/dogsled-cli';
+import { spawnBobsledCommand, collectOutput, getWorkspaceRoot } from '@/lib/bobsled-cli';
 import { parseLoaderQueryTable } from '@/lib/loader-query-parser';
 import { resolveSafePathWithinRoot } from '@/lib/path-safety';
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const child = spawnDogsledCommand('load', ['query', '--db-path', resolved, sql]);
+    const child = spawnBobsledCommand('load', ['query', '--db-path', resolved, sql]);
     const { stdout, stderr, code } = await collectOutput(child, {
       timeoutMs: QUERY_TIMEOUT_MS,
       maxBytes: QUERY_OUTPUT_MAX_BYTES,

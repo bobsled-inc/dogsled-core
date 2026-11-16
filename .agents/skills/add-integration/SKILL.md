@@ -10,12 +10,12 @@ triggers:
   - add stripe integration
   - add api connector
   - build integration from openapi
-  - add new api to dogsled
+  - add new api to bobsled
 ---
 
 # Add Integration
 
-Automates adding a new API integration to `packages/integrations/`. Leverages `dogsled extract generate` for OpenAPI-based generation, with fallback to manual authoring.
+Automates adding a new API integration to `packages/integrations/`. Leverages `bobsled extract generate` for OpenAPI-based generation, with fallback to manual authoring.
 
 ## Usage
 
@@ -54,7 +54,7 @@ If it exists, ask the user whether to regenerate/update or abort.
 ### Step 3: Generate YAMLs from OpenAPI
 
 ```bash
-cd packages/dogsled && pnpm dev extract generate <openapi_url> --directory /tmp/integration-staging --integration <name>
+cd packages/bobsled-core && pnpm dev extract generate <openapi_url> --directory /tmp/integration-staging --integration <name>
 ```
 
 Read all generated files in `/tmp/integration-staging/`.
@@ -105,7 +105,7 @@ Read all generated files in `/tmp/integration-staging/`.
    mapped `output`; it cannot expose inputs, raw responses, headers, auth, or
    environment values. The child field type must match the referenced output type,
    and `from` cannot be combined with `path` or `paths`. Nested paths require the
-   ancestor output to declare the traversed `properties`/`items` shape. Dogsled does
+   ancestor output to declare the traversed `properties`/`items` shape. Bobsled Core does
    not add contextual fields to the primary key, so declare a composite key
    explicitly when child IDs are parent-scoped. A targeted child run can reconstruct
    only an immediate-parent field exactly matched by an explicit `for_each` input
@@ -160,14 +160,14 @@ Run validation and OpenAPI diff checks — these catch most config issues withou
 
 ```bash
 # Static validation: schema correctness + input completeness
-dogsled extract validate --integration <name>
+bobsled extract validate --integration <name>
 
 # OpenAPI spec diff: endpoint mismatches, field type drift, missing fields
 # Auto-resolves the OpenAPI URL from meta.yml if openapi_url is set
-dogsled extract check <name>
+bobsled extract check <name>
 
 # Or provide the URL explicitly:
-dogsled extract check <name> --openapi <openapi-url-or-path>
+bobsled extract check <name> --openapi <openapi-url-or-path>
 ```
 
 **Fix all errors before proceeding.** Warnings are informational — review but don't necessarily fix:
@@ -183,7 +183,7 @@ dogsled extract check <name> --openapi <openapi-url-or-path>
 If the user has API credentials available, run:
 
 ```bash
-dogsled extract test-auth <name>
+bobsled extract test-auth <name>
 ```
 
 All resources should return 200. If failures occur:

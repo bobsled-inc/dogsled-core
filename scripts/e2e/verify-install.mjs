@@ -8,7 +8,7 @@ assert.equal(existsSync('/suite/node_modules'), false);
 const lock = JSON.parse(readFileSync('/consumer/package-lock.json', 'utf8'));
 let bundled = 0;
 for (const [name, info] of Object.entries(lock.packages)) {
-  if (!name.includes('node_modules/@bobsled-inc/') || name === 'node_modules/@bobsled-inc/dogsled')
+  if (!name.includes('node_modules/@bobsled-inc/') || name === 'node_modules/@bobsled-inc/bobsled-core')
     continue;
   assert.equal(info.inBundle, true, `Internal package was not bundled: ${name}`);
   assert.ok(
@@ -29,13 +29,13 @@ for (const command of [
   ['entity-graph', 'status'],
   ['embed', 'run'],
 ]) {
-  const help = execFileSync(process.execPath, [process.env.DOGSLED_E2E_CLI, ...command, '--help'], {
+  const help = execFileSync(process.execPath, [process.env.BOBSLED_CORE_E2E_CLI, ...command, '--help'], {
     encoding: 'utf8',
   });
   assert.match(
     help,
-    new RegExp(`^Usage: dogsled ${command.join(' ')}\\b`, 'm'),
-    `dogsled ${command.join(' ')} --help printed no usage`
+    new RegExp(`^Usage: bobsled ${command.join(' ')}\\b`, 'm'),
+    `bobsled ${command.join(' ')} --help printed no usage`
   );
 }
 process.stdout.write(

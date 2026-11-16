@@ -190,7 +190,7 @@ export default async function ShopDemoModelsPage({
     <div className="mx-auto flex max-w-7xl flex-col gap-6 p-8">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           { label: 'Demo', href: '/demo/shop' },
           { label: 'Models' },
         ]}
@@ -336,7 +336,7 @@ export default async function ShopDemoModelsPage({
                   Compile this model to see the SQL Model Spec generates for DuckDB:
                 </p>
                 <SyntaxBlock
-                  code={`dogsled model compile ${selected} --integration duckdb`}
+                  code={`bobsled model compile ${selected} --integration duckdb`}
                   language="bash"
                 />
               </div>
@@ -345,7 +345,7 @@ export default async function ShopDemoModelsPage({
                   Run all contract checks (primary key, accepted values, row counts) against the
                   live database:
                 </p>
-                <SyntaxBlock code={`dogsled model validate --integration duckdb`} language="bash" />
+                <SyntaxBlock code={`bobsled model validate --integration duckdb`} language="bash" />
               </div>
             </div>
           </div>

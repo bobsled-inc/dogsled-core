@@ -66,7 +66,7 @@ function workload() {
         .map(({ pair_id }) => ({
           pair_id: String(pair_id),
           assessment: `Synthetic assessment ${String(pair_id)}.`,
-          _dogsled_evidence: [
+          _bobsled_evidence: [
             {
               source: assignment.input.ref,
               reference: `${assignment.input.ref}/${String(pair_id)}`,
@@ -74,8 +74,8 @@ function workload() {
               retrieved_at: assignment.input.retrieved_at!,
             },
           ],
-          _dogsled_confidence: 0.75,
-          _dogsled_reason: {
+          _bobsled_confidence: 0.75,
+          _bobsled_reason: {
             summary: 'Synthetic summary.',
             supporting_factors: ['Synthetic factor'],
             conflicting_factors: [],

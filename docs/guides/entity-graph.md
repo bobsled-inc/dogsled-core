@@ -14,8 +14,8 @@ has the `warehouse` integration and the `runner.mjs` module.
 The CRM and the billing system both know Ada Labs, with different capitalization:
 
 ```bash
-dogsled query "CREATE OR REPLACE TABLE raw.crm_contacts AS SELECT * FROM (VALUES ('c1','Ada Labs','Ada@AdaLabs.example'), ('c2','Grace Corp','ops@grace.example')) t(contact_id, name, email); CREATE OR REPLACE TABLE raw.billing_accounts AS SELECT * FROM (VALUES ('b1','Ada Labs Ltd','ada@adalabs.example '), ('b2','Linus Ltd','billing@linus.example')) t(account_id, name, email); CREATE SCHEMA IF NOT EXISTS entity_graph" \
-  --db-path .dogsled/dogsled.duckdb
+bobsled query "CREATE OR REPLACE TABLE raw.crm_contacts AS SELECT * FROM (VALUES ('c1','Ada Labs','Ada@AdaLabs.example'), ('c2','Grace Corp','ops@grace.example')) t(contact_id, name, email); CREATE OR REPLACE TABLE raw.billing_accounts AS SELECT * FROM (VALUES ('b1','Ada Labs Ltd','ada@adalabs.example '), ('b2','Linus Ltd','billing@linus.example')) t(account_id, name, email); CREATE SCHEMA IF NOT EXISTS entity_graph" \
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 Declare both tables as sources.
@@ -116,10 +116,10 @@ entities. It writes its tables to the schema you pass, prefixed with the entity
 name:
 
 ```bash
-dogsled entity-graph resolve validate Customer
-dogsled entity-graph build Customer --runner ./runner.mjs --dialect duckdb --schema entity_graph
-dogsled query "SELECT display_name, source_diversity FROM entity_graph.customer__entity_profile ORDER BY display_name" \
-  --db-path .dogsled/dogsled.duckdb
+bobsled entity-graph resolve validate Customer
+bobsled entity-graph build Customer --runner ./runner.mjs --dialect duckdb --schema entity_graph
+bobsled query "SELECT display_name, source_diversity FROM entity_graph.customer__entity_profile ORDER BY display_name" \
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -136,7 +136,7 @@ Four records became three customers. Ada Labs comes from both systems, and its
 display name comes from the CRM because the CRM is first in `source_precedence`.
 Other tables in the schema hold the candidate pairs, scores, clusters, the review
 queue, crosswalks from each source record to its entity, and an audit log.
-`dogsled entity-graph status --runner ./runner.mjs --dialect duckdb` counts the rows
+`bobsled entity-graph status --runner ./runner.mjs --dialect duckdb` counts the rows
 in the shared tables.
 
 Each entity keeps its `entity_id` across rebuilds, when new records arrive, and when
@@ -145,9 +145,9 @@ entities merge or split, so that downstream tables can join on it.
 ## Read an entity
 
 ```bash
-ID=$(dogsled query "SELECT entity_id FROM entity_graph.customer__entity_profile WHERE display_name = 'Ada Labs'" \
-  --db-path .dogsled/dogsled.duckdb --yaml | sed -n 's/.*entity_id: //p')
-dogsled entity-graph get --entity Customer --id "$ID" \
+ID=$(bobsled query "SELECT entity_id FROM entity_graph.customer__entity_profile WHERE display_name = 'Ada Labs'" \
+  --db-path .bobsled/bobsled.duckdb --yaml | sed -n 's/.*entity_id: //p')
+bobsled entity-graph get --entity Customer --id "$ID" \
   --runner ./runner.mjs --dialect duckdb --schema entity_graph --json
 ```
 
@@ -172,7 +172,7 @@ new record belongs to; `--mode assign` and `--mode stage` write the match.
 ## Generate a typed SDK
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk
+bobsled sdk generate --lang ts --out ./generated/bobsled-sdk
 ```
 
 ```text
@@ -186,16 +186,16 @@ itself: your application passes an executor that runs the requests. See
 
 ## Serve entities to agents
 
-- `dogsled entity-graph serve` starts a read-only HTTP API on 127.0.0.1 with
+- `bobsled entity-graph serve` starts a read-only HTTP API on 127.0.0.1 with
   `/healthz`, `/entities/<entity>` (search) and `/entities/<entity>/<id>`. It does not
   check who is calling, so it binds to loopback only; `--allow-remote` also needs
-  `DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE=1`. `--allow-writes` enables match writes.
-- `dogsled mcp serve --transport stdio --principal-id <id> --runner ./runner.mjs
+  `BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE=1`. `--allow-writes` enables match writes.
+- `bobsled mcp serve --transport stdio --principal-id <id> --runner ./runner.mjs
 --dialect duckdb --schema entity_graph` serves the tools `entity_search`,
   `entity_get`, `entity_match`, `entity_relationships`, `entity_explain` and
   `read_source` (document and chunk rows with citations) to an MCP client. Every call
   runs as the principal you pass; unfiltered reads need both `--allow-unfiltered`
-  and `DOGSLED_MCP_ALLOW_UNFILTERED=1`. See [MCP read_source](../reference/advanced/mcp-read-source.md).
+  and `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`. See [MCP read_source](../reference/advanced/mcp-read-source.md).
 
 ## Everything else in the entity graph
 
@@ -211,8 +211,8 @@ itself: your application passes an executor that runs the requests. See
 | `explain`, `lineage`, `audit`                                                  | Why an entity looks the way it does, where each attribute came from, and the audit log.                                                                |
 | `forget`                                                                       | Remove a source record from every entity-graph table.                                                                                                  |
 | `pii`, `policy`                                                                | Scan for personal data and suggest policies; validate and evaluate policy specs.                                                                       |
-| `activate`                                                                     | Send entity records to external systems through action specs (also `dogsled activate`).                                                                |
+| `activate`                                                                     | Send entity records to external systems through action specs (also `bobsled activate`).                                                                |
 | `agent`                                                                        | Bounded tasks for coding agents: triage, review batches, onboarding.                                                                                   |
 | `diff`                                                                         | Compare entity-graph specs with a Git ref.                                                                                                             |
 
-The [CLI reference](../reference/cli.md#dogsled-entity-graph) lists every flag.
+The [CLI reference](../reference/cli.md#bobsled-entity-graph) lists every flag.

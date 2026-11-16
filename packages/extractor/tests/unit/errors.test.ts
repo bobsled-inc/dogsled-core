@@ -157,7 +157,7 @@ describe('classifyFailureReason', () => {
     ['timeout', true, 'timeout'],
     ['cancellation', false, 'transient_error'],
     ['internal', false, 'transient_error'],
-  ] as const)('maps Dogsled %s structurally', (kind, retryable, expected) => {
+  ] as const)('maps Bobsled Core %s structurally', (kind, retryable, expected) => {
     const error = toExtractorRuntimeError({ kind, code: 'TEST', operation: 'test', retryable });
     expect(classifyFailureReason(error)).toBe(expected);
   });

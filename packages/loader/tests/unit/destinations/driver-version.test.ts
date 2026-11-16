@@ -23,7 +23,7 @@ afterEach(() => {
   if (state.directory) rmSync(state.directory, { recursive: true, force: true });
 });
 function oldDriver(name: string, version: string) {
-  state.directory = mkdtempSync(path.join(os.tmpdir(), 'dogsled-old-driver-'));
+  state.directory = mkdtempSync(path.join(os.tmpdir(), 'bobsled-old-driver-'));
   writeFileSync(path.join(state.directory, 'package.json'), JSON.stringify({ name, version }));
 }
 describe('default destination driver loaders', () => {

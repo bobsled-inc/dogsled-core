@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const root = fileURLToPath(new URL('../../', import.meta.url));
 export const cliPath = path.resolve(
-  process.env.DOGSLED_E2E_CLI ?? path.join(root, 'packages/dogsled/bin/cli.mjs')
+  process.env.BOBSLED_CORE_E2E_CLI ?? path.join(root, 'packages/bobsled-core/bin/cli.mjs')
 );
 const require = createRequire(cliPath);
 
@@ -19,7 +19,7 @@ export function isolatedEnv(home, overrides = {}) {
     TMPDIR: os.tmpdir(),
     CI: '1',
     NO_COLOR: '1',
-    DOGSLED_OUTPUT_FORMAT: 'json',
+    BOBSLED_CORE_OUTPUT_FORMAT: 'json',
     ...overrides,
   };
 }
@@ -32,7 +32,7 @@ export function jsonLines(text) {
 }
 
 export async function publicApi(subpath) {
-  return import(pathToFileURL(require.resolve(`@bobsled-inc/dogsled/${subpath}`)).href);
+  return import(pathToFileURL(require.resolve(`@bobsled-inc/bobsled-core/${subpath}`)).href);
 }
 
 export async function command(executable, args, options = {}) {
@@ -91,9 +91,9 @@ export async function command(executable, args, options = {}) {
 }
 
 export async function context(name) {
-  const project = await mkdtemp(path.join(os.tmpdir(), `dogsled-e2e-${name}-`));
+  const project = await mkdtemp(path.join(os.tmpdir(), `bobsled-e2e-${name}-`));
   const home = path.resolve(
-    process.env.DOGSLED_E2E_HOME ?? path.join(root, 'test-results/e2e/home')
+    process.env.BOBSLED_CORE_E2E_HOME ?? path.join(root, 'test-results/e2e/home')
   );
   await mkdir(home, { recursive: true });
   const env = isolatedEnv(home);

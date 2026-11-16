@@ -11,7 +11,7 @@ const FEATURES = [
   ],
   [
     'Cross-source entity resolution',
-    '`dogsled entity-graph resolve` materializes canonical entity tables with declared (not inferred) relationships, no orphan edges, and per-row quality columns.',
+    '`bobsled entity-graph resolve` materializes canonical entity tables with declared (not inferred) relationships, no orphan edges, and per-row quality columns.',
   ],
   [
     'Unstructured ↔ structured linking',
@@ -19,15 +19,15 @@ const FEATURES = [
   ],
   [
     'Review queue export',
-    '`dogsled entity-graph mentions review export` reuses the existing `model review export` envelope — same CSV columns, same `--json` / `--yaml` outputs, mention columns appended.',
+    '`bobsled entity-graph mentions review export` reuses the existing `model review export` envelope — same CSV columns, same `--json` / `--yaml` outputs, mention columns appended.',
   ],
   [
     'Typed SDK codegen',
-    '`dogsled sdk generate --lang ts` emits a `tsc --noEmit`-clean SDK with branded IDs, strict per-entity filter shapes, an `EntityQueryBuilder`, and a `createDogsledClient()` factory.',
+    '`bobsled sdk generate --lang ts` emits a `tsc --noEmit`-clean SDK with branded IDs, strict per-entity filter shapes, an `EntityQueryBuilder`, and a `createBobsledClient()` factory.',
   ],
   [
     'Executor-backed runtime',
-    'Generated SDKs do not embed a database driver. The consumer passes a `DogsledEntityExecutor` so the SDK stays pure transformation and app code owns execution context.',
+    'Generated SDKs do not embed a database driver. The consumer passes a `BobsledEntityExecutor` so the SDK stays pure transformation and app code owns execution context.',
   ],
 ] as const;
 
@@ -44,7 +44,7 @@ const STEPS: ReadonlyArray<{
     title: 'Validate the resolution specs',
     description:
       'Offline schema check before any data plane work. Verifies entity, relationship, and survivorship specs in `entity-graph/`.',
-    code: 'dogsled entity-graph resolve validate customer deal document --json',
+    code: 'bobsled entity-graph resolve validate customer deal document --json',
     language: 'bash',
     href: null,
   },
@@ -54,11 +54,11 @@ const STEPS: ReadonlyArray<{
     description:
       'Three-step pipeline that materializes `__entity_profile`, `__entity_relationship`, and per-entity quality views. The runner module is local DuckDB by default, no warehouse credentials required.',
     code: [
-      'dogsled entity-graph resolve run customer deal document \\',
+      'bobsled entity-graph resolve run customer deal document \\',
       '  --runner ./runner.js --json',
-      'dogsled entity-graph resolve cluster customer deal document \\',
+      'bobsled entity-graph resolve cluster customer deal document \\',
       '  --runner ./runner.js --json',
-      'dogsled entity-graph resolve profile customer deal document \\',
+      'bobsled entity-graph resolve profile customer deal document \\',
       '  --runner ./runner.js --json',
     ].join('\n'),
     language: 'bash',
@@ -70,7 +70,7 @@ const STEPS: ReadonlyArray<{
     description:
       'CSV envelope-parity with `model review export`. Rows that need attention by default; pass `--all` for auto-merges. Auto-resolves to JSON in CI / non-TTY.',
     code: [
-      'dogsled entity-graph mentions review export \\',
+      'bobsled entity-graph mentions review export \\',
       '  --runner ./runner.js \\',
       '  --schema entity_graph \\',
       '  --csv \\',
@@ -83,8 +83,8 @@ const STEPS: ReadonlyArray<{
     step: '4',
     title: 'Generate the typed SDK',
     description:
-      'Reads the IR via `inventoryEntityGraph()`, emits branded IDs + `Profile` interfaces + `FindFilter` shapes + `EntityQueryBuilder` + `createDogsledClient()` into the consumer repo.',
-    code: 'dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json',
+      'Reads the IR via `inventoryEntityGraph()`, emits branded IDs + `Profile` interfaces + `FindFilter` shapes + `EntityQueryBuilder` + `createBobsledClient()` into the consumer repo.',
+    code: 'bobsled sdk generate --lang ts --out ./generated/bobsled-sdk --json',
     language: 'bash',
     href: null,
   },
@@ -92,7 +92,7 @@ const STEPS: ReadonlyArray<{
     step: '5',
     title: 'Wire the executor and query',
     description:
-      'Provide a `DogsledEntityExecutor` (one `find(request)` function) and call the typed surface. The executor can bridge to Dogsled MCP `readSource`, a warehouse runner, or an app API.',
+      'Provide a `BobsledEntityExecutor` (one `find(request)` function) and call the typed surface. The executor can bridge to Bobsled Core MCP `readSource`, a warehouse runner, or an app API.',
     code: null,
     language: 'plaintext',
     href: null,
@@ -108,18 +108,18 @@ const STEPS: ReadonlyArray<{
   },
 ] as const;
 
-const APP_CODE = `import { createDogsledClient, type DogsledEntityExecutor } from './generated/dogsled-sdk';
+const APP_CODE = `import { createBobsledClient, type BobsledEntityExecutor } from './generated/bobsled-sdk';
 
-const executor: DogsledEntityExecutor = {
+const executor: BobsledEntityExecutor = {
   async find(request) {
-    // Bridge to Dogsled MCP readSource, a warehouse runner, or an app API.
-    return queryDogsledEntityGraph(request);
+    // Bridge to Bobsled Core MCP readSource, a warehouse runner, or an app API.
+    return queryBobsledEntityGraph(request);
   },
 };
 
-const dogsled = createDogsledClient(executor);
+const bobsled = createBobsledClient(executor);
 
-const acme = await dogsled.entity.customer
+const acme = await bobsled.entity.customer
   .findBy({ domain: 'acme.com' })
   .withDocuments()
   .withRelationship('customer_has_deal')
@@ -164,7 +164,7 @@ export default function EntityGraphSdkDemoOverviewPage() {
     <div className="mx-auto flex max-w-6xl flex-col gap-8 p-8">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           { label: 'Demo' },
           { label: 'Entity Graph + Typed SDK' },
         ]}
@@ -236,7 +236,7 @@ export default function EntityGraphSdkDemoOverviewPage() {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             Generated SDKs ship without a database driver. App code provides a{' '}
             <code className="rounded bg-muted px-1 font-mono text-[12px]">
-              DogsledEntityExecutor
+              BobsledEntityExecutor
             </code>
             and calls <code className="rounded bg-muted px-1 font-mono text-[12px]">findBy()</code>,{' '}
             <code className="rounded bg-muted px-1 font-mono text-[12px]">withDocuments()</code>,{' '}

@@ -80,9 +80,9 @@ describe('attempt outcome validation for a parsed assignment', () => {
   const row = (pair_id = 'pair-1') => ({
     pair_id,
     assessment: 'Synthetic assessment.',
-    _dogsled_evidence: null,
-    _dogsled_confidence: null,
-    _dogsled_reason: null,
+    _bobsled_evidence: null,
+    _bobsled_confidence: null,
+    _bobsled_reason: null,
   });
   const ids = ['attempt-2', '  attempt-2 ', '   ', '', 'x'.repeat(1024), 'x'.repeat(1025)];
   it.each(ids)('matches revalidating the whole assignment (attempt %#)', (attemptId) => {
@@ -160,7 +160,7 @@ describe('shared row field schemas', () => {
       { name: 'extra', type: 'array', nullable: true },
       { name: 'attributes', type: 'object', nullable: true },
       { name: 'score', type: 'number', nullable: true },
-      { name: '_dogsled_reason', type: 'object', nullable: true },
+      { name: '_bobsled_reason', type: 'object', nullable: true },
     ];
     for (const findings of [false, true]) {
       expect(JSON.stringify(createAgenticRowSchema(columns, findings).toJSONSchema())).toBe(
@@ -173,15 +173,15 @@ describe('shared row field schemas', () => {
     { name: 'count', type: 'integer' as const, nullable: true },
     { name: 'at', type: 'timestamp' as const, nullable: false },
     { name: 'tags', type: 'array' as const, nullable: true },
-    { name: '_dogsled_reason', type: 'object' as const, nullable: true },
+    { name: '_bobsled_reason', type: 'object' as const, nullable: true },
   ];
   const rows = [
-    { id: 'a', count: 1, at: '2026-01-01T00:00:00Z', tags: ['x'], _dogsled_reason: null },
-    { id: 'a', count: null, at: '2026-01-01T00:00:00Z', tags: null, _dogsled_reason: null },
-    { id: 'a', count: 1.5, at: '2026-01-01T00:00:00Z', tags: [], _dogsled_reason: null },
-    { id: 'a', count: 1, at: 'yesterday', tags: [], _dogsled_reason: null },
-    { id: 'a', count: 1, at: '2026-01-01T00:00:00Z', tags: [], _dogsled_reason: { summary: '' } },
-    { id: 'a', count: 1, at: '2026-01-01T00:00:00Z', tags: [], _dogsled_reason: null, extra: 1 },
+    { id: 'a', count: 1, at: '2026-01-01T00:00:00Z', tags: ['x'], _bobsled_reason: null },
+    { id: 'a', count: null, at: '2026-01-01T00:00:00Z', tags: null, _bobsled_reason: null },
+    { id: 'a', count: 1.5, at: '2026-01-01T00:00:00Z', tags: [], _bobsled_reason: null },
+    { id: 'a', count: 1, at: 'yesterday', tags: [], _bobsled_reason: null },
+    { id: 'a', count: 1, at: '2026-01-01T00:00:00Z', tags: [], _bobsled_reason: { summary: '' } },
+    { id: 'a', count: 1, at: '2026-01-01T00:00:00Z', tags: [], _bobsled_reason: null, extra: 1 },
   ];
   it('validates rows identically across schemas and parse modes', () => {
     const first = createAgenticRowSchema(columns);

@@ -1,7 +1,7 @@
 import { LEGACY_BLUEPRINT_KEY_ALIASES } from '@bobsled-inc/protocol';
 
 /**
- * Declared file types a Dogsled project can contain.
+ * Declared file types a Bobsled Core project can contain.
  *
  * A YAML file declares its type with a top-level `type` field and a Markdown
  * file declares it in YAML front matter. The index maps each declared type to
@@ -62,7 +62,7 @@ export type SingletonProjectFileKind = (typeof SINGLETON_KINDS)[number];
 
 export const SINGLETON_PROJECT_FILE_KINDS: ReadonlySet<ProjectFileKind> = new Set(SINGLETON_KINDS);
 
-/** Kinds Dogsled recognizes but leaves to the host application to load. */
+/** Kinds Bobsled Core recognizes but leaves to the host application to load. */
 export const HOST_PROJECT_FILE_KINDS: ReadonlySet<ProjectFileKind> = new Set(['agent']);
 
 const YAML_TYPE_KINDS: ReadonlyMap<string, ProjectFileKind> = new Map(
@@ -99,8 +99,8 @@ const INTEGRATION_ONLY_FIELDS = [
   'transports',
   'default_transport',
   'auth_env_vars',
-  'dogsled_source_kind',
-  'dogsled_connection_ref',
+  'bobsled_source_kind',
+  'bobsled_connection_ref',
   ...Object.keys(LEGACY_BLUEPRINT_KEY_ALIASES),
 ] as const;
 
@@ -164,8 +164,8 @@ export function resolveMarkdownType(declaredType: string): ProjectFileKind | und
   return MARKDOWN_TYPE_KINDS.get(declaredType);
 }
 
-/** True for a declared type whose file Dogsled itself loads (not a host-owned kind). */
-export function isDogsledFileType(declaredType: string): boolean {
+/** True for a declared type whose file Bobsled Core itself loads (not a host-owned kind). */
+export function isBobsledFileType(declaredType: string): boolean {
   const kind = RETIRED_MODEL_TYPES.has(declaredType)
     ? 'model'
     : (YAML_TYPE_KINDS.get(declaredType) ?? MARKDOWN_TYPE_KINDS.get(declaredType));

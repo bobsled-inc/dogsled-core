@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { IntegrationSpecSchema, ResourceSpecSchema } from '../../src/framework/extractor/index.js';
 import { isFileStorageSource } from '../../src/runtime/file-storage-extractor.js';
 
-// Guards the bundled `s3-documents-ingestion` example project (in the `dogsled`
+// Guards the bundled `s3-documents-ingestion` example project (in the `bobsled`
 // package) against schema drift: a typo in its integration or resource YAML
 // fails here in CI instead of silently shipping a broken example.
 const exampleDir = join(
@@ -16,7 +16,7 @@ const exampleDir = join(
   '..',
   '..',
   '..',
-  'dogsled',
+  'bobsled-core',
   'examples',
   's3-documents-ingestion'
 );

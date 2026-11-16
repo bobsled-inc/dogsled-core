@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 /**
  * A configuration value that defers secret resolution to the runtime
- * environment. Literal secrets must never be persisted in Dogsled config.
+ * environment. Literal secrets must never be persisted in Bobsled Core config.
  */
 export const EnvPlaceholderSchema = z
   .string()

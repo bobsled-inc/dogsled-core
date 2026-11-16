@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Dogsled Extractor CLI — extract data from APIs via YAML-defined specs.
+ * Bobsled Core Extractor CLI — extract data from APIs via YAML-defined specs.
  *
  * Agent-native data ingestion: integration files define the API,
  * resource files define what to extract.
@@ -35,9 +35,9 @@ export function buildProgram(): Command {
   const program = new Command();
 
   program
-    .name('dogsled extract')
+    .name('bobsled extract')
     .version('0.0.1')
-    .description('Dogsled Extractor — extract data from APIs into structured streams')
+    .description('Bobsled Core Extractor — extract data from APIs into structured streams')
     .option('-v, --verbose', 'Verbose output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('--log-format <format>', 'Control log format: json or pretty', parseLogFormat, 'json');

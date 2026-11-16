@@ -27,7 +27,7 @@ transports:
       burst: 4
     headers:
       Accept: application/json
-      User-Agent: dogsled-extractor
+      User-Agent: bobsled-core-extractor
       X-Restli-Protocol-Version: 2.0.0
       Linkedin-Version: ${{ env.LINKEDIN_API_VERSION }}
 default_transport: default

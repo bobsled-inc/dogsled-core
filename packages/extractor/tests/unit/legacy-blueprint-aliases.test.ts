@@ -36,7 +36,7 @@ let root: string;
 let originalCwd: string;
 
 beforeEach(() => {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-alias-extractor-'));
+  root = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-alias-extractor-'));
   originalCwd = process.cwd();
   fs.mkdirSync(path.join(root, 'integrations'));
   fs.writeFileSync(path.join(root, 'integrations/api.yml'), YAML.stringify(source));
@@ -58,8 +58,8 @@ describe('legacy integration file aliases', () => {
       { path: 'integrations/api.yml' }
     );
     expect(result.data).toMatchObject({
-      dogsled_connection_ref: 'api-binding',
-      dogsled_source_kind: 'bobsled_api',
+      bobsled_connection_ref: 'api-binding',
+      bobsled_source_kind: 'bobsled_api',
       resource: { bobsled_connection_ref: 'data' },
     });
     expect(result.data).not.toHaveProperty('bobsled_connection_ref');
@@ -74,16 +74,16 @@ describe('legacy integration file aliases', () => {
     expect(loaded.warnings).toHaveLength(2);
     expect(
       loaded.warnings.every(
-        (warning) => warning.includes(file) && warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY')
+        (warning) => warning.includes(file) && warning.includes('BOBSLED_CORE_LEGACY_BLUEPRINT_KEY')
       )
     ).toBe(true);
   });
 
   it('accepts identical duplicates and rejects conflicting values with the file path', () => {
     const file = path.join(root, 'integrations/api.yml');
-    fs.writeFileSync(file, YAML.stringify({ ...source, dogsled_connection_ref: 'api-binding' }));
+    fs.writeFileSync(file, YAML.stringify({ ...source, bobsled_connection_ref: 'api-binding' }));
     expect(loadIntegrationSpecWithWarnings(file).warnings).toHaveLength(2);
-    fs.writeFileSync(file, YAML.stringify({ ...source, dogsled_connection_ref: 'private-new' }));
+    fs.writeFileSync(file, YAML.stringify({ ...source, bobsled_connection_ref: 'private-new' }));
     expect(() => loadIntegrationSpecWithWarnings(file)).toThrow(CommandError);
     try {
       loadIntegrationSpecWithWarnings(file);
@@ -91,17 +91,17 @@ describe('legacy integration file aliases', () => {
       expect(error).toMatchObject({ exitCode: 2 });
     }
     expect(() => loadIntegrationSpecWithWarnings(file)).toThrow(
-      `LEGACY_KEY_CONFLICT: ${file}: bobsled_connection_ref conflicts with dogsled_connection_ref`
+      `LEGACY_KEY_CONFLICT: ${file}: bobsled_connection_ref conflicts with bobsled_connection_ref`
     );
   });
 
   it('keeps direct strict schema calls safe without accepting an old prefix wildcard', () => {
     expect(SourceSchema.safeParse(source).success).toBe(true);
-    const conflict = SourceSchema.safeParse({ ...source, dogsled_source_kind: 'different' });
+    const conflict = SourceSchema.safeParse({ ...source, bobsled_source_kind: 'different' });
     expect(conflict.success).toBe(false);
     if (!conflict.success) {
       expect(conflict.error.issues[0]?.message).toBe(
-        'LEGACY_KEY_CONFLICT: bobsled_source_kind conflicts with dogsled_source_kind'
+        'LEGACY_KEY_CONFLICT: bobsled_source_kind conflicts with bobsled_source_kind'
       );
     }
     expect(SourceSchema.safeParse({ ...source, bobsled_unrelated: true }).success).toBe(false);
@@ -146,7 +146,7 @@ describe('legacy integration file aliases', () => {
         'integration spec api: normalized key: transports[0].baseUrl → base_url'
       );
       const deprecations = warn.mock.calls.filter(([message]) =>
-        message.includes('DOGSLED_LEGACY_BLUEPRINT_KEY')
+        message.includes('BOBSLED_CORE_LEGACY_BLUEPRINT_KEY')
       );
       expect(deprecations).toHaveLength(1);
       expect(deprecations[0]?.[0]).toContain('bobsled_connection_ref');
@@ -207,7 +207,7 @@ describe('legacy integration file aliases', () => {
       'sample'
     );
     expect(resolved.warnings).toHaveLength(1);
-    expect(resolved.warnings[0]).toContain('DOGSLED_LEGACY_BLUEPRINT_KEY');
+    expect(resolved.warnings[0]).toContain('BOBSLED_CORE_LEGACY_BLUEPRINT_KEY');
     expect(resolved.warnings[0]).toContain(path.join(root, 'integrations/api.yml'));
     expect(resolved.warnings[0]).not.toContain('api-binding');
   });
@@ -285,7 +285,7 @@ describe('legacy integration file aliases', () => {
       warnings: 3,
       warning_details: expect.arrayContaining([
         expect.objectContaining({
-          warning: expect.stringContaining('DOGSLED_LEGACY_BLUEPRINT_KEY'),
+          warning: expect.stringContaining('BOBSLED_CORE_LEGACY_BLUEPRINT_KEY'),
         }),
         expect.objectContaining({ warning: 'transports[0].baseUrl → base_url' }),
       ]),

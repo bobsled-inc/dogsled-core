@@ -309,7 +309,7 @@ materialization:
     });
 
     it('scopes lineage output per integration by default', () => {
-      const r = run(['lineage'], projectDir, { DOGSLED_OUTPUT_FORMAT: 'text' });
+      const r = run(['lineage'], projectDir, { BOBSLED_CORE_OUTPUT_FORMAT: 'text' });
       expect(r.exitCode).toBe(0);
       expect(r.stdout).toContain('── integration: ecom_sf ──');
       expect(r.stdout).toContain('── integration: analytics_bq ──');

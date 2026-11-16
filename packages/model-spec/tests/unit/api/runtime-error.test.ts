@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   CommandError,
-  DogsledRuntimeError,
+  BobsledRuntimeError,
   loadProject,
   validateProject,
 } from '../../../src/api/index.js';
@@ -44,7 +44,7 @@ describe('model-spec runtime failure boundary', () => {
   });
 
   it('wraps a CommandError from a real project load', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'dogsled-runtime-error-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'bobsled-runtime-error-'));
     paths.push(cwd);
     writeFileSync(join(cwd, 'model-spec.yml'), 'unknown_key: true\n');
 
@@ -55,14 +55,14 @@ describe('model-spec runtime failure boundary', () => {
       code: 'MODEL_PROJECT_LOAD_VALIDATION_FAILED',
       operation: 'model.project.load',
       retryable: false,
-      message: 'Dogsled could not validate the request.',
+      message: 'Bobsled Core could not validate the request.',
     });
-    expect((result as DogsledRuntimeError).cause).toBeInstanceOf(CommandError);
-    expect((result as DogsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
+    expect((result as BobsledRuntimeError).cause).toBeInstanceOf(CommandError);
+    expect((result as BobsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
   });
 
   it('wraps a native filesystem error from a real project load', async () => {
-    const cwd = join(mkdtempSync(join(tmpdir(), 'dogsled-runtime-error-')), 'not-a-directory');
+    const cwd = join(mkdtempSync(join(tmpdir(), 'bobsled-runtime-error-')), 'not-a-directory');
     paths.push(join(cwd, '..'));
     writeFileSync(cwd, 'not a directory');
 
@@ -73,9 +73,9 @@ describe('model-spec runtime failure boundary', () => {
       code: 'MODEL_PROJECT_LOAD_FILESYSTEM_ENOTDIR',
       operation: 'model.project.load',
       retryable: false,
-      message: 'Dogsled could not complete the operation.',
+      message: 'Bobsled Core could not complete the operation.',
     });
-    expect((result as DogsledRuntimeError).cause).toMatchObject({ code: 'ENOTDIR' });
+    expect((result as BobsledRuntimeError).cause).toMatchObject({ code: 'ENOTDIR' });
   });
 
   it('wraps public metadata validation failures with the validate operation', async () => {
@@ -91,15 +91,15 @@ describe('model-spec runtime failure boundary', () => {
       project: projectWithMetadata({ metrics: new Map([['orders_total', metric]]) }),
     }).catch((error) => error);
 
-    expect(result).toBeInstanceOf(DogsledRuntimeError);
+    expect(result).toBeInstanceOf(BobsledRuntimeError);
     expect(result).toMatchObject({
       kind: 'validation',
       code: 'MODEL_PROJECT_VALIDATE_VALIDATION_FAILED',
       operation: 'model.project.validate',
       retryable: false,
-      message: 'Dogsled could not validate the request.',
+      message: 'Bobsled Core could not validate the request.',
     });
-    expect((result as DogsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
+    expect((result as BobsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
   });
 
   it('keeps an operational metadata failure out of the validation class', async () => {
@@ -128,9 +128,9 @@ describe('model-spec runtime failure boundary', () => {
       code: 'MODEL_PROJECT_VALIDATE_FAILURE',
       operation: 'model.project.validate',
       retryable: false,
-      message: 'Dogsled could not complete the operation.',
+      message: 'Bobsled Core could not complete the operation.',
     });
-    expect((result as DogsledRuntimeError).cause).toMatchObject({
+    expect((result as BobsledRuntimeError).cause).toMatchObject({
       message: 'metadata registry read failed',
     });
   });

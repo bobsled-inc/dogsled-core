@@ -40,9 +40,9 @@ export async function run(ctx) {
     ).stdout
   );
   assert.equal(exported.ready, true, JSON.stringify(exported.diagnostics));
-  assert.match(await ctx.read('shop.ossie.yml'), /DOGSLED/);
+  assert.match(await ctx.read('shop.ossie.yml'), /BOBSLED/);
   const extension = exported.files[0].document.custom_extensions.find(
-    (entry) => entry.vendor_name === 'DOGSLED'
+    (entry) => entry.vendor_name === 'BOBSLED'
   );
   assert.deepEqual(JSON.parse(extension.data).verified_queries, [vq]);
   assert.doesNotMatch(await ctx.read('shop.ossie.yml'), /\bTRACK\b/);

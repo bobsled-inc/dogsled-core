@@ -35,7 +35,7 @@ describe('command helpers', () => {
   });
 
   // The project lives beside, not around, the bundled catalog, as it does when
-  // DOGSLED_BUNDLED_INTEGRATIONS_DIR points at an installed Dogsled package.
+  // BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR points at an installed Bobsled Core package.
   const projectDir = () => path.join(tmpDir, 'project');
   const project = () => {
     fs.mkdirSync(projectDir(), { recursive: true });
@@ -114,8 +114,8 @@ describe('command helpers', () => {
         spec_version: '2',
         type: 'source',
         name: 'smartlead',
-        dogsled_connection_ref: 'smartlead',
-        dogsled_source_kind: 'smartlead',
+        bobsled_connection_ref: 'smartlead',
+        bobsled_source_kind: 'smartlead',
         transports: [
           {
             id: 'smartlead_default',

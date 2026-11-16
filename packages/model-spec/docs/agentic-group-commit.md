@@ -480,7 +480,7 @@ CHECKPOINT_BENCHMARK=1 CHECKPOINT_BENCHMARK_EMULATOR=1 CHECKPOINT_BENCHMARK_LATE
 Set `CHECKPOINT_BENCHMARK_RUNS=4,16` and `CHECKPOINT_BENCHMARK_CONCURRENCY=3` for runs that share
 a schema, `CHECKPOINT_BENCHMARK_LATENCY_TAIL=0` for medians, and `CHECKPOINT_BENCHMARK_CONCURRENCY=1` with
 30 assignments for the calibration. On a real account, leave out `CHECKPOINT_BENCHMARK_EMULATOR` and set
-`DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION` and `DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA` as for the
+`BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_INTEGRATION` and `BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA` as for the
 [live suite](../tests/integration/warehouse/README.md#agentic-store-conformance). Each run then has a
 process of its own. On Snowflake, 30 assignments per run and one sample keep it under an hour.
 
@@ -495,7 +495,7 @@ process of its own. On Snowflake, 30 assignments per run and one sample keep it 
   The scheduler in `schedule.ts` builds them; one command at a time is unchanged.
 - The store conformance suite runs with groups on the Snowflake emulator and DuckDB in every test
   run, on PostgreSQL with its settings, and on a Snowflake account with
-  `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1`. Its group cases cover a group refused whole, a repeated group,
+  `BOBSLED_CORE_MODEL_SPEC_GROUP_COMMIT=1`. Its group cases cover a group refused whole, a repeated group,
   a lost reply, a group from an expired owner, and a group on a run at the store's row limit. Statement
   level tests cover a crash after a group's rows, a lost reply to either statement, and a run saved in
   groups read by a session that does not group. Unit tests compare runs saved in groups with runs
@@ -508,7 +508,7 @@ from about 20 to between 69 and 99 calls a minute and 16 runs sharing a schema f
 
 - Keep the option experimental and off by default.
 - Before turning it on for a warehouse, run the live conformance suite there with
-  `DOGSLED_MODEL_SPEC_GROUP_COMMIT=1`, and the benchmark.
+  `BOBSLED_CORE_MODEL_SPEC_GROUP_COMMIT=1`, and the benchmark.
 - Change the default only in a change of its own.
 
 With model calls that take seconds, expect less: the store stops being the limit, and the model's

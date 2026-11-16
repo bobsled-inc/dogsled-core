@@ -7,7 +7,7 @@ connection:
   account_identifier: '${{ env.SF_ACCOUNT }}'
   warehouse: COMPUTE_WH
   user: '${{ env.SF_USER }}'
-  role: DOGSLED_AI_ROLE
+  role: BOBSLED_CORE_AI_ROLE
 auth:
   type: rsa_key
   private_key_path: /tmp/sf.pem

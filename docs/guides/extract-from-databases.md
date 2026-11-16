@@ -1,7 +1,7 @@
 # Extract from databases
 
-Dogsled reads tables from PostgreSQL, MySQL, Redshift, ClickHouse, Snowflake,
-BigQuery, Apache Iceberg and Delta Lake, and loads them anywhere `dogsled load run`
+Bobsled Core reads tables from PostgreSQL, MySQL, Redshift, ClickHouse, Snowflake,
+BigQuery, Apache Iceberg and Delta Lake, and loads them anywhere `bobsled load run`
 can write. A database resource uses three blocks: `extract` says where to read and
 how to replicate, `schema` declares the columns, and an optional `load` block holds
 destination overrides.
@@ -58,10 +58,10 @@ schema:
 
 ```bash
 export APP_DB_HOST=db.example.com APP_DB_USER=reader APP_DB_PASSWORD=<password>
-dogsled extract validate app_db
-dogsled extract run --integration app_db customers --advance-state --quiet \
-  | dogsled load run --dest duckdb --db-path app.duckdb
-dogsled query "SELECT id, name, plan FROM customers ORDER BY id" --db-path app.duckdb
+bobsled extract validate app_db
+bobsled extract run --integration app_db customers --advance-state --quiet \
+  | bobsled load run --dest duckdb --db-path app.duckdb
+bobsled query "SELECT id, name, plan FROM customers ORDER BY id" --db-path app.duckdb
 ```
 
 ```text
@@ -74,10 +74,10 @@ id	name	plan
 3	Linus Ltd	pro
 ```
 
-Dogsled refuses to connect to private and loopback addresses unless you allow it,
+Bobsled Core refuses to connect to private and loopback addresses unless you allow it,
 which protects shared environments from configuration that points at internal
 hosts. To read from a database on your own machine or private network, set
-`DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`.
+`BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`.
 
 `source.sql` replaces `source.table` with your own `SELECT`. Use `schema` (or
 `dataset` for BigQuery, and `database` where it applies) to qualify the table;
@@ -122,7 +122,7 @@ auth:
 ```
 
 Create `resources/sf_source/orders.yml`. Snowflake stores unquoted names in
-upper case, and Dogsled matches column names exactly, so write them as Snowflake
+upper case, and Bobsled Core matches column names exactly, so write them as Snowflake
 stores them:
 
 ```yaml
@@ -145,9 +145,9 @@ schema:
 ```
 
 ```bash
-dogsled extract validate sf_source
-dogsled extract run --integration sf_source orders --quiet \
-  | dogsled load run --dest duckdb --db-path sf.duckdb
+bobsled extract validate sf_source
+bobsled extract run --integration sf_source orders --quiet \
+  | bobsled load run --dest duckdb --db-path sf.duckdb
 ```
 
 ```text

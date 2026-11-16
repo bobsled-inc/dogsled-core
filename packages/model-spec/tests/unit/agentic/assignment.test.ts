@@ -40,9 +40,9 @@ describe('assignment boundary validation', () => {
   const finding = () => ({
     pair_id: 'pair-1',
     assessment: 'uncertain',
-    _dogsled_evidence: null,
-    _dogsled_confidence: null,
-    _dogsled_reason: null,
+    _bobsled_evidence: null,
+    _bobsled_confidence: null,
+    _bobsled_reason: null,
   });
   const result = (rows: unknown[]) => ({ ...outcome('success-empty'), rows });
 
@@ -67,14 +67,14 @@ describe('assignment boundary validation', () => {
     ['null key', { pair_id: null }],
     ['wrong type', { assessment: 12 }],
     ['unknown field', { extra: true }],
-    ['run override', { _dogsled_run_id: 'forged-run' }],
-    ['invalid confidence', { _dogsled_confidence: 1.1 }],
-    ['malformed reason', { _dogsled_reason: { summary: 'Missing factors' } }],
-    ['empty evidence', { _dogsled_evidence: [] }],
+    ['run override', { _bobsled_run_id: 'forged-run' }],
+    ['invalid confidence', { _bobsled_confidence: 1.1 }],
+    ['malformed reason', { _bobsled_reason: { summary: 'Missing factors' } }],
+    ['empty evidence', { _bobsled_evidence: [] }],
     [
       'undeclared source',
       {
-        _dogsled_evidence: [
+        _bobsled_evidence: [
           {
             source: 'secret',
             reference: 'record:1',
@@ -96,7 +96,7 @@ describe('assignment boundary validation', () => {
   it('accepts non-web evidence without inventing an excerpt', () => {
     const row = {
       ...finding(),
-      _dogsled_evidence: [
+      _bobsled_evidence: [
         {
           source: 'pairs',
           reference: 'record:pair-1',
@@ -171,17 +171,17 @@ it('preserves evidence from earlier findings without granting source access', ()
     retrieved_at: '2026-09-11T10:01:00Z',
   };
   const work = assignment();
-  work.input.columns.push({ name: '_dogsled_evidence', type: 'array', nullable: true });
-  Object.assign(work.input.rows[0]!, { _dogsled_evidence: [citation] });
+  work.input.columns.push({ name: '_bobsled_evidence', type: 'array', nullable: true });
+  Object.assign(work.input.rows[0]!, { _bobsled_evidence: [citation] });
   const result = {
     ...outcome('success-empty'),
     rows: [
       {
         pair_id: 'pair-1',
         assessment: 'uncertain',
-        _dogsled_evidence: [citation],
-        _dogsled_confidence: null,
-        _dogsled_reason: null,
+        _bobsled_evidence: [citation],
+        _bobsled_confidence: null,
+        _bobsled_reason: null,
       },
     ],
   };
@@ -201,7 +201,7 @@ it('accepts a completed empty input group with independent processed keys', () =
 
 it('reports invalid input metadata as a schema failure', () => {
   const work = assignment();
-  work.input.columns.push({ name: '_dogsled_run_id', type: 'number', nullable: true });
+  work.input.columns.push({ name: '_bobsled_run_id', type: 'number', nullable: true });
   expect(AgentAssignmentSchema.safeParse(work).success).toBe(false);
 });
 
@@ -219,7 +219,7 @@ describe('host-owned evidence time', () => {
         {
           pair_id: 'pair-1',
           assessment: 'uncertain',
-          _dogsled_evidence: [
+          _bobsled_evidence: [
             {
               source: work.input.ref,
               reference: 'pair-1',
@@ -227,8 +227,8 @@ describe('host-owned evidence time', () => {
               retrieved_at: date,
             },
           ],
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
         },
       ],
     });
@@ -283,9 +283,9 @@ it('accepts named input evidence and checks its host timestamp', () => {
       {
         pair_id: 'pair-1',
         assessment: 'uncertain',
-        _dogsled_confidence: null,
-        _dogsled_reason: null,
-        _dogsled_evidence: [
+        _bobsled_confidence: null,
+        _bobsled_reason: null,
+        _bobsled_evidence: [
           {
             source: 'phone',
             reference: 'pair-1',
@@ -297,6 +297,6 @@ it('accepts named input evidence and checks its host timestamp', () => {
     ],
   };
   expect(parseAgentAssignmentOutcome(work, reply).status).toBe('succeeded');
-  reply.rows[0]!._dogsled_evidence[0]!.retrieved_at = '2020-01-01T00:00:00Z';
+  reply.rows[0]!._bobsled_evidence[0]!.retrieved_at = '2020-01-01T00:00:00Z';
   expect(() => parseAgentAssignmentOutcome(work, reply)).toThrow(/retrieval time/);
 });

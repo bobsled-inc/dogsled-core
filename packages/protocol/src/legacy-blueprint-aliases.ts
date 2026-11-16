@@ -1,21 +1,21 @@
-export const DOGSLED_LEGACY_BLUEPRINT_KEY = 'DOGSLED_LEGACY_BLUEPRINT_KEY';
+export const BOBSLED_CORE_LEGACY_BLUEPRINT_KEY = 'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY';
 export const LEGACY_KEY_CONFLICT = 'LEGACY_KEY_CONFLICT';
 
 export const LEGACY_BLUEPRINT_KEY_ALIASES = Object.freeze({
-  bobsled_connection_ref: 'dogsled_connection_ref',
-  bobsled_source_kind: 'dogsled_source_kind',
+  bobsled_connection_ref: 'bobsled_connection_ref',
+  bobsled_source_kind: 'bobsled_source_kind',
 } as const);
 
 export const LEGACY_DESTINATION_TYPE_ALIASES = Object.freeze({
-  bobsled_managed: 'dogsled_managed',
+  bobsled_managed: 'bobsled_managed',
 } as const);
 
 export const REJECTED_LEGACY_DESTINATION_TYPES = Object.freeze({
-  bobsled_lakehouse: 'dogsled_managed',
+  bobsled_lakehouse: 'bobsled_managed',
 } as const);
 
 export interface LegacyBlueprintDeprecation {
-  readonly code: typeof DOGSLED_LEGACY_BLUEPRINT_KEY;
+  readonly code: typeof BOBSLED_CORE_LEGACY_BLUEPRINT_KEY;
   readonly path: string;
   readonly oldKey: string;
   readonly newKey: string;
@@ -81,14 +81,14 @@ export function normalizeLegacyBlueprintKeys(
     if (!isRecord(input)) return input;
     const result = { ...input };
     for (const [oldKey, newKey] of Object.entries(LEGACY_BLUEPRINT_KEY_ALIASES)) {
-      if (destination && newKey !== 'dogsled_connection_ref') continue;
+      if (destination && newKey !== 'bobsled_connection_ref') continue;
       if (!Object.hasOwn(input, oldKey)) continue;
       if (Object.hasOwn(input, newKey) && !equalValues(input[oldKey], input[newKey])) {
         throw new LegacyBlueprintKeyConflictError(path, oldKey, newKey);
       }
       result[newKey] = input[oldKey];
       delete result[oldKey];
-      deprecations.push({ code: DOGSLED_LEGACY_BLUEPRINT_KEY, path, oldKey, newKey });
+      deprecations.push({ code: BOBSLED_CORE_LEGACY_BLUEPRINT_KEY, path, oldKey, newKey });
     }
     const type = input['type'];
     if (
@@ -99,7 +99,7 @@ export function normalizeLegacyBlueprintKeys(
       const newKey =
         LEGACY_DESTINATION_TYPE_ALIASES[type as keyof typeof LEGACY_DESTINATION_TYPE_ALIASES];
       result['type'] = newKey;
-      deprecations.push({ code: DOGSLED_LEGACY_BLUEPRINT_KEY, path, oldKey: type, newKey });
+      deprecations.push({ code: BOBSLED_CORE_LEGACY_BLUEPRINT_KEY, path, oldKey: type, newKey });
     }
     return result;
   }

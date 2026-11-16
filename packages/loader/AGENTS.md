@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-11-12 -->
 
-Reads Dogsled protocol messages from stdin and loads data into destinations (files or databases).
+Reads Bobsled Core protocol messages from stdin and loads data into destinations (files or databases).
 
 ---
 
@@ -38,11 +38,11 @@ Condensed checklist:
 ## Key Behaviors
 
 - **Two loader paths**: `runFileLoader` (local/gcs/s3) and `runDatabaseLoader` (duckdb/bigquery)
-- **System columns**: `_time_extracted` (set by extractor), `_dogsled_loaded_at` (set by loader at merge time). Constants in `database.ts` as `SYSTEM_COLUMNS`
+- **System columns**: `_time_extracted` (set by extractor), `_bobsled_loaded_at` (set by loader at merge time). Constants in `database.ts` as `SYSTEM_COLUMNS`
 - **Load strategies**: append (insert), merge (staging + MERGE by key_properties), full_refresh (truncate-on-first-flush)
 - **Per-stream strategy resolution**: CLI `--load-strategy` overrides all > SCHEMA `load_strategy` per-stream > fallback `append`
 - **Schema evolution**: New columns auto-added via ALTER TABLE; type conflicts error
-- **Staging table pattern**: Prefix `_dogsled_stg_` unified across all destinations
+- **Staging table pattern**: Prefix `_bobsled_stg_` unified across all destinations
 - **RECORD enrichment**: `_time_extracted` added in `run.ts` before buffering
 - **BATCH passthrough**: Points at extractor-created files; skips JS-level parsing
 - **STATE forwarding**: Forwarded to stdout after flushing buffered records
@@ -85,7 +85,7 @@ These destinations should fail fast with user-facing validation errors when `vec
 - **local**: Moves converted file into output directory
 - **gcs**: Dynamic import of `@google-cloud/storage` (optional peer dep)
 - **Path safety**: Destination paths normalized and reject traversal outside configured root/prefix
-- **Stream subfolder**: Opt-in `streamSubfolder` (`--stream-subfolder`, `stream_subfolder`) places files at `<stream>/<subfolder>/<stream>-<n>.<ext>`. Its rule is `isValidStreamSubfolder` in `@bobsled-inc/protocol`, shared with the `dogsled.yml` schema. Unset, the path is exactly `<stream>/<stream>-<n>.<ext>`
+- **Stream subfolder**: Opt-in `streamSubfolder` (`--stream-subfolder`, `stream_subfolder`) places files at `<stream>/<subfolder>/<stream>-<n>.<ext>`. Its rule is `isValidStreamSubfolder` in `@bobsled-inc/protocol`, shared with the `bobsled.yml` schema. Unset, the path is exactly `<stream>/<stream>-<n>.<ext>`
 
 ## Format Notes
 

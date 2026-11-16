@@ -27,7 +27,7 @@ export function registerOssieBindings(
 ): void {
   const byName = new Map(nodes.map((node) => [node.name, node]));
   const localOrigins = getOssieOrigins(index).filter(
-    (origin) => origin.kind === 'derived' && origin.source.startsWith('dogsled://')
+    (origin) => origin.kind === 'derived' && origin.source.startsWith('bobsled://')
   );
   if (localOrigins.length > 0) {
     const analysis = analyzeModelDependencies({
@@ -42,7 +42,7 @@ export function registerOssieBindings(
       );
       if (node && node.materialization !== 'ephemeral' && dependency?.executionMode !== 'on_read') {
         throw new CommandError(
-          `${origin.filePath}: Ossie dataset "${origin.name}" uses a Dogsled query reference but has no live source and is not ephemeral. Use the finished warehouse address.`,
+          `${origin.filePath}: Ossie dataset "${origin.name}" uses a Bobsled Core query reference but has no live source and is not ephemeral. Use the finished warehouse address.`,
           2
         );
       }
@@ -96,7 +96,7 @@ export function validateOssieBindings(
   for (const node of nodes) {
     if (!includePublished && getPublishTarget(node.parsedSpec.publish)) continue;
     const binding = bindings.get(node.parsedSpec);
-    if (!binding || binding.source.startsWith('dogsled://')) continue;
+    if (!binding || binding.source.startsWith('bobsled://')) continue;
     const resolved = modelRegistry.get(node.name);
     const declaredParts = addressParts(binding.source, dialect);
     const resolvedParts = resolved && addressParts(resolved, dialect);
@@ -108,8 +108,8 @@ export function validateOssieBindings(
     ) {
       throw new CommandError(
         `${binding.filePath}: Ossie dataset "${node.name}" declares source "${binding.source}", ` +
-          `but Dogsled resolves its output to "${resolved ?? '(unresolved)'}". ` +
-          'Update the source or Dogsled destination settings so they identify the same table.',
+          `but Bobsled Core resolves its output to "${resolved ?? '(unresolved)'}". ` +
+          'Update the source or Bobsled Core destination settings so they identify the same table.',
         2
       );
     }

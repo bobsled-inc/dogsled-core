@@ -666,7 +666,7 @@ function countReviewMarkers(content: string): number {
 }
 
 function getManifestPath(entity: string): string {
-  return path.join(process.cwd(), '.dogsled', 'onboard', `${entity}.json`);
+  return path.join(process.cwd(), '.bobsled', 'onboard', `${entity}.json`);
 }
 
 function writeManifest(manifest: OnboardManifest): string {

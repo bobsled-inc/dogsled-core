@@ -7,7 +7,7 @@ Model Spec supports seven materialization types — `view`, `table`, `incrementa
 ## Type catalog
 
 - `view` — `CREATE OR REPLACE VIEW`. Lightweight, always fresh, no storage. Default if not specified.
-- `table` — `CREATE OR REPLACE TABLE` (Snowflake / BigQuery / Databricks / DuckDB), a swap-rename pattern that builds `<name>__dogsled_new`, renames the live table aside as `<name>__dogsled_old`, then drops the old table with `CASCADE` (Postgres / pgvector / Redshift), or `DROP TABLE IF EXISTS` + `CREATE TABLE` (MySQL). Full refresh on every run. The Postgres swap-rename keeps the live table available while the new copy is being built and avoids `cannot drop table because other objects depend on it` errors when a downstream `materialized_view` references this table; `CASCADE` on the renamed-aside copy intentionally drops the dependent MV so Model Spec can re-create it from the model that owns it later in the same DAG run.
+- `table` — `CREATE OR REPLACE TABLE` (Snowflake / BigQuery / Databricks / DuckDB), a swap-rename pattern that builds `<name>__bobsled_new`, renames the live table aside as `<name>__bobsled_old`, then drops the old table with `CASCADE` (Postgres / pgvector / Redshift), or `DROP TABLE IF EXISTS` + `CREATE TABLE` (MySQL). Full refresh on every run. The Postgres swap-rename keeps the live table available while the new copy is being built and avoids `cannot drop table because other objects depend on it` errors when a downstream `materialized_view` references this table; `CASCADE` on the renamed-aside copy intentionally drops the dependent MV so Model Spec can re-create it from the model that owns it later in the same DAG run.
 - `incremental` — `MERGE`, `DELETE+INSERT`, or `APPEND` strategy. Requires `strategy` + (typically) `unique_key` + `incremental_filter`. First run creates the table; subsequent runs apply the strategy.
 - `ephemeral` — Inlined as a CTE in downstream models. No DDL emitted; not a database object.
 - `snapshot` — Slowly-Changing Dimension Type 2 (SCD-2). Tracks changes to `tracked_columns` for each `unique_key` over time via `valid_from` / `valid_to` / `is_current` columns.
@@ -77,7 +77,7 @@ This transition could lose data or history and must be performed explicitly.
 
 To migrate:
   DROP TABLE IF EXISTS "ANALYTICS"."FCT_ORDERS";
-  -- then re-run: dogsled model run fct_orders
+  -- then re-run: bobsled model run fct_orders
 
 Dialect: snowflake
 ```
@@ -229,7 +229,7 @@ materialization:
 
 ## State and run semantics
 
-Model Spec persists per-model materialization metadata in `.dogsled-model-spec-state/state.json` (or `.dogsled/model-spec/run-state.json` for multi-integration projects, scoped under `<handle>.<model>` keys). State tracks `materialization`, `selectSignature`, `columns`, and `lastRunAt` (`src/compiler/state.ts:37-53`). The compiler uses prior state to detect transitions (`planTransition`) and schema changes (`planSchemaChange`).
+Model Spec persists per-model materialization metadata in `.bobsled-model-spec-state/state.json` (or `.bobsled/model-spec/run-state.json` for multi-integration projects, scoped under `<handle>.<model>` keys). State tracks `materialization`, `selectSignature`, `columns`, and `lastRunAt` (`src/compiler/state.ts:37-53`). The compiler uses prior state to detect transitions (`planTransition`) and schema changes (`planSchemaChange`).
 
 On error, state does not advance — the user can fix and re-run safely. `--full-refresh` clears state for the run; on re-run, all models behave as first-run.
 
@@ -245,4 +245,4 @@ Aside: at the API layer (`runProject`), schema-drift `fail` and unsupported tran
 
 - `AGENTS.md` and `README.md` cover the YAML schema overview.
 - `docs/tutorials/snowflake-materializations.md` provides a multi-step tutorial.
-- `.agents/skills/dogsled-model-spec/SKILL.md` contains the agent-facing skill.
+- `.agents/skills/bobsled-model-spec/SKILL.md` contains the agent-facing skill.

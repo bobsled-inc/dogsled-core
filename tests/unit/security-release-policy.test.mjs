@@ -91,12 +91,12 @@ describe('package import smoke policy', () => {
 describe('release CLI smoke targets', () => {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
   const pkgJson = JSON.parse(
-    readFileSync(path.join(repoRoot, 'packages/dogsled/package.json'), 'utf8')
+    readFileSync(path.join(repoRoot, 'packages/bobsled-core/package.json'), 'utf8')
   );
   const releaseSrc = readFileSync(path.join(repoRoot, 'scripts/security/release.mjs'), 'utf8');
 
   it('package declares at least one bin entry', () => {
-    ok(pkgJson.bin, 'packages/dogsled/package.json must declare bin');
+    ok(pkgJson.bin, 'packages/bobsled-core/package.json must declare bin');
     const binNames = Object.keys(pkgJson.bin);
     ok(binNames.length > 0, 'at least one bin entry required');
   });

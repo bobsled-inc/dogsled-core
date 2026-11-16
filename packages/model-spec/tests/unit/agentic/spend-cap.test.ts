@@ -40,9 +40,9 @@ function answer(request: AgentExecutorRequest, usage: AgenticUsage = measured) {
       {
         pair_id: request.assignment.group_key.pair_id,
         assessment: 'ok',
-        _dogsled_evidence: null,
-        _dogsled_confidence: null,
-        _dogsled_reason: null,
+        _bobsled_evidence: null,
+        _bobsled_confidence: null,
+        _bobsled_reason: null,
       },
     ],
   };

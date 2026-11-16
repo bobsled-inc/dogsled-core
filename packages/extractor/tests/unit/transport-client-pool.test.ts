@@ -54,7 +54,7 @@ describe('TransportClientPool', () => {
   it('resolves per-resource source transports and lazily creates HTTP clients', async () => {
     pool = new TransportClientPool({
       integration: source,
-      stateDir: '/tmp/dogsled-test-state',
+      stateDir: '/tmp/bobsled-test-state',
     });
 
     const first = await pool.getForResource(resource);
@@ -71,7 +71,7 @@ describe('TransportClientPool', () => {
   it('deduplicates concurrent client creation for the same transport', async () => {
     pool = new TransportClientPool({
       integration: source,
-      stateDir: '/tmp/dogsled-test-state',
+      stateDir: '/tmp/bobsled-test-state',
     });
 
     const [first, second] = await Promise.all([

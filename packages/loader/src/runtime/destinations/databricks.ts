@@ -346,7 +346,7 @@ export class DatabricksDestination implements DatabaseDestination {
         2
       );
     }
-    const rows = await this.query(`SHOW TBLPROPERTIES ${qualifiedTable} ('dogsled_temp_dataset')`);
+    const rows = await this.query(`SHOW TBLPROPERTIES ${qualifiedTable} ('bobsled_temp_dataset')`);
     const value = rows[0]?.['value'] ?? rows[0]?.['VALUE'];
     if (value !== marker) {
       throw new CommandError(
@@ -508,7 +508,7 @@ export class DatabricksDestination implements DatabaseDestination {
       const ownershipProperties =
         marker === undefined
           ? ''
-          : ` TBLPROPERTIES ('dogsled_temp_dataset' = ${quoteDatabricksStringLiteral(marker)})`;
+          : ` TBLPROPERTIES ('bobsled_temp_dataset' = ${quoteDatabricksStringLiteral(marker)})`;
       const ddl = `CREATE TABLE IF NOT EXISTS ${qualifiedTable} (${colDefs.join(', ')})${clusterClause}${ownershipProperties}`;
       await withRetry(() => this.query(ddl));
       if (marker !== undefined) {
@@ -726,7 +726,7 @@ export class DatabricksDestination implements DatabaseDestination {
       throw new Error('merge strategy requires at least one key column');
     }
 
-    const stagingName = `_dogsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
+    const stagingName = `_bobsled_stg_${safeTable}_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
     const qualifiedStaging = `${quoteDatabricksIdentifier(safeSchema)}.${quoteDatabricksIdentifier(stagingName)}`;
 
     try {

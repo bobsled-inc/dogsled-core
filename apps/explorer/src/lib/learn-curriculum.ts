@@ -1,5 +1,5 @@
 import { LEARN_MODULES } from './learn-modules';
-import type { ExplorerDogsledCommand } from './command-links';
+import type { ExplorerBobsledCommand } from './command-links';
 import type { EntityGraphTableSuffix } from './learn-entity-graph-atlas';
 
 export { ENTITY_GRAPH_TABLE_ATLAS, isEntityGraphTableSuffix } from './learn-entity-graph-atlas';
@@ -26,7 +26,7 @@ export interface LearnStep {
   title: string;
   body: string;
   cliLessonId?: string;
-  command?: ExplorerDogsledCommand;
+  command?: ExplorerBobsledCommand;
   sql?: string;
   tableSuffix?: EntityGraphTableSuffix;
   action?: LearnAction;
@@ -46,7 +46,7 @@ export interface LearnModule {
 
 export type LearnModuleGroup =
   | 'foundations'
-  | 'dogsled-model-spec-context'
+  | 'bobsled-model-spec-context'
   | 'entity-graph'
   | 'mcp-extraction'
   | 'advanced-elt'
@@ -63,10 +63,10 @@ export const LEARN_MODULE_GROUPS: LearnModuleGroupDefinition[] = [
     id: 'foundations',
     label: 'Foundations',
     description:
-      'CLI basics, local projects, and the Explorer surfaces that make Dogsled inspectable.',
+      'CLI basics, local projects, and the Explorer surfaces that make Bobsled Core inspectable.',
   },
   {
-    id: 'dogsled-model-spec-context',
+    id: 'bobsled-model-spec-context',
     label: 'Model Spec and Context',
     description: 'Model specs, semantic context, verified queries, and local data inspection.',
   },

@@ -10,7 +10,7 @@ import { diffSeeds, loadSeeds, validateSeeds } from '../../../src/api/seed-proje
 const roots: string[] = [];
 
 function project(): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-seed-validation-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-seed-validation-'));
   roots.push(root);
   return root;
 }

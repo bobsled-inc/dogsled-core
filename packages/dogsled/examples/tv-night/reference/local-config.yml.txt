@@ -1,4 +1,0 @@
-default_destination:
-  dest: duckdb
-  dbPath: .dogsled/dogsled.duckdb
-  targetSchema: cache

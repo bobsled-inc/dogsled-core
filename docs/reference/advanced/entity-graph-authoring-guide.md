@@ -1,6 +1,6 @@
 # Entity Graph Authoring Guide
 
-Dogsled's OSS entity graph workflow is broad enough that operators and coding agents need one place that explains which command to use when. This guide covers the shipped CLI, the recommended authoring loop, and the current simplification roadmap. For the stable ID model used by clustering, crosswalks, clean views, profiles, and survivorship, see [Entity Graph Stable Entity IDs](entity-graph-stable-entity-ids.md).
+Bobsled Core's OSS entity graph workflow is broad enough that operators and coding agents need one place that explains which command to use when. This guide covers the shipped CLI, the recommended authoring loop, and the current simplification roadmap. For the stable ID model used by clustering, crosswalks, clean views, profiles, and survivorship, see [Entity Graph Stable Entity IDs](entity-graph-stable-entity-ids.md).
 
 ## Status
 
@@ -17,7 +17,7 @@ Dogsled's OSS entity graph workflow is broad enough that operators and coding ag
 | Contract surfaces      | `build`, `status`, `audit list`, `audit verify`                                                                                                                                                                                                                                      |
 | Column-level lineage   | `lineage compile`, `lineage --entity <name> --attribute <attr>`                                                                                                                                                                                                                      |
 | Provenance explain     | `explain --subject entity`                                                                                                                                                                                                                                                           |
-| Mentions + Typed SDK   | `mentions review export`, `dogsled sdk generate`                                                                                                                                                                                                                                     |
+| Mentions + Typed SDK   | `mentions review export`, `bobsled sdk generate`                                                                                                                                                                                                                                     |
 | Privacy and governance | `pii scan`, `forget`, `policy`                                                                                                                                                                                                                                                       |
 | Live access plane      | `get`, `match`, `serve`                                                                                                                                                                                                                                                              |
 
@@ -48,7 +48,7 @@ If you are writing docs, prompts, or skills for agents, do not describe those co
 | Agent-review the unreviewed gray zone    | `resolve review [entity...] --runner ./runner.js`                        | Model judge from `agent_policy.model` or external reviewer from `agent_policy.reviewer`; `--dry-run` returns the bundle without writing. See below. |
 | Rebuild identity outputs after review    | `resolve cluster`, then `resolve profile`                                | `profile` materializes `__entity_profile` and `__entity_quality`.                                                                                   |
 | Export document mention review rows      | `mentions review export --runner ./runner.js --json`                     | Run `mentions extract` first; then emits the model-review envelope plus mention columns.                                                            |
-| Generate a typed SDK                     | `dogsled sdk generate --lang ts --out ./generated/dogsled-sdk`           | Run after profiles are fresh; generated SDK keys match entity spec names.                                                                           |
+| Generate a typed SDK                     | `bobsled sdk generate --lang ts --out ./generated/bobsled-sdk`           | Run after profiles are fresh; generated SDK keys match entity spec names.                                                                           |
 | Read one golden entity                   | `get --entity <name> --id <entity_id> --runner ./runner.js --json`       | Returns the golden profile plus quality and crosswalk context.                                                                                      |
 | Lookup/stage/assign one source record    | `match --entity <name> --input ./record.json --mode <mode>`              | `lookup` is read-only; `stage`/`assign` mutate `__match_inbox`/identity tables and require valid IDs.                                               |
 | Serve the access API locally             | `serve --port 8765 --runner ./runner.js --json`                          | Loopback/read-only by default. Add `--allow-writes` only for trusted local write flows.                                                             |
@@ -74,26 +74,26 @@ Use [`packages/model-spec/examples/entity-graph-b2b-company-master/README.md`](.
 ### 2. Author and validate
 
 ```bash
-dogsled entity-graph resolve init company
-dogsled entity-graph resolve validate company --json
-dogsled entity-graph resolve compile company -o ./sql
+bobsled entity-graph resolve init company
+bobsled entity-graph resolve validate company --json
+bobsled entity-graph resolve compile company -o ./sql
 ```
 
 If you are iterating on seeds too, validate them before the first warehouse run:
 
 ```bash
-dogsled model seed validate --json
-dogsled model seed load --runner ./runner.js --json
+bobsled model seed validate --json
+bobsled model seed load --runner ./runner.js --json
 ```
 
 ### 3. Run and inspect
 
 ```bash
-dogsled entity-graph resolve run company --runner ./runner.js --json
-dogsled entity-graph resolve status company --runner ./runner.js --json
-dogsled entity-graph resolve estimate company --runner ./runner.js --json
-dogsled entity-graph resolve inspect pair --entity company --pair-id <pair_id> --runner ./runner.js --json
-dogsled entity-graph resolve inspect cluster --entity company --entity-id <entity_id> --runner ./runner.js --json
+bobsled entity-graph resolve run company --runner ./runner.js --json
+bobsled entity-graph resolve status company --runner ./runner.js --json
+bobsled entity-graph resolve estimate company --runner ./runner.js --json
+bobsled entity-graph resolve inspect pair --entity company --pair-id <pair_id> --runner ./runner.js --json
+bobsled entity-graph resolve inspect cluster --entity company --entity-id <entity_id> --runner ./runner.js --json
 ```
 
 Use `resolve inspect pair` when you need pair-level context and `review show` when you want the review-facing rendering of that same pair.
@@ -101,8 +101,8 @@ Use `resolve inspect pair` when you need pair-level context and `review show` wh
 After the first full run has written `<entity>__resolve_state`, use incremental mode for ordinary refreshes:
 
 ```bash
-dogsled entity-graph resolve estimate company --runner ./runner.js --incremental --json
-dogsled entity-graph resolve run company --runner ./runner.js --incremental --json
+bobsled entity-graph resolve estimate company --runner ./runner.js --incremental --json
+bobsled entity-graph resolve run company --runner ./runner.js --incremental --json
 ```
 
 Read the returned `mode` and `mode_reason` fields. A requested incremental run legitimately compiles as full when the baseline state is missing, the spec fingerprint changed, or an input cannot produce a safe delta watermark.
@@ -110,13 +110,13 @@ Read the returned `mode` and `mode_reason` fields. A requested incremental run l
 ### 4. Review and cluster
 
 ```bash
-dogsled entity-graph review export company --template --format csv --runner ./runner.js --output ./review/company_queue.csv
-dogsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js --json
-dogsled entity-graph resolve cluster company --runner ./runner.js --json
-dogsled entity-graph resolve profile company --runner ./runner.js --json
-dogsled entity-graph mentions extract company --runner ./runner.js --fallback compromise --json
-dogsled entity-graph mentions review export --runner ./runner.js --schema entity_graph --json
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+bobsled entity-graph review export company --template --format csv --runner ./runner.js --output ./review/company_queue.csv
+bobsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js --json
+bobsled entity-graph resolve cluster company --runner ./runner.js --json
+bobsled entity-graph resolve profile company --runner ./runner.js --json
+bobsled entity-graph mentions extract company --runner ./runner.js --fallback compromise --json
+bobsled entity-graph mentions review export --runner ./runner.js --schema entity_graph --json
+bobsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 Use `review list` or `review decide` when an agent should make a few explicit decisions instead of producing a whole file.
@@ -124,21 +124,21 @@ Use `review list` or `review decide` when an agent should make a few explicit de
 ### 4.5. Use the access plane for live reads and record intake
 
 ```bash
-dogsled entity-graph get --entity company --id <entity_id> --runner ./runner.js --json
-dogsled entity-graph match --entity company --input ./record.json --mode lookup --runner ./runner.js --json
-dogsled entity-graph match --entity company --input ./record.json --mode stage --runner ./runner.js --json
-dogsled entity-graph serve --port 8765 --runner ./runner.js --json
+bobsled entity-graph get --entity company --id <entity_id> --runner ./runner.js --json
+bobsled entity-graph match --entity company --input ./record.json --mode lookup --runner ./runner.js --json
+bobsled entity-graph match --entity company --input ./record.json --mode stage --runner ./runner.js --json
+bobsled entity-graph serve --port 8765 --runner ./runner.js --json
 ```
 
-`match` records must include the selected input's `id_fields` as non-null scalar values. Use `source_ref` or `_source_ref` in the record when multiple inputs could match the same field shape. `serve` is loopback and read-only by default; `assign`/`stage` over HTTP require `--allow-writes`, and remote binds require both `--allow-remote` and `DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE=1`.
+`match` records must include the selected input's `id_fields` as non-null scalar values. Use `source_ref` or `_source_ref` in the record when multiple inputs could match the same field shape. `serve` is loopback and read-only by default; `assign`/`stage` over HTTP require `--allow-writes`, and remote binds require both `--allow-remote` and `BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE=1`.
 
 ### 5. Inspect stable IDs
 
 After `resolve cluster`, the serving ID is `entity_id`. `cluster_id` remains as a compatibility alias for current outputs, and `component_id` is the current connected-component topology ID for debugging.
 
 ```bash
-dogsled entity-graph resolve cluster company --runner ./runner.js --json
-dogsled entity-graph resolve inspect cluster --entity company --entity-id <entity_id> --runner ./runner.js --json
+bobsled entity-graph resolve cluster company --runner ./runner.js --json
+bobsled entity-graph resolve inspect cluster --entity company --entity-id <entity_id> --runner ./runner.js --json
 ```
 
 The cluster JSON includes `entity_id_summary` counts for new, reused, merged, split, and reactivated IDs. Use the dedicated [stable entity ID reference](entity-graph-stable-entity-ids.md) when you need to explain merge aliases, reviewed splits, reactivation, or clean-view metadata columns such as `ENTITY_GRAPH_ENTITY_ID`.
@@ -146,11 +146,11 @@ The cluster JSON includes `entity_id_summary` counts for new, reused, merged, sp
 ### 6. Build serving surfaces
 
 ```bash
-dogsled entity-graph build company --runner ./runner.js --json
-dogsled entity-graph status --runner ./runner.js --json
-dogsled entity-graph audit verify --runner ./runner.js --json
-dogsled entity-graph survivorship run company --runner ./runner.js --json
-dogsled entity-graph survivorship inspect company --runner ./runner.js --json
+bobsled entity-graph build company --runner ./runner.js --json
+bobsled entity-graph status --runner ./runner.js --json
+bobsled entity-graph audit verify --runner ./runner.js --json
+bobsled entity-graph survivorship run company --runner ./runner.js --json
+bobsled entity-graph survivorship inspect company --runner ./runner.js --json
 ```
 
 `build` refreshes the per-entity identity tables, colocated survivorship specs, and the shared `entity_graph.*` contract surfaces. Use `audit list --cluster-id <id>` when you need the mutation chain for a cluster.
@@ -158,7 +158,7 @@ dogsled entity-graph survivorship inspect company --runner ./runner.js --json
 The runtime overview report is intentionally the only packaged report in Drop 1:
 
 ```bash
-dogsled entity-graph resolve report overview --entity company --runner ./runner.js --format markdown
+bobsled entity-graph resolve report overview --entity company --runner ./runner.js --format markdown
 ```
 
 Other report shapes can be queried directly from the contract surfaces:
@@ -188,9 +188,9 @@ GROUP BY threshold_band;
 ### 7. Regress thresholds with labels
 
 ```bash
-dogsled entity-graph truthset score company --runner ./runner.js --json
-dogsled entity-graph truthset tune company --runner ./runner.js --json
-dogsled entity-graph truthset train company --runner ./runner.js --json
+bobsled entity-graph truthset score company --runner ./runner.js --json
+bobsled entity-graph truthset tune company --runner ./runner.js --json
+bobsled entity-graph truthset train company --runner ./runner.js --json
 ```
 
 Truthset output is advisory. Treat tuned thresholds and trained Fellegi-Sunter weights as inputs to a reviewed spec change.
@@ -200,10 +200,10 @@ Truthset output is advisory. Treat tuned thresholds and trained Fellegi-Sunter w
 Use the `agent` command group when the task is intentionally bounded and you want one invocation to return a next action or artifact bundle.
 
 ```bash
-dogsled entity-graph agent triage company --runner ./runner.js --json
-dogsled entity-graph agent review-batch --entity company --mode propose --runner ./runner.js --json
-dogsled entity-graph agent survivorship-refresh company --runner ./runner.js --json
-dogsled entity-graph agent truthset-regress company --runner ./runner.js --json
+bobsled entity-graph agent triage company --runner ./runner.js --json
+bobsled entity-graph agent review-batch --entity company --mode propose --runner ./runner.js --json
+bobsled entity-graph agent survivorship-refresh company --runner ./runner.js --json
+bobsled entity-graph agent truthset-regress company --runner ./runner.js --json
 ```
 
 Rules for agents:
@@ -225,7 +225,7 @@ below it as `proposed` (human confirmation), and `defer` as `deferred`.
 `resolve run`'s default behavior never changes — review only happens when you
 invoke it.
 
-Configuration lives in the resolution spec plus a `dogsled.yml` model role:
+Configuration lives in the resolution spec plus a `bobsled.yml` model role:
 
 ```yaml
 # entity-graph/<entity>_resolution.yml
@@ -244,7 +244,7 @@ entity_semantics: # folded into the judge's prompt
   positive_examples: ['Acme Corp ↔ Acme Corporation (same domain)']
   negative_examples: ['Acme US ↔ Acme Japan (regional subsidiaries)']
 
-# dogsled.yml (same directory or any parent)
+# bobsled.yml (same directory or any parent)
 platform:
   models:
     reviewer:
@@ -254,9 +254,9 @@ platform:
 ```
 
 ```bash
-dogsled entity-graph resolve review company --runner ./runner.js --dry-run --json  # judge runs, nothing written
-dogsled entity-graph resolve review company --runner ./runner.js                   # gated decisions written
-dogsled entity-graph resolve cluster company --runner ./runner.js                  # applied merges fold in
+bobsled entity-graph resolve review company --runner ./runner.js --dry-run --json  # judge runs, nothing written
+bobsled entity-graph resolve review company --runner ./runner.js                   # gated decisions written
+bobsled entity-graph resolve cluster company --runner ./runner.js                  # applied merges fold in
 ```
 
 Semantics worth knowing:
@@ -275,7 +275,7 @@ Semantics worth knowing:
 
 ### External reviewer (bring your own agent)
 
-Instead of the in-dogsled model judge, `agent_policy.reviewer` ships each batch
+Instead of the built-in model judge, `agent_policy.reviewer` ships each batch
 of pairs to an agent you host (`kind: http`) or run locally (`kind: command`):
 
 ```yaml
@@ -284,7 +284,7 @@ agent_policy:
   reviewer:
     kind: http
     url: https://reviewer.example/review
-    auth_token: ${{ env.DOGSLED_REVIEWER_TOKEN }} # env placeholder — never a literal
+    auth_token: ${{ env.REVIEWER_TOKEN }} # env placeholder — never a literal
     timeout_s: 300
     poll_interval_s: 5
     # — or —
@@ -316,7 +316,7 @@ agent_policy:
 - **absent (default → model)** — today's precedence, unchanged: an external
   reviewer still wins when configured, otherwise the model judge / panel serves.
   Every existing spec keeps working.
-- **`model`** — pin the in-dogsled model judge; an external `reviewer` or
+- **`model`** — pin the built-in model judge; an external `reviewer` or
   `reviewerOverride` is ignored and the ignore is warned about (a host-injected
   `llmClient` remains the explicit exception). Use it to guarantee an entity is
   never routed to a managed agent tier.

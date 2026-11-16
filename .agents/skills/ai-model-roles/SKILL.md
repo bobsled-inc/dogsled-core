@@ -1,11 +1,11 @@
 ---
 name: ai-model-roles
-description: Configure and validate Dogsled AI model roles, provider credentials, budgets, dogsled doctor, and dogsled ai test
+description: Configure and validate Bobsled Core AI model roles, provider credentials, budgets, bobsled doctor, and bobsled ai test
 ---
 
 # AI Model Roles
 
-Use this skill when an agent needs to add, review, or debug `platform.models`, `platform.budget`, `dogsled doctor`, or `dogsled ai test`.
+Use this skill when an agent needs to add, review, or debug `platform.models`, `platform.budget`, `bobsled doctor`, or `bobsled ai test`.
 
 ## Input
 
@@ -26,8 +26,8 @@ Read the local docs and schemas before editing config:
 - `docs/reference/project-files.md`
 - `packages/connections/src/schemas/model.ts`
 - `packages/ai/AGENTS.md`
-- `packages/dogsled/src/commands/doctor.ts`
-- `packages/dogsled/src/commands/ai.ts`
+- `packages/bobsled-core/src/commands/doctor.ts`
+- `packages/bobsled-core/src/commands/ai.ts`
 
 Use provider role names in config and code. Do not hardcode provider model IDs into pipeline resources when a stable role can be referenced instead.
 
@@ -91,7 +91,7 @@ Notes:
 Run project health checks:
 
 ```bash
-dogsled doctor --json
+bobsled doctor --json
 ```
 
 Expected behavior:
@@ -103,7 +103,7 @@ Expected behavior:
 If live provider credentials are unavailable but the command path must be tested, use:
 
 ```bash
-DOGSLED_AI_TEST_STUB=1 dogsled ai test --connection <role> --json
+BOBSLED_CORE_AI_TEST_STUB=1 bobsled ai test --connection <role> --json
 ```
 
 Stub mode validates config loading and role resolution only. It does not verify credentials, provider availability, pricing, or real token usage.
@@ -113,8 +113,8 @@ Stub mode validates config loading and role resolution only. It does not verify 
 Run a live probe for each role before treating it as production-ready:
 
 ```bash
-dogsled ai test --connection default_embedding_v1 --json
-dogsled ai test --connection mention_disambiguation_v1 --json
+bobsled ai test --connection default_embedding_v1 --json
+bobsled ai test --connection mention_disambiguation_v1 --json
 ```
 
 Interpretation:
@@ -150,7 +150,7 @@ For schema, command, or AI package changes:
 ```bash
 pnpm --filter @bobsled-inc/ai typecheck
 pnpm --filter @bobsled-inc/ai test:unit
-pnpm --filter @bobsled-inc/dogsled typecheck
-pnpm --filter @bobsled-inc/dogsled test:unit
+pnpm --filter @bobsled-inc/bobsled-core typecheck
+pnpm --filter @bobsled-inc/bobsled-core test:unit
 pnpm precommit
 ```

@@ -5,7 +5,7 @@ import path from 'node:path';
 import semver from 'semver';
 import { parse as parseYaml } from 'yaml';
 import { listWorkspacePackages } from '../ci/shared.mjs';
-import { INTERNAL_PACKAGE_NAMES, DOGSLED_PACKAGE_NAME } from '../release/package-set.mjs';
+import { INTERNAL_PACKAGE_NAMES, BOBSLED_CORE_PACKAGE_NAME } from '../release/package-set.mjs';
 import {
   exemptionOverrides,
   parseReleaseAgeExemptions,
@@ -103,15 +103,15 @@ export async function auditPackedConsumers({ tarball, outputDir, repoRoot, now =
   const results = [];
   mkdirSync(outputDir, { recursive: true });
   for (const [mode, drivers] of Object.entries(versions)) {
-    const scratch = mkdtempSync(path.join(os.tmpdir(), `dogsled-consumer-${mode}-`));
+    const scratch = mkdtempSync(path.join(os.tmpdir(), `bobsled-consumer-${mode}-`));
     const evidence = path.join(outputDir, mode);
     mkdirSync(evidence, { recursive: true });
     try {
       const manifest = {
-        name: `dogsled-consumer-${mode}`,
+        name: `bobsled-consumer-${mode}`,
         private: true,
         type: 'module',
-        dependencies: { [DOGSLED_PACKAGE_NAME]: `file:${path.resolve(tarball)}`, ...drivers },
+        dependencies: { [BOBSLED_CORE_PACKAGE_NAME]: `file:${path.resolve(tarball)}`, ...drivers },
         ...(exemptions.length > 0 ? { overrides } : {}),
       };
       writeFileSync(path.join(scratch, 'package.json'), JSON.stringify(manifest, null, 2));

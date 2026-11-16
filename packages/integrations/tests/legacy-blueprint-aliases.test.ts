@@ -17,16 +17,16 @@ describe('legacy source extension safety net', () => {
   it('accepts only the exact aliases and strips canonical extensions', () => {
     const result = SourceSpecSchema.parse(source);
     expect(result).not.toHaveProperty('bobsled_connection_ref');
-    expect(result).not.toHaveProperty('dogsled_connection_ref');
+    expect(result).not.toHaveProperty('bobsled_connection_ref');
     expect(SourceSpecSchema.safeParse({ ...source, bobsled_unrelated: true }).success).toBe(false);
   });
 
   it('rejects conflicting duplicates before stripping either key', () => {
-    const result = SourceSpecSchema.safeParse({ ...source, dogsled_connection_ref: 'private-new' });
+    const result = SourceSpecSchema.safeParse({ ...source, bobsled_connection_ref: 'private-new' });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0]?.message).toBe(
-        'LEGACY_KEY_CONFLICT: bobsled_connection_ref conflicts with dogsled_connection_ref'
+        'LEGACY_KEY_CONFLICT: bobsled_connection_ref conflicts with bobsled_connection_ref'
       );
       expect(result.error.message).not.toContain('private-new');
       expect(result.error.message).not.toContain('api-binding');

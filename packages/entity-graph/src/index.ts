@@ -43,9 +43,9 @@ export function buildProgram(): Command {
       : '0.0.1';
 
   program
-    .name('dogsled entity-graph')
+    .name('bobsled entity-graph')
     .version(cliVersion)
-    .description('Dogsled Entity Graph — identity, review, survivorship, and trust workflows')
+    .description('Bobsled Core Entity Graph — identity, review, survivorship, and trust workflows')
     .option('-v, --verbose', 'Verbose output')
     .option('-q, --quiet', 'Suppress non-error output');
 

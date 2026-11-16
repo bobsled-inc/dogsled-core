@@ -506,7 +506,7 @@ async function persistAgentAssessments(
   assessments: ClaudeAgentAssessment[],
   decisionBatchId: string
 ): Promise<void> {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-entity-graph-agent-review-'));
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-entity-graph-agent-review-'));
   const inputPath = path.join(tempDir, 'decisions.json');
   const runnerPath = getEntityGraphRunnerPath(scenarioId);
 

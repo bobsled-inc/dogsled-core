@@ -3,7 +3,7 @@ import { existsSync } from 'fs';
 import { homedir } from 'os';
 import { resolve as resolvePath } from 'path';
 import { resolveSafePathWithinRoot } from '@/lib/path-safety';
-import { getWorkspaceRoot } from '@/lib/dogsled-cli';
+import { getWorkspaceRoot } from '@/lib/bobsled-cli';
 
 interface TestBody {
   type: string;

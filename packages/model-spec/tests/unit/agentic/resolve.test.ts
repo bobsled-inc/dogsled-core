@@ -36,10 +36,10 @@ describe('agentic schema resolution', () => {
     expect(resolved.output_columns.map((column) => column.name)).toEqual([
       'pair_id',
       'assessment',
-      '_dogsled_run_id',
-      '_dogsled_evidence',
-      '_dogsled_confidence',
-      '_dogsled_reason',
+      '_bobsled_run_id',
+      '_bobsled_evidence',
+      '_bobsled_confidence',
+      '_bobsled_reason',
     ]);
   });
 
@@ -78,7 +78,7 @@ it('resolves reduce inputs from saved finding schemas and honors a profile overr
     },
   });
   expect(resolved.steps[1]?.input_columns.map((column) => column.name)).toContain(
-    '_dogsled_evidence'
+    '_bobsled_evidence'
   );
   expect(resolved.steps[1]?.profile.connection.model).toBe('comparison-model');
 });

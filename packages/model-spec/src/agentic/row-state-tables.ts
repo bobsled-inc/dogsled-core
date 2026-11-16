@@ -13,9 +13,9 @@ import type { StatementTimeoutHandling } from './warehouse-statement-limit.js';
 
 export const AGENTIC_ROW_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
-export const AGENTIC_RUNS_TABLE = '__dogsled_agentic_runs';
-export const AGENTIC_ROWS_TABLE = '__dogsled_agentic_rows';
-export const AGENTIC_CURSORS_TABLE = '__dogsled_agentic_cursors';
+export const AGENTIC_RUNS_TABLE = '__bobsled_agentic_runs';
+export const AGENTIC_ROWS_TABLE = '__bobsled_agentic_rows';
+export const AGENTIC_CURSORS_TABLE = '__bobsled_agentic_cursors';
 
 const text = (name: string): AgenticRowColumn => ({ name, type: 'text' });
 const integer = (name: string): AgenticRowColumn => ({ name, type: 'integer' });
@@ -203,7 +203,7 @@ export const agenticTableReplaced = (cause?: unknown): AgenticStateError =>
     'corrupt',
     {
       reason: 'state_table_replaced',
-      message: 'The agentic checkpoint store is not as Dogsled created it.',
+      message: 'The agentic checkpoint store is not as Bobsled Core created it.',
       hint: 'Stop all writers and inspect the store before resuming. It must hold nothing else.',
     },
     cause === undefined ? undefined : { cause }

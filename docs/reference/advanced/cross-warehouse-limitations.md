@@ -51,9 +51,9 @@ Why: OAuth tokens can expire during multi-hour publishes, and source runners do 
 
 ### UNLOAD Requires Shared Storage
 
-The configured `cross_warehouse_staging.uri` must be writable by the source warehouse and readable by the destination warehouse. Dogsled does not abstract cloud IAM, storage integrations, external locations, or cross-cloud network policy.
+The configured `cross_warehouse_staging.uri` must be writable by the source warehouse and readable by the destination warehouse. Bobsled Core does not abstract cloud IAM, storage integrations, external locations, or cross-cloud network policy.
 
-If UNLOAD fails at runtime, Dogsled warns and falls back to streaming for that source. The publish can still complete, but slower and with the Dogsled host in the row-data path for that source.
+If UNLOAD fails at runtime, Bobsled Core warns and falls back to streaming for that source. The publish can still complete, but slower and with the Bobsled Core host in the row-data path for that source.
 
 ### Postgres Sources
 
@@ -65,11 +65,11 @@ Postgres destinations do not support `loadFromUri()`. Published models targeting
 
 ### Concurrency
 
-There is no file lock or destination-side claim. Two concurrent `dogsled model run` invocations against the same published model can race on the same destination target.
+There is no file lock or destination-side claim. Two concurrent `bobsled model run` invocations against the same published model can race on the same destination target.
 
 Operator guidance: serialize publish runs per model in CI, CRON, and workflow schedulers.
 
-Roadmap: a destination-side `_dogsled_xwh_locks` table plus stale-lock recovery command.
+Roadmap: a destination-side `_bobsled_xwh_locks` table plus stale-lock recovery command.
 
 ### Single Destination Per Model
 
@@ -103,11 +103,11 @@ The CLI prints a phase summary at completion (`stage`, `publish`, `format`, `sub
 
 If a publish fails late, the next invocation restarts from the beginning. There is no checkpoint/resume protocol.
 
-Roadmap: per-phase checkpoints plus `dogsled model run --resume-run <run_id>`.
+Roadmap: per-phase checkpoints plus `bobsled model run --resume-run <run_id>`.
 
 ## Scale Guidance
 
-Native UNLOAD plus destination-side SELECT is the preferred path for large warehouse-to-warehouse publishes. Streaming fallback is functional and preserves v1 behavior, but the Dogsled host carries the row data for streamed sources. For very large Postgres sources, consider a normal extract/load pipeline into the destination first, then a single-warehouse Model Spec model.
+Native UNLOAD plus destination-side SELECT is the preferred path for large warehouse-to-warehouse publishes. Streaming fallback is functional and preserves v1 behavior, but the Bobsled Core host carries the row data for streamed sources. For very large Postgres sources, consider a normal extract/load pipeline into the destination first, then a single-warehouse Model Spec model.
 
 ## See Also
 

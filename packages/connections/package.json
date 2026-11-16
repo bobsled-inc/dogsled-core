@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "packages/connections"
   },
   "engines": {
@@ -91,9 +91,9 @@
     "@vitest/coverage-v8": "catalog:testing",
     "vitest": "catalog:testing"
   },
-  "description": "Typed connection schemas, secret resolution, and warehouse runners for Dogsled.",
+  "description": "Typed connection schemas, secret resolution, and warehouse runners for Bobsled Core.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
@@ -102,8 +102,8 @@
     "warehouses",
     "secrets"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   }
 }

@@ -112,11 +112,11 @@ export function requiredString(row: Record<string, unknown>, name: string, sourc
   return value;
 }
 
-function findDogsledConfig(startDir: string): string | undefined {
+function findBobsledConfig(startDir: string): string | undefined {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
   while (dir !== root) {
-    for (const name of ['dogsled.yml', 'dogsled.yaml']) {
+    for (const name of ['bobsled.yml', 'bobsled.yaml']) {
       const candidate = path.join(dir, name);
       if (fs.existsSync(candidate)) return candidate;
     }
@@ -132,7 +132,7 @@ function formatPlatformIssues(error: z.ZodError): string {
 }
 
 export function loadPlatformResolution(cwd: string): PlatformResolution {
-  const configPath = findDogsledConfig(cwd);
+  const configPath = findBobsledConfig(cwd);
   if (!configPath) return { projectKey: path.resolve(cwd) };
   const raw = YAML.parse(fs.readFileSync(configPath, 'utf-8')) as unknown;
   const platformRaw =
@@ -145,7 +145,7 @@ export function loadPlatformResolution(cwd: string): PlatformResolution {
   const parsed = PlatformConfigSchema.safeParse(platformRaw);
   if (!parsed.success) {
     throw new CommandError(
-      `Invalid dogsled.yml platform block:\n${formatPlatformIssues(parsed.error)}`,
+      `Invalid bobsled.yml platform block:\n${formatPlatformIssues(parsed.error)}`,
       2
     );
   }

@@ -54,7 +54,7 @@ describe('@bobsled-inc/models', () => {
     for (const entry of listModelPackages()) {
       const bundle = getModelPackage(entry.name);
       for (const spec of [...bundle.stagingSpecs, ...bundle.martSpecs]) {
-        expect(spec.owner).not.toBe('dogsled');
+        expect(spec.owner).not.toBe('bobsled');
       }
     }
   });
@@ -417,7 +417,7 @@ describe('@bobsled-inc/models', () => {
   });
 
   it('installs package files into a project directory with a raw schema override', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'dogsled-models-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'bobsled-models-'));
     tempDirs.push(cwd);
 
     const result = installModelPackage('github', {

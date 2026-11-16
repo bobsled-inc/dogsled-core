@@ -255,13 +255,13 @@ describe('workspace package conventions', () => {
     );
   });
 
-  it('exposes only the unified dogsled bin across workspace packages', () => {
+  it('exposes only the unified bobsled bin across workspace packages', () => {
     const workspacePackages = listWorkspacePackages();
     deepStrictEqual(
       workspacePackages
         .filter((pkg) => pkg.packageJson.bin !== undefined)
         .map((pkg) => ({ name: pkg.name, bin: pkg.packageJson.bin })),
-      [{ name: '@bobsled-inc/dogsled', bin: { dogsled: './bin/cli.mjs' } }]
+      [{ name: '@bobsled-inc/bobsled-core', bin: { bobsled: './bin/cli.mjs' } }]
     );
   });
 
@@ -334,10 +334,10 @@ describe('publish hygiene', () => {
 
     if (
       publishablePackages.length !== 1 ||
-      publishablePackages[0]?.name !== '@bobsled-inc/dogsled'
+      publishablePackages[0]?.name !== '@bobsled-inc/bobsled-core'
     ) {
       violations.push(
-        'expected @bobsled-inc/dogsled to be the one publishable package under packages/'
+        'expected @bobsled-inc/bobsled-core to be the one publishable package under packages/'
       );
     }
 
@@ -371,10 +371,10 @@ describe('publish hygiene', () => {
         manifest.repository,
         {
           type: 'git',
-          url: 'git+https://github.com/bobsled-inc/dogsled-core.git',
+          url: 'git+https://github.com/bobsled-inc/bobsled-core.git',
           directory: `packages/${pkg.shortName}`,
         },
-        `${pkg.name} must identify its source directory in dogsled`
+        `${pkg.name} must identify its source directory in bobsled`
       );
       if (!Array.isArray(manifest.files) || manifest.files.length === 0) {
         violations.push(`${pkg.name} must declare a non-empty files[] allowlist`);
@@ -417,7 +417,7 @@ describe('publish hygiene', () => {
   });
 
   it('keeps every supporting workspace private and out of npm publication', () => {
-    const internalPackages = workspacePackages.filter((pkg) => pkg.name !== '@bobsled-inc/dogsled');
+    const internalPackages = workspacePackages.filter((pkg) => pkg.name !== '@bobsled-inc/bobsled-core');
     const violations = [];
 
     if (internalPackages.length !== 15) {
@@ -437,29 +437,29 @@ describe('publish hygiene', () => {
 
     assertNoViolations(
       violations,
-      'Supporting workspaces are implementation details embedded in the Dogsled package and must never publish independently.',
+      'Supporting workspaces are implementation details embedded in the Bobsled Core package and must never publish independently.',
       'docs/releases.md -> Package model'
     );
   });
 
-  it('bundles the complete internal workspace set into Dogsled', () => {
-    const dogsledPackage = publishablePackages[0];
+  it('bundles the complete internal workspace set into Bobsled Core', () => {
+    const bobsledPackage = publishablePackages[0];
     const internalNames = workspacePackages
-      .filter((pkg) => pkg.name !== '@bobsled-inc/dogsled')
+      .filter((pkg) => pkg.name !== '@bobsled-inc/bobsled-core')
       .map((pkg) => pkg.name)
       .sort();
-    const bundled = [...(dogsledPackage?.packageJson.bundleDependencies ?? [])].sort();
+    const bundled = [...(bobsledPackage?.packageJson.bundleDependencies ?? [])].sort();
 
     deepStrictEqual(
       bundled,
       [...internalNames, ...BUNDLED_EXTERNAL_PACKAGE_NAMES].sort(),
-      'Dogsled bundleDependencies must contain every supporting workspace'
+      'Bobsled Core bundleDependencies must contain every supporting workspace'
     );
     for (const name of internalNames) {
       deepStrictEqual(
-        dogsledPackage.packageJson.dependencies?.[name],
+        bobsledPackage.packageJson.dependencies?.[name],
         'workspace:*',
-        `Dogsled must stage ${name} from the workspace`
+        `Bobsled Core must stage ${name} from the workspace`
       );
     }
   });
@@ -712,7 +712,7 @@ describe('CLI identity hygiene', () => {
     assertNoViolations(
       violations,
       'Active repo surfaces must not refer to the legacy bx identity except for the explicit fixture allowlist.',
-      'packages/dogsled/AGENTS.md -> Two Command Strategies'
+      'packages/bobsled-core/AGENTS.md -> Two Command Strategies'
     );
   });
 });
@@ -976,13 +976,13 @@ describe('release and dependency policy guardrails', () => {
     match(tagJob, /git -c core.hooksPath=\/dev\/null push origin/);
   });
 
-  it('deploys only the Dogsled production graph for release artifacts', () => {
+  it('deploys only the Bobsled Core production graph for release artifacts', () => {
     const stageScript = readFileSync(
       path.join(repoRoot, 'scripts/release/stage-package.mjs'),
       'utf8'
     );
     const archiveScript = readFileSync(
-      path.join(repoRoot, 'packages/dogsled/scripts/pack.sh'),
+      path.join(repoRoot, 'packages/bobsled-core/scripts/pack.sh'),
       'utf8'
     );
 
@@ -992,7 +992,7 @@ describe('release and dependency policy guardrails', () => {
 
     match(
       archiveScript,
-      /pnpm --config\.inject-workspace-packages=true deploy --filter @bobsled-inc\/dogsled --prod/
+      /pnpm --config\.inject-workspace-packages=true deploy --filter @bobsled-inc\/bobsled-core --prod/
     );
     doesNotMatch(archiveScript, /pnpm deploy --legacy/);
   });
@@ -1297,7 +1297,7 @@ describe('workflow guardrails', () => {
   it('unit matrix partitions every workspace package exactly once, including future packages', () => {
     const scripts = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')).scripts;
     const ci = parseYaml(readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8'));
-    const legs = ['model', 'graph', 'dogsled', 'rest'];
+    const legs = ['model', 'graph', 'bobsled', 'rest'];
     deepStrictEqual(ci.jobs.unit.strategy.matrix.leg, legs);
     deepStrictEqual(ci.jobs.unit.strategy['fail-fast'], false);
     const actual = [];
@@ -1384,7 +1384,7 @@ await import('./scripts/docs/cli-reference.mjs');`;
 
   it('CLI reference routing matches the runtime delegated subcommand lists', () => {
     const delegation = readFileSync(
-      path.join(repoRoot, 'packages/dogsled/src/runtime/delegation.ts'),
+      path.join(repoRoot, 'packages/bobsled-core/src/runtime/delegation.ts'),
       'utf8'
     );
     const table = delegation.match(/const GROUP_SUBCOMMANDS = \{([\s\S]*?)\} satisfies/)?.[1];
@@ -1419,7 +1419,7 @@ for (const [group, file, constant, entry] of [
   ['entity-graph', 'entity-graph', 'ENTITY_GRAPH_SUBCOMMANDS', 'entity-graph/dist/cli.js'],
   ['mcp', 'mcp', 'MCP_SUBCOMMANDS', 'extractor/dist/index.js'],
 ]) {
-  const lists = await import('./packages/dogsled/src/groups/' + file + '.ts');
+  const lists = await import('./packages/bobsled-core/src/groups/' + file + '.ts');
   const { buildProgram } = await import('./packages/' + entry);
   let program = buildProgram();
   if (group === 'mcp') program = program.commands.find((command) => command.name() === 'mcp');
@@ -1447,7 +1447,7 @@ assert.equal(delegatedCommand(['activate', 'receipts'], shell).helpInformation()
   });
 
   it('PR change-type validator accepts escaped markdown code spans from live PR bodies', () => {
-    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-pr-change-type-'));
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-pr-change-type-'));
     const eventPath = path.join(tempDir, 'event.json');
 
     writeFileSync(
@@ -1487,7 +1487,7 @@ assert.equal(delegatedCommand(['activate', 'receipts'], shell).helpInformation()
 });
 
 describe('action packaging hygiene', () => {
-  it('composite actions do not self-reference remote Dogsled actions', () => {
+  it('composite actions do not self-reference remote Bobsled Core actions', () => {
     const violations = collectPatternViolations({
       fileFilter: (filePath) => {
         return (
@@ -1496,14 +1496,14 @@ describe('action packaging hygiene', () => {
         );
       },
       messageForMatch: ({ relativePath }) =>
-        `${relativePath} references a remote Dogsled action instead of using local implementation steps`,
+        `${relativePath} references a remote Bobsled Core action instead of using local implementation steps`,
       patterns: [/bobsled-inc\/track\/actions\/[^\s'"]+@/],
       stopAfterFirstMatchPerFile: true,
     });
 
     assertNoViolations(
       violations,
-      'Composite actions in this repo must stay self-contained so pinning a Dogsled action does not silently hop back to a different ref.',
+      'Composite actions in this repo must stay self-contained so pinning a Bobsled Core action does not silently hop back to a different ref.',
       'AGENTS.md -> Protocol'
     );
   });

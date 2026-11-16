@@ -105,7 +105,7 @@ interface QueryCapabilityLoadedResource {
 
 export const QUERY_CAPABILITIES_MANIFEST_JSON_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'Dogsled Query Capabilities Manifest',
+  title: 'Bobsled Core Query Capabilities Manifest',
   type: 'object',
   additionalProperties: false,
   required: ['schemaVersion', 'filterSyntax', 'summary', 'llmEval', 'integrations'],

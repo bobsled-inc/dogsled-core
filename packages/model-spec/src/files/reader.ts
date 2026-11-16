@@ -1,7 +1,7 @@
 /**
  * YAML and text file reading utilities.
  *
- * Extracted subset of the Dogsled CLI reader — only the generic
+ * Extracted subset of the Bobsled Core CLI reader — only the generic
  * file reading helpers needed by the compiler.
  */
 

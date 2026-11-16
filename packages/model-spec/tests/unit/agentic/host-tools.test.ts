@@ -107,9 +107,9 @@ describe('host tools', () => {
         {
           pair_id: 'pair-1',
           assessment: 'uncertain',
-          _dogsled_confidence: null,
-          _dogsled_reason: null,
-          _dogsled_evidence: [
+          _bobsled_confidence: null,
+          _bobsled_reason: null,
+          _bobsled_evidence: [
             {
               source: 'web_fetch',
               support_excerpt: null,

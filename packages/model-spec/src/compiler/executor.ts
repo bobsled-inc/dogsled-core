@@ -209,7 +209,7 @@ export async function executeSqlStatements(
         cancelRemaining(index, 'Cancelled while the statement was in flight.');
         return results;
       }
-      // Redact any materialized DOGSLED_MATCH_KEY_SECRET literal a driver may
+      // Redact any materialized BOBSLED_CORE_MATCH_KEY_SECRET literal a driver may
       // have echoed from the failing statement before it reaches logs/results.
       const message = redactMatchKeySecret(
         error instanceof Error ? error.message : 'Unknown error'

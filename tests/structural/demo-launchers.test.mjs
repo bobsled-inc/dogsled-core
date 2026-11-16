@@ -18,7 +18,7 @@ describe('customer-resolution demo launchers', () => {
       const source = readFileSync(file, 'utf8');
       const rootPackage = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
       const cliPackage = JSON.parse(
-        readFileSync(path.join(repoRoot, 'packages/dogsled/package.json'), 'utf8')
+        readFileSync(path.join(repoRoot, 'packages/bobsled-core/package.json'), 'utf8')
       );
 
       execFileSync('bash', ['-n', file]);
@@ -31,7 +31,7 @@ describe('customer-resolution demo launchers', () => {
       expect(rootPackage.scripts.setup).toBeTruthy();
       expect(cliPackage.scripts.build).toBeTruthy();
       expect(cliPackage.dependencies['@duckdb/node-api']).toBeTruthy();
-      expect(source).toContain('packages/dogsled/dist/index.js');
+      expect(source).toContain('packages/bobsled-core/dist/index.js');
     });
   }
 });

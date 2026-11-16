@@ -5,7 +5,7 @@ built source checkout. The test seeds and resolves the fictional Entity Graph
 workspace, starts Explorer through its documented dev launcher on a free loopback
 port, and uses Chromium to check the dashboard, entity workspace, integration
 catalog, curriculum, and pipeline builder. It exports an actual builder config
-through the clipboard and validates the YAML with Dogsled's public schema.
+through the clipboard and validates the YAML with Bobsled Core's public schema.
 Screenshots and the exported config are retained under ignored
 `test-results/e2e/explorer/`.
 

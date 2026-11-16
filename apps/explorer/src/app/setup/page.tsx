@@ -72,7 +72,7 @@ export default function SetupPage() {
     setMessages((prev) => [...prev, { ...msg, id: prev.length + 1 }]);
   }, []);
 
-  // Load catalog from Dogsled setup describe API
+  // Load catalog from Bobsled Core setup describe API
   useEffect(() => {
     async function loadCatalog() {
       try {
@@ -94,7 +94,7 @@ export default function SetupPage() {
       addMessage({
         role: 'assistant',
         content:
-          "Welcome to Dogsled Setup! I'll help you configure a data pipeline.\n\nWhat's your primary goal? Describe it in plain English, or pick a preset below.",
+          "Welcome to Bobsled Core Setup! I'll help you configure a data pipeline.\n\nWhat's your primary goal? Describe it in plain English, or pick a preset below.",
         type: 'text',
       });
     }
@@ -178,7 +178,7 @@ export default function SetupPage() {
     addMessage({ role: 'user', content: text });
     setAnswers((a) => ({ ...a, goal: text }));
 
-    // Try to get recommendation from Dogsled API
+    // Try to get recommendation from Bobsled Core API
     try {
       const r = await explorerFetch('/api/setup/recommend', {
         method: 'POST',
@@ -303,8 +303,8 @@ export default function SetupPage() {
           `**Schedule:** ${schedule}`,
           '',
           'Next steps:',
-          '- Go to **Pipeline Builder** to refine resources and export `dogsled.yml`',
-          '- Go to **Terminal** to run `dogsled setup render` with your config',
+          '- Go to **Pipeline Builder** to refine resources and export `bobsled.yml`',
+          '- Go to **Terminal** to run `bobsled setup render` with your config',
           '- Go to **Integrations** to explore resource schemas',
         ]
           .filter(Boolean)
@@ -343,7 +343,7 @@ export default function SetupPage() {
         <h1 className="text-xl font-bold tracking-tight">Setup Wizard</h1>
         <p className="text-xs text-muted-foreground mt-1">
           Guided pipeline configuration
-          {catalog && <span className="ml-2 text-accent">(connected to Dogsled)</span>}
+          {catalog && <span className="ml-2 text-accent">(connected to Bobsled Core)</span>}
         </p>
       </div>
 

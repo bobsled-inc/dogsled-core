@@ -1,6 +1,6 @@
 # Incremental cursors
 
-Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:incremental-cursors`.
+Prerequisites: Node.js 24+, an installed `bobsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:incremental-cursors`.
 
 1. From the checkout root, start the fictional HTTPS API in one terminal:
 
@@ -15,14 +15,14 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 2. In that second terminal, copy the committed project and enter it:
 
    ```bash
-   cp -R examples/incremental-cursors /tmp/dogsled-incremental-cursors
-   cd /tmp/dogsled-incremental-cursors
+   cp -R examples/incremental-cursors /tmp/bobsled-incremental-cursors
+   cd /tmp/bobsled-incremental-cursors
    ```
 
 3. Load the first 100 events and inspect the persisted cursor:
 
    ```bash
-   dogsled pipeline --integration shop_api --resource events --dest duckdb --db-path data.duckdb --log-format json
+   bobsled pipeline --integration shop_api --resource events --dest duckdb --db-path data.duckdb --log-format json
    cat .extractor/state.json
    ```
 
@@ -33,8 +33,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 
    ```bash
    curl --cacert "$NODE_EXTRA_CA_CERTS" -X POST -H 'Authorization: Bearer showcase-local-key' "$SHOWCASE_API_URL/advance"
-   dogsled pipeline --integration shop_api --resource events --dest duckdb --db-path data.duckdb --log-format json
-   dogsled query 'SELECT count(*) AS n, count(DISTINCT id) AS unique_ids FROM events' --db-path data.duckdb
+   bobsled pipeline --integration shop_api --resource events --dest duckdb --db-path data.duckdb --log-format json
+   bobsled query 'SELECT count(*) AS n, count(DISTINCT id) AS unique_ids FROM events' --db-path data.duckdb
    ```
 
    Expect `advanced: true`, then 50 extracted records. Both query values are 150.

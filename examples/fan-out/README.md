@@ -1,6 +1,6 @@
 # One extraction, three destinations
 
-Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:fan-out`. Docker is also required.
+Prerequisites: Node.js 24+, an installed `bobsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:fan-out`. Docker is also required.
 
 1. From the checkout root, start the fictional HTTPS API in one terminal:
 
@@ -15,8 +15,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 2. In that second terminal, copy the committed project and enter it:
 
    ```bash
-   cp -R examples/fan-out /tmp/dogsled-fan-out
-   cd /tmp/dogsled-fan-out
+   cp -R examples/fan-out /tmp/bobsled-fan-out
+   cd /tmp/bobsled-fan-out
    ```
 
 3. Start disposable Postgres on a random loopback port and configure the copied project:
@@ -37,9 +37,9 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 4. Replay one extraction to all three destinations:
 
    ```bash
-   dogsled pipeline --integration shop_api --resource customers --destinations-json "$(cat destinations.json)" --output-dir archive --log-format json
-   dogsled query 'SELECT count(*) AS n FROM customers' --db-path data.duckdb
-   docker compose exec postgres psql -U postgres -d showcase -c 'SELECT count(*), count(_dogsled_loaded_at) FROM fanout.customers'
+   bobsled pipeline --integration shop_api --resource customers --destinations-json "$(cat destinations.json)" --output-dir archive --log-format json
+   bobsled query 'SELECT count(*) AS n FROM customers' --db-path data.duckdb
+   docker compose exec postgres psql -U postgres -d showcase -c 'SELECT count(*), count(_bobsled_loaded_at) FROM fanout.customers'
    ```
 
    Expect zero failed streams and 200 rows in each destination, including the

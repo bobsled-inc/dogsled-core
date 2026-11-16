@@ -43,7 +43,7 @@ export async function writeLine(stream: Writable, line: string): Promise<void> {
  *
  * Trust boundary: BATCH file URIs originate from the extractor process and can
  * legitimately reference any path on disk where the extractor wrote its output.
- * This is by design in the Dogsled protocol — the loader trusts the
+ * This is by design in the Bobsled Core protocol — the loader trusts the
  * extractor's manifest entries. No path-containment check is applied here.
  */
 export function fileUriToPath(uri: string): string {
@@ -93,7 +93,7 @@ export async function runFileLoader(
   }
 
   const ownedTempDir = await fs.mkdtemp(
-    path.join(providedTempRoot ?? os.tmpdir(), 'dogsled-loader-')
+    path.join(providedTempRoot ?? os.tmpdir(), 'bobsled-loader-')
   );
 
   const bufferRootDir = path.join(ownedTempDir, 'buffer');

@@ -224,7 +224,7 @@ async function importRequest(
 export function registerOssieCommand(program: Command): void {
   const command = program
     .command('ossie')
-    .description('Import/export Ossie using native Dogsled files and DOGSLED extensions');
+    .description('Import/export Ossie using native Bobsled Core files and BOBSLED extensions');
   command
     .command('import <files...>')
     .description(
@@ -233,7 +233,7 @@ export function registerOssieCommand(program: Command): void {
     .option('--connection <handle>', 'Default connection for unresolved sources')
     .option('--bind <dataset=handle>', 'Bind one dataset to a connection', collect, [])
     .option('--map-connection <old=new>', 'Map an imported connection handle', collect, [])
-    .option('--project <directory>', 'Validate connection handles against a Dogsled project')
+    .option('--project <directory>', 'Validate connection handles against a Bobsled Core project')
     .option('--out <directory>', 'New output directory; existing paths are never overwritten')
     .option('--strict', 'Block readiness and writes when the conversion loses meaning')
     .option('--human', 'Readable conversion report')
@@ -245,7 +245,7 @@ export function registerOssieCommand(program: Command): void {
   command
     .command('export [selectors...]')
     .description('Convert selected native sources and models to one Ossie YAML document')
-    .option('--project <directory>', 'Native Dogsled project directory', '.')
+    .option('--project <directory>', 'Native Bobsled Core project directory', '.')
     .requiredOption('--name <name>', 'Ossie semantic model name')
     .option('--all', 'Export every supported source and model')
     .option(

@@ -66,10 +66,10 @@ export type StatementKind =
 /** What a statement is, for both the latency model and the counts a benchmark reports. A header
  * commit is the fenced update that sets a revision; other header updates claim, renew or release. */
 export function statementKind(sql: string): StatementKind {
-  if (/^\s*UPDATE\b[^;]*__DOGSLED_AGENTIC_RUNS/i.test(sql)) {
+  if (/^\s*UPDATE\b[^;]*__BOBSLED_AGENTIC_RUNS/i.test(sql)) {
     return /SET\s+"REVISION"\s*=/i.test(sql) ? 'header_commit' : 'header_update';
   }
-  if (/^\s*INSERT\b[^;]*__DOGSLED_AGENTIC_ROWS/i.test(sql)) return 'row_insert';
+  if (/^\s*INSERT\b[^;]*__BOBSLED_AGENTIC_ROWS/i.test(sql)) return 'row_insert';
   if (/^\s*INSERT\b/i.test(sql)) return 'insert';
   if (/^\s*(UPDATE|DELETE)\b/i.test(sql)) return 'update';
   if (/^\s*(SELECT|WITH)\b/i.test(sql)) return 'read';

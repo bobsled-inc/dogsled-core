@@ -167,7 +167,7 @@ describe('deployed model planning', () => {
       expect(plan.closure.models).toEqual([target]);
       expect(plan.executionMode).toBe(target === 'live_users' ? 'on_read' : 'materialized');
       expect(plan.sourceBindings).toHaveLength(1);
-      expect(plan.sql).toContain('__dogsled_source_1');
+      expect(plan.sql).toContain('__bobsled_source_1');
     }
   );
 
@@ -276,7 +276,7 @@ describe('deployed model planning', () => {
       model: 'users_model',
     });
 
-    expect(plan.sql).toContain('__dogsled_source_1');
+    expect(plan.sql).toContain('__bobsled_source_1');
     expect(plan.sql).not.toContain('sources.Users');
   });
 });

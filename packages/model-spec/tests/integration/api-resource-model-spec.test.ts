@@ -10,7 +10,7 @@ import { buildModelRegistry, buildSourceRegistry } from '../../src/compiler/pars
 
 describe('Model Spec compile — api_resource sources', () => {
   it('emits sources.<name> for a model referencing an api_resource source', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'dogsled-model-spec-api-'));
+    const root = await mkdtemp(join(tmpdir(), 'bobsled-model-spec-api-'));
     await mkdir(join(root, 'sources'), { recursive: true });
     await mkdir(join(root, 'models'), { recursive: true });
     await writeFile(

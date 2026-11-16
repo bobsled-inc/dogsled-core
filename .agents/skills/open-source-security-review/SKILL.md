@@ -1,6 +1,6 @@
 ---
 name: open-source-security-review
-description: Review Dogsled security and privacy changes with deterministic checks and regression tests.
+description: Review Bobsled Core security and privacy changes with deterministic checks and regression tests.
 ---
 
 # Security and privacy review

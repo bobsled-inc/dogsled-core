@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DOGSLED_RUNTIME_ERROR_KINDS } from '@bobsled-inc/protocol';
+import { BOBSLED_CORE_RUNTIME_ERROR_KINDS } from '@bobsled-inc/protocol';
 import { identifierSchema } from '../compiler/shared-validators.js';
 import {
   AgenticColumnsSchema,
@@ -141,7 +141,7 @@ const AssignmentObjectSchema = z
     if (work.mode === 'llm_call' && work.allowed_sources.length) {
       issue('Direct calls cannot carry source access');
     }
-    if (work.output.columns.some((column) => column.name.toLowerCase().startsWith('_dogsled_'))) {
+    if (work.output.columns.some((column) => column.name.toLowerCase().startsWith('_bobsled_'))) {
       issue('Output metadata columns are reserved');
     }
     const keyNames = Object.keys(work.group_key);
@@ -282,7 +282,7 @@ export const AgentAssignmentOutcomeSchema = AgenticJsonSchema.pipe(
         status: z.literal('failed'),
         error: z
           .object({
-            kind: z.enum(DOGSLED_RUNTIME_ERROR_KINDS),
+            kind: z.enum(BOBSLED_CORE_RUNTIME_ERROR_KINDS),
             code: identifierSchema,
             retryable: z.boolean(),
           })
@@ -307,7 +307,7 @@ function assignmentEvidenceSources(work: AgentAssignment): Set<string> {
   // Saved input evidence can be cited without granting fresh access to its source.
   for (const row of inputs.flatMap((input) => input.rows)) {
     if (row === null || typeof row !== 'object' || Array.isArray(row)) continue;
-    const prior = AgenticJudgmentSchema.shape._dogsled_evidence.safeParse(row['_dogsled_evidence']);
+    const prior = AgenticJudgmentSchema.shape._bobsled_evidence.safeParse(row['_bobsled_evidence']);
     if (prior.success && prior.data) {
       for (const entry of prior.data) sources.add(entry.source);
     }
@@ -338,7 +338,7 @@ function assignmentRowSchema(work: AgentAssignment) {
       });
     });
     const evidence = variants.length === 1 ? variants[0]! : z.union(variants);
-    fields['_dogsled_evidence'] = z.array(evidence).min(1).max(256).nullable();
+    fields['_bobsled_evidence'] = z.array(evidence).min(1).max(256).nullable();
   }
   if (work.classification) {
     fields['choice'] = z.enum(Object.keys(work.classification.choices));
@@ -436,7 +436,7 @@ function parseOutcome(work: AgentAssignment, value: unknown): AgentAssignmentOut
       const identity = keyIdentity(data, work.output.grain);
       if (grain.has(identity)) issue('Output rows must be unique at the declared grain');
       grain.add(identity);
-      const evidence = data['_dogsled_evidence'];
+      const evidence = data['_bobsled_evidence'];
       if (Array.isArray(evidence)) {
         for (const entry of evidence) {
           const prepared = inputs.find((input) => input.ref === entry.source);

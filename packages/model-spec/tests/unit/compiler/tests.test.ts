@@ -30,7 +30,7 @@ describe('generateTestSql', () => {
     const tests: TestSpec[] = [{ type: 'not_null', column: 'status' }];
     const results = generateTestSql(
       'stg_orders',
-      'DOGSLED_WORKSPACE',
+      'BOBSLED_CORE_WORKSPACE',
       tests,
       noPkColumns,
       'snowflake'
@@ -39,7 +39,7 @@ describe('generateTestSql', () => {
     const notNull = results.find((r) => r.testName === 'status_not_null');
     expect(notNull).toBeDefined();
     expect(notNull!.sql).toBe(
-      'SELECT * FROM "DOGSLED_WORKSPACE"."STG_ORDERS" WHERE STATUS IS NULL;'
+      'SELECT * FROM "BOBSLED_CORE_WORKSPACE"."STG_ORDERS" WHERE STATUS IS NULL;'
     );
     expect(notNull!.modelName).toBe('stg_orders');
   });
@@ -48,7 +48,7 @@ describe('generateTestSql', () => {
     const tests: TestSpec[] = [{ type: 'unique', column: 'order_id' }];
     const results = generateTestSql(
       'stg_orders',
-      'DOGSLED_WORKSPACE',
+      'BOBSLED_CORE_WORKSPACE',
       tests,
       noPkColumns,
       'snowflake'
@@ -57,7 +57,7 @@ describe('generateTestSql', () => {
     const unique = results.find((r) => r.testName === 'order_id_unique');
     expect(unique).toBeDefined();
     expect(unique!.sql).toBe(
-      'SELECT ORDER_ID, COUNT(*) AS __count FROM "DOGSLED_WORKSPACE"."STG_ORDERS" GROUP BY ORDER_ID HAVING COUNT(*) > 1;'
+      'SELECT ORDER_ID, COUNT(*) AS __count FROM "BOBSLED_CORE_WORKSPACE"."STG_ORDERS" GROUP BY ORDER_ID HAVING COUNT(*) > 1;'
     );
   });
 
@@ -67,7 +67,7 @@ describe('generateTestSql', () => {
     ];
     const results = generateTestSql(
       'stg_orders',
-      'DOGSLED_WORKSPACE',
+      'BOBSLED_CORE_WORKSPACE',
       tests,
       noPkColumns,
       'snowflake'
@@ -76,7 +76,7 @@ describe('generateTestSql', () => {
     const av = results.find((r) => r.testName === 'status_accepted_values');
     expect(av).toBeDefined();
     expect(av!.sql).toBe(
-      "SELECT * FROM \"DOGSLED_WORKSPACE\".\"STG_ORDERS\" WHERE STATUS NOT IN ('active', 'inactive', 'pending');"
+      "SELECT * FROM \"BOBSLED_CORE_WORKSPACE\".\"STG_ORDERS\" WHERE STATUS NOT IN ('active', 'inactive', 'pending');"
     );
   });
 
@@ -110,7 +110,7 @@ describe('generateTestSql', () => {
   it('auto-generates not_null + unique for primary_key columns', () => {
     const results = generateTestSql(
       'stg_orders',
-      'DOGSLED_WORKSPACE',
+      'BOBSLED_CORE_WORKSPACE',
       [],
       basicColumns,
       'snowflake'
@@ -170,7 +170,7 @@ describe('generateTestSql', () => {
       { name: 'order_id', expr: 'o.ID' },
       { name: 'status', expr: 'o.STATUS', not_null: true },
     ];
-    const results = generateTestSql('stg_orders', 'DOGSLED_WORKSPACE', [], columns, 'snowflake');
+    const results = generateTestSql('stg_orders', 'BOBSLED_CORE_WORKSPACE', [], columns, 'snowflake');
 
     expect(results).toHaveLength(1);
     const notNull = results.find((r) => r.testName === 'status_not_null');
@@ -182,7 +182,7 @@ describe('generateTestSql', () => {
     const columns: ResolvedColumn[] = [
       { name: 'order_id', expr: 'o.ID', primary_key: true, not_null: true },
     ];
-    const results = generateTestSql('stg_orders', 'DOGSLED_WORKSPACE', [], columns, 'snowflake');
+    const results = generateTestSql('stg_orders', 'BOBSLED_CORE_WORKSPACE', [], columns, 'snowflake');
 
     // primary_key generates not_null + unique; not_null skips because primary_key is true
     const notNullTests = results.filter((r) => r.testName === 'order_id_not_null');

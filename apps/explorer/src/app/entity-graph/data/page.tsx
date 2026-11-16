@@ -43,8 +43,8 @@ const ENTITY_GRAPH_SCENARIOS: { scenario: EntityGraphScenarioId; label: string }
   { scenario: 'default', label: 'Entity Graph Demo (company_resolution.db)' },
 ];
 
-const QUERY_HISTORY_STORAGE_KEY = 'dogsled-explorer-entity_graph-query-history';
-const LEGACY_QUERY_HISTORY_STORAGE_KEY = 'dogsled-explorer-mdm-query-history';
+const QUERY_HISTORY_STORAGE_KEY = 'bobsled-explorer-entity_graph-query-history';
+const LEGACY_QUERY_HISTORY_STORAGE_KEY = 'bobsled-explorer-mdm-query-history';
 const MAX_DISPLAY_ROWS = 500;
 
 function resolveDataPageSelection(
@@ -190,7 +190,7 @@ export default function EntityGraphDataPage() {
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           { label: 'Entity Graph', href: '/entity-graph' },
           { label: 'Data' },
         ]}

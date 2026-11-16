@@ -128,7 +128,7 @@ type OutputMode = 'json' | 'yaml' | 'text';
 
 function detectOutputMode(yamlFlag: boolean): OutputMode {
   if (yamlFlag) return 'yaml';
-  const envFormat = process.env['DOGSLED_OUTPUT_FORMAT']?.toLowerCase();
+  const envFormat = process.env['BOBSLED_CORE_OUTPUT_FORMAT']?.toLowerCase();
   if (envFormat === 'json') return 'json';
   if (envFormat === 'text') return 'text';
   if (process.env['CI'] === '1' || process.env['CI'] === 'true') return 'json';
@@ -181,7 +181,7 @@ export function registerQueryCommand(program: Command): void {
             const dbPath = options.dbPath as string | undefined;
             if (!dbPath) {
               emitError(
-                '--db-path is required for DuckDB query. To query Dogsled API sources, use `dogsled source-query <sql>` instead.'
+                '--db-path is required for DuckDB query. To query Bobsled Core API sources, use `bobsled source-query <sql>` instead.'
               );
               return;
             }

@@ -1,12 +1,12 @@
 # @bobsled-inc/skills
 
-This is a private workspace bundled inside `@bobsled-inc/dogsled`. Users
-install only `@bobsled-inc/dogsled`; they do not install this package.
+This is a private workspace bundled inside `@bobsled-inc/bobsled-core`. Users
+install only `@bobsled-inc/bobsled-core`; they do not install this package.
 
 The workspace contains two separate Skill concepts:
 
-- **Built-in Skills** are Dogsled authoring guidance shipped from this repository's `.agents/skills/` directory.
-- **Project Skills** are guidance owned by one Dogsled project and authored under that project's `skills/` directory.
+- **Built-in Skills** are Bobsled Core authoring guidance shipped from this repository's `.agents/skills/` directory.
+- **Project Skills** are guidance owned by one Bobsled Core project and authored under that project's `skills/` directory.
 
 Their schemas, source directories, and manifests are separate.
 The workspace also owns the parser for a project's optional root `AGENTS.md`.
@@ -15,21 +15,21 @@ The workspace also owns the parser for a project's optional root `AGENTS.md`.
 
 Versioned re-publish of the action-oriented authoring skills under
 `.agents/skills/<name>/SKILL.md` plus the three discriminator catalogs
-that the host agent uses when emitting Dogsled / Model Spec YAML.
+that the host agent uses when emitting Bobsled Core / Model Spec YAML.
 
 The package mirrors the build-time-bake pattern used by
 `@bobsled-inc/integrations/catalog`: a script
 (`scripts/build-manifest.ts`) walks the source skills, resolves
 transclusions, and writes a typed constant to `src/generated-data.ts`
 which is bundled into the JS output. There is zero filesystem I/O at
-runtime when using the package root or `/dogsled` subpath.
+runtime when using the package root or `/bobsled` subpath.
 
 The same generation command also writes the installable Claude Code and Codex
-plugin under `plugins/dogsled-core/`, with host-specific marketplace catalogs. See the
-[plugin installation guide](../../plugins/dogsled-core/README.md). Plugin skill copies
+plugin under `plugins/bobsled-core/`, with host-specific marketplace catalogs. See the
+[plugin installation guide](../../plugins/bobsled-core/README.md). Plugin skill copies
 are generated from the authored sources and include expanded document references.
 
-## Internal Dogsled catalog API
+## Internal Bobsled Core catalog API
 
 ```ts
 import {
@@ -41,14 +41,14 @@ import {
 } from '@bobsled-inc/skills';
 
 const manifest = listSkills();
-const skill = getSkill('dogsled-add-pipeline');
+const skill = getSkill('bobsled-add-pipeline');
 const integrationKinds = getCatalog('integration-kinds');
 ```
 
 A clean-island subpath is also available:
 
 ```ts
-import { listSkills } from '@bobsled-inc/skills/dogsled';
+import { listSkills } from '@bobsled-inc/skills/bobsled';
 ```
 
 ## Internal Project document API
@@ -65,12 +65,12 @@ import {
   parseProjectSkill,
 } from '@bobsled-inc/skills/project';
 
-const registry = loadProjectSkillDocuments('/srv/my-dogsled-project');
-const guide = loadProjectGuideDocument('/srv/my-dogsled-project');
+const registry = loadProjectSkillDocuments('/srv/my-bobsled-project');
+const guide = loadProjectGuideDocument('/srv/my-bobsled-project');
 const manifest = buildProjectSkillDocumentsManifest(registry, guide);
 ```
 
-Only a leading YAML mapping with its own `description` is Dogsled Project guide
+Only a leading YAML mapping with its own `description` is Bobsled Core Project guide
 front matter. Other blocks stay in the Markdown body, while extra keys beside
 `description` are tolerated and ignored.
 
@@ -83,28 +83,28 @@ manifest containing a guide uses strict v2, where `guide` is required. Both
 versions reject unknown top-level fields.
 
 This low-level subpath owns strict Skill schemas, bounded file loading,
-deterministic hashes, and injected reference validation. Dogsled project
-integration is exposed from `@bobsled-inc/dogsled/project-skills`.
+deterministic hashes, and injected reference validation. Bobsled Core project
+integration is exposed from `@bobsled-inc/bobsled-core/project-skills`.
 
 ## Which skills are exposed?
 
 Any `.agents/skills/<name>/SKILL.md` with `exposed: true` in its YAML
 front-matter is included in the manifest. Skills without that flag are
-considered internal to Dogsled development.
+considered internal to Bobsled Core development.
 
-## Dogsled agent host usage
+## Bobsled Core agent host usage
 
-Dogsled-maintained hosts can use this internal workspace as the bundled source of
-Dogsled authoring and operating guidance. Load the manifest once, route by trigger
+Bobsled Core-maintained hosts can use this internal workspace as the bundled source of
+Bobsled Core authoring and operating guidance. Load the manifest once, route by trigger
 or name, then keep the selected Skill body in the agent context while editing
-YAML or invoking Dogsled commands:
+YAML or invoking Bobsled Core commands:
 
 ```ts
-import { getSkill, listSkills } from '@bobsled-inc/skills/dogsled';
+import { getSkill, listSkills } from '@bobsled-inc/skills/bobsled';
 
 const available = listSkills();
 const entityResolution = getSkill('entity-resolution');
-const cleaning = getSkill('dogsled-model-spec-cleaning');
+const cleaning = getSkill('bobsled-model-spec-cleaning');
 ```
 
 For entity graph work, the two most important exposed skills are:
@@ -112,11 +112,11 @@ For entity graph work, the two most important exposed skills are:
 - `entity-resolution` — resolution spec authoring, full vs incremental runs,
   review workflow, `get`/`match`/`serve` access-plane commands, PII scan, and
   right-to-erasure operations.
-- `dogsled-model-spec-cleaning` — Model Spec cleaning expressions and entity-graph
+- `bobsled-model-spec-cleaning` — Model Spec cleaning expressions and entity-graph
   `standardize.transforms`, including address normalization, UID2-compatible
   email normalization, `hmac_sha256`, and `pre_hashed` match keys.
 
-Runtime Dogsled MCP entity-graph tools are read-only (`entity_search`,
+Runtime Bobsled Core MCP entity-graph tools are read-only (`entity_search`,
 `entity_get`, `entity_match`, `entity_relationships`, `entity_explain`). When a
 host agent needs to mutate graph state, route through the explicit CLI/HTTP
 write surfaces documented in `entity-resolution`, such as `match --mode stage`,
@@ -140,7 +140,7 @@ self-contained skill body.
 ## Release model
 
 - This workspace is private and is embedded in the single published
-  `@bobsled-inc/dogsled` package.
+  `@bobsled-inc/bobsled-core` package.
 - The manifest carries a combined SHA256 hash across every skill body
   and catalog. Any edit to a source skill, a transcluded doc, or a
   catalog value bumps the hash — consumers can cache on it.

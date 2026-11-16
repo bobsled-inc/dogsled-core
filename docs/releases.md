@@ -1,7 +1,7 @@
 # Cutting a release
 
-Dogsled publishes `@bobsled-inc/dogsled` with 15 workspace packages embedded in its tarball.
-Only `packages/dogsled/package.json` advances its version.
+Bobsled Core publishes `@bobsled-inc/bobsled-core` with 15 workspace packages embedded in its tarball.
+Only `packages/bobsled-core/package.json` advances its version.
 
 ## Merges release
 
@@ -65,7 +65,7 @@ Publication runs in `npm-release`, which npm's trusted publisher is bound to.
 The workflow pushes the verified tag with hooks disabled. It does not push release bookkeeping to `main`.
 
 After changing bundled dependencies, build and run `node scripts/release/third-party-notices.mjs`.
-Review [THIRD_PARTY_NOTICES.md](../packages/dogsled/THIRD_PARTY_NOTICES.md) before dispatching the release.
+Review [THIRD_PARTY_NOTICES.md](../packages/bobsled-core/THIRD_PARTY_NOTICES.md) before dispatching the release.
 
 Preparation sets npm fetch timeouts and retries, and time limits on the install, packed-catalog and release-verification steps, so a stalled registry connection fails within minutes instead of using up the job.
 The packed-catalog check retries once on its own. Before a tag is pushed, re-run the failed prepare job.
@@ -77,4 +77,4 @@ If only GitHub release finalization fails, re-run the failed jobs: it creates a 
 When a release awaits approval, two Slack messages appear in the release channel:
 
 1. The `notify` job sends the version, summary, PR list and breaking flag to Husky (`POST /api/releases/notify` with a GitHub OIDC token). Husky posts and later updates the Slack message. A `release-status` job sends the outcome (`released` or `not_released`) so Husky can update the message. Core holds no Slack secrets; the only configuration is the `HUSKY_ORIGIN` variable. The notification is skipped when `HUSKY_ORIGIN` is unset and never fails the release.
-2. The GitHub Slack app posts the deployment approval with Approve and Reject buttons. Set it up with `/github subscribe bobsled-inc/dogsled-core workflows` (filtered to the Release workflow); each maintainer runs `/github signin` once.
+2. The GitHub Slack app posts the deployment approval with Approve and Reject buttons. Set it up with `/github subscribe bobsled-inc/bobsled-core workflows` (filtered to the Release workflow); each maintainer runs `/github signin` once.

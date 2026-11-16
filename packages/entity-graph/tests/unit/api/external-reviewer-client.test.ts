@@ -158,7 +158,7 @@ describe('buildReviewRequest', () => {
         target_schema: 'ENTITY_GRAPH',
         dialect: 'snowflake',
       },
-      // PairContext[] travels camelCase, exactly as the Dogsled type.
+      // PairContext[] travels camelCase, exactly as the Bobsled Core type.
       pairs: [makePair('p1')],
     });
   });

@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-09-02 -->
 
-Bundled Dogsled Skill generation plus Project Skill document schemas and bounded loading.
+Bundled Bobsled Core Skill generation plus Project Skill document schemas and bounded loading.
 
 ## Source Of Truth
 
@@ -12,7 +12,7 @@ Bundled Dogsled Skill generation plus Project Skill document schemas and bounded
 - A user's exact-case root `AGENTS.md` is the separate optional Project guide. It
   never belongs in the Built-in Skill manifest or a Project Skill directory.
 - `content/catalogs/*.json` values and exposed skill names are append-only contracts.
-- `src/generated-data.ts`, `plugins/dogsled-core/skills/`, plugin manifests, and marketplace
+- `src/generated-data.ts`, `plugins/bobsled-core/skills/`, plugin manifests, and marketplace
   catalogs are generated; never edit them directly. `generate:manifest` updates both
   the runtime manifest and the installable plugin from the same exposed skills.
 - Transclusions are resolved during generation so bundled Skill bodies are
@@ -25,7 +25,7 @@ the build cache.
 
 ## Project Document Contracts
 
-- A leading guide YAML block is Dogsled front matter only when it is a mapping with
+- A leading guide YAML block is Bobsled Core front matter only when it is a mapping with
   its own `description`. Keep unknown-only blocks as Markdown and tolerate extra
   keys beside `description`.
 - Measure `ProjectGuide.byteLength` and the 32 KiB limit from raw source bytes.

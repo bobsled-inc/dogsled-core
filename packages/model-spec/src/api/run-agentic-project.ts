@@ -196,7 +196,7 @@ export async function runAgenticProject(
     const fields = deprecatedAssignmentLimitFields(model.model);
     if (fields.length) {
       result.warnings.push(
-        `Agentic model "${name}" sets ${fields.join(', ')}. These per-assignment limits are deprecated and new runs ignore them (runs saved by an earlier Dogsled still apply them). Use limits.tokens or limits.max_cost_usd to cap a run.`
+        `Agentic model "${name}" sets ${fields.join(', ')}. These per-assignment limits are deprecated and new runs ignore them (runs saved by an earlier Bobsled Core still apply them). Use limits.tokens or limits.max_cost_usd to cap a run.`
       );
     }
   }
@@ -316,7 +316,7 @@ export async function runAgenticProject(
           secretResolver
         );
         const credentialsTokenCommand =
-          options.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+          options.credentialsTokenCommand ?? process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
         stateStore =
           integration.source_type === 'duckdb'
             ? configuredDuckDbStore(
@@ -361,7 +361,7 @@ export async function runAgenticProject(
             secretResolver
           );
           const credentialsTokenCommand =
-            options.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+            options.credentialsTokenCommand ?? process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
           ownedPublisher = await createSqlAgenticPublisher(integration, {
             ...(checkpointConfig ? { systemSchema: checkpointConfig.schema } : {}),
             secretResolver,

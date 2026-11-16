@@ -291,7 +291,7 @@ materialization:
     // Schema drift `fail` is now surfaced as a per-model failure inside
     // `result.byIntegration[i].executionResults` — `runProject` returns with
     // `ok: false` instead of throwing. This makes the failure visible in
-    // `dogsled model run --json` output.
+    // `bobsled model run --json` output.
     const result = await runOnce(harness);
     expect(result.ok).toBe(false);
     const integration = result.byIntegration[0];

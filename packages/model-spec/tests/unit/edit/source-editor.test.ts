@@ -16,7 +16,7 @@ describe('edit/source-editor', () => {
   let sourcePath: string;
 
   beforeEach(() => {
-    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-edit-source-'));
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-edit-source-'));
     fs.mkdirSync(path.join(projectDir, 'sources', 'ecom'), { recursive: true });
     sourcePath = path.join(projectDir, 'sources', 'ecom', 'raw_customers.yml');
     fs.writeFileSync(sourcePath, sourceYaml(), 'utf-8');

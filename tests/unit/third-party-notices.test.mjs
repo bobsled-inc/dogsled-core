@@ -20,7 +20,7 @@ function fixture() {
   const root = mkdtempSync(path.join(os.tmpdir(), 'notice-fixture-'));
   roots.push(root);
   mkdirSync(path.join(root, 'node_modules/.pnpm'), { recursive: true });
-  mkdirSync(path.join(root, 'packages/dogsled'), { recursive: true });
+  mkdirSync(path.join(root, 'packages/bobsled-core'), { recursive: true });
   const metafiles = [{ file: 'meta.json', cwd: '.' }];
   const inputs = {};
   function add(name, version, documents = { LICENSE: 'MIT license text' }, extra = {}) {

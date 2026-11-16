@@ -4,7 +4,7 @@ import * as path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import {
   compileProject,
   loadProject,
@@ -24,7 +24,7 @@ describe('validateProject / compileProject — preloaded integrations bypass dis
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-preloaded-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-preloaded-'));
 
     fs.writeFileSync(
       path.join(tmpDir, 'model-spec.yml'),
@@ -154,7 +154,7 @@ describe('validateProject / compileProject — preloaded integrations bypass dis
       code: 'MODEL_PROJECT_VALIDATE_VALIDATION_FAILED',
       operation: 'model.project.validate',
     });
-    expect((error as DogsledRuntimeError).cause).toMatchObject({
+    expect((error as BobsledRuntimeError).cause).toMatchObject({
       message: expect.stringContaining('does_not_exist'),
     });
   });

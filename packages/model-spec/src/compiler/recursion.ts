@@ -48,7 +48,7 @@ import {
 } from './schemas.js';
 
 import type { SupportedDialect } from './dialect.js';
-import type { DogsledExpr } from './expr/index.js';
+import type { BobsledExpr } from './expr/index.js';
 import type { HierarchySpec, RecurseSpec, TransformSpec } from './schemas.js';
 
 /** Internal column carrying the walked key, so the join never depends on how the author aliased it. */
@@ -78,7 +78,7 @@ const RECURSE_PHYSICAL_SOURCE = '__bms_source';
 export function qualifyStepExpression(exprText: string, dialect: SupportedDialect): string {
   const ast = parseExprField(exprText);
   if (ast.kind === 'raw_sql') return ast.sql;
-  const qualified = mapExpr(ast, (node: DogsledExpr): DogsledExpr => {
+  const qualified = mapExpr(ast, (node: BobsledExpr): BobsledExpr => {
     if (node.kind !== 'column_ref') return node;
     const table = node.table?.toLocaleLowerCase();
     if (table === RECURSE_ALIAS_PRIOR) return { ...node, table: RECURSE_PHYSICAL_PRIOR };

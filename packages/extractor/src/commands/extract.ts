@@ -316,7 +316,7 @@ export function registerExtractCommand(program: Command): void {
               2
             );
           }
-          // Validate at the extractor boundary too — Dogsled-side cross-validation
+          // Validate at the extractor boundary too — Bobsled Core-side cross-validation
           // is the authority for pipeline-authored configs, but `--resource-via`
           // is also reachable when the extractor is invoked standalone.
           validateResourceViaOverride(integration, opts.resourceVia);
@@ -363,7 +363,7 @@ export function registerExtractCommand(program: Command): void {
             for (const { spec } of resources) {
               if (isLookupOnlyApiResource(spec)) {
                 throw new CommandError(
-                  `Resource "${integrationName}/${spec.name}" only supports lookup. Use "dogsled extract lookup" instead of "dogsled extract run".`
+                  `Resource "${integrationName}/${spec.name}" only supports lookup. Use "bobsled extract lookup" instead of "bobsled extract run".`
                 );
               }
             }

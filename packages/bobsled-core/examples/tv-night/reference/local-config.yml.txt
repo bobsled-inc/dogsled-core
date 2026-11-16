@@ -1,0 +1,4 @@
+default_destination:
+  dest: duckdb
+  dbPath: .bobsled/bobsled.duckdb
+  targetSchema: cache

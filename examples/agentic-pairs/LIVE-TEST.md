@@ -1,6 +1,6 @@
 # Live test — 13 September 2026
 
-The standalone Dogsled CLI passed with OpenAI `gpt-4.1-mini` and a real provider call for each pair.
+The standalone Bobsled Core CLI passed with OpenAI `gpt-4.1-mini` and a real provider call for each pair.
 The test used the synthetic input from this project. It did not use a mock provider.
 
 | Pair   | LLM assessment        | SQL action            | Merge authorized |
@@ -12,7 +12,7 @@ The test used the synthetic input from this project. It did not use a mock provi
 All three models succeeded: `undecided_pairs`, `pair_assessments`, and `pair_decisions`.
 The executor made three calls. All three attempts succeeded on their first call.
 The provider reported 1,689 input tokens and 450 output tokens, for a total of 2,139 tokens.
-Dogsled saved the same total charge.
+Bobsled Core saved the same total charge.
 
 A second CLI process used the same run ID with `--agent-resume`.
 The resume succeeded and made zero new executor calls.
@@ -34,7 +34,7 @@ The LLM supplied those dates because the provider schema required them.
 The original assessment checks did not catch this metadata error.
 
 The corrected run also passed with three real OpenAI calls.
-Dogsled recorded `2026-09-13T11:38:05.554Z` when it received the prepared input.
+Bobsled Core recorded `2026-09-13T11:38:05.554Z` when it received the prepared input.
 Every published evidence date equals that saved host time.
 The provider schema has no retrieval date field.
 The executor attaches the host time after it validates the response.
@@ -45,7 +45,7 @@ The token counts above describe this corrected run.
 
 This test proves the CLI, LLM call, result validation, saved state, DuckDB publication, and downstream SQL path.
 It does not prove general entity-resolution accuracy or a full entity-resolution pipeline.
-It does not test candidate discovery, clustering, record merges, Dogsled, or a live cloud database.
+It does not test candidate discovery, clustering, record merges, Bobsled Core, or a live cloud database.
 
 ## Repeat the test
 
@@ -60,7 +60,7 @@ A separate local restaurant demo used the reference loop with OpenAI
 `gpt-4.1-mini` and real DuckDB source reads. It kept the previous demo's public
 Fodors–Zagats seeds, 30 candidate pairs, and ten SQL models unchanged. A new
 work-list model supplied only the pair ID. Each agent read the candidate table
-through Dogsled before it returned its assessment.
+through Bobsled Core before it returned its assessment.
 
 The completed run used concurrency 3. All 30 assignments succeeded, with 60 real
 LLM calls and 30 source reads. The provider reported 166,860 tokens. All twelve

@@ -69,7 +69,7 @@ export function createWarehouseAgenticCursorStore(
   const { catalog, schema } = resolveWarehouseCheckpointTarget(integration, options);
   const q = (name: string) => quoteIdentifier(caseName(name, dialect), dialect);
   const namespace = [...(catalog ? [catalog] : []), schema].map(q).join('.');
-  const table = `${namespace}.${q('__dogsled_cursors')}`;
+  const table = `${namespace}.${q('__bobsled_cursors')}`;
   const lit = (value: string) => publicationLiteral(value, dialect);
   const mutateOnce = async (
     key: AgenticCursorKey,

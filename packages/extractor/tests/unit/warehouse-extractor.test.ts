@@ -94,7 +94,7 @@ function snowflakeIntegration(): IntegrationSpec {
       'SNOWFLAKE_ACCOUNT',
       'SNOWFLAKE_TOKEN',
       'SNOWFLAKE_WAREHOUSE',
-      'DOGSLED_TEST_LARGE_WAREHOUSE',
+      'BOBSLED_CORE_TEST_LARGE_WAREHOUSE',
     ],
     spec_version: '1',
     type: 'integration',
@@ -376,7 +376,7 @@ describe('isWarehouseSource', () => {
         'SNOWFLAKE_ACCOUNT',
         'SNOWFLAKE_TOKEN',
         'SNOWFLAKE_WAREHOUSE',
-        'DOGSLED_TEST_LARGE_WAREHOUSE',
+        'BOBSLED_CORE_TEST_LARGE_WAREHOUSE',
       ],
       spec_version: '2',
       type: 'source',
@@ -705,9 +705,9 @@ describe('extractWarehouseResource', () => {
     const integration = snowflakeIntegration();
     (integration.connection as Record<string, unknown>)['warehouses'] = {
       small: 'SMALL_WH',
-      large: '${{ env.DOGSLED_TEST_LARGE_WAREHOUSE }}',
+      large: '${{ env.BOBSLED_CORE_TEST_LARGE_WAREHOUSE }}',
     };
-    process.env['DOGSLED_TEST_LARGE_WAREHOUSE'] = 'LARGE_WH';
+    process.env['BOBSLED_CORE_TEST_LARGE_WAREHOUSE'] = 'LARGE_WH';
 
     try {
       await extractWarehouseResource({
@@ -721,7 +721,7 @@ describe('extractWarehouseResource', () => {
         warehouse: 'large',
       });
     } finally {
-      delete process.env['DOGSLED_TEST_LARGE_WAREHOUSE'];
+      delete process.env['BOBSLED_CORE_TEST_LARGE_WAREHOUSE'];
     }
 
     expect(createWarehouseClient).toHaveBeenCalledWith(
@@ -874,7 +874,7 @@ describe('extractWarehouseResource', () => {
         'SNOWFLAKE_ACCOUNT',
         'SNOWFLAKE_TOKEN',
         'SNOWFLAKE_WAREHOUSE',
-        'DOGSLED_TEST_LARGE_WAREHOUSE',
+        'BOBSLED_CORE_TEST_LARGE_WAREHOUSE',
       ],
       spec_version: '2',
       type: 'source',

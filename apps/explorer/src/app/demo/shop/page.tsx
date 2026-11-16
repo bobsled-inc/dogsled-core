@@ -77,7 +77,7 @@ const STEPS = [
     title: 'Validate and compile',
     description:
       'Run the Model Spec CLI to validate contracts and compile any model to inspect the generated SQL.',
-    code: 'dogsled model validate --integration duckdb\ndogsled model compile stg_customers --integration duckdb',
+    code: 'bobsled model validate --integration duckdb\nbobsled model compile stg_customers --integration duckdb',
     href: null,
   },
 ] as const;
@@ -89,7 +89,7 @@ export default async function ShopDemoOverviewPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 p-8">
       <PageHeader
-        breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Demo' }, { label: 'Shop Demo' }]}
+        breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Demo' }, { label: 'Shop Demo' }]}
         title="Shop Demo"
         description="A complete Model Spec reference project: five raw CSVs become cleaned staging views, mart tables, metrics, and verified queries — all in local DuckDB."
         actions={

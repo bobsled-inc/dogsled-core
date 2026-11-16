@@ -51,7 +51,7 @@ describe('loadEmbedConfigFile', () => {
     expect(() => loadEmbedConfigFile(path)).toThrow(/Invalid embed config file/);
   });
 
-  it('accepts extra top-level fields (shared file with dogsled embed)', () => {
+  it('accepts extra top-level fields (shared file with bobsled embed)', () => {
     const path = writeTempJson({
       provider: 'openai',
       model: 'text-embedding-3-small',

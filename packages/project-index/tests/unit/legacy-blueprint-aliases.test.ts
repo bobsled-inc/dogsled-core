@@ -24,7 +24,7 @@ describe('legacy Blueprint index normalization', () => {
       entry: {
         kind,
         content,
-        document: { dogsled_connection_ref: 'api-binding', dogsled_source_kind: 'bobsled_api' },
+        document: { bobsled_connection_ref: 'api-binding', bobsled_source_kind: 'bobsled_api' },
       },
     });
     if (classification.status !== 'recognized') throw new Error('expected recognized source');
@@ -43,7 +43,7 @@ describe('legacy Blueprint index normalization', () => {
     expect(index.entries[0]?.content).toBe(pipeline);
     expect(index.entries[0]?.document).toMatchObject({
       destinations: {
-        warehouse: { type: 'dogsled_managed', dogsled_connection_ref: 'warehouse-prod' },
+        warehouse: { type: 'bobsled_managed', bobsled_connection_ref: 'warehouse-prod' },
       },
       pipelines: { api: { inputs: { bobsled_connection_ref: 'user-data' } } },
     });
@@ -59,16 +59,16 @@ describe('legacy Blueprint index normalization', () => {
     const deprecations: readonly ProjectIndexDeprecation[] = index.deprecations ?? [];
     expect(deprecations.map(({ path }) => path)).toEqual(['a.yml', 'a.yml', 'z.yml', 'z.yml']);
     expect(deprecations[0]).toEqual({
-      code: 'DOGSLED_LEGACY_BLUEPRINT_KEY',
+      code: 'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY',
       path: 'a.yml',
       oldKey: 'bobsled_connection_ref',
-      newKey: 'dogsled_connection_ref',
+      newKey: 'bobsled_connection_ref',
     });
     expect(deprecations[1]).toEqual({
-      code: 'DOGSLED_LEGACY_BLUEPRINT_KEY',
+      code: 'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY',
       path: 'a.yml',
       oldKey: 'bobsled_source_kind',
-      newKey: 'dogsled_source_kind',
+      newKey: 'bobsled_source_kind',
     });
     expect(JSON.stringify(deprecations)).not.toContain('api-binding');
     expect(index.issues).toEqual([]);
@@ -79,7 +79,7 @@ describe('legacy Blueprint index normalization', () => {
     const equal = indexProjectFiles([
       {
         path: 'api.yml',
-        content: 'type: integration\n' + bindings + 'dogsled_connection_ref: api-binding\n',
+        content: 'type: integration\n' + bindings + 'bobsled_connection_ref: api-binding\n',
       },
     ]);
     expect(equal.issues).toEqual([]);
@@ -87,7 +87,7 @@ describe('legacy Blueprint index normalization', () => {
     const conflict = indexProjectFiles([
       {
         path: 'api.yml',
-        content: 'type: integration\n' + bindings + 'dogsled_connection_ref: private-new\n',
+        content: 'type: integration\n' + bindings + 'bobsled_connection_ref: private-new\n',
       },
     ]);
     expect(conflict.entries).toEqual([]);
@@ -95,7 +95,7 @@ describe('legacy Blueprint index normalization', () => {
       { code: 'LEGACY_KEY_CONFLICT', path: 'api.yml', kind: 'integration' },
     ]);
     expect(conflict.issues[0]?.message).toBe(
-      'LEGACY_KEY_CONFLICT: api.yml: bobsled_connection_ref conflicts with dogsled_connection_ref'
+      'LEGACY_KEY_CONFLICT: api.yml: bobsled_connection_ref conflicts with bobsled_connection_ref'
     );
     expect(() => assertValidProjectIndex(conflict)).toThrow('LEGACY_KEY_CONFLICT');
   });
@@ -103,7 +103,7 @@ describe('legacy Blueprint index normalization', () => {
   it('omits the additive field when canonical input has no deprecations', () => {
     expect(
       indexProjectFiles([
-        { path: 'api.yml', content: 'type: integration\ndogsled_connection_ref: api-binding\n' },
+        { path: 'api.yml', content: 'type: integration\nbobsled_connection_ref: api-binding\n' },
       ])
     ).not.toHaveProperty('deprecations');
   });

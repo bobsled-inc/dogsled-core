@@ -1,5 +1,5 @@
 ---
-module: dogsled-action-system
+module: bobsled-action-system
 date: 2026-04-23
 problem_type: integration_issue
 component: webhook action transport
@@ -48,7 +48,7 @@ The fix split the behavior by transport:
 Relevant code:
 
 - [packages/extractor/src/framework/extractor/action.ts](../../../packages/extractor/src/framework/extractor/action.ts)
-- [packages/dogsled/src/lib/transports/webhook.ts](../../../packages/dogsled/src/lib/transports/webhook.ts)
+- [packages/bobsled-core/src/lib/transports/webhook.ts](../../../packages/bobsled-core/src/lib/transports/webhook.ts)
 
 ## Prevention
 

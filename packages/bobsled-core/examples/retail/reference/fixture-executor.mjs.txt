@@ -1,0 +1,48 @@
+// Credential-free, deterministic fixture executor. This runs rules over the
+// fictional fixture; it makes no model call and reports zero model tokens.
+export async function executeAgent(request) {
+  request.signal.throwIfAborted();
+  const assignment = request.assignment;
+  const input = assignment.input;
+  const row = input.rows[0];
+  if (!row) throw new Error('Expected one prepared support case per assignment');
+  const text = `${row.conversation || ''}`.toLowerCase();
+  let issue_category = 'other';
+  let resolution_type = 'other';
+  let evidence_summary = row.conversation || 'No conversation supplied';
+  if (/crack|damaged|broken|pieces/.test(text)) {
+    issue_category = 'product_damage';
+    resolution_type = 'replacement_offered';
+  } else if (/sold out|out of stock|unavailable|restock/.test(text)) {
+    issue_category = 'stock_availability';
+    resolution_type = 'restock_alert';
+  } else if (/comfortable|easy to assemble|looks great|thanks for taking/.test(text)) {
+    issue_category = 'positive_feedback';
+    resolution_type = 'informational';
+  } else if (/not sure which|which item|identify the product/.test(text)) {
+    issue_category = 'other';
+    resolution_type = 'awaiting_customer';
+  }
+  const usage = { status: 'measured', input_tokens: 0, output_tokens: 0, total_tokens: 0 };
+  const receipt = await request.budget.reserve(assignment.limits.tokens);
+  await request.budget.settle(receipt, usage);
+  const reference = row.ticket_id;
+  return {
+    contract_version: 2,
+    attempt_id: assignment.attempt_id,
+    status: 'succeeded',
+    rows: [{
+      ticket_id: row.ticket_id,
+      analysis_mode: "fixture",
+      support_quote: row.conversation.slice(0, 180),
+      product_id: row.product_id ?? null,
+      issue_category,
+      resolution_type,
+      evidence_summary: evidence_summary.slice(0, 180),
+      _bobsled_evidence: [{ source: input.ref, reference, retrieved_at: input.retrieved_at, support_excerpt: evidence_summary.slice(0, 400) }],
+      _bobsled_confidence: null,
+      _bobsled_reason: null,
+    }],
+    usage,
+  };
+}

@@ -52,14 +52,14 @@ materialization:
   type: view               # view | table | incremental | ephemeral
 `;
 
-const GITIGNORE = `.dogsled/model-spec/
+const GITIGNORE = `.bobsled/model-spec/
 dist/
 `;
 
 const DEFAULT_CONFIG = `# Model Spec project configuration.
 #
 # Warehouse credentials and dialect now live in integrations/<handle>.yml.
-# Select the active integration with \`dogsled model compile --integration <handle>\`.
+# Select the active integration with \`bobsled model compile --integration <handle>\`.
 
 # sources_dir: sources             # Directory containing source spec files
 # models_dir: models               # Directory containing model spec files
@@ -68,7 +68,7 @@ const DEFAULT_CONFIG = `# Model Spec project configuration.
 # integrations_dir: integrations   # Directory containing integration spec files
 # targets_dir: targets             # Directory containing target spec files
 # metrics_dir: metrics             # First-class named measures (emitted as JSON
-#                                  # alongside SQL via \`dogsled model compile --include-metadata\`)
+#                                  # alongside SQL via \`bobsled model compile --include-metadata\`)
 # relationships_dir: relationships # Multi-column join descriptions between models
 # vqs_dir: vqs                     # Verified-query NLQ-to-SQL pairings
 `;
@@ -80,13 +80,13 @@ type: integration
 name: example
 source_type: duckdb
 connection:
-  path: .dogsled/model-spec/warehouse.duckdb
+  path: .bobsled/model-spec/warehouse.duckdb
 auth:
   type: file
 `;
 
 const EXAMPLE_METRIC = `# A first-class named measure. Rendered to target/metrics.json when you
-# pass \`dogsled model compile --include-metadata --output <dir>\`. The Data Estate
+# pass \`bobsled model compile --include-metadata --output <dir>\`. The Data Estate
 # UI surfaces these alongside the raw SQL.
 spec_version: "0.2"
 type: metric

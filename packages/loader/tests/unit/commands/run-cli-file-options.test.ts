@@ -19,7 +19,7 @@ async function runWith(args: string[]): Promise<{ config?: LoaderConfig; error?:
     config = received;
   });
   try {
-    await program.parseAsync(['node', 'dogsled load', 'run', ...args]);
+    await program.parseAsync(['node', 'bobsled load', 'run', ...args]);
   } catch (error) {
     return { error };
   }

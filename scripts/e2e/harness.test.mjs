@@ -14,14 +14,14 @@ test('CLI runs in a clean project without inherited credentials', async () => {
     const version = await ctx.cli(['--version']);
     assert.match(version.stdout, /\d+\.\d+\.\d+/);
     const help = await ctx.cli(['--help']);
-    assert.match(help.stdout, /Dogsled/);
+    assert.match(help.stdout, /Bobsled Core/);
   } finally {
     await ctx.cleanup();
   }
 });
 
 async function discoveryFixture(source) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'dogsled-discovery-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'bobsled-discovery-'));
   await mkdir(path.join(directory, 'scripts/e2e'), { recursive: true });
   await mkdir(path.join(directory, 'examples/example'), { recursive: true });
   await writeFile(
@@ -81,7 +81,7 @@ test('full suite requires exact IDs and applicable result counts', () => {
 test('showcase aggregation rejects missing, duplicate, failed, skipped, and misassigned results', async () => {
   const { aggregateResults, showcaseLegs } = await import('./run.mjs');
   assertScenarioIds(Object.values(showcaseLegs).flat());
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'dogsled-results-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'bobsled-results-'));
   const reports = Object.entries(showcaseLegs).map(([leg, ids]) => ({
     leg,
     results: ids.map((scenario) => ({ scenario, status: 'PASS' })),

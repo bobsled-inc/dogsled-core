@@ -23,9 +23,9 @@ Default to discovery-only unless the resource is a high-signal public pilot, hea
 
 1. Confirm the resource is already queryable from YAML.
    Run:
-   - `dogsled extract validate <integration>`
-   - `dogsled extract verify <integration>`
-   - `dogsled extract verify <integration> --mock`
+   - `bobsled extract validate <integration>`
+   - `bobsled extract verify <integration>`
+   - `bobsled extract verify <integration> --mock`
    - `pnpm --filter @bobsled-inc/integrations test:unit`
 
 2. Hand-write the three public types from the YAML.

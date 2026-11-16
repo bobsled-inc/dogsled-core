@@ -15,4 +15,4 @@ transport:
     retry_after_header: true
   headers:
     Accept: application/vnd.github+json
-    User-Agent: dogsled-first-ingest-sample
+    User-Agent: bobsled-first-ingest-sample

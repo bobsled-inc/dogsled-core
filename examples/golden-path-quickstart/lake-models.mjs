@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
-import { buildDuckDbRunner, CustomRunnerRegistry } from '@bobsled-inc/dogsled/connections';
-import { runProject } from '@bobsled-inc/dogsled/model-spec/project';
+import { buildDuckDbRunner, CustomRunnerRegistry } from '@bobsled-inc/bobsled-core/connections';
+import { runProject } from '@bobsled-inc/bobsled-core/model-spec/project';
 
 const customRunners = new CustomRunnerRegistry();
 customRunners.register('duckdb', 'memory', async (integration) => {
   const runner = await buildDuckDbRunner(integration);
   await runner.run('INSTALL ducklake');
   await runner.run('LOAD ducklake');
-  await runner.run("ATTACH 'ducklake:.dogsled/lake/catalog.ducklake' AS lake");
+  await runner.run("ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake");
   await runner.run('USE lake');
   return runner;
 });

@@ -138,7 +138,7 @@ export function planTransition(
       '',
       'To migrate:',
       `  ${dropStatementForMaterialization(previousMaterialization, fqName)}`,
-      `  -- then re-run: dogsled model run ${modelName}`,
+      `  -- then re-run: bobsled model run ${modelName}`,
       '',
       `Dialect: ${getCanonicalDialect(dialect)}`,
     ].join('\n'),
@@ -177,7 +177,7 @@ export function planSchemaChange(
     return { kind: 'full_refresh' };
   }
   const remediations = [
-    `  - rebuild the table:  dogsled model run ${modelName} --full-refresh`,
+    `  - rebuild the table:  bobsled model run ${modelName} --full-refresh`,
     ...(allowFullRefreshHint
       ? [`  - opt into auto-rebuild:  set \`on_schema_change: full_refresh\` in ${modelName}.yml`]
       : []),
@@ -246,12 +246,12 @@ function generateTableDdl(
  * A naive `DROP TABLE` fails on the second run with
  *   `cannot drop table ... because other objects depend on it`
  * once a MV exists, because Postgres tracks MV dependencies in pg_depend by
- * relation OID. The swap below builds a fresh `__dogsled_new` table, renames
- * it into place, then drops the renamed-aside `__dogsled_old` with CASCADE.
+ * relation OID. The swap below builds a fresh `__bobsled_new` table, renames
+ * it into place, then drops the renamed-aside `__bobsled_old` with CASCADE.
  *
  * CASCADE is safe in the Model Spec DAG context: dependent MVs are themselves
- * Dogsled-managed models that run *after* this table in topological order
- * within the same `dogsled model run` invocation, so the dropped MV is
+ * platform-managed models that run *after* this table in topological order
+ * within the same `bobsled model run` invocation, so the dropped MV is
  * re-created downstream against the new table with fresh data.
  */
 function generatePostgresTableSwapDdl(
@@ -261,8 +261,8 @@ function generatePostgresTableSwapDdl(
   dialect: SupportedDialect
 ): string[] {
   const baseName = caseName(modelName, dialect);
-  const newName = `${baseName}__dogsled_new`;
-  const oldName = `${baseName}__dogsled_old`;
+  const newName = `${baseName}__bobsled_new`;
+  const oldName = `${baseName}__bobsled_old`;
   const newFqName = withSwappedTableName(fqName, newName, dialect);
   const oldFqName = withSwappedTableName(fqName, oldName, dialect);
   const quotedOriginal = quoteIdentifier(baseName, dialect);
@@ -470,7 +470,7 @@ function unsupportedMaterializationError(
     [
       `Dialect \`${dialect}\` does not support materialization \`${materialization}\`.`,
       ...suggestion,
-      'Change the model materialization and re-run `dogsled model compile`.',
+      'Change the model materialization and re-run `bobsled model compile`.',
     ].join('\n'),
     2
   );

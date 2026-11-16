@@ -23,7 +23,7 @@ interface Destination {
   description: string;
 }
 
-const VISITED_STORAGE_KEY = 'dogsled-explorer-visited';
+const VISITED_STORAGE_KEY = 'bobsled-explorer-visited';
 
 export function DashboardToolkitCatalog({
   capabilities,
@@ -157,7 +157,7 @@ export function DashboardToolkitCatalog({
               <h2 className="mt-2 text-xl font-semibold">From discovery to a runnable pipeline</h2>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 Follow the same flow most developers use the first time they kick the tires on
-                Dogsled Explorer.
+                Bobsled Core Explorer.
               </p>
             </div>
             <Badge variant="accent">New session</Badge>
@@ -173,7 +173,7 @@ export function DashboardToolkitCatalog({
               {
                 href: '/pipelines/new',
                 label: '2. Build a pipeline',
-                body: 'Choose sources, resources, destination, and schedule, then export dogsled.yml.',
+                body: 'Choose sources, resources, destination, and schedule, then export bobsled.yml.',
               },
               {
                 href: '/terminal',
@@ -249,7 +249,7 @@ export function DashboardToolkitCatalog({
           </div>
 
           <div>
-            <h2 className="mb-3 text-sm font-semibold">Dogsled Capabilities</h2>
+            <h2 className="mb-3 text-sm font-semibold">Bobsled Core Capabilities</h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {capabilities.map((capability) => (
                 <Link

@@ -3,13 +3,13 @@ import type { ProjectFileKind } from './kinds.js';
 export type ProjectFileFormat = 'yaml' | 'json' | 'markdown' | 'other';
 
 /**
- * Untyped files Dogsled still recognizes at their historical locations. Every
+ * Untyped files Bobsled Core still recognizes at their historical locations. Every
  * other untyped file is left unrecognized; a file that declares a type is
  * classified by that type wherever it lives.
  */
 const CONVENTIONAL_ROOT_FILES: ReadonlyMap<string, ProjectFileKind> = new Map([
-  ['dogsled.yml', 'pipeline_config'],
-  ['dogsled.yaml', 'pipeline_config'],
+  ['bobsled.yml', 'pipeline_config'],
+  ['bobsled.yaml', 'pipeline_config'],
   ['model-spec.yml', 'model_spec_config'],
   ['model-spec.yaml', 'model_spec_config'],
   ['extractor.yml', 'extractor_config'],
@@ -38,7 +38,7 @@ export function isSkillPackageResourcePath(
 }
 
 /**
- * Top-level folders Dogsled loaded project objects from before it discovered
+ * Top-level folders Bobsled Core loaded project objects from before it discovered
  * files by type. A problem with a file inside one of them still stops loading,
  * as it did then; problems elsewhere are reported without stopping loaders.
  */

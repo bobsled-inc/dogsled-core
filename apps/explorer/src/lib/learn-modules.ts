@@ -6,10 +6,10 @@ import { command, terminalAction } from './learn-module-helpers';
 export const LEARN_MODULES: LearnModule[] = [
   {
     id: 'foundations',
-    title: 'Dogsled Foundations',
+    title: 'Bobsled Core Foundations',
     group: 'foundations',
     description:
-      'Build the mental model for Dogsled projects, commands, specs, and Explorer surfaces.',
+      'Build the mental model for Bobsled Core projects, commands, specs, and Explorer surfaces.',
     outcome:
       'You can move between CLI help, generated examples, Explorer catalogs, and local data.',
     estimatedMinutes: 18,
@@ -19,14 +19,14 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'protocol-first',
         kind: 'concept',
         title: 'Start with the protocol',
-        body: 'Dogsled components compose through structured messages: extractors emit SCHEMA, RECORD, and STATE events on stdout; loaders and tools consume them from stdin. This separation means you can pipe any extractor into any loader without coupling them. Every CLI command in Dogsled either produces or consumes this stream.',
+        body: 'Bobsled Core components compose through structured messages: extractors emit SCHEMA, RECORD, and STATE events on stdout; loaders and tools consume them from stdin. This separation means you can pipe any extractor into any loader without coupling them. Every CLI command in Bobsled Core either produces or consumes this stream.',
         cliLessonId: 'welcome.protocol',
       },
       {
         id: 'inspect-cli',
         kind: 'command',
         title: 'Browse CLI examples',
-        body: 'The `examples list` command prints every built-in runnable example grouped by category — extraction, loading, entity graph, pipeline, and MCP. Each entry shows the command, a short description, and which flags are relevant. Browsing this list gives you the fastest mental map of what Dogsled can do before you start configuring your own pipelines.',
+        body: 'The `examples list` command prints every built-in runnable example grouped by category — extraction, loading, entity graph, pipeline, and MCP. Each entry shows the command, a short description, and which flags are relevant. Browsing this list gives you the fastest mental map of what Bobsled Core can do before you start configuring your own pipelines.',
         cliLessonId: 'cli-map.help',
         command: command('examples', ['list']),
         action: terminalAction('Open Examples', command('examples', ['list'])),
@@ -47,9 +47,9 @@ export const LEARN_MODULES: LearnModule[] = [
     ],
   },
   {
-    id: 'dogsled-model-spec-context',
+    id: 'bobsled-model-spec-context',
     title: 'Model Spec and Context as Code',
-    group: 'dogsled-model-spec-context',
+    group: 'bobsled-model-spec-context',
     description: 'Connect model specs, semantic context, verified queries, and data previews.',
     outcome:
       'You can inspect model DAGs, compiled SQL, semantic artifacts, and queryable demo tables.',
@@ -171,7 +171,7 @@ export const LEARN_MODULES: LearnModule[] = [
     id: 'mcp-extraction',
     title: 'MCP Extraction',
     group: 'mcp-extraction',
-    description: 'Learn how Dogsled treats MCP tools as structured extraction resources.',
+    description: 'Learn how Bobsled Core treats MCP tools as structured extraction resources.',
     outcome: 'You can identify MCP transports, pagination, auth, and sandbox fallback paths.',
     estimatedMinutes: 38,
     cliPhaseIds: ['mcp-client', 'mcp-pagination', 'mcp-auth'],
@@ -181,19 +181,19 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'mcp-concept',
         kind: 'concept',
         title: 'Tool calls as resources',
-        body: 'MCP (Model Context Protocol) is an open standard for exposing tools to AI agents and automation clients. In Dogsled, MCP resources define tool_name and arguments instead of HTTP endpoints. The extractor calls the MCP server using this protocol and emits the same SCHEMA/RECORD/STATE messages as a REST extraction. This means the same loader and pipeline machinery works regardless of transport — swap the integration YAML and the rest is unchanged.',
+        body: 'MCP (Model Context Protocol) is an open standard for exposing tools to AI agents and automation clients. In Bobsled Core, MCP resources define tool_name and arguments instead of HTTP endpoints. The extractor calls the MCP server using this protocol and emits the same SCHEMA/RECORD/STATE messages as a REST extraction. This means the same loader and pipeline machinery works regardless of transport — swap the integration YAML and the rest is unchanged.',
       },
       {
         id: 'mcp-transport',
         kind: 'concept',
         title: 'Transports: stdio vs SSE',
-        body: 'Dogsled supports two MCP transports. stdio launches a local process and communicates over stdin/stdout — useful for running a local MCP server during development. SSE connects to a remote server over HTTP Server-Sent Events using a bearer token. The integration YAML specifies which transport via the transport.type field.',
+        body: 'Bobsled Core supports two MCP transports. stdio launches a local process and communicates over stdin/stdout — useful for running a local MCP server during development. SSE connects to a remote server over HTTP Server-Sent Events using a bearer token. The integration YAML specifies which transport via the transport.type field.',
       },
       {
         id: 'mcp-pagination',
         kind: 'concept',
         title: 'Pagination and cursors with MCP',
-        body: 'MCP tools that return paginated results pass a next_cursor in their output. Dogsled reads this cursor, stores it in a STATE message, and passes it as an argument on the next tool call. On incremental runs, the extractor resumes from the stored cursor rather than re-fetching all records.',
+        body: 'MCP tools that return paginated results pass a next_cursor in their output. Bobsled Core reads this cursor, stores it in a STATE message, and passes it as an argument on the next tool call. On incremental runs, the extractor resumes from the stored cursor rather than re-fetching all records.',
       },
       {
         id: 'credential-check',
@@ -240,7 +240,7 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'incremental-concept',
         kind: 'concept',
         title: 'Incremental sync and cursor state',
-        body: 'On the first run, Dogsled does a full extraction and writes a STATE message containing the cursor — typically a timestamp or max ID. On subsequent runs, the extractor reads the stored state and fetches only records newer than the cursor. This means API calls and load volume shrink dramatically after the initial sync.',
+        body: 'On the first run, Bobsled Core does a full extraction and writes a STATE message containing the cursor — typically a timestamp or max ID. On subsequent runs, the extractor reads the stored state and fetches only records newer than the cursor. This means API calls and load volume shrink dramatically after the initial sync.',
       },
       {
         id: 'load-strategies',
@@ -252,7 +252,7 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'pipeline-builder',
         kind: 'surface',
         title: 'Build a pipeline in Explorer',
-        body: 'The pipeline builder walks you through preset → integrations → resources → destination → schedule → review. At the review step you can inspect the generated dogsled.yml before exporting or deploying. Use DuckDB as the destination to run locally without cloud credentials.',
+        body: 'The pipeline builder walks you through preset → integrations → resources → destination → schedule → review. At the review step you can inspect the generated bobsled.yml before exporting or deploying. Use DuckDB as the destination to run locally without cloud credentials.',
         action: { label: 'Open Pipeline Builder', href: '/pipelines/new', autoCompletes: true },
       },
       {
@@ -276,7 +276,7 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'extract-command',
         kind: 'command',
         title: 'Run an extraction',
-        body: 'The core ELT command is `dogsled extract <integration>`. It reads the integration YAML, authenticates using your configured credentials, and streams SCHEMA, RECORD, and STATE messages to stdout. Pipe it into `dogsled load` to land data: `dogsled extract github | dogsled load --destination duckdb --strategy merge --primary-key id`. The `--resource` flag limits extraction to a single resource; omitting it runs all resources defined in the spec.',
+        body: 'The core ELT command is `bobsled extract <integration>`. It reads the integration YAML, authenticates using your configured credentials, and streams SCHEMA, RECORD, and STATE messages to stdout. Pipe it into `bobsled load` to land data: `bobsled extract github | bobsled load --destination duckdb --strategy merge --primary-key id`. The `--resource` flag limits extraction to a single resource; omitting it runs all resources defined in the spec.',
         command: command('extract', ['--help']),
         action: terminalAction('Open Extract Command', command('extract', ['--help'])),
       },
@@ -284,7 +284,7 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'load-help',
         kind: 'command',
         title: 'Inspect loader destination options',
-        body: 'Run load --help to see all destination flags: --destination duckdb|bigquery|gcs|local, --strategy append|merge|full_refresh, and --primary-key. These map directly to the destination block in dogsled.yml.',
+        body: 'Run load --help to see all destination flags: --destination duckdb|bigquery|gcs|local, --strategy append|merge|full_refresh, and --primary-key. These map directly to the destination block in bobsled.yml.',
         command: command('load', ['--help']),
         action: terminalAction('Open Load Help', command('load', ['--help'])),
       },
@@ -319,7 +319,7 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'warehouse-destinations',
         kind: 'concept',
         title: 'Warehouse destinations: BigQuery and Snowflake',
-        body: 'When loading into BigQuery, Dogsled writes to a dataset and table using the Google Cloud Storage staging path for large loads. For Snowflake it uses the Snowflake COPY INTO pattern with an internal stage. Both destinations respect the load strategy — append appends, merge upserts, full_refresh recreates the table.',
+        body: 'When loading into BigQuery, Bobsled Core writes to a dataset and table using the Google Cloud Storage staging path for large loads. For Snowflake it uses the Snowflake COPY INTO pattern with an internal stage. Both destinations respect the load strategy — append appends, merge upserts, full_refresh recreates the table.',
       },
       {
         id: 'destination-catalog',

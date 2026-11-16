@@ -11,7 +11,7 @@ import {
   type EntityGraphScenarioId,
 } from './entity-graph-scenarios';
 
-export const ENTITY_GRAPH_WIZARD_STORAGE_KEY = 'dogsled-explorer-entity_graph-config';
+export const ENTITY_GRAPH_WIZARD_STORAGE_KEY = 'bobsled-explorer-entity_graph-config';
 
 export interface PersistedEntityGraphWizardState {
   scenarioId?: EntityGraphScenarioId;

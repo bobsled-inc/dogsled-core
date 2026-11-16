@@ -180,7 +180,7 @@ describe('Ossie export converter', () => {
         },
       ],
     });
-    expect(result.files[0]?.content).not.toContain('DOGSLED');
+    expect(result.files[0]?.content).not.toContain('BOBSLED');
     expect(result.files[0]?.content).not.toContain('datatype:');
     expect(result.files[0]?.content).toContain('vendor_name: DBT');
     expect(result.files[0]?.content).not.toContain('vendor_name: CATALOG');
@@ -360,10 +360,10 @@ describe('Ossie export converter', () => {
     expect(document.datasets[0]?.fields.map((field) => field.name)).toEqual([
       'order_id',
       'summary',
-      '_dogsled_run_id',
-      '_dogsled_evidence',
-      '_dogsled_confidence',
-      '_dogsled_reason',
+      '_bobsled_run_id',
+      '_bobsled_evidence',
+      '_bobsled_confidence',
+      '_bobsled_reason',
     ]);
     expect(document.datasets[0]?.custom_extensions ?? []).toEqual([]);
     expect(result.files[0]?.content).not.toContain('build_expression');
@@ -491,7 +491,7 @@ describe('Ossie export converter', () => {
     expect(unsupported).toMatchObject({ ok: false, ready: false, files: [] });
     expect(unsupported.diagnostics[0]?.message).toContain('include_all_columns');
   });
-  it('leaves out properties Dogsled ignores and warns once per dataset', () => {
+  it('leaves out properties Bobsled Core ignores and warns once per dataset', () => {
     const unionModel = {
       ...model,
       name: 'all_orders',

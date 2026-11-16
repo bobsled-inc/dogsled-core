@@ -11,7 +11,7 @@ the audit pins each exempted version to its registry tarball through consumer
 `overrides` and checks the installed integrity against the registry. The gate verifies installed driver versions,
 rejects independently resolved internal packages, and audits the resulting trees.
 The staged AI manifest omits providers already inlined into its built output. Otherwise npm would install duplicate upstream providers with older transitive
-provider-utils pins despite the fixed code bundled by Dogsled. Required external
+provider-utils pins despite the fixed code bundled by Bobsled Core. Required external
 runtime dependencies remain declared, and public imports are smoke-tested.
 
 High and critical advisories fail unless every installed dependency path matches
@@ -20,9 +20,9 @@ require an exact advisory, package version, dependency path, reviewed parent SDK
 owner, evidence,
 review deadline and one of two statuses:
 
-- `not_applicable`: Dogsled cannot reach the vulnerable code, for example because
+- `not_applicable`: Bobsled Core cannot reach the vulnerable code, for example because
   it never calls the affected function or never passes it untrusted input.
-- `accepted_risk`: Dogsled can reach the vulnerable code. Maintainers have
+- `accepted_risk`: Bobsled Core can reach the vulnerable code. Maintainers have
   reviewed the impact and accept it until the review deadline, usually while a
   fixed version waits out the release-age policy.
 
@@ -57,7 +57,7 @@ cutoff. Lowered from 21 to 7 days on 2026-11-09 (owner decision): major JS
 projects use 1--8 days, 7 is the common strict value, Yarn's default is 7, and
 known npm hijacks were pulled within hours. Never lowered further without an
 owner decision. The only exception is a published
-security fix for an advisory that affects Dogsled: the owner may exempt that
+security fix for an advisory that affects Bobsled Core: the owner may exempt that
 exact version (`name@version`, never a name or pattern) in
 `minimumReleaseAgeExclude`. Before approval, check that the release comes from
 the package's usual publisher, that its registry signature verifies (and its
@@ -86,7 +86,7 @@ were removed on 2026-11-09.
 | `@aws-sdk/client-s3`     | 3.1017.0 | Reviewed Node driver avoids the old retry dependency's React Native tooling peer chain, including vulnerable braces (GHSA-vfj7-8cjw-p6xm) |
 
 Install these versions or newer supported versions.
-Dogsled checks installed versions before loading these SDKs in its default
+Bobsled Core checks installed versions before loading these SDKs in its default
 adapters, queries and connectivity checks. A missing, unverifiable, prerelease
 or older driver fails before connection creation. Injected test adapters remain
 credential-free. Databricks 1.x is no longer supported. Install 2.x before using
@@ -106,22 +106,22 @@ and the exemption above pin it to 1.16.2, and the lockfile resolves 1.16.2 every
 
 MCP SDK 1.32.0 became age-eligible on 2026-10-23T17:32:51.427Z.
 The workspace catalog and lockfile now pin this version, which also supplies the
-staged Dogsled runtime dependency. All MCP workspace and consumer exceptions
+staged Bobsled Core runtime dependency. All MCP workspace and consumer exceptions
 have been removed.
 
 The exempted versions above replace every undici, Zod, TOML, DOMPurify, Next and
-body-parser exception. The catalog pins undici 8.12.2 for Dogsled's own HTTP
+body-parser exception. The catalog pins undici 8.12.2 for Bobsled Core's own HTTP
 clients and Zod 4.6.6 for every package and the npm bundle. The `undici@7`,
 `undici@6`, `toml`, `dompurify` and `body-parser` overrides cover the
 Turbopuffer, AI SDK, Snowflake, Mermaid and MCP SDK copies, and the clean
 consumer trees resolve the same versions.
 
-The published Dogsled manifest leaves optional drivers optional and does not
+The published Bobsled Core manifest leaves optional drivers optional and does not
 promote the internal peer declarations. npm can otherwise reject installing
-Dogsled in a project that pins an old driver for unrelated work. The bundled
+Bobsled Core in a project that pins an old driver for unrelated work. The bundled
 internal manifests declare only other bundled packages: npm treats any other
 dependency or peer they declare as part of the bundle when it is installed under
-Dogsled, as in a global install, and leaves its folder empty. The top-level
+Bobsled Core, as in a global install, and leaves its folder empty. The top-level
 manifest declares every external runtime dependency instead. Missing drivers
 are not forced into the project. The runtime checks above reject unsupported
 versions when that warehouse is actually used.
@@ -130,7 +130,7 @@ versions when that warehouse is actually used.
 
 Owner for each entry: security/release maintainers. Re-review when a driver changes
 its dependency tree or integration behavior, even if the deadline has not arrived.
-These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
+These exceptions describe Bobsled Core's adapters, not arbitrary direct SDK usage.
 
 - Databricks SQL > proxy-agent > pac-proxy-agent > get-uri > basic-ftp 5.3.1:
   GHSA-c475-qrg2-pj4r affects `Client.list()` parsing of FTP directory listings.
@@ -143,7 +143,7 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   2026-11-13: no upstream fix path, because get-uri 8.0.1 still requires
   basic-ftp ^5.3.1 and the fix is only in basic-ftp 6.2.1. Review by 2026-12-20.
   Databricks SQL 3.0.0 keeps that proxy path but its `engines` excludes Node.js
-  24.0 through 24.22.0, which Dogsled supports, so the optional peer ranges are
+  24.0 through 24.22.0, which Bobsled Core supports, so the optional peer ranges are
   capped at `>=2.0.0 <3` until maintainers decide to support 3.x.
 - Snowflake and Tedious > Azure Identity > MSAL Node: GHSA-xcx6-jx8p-x3h5 is
   resolved. Azure Identity 4.14.1 (published 2026-10-29, age-eligible since

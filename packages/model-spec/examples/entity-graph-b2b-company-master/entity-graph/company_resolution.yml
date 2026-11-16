@@ -77,7 +77,7 @@ agent_policy:
   enabled: true
   max_embedding_cost_usd: 0.25
   # judge: model # optional review tier. Omit for the default (model judge/panel).
-  #              #   'model' pins the in-Dogsled model judge (ignores any reviewer).
+  #              #   'model' pins the in-Bobsled Core model judge (ignores any reviewer).
   #              #   'agent' requires an external reviewer (see `reviewer:` below);
   #              #   with none configured the review skips (no_judge_configured)
   #              #   rather than falling back to the model judge.

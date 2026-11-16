@@ -14,7 +14,7 @@ import {
   resolveCustomTokenAuthorization,
   sharesCustomToken,
 } from '../../src/runtime/custom-token-authorization.js';
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { makeProvider, makeResource } from '../helpers/fixtures.js';
 
@@ -179,7 +179,7 @@ describe('custom-token shared store', () => {
       .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
       .catch((value: unknown) => value);
 
-    expect(error).toBeInstanceOf(DogsledRuntimeError);
+    expect(error).toBeInstanceOf(BobsledRuntimeError);
     expect(error).toMatchObject({ kind: 'auth', code: 'EXTRACTOR_HTTP_AUTH_FAILURE' });
   });
 

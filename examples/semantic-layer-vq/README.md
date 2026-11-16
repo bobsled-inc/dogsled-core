@@ -9,7 +9,7 @@ are loaded and validated, not computed by a metric CLI.
    `metrics/` and `relationships/` into that project and validate it:
 
    ```bash
-   dogsled model validate --integration local_duckdb
+   bobsled model validate --integration local_duckdb
    ```
 
    The automated `pnpm e2e:semantic-layer-vq` prepares that same shop, copies the
@@ -29,21 +29,21 @@ are loaded and validated, not computed by a metric CLI.
 3. From the checkout root in that query terminal, copy the complete API project:
 
    ```bash
-   cp -R examples/semantic-layer-vq/api-query /tmp/dogsled-semantic-queries
-   cd /tmp/dogsled-semantic-queries
-   dogsled vq revenue_by_customer --param start_date=2025-01-01 --param end_date=2025-12-31
-   dogsled vq top_products --param category=electronics
+   cp -R examples/semantic-layer-vq/api-query /tmp/bobsled-semantic-queries
+   cd /tmp/bobsled-semantic-queries
+   bobsled vq revenue_by_customer --param start_date=2025-01-01 --param end_date=2025-12-31
+   bobsled vq top_products --param category=electronics
    ```
 
    Expect 50 customer rows totalling 50500 revenue units and four electronics
    products. The committed `sources/`, `resources/`, `integrations/` and `vqs/`
    declare the complete query surface. SQL parameter placeholders are `{name}`;
-   Dogsled validates and escapes their values.
+   Bobsled Core validates and escapes their values.
 
 4. Check parameter validation, then stop the mock API with Ctrl-C:
 
    ```bash
-   dogsled vq revenue_by_customer --param start_date=not-a-date --param end_date=2025-12-31
+   bobsled vq revenue_by_customer --param start_date=not-a-date --param end_date=2025-12-31
    ```
 
    Expect exit code 2 and a `YYYY-MM-DD date` diagnostic before query execution.

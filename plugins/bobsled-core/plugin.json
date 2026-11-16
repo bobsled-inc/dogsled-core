@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "bobsled-core",
+  "version": "0.1.0",
+  "description": "Set up local Bobsled Core projects, build data pipelines and models, and diagnose failures.",
+  "author": {
+    "name": "Bobsled Core maintainers"
+  },
+  "homepage": "https://github.com/bobsled-inc/bobsled-core",
+  "repository": "https://github.com/bobsled-inc/bobsled-core",
+  "license": "Apache-2.0",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Bobsled Core",
+        "shortDescription": "Build local data pipelines and models with Bobsled Core",
+        "developerName": "Bobsled Core maintainers",
+        "category": "Developer Tools"
+      }
+    }
+  }
+}

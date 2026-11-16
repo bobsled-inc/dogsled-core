@@ -12,7 +12,7 @@
  * programmatic/test escape hatch:
  *   - host-injected `llmClient` — wins over every config-driven judge, including
  *     a pinned `judge` tier (works even when `agent_policy` is absent)
- *   - `judge: 'model'` — pin the in-Dogsled model judge; `reviewerOverride` AND
+ *   - `judge: 'model'` — pin the in-Bobsled Core model judge; `reviewerOverride` AND
  *     `agent_policy.reviewer` are ignored (a host cannot upgrade a pinned-model
  *     entity — an ignored override is warned about)
  *   - `judge: 'agent'` — require an external transport (`reviewerOverride` >
@@ -23,7 +23,7 @@
  *
  * Config-driven judges, once the lane is picked:
  *   - external transport — `createExternalReviewerClient` (override wins over spec)
- *   - `agent_policy.model` — in-Dogsled model judge (`createModelReviewLlmClient`),
+ *   - `agent_policy.model` — in-Bobsled Core model judge (`createModelReviewLlmClient`),
  *     composed with `agent_policy.panel` via `runReviewWithPanel` when enabled
  *   - `agent_policy.panel` alone (mode `replace`) — panel of model-role judges
  *
@@ -116,7 +116,7 @@ export interface ReviewResolveProjectResult {
   failure?: ResolveWorkflowFailure;
 }
 
-/** In-Dogsled model judge decisions land as `agent_auto` (cross-repo contract §4). */
+/** In-Bobsled Core model judge decisions land as `agent_auto` (cross-repo contract §4). */
 const MODEL_JUDGE_DECISION_SOURCE = 'agent_auto';
 /** External reviewer decisions land as `agent` (cross-repo contract §4). */
 const EXTERNAL_REVIEWER_DECISION_SOURCE = 'agent';
@@ -265,19 +265,19 @@ async function selectJudge(input: JudgeSelectionInput): Promise<SelectedJudge | 
   const judge = spec.agentPolicy?.judge;
   const offeredReviewer = options.reviewerOverride ?? spec.agentPolicy?.reviewer;
 
-  // `judge: 'model'` pins the in-Dogsled model judge — a host cannot upgrade a
+  // `judge: 'model'` pins the in-Bobsled Core model judge — a host cannot upgrade a
   // pinned-model entity to the agent tier. Ignore both the host override and the
   // spec's own `reviewer:`, warning when either was offered so the silent
   // downgrade is visible.
   if (judge === 'model') {
     if (options.reviewerOverride) {
       warnings.push(
-        `${spec.entity}: agent_policy.judge 'model' pins the in-Dogsled model judge; the host-supplied reviewer override was ignored (a pinned-model entity cannot be upgraded to the agent tier).`
+        `${spec.entity}: agent_policy.judge 'model' pins the in-Bobsled Core model judge; the host-supplied reviewer override was ignored (a pinned-model entity cannot be upgraded to the agent tier).`
       );
     }
     if (spec.agentPolicy?.reviewer) {
       warnings.push(
-        `${spec.entity}: agent_policy.judge 'model' pins the in-Dogsled model judge; agent_policy.reviewer was ignored.`
+        `${spec.entity}: agent_policy.judge 'model' pins the in-Bobsled Core model judge; agent_policy.reviewer was ignored.`
       );
     }
     return buildModelJudge(input);
@@ -331,7 +331,7 @@ async function buildExternalReviewerJudge(
   };
 }
 
-/** In-Dogsled model judge (`agent_policy.model`) and/or panel of model-role judges. */
+/** In-Bobsled Core model judge (`agent_policy.model`) and/or panel of model-role judges. */
 async function buildModelJudge(input: JudgeSelectionInput): Promise<SelectedJudge | undefined> {
   const { spec, cwd, learningContext, warnings } = input;
   const policy = spec.agentPolicy;
@@ -351,7 +351,7 @@ async function buildModelJudge(input: JudgeSelectionInput): Promise<SelectedJudg
     modelClient = await makeClient(policy.legacyModel);
     if (!modelClient) {
       warnings.push(
-        `agent_policy.model '${policy.legacyModel}' is not configured under platform.models in dogsled.yml; no model judge available.`
+        `agent_policy.model '${policy.legacyModel}' is not configured under platform.models in bobsled.yml; no model judge available.`
       );
     } else {
       usageClients.push(modelClient);

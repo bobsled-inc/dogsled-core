@@ -9,7 +9,7 @@ describe('workspace unit test build ordering', () => {
     const graph = JSON.parse(
       execFileSync(
         'pnpm',
-        ['exec', 'turbo', 'run', 'test:unit', '--dry=json', '--filter=!@bobsled-inc/dogsled'],
+        ['exec', 'turbo', 'run', 'test:unit', '--dry=json', '--filter=!@bobsled-inc/bobsled-core'],
         {
           cwd: root,
           env: { ...process.env, pnpm_config_verify_deps_before_run: 'false' },

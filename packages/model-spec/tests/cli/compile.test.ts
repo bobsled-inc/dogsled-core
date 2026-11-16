@@ -187,7 +187,7 @@ describe.skipIf(!CLI_READY)('model CLI (e2e)', { timeout: CLI_SUITE_TIMEOUT_MS }
       fs.writeFileSync(
         path.join(writable, 'integrations', 'snowflake.yml'),
         `spec_version: '1'
-auth_env_vars: [DOGSLED_MODEL_SPEC_TEST_DATABASE]
+auth_env_vars: [BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE]
 type: integration
 name: snowflake
 source_type: snowflake
@@ -195,7 +195,7 @@ connection:
   account_identifier: xt00000
   warehouse: COMPUTE_WH
   role: BMS_TEST_ROLE
-  database: \${{ env.DOGSLED_MODEL_SPEC_TEST_DATABASE }}
+  database: \${{ env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE }}
 auth:
   type: pat
   token: tok-placeholder
@@ -204,7 +204,7 @@ auth:
       );
 
       const r = run(['compile', 'stg_orders', '--quiet', '--integration', 'snowflake'], writable, {
-        DOGSLED_MODEL_SPEC_TEST_DATABASE: 'DEMO_DB',
+        BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE: 'DEMO_DB',
       });
       expect(r.exitCode).toBe(0);
       expect(r.stdout).toContain('"DEMO_DB"."PUBLIC"."STG_ORDERS"');

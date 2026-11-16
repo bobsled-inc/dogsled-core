@@ -79,7 +79,7 @@ if [[ "$DIALECT" == "bigquery" && ! -f "$PROJECT_DIR/runner.config.json" ]]; the
 fi
 
 if [[ "$DIALECT" == "duckdb" ]]; then
-  if ! (cd "$REPO_ROOT/packages/dogsled" && node -e "import('@duckdb/node-api')" >/dev/null 2>&1); then
+  if ! (cd "$REPO_ROOT/packages/bobsled-core" && node -e "import('@duckdb/node-api')" >/dev/null 2>&1); then
     echo "DuckDB native bindings not found. Run 'pnpm install' from $REPO_ROOT first." >&2
     exit 1
   fi

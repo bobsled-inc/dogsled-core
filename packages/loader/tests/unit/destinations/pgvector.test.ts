@@ -137,7 +137,7 @@ describe('PgVectorDestination', () => {
     expect(createSql).toContain('"content" TEXT');
     expect(createSql).toContain('"embedding" vector(1536)');
     expect(createSql).toContain('"_time_extracted" TIMESTAMPTZ');
-    expect(createSql).toContain('"_dogsled_loaded_at" TIMESTAMPTZ DEFAULT NOW()');
+    expect(createSql).toContain('"_bobsled_loaded_at" TIMESTAMPTZ DEFAULT NOW()');
   });
 
   it('ensureTable() accepts protocol vector columns without vectorColumns config', async () => {
@@ -174,7 +174,7 @@ describe('PgVectorDestination', () => {
       existingColumns: [
         { column_name: 'id', data_type: 'BIGINT' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMPTZ' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMPTZ' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMPTZ' },
       ],
     });
     const pool = createMockPool(client);
@@ -199,7 +199,7 @@ describe('PgVectorDestination', () => {
         { column_name: 'content', data_type: 'TEXT' },
         { column_name: 'embedding', data_type: 'VECTOR(1536)' },
         { column_name: '_time_extracted', data_type: 'TIMESTAMPTZ' },
-        { column_name: '_dogsled_loaded_at', data_type: 'TIMESTAMPTZ' },
+        { column_name: '_bobsled_loaded_at', data_type: 'TIMESTAMPTZ' },
       ],
     });
     const pool = createMockPool(client);
@@ -328,7 +328,7 @@ describe('PgVectorDestination', () => {
     const createTempSql = queries.find((q) => q.includes('CREATE TEMP TABLE'));
     expect(createTempSql).toBeDefined();
     expect(createTempSql).not.toContain('"analytics"');
-    expect(createTempSql).toMatch(/"_dogsled_stg_items_[a-f0-9]{16}"/);
+    expect(createTempSql).toMatch(/"_bobsled_stg_items_[a-f0-9]{16}"/);
   });
 
   it('loadAndFinalize("merge") generates correct ON CONFLICT SQL with EXCLUDED and target alias', async () => {

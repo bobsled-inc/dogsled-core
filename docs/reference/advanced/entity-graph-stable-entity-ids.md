@@ -43,7 +43,7 @@ Do not use `component_id` as a durable foreign key. It can change when the graph
 
 ## What Happens During `resolve cluster`
 
-`dogsled entity-graph resolve cluster` runs the connected-components stage and then assigns stable entity IDs before rebuilding the serving surfaces:
+`bobsled entity-graph resolve cluster` runs the connected-components stage and then assigns stable entity IDs before rebuilding the serving surfaces:
 
 1. Build current components from auto-merge pairs and applied `merge` review decisions.
 2. Backfill stable entity events from existing `__clusters` if this project was created before stable IDs existed.
@@ -125,7 +125,7 @@ If a source table already has one of those names, clean-view generation fails fa
 Use `resolve cluster --json` to get an entity ID summary after an executed cluster run:
 
 ```bash
-dogsled entity-graph resolve cluster company --runner ./runner.js --json
+bobsled entity-graph resolve cluster company --runner ./runner.js --json
 ```
 
 Each `entities[]` entry in the JSON response can include:
@@ -146,7 +146,7 @@ Each `entities[]` entry in the JSON response can include:
 Use `resolve inspect cluster` to inspect the current entity and its evidence:
 
 ```bash
-dogsled entity-graph resolve inspect cluster \
+bobsled entity-graph resolve inspect cluster \
   --entity company \
   --entity-id <entity_id> \
   --runner ./runner.js \
@@ -156,7 +156,7 @@ dogsled entity-graph resolve inspect cluster \
 `--cluster-id` is accepted as an alias for `--entity-id` for compatibility:
 
 ```bash
-dogsled entity-graph resolve inspect cluster \
+bobsled entity-graph resolve inspect cluster \
   --entity company \
   --cluster-id <entity_id> \
   --runner ./runner.js \

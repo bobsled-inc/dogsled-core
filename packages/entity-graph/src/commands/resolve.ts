@@ -1,5 +1,5 @@
 /**
- * `dogsled entity-graph resolve` command group.
+ * `bobsled entity-graph resolve` command group.
  *
  * Exit codes:
  *   0 = success

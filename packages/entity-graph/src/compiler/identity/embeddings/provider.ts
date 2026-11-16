@@ -214,9 +214,9 @@ export async function createSemanticEmbeddingProvider(options: {
   const env = options.env ?? process.env;
   const config = resolveSemanticEmbeddingProviderConfig(options.triage);
 
-  if (env['DOGSLED_EMBED_STUB'] === '1') {
+  if (env['BOBSLED_CORE_EMBED_STUB'] === '1') {
     out.warn(
-      'DOGSLED_EMBED_STUB is active — embeddings are synthetic stubs and must not be used in production.'
+      'BOBSLED_CORE_EMBED_STUB is active — embeddings are synthetic stubs and must not be used in production.'
     );
     return {
       ...config,

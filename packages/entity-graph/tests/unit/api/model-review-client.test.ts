@@ -27,7 +27,7 @@ let tmpDir: string;
 
 const REVIEW_OPTIONS: AgentReviewOptions = { batchSize: 10 };
 
-function writeDogsledYml(models = true): void {
+function writeBobsledYml(models = true): void {
   const platform = models
     ? [
         `platform:`,
@@ -38,7 +38,7 @@ function writeDogsledYml(models = true): void {
         `      api_key: $ANTHROPIC_API_KEY`,
       ]
     : [`platform: {}`];
-  fs.writeFileSync(path.join(tmpDir, 'dogsled.yml'), [`version: 1`, ...platform, ``].join('\n'));
+  fs.writeFileSync(path.join(tmpDir, 'bobsled.yml'), [`version: 1`, ...platform, ``].join('\n'));
 }
 
 function makePair(pairId: string): PairContext {
@@ -82,7 +82,7 @@ afterEach(() => {
 
 describe('createModelReviewLlmClient', () => {
   it('returns undefined when the role is not configured under platform.models', async () => {
-    writeDogsledYml(false);
+    writeBobsledYml(false);
     const client = await createModelReviewLlmClient({
       role: 'reviewer',
       cwd: tmpDir,
@@ -92,7 +92,7 @@ describe('createModelReviewLlmClient', () => {
   });
 
   it('maps a valid structured response to pair decisions at temperature 0', async () => {
-    writeDogsledYml();
+    writeBobsledYml();
     generateStructuredMock.mockResolvedValueOnce({
       ok: true,
       value: {
@@ -129,7 +129,7 @@ describe('createModelReviewLlmClient', () => {
   });
 
   it('defers the whole batch on a schema violation, with a warning (fail-soft)', async () => {
-    writeDogsledYml();
+    writeBobsledYml();
     generateStructuredMock.mockResolvedValueOnce({
       ok: false,
       error: 'schema_violation',
@@ -147,7 +147,7 @@ describe('createModelReviewLlmClient', () => {
   });
 
   it('reports unknown pricing without deferring a successful model-review batch', async () => {
-    writeDogsledYml();
+    writeBobsledYml();
     generateStructuredMock.mockResolvedValueOnce({
       ok: true,
       value: {
@@ -169,7 +169,7 @@ describe('createModelReviewLlmClient', () => {
   });
 
   it('treats budget_exceeded as a persistent stop for subsequent batches', async () => {
-    writeDogsledYml();
+    writeBobsledYml();
     generateStructuredMock.mockResolvedValueOnce({
       ok: false,
       error: 'budget_exceeded',
@@ -190,7 +190,7 @@ describe('createModelReviewLlmClient', () => {
   });
 
   it('passes the remaining maxCostUsd ceiling and stops once it is reached', async () => {
-    writeDogsledYml();
+    writeBobsledYml();
     generateStructuredMock
       .mockResolvedValueOnce({
         ok: true,
@@ -222,7 +222,7 @@ describe('createModelReviewLlmClient', () => {
   });
 
   it('drops unknown pairIds and defers pairs the model omitted', async () => {
-    writeDogsledYml();
+    writeBobsledYml();
     generateStructuredMock.mockResolvedValueOnce({
       ok: true,
       value: {
@@ -247,7 +247,7 @@ describe('createModelReviewLlmClient', () => {
   });
 
   it('lets agent_policy.prompt_template replace the default instruction preamble', async () => {
-    writeDogsledYml();
+    writeBobsledYml();
     generateStructuredMock.mockResolvedValueOnce({
       ok: true,
       value: { decisions: [] },

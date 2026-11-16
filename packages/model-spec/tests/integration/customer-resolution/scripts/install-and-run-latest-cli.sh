@@ -75,7 +75,7 @@ fi
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd -- "$PROJECT_DIR/../../../../.." && pwd)"
-CLI_BIN="$REPO_ROOT/packages/dogsled/dist/index.js"
+CLI_BIN="$REPO_ROOT/packages/bobsled-core/dist/index.js"
 RUNNER="$PROJECT_DIR/runner.${DIALECT}.js"
 
 if [[ "$DIALECT" == "bigquery" && ! -f "$PROJECT_DIR/runner.config.json" ]]; then
@@ -88,8 +88,8 @@ if [[ "$SKIP_INSTALL" != "1" ]]; then
   pnpm --dir "$REPO_ROOT" install >/dev/null
 fi
 
-echo "Building the latest dogsled CLI from the current checkout..." >&2
-pnpm --dir "$REPO_ROOT/packages/dogsled" build >/dev/null
+echo "Building the latest bobsled CLI from the current checkout..." >&2
+pnpm --dir "$REPO_ROOT/packages/bobsled-core" build >/dev/null
 
 if [[ ! -f "$CLI_BIN" ]]; then
   echo "Built CLI not found at $CLI_BIN." >&2
@@ -97,13 +97,13 @@ if [[ ! -f "$CLI_BIN" ]]; then
 fi
 
 if [[ "$DIALECT" == "duckdb" ]]; then
-  if ! (cd "$REPO_ROOT/packages/dogsled" && node -e "import('@duckdb/node-api')" >/dev/null 2>&1); then
+  if ! (cd "$REPO_ROOT/packages/bobsled-core" && node -e "import('@duckdb/node-api')" >/dev/null 2>&1); then
     echo "Preparing workspace dependencies and native bindings..." >&2
     pnpm --dir "$REPO_ROOT" run setup >/dev/null
   fi
 fi
 
-echo "Using dogsled CLI version $(node "$CLI_BIN" --version)" >&2
+echo "Using bobsled CLI version $(node "$CLI_BIN" --version)" >&2
 
 export MODE DIALECT SCRIPT_DIR PROJECT_DIR REPO_ROOT RUNNER CLI_BIN
 

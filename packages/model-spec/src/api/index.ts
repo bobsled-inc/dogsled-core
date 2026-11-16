@@ -103,9 +103,9 @@ export {
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
-export { CommandError, DogsledRuntimeError } from '../errors.js';
+export { CommandError, BobsledRuntimeError } from '../errors.js';
 
-// Publish/execution accessors — re-exported so orchestrators (e.g. the Dogsled
+// Publish/execution accessors — re-exported so orchestrators (e.g. the Bobsled Core
 // live-source bridge) can reproduce the publisher's "is this model published?"
 // decision without re-deriving it and drifting from `runProject`.
 export { getExecutionEngine, getPublishTarget } from '../compiler/index.js';
@@ -243,7 +243,7 @@ export type {
   TransformSpec,
 } from '../compiler/index.js';
 
-// Ossie authoring support; the compiler continues to consume native Dogsled types.
+// Ossie authoring support; the compiler continues to consume native Bobsled Core types.
 export {
   expandOssieIndex,
   getOssieOrigins,

@@ -11,7 +11,7 @@ export interface AgenticAssignmentFailure {
   kind?: string;
   code?: string;
   retryable?: boolean;
-  /** Dogsled-generated validation summary of the last result; field names only. */
+  /** Bobsled Core-generated validation summary of the last result; field names only. */
   detail?: string;
 }
 

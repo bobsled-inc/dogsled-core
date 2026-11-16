@@ -204,7 +204,7 @@ export async function openAgenticRowSession(
     if (changed !== 1) {
       throw new AgenticStateError('conflict', {
         reason: 'run_in_progress',
-        message: `Run "${key.id}" is owned by another Dogsled process.`,
+        message: `Run "${key.id}" is owned by another Bobsled Core process.`,
         hint: 'Wait for that process to finish or for its lease to expire, then resume.',
       });
     }

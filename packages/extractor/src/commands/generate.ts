@@ -1,5 +1,5 @@
 /**
- * `dogsled extract generate` command.
+ * `bobsled extract generate` command.
  *
  * Auto-generate extractor specs from an OpenAPI 3.x document.
  */
@@ -150,9 +150,9 @@ function printSummary(result: GenerateResult, baseDir: string, _logger: ControlL
   lines.push(`  ${chalk.cyan('Next steps:')}`);
   const reviewPath = path.join(baseDir, 'resources', integrationName);
   lines.push(`    1. Review: ${chalk.dim(`grep -r "# REVIEW:" ${reviewPath}/`)}`);
-  lines.push(`    2. Validate: ${chalk.dim('dogsled extract validate')}`);
+  lines.push(`    2. Validate: ${chalk.dim('bobsled extract validate')}`);
   lines.push(
-    `    3. Run: ${chalk.dim(`dogsled extract run --integration ${integrationName} <resource>`)}`
+    `    3. Run: ${chalk.dim(`bobsled extract run --integration ${integrationName} <resource>`)}`
   );
   lines.push('');
 

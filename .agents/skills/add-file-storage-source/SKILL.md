@@ -130,7 +130,7 @@ output:
 
 ### What you get
 
-The document extractor emits Dogsled protocol streams that load as warehouse
+The document extractor emits Bobsled Core protocol streams that load as warehouse
 tables, prefixed by the resource name:
 
 - `<resource>__documents` — one row per file (`document_id`, source URI, format, text, byte length, …)
@@ -140,8 +140,8 @@ tables, prefixed by the resource name:
 ### Step 3 — (optional) Embeddings
 
 Add an `embedding:` block under the resource's `source:` and declare a matching
-model role under `platform.models` in `dogsled.yml`. When a pipeline runs with an
-embedding, Dogsled auto-chains `extract → embed → load`, adding a
+model role under `platform.models` in `bobsled.yml`. When a pipeline runs with an
+embedding, Bobsled Core auto-chains `extract → embed → load`, adding a
 `text_embedding` vector column to `<resource>__chunks`.
 
 ```yaml
@@ -153,7 +153,7 @@ embedding:
 ```
 
 ```yaml
-# dogsled.yml
+# bobsled.yml
 platform:
   models:
     default_embedding_v1:
@@ -167,29 +167,29 @@ platform:
 # S3:
 export S3_BUCKET=my-company-docs
 export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...   # or an IAM role for default_chain
-dogsled extract validate --integration s3_documents documents
-dogsled extract run --integration s3_documents documents | dogsled load run --to duckdb
+bobsled extract validate --integration s3_documents documents
+bobsled extract run --integration s3_documents documents | bobsled load run --to duckdb
 
 # GCS:
 export GCS_BUCKET=my-company-docs
 gcloud auth application-default login                    # ADC; or service_account_json
-dogsled extract validate --integration gcs_documents documents
-dogsled extract run --integration gcs_documents documents | dogsled load run --to duckdb
+bobsled extract validate --integration gcs_documents documents
+bobsled extract run --integration gcs_documents documents | bobsled load run --to duckdb
 ```
 
 A ready-to-edit example project ships with the CLI:
 
 ```bash
-dogsled examples init s3-documents-ingestion
+bobsled examples init s3-documents-ingestion
 ```
 
 ## Managed destinations
 
-A destination with `type: dogsled_managed` uses `dogsled_connection_ref` to name a
+A destination with `type: bobsled_managed` uses `bobsled_connection_ref` to name a
 connection supplied by an orchestrator. Core validates these fields but cannot
 load into a managed destination. For local execution, use a concrete destination
 such as DuckDB or BigQuery. Author the `documents` resource and optional `embedding:`
-block as above. See [Dogsled Cloud and Core](../../../docs/guides/dogsled-cloud.md).
+block as above. See [Dogsled Cloud and Core](../../../docs/guides/hosted-runs.md).
 
 ## Next step — feed the entity graph
 
@@ -207,4 +207,4 @@ resolving entities (`entity-resolution`), point construction at these chunks.
 - Every credential is env indirection (`${{ env.X }}` / `*_env`) — no raw secrets, no literal bucket.
 - The resource sets `source.format: document`, a provider-relative `source.path` glob, `parse.formats`, and `chunk` settings; `integration:` matches the integration `name`.
 - Use `on_error: record` when the user wants a `__parse_errors` table instead of a hard run failure.
-- Embeddings: `source.embedding.role` matches a `platform.models` role declared in `dogsled.yml`.
+- Embeddings: `source.embedding.role` matches a `platform.models` role declared in `bobsled.yml`.

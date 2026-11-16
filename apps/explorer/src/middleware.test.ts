@@ -10,7 +10,7 @@ function request(method = 'GET', headers: Record<string, string> = {}, path = '/
   });
 }
 function token() {
-  return middleware(request()).headers.get('x-middleware-request-x-dogsled-explorer-token')!;
+  return middleware(request()).headers.get('x-middleware-request-x-bobsled-explorer-token')!;
 }
 
 describe('Explorer local request protection', () => {
@@ -22,7 +22,7 @@ describe('Explorer local request protection', () => {
           ...(source ? { origin: source } : {}),
           referer: origin,
           'content-type': 'application/json',
-          'x-dogsled-explorer-token': token(),
+          'x-bobsled-explorer-token': token(),
         })
       );
       expect(response.status).toBe(403);
@@ -34,7 +34,7 @@ describe('Explorer local request protection', () => {
         request('POST', {
           origin,
           'content-type': 'text/plain',
-          'x-dogsled-explorer-token': token(),
+          'x-bobsled-explorer-token': token(),
         })
       ).status
     ).toBe(415);
@@ -46,7 +46,7 @@ describe('Explorer local request protection', () => {
         request('POST', {
           origin,
           'content-type': 'application/json',
-          'x-dogsled-explorer-token': 'wrong',
+          'x-bobsled-explorer-token': 'wrong',
         })
       ).status
     ).toBe(403);
@@ -55,7 +55,7 @@ describe('Explorer local request protection', () => {
         request('POST', {
           origin,
           'content-type': 'application/json; charset=utf-8',
-          'x-dogsled-explorer-token': token(),
+          'x-bobsled-explorer-token': token(),
         })
       ).headers.get('x-middleware-next')
     ).toBe('1');
@@ -69,8 +69,8 @@ describe('Explorer local request protection', () => {
   });
   it('overwrites client supplied token metadata on GET', () => {
     expect(
-      middleware(request('GET', { 'x-dogsled-explorer-token': 'forged' })).headers.get(
-        'x-middleware-request-x-dogsled-explorer-token'
+      middleware(request('GET', { 'x-bobsled-explorer-token': 'forged' })).headers.get(
+        'x-middleware-request-x-bobsled-explorer-token'
       )
     ).toBe(token());
   });

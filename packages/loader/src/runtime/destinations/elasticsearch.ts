@@ -587,7 +587,7 @@ export class ElasticsearchDestination implements DatabaseDestination {
 }
 
 const DELETE_BATCH_SIZE = 500;
-const EXACT_MATCH_FIELD = 'dogsled_replace_key';
+const EXACT_MATCH_FIELD = 'bobsled_replace_key';
 const EXACT_MATCH_SCRIPT =
   "def v = params['_source'][params['field']]; if (v instanceof String) { emit(v); }";
 

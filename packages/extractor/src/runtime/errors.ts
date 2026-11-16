@@ -7,21 +7,21 @@ import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import {
   serializeErrorCause,
-  DogsledRuntimeError,
+  BobsledRuntimeError,
   type SerializedErrorCause,
-  type DogsledRuntimeErrorOptions,
+  type BobsledRuntimeErrorOptions,
 } from '@bobsled-inc/protocol';
 import { getErrorMessage, ResponseBodyLimitError } from '../framework/core/index.js';
 import { RateLimitTimeoutError } from './rate-limiter.js';
 
-/** Construct the shared Dogsled failure contract at an extractor boundary. */
-export function toExtractorRuntimeError(options: DogsledRuntimeErrorOptions): DogsledRuntimeError {
-  return new DogsledRuntimeError(options);
+/** Construct the shared Bobsled Core failure contract at an extractor boundary. */
+export function toExtractorRuntimeError(options: BobsledRuntimeErrorOptions): BobsledRuntimeError {
+  return new BobsledRuntimeError(options);
 }
 
-/** Preserve the original provider/runtime cause for the parent Dogsled process. */
+/** Preserve the original provider/runtime cause for the parent Bobsled Core process. */
 export function serializeExtractorErrorCause(error: unknown): SerializedErrorCause | undefined {
-  return serializeErrorCause(error instanceof DogsledRuntimeError ? error.cause : error);
+  return serializeErrorCause(error instanceof BobsledRuntimeError ? error.cause : error);
 }
 
 type ErrorWithProviderStatus = Error & { status?: unknown };
@@ -41,8 +41,8 @@ function providerStatus(error: Error): number | undefined {
 export function toExtractorHttpRuntimeError(
   cause: unknown,
   signal?: AbortSignal
-): DogsledRuntimeError {
-  if (cause instanceof DogsledRuntimeError) return cause;
+): BobsledRuntimeError {
+  if (cause instanceof BobsledRuntimeError) return cause;
   const error = asError(cause);
   if (signal?.aborted || error.name === 'AbortError') {
     return toExtractorRuntimeError({
@@ -130,8 +130,8 @@ const TOKEN_REJECTION_STATUSES: ReadonlySet<number> = new Set([400, 401, 403]);
 export function toExtractorAuthRuntimeError(
   cause: unknown,
   signal?: AbortSignal
-): DogsledRuntimeError {
-  if (cause instanceof DogsledRuntimeError) return cause;
+): BobsledRuntimeError {
+  if (cause instanceof BobsledRuntimeError) return cause;
   const error = asError(cause);
   if (signal?.aborted || error.name === 'AbortError' || error.name === 'TimeoutError') {
     return toExtractorHttpRuntimeError(error, signal);
@@ -164,8 +164,8 @@ export function toExtractorAuthRuntimeError(
 export function toExtractorMcpRuntimeError(
   cause: unknown,
   signal?: AbortSignal
-): DogsledRuntimeError {
-  if (cause instanceof DogsledRuntimeError) return cause;
+): BobsledRuntimeError {
+  if (cause instanceof BobsledRuntimeError) return cause;
   const error = signal?.aborted && signal.reason instanceof Error ? signal.reason : asError(cause);
   if (signal?.aborted || error.name === 'AbortError') {
     return toExtractorRuntimeError({
@@ -263,7 +263,7 @@ export type { FailureReason } from '@bobsled-inc/protocol';
 import type { FailureReason } from '@bobsled-inc/protocol';
 
 export function classifyFailureReason(error: unknown): FailureReason {
-  if (error instanceof DogsledRuntimeError) {
+  if (error instanceof BobsledRuntimeError) {
     switch (error.kind) {
       case 'auth':
         return 'auth_failure';

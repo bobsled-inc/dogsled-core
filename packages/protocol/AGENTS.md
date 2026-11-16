@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-11-12 -->
 
-Shared Dogsled protocol message types plus metadata-safe configuration contracts.
+Shared Bobsled Core protocol message types plus metadata-safe configuration contracts.
 Packages that only validate manifests or configuration should depend on this
 package instead of a connection runtime.
 
@@ -32,7 +32,7 @@ package instead of a connection runtime.
 | `EnvPlaceholderSchema`                           | Require `$VARNAME` or `${{ env.VARNAME }}` for secret-valued configuration                                     |
 | `ModelConnectionSchema` / `PlatformConfigSchema` | Validate shared model roles and platform metadata without loading connection drivers                           |
 | `validateSqlIdentifier` / `isValidSqlIdentifier` | Validate unquoted identifiers, optionally dot-qualified; bind SQL values separately                            |
-| `isValidStreamSubfolder`                         | Validate the folder a file destination adds inside each stream's folder; the loader and `dogsled.yml` share it |
+| `isValidStreamSubfolder`                         | Validate the folder a file destination adds inside each stream's folder; the loader and `bobsled.yml` share it |
 
 ## Protocol Rules
 

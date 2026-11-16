@@ -1,0 +1,272 @@
+{
+  "name": "@bobsled-inc/bobsled-core",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
+    "directory": "packages/bobsled-core"
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "bobsled": "./bin/cli.mjs"
+  },
+  "main": "./dist/public-apis.js",
+  "types": "./dist/public-apis.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/public-apis.d.ts",
+      "import": "./dist/public-apis.js",
+      "default": "./dist/public-apis.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    },
+    "./actions": {
+      "types": "./dist/actions/index.d.ts",
+      "import": "./dist/actions/index.js",
+      "default": "./dist/actions/index.js"
+    },
+    "./resources": {
+      "types": "./dist/resources/index.d.ts",
+      "import": "./dist/resources/index.js",
+      "default": "./dist/resources/index.js"
+    },
+    "./project-skills": {
+      "types": "./dist/project-skills/index.d.ts",
+      "import": "./dist/project-skills/index.js",
+      "default": "./dist/project-skills/index.js"
+    },
+    "./sync": {
+      "types": "./dist/sync/index.d.ts",
+      "import": "./dist/sync/index.js",
+      "default": "./dist/sync/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js",
+      "default": "./dist/schema/index.js"
+    },
+    "./reverse-etl": {
+      "types": "./dist/reverse-etl/index.d.ts",
+      "import": "./dist/reverse-etl/index.js",
+      "default": "./dist/reverse-etl/index.js"
+    },
+    "./pipeline": {
+      "types": "./dist/pipeline/index.d.ts",
+      "import": "./dist/pipeline/index.js",
+      "default": "./dist/pipeline/index.js"
+    },
+    "./manifest": {
+      "types": "./dist/manifest.d.ts",
+      "import": "./dist/manifest.js",
+      "default": "./dist/manifest.js"
+    },
+    "./validation": {
+      "types": "./dist/validation.d.ts",
+      "import": "./dist/validation.js",
+      "default": "./dist/validation.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js",
+      "default": "./dist/mcp/index.js"
+    },
+    "./source-query": {
+      "types": "./dist/source-query.d.ts",
+      "import": "./dist/source-query.js",
+      "default": "./dist/source-query.js"
+    },
+    "./connections": {
+      "types": "./dist/compat/connections.d.ts",
+      "import": "./dist/compat/connections.js",
+      "default": "./dist/compat/connections.js"
+    },
+    "./document-parsers": {
+      "types": "./dist/compat/document-parsers.d.ts",
+      "import": "./dist/compat/document-parsers.js",
+      "default": "./dist/compat/document-parsers.js"
+    },
+    "./extractor/extractor": {
+      "types": "./dist/compat/extractor.d.ts",
+      "import": "./dist/compat/extractor.js",
+      "default": "./dist/compat/extractor.js"
+    },
+    "./integrations": {
+      "types": "./dist/compat/integrations.d.ts",
+      "import": "./dist/compat/integrations.js",
+      "default": "./dist/compat/integrations.js"
+    },
+    "./integrations/catalog": {
+      "types": "./dist/compat/integrations-catalog.d.ts",
+      "import": "./dist/compat/integrations-catalog.js",
+      "default": "./dist/compat/integrations-catalog.js"
+    },
+    "./model-spec": {
+      "types": "./dist/compat/model-spec.d.ts",
+      "import": "./dist/compat/model-spec.js",
+      "default": "./dist/compat/model-spec.js"
+    },
+    "./model-spec/project": {
+      "types": "./dist/compat/model-spec-project.d.ts",
+      "import": "./dist/compat/model-spec-project.js",
+      "default": "./dist/compat/model-spec-project.js"
+    },
+    "./project-index": {
+      "types": "./dist/compat/project-index.d.ts",
+      "import": "./dist/compat/project-index.js",
+      "default": "./dist/compat/project-index.js"
+    },
+    "./model-spec/schemas": {
+      "types": "./dist/compat/model-spec-schemas.d.ts",
+      "import": "./dist/compat/model-spec-schemas.js",
+      "default": "./dist/compat/model-spec-schemas.js"
+    },
+    "./ai": {
+      "types": "./dist/compat/ai.d.ts",
+      "import": "./dist/compat/ai.js",
+      "default": "./dist/compat/ai.js"
+    },
+    "./model-spec/agentic": {
+      "types": "./dist/compat/model-spec-agentic.d.ts",
+      "import": "./dist/compat/model-spec-agentic.js",
+      "default": "./dist/compat/model-spec-agentic.js"
+    },
+    "./agentic": {
+      "types": "./dist/agentic.d.ts",
+      "import": "./dist/agentic.js",
+      "default": "./dist/agentic.js"
+    },
+    "./model-spec/interchange": {
+      "types": "./dist/compat/model-spec-interchange.d.ts",
+      "import": "./dist/compat/model-spec-interchange.js",
+      "default": "./dist/compat/model-spec-interchange.js"
+    },
+    "./blueprint-aliases": {
+      "types": "./dist/blueprint-aliases.d.ts",
+      "import": "./dist/blueprint-aliases.js",
+      "default": "./dist/blueprint-aliases.js"
+    },
+    "./ai/test-stubs": {
+      "types": "./dist/compat/ai-test-stubs.d.ts",
+      "import": "./dist/compat/ai-test-stubs.js",
+      "default": "./dist/compat/ai-test-stubs.js"
+    },
+    "./ontology": {
+      "types": "./dist/compat/ontology.d.ts",
+      "import": "./dist/compat/ontology.js",
+      "default": "./dist/compat/ontology.js"
+    },
+    "./sftp": {
+      "types": "./dist/compat/sftp.d.ts",
+      "import": "./dist/compat/sftp.js",
+      "default": "./dist/compat/sftp.js"
+    }
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD_PARTY_NOTICES.md",
+    "examples/",
+    "cowork/",
+    "!dist/metafile-*.json"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "node scripts/onboarding-assets.mjs --check && tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:cross-warehouse": "vitest run --config vitest.unit.config.ts tests/unit/runtime/cross-warehouse.test.ts tests/unit/runtime/cross-warehouse-schema.test.ts tests/unit/runtime/cross-warehouse-bigquery-smoke.test.ts",
+    "test:watch": "vitest",
+    "smoke:cross-warehouse:bigquery": "tsx scripts/cross-warehouse-bigquery-duckdb-smoke.ts"
+  },
+  "dependencies": {
+    "@bobsled-inc/api-resource": "workspace:*",
+    "@bobsled-inc/ai": "workspace:*",
+    "@bobsled-inc/connections": "workspace:*",
+    "@bobsled-inc/document-parsers": "workspace:*",
+    "@bobsled-inc/embedder": "workspace:*",
+    "@bobsled-inc/entity-graph": "workspace:*",
+    "@bobsled-inc/extractor": "workspace:*",
+    "@bobsled-inc/integrations": "workspace:*",
+    "@bobsled-inc/loader": "workspace:*",
+    "@bobsled-inc/model-spec": "workspace:*",
+    "@bobsled-inc/models": "workspace:*",
+    "@bobsled-inc/project-index": "workspace:*",
+    "@bobsled-inc/protocol": "workspace:*",
+    "@bobsled-inc/sdk-codegen": "workspace:*",
+    "@bobsled-inc/skills": "workspace:*",
+    "@aws-sdk/client-s3": "catalog:",
+    "@aws-crypto/sha256-js": "catalog:aws-sdk",
+    "@google-cloud/storage": "7.22.0",
+    "@polyglot-sql/sdk": "catalog:",
+    "@smithy/signature-v4": "catalog:aws-sdk",
+    "chalk": "catalog:cli",
+    "commander": "catalog:dev-packages",
+    "@duckdb/node-api": "catalog:duckdb",
+    "jsonpath-plus": "catalog:app-packages",
+    "yaml": "catalog:app-packages",
+    "zod": "catalog:dev-packages"
+  },
+  "bundleDependencies": [
+    "@bobsled-inc/api-resource",
+    "@bobsled-inc/ai",
+    "@bobsled-inc/connections",
+    "@bobsled-inc/document-parsers",
+    "@bobsled-inc/embedder",
+    "@bobsled-inc/entity-graph",
+    "@bobsled-inc/extractor",
+    "@bobsled-inc/integrations",
+    "@bobsled-inc/loader",
+    "@bobsled-inc/model-spec",
+    "@bobsled-inc/models",
+    "@bobsled-inc/project-index",
+    "@bobsled-inc/protocol",
+    "@bobsled-inc/sdk-codegen",
+    "@bobsled-inc/skills",
+    "zod"
+  ],
+  "devDependencies": {
+    "@types/node": "catalog:dev-packages",
+    "@typescript-eslint/eslint-plugin": "catalog:eslint",
+    "@typescript-eslint/parser": "catalog:eslint",
+    "eslint": "catalog:eslint",
+    "globals": "catalog:dev-packages",
+    "jsdom": "catalog:",
+    "tsup": "catalog:cli",
+    "tsx": "catalog:dev-packages",
+    "typescript": "catalog:dev-packages",
+    "@vitest/coverage-v8": "catalog:testing",
+    "vitest": "catalog:testing"
+  },
+  "description": "Extract, load and model data with YAML project files: the bobsled CLI and its library APIs.",
+  "keywords": [
+    "bobsled",
+    "data-engineering",
+    "etl",
+    "elt",
+    "agent-native",
+    "cli",
+    "pipelines",
+    "agents"
+  ],
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
+  "bugs": {
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
+  }
+}

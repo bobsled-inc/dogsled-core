@@ -1,14 +1,14 @@
 {
-  "name": "dogsled",
+  "name": "bobsled",
   "interface": {
-    "displayName": "Dogsled"
+    "displayName": "Bobsled Core"
   },
   "plugins": [
     {
-      "name": "dogsled-core",
+      "name": "bobsled-core",
       "source": {
         "source": "local",
-        "path": "./plugins/dogsled-core"
+        "path": "./plugins/bobsled-core"
       },
       "policy": {
         "installation": "AVAILABLE",

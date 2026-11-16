@@ -478,13 +478,13 @@ describe('Warehouse connection SSRF', () => {
   let originalValue: string | undefined;
 
   beforeAll(() => {
-    originalValue = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    originalValue = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
   });
 
   afterAll(() => {
     if (originalValue !== undefined) {
-      process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalValue;
+      process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalValue;
     }
   });
 

@@ -1,12 +1,12 @@
 ---
 name: pipeline
-description: Compose and run Dogsled protocol stages from extraction through optional embedding and loading. Use when running an end-to-end pipeline, configuring embeddings, or verifying loaded output.
+description: Compose and run Bobsled Core protocol stages from extraction through optional embedding and loading. Use when running an end-to-end pipeline, configuring embeddings, or verifying loaded output.
 exposed: true
 triggers:
   - run pipeline
   - extract and load
   - run etl
-  - dogsled pipeline command
+  - bobsled pipeline command
   - extract to bigquery
   - load to duckdb
   - end to end data pipeline
@@ -23,29 +23,29 @@ This skill owns composition across extract → optional embed → load. The `ext
 - Extract behavior and runner orchestration → `extract-pipelines`.
 - Embedding fields/providers/model roles → `ai-model-roles` plus the embed guidance below.
 - Destination configuration and load strategy → `loader`.
-- Model Spec model materialization → `dogsled-model-spec`; it is not extraction.
+- Model Spec model materialization → `bobsled-model-spec`; it is not extraction.
 
-For direct composition, stdout carries Dogsled protocol data and stderr carries structured logs:
+For direct composition, stdout carries Bobsled Core protocol data and stderr carries structured logs:
 
 ```bash
-dogsled extract run --integration <source> <resource> \
-  | dogsled embed --config ./embedder.json \
-  | dogsled load run --dest <destination> ...
+bobsled extract run --integration <source> <resource> \
+  | bobsled embed --config ./embedder.json \
+  | bobsled load run --dest <destination> ...
 ```
 
 For a configured pipeline, use the safe command ladder and destination precautions in `extract-pipelines`:
 
 ```bash
-dogsled runner run <pipeline> --resource <resource>
+bobsled runner run <pipeline> --resource <resource>
 ```
 
-An `embed:` block enriches selected text fields between extraction and loading. Use environment placeholders for credentials, validate stream/field names against resource output, enforce model dimensions and cost budgets, and confirm the destination supports vector columns. Use `DOGSLED_EMBED_STUB=1` only for wiring tests that intentionally avoid a provider call.
+An `embed:` block enriches selected text fields between extraction and loading. Use environment placeholders for credentials, validate stream/field names against resource output, enforce model dimensions and cost budgets, and confirm the destination supports vector columns. Use `BOBSLED_CORE_EMBED_STUB=1` only for wiring tests that intentionally avoid a provider call.
 
 After running, verify destination row counts, schema, table/load strategy, vector dimensions when applicable, and state behavior. Never interpret a limited extractor preview as a state-advancing acceptance run.
 
 ## Detailed direct-CLI reference
 
-Read this only when using the legacy/direct `dogsled pipeline` command rather than dogsled runner orchestration:
+Read this only when using the legacy/direct `bobsled pipeline` command rather than bobsled runner orchestration:
 
 {{include: .agents/skills/pipeline/references/cli-reference.md}}
 

@@ -1,6 +1,6 @@
 # Extract from files
 
-Dogsled reads CSV, JSON Lines and Parquet files, and parses documents (PDF, Word,
+Bobsled Core reads CSV, JSON Lines and Parquet files, and parses documents (PDF, Word,
 PowerPoint, HTML, Markdown, text and email) into text chunks. Files can come from a
 local folder, Amazon S3, Google Cloud Storage, an SFTP server or a private Vercel
 Blob object.
@@ -66,9 +66,9 @@ output:
 Extract and load both files:
 
 ```bash
-dogsled extract run --integration files events --advance-state --quiet \
-  | dogsled load run --dest duckdb --db-path files.duckdb
-dogsled query "SELECT event_id, kind, _file_path FROM events ORDER BY event_id" --db-path files.duckdb
+bobsled extract run --integration files events --advance-state --quiet \
+  | bobsled load run --dest duckdb --db-path files.duckdb
+bobsled query "SELECT event_id, kind, _file_path FROM events ORDER BY event_id" --db-path files.duckdb
 ```
 
 ```text
@@ -98,9 +98,9 @@ event_id,kind,amount
 ```
 
 ```bash
-dogsled extract run --integration files events --advance-state --quiet \
-  | dogsled load run --dest duckdb --db-path files.duckdb
-dogsled query "SELECT count(*) AS events FROM events" --db-path files.duckdb
+bobsled extract run --integration files events --advance-state --quiet \
+  | bobsled load run --dest duckdb --db-path files.duckdb
+bobsled query "SELECT count(*) AS events FROM events" --db-path files.duckdb
 ```
 
 ```text
@@ -129,7 +129,7 @@ integration's folder or bucket; absolute paths and `..` are rejected.
 
 ## Parse documents
 
-Set `format: document` to parse documents instead of reading rows. Dogsled extracts
+Set `format: document` to parse documents instead of reading rows. Bobsled Core extracts
 the text, splits it into overlapping chunks by token count, and records what it
 could not parse.
 
@@ -164,9 +164,9 @@ output:
 ```
 
 ```bash
-dogsled extract run --integration files handbook --quiet \
-  | dogsled load run --dest duckdb --db-path files.duckdb
-dogsled query "SELECT chunk_index, token_count FROM handbook__chunks" --db-path files.duckdb
+bobsled extract run --integration files handbook --quiet \
+  | bobsled load run --dest duckdb --db-path files.duckdb
+bobsled query "SELECT chunk_index, token_count FROM handbook__chunks" --db-path files.duckdb
 ```
 
 ```text
@@ -184,7 +184,7 @@ A document resource produces four tables, named after the resource:
 | `<name>__documents`    | One row per document, at its latest version: `document_id`, `source_uri`, `format`, full `text`, `content_hash`, `parser_version`.                    |
 | `<name>__chunks`       | One row per chunk: `chunk_id`, `document_id`, `chunk_index`, `text`, `token_count`.                                                                   |
 | `<name>__parse_errors` | Files that could not be parsed, when `parse.on_error` is `record` (the default). `skip` ignores them and `fail` stops the run.                        |
-| `<name>__acl`          | Permission evidence (who could read the file) when the source exposes it and `permissions.capture` is on. Dogsled records it; it does not enforce it. |
+| `<name>__acl`          | Permission evidence (who could read the file) when the source exposes it and `permissions.capture` is on. Bobsled Core records it; it does not enforce it. |
 
 Document options:
 
@@ -265,7 +265,7 @@ name: partner_drop
 source_type: sftp
 connection:
   host: sftp.example.com
-  username: dogsled
+  username: bobsled
   base_directory: /outgoing
   host_keys:
     - algorithm: ssh-ed25519
@@ -298,7 +298,7 @@ connection fails the run instead of skipping the remaining files. Connection
 failures carry a stable `code`, for example `SFTP_HOST_KEY_MISMATCH`,
 `SFTP_HOST_KEY_TYPE_UNAVAILABLE`, `SFTP_AUTH_FAILED`, `SFTP_TIMEOUT` or
 `SFTP_CONNECTION_LOST`. The full list is exported as `SFTP_ERROR_CODES` from
-`@bobsled-inc/extractor` and `@bobsled-inc/dogsled/sftp`. Library hosts can use
+`@bobsled-inc/extractor` and `@bobsled-inc/bobsled-core/sftp`. Library hosts can use
 `SftpFileStorageClient` from that subpath, with `ssh2` installed, and pin a
 download with `expected: { size, mtimeSeconds }`: a file that no longer matches
 fails with `SFTP_FILE_CHANGED`. Passing the same `progress` object and target

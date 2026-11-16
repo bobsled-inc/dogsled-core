@@ -447,7 +447,7 @@ export class MsSqlDestination implements DatabaseDestination {
   ): Promise<void> {
     if (keyProperties.length === 0) return;
     const keyColList = keyProperties.map(quoteMsSqlIdentifier).join(', ');
-    const indexName = quoteMsSqlIdentifier(`_dogsled_uq_${tableName}`);
+    const indexName = quoteMsSqlIdentifier(`_bobsled_uq_${tableName}`);
     await this.query(`CREATE UNIQUE INDEX ${indexName} ON ${qualifiedTable} (${keyColList})`).catch(
       (err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
@@ -531,7 +531,7 @@ export class MsSqlDestination implements DatabaseDestination {
         return { rowsAffected: 0 };
       }
 
-      const stagingName = `_dogsled_stg_${safeTable}`;
+      const stagingName = `_bobsled_stg_${safeTable}`;
       const quotedStaging = `${quoteMsSqlIdentifier(this.schema)}.${quoteMsSqlIdentifier(stagingName)}`;
 
       const stagingColDefs = [

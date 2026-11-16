@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-07-27 -->
 
-YAML-driven data extraction CLI supporting API, warehouse/database, and MCP sources with Dogsled protocol JSONL messages.
+YAML-driven data extraction CLI supporting API, warehouse/database, and MCP sources with Bobsled Core protocol JSONL messages.
 
 ---
 

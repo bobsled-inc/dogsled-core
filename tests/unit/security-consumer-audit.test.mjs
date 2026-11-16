@@ -365,14 +365,14 @@ describe('reviewed transitive advisory consumer exceptions', () => {
       at
     ).passed;
   }
-  const dogsled = ['@bobsled-inc/dogsled', '0.62.0'];
+  const bobsled = ['@bobsled-inc/bobsled-core', '0.62.0'];
   const sdk = ['@modelcontextprotocol/sdk', '1.32.0'];
   it.each([
-    ['GHSA-xjj6-f33q-929c', 'undici', '8.11.2', [dogsled]],
+    ['GHSA-xjj6-f33q-929c', 'undici', '8.11.2', [bobsled]],
     ['GHSA-xjj6-f33q-929c', 'undici', '7.30.0', [['@turbopuffer/turbopuffer', '2.0.0']]],
-    ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.3.6', [dogsled]],
-    ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.6.5', [dogsled, sdk]],
-    ['GHSA-27r3-jxmh-p828', 'body-parser', '2.3.0', [dogsled, sdk, ['express', '5.2.1']]],
+    ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.3.6', [bobsled]],
+    ['GHSA-mrhx-c7xc-m3w5', 'zod', '4.6.5', [bobsled, sdk]],
+    ['GHSA-27r3-jxmh-p828', 'body-parser', '2.3.0', [bobsled, sdk, ['express', '5.2.1']]],
     [
       'GHSA-xcx6-jx8p-x3h5',
       '@azure/msal-node',

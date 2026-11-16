@@ -95,7 +95,7 @@ describe('MySqlDestination', () => {
     expect(createStatement).toContain('`title` TEXT');
     expect(createStatement).toContain('`_time_extracted` DATETIME(6)');
     expect(createStatement).toContain(
-      '`_dogsled_loaded_at` DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)'
+      '`_bobsled_loaded_at` DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)'
     );
   });
 
@@ -104,7 +104,7 @@ describe('MySqlDestination', () => {
       existingColumns: [
         { COLUMN_NAME: 'id', DATA_TYPE: 'BIGINT' },
         { COLUMN_NAME: '_time_extracted', DATA_TYPE: 'DATETIME' },
-        { COLUMN_NAME: '_dogsled_loaded_at', DATA_TYPE: 'DATETIME' },
+        { COLUMN_NAME: '_bobsled_loaded_at', DATA_TYPE: 'DATETIME' },
       ],
     });
     const { dest } = await createDestination(createMockPool(connection));
@@ -124,7 +124,7 @@ describe('MySqlDestination', () => {
         { COLUMN_NAME: 'id', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: 'title', DATA_TYPE: 'TEXT' },
         { COLUMN_NAME: '_time_extracted', DATA_TYPE: 'DATETIME' },
-        { COLUMN_NAME: '_dogsled_loaded_at', DATA_TYPE: 'DATETIME' },
+        { COLUMN_NAME: '_bobsled_loaded_at', DATA_TYPE: 'DATETIME' },
       ],
     });
     const { dest } = await createDestination(createMockPool(connection));

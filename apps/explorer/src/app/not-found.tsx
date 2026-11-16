@@ -6,7 +6,7 @@ export default function NotFound() {
       <div className="text-6xl font-bold text-muted-foreground">404</div>
       <h1 className="text-xl font-bold">Page Not Found</h1>
       <p className="text-xs text-muted-foreground">
-        The page you&apos;re looking for doesn&apos;t exist in Dogsled Explorer.
+        The page you&apos;re looking for doesn&apos;t exist in Bobsled Core Explorer.
       </p>
       <div className="flex justify-center gap-3">
         <Link

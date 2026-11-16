@@ -2,7 +2,7 @@ import type { ListedFile } from '../framework/core/index.js';
 
 /**
  * ACL evidence capture for document resources. Per the Permission Evidence
- * (`__acl`) Contract: Dogsled OSS extracts and stores ACL evidence whenever a
+ * (`__acl`) Contract: Bobsled Core OSS extracts and stores ACL evidence whenever a
  * source backend exposes it; OSS does NOT enforce.
  *
  * This module owns the normalization layer that translates provider-specific

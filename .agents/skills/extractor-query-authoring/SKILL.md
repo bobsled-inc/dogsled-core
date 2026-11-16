@@ -53,10 +53,10 @@ Examples:
 ## Workflow
 
 1. Read the resource YAML and identify scalar output fields that make sense as caller-facing filters.
-2. Run `dogsled extract validate <integration>` to catch schema/config issues early.
-3. Run `dogsled extract verify <integration>`.
-4. Run `dogsled extract verify <integration> --mock`.
-5. If `meta.yml` has `openapi_url`, run `dogsled extract check <integration>` for parameter/type hints.
+2. Run `bobsled extract validate <integration>` to catch schema/config issues early.
+3. Run `bobsled extract verify <integration>`.
+4. Run `bobsled extract verify <integration> --mock`.
+5. If `meta.yml` has `openapi_url`, run `bobsled extract check <integration>` for parameter/type hints.
 6. Decide which operators each field supports.
 7. Bind each operator to an existing optional input.
 8. Add `query.filters` and/or `query.search` to the resource YAML.
@@ -115,7 +115,7 @@ extract:
       gte: '-6mo'
 ```
 
-Dogsled inspects `resource.query.filters.last_edited_time.compile.gte`:
+Bobsled Core inspects `resource.query.filters.last_edited_time.compile.gte`:
 
 - `mode: http_query` → predicate value lands in the URL query param named by
   `param` (or `bind.gte.input` if `param` is omitted).
@@ -139,7 +139,7 @@ This is the **canonical reference** for the path dialect used by `output.<field>
 `output.<field>.paths`, `extract.record_path`, and `after_response` hook `unwrap`.
 The resolver is `extractJsonPath` (`src/framework/runtime/output-mapper.ts`), backed by
 `parseJsonPathTokens` (`src/framework/core/json-path.ts`). It is **three-tiered**, and
-only the first tier is a contract Dogsled tests and supports.
+only the first tier is a contract Bobsled Core tests and supports.
 
 ### Tier 1 — SUPPORTED (deterministic, tested)
 
@@ -162,7 +162,7 @@ dotted segment matches `^([A-Za-z_][A-Za-z0-9_]*)(?:\[(-?\d+)\])?$`. Use only th
 ### Tier 2/3 — NOT SUPPORTED (do not use in `output.path` / `record_path`)
 
 Any path the supported tokenizer rejects falls through to `jsonpath-plus@10.4.0` with
-`wrap: true`. **That fallthrough is unspecced and untested by Dogsled** — treat it as
+`wrap: true`. **That fallthrough is unspecced and untested by Bobsled Core** — treat it as
 undefined behavior, not a feature. Do **not** use any of these:
 
 - wildcards — `$.*`, `$.a[*]`

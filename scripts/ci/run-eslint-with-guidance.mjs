@@ -21,18 +21,18 @@ const RULE_GUIDANCE = {
     agentsSection: 'Code Standards',
     category: 'types',
   },
-  'dogsled/no-console': {
+  'bobsled/no-console': {
     summary:
       'Route CLI output through formatter helpers so JSON, quiet, and verbose modes stay correct.',
     agentsSection: 'Code Standards',
     category: 'output',
   },
-  'dogsled/no-process-exit': {
+  'bobsled/no-process-exit': {
     summary: 'Set `process.exitCode` and return so cleanup and test harnesses keep working.',
     agentsSection: 'Code Standards',
     category: 'output',
   },
-  'dogsled/import-extension': {
+  'bobsled/import-extension': {
     summary:
       'Use `.js` on relative imports because NodeNext ESM keeps the import specifier verbatim.',
     agentsSection: 'Code Standards',
@@ -61,7 +61,7 @@ const RULE_GUIDANCE = {
     agentsSection: 'Code Standards',
     category: 'types',
   },
-  'dogsled/file-size-limit': {
+  'bobsled/file-size-limit': {
     summary:
       'Split large files before adding more logic so agents can reason about modules locally.',
     agentsSection: 'Code Standards',
@@ -85,7 +85,7 @@ function printMessage(result, message) {
         agentsSection: guidance.agentsSection,
         packageDoc: pkg?.agentsPath,
         packageSection:
-          pkg?.shortName === 'dogsled' && guidance.category === 'output' ? 'Output Modes' : null,
+          pkg?.shortName === 'bobsled' && guidance.category === 'output' ? 'Output Modes' : null,
       })}`
     );
   } else if (pkg) {

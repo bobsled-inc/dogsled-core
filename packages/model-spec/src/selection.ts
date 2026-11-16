@@ -2,7 +2,7 @@
  * Shared model-selection grammar (dbt-style) for `@bobsled-inc/model-spec`.
  *
  * Published at the `@bobsled-inc/model-spec/selection` subpath so BOTH the
- * Dogsled CLI (Model Spec `model run`/`compile`/…) and downstream host applications resolve
+ * Bobsled Core CLI (Model Spec `model run`/`compile`/…) and downstream host applications resolve
  * a selection to the SAME exact node set. This is one of the three cross-repo
  * contract seams for Pipelines v2 — keep its public API stable.
  *

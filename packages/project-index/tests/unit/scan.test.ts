@@ -40,11 +40,11 @@ afterEach(() => {
 });
 
 describe('scanProject', () => {
-  it.each(['yml', 'yaml'])('recognizes Dogsled config extensions .%s', (extension) => {
-    write(`dogsled.${extension}`, 'pipelines: {}\n');
+  it.each(['yml', 'yaml'])('recognizes Bobsled Core config extensions .%s', (extension) => {
+    write(`bobsled.${extension}`, 'pipelines: {}\n');
     write(`model-spec.${extension}`, 'models_dir: models\n');
     expect(kinds(scanProject(root))).toEqual([
-      [`dogsled.${extension}`, 'pipeline_config'],
+      [`bobsled.${extension}`, 'pipeline_config'],
       [`model-spec.${extension}`, 'model_spec_config'],
     ]);
   });
@@ -56,7 +56,7 @@ describe('scanProject', () => {
   });
 
   it('indexes nested data-first folders by declared type', () => {
-    write('dogsled.yml', 'pipelines: {}\n');
+    write('bobsled.yml', 'pipelines: {}\n');
     write('datagolf/integration.yml', 'spec_version: "2"\ntype: source\nname: datagolf\n');
     write('datagolf/players/players.yml', 'spec_version: "0.2"\ntype: model\nname: players\n');
     write('datagolf/players/raw.yml', 'spec_version: "0.2"\ntype: source\nname: raw\n');
@@ -70,7 +70,7 @@ describe('scanProject', () => {
       ['datagolf/players/players.yml', 'model'],
       ['datagolf/players/raw.yml', 'source'],
       ['datagolf/skills/lookup.md', 'skill'],
-      ['dogsled.yml', 'pipeline_config'],
+      ['bobsled.yml', 'pipeline_config'],
     ]);
     expect(index.unrecognized).toEqual([{ path: 'README.md', format: 'markdown' }]);
     expect(index.issues).toEqual([]);
@@ -99,7 +99,7 @@ describe('scanProject', () => {
 
   it('skips hidden entries and node_modules without reading them', () => {
     write('.github/workflows/ci.yml', 'type: nope\n');
-    write('.dogsled/state.yml', 'type: nope\n');
+    write('.bobsled/state.yml', 'type: nope\n');
     write('node_modules/pkg/spec.yml', 'type: nope\n');
     write('models/.draft.yml', 'type: nope\n');
     write('models/a.yml', 'type: model\nname: a\n');
@@ -311,7 +311,7 @@ describe('findConfigurationEntry', () => {
     symlinkSync(path.join(root, 'shared', 'model-spec.yml'), path.join(root, 'model-spec.yml'));
 
     expect(() => findConfigurationEntry(root, 'model_spec_config')).toThrow(
-      /model-spec\.yml: Dogsled does not follow symbolic links\./
+      /model-spec\.yml: Bobsled Core does not follow symbolic links\./
     );
   });
 

@@ -10,7 +10,7 @@ import { warehouseEnabled } from './setup.js';
 it.skipIf(!warehouseEnabled('duckdb'))(
   'shares one durable DuckDB cursor table across models',
   async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'dogsled-duckdb-cursors-'));
+    const directory = await mkdtemp(join(tmpdir(), 'bobsled-duckdb-cursors-'));
     const integration: DuckDbIntegration = {
       spec_version: '1',
       type: 'integration',
@@ -35,7 +35,7 @@ it.skipIf(!warehouseEnabled('duckdb'))(
       try {
         expect(
           await runner.query!(
-            'SELECT count(*)::INTEGER AS n FROM _dogsled_agentic_publication.cursors'
+            'SELECT count(*)::INTEGER AS n FROM _bobsled_agentic_publication.cursors'
           )
         ).toEqual([{ n: 2 }]);
       } finally {
@@ -51,7 +51,7 @@ it.skipIf(!warehouseEnabled('duckdb'))(
 it.skipIf(!warehouseEnabled('duckdb'))(
   'publishes empty findings and resumes incremental batches with DuckDB',
   async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'dogsled-duckdb-incremental-'));
+    const directory = await mkdtemp(join(tmpdir(), 'bobsled-duckdb-incremental-'));
     const integration: DuckDbIntegration = {
       spec_version: '1',
       type: 'integration',

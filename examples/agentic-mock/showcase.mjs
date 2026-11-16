@@ -48,7 +48,7 @@ export async function run(ctx) {
   assert.ok(
     rows.every(
       (row) =>
-        row._dogsled_run_id && row._dogsled_evidence && Number(row._dogsled_confidence) === 0.9
+        row._bobsled_run_id && row._bobsled_evidence && Number(row._bobsled_confidence) === 0.9
     )
   );
   const calls = (await ctx.read('calls.jsonl')).trim().split('\n').map(JSON.parse);
@@ -63,7 +63,7 @@ export async function run(ctx) {
     .rows;
   const files = await readdir(ctx.project, { recursive: true });
   assert.ok(files.some((name) => /run-[a-f0-9]{64}\.duckdb$/.test(name)));
-  assert.ok(tables.some((row) => row.table_schema === '_dogsled_agentic_publication'));
+  assert.ok(tables.some((row) => row.table_schema === '_bobsled_agentic_publication'));
   await ctx.cli([...args, '--agent-resume']);
   assert.equal((await ctx.read('calls.jsonl')).trim().split('\n').length, calls.length);
 }

@@ -1003,7 +1003,7 @@ const WarehouseExtractBlockSchema = z
     /**
      * Optional self-description: which source integration this resource was
      * authored against. Not load-bearing — the actual binding comes from the
-     * pipeline (dogsled.yml `pipeline.source`) or CLI `--integration` flag. When
+     * pipeline (bobsled.yml `pipeline.source`) or CLI `--integration` flag. When
      * present, the pipeline loader cross-checks against the active binding and
      * fails on mismatch. When absent, no check runs.
      *
@@ -1139,7 +1139,7 @@ export const ResourceSpecSchema = z.union([
       },
       // V2 load block no longer carries integration — it's only defaults+overrides.
       // The destination binding comes from extractor.yml.default_load,
-      // CLI --load-integration, or dogsled.yml pipeline.destination.
+      // CLI --load-integration, or bobsled.yml pipeline.destination.
       // Preserve the full load block so loader-side consumers can read
       // overrides + defaults beyond just load_strategy.
       ...(v2.load ? { load: v2.load } : {}),

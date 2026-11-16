@@ -1,13 +1,13 @@
 # @bobsled-inc/sdk-codegen
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Generates typed SDK files from a Dogsled entity graph inventory.
+Generates typed SDK files from a Bobsled Core entity graph inventory.
 
 ## CLI
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+bobsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 The emitted TypeScript SDK includes:
@@ -15,7 +15,7 @@ The emitted TypeScript SDK includes:
 - branded entity ID types;
 - per-entity profile interfaces;
 - shared `EntityQuality`;
-- `createDogsledClient(executor)` with typed `findBy(...)`, `withDocuments()`, `withRelationship(...)`, `all()`, and `first()`.
+- `createBobsledClient(executor)` with typed `findBy(...)`, `withDocuments()`, `withRelationship(...)`, `all()`, and `first()`.
 
 The SDK is generated into the consumer repo. Generated SDK package publishing is not part of v1.
 
@@ -36,16 +36,16 @@ The Python emitter produces pydantic v2 profile models for library consumers. Th
 Generated TypeScript clients are executor-backed. Apps own the warehouse/API connection and return profile rows plus requested includes.
 
 ```ts
-import { createDogsledClient, type DogsledEntityExecutor } from './generated/dogsled-sdk/index.js';
+import { createBobsledClient, type BobsledEntityExecutor } from './generated/bobsled-sdk/index.js';
 
-const executor: DogsledEntityExecutor = {
+const executor: BobsledEntityExecutor = {
   async find(request) {
-    return queryDogsledServingTables(request);
+    return queryBobsledServingTables(request);
   },
 };
 
-const dogsled = createDogsledClient(executor);
-const customer = await dogsled.entity.customer
+const bobsled = createBobsledClient(executor);
+const customer = await bobsled.entity.customer
   .findBy({ domain: 'acme.com' })
   .withDocuments()
   .first();

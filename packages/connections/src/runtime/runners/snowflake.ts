@@ -202,7 +202,7 @@ async function resolveOAuthToken(
  * attacker-reachable internal endpoint. Mirror the extractor's approach
  * (`packages/extractor/src/framework/core/shared.ts:isPrivateHost`) without
  * importing across package boundaries. Operators that genuinely need an
- * internal token endpoint can set DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS=1.
+ * internal token endpoint can set BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS=1.
  */
 const CLOUD_METADATA_HOSTNAMES = new Set(['metadata.google.internal', 'metadata.goog', 'metadata']);
 const NON_PUBLIC_IPV4 = new BlockList();
@@ -260,7 +260,7 @@ export function isPrivateOauthHost(hostname: string): boolean {
   ) {
     return true;
   }
-  if (process.env['DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS'] === '1') return false;
+  if (process.env['BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS'] === '1') return false;
   if (bareHost === 'localhost') return true;
   if (family === 4) return NON_PUBLIC_IPV4.check(bareHost, 'ipv4');
   if (family === 6) return NON_PUBLIC_IPV6.check(bareHost, 'ipv6');
@@ -334,7 +334,7 @@ async function fetchOAuthTokenDefault(
   if (isPrivateOauthHost(url.hostname)) {
     throw new CommandError(
       `OAuth token URL points to a private/loopback host (${url.hostname}); refusing to send credentials. ` +
-        `Set DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS=1 to override (e.g. internal IdP behind VPN).`,
+        `Set BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS=1 to override (e.g. internal IdP behind VPN).`,
       1
     );
   }
@@ -458,7 +458,7 @@ export interface SnowflakeRunnerModule extends SqlRunnerModule {
 }
 
 /**
- * Resolve a pipeline warehouse selector for Dogsled's built-in Snowflake runner.
+ * Resolve a pipeline warehouse selector for Bobsled Core's built-in Snowflake runner.
  * Custom runners receive the stable selector unchanged through their factory
  * context; only the built-in adapter translates a declared ID to the physical
  * session warehouse.

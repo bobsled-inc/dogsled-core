@@ -86,7 +86,7 @@ export type LlmCall = (prompt: ReturnType<typeof buildPrompt>) => Promise<
 export interface ExtractMentionOptions {
   strategy: CandidateRetrievalStrategy;
   llmCall: LlmCall;
-  /** Dogsled AI model role used (for audit). */
+  /** Bobsled Core AI model role used (for audit). */
   extractionRole: string;
   /** Top-K passed to candidate retrieval. */
   k?: number;

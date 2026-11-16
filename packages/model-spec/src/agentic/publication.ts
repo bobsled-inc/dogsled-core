@@ -128,7 +128,7 @@ export function agenticPublicationData(run: AgenticRunSnapshot): {
       work.accepted && work.accepted.status !== 'failed'
         ? work.accepted.rows.map((row) => ({
             ...(row as Record<string, JsonValue>),
-            _dogsled_run_id: run.key.id,
+            _bobsled_run_id: run.key.id,
           }))
         : []
     ),

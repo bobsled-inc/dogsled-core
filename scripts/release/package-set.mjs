@@ -1,4 +1,4 @@
-export const DOGSLED_PACKAGE_NAME = '@bobsled-inc/dogsled';
+export const BOBSLED_CORE_PACKAGE_NAME = '@bobsled-inc/bobsled-core';
 
 export const INTERNAL_PACKAGE_NAMES = [
   '@bobsled-inc/ai',
@@ -24,7 +24,7 @@ export const BUNDLED_EXTERNAL_PACKAGE_NAMES = ['zod'];
 
 // These providers are implementation details of @bobsled-inc/ai. They are
 // bundled into its output so their peer requirements (notably the incompatible
-// zod range declared by Ollama) cannot leak into Dogsled consumers.
+// zod range declared by Ollama) cannot leak into Bobsled Core consumers.
 export const INLINED_AI_DEPENDENCY_NAMES = [
   '@ai-sdk/amazon-bedrock',
   '@ai-sdk/anthropic',

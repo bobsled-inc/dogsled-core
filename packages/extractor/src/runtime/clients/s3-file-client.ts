@@ -52,11 +52,11 @@ async function validateS3Endpoint(endpoint: string | undefined): Promise<void> {
   }
   if (
     endpointUrl.protocol === 'http:' &&
-    (process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] !== '1' ||
+    (process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] !== '1' ||
       !isNonPublicHost(endpointUrl.hostname))
   ) {
     throw new ExtractorConfigError(
-      'S3 endpoints must use HTTPS. Cleartext HTTP is allowed only for an explicit private IP or localhost when DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1.'
+      'S3 endpoints must use HTTPS. Cleartext HTTP is allowed only for an explicit private IP or localhost when BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1.'
     );
   }
   await validateRemoteHost(endpointUrl.hostname, 'S3 endpoint');

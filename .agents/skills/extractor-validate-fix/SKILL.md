@@ -5,19 +5,19 @@ description: Validate extractor YAML configs and auto-fix common errors. Use whe
 
 # Extractor Validate & Fix
 
-Diagnose and fix extractor YAML validation errors using the `dogsled extract validate` command and structured error output.
+Diagnose and fix extractor YAML validation errors using the `bobsled extract validate` command and structured error output.
 
 ## Step 1: Run Validation
 
 ```bash
 # Validate all configs
-dogsled extract validate --format json
+bobsled extract validate --format json
 
 # Validate a specific connection
-dogsled extract validate --connection {name} --format json
+bobsled extract validate --connection {name} --format json
 
 # Also check env vars
-dogsled extract validate --connection {name} --format json --check-env
+bobsled extract validate --connection {name} --format json --check-env
 ```
 
 The `--format json` flag outputs structured errors that are easier to parse programmatically.
@@ -45,7 +45,7 @@ The `--format json` flag outputs structured errors that are easier to parse prog
 After applying fixes, re-run validation:
 
 ```bash
-dogsled extract validate --connection {name} --format json
+bobsled extract validate --connection {name} --format json
 ```
 
 Repeat Steps 2-3 until no errors remain.
@@ -55,7 +55,7 @@ Repeat Steps 2-3 until no errors remain.
 With `--check-env`, validation also checks that all referenced `*_env` variables are set in the environment:
 
 ```bash
-dogsled extract validate --connection {name} --format json --check-env
+bobsled extract validate --connection {name} --format json --check-env
 ```
 
 If env vars are missing, generate a `.env.example` snippet:

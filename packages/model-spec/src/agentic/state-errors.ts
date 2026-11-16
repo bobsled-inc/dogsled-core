@@ -43,7 +43,7 @@ const DEFAULT_MESSAGES: Record<AgenticStateErrorCode, string> = {
     'The saved agentic run state conflicts with this request. Another process may have changed it.',
   missing: 'No saved agentic run matches this run ID and scope.',
   corrupt:
-    'The saved agentic run checkpoint is damaged or was written by an incompatible Dogsled version.',
+    'The saved agentic run checkpoint is damaged or was written by an incompatible Bobsled Core version.',
   unavailable: 'The agentic checkpoint store is unavailable.',
   limit: 'An agentic run limit was reached.',
   expired: 'The agentic run deadline (limits.timeout_seconds) has passed.',

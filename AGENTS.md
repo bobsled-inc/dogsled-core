@@ -1,8 +1,8 @@
-# Dogsled — Agent Guide
+# Bobsled Core — Agent Guide
 
 <!-- last-reviewed: 2026-10-28 -->
 
-Dogsled is an agent-native, open-source data engineering toolkit. Keep this guide
+Bobsled Core is an agent-native, open-source data engineering toolkit. Keep this guide
 limited to durable rules that are difficult to infer from code, tests, or public
 documentation. Roadmaps and launch status belong in issues.
 
@@ -23,9 +23,9 @@ documentation. Roadmaps and launch status belong in issues.
   Never enable auto-merge or dismiss reviews.
 - Keep commits logically focused and use imperative messages that explain why.
 
-Do not add model-specific instruction files. For Dogsled's own Built-in Skills,
+Do not add model-specific instruction files. For Bobsled Core's own Built-in Skills,
 `.agents/skills/` is the only authored source and `.claude/skills` is a compatibility
-symlink. Project Skills in a user's Dogsled project are separate authored content under
+symlink. Project Skills in a user's Bobsled Core project are separate authored content under
 that project's `skills/` directory.
 
 ## Architecture Contracts
@@ -101,7 +101,7 @@ release notes, and every published npm version.
 - Bound retries, redirects, response sizes, parser work, and temporary storage.
 - Use exact reviewed subprocess shapes; never widen an allowlist into general shell
   execution.
-- Do not add telemetry, analytics, remote error reporting, or Dogsled-operated
+- Do not add telemetry, analytics, remote error reporting, or Bobsled Core-operated
   endpoints without an explicit privacy review and documentation update.
 
 Security-sensitive changes require regression coverage at the affected trust
@@ -117,7 +117,7 @@ review work.
   are unavailable.
 - Integration specifications must validate structurally and resolve review markers.
 - Preserve root test sequencing: run at most two other workspace suites at once,
-  then run the Dogsled suite. Each suite can start its own workers; unbounded
+  then run the Bobsled Core suite. Each suite can start its own workers; unbounded
   package concurrency can exhaust small CI runners.
 - `pnpm precommit` is the required repository gate.
 

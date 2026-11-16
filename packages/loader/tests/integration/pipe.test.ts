@@ -414,7 +414,7 @@ describe('runLoader', () => {
     const sentinelContent = await fs.readFile(sentinelPath, 'utf-8');
     expect(sentinelContent).toBe('do-not-delete');
 
-    // The owned temp subdirectory (dogsled-loader-*) should be cleaned up
+    // The owned temp subdirectory (bobsled-loader-*) should be cleaned up
     const remaining = await fs.readdir(callerTempRoot);
     expect(remaining).toEqual(['sentinel.txt']);
   });
@@ -474,15 +474,15 @@ describe('runLoader — DuckDB destination', () => {
       { id: BigInt(2), title: 'beta' },
     ]);
 
-    // Verify _time_extracted and _dogsled_loaded_at are populated
+    // Verify _time_extracted and _bobsled_loaded_at are populated
     const tsRows = await queryPersistentDb(
       dbPath,
-      'SELECT "_time_extracted", "_dogsled_loaded_at" FROM main.issues'
+      'SELECT "_time_extracted", "_bobsled_loaded_at" FROM main.issues'
     );
     expect(tsRows.length).toBe(2);
     for (const row of tsRows) {
       expect(row['_time_extracted']).toBeInstanceOf(Date);
-      expect(row['_dogsled_loaded_at']).toBeInstanceOf(Date);
+      expect(row['_bobsled_loaded_at']).toBeInstanceOf(Date);
     }
 
     // STATE forwarded
@@ -679,7 +679,7 @@ describe('runLoader — DuckDB destination', () => {
       existingRecord: { id: 1, title: 'alpha' },
       driftRecord: { id: 2, title: 'beta', status: 'open' },
       error: /Schema contract violation \(strict\).*unexpected new columns: status/,
-      expectedColumns: ['id', 'title', '_time_extracted', '_dogsled_loaded_at'],
+      expectedColumns: ['id', 'title', '_time_extracted', '_bobsled_loaded_at'],
       expectedRows: [{ id: BigInt(1), title: 'alpha' }],
     },
     {
@@ -689,7 +689,7 @@ describe('runLoader — DuckDB destination', () => {
       existingRecord: { id: 1, title: 'alpha', status: 'open' },
       driftRecord: { id: 2, title: 'beta' },
       error: /Schema contract violation \(strict\).*missing expected columns: status/,
-      expectedColumns: ['id', 'title', 'status', '_time_extracted', '_dogsled_loaded_at'],
+      expectedColumns: ['id', 'title', 'status', '_time_extracted', '_bobsled_loaded_at'],
       expectedRows: [{ id: BigInt(1), title: 'alpha', status: 'open' }],
     },
   ])(
@@ -750,7 +750,7 @@ describe('runLoader — DuckDB destination', () => {
 
       const rows = await queryPersistentDb(
         dbPath,
-        'SELECT * EXCLUDE (_time_extracted, _dogsled_loaded_at) FROM main.issues'
+        'SELECT * EXCLUDE (_time_extracted, _bobsled_loaded_at) FROM main.issues'
       );
       expect(rows).toEqual(test.expectedRows);
     }
@@ -931,7 +931,7 @@ describe('runLoader — DuckDB destination', () => {
         }
       )
     ).rejects.toThrow(
-      /Failed to load stream "issues" to duckdb: connection refused.*dogsled load check --dest duckdb/
+      /Failed to load stream "issues" to duckdb: connection refused.*bobsled load check --dest duckdb/
     );
   });
 

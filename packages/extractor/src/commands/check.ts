@@ -1,5 +1,5 @@
 /**
- * `dogsled extract check` command.
+ * `bobsled extract check` command.
  *
  * Diff integration + resource YAML specs against an OpenAPI document
  * to detect drift: missing endpoints, type mismatches, pagination

@@ -24,7 +24,7 @@ describe('state', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-state-test-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-state-test-'));
   });
 
   afterEach(() => {
@@ -38,9 +38,9 @@ describe('state', () => {
     });
 
     it('throws CommandError exit 2 on corrupted JSON', () => {
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         'not json',
         'utf-8'
       );
@@ -54,9 +54,9 @@ describe('state', () => {
     });
 
     it('throws CommandError exit 2 on invalid schema', () => {
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         JSON.stringify({ models: { bad: { unexpectedField: true } } }),
         'utf-8'
       );
@@ -69,7 +69,7 @@ describe('state', () => {
       }
     });
 
-    it.each(['.bms', '.dogsled-context'])('ignores retired state directory %s', (legacyDir) => {
+    it.each(['.bms', '.bobsled-context'])('ignores retired state directory %s', (legacyDir) => {
       const legacyState: RunState = {
         models: {
           legacy_model: {
@@ -412,7 +412,7 @@ describe('state', () => {
     });
 
     it('loads older state files that lack the new fields (backward compat)', () => {
-      // Mirrors state written by Dogsled versions < drift-detection. The reader
+      // Mirrors state written by Bobsled Core versions < drift-detection. The reader
       // must accept it without throwing — the new fields are all optional.
       const fileContent = JSON.stringify({
         models: {
@@ -423,9 +423,9 @@ describe('state', () => {
           },
         },
       });
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         fileContent,
         'utf-8'
       );
@@ -436,9 +436,9 @@ describe('state', () => {
     });
 
     it('preserves unknown forward-compat fields on round-trip', () => {
-      // State written by a *newer* Dogsled version may have keys this version
+      // State written by a *newer* Bobsled Core version may have keys this version
       // doesn't recognize. We must not strip them — round-tripping must be
-      // lossless so the orchestrator can persist whatever Dogsled gives it.
+      // lossless so the orchestrator can persist whatever Bobsled Core gives it.
       const fileContent = JSON.stringify({
         models: {
           'duckdb.stg_orders': {
@@ -449,9 +449,9 @@ describe('state', () => {
           },
         },
       });
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         fileContent,
         'utf-8'
       );

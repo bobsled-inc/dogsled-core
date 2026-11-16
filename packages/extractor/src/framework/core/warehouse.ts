@@ -315,7 +315,7 @@ export const SnowflakeRsaKeyAuthSchema = z
 
 /**
  * Workload identity federation over the Snowflake SQL REST API. The
- * host application wrapping Dogsled
+ * host application wrapping Bobsled Core
  * mints a short-lived identity token externally and passes it in; the
  * extractor sends it as `Authorization: Bearer WIF.<provider>.<token>`. No
  * username, key material, or secret is needed: Snowflake maps the token

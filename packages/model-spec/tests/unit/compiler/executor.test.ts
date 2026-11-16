@@ -36,7 +36,7 @@ describe('executeSqlStatements', () => {
   });
 
   it('redacts the match-key secret from driver error messages and callbacks', async () => {
-    vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', 'super-secret-key');
+    vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', 'super-secret-key');
     try {
       const onError = vi.fn();
       vi.mocked(runner).mockRejectedValueOnce(

@@ -1,5 +1,5 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -137,7 +137,7 @@ const PARSE_ERRORS_OUTPUT: FileResourceSpec['output'] = {
 };
 
 /**
- * Permission Evidence (`__acl`) Contract. Dogsled OSS extracts and stores ACL evidence
+ * Permission Evidence (`__acl`) Contract. Bobsled Core OSS extracts and stores ACL evidence
  * whenever a source backend exposes it; OSS does NOT enforce. Emitting the schema even
  * when no rows are produced keeps the downstream consumer contract stable so app-layer
  * consumers can rely on the column shape regardless of which providers have ACL
@@ -171,7 +171,7 @@ export async function extractDocumentResource(
   const maxBytes = (source.parse?.max_file_size_mb ?? DEFAULT_MAX_FILE_SIZE_MB) * 1024 * 1024;
 
   const client = await createFileStorageClient(integration);
-  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'dogsled-document-'));
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'bobsled-document-'));
   // See extractFileStorageResource: full_refresh rereads every file.
   const readAllFiles = opts.fullRefresh === true || resource.replication.method === 'full_refresh';
   const existingState = readAllFiles ? {} : getDocumentState(state, integrationName, resource.name);
@@ -260,7 +260,7 @@ export async function extractDocumentResource(
       } catch (err) {
         // Connection-level failures (lost connection, timeout, cancel) fail the run;
         // only per-file problems become parse-error rows.
-        if (err instanceof DogsledRuntimeError) throw err;
+        if (err instanceof BobsledRuntimeError) throw err;
         // The new version was not read, so its last good rows stay; only the error is current.
         await replaceFileRows(documentId(file.uri), [parseErrorsStream]);
         const rawMessage = err instanceof Error ? err.message : String(err);

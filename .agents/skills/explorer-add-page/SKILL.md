@@ -1,12 +1,12 @@
 ---
 name: explorer-add-page
-description: Add a new page to the Dogsled Explorer app. Scaffolds the page component, API route, sidebar entry, and docs update.
+description: Add a new page to the Bobsled Core Explorer app. Scaffolds the page component, API route, sidebar entry, and docs update.
 argument-hint: '<page-name> — e.g., "connections" or "schedules"'
 ---
 
 # Explorer Add Page — Scaffold a New Explorer Page
 
-Add a complete new page to the Dogsled Explorer at `apps/explorer/`.
+Add a complete new page to the Bobsled Core Explorer at `apps/explorer/`.
 
 ## Usage
 
@@ -98,7 +98,7 @@ Create `apps/explorer/src/app/api/<page-name>/route.ts`.
 Follow these conventions:
 
 - Import from `@/lib/integrations` or `@/lib/models` (wrappers with cache clearing)
-- For CLI subprocess calls, use `spawnDogsledCommand` from `@/lib/dogsled-cli`
+- For CLI subprocess calls, use `spawnBobsledCommand` from `@/lib/bobsled-cli`
 - Return `NextResponse.json()` for simple responses
 - Return SSE `ReadableStream` for streaming responses
 - Handle errors with proper status codes
@@ -145,7 +145,7 @@ Use Heroicons (outline style, 24x24 viewBox, strokeWidth 1.5). Pick from: https:
 If the page is a primary feature, add it to `apps/explorer/src/app/page.tsx`:
 
 - Add a quick action card in the quick actions section
-- Or add to the capabilities overview if it's a core Dogsled capability
+- Or add to the capabilities overview if it's a core Bobsled Core capability
 
 ### Step 6: Update docs
 

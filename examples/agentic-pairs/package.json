@@ -1,5 +1,5 @@
 {
-  "name": "dogsled-agentic-pairs-example",
+  "name": "bobsled-agentic-pairs-example",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,7 +7,7 @@
     "test": "node --test executor.test.mjs loop-executor.test.mjs"
   },
   "dependencies": {
-    "@bobsled-inc/dogsled": "^0.1.0",
+    "@bobsled-inc/bobsled-core": "^0.1.0",
     "zod": "^4.3.6"
   }
 }

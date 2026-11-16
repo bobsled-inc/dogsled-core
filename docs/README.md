@@ -1,12 +1,12 @@
-# Dogsled documentation
+# Bobsled Core documentation
 
-Commands in these pages are shown as `dogsled`. If you installed Dogsled into a
+Commands in these pages are shown as `bobsled`. If you installed Bobsled Core into a
 project folder, as [Get started](getting-started.md) does, run them as
-`npx dogsled`.
+`npx bobsled`.
 
 ## Start here
 
-- [Get started](getting-started.md): install Dogsled, load a CSV file and a public
+- [Get started](getting-started.md): install Bobsled Core, load a CSV file and a public
   API into DuckDB, and build your first model.
 - [Concepts](concepts.md): integrations, resources, the protocol, destinations,
   state, pipelines, sources and models.
@@ -30,7 +30,7 @@ Extract:
 Load and run:
 
 - [Load data](guides/load-data.md): destinations, load strategies and checks.
-- [Run pipelines](guides/run-pipelines.md): `dogsled.yml`, fan-out and scheduling.
+- [Run pipelines](guides/run-pipelines.md): `bobsled.yml`, fan-out and scheduling.
 - [Run in production](guides/run-in-production.md): GitHub Actions, systemd and
   containers, credentials, incremental state and alerts.
 
@@ -59,9 +59,9 @@ Work with agents and other systems:
 More:
 
 - [Explorer](guides/explorer.md): the local web app.
-- [Tutorial and examples](guides/learn-and-examples.md): `dogsled learn` and the
+- [Tutorial and examples](guides/learn-and-examples.md): `bobsled learn` and the
   example projects.
-- [Dogsled Cloud and Core](guides/dogsled-cloud.md): fields that only Dogsled Cloud
+- [Dogsled Cloud and Core](guides/hosted-runs.md): fields that only Dogsled Cloud
   reads.
 
 ## Reference

@@ -14,7 +14,7 @@ export function rebaseNativeExtensions(
     if (key === 'custom_extensions' && Array.isArray(child)) {
       for (const extension of child) {
         const item = record(extension);
-        if (item['vendor_name'] !== 'DOGSLED' || typeof item['data'] !== 'string') continue;
+        if (item['vendor_name'] !== 'BOBSLED' || typeof item['data'] !== 'string') continue;
         const payload: unknown = JSON.parse(item['data']);
         rebase(payload, references);
         (extension as Record<string, unknown>)['data'] = JSON.stringify(payload);

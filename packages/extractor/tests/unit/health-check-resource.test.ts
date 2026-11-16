@@ -15,7 +15,7 @@ import { makeResource } from '../helpers/fixtures.js';
 
 const tempDirs: string[] = [];
 
-function dogsledTempDir(dir: string): string {
+function bobsledTempDir(dir: string): string {
   tempDirs.push(dir);
   return dir;
 }
@@ -27,10 +27,10 @@ afterEach(() => {
 });
 
 describe('readScopedHealthResource', () => {
-  it('reads the first scoped resource from dogsled.yml for the integration', () => {
-    const projectRoot = dogsledTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-health-')));
+  it('reads the first scoped resource from bobsled.yml for the integration', () => {
+    const projectRoot = bobsledTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-health-')));
     fs.writeFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       [
         'pipelines:',
         '  vantage:',
@@ -46,9 +46,9 @@ describe('readScopedHealthResource', () => {
     expect(readScopedHealthResource(projectRoot, 'hubspot')).toBeUndefined();
   });
 
-  it('ignores oversized Dogsled configs', () => {
-    const projectRoot = dogsledTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-health-')));
-    fs.writeFileSync(path.join(projectRoot, 'dogsled.yml'), 'x'.repeat(1024 * 1024 + 1));
+  it('ignores oversized Bobsled Core configs', () => {
+    const projectRoot = bobsledTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-health-')));
+    fs.writeFileSync(path.join(projectRoot, 'bobsled.yml'), 'x'.repeat(1024 * 1024 + 1));
 
     expect(readScopedHealthResource(projectRoot, 'vantage')).toBeUndefined();
   });

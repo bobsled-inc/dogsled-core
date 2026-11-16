@@ -12,15 +12,15 @@ import { createWarehouseAgenticCursorStore } from '../../../src/agentic/warehous
 import { digestAgenticState } from '../../../src/agentic/state.js';
 import { caseName, quoteIdentifier } from '../../../src/compiler/dialect.js';
 
-const integrationPath = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION;
-const schema = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA;
+const integrationPath = process.env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_INTEGRATION;
+const schema = process.env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA;
 
 it.skipIf(!integrationPath && !schema)(
   'persists shared warehouse cursors across batches',
   async () => {
     if (!integrationPath || !schema) {
       throw new Error(
-        'Set DOGSLED_MODEL_SPEC_CHECKPOINT_INTEGRATION and DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA'
+        'Set BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_INTEGRATION and BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA'
       );
     }
     const integration = IntegrationFileSchema.parse(
@@ -42,7 +42,7 @@ it.skipIf(!integrationPath && !schema)(
             : undefined;
     const q = (name: string) =>
       quoteIdentifier(caseName(name, integration.source_type), integration.source_type);
-    const table = [...(catalog ? [catalog] : []), schema, '__dogsled_cursors'].map(q).join('.');
+    const table = [...(catalog ? [catalog] : []), schema, '__bobsled_cursors'].map(q).join('.');
     const key = { scope: 'cursor-integration-test', model: randomUUID(), target: 'cursor-test' };
     const signature = 'a'.repeat(64);
     const store = createWarehouseAgenticCursorStore(integration, { schema });
