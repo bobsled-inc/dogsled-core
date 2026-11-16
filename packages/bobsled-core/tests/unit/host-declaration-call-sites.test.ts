@@ -108,8 +108,8 @@ describe('parseReverseEtlProject host declarations', () => {
 describe('loadBobsledConfig host declarations', () => {
   it('keeps undeclared profile keys fail-closed by default', () => {
     vi.stubEnv('LLM_API_KEY', 'ambient-canary');
-    const root = project({ 'dogsled.yml': `pipelines: {}\n${PLATFORM}` });
-    const configPath = path.join(root, 'dogsled.yml');
+    const root = project({ 'bobsled.yml': `pipelines: {}\n${PLATFORM}` });
+    const configPath = path.join(root, 'bobsled.yml');
     for (const options of [undefined, {}, { hostManagedModelAuth: false }]) {
       expect(() => loadBobsledConfig(configPath, options)).toThrow(PROFILE_ERRORS[0]);
       expect(() => loadBobsledConfig(configPath, options)).toThrow(PROFILE_ERRORS[1]);
@@ -117,8 +117,8 @@ describe('loadBobsledConfig host declarations', () => {
   });
 
   it('forwards hostManagedModelAuth and declaredEnvNames without changing placeholders', () => {
-    const root = project({ 'dogsled.yml': `pipelines: {}\n${PLATFORM}` });
-    const configPath = path.join(root, 'dogsled.yml');
+    const root = project({ 'bobsled.yml': `pipelines: {}\n${PLATFORM}` });
+    const configPath = path.join(root, 'bobsled.yml');
     const before = readFileSync(configPath, 'utf8');
     const managed = loadBobsledConfig(configPath, { hostManagedModelAuth: true });
     expect(managed.platform?.models?.['flash']?.api_key).toBe('${{ env.LLM_API_KEY }}');
@@ -133,8 +133,8 @@ describe('loadBobsledConfig host declarations', () => {
   });
 
   it('accepts an embedding key only through declaredEnvNames', () => {
-    const root = project({ 'dogsled.yml': EMBEDDING });
-    const configPath = path.join(root, 'dogsled.yml');
+    const root = project({ 'bobsled.yml': EMBEDDING });
+    const configPath = path.join(root, 'bobsled.yml');
     expect(() => loadBobsledConfig(configPath, { hostManagedModelAuth: true })).toThrow(
       EMBED_ERROR
     );

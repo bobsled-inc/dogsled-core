@@ -21,12 +21,12 @@ dogsled extract validate local_files
 for resource in customers products orders; do
   dogsled extract run --integration local_files "$resource" \
     | dogsled load run --dest ducklake \
-        --ducklake-catalog-url ducklake:.dogsled/lake/catalog.ducklake \
+        --ducklake-catalog-url ducklake:.bobsled/lake/catalog.ducklake \
         --target-schema bronze
 done
 dogsled model validate --integration local_lake
 node lake-models.mjs
-dogsled query "LOAD ducklake; ATTACH 'ducklake:.dogsled/lake/catalog.ducklake' AS lake; SELECT count(*) FROM lake.bronze.order_summary" --db-path query.duckdb
+dogsled query "LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) FROM lake.bronze.order_summary" --db-path query.duckdb
 dogsled doctor --json
 ```
 

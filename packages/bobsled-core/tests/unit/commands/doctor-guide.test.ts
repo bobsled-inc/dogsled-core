@@ -121,7 +121,7 @@ describe('checkProjectGuide', () => {
 
   it('allows the command to explicitly skip guide validation', async () => {
     const root = project('x'.repeat(32 * 1024 + 1));
-    const configPath = path.join(root, 'dogsled.yml');
+    const configPath = path.join(root, 'bobsled.yml');
     writeFileSync(configPath, 'pipelines: {}\n', 'utf8');
     const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     const previousExitCode = process.exitCode;

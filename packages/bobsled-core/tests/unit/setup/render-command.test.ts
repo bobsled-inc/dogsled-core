@@ -64,7 +64,7 @@ describe('setup render command output', () => {
     expect(output).toContain(
       'Preserved existing AGENTS.md (edit it in place, or delete it to regenerate the scaffold).'
     );
-    expect(output).toContain('dogsled.yml\n');
+    expect(output).toContain('bobsled.yml\n');
     expect(output).not.toMatch(/AGENTS\.md\n/);
     expect(readFileSync(path.join(root, 'AGENTS.md'), 'utf-8')).toBe(authored);
   });
@@ -83,7 +83,7 @@ describe('setup render command output', () => {
     expect(lines).toHaveLength(1);
     const paths = JSON.parse(lines[0] as string) as string[];
     expect(Array.isArray(paths)).toBe(true);
-    expect(paths).toContain('dogsled.yml');
+    expect(paths).toContain('bobsled.yml');
     expect(paths).toContain('skills/project-overview/SKILL.md');
     expect(paths).toContain('AGENTS.md');
   });

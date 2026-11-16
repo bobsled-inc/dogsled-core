@@ -98,7 +98,7 @@ const destinationTable = sqlIdentifier.refine(
  * Per-stream load-strategy overrides, keyed by the RAW stream name as it
  * appears in the SCHEMA message (before `tablePrefix` / sanitization). Set by
  * repeatable `--stream-load-strategy <stream>:<strategy>` flags, or by Dogsled
- * when a `dogsled.yml` resource declares `load_strategy:`.
+ * when a `bobsled.yml` resource declares `load_strategy:`.
  *
  * Precedence (highest first): this map → `loadStrategy` (the pipeline-level
  * `--load-strategy` default) → the SCHEMA message's own `load_strategy` →
@@ -110,7 +110,7 @@ const streamLoadStrategies = z.record(z.string().min(1), z.enum(LOAD_STRATEGIES)
  * Per-stream schema-behavior overrides, keyed by the RAW stream name as it
  * appears in the SCHEMA message. Set by repeatable
  * `--stream-schema-behavior <stream>:<mode>` flags, or by Dogsled when a
- * `dogsled.yml` resource declares `schema_behavior:`.
+ * `bobsled.yml` resource declares `schema_behavior:`.
  *
  * Precedence (highest first): this map → `schemaBehavior` (the pipeline-level
  * `--schema-behavior` default) → the SCHEMA message's own `schema_behavior` →
@@ -121,7 +121,7 @@ const streamSchemaBehaviors = z.record(z.string().min(1), z.enum(SCHEMA_BEHAVIOR
 /**
  * Per-stream destination table names, keyed by the RAW stream name as it
  * appears in the SCHEMA message. Set by repeatable
- * `--stream-table <stream>:<table>` flags, or by Dogsled when a `dogsled.yml`
+ * `--stream-table <stream>:<table>` flags, or by Dogsled when a `bobsled.yml`
  * resource declares `table:`. An entry REPLACES the whole computed table name
  * — `tablePrefix` is not re-applied on top of it.
  */
@@ -196,7 +196,7 @@ const BigQueryDestConfigSchema = z.object({
    * precedence over `keyFilename` and `credentials`; passed directly
    * to `new BigQuery({ token })` (mirrors dbt-bigquery's
    * `oauth-secrets` Temporary Token method). The runner is responsible
-   * for resolving any `$VARNAME` placeholder in the source `dogsled.yml`
+   * for resolving any `$VARNAME` placeholder in the source `bobsled.yml`
    * `credentials_access_token:` field before constructing this config.
    */
   accessToken: z.string().trim().min(1).optional(),

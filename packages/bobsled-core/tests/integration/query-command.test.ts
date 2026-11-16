@@ -65,9 +65,9 @@ schema:
 
   it('reuses metadata on a configured DuckDB destination and rewrites logical source refs', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'cache.duckdb')}
@@ -120,9 +120,9 @@ schema:
 
   it('keeps lazy materializations indefinitely when max_age is omitted', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'lazy.duckdb')}
@@ -174,9 +174,9 @@ schema:
 
   it('does not rewrite logical source refs inside SQL literals or comments', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'literal-rewrite.duckdb')}
@@ -222,9 +222,9 @@ schema:
 
   it('reuses partial lazy slices from SQL LIMIT without replacing the canonical cache', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'limit-cache.duckdb')}
@@ -289,9 +289,9 @@ schema:
 
   it('with partialMaterialization off, SQL LIMIT uses the canonical cache (no per-limit table)', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'limit-off-cache.duckdb')}
@@ -355,9 +355,9 @@ schema:
 
   it('refreshes lazy max_age slices after the ceiling and then reuses the fresh load', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'lazy-max-age.duckdb')}
@@ -420,9 +420,9 @@ schema:
 
   it('keeps relative-date filters stable within a bucket and refreshes at the boundary', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'relative-date.duckdb')}
@@ -722,9 +722,9 @@ schema:
 
   it('uses distinct physical tables for different pushed filter slices', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${join(root, 'filter-slices.duckdb')}
@@ -1127,9 +1127,9 @@ parameters:
   it('honors declared modes when live and persisted sources are joined', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
     const dbPath = join(root, 'mixed.duckdb');
-    await mkdir(join(root, '.dogsled'), { recursive: true });
+    await mkdir(join(root, '.bobsled'), { recursive: true });
     await writeFile(
-      join(root, '.dogsled', 'config.yml'),
+      join(root, '.bobsled', 'config.yml'),
       `default_destination:
   dest: duckdb
   dbPath: ${dbPath}

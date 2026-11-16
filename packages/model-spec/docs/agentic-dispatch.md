@@ -136,7 +136,7 @@ shared run deadline, reserves call capacity, and accounts for unknown usage usin
 the full reservation.
 
 Agentic execution checkpoints use the compatible `agentic` extension in
-`.dogsled/model-spec/run-state.json`, or a supplied store. They are separate from regular model
+`.bobsled/model-spec/run-state.json`, or a supplied store. They are separate from regular model
 completion. A successful publication probe is evidence of that test only. It is
 not a durable warehouse publication receipt. A CLI run without the required host
 capability fails clearly.

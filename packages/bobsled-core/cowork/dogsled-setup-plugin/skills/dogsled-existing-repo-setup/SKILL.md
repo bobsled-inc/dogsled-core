@@ -8,7 +8,7 @@ version: 1.0.0
 
 When this skill applies:
 
-- read `AGENTS.md`, `dogsled.setup.answers.yml`, `dogsled.setup.summary.md`, and `dogsled.yml` if present
+- read `AGENTS.md`, `bobsled.setup.answers.yml`, `bobsled.setup.summary.md`, and `bobsled.yml` if present
 - run `dogsled setup doctor` to understand the current blockers
 - only rerender files with `dogsled setup render` after confirming the intended changes
 - prefer repairing the local answers file over inventing a new setup path

@@ -54,7 +54,7 @@ describe('public project manifest compiler', () => {
 
   function writeConfig(destination = 'warehouse'): void {
     fs.writeFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       [
         'destinations:',
         '  warehouse:',
@@ -91,7 +91,7 @@ describe('public project manifest compiler', () => {
 
     const resolved = await resolveProjectPipelines({ projectRoot });
 
-    expect(resolved.configPaths).toEqual(['dogsled.yml']);
+    expect(resolved.configPaths).toEqual(['bobsled.yml']);
     expect(resolved.extractPipelines).toHaveLength(2);
     expect(resolved.extractPipelines[0]).toMatchObject({
       name: 'stripe_sync',
@@ -115,7 +115,7 @@ describe('public project manifest compiler', () => {
 
   it('threads an injected validation catalog through resolution and manifest grouping', async () => {
     fs.writeFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       `destinations:
   warehouse:
     type: duckdb
@@ -196,7 +196,7 @@ pipelines:
     'resolves and compiles a managed $source for_each pipeline from built-in metadata',
     async ({ source, resources, via }) => {
       fs.writeFileSync(
-        path.join(projectRoot, 'dogsled.yml'),
+        path.join(projectRoot, 'bobsled.yml'),
         `destinations:
   warehouse:
     type: duckdb
@@ -239,7 +239,7 @@ ${via ? `    via: ${via}\n` : ''}    resources: [${resources.join(', ')}]
     expect(JSON.stringify(first)).toBe(JSON.stringify(second));
     expect(parsePipelineManifest(first)).toEqual(first);
     expect(first).toMatchObject({
-      kind: 'dogsled.pipeline.dag',
+      kind: 'bobsled.pipeline.dag',
       version: 7,
       command_contract: {
         command_env: 'BOBSLED_CORE_PIPELINE_COMMAND',
@@ -284,7 +284,7 @@ ${via ? `    via: ${via}\n` : ''}    resources: [${resources.join(', ')}]
 
   it('preserves an exact Snowflake table and ownership marker in a managed manifest', async () => {
     writeConfig();
-    const configPath = path.join(projectRoot, 'dogsled.yml');
+    const configPath = path.join(projectRoot, 'bobsled.yml');
     const original = fs.readFileSync(configPath, 'utf8');
     fs.writeFileSync(
       configPath,
@@ -310,7 +310,7 @@ ${via ? `    via: ${via}\n` : ''}    resources: [${resources.join(', ')}]
   it('emits only enabled managed extract pipelines in the task DAG', async () => {
     writeConfig();
     fs.appendFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       `  stripe_second:
     schedule: daily
     runner: managed
@@ -330,7 +330,7 @@ ${via ? `    via: ${via}\n` : ''}    resources: [${resources.join(', ')}]
 
   it('freezes destination-specific effective load settings for fan-out pipelines', async () => {
     fs.writeFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       `destinations:
   warehouse:
     type: duckdb
@@ -374,11 +374,11 @@ pipelines:
 
   it('resolves load strategy and schema behavior as resource then pipeline then destination', async () => {
     fs.writeFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       `destinations:
   warehouse:
-    type: dogsled_managed
-    dogsled_connection_ref: warehouse-prod
+    type: bobsled_managed
+    bobsled_connection_ref: warehouse-prod
     load_strategy: append
     schema_behavior: freeze
 pipelines:
@@ -466,7 +466,7 @@ materialization:
 `
     );
     fs.writeFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       `destinations:
   warehouse:
     type: duckdb
@@ -535,8 +535,8 @@ pipelines:
     const config = BobsledConfigSchema.parse({
       destinations: {
         warehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'warehouse-prod',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'warehouse-prod',
         },
       },
       pipelines: {
@@ -568,7 +568,7 @@ pipelines:
 
   it('rejects invalid resources through the same project cross-validation path', async () => {
     writeConfig();
-    const configPath = path.join(projectRoot, 'dogsled.yml');
+    const configPath = path.join(projectRoot, 'bobsled.yml');
     fs.writeFileSync(
       configPath,
       fs.readFileSync(configPath, 'utf8').replace('      - customers', '      - not_a_resource')
@@ -588,7 +588,7 @@ pipelines:
       exitCode: 2,
       issues: [
         expect.objectContaining({
-          path: 'dogsled.yml:pipelines.stripe_sync',
+          path: 'bobsled.yml:pipelines.stripe_sync',
           message: expect.stringContaining('Destination "missing" not found'),
         }),
       ],
@@ -599,7 +599,7 @@ pipelines:
     await expect(
       resolveProjectPipelines({
         projectRoot,
-        configPath: path.join(path.dirname(projectRoot), 'outside', 'dogsled.yml'),
+        configPath: path.join(path.dirname(projectRoot), 'outside', 'bobsled.yml'),
       })
     ).rejects.toMatchObject({
       exitCode: 2,
@@ -614,9 +614,9 @@ pipelines:
 
   it('rejects in-root config symlinks that resolve outside the project root', async () => {
     const outsideRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-outside-'));
-    const outsideConfig = path.join(outsideRoot, 'dogsled.yml');
+    const outsideConfig = path.join(outsideRoot, 'bobsled.yml');
     fs.writeFileSync(outsideConfig, 'destinations: {}\npipelines: {}\n');
-    const linkedConfig = path.join(projectRoot, 'dogsled.yml');
+    const linkedConfig = path.join(projectRoot, 'bobsled.yml');
     fs.symlinkSync(outsideConfig, linkedConfig);
 
     try {
@@ -626,7 +626,7 @@ pipelines:
         exitCode: 2,
         issues: [
           expect.objectContaining({
-            filePath: 'dogsled.yml',
+            filePath: 'bobsled.yml',
             message: 'configPath must live inside projectRoot.',
           }),
         ],
@@ -636,27 +636,27 @@ pipelines:
     }
   });
 
-  it('names a linked dogsled.yml instead of reporting no configuration', async () => {
+  it('names a linked bobsled.yml instead of reporting no configuration', async () => {
     const configDirectory = path.join(projectRoot, 'config');
     fs.mkdirSync(configDirectory, { recursive: true });
     fs.writeFileSync(
-      path.join(configDirectory, 'dogsled.yml'),
+      path.join(configDirectory, 'bobsled.yml'),
       'destinations: {}\npipelines: {}\n'
     );
     fs.symlinkSync(
-      path.join(configDirectory, 'dogsled.yml'),
-      path.join(projectRoot, 'dogsled.yml')
+      path.join(configDirectory, 'bobsled.yml'),
+      path.join(projectRoot, 'bobsled.yml')
     );
 
     await expect(resolveProjectPipelines({ projectRoot })).rejects.toMatchObject({
       exitCode: 2,
-      message: expect.stringContaining('dogsled.yml: Dogsled does not follow symbolic links.'),
+      message: expect.stringContaining('bobsled.yml: Dogsled does not follow symbolic links.'),
     });
   });
 
   it('rejects missing configs beneath in-root directories that resolve outside the project', async () => {
     const linkedDirectory = path.join(projectRoot, 'linked-config');
-    const missingConfig = path.join(linkedDirectory, 'missing-dogsled.yml');
+    const missingConfig = path.join(linkedDirectory, 'missing-bobsled.yml');
     const missingError = Object.assign(new Error('missing'), { code: 'ENOENT' });
     const rootStats = filesystem.actualLstatSync?.(projectRoot);
     expect(rootStats).toBeDefined();
@@ -681,7 +681,7 @@ pipelines:
       exitCode: 2,
       issues: [
         expect.objectContaining({
-          filePath: 'linked-config/missing-dogsled.yml',
+          filePath: 'linked-config/missing-bobsled.yml',
           message: 'configPath must live inside projectRoot.',
         }),
       ],

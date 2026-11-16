@@ -84,7 +84,7 @@ describe('loadBobsledConfig legacy aliases', () => {
   });
 
   function writeConfig(contents: string): string {
-    const configPath = path.join(configDir, 'dogsled.yml');
+    const configPath = path.join(configDir, 'bobsled.yml');
     fs.writeFileSync(configPath, contents);
     return configPath;
   }
@@ -123,7 +123,7 @@ pipelines:
     runner: langgraph
 `)
       )
-    ).toThrow('Invalid dogsled.yml');
+    ).toThrow('Invalid bobsled.yml');
   });
 
   it('accepts canonical values', () => {
@@ -131,8 +131,8 @@ pipelines:
       writeConfig(`
 destinations:
   managed:
-    type: dogsled_managed
-    dogsled_connection_ref: warehouse-prod
+    type: bobsled_managed
+    bobsled_connection_ref: warehouse-prod
 pipelines:
   sync:
     schedule: daily
@@ -143,7 +143,7 @@ pipelines:
 `)
     );
 
-    expect(config.destinations.managed).toMatchObject({ type: 'dogsled_managed' });
+    expect(config.destinations.managed).toMatchObject({ type: 'bobsled_managed' });
     expect(config.pipelines.sync).toMatchObject({ runner: 'managed' });
   });
 
@@ -151,10 +151,10 @@ pipelines:
     writeConfig(
       `destinations:\n  managed:\n    type: bobsled_managed\n    bobsled_connection_ref: warehouse-prod\npipelines: {}\n`
     );
-    const config = loadBobsledConfig(path.join(configDir, 'dogsled.yml'));
+    const config = loadBobsledConfig(path.join(configDir, 'bobsled.yml'));
     expect(config.destinations.managed).toEqual({
-      type: 'dogsled_managed',
-      dogsled_connection_ref: 'warehouse-prod',
+      type: 'bobsled_managed',
+      bobsled_connection_ref: 'warehouse-prod',
     });
     const validation = await validateBobsledConfig(config, configDir);
     expect(validation.errors).toEqual([]);
@@ -169,11 +169,11 @@ pipelines:
 destinations:
   warehouse:
     type: duckdb
-    db_path: dogsled_managed
+    db_path: bobsled_managed
     table_prefix: langgraph
 pipelines:
   sync:
-    description: "langgraph dogsled_managed"
+    description: "langgraph bobsled_managed"
     schedule: daily
     source: github
     destination: warehouse
@@ -182,10 +182,10 @@ pipelines:
     );
 
     expect(config.destinations.warehouse).toMatchObject({
-      db_path: 'dogsled_managed',
+      db_path: 'bobsled_managed',
       table_prefix: 'langgraph',
     });
-    expect(config.pipelines.sync).toMatchObject({ description: 'langgraph dogsled_managed' });
+    expect(config.pipelines.sync).toMatchObject({ description: 'langgraph bobsled_managed' });
   });
 
   it.each([
@@ -214,7 +214,7 @@ pipelines:
 destinations:
   managed:
     type: bobsled_lakehouse
-    dogsled_connection_ref: warehouse-prod
+    bobsled_connection_ref: warehouse-prod
 pipelines:
   sync:
     schedule: daily
@@ -223,7 +223,7 @@ pipelines:
     resources: [issues]
 `,
       alias: 'bobsled_lakehouse',
-      canonical: 'dogsled_managed',
+      canonical: 'bobsled_managed',
       configPath: 'destinations.managed.type',
     },
   ])('rejects the unsupported $name spelling', ({ config, name }) => {
@@ -236,9 +236,9 @@ pipelines:
 
     expect(error).toBeInstanceOf(CommandError);
     expect((error as CommandError).exitCode).toBe(2);
-    expect((error as CommandError).message).toContain('Invalid dogsled.yml');
+    expect((error as CommandError).message).toContain('Invalid bobsled.yml');
     if (name === 'destination type') {
-      expect((error as CommandError).message).toContain('use dogsled_managed');
+      expect((error as CommandError).message).toContain('use bobsled_managed');
     }
   });
 });
@@ -461,7 +461,7 @@ describe('resolvePipelines', () => {
   it('carries destination_warehouse onto the resolved extract pipeline', () => {
     const config = makeConfig({
       destinations: {
-        warehouse: { type: 'dogsled_managed', dogsled_connection_ref: 'warehouse-prod' },
+        warehouse: { type: 'bobsled_managed', bobsled_connection_ref: 'warehouse-prod' },
       },
       pipelines: {
         stripe: {
@@ -856,7 +856,7 @@ extract: { record_path: '$', incremental: { strategy: full_refresh } }
   it('accepts destination_warehouse only for a singular managed destination', async () => {
     const managed = makeConfig({
       destinations: {
-        warehouse: { type: 'dogsled_managed', dogsled_connection_ref: 'warehouse-prod' },
+        warehouse: { type: 'bobsled_managed', bobsled_connection_ref: 'warehouse-prod' },
       },
       pipelines: {
         github: {
@@ -887,8 +887,8 @@ extract: { record_path: '$', incremental: { strategy: full_refresh } }
     expect((await validateBobsledConfig(managed, projectRoot)).errors).toEqual([]);
     expect((await validateBobsledConfig(concrete, projectRoot)).errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.github.destination_warehouse',
-        message: expect.stringContaining('singular destination whose type is "dogsled_managed"'),
+        path: 'bobsled.yml:pipelines.github.destination_warehouse',
+        message: expect.stringContaining('singular destination whose type is "bobsled_managed"'),
       })
     );
   });
@@ -912,7 +912,7 @@ extract: { record_path: '$', incremental: { strategy: full_refresh } }
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.github',
+        path: 'bobsled.yml:pipelines.github',
         message: expect.stringContaining('Destination "unknown_warehouse" not found'),
       })
     );
@@ -964,7 +964,7 @@ extract: { record_path: '$', incremental: { strategy: full_refresh } }
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.weird.source',
+        path: 'bobsled.yml:pipelines.weird.source',
         message: expect.stringContaining('Source "not_a_real_integration" not found'),
       })
     );
@@ -989,7 +989,7 @@ extract: { record_path: '$', incremental: { strategy: full_refresh } }
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.github.resources',
+        path: 'bobsled.yml:pipelines.github.resources',
         message: expect.stringContaining('Resource "nonexistent" not found in source "github"'),
       })
     );
@@ -1115,7 +1115,7 @@ extract: { record_path: '$', incremental: { strategy: full_refresh } }
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.github.resources',
+        path: 'bobsled.yml:pipelines.github.resources',
         message: expect.stringContaining('declares extract.integration as "bigquery_warehouse"'),
       })
     );
@@ -1248,7 +1248,7 @@ extract: { record_path: '$', incremental: { strategy: full_refresh } }
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.github.embed.streams.issues.missing_field',
+        path: 'bobsled.yml:pipelines.github.embed.streams.issues.missing_field',
         message: expect.stringContaining('field "missing_field" not found'),
       })
     );
@@ -1363,7 +1363,7 @@ describe('validateBobsledConfig — via: cross-validation', () => {
     });
     const result = await validateBobsledConfig(config, emptyProjectRoot);
     expect(result.valid).toBe(false);
-    const viaError = result.errors.find((e) => e.path === 'dogsled.yml:pipelines.linear_bogus.via');
+    const viaError = result.errors.find((e) => e.path === 'bobsled.yml:pipelines.linear_bogus.via');
     expect(viaError?.message).toMatch(/transport "bogus" not found.*linear/);
     expect(viaError?.message).toMatch(/Available: graphql, mcp/);
   });
@@ -1384,7 +1384,7 @@ describe('validateBobsledConfig — via: cross-validation', () => {
     const result = await validateBobsledConfig(config, emptyProjectRoot);
     expect(result.valid).toBe(false);
     const viaError = result.errors.find(
-      (e) => e.path === 'dogsled.yml:pipelines.linear.resources.teams_mcp.via'
+      (e) => e.path === 'bobsled.yml:pipelines.linear.resources.teams_mcp.via'
     );
     expect(viaError?.message).toMatch(/transport "bogus" not found.*linear/);
   });
@@ -1409,7 +1409,7 @@ describe('validateBobsledConfig — via: cross-validation', () => {
     const result = await validateBobsledConfig(config, emptyProjectRoot);
     expect(result.valid).toBe(false);
     const viaError = result.errors.find(
-      (e) => e.path === 'dogsled.yml:pipelines.linear.resources.issues.via'
+      (e) => e.path === 'bobsled.yml:pipelines.linear.resources.issues.via'
     );
     expect(viaError?.message).toMatch(/transport "bogus" not found.*linear/);
   });
@@ -1524,7 +1524,7 @@ describe('validateBobsledConfig — entity-aware resource resolution', () => {
     const entityError = result.errors.find((e) =>
       e.message.includes('multiple transport variants')
     );
-    expect(entityError?.path).toBe('dogsled.yml:pipelines.linear.resources.issues');
+    expect(entityError?.path).toBe('bobsled.yml:pipelines.linear.resources.issues');
     expect(entityError?.message).toMatch(/"issues"/);
   });
 
@@ -1615,7 +1615,7 @@ describe('validateEmbedSecretsResolvable', () => {
     const issues = validateEmbedSecretsResolvable(configWithEmbed('$OPENAI_API_KEY'), {});
     expect(issues).toEqual([
       {
-        path: 'dogsled.yml:pipelines.github.embed.api_key',
+        path: 'bobsled.yml:pipelines.github.embed.api_key',
         message: expect.stringContaining('OPENAI_API_KEY'),
       },
     ]);
@@ -1806,7 +1806,7 @@ describe('validateBobsledConfig — model pipeline membership', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.ecom_silver.models',
+        path: 'bobsled.yml:pipelines.ecom_silver.models',
         message: expect.stringContaining('Model "stg_orders" not found'),
       })
     );
@@ -1830,7 +1830,7 @@ describe('validateBobsledConfig — model pipeline membership', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.ecom_silver.models',
+        path: 'bobsled.yml:pipelines.ecom_silver.models',
         message: expect.stringContaining('Model "stg_orders" belongs to connection "bigquery"'),
       })
     );
@@ -1960,7 +1960,7 @@ describe('validateBobsledConfig — model pipeline membership', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.ecom_silver.models',
+        path: 'bobsled.yml:pipelines.ecom_silver.models',
         message: expect.stringContaining('Model "stg_orders" not found'),
       })
     );

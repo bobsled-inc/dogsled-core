@@ -12,7 +12,7 @@ const teachingPanel = (step: Parameters<typeof renderTeaching>[0], complete = fa
 it('renders nested folders with filenames, not flattened path buttons', () => {
   const html = renderFileTree([
     { path: 'resources/tvmaze/shows.yml', content: '', language: 'yaml' },
-    { path: 'dogsled.yml', content: '', language: 'yaml' },
+    { path: 'bobsled.yml', content: '', language: 'yaml' },
   ]);
   expect(html).toMatch(/resources<\/summary><ul><li><details open><summary>.*tvmaze<\/summary>/);
   expect(html).toContain('data-tree-file="true"');

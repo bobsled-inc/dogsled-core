@@ -6,7 +6,7 @@ The `dogsled pipeline` command runs extractor + loader together. It has two exec
 - **Multi-destination fan-out**: extractor stdout is captured once, replayed into multiple loader subprocesses, and extractor state is committed only after every destination succeeds.
 
 A third optional middle stage — the **embedder** — slots between extract and
-load when a `dogsled.yml` pipeline has an `embed:` block. Dogsled spawns the
+load when a `bobsled.yml` pipeline has an `embed:` block. Dogsled spawns the
 embedder subprocess automatically; the extractor pipes through it and each
 loaded record gains `<field>_embedding` (`vector`) columns alongside the
 originals. See "Embed Stage" below.
@@ -45,7 +45,7 @@ dogsled pipeline cost_providers costs dashboards users \
 # Custom input values
 dogsled pipeline repos --integration github --format parquet --input org=bobsled-inc
 
-# Multi-destination fan-out is driven from dogsled.yml via `dogsled runner run`
+# Multi-destination fan-out is driven from bobsled.yml via `dogsled runner run`
 dogsled runner run stripe
 ```
 
@@ -185,7 +185,7 @@ For the multi-destination path, extractor state is deferred until every destinat
 
 ## Embed Stage
 
-When a pipeline has an `embed:` block in `dogsled.yml`, the chain becomes:
+When a pipeline has an `embed:` block in `bobsled.yml`, the chain becomes:
 
 ```text
 dogsled extract ──▶ dogsled embed ──▶ dogsled load
@@ -276,7 +276,7 @@ loaders and any downstream protocol consumer can recover provenance live
 
 ## Multi-Destination Fan-out
 
-Configure fan-out in `dogsled.yml` and run it through the runner:
+Configure fan-out in `bobsled.yml` and run it through the runner:
 
 ```yaml
 destination:

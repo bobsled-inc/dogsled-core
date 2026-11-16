@@ -490,7 +490,7 @@ Once your server is at a stable HTTPS URL, hand off to
 spec_version: '2'
 type: source
 source_type: custom_mcp
-dogsled_source_kind: custom_mcp
+bobsled_source_kind: custom_mcp
 name: my_team_tools
 auth_env_vars:
   - MY_TEAM_MCP_TOKEN

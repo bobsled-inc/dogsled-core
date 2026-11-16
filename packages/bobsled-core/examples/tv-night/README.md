@@ -10,7 +10,7 @@ Welcome to Dogsled! In this tutorial, you’ll build a data project to help answ
 
 We’ll build it together, one chapter at a time. Your agent will explain the files and queries, help you run them, and pause so you can explore the results before moving on.
 
-The data we load will be stored locally in a DuckDB database, by default `.dogsled/dogsled.duckdb` inside your project folder. You can query it directly with SQL or start DuckDB UI yourself if you want. Both are optional; the conversation and HTML previews are enough to follow the tutorial. The database and its data are created as we work through the steps.
+The data we load will be stored locally in a DuckDB database, by default `.bobsled/bobsled.duckdb` inside your project folder. You can query it directly with SQL or start DuckDB UI yourself if you want. Both are optional; the conversation and HTML previews are enough to follow the tutorial. The database and its data are created as we work through the steps.
 
 - Chapter 1: connect to an API.
 - Chapter 2: build an ETL pipeline.
@@ -78,7 +78,7 @@ An **integration** stores the shared connection settings. A **resource** describ
 
 Show `integrations/tvmaze.yml`, `resources/tvmaze/probe.yml`, and `sources/tvmaze_probe.yml`. For example, `name: {type: string, path: $.name}` means “read the response's name field into a text column.” Explain this before running it.
 
-Use the user's favourite show as the probe when they named one. Look up its real ID; do not infer the ID from a title. The inactive example uses The Good Place, ID 2790. Set the resource's show ID and the source filter consistently. Configure `integrations/warehouse.yml` and `.dogsled/config.yml` from the setup references so query-time results have a local cache.
+Use the user's favourite show as the probe when they named one. Look up its real ID; do not infer the ID from a title. The inactive example uses The Good Place, ID 2790. Set the resource's show ID and the source filter consistently. Configure `integrations/warehouse.yml` and `.bobsled/config.yml` from the setup references so query-time results have a local cache.
 
 ```sh
 dogsled extract run probe --integration tvmaze --limit 1
@@ -132,7 +132,7 @@ FROM raw.shows s JOIN raw.episodes e ON s.id = e.show_id
 ORDER BY s.name, e.season, e.number LIMIT 10;
 ```
 
-Use `dogsled query` with `--db-path .dogsled/dogsled.duckdb`. Then verify `load` and render.
+Use `dogsled query` with `--db-path .bobsled/bobsled.duckdb`. Then verify `load` and render.
 
 **Inspect:** select Raw shows, find a real multi-genre show, and inspect its full genre list. Then select Raw episodes and find the same show ID. State exact names and expected values from this run.
 
@@ -323,7 +323,7 @@ Validate the files and confirm the scope query returns exactly one approved show
 ```sh
 dogsled model validate --integration warehouse
 dogsled model run article_inputs assessment_inputs --integration warehouse
-dogsled query "SELECT show_id, revision_id FROM analytics.assessment_inputs" --db-path .dogsled/dogsled.duckdb
+dogsled query "SELECT show_id, revision_id FROM analytics.assessment_inputs" --db-path .bobsled/bobsled.duckdb
 dogsled model run show_notes --integration warehouse --agent-executor ./executor.mjs --agent-run-id tv-pilot
 dogsled model run recommendations --integration warehouse
 ```
@@ -347,7 +347,7 @@ Run the final comparison only when the remaining results are ready:
 
 ```sh
 dogsled model run recommendations --integration warehouse
-dogsled query "SELECT * FROM analytics.recommendations" --db-path .dogsled/dogsled.duckdb
+dogsled query "SELECT * FROM analytics.recommendations" --db-path .bobsled/bobsled.duckdb
 dogsled onboarding verify transform
 dogsled onboarding render
 ```
@@ -404,7 +404,7 @@ Use the HTML table previews and queries run with your agent to inspect the tutor
 **Optional:** if you prefer a separate SQL interface, you can start [DuckDB UI](https://duckdb.org/docs/stable/core_extensions/ui.html) yourself after loading data. From your tutorial project folder, with the official DuckDB CLI installed:
 
 ```sh
-duckdb -ui .dogsled/dogsled.duckdb
+duckdb -ui .bobsled/bobsled.duckdb
 ```
 
 The tutorial does not start or manage DuckDB UI. Close that database session before continuing ETL or model writes to avoid file locks. This is optional; every chapter can be completed without it.

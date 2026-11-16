@@ -8,7 +8,7 @@
  *   - `{ config, projectRoot }` — read Model Spec model metadata from disk.
  *   - `{ config, models }`     — caller supplies the Model Spec model registry.
  *
- * The `dogsled.yml` parser + schema (`loadBobsledConfig`, `BobsledConfigSchema`) is
+ * The `bobsled.yml` parser + schema (`loadBobsledConfig`, `BobsledConfigSchema`) is
  * also exported so callers can validate before generating.
  */
 

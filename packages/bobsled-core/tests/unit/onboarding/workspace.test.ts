@@ -23,7 +23,7 @@ it('includes safe working files, descriptions and declared lineage without secre
       'data/tv-night/private.json': '{"secret":"PRIVATE DATA"}',
       '.env': 'TOKEN=ENV_SECRET',
       'resources/api/shows.yml': 'type: resource\nname: shows\nintegration: api\n',
-      'dogsled.yml':
+      'bobsled.yml':
         'destinations: {warehouse: {schema: raw}}\npipelines: {tv: {source: api, destination: warehouse, resources: [shows]}}\n',
       'integrations/api.yml': 'type: integration\nname: api\napi_key: literal-secret\n',
       'sources/shows.yml': 'type: source\nname: shows\nconnection: warehouse\ntable: raw.shows\n',

@@ -95,7 +95,7 @@ describe('loadProjectSkillPackage', () => {
       entrypoint: inline,
       resources: [
         {
-          path: 'dogsled.yaml',
+          path: 'bobsled.yaml',
           content:
             'triggers:\n  - sidecar-trigger\nreferences:\n  - kind: resource\n    name: sidecar_resource\n',
         },
@@ -112,7 +112,7 @@ describe('loadProjectSkillPackage', () => {
     const skill = loadProjectSkillPackage({
       entrypointPath: 'skills/skill-creator/SKILL.md',
       entrypoint: inline,
-      resources: [{ path: 'dogsled.yaml', content: '{}\n' }],
+      resources: [{ path: 'bobsled.yaml', content: '{}\n' }],
     });
 
     expect(skill.triggers).toEqual([]);
@@ -125,9 +125,9 @@ describe('loadProjectSkillPackage', () => {
         loadProjectSkillPackage({
           entrypointPath: 'skills/skill-creator/SKILL.md',
           entrypoint,
-          resources: [{ path: 'dogsled.yaml', content }],
+          resources: [{ path: 'bobsled.yaml', content }],
         })
-      ).toThrow(/dogsled\.yaml/u);
+      ).toThrow(/bobsled\.yaml/u);
     }
   });
 

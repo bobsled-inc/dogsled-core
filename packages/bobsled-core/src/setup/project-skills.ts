@@ -20,7 +20,7 @@ triggers:
 
 # ${repoName} project overview
 
-Read \`dogsled.yml\` before changing pipeline behavior. Use the project models, Resources, Actions, and pipelines by their Dogsled names. Never place secret values in project files or output.
+Read \`bobsled.yml\` before changing pipeline behavior. Use the project models, Resources, Actions, and pipelines by their Dogsled names. Never place secret values in project files or output.
 `,
   };
 }

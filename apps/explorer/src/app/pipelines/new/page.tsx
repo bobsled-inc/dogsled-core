@@ -806,7 +806,7 @@ export default function NewPipelinePage() {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Generated dogsled.yml
+                Generated bobsled.yml
               </div>
               <div className="flex gap-2">
                 <button

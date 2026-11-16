@@ -44,7 +44,7 @@ describe('registerRunCommand', () => {
     vi.clearAllMocks();
     process.exitCode = undefined;
     vi.mocked(resolveCliBobsledProject).mockImplementation((options) => {
-      const resolved = options.configPath ?? '/tmp/project/dogsled.yml';
+      const resolved = options.configPath ?? '/tmp/project/bobsled.yml';
       const projectRoot = options.projectRoot ?? path.dirname(resolved);
       return { projectRoot, configPaths: [path.resolve(projectRoot, resolved)] };
     });
@@ -127,20 +127,20 @@ describe('registerRunCommand', () => {
     });
   });
 
-  it('honors the parent --config option when resolving dogsled.yml', async () => {
+  it('honors the parent --config option when resolving bobsled.yml', async () => {
     await createProgram().parseAsync(
-      ['--config', '/tmp/alternate/dogsled.yml', 'runner', 'run', 'stripe'],
+      ['--config', '/tmp/alternate/bobsled.yml', 'runner', 'run', 'stripe'],
       { from: 'user' }
     );
 
     expect(runProjectPipeline).toHaveBeenCalledWith({
       projectRoot: '/tmp/alternate',
-      configPath: '/tmp/alternate/dogsled.yml',
+      configPath: '/tmp/alternate/bobsled.yml',
       pipelineName: 'stripe',
     });
     expect(runProjectPipeline).toHaveBeenCalledTimes(1);
     expect(resolveCliBobsledProject).toHaveBeenCalledWith({
-      configPath: '/tmp/alternate/dogsled.yml',
+      configPath: '/tmp/alternate/bobsled.yml',
       projectRoot: undefined,
     });
   });

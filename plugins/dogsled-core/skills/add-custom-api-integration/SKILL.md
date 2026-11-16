@@ -48,7 +48,7 @@ transport with `base_url` + `auth`. Auth types: `bearer`, `api-key`, `basic`,
 spec_version: '2'
 type: source
 source_type: custom_api # Dogsled-visible marker
-dogsled_source_kind: custom_api # orchestrator/host application marker (Dogsled ignores it)
+bobsled_source_kind: custom_api # orchestrator/host application marker (Dogsled ignores it)
 name: <source-name>
 description: <one line>
 auth_env_vars: # env vars the transport interpolates
@@ -626,7 +626,7 @@ also accepted), limit/offset pagination, root-array responses.
 spec_version: '2'
 type: source
 source_type: custom_api
-dogsled_source_kind: custom_api
+bobsled_source_kind: custom_api
 name: langsmith
 description: LangSmith observability and evaluation platform by LangChain.
 auth_env_vars:

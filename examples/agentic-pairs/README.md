@@ -34,7 +34,7 @@ node seed.mjs
 ```
 
 Set `OPENAI_API_KEY` in your shell through your normal secret manager. The
-`review` profile in `dogsled.yml` reads that variable. Do not put a key in YAML.
+`review` profile in `bobsled.yml` reads that variable. Do not put a key in YAML.
 The live run sends only the supplied synthetic records to the provider. It makes
 three paid calls on a successful fresh run. Model output can differ between runs.
 
@@ -65,7 +65,7 @@ Dogsled uses saved input and accepted results to resume the agentic work. A call
 that failed before its result was saved may run again. To start new work, use
 a new run ID and omit `--agent-resume`.
 
-Keep `.dogsled/model-spec/` to retain local run state and snapshots. Keep `data/pairs.duckdb`
+Keep `.bobsled/model-spec/` to retain local run state and snapshots. Keep `data/pairs.duckdb`
 to retain the source tables and published model tables. These serve different
 purposes. Both survive a process restart while their files remain available.
 

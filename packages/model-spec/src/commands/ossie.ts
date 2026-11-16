@@ -224,7 +224,7 @@ async function importRequest(
 export function registerOssieCommand(program: Command): void {
   const command = program
     .command('ossie')
-    .description('Import/export Ossie using native Dogsled files and DOGSLED extensions');
+    .description('Import/export Ossie using native Dogsled files and BOBSLED extensions');
   command
     .command('import <files...>')
     .description(

@@ -146,7 +146,7 @@ function destinationDefaults(type: SetupDestinationType): SetupDestination {
       return {
         type,
         account: 'your-account',
-        username: 'DOGSLED',
+        username: 'BOBSLED',
         warehouse: 'COMPUTE_WH',
         database: 'RAW',
         schema: 'PUBLIC',

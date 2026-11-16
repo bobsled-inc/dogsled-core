@@ -23,7 +23,7 @@ const queryExtension = z
 
 export class VerifiedQueryFailure extends Error {
   readonly objectReference: { documentPath: string };
-  readonly remedy = 'Correct the DOGSLED verified-query definitions and retry.';
+  readonly remedy = 'Correct the BOBSLED verified-query definitions and retry.';
   constructor(
     readonly code: string,
     readonly diagnosticPath: string,
@@ -89,7 +89,7 @@ export function exportVerifiedQueries(
       diagnostic(
         'verified_queries_not_supported_by_profile',
         'project#verified_queries',
-        'OSI 0.1.1 cannot store DOGSLED verified queries; they were omitted.',
+        'OSI 0.1.1 cannot store BOBSLED verified queries; they were omitted.',
         'warning',
         { documentPath: 'project' },
         'Use OSI 0.2.0.dev0 to preserve verified queries.'
@@ -122,7 +122,7 @@ export function importVerifiedQueries(
     throw new VerifiedQueryFailure(
       'invalid_bobsled_extension',
       path,
-      'Use only one semantic-model DOGSLED extension.'
+      'Use only one semantic-model BOBSLED extension.'
     );
   }
   let payload: z.infer<typeof queryExtension>;
@@ -134,7 +134,7 @@ export function importVerifiedQueries(
     throw new VerifiedQueryFailure(
       'invalid_bobsled_extension',
       path,
-      'Expected DOGSLED extension_version "2" and valid verified_queries.'
+      'Expected BOBSLED extension_version "2" and valid verified_queries.'
     );
   }
   for (const query of payload.verified_queries) {

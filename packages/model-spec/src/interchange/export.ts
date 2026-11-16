@@ -540,10 +540,10 @@ function datasetAddress(dataset: NativeDataset, addresses: Record<string, string
     if (dataset.document['source_type'] === 'warehouse_table') {
       return String(dataset.document['table']);
     }
-    return `dogsled://sources/${String(dataset.document['connection'])}/${dataset.name}`;
+    return `bobsled://sources/${String(dataset.document['connection'])}/${dataset.name}`;
   }
   if (record(dataset.document['materialization'])['type'] === 'ephemeral') {
-    return `dogsled://models/${dataset.name}`;
+    return `bobsled://models/${dataset.name}`;
   }
   return fail(
     'native_incomplete',
@@ -821,7 +821,7 @@ function outputRelationships(
         'relationship_cardinality_projected',
         path,
         `Standard Ossie projects ${relationshipType} relationship ${name} as many-to-one.`,
-        'Use the DOGSLED metadata in Ossie 0.2.0.dev0 to restore exact cardinality.'
+        'Use the BOBSLED metadata in Ossie 0.2.0.dev0 to restore exact cardinality.'
       );
     }
     if (version === '0.2.0.dev0') {
@@ -1141,7 +1141,7 @@ export function exportOssieDocuments(
       verifiedQueries,
       addresses: options.addresses ?? {},
     },
-    semanticModelName: options.name ?? 'track_export',
+    semanticModelName: options.name ?? 'bobsled_export',
     selection: { all: true },
     ossieVersion: options.ossieVersion ?? '0.2.0.dev0',
     strict: options.strict,

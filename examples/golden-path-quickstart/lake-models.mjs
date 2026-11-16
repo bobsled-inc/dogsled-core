@@ -7,7 +7,7 @@ customRunners.register('duckdb', 'memory', async (integration) => {
   const runner = await buildDuckDbRunner(integration);
   await runner.run('INSTALL ducklake');
   await runner.run('LOAD ducklake');
-  await runner.run("ATTACH 'ducklake:.dogsled/lake/catalog.ducklake' AS lake");
+  await runner.run("ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake");
   await runner.run('USE lake');
   return runner;
 });

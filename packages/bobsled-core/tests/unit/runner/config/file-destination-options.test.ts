@@ -21,7 +21,7 @@ const pipelines = {
   },
 };
 
-describe('file destination options in dogsled.yml', () => {
+describe('file destination options in bobsled.yml', () => {
   it.each(fileDestinations)('accepts stream_subfolder on a $type destination', (destination) => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {

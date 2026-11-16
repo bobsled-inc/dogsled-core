@@ -23,7 +23,7 @@ export function validateUniqueResolvedResources(
 
   if (duplicates.size > 0) {
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
       message:
         'Duplicate resources resolve to the same extractor stream: ' +
         `${[...duplicates].join(', ')}. Keep exactly one reference per resolved stream.`,

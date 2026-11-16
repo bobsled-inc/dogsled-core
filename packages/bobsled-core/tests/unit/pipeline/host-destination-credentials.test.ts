@@ -104,7 +104,7 @@ extract:
       ? `destination: ${destinationNames[0]}`
       : `destinations: [${destinationNames.join(', ')}]`;
   fs.writeFileSync(
-    path.join(root, 'dogsled.yml'),
+    path.join(root, 'bobsled.yml'),
     `destinations:
 ${destinations}
 pipelines:
@@ -349,7 +349,7 @@ describe('host-declared credentials with destination-only names (real extractor 
   it('rejects a Project resource name that would parse as the host flag', async () => {
     const projectRoot = makeProject(BIGQUERY_TOKEN, ['lake']);
     useReservedSourceToken(projectRoot);
-    const config = path.join(projectRoot, 'dogsled.yml');
+    const config = path.join(projectRoot, 'bobsled.yml');
     fs.writeFileSync(
       config,
       fs

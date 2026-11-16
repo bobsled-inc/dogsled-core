@@ -23,7 +23,7 @@ describe('agent guide', () => {
     expect(guide.startsWith('# example — Agent Guide')).toBe(true);
     expect(guide).toContain('## About this data');
     expect(guide).toContain('Pipeline configuration is optional.');
-    expect(guide).toContain('An optional root `dogsled.yml` can hold all pipeline configuration');
+    expect(guide).toContain('An optional root `bobsled.yml` can hold all pipeline configuration');
     expect(guide).toContain('typed `pipeline_config` fragments can split it across the Project');
     expect(guide).toContain('pass `--project-root /path/to/project`');
     expect(guide).toContain('its path is relative to the Project root and selects one file');

@@ -297,6 +297,6 @@ describe('extractDocumentResource', () => {
       files: [{ name: 'a.md', content: '# t\n\nbody.' }],
     });
     expect(fs.existsSync(path.join(baseDir, 'entity_graph'))).toBe(false);
-    expect(fs.existsSync(path.join(baseDir, '.dogsled/model-spec'))).toBe(false);
+    expect(fs.existsSync(path.join(baseDir, '.bobsled/model-spec'))).toBe(false);
   });
 });

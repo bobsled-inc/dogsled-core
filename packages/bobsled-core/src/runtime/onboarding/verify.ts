@@ -20,7 +20,7 @@ export const readWithCli: CliReader = async (
   root,
   sql,
   remote,
-  databasePath = '.dogsled/dogsled.duckdb'
+  databasePath = '.bobsled/bobsled.duckdb'
 ) => {
   let dir = dirname(fileURLToPath(import.meta.url));
   while (dirname(dir) !== dir) {

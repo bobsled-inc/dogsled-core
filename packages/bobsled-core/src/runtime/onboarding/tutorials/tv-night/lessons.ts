@@ -16,7 +16,7 @@ export const lessons: Record<
   load: {
     learn:
       'Dogsled lets you create ETL pipelines that fetch data from a source, turn it into rows, and load it into a database. Here, you will load TV shows and episodes from TVmaze into DuckDB. ETL stands for extract, transform and load.',
-    files: ['dogsled.yml', 'resources/tvmaze/shows.yml', 'resources/tvmaze/episodes.yml'],
+    files: ['bobsled.yml', 'resources/tvmaze/shows.yml', 'resources/tvmaze/episodes.yml'],
     choice:
       'Start with page [0] (around 250 shows), or choose more pages after reviewing the request count.',
     inspect:

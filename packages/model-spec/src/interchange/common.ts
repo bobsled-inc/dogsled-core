@@ -5,8 +5,8 @@ import { CommandError } from '../errors.js';
 import { boundedJsonProblem, type BoundedJsonLimits } from './storage.js';
 import { OSSIE_URI_SCHEMES, OSSIE_VENDOR_SPELLINGS } from './legacy-names.js';
 
-export const OSSIE_VENDOR = 'DOGSLED';
-export const OSSIE_URI_SCHEME = 'dogsled://';
+export const OSSIE_VENDOR = 'BOBSLED';
+export const OSSIE_URI_SCHEME = 'bobsled://';
 
 /** Whether an extension is Core's own, in any Core generation's spelling. */
 export function isOwnOssieVendor(vendor: unknown): boolean {

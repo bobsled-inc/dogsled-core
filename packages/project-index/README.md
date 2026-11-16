@@ -17,12 +17,12 @@ datagolf/
   skills/
     player-lookup.md     # front matter type: skill
 shared/
-  dogsled.yml              # type: pipeline_config
+  bobsled.yml              # type: pipeline_config
 ```
 
 An explicit type lets YAML definitions live in any folder; folder names do not
 create semantic names or namespaces. Untyped YAML uses the nearest exact
-conventional folder for its kind. Root `dogsled.yml` and `dogsled.yaml` remain
+conventional folder for its kind. Root `bobsled.yml` and `bobsled.yaml` remain
 legacy pipeline configs and may omit `type`; nested pipeline fragments must
 declare `type: pipeline_config`. A Project may have no pipeline config or
 several fragments. Dogsled merges their `pipelines` and `destinations` by name;
@@ -36,7 +36,7 @@ Project Skill path. Other Markdown files declare `type: guide` or
 
 | Type                                                                                                                                                         | Format   | Notes                                                                                                       |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `pipeline_config`                                                                                                                                            | YAML     | Zero or more fragments. Root `dogsled.yml` and `dogsled.yaml` may omit `type`; nested fragments declare it. |
+| `pipeline_config`                                                                                                                                            | YAML     | Zero or more fragments. Root `bobsled.yml` and `bobsled.yaml` may omit `type`; nested fragments declare it. |
 | `model_spec_config`, `extractor_config`, `extract-intents`                                                                                                   | YAML     | One file of each per project.                                                                               |
 | `integration`                                                                                                                                                | YAML     | Warehouse integrations use `spec_version: '1'`; API integrations use `spec_version: '2'`.                   |
 | `source`                                                                                                                                                     | YAML     | A model source at `spec_version: '0.2'`; an API integration at `spec_version: '2'`.                         |

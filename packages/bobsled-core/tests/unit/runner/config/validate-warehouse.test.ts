@@ -109,7 +109,7 @@ describe('validateWarehouseSelections (extract pipelines)', () => {
     const errors: ValidationIssue[] = [];
     validateWarehouseSelections(makePipeline({ warehouse: 'GHOST_WH' }), makeLib(declared), errors);
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.path).toBe('dogsled.yml:pipelines.warehouse_pipeline.warehouse');
+    expect(errors[0]?.path).toBe('bobsled.yml:pipelines.warehouse_pipeline.warehouse');
     expect(errors[0]?.message).toMatch(/not a declared warehouse ID on source/);
     expect(errors[0]?.message).toContain('Declared warehouse IDs: small, large.');
   });
@@ -128,7 +128,7 @@ describe('validateWarehouseSelections (extract pipelines)', () => {
         'Set `warehouse:` at the pipeline level instead.'
     );
     expect(errors[0]?.path).toBe(
-      'dogsled.yml:pipelines.warehouse_pipeline.resources.orders.warehouse'
+      'bobsled.yml:pipelines.warehouse_pipeline.resources.orders.warehouse'
     );
   });
 
@@ -152,7 +152,7 @@ describe('validateWarehouseSelections (extract pipelines)', () => {
       makeLib(undefined),
       errors
     );
-    expect(errors[0]?.path).toBe('dogsled.yml:pipelines.warehouse_pipeline.warehouse');
+    expect(errors[0]?.path).toBe('bobsled.yml:pipelines.warehouse_pipeline.warehouse');
     expect(errors[0]?.message).toContain('declares no warehouse IDs');
     expect(errors[0]?.message).toContain('Declared warehouse IDs: (none).');
   });
@@ -203,7 +203,7 @@ describe('validateModelWarehouseSelections (model pipelines)', () => {
       errors
     );
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.path).toBe('dogsled.yml:pipelines.models_pipeline.warehouse');
+    expect(errors[0]?.path).toBe('bobsled.yml:pipelines.models_pipeline.warehouse');
     expect(errors[0]?.message).toMatch(/not a declared warehouse ID on connection/);
     expect(errors[0]?.message).toContain('Declared warehouse IDs: small, large.');
   });
@@ -215,7 +215,7 @@ describe('validateModelWarehouseSelections (model pipelines)', () => {
       makeLib(undefined),
       errors
     );
-    expect(errors[0]?.path).toBe('dogsled.yml:pipelines.models_pipeline.warehouse');
+    expect(errors[0]?.path).toBe('bobsled.yml:pipelines.models_pipeline.warehouse');
     expect(errors[0]?.message).toContain('declares no warehouse IDs');
     expect(errors[0]?.message).toContain('Declared warehouse IDs: (none).');
   });

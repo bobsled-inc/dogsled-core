@@ -252,7 +252,7 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'pipeline-builder',
         kind: 'surface',
         title: 'Build a pipeline in Explorer',
-        body: 'The pipeline builder walks you through preset → integrations → resources → destination → schedule → review. At the review step you can inspect the generated dogsled.yml before exporting or deploying. Use DuckDB as the destination to run locally without cloud credentials.',
+        body: 'The pipeline builder walks you through preset → integrations → resources → destination → schedule → review. At the review step you can inspect the generated bobsled.yml before exporting or deploying. Use DuckDB as the destination to run locally without cloud credentials.',
         action: { label: 'Open Pipeline Builder', href: '/pipelines/new', autoCompletes: true },
       },
       {
@@ -284,7 +284,7 @@ export const LEARN_MODULES: LearnModule[] = [
         id: 'load-help',
         kind: 'command',
         title: 'Inspect loader destination options',
-        body: 'Run load --help to see all destination flags: --destination duckdb|bigquery|gcs|local, --strategy append|merge|full_refresh, and --primary-key. These map directly to the destination block in dogsled.yml.',
+        body: 'Run load --help to see all destination flags: --destination duckdb|bigquery|gcs|local, --strategy append|merge|full_refresh, and --primary-key. These map directly to the destination block in bobsled.yml.',
         command: command('load', ['--help']),
         action: terminalAction('Open Load Help', command('load', ['--help'])),
       },

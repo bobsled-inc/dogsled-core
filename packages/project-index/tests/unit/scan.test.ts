@@ -60,7 +60,7 @@ describe('scanProject', () => {
   });
 
   it('indexes nested data-first folders by declared type', () => {
-    write('dogsled.yml', 'pipelines: {}\n');
+    write('bobsled.yml', 'pipelines: {}\n');
     write('datagolf/integration.yml', 'spec_version: "2"\ntype: source\nname: datagolf\n');
     write('datagolf/players/players.yml', 'spec_version: "0.2"\ntype: model\nname: players\n');
     write('datagolf/players/raw.yml', 'spec_version: "0.2"\ntype: source\nname: raw\n');
@@ -70,11 +70,11 @@ describe('scanProject', () => {
     const index = scanProject(root);
     expect(index.root).toBe(path.resolve(root));
     expect(kinds(index)).toEqual([
+      ['bobsled.yml', 'pipeline_config'],
       ['datagolf/integration.yml', 'integration'],
       ['datagolf/players/players.yml', 'model'],
       ['datagolf/players/raw.yml', 'source'],
       ['datagolf/skills/lookup.md', 'skill'],
-      ['dogsled.yml', 'pipeline_config'],
     ]);
     expect(index.unrecognized).toEqual([{ path: 'README.md', format: 'markdown' }]);
     expect(index.issues).toEqual([]);
@@ -103,7 +103,7 @@ describe('scanProject', () => {
 
   it('skips hidden entries and node_modules without reading them', () => {
     write('.github/workflows/ci.yml', 'type: nope\n');
-    write('.dogsled/state.yml', 'type: nope\n');
+    write('.bobsled/state.yml', 'type: nope\n');
     write('node_modules/pkg/spec.yml', 'type: nope\n');
     write('models/.draft.yml', 'type: nope\n');
     write('models/a.yml', 'type: model\nname: a\n');

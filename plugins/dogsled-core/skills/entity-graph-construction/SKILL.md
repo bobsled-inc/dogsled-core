@@ -37,7 +37,7 @@ and **`relationship_extraction`**.
 >
 > Authoring or running a phase before its input exists produces zero rows.
 
-Managed destinations use `type: dogsled_managed` and `dogsled_connection_ref` to
+Managed destinations use `type: bobsled_managed` and `bobsled_connection_ref` to
 name a connection supplied by an orchestrator. Core validates these hooks but
 cannot load into a managed destination. For local execution, configure a concrete
 destination and run the work with `dogsled entity-graph build`.
@@ -54,7 +54,7 @@ entity-graph/
   relationship_ontology.yml        # type: relationship_ontology
   <Entity>_mention_extraction.yml  # type: mention_extraction
   <Entity>_relationship_extraction.yml  # type: relationship_extraction
-dogsled.yml                          # platform.models roles + entity-graph pipeline
+bobsled.yml                          # platform.models roles + entity-graph pipeline
 ```
 
 Use the inline examples below, which mirror the canonical
@@ -165,7 +165,7 @@ review:
   use_ontology_thresholds: true
 ```
 
-### Step D — `platform.models` roles (`dogsled.yml`)
+### Step D — `platform.models` roles (`bobsled.yml`)
 
 The two roles named by `extraction_role` / `extraction.role` must exist under
 `platform.models`. Keep a `platform.budget` cap so a runaway run can't burn the

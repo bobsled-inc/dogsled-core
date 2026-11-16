@@ -102,7 +102,7 @@ it('checks a passage-ID pilot, preserves chapter state, and verifies the remaini
     const pilot = await verifyOnboarding(root, 'transform', read, { showId: 1 });
     expect(pilot.tables[0]?.rows[0]?.['passage_ids']).toBe('["p1"]');
     const { existsSync } = await import('node:fs');
-    expect(existsSync(join(root, '.dogsled/onboarding/transform.json'))).toBe(false);
+    expect(existsSync(join(root, '.bobsled/onboarding/transform.json'))).toBe(false);
     await expect(verifyOnboarding(root, 'transform', read)).rejects.toThrow(/every finalist/);
     await runner.run(`INSERT INTO analytics.show_notes SELECT show_id,revision_id,['p1'],
       'supported','The passage describes faction struggles.',article_text,'remaining-run'

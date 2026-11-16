@@ -299,6 +299,6 @@ describe('postal suffix vocabulary', () => {
     for (const suffix of ['TRACK', 'TRK']) {
       expect(sql).toMatch(new RegExp(`\\b${suffix}\\b`));
     }
-    expect(sql).not.toContain('DOGSLED');
+    expect(sql).not.toContain('BOBSLED');
   });
 });

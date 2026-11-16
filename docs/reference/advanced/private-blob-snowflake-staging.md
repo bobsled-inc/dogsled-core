@@ -45,7 +45,7 @@ replication:
 output: {} # infer columns and types from the CSV
 ```
 
-`dogsled.yml`:
+`bobsled.yml`:
 
 ```yaml
 destinations:

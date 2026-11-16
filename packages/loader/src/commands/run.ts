@@ -254,7 +254,7 @@ export async function runDatabaseLoader(
    *
    * A per-stream `table:` override REPLACES the whole computed name — the
    * `tablePrefix` is deliberately NOT re-applied on top of it (documented
-   * `dogsled.yml` semantics: `table: raw_stripe__subs_v2` is the final table).
+   * `bobsled.yml` semantics: `table: raw_stripe__subs_v2` is the final table).
    * Everything else in the database loader (schemas, buffers, strategies,
    * pending loads, checkpoints) is keyed by this return value, so overriding
    * here keeps that keying consistent everywhere.

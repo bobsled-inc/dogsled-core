@@ -19,7 +19,7 @@ source:
   ingest:
     mode: extract
   # Optional: emit a vector column per chunk. Requires an embedding model role
-  # declared under `platform.models` in your dogsled.yml / runner. See README.
+  # declared under `platform.models` in your bobsled.yml / runner. See README.
   # embedding:
   #   role: default_embedding_v1
   #   field: text

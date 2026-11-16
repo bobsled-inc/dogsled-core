@@ -1,5 +1,6 @@
 import YAML from 'yaml';
 import { inputFiles, readBounded } from './files.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 export interface ProjectFile {
   path: string;
@@ -50,7 +51,7 @@ export async function projectWorkspace(
       !/^(models|sources|metrics|relationships|integrations|resources|queries|entity-graph)\/[^\n]+\.(ya?ml|sql)$/.test(
         path
       ) &&
-      !/^dogsled\.ya?ml$/.test(path)
+      !ROOT_CONFIG_FILE_SPELLINGS.includes(path)
     ) {
       continue;
     }
@@ -127,7 +128,7 @@ export async function projectWorkspace(
     }
   }
   // Connect API resources to raw sources only when an explicit ETL destination and table agree.
-  for (const config of records.filter((r) => /^dogsled\.ya?ml$/.test(r.path))) {
+  for (const config of records.filter((r) => ROOT_CONFIG_FILE_SPELLINGS.includes(r.path))) {
     const destinations = config.value['destinations'] as
       Record<string, { schema?: string }> | undefined;
     const pipelines = config.value['pipelines'];

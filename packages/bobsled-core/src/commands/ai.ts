@@ -49,7 +49,7 @@ export function createAiGroup(program: Command): Command {
   command
     .command('test')
     .requiredOption('--connection <role>', 'platform.models role to test')
-    .option('--config <path>', 'Path to dogsled.yml')
+    .option('--config <path>', 'Path to bobsled.yml')
     .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
     .option('--json', 'Emit JSON')
     .option('--yaml', 'Emit YAML')

@@ -138,8 +138,8 @@ function bobsledExtension(
       'invalid_bobsled_extension',
       path,
       objectReference,
-      'An owner can contain only one DOGSLED extension.',
-      'Remove the duplicate DOGSLED extension.'
+      'An owner can contain only one BOBSLED extension.',
+      'Remove the duplicate BOBSLED extension.'
     );
   }
   if (!entries[0]) return undefined;
@@ -152,7 +152,7 @@ function bobsledExtension(
       'invalid_bobsled_extension',
       path,
       objectReference,
-      `DOGSLED extension data must be a bounded JSON object: ${errorMessage(error)}`,
+      `BOBSLED extension data must be a bounded JSON object: ${errorMessage(error)}`,
       'Replace the extension data with a valid JSON object string.'
     );
   }
@@ -171,8 +171,8 @@ function parseDatasetExtension(
       version === undefined ? 'invalid_bobsled_extension' : 'unsupported_extension_version',
       path,
       objectReference,
-      'DOGSLED extension_version must be "1" or "2".',
-      'Use a supported DOGSLED extension version.'
+      'BOBSLED extension_version must be "1" or "2".',
+      'Use a supported BOBSLED extension version.'
     );
   }
   const kind = extension['kind'] ?? 'source';
@@ -181,7 +181,7 @@ function parseDatasetExtension(
       'unsupported_kind',
       path,
       objectReference,
-      'DOGSLED kind must be source or derived.',
+      'BOBSLED kind must be source or derived.',
       'Set kind to source or derived.'
     );
   }
@@ -192,7 +192,7 @@ function parseDatasetExtension(
       'invalid_bobsled_extension',
       `${path}.${unknown}`,
       objectReference,
-      `Unknown DOGSLED dataset property ${unknown}.`,
+      `Unknown BOBSLED dataset property ${unknown}.`,
       'Remove the unsupported property.'
     );
   }
@@ -203,7 +203,7 @@ function parseDatasetExtension(
         'invalid_bobsled_extension',
         `${path}.build`,
         objectReference,
-        'DOGSLED build must be an object.',
+        'BOBSLED build must be an object.',
         'Use an object for build settings.'
       );
     }
@@ -245,7 +245,7 @@ function addLegacyVendorDiagnostic(
     path,
     objectReference,
     'The TRACK extension was preserved as foreign data and was not interpreted.',
-    'Use DOGSLED metadata when native conversion behavior is required.'
+    'Use BOBSLED metadata when native conversion behavior is required.'
   );
 }
 
@@ -424,8 +424,8 @@ function convertFields(
         'error',
         path,
         objectReference,
-        `DOGSLED sql_type ${sql_type} conflicts with physical type ${physicalType}.`,
-        'Make the DOGSLED sql_type match the selected physical column.'
+        `BOBSLED sql_type ${sql_type} conflicts with physical type ${physicalType}.`,
+        'Make the BOBSLED sql_type match the selected physical column.'
       );
     }
     const exactType = sql_type ?? physicalType;
@@ -442,7 +442,7 @@ function convertFields(
         `${path}.type`,
         objectReference,
         'This source field has no exact physical SQL type.',
-        'Supply DOGSLED sql_type or a matching physical schema.'
+        'Supply BOBSLED sql_type or a matching physical schema.'
       );
     }
     if (exactType && field.datatype && logicalTypeForSqlType(exactType) !== field.datatype) {
@@ -575,7 +575,7 @@ function metricExtension(
       'unsupported_extension_version',
       path,
       objectReference,
-      'Unsupported DOGSLED metric extension version.',
+      'Unsupported BOBSLED metric extension version.',
       'Use extension version 2.'
     );
   }
@@ -583,7 +583,7 @@ function metricExtension(
     'invalid_bobsled_extension',
     path,
     objectReference,
-    'Invalid DOGSLED metric extension.',
+    'Invalid BOBSLED metric extension.',
     'Use the documented metric extension properties.'
   );
 }
@@ -625,7 +625,7 @@ function relationshipExtension(
       'unsupported_extension_version',
       path,
       objectReference,
-      'Unsupported DOGSLED relationship extension version.',
+      'Unsupported BOBSLED relationship extension version.',
       'Use extension version 2.'
     );
   }
@@ -633,7 +633,7 @@ function relationshipExtension(
     'invalid_bobsled_extension',
     path,
     objectReference,
-    'Invalid DOGSLED relationship extension.',
+    'Invalid BOBSLED relationship extension.',
     'Use the documented relationship extension properties.'
   );
 }
@@ -709,7 +709,7 @@ function convertMetric(
       path,
       objectReference,
       'Dogsled cannot determine which datasets this metric uses.',
-      'Add DOGSLED dataset references or qualify a dataset in the metric expression.'
+      'Add BOBSLED dataset references or qualify a dataset in the metric expression.'
     );
     return undefined;
   }
@@ -724,7 +724,7 @@ function convertMetric(
       path,
       objectReference,
       'Dogsled cannot select one native metric expression.',
-      'Add an ANSI_SQL expression or a DOGSLED native expression.'
+      'Add an ANSI_SQL expression or a BOBSLED native expression.'
     );
     return undefined;
   }
@@ -836,7 +836,7 @@ function convertRelationship(
       path,
       objectReference,
       'The relationship join type defaulted to inner.',
-      'Add DOGSLED relationship metadata when another join type is required.'
+      'Add BOBSLED relationship metadata when another join type is required.'
     );
   }
   const interchange = entityInterchange(relationship);

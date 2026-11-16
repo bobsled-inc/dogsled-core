@@ -966,7 +966,7 @@ function resolveNamedDestination(
         ...(destination.prefix ? { prefix: resolve(destination.prefix)! } : {}),
         format: resolve(destination.format)! as 'parquet' | 'jsonl' | 'csv',
       };
-    case 'dogsled_managed':
+    case 'bobsled_managed':
       throw new CommandError(MANAGED_DESTINATION_CORE_ERROR, 2);
   }
 }
@@ -1171,7 +1171,7 @@ function resolveSingleDestinationOptions(
         ...loadStrategyOption,
         ...schemaBehaviorOption,
       };
-    case 'dogsled_managed':
+    case 'bobsled_managed':
       throw new CommandError(MANAGED_DESTINATION_CORE_ERROR, 2);
   }
 }

@@ -62,7 +62,7 @@ describe('init command scaffolding', () => {
   it('scaffolds .gitignore', async () => {
     await runInit(projectDir);
     const content = fs.readFileSync(path.join(projectDir, '.gitignore'), 'utf-8');
-    expect(content).toContain('.dogsled/model-spec/');
+    expect(content).toContain('.bobsled/model-spec/');
     expect(content).toContain('dist/');
   });
 

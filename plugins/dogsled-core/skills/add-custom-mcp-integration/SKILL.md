@@ -109,7 +109,7 @@ Bearer auth (most common — Linear, Notion, GitHub MCP):
 spec_version: '2'
 type: source
 source_type: custom_mcp # Dogsled-visible marker
-dogsled_source_kind: custom_mcp # orchestrator / host application marker (Dogsled ignores it)
+bobsled_source_kind: custom_mcp # orchestrator / host application marker (Dogsled ignores it)
 name: <source-name>
 description: <one line>
 auth_env_vars: # env vars the transport interpolates
@@ -586,7 +586,7 @@ real BYO MCP server, swap the URL and tool names.
 spec_version: '2'
 type: source
 source_type: custom_mcp
-dogsled_source_kind: custom_mcp
+bobsled_source_kind: custom_mcp
 name: linear_mcp
 description: Linear team data via the public Linear MCP server.
 auth_env_vars:
@@ -742,7 +742,7 @@ dogsled extract run linear_mcp --resource cycles --limit 5
 Before handing back to the user:
 
 - [ ] `source.yml` has `source_type: custom_mcp` and
-      `dogsled_source_kind: custom_mcp`.
+      `bobsled_source_kind: custom_mcp`.
 - [ ] `transports[0].type === 'mcp_http'` and `url` is absolute HTTPS.
 - [ ] No `mcp_stdio` transports anywhere in the bundle.
 - [ ] `auth_env_vars` lists every env var the transport references.

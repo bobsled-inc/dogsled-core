@@ -1,6 +1,6 @@
 # Agentic execution state and restart
 
-Dogsled saves agentic checkpoints under the project `.dogsled/model-spec` directory by default.
+Dogsled saves agentic checkpoints under the project `.bobsled/model-spec` directory by default.
 A supplied `AgenticStateStore` replaces all local agentic storage. Execution state
 needs no warehouse or database service. See [where state is stored](#where-state-is-stored)
 for how a run's store is chosen.
@@ -179,7 +179,7 @@ Dogsled uses the first of these that applies:
 
 1. A store supplied as `stateStore`, or `agentic.stateStore` for `runProject`.
 2. `checkpoint_store` in `model-spec.yml`, which can name a warehouse or a DuckDB integration.
-3. A DuckDB file for the run under `.dogsled/model-spec/agentic-state`, when `@duckdb/node-api`
+3. A DuckDB file for the run under `.bobsled/model-spec/agentic-state`, when `@duckdb/node-api`
    can be loaded. It is an optional peer dependency that the `dogsled` CLI installs.
 4. The [file store](#local-files-ownership-and-retention).
 
@@ -460,7 +460,7 @@ how to run it, and `row-store-growth.bench.test.ts` for the gate that keeps it f
 
 ### Local DuckDB files
 
-Each run has its own file, `.dogsled/model-spec/agentic-state/run-<hash>.duckdb`, which stays open
+Each run has its own file, `.bobsled/model-spec/agentic-state/run-<hash>.duckdb`, which stays open
 for the session. DuckDB allows one writing process per file, and a run file has one owner, so runs
 in different processes do not contend. Commits go to DuckDB's write-ahead log, and closing the file
 merges it. Incremental cursors use `agentic-state/cursors.duckdb`, which is opened for each
@@ -473,7 +473,7 @@ once. The directory is private and run files use private permissions. Symlinks a
 
 An acquisition checks up to eight old run files and removes those that have expired. It skips any
 file with a live owner. An empty file left by a crash expires the same way. Keep
-`.dogsled/model-spec` on a local disk, as for the file store.
+`.bobsled/model-spec` on a local disk, as for the file store.
 
 ### DuckDB checkpoint store
 
@@ -522,7 +522,7 @@ import { createWarehouseRowStore } from '@bobsled-inc/bobsled-core/model-spec/ag
 import { runProject } from '@bobsled-inc/bobsled-core/model-spec/project';
 
 const stateStore = createWarehouseRowStore(integration, {
-  schema: 'track_checkpoints',
+  schema: 'bobsled_checkpoints',
   database: 'writable_database', // Optional. Snowflake only.
   leaseMs: 300_000, // Optional. Default: 120,000. Range: 10,000–600,000.
   retentionMs: 30 * 86_400_000, // Optional. Default: 30 days.
@@ -628,9 +628,9 @@ figures.
 
 ## Local files, ownership and retention
 
-This section describes the file store. `.dogsled/model-spec/run-state.json` is its state entry
+This section describes the file store. `.bobsled/model-spec/run-state.json` is its state entry
 point and also holds regular model state. Its compatible `agentic`
-extension maps hashed run keys to digest-named snapshot files in `.dogsled/model-spec`. Snapshots
+extension maps hashed run keys to digest-named snapshot files in `.bobsled/model-spec`. Snapshots
 contain the frozen definition, input, attempts, usage, results and completion.
 Reads check the digest, schema and scoped identity. Missing or damaged files cause
 an explicit error. Dogsled does not replace them with empty state.
@@ -649,7 +649,7 @@ A crash during lock recovery fails closed: an operator must confirm that no
 writer remains before removing the recovery lock. Do not remove a live lock.
 
 State directory and artifact symlinks are rejected. Snapshot names cannot escape
-`.dogsled/model-spec`. Files use private permissions. Local limits are 100 retained runs, 16 MiB
+`.bobsled/model-spec`. Files use private permissions. Local limits are 100 retained runs, 16 MiB
 per file, 2,000 directory entries and a 256 MiB directory budget. The budget check
 includes orphan files and space for the next write. Exceeding a limit stops before
 execution or the next checkpoint.
@@ -657,7 +657,7 @@ execution or the next checkpoint.
 There is no automatic expiry. Referenced snapshots remain until the host removes
 that run. After a successful checkpoint, Dogsled removes the previous snapshot.
 A crash can leave an unreferenced snapshot or temporary file. For cleanup, stop
-all project writers, back up `.dogsled/model-spec`, retain every snapshot named by `run-state.json`,
+all project writers, back up `.bobsled/model-spec`, retain every snapshot named by `run-state.json`,
 and remove only unreferenced snapshot or temporary files. Do not delete active run
 records or pending-publication records that the host still needs. Deleting a run
 record or required artifact removes its ability to resume. Temporary containers
@@ -670,7 +670,7 @@ Configure a warehouse checkpoint store in the project `model-spec.yml`:
 ```yaml
 checkpoint_store:
   integration: analytics_warehouse
-  schema: track_checkpoints
+  schema: bobsled_checkpoints
   database: writable_database # Optional. Snowflake only; defaults to the integration database.
   lease_seconds: 300 # Optional. Default: 120. Range: 10–600 whole seconds.
 ```

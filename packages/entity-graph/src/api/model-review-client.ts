@@ -3,7 +3,7 @@
  * built on `@bobsled-inc/ai`.
  *
  * Resolves `agent_policy.model` as a role against `platform.models` in
- * dogsled.yml (exactly like `createAiMentionLlmCall`), then makes one
+ * bobsled.yml (exactly like `createAiMentionLlmCall`), then makes one
  * structured, temperature-0 call per batch of pairs. Per-call and daily
  * budgets from `@bobsled-inc/ai` apply through `generateStructured`.
  *
@@ -58,9 +58,9 @@ export interface ModelReviewLlmClient extends LlmClient {
 }
 
 export interface CreateModelReviewLlmClientOptions {
-  /** Model role name — a key in dogsled.yml's `platform.models`. */
+  /** Model role name — a key in bobsled.yml's `platform.models`. */
   role: string;
-  /** Project directory; dogsled.yml is discovered upward from here. */
+  /** Project directory; bobsled.yml is discovered upward from here. */
   cwd: string;
   /** Entity name, used in the prompt. */
   entity: string;

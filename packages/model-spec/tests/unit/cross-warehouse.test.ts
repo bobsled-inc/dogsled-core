@@ -362,7 +362,7 @@ materialization:
 `
     );
     await writeFile(
-      path.join(projectDir, '.dogsled/model-spec', 'run-state.json'),
+      path.join(projectDir, '.bobsled/model-spec', 'run-state.json'),
       JSON.stringify(
         {
           models: {
@@ -405,7 +405,7 @@ materialization:
     // DROP VIEW preDdl that the publisher must execute against the
     // destination warehouse before the new CREATE TABLE materialization runs.
     await writeFile(
-      path.join(projectDir, '.dogsled/model-spec', 'run-state.json'),
+      path.join(projectDir, '.bobsled/model-spec', 'run-state.json'),
       JSON.stringify({
         models: {
           'mart.customer_orders': {

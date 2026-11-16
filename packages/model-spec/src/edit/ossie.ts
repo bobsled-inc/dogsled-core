@@ -60,13 +60,13 @@ function extensionAt(doc: Document.Parsed, base: YamlPath): { path: YamlPath; da
         ? [index]
         : []
     );
-    if (indices.length > 1) throw new Error('Multiple DOGSLED extensions on the same object');
+    if (indices.length > 1) throw new Error('Multiple BOBSLED extensions on the same object');
     if (indices.length === 1) {
       const path = [...base, 'custom_extensions', indices[0]!, 'data'];
       const raw = doc.getIn(path);
-      if (typeof raw !== 'string') throw new Error('DOGSLED extension data must be a JSON string');
+      if (typeof raw !== 'string') throw new Error('BOBSLED extension data must be a JSON string');
       const data = record(JSON.parse(raw));
-      if (!data) throw new Error('DOGSLED extension data must contain a JSON object');
+      if (!data) throw new Error('BOBSLED extension data must contain a JSON object');
       return { path, data };
     }
   } else {
@@ -75,7 +75,7 @@ function extensionAt(doc: Document.Parsed, base: YamlPath): { path: YamlPath; da
   const sequence = doc.getIn([...base, 'custom_extensions'], true);
   if (!isSeq(sequence)) throw new Error('Expected custom_extensions sequence');
   const index = sequence.items.length;
-  sequence.add(doc.createNode({ vendor_name: 'DOGSLED', data: '{}' }));
+  sequence.add(doc.createNode({ vendor_name: 'BOBSLED', data: '{}' }));
   return { path: [...base, 'custom_extensions', index, 'data'], data: {} };
 }
 

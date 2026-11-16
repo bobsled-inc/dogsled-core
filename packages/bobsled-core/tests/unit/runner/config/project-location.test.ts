@@ -28,12 +28,12 @@ afterEach(() => {
 });
 
 describe('findBobsledProject', () => {
-  it('walks up to the nearest root dogsled.yml', () => {
-    const root = project({ 'dogsled.yml': 'pipelines: {}\n', 'crm/hubspot/notes.md': '# Notes\n' });
+  it('walks up to the nearest root bobsled.yml', () => {
+    const root = project({ 'bobsled.yml': 'pipelines: {}\n', 'crm/hubspot/notes.md': '# Notes\n' });
 
     expect(findBobsledProject(path.join(root, 'crm', 'hubspot'))).toEqual({
       projectRoot: root,
-      configPaths: [path.join(root, 'dogsled.yml')],
+      configPaths: [path.join(root, 'bobsled.yml')],
       index: expect.objectContaining({ root, issues: [] }),
     });
   });
@@ -67,20 +67,20 @@ describe('findBobsledProject', () => {
 
 describe('bobsledProjectForConfig', () => {
   it('uses the directory of an untyped configuration', () => {
-    const root = project({ 'nested/dogsled.yml': 'pipelines: {}\n' });
+    const root = project({ 'nested/bobsled.yml': 'pipelines: {}\n' });
 
-    expect(bobsledProjectForConfig('nested/dogsled.yml', root)).toEqual({
+    expect(bobsledProjectForConfig('nested/bobsled.yml', root)).toEqual({
       projectRoot: path.join(root, 'nested'),
-      configPaths: [path.join(root, 'nested', 'dogsled.yml')],
+      configPaths: [path.join(root, 'nested', 'bobsled.yml')],
     });
   });
 
-  it('uses the caller Project root for a typed nested dogsled.yml', () => {
-    const root = project({ 'nested/dogsled.yml': 'type: pipeline_config\npipelines: {}\n' });
+  it('uses the caller Project root for a typed nested bobsled.yml', () => {
+    const root = project({ 'nested/bobsled.yml': 'type: pipeline_config\npipelines: {}\n' });
 
-    expect(bobsledProjectForConfig('nested/dogsled.yml', root)).toEqual({
+    expect(bobsledProjectForConfig('nested/bobsled.yml', root)).toEqual({
       projectRoot: root,
-      configPaths: [path.join(root, 'nested', 'dogsled.yml')],
+      configPaths: [path.join(root, 'nested', 'bobsled.yml')],
     });
   });
 
@@ -107,7 +107,7 @@ describe('bobsledProjectForConfig', () => {
 
 describe('resolveBobsledProject', () => {
   it('discovers the project from the working directory without --config', () => {
-    const root = project({ 'dogsled.yml': 'pipelines: {}\n' });
+    const root = project({ 'bobsled.yml': 'pipelines: {}\n' });
 
     expect(resolveBobsledProject(undefined, root)?.projectRoot).toBe(root);
   });
@@ -118,12 +118,12 @@ describe('resolveBobsledProject', () => {
     expect(resolveBobsledProject('settings/pipelines.yml', root)?.projectRoot).toBe(root);
   });
 
-  it('keeps explicit single-file mode rooted above a nested dogsled.yml', () => {
-    const root = project({ 'golf/dogsled.yml': 'type: pipeline_config\npipelines: {}\n' });
+  it('keeps explicit single-file mode rooted above a nested bobsled.yml', () => {
+    const root = project({ 'golf/bobsled.yml': 'type: pipeline_config\npipelines: {}\n' });
 
-    expect(resolveBobsledProject('golf/dogsled.yml', root)).toMatchObject({
+    expect(resolveBobsledProject('golf/bobsled.yml', root)).toMatchObject({
       projectRoot: root,
-      configPaths: [path.join(root, 'golf', 'dogsled.yml')],
+      configPaths: [path.join(root, 'golf', 'bobsled.yml')],
     });
   });
 });
@@ -131,7 +131,7 @@ describe('resolveBobsledProject', () => {
 describe('resolveCliBobsledProject', () => {
   it('uses cwd as the default root instead of finding an ancestor Project', () => {
     const parent = project({
-      'dogsled.yml': 'pipelines: {}\n',
+      'bobsled.yml': 'pipelines: {}\n',
       'nested/models/orders.yml': 'type: model\nname: orders\n',
     });
     const cwd = path.join(parent, 'nested');
@@ -171,7 +171,7 @@ describe('resolveCliBobsledProject', () => {
   it('rejects config paths outside an explicit root', () => {
     const root = project({});
     expect(() =>
-      resolveCliBobsledProject({ projectRoot: root, configPath: '../outside/dogsled.yml' })
+      resolveCliBobsledProject({ projectRoot: root, configPath: '../outside/bobsled.yml' })
     ).toThrow('configPath must live inside projectRoot.');
   });
 
@@ -188,12 +188,12 @@ describe('resolveCliBobsledProject', () => {
   });
 
   it('preserves legacy explicit config behavior when no project root is supplied', () => {
-    const root = project({ 'nested/dogsled.yml': 'pipelines: {}\n' });
+    const root = project({ 'nested/bobsled.yml': 'pipelines: {}\n' });
 
-    expect(resolveCliBobsledProject({ configPath: 'nested/dogsled.yml', cwd: root })).toMatchObject(
+    expect(resolveCliBobsledProject({ configPath: 'nested/bobsled.yml', cwd: root })).toMatchObject(
       {
         projectRoot: path.join(root, 'nested'),
-        configPaths: [path.join(root, 'nested', 'dogsled.yml')],
+        configPaths: [path.join(root, 'nested', 'bobsled.yml')],
       }
     );
   });

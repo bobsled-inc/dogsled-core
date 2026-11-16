@@ -35,7 +35,7 @@ afterEach(() => {
 describe('loadProjectPipelineConfig', () => {
   it('merges root and nested fragments in path order and records owners', () => {
     const root = project({
-      'dogsled.yml': `pipelines:\n  zeta:\n${modelsPipeline('warehouse')
+      'bobsled.yml': `pipelines:\n  zeta:\n${modelsPipeline('warehouse')
         .split('\n')
         .filter(Boolean)
         .map((line) => `    ${line}`)
@@ -60,12 +60,12 @@ describe('loadProjectPipelineConfig', () => {
 
     expect(Object.keys(loaded.config.pipelines)).toEqual(['zeta', 'pga', 'alpha']);
     expect(loaded.configPaths).toEqual([
-      'dogsled.yml',
+      'bobsled.yml',
       'golf/datagolf/pga.yml',
       'golf/pipelines.yml',
     ]);
     expect([...loaded.pipelinePathByName]).toEqual([
-      ['zeta', 'dogsled.yml'],
+      ['zeta', 'bobsled.yml'],
       ['pga', 'golf/datagolf/pga.yml'],
       ['alpha', 'golf/pipelines.yml'],
     ]);
@@ -124,12 +124,12 @@ describe('loadProjectPipelineConfig', () => {
 
   it('keeps explicit config mode limited to that file while using the caller root', () => {
     const root = project({
-      'dogsled.yml': `pipelines:\n  legacy:\n${modelsPipeline('warehouse')
+      'bobsled.yml': `pipelines:\n  legacy:\n${modelsPipeline('warehouse')
         .split('\n')
         .filter(Boolean)
         .map((line) => `    ${line}`)
         .join('\n')}\n`,
-      'golf/dogsled.yml': `type: pipeline_config\npipelines:\n  selected:\n${modelsPipeline(
+      'golf/bobsled.yml': `type: pipeline_config\npipelines:\n  selected:\n${modelsPipeline(
         'warehouse'
       )
         .split('\n')
@@ -138,10 +138,10 @@ describe('loadProjectPipelineConfig', () => {
         .join('\n')}\n`,
     });
 
-    const loaded = loadProjectPipelineConfig({ projectRoot: root, configPath: 'golf/dogsled.yml' });
+    const loaded = loadProjectPipelineConfig({ projectRoot: root, configPath: 'golf/bobsled.yml' });
 
     expect(Object.keys(loaded.config.pipelines)).toEqual(['selected']);
-    expect(loaded.configPaths).toEqual(['golf/dogsled.yml']);
+    expect(loaded.configPaths).toEqual(['golf/bobsled.yml']);
   });
 
   it('reports validation errors at the owning nested fragment', async () => {
@@ -300,12 +300,12 @@ describe('validateProjectPipelines', () => {
 
   it('keeps explicit config mode scoped to the selected file', async () => {
     const root = project({
-      'dogsled.yml': `pipelines:\n  legacy:\n${modelsPipeline('warehouse')
+      'bobsled.yml': `pipelines:\n  legacy:\n${modelsPipeline('warehouse')
         .split('\n')
         .filter(Boolean)
         .map((line) => `    ${line}`)
         .join('\n')}\n`,
-      'golf/dogsled.yml': `type: pipeline_config\npipelines:\n  selected:\n${modelsPipeline(
+      'golf/bobsled.yml': `type: pipeline_config\npipelines:\n  selected:\n${modelsPipeline(
         'warehouse'
       )
         .split('\n')
@@ -316,12 +316,12 @@ describe('validateProjectPipelines', () => {
 
     const result = await validateProjectPipelines({
       projectRoot: root,
-      configPath: 'golf/dogsled.yml',
+      configPath: 'golf/bobsled.yml',
     });
 
     expect(result.status).toBe('valid');
     if (result.status !== 'valid') throw new Error('Expected valid result');
     expect(Object.keys(result.project.config.pipelines)).toEqual(['selected']);
-    expect(result.project.configPaths).toEqual(['golf/dogsled.yml']);
+    expect(result.project.configPaths).toEqual(['golf/bobsled.yml']);
   });
 });

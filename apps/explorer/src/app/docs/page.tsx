@@ -372,12 +372,12 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
                   'Resources — pick specific API resources with Select All and incremental indicators',
                   'Destination — DuckDB, BigQuery, Snowflake, PostgreSQL, ClickHouse, Turbopuffer, Local, S3, or GCS',
                   'Schedule — hourly, every 4h, daily, weekly, or custom',
-                  'Review — generated dogsled.yml with copy, export, and "Run in Terminal" buttons',
+                  'Review — generated bobsled.yml with copy, export, and "Run in Terminal" buttons',
                 ]}
               />
               <P>
                 From the review step, click <strong>Export Options</strong> to get your config as
-                dogsled.yml or CLI commands. The export page dynamically generates both formats from
+                bobsled.yml or CLI commands. The export page dynamically generates both formats from
                 your actual configuration, and the terminal CTA runs every selected integration in
                 sequence.
               </P>

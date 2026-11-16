@@ -18,7 +18,7 @@ describe('resolveActionProjectRoot', () => {
     const nestedDir = join(tempDir, 'apps', 'operator');
     mkdirSync(nestedDir, { recursive: true });
     writeFileSync(
-      join(tempDir, 'dogsled.yml'),
+      join(tempDir, 'bobsled.yml'),
       [
         'version: 2',
         'dataProducts:',
@@ -71,11 +71,11 @@ describe('resolveActionProjectRoot', () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-action-paths-project-config-'));
     const nestedDir = join(tempDir, 'crm', 'hubspot');
     mkdirSync(nestedDir, { recursive: true });
-    writeFileSync(join(tempDir, 'dogsled.yml'), 'pipelines: {}\n', 'utf-8');
+    writeFileSync(join(tempDir, 'bobsled.yml'), 'pipelines: {}\n', 'utf-8');
     process.chdir(nestedDir);
 
     try {
-      expect(resolveActionProjectRoot(join(tempDir, 'dogsled.yml'))).toBe(tempDir);
+      expect(resolveActionProjectRoot(join(tempDir, 'bobsled.yml'))).toBe(tempDir);
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }

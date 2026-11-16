@@ -131,7 +131,7 @@ describe('runLocalInit (DuckLake default)', () => {
     // Existing file remains intact — the guard fires before any scaffolding write.
     expect(await fs.readFile(keepPath, 'utf-8')).toBe('untouched');
     // No scaffolding files were created either.
-    await expect(fs.access(path.join(projectDir, 'dogsled.yml'))).rejects.toThrow();
+    await expect(fs.access(path.join(projectDir, 'bobsled.yml'))).rejects.toThrow();
   });
 
   it('refuses initialization when the project path is an existing file', async () => {
@@ -150,12 +150,12 @@ describe('runLocalInit (DuckLake default)', () => {
     await runLocalInit({ local: true, projectName: 'demo' }, {});
     const projectDir = path.join(workDir, 'demo');
 
-    await expect(fs.access(path.join(projectDir, 'bobsled.yml'))).rejects.toThrow();
-    await expect(fs.access(path.join(projectDir, 'dogsled.yml'))).resolves.toBeUndefined();
+    await expect(fs.access(path.join(projectDir, 'dogsled.yml'))).rejects.toThrow(); // rename:keep (Core writes only the current name)
+    await expect(fs.access(path.join(projectDir, 'bobsled.yml'))).resolves.toBeUndefined();
     await expect(
-      fs.access(path.join(projectDir, '.dogsled', 'config.yml'))
+      fs.access(path.join(projectDir, '.bobsled', 'config.yml'))
     ).resolves.toBeUndefined();
-    await expect(fs.access(path.join(projectDir, '.dogsled', 'lake'))).resolves.toBeUndefined();
+    await expect(fs.access(path.join(projectDir, '.bobsled', 'lake'))).resolves.toBeUndefined();
     await expect(
       fs.access(path.join(projectDir, 'integrations', '.gitkeep'))
     ).resolves.toBeUndefined();
@@ -163,32 +163,32 @@ describe('runLocalInit (DuckLake default)', () => {
     await expect(fs.access(path.join(projectDir, '.gitignore'))).resolves.toBeUndefined();
     await expect(fs.access(path.join(projectDir, 'README.md'))).resolves.toBeUndefined();
 
-    const config = await fs.readFile(path.join(projectDir, '.dogsled', 'config.yml'), 'utf-8');
+    const config = await fs.readFile(path.join(projectDir, '.bobsled', 'config.yml'), 'utf-8');
     expect(config).toContain('dest: ducklake');
-    expect(config).toContain('catalogUrl: ducklake:.dogsled/lake/catalog.ducklake');
+    expect(config).toContain('catalogUrl: ducklake:.bobsled/lake/catalog.ducklake');
     expect(config).not.toContain('kind:');
   });
 
   it('scaffolds a DuckDB-classic project', async () => {
     await runLocalInit({ duckdb: true, projectName: 'demo-duckdb' }, {});
     const config = await fs.readFile(
-      path.join(workDir, 'demo-duckdb', '.dogsled', 'config.yml'),
+      path.join(workDir, 'demo-duckdb', '.bobsled', 'config.yml'),
       'utf-8'
     );
     const readme = await fs.readFile(path.join(workDir, 'demo-duckdb', 'README.md'), 'utf-8');
     expect(config).toContain('dest: duckdb');
-    expect(config).toContain('dbPath: .dogsled/dogsled.duckdb');
-    expect(readme).toContain('dogsled load run --dest duckdb --db-path .dogsled/dogsled.duckdb');
+    expect(config).toContain('dbPath: .bobsled/bobsled.duckdb');
+    expect(readme).toContain('dogsled load run --dest duckdb --db-path .bobsled/bobsled.duckdb');
     // No lake directory.
     await expect(
-      fs.access(path.join(workDir, 'demo-duckdb', '.dogsled', 'lake'))
+      fs.access(path.join(workDir, 'demo-duckdb', '.bobsled', 'lake'))
     ).rejects.toThrow();
   });
 
   it('scaffolds a Postgres project whose lazy sources stay in local DuckLake', async () => {
     await runLocalInit({ destination: 'postgres', projectName: 'demo-pg' }, {});
     const config = await fs.readFile(
-      path.join(workDir, 'demo-pg', '.dogsled', 'config.yml'),
+      path.join(workDir, 'demo-pg', '.bobsled', 'config.yml'),
       'utf-8'
     );
     expect(config).toContain('dest: ducklake');
@@ -196,7 +196,7 @@ describe('runLocalInit (DuckLake default)', () => {
   });
 
   it.each(['ducklake', 'duckdb', 'postgres', 'snowflake', 'bigquery'] as const)(
-    'writes a %s .dogsled/config.yml that the lazy-source destination resolver accepts',
+    'writes a %s .bobsled/config.yml that the lazy-source destination resolver accepts',
     async (destination) => {
       const projectName = `demo-resolve-${destination}`;
       await runLocalInit({ destination, projectName }, {});
@@ -215,13 +215,13 @@ describe('runLocalInit (DuckLake default)', () => {
       const expectedKind = destination === 'postgres' ? 'ducklake' : destination;
       expect(resolved.kind).toBe(expectedKind);
       expect(resolved.schema).toBe('bronze');
-      const config = await fs.readFile(path.join(projectRoot, '.dogsled', 'config.yml'), 'utf-8');
+      const config = await fs.readFile(path.join(projectRoot, '.bobsled', 'config.yml'), 'utf-8');
       expect(parse(config).default_destination).not.toHaveProperty('password');
     }
   );
 
   it.each(['duckdb', 'ducklake'] as const)(
-    'resolves the relative %s paths in .dogsled/config.yml against the project root',
+    'resolves the relative %s paths in .bobsled/config.yml against the project root',
     async (destination) => {
       const projectName = `demo-paths-${destination}`;
       await runLocalInit({ destination, projectName }, {});
@@ -243,10 +243,10 @@ describe('runLocalInit (DuckLake default)', () => {
         });
         const config = resolved.config as { dbPath?: string; catalogUrl?: string };
         if (destination === 'duckdb') {
-          expect(config.dbPath).toBe(path.join(projectRoot, '.dogsled', 'dogsled.duckdb'));
+          expect(config.dbPath).toBe(path.join(projectRoot, '.bobsled', 'bobsled.duckdb'));
         } else {
           expect(config.catalogUrl).toBe(
-            `ducklake:${path.join(projectRoot, '.dogsled', 'lake', 'catalog.ducklake')}`
+            `ducklake:${path.join(projectRoot, '.bobsled', 'lake', 'catalog.ducklake')}`
           );
         }
       } finally {
@@ -257,27 +257,27 @@ describe('runLocalInit (DuckLake default)', () => {
   );
 
   it.each(['ducklake', 'duckdb', 'postgres', 'snowflake', 'bigquery'] as const)(
-    'git-ignores everything in .dogsled/ except config.yml for a %s project',
+    'git-ignores everything in .bobsled/ except config.yml for a %s project',
     async (destination) => {
       const projectName = `demo-ignore-${destination}`;
       await runLocalInit({ destination, projectName }, {});
       const gitignore = await fs.readFile(path.join(workDir, projectName, '.gitignore'), 'utf-8');
       expect(gitignore.split('\n')).toEqual(
-        expect.arrayContaining(['.dogsled/*', '!.dogsled/config.yml'])
+        expect.arrayContaining(['.bobsled/*', '!.bobsled/config.yml'])
       );
       const inner = await fs.readFile(
-        path.join(workDir, projectName, '.dogsled', '.gitignore'),
+        path.join(workDir, projectName, '.bobsled', '.gitignore'),
         'utf-8'
       );
       expect(inner.split('\n')).toEqual(['*', '!.gitignore', '!config.yml', '']);
       const readme = await fs.readFile(path.join(workDir, projectName, 'README.md'), 'utf-8');
-      expect(readme).not.toContain('connection details in .dogsled/config.yml');
+      expect(readme).not.toContain('connection details in .bobsled/config.yml');
     }
   );
 
-  it('starter dogsled.yml is valid with and without its commented example', async () => {
+  it('starter bobsled.yml is valid with and without its commented example', async () => {
     await runLocalInit({ local: true, projectName: 'demo' }, {});
-    const bobsledYaml = await fs.readFile(path.join(workDir, 'demo', 'dogsled.yml'), 'utf-8');
+    const bobsledYaml = await fs.readFile(path.join(workDir, 'demo', 'bobsled.yml'), 'utf-8');
     expect(bobsledYaml).toContain('default_embedding_v1');
     expect(bobsledYaml).toContain('platform:');
     expect(BobsledConfigFragmentSchema.safeParse(parse(bobsledYaml)).success).toBe(true);
@@ -296,7 +296,7 @@ describe('runLocalInit (DuckLake default)', () => {
 
     expect(readme).toContain('dogsled extract run --integration <name> <resource>');
     expect(readme).toContain(
-      'dogsled load run --dest ducklake --ducklake-catalog-url ducklake:.dogsled/lake/catalog.ducklake'
+      'dogsled load run --dest ducklake --ducklake-catalog-url ducklake:.bobsled/lake/catalog.ducklake'
     );
     expect(readme).not.toContain('dogsled load run --dest duckdb');
     expect(readme).not.toContain('dogsled extract --all');

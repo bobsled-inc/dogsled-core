@@ -6,7 +6,7 @@ description: Diagnose and fix dogsled pipeline failures — auth issues, rate
 
 # Dogsled Troubleshoot
 
-Diagnose local Dogsled pipelines using `extract-pipelines` as the authoritative extraction contract. Read the Project guide, the owning `dogsled.yml` or typed pipeline fragment, `extractor.yml`, and the relevant integration/resource files.
+Diagnose local Dogsled pipelines using `extract-pipelines` as the authoritative extraction contract. Read the Project guide, the owning `bobsled.yml` or typed pipeline fragment, `extractor.yml`, and the relevant integration/resource files.
 
 ## Validate and locate the failure
 

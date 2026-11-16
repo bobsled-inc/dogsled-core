@@ -111,7 +111,7 @@ export async function run(ctx) {
     const checked = BobsledConfigSchema.safeParse(exported);
     assert.equal(checked.success, true, checked.error?.message);
     assert.ok(Object.keys(exported.pipelines).length >= 1);
-    await writeFile(path.join(artifacts, 'exported.dogsled.yml'), yaml);
+    await writeFile(path.join(artifacts, 'exported.bobsled.yml'), yaml);
     await page.screenshot({ path: path.join(artifacts, 'pipeline-export.png'), fullPage: true });
     assert.deepEqual(errors, []);
     await assertResourceRetry(browser, url);

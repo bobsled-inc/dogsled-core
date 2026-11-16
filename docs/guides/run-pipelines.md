@@ -1,7 +1,7 @@
 # Run pipelines
 
 A pipeline names a source, the resources to extract, and one or more destinations.
-You declare pipelines and destinations once in `dogsled.yml`, check them with
+You declare pipelines and destinations once in `bobsled.yml`, check them with
 `dogsled runner validate`, and run one with `dogsled runner run`. Dogsled Core has
 no scheduler of its own: call `dogsled runner run` from cron, a CI job or your
 orchestrator. This release has no GitHub Action; call `dogsled runner run` from a
@@ -12,14 +12,14 @@ The examples use the `shop` project from [Get started](../getting-started.md).
 
 ## Declare destinations and a pipeline
 
-Add a `destinations` map and a `pipelines` map to `dogsled.yml`. This pipeline
+Add a `destinations` map and a `pipelines` map to `bobsled.yml`. This pipeline
 loads the `orders` resource into DuckDB and also writes it to JSON Lines files:
 
 ```yaml
 destinations:
   warehouse:
     type: duckdb
-    db_path: .dogsled/dogsled.duckdb
+    db_path: .bobsled/bobsled.duckdb
     schema: raw
   archive:
     type: local
@@ -36,12 +36,12 @@ pipelines:
 Append it to the file that `dogsled init` created:
 
 ```bash
-cat >> dogsled.yml <<'EOF'
+cat >> bobsled.yml <<'EOF'
 
 destinations:
   warehouse:
     type: duckdb
-    db_path: .dogsled/dogsled.duckdb
+    db_path: .bobsled/bobsled.duckdb
     schema: raw
   archive:
     type: local
@@ -72,7 +72,7 @@ several.
 
 ```bash
 dogsled runner run shop_files --quiet
-dogsled query "SELECT count(*) AS orders FROM raw.shop_files__orders" --db-path .dogsled/dogsled.duckdb
+dogsled query "SELECT count(*) AS orders FROM raw.shop_files__orders" --db-path .bobsled/bobsled.duckdb
 ls output/orders
 ```
 
@@ -112,9 +112,9 @@ Settings apply in this order: destination, then pipeline, then resource.
 
 ## Destination types
 
-`dogsled.yml` destinations accept these `type` values: `duckdb`, `bigquery`,
+`bobsled.yml` destinations accept these `type` values: `duckdb`, `bigquery`,
 `snowflake`, `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`,
-`local`, `gcs` and `s3`, plus `dogsled_managed`, which only Dogsled Cloud can run
+`local`, `gcs` and `s3`, plus `bobsled_managed`, which only Dogsled Cloud can run
 (see [Dogsled Cloud and Core](dogsled-cloud.md)). For DuckLake, SQLite and the other
 `load run` destinations, pipe `extract run` into `load run` instead. The fields of
 each type are in the [project file reference](../reference/project-files.md#destinations).
@@ -141,7 +141,7 @@ These pipelines are instructions for an orchestrator such as Dogsled Cloud.
 
 ## Split configuration across files
 
-`dogsled.yml` is optional. Any YAML file with `type: pipeline_config` contributes
+`bobsled.yml` is optional. Any YAML file with `type: pipeline_config` contributes
 destinations and pipelines, so a large project can keep each domain's pipelines next
 to its integrations. Dogsled merges the fragments by name; a duplicate pipeline or
 destination name is an error. Pass `--config <file>` to read only one file, and

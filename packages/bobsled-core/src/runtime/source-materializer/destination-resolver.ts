@@ -25,7 +25,7 @@ export interface ResolveDestinationArgs {
   projectRoot: string;
   /**
    * Optional injected default destination. When provided it bypasses the
-   * `.dogsled/config.yml` read so library callers can drive the engine without
+   * `.bobsled/config.yml` read so library callers can drive the engine without
    * an on-disk project config. `dest` selects the destination kind; remaining
    * fields mirror the `default_destination` block. When a SQL runner is
    * injected separately, credentials here may be omitted.
@@ -239,7 +239,7 @@ export async function resolveDestinationFor(
   throw new CommandError(`unknown default_destination.dest "${destKind}"`, 2);
 }
 
-/** Resolve a relative local path from `.dogsled/config.yml` against the project root. */
+/** Resolve a relative local path from `.bobsled/config.yml` against the project root. */
 export function resolveProjectPath(value: string, projectRoot: string): string {
   if (value === ':memory:' || isAbsolute(value) || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value)) {
     return value;

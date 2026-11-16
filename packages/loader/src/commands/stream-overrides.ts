@@ -26,7 +26,7 @@ import type { LoadStrategy, SchemaBehavior } from '@bobsled-inc/protocol';
  *
  * These flags are public CLI surface: `dogsled load run` is invokable
  * standalone, so every pair is validated here at the subprocess boundary even
- * though Dogsled already validates `dogsled.yml` before spawning the loader.
+ * though Dogsled already validates `bobsled.yml` before spawning the loader.
  */
 function splitPair(flag: string, shape: string, value: string): { stream: string; rest: string } {
   const colon = value.indexOf(':');

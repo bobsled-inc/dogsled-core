@@ -12,7 +12,7 @@ export const tvNight: TutorialDefinition = {
   skill: 'dogsled-tutorials',
   example: 'tv-night',
   dataDirectory: 'data/tv-night',
-  databasePath: '.dogsled/dogsled.duckdb',
+  databasePath: '.bobsled/bobsled.duckdb',
   steps,
   optionalSteps: ['resolve'],
   lessons,

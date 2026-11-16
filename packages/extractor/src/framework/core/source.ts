@@ -146,8 +146,8 @@ export const TransportSchema = z.union([
  * "this field is for some other tool."
  *
  * - `x-*`     — generic, OpenAPI-style extension namespace.
- * - `dogsled_*` — fields used by a host application's managed ELT
- *               adapter (e.g. `dogsled_connection_ref` linking the
+ * - `bobsled_*` — fields used by a host application's managed ELT
+ *               adapter (e.g. `bobsled_connection_ref` linking the
  *               source to a host-managed connection row).
  *
  * We preprocess these out of the input BEFORE the strict schema runs.

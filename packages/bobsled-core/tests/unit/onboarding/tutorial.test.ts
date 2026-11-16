@@ -29,7 +29,7 @@ it('resolves old and explicitly identified TV Night projects', async () => {
 it('preserves legacy evidence and reviews without rewriting them', async () => {
   const root = await project();
   await saveCheckpoint(root, 'load', { mode: 'offline', tables: [], receipts: [] });
-  const path = join(root, '.dogsled/onboarding/load.json');
+  const path = join(root, '.bobsled/onboarding/load.json');
   const old = JSON.parse(await readFile(path, 'utf8'));
   delete old.tutorial;
   await writeFile(path, JSON.stringify(old));
@@ -44,7 +44,7 @@ it('preserves legacy evidence and reviews without rewriting them', async () => {
 it('rejects a saved checkpoint from another tutorial or chapter', async () => {
   const root = await project('tv-night');
   await saveCheckpoint(root, 'load', { mode: 'offline', tables: [], receipts: [] });
-  const path = join(root, '.dogsled/onboarding/load.json');
+  const path = join(root, '.bobsled/onboarding/load.json');
   const saved = JSON.parse(await readFile(path, 'utf8'));
   expect(saved.tutorial).toBe('tv-night');
   await writeFile(path, JSON.stringify({ ...saved, tutorial: 'other' }));

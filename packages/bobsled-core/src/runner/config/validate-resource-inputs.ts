@@ -78,7 +78,7 @@ export function validateResourceInputOverrides(
     if (unknown.length === 0) continue;
     const available = Object.keys(schema);
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
       message:
         `Unknown input(s) [${unknown.join(', ')}] for resource ` +
         `"${resource.requestedName ?? resource.name}".` +
@@ -192,20 +192,20 @@ export function validateResourceInputMatrices(
       if (!Object.hasOwn(input, axis)) {
         hasInvalidValue = true;
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
           message: `input_matrix axis "${axis}" is not a declared input of resource "${resource.name}".`,
         });
         continue;
       }
       if (conflictNames.has(axis)) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
           message: `input_matrix axis "${axis}" conflicts with an existing pipeline or resource input override.`,
         });
       }
       if (values.length > MAX_INPUT_MATRIX_AXIS_VALUES) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
           message:
             `input_matrix axis "${axis}" contains ${values.length} values; ` +
             `the maximum is ${MAX_INPUT_MATRIX_AXIS_VALUES}.`,
@@ -222,7 +222,7 @@ export function validateResourceInputMatrices(
         if (normalized === undefined || !matrixValueMatchesConstraints(normalized, input[axis]!)) {
           hasInvalidValue = true;
           errors.push({
-            path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
+            path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix.axes.${axis}`,
             message: `input_matrix value ${JSON.stringify(value)} is incompatible with input "${axis}".`,
           });
         } else {
@@ -233,7 +233,7 @@ export function validateResourceInputMatrices(
     }
     if (combinations > MAX_INPUT_MATRIX_COMBINATIONS) {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix`,
         message:
           `input_matrix expands to more than ${MAX_INPUT_MATRIX_COMBINATIONS} combinations; ` +
           `the maximum is ${MAX_INPUT_MATRIX_COMBINATIONS}.`,
@@ -242,7 +242,7 @@ export function validateResourceInputMatrices(
     const strategy = definition?.extract?.incremental?.strategy;
     if (strategy !== 'full_refresh') {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix`,
         message:
           `input_matrix is currently supported only for full_refresh extraction resources; ` +
           `"${resource.name}" declares incremental strategy "${String(strategy)}".`,
@@ -258,7 +258,7 @@ export function validateResourceInputMatrices(
         const key = matrixTupleKey(tuple);
         if (seen.has(key)) {
           errors.push({
-            path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix`,
+            path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.input_matrix`,
             message: `input_matrix contains duplicate normalized tuple ${key}.`,
           });
         }

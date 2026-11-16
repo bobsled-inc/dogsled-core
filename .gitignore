@@ -146,7 +146,7 @@ vite.config.ts.timestamp-*
 .turbo/
 
 # Local runtime state
-.dogsled/tutor-lab/
+.bobsled/tutor-lab/
 
 # Entity Graph demo workspace runtime artifacts
 workspace/entity-graph-demo/*.db
@@ -178,4 +178,4 @@ PR_DESCRIPTION.md
 test-results/
 
 # Generated offline tutorial review scenarios.
-**/.dogsled/ui-review/
+**/.bobsled/ui-review/

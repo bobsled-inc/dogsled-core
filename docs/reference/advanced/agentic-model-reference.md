@@ -17,7 +17,7 @@ Definitions live in the project's models directory, usually `models/`.
 | `description`                      | Yes      | What the model does                                                           |
 | `grain`                            | Yes      | Columns that uniquely identify an output row                                  |
 | `sources`                          | Yes      | One to 256 aliases, each with a `ref` and optional `incremental.cursor_field` |
-| `llm.profile`                      | Yes      | Default role name under `platform.models` in `dogsled.yml`                    |
+| `llm.profile`                      | Yes      | Default role name under `platform.models` in `bobsled.yml`                    |
 | `limits`                           | No       | Run spend caps and timeout; see below                                         |
 | `plan.steps`                       | Yes      | One to 256 steps in dependency order                                          |
 | `output.from`                      | Yes      | ID of the step whose rows are published                                       |

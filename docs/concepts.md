@@ -29,9 +29,9 @@ it sits in:
 | `entity-graph/`                      | `resolution` and others        | Entity resolution specs.                                                  |
 | `skills/`                            | Markdown                       | Instructions for coding agents.                                           |
 
-Some files have fixed names: `dogsled.yml` (pipelines, destinations and AI model
+Some files have fixed names: `bobsled.yml` (pipelines, destinations and AI model
 roles), `extractor.yml` and `model-spec.yml` (folder settings), `extract-intents.yml`
-(plans for paid APIs), `AGENTS.md` (the Project guide) and `.dogsled/config.yml`
+(plans for paid APIs), `AGENTS.md` (the Project guide) and `.bobsled/config.yml`
 (local settings). A file's `name` is its identity, so files can live in nested
 folders. The [project file reference](reference/project-files.md) lists every field.
 
@@ -74,7 +74,7 @@ saved with `--advance-state`, or after a successful `dogsled pipeline` or
 
 ## Pipelines
 
-A **pipeline** in `dogsled.yml` names a source integration, its resources and one or
+A **pipeline** in `bobsled.yml` names a source integration, its resources and one or
 more destinations. `dogsled runner run <pipeline>` runs it. Dogsled Core has no
 scheduler: the `schedule` field is for whatever runs your jobs.
 

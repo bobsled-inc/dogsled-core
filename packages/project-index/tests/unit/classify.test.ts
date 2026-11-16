@@ -113,8 +113,8 @@ describe('classifyProjectFile — type: source', () => {
     ['source_type: custom_api\n', 'integration'],
     ['source_type: custom_mcp\n', 'integration'],
     ['transports: []\n', 'integration'],
-    ['dogsled_source_kind: snowflake\n', 'integration'],
-    ['dogsled_connection_ref: warehouse\n', 'integration'],
+    ['bobsled_source_kind: snowflake\n', 'integration'],
+    ['bobsled_connection_ref: warehouse\n', 'integration'],
     ['schema:\n  columns: []\n', 'source'],
   ])('classifies %j as %s', (fields, kind) => {
     expect(
@@ -141,8 +141,8 @@ describe('classifyProjectFile — type: source', () => {
 
 describe('classifyProjectFile — untyped files', () => {
   it.each([
-    ['dogsled.yml', 'pipeline_config'],
-    ['dogsled.yaml', 'pipeline_config'],
+    ['bobsled.yml', 'pipeline_config'],
+    ['bobsled.yaml', 'pipeline_config'],
     ['model-spec.yml', 'model_spec_config'],
     ['extractor.yml', 'extractor_config'],
     ['extract-intents.yml', 'extract-intents'],
@@ -156,10 +156,10 @@ describe('classifyProjectFile — untyped files', () => {
 
   it('requires a moved pipeline config to declare its type', () => {
     expect(
-      classifyProjectFile({ path: 'shared/dogsled.yml', content: 'pipelines: {}\n' })
+      classifyProjectFile({ path: 'shared/bobsled.yml', content: 'pipelines: {}\n' })
     ).toMatchObject({
       status: 'invalid',
-      issue: { path: 'shared/dogsled.yml', code: 'invalid_type' },
+      issue: { path: 'shared/bobsled.yml', code: 'invalid_type' },
     });
   });
 
@@ -218,7 +218,7 @@ describe('classifyProjectFile — untyped files', () => {
     expect(
       kindOf(
         classifyProjectFile({
-          path: 'shared/dogsled.yml',
+          path: 'shared/bobsled.yml',
           content: 'type: pipeline_config\npipelines: {}\n',
         })
       )
@@ -226,7 +226,7 @@ describe('classifyProjectFile — untyped files', () => {
   });
 
   it('keeps an unparseable conventional file for its own loader', () => {
-    expect(classifyProjectFile({ path: 'dogsled.yml', content: 'pipelines: [\n' })).toMatchObject({
+    expect(classifyProjectFile({ path: 'bobsled.yml', content: 'pipelines: [\n' })).toMatchObject({
       status: 'recognized',
       entry: { kind: 'pipeline_config', document: undefined },
     });
@@ -359,7 +359,7 @@ describe('classifyProjectFile — Markdown', () => {
 
 describe('classifyProjectFile — paths', () => {
   it.each([
-    '.github/workflows/dogsled.yml',
+    '.github/workflows/bobsled.yml',
     'models/.draft/a.yml',
     'node_modules/pkg/a.yml',
     '.env.yml',

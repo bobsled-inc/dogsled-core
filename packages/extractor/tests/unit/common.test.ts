@@ -114,8 +114,8 @@ describe('command helpers', () => {
         spec_version: '2',
         type: 'source',
         name: 'smartlead',
-        dogsled_connection_ref: 'smartlead',
-        dogsled_source_kind: 'smartlead',
+        bobsled_connection_ref: 'smartlead',
+        bobsled_source_kind: 'smartlead',
         transports: [
           {
             id: 'smartlead_default',

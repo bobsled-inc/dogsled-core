@@ -221,4 +221,4 @@ orders: 5 records, 0 API calls
 ```
 
 To describe destinations once and reuse them, and to load one extraction into
-several destinations, use `dogsled.yml`: see [Run pipelines](run-pipelines.md).
+several destinations, use `bobsled.yml`: see [Run pipelines](run-pipelines.md).

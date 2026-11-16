@@ -17,8 +17,8 @@ const baseEntry = {
 
 async function withConfig(text: string): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'dr-'));
-  await mkdir(join(root, '.dogsled'), { recursive: true });
-  await writeFile(join(root, '.dogsled', 'config.yml'), text, 'utf8');
+  await mkdir(join(root, '.bobsled'), { recursive: true });
+  await writeFile(join(root, '.bobsled', 'config.yml'), text, 'utf8');
   return root;
 }
 

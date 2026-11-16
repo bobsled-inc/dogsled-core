@@ -63,7 +63,7 @@ for the exact evidence shown. Do not mark unseen evidence reviewed. A failed
 check is not completion. Rendering must not rerun queries or paid calls.
 
 On resume read `onboarding status`, the current HTML and
-`.dogsled/onboarding/journal.json`. Continue at the saved inspection pause. A side
+`.bobsled/onboarding/journal.json`. Continue at the saved inspection pause. A side
 question does not reset progress. TV Night and Retail progress are not portable
 between projects; keep each project in its own folder.
 
@@ -77,7 +77,7 @@ secrets in chat. Use environment references and the `ai-model-roles` skill for
 supported configuration. A Gateway key is not a model selection; choose and
 explain a model suitable for structured classification.
 
-Configure the `review` role in `dogsled.yml` only after those choices. Without a
+Configure the `review` role in `bobsled.yml` only after those choices. Without a
 cap, use observe mode only after consent; unknown pricing is not free usage.
 With a cap, set `platform.models.review.cost_budget_usd`; the executor enforces
 this per-call cap. Explain the resulting maximum batch allowance. If pricing is
@@ -267,7 +267,7 @@ have intentionally ambiguous product identity. Keep their product IDs null.
 ## 6. Build an agentic transformation (`transform`)
 
 First obtain consent and provider/model choices using the Retail guide. Configure
-the `review` role in `dogsled.yml` through environment references. Adapt the
+the `review` role in `bobsled.yml` through environment references. Adapt the
 `support_batch` and `support_case_classifications` templates. Put the model-backed
 executor template at `executor.mjs`; its Dogsled and `zod` imports must resolve
 from the project, using the installed package or a source-workspace link.

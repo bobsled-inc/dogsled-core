@@ -21,7 +21,7 @@ export function validateSourcePresence(
       lib.getIntegration(pipeline.source);
     } catch {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.source`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.source`,
         message: `Source "${pipeline.source}" not found in bundled or project-local integrations`,
       });
     }

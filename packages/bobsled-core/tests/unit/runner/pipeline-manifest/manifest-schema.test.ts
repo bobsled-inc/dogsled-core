@@ -29,7 +29,7 @@ const currentCommandContract = {
 function generatedManifest(warehouse?: string, destinationWarehouse?: string) {
   const extract: PipelineTemplateInput = {
     cron: '0 * * * *',
-    graphId: 'track_orders',
+    graphId: 'bobsled_orders',
     integration: 'stripe',
     ...(warehouse !== undefined ? { warehouse } : {}),
     ...(destinationWarehouse !== undefined ? { destinationWarehouse } : {}),
@@ -52,7 +52,7 @@ const v1Manifest = {
     {
       name: 'orders',
       integration: 'stripe',
-      graph_id: 'track_orders',
+      graph_id: 'bobsled_orders',
       schedule: { expression: 'hourly', cron: '0 * * * *' },
       state: {
         resource_runs: 'append',
@@ -87,7 +87,7 @@ const v2Manifest = {
     {
       name: 'analytics',
       kind: 'models',
-      graph_id: 'track_analytics',
+      graph_id: 'bobsled_analytics',
       connection: 'warehouse',
       models: ['stg_orders', 'fct_orders'],
       schedule: { expression: 'daily', cron: '0 6 * * *' },
@@ -111,7 +111,7 @@ function historicalManifest(warehouse?: string) {
   return JSON.parse(
     JSON.stringify(generatedManifest(warehouse))
       .replaceAll('dogsled.', 'track.')
-      .replaceAll('dogsled_cli_version', 'track_cli_version')
+      .replaceAll('bobsled_cli_version', 'track_cli_version')
       .replaceAll('BOBSLED_CORE_PIPELINE_', 'TRACK_PIPELINE_')
       .replaceAll('"default_command":"dogsled"', '"default_command":"track"')
   );
@@ -143,10 +143,10 @@ describe('persisted pipeline manifest validation', () => {
 
     expect(parsed).toEqual(generated);
     expect(parsed.version).toBe(7);
-    expect(parsed.kind).toBe('dogsled.pipeline.dag');
+    expect(parsed.kind).toBe('bobsled.pipeline.dag');
     expect(parsed.command_contract).toEqual({
       ...currentCommandContract,
-      default_command: 'dogsled',
+      default_command: 'bobsled',
       command_env: 'BOBSLED_CORE_PIPELINE_COMMAND',
       cwd_env: 'BOBSLED_CORE_PIPELINE_CWD',
       timeout_seconds_env: 'BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS',
@@ -196,7 +196,7 @@ describe('persisted pipeline manifest validation', () => {
       [
         {
           pipelineName: 'silver_models',
-          graphId: 'track_silver_models',
+          graphId: 'bobsled_silver_models',
           connection: 'snowflake',
           warehouse: 'large',
           models: ['daily_revenue'],
@@ -420,9 +420,9 @@ describe('pipeline manifest collection limits', () => {
     const pipeline = structuredClone(generatedManifest().pipelines[0]!);
     if (pipeline.kind !== 'extract') throw new Error('expected extract fixture');
     pipeline.name = `orders_${index}`;
-    pipeline.graph_id = `track_orders_${index}`;
+    pipeline.graph_id = `bobsled_orders_${index}`;
     for (const node of pipeline.nodes) {
-      if (node.kind === 'dogsled.runner.run_resource') {
+      if (node.kind === 'bobsled.runner.run_resource') {
         node.pipeline = pipeline.name;
         node.command = ['runner', 'run', pipeline.name, '--resource', node.resource, '--json'];
       }
@@ -505,7 +505,7 @@ describe('pipeline manifest collection limits', () => {
 
     const wide = extractPipelineAt(0);
     const template = wide.nodes[0]!;
-    if (template.kind !== 'dogsled.runner.run_resource') throw new Error('expected resource node');
+    if (template.kind !== 'bobsled.runner.run_resource') throw new Error('expected resource node');
     const ids = Array.from({ length: 10_000 }, (_, index) => `extract_${index}`);
     wide.nodes = ids.map((id, index) => ({
       ...template,

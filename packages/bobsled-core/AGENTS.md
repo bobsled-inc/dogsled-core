@@ -44,12 +44,12 @@ Highest to lowest:
 
 1. CLI flags (`--project-root` selects the Project root; `--config` selects one config file explicitly)
 2. Environment variables
-3. Pipeline configuration indexed from the Project root, including legacy root `dogsled.yml` and `dogsled.yaml` files plus typed `pipeline_config` fragments
+3. Pipeline configuration indexed from the Project root, including legacy root `bobsled.yml` and `bobsled.yaml` files plus typed `pipeline_config` fragments
 4. Built-in defaults
 
 Pipeline configuration is optional. Local Project commands use the current working directory as the Project root unless you pass `--project-root`. With both `--project-root` and `--config`, resolve the config path relative to the Project root and keep `--config` limited to that one file.
 
-In default Project mode, Dogsled merges typed pipeline fragments by pipeline and destination name. Duplicate names or repeated single-owner sections are errors. Untyped YAML objects can live in nested conventional folders; an explicit `type` allows a file anywhere. The nearest exact conventional folder infers only the file kind. It does not supply a name or namespace. A root `dogsled.yml` is a supported legacy form, not a required Project marker.
+In default Project mode, Dogsled merges typed pipeline fragments by pipeline and destination name. Duplicate names or repeated single-owner sections are errors. Untyped YAML objects can live in nested conventional folders; an explicit `type` allows a file anywhere. The nearest exact conventional folder infers only the file kind. It does not supply a name or namespace. A root `bobsled.yml` is a supported legacy form, not a required Project marker.
 
 ## Output Modes
 
@@ -94,7 +94,7 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 - Protocol `vector` columns require a `dimension`; the embedder derives it from the selected model
 - Smoke tests can set `BOBSLED_CORE_EMBED_STUB=1` to avoid live OpenAI calls while preserving vector dimensions
 - Destination choice matters for embedding workflows; consult `packages/loader/README.md` and `packages/loader/AGENTS.md` before enabling vectors downstream
-- Shared model roles live under `platform.models` in `dogsled.yml`; use `dogsled doctor --json` to validate config and `dogsled ai test --connection <role> --json` for provider probes
+- Shared model roles live under `platform.models` in `bobsled.yml`; use `dogsled doctor --json` to validate config and `dogsled ai test --connection <role> --json` for provider probes
 - `dogsled ai test` should pass a stable project key into `@bobsled-inc/ai` so `platform.budget.ai_cost_daily_usd` can be enforced without mixing projects
 - Use `BOBSLED_CORE_AI_TEST_STUB=1` only for command wiring tests; it does not verify provider credentials, pricing, or model availability
 

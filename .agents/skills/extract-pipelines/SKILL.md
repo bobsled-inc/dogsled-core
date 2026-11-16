@@ -17,11 +17,11 @@ triggers:
 
 # Extract pipelines
 
-This is the authoritative skill for dogsled extract-pipeline capability and workflow. Use it for both orchestration in a root `dogsled.yml` or typed pipeline-config fragments and extractor resource behavior. Other skills may collect a goal, implement a new connector, configure a loader, or diagnose infrastructure, but must route extract-pipeline decisions here.
+This is the authoritative skill for dogsled extract-pipeline capability and workflow. Use it for both orchestration in a root `bobsled.yml` or typed pipeline-config fragments and extractor resource behavior. Other skills may collect a goal, implement a new connector, configure a loader, or diagnose infrastructure, but must route extract-pipeline decisions here.
 
 ## Required workflow
 
-1. Inspect the Project's pipeline config files and capability before editing. A root `dogsled.yml` or `dogsled.yaml` remains valid. Nonroot fragments declare `type: pipeline_config`. Read the config file that owns the related pipeline, then inspect:
+1. Inspect the Project's pipeline config files and capability before editing. A root `bobsled.yml` or `bobsled.yaml` remains valid. Nonroot fragments declare `type: pipeline_config`. Read the config file that owns the related pipeline, then inspect:
    ```bash
    dogsled integrations list
    dogsled integrations show <source>
@@ -51,7 +51,7 @@ dogsled extract scaffold-test <source>
 dogsled extract run --integration <source> <resource> --limit 5
 
 dogsled runner validate --strict
-# Real write: first point dogsled.yml at a disposable destination.
+# Real write: first point bobsled.yml at a disposable destination.
 dogsled runner run <pipeline> --resource <resource>
 ```
 

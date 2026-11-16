@@ -195,10 +195,10 @@ describe('parseReverseEtlProject', () => {
     ]);
   });
 
-  it('aggregates sync schema errors, action schema errors, and dogsled.yml name collisions', () => {
+  it('aggregates sync schema errors, action schema errors, and bobsled.yml name collisions', () => {
     const projectRoot = makeTempProject();
     integrationMocks.actions = [registryActionFromFixture(validWebhookAction())];
-    writeYaml(path.join(projectRoot, 'dogsled.yaml'), {
+    writeYaml(path.join(projectRoot, 'bobsled.yaml'), {
       pipelines: {
         contacts_to_webhook: {
           type: 'models',
@@ -236,11 +236,11 @@ describe('parseReverseEtlProject', () => {
       expect.arrayContaining([
         path.join(projectRoot, 'syncs', 'contacts_to_webhook.yml'),
         path.join(projectRoot, 'actions', 'broken.yml'),
-        'dogsled.yaml',
+        'bobsled.yaml',
       ])
     );
     expect(result.errors.map((error) => error.message).join('\n')).toContain(
-      'collides with pipeline "contacts_to_webhook" in dogsled.yaml'
+      'collides with pipeline "contacts_to_webhook" in bobsled.yaml'
     );
   });
 

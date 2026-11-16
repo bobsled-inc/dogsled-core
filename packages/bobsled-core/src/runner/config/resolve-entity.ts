@@ -69,7 +69,7 @@ export function resolveEntityVariant(
 
     // Echo back the resource segment the user wrote — matches the path shape
     // used by `validateViaSelections` so editors can jump directly to the row.
-    const errorPath = `dogsled.yml:pipelines.${pipeline.name}.resources.${requestedName}`;
+    const errorPath = `bobsled.yml:pipelines.${pipeline.name}.resources.${requestedName}`;
     const effectiveVia = resource.override?.via ?? pipeline.via;
 
     // Single-variant entities don't need a via to disambiguate — pick the

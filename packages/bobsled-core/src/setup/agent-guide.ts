@@ -36,7 +36,7 @@ export function buildAgentGuide(
 
 ## Repo Purpose
 
-This repo is a Dogsled Project. Project files are the source of truth. Pipeline configuration is optional. An optional root \`dogsled.yml\` can hold all pipeline configuration, or typed \`pipeline_config\` fragments can split it across the Project.
+This repo is a Dogsled Project. Project files are the source of truth. Pipeline configuration is optional. An optional root \`bobsled.yml\` can hold all pipeline configuration, or typed \`pipeline_config\` fragments can split it across the Project.
 
 Declare \`type\` to place a YAML file anywhere. If a file is untyped, Dogsled uses the nearest exact conventional folder to infer only its kind, not its name or namespace. Nested domain folders work the same way; for example, an untyped file under \`golf/datagolf/pga/metrics/\` is inferred as a metric.
 

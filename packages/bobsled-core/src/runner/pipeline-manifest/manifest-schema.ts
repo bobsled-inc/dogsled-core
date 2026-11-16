@@ -97,7 +97,7 @@ function spelling<C extends string>(current: C, role: keyof typeof MANIFEST_SPEL
 
 const currentCommandContractSchema = z
   .object({
-    default_command: spelling('dogsled', 'default_command'),
+    default_command: spelling('bobsled', 'default_command'),
     command_env: spelling('BOBSLED_CORE_PIPELINE_COMMAND', 'command_env'),
     cwd_env: spelling('BOBSLED_CORE_PIPELINE_CWD', 'cwd_env'),
     timeout_seconds_env: spelling('BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS', 'timeout_seconds_env'),
@@ -109,7 +109,7 @@ const currentCommandContractSchema = z
 const resourceNodeBaseSchema = z
   .object({
     id: nonEmptyString,
-    kind: spelling('dogsled.runner.run_resource', 'run_resource'),
+    kind: spelling('bobsled.runner.run_resource', 'run_resource'),
     pipeline: nonEmptyString,
     integration: nonEmptyString,
     resource: nonEmptyString,
@@ -123,7 +123,7 @@ const resourceNodeBaseSchema = z
 const embeddedModelNodeSchema = z
   .object({
     id: z.literal('model'),
-    kind: spelling('dogsled.model.run', 'model_run'),
+    kind: spelling('bobsled.model.run', 'model_run'),
     integration: nonEmptyString,
     models: z.array(nonEmptyString).min(1).max(MAX_COLLECTION_ITEMS),
     command: commandSchema,
@@ -142,7 +142,7 @@ const extractNodesSchema = z.union([resourceNodeSchema, embeddedModelNodeSchema]
 const modelNodeSchema = z
   .object({
     id: nonEmptyString,
-    kind: spelling('dogsled.model.run', 'model_run'),
+    kind: spelling('bobsled.model.run', 'model_run'),
     model: nonEmptyString,
     tags: z.array(nonEmptyString).max(MAX_COLLECTION_ITEMS).optional(),
     command: commandSchema,
@@ -159,7 +159,7 @@ const entityGraphPhaseSchema = z.enum([
 const entityGraphNodeSchema = z
   .object({
     id: nonEmptyString,
-    kind: spelling('dogsled.entity_graph.run', 'entity_graph_run'),
+    kind: spelling('bobsled.entity_graph.run', 'entity_graph_run'),
     phase: entityGraphPhaseSchema,
     command: commandSchema,
     emits: z.tuple([z.literal('entity_graph_runs')]),
@@ -259,9 +259,9 @@ const reverseEtlPipelineSchema = z
 
 const manifestV7Schema = z
   .object({
-    kind: spelling('dogsled.pipeline.dag', 'kind'),
+    kind: spelling('bobsled.pipeline.dag', 'kind'),
     version: z.literal(7),
-    dogsled_cli_version: nonEmptyString,
+    bobsled_cli_version: nonEmptyString,
     command_contract: currentCommandContractSchema,
     pipelines: z
       .array(
@@ -513,7 +513,7 @@ function commandIssues(
   if (pipeline.kind === 'extract') {
     for (const [nodeIndex, node] of pipeline.nodes.entries()) {
       let expected: string[];
-      if (node.kind === 'dogsled.model.run') {
+      if (node.kind === 'bobsled.model.run') {
         expected = ['model', 'run', ...node.models, '--integration', node.integration, '--json'];
       } else {
         const resources = node.resources ?? [node.resource];
@@ -742,7 +742,7 @@ function collectionLimitIssue(input: unknown): PipelineManifestValidationIssue |
   return undefined;
 }
 
-const CLI_VERSION_FIELD = 'dogsled_cli_version';
+const CLI_VERSION_FIELD = 'bobsled_cli_version';
 
 /**
  * A manifest may name the CLI version field in any generation's spelling. Every spelling moves to

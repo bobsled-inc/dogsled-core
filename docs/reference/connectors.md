@@ -69,7 +69,7 @@ and documents: `pdf`, `docx`, `pptx`, `html`, `md`, `txt` and `eml`.
 | Turbopuffer                                   | `turbopuffer`          | `@turbopuffer/turbopuffer`                    |
 
 For a service that is compatible with PostgreSQL or MySQL, use that destination.
-`dogsled.yml` pipelines accept a subset: `duckdb`, `bigquery`, `snowflake`,
+`bobsled.yml` pipelines accept a subset: `duckdb`, `bigquery`, `snowflake`,
 `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`, `local`, `gcs` and
 `s3` (see [Run pipelines](../guides/run-pipelines.md#destination-types)). The flags
 for each destination are in the [CLI reference](cli.md#dogsled-load-run).

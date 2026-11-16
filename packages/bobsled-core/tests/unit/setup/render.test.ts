@@ -52,15 +52,15 @@ describe('renderSetupFiles', () => {
     });
 
     const files = await renderSetupFiles(answers);
-    const bobsledConfig = files.find((file) => file.path === 'dogsled.yml');
+    const bobsledConfig = files.find((file) => file.path === 'bobsled.yml');
     const agentGuide = files.find((file) => file.path === 'AGENTS.md');
-    const summary = files.find((file) => file.path === 'dogsled.setup.summary.md');
+    const summary = files.find((file) => file.path === 'bobsled.setup.summary.md');
     const state = files.find((file) => file.path === 'dogsled.dashboard.state.json');
     const starterSkill = files.find((file) => file.path === 'skills/project-overview/SKILL.md');
 
     expect(bobsledConfig?.content).toContain('destination:');
     expect(bobsledConfig?.content).toContain('project: acme-analytics');
-    expect(agentGuide?.content).toContain('dogsled.yml');
+    expect(agentGuide?.content).toContain('bobsled.yml');
     expect(files.some((file) => file.path === 'CLAUDE.md')).toBe(false);
     expect(summary?.content).toContain('Current Goal');
     expect(summary?.content).toContain('HUBSPOT_ACCESS_TOKEN');

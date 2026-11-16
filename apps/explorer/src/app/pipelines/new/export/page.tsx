@@ -19,7 +19,7 @@ import {
 type ExportFormat = 'dogsled-yml' | 'cli-commands';
 
 const EXPORT_FORMATS: Array<{ id: ExportFormat; name: string; description: string }> = [
-  { id: 'dogsled-yml', name: 'dogsled.yml', description: 'Local pipeline configuration' },
+  { id: 'dogsled-yml', name: 'bobsled.yml', description: 'Local pipeline configuration' },
   { id: 'cli-commands', name: 'CLI Commands', description: 'Commands for manual execution' },
 ];
 

@@ -31,7 +31,7 @@ Dataworks Inc`, `Vandelay Industries Group` ↔ `Vandelay Industry Grp`) that
 score inside the review band, so `resolve run` leaves them in
 `company__review_queue`. The resolution spec enables `agent_policy` with
 `model: reviewer` (resolved against `platform.models` in this directory's
-`dogsled.yml`) plus an `entity_semantics` block that shapes the judge's prompt.
+`bobsled.yml`) plus an `entity_semantics` block that shapes the judge's prompt.
 
 ```bash
 cd workspace/entity-graph-demo

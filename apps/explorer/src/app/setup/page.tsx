@@ -303,7 +303,7 @@ export default function SetupPage() {
           `**Schedule:** ${schedule}`,
           '',
           'Next steps:',
-          '- Go to **Pipeline Builder** to refine resources and export `dogsled.yml`',
+          '- Go to **Pipeline Builder** to refine resources and export `bobsled.yml`',
           '- Go to **Terminal** to run `dogsled setup render` with your config',
           '- Go to **Integrations** to explore resource schemas',
         ]

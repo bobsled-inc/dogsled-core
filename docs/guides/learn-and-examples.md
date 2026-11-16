@@ -25,7 +25,7 @@ node packages/bobsled-core/bin/cli.mjs learn --cli "node $PWD/packages/bobsled-c
 - `--auto` runs the lessons without waiting for you.
 - `--reset` clears your progress.
 
-Progress is saved in `.dogsled/tutor-lab/` under the repository root. Most
+Progress is saved in `.bobsled/tutor-lab/` under the repository root. Most
 sections need no credentials. Sections that call live APIs, such as Linear or a
 cloud warehouse, list the environment variables they need and are skipped when
 those variables are not set.

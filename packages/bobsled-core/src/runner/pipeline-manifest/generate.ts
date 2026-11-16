@@ -90,7 +90,7 @@ function slugForPipelineName(name: string): string {
 }
 
 export function graphIdForPipeline(pipelineName: string): string {
-  return `track_${slugForPipelineName(pipelineName)}`;
+  return `bobsled_${slugForPipelineName(pipelineName)}`;
 }
 
 function resolveResources(pipeline: ResolvedPipeline, _lib?: IntegrationsLib): string[] {
@@ -119,7 +119,7 @@ function resolveResources(pipeline: ResolvedPipeline, _lib?: IntegrationsLib): s
  *      defined in user bundles live outside that package, so library-mode
  *      callers must supply the metadata directly.
  *   2. **`IntegrationsLib.getResources(...)` lookup.** Dogsled CLI flow: when
- *      generating the manifest from `dogsled.yml` and a bundled integration,
+ *      generating the manifest from `bobsled.yml` and a bundled integration,
  *      pull `extract.for_each.resource` straight off the loaded ResourceSpec.
  *
  * Returns `undefined` only when neither source yields any parent — in that
@@ -350,7 +350,7 @@ export function buildModelPipelineInputs(
 }
 
 /**
- * Map `ResolvedEntityGraphPipeline` (parsed from `dogsled.yml`) onto the
+ * Map `ResolvedEntityGraphPipeline` (parsed from `bobsled.yml`) onto the
  * manifest's `EntityGraphPipelineTemplateInput` shape. Pure data
  * shuffle. Disabled pipelines are filtered out so they neither claim a
  * graph id nor land in the manifest.
@@ -435,7 +435,7 @@ export function generatePipelineManifestFiles(
   const hasModelPipelines = Object.values(config.pipelines).some(isModelsPipelineConfig);
   if (hasModelPipelines && !options.projectRoot) {
     throw new CommandError(
-      'generatePipelineManifestFiles: dogsled.yml declares model pipelines but no `projectRoot` was provided. ' +
+      'generatePipelineManifestFiles: bobsled.yml declares model pipelines but no `projectRoot` was provided. ' +
         'Pass `options.projectRoot` so Dogsled can scan `models/` for connection + materialization metadata, ' +
         'or call `generateManifest({ config, models })` directly with a pre-loaded model registry.',
       2
@@ -506,7 +506,7 @@ export type GenerateManifestProjectInput =
     };
 
 export interface GenerateManifestOptions {
-  /** Override `dogsled_cli_version`; defaults to the running Dogsled CLI version. */
+  /** Override `bobsled_cli_version`; defaults to the running Dogsled CLI version. */
   bobsledVersion?: string;
   /**
    * Resolved extract pipelines whose `runner` is `'managed'`. Optional —
@@ -524,7 +524,7 @@ export interface GenerateManifestOptions {
 }
 
 export interface GenerateProjectManifestOptions extends ResolveProjectPipelinesOptions {
-  /** Override `dogsled_cli_version`; defaults to the running Dogsled CLI version. */
+  /** Override `bobsled_cli_version`; defaults to the running Dogsled CLI version. */
   bobsledVersion?: string;
 }
 

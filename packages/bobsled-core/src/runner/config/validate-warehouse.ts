@@ -59,7 +59,7 @@ export function validateWarehouseSelections(
   for (const resource of pipeline.resources) {
     if (resource.override?.warehouse === undefined) continue;
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.warehouse`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.warehouse`,
       message: PER_RESOURCE_WAREHOUSE_REJECTION,
     });
   }
@@ -70,7 +70,7 @@ export function validateWarehouseSelections(
   if (pipeline.warehouse === undefined) return;
   if (lib === undefined) {
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.warehouse`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.warehouse`,
       message:
         `warehouse "${pipeline.warehouse}" cannot be validated for source "${pipeline.source}". ` +
         'Declared warehouse IDs: (unavailable).',
@@ -89,7 +89,7 @@ export function validateWarehouseSelections(
   const result = checkWarehouseMembership(pipeline.warehouse, integration.warehouses);
   if (!result.valid) {
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.warehouse`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.warehouse`,
       message:
         result.declaredIds.length === 0
           ? `warehouse "${pipeline.warehouse}" is not supported by source "${pipeline.source}" because it declares no warehouse IDs. ` +
@@ -123,7 +123,7 @@ export function validateModelWarehouseSelections(
   if (pipeline.warehouse === undefined) return;
   if (lib === undefined) {
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.warehouse`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.warehouse`,
       message:
         `warehouse "${pipeline.warehouse}" cannot be validated for connection "${pipeline.connection}". ` +
         'Declared warehouse IDs: (unavailable).',
@@ -142,7 +142,7 @@ export function validateModelWarehouseSelections(
   const result = checkWarehouseMembership(pipeline.warehouse, integration.warehouses);
   if (!result.valid) {
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.warehouse`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.warehouse`,
       message:
         result.declaredIds.length === 0
           ? `warehouse "${pipeline.warehouse}" is not supported by connection "${pipeline.connection}" because it declares no warehouse IDs. ` +

@@ -140,7 +140,7 @@ describe('V2 resource — extract.integration + load.integration', () => {
 
   it('rejects integration field on resource load block', () => {
     // Resource load block is defaults+overrides only; the destination binding
-    // (integration) belongs on the pipeline (dogsled.yml) or CLI flag.
+    // (integration) belongs on the pipeline (bobsled.yml) or CLI flag.
     const result = WarehouseResourceV2SpecSchema.safeParse({
       ...v2Resource,
       load: { ...v2Resource.load, integration: 'main_warehouse' },

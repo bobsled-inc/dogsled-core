@@ -72,7 +72,7 @@ extract:
       ? `destination: ${destinationNames[0]}`
       : `destinations: [${destinationNames.join(', ')}]`;
   fs.writeFileSync(
-    path.join(root, 'dogsled.yml'),
+    path.join(root, 'bobsled.yml'),
     `destinations:
 ${destinations}
 pipelines:

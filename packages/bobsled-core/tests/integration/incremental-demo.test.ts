@@ -236,11 +236,11 @@ parameters:
 });
 
 async function writeProject(projectRoot: string): Promise<void> {
-  await mkdir(join(projectRoot, '.dogsled'), { recursive: true });
+  await mkdir(join(projectRoot, '.bobsled'), { recursive: true });
   await mkdir(join(projectRoot, 'sources'), { recursive: true });
   await mkdir(join(projectRoot, 'vqs'), { recursive: true });
   await writeFile(
-    join(projectRoot, '.dogsled', 'config.yml'),
+    join(projectRoot, '.bobsled', 'config.yml'),
     `default_destination:
   dest: duckdb
   dbPath: ${join(projectRoot, 'incremental-demo.duckdb')}

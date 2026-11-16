@@ -63,7 +63,7 @@ export interface RunQueryArgs {
   apiResourceEntries?: ApiResourceEntry[];
   /**
    * Optional injected default destination, forwarded to the destination
-   * resolver to bypass `.dogsled/config.yml`. Defaults to the on-disk read.
+   * resolver to bypass `.bobsled/config.yml`. Defaults to the on-disk read.
    */
   defaultDestination?: { dest: string } & Record<string, unknown>;
   /**

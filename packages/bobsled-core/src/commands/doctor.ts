@@ -213,7 +213,7 @@ export function registerDoctorCommand(program: Command): void {
   program
     .command('doctor')
     .description('Check Dogsled project health')
-    .option('--config <path>', 'Path to dogsled.yml')
+    .option('--config <path>', 'Path to bobsled.yml')
     .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
     .option('--no-guide', 'Skip Project guide validation')
     .option('--json', 'Emit JSON')

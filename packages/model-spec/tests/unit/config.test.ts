@@ -52,12 +52,12 @@ describe('config', () => {
     it('preserves warehouse checkpoint configuration during project resolution', () => {
       fs.writeFileSync(
         path.join(tmpDir, 'model-spec.yml'),
-        'checkpoint_store:\n  integration: analytics_warehouse\n  schema: track_checkpoints\n'
+        'checkpoint_store:\n  integration: analytics_warehouse\n  schema: bobsled_checkpoints\n'
       );
       const { config } = loadProjectConfig(tmpDir);
       expect(resolveConfig({}, config).checkpointStore).toEqual({
         integration: 'analytics_warehouse',
-        schema: 'track_checkpoints',
+        schema: 'bobsled_checkpoints',
       });
     });
 

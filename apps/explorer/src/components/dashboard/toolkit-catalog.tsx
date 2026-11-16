@@ -173,7 +173,7 @@ export function DashboardToolkitCatalog({
               {
                 href: '/pipelines/new',
                 label: '2. Build a pipeline',
-                body: 'Choose sources, resources, destination, and schedule, then export dogsled.yml.',
+                body: 'Choose sources, resources, destination, and schedule, then export bobsled.yml.',
               },
               {
                 href: '/terminal',

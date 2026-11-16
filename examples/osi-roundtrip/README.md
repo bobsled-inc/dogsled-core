@@ -1,7 +1,7 @@
 # OSI round trip
 
 Run `pnpm e2e:osi-roundtrip`. This example exports three fictional SQL models, two
-metrics and one verified query to OSI profile `0.2.0.dev0`, checks the `DOGSLED`
+metrics and one verified query to OSI profile `0.2.0.dev0`, checks the `BOBSLED`
 extension vendor, imports into a fresh directory, validates the result, and compares
 compiled SQL before and after. Imported column semantics are checked in the native
 documents, and the verified query comes back unchanged under `verified_queries/`.

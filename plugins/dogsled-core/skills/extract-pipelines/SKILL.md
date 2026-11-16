@@ -9,11 +9,11 @@ description: Author and operate dogsled extract pipelines end to end, including
 
 # Extract pipelines
 
-This is the authoritative skill for dogsled extract-pipeline capability and workflow. Use it for both orchestration in a root `dogsled.yml` or typed pipeline-config fragments and extractor resource behavior. Other skills may collect a goal, implement a new connector, configure a loader, or diagnose infrastructure, but must route extract-pipeline decisions here.
+This is the authoritative skill for dogsled extract-pipeline capability and workflow. Use it for both orchestration in a root `bobsled.yml` or typed pipeline-config fragments and extractor resource behavior. Other skills may collect a goal, implement a new connector, configure a loader, or diagnose infrastructure, but must route extract-pipeline decisions here.
 
 ## Required workflow
 
-1. Inspect the Project's pipeline config files and capability before editing. A root `dogsled.yml` or `dogsled.yaml` remains valid. Nonroot fragments declare `type: pipeline_config`. Read the config file that owns the related pipeline, then inspect:
+1. Inspect the Project's pipeline config files and capability before editing. A root `bobsled.yml` or `bobsled.yaml` remains valid. Nonroot fragments declare `type: pipeline_config`. Read the config file that owns the related pipeline, then inspect:
    ```bash
    dogsled integrations list
    dogsled integrations show <source>
@@ -43,7 +43,7 @@ dogsled extract scaffold-test <source>
 dogsled extract run --integration <source> <resource> --limit 5
 
 dogsled runner validate --strict
-# Real write: first point dogsled.yml at a disposable destination.
+# Real write: first point bobsled.yml at a disposable destination.
 dogsled runner run <pipeline> --resource <resource>
 ```
 
@@ -59,7 +59,7 @@ Read and apply the complete capability contract below. It defines exact YAML sha
 
 ## Pipeline configuration files: orchestration
 
-The root `dogsled.yml` or `dogsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
+The root `bobsled.yml` or `bobsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
 
 An extract pipeline pulls explicitly named resources from one source and loads them into one or more named destinations:
 
@@ -161,7 +161,7 @@ below when the load session needs a non-default warehouse.
 
 ### Managed Snowflake destination warehouse selection
 
-An extract pipeline with one singular `dogsled_managed` destination may select
+An extract pipeline with one singular `bobsled_managed` destination may select
 the Snowflake warehouse used by the destination load session:
 
 ```yaml
@@ -193,7 +193,7 @@ and may resolve to different physical warehouses.
 
 The extractor emits the effective schema policy in each `SCHEMA` message. Choose
 one explicitly before the first write instead of relying on the implicit
-`evolve` default. The policy is a load default, not a `dogsled.yml`
+`evolve` default. The policy is a load default, not a `bobsled.yml`
 `load_strategy` setting.
 
 Set a project-wide policy in `extractor.yml` with `default_load.defaults`:
@@ -397,7 +397,7 @@ Project-local `extractor.yml` normally points at `integrations/`, `resources/`, 
 Project-local resources extend the bundled source catalog one resource at a time. A file under
 `resources/<source>/` overrides a bundled resource with the same declared `name`; bundled siblings
 remain available to discovery, validation, `for_each` dependencies, contextual outputs, and
-`dogsled.yml` resource lists. Adding one local resource never replaces the source's whole bundled
+`bobsled.yml` resource lists. Adding one local resource never replaces the source's whole bundled
 resource tree.
 
 An integration declares one or more transports plus auth. A resource declares one endpoint/tool/query, typed inputs and outputs, extraction mechanics, and table metadata. A representative HTTP resource is:

@@ -45,12 +45,12 @@ function makeUnionModel(): InMemoryModel {
     type: 'model',
     description: 'Customer chat feedback across every credit-warehouse source.',
     grain: 'row_id',
-    source: { ref: 'dogsled_managed.acme__chat_feedback' },
+    source: { ref: 'bobsled_managed.acme__chat_feedback' },
     include_all_columns: true,
     columns: [{ name: 'source_system', expr: "'acme'" }],
     union: [
       {
-        ref: 'dogsled_managed.globex__chat_feedback',
+        ref: 'bobsled_managed.globex__chat_feedback',
         include_all_columns: true,
         columns: [{ name: 'source_system', expr: "'globex'" }],
       },
@@ -64,25 +64,25 @@ function makeBigQuerySourceRegistry(): SourceRegistry {
   // Mirrors the host application's pre-fix wiring: `SourceRegistry` is the
   // ref → fully-qualified table name map, but no column metadata is supplied.
   const map: SourceRegistry = new Map();
-  map.set('dogsled_managed.acme__chat_feedback', 'lake.acme__chat_feedback');
-  map.set('dogsled_managed.globex__chat_feedback', 'lake.globex__chat_feedback');
+  map.set('bobsled_managed.acme__chat_feedback', 'lake.acme__chat_feedback');
+  map.set('bobsled_managed.globex__chat_feedback', 'lake.globex__chat_feedback');
   return map;
 }
 
 describe('buildInMemorySourceEntryRegistry', () => {
   it('produces a registry keyed by `connection.name` from parsed SourceSpecs', () => {
     const specs = [
-      makeSourceSpec('acme__chat_feedback', 'dogsled_managed', 'lake.acme__chat_feedback'),
-      makeSourceSpec('globex__chat_feedback', 'dogsled_managed', 'lake.globex__chat_feedback'),
+      makeSourceSpec('acme__chat_feedback', 'bobsled_managed', 'lake.acme__chat_feedback'),
+      makeSourceSpec('globex__chat_feedback', 'bobsled_managed', 'lake.globex__chat_feedback'),
     ];
     const result = buildInMemorySourceEntryRegistry(specs);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.entryRegistry.size).toBe(2);
-    const entry = result.entryRegistry.get('dogsled_managed.acme__chat_feedback');
+    const entry = result.entryRegistry.get('bobsled_managed.acme__chat_feedback');
     expect(entry?.kind).toBe('warehouse_table');
     expect(entry?.columns.map((c) => c.name)).toEqual(['row_id', 'amount']);
-    expect(result.registry.get('dogsled_managed.acme__chat_feedback')).toBe(
+    expect(result.registry.get('bobsled_managed.acme__chat_feedback')).toBe(
       'lake.acme__chat_feedback'
     );
   });
@@ -100,8 +100,8 @@ describe('compileInMemory — BigQuery union with include_all_columns', () => {
   const sources = makeBigQuerySourceRegistry();
   const model = makeUnionModel();
   const sourceSpecs = [
-    makeSourceSpec('acme__chat_feedback', 'dogsled_managed', 'lake.acme__chat_feedback'),
-    makeSourceSpec('globex__chat_feedback', 'dogsled_managed', 'lake.globex__chat_feedback'),
+    makeSourceSpec('acme__chat_feedback', 'bobsled_managed', 'lake.acme__chat_feedback'),
+    makeSourceSpec('globex__chat_feedback', 'bobsled_managed', 'lake.globex__chat_feedback'),
   ];
 
   it('trips the bigquery_union_drift_guard when entryRegistry is omitted', () => {
@@ -149,8 +149,8 @@ describe('dryRunInMemory — BigQuery union with include_all_columns', () => {
   const sources = makeBigQuerySourceRegistry();
   const model = makeUnionModel();
   const sourceSpecs = [
-    makeSourceSpec('acme__chat_feedback', 'dogsled_managed', 'lake.acme__chat_feedback'),
-    makeSourceSpec('globex__chat_feedback', 'dogsled_managed', 'lake.globex__chat_feedback'),
+    makeSourceSpec('acme__chat_feedback', 'bobsled_managed', 'lake.acme__chat_feedback'),
+    makeSourceSpec('globex__chat_feedback', 'bobsled_managed', 'lake.globex__chat_feedback'),
   ];
 
   it('surfaces the drift guard as a failed result when entryRegistry is omitted', async () => {

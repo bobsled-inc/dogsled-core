@@ -13,17 +13,17 @@ alone, and refuses to run anything that depends on them. This page lists them.
 
 In Cloud, a destination can point at a connection that Cloud manages instead of
 naming a warehouse. For example, in the `shop` project from
-[Run pipelines](run-pipelines.md), the `warehouse` destination in `dogsled.yml`
+[Run pipelines](run-pipelines.md), the `warehouse` destination in `bobsled.yml`
 could be:
 
 ```yaml
 destinations:
   warehouse:
-    type: dogsled_managed
-    dogsled_connection_ref: analytics-prod
+    type: bobsled_managed
+    bobsled_connection_ref: analytics-prod
 ```
 
-`dogsled_connection_ref` names the connection in Cloud. `runner validate` accepts
+`bobsled_connection_ref` names the connection in Cloud. `runner validate` accepts
 this destination, but Core cannot load into it:
 
 ```bash
@@ -33,14 +33,14 @@ dogsled runner run shop_files || echo "exit code $?"
 
 ```text
 ✓ Configuration is valid
-A "dogsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Dogsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".
+A "bobsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Dogsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".
 exit code 2
 ```
 
 To run the project with Core, replace the destination with a concrete one, for
 example `type: duckdb` with a `db_path`, or `type: bigquery` with its connection
 fields. A pipeline-level
-`destination_warehouse` is only valid with a single `dogsled_managed` destination.
+`destination_warehouse` is only valid with a single `bobsled_managed` destination.
 
 ## Extension keys
 

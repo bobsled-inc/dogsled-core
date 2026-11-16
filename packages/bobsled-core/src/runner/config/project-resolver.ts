@@ -178,8 +178,8 @@ function safeParseYaml(raw: string): unknown {
 
 function rootConfigPath(pathname: string): boolean {
   return (
-    pathname === 'dogsled.yml' ||
-    pathname === 'dogsled.yaml' ||
+    pathname === 'bobsled.yml' ||
+    pathname === 'bobsled.yaml' ||
     ROOT_CONFIG_FILE_SPELLINGS.includes(pathname)
   );
 }
@@ -503,11 +503,11 @@ function issueOwner(
   issuePath: string,
   project: LoadedProjectPipelineConfig
 ): { filePath: string; fieldPath: string } | undefined {
-  const normalizedIssuePath =
-    ROOT_CONFIG_FILE_SPELLINGS.some((name) => issuePath.startsWith(`${name}:`)) ||
-    /^dogsled\.ya?ml:/u.test(issuePath)
-      ? issuePath.slice(issuePath.indexOf(':') + 1)
-      : issuePath;
+  const normalizedIssuePath = ROOT_CONFIG_FILE_SPELLINGS.some((name) =>
+    issuePath.startsWith(`${name}:`)
+  )
+    ? issuePath.slice(issuePath.indexOf(':') + 1)
+    : issuePath;
   for (const [prefix, owners] of [
     ['pipelines.', project.pipelinePathByName],
     ['destinations.', project.destinationPathByName],

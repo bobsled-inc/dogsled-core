@@ -30,7 +30,7 @@ const referencedBy = () => {
 
 beforeEach(() => {
   root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'takeover-cli-')));
-  write('project/dogsled.yml', 'pipelines: {}\n');
+  write('project/bobsled.yml', 'pipelines: {}\n');
   write('project/sub/keep.txt', '');
   vi.clearAllMocks();
 });

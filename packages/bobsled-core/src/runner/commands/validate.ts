@@ -12,8 +12,8 @@ import type { GlobalOptions } from '../../types/index.js';
 export function registerRunnerValidateCommand(runner: Command): void {
   runner
     .command('validate')
-    .description('Validate dogsled.yml configuration')
-    .option('--config <path>', 'Path to dogsled.yml')
+    .description('Validate bobsled.yml configuration')
+    .option('--config <path>', 'Path to bobsled.yml')
     .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
     .option('--yaml', 'Output as YAML')
     .option('--strict', 'Treat warnings as errors')

@@ -25,7 +25,7 @@ export const teaching: Record<
   load: {
     code: [
       [
-        'dogsled.yml',
+        'bobsled.yml',
         'Find the source, destination, resources and page list: these define what the pipeline fetches and where it loads rows.',
       ],
       [
@@ -146,7 +146,7 @@ export const teaching: Record<
         'Inspect how the executor calls the configured AI model and attaches original text for passage IDs. It is separate from the model definition.',
       ],
       [
-        'dogsled.yml',
+        'bobsled.yml',
         'Inspect platform.models.show_review: the agentic model names this provider profile through llm.profile.',
       ],
     ],
@@ -189,6 +189,6 @@ export const planned: Record<StepId, string> = {
 function agenticReviewPanel(): string {
   return `<div class="callout" data-agentic-review><h3>Explain the build before choosing a show</h3><p>Prepare → pilot → inspect → finish approved runs → review quality → explain the build → pause. Return to this sequence after any recovery.</p><p>Follow your actual model chain: <code>article_inputs → assessment_inputs → show_notes → recommendations</code>. Inspect each definition’s input, rule and output table or view.</p><p>Open <button type="button" data-file="models/show_notes.yml">models/show_notes.yml</button>. Find <code>model_kind: agentic</code>, <code>llm.profile</code>, the instructions, output columns and <code>replace_processed_keys</code>. Which definition would you change to assess a different preference?</p><p>Querying saved recommendations makes no new AI call. Running the agentic model can. The executor attaches source text; the model defines the assessment.</p><p><strong>Quality review:</strong> technical checks verify the saved references. An explanation must say which requested qualities are supported, which remain unknown, and why its overall fit follows. Mark weak reasoning <strong>needs review</strong> and keep it out of the recommendation. A valid unknown is not a failure.</p><p>Review the model definitions and any quality gaps before marking the chapter inspected. Recovery attempts require prior approval; a no-cap choice is not unlimited permission to retry.</p></div>`;
 }
-export const tutorialOverview = `<section class="stage" id="tutorial-overview"><h2>You’re starting the Dogsled tutorial</h2><p>Build a data project to help answer “What should I watch next?” Bring in TV show data, organize it into models you can ask questions about, and add Wikipedia context to compare your options. Your agent will explain the files and queries and pause after each chapter so you can explore the results.</p><p>The data you load will be stored locally in a DuckDB database, by default <code>.dogsled/dogsled.duckdb</code> inside your project. You can query it directly with SQL or start DuckDB UI yourself if you want. Both are optional; the conversation and this page’s previews are enough to follow the tutorial.</p><ul><li>1. Connect to an API</li><li>2. Build an ETL pipeline</li><li>3. Build semantic models</li><li>4. Query your data</li><li>5. Query across sources</li><li>6. Build an agentic transformation</li><li>Optional: learn entity resolution using your watchlist</li></ul></section>`;
+export const tutorialOverview = `<section class="stage" id="tutorial-overview"><h2>You’re starting the Dogsled tutorial</h2><p>Build a data project to help answer “What should I watch next?” Bring in TV show data, organize it into models you can ask questions about, and add Wikipedia context to compare your options. Your agent will explain the files and queries and pause after each chapter so you can explore the results.</p><p>The data you load will be stored locally in a DuckDB database, by default <code>.bobsled/bobsled.duckdb</code> inside your project. You can query it directly with SQL or start DuckDB UI yourself if you want. Both are optional; the conversation and this page’s previews are enough to follow the tutorial.</p><ul><li>1. Connect to an API</li><li>2. Build an ETL pipeline</li><li>3. Build semantic models</li><li>4. Query your data</li><li>5. Query across sources</li><li>6. Build an agentic transformation</li><li>Optional: learn entity resolution using your watchlist</li></ul></section>`;
 
 export const teachingHtml = { transform: agenticReviewPanel() };

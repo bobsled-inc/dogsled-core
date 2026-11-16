@@ -3,7 +3,7 @@ import { CommandError, parseEnvPlaceholder } from '@bobsled-inc/protocol';
 export function resolveEnvPlaceholder(
   value: string,
   env: NodeJS.ProcessEnv = process.env,
-  label = 'a destination setting in dogsled.yml'
+  label = 'a destination setting in bobsled.yml'
 ): string {
   if (!value.startsWith('$')) {
     return value;

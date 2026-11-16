@@ -16,7 +16,7 @@ describe('validateUniqueResolvedResources', () => {
 
     expect(errors).toEqual([
       expect.objectContaining({
-        path: 'dogsled.yml:pipelines.duplicates.resources',
+        path: 'bobsled.yml:pipelines.duplicates.resources',
         message: expect.stringContaining('issues / issues → issues'),
       }),
     ]);

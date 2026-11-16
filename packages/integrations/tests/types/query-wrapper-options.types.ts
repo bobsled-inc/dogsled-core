@@ -92,7 +92,7 @@ queryResources.jira.searchIssues.list({
   input: {
     start_at: 25,
   },
-  search: 'project = DOGSLED',
+  search: 'project = BOBSLED',
 });
 
 // @ts-expect-error search-only wrappers do not accept filters

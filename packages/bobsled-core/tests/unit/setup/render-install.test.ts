@@ -81,7 +81,7 @@ describe('installCoworkAssets', () => {
 
   it('preserves an existing starter answers file when exclusive create reports EEXIST', async () => {
     const dir = createTempDir();
-    const answersPath = path.join(dir, 'dogsled.setup.answers.yml');
+    const answersPath = path.join(dir, 'bobsled.setup.answers.yml');
     const existingContent = 'project:\n  repo_name: existing-pipeline\n';
     writeFileSync(answersPath, existingContent, 'utf-8');
 
@@ -98,6 +98,6 @@ describe('installCoworkAssets', () => {
     const copied = installCoworkAssets(dir);
 
     expect(readFileSync(answersPath, 'utf-8')).toBe(existingContent);
-    expect(copied).not.toContain('dogsled.setup.answers.yml');
+    expect(copied).not.toContain('bobsled.setup.answers.yml');
   });
 });

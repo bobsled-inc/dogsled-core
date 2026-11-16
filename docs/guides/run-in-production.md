@@ -16,7 +16,7 @@ npx --no-install dogsled runner run helpdesk_tickets
 npx --no-install dogsled model run --integration warehouse --json
 ```
 
-`runner run` runs one extract pipeline from `dogsled.yml` and exits.
+`runner run` runs one extract pipeline from `bobsled.yml` and exits.
 `model run` builds the models on one model integration and exits. Run Dogsled with
 `npx --no-install dogsled` in production. Without `--no-install`, npx downloads
 and runs a package from the npm registry when Dogsled is not installed in the
@@ -60,7 +60,7 @@ need other drivers, for example `snowflake-sdk` for Snowflake; see the
 
 Dogsled reads a credential only from an environment variable that a project file
 declares. An integration lists the names it uses in `auth_env_vars`, and a
-destination in `dogsled.yml` does the same:
+destination in `bobsled.yml` does the same:
 
 ```yaml
 spec_version: '1'
@@ -77,7 +77,7 @@ transport:
 
 The scheduler maps each secret to a variable with the same name. A name that is
 not declared is refused. `runner validate --strict` fails on an undeclared name in
-an integration. It does not check the names that destinations in `dogsled.yml`
+an integration. It does not check the names that destinations in `bobsled.yml`
 use: `runner run` refuses an undeclared destination name when it starts, with exit
 code `2`. Dogsled keeps the values out of its output, logs and state files.
 [Environment variables](../reference/environment-variables.md#state-and-credentials)
@@ -90,7 +90,7 @@ addresses, such as an API inside your own network, unless the run sets
 
 ## GitHub Actions
 
-This workflow lives in the project repository at `.github/workflows/dogsled.yml`.
+This workflow lives in the project repository at `.github/workflows/bobsled.yml`.
 It has two jobs:
 
 - `run` extracts, loads and builds the models every day, and when you start it by
@@ -159,9 +159,9 @@ jobs:
       - name: Restore state
         id: restore
         run: |
-          mkdir -p .extractor .dogsled/model-spec
+          mkdir -p .extractor .bobsled/model-spec
           gcloud storage cp "$STATE_PREFIX/state.json" .extractor/state.json
-          gcloud storage cp "$STATE_PREFIX/run-state.json" .dogsled/model-spec/run-state.json
+          gcloud storage cp "$STATE_PREFIX/run-state.json" .bobsled/model-spec/run-state.json
       - name: Extract and load
         env:
           HELPDESK_TOKEN: ${{ secrets.HELPDESK_TOKEN }}
@@ -172,7 +172,7 @@ jobs:
         run: npx --no-install dogsled model run --integration warehouse --json
       - name: Save model state
         if: always() && steps.restore.outcome == 'success'
-        run: gcloud storage cp .dogsled/model-spec/run-state.json "$STATE_PREFIX/run-state.json"
+        run: gcloud storage cp .bobsled/model-spec/run-state.json "$STATE_PREFIX/run-state.json"
       - name: Report a failure
         if: failure()
         env:
@@ -216,7 +216,7 @@ What each part does:
   pipeline, and `model run` builds the models. `--json` makes `model run` print
   each model's result, including the reason a model failed.
 
-Models pipelines (`type: models`) in `dogsled.yml` are instructions for an
+Models pipelines (`type: models`) in `bobsled.yml` are instructions for an
 orchestrator. `runner run` does not build them; it exits with code `2` and prints
 the `dogsled model run` command to use instead. See
 [Run pipelines](run-pipelines.md#models-and-entity-graph-pipelines).
@@ -340,7 +340,7 @@ can reach, for example S3 with `aws s3 cp` in the same steps as above.
 Dogsled keeps two state files in the project folder:
 
 - `.extractor/state.json` holds the extraction cursors.
-- `.dogsled/model-spec/run-state.json` records what `model run` built.
+- `.bobsled/model-spec/run-state.json` records what `model run` built.
 
 A fresh CI runner or container starts without either file, so keep both between
 runs.
@@ -372,7 +372,7 @@ again, and an `append` resource loads duplicate rows.
 
 ### Model state
 
-`model run` records each model it builds in `.dogsled/model-spec/run-state.json`:
+`model run` records each model it builds in `.bobsled/model-spec/run-state.json`:
 its materialization, its columns and when it last ran. Without this file, every
 model counts as never built:
 
@@ -382,11 +382,11 @@ model counts as never built:
 - a change to a model's columns or materialization is no longer caught, so the
   table is rebuilt instead of the run stopping with exit code `3`.
 
-Agentic models on DuckDB also keep their checkpoints under `.dogsled/model-spec/`.
+Agentic models on DuckDB also keep their checkpoints under `.bobsled/model-spec/`.
 On a warehouse they keep them in warehouse tables. See
 [Agentic models](agentic-models.md#run-and-resume).
 
-Add `node_modules/`, `.extractor/` and `.dogsled/` to `.gitignore`. State does not
+Add `node_modules/`, `.extractor/` and `.bobsled/` to `.gitignore`. State does not
 belong in the project repository; keep it as described below.
 
 ### Recommended: copy the files to object storage
@@ -513,7 +513,7 @@ success, build the models, save `run-state.json`.
 ### A server with systemd
 
 On a server that keeps its files between runs, `.extractor/state.json` and
-`.dogsled/model-spec/run-state.json` stay on disk, and you do not need to copy
+`.bobsled/model-spec/run-state.json` stay on disk, and you do not need to copy
 them. Back them up with the rest of the server.
 
 Put the commands in a script in the project, `run-bobsled.sh`:
@@ -586,7 +586,7 @@ USER node
 COPY --chown=node:node package.json package-lock.json ./
 RUN npm ci
 COPY --chown=node:node . .
-RUN mkdir -p .extractor .dogsled/model-spec
+RUN mkdir -p .extractor .bobsled/model-spec
 ENTRYPOINT ["npx", "--no-install", "dogsled"]
 ```
 
@@ -609,11 +609,11 @@ environment variables by the platform:
 ```bash
 docker run --rm -e HELPDESK_TOKEN \
   -v dogsled-extract-state:/project/.extractor \
-  -v dogsled-model-state:/project/.dogsled/model-spec \
+  -v dogsled-model-state:/project/.bobsled/model-spec \
   my-bobsled-project runner run helpdesk_tickets
 docker run --rm \
   -v dogsled-extract-state:/project/.extractor \
-  -v dogsled-model-state:/project/.dogsled/model-spec \
+  -v dogsled-model-state:/project/.bobsled/model-spec \
   my-bobsled-project model run --integration warehouse --json
 ```
 
@@ -636,9 +636,9 @@ DAG with `max_active_runs=1`. Both keep runs from overlapping.
   key pair rather than a password for Snowflake.
 - Keep `.extractor/state.json` between runs, and save it only after a successful
   run.
-- Keep `.dogsled/model-spec/run-state.json` between runs, and save it after every
+- Keep `.bobsled/model-spec/run-state.json` between runs, and save it after every
   `model run`.
-- Keep `node_modules/`, `.extractor/` and `.dogsled/` out of Git. Never commit or
+- Keep `node_modules/`, `.extractor/` and `.bobsled/` out of Git. Never commit or
   cache `auth-state.json`.
 - Run Dogsled with `npx --no-install dogsled`.
 - Run `runner validate --strict` in pull requests, without secrets.

@@ -141,7 +141,7 @@ have intentionally ambiguous product identity. Keep their product IDs null.
 ## 6. Build an agentic transformation (`transform`)
 
 First obtain consent and provider/model choices using the Retail guide. Configure
-the `review` role in `dogsled.yml` through environment references. Adapt the
+the `review` role in `bobsled.yml` through environment references. Adapt the
 `support_batch` and `support_case_classifications` templates. Put the model-backed
 executor template at `executor.mjs`; its Dogsled and `zod` imports must resolve
 from the project, using the installed package or a source-workspace link.

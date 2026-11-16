@@ -90,21 +90,21 @@ export type { IntegrationsLib, ValidationCatalog } from '../../validation.js';
 // File discovery
 // ---------------------------------------------------------------------------
 
-const CONFIG_NAMES = [...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])];
+const CONFIG_NAMES = [...new Set(['bobsled.yml', 'bobsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])];
 export const INTEGRATIONS_LOAD_WARNING =
   'Could not load @bobsled-inc/integrations — skipping integration validation';
 
 export interface ResolvedResource {
   /**
    * Resolved resource spec name as consumed by the extractor (e.g.
-   * `issues_mcp`). For entity-name references in `dogsled.yml` (e.g.
+   * `issues_mcp`). For entity-name references in `bobsled.yml` (e.g.
    * `resources: [issues] + via: mcp`), `resolveEntityVariant` rewrites this to
    * the matched variant's spec name and preserves the original token on
    * `requestedName`. Strict-name references leave `requestedName` unset.
    */
   name: string;
   /**
-   * The original token authored in `dogsled.yml` when entity resolution rewrote
+   * The original token authored in `bobsled.yml` when entity resolution rewrote
    * `name`. Preserved so error messages and observability can echo back what
    * the user wrote (e.g. `Pipeline "..." uses per-resource overrides on
    * [issues]`) instead of the variant-specific spec name.
@@ -200,7 +200,7 @@ export interface ValidationResult {
 
 /**
  * Locate the Dogsled project for `startDir`: the nearest directory at or above
- * it that holds a root `dogsled.yml`/`dogsled.yaml`, or else `startDir` itself when
+ * it that holds a root `bobsled.yml`/`bobsled.yaml`, or else `startDir` itself when
  * it contains Dogsled Project files. Pipeline configuration is optional.
  */
 export function findBobsledProject(startDir?: string): BobsledProjectLocation | null {
@@ -265,7 +265,7 @@ function declaresPipelineConfig(configPath: string): boolean {
  * The project an explicit pipeline configuration belongs to: the file's
  * directory, unless a typed fragment lives inside the caller's working
  * directory. In that case the working directory is the Project root, even
- * when the fragment is named `dogsled.yml` or `dogsled.yaml`.
+ * when the fragment is named `bobsled.yml` or `bobsled.yaml`.
  */
 export function bobsledProjectForConfig(
   explicitConfigPath: string,
@@ -340,7 +340,7 @@ export function loadBobsledConfig(
   );
   if (!result.success) {
     const issues = result.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n');
-    throw new CommandError(`Invalid dogsled.yml:\n${issues}`, 2);
+    throw new CommandError(`Invalid bobsled.yml:\n${issues}`, 2);
   }
 
   return result.data;
@@ -457,7 +457,7 @@ export interface ResolvedEntityGraphPipeline {
   default_run_mode: 'full' | 'incremental';
   /**
    * Optional warehouse-text chunk sources, copied through verbatim from
-   * `dogsled.yml`. The `extract_mentions` phase chunks these into `__chunks`.
+   * `bobsled.yml`. The `extract_mentions` phase chunks these into `__chunks`.
    * Consumed by the managed runner; absent for resolution-only pipelines.
    */
   chunk_sources?: ChunkSource[];
@@ -465,7 +465,7 @@ export interface ResolvedEntityGraphPipeline {
 }
 
 /**
- * Walk `dogsled.yml` and return one `ResolvedEntityGraphPipeline` per
+ * Walk `bobsled.yml` and return one `ResolvedEntityGraphPipeline` per
  * `type: entity-graph` entry. Schedules are pre-parsed into POSIX cron
  * (or `null` for `schedule: manual`) and the `phases` default is
  * already materialized by the Zod schema, so consumers don't need to
@@ -547,7 +547,7 @@ export interface ExpandedModelPipeline {
 function buildModelNodes(modelNames: string[], models: Map<string, DiscoveredModel>): ModelNode[] {
   const inSet = new Set(modelNames.map((name) => name.toLowerCase()));
   // Resolve metadata case-insensitively — the Model Spec DAG canonicalizes model
-  // names/refs to lowercase, so a `dogsled.yml` pipeline may list a model in a
+  // names/refs to lowercase, so a `bobsled.yml` pipeline may list a model in a
   // different case than the spec's `name:`. A case-sensitive `models.get(name)`
   // would miss, drop the model's refs, and silently turn it into a spurious
   // root node (parallel instead of sequential edges).
@@ -680,7 +680,7 @@ export function computeSyntheticModelPipelines(
  * a given Dogsled config + project root. The manifest generator uses this; the
  * host application will too once it imports the library export.
  *
- * Returns authored pipelines first (preserving dogsled.yml ordering), followed
+ * Returns authored pipelines first (preserving bobsled.yml ordering), followed
  * by synthetic pipelines sorted by connection slug.
  */
 export function resolveAllModelPipelines(
@@ -816,7 +816,7 @@ export function validateEmbedSecretsResolvable(
     const value = env[binding.envVar];
     if (value === undefined || value === '') {
       issues.push({
-        path: `dogsled.yml:pipelines.${binding.pipelineName}.embed.api_key`,
+        path: `bobsled.yml:pipelines.${binding.pipelineName}.embed.api_key`,
         message:
           `Environment variable "${binding.envVar}" referenced by ` +
           `"${binding.rawPlaceholder}" is not set.`,
@@ -895,7 +895,7 @@ function validateEmbedSelections(
     const resource = resourcesByName.get(stream);
     if (!resource) {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.embed.streams.${stream}`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.embed.streams.${stream}`,
         message:
           `resource "${stream}" not found in integration "${pipeline.source}" ` +
           'or is excluded from this pipeline',
@@ -907,7 +907,7 @@ function validateEmbedSelections(
       const outputField = resource.output?.[field.field];
       if (!outputField) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.embed.streams.${stream}.${field.field}`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.embed.streams.${stream}.${field.field}`,
           message:
             `field "${field.field}" not found on resource "${stream}" ` +
             `in integration "${pipeline.source}"`,
@@ -966,7 +966,7 @@ export async function validateBobsledConfig(
     modelPipelines = resolveModelPipelines(config);
     entityGraphPipelines = resolveEntityGraphPipelines(config);
   } catch (e) {
-    errors.push({ path: 'dogsled.yml', message: (e as Error).message });
+    errors.push({ path: 'bobsled.yml', message: (e as Error).message });
     return invalid();
   }
 
@@ -977,7 +977,7 @@ export async function validateBobsledConfig(
       if (!(destinationName in config.destinations)) {
         const available = Object.keys(config.destinations).join(', ');
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}`,
+          path: `bobsled.yml:pipelines.${pipeline.name}`,
           message: `Destination "${destinationName}" not found in top-level destinations map. Available: ${available}`,
         });
       }
@@ -985,11 +985,11 @@ export async function validateBobsledConfig(
     if (pipeline.destinationWarehouse !== undefined) {
       const destinationName = pipeline.destinationNames[0];
       const destination = destinationName ? config.destinations[destinationName] : undefined;
-      if (pipeline.destinationNames.length !== 1 || destination?.type !== 'dogsled_managed') {
+      if (pipeline.destinationNames.length !== 1 || destination?.type !== 'bobsled_managed') {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.destination_warehouse`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.destination_warehouse`,
           message:
-            'destination_warehouse is only supported with a singular destination whose type is "dogsled_managed".',
+            'destination_warehouse is only supported with a singular destination whose type is "bobsled_managed".',
         });
       }
     }
@@ -1004,7 +1004,7 @@ export async function validateBobsledConfig(
           ))
       ) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.table_ownership_marker`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.table_ownership_marker`,
           message: 'table_ownership_marker requires one supported warehouse destination',
         });
       }
@@ -1024,7 +1024,7 @@ export async function validateBobsledConfig(
     );
     if (unsupported.length > 0) {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
         message:
           `Per-resource load_strategy/table overrides require database destinations; ` +
           `file destination(s) [${fileDestinations.join(', ')}] cannot apply overrides on ` +

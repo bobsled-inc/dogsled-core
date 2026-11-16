@@ -72,7 +72,7 @@ describe('doctorSetup', () => {
       },
     });
 
-    writeFileSync(path.join(dir, 'dogsled.setup.answers.yml'), stringify(answers), 'utf-8');
+    writeFileSync(path.join(dir, 'bobsled.setup.answers.yml'), stringify(answers), 'utf-8');
 
     const report = await doctorSetup({ cwd: dir });
 
@@ -124,7 +124,7 @@ describe('doctorSetup', () => {
       },
     });
 
-    writeFileSync(path.join(dir, 'dogsled.setup.answers.yml'), stringify(answers), 'utf-8');
+    writeFileSync(path.join(dir, 'bobsled.setup.answers.yml'), stringify(answers), 'utf-8');
 
     const report = await doctorSetup({ cwd: dir });
     const credCheck = report.checks.find((check) => check.name === 'credentials');
@@ -163,7 +163,7 @@ describe('doctorSetup', () => {
       },
     });
 
-    writeFileSync(path.join(dir, 'dogsled.setup.answers.yml'), stringify(answers), 'utf-8');
+    writeFileSync(path.join(dir, 'bobsled.setup.answers.yml'), stringify(answers), 'utf-8');
 
     const report = await doctorSetup({ cwd: dir });
     const credCheck = report.checks.find((check) => check.name === 'credentials');

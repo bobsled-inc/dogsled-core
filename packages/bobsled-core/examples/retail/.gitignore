@@ -3,7 +3,7 @@
 *.duckdb.wal
 .extractor/
 output/
-.dogsled/onboarding/
-.dogsled/model-spec/
+.bobsled/onboarding/
+.bobsled/model-spec/
 .env*
 node_modules/

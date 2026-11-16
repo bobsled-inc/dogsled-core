@@ -14,7 +14,7 @@ const roots: string[] = [];
 afterEach(() =>
   roots.splice(0).forEach((root) => fs.rmSync(root, { recursive: true, force: true }))
 );
-const extension = (data: object) => [{ vendor_name: 'DOGSLED', data: JSON.stringify(data) }];
+const extension = (data: object) => [{ vendor_name: 'BOBSLED', data: JSON.stringify(data) }];
 function project(source = 'main.clean_orders') {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ossie-load-'));
   roots.push(root);
@@ -122,7 +122,7 @@ describe('Ossie project loading', () => {
     ).toThrow(/resolves its output/);
   });
   it('rejects a query reference for a view with no live parent', async () => {
-    const { root, write, document } = project('dogsled://models/clean_orders');
+    const { root, write, document } = project('bobsled://models/clean_orders');
     document.datasets[0].custom_extensions = extension({
       extension_version: '1',
       kind: 'derived',
@@ -137,7 +137,7 @@ describe('Ossie project loading', () => {
     });
   });
   it('accepts a query reference when an existing live API source drives the model', async () => {
-    const { root, write, document } = project('dogsled://models/clean_orders');
+    const { root, write, document } = project('bobsled://models/clean_orders');
     write('raw.yml', {
       spec_version: '0.2',
       type: 'source',
@@ -160,7 +160,7 @@ describe('Ossie project loading', () => {
     expect(loaded.models[0].materialization).toBe('view');
   });
   it('accepts a project-local ephemeral model and resolves its downstream reference', async () => {
-    const { root, write, document } = project('dogsled://models/clean_orders');
+    const { root, write, document } = project('bobsled://models/clean_orders');
     document.datasets[0].custom_extensions = extension({
       extension_version: '1',
       kind: 'derived',

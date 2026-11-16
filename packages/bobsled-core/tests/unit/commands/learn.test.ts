@@ -14,7 +14,7 @@ describe('learn command', () => {
     try {
       await buildProgram().parseAsync(['node', 'dogsled', 'learn', '--reset']);
       const progress = JSON.parse(
-        readFileSync(path.join(root, '.dogsled/tutor-lab/.dogsled-tutor-progress.json'), 'utf8')
+        readFileSync(path.join(root, '.bobsled/tutor-lab/.dogsled-tutor-progress.json'), 'utf8')
       );
       expect(progress.completed).toEqual({});
       expect(progress.skipped).toEqual({});
