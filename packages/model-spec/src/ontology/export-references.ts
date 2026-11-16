@@ -1,4 +1,4 @@
-import { record } from '../interchange/common.js';
+import { isOwnOssieVendor, record } from '../interchange/common.js';
 
 /** Rebase structured native build references; opaque expressions need reviewed aliases. */
 export function rebaseNativeExtensions(
@@ -14,7 +14,7 @@ export function rebaseNativeExtensions(
     if (key === 'custom_extensions' && Array.isArray(child)) {
       for (const extension of child) {
         const item = record(extension);
-        if (item['vendor_name'] !== 'DOGSLED' || typeof item['data'] !== 'string') continue;
+        if (!isOwnOssieVendor(item['vendor_name']) || typeof item['data'] !== 'string') continue;
         const payload: unknown = JSON.parse(item['data']);
         rebase(payload, references);
         (extension as Record<string, unknown>)['data'] = JSON.stringify(payload);

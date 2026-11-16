@@ -34,6 +34,7 @@ import {
 } from './schema.js';
 import type { DogsledConfig } from './schema.js';
 import { BUILT_IN_VALIDATION_CATALOG, type ValidationCatalog } from '../../validation.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 export interface LoadProjectPipelineConfigOptions {
   projectRoot: string;
@@ -176,7 +177,11 @@ function safeParseYaml(raw: string): unknown {
 }
 
 function rootConfigPath(pathname: string): boolean {
-  return pathname === 'dogsled.yml' || pathname === 'dogsled.yaml';
+  return (
+    pathname === 'dogsled.yml' ||
+    pathname === 'dogsled.yaml' ||
+    ROOT_CONFIG_FILE_SPELLINGS.includes(pathname)
+  );
 }
 
 function relativeConfigPath(projectRoot: string, absolutePath: string): string {
@@ -498,9 +503,11 @@ function issueOwner(
   issuePath: string,
   project: LoadedProjectPipelineConfig
 ): { filePath: string; fieldPath: string } | undefined {
-  const normalizedIssuePath = /^dogsled\.ya?ml:/u.test(issuePath)
-    ? issuePath.slice(issuePath.indexOf(':') + 1)
-    : issuePath;
+  const normalizedIssuePath =
+    ROOT_CONFIG_FILE_SPELLINGS.some((name) => issuePath.startsWith(`${name}:`)) ||
+    /^dogsled\.ya?ml:/u.test(issuePath)
+      ? issuePath.slice(issuePath.indexOf(':') + 1)
+      : issuePath;
   for (const [prefix, owners] of [
     ['pipelines.', project.pipelinePathByName],
     ['destinations.', project.destinationPathByName],

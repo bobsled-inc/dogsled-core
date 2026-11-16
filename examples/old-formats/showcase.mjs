@@ -186,10 +186,12 @@ export async function run(ctx) {
   const manifest = safeParsePipelineManifest({ ...currentManifest, version: 6 });
   assert.equal(manifest.success, false);
   assert.equal(manifest.issues[0]?.code, 'unsupported_version');
-  assert.equal(
-    safeParsePipelineManifest({ ...currentManifest, kind: 'track.pipeline.dag' }).success,
-    false
-  );
+  const trackManifest = safeParsePipelineManifest({
+    ...currentManifest,
+    kind: 'track.pipeline.dag',
+  });
+  assert.equal(trackManifest.success, true);
+  assert.equal(trackManifest.data.kind, currentManifest.kind);
   await rm(path.join(ctx.project, 'integrations'), { recursive: true });
   await ctx.write('dogsled.yml', 'pipelines: [\n');
   const broken = await ctx.cli(['doctor', '--json'], { expected: null });
@@ -199,7 +201,6 @@ export async function run(ctx) {
   await rm(path.join(ctx.project, 'dogsled.yml'));
   await ctx.write('track.yml', 'pipelines: {}\n');
   const old = await ctx.cli(['doctor', '--json'], { expected: null });
-  assert.equal(old.code, 1, 'Known limitation: retired root config has no migration diagnostic');
-  assert.match(old.stdout + old.stderr, /Could not find a Dogsled Project/);
+  assert.doesNotMatch(old.stdout + old.stderr, /Could not find a \w+ Project/);
   assert.doesNotMatch(old.stdout + old.stderr, /^\s+at .+:\d+:\d+\)?$/m);
 }

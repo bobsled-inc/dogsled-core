@@ -15,6 +15,7 @@ import {
   type OssieField,
 } from './schema.js';
 import { logicalTypeForSqlType } from './types.js';
+import { currentOssieUri, isOssieLocalUri } from '../interchange/common.js';
 
 export interface OssieOrigin {
   filePath: string;
@@ -225,8 +226,8 @@ export function translateOssieDocument(
       assertNoDiscardedKeys(raw, native, where);
       derivedNames.add(dataset.name);
       const materialization = (native as z.infer<typeof TransformSpecSchema>).materialization.type;
-      if (dataset.source.startsWith('dogsled://')) {
-        if (dataset.source !== `dogsled://models/${dataset.name}`) {
+      if (isOssieLocalUri(dataset.source)) {
+        if (currentOssieUri(dataset.source) !== `dogsled://models/${dataset.name}`) {
           fail(where, 'Project-local source must be dogsled://models/<dataset-name>');
         }
         // Live closures are validated by the existing runtime. Persisted outputs
@@ -272,7 +273,8 @@ export function translateOssieDocument(
       assertNoDiscardedKeys(raw, native, where);
       if (
         sourceType === 'api_resource' &&
-        dataset.source !== `dogsled://sources/${String(settings['connection'])}/${dataset.name}`
+        currentOssieUri(dataset.source) !==
+          `dogsled://sources/${String(settings['connection'])}/${dataset.name}`
       ) {
         fail(where, 'API sources require dogsled://sources/<connection>/<dataset-name>');
       }

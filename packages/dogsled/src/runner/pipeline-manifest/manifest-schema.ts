@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { parseToCron } from '../schedule/parser.js';
 import { PIPELINE_MANIFEST_COMPAT_VERSIONS } from './template.js';
+import { MANIFEST_SPELLINGS } from './legacy-names.js';
 
 const MAX_STRING_LENGTH = 4_096;
 const MAX_COMMAND_TOKENS = 256;
@@ -82,12 +83,24 @@ const resourceMetadataMapSchema = z
     message: `Resource metadata cannot exceed ${MAX_COLLECTION_ITEMS} entries.`,
   });
 
+/**
+ * A name a manifest may spell either way (see legacy-names.ts). It parses to the spelling Core
+ * writes now, so code after parsing compares against one spelling.
+ */
+function spelling<C extends string>(current: C, role: keyof typeof MANIFEST_SPELLINGS) {
+  const spellings = MANIFEST_SPELLINGS[role] as readonly string[];
+  if (!spellings.includes(current)) {
+    throw new Error(`Manifest spelling ${current} is missing from legacy-names.ts.`);
+  }
+  return z.enum(spellings as [string, ...string[]]).transform((): C => current);
+}
+
 const currentCommandContractSchema = z
   .object({
-    default_command: z.literal('dogsled'),
-    command_env: z.literal('DOGSLED_PIPELINE_COMMAND'),
-    cwd_env: z.literal('DOGSLED_PIPELINE_CWD'),
-    timeout_seconds_env: z.literal('DOGSLED_PIPELINE_TIMEOUT_SECONDS'),
+    default_command: spelling('dogsled', 'default_command'),
+    command_env: spelling('DOGSLED_PIPELINE_COMMAND', 'command_env'),
+    cwd_env: spelling('DOGSLED_PIPELINE_CWD', 'cwd_env'),
+    timeout_seconds_env: spelling('DOGSLED_PIPELINE_TIMEOUT_SECONDS', 'timeout_seconds_env'),
     default_timeout_seconds: z.literal(1800),
     output: z.literal('jsonl'),
   })
@@ -96,7 +109,7 @@ const currentCommandContractSchema = z
 const resourceNodeBaseSchema = z
   .object({
     id: nonEmptyString,
-    kind: z.literal('dogsled.runner.run_resource'),
+    kind: spelling('dogsled.runner.run_resource', 'run_resource'),
     pipeline: nonEmptyString,
     integration: nonEmptyString,
     resource: nonEmptyString,
@@ -110,7 +123,7 @@ const resourceNodeBaseSchema = z
 const embeddedModelNodeSchema = z
   .object({
     id: z.literal('model'),
-    kind: z.literal('dogsled.model.run'),
+    kind: spelling('dogsled.model.run', 'model_run'),
     integration: nonEmptyString,
     models: z.array(nonEmptyString).min(1).max(MAX_COLLECTION_ITEMS),
     command: commandSchema,
@@ -129,7 +142,7 @@ const extractNodesSchema = z.union([resourceNodeSchema, embeddedModelNodeSchema]
 const modelNodeSchema = z
   .object({
     id: nonEmptyString,
-    kind: z.literal('dogsled.model.run'),
+    kind: spelling('dogsled.model.run', 'model_run'),
     model: nonEmptyString,
     tags: z.array(nonEmptyString).max(MAX_COLLECTION_ITEMS).optional(),
     command: commandSchema,
@@ -146,7 +159,7 @@ const entityGraphPhaseSchema = z.enum([
 const entityGraphNodeSchema = z
   .object({
     id: nonEmptyString,
-    kind: z.literal('dogsled.entity_graph.run'),
+    kind: spelling('dogsled.entity_graph.run', 'entity_graph_run'),
     phase: entityGraphPhaseSchema,
     command: commandSchema,
     emits: z.tuple([z.literal('entity_graph_runs')]),
@@ -246,7 +259,7 @@ const reverseEtlPipelineSchema = z
 
 const manifestV7Schema = z
   .object({
-    kind: z.literal('dogsled.pipeline.dag'),
+    kind: spelling('dogsled.pipeline.dag', 'kind'),
     version: z.literal(7),
     dogsled_cli_version: nonEmptyString,
     command_contract: currentCommandContractSchema,
@@ -729,6 +742,24 @@ function collectionLimitIssue(input: unknown): PipelineManifestValidationIssue |
   return undefined;
 }
 
+const CLI_VERSION_FIELD = 'dogsled_cli_version';
+
+/**
+ * A manifest may name the CLI version field in any generation's spelling. Every spelling moves to
+ * the current key when all spellings present hold the same value. Different values are left in
+ * place, and strict parsing reports the extra keys.
+ */
+function respellCliVersionField(input: unknown): unknown {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) return input;
+  const record = input as Record<string, unknown>;
+  const present = MANIFEST_SPELLINGS.cli_version_field.filter((key) => Object.hasOwn(record, key));
+  if (!present.length || (present.length === 1 && present[0] === CLI_VERSION_FIELD)) return input;
+  const value = record[present[0]!];
+  if (present.some((key) => record[key] !== value)) return input;
+  const rest = Object.fromEntries(Object.entries(record).filter(([key]) => !present.includes(key)));
+  return { ...rest, [CLI_VERSION_FIELD]: value };
+}
+
 export function safeParsePipelineManifest(input: unknown): SafeParsePipelineManifestResult {
   const version =
     typeof input === 'object' && input !== null && !Array.isArray(input)
@@ -753,7 +784,7 @@ export function safeParsePipelineManifest(input: unknown): SafeParsePipelineMani
   const limitIssue = collectionLimitIssue(input);
   if (limitIssue) return { success: false, issues: [limitIssue] };
 
-  const parsed = PipelineManifestSchema.safeParse(input);
+  const parsed = PipelineManifestSchema.safeParse(respellCliVersionField(input));
   if (!parsed.success) {
     return { success: false, issues: structuralIssues(parsed.error) };
   }

@@ -17,6 +17,7 @@ import {
   type ProjectSkillPackageMetadata,
   type ProjectSkillResource,
 } from './schema.js';
+import { SKILL_SIDECAR_SPELLINGS } from './legacy-names.js';
 
 export interface ProjectSkillPackageResourceInput {
   readonly path: string;
@@ -68,9 +69,10 @@ function sortedResources(resources: readonly ProjectSkillResource[]): ProjectSki
 
 function parsePackageMetadata(
   content: Buffer,
-  entrypointPath: string
+  entrypointPath: string,
+  sidecarName: string
 ): ProjectSkillPackageMetadata {
-  const sidecarPath = `${entrypointPath}:dogsled.yaml`;
+  const sidecarPath = `${entrypointPath}:${sidecarName}`;
   let parsedYaml: unknown;
   try {
     parsedYaml = parseYaml(decodeUtf8(content, sidecarPath, projectSkillError), {
@@ -121,6 +123,7 @@ export function loadProjectSkillPackage(
   const resources: ProjectSkillResource[] = [];
   const seen = new Set([path.posix.basename(entrypointPath)]);
   let packageMetadataBytes: Buffer | undefined;
+  let packageMetadataName: string | undefined;
   for (const resource of inputResources) {
     const resourcePath = normalizedRelativePath(resource.path, entrypointPath);
     if (seen.has(resourcePath)) {
@@ -128,7 +131,16 @@ export function loadProjectSkillPackage(
     }
     seen.add(resourcePath);
     const content = bytesOf(resource.content);
-    if (resourcePath === 'dogsled.yaml') packageMetadataBytes = content;
+    if (SKILL_SIDECAR_SPELLINGS.includes(resourcePath)) {
+      if (packageMetadataName) {
+        throw projectSkillError(
+          entrypointPath,
+          `package has both "${packageMetadataName}" and "${resourcePath}"; keep one metadata file`
+        );
+      }
+      packageMetadataBytes = content;
+      packageMetadataName = resourcePath;
+    }
     if (content.byteLength > maxFileBytes) {
       throw projectSkillError(
         `${entrypointPath}:${resourcePath}`,
@@ -162,9 +174,10 @@ export function loadProjectSkillPackage(
     }
   }
 
-  const packageMetadata = packageMetadataBytes
-    ? parsePackageMetadata(packageMetadataBytes, entrypointPath)
-    : undefined;
+  const packageMetadata =
+    packageMetadataBytes && packageMetadataName
+      ? parsePackageMetadata(packageMetadataBytes, entrypointPath, packageMetadataName)
+      : undefined;
   const skill = parseProjectSkill(decodeUtf8(entrypointBytes, entrypointPath, projectSkillError), {
     ...(options.requireDirectoryName === false ? {} : { directoryName }),
     filePath: entrypointPath,

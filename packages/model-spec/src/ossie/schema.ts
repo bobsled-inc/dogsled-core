@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { CommandError } from '../errors.js';
 import upstreamSchema from './upstream-schema.json' with { type: 'json' };
+import { OSSIE_VENDOR, isOwnOssieVendor } from '../interchange/common.js';
 
 export const OSSIE_VERSION = '0.2.0.dev0';
 export const OSSIE_SCHEMA_REVISION = '9cb2ad99f335beacdedc85c861e8f47f354bf449';
@@ -87,7 +88,10 @@ export function dogsledExtension(
   required = false,
   vendor = 'DOGSLED'
 ): Record<string, unknown> {
-  const entries = value.custom_extensions?.filter((e) => e.vendor_name === vendor) ?? [];
+  // Core's own vendor tag is read in every generation's spelling.
+  const own = (name: string) =>
+    vendor === OSSIE_VENDOR ? isOwnOssieVendor(name) : name === vendor;
+  const entries = value.custom_extensions?.filter((e) => own(e.vendor_name)) ?? [];
   if (entries.length > 1) throw new CommandError(`${where}: duplicate ${vendor} extensions`, 2);
   const entry = entries[0];
   if (!entry) {

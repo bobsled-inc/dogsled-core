@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { VqSpecSchema, extractVqSqlTokens, mapVqSqlReferences } from '../entities/vq.js';
 import type { OssieSemanticModel } from '../ossie/profile-types.js';
 import {
+  isOwnOssieVendor,
   assertBounded,
   diagnostic,
   extensions,
@@ -108,7 +109,7 @@ export function importVerifiedQueries(
   result: ConversionResult
 ): void {
   const path = `${documentPath}#verified_queries`;
-  const owned = extensions(model).filter((entry) => entry.vendor_name === OSSIE_VENDOR);
+  const owned = extensions(model).filter((entry) => isOwnOssieVendor(entry.vendor_name));
   if (!owned.length) return;
   if (owned.length !== 1) {
     throw new VerifiedQueryFailure(

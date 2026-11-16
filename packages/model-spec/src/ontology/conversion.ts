@@ -2,6 +2,7 @@ import { importOntologyScopes } from './import-scopes.js';
 import type { ImportOssieDocumentsRequest } from '../interchange/import-types.js';
 import { z } from 'zod';
 import {
+  isOwnOssieVendor,
   assertBounded,
   diagnostic,
   file,
@@ -65,7 +66,7 @@ export function exportOntologyDocuments(
           const extensions = z
             .array(z.object({ vendor_name: z.string(), data: z.string() }).strict())
             .parse(native['custom_extensions'] ?? []);
-          if (extensions.some((e) => e.vendor_name === vendor)) {
+          if (extensions.some((e) => isOwnOssieVendor(e.vendor_name))) {
             throw new Error('Conflicting DOGSLED mapping extension.');
           }
           document['custom_extensions'] = [
@@ -142,7 +143,7 @@ export function importOntologyDocuments(
         const extensions = z
           .array(z.object({ vendor_name: z.string(), data: z.string() }).strict())
           .parse(raw['custom_extensions'] ?? []);
-        const own = extensions.filter((e) => e.vendor_name === vendor);
+        const own = extensions.filter((e) => isOwnOssieVendor(e.vendor_name));
         if (own.length > 1) throw new Error('Duplicate DOGSLED mapping extensions.');
         if (own[0]) {
           const value: unknown = JSON.parse(own[0].data);
@@ -152,7 +153,7 @@ export function importOntologyDocuments(
             ...record(raw['semantic_model_ref']),
             bindings: payload.ontology_mapping.bindings,
           };
-          const foreign = extensions.filter((e) => e.vendor_name !== vendor);
+          const foreign = extensions.filter((e) => !isOwnOssieVendor(e.vendor_name));
           if (foreign.length) document['custom_extensions'] = foreign;
           else delete document['custom_extensions'];
         }

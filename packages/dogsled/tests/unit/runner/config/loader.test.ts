@@ -15,6 +15,7 @@ const integrations = vi.hoisted(() => ({
 }));
 
 import {
+  findDogsledProject,
   loadIntegrationsLib,
   loadDogsledConfig,
   resolveDestinationConfig,
@@ -56,6 +57,20 @@ function makeConfig(overrides: Partial<DogsledConfig> = {}): DogsledConfig {
     ...overrides,
   } as DogsledConfig;
 }
+
+describe('root configuration file spellings', () => {
+  it.each(['bobsled.yml', 'bobsled.yaml'])('finds a project whose root config is %s', (name) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'root-config-'));
+    try {
+      fs.writeFileSync(path.join(dir, name), 'pipelines: {}\n');
+      fs.mkdirSync(path.join(dir, 'nested'));
+      const project = findDogsledProject(path.join(dir, 'nested'));
+      expect(project?.configPaths.map((file) => path.basename(file))).toEqual([name]);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('loadDogsledConfig legacy aliases', () => {
   let configDir: string;

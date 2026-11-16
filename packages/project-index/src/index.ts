@@ -1,4 +1,5 @@
 export { classifyProjectFile } from './classify.js';
+export { ROOT_CONFIG_FILE_SPELLINGS } from './legacy-names.js';
 export {
   documentName,
   duplicateIdentityIssues,

@@ -15,6 +15,7 @@ import type { ResolvedIntegration } from '../integrations.js';
 import type { SupportedDialect } from '../compiler/dialect.js';
 import { CommandError } from '../errors.js';
 import { getOssieOrigins } from '../ossie/index.js';
+import { isOssieLocalUri } from '../interchange/common.js';
 
 // Parsed specs survive integration selection (which copies DAG nodes). Keeping
 // bindings beside them avoids adding authoring-format fields to runtime specs.
@@ -27,7 +28,7 @@ export function registerOssieBindings(
 ): void {
   const byName = new Map(nodes.map((node) => [node.name, node]));
   const localOrigins = getOssieOrigins(index).filter(
-    (origin) => origin.kind === 'derived' && origin.source.startsWith('dogsled://')
+    (origin) => origin.kind === 'derived' && isOssieLocalUri(origin.source)
   );
   if (localOrigins.length > 0) {
     const analysis = analyzeModelDependencies({
@@ -96,7 +97,7 @@ export function validateOssieBindings(
   for (const node of nodes) {
     if (!includePublished && getPublishTarget(node.parsedSpec.publish)) continue;
     const binding = bindings.get(node.parsedSpec);
-    if (!binding || binding.source.startsWith('dogsled://')) continue;
+    if (!binding || isOssieLocalUri(binding.source)) continue;
     const resolved = modelRegistry.get(node.name);
     const declaredParts = addressParts(binding.source, dialect);
     const resolvedParts = resolved && addressParts(resolved, dialect);

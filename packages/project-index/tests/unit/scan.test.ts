@@ -50,9 +50,13 @@ describe('scanProject', () => {
   });
 
   it('leaves retired conventional files unrecognized', () => {
-    write('track.yml', 'pipelines: {}\n');
     write('bms.yml', 'models_dir: models\n');
     expect(kinds(scanProject(root))).toEqual([]);
+  });
+
+  it('reads a Track-era root configuration as pipeline configuration', () => {
+    write('track.yml', 'pipelines: {}\n');
+    expect(kinds(scanProject(root))).toEqual([['track.yml', 'pipeline_config']]);
   });
 
   it('indexes nested data-first folders by declared type', () => {

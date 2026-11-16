@@ -3,8 +3,28 @@ import { z } from 'zod';
 import { parse as parseYaml, stringify } from 'yaml';
 import { CommandError } from '../errors.js';
 import { boundedJson } from './storage.js';
+import { OSSIE_URI_SCHEMES, OSSIE_VENDOR_SPELLINGS } from './legacy-names.js';
 
 export const OSSIE_VENDOR = 'DOGSLED';
+export const OSSIE_URI_SCHEME = 'dogsled://';
+
+/** Whether an extension is Core's own, in any Core generation's spelling. */
+export function isOwnOssieVendor(vendor: unknown): boolean {
+  return vendor === OSSIE_VENDOR || OSSIE_VENDOR_SPELLINGS.includes(String(vendor));
+}
+
+/** A project-local source with an earlier scheme, spelled the current way; others unchanged. */
+export function currentOssieUri(uri: string): string {
+  for (const scheme of OSSIE_URI_SCHEMES) {
+    if (uri.startsWith(scheme)) return `${OSSIE_URI_SCHEME}${uri.slice(scheme.length)}`;
+  }
+  return uri;
+}
+
+/** Whether a dataset source is a project-local Core address in any generation's scheme. */
+export function isOssieLocalUri(uri: string): boolean {
+  return currentOssieUri(uri).startsWith(OSSIE_URI_SCHEME);
+}
 export interface ConversionObjectReference {
   documentPath: string;
   dataset?: string;
@@ -97,7 +117,7 @@ export function foreignMetadata(
   mapped: readonly string[]
 ): Record<string, unknown> {
   const result = omit(value, [...mapped, 'custom_extensions']);
-  const foreign = extensions(value).filter((e) => e.vendor_name !== OSSIE_VENDOR);
+  const foreign = extensions(value).filter((e) => !isOwnOssieVendor(e.vendor_name));
   if (foreign.length) result['custom_extensions'] = foreign;
   return result;
 }

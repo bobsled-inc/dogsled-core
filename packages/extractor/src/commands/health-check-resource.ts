@@ -6,24 +6,26 @@ import YAML from 'yaml';
 import { normalizeForEachConfig } from '../runtime/for-each.js';
 
 import type { ApiResourceSpec } from '../types/index.js';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
-const DOGSLED_CONFIG_NAMES = ['dogsled.yml', 'dogsled.yaml'];
+const DOGSLED_CONFIG_NAMES = [
+  ...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS]),
+];
 const MAX_DOGSLED_CONFIG_BYTES = 1024 * 1024;
 
-function findDogsledConfig(startDir: string): string | undefined {
+/** The root configuration files of the nearest folder that has any; the project resolver merges them. */
+function findDogsledConfigs(startDir: string): string[] {
   let dir = path.resolve(startDir);
 
   while (true) {
-    for (const name of DOGSLED_CONFIG_NAMES) {
-      const candidate = path.join(dir, name);
-      if (fs.existsSync(candidate)) {
-        return candidate;
-      }
-    }
+    const found = DOGSLED_CONFIG_NAMES.map((name) => path.join(dir, name)).filter((candidate) =>
+      fs.existsSync(candidate)
+    );
+    if (found.length) return found;
 
     const parent = path.dirname(dir);
     if (parent === dir) {
-      return undefined;
+      return [];
     }
     dir = parent;
   }
@@ -33,11 +35,17 @@ export function readScopedHealthResource(
   startDir: string,
   integrationName: string
 ): string | undefined {
-  const configPath = findDogsledConfig(startDir);
-  if (!configPath) {
-    return undefined;
+  for (const configPath of findDogsledConfigs(startDir)) {
+    const resource = readScopedHealthResourceFrom(configPath, integrationName);
+    if (resource) return resource;
   }
+  return undefined;
+}
 
+function readScopedHealthResourceFrom(
+  configPath: string,
+  integrationName: string
+): string | undefined {
   try {
     const stats = fs.statSync(configPath);
     if (stats.size > MAX_DOGSLED_CONFIG_BYTES) {
