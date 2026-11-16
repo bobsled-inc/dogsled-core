@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "packages/sdk-codegen"
   },
   "engines": {
@@ -53,9 +53,9 @@
     "@vitest/coverage-v8": "catalog:testing",
     "vitest": "catalog:testing"
   },
-  "description": "Typed SDK generation from Dogsled entity graph intermediate representations.",
+  "description": "Typed SDK generation from Bobsled Core entity graph intermediate representations.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
@@ -64,8 +64,8 @@
     "codegen",
     "entity-graph"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   }
 }

@@ -154,7 +154,7 @@ export function addInternalRuntimeDependencies(manifest, packages, catalogs) {
 
 // npm treats every dependency of a bundled package as part of the bundle when
 // it is installed under the bundling package. A global install places all of
-// Dogsled's dependencies there, so the external dependencies and driver peers
+// Bobsled Core's dependencies there, so the external dependencies and driver peers
 // declared by bundled internal manifests were expected inside the tarball and
 // left empty. Bundled manifests therefore keep only edges to other bundled
 // packages. The top-level manifest already declares every external runtime

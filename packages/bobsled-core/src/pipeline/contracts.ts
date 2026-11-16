@@ -113,7 +113,7 @@ export interface RunProjectPipelineOptions {
   /** Trusted execution-only Snowflake query tag; never persisted to YAML. */
   queryTag?: string;
   /**
-   * Invocation-local incremental state. When supplied, Dogsled uses an isolated
+   * Invocation-local incremental state. When supplied, Bobsled Core uses an isolated
    * project-contained state backend and returns the resulting state.
    */
   state?: PipelineExecutionState;

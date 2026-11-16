@@ -1,5 +1,5 @@
 /**
- * `testProject` — Layer 3 orchestrator for `dogsled model test`.
+ * `testProject` — Layer 3 orchestrator for `bobsled model test`.
  *
  * Generates test SQL from each model's test definitions; does not execute.
  * Returns per-integration groups of `{ modelName, testName, sql }` so hosts

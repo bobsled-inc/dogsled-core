@@ -18,42 +18,42 @@ Manual commands:
 
 ```bash
 # 1. Validate core entity specs. The local runner seeds profile tables for the demo.
-dogsled entity-graph resolve validate customer deal document --json
+bobsled entity-graph resolve validate customer deal document --json
 
 # 2. Extract document mentions, then export ambiguous rows for review.
-dogsled entity-graph mentions extract Customer \
+bobsled entity-graph mentions extract Customer \
   --runner ./runner.js \
   --schema entity_graph \
   --fallback compromise \
   --json
-dogsled entity-graph mentions review export \
+bobsled entity-graph mentions review export \
   --runner ./runner.js \
   --schema entity_graph \
   --csv \
   > ./review/document_mentions.csv
 
 # 3. Extract, review, and compact document-derived relationships.
-dogsled entity-graph relationships extract Customer \
+bobsled entity-graph relationships extract Customer \
   --runner ./runner.js \
   --schema entity_graph \
   --fallback compromise \
   --json
-dogsled entity-graph relationships review export \
+bobsled entity-graph relationships review export \
   --runner ./runner.js \
   --schema entity_graph \
   --yaml \
   > ./review/relationship_decisions.yml
 # Edit ./review/relationship_decisions.yml with confirm/reject/supersede/conflicted decisions.
-dogsled entity-graph relationships review apply ./review/relationship_decisions.yml \
+bobsled entity-graph relationships review apply ./review/relationship_decisions.yml \
   --runner ./runner.js \
   --json
-dogsled entity-graph relationships compact \
+bobsled entity-graph relationships compact \
   --runner ./runner.js \
   --schema entity_graph \
   --json
 
 # 4. Generate the app-local TypeScript SDK.
-dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
+bobsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 
 # 5. Verify generated SDK calls against the seeded local graph.
 pnpm exec tsx src/verify.ts
@@ -77,9 +77,9 @@ const executor: BobsledEntityExecutor = {
   },
 };
 
-const dogsled = createBobsledClient(executor);
+const bobsled = createBobsledClient(executor);
 
-const acme = await dogsled.entity.customer
+const acme = await bobsled.entity.customer
   .findBy({ domain: 'acme.com' })
   .withDocuments()
   .withRelationship('customer_has_deal')

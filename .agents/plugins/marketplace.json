@@ -1,7 +1,7 @@
 {
-  "name": "dogsled",
+  "name": "bobsled",
   "interface": {
-    "displayName": "Dogsled"
+    "displayName": "Bobsled Core"
   },
   "plugins": [
     {

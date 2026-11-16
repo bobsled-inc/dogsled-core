@@ -211,12 +211,12 @@ describe('state', () => {
     expect(buildBookmarkPartition(undefined)).toBeUndefined();
     expect(buildBookmarkPartition({})).toBeUndefined();
     expect(buildBookmarkPartition({ owner: undefined, repo: undefined })).toBeUndefined();
-    expect(buildBookmarkPartition({ owner: 'bobsled-inc', repo: 'dogsled' })).toBe(
-      'owner=bobsled-inc::repo=dogsled'
+    expect(buildBookmarkPartition({ owner: 'bobsled-inc', repo: 'bobsled' })).toBe(
+      'owner=bobsled-inc::repo=bobsled'
     );
     // Key order is normalized — input order must not affect the key
-    expect(buildBookmarkPartition({ repo: 'dogsled', owner: 'bobsled-inc' })).toBe(
-      'owner=bobsled-inc::repo=dogsled'
+    expect(buildBookmarkPartition({ repo: 'bobsled', owner: 'bobsled-inc' })).toBe(
+      'owner=bobsled-inc::repo=bobsled'
     );
     // Embedded delimiters in values must not collide with the format
     expect(buildBookmarkPartition({ repo: 'my=repo::weird' })).toBe('repo=my%3Drepo%3A%3Aweird');
@@ -236,7 +236,7 @@ describe('state', () => {
         last_run_at: '2026-03-20T01:00:00Z',
         record_count: 5,
       },
-      'owner=bobsled-inc::repo=dogsled'
+      'owner=bobsled-inc::repo=bobsled'
     );
     setStreamBookmark(
       state,
@@ -254,7 +254,7 @@ describe('state', () => {
 
     // The bug this guards against: iteration 2 reading iteration 1's cursor.
     expect(
-      getStreamBookmark(state, 'github', 'commits', 'owner=bobsled-inc::repo=dogsled')?.cursor_value
+      getStreamBookmark(state, 'github', 'commits', 'owner=bobsled-inc::repo=bobsled')?.cursor_value
     ).toBe('2026-03-20T00:00:00Z');
     expect(
       getStreamBookmark(state, 'github', 'commits', 'owner=bobsled-inc::repo=demo-repo')
@@ -263,8 +263,8 @@ describe('state', () => {
     // A bare lookup without partition must not return either partitioned bookmark
     expect(getStreamBookmark(state, 'github', 'commits')).toBeUndefined();
     expect(Object.keys(state.streams).sort()).toEqual([
+      'github/commits#owner=bobsled-inc::repo=bobsled',
       'github/commits#owner=bobsled-inc::repo=demo-repo',
-      'github/commits#owner=bobsled-inc::repo=dogsled',
     ]);
   });
 

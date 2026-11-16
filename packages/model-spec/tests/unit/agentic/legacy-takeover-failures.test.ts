@@ -20,7 +20,7 @@ import {
 import { snowflakeRowDialect } from '../../../src/agentic/warehouse-row-dialects.js';
 
 // Generic takeover failure tests: earlier names are stand-ins, so they pass before and after the
-// Dogsled -> Bobsled rename flips the current names.
+// Core name rename flips the current names.
 vi.mock('../../../src/agentic/legacy-names.js', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   LEGACY_AGENTIC_TABLE_PREFIXES: ['__legacy_agentic_'],

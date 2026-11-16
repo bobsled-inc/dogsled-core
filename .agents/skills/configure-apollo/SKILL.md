@@ -23,7 +23,7 @@ Use this skill when a user wants to budget Apollo API calls that consume credits
 2. Reuse the current Apollo resource surface; do not invent new endpoints in this skill.
 3. Generate the `extract-intents.yml` step block for the chosen billable Apollo resource.
 4. Warn that Apollo billing depends on the endpoint and should be confirmed against the workspace pricing plan.
-5. Recommend `dogsled extract estimate --plan <name>` before `dogsled extract run --plan <name>`.
+5. Recommend `bobsled extract estimate --plan <name>` before `bobsled extract run --plan <name>`.
 
 ## Example Plan Snippet
 

@@ -40,7 +40,7 @@ function renderPackageInfo(modelPackage: ModelPackage): void {
 export function registerModelsCommand(program: Command): void {
   const models = program
     .command('models')
-    .description('Browse and install prebuilt Dogsled model packages')
+    .description('Browse and install prebuilt Bobsled Core model packages')
     .option('--json', 'Output results as JSON to stdout');
 
   models

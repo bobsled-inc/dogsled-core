@@ -86,8 +86,8 @@ describe('email-address', () => {
     );
     const findings = (file, address) =>
       scanPrivacyFile(file, [address], exceptions).get('email-address');
-    const security = 'security@dogsledai.com';
-    const maintainers = 'maintainers@dogsledai.com';
+    const security = 'security@bobsled.co';
+    const maintainers = 'maintainers@bobsled.co';
     expect(findings('SECURITY.md', security)).toEqual([]);
     expect(findings('CODE_OF_CONDUCT.md', maintainers)).toEqual([]);
     expect(findings('SUPPORT.md', maintainers)).toEqual([]);
@@ -211,15 +211,13 @@ describe('private-github-repo', () => {
   });
 
   it('allows links to the current repository', () => {
-    expect(countMatches('https://github.com/bobsled-inc/dogsled-core')['private-github-repo']).toBe(
-      0
-    );
+    const url = 'https://github.com/bobsled-inc/dogsled-core'; // rename:keep
+    expect(countMatches(url)['private-github-repo']).toBe(0);
   });
 
   it('allows the current repository .git URL', () => {
-    expect(countMatches('git@github.com/bobsled-inc/dogsled-core.git')['private-github-repo']).toBe(
-      0
-    );
+    const url = 'git@github.com/bobsled-inc/dogsled-core.git'; // rename:keep
+    expect(countMatches(url)['private-github-repo']).toBe(0);
   });
 
   it('allows the public repo name bobsled-core', () => {
@@ -435,7 +433,7 @@ describe('hosted-consumer-wording', () => {
     'Lakehouse\n// agent',
     String.raw`Lakehouse\nagent`,
     'closed-source app',
-    'proprietary Dogsled app',
+    'proprietary Dogsled app', // rename:keep
     String.raw`closed\nsource\napplication`,
   ])('detects consumer wording in %s', (text) => {
     expect(countMatches(text)['hosted-consumer-wording']).toBe(1);
@@ -451,7 +449,7 @@ describe('hosted-consumer-wording', () => {
         'The Lakehouse',
         ' * agent consumes metadata.',
         'Another proprietary',
-        'Dogsled app.',
+        'Dogsled app.', // rename:keep
       ]).get('hosted-consumer-wording')
     ).toEqual([
       { file: 'doc.md', line: 2, column: 5 },

@@ -1,5 +1,5 @@
 /**
- * Dogsled skills manifest runtime entry point.
+ * Bobsled Core skills manifest runtime entry point.
  *
  * `listSkills()`, `getSkill()`, and `getCatalog()` return the constants
  * baked into the bundle at build time by `scripts/build-manifest.ts`.

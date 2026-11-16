@@ -1,13 +1,13 @@
 # Project files
 
-This page lists the files in a Dogsled project and their fields. The guides show
-each file in use; this page is for looking things up. `dogsled doctor` and the
+This page lists the files in a Bobsled Core project and their fields. The guides show
+each file in use; this page is for looking things up. `bobsled doctor` and the
 `validate` commands report any field that is missing, misspelled or of the wrong
 type.
 
-## How Dogsled finds files
+## How Bobsled Core finds files
 
-Dogsled reads YAML and Markdown files anywhere under the project root, skipping
+Bobsled Core reads YAML and Markdown files anywhere under the project root, skipping
 hidden folders and `node_modules`. A file's kind comes from its top-level `type`
 field or, when there is none, from the nearest conventional folder in its path:
 `integrations`, `resources`, `sources`, `models`, `seeds`, `metrics`,
@@ -53,7 +53,7 @@ Secrets in `bobsled.yml` must be environment references (`$NAME`). Each destinat
 | `turbopuffer`     | `api_key`, `region`, `namespace_prefix`, `distance_metric`, `full_text_columns`                                                                                                                                                          |
 | `local`           | `format` (`parquet`, `jsonl`, `csv`), `stream_subfolder`                                                                                                                                                                                 |
 | `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`                                                                                                                                                                                         |
-| `bobsled_managed` | `bobsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/hosted-runs.md))                                                                                                                                    |
+| `bobsled_managed` | `bobsled_connection_ref` (hosted runs only; see [Hosted runs](../guides/hosted-runs.md))                                                                                                                                                 |
 
 Every destination also accepts `load_strategy`, `schema_behavior` and
 `table_prefix`.
@@ -183,7 +183,7 @@ Sources and their columns also take `ai_context` and `synonyms`. See
   [Paid enrichment APIs](../guides/billable-extracts.md).
 - `entity-graph/`: resolution, survivorship, truthset, relationship and policy
   specs; see [Entity graph](../guides/entity-graph.md).
-- `agents/`: agent definitions read by Dogsled Cloud. Core recognizes them and does
+- `agents/`: agent definitions read by a hosted orchestrator. Core recognizes them and does
   not run them.
 - `.bobsled/config.yml`: `default_destination` for lazy API sources, with `dest`
   (`ducklake`, `duckdb`, `bigquery` or `snowflake`) and that destination's fields:

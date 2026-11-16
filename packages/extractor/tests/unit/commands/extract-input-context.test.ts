@@ -501,7 +501,7 @@ describe('extraction input context', () => {
 
     it('rejects the request when a templated input default is env-referencing', async () => {
       await expect(runWithDefault('project_id')).rejects.toThrow(
-        'Dogsled could not validate the request.'
+        'Bobsled Core could not validate the request.'
       );
     });
 

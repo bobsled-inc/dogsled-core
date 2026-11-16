@@ -650,7 +650,7 @@ pipelines:
 
     await expect(resolveProjectPipelines({ projectRoot })).rejects.toMatchObject({
       exitCode: 2,
-      message: expect.stringContaining('bobsled.yml: Dogsled does not follow symbolic links.'),
+      message: expect.stringContaining('bobsled.yml: Bobsled Core does not follow symbolic links.'),
     });
   });
 

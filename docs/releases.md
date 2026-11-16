@@ -1,6 +1,6 @@
 # Cutting a release
 
-Dogsled publishes `@bobsled-inc/bobsled-core` with 15 workspace packages embedded in its tarball.
+Bobsled Core publishes `@bobsled-inc/bobsled-core` with 15 workspace packages embedded in its tarball.
 Only `packages/bobsled-core/package.json` advances its version.
 
 ## Merges release
@@ -77,4 +77,4 @@ If only GitHub release finalization fails, re-run the failed jobs: it creates a 
 When a release awaits approval, two Slack messages appear in the release channel:
 
 1. The `notify` job sends the version, summary, PR list and breaking flag to Husky (`POST /api/releases/notify` with a GitHub OIDC token). Husky posts and later updates the Slack message. A `release-status` job sends the outcome (`released` or `not_released`) so Husky can update the message. Core holds no Slack secrets; the only configuration is the `HUSKY_ORIGIN` variable. The notification is skipped when `HUSKY_ORIGIN` is unset and never fails the release.
-2. The GitHub Slack app posts the deployment approval with Approve and Reject buttons. Set it up with `/github subscribe bobsled-inc/dogsled-core workflows` (filtered to the Release workflow); each maintainer runs `/github signin` once.
+2. The GitHub Slack app posts the deployment approval with Approve and Reject buttons. Set it up with `/github subscribe bobsled-inc/bobsled-core workflows` (filtered to the Release workflow); each maintainer runs `/github signin` once.

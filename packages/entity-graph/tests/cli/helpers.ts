@@ -102,7 +102,7 @@ export function makeProject(tmpDir: string): string {
     throw new Error(describeFixturesError());
   }
 
-  // Copies, not links: Dogsled refuses symbolic links inside a project.
+  // Copies, not links: Bobsled Core refuses symbolic links inside a project.
   const projectDir = path.join(tmpDir, 'project');
   fs.mkdirSync(projectDir, { recursive: true });
   fs.cpSync(path.join(SHARED_FIXTURES, 'sources'), path.join(projectDir, 'sources'), {

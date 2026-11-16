@@ -2,7 +2,7 @@
 
 An ontology describes business concepts and how they relate. A semantic model
 names the data fields, joins, and metrics used to answer questions. A mapping
-connects the two. These customer definitions are separate from Dogsled's own
+connects the two. These customer definitions are separate from Bobsled Core's own
 system model and from the existing relationship extraction configuration.
 
 ## Author a definition
@@ -61,9 +61,9 @@ A link tree's depth follows the relationship's role order; sibling nodes are bra
 ## Inspect and validate
 
 ```bash
-dogsled ontology list --project-root . --json
-dogsled ontology describe sales --concept Order --yaml
-dogsled ontology validate --strict --json
+bobsled ontology list --project-root . --json
+bobsled ontology describe sales --concept Order --yaml
+bobsled ontology validate --strict --json
 ```
 
 Validation checks document shapes, names, inheritance, relationship roles,
@@ -76,7 +76,7 @@ and 64 nesting levels during checking. Other rule syntax and complex mapping
 expressions remain context with `expression_not_verified` warnings. Strict
 validation fails on these warnings. Static validation is not proof that a rule
 holds in the data.
-Dogsled does not execute rules or check warehouse rows during these operations.
+Bobsled Core does not execute rules or check warehouse rows during these operations.
 
 An unmapped ontology is valid. Missing ontology or model bindings make a mapping
 incomplete. Diagnostics contain a code, file path, field path, severity, and message.
@@ -89,9 +89,9 @@ version. A host must attach its deployment identity when using these APIs.
 ## Preview changes
 
 ```bash
-dogsled ontology create business/concepts.yml ./new-ontology.yml --yaml
-dogsled ontology edit business/concepts.yml ./description-patch.yml --yaml
-dogsled ontology delete business/concepts.yml --yaml
+bobsled ontology create business/concepts.yml ./new-ontology.yml --yaml
+bobsled ontology edit business/concepts.yml ./description-patch.yml --yaml
+bobsled ontology delete business/concepts.yml --yaml
 ```
 
 These commands preview changes. Add `--apply` to write. Create the parent folder
@@ -105,9 +105,9 @@ can be repaired or deleted if its YAML and declared file type remain readable.
 ## Exchange Ossie documents
 
 ```bash
-dogsled ontology export --ossie-version 0.2.0.dev0 --yaml
-dogsled ontology export --ossie-version 0.2.0.dev0 --out ./new-export
-dogsled ontology import ./sales.ontology.yml ./sales.mapping.yml --json
+bobsled ontology export --ossie-version 0.2.0.dev0 --yaml
+bobsled ontology export --ossie-version 0.2.0.dev0 --out ./new-export
+bobsled ontology import ./sales.ontology.yml ./sales.mapping.yml --json
 ```
 
 Ontology exchange supports only `0.2.0.dev0`. The default target remains `0.1.1`,
@@ -143,7 +143,7 @@ Import config-only APIs from `@bobsled-inc/bobsled-core/ontology`:
 Start a local MCP server without a SQL runner:
 
 ```bash
-dogsled ontology serve --project-root .
+bobsled ontology serve --project-root .
 ```
 
 The server exposes `ontology_list`, `ontology_describe`, `ontology_validate`,
@@ -171,7 +171,7 @@ and a [mapping](../../packages/model-spec/tests/fixtures/customer-ontology/busin
 Validate that example without a warehouse connection:
 
 ```bash
-dogsled ontology validate --project-root packages/model-spec/tests/fixtures/customer-ontology --strict
+bobsled ontology validate --project-root packages/model-spec/tests/fixtures/customer-ontology --strict
 ```
 
 ## Learn with existing projects

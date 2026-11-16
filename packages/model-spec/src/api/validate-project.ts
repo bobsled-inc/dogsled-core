@@ -1,5 +1,5 @@
 /**
- * `validateProject` — Layer 3 orchestrator for `dogsled model validate`.
+ * `validateProject` — Layer 3 orchestrator for `bobsled model validate`.
  *
  * Returns per-integration validation findings plus metadata cross-reference
  * results without touching stdout. Metadata validation always runs against the

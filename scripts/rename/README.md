@@ -14,7 +14,7 @@ What the tool never rewrites:
 
 Every rule matches only old spellings, so a replay changes nothing that is already renamed. That holds **except** for files in `COMPAT_PATHS` and `rename:keep` lines, which the tool never touches. Old names that are still outside them (see "Existing readers" in `HANDLED_BY_DESIGN`) are rewritten by the first apply of their category, so move them first.
 
-`--check` reporting 0 means no rule matches any more. It does not mean no old name is left: the old-name guard (`pnpm guard:dogsled`) is the authority on that.
+`--check` reporting 0 means no rule matches any more. It does not mean no old name is left: the old-name guard (`pnpm guard:rename`) is the authority on that.
 
 `--apply` also moves the paths in the old-name guard's allow list (`scripts/guards/old-names-allow.json`) with the files they point at, so exceptions do not go stale when a folder moves.
 
@@ -39,7 +39,7 @@ Steps:
 3. Conflicts mean main and the branch changed the same lines for real. For each file, compare with **main's own diff**, `git diff <previous synced main> origin/main -- <path>`, and apply only that change (renamed, in mirror mode). Never take main's whole side: that can undo a design-PR edit.
 4. Do **not** run `--apply` on the merged tree. In mirror mode, `node scripts/rename/rename.mjs --check` must report 0 matches.
 5. `pnpm install` (lockfile), then regenerate the skill catalogue and plugin output with `pnpm --filter @bobsled-inc/skills generate:manifest` and confirm with `pnpm skills:check`. Regenerate `packages/integrations` generated data the same way if main changed integrations.
-6. `pnpm guard:dogsled` must not show new findings or stale exceptions; run `pnpm build`, `pnpm check` and the tests as usual.
+6. `pnpm guard:rename` must not show new findings or stale exceptions; run `pnpm build`, `pnpm check` and the tests as usual.
 7. Open a PR into `rename/bobsled-core` titled `Sync main <sha>` (with the mirror SHA in the body in mirror mode). Merge it with a **merge commit** (not squash). After it merges, push the mirror: `git push origin sync/main-renamed`.
 
 Fallback when a sync is too messy: replay main's commits one by one. `--patch` renames diff lines after their ` `, `+` or `-` marker, moves compatibility files with their folder and leaves their lines untouched.

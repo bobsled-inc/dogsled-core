@@ -1,6 +1,6 @@
 # learn-sandbox
 
-Credential-free sandbox dataset for the `dogsled learn` tutorial. Teaches the extract, load, model, and query workflow using synthetic e-commerce data against a local DuckDB file.
+Credential-free sandbox dataset for the `bobsled learn` tutorial. Teaches the extract, load, model, and query workflow using synthetic e-commerce data against a local DuckDB file.
 
 ## Tables
 
@@ -19,20 +19,20 @@ Credential-free sandbox dataset for the `dogsled learn` tutorial. Teaches the ex
 
 ```bash
 # Load seed CSVs into DuckDB
-dogsled model seed load --integration duckdb
+bobsled model seed load --integration duckdb
 
 # Query loaded data
-dogsled load query --db-path ./learn.duckdb "SELECT * FROM products LIMIT 5"
+bobsled load query --db-path ./learn.duckdb "SELECT * FROM products LIMIT 5"
 
 # Validate and compile Model Spec models
-dogsled model validate --integration duckdb
-dogsled model compile stg_orders --integration duckdb
+bobsled model validate --integration duckdb
+bobsled model compile stg_orders --integration duckdb
 
 # Run all models (creates views and tables)
-dogsled model run --integration duckdb
+bobsled model run --integration duckdb
 
 # Query the materialized fact table
-dogsled load query --db-path ./learn.duckdb "SELECT * FROM fct_order_summary"
+bobsled load query --db-path ./learn.duckdb "SELECT * FROM fct_order_summary"
 ```
 
 ## Models
@@ -44,9 +44,9 @@ dogsled load query --db-path ./learn.duckdb "SELECT * FROM fct_order_summary"
 
 ## Used by
 
-This workspace is used by `dogsled learn` (Phase 1 and Phase 4). Run the tutorial with:
+This workspace is used by `bobsled learn` (Phase 1 and Phase 4). Run the tutorial with:
 
 ```bash
-dogsled learn --section "Phase 1"   # Credential-free extract & load
-dogsled learn --section "Phase 4"   # Model Spec data modeling
+bobsled learn --section "Phase 1"   # Credential-free extract & load
+bobsled learn --section "Phase 4"   # Model Spec data modeling
 ```

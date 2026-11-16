@@ -140,7 +140,7 @@ export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
         context.incremental?.after === undefined
           ? ''
           : ` WHERE ${cursor} > ${quoteLiteral(context.incremental.after, integration.dialect)}`;
-      // In batch mode Dogsled keeps the longest ordered prefix that fits and leaves the
+      // In batch mode Bobsled Core keeps the longest ordered prefix that fits and leaves the
       // rest for the next run, so read in cursor order and one row past the limit.
       const batch = context.incremental?.batch === true;
       const order = batch ? ` ORDER BY ${cursor}` : '';
@@ -186,7 +186,7 @@ export function createAgenticHost(options: AgenticHostOptions): AgenticHost {
           const parsed = schema.parse(normalized);
           bytes += Buffer.byteLength(JSON.stringify(parsed)) + 1;
           normalizedRows.push(parsed);
-          // In batch mode one row past the byte limit tells Dogsled more rows remain.
+          // In batch mode one row past the byte limit tells Bobsled Core more rows remain.
           if (bytes > context.maxBytes) {
             if (batch) break;
             throw new CommandError(

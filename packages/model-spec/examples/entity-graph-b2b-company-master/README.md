@@ -41,42 +41,42 @@ entity-graph-b2b-company-master/
 ## Workflow
 
 ```bash
-dogsled model seed validate
-dogsled model seed diff --runner ./runner.js --json
-dogsled entity-graph resolve validate company
-dogsled entity-graph resolve compile company -o ./sql
-dogsled entity-graph resolve run company --runner ./runner.js
-dogsled entity-graph resolve status company --runner ./runner.js --json
-dogsled entity-graph resolve estimate company --runner ./runner.js --json
-dogsled entity-graph resolve run contact --runner ./runner.js
-dogsled entity-graph resolve cluster contact --runner ./runner.js
-dogsled entity-graph review export company --template --format csv --runner ./runner.js --output ./review/company_queue.csv
-dogsled entity-graph review list company --runner ./runner.js --json
+bobsled model seed validate
+bobsled model seed diff --runner ./runner.js --json
+bobsled entity-graph resolve validate company
+bobsled entity-graph resolve compile company -o ./sql
+bobsled entity-graph resolve run company --runner ./runner.js
+bobsled entity-graph resolve status company --runner ./runner.js --json
+bobsled entity-graph resolve estimate company --runner ./runner.js --json
+bobsled entity-graph resolve run contact --runner ./runner.js
+bobsled entity-graph resolve cluster contact --runner ./runner.js
+bobsled entity-graph review export company --template --format csv --runner ./runner.js --output ./review/company_queue.csv
+bobsled entity-graph review list company --runner ./runner.js --json
 # Open ./review/company_queue.csv, fill in the decision column with merge, not_match, or defer, then save it.
-dogsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js
-dogsled entity-graph resolve cluster company --runner ./runner.js
-dogsled entity-graph survivorship run company --runner ./runner.js
-dogsled entity-graph survivorship inspect company --runner ./runner.js --json
-dogsled entity-graph relate validate --json
-dogsled entity-graph relate compile works_at -o ./sql/relationships
-dogsled entity-graph relate run works_at --runner ./runner.js
-dogsled entity-graph relate review works_at --runner ./runner.js --json
-dogsled entity-graph object validate --json
-dogsled entity-graph object compile -o ./sql/objects
-dogsled entity-graph build company --runner ./runner.js
-dogsled entity-graph explain --subject entity --id company-1 --runner ./runner.js --format=json
-dogsled entity-graph truthset score company --runner ./runner.js
-dogsled entity-graph truthset tune company --runner ./runner.js
+bobsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js
+bobsled entity-graph resolve cluster company --runner ./runner.js
+bobsled entity-graph survivorship run company --runner ./runner.js
+bobsled entity-graph survivorship inspect company --runner ./runner.js --json
+bobsled entity-graph relate validate --json
+bobsled entity-graph relate compile works_at -o ./sql/relationships
+bobsled entity-graph relate run works_at --runner ./runner.js
+bobsled entity-graph relate review works_at --runner ./runner.js --json
+bobsled entity-graph object validate --json
+bobsled entity-graph object compile -o ./sql/objects
+bobsled entity-graph build company --runner ./runner.js
+bobsled entity-graph explain --subject entity --id company-1 --runner ./runner.js --format=json
+bobsled entity-graph truthset score company --runner ./runner.js
+bobsled entity-graph truthset tune company --runner ./runner.js
 ```
 
 ## One-Shot Agent Workflow
 
 ```bash
-dogsled entity-graph agent triage company --runner ./runner.js --json
-dogsled entity-graph agent review-batch --entity company --mode propose --runner ./runner.js --output-bundle ./review/company_agent_bundle.yml --json
-dogsled entity-graph agent review-batch --profile ./entity-graph/agent/company_review_batch.yml --runner ./runner.js --json
-dogsled entity-graph agent survivorship-refresh company --runner ./runner.js --json
-dogsled entity-graph agent truthset-regress company --runner ./runner.js --json
+bobsled entity-graph agent triage company --runner ./runner.js --json
+bobsled entity-graph agent review-batch --entity company --mode propose --runner ./runner.js --output-bundle ./review/company_agent_bundle.yml --json
+bobsled entity-graph agent review-batch --profile ./entity-graph/agent/company_review_batch.yml --runner ./runner.js --json
+bobsled entity-graph agent survivorship-refresh company --runner ./runner.js --json
+bobsled entity-graph agent truthset-regress company --runner ./runner.js --json
 ```
 
 - The low-level `resolve`, `review`, `survivorship`, and `truthset` commands remain the canonical primitives.

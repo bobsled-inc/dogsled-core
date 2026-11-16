@@ -1,6 +1,6 @@
-# Contributing to Dogsled
+# Contributing to Bobsled Core
 
-Thank you for helping improve Dogsled. We currently focus outside code contributions
+Thank you for helping improve Bobsled Core. We currently focus outside code contributions
 on small fixes: roughly twelve changed lines whose complete effect a maintainer can
 check by reading the patch. We are not seeking broader outside implementation work.
 
@@ -11,10 +11,10 @@ larger change. We may revise this policy as the project matures.
 
 ## What is welcome
 
-- Report reproducible bugs in [GitHub issues](https://github.com/bobsled-inc/dogsled-core/issues/new/choose).
-- Discuss ideas, features and connector requests in [GitHub Discussions](https://github.com/bobsled-inc/dogsled-core/discussions).
+- Report reproducible bugs in [GitHub issues](https://github.com/bobsled-inc/bobsled-core/issues/new/choose).
+- Discuss ideas, features and connector requests in [GitHub Discussions](https://github.com/bobsled-inc/bobsled-core/discussions).
   For a connector, describe the API or system, authentication type, objects needed
-  and a synthetic response shape in the [connector request form](https://github.com/bobsled-inc/dogsled-core/discussions/new?category=connector-requests).
+  and a synthetic response shape in the [connector request form](https://github.com/bobsled-inc/bobsled-core/discussions/new?category=connector-requests).
 - Submit a small fix when reading the patch is enough to establish that it is
   correct. Explain the concrete bug and why every effect is easy to verify.
 
@@ -29,7 +29,7 @@ Do not include credentials, customer details or private data in any submission.
 
 ## Sign off accepted fixes
 
-Dogsled remains Apache-2.0. Contributions submitted for inclusion use that license
+Bobsled Core remains Apache-2.0. Contributions submitted for inclusion use that license
 and require the [Developer Certificate of Origin, version 1.1](https://developercertificate.org/).
 A sign-off certifies that you have the right to submit the contribution under that
 certificate. Read it before signing; a sign-off is not a cryptographic signature.

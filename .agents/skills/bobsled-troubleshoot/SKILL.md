@@ -1,6 +1,6 @@
 ---
 name: bobsled-troubleshoot
-description: Diagnose and fix dogsled pipeline failures — auth issues, rate limits, schema drift, transient errors
+description: Diagnose and fix bobsled pipeline failures — auth issues, rate limits, schema drift, transient errors
 exposed: true
 triggers:
   - pipeline is failing
@@ -9,7 +9,7 @@ triggers:
   - rate limit error
   - schema drift detected
   - workflow run failed
-  - troubleshoot dogsled pipeline
+  - troubleshoot bobsled pipeline
   - pipeline transient error
   - diagnose extract failure
   - for_each parent not co-scheduled
@@ -17,15 +17,15 @@ triggers:
   - did not run in this extraction process
 ---
 
-# Dogsled Troubleshoot
+# Bobsled Core Troubleshoot
 
-Diagnose local Dogsled pipelines using `extract-pipelines` as the authoritative extraction contract. Read the Project guide, the owning `bobsled.yml` or typed pipeline fragment, `extractor.yml`, and the relevant integration/resource files.
+Diagnose local Bobsled Core pipelines using `extract-pipelines` as the authoritative extraction contract. Read the Project guide, the owning `bobsled.yml` or typed pipeline fragment, `extractor.yml`, and the relevant integration/resource files.
 
 ## Validate and locate the failure
 
-1. Run `dogsled setup doctor` for guided setup problems.
-2. Run `dogsled runner validate --strict` to check orchestration and references.
-3. Validate the affected integration with `dogsled extract validate <source> --semantic-check=strict`; use `dogsled extract verify <source> --mock` for fixture-backed checks.
+1. Run `bobsled setup doctor` for guided setup problems.
+2. Run `bobsled runner validate --strict` to check orchestration and references.
+3. Validate the affected integration with `bobsled extract validate <source> --semantic-check=strict`; use `bobsled extract verify <source> --mock` for fixture-backed checks.
 4. Read the failed command's structured stderr and summary. stdout is protocol data and must stay machine-readable. Never include credentials or raw provider bodies in a report.
 5. Identify the exact source, resource, destination and execution phase before proposing a retry. Inspect environment-variable names and presence only.
 
@@ -42,4 +42,4 @@ Diagnose local Dogsled pipelines using `extract-pipelines` as the authoritative 
 
 ## Verify the fix
 
-Repeat static validation first. When the user authorizes execution, point at a disposable destination and run `dogsled runner run <pipeline> --resource <resource>`. Verify rows, schema, table names, load strategy and cursor behavior. A bounded extractor preview is useful diagnosis but does not prove state-advancing execution. Keep schedules and retry policy in the caller's orchestration layer.
+Repeat static validation first. When the user authorizes execution, point at a disposable destination and run `bobsled runner run <pipeline> --resource <resource>`. Verify rows, schema, table names, load strategy and cursor behavior. A bounded extractor preview is useful diagnosis but does not prove state-advancing execution. Keep schedules and retry policy in the caller's orchestration layer.

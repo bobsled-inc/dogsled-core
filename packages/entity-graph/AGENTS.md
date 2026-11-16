@@ -12,7 +12,7 @@ survivorship, truthset, mention, relationship, and agent-task workflows.
 - Import shared project loading, formatter, dialect, and command utilities from
   public `@bobsled-inc/model-spec` entrypoints.
 - Keep command modules thin. Structured workflows live under `src/api/`.
-- `dogsled entity-graph` delegates to this package's CLI entrypoint.
+- `bobsled entity-graph` delegates to this package's CLI entrypoint.
 - Use `src/runtime/project-context.ts` and `src/runtime/runner-resolver.ts` for
   project and runner resolution.
 

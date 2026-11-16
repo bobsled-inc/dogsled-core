@@ -457,7 +457,7 @@ describe('BobsledConfigSchema — pipelines', () => {
           source: 'github',
           destination: 'warehouse',
           resources: ['repos'],
-          inputs: { repo_names: ['dogsled', 'demo-repo'], include_archived: [false] },
+          inputs: { repo_names: ['bobsled', 'demo-repo'], include_archived: [false] },
         },
       },
     });
@@ -720,7 +720,7 @@ describe('BobsledConfigSchema — destinations map', () => {
 
   it('accepts both credentials_secret and credentials_access_token simultaneously', () => {
     // Both fields are optional and independent. Loader precedence:
-    // credentials_access_token > credentials > keyFilename. The Dogsled
+    // credentials_access_token > credentials > keyFilename. The Bobsled Core
     // schema doesn't enforce mutual exclusion — that's a runtime
     // concern, not a config-shape concern.
     const result = BobsledConfigSchema.safeParse({
@@ -764,7 +764,7 @@ describe('BobsledConfigSchema — destinations map', () => {
 
   it('accepts both credentials_access_token and credentials_token_command simultaneously', () => {
     // Both optional; loader precedence is token_command > access_token. The
-    // Dogsled schema doesn't enforce mutual exclusion — a runtime concern.
+    // Bobsled Core schema doesn't enforce mutual exclusion — a runtime concern.
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         warehouse: {
@@ -1173,11 +1173,11 @@ describe('BobsledConfigSchema — destinations orchestrator-extension keys', () 
 });
 
 // ---------------------------------------------------------------------------
-// Dogsled-managed destination (orchestrator-resolved type).
-// Dogsled CLI never executes this destination — the orchestrator (Dogsled
+// platform-managed destination (orchestrator-resolved type).
+// Bobsled Core CLI never executes this destination — the orchestrator (Bobsled Core
 // host application) expands it into a concrete warehouse-native destination block
 // (today: bigquery) before invocation. Schema validation lives here so
-// bundles authored against this offering pass Dogsled's parse step at
+// bundles authored against this offering pass Bobsled Core's parse step at
 // upload time.
 // ---------------------------------------------------------------------------
 
@@ -1281,8 +1281,8 @@ describe('BobsledConfigSchema — bobsled_managed destination', () => {
     ['leading hyphen', '-bobsled_managed'],
     ['trailing underscore', 'bobsled_managed_'],
     ['uppercase', 'Bobsled_Managed'],
-    ['double separator', 'dogsled--managed'],
-    ['special char', 'dogsled.managed'],
+    ['double separator', 'bobsled--managed'],
+    ['special char', 'bobsled.managed'],
   ])('rejects bobsled_connection_ref with %s', (_label, ref) => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
@@ -1400,7 +1400,7 @@ describe('BobsledConfigSchema — bobsled_managed destination', () => {
     // `bobsled_*` correctly but ALSO leaving `x-*` keys in place,
     // which then tripped `.strict()`. The two-axis fix preserves
     // bobsled_* for managed types only, while always stripping
-    // `x-*` (generic OpenAPI extension namespace, ignored by Dogsled).
+    // `x-*` (generic OpenAPI extension namespace, ignored by Bobsled Core).
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {

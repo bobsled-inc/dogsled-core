@@ -1,6 +1,6 @@
 ---
 name: model-profiler
-description: Profile Dogsled/Model Spec warehouse sources or models with confidence-scored inferences and cleaning suggestions. Use when an agent needs to run or interpret `dogsled model profile`, propose cleaning/model metadata, inspect PK/FK candidates, or prepare entity graph onboarding evidence from sampled data.
+description: Profile Bobsled Core/Model Spec warehouse sources or models with confidence-scored inferences and cleaning suggestions. Use when an agent needs to run or interpret `bobsled model profile`, propose cleaning/model metadata, inspect PK/FK candidates, or prepare entity graph onboarding evidence from sampled data.
 ---
 
 # Model Profiler
@@ -20,19 +20,19 @@ Load the user guide when you need output-field details, limitations, or runner r
 1. Validate the project:
 
    ```bash
-   dogsled model validate --integration <handle>
+   bobsled model validate --integration <handle>
    ```
 
 2. Profile the source or model with JSON output:
 
    ```bash
-   dogsled model profile <source_or_model> --integration <handle> --json --quiet
+   bobsled model profile <source_or_model> --integration <handle> --json --quiet
    ```
 
 3. For cleaning-only onboarding:
 
    ```bash
-   dogsled model profile suggest cleaning <source_or_model> \
+   bobsled model profile suggest cleaning <source_or_model> \
      --integration <handle> \
      --confidence-min 0.8 \
      --json \

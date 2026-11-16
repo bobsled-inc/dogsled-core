@@ -45,7 +45,7 @@ export default async function ClusterPage({
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           { label: 'Entity Graph', href: getEntityGraphOverviewHref(scenarioId, entityId) },
           {
             label: 'Resolve',

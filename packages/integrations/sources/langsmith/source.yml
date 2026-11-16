@@ -1,8 +1,8 @@
 spec_version: '2'
 type: source
 # Self-describing custom API source — no bundled connector module is required.
-# `source_type` is read by Dogsled; `bobsled_source_kind` is the orchestrator/
-# host application marker (stripped + ignored by the Dogsled CLI).
+# `source_type` is read by Bobsled Core; `bobsled_source_kind` is the orchestrator/
+# host application marker (stripped + ignored by the Bobsled Core CLI).
 source_type: custom_api
 bobsled_source_kind: custom_api
 name: langsmith

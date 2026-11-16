@@ -32,7 +32,7 @@ const RULE_GUIDANCE = {
     agentsSection: 'Code Standards',
     category: 'output',
   },
-  'dogsled/import-extension': {
+  'bobsled/import-extension': {
     summary:
       'Use `.js` on relative imports because NodeNext ESM keeps the import specifier verbatim.',
     agentsSection: 'Code Standards',
@@ -85,7 +85,7 @@ function printMessage(result, message) {
         agentsSection: guidance.agentsSection,
         packageDoc: pkg?.agentsPath,
         packageSection:
-          pkg?.shortName === 'dogsled' && guidance.category === 'output' ? 'Output Modes' : null,
+          pkg?.shortName === 'bobsled' && guidance.category === 'output' ? 'Output Modes' : null,
       })}`
     );
   } else if (pkg) {

@@ -185,7 +185,7 @@ export async function resolveRunConfig(options: Record<string, unknown>): Promis
   );
   const resolvedTarget = { ...targetConfig, ...cliOverrides } as LoaderConfig;
 
-  // Dogsled sends per-resource ownership markers as repeatable CLI overrides
+  // Bobsled Core sends per-resource ownership markers as repeatable CLI overrides
   // even when the connection itself comes from a named target/integration.
   // Preserve target-file markers and let an explicit CLI value win.
   if (hasCliOwnershipMarkers) {

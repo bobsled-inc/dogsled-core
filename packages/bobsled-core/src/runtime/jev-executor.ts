@@ -23,7 +23,7 @@ const responseSchema = z.object({
 
 /**
  * Trusted callers supply secret resolution and may inject transport; neither enters saved
- * assignments. The resolver is required: Dogsled never reads model keys from the environment
+ * assignments. The resolver is required: Bobsled Core never reads model keys from the environment
  * implicitly.
  */
 export function createJevExecutor(options: {
@@ -33,7 +33,7 @@ export function createJevExecutor(options: {
   const resolver: unknown = (options as { secretResolver?: unknown } | undefined)?.secretResolver;
   if (typeof (resolver as Partial<SecretResolver> | null | undefined)?.resolve !== 'function') {
     throw new CommandError(
-      'createJevExecutor requires an explicit secretResolver; Dogsled never reads model keys from the environment implicitly.',
+      'createJevExecutor requires an explicit secretResolver; Bobsled Core never reads model keys from the environment implicitly.',
       2
     );
   }

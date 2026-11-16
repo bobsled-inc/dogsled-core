@@ -52,7 +52,7 @@ export default async function ShopRelationshipsPage() {
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           { label: 'Demo', href: '/demo/shop' },
           { label: 'Relationships' },
         ]}

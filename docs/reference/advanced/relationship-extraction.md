@@ -64,7 +64,7 @@ Rules:
 
 ## Candidate-Pair Discipline
 
-Extraction is pair-first. Dogsled only asks the model about candidate pairs built from already-resolved mentions in a chunk:
+Extraction is pair-first. Bobsled Core only asks the model about candidate pairs built from already-resolved mentions in a chunk:
 
 - unresolved mentions are excluded;
 - self-relations are rejected;
@@ -106,7 +106,7 @@ Rejected rows are audit material; they should not be patched into the evidence t
 Export review rows:
 
 ```bash
-dogsled entity-graph relationships review export \
+bobsled entity-graph relationships review export \
   --runner ./runner.js \
   --schema entity_graph \
   --yaml
@@ -126,7 +126,7 @@ The persisted `review_flag` from extraction wins when present; numeric threshold
 Apply reviewed decisions:
 
 ```bash
-dogsled entity-graph relationships review apply ./review/relationship_decisions.yml \
+bobsled entity-graph relationships review apply ./review/relationship_decisions.yml \
   --runner ./runner.js \
   --json
 ```
@@ -145,7 +145,7 @@ rows:
 Rebuild the public table:
 
 ```bash
-dogsled entity-graph relationships compact \
+bobsled entity-graph relationships compact \
   --runner ./runner.js \
   --schema entity_graph \
   --json
@@ -154,7 +154,7 @@ dogsled entity-graph relationships compact \
 Use dry-run mode to inspect generated SQL before mutating warehouse state:
 
 ```bash
-dogsled entity-graph relationships compact \
+bobsled entity-graph relationships compact \
   --schema entity_graph \
   --dry-run \
   --json

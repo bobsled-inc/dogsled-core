@@ -85,7 +85,7 @@ export default async function EntityGraphHubPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8 p-8">
       <PageHeader
-        breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Entity Graph' }]}
+        breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Entity Graph' }]}
         title="Entity Graph"
         description="Design entity-resolution specs, run the pipeline, and review match results — all against a local DuckDB workspace."
       />

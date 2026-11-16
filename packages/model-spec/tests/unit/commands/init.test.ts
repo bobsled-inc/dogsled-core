@@ -70,7 +70,7 @@ describe('init command scaffolding', () => {
     await runInit(projectDir);
     const content = fs.readFileSync(path.join(projectDir, CONFIG_FILE_NAME), 'utf-8');
     expect(content).toContain('integrations/<handle>.yml');
-    expect(content).toContain('dogsled model compile --integration');
+    expect(content).toContain('bobsled model compile --integration');
     expect(content).toContain('# sources_dir: sources');
     expect(content).toContain('# models_dir: models');
     expect(content).toContain('# seeds_dir: seeds');

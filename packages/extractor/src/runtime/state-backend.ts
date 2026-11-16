@@ -2,7 +2,7 @@
  * State backend URL parsing and factory.
  *
  * Supports file:// URLs (local disk, default) and http(s):// URLs (remote HTTP state backend).
- * The HTTP backend serves host applications and OSS users running Dogsled
+ * The HTTP backend serves host applications and OSS users running Bobsled Core
  * inside an ephemeral container who needs durable state outside the filesystem.
  */
 

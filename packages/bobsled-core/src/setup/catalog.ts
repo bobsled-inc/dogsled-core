@@ -212,7 +212,7 @@ const DESTINATIONS: DestinationSetupMetadata[] = [
         name: 'SNOWFLAKE_PASSWORD',
         location: 'env_var',
         status: 'missing',
-        description: 'Snowflake password for the Dogsled user',
+        description: 'Snowflake password for the Bobsled Core user',
       },
     ],
   },
@@ -229,7 +229,7 @@ const DESTINATIONS: DestinationSetupMetadata[] = [
         name: 'PG_PASSWORD',
         location: 'env_var',
         status: 'missing',
-        description: 'Postgres password for the Dogsled user',
+        description: 'Postgres password for the Bobsled Core user',
       },
     ],
   },
@@ -246,7 +246,7 @@ const DESTINATIONS: DestinationSetupMetadata[] = [
         name: 'CLICKHOUSE_PASSWORD',
         location: 'env_var',
         status: 'missing',
-        description: 'ClickHouse password for the Dogsled user',
+        description: 'ClickHouse password for the Bobsled Core user',
       },
     ],
   },
@@ -386,7 +386,7 @@ const QUESTIONS: SetupQuestion[] = [
   {
     id: 'sources',
     field: 'sources',
-    prompt: 'Which systems should Dogsled sync data from first?',
+    prompt: 'Which systems should Bobsled Core sync data from first?',
     recommended: 'Start with 2-3 systems you use every day.',
   },
   {
@@ -469,7 +469,7 @@ export function buildIntegrationSetupCatalog(): IntegrationSetupMetadata[] {
         integrationType: summary.integration_type,
         plainLanguagePurpose:
           override.plainLanguagePurpose ??
-          `Sync ${summary.display_name} data into Dogsled for reporting and automation.`,
+          `Sync ${summary.display_name} data into Bobsled Core for reporting and automation.`,
         bestFor: override.bestFor ?? [
           `${summary.display_name} reporting`,
           `${summary.category} analytics`,

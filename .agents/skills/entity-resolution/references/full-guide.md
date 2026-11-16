@@ -5,7 +5,7 @@ real-world entities across already-loaded tables — "build a customer (or
 company) golden record", "deduplicate accounts across Salesforce + HubSpot",
 "set up entity resolution / an entity graph".
 
-Entity resolution in Dogsled is **two files authored together**:
+Entity resolution in Bobsled Core is **two files authored together**:
 
 1. a `type: resolution` **spec** per entity, at
    `entity-graph/<name>_resolution.yml`, that declares HOW to collapse
@@ -24,7 +24,7 @@ A resolution spec does nothing on its own — the pipeline is what executes it.
 ## 1. The resolution spec — `entity-graph/<name>_resolution.yml`
 
 Use the resolution schema and examples in [Entity graph authoring guide](../../../../docs/reference/advanced/entity-graph-authoring-guide.md),
-then validate with `dogsled entity-graph resolve validate <name>`.
+then validate with `bobsled entity-graph resolve validate <name>`.
 Do not hand-author the shape from memory. The file is **flat** under
 `entity-graph/` (never nested) and its discriminant is `type: resolution`.
 
@@ -54,7 +54,7 @@ The spec is a deterministic standardize → block → score → threshold flow:
   `jaro_winkler`, `edit_distance`, `soundex`, `numeric_distance`,
   `date_proximity`, and `token_cosine`; MySQL does not support
   `token_cosine`/`jaro_winkler`/`edit_distance` in v1.
-  Use `dogsled entity-graph resolve validate --verbose` to show dialect notes
+  Use `bobsled entity-graph resolve validate --verbose` to show dialect notes
   for approximate Jaro-Winkler implementations and token-cosine support.
 - **`thresholds`** — the `auto_merge` / `review` / `auto_reject` bands.
   Comparisons are **inclusive at the bottom of each band**: a pair
@@ -205,7 +205,7 @@ sparingly or validated with holdout truthset metrics.
   `field` may appear in at most one comparison (a repeated field would
   double-count its evidence).
 
-Use `dogsled entity-graph truthset train --runner ./runner.mjs --entity company`
+Use `bobsled entity-graph truthset train --runner ./runner.mjs --entity company`
 to learn `prior`, `m`, and `u` from labeled truthsets. The trainer estimates
 `m` from labeled matches with Laplace smoothing, estimates `u` from random
 cross-pairs in `__standardized` (not truthset non-match labels), derives the
@@ -240,7 +240,7 @@ thresholds:
 ## 2. The entity-graph pipeline — `bobsled.yml`
 
 Use the pipeline shape in `docs/reference/project-files.md` and validate with
-`dogsled runner validate`.
+`bobsled runner validate`.
 A `type: entity-graph` pipeline needs:
 
 - **`connection`** — the warehouse where the input tables live AND where the
@@ -255,10 +255,10 @@ It must **not** carry `extract`/`models` fields — pipeline arms don't mix.
 
 Author the spec(s) + the pipeline block, then:
 
-1. Run `dogsled entity-graph resolve validate` to check the resolution specs.
-2. Run `dogsled entity-graph resolve run` to score candidate pairs.
-3. Run `dogsled entity-graph resolve cluster` to cluster the reviewed pairs.
-4. Run `dogsled entity-graph resolve profile` to materialize entity profiles.
+1. Run `bobsled entity-graph resolve validate` to check the resolution specs.
+2. Run `bobsled entity-graph resolve run` to score candidate pairs.
+3. Run `bobsled entity-graph resolve cluster` to cluster the reviewed pairs.
+4. Run `bobsled entity-graph resolve profile` to materialize entity profiles.
 
 Each run writes these **query-ready** tables back to the pipeline's `connection`:
 
@@ -294,17 +294,17 @@ Start with a normal full resolve run. It creates the per-entity tables, writes
 watermarks:
 
 ```bash
-dogsled entity-graph resolve run company --runner ./runner.js --json
+bobsled entity-graph resolve run company --runner ./runner.js --json
 ```
 
 After that baseline exists, use `--incremental` for loaded-at delta runs:
 
 ```bash
-dogsled entity-graph resolve run company --runner ./runner.js --incremental --json
-dogsled entity-graph resolve estimate company --runner ./runner.js --incremental --yaml
+bobsled entity-graph resolve run company --runner ./runner.js --incremental --json
+bobsled entity-graph resolve estimate company --runner ./runner.js --incremental --yaml
 ```
 
-Incremental mode requires a query-capable runner because Dogsled must read
+Incremental mode requires a query-capable runner because Bobsled Core must read
 `__resolve_state` and current source watermarks before compiling the delta SQL.
 It falls back to a full rebuild when state is missing, a source lacks a usable
 watermark, content fingerprints change, or the resolution spec fingerprint
@@ -324,10 +324,10 @@ Use the access-plane commands when an app or agent needs to read or submit a
 single entity/record without running the full pipeline:
 
 ```bash
-dogsled entity-graph get --entity company --id <entity_id> --runner ./runner.js --json
-dogsled entity-graph match --entity company --input ./record.json --mode lookup --runner ./runner.js --json
-dogsled entity-graph match --entity company --input ./record.json --mode stage --runner ./runner.js --json
-dogsled entity-graph match --entity company --input ./record.json --mode assign --runner ./runner.js --json
+bobsled entity-graph get --entity company --id <entity_id> --runner ./runner.js --json
+bobsled entity-graph match --entity company --input ./record.json --mode lookup --runner ./runner.js --json
+bobsled entity-graph match --entity company --input ./record.json --mode stage --runner ./runner.js --json
+bobsled entity-graph match --entity company --input ./record.json --mode assign --runner ./runner.js --json
 ```
 
 `lookup` is read-only. `stage` writes the record to `__match_inbox` for a later
@@ -342,8 +342,8 @@ lookup.
 For local HTTP access:
 
 ```bash
-dogsled entity-graph serve --port 8765 --runner ./runner.js --json
-dogsled entity-graph serve --port 8765 --runner ./runner.js --allow-writes --json
+bobsled entity-graph serve --port 8765 --runner ./runner.js --json
+bobsled entity-graph serve --port 8765 --runner ./runner.js --allow-writes --json
 ```
 
 The server binds to loopback by default and is read-only unless
@@ -353,9 +353,9 @@ operators must both pass `--allow-remote` and set
 trusted access controls. `assign` and `stage` over HTTP share the same
 primary-key validation and inbox durability as the CLI.
 
-Dogsled-maintained agents use the same bundled guidance: load `entity-resolution`
+Bobsled Core-maintained agents use the same bundled guidance: load `entity-resolution`
 for the resolution/access-plane workflow and `bobsled-model-spec-cleaning` for standardization
-transforms. The Dogsled MCP entity-graph tools
+transforms. The Bobsled Core MCP entity-graph tools
 (`entity_search`, `entity_get`, `entity_match`, `entity_relationships`,
 `entity_explain`) are read-only; use CLI/HTTP `match --mode stage|assign` only
 when the task explicitly allows warehouse writes.
@@ -382,10 +382,10 @@ scoring:
 ```
 
 `hmac_sha256` reads `BOBSLED_CORE_MATCH_KEY_SECRET` from the process environment and
-fails validation/compile closed when the secret is missing. Dogsled deliberately
+fails validation/compile closed when the secret is missing. Bobsled Core deliberately
 uses one portable nested keyed SHA-256 construction on every warehouse; it is
 not RFC-2104 HMAC and will not interoperate with externally-computed HMACs.
-Both parties in a cross-warehouse join must use the same Dogsled transform and
+Both parties in a cross-warehouse join must use the same Bobsled Core transform and
 secret. Plain `sha256` is also available, but unsalted hashes remain personal
 data and are dictionary-enumerable; prefer keyed match hashes for identifiers.
 
@@ -393,13 +393,13 @@ Hashed fields may be used in blocking keys, exact deterministic rules, and
 exact scoring features. Do not use them in fuzzy comparators, semantic triage,
 or visible profile attributes unless the attribute is explicitly marked
 `hashed: true`. Bloom-filter CLKs, PSI, clean-room matching, and provider-led
-identity integrations are out of scope for Dogsled core.
+identity integrations are out of scope for Bobsled Core core.
 
 Run `pii scan` to suggest source-column annotations and policy redaction fields:
 
 ```bash
-dogsled entity-graph pii scan --entity customer --json
-dogsled entity-graph pii scan --entity customer --apply --yaml
+bobsled entity-graph pii scan --entity customer --json
+bobsled entity-graph pii scan --entity customer --apply --yaml
 ```
 
 The default backend uses the configured `platform.models` role
@@ -424,7 +424,7 @@ profile:
       - { field: standardized_name, masking: partial, classification: person_name }
 ```
 
-`dogsled entity-graph resolve compile --governance -o build/entity-graph`
+`bobsled entity-graph resolve compile --governance -o build/entity-graph`
 emits `<entity>__golden_masked` view SQL for all dialects, Snowflake tag/masking
 DDL artifacts, and BigQuery/Databricks guidance manifests. The command only
 generates governance artifacts; operators apply warehouse DDL with the
@@ -437,7 +437,7 @@ When the user needs to erase a source record from entity-graph outputs, use
 `entity-graph forget` rather than editing output tables by hand:
 
 ```bash
-dogsled entity-graph forget --entity company \
+bobsled entity-graph forget --entity company \
   --source-ref crm.accounts \
   --pk '{"account_id":"acct_123"}' \
   --reason "gdpr_erasure" \
@@ -458,7 +458,7 @@ request supplies the source ref and primary-key JSON.
 
 For Snowflake schemas that hold entity-graph PII, tell operators to keep
 `DATA_RETENTION_TIME_IN_DAYS <= 30`. After any warehouse restore or Time Travel
-recovery, run `dogsled entity-graph forget --entity <name> --replay` to reapply
+recovery, run `bobsled entity-graph forget --entity <name> --replay` to reapply
 all existing tombstones. Crypto-shredding with per-subject keys is a future
 erasure mode, not part of the current implementation.
 

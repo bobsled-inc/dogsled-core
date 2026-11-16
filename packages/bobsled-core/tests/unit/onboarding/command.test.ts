@@ -12,7 +12,7 @@ import { registerOnboardingCommand } from '../../../src/commands/onboarding.js';
 it('exposes the bundled agent guide without needing a project or plugin', async () => {
   const program = new Command();
   registerOnboardingCommand(program);
-  await program.parseAsync(['node', 'dogsled', 'onboarding', 'guide']);
+  await program.parseAsync(['node', 'bobsled', 'onboarding', 'guide']);
   expect(output.mock.calls[0]?.[0]).toMatchObject({
     name: 'bobsled-tutorials',
     content: expect.stringContaining('Teaching contract'),
@@ -60,7 +60,7 @@ it('returns equivalent JSON and YAML progress and rejects a mismatched selection
       output.mockClear();
       const program = new Command().option('--project-root <path>');
       registerOnboardingCommand(program);
-      await program.parseAsync(['node', 'dogsled', '--project-root', root, 'onboarding', ...args]);
+      await program.parseAsync(['node', 'bobsled', '--project-root', root, 'onboarding', ...args]);
       return output.mock.calls[0]?.[0];
     };
     const json = await run('status', '--tutorial', 'tv-night');
@@ -92,7 +92,7 @@ it('returns the retail guide and its own read-only templates', async () => {
   output.mockClear();
   const program = new Command();
   registerOnboardingCommand(program);
-  await program.parseAsync(['node', 'dogsled', 'onboarding', 'guide', '--tutorial', 'retail']);
+  await program.parseAsync(['node', 'bobsled', 'onboarding', 'guide', '--tutorial', 'retail']);
   const guide = output.mock.calls[0]?.[0];
   expect(guide.name).toBe('bobsled-retail');
   expect(guide.content).toContain('one pilot');

@@ -15,7 +15,7 @@ const HUBSPOT_OPERATOR_MAP: Record<QueryPredicate['operator'], string> = {
 export const hubspotFilterBuilder: FilterBuilder = {
   id: 'hubspot/crm-search',
   label: 'HubSpot CRM search',
-  description: 'Builds HubSpot CRM v3 search filterGroups from Dogsled query predicates.',
+  description: 'Builds HubSpot CRM v3 search filterGroups from Bobsled Core query predicates.',
   integrations: ['hubspot'],
   build(config, predicates) {
     const filters = predicates.map((predicate) => buildHubSpotFilter(config, predicate));

@@ -119,7 +119,7 @@ describe('deployed-definition planning public export', () => {
       records: [{ id: 1 }],
       limitReached: false,
     });
-    // The host executes the plan with the existing Dogsled helper. The planner
+    // The host executes the plan with the existing Bobsled Core helper. The planner
     // does not fetch rows, manage credentials, or run this query.
     const result = await runQueryCommand({
       projectRoot: root,

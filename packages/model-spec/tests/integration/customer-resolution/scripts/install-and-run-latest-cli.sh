@@ -88,7 +88,7 @@ if [[ "$SKIP_INSTALL" != "1" ]]; then
   pnpm --dir "$REPO_ROOT" install >/dev/null
 fi
 
-echo "Building the latest dogsled CLI from the current checkout..." >&2
+echo "Building the latest bobsled CLI from the current checkout..." >&2
 pnpm --dir "$REPO_ROOT/packages/bobsled-core" build >/dev/null
 
 if [[ ! -f "$CLI_BIN" ]]; then
@@ -103,7 +103,7 @@ if [[ "$DIALECT" == "duckdb" ]]; then
   fi
 fi
 
-echo "Using dogsled CLI version $(node "$CLI_BIN" --version)" >&2
+echo "Using bobsled CLI version $(node "$CLI_BIN" --version)" >&2
 
 export MODE DIALECT SCRIPT_DIR PROJECT_DIR REPO_ROOT RUNNER CLI_BIN
 

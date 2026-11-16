@@ -161,7 +161,7 @@ describe('discover command MCP consolidation', () => {
 
     await expect(
       createProgram().parseAsync(['discover', 'fixture_mcp'], { from: 'user' })
-    ).rejects.toThrow('MCP discovery is available only through `dogsled extract mcp`');
+    ).rejects.toThrow('MCP discovery is available only through `bobsled extract mcp`');
   });
 
   it('directs MCP source transports to the MCP command group', async () => {
@@ -172,7 +172,7 @@ describe('discover command MCP consolidation', () => {
 
     await expect(
       createProgram().parseAsync(['discover', 'fixture_mcp'], { from: 'user' })
-    ).rejects.toThrow('MCP discovery is available only through `dogsled extract mcp`');
+    ).rejects.toThrow('MCP discovery is available only through `bobsled extract mcp`');
   });
 
   it('allows HTTP resources in a mixed HTTP and MCP source', async () => {

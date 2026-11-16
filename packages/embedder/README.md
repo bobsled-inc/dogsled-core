@@ -2,11 +2,11 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Protocol-aware embedding for Dogsled streams. Run it with `dogsled embed`.
+Protocol-aware embedding for Bobsled Core streams. Run it with `bobsled embed`.
 
 ## What It Does
 
-- Reads Dogsled protocol messages from stdin
+- Reads Bobsled Core protocol messages from stdin
 - Adds `vector` columns to `SCHEMA` messages for configured fields
 - Enriches `RECORD` messages with embedding arrays
 - Rewrites JSONL and JSONL+gzip `BATCH` payloads with embedded columns
@@ -36,21 +36,21 @@ Notes:
 ### Standalone extract -> embed -> load
 
 ```bash
-dogsled extract run --integration github issues \
-  | dogsled embed --config ./embedder.json \
-  | dogsled load run --dest duckdb --db-path ./dev.duckdb
+bobsled extract run --integration github issues \
+  | bobsled embed --config ./embedder.json \
+  | bobsled load run --dest duckdb --db-path ./dev.duckdb
 ```
 
-`dogsled embed` delegates to this package. If you are invoking the package binary directly, use:
+`bobsled embed` delegates to this package. If you are invoking the package binary directly, use:
 
 ```bash
-dogsled embed run --config ./embedder.json
+bobsled embed run --config ./embedder.json
 ```
 
 ### One-step pipeline with embedding
 
 ```bash
-dogsled pipeline \
+bobsled pipeline \
   --integration github \
   --resource issues \
   --dest duckdb \
@@ -59,7 +59,7 @@ dogsled pipeline \
   --embed-config-json '{"provider":"openai","model":"text-embedding-3-small","api_key":"$OPENAI_API_KEY","streams":{"issues":[{"field":"body"}]}}'
 ```
 
-When `dogsled pipeline --embed-config-json` is used, Dogsled validates the JSON and writes it to a `0600` temp file before spawning the embed subprocess, so secrets are not exposed in argv.
+When `bobsled pipeline --embed-config-json` is used, Bobsled Core validates the JSON and writes it to a `0600` temp file before spawning the embed subprocess, so secrets are not exposed in argv.
 
 For reusable repo-local configs, prefer checking in a file like `embedder.json` and composing the explicit `extract | embed | load` pipeline shown above.
 
@@ -77,9 +77,9 @@ Use the stub mode to exercise the pipeline without calling OpenAI:
 
 ```bash
 BOBSLED_CORE_EMBED_STUB=1 \
-dogsled extract run --integration github issues \
-  | dogsled embed --config ./embedder.json \
-  | dogsled load run --dest duckdb --db-path ./dev.duckdb
+bobsled extract run --integration github issues \
+  | bobsled embed --config ./embedder.json \
+  | bobsled load run --dest duckdb --db-path ./dev.duckdb
 ```
 
 Stub mode emits zero-filled vectors with the correct model dimension.

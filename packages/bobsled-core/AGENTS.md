@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-09-02 -->
 
-The unified CLI package. `dogsled` is the only CLI command. It merges ELT tooling with local project commands.
+The unified CLI package. `bobsled` is the only CLI command. It merges ELT tooling with local project commands.
 
 ---
 
@@ -49,7 +49,7 @@ Highest to lowest:
 
 Pipeline configuration is optional. Local Project commands use the current working directory as the Project root unless you pass `--project-root`. With both `--project-root` and `--config`, resolve the config path relative to the Project root and keep `--config` limited to that one file.
 
-In default Project mode, Dogsled merges typed pipeline fragments by pipeline and destination name. Duplicate names or repeated single-owner sections are errors. Untyped YAML objects can live in nested conventional folders; an explicit `type` allows a file anywhere. The nearest exact conventional folder infers only the file kind. It does not supply a name or namespace. A root `bobsled.yml` is a supported legacy form, not a required Project marker.
+In default Project mode, Bobsled Core merges typed pipeline fragments by pipeline and destination name. Duplicate names or repeated single-owner sections are errors. Untyped YAML objects can live in nested conventional folders; an explicit `type` allows a file anywhere. The nearest exact conventional folder infers only the file kind. It does not supply a name or namespace. A root `bobsled.yml` is a supported legacy form, not a required Project marker.
 
 ## Output Modes
 
@@ -71,8 +71,8 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 ## Delegation Behavior
 
 - `extract`, `embed`, `load`, `model`, `entity-graph`, and `query` delegate by subprocess to their respective package CLIs
-- Root parsing short-circuits for delegated subcommands (e.g., `dogsled extract run --help` shows underlying command help)
-- `embed` accepts bare flags without an explicit `run` subcommand (for example `dogsled embed --config ./embedder.json`)
+- Root parsing short-circuits for delegated subcommands (e.g., `bobsled extract run --help` shows underlying command help)
+- `embed` accepts bare flags without an explicit `run` subcommand (for example `bobsled embed --config ./embedder.json`)
 - `pipeline` is the only composed command — it wires extractor stdout to loader stdin, or extractor -> embedder -> loader when `--embed-config-json` is present
 - `pipeline` forwards output controls (`--json`, `--verbose`, `--quiet`, `--log-format`) across extract, embed, and load so stderr stays machine-parseable
 - Inline `--embed-config-json` payloads are validated, written to a `0600` temp file, and then passed to the embed subprocess by path
@@ -83,19 +83,19 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 - For net-new repos, prefer `setup recommend -> render -> doctor` before trying to run `pipeline`
 - `setup render` must use exclusive creation for authored `AGENTS.md` and `skills/project-overview/SKILL.md`; preserve and report existing paths instead of overwriting them
 - For existing extractor projects, validate the pieces independently:
-  - `dogsled extract validate <integration>`
-  - `dogsled load check --dest <destination> ...`
-  - `dogsled pipeline --integration <integration> --resource <resource> ...`
+  - `bobsled extract validate <integration>`
+  - `bobsled load check --dest <destination> ...`
+  - `bobsled pipeline --integration <integration> --resource <resource> ...`
 - For reusable embedding workflows, prefer checked-in config files and explicit `extract | embed | load` composition
-- For one-off automation, `dogsled pipeline --embed-config-json` is the shortest path
+- For one-off automation, `bobsled pipeline --embed-config-json` is the shortest path
 
 ## Vector And Embed Notes
 
 - Protocol `vector` columns require a `dimension`; the embedder derives it from the selected model
 - Smoke tests can set `BOBSLED_CORE_EMBED_STUB=1` to avoid live OpenAI calls while preserving vector dimensions
 - Destination choice matters for embedding workflows; consult `packages/loader/README.md` and `packages/loader/AGENTS.md` before enabling vectors downstream
-- Shared model roles live under `platform.models` in `bobsled.yml`; use `dogsled doctor --json` to validate config and `dogsled ai test --connection <role> --json` for provider probes
-- `dogsled ai test` should pass a stable project key into `@bobsled-inc/ai` so `platform.budget.ai_cost_daily_usd` can be enforced without mixing projects
+- Shared model roles live under `platform.models` in `bobsled.yml`; use `bobsled doctor --json` to validate config and `bobsled ai test --connection <role> --json` for provider probes
+- `bobsled ai test` should pass a stable project key into `@bobsled-inc/ai` so `platform.budget.ai_cost_daily_usd` can be enforced without mixing projects
 - Use `BOBSLED_CORE_AI_TEST_STUB=1` only for command wiring tests; it does not verify provider credentials, pricing, or model availability
 
 ## Build & Distribution
@@ -111,7 +111,7 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 - npm publishes only `@bobsled-inc/bobsled-core`; the supporting workspaces in
   the release package set (`INTERNAL_PACKAGE_NAMES`) stay private and are
   embedded from a `pnpm deploy` staging tree through `bundleDependencies`
-- external library compatibility lives in explicit Dogsled subpath wrappers;
+- external library compatibility lives in explicit Bobsled Core subpath wrappers;
   keep internal source imports on workspace entrypoints
 - Library agentic hosts use the `/agentic` factory with a supplied project, executor,
   secret resolver, and SQL runner options. Keep CLI file loading in its CLI adapter.
@@ -128,7 +128,7 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 - CLI `skill list` and `skill show` deliberately ignore the guide. Both forms of
   `skill validate`, including `validate <name>`, validate and report it.
 - Preserve `--no-guide` on `skill validate` and `doctor` as the explicit
-  compatibility escape hatch for repositories whose root guide is not Dogsled-owned.
+  compatibility escape hatch for repositories whose root guide is not Bobsled Core-owned.
 
 ## Key Source Directories
 

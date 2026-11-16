@@ -24,7 +24,7 @@ export async function postgres() {
       '--name',
       container,
       '--label',
-      'org.dogsled.showcase=phase4-e2e',
+      'org.bobsled.showcase=phase4-e2e',
       '--tmpfs',
       '/var/lib/postgresql/data:rw,size=256m',
       '-e',

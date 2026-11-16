@@ -1,5 +1,5 @@
 /**
- * `dogsled entity-graph resolve review` — the agent review phase CLI.
+ * `bobsled entity-graph resolve review` — the agent review phase CLI.
  *
  * Thin wrapper over `reviewResolveProject` (see `src/api/review-project.ts`),
  * split out of `resolve.ts` to respect the source-file budget.

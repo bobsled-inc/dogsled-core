@@ -3,7 +3,7 @@
  *
  * This barrel has zero static path to execution/runtime code (and therefore
  * to the DuckDB native binding `@duckdb/node-api`). Consumers that only need
- * to validate or synthesize Dogsled config — e.g. a web app's config routes —
+ * to validate or synthesize Bobsled Core config — e.g. a web app's config routes —
  * should import from here instead of `@bobsled-inc/bobsled-core/sync`,
  * `@bobsled-inc/bobsled-core/actions`, or the package root, all of which co-locate
  * execution exports (`runSync`, `executeAction`, `runBatchActions`) that pull

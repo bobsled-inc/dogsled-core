@@ -12,15 +12,15 @@ export function starterProjectSkillFile(repoName: string): RenderedSetupFile {
     content: `---
 type: skill
 name: project-overview
-description: Explain how agents should work with this Dogsled project.
+description: Explain how agents should work with this Bobsled Core project.
 triggers:
-  - understand this Dogsled project
+  - understand this Bobsled Core project
   - work with this project's pipelines
 ---
 
 # ${repoName} project overview
 
-Read \`bobsled.yml\` before changing pipeline behavior. Use the project models, Resources, Actions, and pipelines by their Dogsled names. Never place secret values in project files or output.
+Read \`bobsled.yml\` before changing pipeline behavior. Use the project models, Resources, Actions, and pipelines by their Bobsled Core names. Never place secret values in project files or output.
 `,
   };
 }

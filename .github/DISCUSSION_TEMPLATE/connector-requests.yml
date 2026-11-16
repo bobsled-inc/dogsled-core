@@ -22,7 +22,7 @@ body:
     id: objects
     attributes:
       label: Objects and operations
-      description: Which objects should Dogsled read or write, and what concrete workflow needs them?
+      description: Which objects should Bobsled Core read or write, and what concrete workflow needs them?
     validations:
       required: true
   - type: textarea

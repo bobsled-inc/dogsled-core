@@ -67,11 +67,11 @@ export function exampleNextSteps(targetDir: string, displayDir: string): string[
     steps.push(...integrations.map((name) => `export ${ENV_HINTS[name]}`), './walkthrough.sh');
   } else {
     for (const name of integrations) {
-      steps.push(`export ${ENV_HINTS[name]}`, `dogsled extract validate ${name}`);
+      steps.push(`export ${ENV_HINTS[name]}`, `bobsled extract validate ${name}`);
     }
   }
   if (existsSync(join(targetDir, 'models'))) {
-    steps.push('dogsled model validate', 'dogsled model compile -o ./compiled');
+    steps.push('bobsled model validate', 'bobsled model compile -o ./compiled');
   }
   steps.push('See README.md for the full walkthrough.');
   return steps;
@@ -106,7 +106,7 @@ export function registerExamplesCommand(program: Command): void {
         process.stdout.write(`  ${name}${integrationList}\n`);
       }
 
-      process.stdout.write(`\nScaffold with: dogsled examples init <name>\n`);
+      process.stdout.write(`\nScaffold with: bobsled examples init <name>\n`);
     });
 
   cmd

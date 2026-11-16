@@ -7,12 +7,12 @@ import { buildProgram } from '../../../src/index.js';
 import { LESSONS } from '../../../src/commands/lessons.js';
 
 describe('learn command', () => {
-  it('stores reset progress under the local Dogsled tutor directory', async () => {
+  it('stores reset progress under the local Bobsled Core tutor directory', async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'learn-progress-'));
     mkdirSync(path.join(root, '.git'));
     const cwd = vi.spyOn(process, 'cwd').mockReturnValue(root);
     try {
-      await buildProgram().parseAsync(['node', 'dogsled', 'learn', '--reset']);
+      await buildProgram().parseAsync(['node', 'bobsled', 'learn', '--reset']);
       const progress = JSON.parse(
         readFileSync(path.join(root, '.bobsled/tutor-lab/.bobsled-tutor-progress.json'), 'utf8')
       );

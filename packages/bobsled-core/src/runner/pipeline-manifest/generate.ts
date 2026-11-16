@@ -107,7 +107,7 @@ function resolveResources(pipeline: ResolvedPipeline, _lib?: IntegrationsLib): s
 /**
  * Build complete resolved resource metadata for the persisted manifest.
  * Besides for_each grouping, this freezes destination and effective load
- * settings so an execution consumer never needs to reproduce Dogsled's
+ * settings so an execution consumer never needs to reproduce Bobsled Core's
  * override/default precedence.
  *
  * Resolution order:
@@ -118,7 +118,7 @@ function resolveResources(pipeline: ResolvedPipeline, _lib?: IntegrationsLib): s
  *      `@bobsled-inc/integrations` and they can't — `custom_api` integrations
  *      defined in user bundles live outside that package, so library-mode
  *      callers must supply the metadata directly.
- *   2. **`IntegrationsLib.getResources(...)` lookup.** Dogsled CLI flow: when
+ *   2. **`IntegrationsLib.getResources(...)` lookup.** Bobsled Core CLI flow: when
  *      generating the manifest from `bobsled.yml` and a bundled integration,
  *      pull `extract.for_each.resource` straight off the loaded ResourceSpec.
  *
@@ -142,7 +142,7 @@ function collectResourceMetadata(
     }
   }
 
-  // Pass 1 — freeze Dogsled-resolved load metadata for every selected resource.
+  // Pass 1 — freeze Bobsled Core-resolved load metadata for every selected resource.
   // Runtime precedence for load_strategy and schema_behavior is resource >
   // pipeline > destination. A pipeline can impose one load contract across
   // its fan-out destinations while destinations remain useful as the
@@ -225,7 +225,7 @@ function collectResourceMetadata(
   }
 
   // Pass 2 — IntegrationsLib fallback for resources whose forEachParent was
-  // not already supplied. Dogsled CLI users get the metadata for free this way.
+  // not already supplied. Bobsled Core CLI users get the metadata for free this way.
   if (lib) {
     for (const { resource } of specs) {
       const name = typeof resource?.name === 'string' ? resource.name : undefined;
@@ -436,7 +436,7 @@ export function generatePipelineManifestFiles(
   if (hasModelPipelines && !options.projectRoot) {
     throw new CommandError(
       'generatePipelineManifestFiles: bobsled.yml declares model pipelines but no `projectRoot` was provided. ' +
-        'Pass `options.projectRoot` so Dogsled can scan `models/` for connection + materialization metadata, ' +
+        'Pass `options.projectRoot` so Bobsled Core can scan `models/` for connection + materialization metadata, ' +
         'or call `generateManifest({ config, models })` directly with a pre-loaded model registry.',
       2
     );
@@ -488,7 +488,7 @@ export function generatePipelineManifestFilesFromInputs(
  * logic). Orchestrator integrations should call `generateProjectManifest`
  *
  * Two project-input shapes are supported:
- *   - `{ config, projectRoot }` — Dogsled CLI shape: read Model Spec model metadata
+ *   - `{ config, projectRoot }` — Bobsled Core CLI shape: read Model Spec model metadata
  *     from the `type: model` files under `<projectRoot>` (or
  *     `<projectRoot>/<config.models.project>`), using `index` when given.
  *   - `{ config, models }` — disk-less shape: caller pre-loads the Model Spec model
@@ -506,7 +506,7 @@ export type GenerateManifestProjectInput =
     };
 
 export interface GenerateManifestOptions {
-  /** Override `bobsled_cli_version`; defaults to the running Dogsled CLI version. */
+  /** Override `bobsled_cli_version`; defaults to the running Bobsled Core CLI version. */
   bobsledVersion?: string;
   /**
    * Resolved extract pipelines whose `runner` is `'managed'`. Optional —
@@ -518,20 +518,20 @@ export interface GenerateManifestOptions {
   integrations?: IntegrationsLib;
   /**
    * Parsed sync specs for disk-less callers. When omitted for project-root
-   * callers, Dogsled reads the project's `type: sync` files.
+   * callers, Bobsled Core reads the project's `type: sync` files.
    */
   reverseEtlSyncs?: LoadedSyncSpec[];
 }
 
 export interface GenerateProjectManifestOptions extends ResolveProjectPipelinesOptions {
-  /** Override `bobsled_cli_version`; defaults to the running Dogsled CLI version. */
+  /** Override `bobsled_cli_version`; defaults to the running Bobsled Core CLI version. */
   bobsledVersion?: string;
 }
 
 /**
- * Fully validate and compile a materialized Dogsled project into its canonical
+ * Fully validate and compile a materialized Bobsled Core project into its canonical
  * runtime manifest. Unlike the lower-level synchronous `generateManifest`,
- * callers do not supply partially resolved extract pipelines: Dogsled owns
+ * callers do not supply partially resolved extract pipelines: Bobsled Core owns
  * parsing, cross-validation, entity/resource resolution, for_each grouping,
  * runner filtering, and schedule semantics.
  */

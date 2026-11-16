@@ -251,7 +251,7 @@ function parseProject(
       result,
       'native_property_ignored',
       path,
-      `Dogsled ignores ${paths.join(', ')} on ${name}, so the export leaves ${paths.length === 1 ? 'it' : 'them'} out.`,
+      `Bobsled Core ignores ${paths.join(', ')} on ${name}, so the export leaves ${paths.length === 1 ? 'it' : 'them'} out.`,
       'Remove the property from the Blueprint, or move it to a supported property.',
       objectReference(name)
     );
@@ -508,7 +508,7 @@ function outputFields(
         'native_metadata_not_supported_by_profile',
         path,
         `Ossie 0.1.1 cannot preserve native field data for ${dataset.name}.${name}.`,
-        'Use Ossie 0.2.0.dev0 for a Dogsled round trip.',
+        'Use Ossie 0.2.0.dev0 for a Bobsled Core round trip.',
         reference
       );
     }
@@ -549,7 +549,7 @@ function datasetAddress(dataset: NativeDataset, addresses: Record<string, string
     'native_incomplete',
     `${dataset.path}.source`,
     `No current output address was supplied for ${dataset.reference}.`,
-    'Resolve the model output address through the Dogsled project host.',
+    'Resolve the model output address through the Bobsled Core project host.',
     objectReference(dataset.name)
   );
 }
@@ -597,7 +597,7 @@ function outputDataset(
         'native_metadata_not_supported_by_profile',
         dataset.path,
         `Ossie 0.1.1 cannot preserve source settings for ${dataset.reference}.`,
-        'Use Ossie 0.2.0.dev0 for a Dogsled round trip.',
+        'Use Ossie 0.2.0.dev0 for a Bobsled Core round trip.',
         objectReference(dataset.name)
       );
     }
@@ -612,7 +612,7 @@ function outputDataset(
         'catalog_only_export',
         dataset.path,
         `Model ${dataset.name} was exported as its finished dataset; ${detail} are not preserved. Reimport treats it as a source.`,
-        'Keep the native Dogsled model when executable behavior must be preserved.',
+        'Keep the native Bobsled Core model when executable behavior must be preserved.',
         objectReference(dataset.name)
       );
     } else {
@@ -639,7 +639,7 @@ function outputDataset(
           'native_metadata_not_supported_by_profile',
           dataset.path,
           `Ossie 0.1.1 cannot preserve build settings for ${dataset.name}.`,
-          'Use Ossie 0.2.0.dev0 for a Dogsled round trip.',
+          'Use Ossie 0.2.0.dev0 for a Bobsled Core round trip.',
           objectReference(dataset.name)
         );
       }
@@ -753,7 +753,7 @@ function outputMetrics(
         'native_metadata_not_supported_by_profile',
         path,
         `Ossie 0.1.1 cannot preserve exact native metric data for ${name}.`,
-        'Use Ossie 0.2.0.dev0 for a Dogsled round trip.'
+        'Use Ossie 0.2.0.dev0 for a Bobsled Core round trip.'
       );
       if (metric['datatype'] !== undefined) {
         warn(
@@ -843,7 +843,7 @@ function outputRelationships(
         'relationship_join_type_not_preserved',
         `${path}.join_type`,
         `Ossie 0.1.1 cannot preserve the native join type for ${name}.`,
-        'Use Ossie 0.2.0.dev0 for a Dogsled round trip.'
+        'Use Ossie 0.2.0.dev0 for a Bobsled Core round trip.'
       );
       if (relationship['description'] !== undefined || relationship['tags'] !== undefined) {
         warn(
@@ -851,7 +851,7 @@ function outputRelationships(
           'native_metadata_not_supported_by_profile',
           path,
           `Ossie 0.1.1 cannot preserve all native relationship data for ${name}.`,
-          'Use Ossie 0.2.0.dev0 for a Dogsled round trip.'
+          'Use Ossie 0.2.0.dev0 for a Bobsled Core round trip.'
         );
       }
     }
@@ -908,7 +908,7 @@ function addDependencyDiagnostics(
   }
 }
 
-/** Convert canonical native Dogsled objects into one validated Ossie YAML document. */
+/** Convert canonical native Bobsled Core objects into one validated Ossie YAML document. */
 /**
  * Ossie needs every output field listed. These settings make columns that the Blueprint does
  * not list. A whole-Project export leaves such models out with one warning, so the rest of the

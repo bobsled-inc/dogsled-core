@@ -64,15 +64,15 @@ export function buildProgram(): Command {
   const program = new Command();
 
   program
-    .name('dogsled')
+    .name('bobsled')
     .version(cliVersion, '-V, --version', 'Display the CLI version')
     .description('Extract, load and model data with YAML project files')
     .showHelpAfterError()
     .option('--json', 'Emit all output as newline-delimited JSON', false)
     .option('--verbose', 'Enable verbose / debug-level output', false)
     .option('--quiet', 'Suppress all non-error output', false)
-    .option('--config <path>', 'Path to a Dogsled project config file')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--config <path>', 'Path to a Bobsled Core project config file')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option('--no-color', 'Disable ANSI colour codes');
 
   // Resolve --json default before each subcommand runs
@@ -160,7 +160,7 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<vo
       return;
     }
 
-    await buildProgram().parseAsync(['node', 'dogsled', ...argv]);
+    await buildProgram().parseAsync(['node', 'bobsled', ...argv]);
   } catch (error) {
     handleCliError(error);
   }

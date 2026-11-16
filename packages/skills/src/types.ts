@@ -1,9 +1,9 @@
 /**
- * Public types for the Dogsled skills manifest.
+ * Public types for the Bobsled Core skills manifest.
  *
  * The manifest re-publishes the action-oriented authoring skills under
  * `.agents/skills/<name>/SKILL.md` for downstream consumers (notably the
- * host agent) that cannot read the Dogsled checkout directly.
+ * host agent) that cannot read the Bobsled Core checkout directly.
  *
  * Single source of truth lives in `.agents/skills/`. The build script
  * (`scripts/build-manifest.ts`) flattens transclusions and bakes the
@@ -64,7 +64,7 @@ export interface SkillsManifest {
 
 export const SKILLS_MANIFEST_JSON_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'Dogsled Skills Manifest',
+  title: 'Bobsled Core Skills Manifest',
   type: 'object',
   additionalProperties: false,
   required: ['schema_version', 'version', 'hash', 'skills', 'catalogs'],

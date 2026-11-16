@@ -2,10 +2,10 @@
 
 A pipeline names a source, the resources to extract, and one or more destinations.
 You declare pipelines and destinations once in `bobsled.yml`, check them with
-`dogsled runner validate`, and run one with `dogsled runner run`. Dogsled Core has
-no scheduler of its own: call `dogsled runner run` from cron, a CI job or your
-orchestrator. This release has no GitHub Action; call `dogsled runner run` from a
-workflow step. [Run Dogsled in production](run-in-production.md) has a complete
+`bobsled runner validate`, and run one with `bobsled runner run`. Bobsled Core has
+no scheduler of its own: call `bobsled runner run` from cron, a CI job or your
+orchestrator. This release has no GitHub Action; call `bobsled runner run` from a
+workflow step. [Run Bobsled Core in production](run-in-production.md) has a complete
 workflow and shows how to keep incremental state between runs.
 
 The examples use the `shop` project from [Get started](../getting-started.md).
@@ -33,7 +33,7 @@ pipelines:
     resources: [orders]
 ```
 
-Append it to the file that `dogsled init` created:
+Append it to the file that `bobsled init` created:
 
 ```bash
 cat >> bobsled.yml <<'EOF'
@@ -54,7 +54,7 @@ pipelines:
     destinations: [warehouse, archive]
     resources: [orders]
 EOF
-dogsled runner validate
+bobsled runner validate
 ```
 
 ```text
@@ -71,8 +71,8 @@ several.
 ## Run it
 
 ```bash
-dogsled runner run shop_files --quiet
-dogsled query "SELECT count(*) AS orders FROM raw.shop_files__orders" --db-path .bobsled/bobsled.duckdb
+bobsled runner run shop_files --quiet
+bobsled query "SELECT count(*) AS orders FROM raw.shop_files__orders" --db-path .bobsled/bobsled.duckdb
 ls output/orders
 ```
 
@@ -83,7 +83,7 @@ orders-0.jsonl
 ```
 
 Tables are named `<pipeline>__<stream>` unless you set `table_prefix`. With several
-destinations, Dogsled extracts once to a capture file, loads every destination from
+destinations, Bobsled Core extracts once to a capture file, loads every destination from
 it, and saves the incremental state only after all of them succeed.
 
 `runner run` takes `--full-refresh`, `--resource <name...>` to run part of a
@@ -114,8 +114,8 @@ Settings apply in this order: destination, then pipeline, then resource.
 
 `bobsled.yml` destinations accept these `type` values: `duckdb`, `bigquery`,
 `snowflake`, `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`,
-`local`, `gcs` and `s3`, plus `bobsled_managed`, which only Dogsled Cloud can run
-(see [Dogsled Cloud and Core](hosted-runs.md)). For DuckLake, SQLite and the other
+`local`, `gcs` and `s3`, plus `bobsled_managed`, which only a hosted orchestrator can run
+(see [Hosted runs](hosted-runs.md)). For DuckLake, SQLite and the other
 `load run` destinations, pipe `extract run` into `load run` instead. The fields of
 each type are in the [project file reference](../reference/project-files.md#destinations).
 
@@ -135,15 +135,15 @@ pipelines:
     schedule: daily
 ```
 
-These pipelines are instructions for an orchestrator such as Dogsled Cloud.
+These pipelines are instructions for a hosted orchestrator.
 `runner validate` checks them, and `runner run` explains how to run them yourself:
-`dogsled model run --integration <connection>` builds the same models.
+`bobsled model run --integration <connection>` builds the same models.
 
 ## Split configuration across files
 
 `bobsled.yml` is optional. Any YAML file with `type: pipeline_config` contributes
 destinations and pipelines, so a large project can keep each domain's pipelines next
-to its integrations. Dogsled merges the fragments by name; a duplicate pipeline or
+to its integrations. Bobsled Core merges the fragments by name; a duplicate pipeline or
 destination name is an error. Pass `--config <file>` to read only one file, and
 `--project-root <dir>` when you run commands from another directory.
 
@@ -157,12 +157,12 @@ destination. Run the narrowest one first:
 
 | Command                                        | Catches                                                         |
 | ---------------------------------------------- | --------------------------------------------------------------- |
-| `dogsled extract validate <integration>`       | YAML shape, resource wiring and environment variable references |
-| `dogsled extract verify <integration> --mock`  | Response mapping and pagination, against recorded responses     |
-| `dogsled extract scaffold-test <integration>`  | Credentials, with one record per resource from the live API     |
-| `dogsled load check --dest <destination> ...`  | Destination connection and permissions                          |
-| `dogsled runner validate`                      | Pipelines, destinations and the files they reference            |
-| `dogsled model validate`, `dogsled model test` | Model structure, references and the SQL for model tests         |
+| `bobsled extract validate <integration>`       | YAML shape, resource wiring and environment variable references |
+| `bobsled extract verify <integration> --mock`  | Response mapping and pagination, against recorded responses     |
+| `bobsled extract scaffold-test <integration>`  | Credentials, with one record per resource from the live API     |
+| `bobsled load check --dest <destination> ...`  | Destination connection and permissions                          |
+| `bobsled runner validate`                      | Pipelines, destinations and the files they reference            |
+| `bobsled model validate`, `bobsled model test` | Model structure, references and the SQL for model tests         |
 
 ## Move an existing job
 
@@ -175,5 +175,5 @@ You do not have to replace a working job in one step:
    output, and keep its tests and checks running.
 3. For the first real run, use `--full-refresh` into new tables rather than copying
    the old job's cursor.
-4. Pause the old job, run Dogsled, check the data, and keep the old job ready to
+4. Pause the old job, run Bobsled Core, check the data, and keep the old job ready to
    turn back on until the new one has run cleanly for a while.

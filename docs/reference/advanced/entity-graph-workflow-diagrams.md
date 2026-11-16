@@ -16,7 +16,7 @@ flowchart TD
         sn[(...Source N)]
     end
 
-    subgraph PH1["Phase 1 — RESOLVE       dogsled entity-graph resolve run"]
+    subgraph PH1["Phase 1 — RESOLVE       bobsled entity-graph resolve run"]
         std["Standardize"]
         blk["Block"]
         scr["Score"]
@@ -24,7 +24,7 @@ flowchart TD
         std --> blk --> scr --> thr
     end
 
-    subgraph PH2["Phase 2 — CLUSTER       dogsled entity-graph resolve cluster"]
+    subgraph PH2["Phase 2 — CLUSTER       bobsled entity-graph resolve cluster"]
         rev{Review}
         cmp["Connected Components\ncurrent graph topology"]
         sid["Stable Entity IDs\nappend events + rebuild snapshots"]
@@ -37,7 +37,7 @@ flowchart TD
         ag["Agent Review\nbatch LLM → auto-apply or escalate"]
     end
 
-    subgraph PH3["Phase 3 — PROFILE       dogsled entity-graph resolve profile"]
+    subgraph PH3["Phase 3 — PROFILE       bobsled entity-graph resolve profile"]
         prf["Entity Profile\n+ Trust Score\n+ Activation Projections"]
         srv["Survivorship\n→ Golden Record"]
     end
@@ -58,17 +58,17 @@ The sandbox lives in `workspace/entity-graph-demo`; run these commands from that
 
 ```bash
 # Phase 1 — run the full resolve pipeline (standardize → block → score → threshold)
-dogsled entity-graph resolve run company --runner ./runner.duckdb.js
+bobsled entity-graph resolve run company --runner ./runner.duckdb.js
 
 # Phase 2 — export the review queue, fill in decisions, re-import, then cluster
-dogsled entity-graph review export company --format csv --output company_review.csv
+bobsled entity-graph review export company --format csv --output company_review.csv
 # edit company_review.csv: set `decision` column to merge | not_match | defer
-dogsled entity-graph review apply --entity company --input company_review.csv
-dogsled entity-graph resolve cluster company --runner ./runner.duckdb.js
+bobsled entity-graph review apply --entity company --input company_review.csv
+bobsled entity-graph resolve cluster company --runner ./runner.duckdb.js
 
 # Phase 3 — build entity profiles and golden records
-dogsled entity-graph resolve profile company --runner ./runner.duckdb.js
-dogsled entity-graph survivorship run company --runner ./runner.duckdb.js
+bobsled entity-graph resolve profile company --runner ./runner.duckdb.js
+bobsled entity-graph survivorship run company --runner ./runner.duckdb.js
 ```
 
 **Spot-check queries against company sandbox tables (DuckDB / schema `entity_graph_demo`):**
@@ -143,9 +143,9 @@ flowchart TD
     t_queue_in[("entity__review_queue\nreview-band pairs")]
 
     subgraph HR["Human Review"]
-        hexp["dogsled entity-graph review export\n--format csv"]
+        hexp["bobsled entity-graph review export\n--format csv"]
         hdec["Reviewer decides\nmerge · not_match · defer"]
-        happ["dogsled entity-graph review apply\n--input review.csv"]
+        happ["bobsled entity-graph review apply\n--input review.csv"]
         hexp --> hdec --> happ
     end
 

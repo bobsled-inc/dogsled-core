@@ -539,7 +539,7 @@ export async function materializeSource(args: MaterializeSourceArgs): Promise<Re
     if (!tablePresent) {
       if (mode === 'extract') {
         throw new CommandError(
-          `source "${sourceName}" is mode: extract but table ${args.schema}.${args.table} is missing; run dogsled pipeline before querying it.`,
+          `source "${sourceName}" is mode: extract but table ${args.schema}.${args.table} is missing; run bobsled pipeline before querying it.`,
           1
         );
       }
@@ -563,7 +563,7 @@ export async function materializeSource(args: MaterializeSourceArgs): Promise<Re
 
   if (mode === 'extract') {
     throw new CommandError(
-      `source "${sourceName}" is mode: extract but has not been extracted for this query; run dogsled pipeline before querying it.`,
+      `source "${sourceName}" is mode: extract but has not been extracted for this query; run bobsled pipeline before querying it.`,
       1
     );
   }

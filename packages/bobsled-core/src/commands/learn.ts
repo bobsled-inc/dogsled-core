@@ -210,7 +210,7 @@ function buildWarehouseCommand(lessonId: string, cli: string): string {
 function resolveCommand(lesson: Lesson, cli: string): string {
   const raw = buildWarehouseCommand(lesson.id, cli) || lesson.command || '';
   if (!raw) return '';
-  return cli !== 'dogsled' ? raw.replace(/\bdogsled\b/g, cli) : raw;
+  return cli !== 'bobsled' ? raw.replace(/\bbobsled\b/g, cli) : raw;
 }
 
 async function spawnCommand(
@@ -347,10 +347,10 @@ function printSectionCompletion(
     'Phase 14: Advanced Extraction & Loading':
       'State, schema evolution, retries, and load strategy define production pipeline safety.',
     'Phase 15: Non-Local Warehouse':
-      'Same config, any warehouse — Dogsled abstracts the destination.',
+      'Same config, any warehouse — Bobsled Core abstracts the destination.',
     'Entity Graph + SDK':
       'Resolved profiles, document mentions, relationship evidence, and SDK IR form the entity graph read surface.',
-    'Phase 16: Wrap Up': 'You have the full mental model for Dogsled.',
+    'Phase 16: Wrap Up': 'You have the full mental model for Bobsled Core.',
   };
 
   const concept = concepts[section];
@@ -653,7 +653,7 @@ async function showStartupMenu(progress: ProgressFile, outputOpts: OutputOptions
   });
 
   try {
-    humanWrite(`\n${c.bold.cyan('━━ dogsled learn ━━')}\n\n`, outputOpts);
+    humanWrite(`\n${c.bold.cyan('━━ bobsled learn ━━')}\n\n`, outputOpts);
     humanWrite('What would you like to do?\n\n', outputOpts);
 
     const nextIdx = getNextLessonIndex(progress);
@@ -720,7 +720,7 @@ async function showStartupMenu(progress: ProgressFile, outputOpts: OutputOptions
 export function registerLearnCommand(program: Command): void {
   program
     .command('learn')
-    .description('Interactive CLI tutorial — learn Dogsled step by step')
+    .description('Interactive CLI tutorial — learn Bobsled Core step by step')
     .option('--list', 'Show all phases with progress')
     .option('--reset', 'Clear all progress')
     .option('--section <name>', 'Jump to a named section (e.g. "Phase 4")')

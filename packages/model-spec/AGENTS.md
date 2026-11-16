@@ -4,7 +4,7 @@
 
 `@bobsled-inc/model-spec` is the standalone Model Spec compiler package. It owns declarative source/model/seed parsing, read-only model profiling, DAG resolution, dialect-aware SQL generation, and the shared CLI helpers used by the dedicated Entity Graph package.
 
-Entity Graph no longer lives in this package. Use `dogsled entity-graph` for the CLI surface from `packages/entity-graph/`. If you need entity-resolution, review, survivorship, truthset, or agent-task code, start in `packages/entity-graph/`.
+Entity Graph no longer lives in this package. Use `bobsled entity-graph` for the CLI surface from `packages/entity-graph/`. If you need entity-resolution, review, survivorship, truthset, or agent-task code, start in `packages/entity-graph/`.
 
 ---
 
@@ -81,7 +81,7 @@ packages/model-spec/
 
 ### CLI binaries
 
-- `dogsled model`
+- `bobsled model`
 
 These binaries only expose modeling, profiler, and seed commands.
 
@@ -92,22 +92,22 @@ These binaries only expose modeling, profiler, and seed commands.
 ### Modeling
 
 ```bash
-dogsled model compile [model...] [-o dir] [--integration <handle>] [--include-metadata]
-dogsled model run [--integration <handle>] [--secrets path] [--dry-run] [--full-refresh]
-dogsled model test [model...]
-dogsled model validate [model...] [--no-strict]
-dogsled model lineage [model...] [--integration <handle>] [--json] [--yaml] [--column <model.column>]
-dogsled model profile <table> [--integration <handle>] [--json]
-dogsled model profile suggest cleaning <table> [--integration <handle>] [--json]
-dogsled model init <project-name>
+bobsled model compile [model...] [-o dir] [--integration <handle>] [--include-metadata]
+bobsled model run [--integration <handle>] [--secrets path] [--dry-run] [--full-refresh]
+bobsled model test [model...]
+bobsled model validate [model...] [--no-strict]
+bobsled model lineage [model...] [--integration <handle>] [--json] [--yaml] [--column <model.column>]
+bobsled model profile <table> [--integration <handle>] [--json]
+bobsled model profile suggest cleaning <table> [--integration <handle>] [--json]
+bobsled model init <project-name>
 ```
 
 ### Seeds
 
 ```bash
-dogsled model seed validate [--json]
-dogsled model seed load [--runner ./r.js] [--json]
-dogsled model seed diff --runner ./r.js [--json]
+bobsled model seed validate [--json]
+bobsled model seed load [--runner ./r.js] [--json]
+bobsled model seed diff --runner ./r.js [--json]
 ```
 
 For Entity Graph commands, see:
@@ -122,7 +122,7 @@ For Entity Graph commands, see:
 - Prefer extending declarative schemas over adding one-off imperative behavior.
 - Agent loops inherit approved host tools when `execution.tools` is omitted. An explicit list restricts tools; an empty list disables extra tools. Keep `execution.tools` bound to assignment `allowed_tools` and checkpoint identity. Reject unsupported host tools before preparation; executor hosts own per-call authorization and execution.
 - Agentic spend caps (`limits.max_cost_usd`, `limits.tokens`) are checked only before dispatch: at a cap, stop new work, let in-flight attempts finish, accept their answers, and fail with `spend_cap_reached`. Caps stay out of the run identity so a resume can raise them. Per-assignment limits are deprecated and ignored by spend-cap runs. Runs saved without `accounting: spend_cap` must keep the reservation rules on resume, in transitions and in `checkpointIsConsistent`. Keep unlimited checkpoints JSON-safe and preserve unknown usage.
-- Agentic error messages must be safe to print: put the stable code first, add a `reason` and a `hint` when known, and attach host or storage errors only as `cause`. `formatAgenticError` prints causes that are not Dogsled errors by type, system code and numeric status only.
+- Agentic error messages must be safe to print: put the stable code first, add a `reason` and a `hint` when known, and attach host or storage errors only as `cause`. `formatAgenticError` prints causes that are not Bobsled Core errors by type, system code and numeric status only.
 - Agentic model and executor contracts use the public `@bobsled-inc/model-spec/agentic` subpath. Keep provider SDKs out of this package and runtime callbacks out of serialized assignment payloads.
 - Executor output tools use `createAgentAssignmentOutputSchema(assignment)` for the complete result envelope. Row count, group key values, evidence sources and prepared retrieval times must survive JSON Schema transport. Keep final `parseAgentAssignmentOutcome` validation for replacement-key membership, multi-row grain uniqueness, total data bounds and attempt identity.
 - Agentic checkpoints use a DuckDB file per run or, without the driver, the shared `.bobsled/model-spec/run-state.json` lock and digest-named snapshots; a configured warehouse or DuckDB store; or an exclusive supplied-store session. Warehouse stores must fence owners and commit the snapshot pointer atomically. Keep acceptance separate from warehouse publication. Never save a stale whole-file state over current references.

@@ -94,7 +94,7 @@ describe('resolveEntityGraphRunner', () => {
     // Mirrors `runProject`'s `customRunners` hook for Model Spec — entity-graph
     // runs in agents-elt depend on this so the BigQuery WIF / Snowflake
     // OIDC / Sledhouse OIDC factories from `@dogsled/lakehouse-execution`
-    // win over Dogsled's default driver dispatch.
+    // win over Bobsled Core's default driver dispatch.
     const secretResolver = { get: vi.fn() };
     const interpolated = { ...integration.integration, connection: {} };
     const runner = { run: vi.fn(), close: vi.fn() };

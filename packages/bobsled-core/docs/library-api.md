@@ -1,6 +1,6 @@
 # Library API
 
-Host applications can embed Dogsled Core through the package's exports. This page collects the
+Host applications can embed Bobsled Core through the package's exports. This page collects the
 programmatic contracts that were previously in the npm README. For the command line, see the
 [user documentation](../../../docs/README.md).
 
@@ -30,8 +30,8 @@ The four composite APIs validate the Project guide by default: `loadProjectSkill
 Pass `guide: false` for a Skills-only call, or pass `guide: { maxFileBytes }` to
 override its read limit.
 
-The CLI equivalents are `dogsled skill validate --no-guide` and
-`dogsled doctor --no-guide`.
+The CLI equivalents are `bobsled skill validate --no-guide` and
+`bobsled doctor --no-guide`.
 
 When a Skill declares references, these APIs read model and pipeline names from
 the Project's pipeline config to resolve them. They check its structure but not
@@ -46,7 +46,7 @@ reference does not grant access to its model, Resource, Action, or pipeline.
 See the [Project guide and skills](../../../docs/guides/project-skills.md) for formats,
 manifests, and adapter workflow.
 
-Dogsled exposes project compilation and persisted-manifest validation from
+Bobsled Core exposes project compilation and persisted-manifest validation from
 `@bobsled-inc/bobsled-core/manifest`:
 
 ```typescript
@@ -59,7 +59,7 @@ const persisted = parsePipelineManifest(JSON.parse(await readManifest()));
 `generateProjectManifest` discovers `bobsled.yml`, performs the same full cross-validation used by
 the CLI, resolves extract resources, and emits the canonical v6 `bobsled.pipeline.dag` manifest. The
 default validation catalog is generated at build time and contains no runtime integration YAML or
-execution-package imports, so server and serverless bundlers do not need to trace Dogsled's private
+execution-package imports, so server and serverless bundlers do not need to trace Bobsled Core's private
 integration package. Hosts with their own integration registry can inject the same narrow interface:
 
 ```typescript
@@ -83,7 +83,7 @@ source/model `warehouse` IDs, and can carry an extract-only managed `destination
 without changing task commands.
 
 Use `@bobsled-inc/bobsled-core/resources` for small, request-time Resource reads from a server host.
-It exposes lookup and query operations without adding the Resource runtime to Dogsled's root import:
+It exposes lookup and query operations without adding the Resource runtime to Bobsled Core's root import:
 
 ```typescript
 import { lookupResource, queryResource } from '@bobsled-inc/bobsled-core/resources';
@@ -169,15 +169,15 @@ hard safety ceilings: 10,000 parent work items, target rows, or provider attempt
 bytes; concurrency 64; and a 30-minute deadline.
 
 `QueryFanOutError` is the fail-closed boundary. It preserves the original `cause` and exposes a
-stable `code`, Dogsled `kind`, `phase`, target/current/parent Resource context, the complete binding
+stable `code`, Bobsled Core `kind`, `phase`, target/current/parent Resource context, the complete binding
 tuple and safe parent ordinal when applicable, aggregate counts, retryability, provider status, the
 bounded/redacted provider message/cause chain, and an optional host `correlationId`. Requested row limits may return
 successful rows with `limitReached: true`; exhausting any safety limit throws and never returns
 partial rows. Any provider or child failure fails the complete operation.
 
-In `targeted` mode, all required target and parent-derived inputs must be supplied. Dogsled makes no
+In `targeted` mode, all required target and parent-derived inputs must be supplied. Bobsled Core makes no
 ancestor request and only projects ancestor context that the canonical binding tuple proves; nested
-or unrelated `output.from` context is rejected before the target request. In `fan_out` mode, Dogsled
+or unrelated `output.from` context is rejected before the target request. In `fan_out` mode, Bobsled Core
 queries ancestors first, keeps multi-input bindings correlated, applies `for_each.where` before
 child scheduling, preserves stable parent/page order, and maps only target rows. Query-time
 execution never reads or mutates extractor bookmarks, batches, or durable state.
@@ -203,7 +203,7 @@ const receipt = await executeAction(action, input, {
 });
 ```
 
-`dryRun` builds a safe preview and does not send the write. Dogsled does not grant approval by
+`dryRun` builds a safe preview and does not send the write. Bobsled Core does not grant approval by
 itself. The host app must check project policy and user approval before it calls `executeAction`
 without `dryRun`. The result is a small receipt with success or a stable error code; it does not
 return the full upstream response.
@@ -213,11 +213,11 @@ service that refused the Action (`permission_denied`, HTTP 403); neither is retr
 failure came from an HTTP response, `error.provider_status` holds its status. For a 4xx response
 with a JSON body, `error.provider_message` holds the provider's own reason from `error.message`,
 `message`, a string `error`, `detail`, `errors[0].message`, or `error_description`, in that order.
-Dogsled removes control and formatting characters, sanitizes URLs, then redacts credential-shaped
+Bobsled Core removes control and formatting characters, sanitizes URLs, then redacts credential-shaped
 text, declared credential values, and the credentials sent with the request, including minted or
 refreshed OAuth and custom tokens, authentication header values, and decoded Basic credentials, in
 raw, URL-, form- and JSON-encoded forms. It then limits the message to 300 characters. It is
-present with `safeErrors`, which still replaces `error.message` with a stable text. Dogsled never
+present with `safeErrors`, which still replaces `error.message` with a stable text. Bobsled Core never
 returns the raw body, and omits the field for 5xx responses and for bodies without such a string.
 
 Use `@bobsled-inc/bobsled-core/pipeline` to run a named project pipeline with cancellation, bounded
@@ -242,10 +242,10 @@ For a one-shot Snowflake schema repair, a managed task adapter can add
 `reconcileSchema: ['issues']` and `fullRefresh: true` to that invocation. The
 override is resolved against the selected resources and forwarded to the
 Snowflake loader as `--reconcile-schema`; it is not persisted in the pipeline
-manifest. Dogsled's MCP server is currently read-only, so shell-less agents must
+manifest. Bobsled Core's MCP server is currently read-only, so shell-less agents must
 reach this API through their external managed task adapter.
 
-When `state` is supplied, Dogsled validates it and uses an isolated project-contained backend for
+When `state` is supplied, Bobsled Core validates it and uses an isolated project-contained backend for
 that invocation; the resulting state is returned and temporary files are removed after every
 terminal outcome. Limited runs are previews and therefore do not advance durable state.
 Programmatic fan-out failures also remove raw captures, and credential-shaped values are redacted
@@ -259,7 +259,7 @@ model authoring, and operations. See the [host integration guide](../../model-sp
 for executor contracts, source permissions, usage accounting, and verification.
 
 Use `@bobsled-inc/bobsled-core/agentic` to create the same input and source host that
-Dogsled uses in the CLI. Supply the loaded project, an executor function, model
+Bobsled Core uses in the CLI. Supply the loaded project, an executor function, model
 profiles, and a secret resolver. No local executor file is needed.
 
 ```typescript
@@ -291,7 +291,7 @@ regular model state. Supply the same SQL runner and credential options to both
 functions: the host reads inputs and scoped sources; `runProject` stores
 checkpoints and publishes output. The caller owns executor transport, model
 profile selection, run identity, and cancellation. Pass the run's `AbortSignal`
-to `runProject`. Dogsled passes assignment signals to the executor and its source
+to `runProject`. Bobsled Core passes assignment signals to the executor and its source
 callbacks.
 
 This entry point does not start an LLM provider, a workflow, or a sandbox.
@@ -338,10 +338,10 @@ from `/integrations`: given an integration name, resource name, and options,
 return the integration and resource definitions accepted by `queryResource`,
 including source specs with named transports. The host owns
 project overrides and any fallback to the bundled catalog. An undefined result
-or loader error stops the read; Dogsled does not fall back after a supplied loader
-fails. Without a loader, Dogsled uses the bundled catalog.
+or loader error stops the read; Bobsled Core does not fall back after a supplied loader
+fails. Without a loader, Bobsled Core uses the bundled catalog.
 
-Dogsled still resolves secrets through `secretResolver` and enforces assignment
+Bobsled Core still resolves secrets through `secretResolver` and enforces assignment
 source permissions, paid-source approval, cancellation, and response limits.
 Loading a paid resource definition does not authorize a paid request. This option
 does not change the warehouse used to read model inputs or publish output.
@@ -349,5 +349,5 @@ does not change the warehouse used to read model inputs or publish output.
 Source callback failures keep the original error in a non-enumerable `cause` for
 trusted host diagnostics. The public message remains generic. The cause can
 contain private data or credentials: do not send it to an agent, serialize it
-into a response, or log it without removing sensitive details. Dogsled's assignment
+into a response, or log it without removing sensitive details. Bobsled Core's assignment
 source boundary strips this cause before it reaches the executor.

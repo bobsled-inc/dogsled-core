@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-09-02 -->
 
-Bundled Dogsled Skill generation plus Project Skill document schemas and bounded loading.
+Bundled Bobsled Core Skill generation plus Project Skill document schemas and bounded loading.
 
 ## Source Of Truth
 
@@ -25,7 +25,7 @@ the build cache.
 
 ## Project Document Contracts
 
-- A leading guide YAML block is Dogsled front matter only when it is a mapping with
+- A leading guide YAML block is Bobsled Core front matter only when it is a mapping with
   its own `description`. Keep unknown-only blocks as Markdown and tolerate extra
   keys beside `description`.
 - Measure `ProjectGuide.byteLength` and the 32 KiB limit from raw source bytes.

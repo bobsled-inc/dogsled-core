@@ -88,7 +88,7 @@ describe('loadProjectSkillPackage', () => {
     ).toThrow(/must match directory "other-name"/u);
   });
 
-  it('lets the owned Dogsled sidecar override legacy inline triggers and references', () => {
+  it('lets the owned Bobsled Core sidecar override legacy inline triggers and references', () => {
     const inline = `---\nname: skill-creator\ndescription: Create and validate agent skills.\ntriggers:\n  - inline-trigger\nreferences:\n  - kind: model\n    name: inline_model\n---\n`;
     const skill = loadProjectSkillPackage({
       entrypointPath: 'skills/skill-creator/SKILL.md',
@@ -107,7 +107,7 @@ describe('loadProjectSkillPackage', () => {
     expect(skill.packageHash).toMatch(/^[0-9a-f]{64}$/u);
   });
 
-  it('treats an empty Dogsled sidecar as an explicit override', () => {
+  it('treats an empty Bobsled Core sidecar as an explicit override', () => {
     const inline = `---\nname: skill-creator\ndescription: Create and validate agent skills.\ntriggers:\n  - inline-trigger\n---\n`;
     const skill = loadProjectSkillPackage({
       entrypointPath: 'skills/skill-creator/SKILL.md',
@@ -119,7 +119,7 @@ describe('loadProjectSkillPackage', () => {
     expect(skill.references).toEqual([]);
   });
 
-  it('rejects invalid Dogsled sidecar YAML and unknown keys', () => {
+  it('rejects invalid Bobsled Core sidecar YAML and unknown keys', () => {
     for (const content of ['triggers: [', 'unknown: true\n']) {
       expect(() =>
         loadProjectSkillPackage({

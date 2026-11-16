@@ -18,9 +18,9 @@ export interface GlobalOptions {
   quiet: boolean;
   /** Disable ANSI color codes. Respects NO_COLOR env as well. */
   noColor: boolean;
-  /** Path to a Dogsled project config file. */
+  /** Path to a Bobsled Core project config file. */
   config?: string;
-  /** Path to the local Dogsled Project root. Defaults to the current directory. */
+  /** Path to the local Bobsled Core Project root. Defaults to the current directory. */
   projectRoot?: string;
 }
 

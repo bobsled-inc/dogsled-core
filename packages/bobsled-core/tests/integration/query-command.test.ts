@@ -18,7 +18,7 @@ async function seedVq(root: string, file: string, body: string): Promise<void> {
   await writeFile(join(root, 'vqs', file), body, 'utf8');
 }
 
-describe('dogsled query', () => {
+describe('bobsled query', () => {
   it('mode: live always extracts and runs through in-memory DuckDB', async () => {
     const root = await mkdtemp(join(tmpdir(), 'q-'));
     await seed(

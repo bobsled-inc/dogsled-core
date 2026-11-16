@@ -1,7 +1,7 @@
 > [!IMPORTANT]
-> Dogsled accepts outside code for small fixes that a maintainer can verify from
+> Bobsled Core accepts outside code for small fixes that a maintainer can verify from
 > the patch, usually around twelve changed lines. Please read the
-> [contribution policy](https://github.com/bobsled-inc/dogsled-core/blob/main/CONTRIBUTING.md)
+> [contribution policy](https://github.com/bobsled-inc/bobsled-core/blob/main/CONTRIBUTING.md)
 > before submitting. Report bugs in issues; discuss ideas and connectors in Discussions.
 
 ## What does this change?

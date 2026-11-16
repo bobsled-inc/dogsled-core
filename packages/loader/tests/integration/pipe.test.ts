@@ -931,7 +931,7 @@ describe('runLoader — DuckDB destination', () => {
         }
       )
     ).rejects.toThrow(
-      /Failed to load stream "issues" to duckdb: connection refused.*dogsled load check --dest duckdb/
+      /Failed to load stream "issues" to duckdb: connection refused.*bobsled load check --dest duckdb/
     );
   });
 

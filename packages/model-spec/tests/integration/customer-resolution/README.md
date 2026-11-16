@@ -1,6 +1,6 @@
 # Customer Resolution Integration Example
 
-This directory is a runnable, warehouse-backed integration example for Dogsled's agent-native Entity Graph flow. It uses synthetic B2C customer data across Shopify, HubSpot, and Zendesk, then exercises the full lifecycle:
+This directory is a runnable, warehouse-backed integration example for Bobsled Core's agent-native Entity Graph flow. It uses synthetic B2C customer data across Shopify, HubSpot, and Zendesk, then exercises the full lifecycle:
 
 1. Load seeds into `raw.*`
 2. Run entity resolution into `entity_graph_test.customer__*`
@@ -96,7 +96,7 @@ Latest unified CLI path from the current checkout:
 bash scripts/install-and-run-latest-cli.sh
 ```
 
-That script installs workspace dependencies, builds the current `Dogsled` CLI, and runs the same end-to-end example through `dogsled model ...` instead of the source-only `tsx` shortcut.
+That script installs workspace dependencies, builds the current `Bobsled Core` CLI, and runs the same end-to-end example through `bobsled model ...` instead of the source-only `tsx` shortcut.
 
 ## BigQuery
 

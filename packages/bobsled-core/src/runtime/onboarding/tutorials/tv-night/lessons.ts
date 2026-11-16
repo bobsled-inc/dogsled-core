@@ -7,7 +7,7 @@ export const lessons: Record<
 > = {
   connect: {
     learn:
-      'Dogsled lets you connect to an API and expose its responses as data. An integration configures the connection; a resource defines the request and maps JSON fields into columns. Here, you will fetch one show from TVmaze.',
+      'Bobsled Core lets you connect to an API and expose its responses as data. An integration configures the connection; a resource defines the request and maps JSON fields into columns. Here, you will fetch one show from TVmaze.',
     files: ['integrations/tvmaze.yml', 'resources/tvmaze/probe.yml', 'sources/tvmaze_probe.yml'],
     choice: 'Pick the show for your first request. Compare its source ID with its name.',
     inspect:
@@ -15,7 +15,7 @@ export const lessons: Record<
   },
   load: {
     learn:
-      'Dogsled lets you create ETL pipelines that fetch data from a source, turn it into rows, and load it into a database. Here, you will load TV shows and episodes from TVmaze into DuckDB. ETL stands for extract, transform and load.',
+      'Bobsled Core lets you create ETL pipelines that fetch data from a source, turn it into rows, and load it into a database. Here, you will load TV shows and episodes from TVmaze into DuckDB. ETL stands for extract, transform and load.',
     files: ['bobsled.yml', 'resources/tvmaze/shows.yml', 'resources/tvmaze/episodes.yml'],
     choice:
       'Start with page [0] (around 250 shows), or choose more pages after reviewing the request count.',
@@ -24,7 +24,7 @@ export const lessons: Record<
   },
   model: {
     learn:
-      'Dogsled lets you build semantic models: reusable definitions of your data and its meaning. You configure fields, descriptions, relationships and named calculations called metrics. Here, you will describe the source records, define Show and Episode in an ontology, then build derived models.',
+      'Bobsled Core lets you build semantic models: reusable definitions of your data and its meaning. You configure fields, descriptions, relationships and named calculations called metrics. Here, you will describe the source records, define Show and Episode in an ontology, then build derived models.',
     files: [
       'sources/shows.yml',
       'sources/episodes.yml',
@@ -42,7 +42,7 @@ export const lessons: Record<
   },
   query: {
     learn:
-      'Dogsled lets you query your models and metrics. Ask your agent in plain English, inspect the SQL, or use your own SQL tool. Later, save useful rules as another model.',
+      'Bobsled Core lets you query your models and metrics. Ask your agent in plain English, inspect the SQL, or use your own SQL tool. Later, save useful rules as another model.',
     files: ['models/watch_next.yml', 'queries/shortlist.sql'],
     choice:
       'Choose an example question or ask your own. Your agent waits for your question before running it.',
@@ -51,7 +51,7 @@ export const lessons: Record<
   },
   federate: {
     learn:
-      'Dogsled lets one query join local DuckDB models with a Wikipedia API source. Matching page IDs connect the two sides. Receipts show whether Dogsled fetched API records or reused its cache.',
+      'Bobsled Core lets one query join local DuckDB models with a Wikipedia API source. Matching page IDs connect the two sides. Receipts show whether Bobsled Core fetched API records or reused its cache.',
     files: [
       'integrations/wikipedia.yml',
       'resources/wikipedia/articles.yml',
@@ -65,7 +65,7 @@ export const lessons: Record<
   },
   transform: {
     learn:
-      'Dogsled supports agentic models: models that use an AI model and your instructions to turn input data into structured output. You define their inputs, instructions and output fields. Here, you will build one that reads article passages and produces assessments with references to saved passages. Code attaches the exact source text.',
+      'Bobsled Core supports agentic models: models that use an AI model and your instructions to turn input data into structured output. You define their inputs, instructions and output fields. Here, you will build one that reads article passages and produces assessments with references to saved passages. Code attaches the exact source text.',
     files: [
       'models/article_inputs.yml',
       'models/assessment_inputs.yml',
@@ -79,7 +79,7 @@ export const lessons: Record<
   },
   resolve: {
     learn:
-      'Dogsled supports entity resolution: finding records from different sources that refer to the same thing. You configure matching rules and review uncertain matches. Here, you will link watchlist entries to catalog shows.',
+      'Bobsled Core supports entity resolution: finding records from different sources that refer to the same thing. You configure matching rules and review uncertain matches. Here, you will link watchlist entries to catalog shows.',
     files: ['entity-graph/watchlist_resolution.yml', 'models/watchlist_matches.yml'],
     choice:
       'Bring a watchlist with titles and any years or IDs you know. Review a real ambiguous candidate from TVmaze search.',

@@ -613,7 +613,7 @@ function semanticIssues(
         issues.push({
           code: 'schedule_contract_mismatch',
           path: `${base}.schedule.expression`,
-          message: 'Schedule expression is not supported by Dogsled.',
+          message: 'Schedule expression is not supported by Bobsled Core.',
         });
       }
     }

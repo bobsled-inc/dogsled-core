@@ -3,7 +3,7 @@
 <!-- last-reviewed: 2026-07-27 -->
 
 Installable Model Spec source, staging, mart, metric, and relationship bundles for
-Dogsled integrations.
+Bobsled Core integrations.
 
 ## Design Rules
 

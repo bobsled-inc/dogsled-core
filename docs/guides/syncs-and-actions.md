@@ -1,6 +1,6 @@
 # Send data to other systems
 
-Dogsled can also write outward: an _action_ is one call to another system, such as
+Bobsled Core can also write outward: an _action_ is one call to another system, such as
 a webhook or an API request, and a _sync_ runs an action for every new row of a
 warehouse table, remembering where it stopped.
 
@@ -39,11 +39,11 @@ input:
 
 An action is named `<integration>/<name>`, here `webhook/notify_contact`. The
 library integrations also ship actions, for example `hubspot/create_note`. List,
-inspect and call them with `dogsled act`:
+inspect and call them with `bobsled act`:
 
 ```bash
-dogsled act --list --tag example
-dogsled act webhook/notify_contact --input email=ada@example.com --input last_name=Lovelace --dry-run
+bobsled act --list --tag example
+bobsled act webhook/notify_contact --input email=ada@example.com --input last_name=Lovelace --dry-run
 ```
 
 ```text
@@ -87,7 +87,7 @@ auth:
 ```
 
 ```bash
-dogsled query "CREATE TABLE main.contacts_to_webhook_projection AS SELECT * FROM (VALUES ('e1','ada@example.com','Ada','Lovelace','eligible', TIMESTAMP '2026-01-01 10:00:00'), ('e2','grace@example.com','Grace','Hopper','eligible', TIMESTAMP '2026-01-02 10:00:00'), ('e3','linus@example.com','Linus','T','blocked', TIMESTAMP '2026-01-03 10:00:00')) t(entity_id, email, first_name, last_name, readiness_status, observed_at)" \
+bobsled query "CREATE TABLE main.contacts_to_webhook_projection AS SELECT * FROM (VALUES ('e1','ada@example.com','Ada','Lovelace','eligible', TIMESTAMP '2026-01-01 10:00:00'), ('e2','grace@example.com','Grace','Hopper','eligible', TIMESTAMP '2026-01-02 10:00:00'), ('e3','linus@example.com','Linus','T','blocked', TIMESTAMP '2026-01-03 10:00:00')) t(entity_id, email, first_name, last_name, readiness_status, observed_at)" \
   --db-path demo.db
 ```
 
@@ -123,8 +123,8 @@ options:
 ```
 
 ```bash
-dogsled sync validate contacts_to_webhook
-dogsled sync run contacts_to_webhook
+bobsled sync validate contacts_to_webhook
+bobsled sync run contacts_to_webhook
 ```
 
 ```text
@@ -143,7 +143,7 @@ Two contacts are eligible, so the webhook receives two requests. A second run se
 nothing, because the checkpoint is past both rows:
 
 ```bash
-dogsled sync run contacts_to_webhook
+bobsled sync run contacts_to_webhook
 cat .bobsled/sync-state/contacts_to_webhook/checkpoint.json
 ```
 
@@ -161,11 +161,11 @@ processed: 0
 - `on_record_error: skip` records a failed row and continues; after
   `consecutive_failure_threshold` failures in a row the run stops.
 - Syncs read from DuckDB, PostgreSQL, BigQuery, Snowflake and Databricks. `schedule` is optional metadata
-  for your scheduler; Core runs a sync only when you call `dogsled sync run`.
+  for your scheduler; Core runs a sync only when you call `bobsled sync run`.
 
 ## Entity activation
 
-`dogsled activate` (also `dogsled entity-graph activate`) sends entity-graph
+`bobsled activate` (also `bobsled entity-graph activate`) sends entity-graph
 records to an action and records each dispatch in the entity-graph audit log;
-`activate receipts` queries those records. `dogsled extract activate` calls an API
+`activate receipts` queries those records. `bobsled extract activate` calls an API
 action for every `RECORD` it reads on standard input.

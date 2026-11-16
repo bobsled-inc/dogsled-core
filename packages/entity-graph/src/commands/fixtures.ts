@@ -143,13 +143,13 @@ function copyFixture(name: string, options: FixtureOptions): void {
   const sourcePath = resolveFixtureSourcePath(fixture.name, findEntityGraphPackageRoot());
   if (!sourcePath && fixture.sourceCheckoutOnly) {
     throw new CommandError(
-      `Fixture "${fixture.name}" is available from a source checkout only. Clone the Dogsled repository and use ${fixture.sourceCheckoutOnly}.`,
+      `Fixture "${fixture.name}" is available from a source checkout only. Clone the Bobsled Core repository and use ${fixture.sourceCheckoutOnly}.`,
       1
     );
   }
   if (!sourcePath) {
     throw new CommandError(
-      `Fixture "${fixture.name}" is not included in this installation. Reinstall Dogsled or copy it from a source checkout.`,
+      `Fixture "${fixture.name}" is not included in this installation. Reinstall Bobsled Core or copy it from a source checkout.`,
       1
     );
   }

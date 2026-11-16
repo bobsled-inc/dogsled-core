@@ -1,6 +1,6 @@
 # multi-connection
 
-End-to-end test project for `dogsled model` with two live warehouses (Snowflake + BigQuery) in one Model Spec project. Committed to the repo so we can contribute to it as new Model Spec features land.
+End-to-end test project for `bobsled model` with two live warehouses (Snowflake + BigQuery) in one Model Spec project. Committed to the repo so we can contribute to it as new Model Spec features land.
 
 ## What it exercises
 
@@ -73,30 +73,30 @@ cp secrets.example.yml secrets.yml
 $EDITOR secrets.yml
 
 # 2. Validate both integrations' specs (no warehouse hits).
-dogsled model validate
+bobsled model validate
 
 # 3. Compile both dialects to local SQL.
-dogsled model compile -o target/
+bobsled model compile -o target/
 # → target/snowflake/*.sql + target/bigquery/*.sql
 
 # 3b. Also emit metrics/relationships/vqs JSON alongside the SQL tree.
-dogsled model compile -o target/ --include-metadata
+bobsled model compile -o target/ --include-metadata
 # → target/metrics.json + target/relationships.json + target/vqs.json
 
 # 4. Dry-run the full plan against both warehouses.
-dogsled model run --dry-run --secrets secrets.yml
+bobsled model run --dry-run --secrets secrets.yml
 
 # 5. Run against one warehouse at a time.
-dogsled model run --integration snowflake --secrets secrets.yml
-dogsled model run --integration bigquery  --secrets secrets.yml
+bobsled model run --integration snowflake --secrets secrets.yml
+bobsled model run --integration bigquery  --secrets secrets.yml
 
 # 6. Fan out over both warehouses in one shot.
-dogsled model run --secrets secrets.yml
+bobsled model run --secrets secrets.yml
 
 # 7. Full refresh — recreates every view from source (no-op for `type: view`
 #    on Snowflake/BigQuery since views always `CREATE OR REPLACE`, but keeps
 #    run-state fresh).
-dogsled model run --full-refresh --secrets secrets.yml
+bobsled model run --full-refresh --secrets secrets.yml
 ```
 
 All 10 models are `materialization: view`, so a run is idempotent — it always `CREATE OR REPLACE`s the view against the current source data. After a run the views land at:

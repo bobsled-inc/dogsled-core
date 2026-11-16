@@ -26,9 +26,9 @@ describe('parseStateBackendUrl', () => {
   });
 
   it('classifies https:// URL as http kind', () => {
-    expect(parseStateBackendUrl('https://example.com/api/dogsled/state')).toEqual({
+    expect(parseStateBackendUrl('https://example.com/api/bobsled/state')).toEqual({
       kind: 'http',
-      url: 'https://example.com/api/dogsled/state',
+      url: 'https://example.com/api/bobsled/state',
     });
   });
 

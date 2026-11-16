@@ -112,7 +112,7 @@ it('sorts numbers and inspects records safely, keeping spoiler text collapsed', 
     .querySelector('#load [data-record]')
     ?.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   expect(document.querySelector('#load [data-record]')?.hasAttribute('hidden')).toBe(true);
-  expect(document.querySelectorAll('img')).toHaveLength(1); // bundled logo only
+  expect(document.querySelectorAll('img')).toHaveLength(0); // text wordmark, no images
   click('[data-file="sources/shows.yml"]');
   expect(document.querySelector('#file-content')?.textContent).toContain('<script>inert</script>');
   expect(document.querySelector('#file-content script')).toBeNull();
@@ -121,8 +121,8 @@ it('copies a guarded review request without inventing journal progress', async (
   const { document, click, copied } = open();
   click('#review-chapter');
   await Promise.resolve();
-  expect(copied[0]).toMatch(/dogsled onboarding review load --checkpoint [a-f0-9]{64}/);
-  expect(copied[0]).toContain('dogsled onboarding render');
+  expect(copied[0]).toMatch(/bobsled onboarding review load --checkpoint [a-f0-9]{64}/);
+  expect(copied[0]).toContain('bobsled onboarding render');
   expect(document.querySelector('#load')?.getAttribute('data-reviewed')).toBe('false');
   expect(document.querySelector('#review-chapter')?.textContent).toBe('Mark as reviewed');
   const snapshot = renderFixture();
@@ -170,7 +170,7 @@ it('keeps untrusted snapshot text inert after interaction and supports legacy pa
   expect((document.querySelector('#question') as HTMLDetailsElement).open).toBe(true);
   expect((document.querySelector('#data') as HTMLDetailsElement).open).toBe(true);
   click('[data-results="load"] tbody button');
-  expect(document.querySelectorAll('img')).toHaveLength(1);
+  expect(document.querySelectorAll('img')).toHaveLength(0);
   expect((dom.window as unknown as Record<string, unknown>).injected).toBeUndefined();
 });
 

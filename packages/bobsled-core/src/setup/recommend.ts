@@ -19,7 +19,7 @@ import type {
   SetupSource,
 } from './types.js';
 
-/** Convert free-form text into a Dogsled-safe repo slug. */
+/** Convert free-form text into a Bobsled Core-safe repo slug. */
 function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -159,7 +159,7 @@ function destinationDefaults(type: SetupDestinationType): SetupDestination {
         port: 5432,
         database: 'analytics',
         schema: 'public',
-        username: 'dogsled',
+        username: 'bobsled',
         password: '$PG_PASSWORD',
       };
     case 'clickhouse':
@@ -369,7 +369,7 @@ export function recommendSetup(input: {
       status: { missing_items: [] },
     });
 
-  const goal = input.goal ?? answers.goals.summary ?? 'Set up a new Dogsled repo.';
+  const goal = input.goal ?? answers.goals.summary ?? 'Set up a new Bobsled Core repo.';
   const explicitPreset = answers.goals.preset
     ? presets.find((entry) => entry.id === answers.goals.preset)
     : undefined;
@@ -440,11 +440,11 @@ export function recommendSetup(input: {
         ? [
             'Confirm or update the generated answers file.',
             'Add the missing secret references or environment variable names.',
-            'Run `dogsled setup render` once the answers look right.',
+            'Run `bobsled setup render` once the answers look right.',
           ]
         : [
-            'Run `dogsled setup render`.',
-            'Run `dogsled setup doctor` to verify the generated repo state.',
+            'Run `bobsled setup render`.',
+            'Run `bobsled setup doctor` to verify the generated repo state.',
           ],
     summary: buildSummary(goal, preset, sources, destination, missingItems),
   };

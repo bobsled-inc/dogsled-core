@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect, it } from 'vitest';
 
-it('runs the separate executor tests through Dogsled public exports', () => {
+it('runs the separate executor tests through Bobsled Core public exports', () => {
   const root = path.resolve(import.meta.dirname, '../..');
   const directory = mkdtempSync(path.join(os.tmpdir(), 'bobsled-executor-test-'));
   try {

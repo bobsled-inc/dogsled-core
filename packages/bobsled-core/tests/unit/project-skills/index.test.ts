@@ -59,7 +59,7 @@ describe('Project Skills public interface', () => {
       `---\nname: use-orders\ndescription: Use orders.\n---\n\n# Use orders\n`,
       'utf8'
     );
-    writeFileSync(path.join(root, 'bobsled.yml'), 'not: a valid Dogsled config\n', 'utf8');
+    writeFileSync(path.join(root, 'bobsled.yml'), 'not: a valid Bobsled Core config\n', 'utf8');
 
     await expect(loadProjectSkills(root)).resolves.toMatchObject({
       skills: [{ name: 'use-orders' }],

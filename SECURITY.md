@@ -2,14 +2,14 @@
 
 ## Supported versions
 
-Security fixes target the latest released `0.x` minor of Dogsled. Older minors
+Security fixes target the latest released `0.x` minor of Bobsled Core. Older minors
 are unsupported. Maintainers may ask reporters to reproduce a finding on the
 latest patch within that minor.
 
 ## Reporting a vulnerability
 
-Report vulnerabilities to `security@dogsledai.com` or use
-[GitHub private vulnerability reporting](https://github.com/bobsled-inc/dogsled-core/security/advisories/new).
+Report vulnerabilities to `security@bobsled.co` or use
+[GitHub private vulnerability reporting](https://github.com/bobsled-inc/bobsled-core/security/advisories/new).
 Do not open a public issue for a suspected vulnerability.
 
 Include the affected version, command or configuration, reproduction steps, the
@@ -39,7 +39,7 @@ Treat integration and webhook YAML from others like code: credential references 
 ## Release security
 
 The [Release workflow](.github/workflows/release.yml) runs only in
-`bobsled-inc/dogsled-core`, from `main`. A maintainer dispatches it, or, when the
+`bobsled-inc/bobsled-core`, from `main`. A maintainer dispatches it, or, when the
 `AUTO_RELEASE` variable is `on`, the [Release on merge workflow](.github/workflows/release-on-merge.yml)
 dispatches it in `auto` mode after a pull request merges. That trigger reads the
 merged pull request through the API with code from the merge commit on `main`,

@@ -68,7 +68,7 @@ export function buildPacket(normalized, verification) {
   );
 
   const lines = [
-    '# Dogsled Open-Source Security and Privacy Decision Packet',
+    '# Bobsled Core Open-Source Security and Privacy Decision Packet',
     '',
     `## Recommendation: ${recommendation}`,
     '',
@@ -127,7 +127,7 @@ export function buildPacket(normalized, verification) {
   lines.push(
     '## Privacy summary',
     '',
-    '- Dogsled has no required hosted control plane or default maintainer telemetry.',
+    '- Bobsled Core has no required hosted control plane or default maintainer telemetry.',
     '- Operator data remains local unless a configured API, warehouse, MCP server, AI provider, embedding provider, or destination receives it.',
     '- Credentials are supplied through environment indirection; local state, caches, logs, temporary files, generated workflows, and support bundles remain operator-controlled retention surfaces.',
     '- See `PRIVACY.md` for the reviewed data-flow and review-trigger policy.',
@@ -153,7 +153,7 @@ export function buildPacket(normalized, verification) {
     `- [${stagesComplete ? 'x' : ' '}] All deterministic review stages complete.`,
     staleGarFinding
       ? '- [ ] Maintainer removes the retired GAR user npm configuration and confirms the credential owner action.'
-      : '- [x] Retired GAR settings are absent from user npm configuration; Dogsled Next uses npmjs.org.',
+      : '- [x] Retired GAR settings are absent from user npm configuration; Bobsled Core Next uses npmjs.org.',
     '- [ ] Final clean export is regenerated from the approved immutable commit.',
     '- [ ] Export manifest hash is recorded and the resulting public root matches it.',
     '- [ ] Maintainer approves repository promotion.',

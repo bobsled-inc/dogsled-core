@@ -22,7 +22,7 @@ const c = {
 
 function parseArgs(argv) {
   const args = {
-    cli: process.env.BOBSLED_CORE_CLI ?? 'dogsled',
+    cli: process.env.BOBSLED_CORE_CLI ?? 'bobsled',
     labDir: join(repoRoot, '.bobsled', 'tutor-lab'),
     list: false,
     reset: false,
@@ -35,7 +35,7 @@ function parseArgs(argv) {
     if (arg === '--cli') {
       const value = argv[index + 1];
       if (!value || value.startsWith('--'))
-        throw new CommandError('--cli requires a command, for example: --cli "pnpm exec dogsled"');
+        throw new CommandError('--cli requires a command, for example: --cli "pnpm exec bobsled"');
       args.cli = value;
       index += 1;
     } else if (arg === '--lab-dir') {
@@ -84,8 +84,8 @@ const lessons = [
     id: 'cli-help',
     title: 'Find The Top-Level CLI Surface',
     cwd: 'repo',
-    command: 'dogsled --help',
-    why: 'Start by seeing the command groups Dogsled exposes from the unified CLI.',
+    command: 'bobsled --help',
+    why: 'Start by seeing the command groups Bobsled Core exposes from the unified CLI.',
     think:
       'Look for extract, load, pipeline, model, integrations, entity-graph, and context commands. Those are the major capability areas this walkthrough covers.',
   },
@@ -93,7 +93,7 @@ const lessons = [
     id: 'catalog-list',
     title: 'List Bundled Integrations',
     cwd: 'repo',
-    command: 'dogsled integrations list',
+    command: 'bobsled integrations list',
     why: 'The integration catalog tells us which API sources are already available before we write anything.',
     think:
       'Notice the categories and resource counts. For this local pass, focus on HubSpot, Stripe, Linear, Pylon, and Smartlead. Vantage is intentionally skipped.',
@@ -102,7 +102,7 @@ const lessons = [
     id: 'hubspot-catalog',
     title: 'Inspect HubSpot',
     cwd: 'repo',
-    command: 'dogsled integrations show hubspot',
+    command: 'bobsled integrations show hubspot',
     why: 'HubSpot gives a compact CRM surface for contacts, companies, and deals.',
     think:
       'Read the auth setup and resource list. The command is metadata-only, so it does not call HubSpot.',
@@ -111,7 +111,7 @@ const lessons = [
     id: 'hubspot-contacts-shape',
     title: 'Inspect HubSpot Contacts',
     cwd: 'repo',
-    command: 'dogsled integrations show hubspot contacts',
+    command: 'bobsled integrations show hubspot contacts',
     why: 'Resource details show endpoint shape and normalized output columns before extraction.',
     think:
       'The bundled contacts resource already maps selected HubSpot properties into flat fields. Custom properties still need deliberate resource configuration.',
@@ -120,7 +120,7 @@ const lessons = [
     id: 'stripe-catalog',
     title: 'Inspect Stripe',
     cwd: 'repo',
-    command: 'dogsled integrations show stripe',
+    command: 'bobsled integrations show stripe',
     why: 'Stripe is useful for understanding finance and revenue-oriented resource specs.',
     think:
       'Look for customers, invoices, subscriptions, charges, prices, and products. Those are common raw inputs for revenue models.',
@@ -129,7 +129,7 @@ const lessons = [
     id: 'linear-catalog',
     title: 'Inspect Linear',
     cwd: 'repo',
-    command: 'dogsled integrations show linear',
+    command: 'bobsled integrations show linear',
     why: 'Linear exercises GraphQL and MCP-flavored resources, not just REST list endpoints.',
     think: 'Pay attention to the resource names. The issue resource is issues_graphql, not issues.',
   },
@@ -137,8 +137,8 @@ const lessons = [
     id: 'linear-issues-shape',
     title: 'Inspect Linear Issues',
     cwd: 'repo',
-    command: 'dogsled integrations show linear issues_graphql',
-    why: 'This shows the exact GraphQL-backed issue fields Dogsled exposes.',
+    command: 'bobsled integrations show linear issues_graphql',
+    why: 'This shows the exact GraphQL-backed issue fields Bobsled Core exposes.',
     think:
       'The output columns include state, assignee, team, project, and timestamps. That is the shape you would model later.',
   },
@@ -146,7 +146,7 @@ const lessons = [
     id: 'pylon-catalog',
     title: 'Inspect Pylon',
     cwd: 'repo',
-    command: 'dogsled integrations show pylon',
+    command: 'bobsled integrations show pylon',
     why: 'Pylon gives the customer-support side of a GTM learning dataset.',
     think: 'Scan for accounts, contacts, feature_requests, issues, and support workflow tables.',
   },
@@ -154,7 +154,7 @@ const lessons = [
     id: 'smartlead-catalog',
     title: 'Inspect Smartlead',
     cwd: 'repo',
-    command: 'dogsled integrations show smartlead',
+    command: 'bobsled integrations show smartlead',
     why: 'Smartlead gives a compact marketing-outreach surface.',
     think:
       'This is intentionally smaller than the other integrations, which makes it useful for a quick source-shape pass.',
@@ -175,7 +175,7 @@ const lessons = [
     cwd: 'lab',
     env: ['HUBSPOT_ACCESS_TOKEN'],
     command:
-      'dogsled extract run contacts --integration hubspot --limit 10 | dogsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix hubspot__',
+      'bobsled extract run contacts --integration hubspot --limit 10 | bobsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix hubspot__',
     why: 'This is the safest first live extract because --limit caps the protocol stream before loading it to local DuckDB.',
     think:
       'Read the extractor logs and loader summary. The key idea is that extract emits protocol messages and load consumes them without caring which source produced them.',
@@ -185,7 +185,7 @@ const lessons = [
     title: 'Query The Loaded HubSpot Table',
     cwd: 'lab',
     command:
-      'dogsled load query "SELECT COUNT(*) AS contact_count FROM hubspot__contacts" --dest duckdb --db-path ./dev.duckdb',
+      'bobsled load query "SELECT COUNT(*) AS contact_count FROM hubspot__contacts" --dest duckdb --db-path ./dev.duckdb',
     why: 'A load is not real until you can query the destination and explain what landed.',
     think:
       'The count should match the limited sample unless the source returned fewer rows. If the table does not exist, go back to the extract step.',
@@ -194,8 +194,8 @@ const lessons = [
     id: 'hubspot-describe',
     title: 'Inspect The Loaded Schema',
     cwd: 'lab',
-    command: 'dogsled load query "DESCRIBE hubspot__contacts" --dest duckdb --db-path ./dev.duckdb',
-    why: 'Schema inspection connects the resource output spec to the destination table Dogsled created.',
+    command: 'bobsled load query "DESCRIBE hubspot__contacts" --dest duckdb --db-path ./dev.duckdb',
+    why: 'Schema inspection connects the resource output spec to the destination table Bobsled Core created.',
     think:
       'Compare these columns to integrations show hubspot contacts. This is the raw material Model Spec models consume.',
   },
@@ -215,7 +215,7 @@ const lessons = [
     cwd: 'lab',
     env: ['HUBSPOT_ACCESS_TOKEN'],
     command:
-      'dogsled pipeline --integration hubspot --resource contacts --dest duckdb --db-path ./pipeline.duckdb --table-prefix hubspot_pipeline__ --input limit=25',
+      'bobsled pipeline --integration hubspot --resource contacts --dest duckdb --db-path ./pipeline.duckdb --table-prefix hubspot_pipeline__ --input limit=25',
     why: 'Pipeline is the convenience command that wires extractor output directly into the loader.',
     think:
       'Use this to understand ergonomics, not to schedule anything. The --input limit=25 controls HubSpot page size, not total record count.',
@@ -226,7 +226,7 @@ const lessons = [
     cwd: 'lab',
     env: ['STRIPE_SECRET_KEY'],
     command:
-      'dogsled extract run customers --integration stripe --limit 10 | dogsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix stripe__',
+      'bobsled extract run customers --integration stripe --limit 10 | bobsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix stripe__',
     why: 'Stripe customers let you compare CRM identity data with billing identity data.',
     think:
       'Watch for stable IDs, emails, created timestamps, and nested billing fields that may need modeling attention.',
@@ -237,8 +237,8 @@ const lessons = [
     cwd: 'lab',
     env: ['LINEAR_API_KEY'],
     command:
-      'dogsled extract run issues_graphql --integration linear --limit 10 | dogsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix linear__',
-    why: 'Linear issues exercise Dogsled GraphQL extraction and a developer-workflow data shape.',
+      'bobsled extract run issues_graphql --integration linear --limit 10 | bobsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix linear__',
+    why: 'Linear issues exercise Bobsled Core GraphQL extraction and a developer-workflow data shape.',
     think:
       'Compare the output with the Linear resource detail. This should reinforce that resource names and output schemas are part of the contract.',
   },
@@ -248,7 +248,7 @@ const lessons = [
     cwd: 'lab',
     env: ['PYLON_API_TOKEN'],
     command:
-      'dogsled extract run issues --integration pylon --limit 10 | dogsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix pylon__',
+      'bobsled extract run issues --integration pylon --limit 10 | bobsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix pylon__',
     why: 'Pylon issues add customer-support data to the same local DuckDB destination.',
     think:
       'This is a good place to notice rate limits and how different SaaS products expose related customer concepts.',
@@ -259,7 +259,7 @@ const lessons = [
     cwd: 'lab',
     env: ['SMARTLEAD_API_KEY'],
     command:
-      'dogsled extract run campaigns --integration smartlead --limit 10 | dogsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix smartlead__',
+      'bobsled extract run campaigns --integration smartlead --limit 10 | bobsled load run --dest duckdb --db-path ./dev.duckdb --table-prefix smartlead__',
     why: 'Smartlead campaigns round out the GTM source tour with a compact marketing surface.',
     think:
       'If this is sparse or empty, that is still useful: it tells you which sources carry meaningful data in your account.',
@@ -270,7 +270,7 @@ const lessons = [
     title: 'Validate the Linear Integration',
     cwd: 'lab',
     env: ['LINEAR_API_KEY'],
-    command: 'dogsled extract run linear --validate',
+    command: 'bobsled extract run linear --validate',
     why: 'Validation checks the integration spec before hitting the API — catches auth and config issues early.',
     think:
       'Look for any missing required fields or auth configuration errors. A clean validate means the spec is ready to run.',
@@ -280,7 +280,7 @@ const lessons = [
     title: 'Extract Linear Issues to DuckDB',
     cwd: 'lab',
     env: ['LINEAR_API_KEY'],
-    command: 'dogsled extract run linear --limit 50 | dogsled load run --target duckdb',
+    command: 'bobsled extract run linear --limit 50 | bobsled load run --target duckdb',
     why: 'Full pipeline: extract 50 records from the Linear API, pipe the protocol stream to the DuckDB loader.',
     think:
       'Watch for RECORD and SCHEMA messages flowing through the protocol pipe. The loader consumes them without knowing which source produced them.',
@@ -289,7 +289,7 @@ const lessons = [
     id: 'linear-model-run',
     title: 'Run the Linear Model Spec Stack',
     cwd: 'lab',
-    command: 'dogsled model run --dialect duckdb',
+    command: 'bobsled model run --dialect duckdb',
     why: 'Runs the full Model Spec model stack: issues → comments → users → derived tables.',
     think:
       'This transforms raw Linear protocol output into structured, queryable analytics tables. Each model in the DAG reads from the previous one.',
@@ -299,7 +299,7 @@ const lessons = [
     title: 'Query Linear Issue Counts by State',
     cwd: 'lab',
     command:
-      'dogsled load query "SELECT state, COUNT(*) AS cnt FROM main.linear_issues GROUP BY state ORDER BY cnt DESC" --target duckdb',
+      'bobsled load query "SELECT state, COUNT(*) AS cnt FROM main.linear_issues GROUP BY state ORDER BY cnt DESC" --target duckdb',
     why: 'Shows live results from the materialized data — demonstrating the end-to-end API→model→query flow.',
     think:
       'This is the payoff: raw GraphQL API data modeled into a queryable table, all locally in DuckDB.',
@@ -322,17 +322,17 @@ const lessons = [
     cwd: 'lab',
     env: ['LINEAR_API_KEY'],
     command:
-      'dogsled extract run linear --limit 25 | dogsled load run --target duckdb --strategy merge',
+      'bobsled extract run linear --limit 25 | bobsled load run --target duckdb --strategy merge',
     why: 'First batch: 25 records loaded with merge strategy. This seeds the destination table.',
     think:
-      'The merge strategy requires a primary key column. Dogsled infers it from the resource spec.',
+      'The merge strategy requires a primary key column. Bobsled Core infers it from the resource spec.',
   },
   {
     id: 'incremental-count-before',
     title: 'Count Before Second Load',
     cwd: 'lab',
     command:
-      'dogsled load query "SELECT COUNT(*) AS total FROM main.linear_issues" --target duckdb',
+      'bobsled load query "SELECT COUNT(*) AS total FROM main.linear_issues" --target duckdb',
     why: 'Capture the row count after the first load to verify the second load does not create duplicates.',
     think:
       'Write down the count. After the second load you will verify it either stays the same or grows — never doubles.',
@@ -343,7 +343,7 @@ const lessons = [
     cwd: 'lab',
     env: ['LINEAR_API_KEY'],
     command:
-      'dogsled extract run linear --limit 50 | dogsled load run --target duckdb --strategy merge',
+      'bobsled extract run linear --limit 50 | bobsled load run --target duckdb --strategy merge',
     why: 'Second batch with overlap: 50 records where the first 25 already exist. Merge deduplicates.',
     think:
       'Run the count query again after this step. The total should be ≥25 but never duplicated. That is merge semantics.',
@@ -371,7 +371,7 @@ const lessons = [
     id: 'shop-demo-validate',
     title: 'Validate Model Spec Specs',
     cwd: 'shop',
-    command: 'dogsled model validate --integration duckdb',
+    command: 'bobsled model validate --integration duckdb',
     why: 'Validation catches spec shape, references, and compiler-facing issues before runtime.',
     think: 'This is the deterministic gate you want before asking an agent to modify models.',
   },
@@ -379,7 +379,7 @@ const lessons = [
     id: 'shop-demo-compile',
     title: 'Compile One Model',
     cwd: 'shop',
-    command: 'dogsled model compile stg_customers --integration duckdb',
+    command: 'bobsled model compile stg_customers --integration duckdb',
     why: 'Compilation shows the SQL Model Spec generates for a specific dialect.',
     think:
       'Look for cleaning functions and source references. This is where declarative YAML becomes warehouse SQL.',
@@ -388,7 +388,7 @@ const lessons = [
     id: 'shop-demo-lineage',
     title: 'Inspect Model Lineage',
     cwd: 'shop',
-    command: 'dogsled model lineage fct_orders --integration duckdb',
+    command: 'bobsled model lineage fct_orders --integration duckdb',
     why: 'Lineage explains model dependencies and helps you reason about blast radius.',
     think:
       'Trace fct_orders back to staging models and raw sources. That is the same mental model you need for GTM marts.',
@@ -398,7 +398,7 @@ const lessons = [
     title: 'Run Model Expectations',
     cwd: 'shop',
     command:
-      'dogsled model expect run --model stg_customers --integration duckdb --runner ./runner.duckdb.js',
+      'bobsled model expect run --model stg_customers --integration duckdb --runner ./runner.duckdb.js',
     why: 'Expectations are executable data contracts, not just documentation.',
     think:
       'Read any passing or failing expectation as evidence about the data, model logic, or contract definition.',
@@ -407,7 +407,7 @@ const lessons = [
     id: 'shop-demo-metadata',
     title: 'Compile Metadata Artifacts',
     cwd: 'shop',
-    command: 'dogsled model compile --integration duckdb --include-metadata -o .bobsled-tutor-sql',
+    command: 'bobsled model compile --integration duckdb --include-metadata -o .bobsled-tutor-sql',
     why: 'Metadata output shows how metrics, relationships, entity relationships, and VQs travel alongside SQL.',
     think:
       'Open .bobsled-tutor-sql after this if you want to inspect generated SQL and metadata files.',
@@ -419,7 +419,7 @@ const lessons = [
     command: "sed -n '1,120p' vqs/revenue_by_month.yml",
     why: 'Verified queries encode known-good analytical questions and SQL patterns.',
     think:
-      'The shop-demo VQs use model tokens, so they are best understood here as semantic artifacts emitted by compile metadata. The current dogsled vq run command is narrower and supports source-token VQs.',
+      'The shop-demo VQs use model tokens, so they are best understood here as semantic artifacts emitted by compile metadata. The current bobsled vq run command is narrower and supports source-token VQs.',
   },
   // Entity Graph
   {
@@ -494,7 +494,7 @@ const lessons = [
     title: 'Check BigQuery Connectivity',
     cwd: 'lab',
     env: ['GOOGLE_CLOUD_PROJECT'],
-    command: 'dogsled load check --target bigquery',
+    command: 'bobsled load check --target bigquery',
     why: 'Validates BigQuery connectivity before attempting a load.',
     think: 'A passing check means credentials are configured and the target dataset is reachable.',
   },
@@ -503,7 +503,7 @@ const lessons = [
     title: 'Load Linear Data to BigQuery',
     cwd: 'lab',
     env: ['GOOGLE_CLOUD_PROJECT', 'LINEAR_API_KEY'],
-    command: 'dogsled extract run linear --limit 50 | dogsled load run --target bigquery',
+    command: 'bobsled extract run linear --limit 50 | bobsled load run --target bigquery',
     why: 'Loads Linear data to BigQuery — same protocol pipe, different destination target.',
     think:
       'The protocol stream is destination-agnostic. Swapping DuckDB for BigQuery only changes the --target flag.',
@@ -513,7 +513,7 @@ const lessons = [
     title: 'Query BigQuery Linear Issues',
     cwd: 'lab',
     env: ['GOOGLE_CLOUD_PROJECT'],
-    command: 'dogsled load query "SELECT COUNT(*) FROM linear_issues" --target bigquery',
+    command: 'bobsled load query "SELECT COUNT(*) FROM linear_issues" --target bigquery',
     why: 'Shows live BigQuery query results — same query pattern as DuckDB, warehouse-scale destination.',
     think:
       'Compare this output with the DuckDB equivalent. Same data, same query, warehouse-scale destination.',
@@ -531,14 +531,14 @@ const lessons = [
 ];
 
 function printHelp() {
-  console.log(`Dogsled capability tutor
+  console.log(`Bobsled Core capability tutor
 
 Usage:
   node scripts/bobsled-capability-tutor.mjs [options]
 
 Options:
-  --cli <command>      Command used when executing canonical "dogsled ..." steps.
-                       Default: BOBSLED_CORE_CLI or dogsled
+  --cli <command>      Command used when executing canonical "bobsled ..." steps.
+                       Default: BOBSLED_CORE_CLI or bobsled
   --lab-dir <path>    Directory for local DuckDB files and tutor progress.
                        Default: .bobsled/tutor-lab
   --list              Print lesson list and exit
@@ -549,8 +549,8 @@ Options:
 
 Examples:
   node scripts/bobsled-capability-tutor.mjs
-  BOBSLED_CORE_CLI="pnpm exec dogsled" node scripts/bobsled-capability-tutor.mjs
-  node scripts/bobsled-capability-tutor.mjs --cli "pnpm exec dogsled"
+  BOBSLED_CORE_CLI="pnpm exec bobsled" node scripts/bobsled-capability-tutor.mjs
+  node scripts/bobsled-capability-tutor.mjs --cli "pnpm exec bobsled"
   node scripts/bobsled-capability-tutor.mjs --reset
   node scripts/bobsled-capability-tutor.mjs --goto 13
   node scripts/bobsled-capability-tutor.mjs --auto
@@ -584,7 +584,7 @@ function labelForCwd(lesson, labDir) {
 }
 
 function executableCommand(command, cli) {
-  return command.replace(/(^|[|;&]\s*)dogsled(?=\s|$)/g, (_match, prefix) => `${prefix}${cli}`);
+  return command.replace(/(^|[|;&]\s*)bobsled(?=\s|$)/g, (_match, prefix) => `${prefix}${cli}`);
 }
 
 function normalizeCommand(command) {
@@ -841,7 +841,7 @@ async function main() {
     return;
   }
 
-  console.log(c.bold('Dogsled Capability Tutor'));
+  console.log(c.bold('Bobsled Core Capability Tutor'));
   console.log(`Repo: ${repoRoot}`);
   console.log(`Lab:  ${args.labDir}`);
   console.log(`CLI:  ${args.cli}`);

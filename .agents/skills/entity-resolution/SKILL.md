@@ -15,7 +15,7 @@ triggers:
 
 # Entity Resolution
 
-Use this skill to configure, run, review, or operate Dogsled entity resolution.
+Use this skill to configure, run, review, or operate Bobsled Core entity resolution.
 
 ## Workflow
 

@@ -73,7 +73,7 @@ async function suggestThresholdsHandler(
       diagnostics,
       required_next_steps: [
         'Run resolution so pair score tables exist.',
-        'Pass --runner <path> so Dogsled can score truthset labels.',
+        'Pass --runner <path> so Bobsled Core can score truthset labels.',
         'Use the emitted recommendations only after precision targets are satisfied.',
       ],
     };

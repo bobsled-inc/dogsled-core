@@ -34,7 +34,7 @@ describe('checkProjectFiles', () => {
     ]);
   });
 
-  it('warns about skipped files and errors on problems that stop Dogsled', () => {
+  it('warns about skipped files and errors on problems that stop Bobsled Core', () => {
     const root = project({
       'bobsled.yml': 'pipelines: {}\n',
       'docs/post.md': '---\ntype: page\n---\nBody\n',
@@ -51,7 +51,7 @@ describe('checkProjectFiles', () => {
         name: 'project.files.skipped',
         status: 'warn',
         message: expect.stringMatching(
-          /^Dogsled skipped 1 file: docs\/post\.md: Unknown front matter type "page"/
+          /^Bobsled Core skipped 1 file: docs\/post\.md: Unknown front matter type "page"/
         ),
       },
     ]);

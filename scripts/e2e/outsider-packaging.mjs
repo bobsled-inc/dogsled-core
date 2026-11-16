@@ -97,7 +97,7 @@ export async function verifyGlobalInstall(prefix = globalPrefix) {
     );
     assert.equal(Number(JSON.parse(result.stdout).rows[0].n), 2);
     process.stdout.write(
-      `Global install verified: dogsled ${version} on PATH extracted and loaded a CSV into DuckDB.\n`
+      `Global install verified: bobsled ${version} on PATH extracted and loaded a CSV into DuckDB.\n`
     );
     await ctx.cleanup();
   } catch (error) {
@@ -119,7 +119,7 @@ export async function verifyShippedAssets(cli = cliPath) {
       's3-documents-ingestion': ['s3_documents', 'gcs_documents'],
     };
     for (const [name, integrations] of Object.entries(examples)) {
-      assert.match(listed, new RegExp(`^  ${name} `, 'm'), `dogsled examples list omits ${name}`);
+      assert.match(listed, new RegExp(`^  ${name} `, 'm'), `bobsled examples list omits ${name}`);
       const init = await run(['examples', 'init', name]);
       assert.match(init.stdout, /See README\.md/);
       for (const integration of integrations) {
@@ -179,14 +179,14 @@ export function verifyUserPgInstall(consumer = userPgConsumer, version = userPgV
   );
   assert.equal(readJson(path.join(consumer, 'node_modules/pg/package.json')).version, version);
   const nested = path.join(consumer, ...PACKAGE_PATH, 'node_modules', 'pg');
-  assert.equal(existsSync(nested), false, `Dogsled installed a second pg at ${nested}`);
+  assert.equal(existsSync(nested), false, `Bobsled Core installed a second pg at ${nested}`);
   const lock = readJson(path.join(consumer, 'package-lock.json'));
   for (const [location, info] of Object.entries(lock.packages)) {
     if (location.endsWith('/node_modules/pg')) {
       assert.notEqual(info.inBundle, true, `${location} is marked as bundled but is not shipped`);
     }
   }
-  process.stdout.write(`A project's own pg ${version} is shared with Dogsled.\n`);
+  process.stdout.write(`A project's own pg ${version} is shared with Bobsled Core.\n`);
 }
 
 export async function verifyUserPgExtraction(consumer = userPgConsumer) {

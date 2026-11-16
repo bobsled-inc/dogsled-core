@@ -1,7 +1,7 @@
 /**
  * `runProject` cancellation contract.
  *
- * Covers the guarantees a programmatic host (the Dogsled lakehouse) relies on:
+ * Covers the guarantees a programmatic host (the Bobsled Core lakehouse) relies on:
  * an already-aborted signal never touches the warehouse, an in-flight abort
  * reaches the active runner operation, nothing downstream starts, cancelled work
  * never advances run state, and runners are always closed.

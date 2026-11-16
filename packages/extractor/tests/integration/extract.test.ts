@@ -285,7 +285,7 @@ describe('extract integration', () => {
         path: '/repos',
         handler: () => ({
           body: [
-            { id: 1, name: 'dogsled' },
+            { id: 1, name: 'bobsled' },
             { id: 2, name: 'bobsled-agents' },
             { id: 3, name: 'demo-repo' },
           ],
@@ -325,7 +325,7 @@ describe('extract integration', () => {
       stateStore,
       batchDir: path.join(tmpDir, 'batch'),
       opts: {},
-      inputOverrides: { repo_names: 'dogsled,demo-repo' },
+      inputOverrides: { repo_names: 'bobsled,demo-repo' },
       onRecord: (record) => cachedRecords.push(record),
     });
 
@@ -336,8 +336,8 @@ describe('extract integration', () => {
       .filter((message) => message.type === 'RECORD');
 
     expect(result.recordCount).toBe(2);
-    expect(recordMessages.map((message) => message.record.name)).toEqual(['dogsled', 'demo-repo']);
-    expect(cachedRecords.map((record) => record['name'])).toEqual(['dogsled', 'demo-repo']);
+    expect(recordMessages.map((message) => message.record.name)).toEqual(['bobsled', 'demo-repo']);
+    expect(cachedRecords.map((record) => record['name'])).toEqual(['bobsled', 'demo-repo']);
   });
 
   it('partitions incremental bookmarks per for_each iteration so each repo resumes from its own cursor', async () => {
@@ -349,7 +349,7 @@ describe('extract integration', () => {
     const sinceParamsReceived: Array<string | null> = [];
     server = await createFakeServer([
       {
-        path: '/repos/bobsled-inc/dogsled/commits',
+        path: '/repos/bobsled-inc/bobsled/commits',
         handler: (_req, url) => {
           sinceParamsReceived.push(url.searchParams.get('since'));
           return {
@@ -401,8 +401,8 @@ describe('extract integration', () => {
 
     for (const iteration of [
       {
-        inputs: { owner: 'bobsled-inc', repo: 'dogsled' },
-        partition: 'owner=bobsled-inc::repo=dogsled',
+        inputs: { owner: 'bobsled-inc', repo: 'bobsled' },
+        partition: 'owner=bobsled-inc::repo=bobsled',
       },
       {
         inputs: { owner: 'bobsled-inc', repo: 'demo-repo' },
@@ -436,10 +436,10 @@ describe('extract integration', () => {
     const persisted = await loadState(tmpDir);
     expect(Object.keys(persisted.streams).sort()).toEqual([
       'test_api/commits#owner=bobsled-inc::repo=demo-repo',
-      'test_api/commits#owner=bobsled-inc::repo=dogsled',
+      'test_api/commits#owner=bobsled-inc::repo=bobsled',
     ]);
     expect(
-      persisted.streams['test_api/commits#owner=bobsled-inc::repo=dogsled']?.cursor_value
+      persisted.streams['test_api/commits#owner=bobsled-inc::repo=bobsled']?.cursor_value
     ).toBe('2026-03-16T00:00:00Z');
     expect(
       persisted.streams['test_api/commits#owner=bobsled-inc::repo=demo-repo']?.cursor_value
@@ -454,7 +454,7 @@ describe('extract integration', () => {
       .map((line) => JSON.parse(line))
       .filter((message) => message.type === 'STATE');
     expect(stateMessages.map((m) => ({ stream: m.stream, partition: m.partition }))).toEqual([
-      { stream: 'commits', partition: 'owner=bobsled-inc::repo=dogsled' },
+      { stream: 'commits', partition: 'owner=bobsled-inc::repo=bobsled' },
       { stream: 'commits', partition: 'owner=bobsled-inc::repo=demo-repo' },
     ]);
 
@@ -465,8 +465,8 @@ describe('extract integration', () => {
     sinceParamsReceived.length = 0;
     for (const iteration of [
       {
-        inputs: { owner: 'bobsled-inc', repo: 'dogsled' },
-        partition: 'owner=bobsled-inc::repo=dogsled',
+        inputs: { owner: 'bobsled-inc', repo: 'bobsled' },
+        partition: 'owner=bobsled-inc::repo=bobsled',
       },
       {
         inputs: { owner: 'bobsled-inc', repo: 'demo-repo' },

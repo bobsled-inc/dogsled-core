@@ -10,7 +10,7 @@ key with its new rows. If it produced no rows, delete its old rows. Keep rows fo
 keys that were not processed. Empty input leaves the target unchanged, including
 leaving an absent target absent. Untouched rows keep their metadata.
 
-MySQL, Redshift, and pgvector are compiler targets. Dogsled does not yet ship built-in
+MySQL, Redshift, and pgvector are compiler targets. Bobsled Core does not yet ship built-in
 integration runners for them. This change does not add those integrations.
 
 ## Public API
@@ -54,7 +54,7 @@ byte and cancellation bounds passed in its context. The executor may be a fake o
 a trusted caller implementation. This API does not load a provider SDK or a CLI
 executor. Without a publisher, `executeAgenticRun` still returns pending execution.
 
-For a mixed model graph, pass the host. Dogsled selects and closes a publisher for each model:
+For a mixed model graph, pass the host. Bobsled Core selects and closes a publisher for each model:
 
 ```typescript
 await runProject(projectDirectory, {
@@ -89,7 +89,7 @@ and receipt commit together. A separate processed-key relation supports zero fin
 
 Databricks catalog commits are a Beta feature. Preflight checks table features and
 executes a multi-table transaction before agent work. Existing target tables must
-already have this feature. Dogsled does not upgrade them. See the
+already have this feature. Bobsled Core does not upgrade them. See the
 [Databricks requirements](https://docs.databricks.com/aws/en/transactions).
 
 Snowflake, BigQuery, and Databricks cannot create permanent tables inside this
@@ -225,9 +225,9 @@ execution:
   tools: [web_search, web_fetch]
 ```
 
-These names do not refer to Dogsled sources. Dogsled carries them in the assignment's
+These names do not refer to Bobsled Core sources. Bobsled Core carries them in the assignment's
 optional `allowed_tools` field. The host declares `supportedTools` when it creates
-its agentic host. Dogsled rejects unsupported names before preparation. A direct
+its agentic host. Bobsled Core rejects unsupported names before preparation. A direct
 `llm_call` cannot request tools. When `tools` is omitted, an agent loop uses the host's
 approved `supportedTools`. An explicit list restricts access. Use `tools: []` to
 disable extra tools. A host with no declared tools provides no extra tools.
@@ -235,10 +235,10 @@ disable extra tools. A host with no declared tools provides no extra tools.
 The host owns each implementation, its credentials, permission checks, cancellation,
 call limits, and audit records. Declaring a tool does not grant permission. Executors
 must expose and dispatch only declared, permitted tools, and must fail if a requested
-tool is unavailable. Dogsled does not execute host tools or verify their provider calls.
+tool is unavailable. Bobsled Core does not execute host tools or verify their provider calls.
 
 Tool evidence uses the declared tool name as `source`, a returned reference as
 `reference`, and the tool's actual retrieval time as `retrieved_at`. Hosts that need proof of retrieval must check these claims against tool results.
-Dogsled validates the evidence shape and allowed name; it does not prove that a URL was fetched. Saved tool declarations are part of
+Bobsled Core validates the evidence shape and allowed name; it does not prove that a URL was fetched. Saved tool declarations are part of
 checkpoint identity. Changing the effective selection, including host defaults, requires a new run.
 Resume rejects a changed selection instead of granting new tools silently.

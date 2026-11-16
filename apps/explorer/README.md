@@ -1,6 +1,6 @@
 # Bobsled Core Explorer
 
-A local-first web UI for exploring, configuring, and demoing the [Dogsled](../../README.md) data engineering toolkit. Browse integrations, model bundles, journeys, runs, docs, pipelines, data previews, and the Entity Graph demo surface from your browser. The user guide is [docs/guides/explorer.md](../../docs/guides/explorer.md); this README describes the app for contributors.
+A local-first web UI for exploring, configuring, and demoing the [Bobsled Core](../../README.md) data engineering toolkit. Browse integrations, model bundles, journeys, runs, docs, pipelines, data previews, and the Entity Graph demo surface from your browser. The user guide is [docs/guides/explorer.md](../../docs/guides/explorer.md); this README describes the app for contributors.
 
 Explorer is local-only, has no authentication, and must not be exposed to a network.
 
@@ -21,7 +21,7 @@ The explorer reads integration and model data directly from the monorepo package
 Your launchpad. Shows:
 
 - **Stats at a glance** — integration count, total API resources, model bundles, analytics marts, destinations, categories
-- **Dogsled Capabilities** — five cards covering Extract, Load, Model, Pipeline, and Entity Graph with feature highlights
+- **Bobsled Core Capabilities** — five cards covering Extract, Load, Model, Pipeline, and Entity Graph with feature highlights
 - **Quick actions** — colored cards linking to Guided Setup, Pipeline Builder, Terminal, and Data Query
 - **Integrations by category** — clickable list filtered by category (CRM, payments, marketing, etc.)
 - **Load destinations** — all 9 supported destinations (DuckDB, BigQuery, Snowflake, PostgreSQL, ClickHouse, Turbopuffer, Local Files, S3, GCS)
@@ -46,7 +46,7 @@ Local run history for Terminal sessions:
 
 ### Agent (`/agent`)
 
-Conversational AI assistant powered by your local Claude Code installation. Ask freeform questions about Dogsled:
+Conversational AI assistant powered by your local Claude Code installation. Ask freeform questions about Bobsled Core:
 
 - "What integrations are available for CRM data?"
 - "How do I build a Stripe analytics pipeline?"
@@ -133,20 +133,20 @@ Query local DuckDB databases:
 
 ### Terminal (`/terminal`)
 
-Interactive Dogsled CLI runner with:
+Interactive Bobsled Core CLI runner with:
 
 - **8 quick commands** — list integrations, show Stripe, extract help, etc.
-- **Streaming output** via Server-Sent Events with Dogsled protocol parsing
+- **Streaming output** via Server-Sent Events with Bobsled Core protocol parsing
 - Color-coded messages: LOG (by level), METRIC (green), PROGRESS (primary), SCHEMA (yellow), RECORD (muted)
 - **Command history** with up/down arrow navigation
 - **Stop** button and Ctrl+C support
 - Clear button
 
-Commands are prefixed with `dogsled` automatically — just type `integrations list --type api`.
+Commands are prefixed with `bobsled` automatically — just type `integrations list --type api`.
 
 ### Docs (`/docs`)
 
-In-app documentation for the explorer surface, API routes, and high-value Dogsled commands.
+In-app documentation for the explorer surface, API routes, and high-value Bobsled Core commands.
 
 ### Entity Graph (`/entity-graph`, `/entity-graph/design`, `/entity-graph/resolve`, `/entity-graph/resolve/clusters/[id]`)
 
@@ -161,18 +161,18 @@ The Entity Graph demo is split across a hub, a design flow, and a resolve worksp
 
 Chat-style guided pipeline configuration:
 
-- Connects to Dogsled's setup APIs (`dogsled setup describe` and `dogsled setup recommend`) when available
+- Connects to Bobsled Core's setup APIs (`bobsled setup describe` and `bobsled setup recommend`) when available
 - Falls back to built-in presets if CLI is unavailable
 - Flow: describe your goal → get preset recommendation → choose destination → set schedule → review summary with next steps
 
 ## Architecture
 
-The explorer is a Next.js 15 app that reads integration and model data from workspace packages at build time and spawns `dogsled` CLI subprocesses for command execution.
+The explorer is a Next.js 15 app that reads integration and model data from workspace packages at build time and spawns `bobsled` CLI subprocesses for command execution.
 
 ```
 Browser ──→ Next.js App ──→ @bobsled-inc/integrations (YAML catalog)
                          ──→ @bobsled-inc/models (model bundles)
-                         ──→ dogsled CLI subprocess (commands, queries, setup)
+                         ──→ bobsled CLI subprocess (commands, queries, setup)
                          ──→ claude CLI subprocess (agent chat)
 ```
 
@@ -184,9 +184,9 @@ Browser ──→ Next.js App ──→ @bobsled-inc/integrations (YAML catalog)
 | `/api/integrations/[name]`        | GET     | Integration detail with all resources + model bundle link     |
 | `/api/models`                     | GET     | List model packages                                           |
 | `/api/models/[name]`              | GET     | Model package detail + integration link                       |
-| `/api/command`                    | POST    | Execute dogsled CLI command, returns SSE stream               |
+| `/api/command`                    | POST    | Execute bobsled CLI command, returns SSE stream               |
 | `/api/query`                      | POST    | SQL query against local DuckDB                                |
-| `/api/setup/describe`             | GET     | Setup catalog from dogsled CLI                                |
+| `/api/setup/describe`             | GET     | Setup catalog from bobsled CLI                                |
 | `/api/setup/recommend`            | POST    | Goal-based pipeline recommendation                            |
 | `/api/agent`                      | POST    | Chat with Claude Code agent, returns SSE stream               |
 | `/api/entity-graph/specs`         | GET     | List available Entity Graph demo specs                        |
@@ -196,18 +196,18 @@ Browser ──→ Next.js App ──→ @bobsled-inc/integrations (YAML catalog)
 | `/api/entity-graph/queue`         | GET     | Load the live review queue                                    |
 | `/api/entity-graph/clusters`      | GET     | Summarize resolved clusters                                   |
 | `/api/entity-graph/clusters/[id]` | GET     | Load one cluster detail view                                  |
-| `/api/entity-graph/decide`        | POST    | Persist a review decision via Dogsled Entity Graph            |
+| `/api/entity-graph/decide`        | POST    | Persist a review decision via Bobsled Core Entity Graph       |
 | `/api/entity-graph/agent-review`  | POST    | Run the bounded agent-review flow                             |
 | `/api/entity-graph/assistant`     | POST    | Chat with the Entity Graph assistant rail                     |
 
 ### Key Design Decisions
 
-- **No database** — all data comes from YAML specs in the monorepo or dogsled CLI subprocesses
+- **No database** — all data comes from YAML specs in the monorepo or bobsled CLI subprocesses
 - **Server-Sent Events** — command execution and agent chat stream results incrementally
 - **YAML cache clearing** — integration and model libraries cache parsed YAML; every server-side call clears the cache to prevent memory leaks in the long-running dev server
-- **Command whitelist** — only allowed dogsled subcommands can be executed via the API
+- **Command whitelist** — only allowed bobsled subcommands can be executed via the API
 - **Dynamic system prompt** — the agent's system prompt is built from actual catalog data on every request
-- **Sequential terminal batches** — the explorer can stream multiple Dogsled commands back-to-back for multi-source pipeline runs
+- **Sequential terminal batches** — the explorer can stream multiple Bobsled Core commands back-to-back for multi-source pipeline runs
 
 ## Configuration
 

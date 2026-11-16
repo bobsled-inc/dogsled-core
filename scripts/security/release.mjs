@@ -83,7 +83,7 @@ if (args.execute !== true) {
 if (publishable.length !== 1 || publishable[0].name !== BOBSLED_CORE_PACKAGE_NAME) {
   throw new Error(`Expected ${BOBSLED_CORE_PACKAGE_NAME} to be the one publishable package.`);
 }
-const [dogsled] = publishable;
+const [bobsled] = publishable;
 const dirty = execFileSync('git', ['status', '--porcelain'], {
   cwd: repoRoot,
   encoding: 'utf8',
@@ -231,10 +231,12 @@ try {
             const topLevel = path.join(scratch, 'node_modules', ...name.split('/'));
             const nested = path.join(installedRoot, 'node_modules', ...name.split('/'));
             if (existsSync(topLevel)) {
-              violations.push(`${name} resolved independently instead of from the Dogsled bundle`);
+              violations.push(
+                `${name} resolved independently instead of from the Bobsled Core bundle`
+              );
             }
             if (!existsSync(path.join(nested, 'package.json'))) {
-              violations.push(`${name} is unavailable inside the installed Dogsled bundle`);
+              violations.push(`${name} is unavailable inside the installed Bobsled Core bundle`);
             }
           }
 
@@ -313,7 +315,7 @@ const report = {
   packageCount: 1,
   internalPackageCount: EXPECTED_INTERNAL_PACKAGE_COUNT,
   artifacts,
-  publicImports: packageImportSpecifiers(dogsled.packageJson),
+  publicImports: packageImportSpecifiers(bobsled.packageJson),
   delegatedHelpCommands: [...DELEGATED_HELP_COMMANDS],
   sbomStatus,
   sbomSha256,

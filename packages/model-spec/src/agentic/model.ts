@@ -38,7 +38,7 @@ export const AgenticColumnSchema = FieldMetadataSchema.pick({
     if (!reserved || reserved.type !== column.type || reserved.nullable !== column.nullable) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Dogsled metadata names, types and nullability are fixed',
+        message: 'Bobsled Core metadata names, types and nullability are fixed',
       });
     }
   });
@@ -66,7 +66,7 @@ export const AgenticColumnsSchema = z
 
 const OutputColumnsSchema = AgenticColumnsSchema.refine(
   (columns) => columns.every((column) => !usesReservedAgenticPrefix(column.name)),
-  'Dogsled metadata columns are reserved'
+  'Bobsled Core metadata columns are reserved'
 );
 export const AgenticReferenceSchema = TransformSpecSchema.shape.source.pick({ ref: true }).strict();
 export const AgenticInputSourceSchema = AgenticReferenceSchema.extend({
@@ -299,7 +299,7 @@ export function describeModelSpecIssues(data: unknown, error: z.ZodError): strin
   return issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`).join('; ');
 }
 
-/** Declared business columns plus fixed Dogsled metadata for agentic outputs. */
+/** Declared business columns plus fixed Bobsled Core metadata for agentic outputs. */
 export function getModelOutputColumns(model: ModelSpec) {
   if (model.model_kind !== 'agentic') return model.columns;
   const output = model.plan.steps.find((step) => step.id === model.output.from)!;

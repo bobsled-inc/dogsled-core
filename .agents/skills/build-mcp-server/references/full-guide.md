@@ -4,7 +4,7 @@ Use this when a user wants to **expose their own data or operations as a
 remote MCP server** so the host agent (or any MCP client) can pull
 data from it. The endgame: a publicly reachable HTTPS URL implementing
 the streamable-HTTP MCP transport, which you then wire up via
-`add-custom-mcp-integration` as a Dogsled `custom_mcp` source.
+`add-custom-mcp-integration` as a Bobsled Core `custom_mcp` source.
 
 This skill is **not** about consuming MCP — for that, run
 `add-custom-mcp-integration` (or `mcp-discover` to scaffold from an
@@ -19,7 +19,7 @@ A long-running HTTPS service that:
 2. Exposes a set of **tools** an MCP client can call (`tools/list`,
    `tools/call`).
 3. Authenticates incoming requests (`bearer` or `api-key` for the
-   simplest production-ready shape — Dogsled's `custom_mcp` reads both).
+   simplest production-ready shape — Bobsled Core's `custom_mcp` reads both).
 4. Lives at a stable HTTPS URL the extractor can reach.
 
 The protocol spec is at https://spec.modelcontextprotocol.io/. The
@@ -42,7 +42,7 @@ minor versions.
   - Fly.io (no enforced timeout on the worker side).
   - Render / Railway / a dedicated VM.
 - A TLS-terminating load balancer or platform that provisions a cert
-  for you. Self-signed certs are rejected by Dogsled's
+  for you. Self-signed certs are rejected by Bobsled Core's
   `AbsoluteHttpsUrlSchema` callers and DNS pre-resolution.
 - Secrets management for the auth token: environment variables for
   small deploys, GCP Secret Manager / AWS Secrets Manager / Vault for
@@ -73,7 +73,7 @@ uv add "mcp[cli]"
 
 The Python SDK uses Pydantic models and supports both stdio (for
 desktop Claude) and streamable HTTP (for hosted access — that's what
-you want for Dogsled).
+you want for Bobsled Core).
 
 ## Step 2 — Define tools
 
@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
 ## Step 4 — Auth
 
-Dogsled's `custom_mcp` reads three auth shapes off
+Bobsled Core's `custom_mcp` reads three auth shapes off
 `McpTransportAuthSchema`: `none`, `bearer`, `api-key`. Implement
 whichever fits your security model. **Always** compare tokens with a
 constant-time function and **never** log the raw token.
@@ -321,10 +321,10 @@ class RequireBearerMiddleware(BaseHTTPMiddleware):
 - **`type: api-key`** — per-client keys (the `keys` slice above), so
   you can revoke one client without rotating all of them. Best for
   multi-tenant servers or when you want to attribute calls.
-- **`type: none`** — only for truly public read-only data. Dogsled
+- **`type: none`** — only for truly public read-only data. Bobsled Core
   accepts it but the SSRF + rate-limit on the extractor side is your
   only defense.
-- **OAuth2 client_credentials** — Dogsled's MCP schema accepts it
+- **OAuth2 client_credentials** — Bobsled Core's MCP schema accepts it
   (`token_url`, `client_id`, `client_secret`, `scopes`). The MCP SDK
   side requires you to validate the JWT yourself. Out of scope for
   this skill — use it when you have an existing OIDC IdP and need
@@ -376,7 +376,7 @@ npx @modelcontextprotocol/inspector http://localhost:8080/mcp
 ```
 
 Once the inspector connects and lists your tools, you have a working
-MCP server. Point Dogsled's `mcp-discover` skill at the same URL to
+MCP server. Point Bobsled Core's `mcp-discover` skill at the same URL to
 auto-scaffold the resource YAML, then refine it with
 `add-custom-mcp-integration`.
 
@@ -413,7 +413,7 @@ gcloud run deploy my-mcp-server \
 
 Cloud Run will return an HTTPS URL like
 `https://my-mcp-server-<hash>-uc.a.run.app`. Use `https://<that>/mcp`
-as the `url` in your Dogsled `custom_mcp` source.
+as the `url` in your Bobsled Core `custom_mcp` source.
 
 ### Fly.io
 
@@ -472,21 +472,21 @@ Use `api/mcp.ts` to handle both POST and GET; the StreamableHTTPServerTransport
 fits in a Node serverless function as long as you allocate enough
 `maxDuration`.
 
-## Step 7 — Connect it back via Dogsled
+## Step 7 — Connect it back via Bobsled Core
 
 Once your server is at a stable HTTPS URL, hand off to
 `add-custom-mcp-integration`:
 
-1. The server's URL becomes `transports[0].url` in the Dogsled
+1. The server's URL becomes `transports[0].url` in the Bobsled Core
    `source.yml`.
 2. The bearer token / api-key becomes `${{ env.<VAR> }}` in
    `transports[0].auth`, declared in `auth_env_vars`.
 3. For each tool you exposed, author one resource under
    `resources/<tool>.yml` with the `tool:` block.
-4. `dogsled extract validate <source>` → `verify` → `run`.
+4. `bobsled extract validate <source>` → `verify` → `run`.
 
 ```yaml
-# Your Dogsled source.yml after deploy:
+# Your Bobsled Core source.yml after deploy:
 spec_version: '2'
 type: source
 source_type: custom_mcp
@@ -508,7 +508,7 @@ default_transport: default
 
 Before exposing the server publicly:
 
-- [ ] **HTTPS only.** Reject HTTP at the load balancer. Dogsled's
+- [ ] **HTTPS only.** Reject HTTP at the load balancer. Bobsled Core's
       `AbsoluteHttpsUrlSchema` enforces it on the connection too.
 - [ ] **Auth on every tool.** Don't ship a read-write tool without
       auth. Even read-only tools should be auth'd for rate-limiting.
@@ -546,6 +546,6 @@ top failure mode.
 ## Related
 
 - `add-custom-mcp-integration` — connect your deployed MCP server as a
-  Dogsled `custom_mcp` source (the natural next step).
-- `mcp-discover` — auto-scaffold Dogsled resource YAML from your
+  Bobsled Core `custom_mcp` source (the natural next step).
+- `mcp-discover` — auto-scaffold Bobsled Core resource YAML from your
   server's `tools/list` output.

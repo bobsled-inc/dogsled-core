@@ -249,7 +249,7 @@ export function DashboardToolkitCatalog({
           </div>
 
           <div>
-            <h2 className="mb-3 text-sm font-semibold">Dogsled Capabilities</h2>
+            <h2 className="mb-3 text-sm font-semibold">Bobsled Core Capabilities</h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {capabilities.map((capability) => (
                 <Link

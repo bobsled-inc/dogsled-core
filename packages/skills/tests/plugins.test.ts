@@ -10,7 +10,7 @@ import { renderPluginFiles, REPO_ROOT } from '../scripts/build-plugins.js';
 
 const generated = renderPluginFiles();
 
-describe('installable Dogsled plugin', () => {
+describe('installable Bobsled Core plugin', () => {
   it('ships the current generated files without needing a build after installation', () => {
     for (const [path, content] of Object.entries(generated)) {
       expect(readFileSync(join(REPO_ROOT, path), 'utf8'), path).toBe(content);
@@ -36,8 +36,8 @@ describe('installable Dogsled plugin', () => {
       expect(claudeCatalog.plugins[0].source).toBe(codexCatalog.plugins[0].source.path);
       const claude = JSON.parse(readFileSync(join(plugin, '.claude-plugin/plugin.json'), 'utf8'));
       const codex = JSON.parse(readFileSync(join(plugin, 'plugin.json'), 'utf8'));
-      expect(claudeCatalog.name).toBe('dogsled');
-      expect(codexCatalog.name).toBe('dogsled');
+      expect(claudeCatalog.name).toBe('bobsled');
+      expect(codexCatalog.name).toBe('bobsled');
       expect(claudeCatalog.plugins[0].name).toBe('bobsled-core');
       expect(codexCatalog.plugins[0].name).toBe('bobsled-core');
       expect(claude.name).toBe('bobsled-core');
@@ -50,7 +50,7 @@ describe('installable Dogsled plugin', () => {
           .sort()
       );
       expect(readFileSync(join(plugin, 'skills/bobsled-tutorials/SKILL.md'), 'utf8')).toContain(
-        'https://github.com/bobsled-inc/dogsled-core/blob/main/packages/bobsled-core/examples/tv-night/DESIGN.md'
+        'https://github.com/bobsled-inc/bobsled-core/blob/main/packages/bobsled-core/examples/tv-night/DESIGN.md'
       );
       const requiredReferences = {
         'etl-migration/SKILL.md': [
@@ -70,7 +70,7 @@ describe('installable Dogsled plugin', () => {
         const content = readFileSync(join(plugin, 'skills', document), 'utf8');
         for (const reference of references) {
           expect(content).toContain(
-            `](https://github.com/bobsled-inc/dogsled-core/blob/main/${reference})`
+            `](https://github.com/bobsled-inc/bobsled-core/blob/main/${reference})`
           );
           expect(content).not.toContain('`' + reference + '`');
           expect(readFileSync(join(REPO_ROOT, reference), 'utf8').length).toBeGreaterThan(0);

@@ -37,13 +37,13 @@ function runPolicy(url) {
 describe('operator-controlled runtime network policy', () => {
   it.each([
     'https://dogsledai.com',
-    'https://dogsled.cloud',
+    'https://dogsled.cloud', // rename:keep
     'https://dogsledai.com/events',
     'https://api.dogsledai.com/query',
-    'https://telemetry.dogsled.ai/collect',
-    'https://events.dogsled.cloud/collect',
-    'https://dogsled.co/api',
-    'https://dogsled.com/api',
+    'https://telemetry.dogsled.ai/collect', // rename:keep
+    'https://events.dogsled.cloud/collect', // rename:keep
+    'https://dogsled.co/api', // rename:keep
+    'https://dogsled.com/api', // rename:keep
     'https://dogsled.it/api',
     'https://api.bobsled.co/query',
   ])('rejects an undeclared maintainer endpoint: %s', (url) => {

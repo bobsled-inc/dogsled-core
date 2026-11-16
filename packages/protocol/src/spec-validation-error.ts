@@ -1,6 +1,6 @@
 /**
  * Shared formatter for user-facing Zod-validation failures on
- * Dogsled spec YAMLs (integrations, resources, sources, syncs, policies,
+ * Bobsled Core spec YAMLs (integrations, resources, sources, syncs, policies,
  * truthsets, surviorship rules, etc.).
  *
  * Every package that loads a user-authored YAML and runs `.safeParse(...)`

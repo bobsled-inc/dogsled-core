@@ -172,7 +172,7 @@ function collectUserCteNames(maskedSql: string): Set<string> {
  * excluded. Matching is case-insensitive (DuckDB identifiers are
  * case-insensitive; model names are stored lowercased). A model referenced as
  * `schema.model` is NOT matched — derived models are bare, single-identifier
- * references in `dogsled query`.
+ * references in `bobsled query`.
  *
  * Returns the matched names in their original (lowercased) model-name form,
  * in stable sorted order for deterministic CTE emission.
@@ -232,7 +232,7 @@ export function detectModelReferences(sql: string, modelNames: Iterable<string>)
  * result compiled with `{ inlineDeps: true, selectOnly: true, models: [name] }`.
  * Mirrors how `dryRunProject` buckets per-`modelName` SQL. The model may be
  * referenced under multiple integrations only in pathological multi-integration
- * projects; `dogsled query`'s live/lazy projects are single-integration, so a
+ * projects; `bobsled query`'s live/lazy projects are single-integration, so a
  * unique compiled SELECT is expected.
  */
 /**
@@ -297,7 +297,7 @@ function selectSqlForModel(result: CompileProjectResult, modelName: string): str
   if (hits.length > 1) {
     throw new CommandError(
       `Derived model "${modelName}" resolves under multiple integrations; ` +
-        '`dogsled query` requires an unambiguous single-integration model. ' +
+        '`bobsled query` requires an unambiguous single-integration model. ' +
         'Narrow the project or reference the model under a single integration.',
       2
     );
@@ -379,7 +379,7 @@ export async function resolveModelReferences(
     if (explicitAlias.test(masked) || bareAlias.test(masked)) {
       throw new CommandError(
         `Derived model "${name}" collides with a table/CTE alias "${name}" in the query. ` +
-          'Rename the alias before referencing the model in dogsled query.',
+          'Rename the alias before referencing the model in bobsled query.',
         2
       );
     }

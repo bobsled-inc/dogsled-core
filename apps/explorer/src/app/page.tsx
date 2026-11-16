@@ -28,7 +28,7 @@ const CAPABILITIES = [
       '81 pre-built connectors',
       'Incremental cursor-based sync',
       'OAuth2 + API key auth',
-      'Dogsled protocol JSONL',
+      'Bobsled Core protocol JSONL',
     ],
   },
   {
@@ -46,7 +46,7 @@ const CAPABILITIES = [
   {
     title: 'Model',
     description:
-      'SQL-based data transformation with multi-dialect compilation across Dogsled’s warehouse targets.',
+      'SQL-based data transformation with multi-dialect compilation across Bobsled Core’s warehouse targets.',
     href: '/models',
     highlights: [
       'Source -> staging -> mart DAG',
@@ -89,7 +89,7 @@ export default function Dashboard() {
     <div className="mx-auto max-w-6xl space-y-8 p-6">
       <PageHeader
         title="Bobsled Core Explorer"
-        description="Learn Dogsled through the curriculum, quick guides, runnable demos, and the underlying integration and model catalogs."
+        description="Learn Bobsled Core through the curriculum, quick guides, runnable demos, and the underlying integration and model catalogs."
       />
 
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
@@ -133,7 +133,7 @@ export default function Dashboard() {
             href="/learn"
             className="rounded-2xl border border-primary/20 bg-primary/10 p-4 transition-colors hover:bg-primary/15"
           >
-            <div className="text-sm font-medium text-primary">Learn Dogsled</div>
+            <div className="text-sm font-medium text-primary">Learn Bobsled Core</div>
             <div className="mt-1 text-xs text-muted-foreground">
               Follow the full curriculum with commands and table inspection
             </div>
@@ -156,7 +156,7 @@ export default function Dashboard() {
           >
             <div className="text-sm font-medium text-warning">Run Commands</div>
             <div className="mt-1 text-xs text-muted-foreground">
-              Execute Dogsled CLI commands with streaming output
+              Execute Bobsled Core CLI commands with streaming output
             </div>
           </Link>
           <Link

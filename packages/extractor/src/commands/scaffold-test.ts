@@ -1,5 +1,5 @@
 /**
- * `dogsled extract scaffold-test` command.
+ * `bobsled extract scaffold-test` command.
  *
  * Tests auth, config, and one record per resource for an integration.
  * Standalone resources run first, then their results feed into

@@ -108,7 +108,7 @@ export function registerSyncCommand(program: Command): void {
   group
     .command('list')
     .description('List sync specs in the current project')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option('--yaml', 'Emit results as YAML')
     .action((opts: SyncOutputOptions) => {
       const globalOptions = program.opts<GlobalOptions>();
@@ -129,7 +129,7 @@ export function registerSyncCommand(program: Command): void {
   group
     .command('validate [name]')
     .description('Validate one sync spec or all sync specs')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option('--yaml', 'Emit results as YAML')
     .action(async (name: string | undefined, opts: SyncOutputOptions) => {
       const globalOptions = program.opts<GlobalOptions>();
@@ -158,7 +158,7 @@ export function registerSyncCommand(program: Command): void {
   group
     .command('run <name>')
     .description('Run a sync end-to-end with durable local state')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option(
       '--dry-run',
       'Validate and dispatch without writing receipts or checkpoint state',

@@ -12,12 +12,12 @@ export const BOBSLED_CORE_RUNTIME_ERROR_KINDS = [
 export type BobsledRuntimeErrorKind = (typeof BOBSLED_CORE_RUNTIME_ERROR_KINDS)[number];
 
 export const BOBSLED_CORE_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<BobsledRuntimeErrorKind, string> = {
-  auth: 'Dogsled could not authenticate with the provider.',
-  validation: 'Dogsled could not validate the request.',
+  auth: 'Bobsled Core could not authenticate with the provider.',
+  validation: 'Bobsled Core could not validate the request.',
   provider: 'The provider could not complete the operation.',
   timeout: 'The operation timed out.',
   cancellation: 'The operation was cancelled.',
-  internal: 'Dogsled could not complete the operation.',
+  internal: 'Bobsled Core could not complete the operation.',
 };
 
 export interface BobsledRuntimeErrorOptions {
@@ -88,7 +88,7 @@ function serializeErrorCauseAtDepth(
 }
 
 /**
- * Safe, stable runtime failure contract for Dogsled library boundaries.
+ * Safe, stable runtime failure contract for Bobsled Core library boundaries.
  *
  * The original Error remains available only as the native `cause`; consumers
  * use the explicit fields and never infer behavior from provider text.

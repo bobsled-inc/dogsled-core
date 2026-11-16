@@ -115,7 +115,7 @@ export function scaffoldResolutionSpec(
   const thresholdsNode = doc.get('thresholds', true);
   if (thresholdsNode && typeof thresholdsNode === 'object') {
     (thresholdsNode as { commentBefore?: string | null }).commentBefore =
-      ' REVIEW: Validate thresholds against your dataset with `dogsled model truthset tune` before production deployment.';
+      ' REVIEW: Validate thresholds against your dataset with `bobsled model truthset tune` before production deployment.';
   }
 
   if (!entityMapping.domainField && canonicalEntity === 'company') {

@@ -2,7 +2,7 @@
 name: build-mcp-server
 description: Build a remote MCP (Model Context Protocol) server from scratch —
   pick a language/SDK, define tools, implement streamable HTTP transport, add
-  auth, deploy publicly, then connect it as a Dogsled custom_mcp source. Use when
+  auth, deploy publicly, then connect it as a Bobsled Core custom_mcp source. Use when
   a user wants to expose their own data or operations as an MCP server.
 exposed: true
 triggers:
@@ -21,7 +21,7 @@ triggers:
 
 # Build an MCP Server
 
-Use this skill when exposing Dogsled capabilities through an MCP server.
+Use this skill when exposing Bobsled Core capabilities through an MCP server.
 
 ## Workflow
 

@@ -22,7 +22,7 @@ pnpm --filter @bobsled-inc/entity-graph exec entity-graph resolve profile compan
 pnpm --filter @bobsled-inc/entity-graph exec entity-graph survivorship refresh company --runner ./runner.duckdb.js
 ```
 
-The `dogsled` binary (`packages/bobsled-core`) wraps both — `dogsled model seed load ...` and `dogsled entity-graph resolve run ...` work identically when installed.
+The `bobsled` binary (`packages/bobsled-core`) wraps both — `bobsled model seed load ...` and `bobsled entity-graph resolve run ...` work identically when installed.
 
 ## Agent review walkthrough
 
@@ -65,4 +65,4 @@ contract for bringing your own agent (HTTP or command) is documented in
 
 ## Driving it from the Explorer UI
 
-`/entity-graph/resolve` calls `POST /api/entity-graph/run`. The route spawns the sequence above via the Dogsled CLI, streaming stdout/stderr over SSE. It's idempotent — every run overwrites the `entity_graph_demo.company__*` tables.
+`/entity-graph/resolve` calls `POST /api/entity-graph/run`. The route spawns the sequence above via the Bobsled Core CLI, streaming stdout/stderr over SSE. It's idempotent — every run overwrites the `entity_graph_demo.company__*` tables.

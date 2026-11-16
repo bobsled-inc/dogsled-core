@@ -3,9 +3,9 @@ set -euo pipefail
 shopt -s nullglob
 
 # ============================================================================
-# dogsled Loader Walkthrough
+# bobsled Loader Walkthrough
 # ============================================================================
-# Demonstrates the dogsled loader pipeline: extract data from integrations (or use
+# Demonstrates the bobsled loader pipeline: extract data from integrations (or use
 # synthetic data) and load directly into DuckDB or BigQuery with typed schemas,
 # merge dedup, schema evolution, retry, and structured logging.
 #
@@ -34,9 +34,9 @@ shopt -s nullglob
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Resolve dogsled CLI — prefer local build, fall back to global
-if [ -x "$SCRIPT_DIR/dogsled" ]; then
-  BOBSLED="$SCRIPT_DIR/dogsled"
+# Resolve bobsled CLI — prefer local build, fall back to global
+if [ -x "$SCRIPT_DIR/bobsled" ]; then
+  BOBSLED="$SCRIPT_DIR/bobsled"
 elif [ -x "$SCRIPT_DIR/../../bin/cli.mjs" ]; then
   BOBSLED="$SCRIPT_DIR/../../bin/cli.mjs"
 elif command -v bobsled >/dev/null 2>&1; then
@@ -45,7 +45,7 @@ elif npx --no-install bobsled --version >/dev/null 2>&1; then
   run_bobsled_with_npx() { npx --no-install bobsled "$@"; }
   BOBSLED="run_bobsled_with_npx"
 else
-  echo "Error: dogsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder."
+  echo "Error: bobsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder."
   exit 1
 fi
 
@@ -109,7 +109,7 @@ pipeline_log_format() {
 banner() {
   echo -e "${BOLD}${GREEN}"
   echo "  ╔═══════════════════════════════════════════════════════╗"
-  echo "  ║         dogsled Loader Walkthrough                    ║"
+  echo "  ║         bobsled Loader Walkthrough                    ║"
   echo "  ║  $1"
   echo "  ╚═══════════════════════════════════════════════════════╝"
   echo -e "${RESET}"
@@ -181,7 +181,7 @@ dest_label() {
   fi
 }
 
-# Query helper — works for both DuckDB and BigQuery via dogsled load query
+# Query helper — works for both DuckDB and BigQuery via bobsled load query
 query() {
   local sql="$1"
   echo -e "  ${MAGENTA}SQL:${RESET} ${DIM}${sql}${RESET}"
@@ -249,7 +249,7 @@ validate_dest() {
 
 if [ -z "$MODE" ] || [ "$MODE" = "help" ]; then
   echo -e "${BOLD}${GREEN}"
-  echo "  dogsled Loader Walkthrough"
+  echo "  bobsled Loader Walkthrough"
   echo -e "${RESET}"
   echo -e "  Usage: ${YELLOW}./duckdb-walkthrough.sh <mode> [--dest duckdb|bigquery] [options]${RESET}"
   echo ""
@@ -330,7 +330,7 @@ if [ "$MODE" = "synthetic" ]; then
     explain "For DuckDB, this creates the file if it doesn't exist and runs a test write."
   fi
   echo ""
-  show_command "dogsled load check $(dest_flags_for_display)"
+  show_command "bobsled load check $(dest_flags_for_display)"
   echo ""
   set_dest_args
   "$BOBSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
@@ -367,7 +367,7 @@ if [ "$MODE" = "synthetic" ]; then
   echo ""
 
   echo -e "  ${DIM}Running loader...${RESET}"
-  show_command "echo '<protocol>' | dogsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
+  show_command "echo '<protocol>' | bobsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
   echo ""
   set_dest_args
   echo "$APPEND_INPUT" | "$BOBSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
@@ -390,7 +390,7 @@ if [ "$MODE" = "synthetic" ]; then
 {"_v":1,"type":"STATE","stream":"issues","value":{"record_count":2,"cursor":"2026-03-27T11:00:01.000Z"}}'
 
   echo -e "  ${DIM}Feeding merge data (id=2 updated, id=4 new):${RESET}"
-  show_command "echo '<protocol>' | dogsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
+  show_command "echo '<protocol>' | bobsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
   echo ""
   echo -e "  ${DIM}Running loader...${RESET}"
   set_dest_args
@@ -414,7 +414,7 @@ if [ "$MODE" = "synthetic" ]; then
 {"_v":1,"type":"STATE","stream":"issues","value":{"record_count":1}}'
 
   echo -e "  ${DIM}Feeding stale data for id=2 (time_extracted=09:00 < existing 11:00):${RESET}"
-  show_command "echo '<protocol>' | dogsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
+  show_command "echo '<protocol>' | bobsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
   echo ""
   set_dest_args
   echo "$STALE_INPUT" | "$BOBSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
@@ -482,12 +482,12 @@ if [ "$MODE" = "synthetic" ]; then
   echo ""
   if [ "$DEST" = "duckdb" ]; then
     echo -e "  ${DIM}Explore:${RESET}"
-    echo -e "    ${YELLOW}$ dogsled load check --dest duckdb --db-path ./walkthrough.duckdb${RESET}"
-    echo -e "    ${YELLOW}$ dogsled load query --db-path ./walkthrough.duckdb \"DESCRIBE main.issues\"${RESET}"
-    echo -e "    ${YELLOW}$ dogsled load query --db-path ./walkthrough.duckdb \"SELECT * FROM main.issues\"${RESET}"
+    echo -e "    ${YELLOW}$ bobsled load check --dest duckdb --db-path ./walkthrough.duckdb${RESET}"
+    echo -e "    ${YELLOW}$ bobsled load query --db-path ./walkthrough.duckdb \"DESCRIBE main.issues\"${RESET}"
+    echo -e "    ${YELLOW}$ bobsled load query --db-path ./walkthrough.duckdb \"SELECT * FROM main.issues\"${RESET}"
   else
     echo -e "  ${DIM}Explore:${RESET}"
-    echo -e "    ${YELLOW}$ dogsled load check --dest bigquery --project-id ${BQ_PROJECT} --dataset-id ${BQ_DATASET}${RESET}"
+    echo -e "    ${YELLOW}$ bobsled load check --dest bigquery --project-id ${BQ_PROJECT} --dataset-id ${BQ_DATASET}${RESET}"
     echo -e "    ${YELLOW}\$ bq query --nouse_legacy_sql 'SELECT * FROM \`${BQ_PROJECT}.${BQ_DATASET}.issues\` LIMIT 10'${RESET}"
   fi
   echo ""
@@ -574,7 +574,7 @@ if [ "$MODE" = "notion" ]; then
     explain "Creating DuckDB file and verifying it's writable."
   fi
   echo ""
-  show_command "dogsled load check $(dest_flags_for_display)"
+  show_command "bobsled load check $(dest_flags_for_display)"
   echo ""
   set_dest_args
   "$BOBSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
@@ -590,7 +590,7 @@ if [ "$MODE" = "notion" ]; then
 
   PIPE_FMT=$(pipeline_log_format)
   set_dest_args
-  cmd="dogsled pipeline --integration notion $(dest_flags_for_display) --log-format ${PIPE_FMT} users"
+  cmd="bobsled pipeline --integration notion $(dest_flags_for_display) --log-format ${PIPE_FMT} users"
   show_command "$cmd"
   echo ""
 
@@ -613,7 +613,7 @@ if [ "$MODE" = "notion" ]; then
   echo ""
 
   set_dest_args
-  cmd="dogsled pipeline --integration notion $(dest_flags_for_display) --log-format ${PIPE_FMT} pages"
+  cmd="bobsled pipeline --integration notion $(dest_flags_for_display) --log-format ${PIPE_FMT} pages"
   show_command "$cmd"
   echo ""
 
@@ -663,7 +663,7 @@ if [ "$MODE" = "notion" ]; then
   echo ""
 
   set_dest_args
-  cmd="dogsled pipeline --integration notion $(dest_flags_for_display) --log-format ${PIPE_FMT} pages"
+  cmd="bobsled pipeline --integration notion $(dest_flags_for_display) --log-format ${PIPE_FMT} pages"
   show_command "$cmd"
   echo ""
 
@@ -698,9 +698,9 @@ if [ "$MODE" = "notion" ]; then
   echo ""
   if [ "$DEST" = "duckdb" ]; then
     echo -e "  ${DIM}Explore further:${RESET}"
-    echo -e "    ${YELLOW}$ dogsled load query --db-path ./notion.duckdb \"SELECT * FROM main.users\"${RESET}"
-    echo -e "    ${YELLOW}$ dogsled load query --db-path ./notion.duckdb \"SELECT * FROM main.pages LIMIT 20\"${RESET}"
-    echo -e "    ${YELLOW}$ dogsled load query --db-path ./notion.duckdb \"DESCRIBE main.pages\"${RESET}"
+    echo -e "    ${YELLOW}$ bobsled load query --db-path ./notion.duckdb \"SELECT * FROM main.users\"${RESET}"
+    echo -e "    ${YELLOW}$ bobsled load query --db-path ./notion.duckdb \"SELECT * FROM main.pages LIMIT 20\"${RESET}"
+    echo -e "    ${YELLOW}$ bobsled load query --db-path ./notion.duckdb \"DESCRIBE main.pages\"${RESET}"
   else
     echo -e "  ${DIM}Explore further:${RESET}"
     echo -e "    ${YELLOW}\$ bq query --nouse_legacy_sql 'SELECT * FROM \`${BQ_PROJECT}.${BQ_DATASET}.users\`'${RESET}"
@@ -788,7 +788,7 @@ echo ""
 
 # ── Step 1: Check connectivity ──
 step "Check destination connectivity"
-show_command "dogsled load check $(dest_flags_for_display)"
+show_command "bobsled load check $(dest_flags_for_display)"
 echo ""
 set_dest_args
 "$BOBSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
@@ -796,7 +796,7 @@ echo ""
 
 # ── Step 2: Run pipeline for each resource ──
 step "Extract ${INTEGRATION} → ${DEST_LABEL} via pipeline"
-explain "Running 'dogsled pipeline' for each resource. This pipes extractor output"
+explain "Running 'bobsled pipeline' for each resource. This pipes extractor output"
 explain "directly into the ${DEST_LABEL} loader in a single streaming pass."
 explain ""
 explain "What happens under the hood:"
@@ -821,7 +821,7 @@ for resource in "${ALL_RESOURCES[@]}"; do
 
   PIPE_FMT=$(pipeline_log_format)
   set_dest_args
-  cmd="dogsled pipeline --integration ${INTEGRATION} $(dest_flags_for_display) --log-format ${PIPE_FMT} ${resource}"
+  cmd="bobsled pipeline --integration ${INTEGRATION} $(dest_flags_for_display) --log-format ${PIPE_FMT} ${resource}"
   show_command "$cmd"
   echo ""
 
@@ -882,13 +882,13 @@ echo -e "  Destination: ${BOLD}$(dest_label)${RESET}"
 echo ""
 if [ "$DEST" = "duckdb" ]; then
   echo -e "  ${DIM}Explore further:${RESET}"
-  echo -e "    ${YELLOW}$ dogsled load check --dest duckdb --db-path ./${INTEGRATION}.duckdb${RESET}"
-  echo -e "    ${YELLOW}$ dogsled load query --db-path ./${INTEGRATION}.duckdb \"SELECT table_name FROM duckdb_tables() WHERE schema_name='main'\"${RESET}"
-  echo -e "    ${YELLOW}$ dogsled load query --db-path ./${INTEGRATION}.duckdb \"SELECT * FROM main.<table> LIMIT 10\"${RESET}"
-  echo -e "    ${YELLOW}$ dogsled load query --db-path ./${INTEGRATION}.duckdb \"DESCRIBE main.<table>\"${RESET}"
+  echo -e "    ${YELLOW}$ bobsled load check --dest duckdb --db-path ./${INTEGRATION}.duckdb${RESET}"
+  echo -e "    ${YELLOW}$ bobsled load query --db-path ./${INTEGRATION}.duckdb \"SELECT table_name FROM duckdb_tables() WHERE schema_name='main'\"${RESET}"
+  echo -e "    ${YELLOW}$ bobsled load query --db-path ./${INTEGRATION}.duckdb \"SELECT * FROM main.<table> LIMIT 10\"${RESET}"
+  echo -e "    ${YELLOW}$ bobsled load query --db-path ./${INTEGRATION}.duckdb \"DESCRIBE main.<table>\"${RESET}"
 else
   echo -e "  ${DIM}Explore further:${RESET}"
-  echo -e "    ${YELLOW}$ dogsled load check --dest bigquery --project-id ${BQ_PROJECT} --dataset-id ${BQ_DATASET}${RESET}"
+  echo -e "    ${YELLOW}$ bobsled load check --dest bigquery --project-id ${BQ_PROJECT} --dataset-id ${BQ_DATASET}${RESET}"
   echo -e "    ${YELLOW}\$ bq query --nouse_legacy_sql 'SELECT * FROM \`${BQ_PROJECT}.${BQ_DATASET}.<table>\` LIMIT 10'${RESET}"
   echo -e "    ${YELLOW}\$ bq show ${BQ_PROJECT}:${BQ_DATASET}.<table>${RESET}"
 fi

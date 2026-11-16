@@ -1,12 +1,12 @@
 # Model Profiler User Guide
 
-The model profiler is a read-only diagnostic command for Dogsled/Model Spec projects. It samples warehouse data, infers likely column meaning, and returns confidence-scored evidence that agents and humans can review before changing specs.
+The model profiler is a read-only diagnostic command for Bobsled Core/Model Spec projects. It samples warehouse data, infers likely column meaning, and returns confidence-scored evidence that agents and humans can review before changing specs.
 
 ## Command Surface
 
 ```bash
-dogsled model profile <table> [options]
-dogsled model profile suggest cleaning <table> [options]
+bobsled model profile <table> [options]
+bobsled model profile suggest cleaning <table> [options]
 ```
 
 Options:
@@ -233,7 +233,7 @@ The JSON subfield detector performs real `JSON.parse`; strings that merely look 
 Use `--confidence-min` to reduce noise:
 
 ```bash
-dogsled model profile fct_orders --integration ecom --confidence-min 0.9 --json
+bobsled model profile fct_orders --integration ecom --confidence-min 0.9 --json
 ```
 
 Filtering happens after the scan. It removes low-confidence nested inferences, candidates, and suggestions without changing `rowCount`, `sampleSize`, or the underlying sampled evidence.
@@ -242,7 +242,7 @@ Filtering happens after the scan. It removes low-confidence nested inferences, c
 
 For agent-authored modeling or entity graph onboarding:
 
-1. Run `dogsled model validate --integration <handle>`.
+1. Run `bobsled model validate --integration <handle>`.
 2. Profile candidate sources or models with `--json`.
 3. Inspect high-confidence `cleaningSuggestions` before drafting standardization or model expressions.
 4. Inspect `pkCandidates` and `fkCandidates` before setting `primary_key`, `grain`, or `references`.

@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "packages/entity-graph"
   },
   "engines": {
@@ -92,9 +92,9 @@
     "typescript": "catalog:dev-packages",
     "vitest": "catalog:testing"
   },
-  "description": "Declarative identity resolution, survivorship, review, and entity graph workflows for Dogsled.",
+  "description": "Declarative identity resolution, survivorship, review, and entity graph workflows for Bobsled Core.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
@@ -103,9 +103,9 @@
     "identity",
     "survivorship"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   },
   "files": [
     "bin/",

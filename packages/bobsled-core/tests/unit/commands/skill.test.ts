@@ -47,7 +47,7 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
-describe('dogsled skill commands', () => {
+describe('bobsled skill commands', () => {
   it('lists summaries without Markdown bodies', async () => {
     process.chdir(createProject());
     const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
@@ -299,7 +299,7 @@ describe('dogsled skill commands', () => {
 });
 
 describe('resolveSkillProjectRoot', () => {
-  it('uses the supplied working directory even when an ancestor has a Dogsled config', () => {
+  it('uses the supplied working directory even when an ancestor has a Bobsled Core config', () => {
     const root = createRoot();
     writeFileSync(path.join(root, 'bobsled.yml'), 'pipelines: {}\n', 'utf8');
     const nested = path.join(root, 'notes', 'skills');

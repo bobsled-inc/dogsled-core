@@ -300,7 +300,7 @@ describe('CLI protocol', () => {
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain('only supports lookup');
-    expect(result.stderr).toContain('dogsled extract lookup');
+    expect(result.stderr).toContain('bobsled extract lookup');
   });
 
   it('includes non-semantic warnings in validate JSON output', async () => {

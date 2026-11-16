@@ -8,26 +8,26 @@ From the repository root, run `pnpm e2e:golden-path-quickstart`. For a manual ru
 install `@bobsled-inc/bobsled-core` in a new directory and run:
 
 ```bash
-dogsled init my-project
+bobsled init my-project
 cd my-project
 ```
 
 Copy this example's `data/`, `integrations/`, `resources/`, `sources/`, `models/`,
 `extractor.yml`, `model-spec.yml`, and `lake-models.mjs` into that project. Install
-Dogsled locally there so the JavaScript example can import its public exports.
+Bobsled Core locally there so the JavaScript example can import its public exports.
 
 ```bash
-dogsled extract validate local_files
+bobsled extract validate local_files
 for resource in customers products orders; do
-  dogsled extract run --integration local_files "$resource" \
-    | dogsled load run --dest ducklake \
+  bobsled extract run --integration local_files "$resource" \
+    | bobsled load run --dest ducklake \
         --ducklake-catalog-url ducklake:.bobsled/lake/catalog.ducklake \
         --target-schema bronze
 done
-dogsled model validate --integration local_lake
+bobsled model validate --integration local_lake
 node lake-models.mjs
-dogsled query "LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) FROM lake.bronze.order_summary" --db-path query.duckdb
-dogsled doctor --json
+bobsled query "LOAD ducklake; ATTACH 'ducklake:.bobsled/lake/catalog.ducklake' AS lake; SELECT count(*) FROM lake.bronze.order_summary" --db-path query.duckdb
+bobsled doctor --json
 ```
 
 DuckLake downloads its open-source DuckDB extension on first use. The model

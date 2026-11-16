@@ -14,7 +14,7 @@ const SYSTEM = [
   'Select passage_ids from the supplied list. Do not copy quotes or generate evidence metadata.',
 ].join('\n');
 
-/** Inject the call only in tests. The installed module uses Dogsled's shared AI client. */
+/** Inject the call only in tests. The installed module uses Bobsled Core's shared AI client. */
 export function createExecutor(call = generateStructured, { maxOutputTokens = 4096 } = {}) {
   if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 1)
     throw new Error('Configure maxOutputTokens as a positive integer');

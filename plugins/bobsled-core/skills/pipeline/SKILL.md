@@ -1,8 +1,8 @@
 ---
 name: pipeline
-description: Compose and run Dogsled protocol stages from extraction through
-  optional embedding and loading. Use when running an end-to-end pipeline,
-  configuring embeddings, or verifying loaded output.
+description: Compose and run Bobsled Core protocol stages from extraction
+  through optional embedding and loading. Use when running an end-to-end
+  pipeline, configuring embeddings, or verifying loaded output.
 ---
 
 # Run an end-to-end pipeline
@@ -16,18 +16,18 @@ This skill owns composition across extract → optional embed → load. The `ext
 - Destination configuration and load strategy → `loader`.
 - Model Spec model materialization → `bobsled-model-spec`; it is not extraction.
 
-For direct composition, stdout carries Dogsled protocol data and stderr carries structured logs:
+For direct composition, stdout carries Bobsled Core protocol data and stderr carries structured logs:
 
 ```bash
-dogsled extract run --integration <source> <resource> \
-  | dogsled embed --config ./embedder.json \
-  | dogsled load run --dest <destination> ...
+bobsled extract run --integration <source> <resource> \
+  | bobsled embed --config ./embedder.json \
+  | bobsled load run --dest <destination> ...
 ```
 
 For a configured pipeline, use the safe command ladder and destination precautions in `extract-pipelines`:
 
 ```bash
-dogsled runner run <pipeline> --resource <resource>
+bobsled runner run <pipeline> --resource <resource>
 ```
 
 An `embed:` block enriches selected text fields between extraction and loading. Use environment placeholders for credentials, validate stream/field names against resource output, enforce model dimensions and cost budgets, and confirm the destination supports vector columns. Use `BOBSLED_CORE_EMBED_STUB=1` only for wiring tests that intentionally avoid a provider call.
@@ -36,17 +36,17 @@ After running, verify destination row counts, schema, table/load strategy, vecto
 
 ## Detailed direct-CLI reference
 
-Read this only when using the legacy/direct `dogsled pipeline` command rather than dogsled runner orchestration:
+Read this only when using the legacy/direct `bobsled pipeline` command rather than bobsled runner orchestration:
 
-# Dogsled Pipeline — End-to-End Extract + Load
+# Bobsled Core Pipeline — End-to-End Extract + Load
 
-The `dogsled pipeline` command runs extractor + loader together. It has two execution modes:
+The `bobsled pipeline` command runs extractor + loader together. It has two execution modes:
 
 - **Single destination**: extractor stdout is piped directly into one loader subprocess.
 - **Multi-destination fan-out**: extractor stdout is captured once, replayed into multiple loader subprocesses, and extractor state is committed only after every destination succeeds.
 
 A third optional middle stage — the **embedder** — slots between extract and
-load when a `bobsled.yml` pipeline has an `embed:` block. Dogsled spawns the
+load when a `bobsled.yml` pipeline has an `embed:` block. Bobsled Core spawns the
 embedder subprocess automatically; the extractor pipes through it and each
 loaded record gains `<field>_embedding` (`vector`) columns alongside the
 originals. See "Embed Stage" below.
@@ -55,16 +55,16 @@ originals. See "Embed Stage" below.
 
 ```bash
 # Extract all resources for an integration to local parquet
-dogsled pipeline --integration github --format parquet
+bobsled pipeline --integration github --format parquet
 
 # Extract specific resources
-dogsled pipeline repos issues pull_requests --integration github --format parquet
+bobsled pipeline repos issues pull_requests --integration github --format parquet
 
 # Load into DuckDB
-dogsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
 
 # Load into BigQuery with table prefix
-dogsled pipeline --integration vantage \
+bobsled pipeline --integration vantage \
   --dest bigquery \
   --project-id my-project \
   --dataset-id raw \
@@ -73,30 +73,30 @@ dogsled pipeline --integration vantage \
   --load-strategy full_refresh
 
 # Write logs to file (also prints to terminal)
-dogsled pipeline --integration github --format parquet --log-file ./pipeline.log
+bobsled pipeline --integration github --format parquet --log-file ./pipeline.log
 
 # Watch logs live in another terminal
 tail -f ./pipeline.log
 
 # Retry only failed/remaining resources (skip already-loaded ones)
-dogsled pipeline cost_providers costs dashboards users \
+bobsled pipeline cost_providers costs dashboards users \
   --integration vantage --dest bigquery ...
 
 # Custom input values
-dogsled pipeline repos --integration github --format parquet --input org=bobsled-inc
+bobsled pipeline repos --integration github --format parquet --input org=bobsled-inc
 
-# Multi-destination fan-out is driven from bobsled.yml via `dogsled runner run`
-dogsled runner run stripe
+# Multi-destination fan-out is driven from bobsled.yml via `bobsled runner run`
+bobsled runner run stripe
 ```
 
 ## How It Works
 
 ```
-dogsled pipeline repos --integration github --format parquet
+bobsled pipeline repos --integration github --format parquet
         │
         ▼
 ┌──────────────────┐     stdout (JSONL)     ┌──────────────────┐
-│  dogsled extract │ ──────────────────────▶ │  dogsled load  │
+│  bobsled extract │ ──────────────────────▶ │  bobsled load  │
 │  (subprocess)    │                         │  (subprocess)    │
 └──────────────────┘     stderr (logs)       └──────────────────┘
         │                    │                        │
@@ -106,17 +106,17 @@ dogsled pipeline repos --integration github --format parquet
 
 Single-destination pipeline spawns two child processes:
 
-1. **Extractor** — runs `dogsled extract run <resources>` with the specified integration
-2. **Loader** — runs `dogsled load run` with the specified destination config
+1. **Extractor** — runs `bobsled extract run <resources>` with the specified integration
+2. **Loader** — runs `bobsled load run` with the specified destination config
 
 Extractor stdout is piped directly to loader stdin. Both stderr streams write structured JSON logs.
 
 Multi-destination fan-out works differently:
 
 1. Extractor stdout is captured to a temp JSONL file.
-2. Dogsled replays that file into one loader subprocess per named destination.
-3. If every loader exits successfully, Dogsled runs `dogsled extract commit-state` against the captured `STATE` messages.
-4. If any loader fails, Dogsled exits non-zero and leaves extractor state unadvanced so the next run can retry safely.
+2. Bobsled Core replays that file into one loader subprocess per named destination.
+3. If every loader exits successfully, Bobsled Core runs `bobsled extract commit-state` against the captured `STATE` messages.
+4. If any loader fails, Bobsled Core exits non-zero and leaves extractor state unadvanced so the next run can retry safely.
 
 ## Options
 
@@ -170,7 +170,7 @@ Use `--table-prefix` to namespace tables when loading multiple integrations into
 
 ```bash
 export VANTAGE_API_TOKEN=...
-dogsled pipeline --integration vantage \
+bobsled pipeline --integration vantage \
   --dest bigquery \
   --project-id my-project \
   --dataset-id my_dataset \
@@ -180,7 +180,7 @@ dogsled pipeline --integration vantage \
   --log-file ~/vantage.log
 
 export GITHUB_TOKEN=ghp_...
-dogsled pipeline --integration github \
+bobsled pipeline --integration github \
   --dest bigquery \
   --project-id my-project \
   --dataset-id my_dataset \
@@ -199,26 +199,26 @@ If a pipeline run partially fails (e.g. rate limiting), specify only the remaini
 grep '"level":"error"' ~/pipeline.log
 
 # Re-run only the failed/remaining resources
-dogsled pipeline cost_providers costs dashboards \
+bobsled pipeline cost_providers costs dashboards \
   --integration vantage --dest bigquery ...
 ```
 
 **Important:** If a resource uses `for_each` (parent-child extraction), include the parent resource in the retry list even if it already loaded. For example, `costs` depends on `cost_reports` — include both:
 
 ```bash
-dogsled pipeline cost_reports costs --integration vantage ...
+bobsled pipeline cost_reports costs --integration vantage ...
 ```
 
 ### Incremental Updates
 
-For the single-destination path, `dogsled pipeline` passes `--advance-state` to the extractor. Subsequent runs automatically resume from the last durable cursor position:
+For the single-destination path, `bobsled pipeline` passes `--advance-state` to the extractor. Subsequent runs automatically resume from the last durable cursor position:
 
 ```bash
 # First run: extracts all repos
-dogsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
 
 # Second run: only extracts repos updated since last run
-dogsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
 ```
 
 For the multi-destination path, extractor state is deferred until every destination loader succeeds. That is why retries remain safe even when one destination succeeds and another fails.
@@ -228,7 +228,7 @@ For the multi-destination path, extractor state is deferred until every destinat
 When a pipeline has an `embed:` block in `bobsled.yml`, the chain becomes:
 
 ```text
-dogsled extract ──▶ dogsled embed ──▶ dogsled load
+bobsled extract ──▶ bobsled embed ──▶ bobsled load
 ```
 
 The embedder reads SCHEMA/RECORD/BATCH messages from extractor stdout,
@@ -262,7 +262,7 @@ Provider notes:
   must be an env-var placeholder (raw values are rejected).
 - `amazon-bedrock`: `model` + `region` are required; `api_key` is optional —
   set it to `$AWS_BEARER_TOKEN_BEDROCK` for Bedrock API-key auth, or omit and
-  Dogsled falls back to the AWS SDK credential chain (`AWS_PROFILE`, instance
+  Bobsled Core falls back to the AWS SDK credential chain (`AWS_PROFILE`, instance
   role, SSO, etc.).
 - `ollama`: local/free; `base_url` defaults to `http://127.0.0.1:11434/api`.
 
@@ -277,16 +277,16 @@ type from the SCHEMA message automatically.
 Standalone:
 
 ```bash
-# Inside a pipeline run, Dogsled wires this for you. Standalone use:
-dogsled extract run issues_graphql --integration linear \
-  | dogsled embed run --config embed.json \
-  | dogsled load run --dest duckdb --db-path ./data.duckdb
+# Inside a pipeline run, Bobsled Core wires this for you. Standalone use:
+bobsled extract run issues_graphql --integration linear \
+  | bobsled embed run --config embed.json \
+  | bobsled load run --dest duckdb --db-path ./data.duckdb
 ```
 
 Stub mode for testing without provider credentials:
 
 ```bash
-BOBSLED_CORE_EMBED_STUB=1 dogsled pipeline ...   # emits zero-filled vectors
+BOBSLED_CORE_EMBED_STUB=1 bobsled pipeline ...   # emits zero-filled vectors
 ```
 
 ### Model Spec source scaffold pre-fill
@@ -345,20 +345,20 @@ pipelines:
 Run it locally:
 
 ```bash
-dogsled runner run stripe
+bobsled runner run stripe
 ```
 
 Operational notes:
 
 - `destination` and `destinations` are mutually exclusive per pipeline.
 - Named file destinations (`local`, `gcs`, `s3`) must set `format` explicitly.
-- JSON logs remain machine-parseable in fan-out mode; Dogsled wraps loader log lines with a `destination` field instead of prefixing plain text.
+- JSON logs remain machine-parseable in fan-out mode; Bobsled Core wraps loader log lines with a `destination` field instead of prefixing plain text.
 
 ## Troubleshooting
 
 **"The --format option is required for local and gcs destinations"** — Add `--format parquet` (or jsonl, csv, arrow).
 
-**Pipeline hangs** — Check if the API token is valid. Run the extractor standalone first: `dogsled extract run repos --integration github --limit 5`
+**Pipeline hangs** — Check if the API token is valid. Run the extractor standalone first: `bobsled extract run repos --integration github --limit 5`
 
 **429 Too Many Requests** — The extractor retries with exponential backoff automatically. If it still fails, the integration's `rate_limit.requests_per_second` may be too high for the API. Lower it in `integration.yml`.
 
@@ -377,7 +377,7 @@ consumer routed through this compatibility skill receives the complete contract.
 
 ## Pipeline configuration files: orchestration
 
-The root `bobsled.yml` or `bobsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
+The root `bobsled.yml` or `bobsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Bobsled Core merges those fragments by declared pipeline and destination names.
 
 An extract pipeline pulls explicitly named resources from one source and loads them into one or more named destinations:
 
@@ -417,7 +417,7 @@ Rules:
 ### Static input matrices
 
 Use `input_matrix` when one Resource needs a fixed set of typed request
-combinations. Dogsled expands the axes in authored order and sends every tuple
+combinations. Bobsled Core expands the axes in authored order and sends every tuple
 through one extractor stream and destination table:
 
 ```yaml
@@ -446,7 +446,7 @@ first release supports matrices only on Resources with explicit
 `extract.incremental.strategy: full_refresh`, because tuple-specific state is
 not yet partitioned for cursor or filter strategies.
 
-Use one matrix per Resource. Dogsled includes the failing tuple in structured
+Use one matrix per Resource. Bobsled Core includes the failing tuple in structured
 progress diagnostics and keeps all successful tuples in the same output stream.
 
 ### Snowflake source warehouse selection
@@ -469,7 +469,7 @@ pipelines:
 `warehouse` is a stable key from the source connection's `warehouses` map. Use
 the key (for example `large`), never the provider warehouse name stored as its
 value (for example `LARGE_WH`). Omit the field to keep the source connection's
-default warehouse. Dogsled rejects unknown IDs, sources without a warehouse map,
+default warehouse. Bobsled Core rejects unknown IDs, sources without a warehouse map,
 non-Snowflake sources, and per-resource `warehouse` overrides.
 
 This selector changes only the Snowflake **source extraction session**. It does
@@ -496,10 +496,10 @@ pipelines:
 
 `destination_warehouse` is a stable ID from the managed destination connection,
 not a physical Snowflake name. The managed orchestrator validates the ID and
-resolves it once for execution; Dogsled preserves the ID in manifest v6 and
+resolves it once for execution; Bobsled Core preserves the ID in manifest v6 and
 accepts the resolved physical name only through its trusted programmatic API.
 Omitting the field keeps the saved destination default. It is not supported for
-concrete Dogsled destinations, missing destinations, `destinations` fan-out,
+concrete Bobsled Core destinations, missing destinations, `destinations` fan-out,
 model pipelines, or resource overrides.
 
 A Snowflake-to-Snowflake extract may set both selectors. `warehouse` applies
@@ -618,20 +618,20 @@ Accepted values:
 ### Repairing an existing schema drift
 
 `strict` is intentionally a detector and does not alter the destination. For
-Snowflake, Dogsled provides a narrowly scoped, one-shot reconciliation operation
+Snowflake, Bobsled Core provides a narrowly scoped, one-shot reconciliation operation
 for a known stream. The targeted loader form is
-`dogsled load run --dest snowflake --reconcile-schema <stream>`. An end-to-end
+`bobsled load run --dest snowflake --reconcile-schema <stream>`. An end-to-end
 run must provide protocol input and can resolve a project destination
 integration like this:
 
 ```bash
-dogsled extract run --integration <source> --full-refresh <stream> \
-  | dogsled load run --load-integration <snowflake_destination> \
+bobsled extract run --integration <source> --full-refresh <stream> \
+  | bobsled load run --load-integration <snowflake_destination> \
       --load-strategy full_refresh \
       --reconcile-schema <stream>
 ```
 
-Managed/background agents that cannot invoke a shell use the public Dogsled
+Managed/background agents that cannot invoke a shell use the public Bobsled Core
 runner API instead of trying to call the loader CLI directly:
 
 ```typescript
@@ -650,7 +650,7 @@ await runProjectPipeline({
 or entity resource names as `resources`, resolves them to the exact protocol
 stream names, and must be a subset of the selected resources. A managed task
 adapter should map its validated one-shot repair override to these typed API
-fields. The generated managed manifest command remains unchanged. Dogsled's MCP
+fields. The generated managed manifest command remains unchanged. Bobsled Core's MCP
 server currently exposes read-only `read_source` (and entity-graph reads); it
 does not execute pipelines or loader writes, so an MCP client must use the
 managed adapter's programmatic runner surface.
@@ -688,7 +688,7 @@ cursors for that run.
 
 ### Resource discovery and transports
 
-Use `dogsled integrations show <source>` to discover resources, variants, required environment variables, and transport ids. For a multi-transport source, a canonical entity such as `issues` may have variants such as `issues_graphql` and `issues_mcp`.
+Use `bobsled integrations show <source>` to discover resources, variants, required environment variables, and transport ids. For a multi-transport source, a canonical entity such as `issues` may have variants such as `issues_graphql` and `issues_mcp`.
 
 Resolution precedence is: strict variant name first; otherwise per-resource `via` → pipeline `via` → bundled resource `via` → source `default_transport`. A project-local resource under `resources/<source>/` overrides only the bundled resource with the same declared name; bundled siblings remain available. Single-transport sources ignore `via`. HTTP/REST/GraphQL is normally best for throughput and API-native pagination; MCP is useful when that is the available auth/tool surface. Do not claim one is cheaper or faster without provider evidence.
 
@@ -702,7 +702,7 @@ pipelines:
     resources: [charges, customers]
 ```
 
-Local `dogsled runner run` and `dogsled pipeline` support fan-out by extracting once and replaying to each loader; durable extractor state commits only after every destination succeeds. Scheduling and remote orchestration belong to the caller.
+Local `bobsled runner run` and `bobsled pipeline` support fan-out by extracting once and replaying to each loader; durable extractor state commits only after every destination succeeds. Scheduling and remote orchestration belong to the caller.
 
 An optional `embed:` block sits between extract and load and adds vector fields. It does not change extraction, filters, or cursor semantics. Route provider/model/stream configuration to `pipeline` or `ai-model-roles`, and destination configuration to `loader`. A model pipeline (`type: models`) materializes Model Spec models and is outside this skill.
 
@@ -863,7 +863,7 @@ Compile modes are:
 - `direct_arg`: put the value in an MCP/tool argument.
 - `filter_dsl`: build the provider's native filter expression/DSL.
 
-For `extract.where` pushdown, Dogsled matches the predicate field/operator against `query.filters.<field>.compile`. Matching `http_query` and `direct_arg` bindings push down and are removed from client-side evaluation; unmatched predicates remain client-side. `filter_dsl` is available to the query-resource backend but is not an `extract.where` pushdown mode. A pushed binding therefore carries correctness responsibility: verify that its provider parameter/tool argument has semantics equivalent to the authored predicate.
+For `extract.where` pushdown, Bobsled Core matches the predicate field/operator against `query.filters.<field>.compile`. Matching `http_query` and `direct_arg` bindings push down and are removed from client-side evaluation; unmatched predicates remain client-side. `filter_dsl` is available to the query-resource backend but is not an `extract.where` pushdown mode. A pushed binding therefore carries correctness responsibility: verify that its provider parameter/tool argument has semantics equivalent to the authored predicate.
 
 ## Incremental extraction and state
 
@@ -881,7 +881,7 @@ Choose the strategy explicitly:
 
 For both `filter` and `server_filter`, `initial_lookback_seconds` is mandatory for the first run unless a bookmark or explicit since override already exists; omission causes the run to fail. `lookback_seconds` (default `0`) replays before an existing bookmark for late arrivals. `window_size_seconds` splits the range into positive-sized windows and requires `until_argument`. `value_format` defaults to `iso8601` and may be `iso8601`, `date`, `unix_seconds`, or `unix_milliseconds`; it must match the provider request format and the cursor field's value semantics.
 
-Prefer `extract.incremental` over the accepted legacy top-level placement. The cursor field must be a declared output field. Incremental metadata plus a primary key lets Dogsled infer merge semantics; confirm the resolved load strategy during validation rather than assuming it.
+Prefer `extract.incremental` over the accepted legacy top-level placement. The cursor field must be a declared output field. Incremental metadata plus a primary key lets Bobsled Core infer merge semantics; confirm the resolved load strategy during validation rather than assuming it.
 
 State safety rules:
 
@@ -896,12 +896,12 @@ State safety rules:
 
 Use this order:
 
-1. `dogsled extract validate <source> --semantic-check=strict` — YAML, references, output semantics.
-2. `dogsled extract verify <source>` and `--mock` — static/OpenAPI/fixture and mocked behavior.
-3. For a new or changed HTTP API integration, run `dogsled extract scaffold-test <source>` with credentials. It intentionally rejects MCP, warehouse/database, and file-storage sources; use their source-specific checks plus a bounded extractor preview instead.
-4. `dogsled runner validate --strict` — resolve pipelines, resources, inputs, transports, destinations, and secrets.
+1. `bobsled extract validate <source> --semantic-check=strict` — YAML, references, output semantics.
+2. `bobsled extract verify <source>` and `--mock` — static/OpenAPI/fixture and mocked behavior.
+3. For a new or changed HTTP API integration, run `bobsled extract scaffold-test <source>` with credentials. It intentionally rejects MCP, warehouse/database, and file-storage sources; use their source-specific checks plus a bounded extractor preview instead.
+4. `bobsled runner validate --strict` — resolve pipelines, resources, inputs, transports, destinations, and secrets.
 5. Verify required environment references without printing secret values.
-6. Point the pipeline at a disposable destination, then run one resource with `dogsled runner run <pipeline> --resource <resource>`.
+6. Point the pipeline at a disposable destination, then run one resource with `bobsled runner run <pipeline> --resource <resource>`.
 7. Verify rows, schema, table names/load strategy, cursor behavior, stderr summaries, and destination queries.
 8. Restore the intended destination and review pipeline configuration changes. Scheduling belongs to the caller.
 
@@ -909,7 +909,7 @@ Do not put `--limit` on a real state-advancing acceptance run: it is a safe prev
 
 ## Troubleshooting map
 
-- Unknown/duplicate resource: inspect `dogsled integrations show`, strict variant names, `via` resolution, and the explicit `resources:` list.
+- Unknown/duplicate resource: inspect `bobsled integrations show`, strict variant names, `via` resolution, and the explicit `resources:` list.
 - Missing secret/auth failure: compare integration auth metadata and `$ENV_VAR` references; rerun validation. Never print secret values.
 - Zero records: inspect inputs, pagination, `record_path`, output mapping, predicate summaries, relative-duration clock behavior, and pushdown equivalence.
 - Repeated/omitted records: inspect pagination tokens/order, primary keys, incremental cursor ordering/lookback, and whether a preview run was mistaken for state advancement.

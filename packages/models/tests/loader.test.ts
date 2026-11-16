@@ -54,7 +54,7 @@ describe('@bobsled-inc/models', () => {
     for (const entry of listModelPackages()) {
       const bundle = getModelPackage(entry.name);
       for (const spec of [...bundle.stagingSpecs, ...bundle.martSpecs]) {
-        expect(spec.owner).not.toBe('dogsled');
+        expect(spec.owner).not.toBe('bobsled');
       }
     }
   });

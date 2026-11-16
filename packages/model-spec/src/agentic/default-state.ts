@@ -85,7 +85,7 @@ function duckDbRequired(key?: AgenticRunKey): AgenticStateError {
     message: key
       ? `Run "${key.id}" is saved in a DuckDB state file, but @duckdb/node-api is not available.`
       : 'Incremental progress is saved in a DuckDB state file, but @duckdb/node-api is not available.',
-    hint: 'Install @duckdb/node-api, then resume. Dogsled will not start this work again from older state.',
+    hint: 'Install @duckdb/node-api, then resume. Bobsled Core will not start this work again from older state.',
   });
 }
 

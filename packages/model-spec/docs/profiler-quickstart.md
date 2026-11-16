@@ -1,6 +1,6 @@
 # Model Profiler Quick Start
 
-Use `dogsled model profile` when you want a fast, read-only scan of a warehouse table or Model Spec model before authoring model specs, cleaning rules, or entity graph configs.
+Use `bobsled model profile` when you want a fast, read-only scan of a warehouse table or Model Spec model before authoring model specs, cleaning rules, or entity graph configs.
 
 The profiler runs two SQL queries through the active integration or a custom runner:
 
@@ -11,14 +11,14 @@ It then emits a confidence-scored report with column inferences, key candidates,
 
 ## Prerequisites
 
-- A Dogsled/Model Spec project with `integrations/`, `sources/`, and optionally `models/`.
+- A Bobsled Core/Model Spec project with `integrations/`, `sources/`, and optionally `models/`.
 - An integration that can run warehouse SQL, or a custom runner module with `query(sql)`.
-- The unified CLI (`dogsled model ...` or `dogsled model ...`) or the standalone `model` binary.
+- The unified CLI (`bobsled model ...` or `bobsled model ...`) or the standalone `model` binary.
 
 ## 1. Validate the project
 
 ```bash
-dogsled model validate --integration <handle>
+bobsled model validate --integration <handle>
 ```
 
 Fix validation errors before profiling. The profiler can resolve Model Spec source refs and model refs only when the project loads cleanly.
@@ -28,13 +28,13 @@ Fix validation errors before profiling. The profiler can resolve Model Spec sour
 Use the source ref from `sources/<connection>/<name>.yml`:
 
 ```bash
-dogsled model profile ecom.raw_customers --integration ecom --json
+bobsled model profile ecom.raw_customers --integration ecom --json
 ```
 
 Useful flags:
 
 ```bash
-dogsled model profile ecom.raw_customers \
+bobsled model profile ecom.raw_customers \
   --integration ecom \
   --sample-size 1000 \
   --confidence-min 0.8 \
@@ -50,7 +50,7 @@ dogsled model profile ecom.raw_customers \
 Use the model name from `models/<name>.yml`:
 
 ```bash
-dogsled model profile fct_orders --integration ecom --json
+bobsled model profile fct_orders --integration ecom --json
 ```
 
 When the model has column `references`, the CLI samples the referenced target model and passes those values into FK inference. For example:
@@ -67,7 +67,7 @@ Profiling `fct_orders` can then emit an evidence-backed FK candidate from `CUSTO
 ## 4. Ask only for cleaning suggestions
 
 ```bash
-dogsled model profile suggest cleaning ecom.raw_customers \
+bobsled model profile suggest cleaning ecom.raw_customers \
   --integration ecom \
   --confidence-min 0.9 \
   --json
@@ -92,7 +92,7 @@ export async function query(sql) {
 ```
 
 ```bash
-dogsled model profile raw_customers \
+bobsled model profile raw_customers \
   --runner ./profile-runner.mjs \
   --integration ecom \
   --json

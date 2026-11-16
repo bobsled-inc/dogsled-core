@@ -1,13 +1,13 @@
 ---
 name: bobsled-get-started
-description: Set up or extend a Dogsled environment with the user's own
+description: Set up or extend a Bobsled Core environment with the user's own
   connections, sources, pipelines, and models. Use for practical project setup;
   guided example lessons live in bobsled-tutorials.
 ---
 
-# Get started with Dogsled
+# Get started with Bobsled Core
 
-Help the user turn their own data into a working Dogsled project. Start from their
+Help the user turn their own data into a working Bobsled Core project. Start from their
 question or desired result, configure the needed connections and sources, and
 build the smallest useful pipeline and model. This is practical setup, not a
 chapter-based tutorial. If they ask to learn with TV Night or Retail, use
@@ -29,25 +29,25 @@ instead of initializing again.
 
 ## Prepare the environment
 
-Check Node.js 24+ and the installed Dogsled CLI. If needed, install
-`@bobsled-inc/bobsled-core` in the user's project and use `npx dogsled`. Install optional
-warehouse drivers next to Dogsled only for the chosen destination.
+Check Node.js 24+ and the installed Bobsled Core CLI. If needed, install
+`@bobsled-inc/bobsled-core` in the user's project and use `npx bobsled`. Install optional
+warehouse drivers next to Bobsled Core only for the chosen destination.
 
 For a new project, use `bobsled-init` for the guided setup flow or minimal
-`dogsled init` scaffold. That skill owns project creation; continue here for
+`bobsled init` scaffold. That skill owns project creation; continue here for
 connections, sources and models after it finishes. For an existing project,
 configure only the missing pieces. Use `bobsled-project-layout` when choosing
 where new definitions belong.
 
 Confirm the intended destination before loading. For a simple local project,
-recommend DuckDB (`dogsled init <name> --duckdb`); plain `init` defaults to
+recommend DuckDB (`bobsled init <name> --duckdb`); plain `init` defaults to
 DuckLake. Preserve an existing destination unless the user asks to change it.
 
 ## Connect data and build the first result
 
 Read the relevant Built-in Skills as each step needs them through the installed
-Dogsled Core plugin. If they are unavailable, use the installed CLI help and
-Dogsled documentation for the required commands; do not assume a source checkout
+Bobsled Core plugin. If they are unavailable, use the installed CLI help and
+Bobsled Core documentation for the required commands; do not assume a source checkout
 exists in the user’s project.
 
 - **Connections and extraction:** use `extract-pipelines` for supported API
@@ -77,8 +77,8 @@ needs AI, and agree on provider, model, scope and spend before paid calls.
 
 ## Validate and hand over
 
-Use `dogsled doctor --json` to check project configuration. For a rendered setup
-bundle, also run `dogsled setup doctor`. Validate the relevant extraction,
+Use `bobsled doctor --json` to check project configuration. For a rendered setup
+bundle, also run `bobsled setup doctor`. Validate the relevant extraction,
 pipeline and model definitions with their owning skill's commands before execution.
 Run only within the user's authorized read, write and spending scope; reuse
 explicit authorization already given.
@@ -92,4 +92,4 @@ Finish with the files created or changed, configured sources and destination,
 checks performed, a useful query and its result when run, and any remaining
 blocker. Distinguish configured, validated and successfully run. Leave enough
 local setup context to resume without recording secrets. Scheduling is a separate
-choice; Dogsled does not provision a hosted runner.
+choice; Bobsled Core does not provision a hosted runner.

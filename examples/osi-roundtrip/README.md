@@ -21,10 +21,10 @@ concepts; the semantic models and metrics supply transformations and calculation
 In a fresh copy of this example, before creating the `converted/` folder below:
 
 ```bash
-dogsled ontology describe shop --concept Order --yaml
-dogsled ontology validate --strict --json
-dogsled ontology export --ossie-version 0.2.0.dev0 --out ../shop-ontology-export
-dogsled ontology import ../shop-ontology-export/*.yml --json
+bobsled ontology describe shop --concept Order --yaml
+bobsled ontology validate --strict --json
+bobsled ontology export --ossie-version 0.2.0.dev0 --out ../shop-ontology-export
+bobsled ontology import ../shop-ontology-export/*.yml --json
 ```
 
 The export directory must be new. It contains the ontology, its mapping, and the
@@ -38,12 +38,12 @@ concepts, mappings and source references again.
 
 ## Round-trip the semantic models
 
-To repeat manually after installing Dogsled in this example:
+To repeat manually after installing Bobsled Core in this example:
 
 ```bash
-dogsled model validate --integration local_duckdb
-dogsled model ossie export --all --name shop --ossie-version 0.2.0.dev0 --out shop.ossie.yml
-dogsled model ossie import shop.ossie.yml --out converted
+bobsled model validate --integration local_duckdb
+bobsled model ossie export --all --name shop --ossie-version 0.2.0.dev0 --out shop.ossie.yml
+bobsled model ossie import shop.ossie.yml --out converted
 ```
 
 Copy the local `integrations/` into `converted/` before validating there; exchange

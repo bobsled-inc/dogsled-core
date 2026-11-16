@@ -4,9 +4,9 @@
  * dependency on `@bobsled-inc/bobsled-core`) route their CLI output through
  * these helpers so they never call `process.stdout.write` /
  * `process.stderr.write` directly. This preserves dependency layering:
- * Dogsled depends on protocol, never the reverse.
+ * Bobsled Core depends on protocol, never the reverse.
  *
- * Dogsled's full `lib/output/formatter.ts` (chalk-aware human formatting,
+ * Bobsled Core's full `lib/output/formatter.ts` (chalk-aware human formatting,
  * spinner control, table rendering) layers on top of these primitives.
  */
 

@@ -93,7 +93,7 @@ export interface PipelineTemplateInput {
 
 /**
  * Input describing a `kind: 'models'` pipeline (authored or synthetic). The
- * host application reads these out of the manifest to decide which `dogsled model run
+ * host application reads these out of the manifest to decide which `bobsled model run
  * <models...>` invocation to schedule per cron tick.
  */
 export interface ModelPipelineTemplateInput {
@@ -148,7 +148,7 @@ export interface EntityGraphPipelineTemplateInput {
 
 /**
  * Input describing a `kind: 'reverse-etl'` pipeline sourced from `syncs/*.yml`.
- * Each manifest tick invokes `dogsled sync run <sync_name> --json`; the sync spec
+ * Each manifest tick invokes `bobsled sync run <sync_name> --json`; the sync spec
  * owns the source projection, action reference, entity key, and input mapping.
  */
 export interface ReverseEtlPipelineTemplateInput {
@@ -755,8 +755,8 @@ function buildModelPipelineManifest(input: ModelPipelineTemplateInput): ModelPip
  *
  * `prepare_chunks` is deliberately absent here: it is a lakehouse-execution
  * adapter step (NOT an `entity-graph` CLI call), front-injected by the host application's
- * config synthesizer when `chunk_sources` are present. Dogsled never emits it as a
- * command node; the Host-application construction executor owns it as a pre-step. A Dogsled
+ * config synthesizer when `chunk_sources` are present. Bobsled Core never emits it as a
+ * command node; the Host-application construction executor owns it as a pre-step. A Bobsled Core
  * CLI equivalent, if ever wanted, is a separate ticket.
  */
 const ENTITY_GRAPH_PHASE_COMMAND_PREFIX: Record<EntityGraphPhase, string[]> = {
@@ -847,7 +847,7 @@ function buildEntityGraphPipelineManifest(
   // into construction at runtime today. This drives the v3 `nodes`/`edges`
   // ONLY — never the manifest's `phases` field (see below). `prepare_chunks` is
   // intentionally NOT injected: it is the Host-application construction executor's
-  // responsibility (a lakehouse adapter pre-step), not a Dogsled CLI command. See
+  // responsibility (a lakehouse adapter pre-step), not a Bobsled Core CLI command. See
   // `withInjectedProfilePhase` and `ENTITY_GRAPH_PHASE_COMMAND_PREFIX`.
   const nodePhases = withInjectedProfilePhase(input.phases);
   const seenIds = new Map<string, EntityGraphPhase>();

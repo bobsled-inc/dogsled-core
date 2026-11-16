@@ -33,7 +33,7 @@ jobs:
       - name: Validate change type with trusted base code
         run: node scripts/ci/validate-pr-change-type.mjs
       - name: Check DCO sign-offs from commit metadata
-        if: github.repository == 'bobsled-inc/dogsled-core' && github.event.repository.private == false
+        if: github.repository == 'bobsled-inc/bobsled-core' && github.event.repository.private == false
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -50,13 +50,13 @@ jobs:
           }
 
           async function checkDco({ event, repository, request }) {
-            if (repository !== 'bobsled-inc/dogsled-core' || event.repository?.private !== false) return;
+            if (repository !== 'bobsled-inc/bobsled-core' || event.repository?.private !== false) return;
             const pr = event.pull_request;
             if (!Number.isSafeInteger(pr?.number) || pr.number < 1) throw new Error('Invalid PR number.');
             if (!Number.isSafeInteger(pr.commits) || pr.commits < 1 || pr.commits > 250) throw new Error('Cannot verify the complete PR commit list (maximum 250).');
             const commits = [];
             for (let page = 1; page <= Math.ceil(pr.commits / 100); page += 1) {
-              const batch = await request(`/repos/bobsled-inc/dogsled-core/pulls/${pr.number}/commits?per_page=100&page=${page}`);
+              const batch = await request(`/repos/bobsled-inc/bobsled-core/pulls/${pr.number}/commits?per_page=100&page=${page}`);
               if (!Array.isArray(batch)) throw new Error('Invalid commits response.');
               commits.push(...batch);
             }

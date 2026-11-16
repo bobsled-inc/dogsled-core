@@ -39,7 +39,7 @@ jobs:
   # Phase 1: version decision (fast, gates everything else)
   # ---------------------------------------------------------------------------
   prepare:
-    if: github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main'
+    if: github.repository == 'bobsled-inc/bobsled-core' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -108,7 +108,7 @@ jobs:
   # Mirrors ci.yml `checks`: build, types, lint, structural, security guards.
   release-checks:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' &&
+      github.repository == 'bobsled-inc/bobsled-core' &&
       needs.prepare.outputs.release == 'true'
     needs: prepare
     runs-on: ubuntu-latest
@@ -147,7 +147,7 @@ jobs:
   # Mirrors ci.yml `unit`: four partitions, each builds its own closure.
   release-unit:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' &&
+      github.repository == 'bobsled-inc/bobsled-core' &&
       needs.prepare.outputs.release == 'true'
     needs: prepare
     runs-on: ubuntu-latest
@@ -179,7 +179,7 @@ jobs:
   # Validates the packed tarball can be imported and queried.
   release-packed-catalog:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' &&
+      github.repository == 'bobsled-inc/bobsled-core' &&
       needs.prepare.outputs.release == 'true'
     needs: prepare
     runs-on: ubuntu-latest
@@ -214,7 +214,7 @@ jobs:
   # release artifact.  Runs in parallel with the check and unit jobs.
   release-audit:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' &&
+      github.repository == 'bobsled-inc/bobsled-core' &&
       needs.prepare.outputs.release == 'true'
     needs: prepare
     runs-on: ubuntu-latest
@@ -278,7 +278,7 @@ jobs:
   # ---------------------------------------------------------------------------
   release-checks-ok:
     if: >-
-      always() && github.repository == 'bobsled-inc/dogsled-core' &&
+      always() && github.repository == 'bobsled-inc/bobsled-core' &&
       needs.prepare.outputs.release == 'true'
     needs: [prepare, release-checks, release-unit, release-packed-catalog, release-audit]
     runs-on: ubuntu-latest
@@ -303,7 +303,7 @@ jobs:
   # ---------------------------------------------------------------------------
   notify:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main' &&
+      github.repository == 'bobsled-inc/bobsled-core' && github.ref == 'refs/heads/main' &&
       needs.release-checks-ok.result == 'success' &&
       needs.prepare.outputs.release == 'true'
     needs: [prepare, release-checks-ok]
@@ -374,7 +374,7 @@ jobs:
 
   approve:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' &&
+      github.repository == 'bobsled-inc/bobsled-core' &&
       needs.release-checks-ok.result == 'success' &&
       needs.prepare.outputs.release == 'true'
     needs: [prepare, release-checks-ok, notify]
@@ -396,7 +396,7 @@ jobs:
 
   tag:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' && github.ref == 'refs/heads/main' &&
+      github.repository == 'bobsled-inc/bobsled-core' && github.ref == 'refs/heads/main' &&
       inputs.mode != 'retry' && needs.prepare.outputs.release == 'true'
     needs: [prepare, release-checks-ok, approve]
     environment: release-tag
@@ -429,7 +429,7 @@ jobs:
 
   publish:
     if: >-
-      !cancelled() && github.repository == 'bobsled-inc/dogsled-core' &&
+      !cancelled() && github.repository == 'bobsled-inc/bobsled-core' &&
       needs.prepare.result == 'success' && needs.approve.result == 'success' &&
       needs.release-checks-ok.result == 'success' &&
       needs.prepare.outputs.release == 'true' &&
@@ -489,7 +489,7 @@ jobs:
 
   finalize:
     if: >-
-      !cancelled() && github.repository == 'bobsled-inc/dogsled-core' &&
+      !cancelled() && github.repository == 'bobsled-inc/bobsled-core' &&
       needs.prepare.result == 'success' && needs.publish.result == 'success'
     needs: [prepare, release-checks-ok, publish]
     runs-on: ubuntu-latest
@@ -528,7 +528,7 @@ jobs:
   # ---------------------------------------------------------------------------
   release-status:
     if: >-
-      always() && github.repository == 'bobsled-inc/dogsled-core' &&
+      always() && github.repository == 'bobsled-inc/bobsled-core' &&
       github.ref == 'refs/heads/main' && needs.notify.outputs.notified == 'true'
     needs: [prepare, notify, approve, tag, publish, finalize]
     runs-on: ubuntu-latest

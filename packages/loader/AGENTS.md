@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-11-12 -->
 
-Reads Dogsled protocol messages from stdin and loads data into destinations (files or databases).
+Reads Bobsled Core protocol messages from stdin and loads data into destinations (files or databases).
 
 ---
 

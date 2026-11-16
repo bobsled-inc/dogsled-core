@@ -1,7 +1,7 @@
 # TV Night artifact design
 
 The CLI renders the validated onboarding snapshot through the portable HTML
-composition in `src/runtime/onboarding/`. It uses Dogsled's typography, colours,
+composition in `src/runtime/onboarding/`. It uses Bobsled Core's typography, colours,
 logomark and icons, with licensed fonts embedded for offline use. Asset inputs and
 the regeneration command are documented in `assets/README.md` beside the renderer.
 
@@ -30,10 +30,10 @@ the regeneration command are documented in `assets/README.md` beside the rendere
 
 The HTML explores a timestamped snapshot. It never queries the database, executes
 commands or writes project files. Refreshing the browser does not refresh evidence.
-The agent runs `dogsled onboarding render` to regenerate the same page.
+The agent runs `bobsled onboarding render` to regenerate the same page.
 
 Mark as reviewed prepares and copies a request for the agent, including
-`dogsled onboarding review <step> --checkpoint <sha256>` followed by a render. The
+`bobsled onboarding review <step> --checkpoint <sha256>` followed by a render. The
 hash identifies the tables the learner saw. If those results changed, the CLI
 rejects the request with drift exit code 3 so the learner can review the new result.
 Malformed fingerprints use validation exit code 2. The existing review command

@@ -14,7 +14,7 @@ Use this skill when a user wants Hunter to derive professional email addresses f
 2. Recommend a seed schema with `first_name`, `last_name`, and `company_domain`.
 3. Generate or update the `extract-intents.yml` step block for `hunter/email_finder`.
 4. Warn that Hunter Email Finder is billed per request.
-5. Recommend `dogsled extract estimate --plan <name>` before `dogsled extract run --plan <name>`.
+5. Recommend `bobsled extract estimate --plan <name>` before `bobsled extract run --plan <name>`.
 
 ## Seed Schema
 

@@ -1,7 +1,7 @@
 /**
- * `dogsled entity-graph mentions review export` CLI.
+ * `bobsled entity-graph mentions review export` CLI.
  *
- * Reuses the `dogsled model review export` envelope shape per the locked
+ * Reuses the `bobsled model review export` envelope shape per the locked
  * decision — same CSV header / row format, with mention-specific data
  * columns appended after the standard envelope. Lives as a thin wrapper
  * around an upstream review-export query the runtime emits.

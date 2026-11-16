@@ -29,10 +29,10 @@ import { openBobsledProject, projectFileIssues, type BobsledProject } from './pr
 import type { BobsledConfig } from './schema.js';
 
 /**
- * Resolve the root of the Model Spec project a Dogsled config points at.
+ * Resolve the root of the Model Spec project a Bobsled Core config points at.
  *
- * Dogsled's top-level `models: { project: <path> }` (when present) names the Model Spec
- * project root. When the field is absent, the Model Spec project is the Dogsled
+ * Bobsled Core's top-level `models: { project: <path> }` (when present) names the Model Spec
+ * project root. When the field is absent, the Model Spec project is the Bobsled Core
  * project itself. Models are the `type: model` files anywhere below that root.
  */
 export function resolveModelProjectRoot(config: BobsledConfig, projectRoot: string): string {
@@ -40,9 +40,9 @@ export function resolveModelProjectRoot(config: BobsledConfig, projectRoot: stri
 }
 
 /**
- * Model metadata for the Model Spec project a Dogsled config points at, read from the
- * given project's index when the Model Spec project is the Dogsled project itself. A
- * separate Model Spec project is opened like the Dogsled project: one that does not
+ * Model metadata for the Model Spec project a Bobsled Core config points at, read from the
+ * given project's index when the Model Spec project is the Bobsled Core project itself. A
+ * separate Model Spec project is opened like the Bobsled Core project: one that does not
  * exist has no models, so validation reports the missing names, and its
  * blocking problems raise a `ProjectIndexError`, since its model runs would
  * stop on them.

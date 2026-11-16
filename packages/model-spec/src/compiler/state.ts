@@ -33,7 +33,7 @@ export interface ModelRunState {
   /**
    * Snapshot of the model's incremental strategy at last successful run
    * (`merge` | `delete_insert` | `append`). Omitted for non-incremental models
-   * and for state written by Dogsled versions prior to drift-detection.
+   * and for state written by Bobsled Core versions prior to drift-detection.
    */
   strategy?: string;
   /**
@@ -50,7 +50,7 @@ export interface ModelRunState {
   incrementalFilter?: string;
   /** `fail` | `full_refresh`. Stored to detect flips between policies. */
   onSchemaChange?: string;
-  /** Resolved target schema as Dogsled materialized to on the last run. */
+  /** Resolved target schema as Bobsled Core materialized to on the last run. */
   targetSchema?: string;
   /** Resolved target database (optional in single-database integrations). */
   targetDatabase?: string;
@@ -61,7 +61,7 @@ export interface ModelRunState {
    */
   priorFqName?: string;
   /**
-   * Forward-compatibility: unknown fields written by a newer Dogsled version
+   * Forward-compatibility: unknown fields written by a newer Bobsled Core version
    * are preserved on round-trip. Indexer is `unknown` to avoid implying we
    * understand the shape.
    */

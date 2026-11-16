@@ -125,7 +125,7 @@ const ENTITY_GRAPH_API_ROUTES: readonly ApiRouteRow[] = [
   {
     route: '/api/entity-graph/decide',
     method: 'POST',
-    purpose: 'Persist a review decision via dogsled entity-graph',
+    purpose: 'Persist a review decision via bobsled entity-graph',
   },
   {
     route: '/api/entity-graph/agent-review',
@@ -195,7 +195,7 @@ export default function DocsPage() {
               Bobsled Core Explorer Documentation
             </h1>
             <P>
-              A local-first web UI for exploring, configuring, and demoing the Dogsled data
+              A local-first web UI for exploring, configuring, and demoing the Bobsled Core data
               engineering toolkit. Browse {integrations.length} integrations, {models.length} model
               bundles, build pipelines, preview data, and chat with an AI agent.
             </P>
@@ -235,9 +235,9 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
           <Section id="pages" title="Pages">
             <SubSection id="dashboard" title="Dashboard" href="/">
               <P>
-                Your launchpad for exploring Dogsled. Shows stats at a glance, all five Dogsled
-                capabilities (Extract, Load, Model, Pipeline, Entity Graph), quick action cards,
-                integrations by category, all 7 load destinations, model bundles, and popular
+                Your launchpad for exploring Bobsled Core. Shows stats at a glance, all five Bobsled
+                Core capabilities (Extract, Load, Model, Pipeline, Entity Graph), quick action
+                cards, integrations by category, all 7 load destinations, model bundles, and popular
                 integrations.
               </P>
             </SubSection>
@@ -289,7 +289,7 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
             <SubSection id="agent" title="Agent Chat" href="/agent">
               <P>
                 Conversational AI assistant powered by your local Claude Code installation. Ask
-                freeform questions about Dogsled&apos;s integrations, models, pipelines, and
+                freeform questions about Bobsled Core&apos;s integrations, models, pipelines, and
                 capabilities.
               </P>
               <FeatureList
@@ -422,13 +422,13 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
 
             <SubSection id="terminal" title="Terminal" href="/terminal">
               <P>
-                Interactive Dogsled CLI runner. Commands are automatically prefixed with{' '}
-                <Code>dogsled</Code> — just type <Code>integrations list --type api</Code>.
+                Interactive Bobsled Core CLI runner. Commands are automatically prefixed with{' '}
+                <Code>bobsled</Code> — just type <Code>integrations list --type api</Code>.
               </P>
               <FeatureList
                 items={[
                   '8 quick command buttons (list integrations, show stripe, help pages, etc.)',
-                  'Streaming output with Dogsled protocol parsing (LOG, METRIC, PROGRESS, SCHEMA, RECORD)',
+                  'Streaming output with Bobsled Core protocol parsing (LOG, METRIC, PROGRESS, SCHEMA, RECORD)',
                   'Color-coded messages by type and severity',
                   'Command history with up/down arrow keys',
                   'Stop button and Ctrl+C support',
@@ -439,7 +439,7 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
             <SubSection id="docs-page" title="Docs" href="/docs">
               <P>
                 The in-product reference you are reading now. It mirrors the shipped explorer
-                routes, API surface, and high-value Dogsled CLI commands.
+                routes, API surface, and high-value Bobsled Core CLI commands.
               </P>
             </SubSection>
 
@@ -466,13 +466,13 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
 
             <SubSection id="setup" title="Setup Wizard" href="/setup">
               <P>
-                Chat-style guided configuration. Connects to Dogsled&apos;s setup APIs when
+                Chat-style guided configuration. Connects to Bobsled Core&apos;s setup APIs when
                 available, falls back to built-in presets otherwise.
               </P>
               <FeatureList
                 items={[
                   'Describe your goal in plain English',
-                  'Get AI-powered preset recommendation (when dogsled CLI available)',
+                  'Get AI-powered preset recommendation (when bobsled CLI available)',
                   '5 presets: SaaS Analytics, CRM RevOps, Ad Spend, Support Ops, Finance Ops',
                   'Destination selection with descriptions',
                   'Schedule picker',
@@ -517,10 +517,10 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
                   <TableRow
                     cells={['/api/models/[name]', 'GET', 'Model package detail + integration link']}
                   />
-                  <TableRow cells={['/api/command', 'POST', 'Execute dogsled CLI → SSE stream']} />
+                  <TableRow cells={['/api/command', 'POST', 'Execute bobsled CLI → SSE stream']} />
                   <TableRow cells={['/api/query', 'POST', 'SQL query against local DuckDB']} />
                   <TableRow
-                    cells={['/api/setup/describe', 'GET', 'Setup catalog from dogsled CLI']}
+                    cells={['/api/setup/describe', 'GET', 'Setup catalog from bobsled CLI']}
                   />
                   <TableRow
                     cells={['/api/setup/recommend', 'POST', 'Goal → pipeline recommendation']}
@@ -568,7 +568,7 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
           <Section id="architecture" title="Architecture">
             <CodeBlock>{`Browser ──→ Next.js App ──→ @bobsled-inc/integrations (YAML catalog)
                          ──→ @bobsled-inc/models (model bundles)
-                         ──→ dogsled CLI subprocess (commands, queries, setup)
+                         ──→ bobsled CLI subprocess (commands, queries, setup)
                          ──→ claude CLI subprocess (agent chat)`}</CodeBlock>
             <P>
               The explorer is a Next.js 15 app using the App Router. Integration and model data is
@@ -582,7 +582,7 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
                   'No database — all data from YAML specs or CLI subprocesses',
                   'Server-Sent Events for streaming command output and agent chat',
                   'YAML cache clearing after every request to prevent memory leaks',
-                  'Command whitelist — only allowed dogsled subcommands can execute',
+                  'Command whitelist — only allowed bobsled subcommands can execute',
                   'Dynamic agent system prompt built from actual catalog data',
                   'Pipeline config passed to export page via base64 URL parameter',
                   'ESM bundler mode — Next.js uses its own bundler, not NodeNext',
@@ -592,7 +592,7 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
           </Section>
 
           <Section id="reference" title="Reference">
-            <SubSection id="cli-commands" title="Useful Dogsled CLI Commands">
+            <SubSection id="cli-commands" title="Useful Bobsled Core CLI Commands">
               <div className="bg-card border border-border rounded-lg overflow-hidden mb-3">
                 <table className="w-full text-xs">
                   <thead>
@@ -607,31 +607,31 @@ pnpm --filter @bobsled-inc/explorer dev         # http://localhost:3333`}</CodeB
                   </thead>
                   <tbody>
                     <TableRow
-                      cells={['dogsled integrations list', 'List all available integrations']}
+                      cells={['bobsled integrations list', 'List all available integrations']}
                     />
                     <TableRow
-                      cells={['dogsled integrations show <name>', 'Show integration details']}
+                      cells={['bobsled integrations show <name>', 'Show integration details']}
                     />
                     <TableRow
                       cells={[
-                        'dogsled extract run <integration>',
+                        'bobsled extract run <integration>',
                         'Extract data from an integration',
                       ]}
                     />
                     <TableRow
                       cells={[
-                        'dogsled pipeline --integration <name>',
+                        'bobsled pipeline --integration <name>',
                         'Extract + load in one command',
                       ]}
                     />
                     <TableRow
-                      cells={['dogsled model compile --dialect <x>', 'Compile SQL models']}
+                      cells={['bobsled model compile --dialect <x>', 'Compile SQL models']}
                     />
-                    <TableRow cells={['dogsled setup describe --json', 'Show setup catalog']} />
+                    <TableRow cells={['bobsled setup describe --json', 'Show setup catalog']} />
                     <TableRow
-                      cells={['dogsled setup recommend --goal "..."', 'Get recommendations']}
+                      cells={['bobsled setup recommend --goal "..."', 'Get recommendations']}
                     />
-                    <TableRow cells={['dogsled load query --db-path <db> "..."', 'Query DuckDB']} />
+                    <TableRow cells={['bobsled load query --db-path <db> "..."', 'Query DuckDB']} />
                   </tbody>
                 </table>
               </div>

@@ -129,7 +129,7 @@ describe('validateResourceInputOverrides', () => {
     try {
       expect(() => openBobsledProject(projectRoot)).toThrow(ProjectIndexError);
       expect(() => openBobsledProject(projectRoot)).toThrow(
-        /resources\/custom\/items\.yml: Dogsled does not follow symbolic links\./
+        /resources\/custom\/items\.yml: Bobsled Core does not follow symbolic links\./
       );
     } finally {
       fs.rmSync(outside, { recursive: true, force: true });

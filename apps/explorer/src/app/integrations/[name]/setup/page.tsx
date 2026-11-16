@@ -70,7 +70,7 @@ export default function IntegrationSetupGuidePage() {
       destination: { type: 'duckdb', db_path: './pipeline.duckdb' },
     });
   }, [data?.name, selectedResources]);
-  const commandText = `dogsled pipeline ${commandArgs.join(' ')}`;
+  const commandText = `bobsled pipeline ${commandArgs.join(' ')}`;
 
   if (errorMessage) {
     return (

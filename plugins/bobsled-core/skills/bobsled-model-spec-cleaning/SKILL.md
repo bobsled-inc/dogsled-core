@@ -37,7 +37,7 @@ Use this skill when authoring staging models, applying profiler cleaning suggest
 
 - Company: `normalize_company(company_name)` or `normalize_company(strip_trading_as(company_name))`.
 - Email: `normalize_email(email)` and `extract_email_domain(normalize_email(email))`.
-- Privacy match key: `hmac_sha256(normalize_email_uid2(email))` for cross-party email joins when both parties use Dogsled's portable keyed construction.
+- Privacy match key: `hmac_sha256(normalize_email_uid2(email))` for cross-party email joins when both parties use Bobsled Core's portable keyed construction.
 - Phone: `normalize_phone(strip_phone_extension(phone))` when extensions appear.
 - URL/domain: `extract_domain(lower(website_url))` for full URLs; `lower(strip_www(domain))` for bare domains.
 - State: `normalize_state(state)`.
@@ -47,13 +47,13 @@ Use this skill when authoring staging models, applying profiler cleaning suggest
 
 ## Profiler Workflow
 
-Run `dogsled model profile suggest cleaning <table> --integration <handle> --json`, then copy `model_expr` into staging model column `expr` fields. Treat suggestions as starting points: verify grain, null handling, and business-specific exceptions.
+Run `bobsled model profile suggest cleaning <table> --integration <handle> --json`, then copy `model_expr` into staging model column `expr` fields. Treat suggestions as starting points: verify grain, null handling, and business-specific exceptions.
 
 ## Transform Ordering
 
 Model Spec expressions run inside-out. Prefer: trim/null handling → type-specific cleanup → case normalization → whitespace collapse. Convenience wrappers already encode this ordering for company, email, phone, domain, and state use cases. Hashing transforms are terminal: apply `sha256` or `hmac_sha256` last, and do not feed hashed outputs into fuzzy comparators or display fields.
 
-`hmac_sha256` intentionally emits the same portable nested keyed SHA-256 construction on every warehouse, not RFC-2104 HMAC. Set `BOBSLED_CORE_MATCH_KEY_SECRET` in the runtime environment before compiling or running specs that use it. The generated digest only interoperates with parties using the same Dogsled transform and secret.
+`hmac_sha256` intentionally emits the same portable nested keyed SHA-256 construction on every warehouse, not RFC-2104 HMAC. Set `BOBSLED_CORE_MATCH_KEY_SECRET` in the runtime environment before compiling or running specs that use it. The generated digest only interoperates with parties using the same Bobsled Core transform and secret.
 
 ## Entity Graph Standardize
 

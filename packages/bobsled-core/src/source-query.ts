@@ -1,7 +1,7 @@
 /**
  * Public library surface for the lazy/live source-query engine.
  *
- * Exposes the same engine that powers the `dogsled source-query` (alias `vq`)
+ * Exposes the same engine that powers the `bobsled source-query` (alias `vq`)
  * CLI so host applications can drive it programmatically: inject source entries
  * in memory, supply a default destination and/or warehouse SQL runner, and pass
  * API secrets without mutating `process.env`.
@@ -82,7 +82,7 @@ export type {
 } from './runtime/source-materializer/materialize-warehouse-leaf.js';
 
 // Deployed-definition planning. This is the small host seam for products that
-// persist Dogsled definitions outside a project directory: Dogsled validates the
+// persist Bobsled Core definitions outside a project directory: Bobsled Core validates the
 // definitions, derives the transitive execution mode/closure, assigns safe
 // internal source tables, and folds model SQL for DuckDB.
 export {

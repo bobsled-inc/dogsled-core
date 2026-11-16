@@ -1,7 +1,7 @@
 /**
  * DuckDB candidate retrieval — `jaro_winkler_similarity` on
  * `__entity_profile` canonical names and profile aliases. The default for
- * `dogsled init --local`.
+ * `bobsled init --local`.
  *
  * `profileTable` is validated by `assertSafeIdentifier` before
  * interpolation; the similarity expression is computed once in a CTE so

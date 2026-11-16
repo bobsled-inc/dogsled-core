@@ -71,7 +71,7 @@ describe('discoverProjectResourceNames', () => {
 
     expect(() => openBobsledProject(root)).toThrow(ProjectIndexError);
     expect(() => openBobsledProject(root)).toThrow(
-      /resources\/product\/linked\.yml: Dogsled does not follow symbolic links\./
+      /resources\/product\/linked\.yml: Bobsled Core does not follow symbolic links\./
     );
   });
 });

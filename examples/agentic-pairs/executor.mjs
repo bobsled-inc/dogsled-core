@@ -17,7 +17,7 @@ const SYSTEM = [
   'Evidence source must equal a supplied input ref. A reference must identify a supplied row.',
 ].join('\n');
 
-/** Inject the call only in tests. The installed module uses Dogsled's shared AI client. */
+/** Inject the call only in tests. The installed module uses Bobsled Core's shared AI client. */
 export function createExecutor(call = generateStructured) {
   return async function executeAgent(request) {
     const assignment = AgentAssignmentSchema.parse(request.assignment);
@@ -67,7 +67,7 @@ export function createExecutor(call = generateStructured) {
       processed_keys: assignment.processed_keys,
     });
     // UTF-8 bytes provide a conservative text allowance; leave extra room for provider framing.
-    // Actual provider usage remains authoritative. Dogsled rejects results above the saved reservation.
+    // Actual provider usage remains authoritative. Bobsled Core rejects results above the saved reservation.
     const inputAllowance =
       Buffer.byteLength(SYSTEM + prompt + JSON.stringify(z.toJSONSchema(schema)), 'utf8') + 1024;
     const maxOutputTokens = Math.min(2048, (assignment.limits.tokens ?? Infinity) - inputAllowance);

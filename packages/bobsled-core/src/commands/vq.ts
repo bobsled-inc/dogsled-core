@@ -230,7 +230,7 @@ function renderVqSql(
     }
 
     throw new CommandError(
-      `VQ "${vq.name}" contains unresolved model token ${token.raw}; dogsled vq run currently supports sources.* SQL and {integration.source} source tokens.`,
+      `VQ "${vq.name}" contains unresolved model token ${token.raw}; bobsled vq run currently supports sources.* SQL and {integration.source} source tokens.`,
       2
     );
   });
@@ -464,7 +464,7 @@ export function registerVqCommand(program: Command): void {
   const vq = program
     .command('vq')
     .description('Run parameterized verified queries')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)');
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)');
 
   // Primary: vq <name>
   addVqOptions(vq.argument('<name>', 'Name of the verified query to run')).action(

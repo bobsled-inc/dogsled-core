@@ -238,7 +238,7 @@ export interface AgentPolicy {
   /**
    * User-facing judge tier for the review phase (cross-repo contract §5).
    * Absent ⇒ model (default) with today's precedence unchanged (external
-   * reviewer still wins when present). `'model'` pins the in-Dogsled model judge
+   * reviewer still wins when present). `'model'` pins the in-Bobsled Core model judge
    * and ignores `reviewer` / `reviewerOverride`. `'agent'` requires an external
    * reviewer transport and skips (`no_judge_configured`) rather than falling
    * back to the model judge. A host-injected `llmClient` always wins. Selection

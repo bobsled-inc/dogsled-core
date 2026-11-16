@@ -128,7 +128,7 @@ export async function maybeRunDelegatedCommand(
   }
 
   // The loader and embedder both accept bare flags without a subcommand name
-  // (for example `dogsled load --format csv` or `dogsled embed --config-json ...`),
+  // (for example `bobsled load --format csv` or `bobsled embed --config-json ...`),
   // so those invocations are delegated immediately rather than falling through to Commander.
   if ((cliTarget === 'load' || cliTarget === 'embed') && nextArg.startsWith('-')) {
     return {
@@ -141,7 +141,7 @@ export async function maybeRunDelegatedCommand(
     return { handled: false };
   }
 
-  // `model run` uses a Dogsled-owned child entrypoint so the unified CLI process
+  // `model run` uses a Bobsled Core-owned child entrypoint so the unified CLI process
   // preserves the same native-dependency subprocess boundary as the other ELT
   // commands while still injecting the cross-warehouse publisher.
   if (group === 'model' && nextArg === 'run') {

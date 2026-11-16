@@ -545,7 +545,7 @@ function buildExecutorRequest(
       secrets: options.secrets ? { ...options.secrets } : {},
       declaredSecretNames: options.declaredSecretNames,
       // Built-in YAMLs historically use env placeholders for provider
-      // credentials. Dogsled supplies project secrets, so make that explicit
+      // credentials. Bobsled Core supplies project secrets, so make that explicit
       // map available to both the legacy env spelling and the secrets spelling
       // without consulting process.env.
       env: { ...(options.secrets ?? {}), ...(options.env ?? {}) },
@@ -580,7 +580,7 @@ function validateResponseLimit(value: number | undefined): number | undefined {
 
 /**
  * Execute one request for a built-in or validated external API resource. The
- * executor is the only network boundary; Dogsled does not apply retries,
+ * executor is the only network boundary; Bobsled Core does not apply retries,
  * redirects, pagination, loaders, or state changes. OAuth/custom-token auth
  * performs one bounded token exchange through the same executor before the
  * one resource request.

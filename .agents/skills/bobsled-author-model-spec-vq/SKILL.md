@@ -76,7 +76,7 @@ identifiers. Two forms:
 | `{model_name}`             | The Model Spec model identifier (e.g. `{fct_orders}`)     |
 | `{connection.source_name}` | A Model Spec source identifier (e.g. `{ecom.raw_orders}`) |
 
-`validateMetadataReferences` (run as part of `dogsled model validate`)
+`validateMetadataReferences` (run as part of `bobsled model validate`)
 asserts every token resolves. Tokens inside single-quoted strings,
 double-quoted identifiers, `--` line comments, and `/* ... */` block
 comments are correctly ignored by the tokenizer.
@@ -104,7 +104,7 @@ at query time and decides coercion.
    elsewhere.
 5. **Tag for retrieval.** Tags help the agent narrow candidates
    during retrieval (`revenue`, `customer-360`, `finance`).
-6. **Validate.** `dogsled model validate --integration <handle>` —
+6. **Validate.** `bobsled model validate --integration <handle>` —
    surfaces unresolved `{ref}` tokens and connection-handle
    mismatches.
 

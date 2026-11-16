@@ -1,6 +1,6 @@
 ---
 name: bobsled-ontology
-description: Author, inspect, validate, and exchange customer ontologies and data mappings in Dogsled YAML.
+description: Author, inspect, validate, and exchange customer ontologies and data mappings in Bobsled Core YAML.
 exposed: true
 triggers:
   - author a customer ontology
@@ -13,7 +13,7 @@ triggers:
 
 Inspect existing ontology and semantic-model definitions before editing. Users may
 store typed ontology files in any indexed project folder. Keep customer ontologies
-separate from Dogsled's system model and relationship extraction settings.
+separate from Bobsled Core's system model and relationship extraction settings.
 
 Use the shared ontology CLI, API, or MCP tools. Preview changes, inspect affected
 references, then apply the authorized edits. Validate the complete project draft.

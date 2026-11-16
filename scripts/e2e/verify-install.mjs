@@ -41,8 +41,8 @@ for (const command of [
   );
   assert.match(
     help,
-    new RegExp(`^Usage: dogsled ${command.join(' ')}\\b`, 'm'),
-    `dogsled ${command.join(' ')} --help printed no usage`
+    new RegExp(`^Usage: bobsled ${command.join(' ')}\\b`, 'm'),
+    `bobsled ${command.join(' ')} --help printed no usage`
   );
 }
 process.stdout.write(

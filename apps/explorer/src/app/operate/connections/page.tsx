@@ -316,7 +316,7 @@ export default function ConnectionsPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
       <PageHeader
-        breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Connections' }]}
+        breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Connections' }]}
         title="Connections"
         description="Manage credentials for pipeline destinations. Saved connections can be reused in the pipeline wizard."
         actions={

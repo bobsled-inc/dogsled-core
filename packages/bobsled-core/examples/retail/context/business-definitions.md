@@ -21,4 +21,4 @@ Hearth & Home is a fictional midsized home-goods retailer with an online channel
 
 ## External evidence
 
-Reviews preserve the written rating and text. Support input includes customer message and the recorded agent response. The agentic model should return typed issue and resolution categories with Dogsled evidence metadata. It must preserve a null product when the order lines cannot identify one. Classification output is advice for analysis and does not trigger a refund, replacement, restock, or customer contact.
+Reviews preserve the written rating and text. Support input includes customer message and the recorded agent response. The agentic model should return typed issue and resolution categories with Bobsled Core evidence metadata. It must preserve a null product when the order lines cannot identify one. Classification output is advice for analysis and does not trigger a refund, replacement, restock, or customer contact.

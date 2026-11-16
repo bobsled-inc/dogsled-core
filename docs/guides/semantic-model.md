@@ -4,7 +4,7 @@ A project's semantic model is what its data means: descriptions and AI context,
 metrics, relationships between models, and verified queries. It is not a separate
 file. It lives in the model files themselves and in the `metrics/`,
 `relationships/` and `vqs/` folders next to them. People and agents read it to
-answer questions with the right tables and definitions. Dogsled validates it with
+answer questions with the right tables and definitions. Bobsled Core validates it with
 your models, exports it for other tools, and runs verified queries. Entities, the
 other part of the semantic model, are covered in [Entity graph](entity-graph.md).
 
@@ -14,7 +14,7 @@ This guide continues the `shop` project from [Build models](build-models.md).
 
 Sources, models, columns, metrics and relationships each take a `description`, for
 people, and an `ai_context`, for agents. `ai_context` is either text or a mapping
-with keys you choose, such as instructions and synonyms. Dogsled checks that it is
+with keys you choose, such as instructions and synonyms. Bobsled Core checks that it is
 text or a mapping, keeps it in exports, and leaves its meaning to the agent that
 reads it.
 
@@ -41,13 +41,13 @@ schema:
       synonyms: [APN, parcel id]
 ```
 
-Synonyms in `ai_context.synonyms`, the Ossie location, also count. Dogsled merges
+Synonyms in `ai_context.synonyms`, the Ossie location, also count. Bobsled Core merges
 the two lists: `synonyms` first, then `ai_context.synonyms`, without repeats that
 differ only in case or spacing. Ossie export writes the merged list to
 `ai_context.synonyms`. Ossie import moves it back to `synonyms`, so exporting again
 writes the same document.
 
-Dogsled warns about keys a source or model file declares that it does not use, such
+Bobsled Core warns about keys a source or model file declares that it does not use, such
 as a misspelled `synonym`. The file still loads.
 
 ## Metrics
@@ -84,11 +84,11 @@ join_columns:
 relationship_type: many_to_one
 ```
 
-`dogsled model validate` checks that each metric and relationship points at models
+`bobsled model validate` checks that each metric and relationship points at models
 and columns that exist:
 
 ```bash
-dogsled model validate --integration warehouse
+bobsled model validate --integration warehouse
 ```
 
 ```text
@@ -97,27 +97,27 @@ dogsled model validate --integration warehouse
 Validated 3 model(s): 3 passed
 ```
 
-`dogsled model compile --output build --include-metadata` writes the metrics and
+`bobsled model compile --output build --include-metadata` writes the metrics and
 relationships to `build/metrics.json` and `build/relationships.json` for other tools.
-Dogsled Core does not compute metrics itself.
+Bobsled Core does not compute metrics itself.
 
 ## Verified queries
 
 A verified query (`type: vq`) pairs a question with SQL that is known to answer it,
-with typed parameters. Agents use them as worked examples, and `dogsled vq <name>`
+with typed parameters. Agents use them as worked examples, and `bobsled vq <name>`
 runs them. See [Query data](query-data.md#run-a-verified-query).
 
 ## Exchange models with Apache Ossie
 
 [Apache Ossie](https://ossie.apache.org/) is a vendor-neutral interchange format
-for semantic models. Dogsled exports sources, models, metrics and relationships,
+for semantic models. Bobsled Core exports sources, models, metrics and relationships,
 and verified queries (with `0.2.0.dev0`), to one Ossie YAML document, and imports
-Ossie documents into Dogsled files.
+Ossie documents into Bobsled Core files.
 
 ```bash
-dogsled model ossie export --all --name shop --ossie-version 0.2.0.dev0 \
+bobsled model ossie export --all --name shop --ossie-version 0.2.0.dev0 \
   --out ../shop.ossie.yaml --human
-dogsled model ossie import ../shop.ossie.yaml --project . --out ../imported --human
+bobsled model ossie import ../shop.ossie.yaml --project . --out ../imported --human
 grep "ai_context: Revenue" ../shop.ossie.yaml
 ```
 
@@ -130,12 +130,12 @@ Ready: 6 generated file(s)
 ```
 
 Keep exported documents and imported files outside the project folder until you
-review them: `dogsled model validate` reads every file in the project, and an
+review them: `bobsled model validate` reads every file in the project, and an
 exported Ossie document or a second copy of a model there makes it fail.
 
 The default version, `0.1.1`, is the released standard; it cannot carry everything
-a Dogsled model needs, so the export lists what it dropped. `0.2.0.dev0` keeps the
-extra Dogsled fields so that a round trip produces equivalent models. Import never
+a Bobsled Core model needs, so the export lists what it dropped. `0.2.0.dev0` keeps the
+extra Bobsled Core fields so that a round trip produces equivalent models. Import never
 overwrites files: `--out` must be a new directory, and without `--out` it only
 previews. Pass `--strict` to fail instead of dropping information, and
 `--connection`, `--bind` or `--map-connection` to attach imported datasets to your

@@ -1,7 +1,7 @@
 /**
  * Entity-graph serving doctor checks (runtime-backed in this branch).
  *
- * `dogsled doctor` exposes entity-graph serving checks for the MCP permission
+ * `bobsled doctor` exposes entity-graph serving checks for the MCP permission
  * default and generated-SDK freshness.
  *
  * Other serving checks (queue/telemetry/compile-driven checks) are deferred

@@ -55,7 +55,7 @@ export interface ActionPreview {
   request?: ActionPreviewRequest;
 }
 
-/** A request location a template sends an input to. `other` is any location Dogsled does not classify. */
+/** A request location a template sends an input to. `other` is any location Bobsled Core does not classify. */
 export type ActionInputLocation =
   'auth' | 'base_url' | 'body' | 'header' | 'origin' | 'other' | 'path' | 'query';
 

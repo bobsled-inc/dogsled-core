@@ -27,7 +27,7 @@ export default defineConfig([
       // gives consumers `createEmbedConfigSchema` (and the supporting field /
       // streams schemas) without pulling in the embedder runtime, which
       // transitively loads `@bobsled-inc/loader`'s DuckDB primitives at
-      // module-init. Used by Dogsled's manifest library so server-side / Lambda
+      // module-init. Used by Bobsled Core's manifest library so server-side / Lambda
       // consumers can validate the `embed:` block without needing
       // libduckdb.so available at import time.
       config: 'src/config.ts',

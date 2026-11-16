@@ -1,5 +1,5 @@
 /**
- * `dogsled model seed` command group — thin CLI wrappers over the seed API.
+ * `bobsled model seed` command group — thin CLI wrappers over the seed API.
  *
  * All seed business logic (parse/validate/codegen/diff) lives in
  * `../api/seed-project.ts`. This file owns only arg parsing, runner loading,

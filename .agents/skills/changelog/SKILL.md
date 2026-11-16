@@ -6,7 +6,7 @@ argument-hint: '[optional: release version or time period]'
 
 # Changelog
 
-Summarize reviewed changes for users of Dogsled. Describe observable behavior,
+Summarize reviewed changes for users of Bobsled Core. Describe observable behavior,
 compatibility changes, and migration steps in plain language.
 
 1. Read the requested diff and public release notes. Use only material approved

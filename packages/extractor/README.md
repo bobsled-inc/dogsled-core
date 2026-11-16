@@ -17,21 +17,21 @@ pnpm --filter @bobsled-inc/extractor build
 
 ```sh
 # Scaffold a project
-dogsled extract init my-project --integration github
+bobsled extract init my-project --integration github
 cd my-project
 
 # Validate all specs
-dogsled extract validate
+bobsled extract validate
 
 # Validate one provider or one resource
-dogsled extract validate github
-dogsled extract validate github/issues
+bobsled extract validate github
+bobsled extract validate github/issues
 
 # List resources for a provider
-dogsled extract discover github
+bobsled extract discover github
 
 # Run one or more resources
-dogsled extract run --integration github issues repos
+bobsled extract run --integration github issues repos
 ```
 
 ## Project Layout
@@ -202,7 +202,7 @@ lookup:
     record_path: '$.data.user'
 ```
 
-Run this Resource with `dogsled extract lookup`. An extraction run or extraction plan rejects it
+Run this Resource with `bobsled extract lookup`. An extraction run or extraction plan rejects it
 because it has no extraction operation.
 
 ## Parent context in fan-out records
@@ -262,12 +262,12 @@ Context paths resolve against the ancestor's declared, mapped `output`, not its 
 API response or request configuration. Nested paths are allowed only where the
 ancestor output declares the corresponding `properties` or `items`; opaque objects,
 unrelated resources, inputs, headers, auth values, and environment values cannot be
-projected. Include every required parent in the extraction so Dogsled can establish
+projected. Include every required parent in the extraction so Bobsled Core can establish
 the lineage. A directly targeted child run may reconstruct only an immediate-parent
 value that is exactly the explicitly supplied `for_each` input binding; every other
 ancestor projection requires the ancestors to be co-scheduled.
 
-Dogsled never changes a child's primary key automatically. If child IDs are scoped to
+Bobsled Core never changes a child's primary key automatically. If child IDs are scoped to
 their parent, declare the composite key explicitly as shown above. Resources without
 contextual outputs retain their existing behavior.
 
@@ -345,7 +345,7 @@ Supported templates:
 Extractor CLI overrides populate `input` values:
 
 ```sh
-dogsled extract run --integration github issues --input owner=my-org --input repo=my-repo
+bobsled extract run --integration github issues --input owner=my-org --input repo=my-repo
 ```
 
 ## Commands
@@ -353,48 +353,48 @@ dogsled extract run --integration github issues --input owner=my-org --input rep
 `init`
 
 ```sh
-dogsled extract init demo --integration github
+bobsled extract init demo --integration github
 ```
 
 `validate`
 
 ```sh
-dogsled extract validate
-dogsled extract validate github
-dogsled extract validate github/issues
-dogsled extract validate --check-env
+bobsled extract validate
+bobsled extract validate github
+bobsled extract validate github/issues
+bobsled extract validate --check-env
 ```
 
 `discover`
 
 ```sh
-dogsled extract discover github
-dogsled extract discover github --probe
+bobsled extract discover github
+bobsled extract discover github --probe
 ```
 
 `run`
 
 ```sh
-dogsled extract run
-dogsled extract run --integration github
-dogsled extract run --integration github issues repos
-dogsled extract run --integration github issues --limit 100
-dogsled extract run --integration github issues --output file
-dogsled extract run --integration github issues --full-refresh
+bobsled extract run
+bobsled extract run --integration github
+bobsled extract run --integration github issues repos
+bobsled extract run --integration github issues --limit 100
+bobsled extract run --integration github issues --output file
+bobsled extract run --integration github issues --full-refresh
 ```
 
 `lookup`
 
 ```sh
-dogsled extract lookup --integration github --resource issues --input id=42
+bobsled extract lookup --integration github --resource issues --input id=42
 ```
 
 `topup`
 
 ```sh
-dogsled extract topup --integration github --resource issues --since 2h
-dogsled extract topup --integration github --resource issues --since 2026-03-01T00:00:00Z --until 2026-03-15T00:00:00Z
-dogsled extract topup --integration github --resource issues --since 1d --advance-state
+bobsled extract topup --integration github --resource issues --since 2h
+bobsled extract topup --integration github --resource issues --since 2026-03-01T00:00:00Z --until 2026-03-15T00:00:00Z
+bobsled extract topup --integration github --resource issues --since 1d --advance-state
 ```
 
 ## Output
@@ -440,7 +440,7 @@ Bookmarks are stored in `.extractor/state.json`, keyed as `provider/resource`.
 To make a deferred run durable later, commit the captured `STATE` messages explicitly:
 
 ```bash
-dogsled extract commit-state \
+bobsled extract commit-state \
   --integration github \
   --capture-file ./.extractor/captured-state.jsonl
 ```
@@ -468,13 +468,13 @@ Auth for HTTP backends:
 - The extractor refuses to send a bearer token over cleartext `http://` to a public host — use `https://` for authenticated backends. Loopback addresses (`localhost`, `127.*`, `::1`) are still allowed for local dev.
 - `http(s)://` backends resolving to private/loopback/link-local hosts are rejected unless `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` is set (same escape hatch used elsewhere by the extractor for VPN / on-prem setups).
 
-Example — running `dogsled extract run` against a self-hosted state backend:
+Example — running `bobsled extract run` against a self-hosted state backend:
 
 ```sh
-BOBSLED_CORE_STATE_BACKEND=https://state.example.com/api/dogsled/state \
+BOBSLED_CORE_STATE_BACKEND=https://state.example.com/api/bobsled/state \
 BOBSLED_CORE_STATE_AUTH_ENV=RUN_TOKEN \
 RUN_TOKEN=<jwt> \
-dogsled extract run --integration linear --advance-state
+bobsled extract run --integration linear --advance-state
 ```
 
 The HTTP contract (path, version, error-response shape) is exported from `@bobsled-inc/protocol` as `STATE_BACKEND_PATH`, `STATE_BACKEND_CONTRACT_VERSION`, `StateBackendErrorResponse`, and `isStateBackendErrorResponse`, so OSS users and third-party state services share one source of truth.

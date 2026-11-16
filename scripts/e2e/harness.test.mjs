@@ -14,7 +14,7 @@ test('CLI runs in a clean project without inherited credentials', async () => {
     const version = await ctx.cli(['--version']);
     assert.match(version.stdout, /\d+\.\d+\.\d+/);
     const help = await ctx.cli(['--help']);
-    assert.match(help.stdout, /Dogsled/);
+    assert.match(help.stdout, /Bobsled Core/);
   } finally {
     await ctx.cleanup();
   }

@@ -41,7 +41,7 @@ interface InputDefinition {
  * Pipeline-wide inputs intentionally remain broadcasts: each extractor
  * resource filters that map to its own declared keys. A resource-level input
  * is different—the author named the exact consumer—so misspellings must fail
- * during Dogsled validation instead of surviving until a child process starts.
+ * during Bobsled Core validation instead of surviving until a child process starts.
  */
 export function validateResourceInputOverrides(
   pipeline: ResolvedPipeline,

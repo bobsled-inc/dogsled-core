@@ -110,10 +110,10 @@ const v1ManualManifest = {
 function historicalManifest(warehouse?: string) {
   return JSON.parse(
     JSON.stringify(generatedManifest(warehouse))
-      .replaceAll('dogsled.', 'track.')
+      .replaceAll('bobsled.', 'track.')
       .replaceAll('bobsled_cli_version', 'track_cli_version')
       .replaceAll('BOBSLED_CORE_PIPELINE_', 'TRACK_PIPELINE_')
-      .replaceAll('"default_command":"dogsled"', '"default_command":"track"')
+      .replaceAll('"default_command":"bobsled"', '"default_command":"track"')
   );
 }
 

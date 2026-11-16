@@ -10,9 +10,9 @@ Define your sources, transformations, joins, materializations, and entity resolu
 YAML specs  ──>  Model Spec compiler  ──>  CREATE VIEW / TABLE / MERGE SQL
 ```
 
-> **CLI:** Use `dogsled model <command>` / `dogsled model <command>` for data modeling and `dogsled entity-graph <command>` / `dogsled entity-graph <command>` for entity graph workflows. The standalone package binary here is `model` for modeling only. Standalone Entity Graph commands now live in the `@bobsled-inc/entity-graph` package and its `entity-graph` binary.
+> **CLI:** Use `bobsled model <command>` / `bobsled model <command>` for data modeling and `bobsled entity-graph <command>` / `bobsled entity-graph <command>` for entity graph workflows. The standalone package binary here is `model` for modeling only. Standalone Entity Graph commands now live in the `@bobsled-inc/entity-graph` package and its `entity-graph` binary.
 >
-> **Install note:** The `dogsled entity-graph` examples below use the unified CLI from `@bobsled-inc/bobsled-core`. The standalone compiler package does not install a separate Entity Graph command.
+> **Install note:** The `bobsled entity-graph` examples below use the unified CLI from `@bobsled-inc/bobsled-core`. The standalone compiler package does not install a separate Entity Graph command.
 
 ## Why Model Spec?
 
@@ -32,7 +32,7 @@ Install `@bobsled-inc/bobsled-core`; this code ships inside it.
 ### 1. Scaffold a project
 
 ```sh
-dogsled model init my-project
+bobsled model init my-project
 cd my-project
 ```
 
@@ -101,7 +101,7 @@ A model reads from a source (or another model), defines output columns as expres
 ### 4. Compile to SQL
 
 ```sh
-dogsled model compile --integration example
+bobsled model compile --integration example
 ```
 
 Output:
@@ -134,7 +134,7 @@ auth:
 ```
 
 ```sh
-dogsled model compile --integration bigquery_dev
+bobsled model compile --integration bigquery_dev
 ```
 
 ```sql
@@ -148,7 +148,7 @@ FROM raw.raw_users AS t0;
 
 Same YAML specs, different SQL dialect. Quoting, casing, and function calls adapt automatically.
 
-When a project declares multiple integrations, each source pins itself to one via `connection: <handle>` (matching the `name` of a `type: integration` file, wherever it lives). Running `dogsled model compile` without `--integration` fans out: every declared integration compiles its own subgraph in the correct dialect, and integrations that no model references are skipped with a warning. A model that joins or unions sources from two different handles is rejected by default; add `publish: <target-handle>` when the model should be staged by Dogsled and landed in a specific warehouse. `dogsled model run` keeps per-integration state under `<handle>.<model>` keys in `.bobsled/model-spec/run-state.json`.
+When a project declares multiple integrations, each source pins itself to one via `connection: <handle>` (matching the `name` of a `type: integration` file, wherever it lives). Running `bobsled model compile` without `--integration` fans out: every declared integration compiles its own subgraph in the correct dialect, and integrations that no model references are skipped with a warning. A model that joins or unions sources from two different handles is rejected by default; add `publish: <target-handle>` when the model should be staged by Bobsled Core and landed in a specific warehouse. `bobsled model run` keeps per-integration state under `<handle>.<model>` keys in `.bobsled/model-spec/run-state.json`.
 
 ### Cross-Warehouse Publish
 
@@ -178,7 +178,7 @@ materialization:
   type: table
 ```
 
-`dogsled model run --integration databricks` stages the referenced source columns into destination-side temporary tables, evaluates the model SELECT in the destination warehouse, and applies the requested destination materialization.
+`bobsled model run --integration databricks` stages the referenced source columns into destination-side temporary tables, evaluates the model SELECT in the destination warehouse, and applies the requested destination materialization.
 
 Current scope:
 
@@ -231,18 +231,18 @@ See `../../examples/mixed-models/` for a runnable API + Snowflake + BigQuery fix
 
 ### 6. Run models against the warehouse
 
-`dogsled model run` constructs the runner itself from the active integration file — no hand-written runner module required for the supported dialects. Credentials flow in via `${{ env.VAR }}` tokens (or legacy `_env` suffix fields) that Model Spec resolves through an `EnvSecretResolver` at runtime.
+`bobsled model run` constructs the runner itself from the active integration file — no hand-written runner module required for the supported dialects. Credentials flow in via `${{ env.VAR }}` tokens (or legacy `_env` suffix fields) that Model Spec resolves through an `EnvSecretResolver` at runtime.
 
 Preview the execution plan (dry run):
 
 ```sh
-dogsled model run --integration example --dry-run
+bobsled model run --integration example --dry-run
 ```
 
 Execute for real:
 
 ```sh
-dogsled model run --integration example --secrets secrets.env.yml
+bobsled model run --integration example --secrets secrets.env.yml
 ```
 
 The `--secrets <path>` file is an optional flat YAML map of env-var names to values, layered on top of `process.env` (so test overrides don't require exporting vars). For a Snowflake integration you might set `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PASSWORD`, etc.
@@ -268,12 +268,12 @@ model, the up-front dry run fails because the old upstream has no such column.
 Run the upstream first, then the rest:
 
 ```sh
-dogsled model run stg_orders --integration warehouse
-dogsled model run stg_orders+ --integration warehouse
+bobsled model run stg_orders --integration warehouse
+bobsled model run stg_orders+ --integration warehouse
 ```
 
 A source whose table is built by a model in the same run is ordered after that
-model only when the model already runs first. Otherwise Dogsled warns; use
+model only when the model already runs first. Otherwise Bobsled Core warns; use
 `ref: <model>` instead of the source so the DAG orders them.
 
 ### 7. Profile a table or model
@@ -281,9 +281,9 @@ model only when the model already runs first. Otherwise Dogsled warns; use
 Use `model profile` before authoring model metadata, cleaning expressions, or entity graph specs. It samples a warehouse table or Model Spec model and emits confidence-scored type, format, semantic-role, anomaly, primary-key, foreign-key, and cleaning-suggestion evidence.
 
 ```sh
-dogsled model profile ecom.raw_customers --integration ecom --json
-dogsled model profile fct_orders --integration ecom --sample-size 1000 --json
-dogsled model profile suggest cleaning ecom.raw_customers --integration ecom --confidence-min 0.9 --json
+bobsled model profile ecom.raw_customers --integration ecom --json
+bobsled model profile fct_orders --integration ecom --sample-size 1000 --json
+bobsled model profile suggest cleaning ecom.raw_customers --integration ecom --confidence-min 0.9 --json
 ```
 
 The command resolves Model Spec source refs, Model Spec model names, fuzzy source names, and direct physical table refs. When profiling a model with column `references`, it samples the referenced target model so FK candidates can include observed hit-rate evidence.
@@ -864,11 +864,11 @@ See `docs/materializations-reference.md` for the dialect capability matrix, tran
 Models reference other models via `source.ref` and `joins[].ref`. The compiler builds a directed acyclic graph, topologically sorts it, and compiles in dependency order. Circular references are rejected.
 
 ```sh
-dogsled model lineage              # View the full dependency graph
-dogsled model lineage fct_orders   # View subgraph for a specific model
-dogsled model lineage --json       # Emit model + column lineage JSON for agents
-dogsled model lineage --yaml       # Emit the same envelope as YAML for agent review notes
-dogsled model lineage --column fct_orders.ORDER_ID --json
+bobsled model lineage              # View the full dependency graph
+bobsled model lineage fct_orders   # View subgraph for a specific model
+bobsled model lineage --json       # Emit model + column lineage JSON for agents
+bobsled model lineage --yaml       # Emit the same envelope as YAML for agent review notes
+bobsled model lineage --column fct_orders.ORDER_ID --json
 ```
 
 ## Entity Resolution
@@ -975,23 +975,23 @@ outputs:
 #### 3. Validate and compile
 
 ```sh
-dogsled entity-graph resolve validate company
-dogsled entity-graph resolve validate company --json
-dogsled entity-graph resolve compile company -o ./sql
-dogsled entity-graph resolve compile company --json
+bobsled entity-graph resolve validate company
+bobsled entity-graph resolve validate company --json
+bobsled entity-graph resolve compile company -o ./sql
+bobsled entity-graph resolve compile company --json
 ```
 
 #### 4. Run stages 1-4
 
 ```sh
 # Show the execution plan and emitted SQL
-dogsled entity-graph resolve run company --dry-run
+bobsled entity-graph resolve run company --dry-run
 
 # Execute against the warehouse
-dogsled entity-graph resolve run company --runner ./runner.js
+bobsled entity-graph resolve run company --runner ./runner.js
 
 # Emit a machine-readable execution summary
-dogsled entity-graph resolve run company --runner ./runner.js --json
+bobsled entity-graph resolve run company --runner ./runner.js --json
 ```
 
 `resolve run` builds:
@@ -1005,21 +1005,21 @@ dogsled entity-graph resolve run company --runner ./runner.js --json
 
 ```sh
 # With a query-capable runner, write real CSV
-dogsled entity-graph review export company --format csv --runner ./runner.js --output ./review/company_queue.csv
+bobsled entity-graph review export company --format csv --runner ./runner.js --output ./review/company_queue.csv
 
 # Without --runner, emit the SQL query you should run in the warehouse
-dogsled entity-graph review export company --format csv
+bobsled entity-graph review export company --format csv
 
 # For agents, emit structured JSON instead of CSV/SQL stdout
-dogsled entity-graph review export company --runner ./runner.js --json
+bobsled entity-graph review export company --runner ./runner.js --json
 ```
 
 #### 6. Apply decisions and cluster
 
 ```sh
-dogsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js
-dogsled entity-graph resolve cluster company --runner ./runner.js
-dogsled entity-graph resolve cluster company --runner ./runner.js --json
+bobsled entity-graph review apply --input ./review/company_queue.csv --entity company --runner ./runner.js
+bobsled entity-graph resolve cluster company --runner ./runner.js
+bobsled entity-graph resolve cluster company --runner ./runner.js --json
 ```
 
 ### Resolution Spec Fields
@@ -1154,11 +1154,11 @@ Fuzzy helpers use native-safe mappings only. Unsupported functions fail during c
 ### Seed Data
 
 ```sh
-dogsled model seed validate
-dogsled model seed validate --json
-dogsled model seed load
-dogsled model seed load --runner ./runner.js
-dogsled model seed diff --runner ./runner.js --json
+bobsled model seed validate
+bobsled model seed validate --json
+bobsled model seed load
+bobsled model seed load --runner ./runner.js
+bobsled model seed diff --runner ./runner.js --json
 ```
 
 Without `--runner`, `seed load` prints compiled SQL. With `--runner`, it executes it.
@@ -1232,11 +1232,11 @@ default_timestamp_field: updated_at
 ```
 
 ```sh
-dogsled entity-graph survivorship validate [name...] [--json]
-dogsled entity-graph survivorship compile [name...] [-o dir] [--json]
-dogsled entity-graph survivorship run [name...] [--runner ./r.js] [--json]
-dogsled entity-graph survivorship inspect <name> [--cluster-id id] [--runner ./r.js] [--json]
-dogsled entity-graph survivorship init <entity>
+bobsled entity-graph survivorship validate [name...] [--json]
+bobsled entity-graph survivorship compile [name...] [-o dir] [--json]
+bobsled entity-graph survivorship run [name...] [--runner ./r.js] [--json]
+bobsled entity-graph survivorship inspect <name> [--cluster-id id] [--runner ./r.js] [--json]
+bobsled entity-graph survivorship init <entity>
 ```
 
 `survivorship run` populates `__golden_record`, `__golden_history`, and `__survivorship_audit`. Use `survivorship inspect` to verify output for a specific cluster.
@@ -1264,10 +1264,10 @@ targets:
 The CSV requires `pair_id,label` columns with labels in `{merge, not_match}`.
 
 ```sh
-dogsled entity-graph truthset validate [name...] [--json]
-dogsled entity-graph truthset score [name...] --runner ./r.js [--json]
-dogsled entity-graph truthset tune [name...] --runner ./r.js [--json]
-dogsled entity-graph truthset init <entity>
+bobsled entity-graph truthset validate [name...] [--json]
+bobsled entity-graph truthset score [name...] --runner ./r.js [--json]
+bobsled entity-graph truthset tune [name...] --runner ./r.js [--json]
+bobsled entity-graph truthset init <entity>
 ```
 
 `truthset score` reports precision and recall at the current thresholds. `truthset tune` recommends new thresholds from labeled scores — treat recommendations as inputs to a reviewed spec change, not an automatic rewrite.
@@ -1285,22 +1285,22 @@ See the [agent CLI reference](#agent) for the full command list.
 Generate SQL from model specs. Dialect and target schema come from the active integration file.
 
 ```sh
-dogsled model compile --integration duckdb                                 # All models to stdout
-dogsled model compile stg_customers --integration snowflake                # Single model
-dogsled model compile -o target/ --integration bigquery                    # Write each model to target/<integration>/MODEL.sql
-dogsled model compile -o target/ --include-metadata --integration duckdb   # Also emit metrics.json / relationships.json / vqs.json
-dogsled model compile --strict --integration duckdb                        # Reject implicit raw_sql fallbacks
+bobsled model compile --integration duckdb                                 # All models to stdout
+bobsled model compile stg_customers --integration snowflake                # Single model
+bobsled model compile -o target/ --integration bigquery                    # Write each model to target/<integration>/MODEL.sql
+bobsled model compile -o target/ --include-metadata --integration duckdb   # Also emit metrics.json / relationships.json / vqs.json
+bobsled model compile --strict --integration duckdb                        # Reject implicit raw_sql fallbacks
 ```
 
 ### run
 
-Compile and execute models against a warehouse. `dogsled model run` constructs the runner from the active integration via `@bobsled-inc/connections` — no hand-written runner module needed.
+Compile and execute models against a warehouse. `bobsled model run` constructs the runner from the active integration via `@bobsled-inc/connections` — no hand-written runner module needed.
 
 ```sh
-dogsled model run --integration duckdb --dry-run                # Show execution plan without running
-dogsled model run --integration snowflake --secrets env.yml     # Execute — all 5 dialects ship real built-in runners
-dogsled model run --secrets env.yml                             # Fan out — run every declared integration in sequence
-dogsled model run --integration duckdb --full-refresh           # Force full table rebuild
+bobsled model run --integration duckdb --dry-run                # Show execution plan without running
+bobsled model run --integration snowflake --secrets env.yml     # Execute — all 5 dialects ship real built-in runners
+bobsled model run --secrets env.yml                             # Fan out — run every declared integration in sequence
+bobsled model run --integration duckdb --full-refresh           # Force full table rebuild
 ```
 
 Hosts that need custom runner construction (e.g. the host application for `sledhouse_oidc`) register via `@bobsled-inc/connections`'s `CustomRunnerRegistry`.
@@ -1310,8 +1310,8 @@ Hosts that need custom runner construction (e.g. the host application for `sledh
 Generate test SQL from model test definitions.
 
 ```sh
-dogsled model test --integration duckdb                # All models
-dogsled model test stg_orders --integration duckdb     # Single model
+bobsled model test --integration duckdb                # All models
+bobsled model test stg_orders --integration duckdb     # Single model
 ```
 
 Define tests in your model spec:
@@ -1336,9 +1336,9 @@ For the complete quality-gate contract surface, including field metadata, semant
 Compile or execute model expectation sentinels. Expectations differ from `tests:` blocks: each expectation query returns a `violation_count`, and with `--runner` the command produces pass, warn, and fail statuses for agents and CI.
 
 ```sh
-dogsled model expect run --integration duckdb                         # Compile all expectation SQL
-dogsled model expect run --integration duckdb --model stg_customers   # Scope to one model
-dogsled model expect run --integration duckdb --runner ./runner.js --json
+bobsled model expect run --integration duckdb                         # Compile all expectation SQL
+bobsled model expect run --integration duckdb --model stg_customers   # Scope to one model
+bobsled model expect run --integration duckdb --runner ./runner.js --json
 ```
 
 Define expectations in your model spec:
@@ -1367,9 +1367,9 @@ Supported expectation kinds are `primary_key`, `non_null`, `unique`, `in_range`,
 Check specs + metric / relationship / VQ cross-references without compiling.
 
 ```sh
-dogsled model validate --integration duckdb                # All models + entities (strict by default)
-dogsled model validate --no-strict --integration duckdb    # Allow raw_sql fallbacks
-dogsled model validate --integration duckdb --semantic-check=strict
+bobsled model validate --integration duckdb                # All models + entities (strict by default)
+bobsled model validate --no-strict --integration duckdb    # Allow raw_sql fallbacks
+bobsled model validate --integration duckdb --semantic-check=strict
 ```
 
 ### lineage
@@ -1377,30 +1377,30 @@ dogsled model validate --integration duckdb --semantic-check=strict
 Display the model dependency graph and column-level upstream references.
 
 ```sh
-dogsled model lineage --integration duckdb                 # Full graph
-dogsled model lineage fct_orders --integration duckdb      # Subgraph
-dogsled model lineage --integration duckdb --json          # JSON envelope with columnLineage
-dogsled model lineage --integration duckdb --yaml          # YAML envelope with columnLineage
-dogsled model lineage --integration duckdb --column fct_orders.ORDER_ID --json
-dogsled model lineage --integration duckdb --column fct_orders.ORDER_ID --yaml
+bobsled model lineage --integration duckdb                 # Full graph
+bobsled model lineage fct_orders --integration duckdb      # Subgraph
+bobsled model lineage --integration duckdb --json          # JSON envelope with columnLineage
+bobsled model lineage --integration duckdb --yaml          # YAML envelope with columnLineage
+bobsled model lineage --integration duckdb --column fct_orders.ORDER_ID --json
+bobsled model lineage --integration duckdb --column fct_orders.ORDER_ID --yaml
 ```
 
-Column lineage traces parsed expressions, `include_all_columns` passthrough when source schemas are known, join predicates for joined-table outputs, and filter predicates that constrain row membership. Opaque boundaries such as `raw_sql`, subqueries, `flatten_json`, `pivot`, and `unpivot` are emitted with `isComplete=false` rather than guessed through. See [Model Spec Lineage Quick Start](./docs/lineage-quickstart.md) and the cross-project [Dogsled Lineage Guide](../../docs/reference/advanced/lineage-guide.md).
+Column lineage traces parsed expressions, `include_all_columns` passthrough when source schemas are known, join predicates for joined-table outputs, and filter predicates that constrain row membership. Opaque boundaries such as `raw_sql`, subqueries, `flatten_json`, `pivot`, and `unpivot` are emitted with `isComplete=false` rather than guessed through. See [Model Spec Lineage Quick Start](./docs/lineage-quickstart.md) and the cross-project [Bobsled Core Lineage Guide](../../docs/reference/advanced/lineage-guide.md).
 
 ### profile
 
 Profile a warehouse table, Model Spec source, or Model Spec model with confidence-scored inferences.
 
 ```sh
-dogsled model profile ecom.raw_customers --integration ecom --json
-dogsled model profile fct_orders --integration ecom --sample-size 1000 --json
-dogsled model profile raw_customers --integration ecom --confidence-min 0.8
+bobsled model profile ecom.raw_customers --integration ecom --json
+bobsled model profile fct_orders --integration ecom --sample-size 1000 --json
+bobsled model profile raw_customers --integration ecom --confidence-min 0.8
 ```
 
 Emit only cleaning suggestions:
 
 ```sh
-dogsled model profile suggest cleaning ecom.raw_customers --integration ecom --confidence-min 0.9 --json
+bobsled model profile suggest cleaning ecom.raw_customers --integration ecom --confidence-min 0.9 --json
 ```
 
 Options:
@@ -1422,7 +1422,7 @@ Read [Model Profiler User Guide](docs/profiler-user-guide.md) for output shape, 
 Scaffold a new project with example files.
 
 ```sh
-dogsled model init my-project
+bobsled model init my-project
 ```
 
 ### resolve
@@ -1430,16 +1430,16 @@ dogsled model init my-project
 Entity resolution pipeline commands.
 
 ```sh
-dogsled entity-graph resolve init <entity>                                          # Scaffold a new resolution spec
-dogsled entity-graph resolve validate [entity...] [--json]                          # Validate resolution specs
-dogsled entity-graph resolve compile [entity...] [-o dir] [--json]                  # Compile to SQL
-dogsled entity-graph resolve run [entity...] [--runner ./r.js] [--dry-run] [--json] # Run through threshold routing or print the plan
-dogsled entity-graph resolve cluster [entity...] [--runner ./r.js] [--json]         # Cluster after review
-dogsled entity-graph resolve report [entity...] [--json]                            # Spec summary
-dogsled entity-graph resolve status [entity...] [--runner ./r.js] [--json]          # Row counts across runtime tables
-dogsled entity-graph resolve estimate [entity...] [--runner ./r.js] [--json]        # Threshold-band volume estimates
-dogsled entity-graph resolve inspect pair --entity <name> --pair-id <id> [--runner ./r.js] [--json]
-dogsled entity-graph resolve inspect cluster --entity <name> --cluster-id <id> [--runner ./r.js] [--json]
+bobsled entity-graph resolve init <entity>                                          # Scaffold a new resolution spec
+bobsled entity-graph resolve validate [entity...] [--json]                          # Validate resolution specs
+bobsled entity-graph resolve compile [entity...] [-o dir] [--json]                  # Compile to SQL
+bobsled entity-graph resolve run [entity...] [--runner ./r.js] [--dry-run] [--json] # Run through threshold routing or print the plan
+bobsled entity-graph resolve cluster [entity...] [--runner ./r.js] [--json]         # Cluster after review
+bobsled entity-graph resolve report [entity...] [--json]                            # Spec summary
+bobsled entity-graph resolve status [entity...] [--runner ./r.js] [--json]          # Row counts across runtime tables
+bobsled entity-graph resolve estimate [entity...] [--runner ./r.js] [--json]        # Threshold-band volume estimates
+bobsled entity-graph resolve inspect pair --entity <name> --pair-id <id> [--runner ./r.js] [--json]
+bobsled entity-graph resolve inspect cluster --entity <name> --cluster-id <id> [--runner ./r.js] [--json]
 ```
 
 ### review
@@ -1447,11 +1447,11 @@ dogsled entity-graph resolve inspect cluster --entity <name> --cluster-id <id> [
 Review queue management for entity resolution.
 
 ```sh
-dogsled entity-graph review export <entity...> [--format csv|json|yaml] [--template] [--all] [--limit n] [--runner ./r.js] [--json]
-dogsled entity-graph review apply --input <file|"-"> --entity <name> [--batch-id id] [--runner ./r.js] [--json]
-dogsled entity-graph review list <entity...> [--limit n] [--threshold-band review|agent_review|human_review] [--runner ./r.js] [--json]
-dogsled entity-graph review show --entity <name> --pair-id <id> [--runner ./r.js] [--json]
-dogsled entity-graph review decide --entity <name> --pair-id <id> --decision merge|not_match|defer [--runner ./r.js] [--json]
+bobsled entity-graph review export <entity...> [--format csv|json|yaml] [--template] [--all] [--limit n] [--runner ./r.js] [--json]
+bobsled entity-graph review apply --input <file|"-"> --entity <name> [--batch-id id] [--runner ./r.js] [--json]
+bobsled entity-graph review list <entity...> [--limit n] [--threshold-band review|agent_review|human_review] [--runner ./r.js] [--json]
+bobsled entity-graph review show --entity <name> --pair-id <id> [--runner ./r.js] [--json]
+bobsled entity-graph review decide --entity <name> --pair-id <id> --decision merge|not_match|defer [--runner ./r.js] [--json]
 ```
 
 ### seed
@@ -1459,9 +1459,9 @@ dogsled entity-graph review decide --entity <name> --pair-id <id> --decision mer
 Reference data loading.
 
 ```sh
-dogsled model seed validate [--json]               # Validate seed specs
-dogsled model seed load [--runner ./r.js] [--json] # Load seed data or print SQL
-dogsled model seed diff [--runner ./r.js] [--json]  # Compare warehouse state vs local CSV
+bobsled model seed validate [--json]               # Validate seed specs
+bobsled model seed load [--runner ./r.js] [--json] # Load seed data or print SQL
+bobsled model seed diff [--runner ./r.js] [--json]  # Compare warehouse state vs local CSV
 ```
 
 ### survivorship
@@ -1469,11 +1469,11 @@ dogsled model seed diff [--runner ./r.js] [--json]  # Compare warehouse state vs
 Golden-record survivorship rules.
 
 ```sh
-dogsled entity-graph survivorship init <entity>                                             # Scaffold a survivorship spec
-dogsled entity-graph survivorship validate [name...] [--json]                               # Validate survivorship specs
-dogsled entity-graph survivorship compile [name...] [-o dir] [--json]                       # Compile to SQL
-dogsled entity-graph survivorship run [name...] [--runner ./r.js] [--json]                  # Run survivorship or print SQL
-dogsled entity-graph survivorship inspect <name> [--cluster-id id] [--runner ./r.js] [--json] # Inspect golden record
+bobsled entity-graph survivorship init <entity>                                             # Scaffold a survivorship spec
+bobsled entity-graph survivorship validate [name...] [--json]                               # Validate survivorship specs
+bobsled entity-graph survivorship compile [name...] [-o dir] [--json]                       # Compile to SQL
+bobsled entity-graph survivorship run [name...] [--runner ./r.js] [--json]                  # Run survivorship or print SQL
+bobsled entity-graph survivorship inspect <name> [--cluster-id id] [--runner ./r.js] [--json] # Inspect golden record
 ```
 
 ### truthset
@@ -1481,10 +1481,10 @@ dogsled entity-graph survivorship inspect <name> [--cluster-id id] [--runner ./r
 Threshold regression with labeled pairs.
 
 ```sh
-dogsled entity-graph truthset init <entity>                                   # Scaffold a truthset spec and CSV
-dogsled entity-graph truthset validate [name...] [--json]                     # Validate truthset specs
-dogsled entity-graph truthset score [name...] --runner ./r.js [--json]        # Measure precision/recall
-dogsled entity-graph truthset tune [name...] --runner ./r.js [--json]         # Recommend new thresholds
+bobsled entity-graph truthset init <entity>                                   # Scaffold a truthset spec and CSV
+bobsled entity-graph truthset validate [name...] [--json]                     # Validate truthset specs
+bobsled entity-graph truthset score [name...] --runner ./r.js [--json]        # Measure precision/recall
+bobsled entity-graph truthset tune [name...] --runner ./r.js [--json]         # Recommend new thresholds
 ```
 
 ### agent
@@ -1492,11 +1492,11 @@ dogsled entity-graph truthset tune [name...] --runner ./r.js [--json]         # 
 Agent-native Entity Graph task orchestration.
 
 ```sh
-dogsled entity-graph agent triage [entity...] --runner ./r.js [--profile path] [--json]
-dogsled entity-graph agent review-batch --entity <name> --runner ./r.js [--mode propose|apply] [--profile path] [--output-bundle path] [--json]
-dogsled entity-graph agent survivorship-refresh [entity...] --runner ./r.js [--profile path] [--json]
-dogsled entity-graph agent truthset-regress [entity...] --runner ./r.js [--profile path] [--json]
-dogsled entity-graph agent init-profile <name> [--entity name] [--operation review_batch] [--mode propose|apply]
+bobsled entity-graph agent triage [entity...] --runner ./r.js [--profile path] [--json]
+bobsled entity-graph agent review-batch --entity <name> --runner ./r.js [--mode propose|apply] [--profile path] [--output-bundle path] [--json]
+bobsled entity-graph agent survivorship-refresh [entity...] --runner ./r.js [--profile path] [--json]
+bobsled entity-graph agent truthset-regress [entity...] --runner ./r.js [--profile path] [--json]
+bobsled entity-graph agent init-profile <name> [--entity name] [--operation review_batch] [--mode propose|apply]
 ```
 
 ### Global Options
@@ -1693,7 +1693,7 @@ sources:
 ```
 
 The first batch reads all input rows. Later batches read rows whose cursor is
-strictly greater than the last published batch's cursor. Dogsled freezes these
+strictly greater than the last published batch's cursor. Bobsled Core freezes these
 inputs and their maximum cursor values in the execution checkpoint. It advances
 the shared cursor only after publication is confirmed. A successful input that
 returns zero output rows still advances progress. Output metadata timestamps do
@@ -1715,7 +1715,7 @@ Storage follows the execution configuration:
   its system schema. PostgreSQL, Snowflake, BigQuery, and Databricks are supported.
   Databricks requires catalog-managed transactions, as for publication.
 - Library hosts can supply `agentic.cursorStore`, or expose `cursors` on their
-  checkpoint store. Dogsled does not silently use local cursors for a supplied store.
+  checkpoint store. Bobsled Core does not silently use local cursors for a supplied store.
 
 A cursor record belongs to a scope, model, and target and holds each input's
 bookmark. It reserves the unfinished batch's run ID. Resume that ID to reuse saved work. A fresh start can take over an unpublished
@@ -1737,7 +1737,7 @@ value at the cut are never split across batches. If more rows share one cursor v
 than fit in a batch, the run fails and asks for a cursor with more distinct values.
 
 Hosts receive `prepare(context).incremental` with `cursor_field` and optional
-`after`. Apply the filter **before** the input row limit. Dogsled checks returned
+`after`. Apply the filter **before** the input row limit. Bobsled Core checks returned
 rows again. Hosts that set `incrementalBatches` also receive `batch: true` and must
 order rows by the cursor; other hosts keep failing when the backlog does not fit. Existing hosts remain valid for bounded inputs, but must implement
 filter pushdown to process large upstream tables efficiently. Agentic input
@@ -1746,7 +1746,7 @@ not supported.
 
 ## OSI import and export
 
-Dogsled supports importing and exporting semantic models in the Open Semantic
+Bobsled Core supports importing and exporting semantic models in the Open Semantic
 Interchange (OSI) format. Use [OSI import and export](docs/ossie-interchange.md)
 to convert between OSI documents and native source, model, metric, and relationship
 YAML, and verified queries (with `0.2.0.dev0`). The guide covers the CLI and SDK, incomplete imports, BOBSLED extensions,

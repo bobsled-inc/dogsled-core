@@ -95,7 +95,7 @@ export function escapeSqlLiteral(value: string): string {
 }
 
 /**
- * Allowed suffixes for `<entity>__<suffix>` tables produced by the Dogsled Entity Graph
+ * Allowed suffixes for `<entity>__<suffix>` tables produced by the Bobsled Core Entity Graph
  * pipeline. New suffixes must be added here explicitly so that
  * `formatEntityGraphTableName` can guarantee a safe, injection-proof identifier.
  */

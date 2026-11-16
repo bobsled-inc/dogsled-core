@@ -169,7 +169,7 @@ export async function runDatabaseLoader(
   const streamStrategies = new Map<string, LoadStrategy>();
   // Final destination table -> original protocol stream. Load execution is
   // keyed by table, but structured progress must retain the source identity so
-  // Dogsled can attribute rows when `table:` replaces the normal prefix.
+  // Bobsled Core can attribute rows when `table:` replaces the normal prefix.
   const sourceStreams = new Map<string, string>();
   const seenReconcileSchemaStreams = new Set<string>();
   const buffers = new Map<string, RecordBuffer>();

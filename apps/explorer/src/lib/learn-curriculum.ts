@@ -63,7 +63,7 @@ export const LEARN_MODULE_GROUPS: LearnModuleGroupDefinition[] = [
     id: 'foundations',
     label: 'Foundations',
     description:
-      'CLI basics, local projects, and the Explorer surfaces that make Dogsled inspectable.',
+      'CLI basics, local projects, and the Explorer surfaces that make Bobsled Core inspectable.',
   },
   {
     id: 'bobsled-model-spec-context',

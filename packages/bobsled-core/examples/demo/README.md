@@ -1,4 +1,4 @@
-# dogsled Demo
+# bobsled Demo
 
 End-to-end walkthrough: extract data from REST and GraphQL APIs, build semantic models, query locally with DuckDB.
 
@@ -7,7 +7,7 @@ Includes four integrations — run any combination depending on which tokens you
 ## Quick Start
 
 ```bash
-dogsled examples init demo
+bobsled examples init demo
 cd demo
 ```
 
@@ -17,8 +17,8 @@ Set one or more tokens (see below), then:
 ./walkthrough.sh
 ```
 
-If you installed Dogsled into a project folder with `npm install @bobsled-inc/bobsled-core`,
-run the commands below with `npx dogsled`; the walkthrough finds it either way. The
+If you installed Bobsled Core into a project folder with `npm install @bobsled-inc/bobsled-core`,
+run the commands below with `npx bobsled`; the walkthrough finds it either way. The
 walkthrough needs bash 4 or later.
 
 The script auto-detects which tokens are set and runs only those integrations.
@@ -110,22 +110,22 @@ walkthrough.sh      Run everything end-to-end
 
 ```bash
 # Validate
-dogsled extract validate github
-dogsled model validate
+bobsled extract validate github
+bobsled model validate
 
 # Extract a single resource
-dogsled pipeline repos --integration github --format parquet --output-dir ./output --input org=octocat
-dogsled pipeline channels --integration slack --format parquet --output-dir ./output
-dogsled pipeline users --integration notion --format parquet --output-dir ./output
-dogsled pipeline issues --integration linear --format parquet --output-dir ./output
+bobsled pipeline repos --integration github --format parquet --output-dir ./output --input org=octocat
+bobsled pipeline channels --integration slack --format parquet --output-dir ./output
+bobsled pipeline users --integration notion --format parquet --output-dir ./output
+bobsled pipeline issues --integration linear --format parquet --output-dir ./output
 
 # Compile models (writes ./compiled/warehouse/*.sql)
-dogsled model compile -o ./compiled
+bobsled model compile -o ./compiled
 ```
 
 ## Prerequisites
 
 - **Node.js** 24+
 - **bash** 4+ for `walkthrough.sh`
-- **dogsled** CLI installed (`dogsled --version`)
+- **bobsled** CLI installed (`bobsled --version`)
 - **DuckDB** (optional, for query step) — `brew install duckdb`

@@ -2,7 +2,7 @@
 
 <!-- last-reviewed: 2026-11-12 -->
 
-Shared Dogsled protocol message types plus metadata-safe configuration contracts.
+Shared Bobsled Core protocol message types plus metadata-safe configuration contracts.
 Packages that only validate manifests or configuration should depend on this
 package instead of a connection runtime.
 

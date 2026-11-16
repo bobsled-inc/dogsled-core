@@ -13,7 +13,7 @@ async function expectLoadFailure(projectDir: string, message: RegExp): Promise<v
   const error = await loadProject(projectDir).catch((value) => value as BobsledRuntimeError);
   expect(error).toMatchObject({
     kind: 'validation',
-    message: 'Dogsled could not validate the request.',
+    message: 'Bobsled Core could not validate the request.',
   });
   expect(error.cause?.message).toMatch(message);
 }

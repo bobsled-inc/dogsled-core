@@ -7,7 +7,7 @@ import {
 /**
  * Zod schemas for source and transform spec files.
  *
- * Validates YAML specs used by `dogsled model compile` to generate
+ * Validates YAML specs used by `bobsled model compile` to generate
  * warehouse DDL from declarative definitions.
  */
 

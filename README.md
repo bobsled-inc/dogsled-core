@@ -1,10 +1,10 @@
-# Dogsled Core
+# Bobsled Core
 
-[![CI](https://github.com/bobsled-inc/dogsled-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bobsled-inc/dogsled-core/actions/workflows/ci.yml)
+[![CI](https://github.com/bobsled-inc/bobsled-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bobsled-inc/bobsled-core/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@bobsled-inc/bobsled-core.svg)](https://www.npmjs.com/package/@bobsled-inc/bobsled-core)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-**Dogsled Core is an open-source command-line toolkit for moving and transforming data.**
+**Bobsled Core is an open-source command-line toolkit for moving and transforming data.**
 Extract data from APIs, files and databases, load it into a database or warehouse,
 and build SQL models that produce tables you can query.
 
@@ -17,7 +17,7 @@ read, review, validate and run that project from a repository.
 [Concepts](docs/concepts.md) ·
 [Documentation](docs/README.md) · [Examples](examples/README.md)
 
-## When to use Dogsled Core
+## When to use Bobsled Core
 
 - **Turn source data into queryable tables.** Load API responses or files into
   DuckDB or a warehouse, then build models for questions such as customer spend.
@@ -39,7 +39,7 @@ See [Run pipelines](docs/guides/run-pipelines.md) and
 
 The [ten-minute tutorial](docs/getting-started.md) loads a CSV file into a local
 DuckDB database, builds a model and queries it. You need **Node.js 24 or later
-and npm**. The exercise needs no Dogsled account, AI provider or external warehouse.
+and npm**. The exercise needs no Bobsled Core account, AI provider or external warehouse.
 
 Install the `@bobsled-inc/bobsled-core` package and create a project:
 
@@ -48,9 +48,9 @@ mkdir my-data
 cd my-data
 npm init -y
 npm install @bobsled-inc/bobsled-core
-npx dogsled init shop --duckdb
+npx bobsled init shop --duckdb
 cd shop
-npx dogsled doctor
+npx bobsled doctor
 ```
 
 These commands create and check an empty project. Continue with
@@ -67,34 +67,34 @@ the model query returns:
 The tutorial then adds a public API without an API key. It includes every project
 file, command and expected result.
 
-Installing Dogsled into each project keeps its version and warehouse drivers with
+Installing Bobsled Core into each project keeps its version and warehouse drivers with
 that project. Other destinations can require optional drivers and credentials.
 See [Load data](docs/guides/load-data.md#install-a-warehouse-driver).
-The [installation guide](docs/getting-started.md#install-dogsled) also covers global installation.
+The [installation guide](docs/getting-started.md#install-bobsled-core) also covers global installation.
 
 ### Set up your own data with your coding agent
 
-Install the [Dogsled Core plugin for Claude Code or Codex](plugins/bobsled-core/README.md),
+Install the [Bobsled Core plugin for Claude Code or Codex](plugins/bobsled-core/README.md),
 open your project folder in the agent, and ask:
 
-> Use bobsled-get-started to install Dogsled and set up my project.
+> Use bobsled-get-started to install Bobsled Core and set up my project.
 
-The skill checks Node.js 24+ and installs Dogsled in your project if needed.
-Use **`bobsled-get-started`** to set up your Dogsled environment with your own
+The skill checks Node.js 24+ and installs Bobsled Core in your project if needed.
+Use **`bobsled-get-started`** to set up your Bobsled Core environment with your own
 connections, sources, pipelines and models. It can create a project or continue
 an existing one, then validate the setup and help you run a first useful query.
 
 ### Learn with your coding agent
 
-The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
+The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Bobsled Core through
 “What should I watch next?” Connect to a public API, build an ETL pipeline and
 semantic models, query across sources, and try an agentic transformation. An
 optional chapter teaches entity resolution.
 
-Install the [Dogsled Core plugin for Claude Code or Codex](plugins/bobsled-core/README.md)
+Install the [Bobsled Core plugin for Claude Code or Codex](plugins/bobsled-core/README.md)
 to make the built-in skills available without copying files from this repository.
 
-After installing Dogsled, open Claude Code or Codex in your project folder and
+After installing Bobsled Core, open Claude Code or Codex in your project folder and
 invoke the **`bobsled-tutorials`** skill, or ask:
 
 > Use the bobsled-tutorials skill for TV Night.
@@ -103,7 +103,7 @@ The skill already includes the chapter order, setup, choices and inspection paus
 You do not need to repeat those instructions. If the skill is not available in your
 agent, use this fallback:
 
-> Read `npx dogsled onboarding guide` and follow its instructions.
+> Read `npx bobsled onboarding guide` and follow its instructions.
 
 This command exposes the bundled guide without a separate skill installation.
 
@@ -121,7 +121,7 @@ chapter instructions.
 
 ## How a project works
 
-A Dogsled project is a folder of YAML and Markdown files:
+A Bobsled Core project is a folder of YAML and Markdown files:
 
 ```text
 APIs, files, databases → extract → load → tables → SQL models → query
@@ -154,7 +154,7 @@ group_by: [customer]
 materialization: { type: table }
 ```
 
-Dogsled validates the model, compiles it to SQL and runs it against the configured
+Bobsled Core validates the model, compiles it to SQL and runs it against the configured
 database. People and agents can read the descriptions and `ai_context` to decide
 which model to use. Core also validates and exports metric definitions. It does
 not compute those metrics itself. See [Semantic model](docs/guides/semantic-model.md).
@@ -207,7 +207,7 @@ uses of AI. Ordinary extraction, loading and SQL modeling do not require an AI p
 ## Running Core
 
 Core runs in your environment and uses the sources and destinations you configure.
-It requires no hosted Dogsled account or control plane and has no default
+It requires no hosted Bobsled Core account or control plane and has no default
 maintainer telemetry. Keep credentials in environment variables referenced by
 project files. Optional AI and embedding features send selected data to configured
 providers and can incur provider charges. See [Privacy](PRIVACY.md) for data flows,
@@ -226,10 +226,10 @@ local state and retention.
 ## Community and contributions
 
 Ask questions, share ideas and request connectors in
-[GitHub Discussions](https://github.com/bobsled-inc/dogsled-core/discussions).
+[GitHub Discussions](https://github.com/bobsled-inc/bobsled-core/discussions).
 
 - Report a reproducible bug in a
-  [GitHub issue](https://github.com/bobsled-inc/dogsled-core/issues/new/choose).
+  [GitHub issue](https://github.com/bobsled-inc/bobsled-core/issues/new/choose).
 - Report a vulnerability privately, as described in [SECURITY.md](SECURITY.md).
 - Outside code contributions are limited to small fixes. Read
   [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution policy, development setup

@@ -69,9 +69,9 @@ function describeIndexIssues(issues: readonly ProjectIndexIssue[]): string {
 }
 
 /**
- * Report the project scan: problems that stop Dogsled commands as an error, and
- * files Dogsled skipped (symbolic links, files owned by other tools, unknown
- * types outside Dogsled folders) as a warning, so nothing is skipped unseen.
+ * Report the project scan: problems that stop Bobsled Core commands as an error, and
+ * files Bobsled Core skipped (symbolic links, files owned by other tools, unknown
+ * types outside Bobsled Core folders) as a warning, so nothing is skipped unseen.
  */
 export function checkProjectFiles(projectRoot: string, index?: ProjectIndex): DoctorCheck[] {
   let scanned: ProjectIndex;
@@ -95,7 +95,7 @@ export function checkProjectFiles(projectRoot: string, index?: ProjectIndex): Do
     checks.push({
       name: 'project.files.skipped',
       status: 'warn',
-      message: `Dogsled skipped ${skipped.length} file${skipped.length === 1 ? '' : 's'}: ${describeIndexIssues(skipped)}`,
+      message: `Bobsled Core skipped ${skipped.length} file${skipped.length === 1 ? '' : 's'}: ${describeIndexIssues(skipped)}`,
     });
   }
   return checks;
@@ -193,7 +193,7 @@ function resolveProject(configPath?: string, projectRoot?: string): BobsledProje
   const project = resolveCliBobsledProject({ configPath, projectRoot });
   if (!project) {
     throw new CommandError(
-      'Could not find a Dogsled Project. Pass --project-root <path>.',
+      'Could not find a Bobsled Core Project. Pass --project-root <path>.',
       EXIT_ERROR
     );
   }
@@ -212,9 +212,9 @@ export function servingCheckName(check: DoctorFinding['check']): string {
 export function registerDoctorCommand(program: Command): void {
   program
     .command('doctor')
-    .description('Check Dogsled project health')
+    .description('Check Bobsled Core project health')
     .option('--config <path>', 'Path to bobsled.yml')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option('--no-guide', 'Skip Project guide validation')
     .option('--json', 'Emit JSON')
     .option('--yaml', 'Emit YAML')

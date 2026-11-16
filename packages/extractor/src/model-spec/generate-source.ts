@@ -311,8 +311,8 @@ function collectFieldMetadata(field: ResourceOutputField): Partial<FieldMetadata
  *
  * When `embedConfig` is provided, one VECTOR column per configured embed field
  * is appended to the schema with `embedded_from` provenance. Callers that have
- * no pipeline context (e.g. standalone `dogsled extract run --emit-model-spec-source`
- * outside `dogsled pipeline`) omit the argument and the scaffold behaves
+ * no pipeline context (e.g. standalone `bobsled extract run --emit-model-spec-source`
+ * outside `bobsled pipeline`) omit the argument and the scaffold behaves
  * exactly as before.
  */
 export function generateModelSpecSource(

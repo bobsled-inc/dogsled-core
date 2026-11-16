@@ -147,7 +147,7 @@ function resolveBobsledCli(): { command: string; baseArgs: string[]; root: strin
     return { command: 'npx', baseArgs: ['tsx', srcPath], root };
   }
 
-  throw new Error('Could not resolve dogsled CLI (neither dist nor src found)');
+  throw new Error('Could not resolve bobsled CLI (neither dist nor src found)');
 }
 
 const ALLOWED_COMMANDS = new Set([

@@ -13,7 +13,7 @@
  *
  * This module intentionally does NOT import from `../validate.js`, which
  * pulls in `@bobsled-inc/extractor` -> DuckDB native binding. Source YAML
- * shape is already enforced by `validate-all.test.ts` at Dogsled build time,
+ * shape is already enforced by `validate-all.test.ts` at Bobsled Core build time,
  * so the walker can safely use hand-rolled type guards.
  */
 
@@ -467,7 +467,7 @@ function loadResourceFile(
 
   // We trust the YAML shape (see file header) — only check the fields we
   // actually read for type-correctness. Source authors committing malformed
-  // YAML are caught by `validate-all.test.ts` at Dogsled build time.
+  // YAML are caught by `validate-all.test.ts` at Bobsled Core build time.
   const specName = asString(parsed['name']);
   if (!specName) return undefined;
   const entity = asString(parsed['entity']) ?? specName;

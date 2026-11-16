@@ -203,11 +203,11 @@ async function actHandler(
   }
 }
 
-/** Registers the `dogsled act` command for listing, describing, and executing actions. */
+/** Registers the `bobsled act` command for listing, describing, and executing actions. */
 export function registerActCommand(program: Command): void {
   program
     .command('act [action]')
-    .description('Execute an action from the Dogsled action registry')
+    .description('Execute an action from the Bobsled Core action registry')
     .option('--input <key=value>', 'Input key-value pairs', collectValue)
     .option('--input-json <json>', 'Input as a JSON object')
     .option('--dry-run', 'Validate and build the request without executing it', false)
@@ -216,7 +216,7 @@ export function registerActCommand(program: Command): void {
     .option('--integration <name>', 'Filter by integration when listing actions')
     .option('--tag <tag>', 'Filter by tag when listing actions', collectValue)
     .option('--yaml', 'Emit structured output as YAML')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .action(async (actionName: string | undefined, localOptions: ActOptions) => {
       const globalOptions = program.opts<GlobalOptions>();
       await actHandler(actionName, localOptions, globalOptions);

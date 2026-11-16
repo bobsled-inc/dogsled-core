@@ -40,7 +40,7 @@ it('rejects oversized previews rather than silently embedding all data', () => {
 
 it('explains the empty API-first journey without claiming bundled records', () => {
   const html = renderOnboardingHtml({ ...snapshot, tables: [] });
-  expect(html).toContain('Learn Dogsled with TV Night');
+  expect(html).toContain('Learn Bobsled Core with TV Night');
   expect(html).toContain('Connect to TVmaze');
   expect(html).toContain('No data fetched yet');
   expect(html).not.toContain('bundled snapshot');
@@ -143,7 +143,7 @@ it('introduces querying and invites the learner question before building a short
       steps: [{ id: 'query', label: 'Query your data', status: 'not_started' }],
     },
   });
-  expect(html).toContain('Dogsled lets you query your models and metrics');
+  expect(html).toContain('Bobsled Core lets you query your models and metrics');
   expect(html).toContain('Choose an example question or ask your own');
   expect(html).toContain('Wait for my question before running a query');
   expect(html).not.toContain('Build or update watch_next using my preferences');

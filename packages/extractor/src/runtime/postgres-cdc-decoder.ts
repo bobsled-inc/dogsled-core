@@ -245,12 +245,14 @@ export class PgoutputDecoder {
         reader.readBytes(reader.readInt32());
         break;
       case 'T':
-        throw new Error('pgoutput TRUNCATE messages are not supported in Dogsled CDC');
+        throw new Error('pgoutput TRUNCATE messages are not supported in Bobsled Core CDC');
       case 'S':
       case 'E':
       case 'c':
       case 'A':
-        throw new Error('pgoutput streamed transaction messages are not supported in Dogsled CDC');
+        throw new Error(
+          'pgoutput streamed transaction messages are not supported in Bobsled Core CDC'
+        );
       default:
         throw new Error(`Unsupported pgoutput message type "${tag}"`);
     }

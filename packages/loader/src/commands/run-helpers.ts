@@ -53,7 +53,7 @@ export function formatDatabaseError(
   if (!schemaDrift) {
     return wrap(
       `Failed to load stream "${stream}" to ${destination}: ${detail}. ` +
-        `Run \`dogsled load check --dest ${destination}\` to diagnose connectivity issues.`
+        `Run \`bobsled load check --dest ${destination}\` to diagnose connectivity issues.`
     );
   }
 

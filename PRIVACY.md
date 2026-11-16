@@ -2,13 +2,13 @@
 
 <!-- last-reviewed: 2026-07-27 -->
 
-Dogsled is a local-first data engineering toolkit. It has no required hosted
+Bobsled Core is a local-first data engineering toolkit. It has no required hosted
 account, hosted control plane, or default maintainer telemetry. Configuration,
 state, and semantic context live in the operator's project and infrastructure.
 
 ## Where data can flow
 
-Dogsled processes data only through capabilities the operator invokes and
+Bobsled Core processes data only through capabilities the operator invokes and
 configures:
 
 - extractors read local documents, APIs, databases, warehouses, object stores,
@@ -17,16 +17,16 @@ configures:
   configured in `bobsled.yml`;
 - loaders write records to the configured local, database, warehouse, search,
   vector, or object-storage destination;
-- operators can run `dogsled runner run` from their own workflow steps, using
+- operators can run `bobsled runner run` from their own workflow steps, using
   the secrets, variables, permissions, and environments they configure.
 
 These providers and destinations have their own privacy and retention terms.
-Dogsled does not proxy their traffic through a maintainer-operated service.
+Bobsled Core does not proxy their traffic through a maintainer-operated service.
 
 ## Credentials
 
 Checked-in configuration should reference credentials through environment
-variables or GitHub secrets. Dogsled does not intentionally write raw credentials
+variables or GitHub secrets. Bobsled Core does not intentionally write raw credentials
 into project configuration, state, or reports. Error and
 diagnostic paths apply credential redaction, but operators should still treat
 logs and generated artifacts as sensitive and review them before sharing.
@@ -39,14 +39,14 @@ customer data.
 Depending on the commands and destinations used, an operator's environment may
 contain:
 
-- extracted records and Dogsled protocol JSONL streams;
+- extracted records and Bobsled Core protocol JSONL streams;
 - DuckDB, DuckLake, SQLite, warehouse, or destination tables;
 - cursor and runner state;
 - caches, batches, generated SQL, compiled models, and temporary files;
 - logs, error bodies, manifests, workflow artifacts;
 - entity-resolution review queues, decisions, embeddings, and generated SDKs.
 
-Dogsled bounds and cleans up security-sensitive temporary files where the runtime
+Bobsled Core bounds and cleans up security-sensitive temporary files where the runtime
 owns their lifecycle. Destination data, project state, CI artifacts, logs, and
 support exports remain under the operator's retention and deletion policies.
 Delete them using the controls of the filesystem, repository, CI platform, and
@@ -58,7 +58,7 @@ Agentic executors can send prepared records, instructions, intermediate findings
 and retrieved context to the selected AI provider. The built-in TypeSafe executor
 sends classification inputs to TypeSafe. Extra host tools and custom executors
 have their own network behavior; review them before loading them. A local executor
-module is trusted application code and is not sandboxed by Dogsled.
+module is trusted application code and is not sandboxed by Bobsled Core.
 
 Agentic checkpoints retain frozen inputs, model definitions, accepted and
 intermediate results, evidence, and usage under `.bobsled/model-spec/` or the configured
@@ -66,7 +66,7 @@ checkpoint store. Warehouse payload encoding is not encryption. Published findin
 publication stages, receipts, and shared input cursors can remain in the output
 database. These records can contain source data and personal information.
 
-Runs saved as rows expire, in DuckDB and in the opt-in warehouse row store: Dogsled removes a run
+Runs saved as rows expire, in DuckDB and in the opt-in warehouse row store: Bobsled Core removes a run
 30 days after its last write, or after the period the store sets, unless it is still owed
 publication or cursor recovery. This is storage housekeeping, not secure erasure: a warehouse can
 keep deleted rows for a time, as Snowflake does in Time Travel and Fail-safe. Nothing else expires
@@ -84,7 +84,7 @@ whether a source may be processed, limiting extracted fields and records,
 selecting appropriate destinations and AI providers, and satisfying applicable
 access, retention, deletion, and data-residency obligations.
 
-Dogsled's entity-graph privacy helpers can normalize or hash selected match keys,
+Bobsled Core's entity-graph privacy helpers can normalize or hash selected match keys,
 but pseudonymized or hashed identifiers may still be personal data.
 
 ## Diagnostics and security reviews
@@ -94,7 +94,7 @@ gitignored `.security-review/` directory. Raw reports can contain private paths,
 code excerpts, or secret-like values and must not be uploaded as CI artifacts
 or committed. Review and redact diagnostics before sharing them.
 
-Dogsled does not silently enable analytics, remote error reporting, or
+Bobsled Core does not silently enable analytics, remote error reporting, or
 maintainer-operated runtime endpoints. The security policy check protects that default.
 
 ## When this review must be updated

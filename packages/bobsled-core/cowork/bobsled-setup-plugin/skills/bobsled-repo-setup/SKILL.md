@@ -1,18 +1,18 @@
 ---
 name: bobsled-repo-setup
-description: Use this skill when the user wants Claude Cowork to create a new Dogsled repo from scratch or set up a repo in plain English without manual YAML editing.
+description: Use this skill when the user wants Claude Cowork to create a new Bobsled Core repo from scratch or set up a repo in plain English without manual YAML editing.
 version: 1.0.0
 ---
 
-# Dogsled Repo Setup
+# Bobsled Core Repo Setup
 
-Use the local `dogsled setup` commands as the source of truth:
+Use the local `bobsled setup` commands as the source of truth:
 
-1. `dogsled setup install`
-2. `dogsled setup recommend --write`
-3. `dogsled setup render`
-4. `dogsled setup doctor`
-5. `dogsled runner validate --strict` when local configuration is ready
+1. `bobsled setup install`
+2. `bobsled setup recommend --write`
+3. `bobsled setup render`
+4. `bobsled setup doctor`
+5. `bobsled runner validate --strict` when local configuration is ready
 
 Rules:
 

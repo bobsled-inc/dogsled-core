@@ -120,7 +120,7 @@ process.stdout.write(
 `;
 
 /**
- * Bundle the installed Dogsled package the way an app bundler (Nitro on Vercel)
+ * Bundle the installed Bobsled Core package the way an app bundler (Nitro on Vercel)
  * does: inline every module into one file in a nested `_libs/` folder unlike the
  * package layout, delete the packed integrations `sources/` folder, then check
  * that the bundle resolves exactly the sources, resources, metadata and actions

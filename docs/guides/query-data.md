@@ -1,15 +1,15 @@
 # Query data
 
-Dogsled can query the tables you loaded, query an API as if it were a table, and
+Bobsled Core can query the tables you loaded, query an API as if it were a table, and
 run verified queries by name. The examples continue the `shop` project from
 [Get started](../getting-started.md) and [Build models](build-models.md).
 
 ## Query a database
 
-`dogsled query` runs SQL against a DuckDB file or a BigQuery dataset:
+`bobsled query` runs SQL against a DuckDB file or a BigQuery dataset:
 
 ```bash
-dogsled query "SELECT customer, total_amount FROM analytics.customer_revenue ORDER BY total_amount DESC" \
+bobsled query "SELECT customer, total_amount FROM analytics.customer_revenue ORDER BY total_amount DESC" \
   --db-path .bobsled/bobsled.duckdb
 ```
 
@@ -23,12 +23,12 @@ grace	95.75
 In a terminal the result is tab-separated. When the output goes to a pipe, a file
 or a CI job, it is JSON; `--yaml` prints YAML. For BigQuery, pass `--dest bigquery`
 with `--project-id`, `--dataset-id` and optionally `--location` and
-`--key-filename`. `dogsled load query` is the same command.
+`--key-filename`. `bobsled load query` is the same command.
 
 ## Query an API as a table
 
-`dogsled source-query` runs SQL over `sources.<name>`, where each name is an
-API-backed source. Dogsled fetches the API when the query needs it, loads the rows
+`bobsled source-query` runs SQL over `sources.<name>`, where each name is an
+API-backed source. Bobsled Core fetches the API when the query needs it, loads the rows
 into DuckDB, and runs the query there.
 
 An API-backed source needs a resource with a `query` block, which lists the filters
@@ -86,7 +86,7 @@ schema:
 ```
 
 ```bash
-dogsled source-query "SELECT city, count(*) AS users FROM sources.users GROUP BY city ORDER BY city LIMIT 3"
+bobsled source-query "SELECT city, count(*) AS users FROM sources.users GROUP BY city ORDER BY city LIMIT 3"
 ```
 
 ```text
@@ -96,7 +96,7 @@ source=users target=duckdb table=bronze.users
 {"city":"Gwenborough","users":1}
 ```
 
-The first line goes to standard error and describes what Dogsled did: here it
+The first line goes to standard error and describes what Bobsled Core did: here it
 fetched 10 records and stored them (`action=materialized`).
 
 `mode` controls the cache:
@@ -108,14 +108,14 @@ fetched 10 records and stored them (`action=materialized`).
   into the destination, and fails if the table is missing.
 
 Lazy sources are stored in the destination named in `.bobsled/config.yml`:
-DuckDB, DuckLake, Snowflake or BigQuery. `dogsled init` writes this file and uses the
+DuckDB, DuckLake, Snowflake or BigQuery. `bobsled init` writes this file and uses the
 `bronze` schema.
 
 ## Run a verified query
 
 A verified query pairs a question with SQL that answers it and declares typed
 parameters. Refer to an API-backed source as `{<integration>.<source>}` and to a
-parameter as `{<name>}`. Dogsled checks each value against its type and escapes it.
+parameter as `{<name>}`. Bobsled Core checks each value against its type and escapes it.
 
 Create `vqs/users_in_city.yml`:
 
@@ -131,7 +131,7 @@ parameters:
 ```
 
 ```bash
-dogsled vq users_in_city --param city=Gwenborough
+bobsled vq users_in_city --param city=Gwenborough
 ```
 
 ```text
@@ -142,7 +142,7 @@ dogsled vq users_in_city --param city=Gwenborough
 A missing or invalid parameter stops the query with exit code 2:
 
 ```bash
-dogsled vq users_in_city || echo "exit code $?"
+bobsled vq users_in_city || echo "exit code $?"
 ```
 
 ```text

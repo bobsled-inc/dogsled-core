@@ -1,15 +1,15 @@
 ---
 name: bobsled-retail
-description: Learn Dogsled with a fictional retailer. Build warehouse models, join API feedback and classify support conversations with reviewed evidence.
+description: Learn Bobsled Core with a fictional retailer. Build warehouse models, join API feedback and classify support conversations with reviewed evidence.
 exposed: true
 triggers:
   - start the retail tutorial
   - retail demo
-  - learn dogsled with retail
+  - learn bobsled with retail
   - resume retail tutorial
 ---
 
-# Learn Dogsled with Retail
+# Learn Bobsled Core with Retail
 
 Use the shared onboarding engine. Do not create a separate progress tracker,
 HTML application or review workflow. The general `bobsled-tutorials` skill
@@ -34,15 +34,15 @@ the model works. Show a short excerpt from the actual files and link them. Keep
 the final response self-contained: chapter goal, explanation, evidence link,
 result, inspection task and a pause. Commentary alone does not count as teaching.
 
-Use `dogsled onboarding guide --tutorial retail` to find read-only `templatesPath`.
+Use `bobsled onboarding guide --tutorial retail` to find read-only `templatesPath`.
 Read and adapt only the current chapter's templates. Do not copy `reference/` or
 all completed models into the learner project. Show a model solution only when
 requested; guide the learner through the business rule and construction first.
 Use the public CLI, not direct database edits that bypass the lesson.
 
 In Chapter 3, first read `context/retail.ontology.yml` and
-`context/retail.mapping.yml`. Run `dogsled ontology describe retail --concept
-SalesLine --yaml` and `dogsled ontology validate --strict`. Explain the path from
+`context/retail.mapping.yml`. Run `bobsled ontology describe retail --concept
+SalesLine --yaml` and `bobsled ontology validate --strict`. Explain the path from
 a sales line to its product and supplier, then inspect the mapped source fields.
 Ask the learner why counting sales lines differs from summing units. Keep ontology
 meaning, semantic-model calculations and query results distinct. This is part of
@@ -51,19 +51,19 @@ the model chapter, not a new progress step.
 ## Setup and continuity
 
 Inspect the current folder. Preserve existing work. For a new project run
-`dogsled examples init retail --dir <new-folder>`. Record the original question and
+`bobsled examples init retail --dir <new-folder>`. Record the original question and
 preferences separately in `data/retail/question.json` (2,000 characters each).
 Run `node validate.mjs` to check source fixtures. Explain local API certificate
 setup before starting it; follow the bundled README. Never disable TLS checks.
 
-Run `dogsled onboarding render` in the project and open its returned HTML path.
+Run `bobsled onboarding render` in the project and open its returned HTML path.
 Reuse that view and refresh after later renders. If opening local HTML is not
 supported, provide its exact link and say so. Never claim a view opened if it did
 not. Database UI is optional, not a prerequisite.
 
-After a chapter, run `dogsled onboarding verify <step>` then render. Explain and
+After a chapter, run `bobsled onboarding verify <step>` then render. Explain and
 inspect the result with the learner. Only after their inspection, use the page's
-copied review request or `dogsled onboarding review <step> --checkpoint <hash>`
+copied review request or `bobsled onboarding review <step> --checkpoint <hash>`
 for the exact evidence shown. Do not mark unseen evidence reviewed. A failed
 check is not completion. Rendering must not rerun queries or paid calls.
 

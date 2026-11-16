@@ -1,5 +1,5 @@
 /**
- * Seed orchestrators — Layer 3 for `dogsled model seed validate|load|diff`.
+ * Seed orchestrators — Layer 3 for `bobsled model seed validate|load|diff`.
  *
  * Split into three entry points to keep host code honest about what it wants:
  *   - `validateSeeds` — parse + CSV validation only (no runner)

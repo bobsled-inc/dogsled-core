@@ -87,7 +87,7 @@ const SUGGESTED_QUESTIONS = [
   'How does incremental sync work?',
   'What is entity resolution and when should I use it?',
   'Walk me through setting up a SaaS analytics stack',
-  'What Dogsled CLI commands should I know?',
+  'What Bobsled Core CLI commands should I know?',
 ];
 
 export default function AgentPage() {
@@ -317,8 +317,8 @@ export default function AgentPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto flex flex-col h-[calc(100vh-2rem)]">
       <PageHeader
-        title="Dogsled Agent"
-        description="Ask anything about Dogsled's integrations, models, pipelines, and capabilities."
+        title="Bobsled Core Agent"
+        description="Ask anything about Bobsled Core's integrations, models, pipelines, and capabilities."
         actions={
           <>
             <button
@@ -385,7 +385,7 @@ export default function AgentPage() {
           <div className="space-y-4">
             <div className="bg-card border border-border rounded-lg p-4">
               <p className="text-xs text-muted-foreground">
-                I can help you explore Dogsled&apos;s full capability surface. Ask me about
+                I can help you explore Bobsled Core&apos;s full capability surface. Ask me about
                 integrations, data models, pipeline configuration, destinations, entity resolution,
                 or CLI commands.
               </p>
@@ -496,7 +496,7 @@ export default function AgentPage() {
               handleSubmit();
             }
           }}
-          placeholder={streaming ? 'Waiting for response...' : 'Ask about Dogsled...'}
+          placeholder={streaming ? 'Waiting for response...' : 'Ask about Bobsled Core...'}
           disabled={streaming}
           className="flex-1 bg-input border border-border rounded-md px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
         />

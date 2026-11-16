@@ -1,6 +1,6 @@
 # Classify rows with Jev
 
-Jev selects one answer from a fixed set of choices. Dogsled runs one classification per prepared row and publishes the result through its normal materializer.
+Jev selects one answer from a fixed set of choices. Bobsled Core runs one classification per prepared row and publishes the result through its normal materializer.
 
 ## Configure a profile
 
@@ -43,14 +43,14 @@ columns:
 
 Use between 2 and 255 choices. Each description must be a nonempty string. Each group must contain exactly one row. Output columns must be the grouping keys, `choice`, and `confidence`. Grouping keys must include any materialization keys.
 
-The adapter copies keys from Dogsled's assignment. It does not ask Jev to generate them. Jev's confidence is also stored in `_bobsled_confidence`. Evidence and reason metadata are null. Confidence is the provider's estimate, not proof of correctness. A valid `uncertain` choice counts as completed work.
+The adapter copies keys from Bobsled Core's assignment. It does not ask Jev to generate them. Jev's confidence is also stored in `_bobsled_confidence`. Evidence and reason metadata are null. Confidence is the provider's estimate, not proof of correctness. A valid `uncertain` choice counts as completed work.
 
 This version supports map steps only. It does not support skills, tools, source callbacks, reduce steps, multiple questions, scoring, embeddings, or generated explanations. TypeSafe profiles cannot be used for normal text generation. Model dimension and per-profile dollar budgets are unsupported; use the agentic model token and time limits.
 
 ## Run
 
 ```bash
-dogsled model run --agent-executor typesafe \
+bobsled model run --agent-executor typesafe \
   --agent-run-id restaurant-jev-1 --agent-tokens-per-assignment 8000
 ```
 
@@ -73,6 +73,6 @@ const host = createAgenticHost({
 });
 ```
 
-A custom host can dispatch different providers to different executors. Never send a classification assignment to a text-generation executor that ignores its choices. Dogsled and Vercel AI Gateway integration are outside this first version.
+A custom host can dispatch different providers to different executors. Never send a classification assignment to a text-generation executor that ignores its choices. Bobsled Core and Vercel AI Gateway integration are outside this first version.
 
 See [TypeSafe's Choice API](https://docs.typesafe.ai/primitives/choice).

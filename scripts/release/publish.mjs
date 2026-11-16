@@ -10,7 +10,7 @@ import { publishAccessForPackages } from './access.mjs';
 import { BOBSLED_CORE_PACKAGE_NAME } from './package-set.mjs';
 
 if (
-  process.env.GITHUB_REPOSITORY !== 'bobsled-inc/dogsled-core' ||
+  process.env.GITHUB_REPOSITORY !== 'bobsled-inc/bobsled-core' ||
   process.env.GITHUB_ACTIONS !== 'true'
 )
   throw new Error('Publication requires the bobsled-core release workflow.');

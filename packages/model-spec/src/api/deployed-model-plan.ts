@@ -2,13 +2,13 @@
  * File-less analysis and DuckDB planning for deployed model definitions.
  *
  * Hosts can keep committed source/model YAML in their own database, validate it
- * once, and ask Dogsled for the transitive execution closure without creating a
+ * once, and ask Bobsled Core for the transitive execution closure without creating a
  * temporary project directory. The returned SQL uses deterministic internal
  * source aliases and contains no credentials or execution controls. The host
  * owns source reads, limits, staging, execution, cancellation, and cleanup.
  *
  * This module is an intentional exception to model-spec's general multi-dialect
- * code-generation rule. A deployed plan is a fixed contract for Dogsled's
+ * code-generation rule. A deployed plan is a fixed contract for Bobsled Core's
  * query-time DuckDB runner, not portable warehouse SQL. The public API therefore
  * does not accept a dialect option.
  */

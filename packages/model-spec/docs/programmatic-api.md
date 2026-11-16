@@ -2,7 +2,7 @@
 
 Every Model Spec CLI verb is available as a library function. Hosts that want to drive
 `compile` / `run` / `validate` / `test` / `lineage` / `seed` pipelines without
-shelling out to the `dogsled model` CLI can import the same orchestrators the CLI itself
+shelling out to the `bobsled model` CLI can import the same orchestrators the CLI itself
 uses. Layer 1 primitives (`compileAll`, `buildModelRegistry`, `generateSql`,
 `TransformSpecSchema`, ...) stay frozen — hand-rolled flows like the host application
 app's `data-model-compilation-service.ts` keep working byte-for-byte.

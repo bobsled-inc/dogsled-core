@@ -74,7 +74,7 @@ export interface ExtractMentionsProjectOptions extends EntityGraphProjectOptions
    * Custom runner registry for integration-backed execution. Mirrors the
    * resolve / cluster / apply-decisions path (`ResolveWorkflowOptions.customRunners`):
    * when present it lets BigQuery / Snowflake runs authenticate via pre-minted,
-   * decrypted tokens, because the managed platform can't use Dogsled's built-in
+   * decrypted tokens, because the managed platform can't use Bobsled Core's built-in
    * `(bigquery, adc)` / `(snowflake, sledhouse_oidc)` runners on LangSmith Cloud.
    * Forwarded verbatim to `resolveEntityGraphRunner`; consulted only on the
    * integration branch and ignored when an explicit `--runner <path>` is set.

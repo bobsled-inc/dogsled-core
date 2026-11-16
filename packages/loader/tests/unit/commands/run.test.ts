@@ -716,7 +716,7 @@ describe('runDatabaseLoader: parallel loading', () => {
       'Failed to load stream "issues" to bigquery: SQL compilation error:\n' +
         'error line 1 at position 56\n' +
         'invalid identifier "TOKEN"; detail=[REDACTED]. ' +
-        'Run `dogsled load check --dest bigquery` to diagnose connectivity issues.'
+        'Run `bobsled load check --dest bigquery` to diagnose connectivity issues.'
     );
 
     expect(stderr.toString()).not.toContain('"level":"error"');

@@ -5,23 +5,23 @@ description: Load extracted data into DuckDB, BigQuery, GCS, or local files. Use
   or working with load strategies.
 ---
 
-# Dogsled loader — Data Loading Reference
+# Bobsled Core loader — Data Loading Reference
 
-Load Dogsled protocol data into analytical stores.
+Load Bobsled Core protocol data into analytical stores.
 
 ## Quick Reference
 
-**Prefer `dogsled pipeline`** for extract+load workflows — it handles subprocess orchestration automatically:
+**Prefer `bobsled pipeline`** for extract+load workflows — it handles subprocess orchestration automatically:
 
 ```bash
 # Extract + load into local parquet files
-dogsled pipeline --integration github --format parquet
+bobsled pipeline --integration github --format parquet
 
 # Extract + load into DuckDB
-dogsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
 
 # Extract + load into BigQuery
-dogsled pipeline --integration vantage costs \
+bobsled pipeline --integration vantage costs \
   --dest bigquery \
   --project-id my-project \
   --dataset-id raw \
@@ -29,25 +29,25 @@ dogsled pipeline --integration vantage costs \
   --table-prefix vantage__
 
 # Extract + load into GCS
-dogsled pipeline --integration github --dest gcs --gcs-bucket my-bucket --format parquet
+bobsled pipeline --integration github --dest gcs --gcs-bucket my-bucket --format parquet
 ```
 
 For standalone loader operations (checking connectivity, querying loaded data):
 
 ```bash
 # Check destination connectivity
-dogsled load check --dest duckdb --db-path ./data.duckdb
-dogsled load check --dest bigquery --project-id my-project --dataset-id raw
+bobsled load check --dest duckdb --db-path ./data.duckdb
+bobsled load check --dest bigquery --project-id my-project --dataset-id raw
 
 # Query loaded data
-dogsled load query "SELECT * FROM repos LIMIT 10" --db-path ./data.duckdb
-dogsled load query "SELECT * FROM raw.repos LIMIT 10" --dest bigquery --project-id my-project --dataset-id raw
+bobsled load query "SELECT * FROM repos LIMIT 10" --db-path ./data.duckdb
+bobsled load query "SELECT * FROM raw.repos LIMIT 10" --dest bigquery --project-id my-project --dataset-id raw
 ```
 
 For advanced use cases, you can pipe extract and load manually:
 
 ```bash
-dogsled extract run --integration github repos | dogsled load run --dest duckdb --db-path ./data.duckdb
+bobsled extract run --integration github repos | bobsled load run --dest duckdb --db-path ./data.duckdb
 ```
 
 ## Destinations
@@ -151,7 +151,7 @@ table through the destination's migration tooling.
 Preview what the loader would do without actually loading:
 
 ```bash
-dogsled extract run --integration github repos | dogsled load run --dest duckdb --db-path ./data.duckdb --dry-run
+bobsled extract run --integration github repos | bobsled load run --dest duckdb --db-path ./data.duckdb --dry-run
 ```
 
 Shows the strategy table (stream name, load strategy, key properties) without writing data.

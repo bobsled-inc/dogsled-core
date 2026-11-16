@@ -2,7 +2,7 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Reads the Dogsled protocol from standard input and loads it into a destination: local files, S3, GCS, DuckDB, DuckLake, SQLite, PostgreSQL, pgvector, Snowflake, BigQuery, MySQL, SQL Server, Databricks, ClickHouse, Elasticsearch, Chroma or Turbopuffer.
+Reads the Bobsled Core protocol from standard input and loads it into a destination: local files, S3, GCS, DuckDB, DuckLake, SQLite, PostgreSQL, pgvector, Snowflake, BigQuery, MySQL, SQL Server, Databricks, ClickHouse, Elasticsearch, Chroma or Turbopuffer.
 
 ## Installation
 
@@ -12,19 +12,19 @@ Install `@bobsled-inc/bobsled-core`; this code ships inside it.
 
 ```bash
 # 1. Local dev — load into DuckDB (strategy auto-resolved from resource config)
-dogsled pipeline --integration github --resource issues --dest duckdb --db-path ./dev.duckdb
+bobsled pipeline --integration github --resource issues --dest duckdb --db-path ./dev.duckdb
 
 # 2. Query loaded data
-dogsled load query "SELECT COUNT(*) FROM main.issues" --db-path ./dev.duckdb
+bobsled load query "SELECT COUNT(*) FROM main.issues" --db-path ./dev.duckdb
 
 # 3. Preview strategy resolution before loading
-dogsled extract run --integration github | dogsled load run --dest bigquery --dataset-id raw_github --dry-run
+bobsled extract run --integration github | bobsled load run --dest bigquery --dataset-id raw_github --dry-run
 
 # 4. Verify connectivity before production
-dogsled load check --dest bigquery --dataset-id raw_github
+bobsled load check --dest bigquery --dataset-id raw_github
 
 # 5. Production — same pipeline, different flags
-dogsled pipeline --integration github --resource issues --dest bigquery --dataset-id raw_github
+bobsled pipeline --integration github --resource issues --dest bigquery --dataset-id raw_github
 ```
 
 ## Vector Columns
@@ -49,11 +49,11 @@ Destinations that still reject protocol `vector` columns with validation errors 
 - `mssql`
 - `databricks`
 
-If you are enabling embeddings in a pipeline, validate destination compatibility before the first load with `dogsled load check` or a focused smoke test.
+If you are enabling embeddings in a pipeline, validate destination compatibility before the first load with `bobsled load check` or a focused smoke test.
 
 ## CLI Commands
 
-### `dogsled load run` (default)
+### `bobsled load run` (default)
 
 Reads protocol from stdin, writes to destination.
 
@@ -75,27 +75,27 @@ Reads protocol from stdin, writes to destination.
 | `--dry-run`                              | Print strategy table and exit without loading                                                                                                    | —                               |
 | `--buffer-size <n>`                      | Records buffered before flushing                                                                                                                 | `10000`                         |
 
-### `dogsled load check`
+### `bobsled load check`
 
 Validate destination connectivity before running a pipeline.
 
 ```bash
-dogsled load check --dest duckdb --db-path ./test.duckdb
-dogsled load check --dest ducklake --ducklake-catalog-url ducklake:./catalog.db
-dogsled load check --dest bigquery --dataset-id my_dataset
-dogsled load check --dest gcs --gcs-bucket my-bucket
+bobsled load check --dest duckdb --db-path ./test.duckdb
+bobsled load check --dest ducklake --ducklake-catalog-url ducklake:./catalog.db
+bobsled load check --dest bigquery --dataset-id my_dataset
+bobsled load check --dest gcs --gcs-bucket my-bucket
 ```
 
-### `dogsled load query`
+### `bobsled load query`
 
 Run SQL against a DuckDB or BigQuery database (TSV output).
 
 ```bash
 # DuckDB
-dogsled load query "SELECT * FROM main.issues LIMIT 10" --db-path ./dev.duckdb
+bobsled load query "SELECT * FROM main.issues LIMIT 10" --db-path ./dev.duckdb
 
 # BigQuery
-dogsled load query "SELECT * FROM raw_github.issues LIMIT 10" --dest bigquery --project-id my-project
+bobsled load query "SELECT * FROM raw_github.issues LIMIT 10" --dest bigquery --project-id my-project
 ```
 
 ## Load configuration
@@ -142,8 +142,8 @@ below. A data pipe carries protocol messages, so the loader does not automatical
 read the extractor's resource YAML.
 
 ```bash
-dogsled extract run --integration snowflake_source orders | \
-  dogsled load run --load-file load-orders.yml
+bobsled extract run --integration snowflake_source orders | \
+  bobsled load run --load-file load-orders.yml
 ```
 
 Project pipelines can bind a destination in `bobsled.yml` or use
@@ -240,7 +240,7 @@ auth:
 - Loader fetches an access token at connection time and passes it to `snowflake-sdk` via `authenticator: 'OAUTH'` + `token`.
 - Token URL must be `https://` (credentials are in the Basic auth header).
 
-**Pre-minted OIDC / access-token auth (Dogsled destination fields):**
+**Pre-minted OIDC / access-token auth (Bobsled Core destination fields):**
 
 - `credentials_access_token` resolves to loader flag `--sf-access-token` and forces `authenticator: 'OAUTH'`.
 - `credentials_token_command` resolves to loader flag `--sf-token-command`, takes precedence over the static token, and reconnects with a fresh token before expiry.
@@ -265,8 +265,8 @@ Workload identity requires `snowflake-sdk >=3.4.0`.
 
 The loader checks that the value has three JWT segments and that its Base64URL
 payload contains a future safe-integer `exp` claim before it creates a
-connection. Dogsled does not verify the signature; Snowflake verifies the token.
-The token is valid for one Dogsled attempt: the loader does not refresh or
+connection. Bobsled Core does not verify the signature; Snowflake verifies the token.
+The token is valid for one Bobsled Core attempt: the loader does not refresh or
 reconnect with it, and an expired token or closed connection fails the attempt
 so the next attempt can provide a current token. WIF cannot be combined with
 OAuth, PAT, or RSA fields. The token is treated as a known secret and is
@@ -353,10 +353,10 @@ default_load:
 
 ```bash
 # Normal operation -- load block is resolved from the resource or project config
-dogsled extract run --integration snowflake_source orders | dogsled load run
+bobsled extract run --integration snowflake_source orders | bobsled load run
 
 # Ops escape hatch -- override with a load-file
-dogsled load run --load-file ./overrides/staging-load.yml
+bobsled load run --load-file ./overrides/staging-load.yml
 ```
 
 When `--load-file` or `--load-integration` is set, explicit connection and authentication flags (such as `--dest` and `--sf-account`) are rejected. Configure those values in the selected integration or load file. Runtime overrides such as `--table-prefix` and `--load-strategy` still apply.
@@ -385,7 +385,7 @@ provided, the loader's default is `evolve`.
 Use `--dry-run` to preview resolved strategies without loading:
 
 ```bash
-dogsled extract run --integration github | dogsled load run --dest bigquery --dataset-id test --dry-run
+bobsled extract run --integration github | bobsled load run --dest bigquery --dataset-id test --dry-run
 ```
 
 `full_refresh` truncates destination rows once on the first flush. For
@@ -437,7 +437,7 @@ The loader uses Google Cloud Application Default Credentials. Choose one:
 gcloud auth application-default login
 
 # Option 2: Service account key file
-dogsled load run --dest bigquery --key-filename ./sa-key.json --dataset-id raw_github
+bobsled load run --dest bigquery --key-filename ./sa-key.json --dataset-id raw_github
 
 # Option 3: Workload Identity Federation (CI/CD)
 # Set GOOGLE_APPLICATION_CREDENTIALS or configure WIF — no flags needed
@@ -455,13 +455,13 @@ bq mk --dataset --location=US my-project:raw_github
 
 ```bash
 # 1. Verify connectivity
-dogsled load check --dest bigquery --dataset-id raw_github --project-id my-project
+bobsled load check --dest bigquery --dataset-id raw_github --project-id my-project
 
 # 2. Preview resolved strategies
-dogsled extract run --integration github | dogsled load run --dest bigquery --dataset-id raw_github --dry-run
+bobsled extract run --integration github | bobsled load run --dest bigquery --dataset-id raw_github --dry-run
 
 # 3. Run a pipeline (strategy auto-resolved per stream)
-dogsled pipeline github issues \
+bobsled pipeline github issues \
   --dest bigquery \
   --dataset-id raw_github \
   --project-id my-project
@@ -470,7 +470,7 @@ dogsled pipeline github issues \
 bq show --format=prettyjson raw_github.issues | jq '.timePartitioning, .clustering'
 
 # 5. Override strategy for all streams if needed
-dogsled pipeline github issues \
+bobsled pipeline github issues \
   --dest bigquery \
   --dataset-id raw_github \
   --load-strategy full_refresh
@@ -484,19 +484,19 @@ No cloud credentials needed — just provide a file path:
 
 ```bash
 # Create or append to a local database (strategy auto-resolved per stream)
-dogsled pipeline github issues --dest duckdb --db-path ./dev.duckdb
+bobsled pipeline github issues --dest duckdb --db-path ./dev.duckdb
 
 # Query it
-dogsled load query "SELECT * FROM main.issues LIMIT 10" --db-path ./dev.duckdb
+bobsled load query "SELECT * FROM main.issues LIMIT 10" --db-path ./dev.duckdb
 
 # Use a custom schema
-dogsled pipeline github issues --dest duckdb --db-path ./dev.duckdb --target-schema raw_github
+bobsled pipeline github issues --dest duckdb --db-path ./dev.duckdb --target-schema raw_github
 ```
 
 ## PostgreSQL Setup
 
 ```bash
-dogsled load run --dest postgres \
+bobsled load run --dest postgres \
   --postgres-host your-host.example.com \
   --postgres-port 5432 \
   --postgres-database mydb \
@@ -510,7 +510,7 @@ Use it for services that are compatible with PostgreSQL; see the [connector refe
 ## MySQL Setup
 
 ```bash
-dogsled load run --dest mysql \
+bobsled load run --dest mysql \
   --mysql-host your-host.example.com \
   --mysql-port 3306 \
   --mysql-database mydb \
@@ -524,7 +524,7 @@ Use it for services that are compatible with MySQL. See [Connectors](../../docs/
 ## ClickHouse Setup
 
 ```bash
-dogsled load run --dest clickhouse \
+bobsled load run --dest clickhouse \
   --clickhouse-host your-clickhouse-host.example.com \
   --clickhouse-port 8443 \
   --clickhouse-database analytics \
@@ -541,7 +541,7 @@ later.
 ## Turbopuffer Setup
 
 ```bash
-dogsled load run --dest turbopuffer \
+bobsled load run --dest turbopuffer \
   --turbopuffer-api-key "$TURBOPUFFER_API_KEY" \
   --turbopuffer-region gcp-us-central1
 ```
@@ -562,7 +562,7 @@ merge is an upsert, and `full_refresh` deletes the namespace once per run.
 
 ## Protocol
 
-The loader reads the Dogsled protocol from stdin:
+The loader reads the Bobsled Core protocol from stdin:
 
 - **SCHEMA** — Declares stream columns, types, key properties, `load_strategy`, and optional `cursor_field`
 - **RECORD** — Individual data records (buffered to temp JSONL)
@@ -622,9 +622,9 @@ with exit code 2; edit the integration or select another one instead.
 ### Optional driver security minimums
 
 Install `mysql2 >=3.22.0` for MySQL and `snowflake-sdk >=3.4.0` for Snowflake.
-Dogsled checks the installed driver version before loading either SDK, including
+Bobsled Core checks the installed driver version before loading either SDK, including
 connectivity checks. Unsupported versions fail before opening a connection;
-upgrade the driver in the project that runs Dogsled.
+upgrade the driver in the project that runs Bobsled Core.
 
 See [installed dependency security](../../docs/dependency-security.md) for the full
 driver minimums and installation contract.

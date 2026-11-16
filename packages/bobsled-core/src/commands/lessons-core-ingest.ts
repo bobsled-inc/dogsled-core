@@ -23,7 +23,7 @@ export const INGEST_LESSONS: Lesson[] = [
     title: 'Validate Ingest Specs',
     section: 'Unified Ingest',
     cwd: 'first-ingest',
-    command: 'dogsled extract validate',
+    command: 'bobsled extract validate',
     why: 'Checks the local document and public API specs before any extraction',
     think: 'Validation is the fastest way to catch config drift before runtime',
   },
@@ -58,7 +58,7 @@ export const INGEST_LESSONS: Lesson[] = [
     section: 'Unified Ingest',
     cwd: 'first-ingest',
     command:
-      'dogsled query --db-path ./first-ingest.duckdb "SELECT chunk_id, chunk_index, token_count FROM first_pdf__chunks ORDER BY chunk_index LIMIT 5"',
+      'bobsled query --db-path ./first-ingest.duckdb "SELECT chunk_id, chunk_index, token_count FROM first_pdf__chunks ORDER BY chunk_index LIMIT 5"',
     why: 'Shows stable chunk identity and token counts after parsing',
     think: 'Chunk IDs make document text addressable for later retrieval and citation',
   },
@@ -68,7 +68,7 @@ export const INGEST_LESSONS: Lesson[] = [
     section: 'Unified Ingest',
     cwd: 'first-ingest',
     command:
-      'dogsled query --db-path ./first-ingest.duckdb "SELECT row_id, row_type, principal_id, source_grant_type, source_provider FROM first_pdf__acl LIMIT 5"',
+      'bobsled query --db-path ./first-ingest.duckdb "SELECT row_id, row_type, principal_id, source_grant_type, source_provider FROM first_pdf__acl LIMIT 5"',
     why: 'Shows the permission evidence table contract',
     think: 'Even when local files have no provider ACL backend, the table shape is explicit',
   },
@@ -78,7 +78,7 @@ export const INGEST_LESSONS: Lesson[] = [
     section: 'Unified Ingest',
     cwd: 'first-ingest',
     command:
-      'dogsled query --db-path ./first-ingest.duckdb "SELECT (SELECT count(*) FROM first_pdf__chunks) AS chunk_count, (SELECT count(*) FROM public_repos) AS repo_count"',
+      'bobsled query --db-path ./first-ingest.duckdb "SELECT (SELECT count(*) FROM first_pdf__chunks) AS chunk_count, (SELECT count(*) FROM public_repos) AS repo_count"',
     why: 'Confirms document chunks and GitHub rows landed in the same DuckDB file',
     think: 'Side-by-side loading is the bridge from raw ingestion to ontology-facing outputs',
   },
@@ -88,7 +88,7 @@ export const INGEST_LESSONS: Lesson[] = [
     section: 'Unified Ingest',
     cwd: 'first-ingest',
     command:
-      'dogsled query --db-path ./first-ingest.duckdb "SELECT name, full_name, stargazers_count FROM public_repos ORDER BY updated_at DESC LIMIT 5"',
+      'bobsled query --db-path ./first-ingest.duckdb "SELECT name, full_name, stargazers_count FROM public_repos ORDER BY updated_at DESC LIMIT 5"',
     why: 'Finishes with direct local SQL over API rows',
     think: 'Queryable local outputs are the default success condition for connection-free ingest',
   },

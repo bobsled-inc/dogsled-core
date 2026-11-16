@@ -108,8 +108,8 @@ describe('old-name guard', () => {
   it('runs report-only in CI until the rename is done', () => {
     const ci = parse(readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8'));
     const scripts = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')).scripts;
-    const step = ci.jobs.checks.steps.find((s) => s.run === 'pnpm guard:dogsled');
+    const step = ci.jobs.checks.steps.find((s) => s.run === 'pnpm guard:rename');
     expect(step).toBeDefined();
-    expect(scripts['guard:dogsled']).toBe('node ./scripts/guards/old-names.mjs');
+    expect(scripts['guard:rename']).toBe('node ./scripts/guards/old-names.mjs');
   });
 });

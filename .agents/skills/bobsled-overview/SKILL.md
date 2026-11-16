@@ -1,28 +1,28 @@
 ---
 name: bobsled-overview
-description: Source-of-truth high-level overview of Dogsled — what it is, how a typical project is laid out, what each entity (integration, source, resource, destination, extract+load pipeline, model pipeline, Model Spec model/metric/relationship/VQ, entity graph) means, and which skill to reach for next. Read this first when you're new to Dogsled or when a user request spans multiple concepts.
+description: Source-of-truth high-level overview of Bobsled Core — what it is, how a typical project is laid out, what each entity (integration, source, resource, destination, extract+load pipeline, model pipeline, Model Spec model/metric/relationship/VQ, entity graph) means, and which skill to reach for next. Read this first when you're new to Bobsled Core or when a user request spans multiple concepts.
 exposed: true
 triggers:
-  - what is dogsled
-  - dogsled overview
-  - explain dogsled
-  - dogsled concepts
-  - dogsled project structure
-  - dogsled entity map
-  - model spec vs dogsled yml
+  - what is bobsled
+  - bobsled overview
+  - explain bobsled
+  - bobsled concepts
+  - bobsled project structure
+  - bobsled entity map
+  - model spec vs bobsled yml
   - extractor yml
-  - what is a resource in dogsled
-  - what is an integration in dogsled
-  - dogsled glossary
-  - new to dogsled
+  - what is a resource in bobsled
+  - what is an integration in bobsled
+  - bobsled glossary
+  - new to bobsled
   - model pipeline
-  - dogsled protocol
+  - bobsled protocol
   - entity graph
 ---
 
-# Dogsled — Overview & Entity Map
+# Bobsled Core — Overview & Entity Map
 
-Read this skill first when a user is starting from scratch, asking conceptual questions, or making a request that touches more than one Dogsled entity (e.g. "extract Linear into Snowflake and add some models"). It gives you the vocabulary, the file layout, and the routing table; the action-oriented skills do the actual work.
+Read this skill first when a user is starting from scratch, asking conceptual questions, or making a request that touches more than one Bobsled Core entity (e.g. "extract Linear into Snowflake and add some models"). It gives you the vocabulary, the file layout, and the routing table; the action-oriented skills do the actual work.
 
 For any request about creating, configuring, filtering, scheduling, running, or
 diagnosing an extract pipeline, route to `extract-pipelines`. It is the single
@@ -31,21 +31,21 @@ only.
 
 This skill is intended to be source-of-truth-accurate. The canonical references it draws from live in `AGENTS.md` (root), `docs/guides/run-pipelines.md`, and the example projects under `examples/` and `workspace/`. If anything here ever drifts from those, treat the canonical references as authoritative and update this skill.
 
-## What Dogsled is
+## What Bobsled Core is
 
-Dogsled is an **open-source, context-and-semantics-first data-engineering toolkit, built for the agent era**. The whole stack is YAML-driven, CLI-first, and designed so AI agents can author, operate, and evolve pipelines and semantic models with humans steering. There is no UI in the core product.
+Bobsled Core is an **open-source, context-and-semantics-first data-engineering toolkit, built for the agent era**. The whole stack is YAML-driven, CLI-first, and designed so AI agents can author, operate, and evolve pipelines and semantic models with humans steering. There is no UI in the core product.
 
-A Dogsled project has four concerns:
+A Bobsled Core project has four concerns:
 
 1. **ELT** — extract from APIs, warehouses/databases, or MCP servers, optionally embed text fields, and load into one or more destinations.
 2. **Semantic modeling (Model Spec)** — describe the loaded data as portable SQL models, named metrics, declared joins (relationships), and verified queries.
 3. **Entity graph (optional)** — identity resolution, survivorship, truthsets, and agent-task workflows that sit on top of loaded data via `@bobsled-inc/entity-graph`.
-4. **Orchestration** — pipelines tie ELT and model materialization together under one schedule (or on-demand), all run by the `dogsled` CLI.
+4. **Orchestration** — pipelines tie ELT and model materialization together under one schedule (or on-demand), all run by the `bobsled` CLI.
 
-Components communicate through the **Dogsled protocol**, a JSONL stream of typed messages (`SCHEMA`, `RECORD`, `STATE`, `BATCH`, `LOG`, `METRIC`). Extractor → optional embedder → loader is the canonical pipe; every component works standalone or composed.
+Components communicate through the **Bobsled Core protocol**, a JSONL stream of typed messages (`SCHEMA`, `RECORD`, `STATE`, `BATCH`, `LOG`, `METRIC`). Extractor → optional embedder → loader is the canonical pipe; every component works standalone or composed.
 
 ```text
-              Dogsled protocol (JSONL on stdout)
+              Bobsled Core protocol (JSONL on stdout)
  ┌──────────┐  ┌─────────────────┐  ┌──────────┐  ┌──────────┐
  │ Extractor│─▶│ SCHEMA/RECORD/… │─▶│ Embedder │─▶│  Loader  │
  │  (YAML)  │  │ shared contract │  │ optional │  │          │
@@ -60,14 +60,14 @@ Components communicate through the **Dogsled protocol**, a JSONL stream of typed
   - **MCP** — pulls data via Model Context Protocol servers over stdio or HTTP. Two flavors: bundled MCP integrations (Linear, Notion, …) via `explore-integration` / `mcp-discover`, **or** bring-your-own remote MCP servers via `add-custom-mcp-integration` (HTTP-only, inline `mcp_http` transport authored entirely in YAML).
 - **Integrations catalog.** ~80 bundled API/warehouse/MCP integrations in `@bobsled-inc/integrations` (GitHub, Stripe, Slack, Linear, Notion, HubSpot, GitLab, Salesforce, Jira, Shopify, Zendesk, and more). Projects can add their own under `integrations/`.
 - **Loading.** 17 destinations in `@bobsled-inc/loader`: DuckDB, DuckLake, SQLite, BigQuery, **Snowflake**, PostgreSQL, MySQL, Databricks, SQL Server, ClickHouse, Turbopuffer, Elasticsearch, Chroma, pgvector, GCS, S3, local filesystem. Strategies: `append`, `merge`, `full_refresh`. Schema evolution supported.
-- **Embedding.** Optional Dogsled-protocol stream enrichment (`@bobsled-inc/embedder`) — adds vector embeddings to selected text fields before they reach the loader.
+- **Embedding.** Optional Bobsled Core-protocol stream enrichment (`@bobsled-inc/embedder`) — adds vector embeddings to selected text fields before they reach the loader.
 - **Semantic modeling.** Models, metrics, relationships, and verified queries via `@bobsled-inc/model-spec` (Model Spec). Multi-dialect SQL compilation (Snowflake, BigQuery, Postgres, Databricks, Redshift, DuckDB, ClickHouse).
-- **Entity graph.** Resolution, review, survivorship, truthset, and agent-task workflows via `@bobsled-inc/entity-graph` (`dogsled entity-graph ...`).
-- **CLI.** Single public binary: `dogsled`.
+- **Entity graph.** Resolution, review, survivorship, truthset, and agent-task workflows via `@bobsled-inc/entity-graph` (`bobsled entity-graph ...`).
+- **CLI.** Single public binary: `bobsled`.
 
 If a user asks for something _not_ in this list (e.g. federation / query-in-place, a destination not above), flag the gap — don't claim it ships today.
 
-## Anatomy of a typical Dogsled project
+## Anatomy of a typical Bobsled Core project
 
 ```text
 my-bobsled-project/
@@ -107,18 +107,18 @@ my-bobsled-project/
 
 Things to remember:
 
-- **This is the conventional layout, not a requirement.** Dogsled finds typed definitions anywhere, so files can also be grouped by source or subject, such as `golf/datagolf/pga/`. Untyped YAML under a recognized kind folder inherits that kind. The root `bobsled.yml` and `bobsled.yaml` stay valid legacy pipeline configs. Nonroot pipeline fragments declare `type: pipeline_config`.
-- **Pipeline configuration can be split by domain.** Dogsled merges root configs and typed fragments by pipeline and destination name. A repeated name or single-owner section fails and reports both paths. With no config file, the Project has no pipelines and Dogsled creates no file.
+- **This is the conventional layout, not a requirement.** Bobsled Core finds typed definitions anywhere, so files can also be grouped by source or subject, such as `golf/datagolf/pga/`. Untyped YAML under a recognized kind folder inherits that kind. The root `bobsled.yml` and `bobsled.yaml` stay valid legacy pipeline configs. Nonroot pipeline fragments declare `type: pipeline_config`.
+- **Pipeline configuration can be split by domain.** Bobsled Core merges root configs and typed fragments by pipeline and destination name. A repeated name or single-owner section fails and reports both paths. With no config file, the Project has no pipelines and Bobsled Core creates no file.
 - **Names remain semantic fields.** A folder does not create a name, namespace, integration owner, warehouse, or schema. Keep required `name` and `integration` fields explicit.
-- **`model-spec.yml`'s directory keys** (`sources_dir`, `models_dir`, `metrics_dir`, `relationships_dir`, `vqs_dir`, `integrations_dir`) are accepted but no longer limit where files live. Dogsled discovers CSVs below `seeds/`; `seeds_dir` remains an explicit legacy override. `entity_graph_dir` (legacy `mdm_dir`) still locates Entity Graph specs.
+- **`model-spec.yml`'s directory keys** (`sources_dir`, `models_dir`, `metrics_dir`, `relationships_dir`, `vqs_dir`, `integrations_dir`) are accepted but no longer limit where files live. Bobsled Core discovers CSVs below `seeds/`; `seeds_dir` remains an explicit legacy override. `entity_graph_dir` (legacy `mdm_dir`) still locates Entity Graph specs.
 - **`extractor.yml`'s common keys:** `state_dir`, `batch_dir`; `integrations_dir` and `resources_dir` are accepted but no longer limit where files live.
 - **`integrations/` is shared** between the ELT side (extract-time transport/auth) and the Model Spec side (a Model Spec source can reference a warehouse integration to know where to materialize). Project-local integration files override or extend the bundled catalog in `@bobsled-inc/integrations`.
 - **Secrets are never inlined.** YAML references env vars with `$VAR_NAME`; the extractor and loader resolve them at runtime.
-- **`AGENTS.md` is a scoped Project guide.** Dogsled applies guides from the Project root through each ancestor directory of an asset. Put broad context at the root and more specific data context beside a domain. A Markdown file can also declare `type: guide`. Guides are context, never authority. Project Skills stay the place for repeatable procedures.
+- **`AGENTS.md` is a scoped Project guide.** Bobsled Core applies guides from the Project root through each ancestor directory of an asset. Put broad context at the root and more specific data context beside a domain. A Markdown file can also declare `type: guide`. Guides are context, never authority. Project Skills stay the place for repeatable procedures.
 
 ## The word "source" is overloaded — read this carefully
 
-Dogsled uses _source_ in two distinct ways. Confirm which one a user means before acting:
+Bobsled Core uses _source_ in two distinct ways. Confirm which one a user means before acting:
 
 |                 | ELT _source_                                      | Model Spec _source_                                                                          |
 | --------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
@@ -168,7 +168,7 @@ linear_sflk:
   runner: managed
 ```
 
-- **Run with:** `dogsled pipeline <name>`.
+- **Run with:** `bobsled pipeline <name>`.
 - **Author and operate with:** `extract-pipelines`.
 
 ### Model pipeline
@@ -185,7 +185,7 @@ snowflake_silver:
 ```
 
 - **When used:** to refresh the materialized tables/views Model Spec models define. Typically scheduled to run _after_ the extract+load pipelines that populate raw tables.
-- **Run with:** the same `dogsled pipeline <name>` surface as extract+load pipelines.
+- **Run with:** the same `bobsled pipeline <name>` surface as extract+load pipelines.
 - **Author with:** `bobsled-add-pipeline`.
 
 ### Schedule
@@ -220,11 +220,11 @@ A natural-language-question → SQL pairing the host agent treats as **ground tr
 
 ### Seed (optional)
 
-Static reference data (CSV/YAML) loaded into the warehouse alongside extracted data. Useful for lookups (e.g. country codes, status mappings) that don't come from an upstream system. Dogsled discovers CSVs below any `seeds/` path. Add a YAML seed spec when warehouse loading is needed; a bare CSV has no warehouse target. `seeds_dir` in `model-spec.yml` remains available as a legacy folder override.
+Static reference data (CSV/YAML) loaded into the warehouse alongside extracted data. Useful for lookups (e.g. country codes, status mappings) that don't come from an upstream system. Bobsled Core discovers CSVs below any `seeds/` path. Add a YAML seed spec when warehouse loading is needed; a bare CSV has no warehouse target. `seeds_dir` in `model-spec.yml` remains available as a legacy folder override.
 
 ### Entity graph (optional)
 
-Identity resolution + survivorship + truthsets + agent-task workflows on top of loaded data. Lives in `entity-graph/` (path configurable via `mdm_dir` in `model-spec.yml`) and is driven by the `dogsled entity-graph …` CLI in `@bobsled-inc/entity-graph`.
+Identity resolution + survivorship + truthsets + agent-task workflows on top of loaded data. Lives in `entity-graph/` (path configurable via `mdm_dir` in `model-spec.yml`) and is driven by the `bobsled entity-graph …` CLI in `@bobsled-inc/entity-graph`.
 
 - **When used:** deduplicating people/companies/accounts across multiple sources, building golden records, running agent-driven enrichment tasks.
 - **Set up / run with:** `entity-resolution`.
@@ -239,7 +239,7 @@ Identity resolution + survivorship + truthsets + agent-task workflows on top of 
 | **Authored by**      | `bobsled-init`, `bobsled-add-pipeline`, `bobsled-generate-yml`                               | `bobsled-init` (rarely hand-edited after)    | `bobsled-init` (rarely hand-edited after)                                             |
 | **Changes when**     | adding/removing pipelines, switching destinations, retiming syncs, adding model pipelines    | restructuring project layout (rare)          | restructuring project layout (rare)                                                   |
 
-If the change is about _what runs and when_, update the owning pipeline config file. Dogsled merges all indexed fragments. Keep one owner for each pipeline name, destination name, and other top-level section. The other two manifests hold settings that rarely change once written; their `*_dir` keys for integrations, resources, sources, models, metrics, relationships, and VQs no longer limit where those files live.
+If the change is about _what runs and when_, update the owning pipeline config file. Bobsled Core merges all indexed fragments. Keep one owner for each pipeline name, destination name, and other top-level section. The other two manifests hold settings that rarely change once written; their `*_dir` keys for integrations, resources, sources, models, metrics, relationships, and VQs no longer limit where those files live.
 
 ## Lifecycle — which skill owns which phase
 
@@ -268,7 +268,7 @@ If the change is about _what runs and when_, update the owning pipeline config f
 
 | Goal                                                                                               | Skill                                    |
 | -------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Bootstrap a new Dogsled repo from scratch                                                          | `bobsled-init`                           |
+| Bootstrap a new Bobsled Core repo from scratch                                                     | `bobsled-init`                           |
 | Author, modify, filter, schedule, run, or diagnose an extract pipeline                             | `extract-pipelines`                      |
 | Add another pipeline to an existing repo                                                           | `bobsled-add-pipeline`                   |
 | Turn a plain-English goal into `bobsled.yml`                                                       | `bobsled-generate-yml`                   |
@@ -285,7 +285,7 @@ If the change is about _what runs and when_, update the owning pipeline config f
 | Configure loading details only                                                                     | `loader`                                 |
 | Validate a project before running                                                                  | `bobsled-troubleshoot`                   |
 | Diagnose a failing pipeline                                                                        | `bobsled-troubleshoot`                   |
-| Wrap an existing ETL into Dogsled                                                                  | `etl-migration`                          |
+| Wrap an existing ETL into Bobsled Core                                                             | `etl-migration`                          |
 | Author a Model Spec model from SQL or a description                                                | `bobsled-author-model-spec-model`        |
 | Author a named metric                                                                              | `bobsled-author-model-spec-metric`       |
 | Declare a join between two Model Spec models                                                       | `bobsled-author-model-spec-relationship` |
@@ -304,5 +304,5 @@ If the change is about _what runs and when_, update the owning pipeline config f
 - **Check capability before promising.** The "What's available today" list above is the source of truth for what's shipped. If a user names a destination, integration, or feature that isn't on it, the next step is `add-*` or a gap conversation — not a fabricated pipeline.
 - **Mind the overloaded "source".** Confirm whether the user means an ELT source (integration to pull from) or a Model Spec source (loaded-table schema) — they're authored differently.
 - **Secrets via `$ENV_VAR` indirection.** Never write raw credentials into a pipeline config, `extractor.yml`, or any project YAML.
-- **One question at a time.** Dogsled projects accumulate decisions (auth, resource subset, destination, schedule, materialization). Don't dump them all at once.
+- **One question at a time.** Bobsled Core projects accumulate decisions (auth, resource subset, destination, schedule, materialization). Don't dump them all at once.
 - **When in doubt, check the canonical references.** Root `AGENTS.md`, `docs/guides/run-pipelines.md`, and the example projects under `examples/` and `workspace/` are authoritative.

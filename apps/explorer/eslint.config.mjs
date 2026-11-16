@@ -13,7 +13,7 @@ export default [
   {
     // Next.js route handlers log server-side errors via console.*,
     // which is the idiomatic pattern. The bobsled/no-console rule
-    // targets CLI packages that emit Dogsled protocol messages on stdout.
+    // targets CLI packages that emit Bobsled Core protocol messages on stdout.
     files: ['src/app/api/**/*.ts', 'src/app/api/**/*.tsx'],
     rules: {
       'bobsled/no-console': 'off',

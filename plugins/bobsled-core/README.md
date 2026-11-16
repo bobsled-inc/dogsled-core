@@ -1,10 +1,10 @@
-# Dogsled Core plugin for Claude Code and Codex
+# Bobsled Core plugin for Claude Code and Codex
 
-Install Dogsled's built-in skills together. Ask your agent to set up a project,
+Install Bobsled Core's built-in skills together. Ask your agent to set up a project,
 build a pipeline, define data models, or diagnose a failed run.
 
 The plugin contains instructions and reference documents. It uses the agent's
-terminal tool to run Dogsled. It does not install the CLI, add a hosted service,
+terminal tool to run Bobsled Core. It does not install the CLI, add a hosted service,
 connect accounts, or run commands on installation.
 
 ## Install in Claude Code
@@ -12,15 +12,15 @@ connect accounts, or run commands on installation.
 Run these commands inside Claude Code:
 
 ```text
-/plugin marketplace add bobsled-inc/dogsled-core
+/plugin marketplace add bobsled-inc/bobsled-core
 /plugin install bobsled-core@bobsled
 ```
 
 Open your project folder in Claude Code and ask:
 
-> Use bobsled-get-started to install Dogsled and set up my project.
+> Use bobsled-get-started to install Bobsled Core and set up my project.
 
-The skill checks Node.js 24+ and installs Dogsled in your project if needed.
+The skill checks Node.js 24+ and installs Bobsled Core in your project if needed.
 For the guided tutorial, run `/bobsled-core:bobsled-tutorials`.
 
 ## Install in Codex
@@ -28,40 +28,40 @@ For the guided tutorial, run `/bobsled-core:bobsled-tutorials`.
 Run these commands in your terminal with a current Codex CLI:
 
 ```bash
-codex plugin marketplace add bobsled-inc/dogsled-core
+codex plugin marketplace add bobsled-inc/bobsled-core
 codex plugin add bobsled-core@bobsled
 ```
 
 Start a new Codex chat in your project folder and ask:
 
-> Use bobsled-get-started to install Dogsled and set up my project.
+> Use bobsled-get-started to install Bobsled Core and set up my project.
 
-The skill checks Node.js 24+ and installs Dogsled in your project if needed.
-In the desktop app, you can also select the Dogsled marketplace in
-Plugins and install Dogsled Core there after adding the marketplace.
+The skill checks Node.js 24+ and installs Bobsled Core in your project if needed.
+In the desktop app, you can also select the Bobsled Core marketplace in
+Plugins and install Bobsled Core there after adding the marketplace.
 
 These GitHub commands work after the plugin files reach the repository's default
 branch. To test an unpublished checkout, use its absolute directory path instead
-of `bobsled-inc/dogsled-core` when adding the marketplace.
+of `bobsled-inc/bobsled-core` when adding the marketplace.
 
-## Install the Dogsled CLI
+## Install the Bobsled Core CLI
 
 The setup skill can install the CLI for you. To install it yourself, use Node.js
 24 or newer and run these commands in your data project:
 
 ```bash
 npm install @bobsled-inc/bobsled-core
-npx dogsled --help
+npx bobsled --help
 ```
 
-Ask the agent to use `npx dogsled` for a project-local installation. The CLI and
+Ask the agent to use `npx bobsled` for a project-local installation. The CLI and
 plugin are released separately. Database drivers and credentials
 depend on the source and destination you choose. Keep credentials in environment
 variables, never in skill files or committed configuration.
 
 ## Update
 
-In Claude Code, run `/plugin marketplace update dogsled` and
+In Claude Code, run `/plugin marketplace update bobsled` and
 `/plugin update bobsled-core@bobsled`. In Codex, use the plugin management UI to update
 the marketplace and plugin, or inspect `codex plugin marketplace --help` for the
 commands supported by your installed version. Start a new chat after updating.
@@ -94,5 +94,5 @@ It fails on changed, missing, or extra skill files, so a build cannot hide stale
 committed copies by rewriting them first. Publishing and plugin version bumps
 remain separate maintainer steps.
 
-Publishing this GitHub marketplace does not list Dogsled in either provider's
+Publishing this GitHub marketplace does not list Bobsled Core in either provider's
 official directory. Official listings require a separate submission.

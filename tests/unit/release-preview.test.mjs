@@ -45,7 +45,7 @@ function packFixture({ name = '@bobsled-inc/bobsled-core', version = '0.1.0-prev
     JSON.stringify({
       name,
       version,
-      bin: { dogsled: './cli.mjs' },
+      bin: { bobsled: './cli.mjs' },
       dependencies: { bundled: '1.0.0' },
       bundleDependencies: ['bundled'],
     })

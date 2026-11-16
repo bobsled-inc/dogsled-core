@@ -102,7 +102,7 @@ export function tryFindWorkspaceRoot(metaUrl: string): string | null {
 export function findWorkspaceRoot(metaUrl: string): string {
   const workspaceRoot = tryFindWorkspaceRoot(metaUrl);
   if (!workspaceRoot) {
-    throw new CommandError('Unable to locate the workspace root for the unified dogsled CLI.');
+    throw new CommandError('Unable to locate the workspace root for the unified bobsled CLI.');
   }
   return workspaceRoot;
 }
@@ -194,7 +194,7 @@ export function resolveCliInvocation(
   }
 
   throw new CommandError(
-    `Unable to locate the ${target} CLI for the unified dogsled CLI. Reinstall dogsled or run it from the repository workspace.`
+    `Unable to locate the ${target} CLI for the unified bobsled CLI. Reinstall bobsled or run it from the repository workspace.`
   );
 }
 
@@ -221,7 +221,9 @@ export function resolveBobsledModelRunInvocation(
       }
     }
 
-    throw new CommandError('Unable to locate the Dogsled model run child CLI in this workspace.');
+    throw new CommandError(
+      'Unable to locate the Bobsled Core model run child CLI in this workspace.'
+    );
   }
 
   let currentDir = path.dirname(fileURLToPath(metaUrl));
@@ -240,6 +242,6 @@ export function resolveBobsledModelRunInvocation(
   }
 
   throw new CommandError(
-    'Unable to locate the Dogsled model run child CLI. Reinstall dogsled or run it from the repository workspace.'
+    'Unable to locate the Bobsled Core model run child CLI. Reinstall bobsled or run it from the repository workspace.'
   );
 }

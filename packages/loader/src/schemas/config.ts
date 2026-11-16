@@ -97,7 +97,7 @@ const destinationTable = sqlIdentifier.refine(
 /**
  * Per-stream load-strategy overrides, keyed by the RAW stream name as it
  * appears in the SCHEMA message (before `tablePrefix` / sanitization). Set by
- * repeatable `--stream-load-strategy <stream>:<strategy>` flags, or by Dogsled
+ * repeatable `--stream-load-strategy <stream>:<strategy>` flags, or by Bobsled Core
  * when a `bobsled.yml` resource declares `load_strategy:`.
  *
  * Precedence (highest first): this map → `loadStrategy` (the pipeline-level
@@ -109,7 +109,7 @@ const streamLoadStrategies = z.record(z.string().min(1), z.enum(LOAD_STRATEGIES)
 /**
  * Per-stream schema-behavior overrides, keyed by the RAW stream name as it
  * appears in the SCHEMA message. Set by repeatable
- * `--stream-schema-behavior <stream>:<mode>` flags, or by Dogsled when a
+ * `--stream-schema-behavior <stream>:<mode>` flags, or by Bobsled Core when a
  * `bobsled.yml` resource declares `schema_behavior:`.
  *
  * Precedence (highest first): this map → `schemaBehavior` (the pipeline-level
@@ -121,7 +121,7 @@ const streamSchemaBehaviors = z.record(z.string().min(1), z.enum(SCHEMA_BEHAVIOR
 /**
  * Per-stream destination table names, keyed by the RAW stream name as it
  * appears in the SCHEMA message. Set by repeatable
- * `--stream-table <stream>:<table>` flags, or by Dogsled when a `bobsled.yml`
+ * `--stream-table <stream>:<table>` flags, or by Bobsled Core when a `bobsled.yml`
  * resource declares `table:`. An entry REPLACES the whole computed table name
  * — `tablePrefix` is not re-applied on top of it.
  */
@@ -207,7 +207,7 @@ const BigQueryDestConfigSchema = z.object({
    * fetch by the loader, which refreshes proactively (within a 5-min skew of
    * expiry) and reactively (on a 401) so loads survive past the token TTL.
    *
-   * Dogsled.yml field name: `credentials_token_command`. Takes precedence over the
+   * Bobsled Core.yml field name: `credentials_token_command`. Takes precedence over the
    * static `credentials_access_token` (`accessToken`) when both are present.
    * Supports `$VAR` / `${{ env.VAR }}` placeholders like other secret fields.
    */
@@ -250,7 +250,7 @@ const SnowflakeDestConfigSchema = z.object({
    * `{ "access_token": string, "expires_at": number }` (`expires_in` also
    * accepted). Run once per fetch via the shared refreshable-token provider.
    *
-   * Dogsled.yml field name: `credentials_token_command`. Takes precedence over
+   * Bobsled Core.yml field name: `credentials_token_command`. Takes precedence over
    * `credentials_access_token` (`accessToken`) when both are set.
    */
   tokenCommand: z.string().trim().min(1).optional(),

@@ -35,7 +35,7 @@ describe('command helpers', () => {
   });
 
   // The project lives beside, not around, the bundled catalog, as it does when
-  // BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR points at an installed Dogsled package.
+  // BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR points at an installed Bobsled Core package.
   const projectDir = () => path.join(tmpDir, 'project');
   const project = () => {
     fs.mkdirSync(projectDir(), { recursive: true });

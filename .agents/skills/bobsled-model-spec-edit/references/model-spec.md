@@ -36,7 +36,7 @@ Always branch on `result.ok`. Do not assume the edit wrote to disk.
 2. Use the most specific edit function available.
 3. Use `dryRun: true` first when showing a preview or diff.
 4. Check `result.ok`.
-5. Run `dogsled model validate` or package tests after substantial edits.
+5. Run `bobsled model validate` or package tests after substantial edits.
 
 ## Source Column Metadata
 
@@ -171,13 +171,13 @@ pnpm --filter @bobsled-inc/model-spec test -- tests/unit/edit
 When using the API to modify a project, run:
 
 ```bash
-dogsled model validate --integration <handle>
+bobsled model validate --integration <handle>
 ```
 
 For model expression edits, column removals, or schema metadata changes with downstream risk, run lineage as well:
 
 ```bash
-dogsled model lineage --integration <handle> --json
+bobsled model lineage --integration <handle> --json
 ```
 
 Full docs: `packages/model-spec/docs/programmatic-edit-api.md`.

@@ -1,8 +1,8 @@
 /**
- * Public library entry point for Dogsled's pipeline manifest generator.
+ * Public library entry point for Bobsled Core's pipeline manifest generator.
  *
  * Imported as `@bobsled-inc/bobsled-core/manifest`. Consumers use this surface
- * so persisted manifests and runtime execution stay aligned with Dogsled.
+ * so persisted manifests and runtime execution stay aligned with Bobsled Core.
  *
  * Two project-input shapes are supported (see `GenerateManifestProjectInput`):
  *   - `{ config, projectRoot }` — read Model Spec model metadata from disk.

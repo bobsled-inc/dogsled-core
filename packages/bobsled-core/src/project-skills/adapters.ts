@@ -83,9 +83,9 @@ function adapterMode(skill: ProjectSkill, copy = false): ProjectSkillAdapterMode
 }
 
 /**
- * The entry Dogsled made for a Skill whose file has since moved: a link to the
+ * The entry Bobsled Core made for a Skill whose file has since moved: a link to the
  * conventional `skills/<name>` folder, or an unedited managed copy made from
- * another Skill file. Dogsled may replace it; anything else is the author's.
+ * another Skill file. Bobsled Core may replace it; anything else is the author's.
  */
 function formerBobsledEntry(
   projectRoot: string,
@@ -150,7 +150,7 @@ export function configureProjectSkillAdapters(
 }
 
 /**
- * An adapter entry no current Skill owns is Dogsled's to remove when it is a
+ * An adapter entry no current Skill owns is Bobsled Core's to remove when it is a
  * managed copy, a link to the conventional `skills/<name>` folder, or a link
  * left under an old name to a current Skill's folder.
  */

@@ -23,7 +23,7 @@ Use this skill when a user wants Findymail to search verified emails from name a
 2. Recommend a seed schema with `name` and `domain`.
 3. Generate the `extract-intents.yml` step block for `findymail/email_finder`.
 4. Warn that Findymail is pay-per-result, so estimates are upper bounds.
-5. Recommend `dogsled extract estimate --plan <name>` before `dogsled extract run --plan <name>`.
+5. Recommend `bobsled extract estimate --plan <name>` before `bobsled extract run --plan <name>`.
 
 ## Seed Schema
 

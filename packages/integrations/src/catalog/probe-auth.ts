@@ -258,7 +258,7 @@ async function exchangeCustomToken(
 }
 
 /**
- * Apply Dogsled's effective auth. Only token exchanges use the executor before
+ * Apply Bobsled Core's effective auth. Only token exchanges use the executor before
  * the resource request, and each exchange is performed once without caching.
  */
 export async function applyProbeAuthentication(params: {
