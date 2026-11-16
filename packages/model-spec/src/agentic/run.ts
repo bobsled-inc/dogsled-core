@@ -25,10 +25,16 @@ import {
   AgenticRunSnapshotSchema,
   AgenticRunKeySchema,
   AgenticStateError,
+  agenticDefinitionIdentity,
   digestAgenticState,
 } from './state.js';
 import type { AgenticStateStore, AgenticRunSnapshot, AgenticCheckpointCommand } from './state.js';
 import { createDefaultAgenticStateStore } from './default-state.js';
+import {
+  AGENTIC_METADATA_NAMES,
+  canonicalAgenticDefinition,
+  currentAgenticNames,
+} from './metadata-names.js';
 import type { ExperimentalAgenticProbe, AgenticProbeContext } from './probe.js';
 import { createAgenticProgressReporter, type AgenticRunProgress } from './progress.js';
 
@@ -199,8 +205,10 @@ async function executeOwnedAgenticRun(
       JSON.stringify({ ...context, tokensPerAssignment: host.tokensPerAssignment, maxAttempts })
     )
   );
-  const identity = digestAgenticState(definition);
-  const comparable = digestAgenticState(comparableDefinition(definition));
+  const identity = agenticDefinitionIdentity(definition);
+  const comparable = digestAgenticState(
+    comparableDefinition(canonicalAgenticDefinition(definition))
+  );
   const costCapUsd =
     options.maxCostUsd !== undefined ? options.maxCostUsd : (model.limits.max_cost_usd ?? null);
   if (costCapUsd !== null && !(Number.isFinite(costCapUsd) && costCapUsd > 0)) {
@@ -274,7 +282,9 @@ async function executeOwnedAgenticRun(
         digestAgenticState(snapshot.key) !== digestAgenticState(key) ||
         // Legacy runs keep their saved budget, so a changed cap must not pass silently.
         (snapshot.accounting === 'spend_cap'
-          ? digestAgenticState(comparableDefinition(snapshot.definition)) !== comparable
+          ? digestAgenticState(
+              comparableDefinition(canonicalAgenticDefinition(snapshot.definition))
+            ) !== comparable
           : snapshot.identity !== identity)
       ) {
         throw new AgenticStateError('conflict', {
@@ -587,7 +597,10 @@ async function executeOwnedAgenticRun(
         const identity = JSON.stringify(model.grain.map((name) => row[name]));
         if (grain.has(identity)) throw new Error('Agentic output has duplicate final grain');
         grain.add(identity);
-        findings.push({ ...structuredClone(row), _dogsled_run_id: key.id });
+        // Rows saved by an earlier Core generation are written under the current column names.
+        findings.push(
+          currentAgenticNames({ ...structuredClone(row), [AGENTIC_METADATA_NAMES.run_id]: key.id })
+        );
       }
     }
     boundedAgenticRows(findings, `The output of agentic model "${model.name}"`, limits);

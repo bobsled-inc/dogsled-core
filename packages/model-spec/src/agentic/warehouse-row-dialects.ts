@@ -35,6 +35,15 @@ export const postgresRowDialect: AgenticRowDialect = {
   identifier: pg,
   bind: (index) => `$${index}`,
   clock: 'CAST(EXTRACT(EPOCH FROM clock_timestamp()) * 1000 AS BIGINT)',
+  renameTable: (namespace, from, to) =>
+    `ALTER TABLE IF EXISTS ${namespace}.${pg(from)} RENAME TO ${pg(to)}`,
+  async tableExists(db, namespace, name) {
+    const rows = await db.query(
+      "SELECT 1 AS found FROM pg_catalog.pg_class AS k JOIN pg_catalog.pg_namespace AS n ON n.oid = k.relnamespace WHERE n.nspname = $1 AND k.relname = $2 AND k.relkind IN ('r', 'p')",
+      [agenticQuotedParts(namespace).at(-1)!, caseName(name, 'postgres')]
+    );
+    return rows.length > 0;
+  },
   createTable: (table, columns, key) =>
     `CREATE TABLE IF NOT EXISTS ${table} (${columns
       .map((column) => `${pg(column.name)} ${pgTypes[column.type]} NOT NULL`)
@@ -154,6 +163,20 @@ function rowsUpdated(rows: readonly Record<string, unknown>[]): number {
  * full only about eight times.
  */
 export const snowflakeRowDialect: AgenticRowDialect = {
+  setupTables: [guardName],
+  // Snowflake resolves an unqualified new name in the session's schema, so qualify it.
+  renameTable: (namespace, from, to) =>
+    `ALTER TABLE IF EXISTS ${namespace}.${sf(from)} RENAME TO ${namespace}.${sf(to)}`,
+  /** By name alone: `hasBaseTables` also requires the guard, which the takeover renames last. */
+  async tableExists(db, namespace, name) {
+    const parts = agenticQuotedParts(namespace);
+    const catalog = parts.length > 1 ? `${sf(parts[0]!)}.` : '';
+    const rows = await db.query(
+      `SELECT 1 AS found FROM ${catalog}information_schema.tables WHERE table_schema = ? AND table_name = ? AND table_type = 'BASE TABLE'`,
+      [parts.at(-1)!, caseName(name, 'snowflake')]
+    );
+    return rows.length > 0;
+  },
   // Measured on a real account up to these limits. Every step that reads the whole run is many
   // statements there, and the session renews its lease between them: see docs/agentic-state.md.
   limits: AGENTIC_ROW_STORE_LIMITS,

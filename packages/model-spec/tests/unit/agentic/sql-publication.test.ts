@@ -10,6 +10,7 @@ import {
   type PublicationDialect,
 } from '../../../src/agentic/sql-publication-dialect.js';
 import { digestAgenticState } from '../../../src/agentic/state.js';
+import { agenticRowsDigest, agenticSchemaDigest } from '../../../src/agentic/publication.js';
 import { runFixture, MemoryStateStore } from './state-fixture.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import { publicationWarehouse } from '../../support/publication-warehouse.js';
@@ -203,8 +204,8 @@ for (const dialect of Object.keys(configs) as PublicationDialect[]) {
         run: { scope: 'test', model: 'test', id: 'run' },
         definition_digest: 'b'.repeat(64),
         target: db.context.target,
-        schema_digest: digestAgenticState(db.context.resolved.output_columns),
-        results_digest: digestAgenticState(accepted),
+        schema_digest: agenticSchemaDigest(db.context.resolved.output_columns),
+        results_digest: agenticRowsDigest(accepted),
         processed_keys_digest: digestAgenticState(keys),
       });
       return { db, publisher, claim, identity, accepted, keys };

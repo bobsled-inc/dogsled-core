@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { createWarehouseCheckpointStore } from '../../../src/agentic/warehouse-state.js';
 import { executeAgenticRun } from '../../../src/agentic/run.js';
 import {
+  agenticDefinitionIdentity,
   AgenticRunSnapshotSchema,
   applyAgenticCheckpoint,
   digestAgenticState,
@@ -31,7 +32,7 @@ function initial() {
     revision: 0,
     key: { scope: 'test', model: f.model.name, id: 'reuse' },
     definition,
-    identity: digestAgenticState(definition),
+    identity: agenticDefinitionIdentity(definition),
     started_at: new Date(started).toISOString(),
     deadline_at: new Date(started + 600000).toISOString(),
     token_limit: 100000,

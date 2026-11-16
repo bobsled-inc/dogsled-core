@@ -20,6 +20,8 @@ import { AgenticColumnsSchema } from './model.js';
 import { createAgenticRowSchema } from './rows.js';
 import { digestAgenticState } from './state.js';
 import {
+  agenticRowsDigest,
+  agenticSchemaDigest,
   AgenticPublicationIntentSchema,
   AgenticPublicationReceiptSchema,
   validateAgenticPublicationRows,
@@ -248,8 +250,8 @@ export async function createSqlAgenticPublisher(
       validateAgenticPublicationRows(rows, processedKeys, limits);
       if (
         identity.target !== context.target ||
-        identity.schema_digest !== digestAgenticState(context.resolved.output_columns) ||
-        identity.results_digest !== digestAgenticState(rows) ||
+        identity.schema_digest !== agenticSchemaDigest(context.resolved.output_columns) ||
+        identity.results_digest !== agenticRowsDigest(rows) ||
         identity.processed_keys_digest !== digestAgenticState(processedKeys)
       ) {
         throw new Error('Publication payload identity mismatch');

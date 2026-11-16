@@ -8,6 +8,7 @@ import {
   validClassificationColumns,
 } from './model.js';
 import { AgenticProfileSchema } from './resolve.js';
+import { agenticMetadataValue, usesReservedAgenticPrefix } from './metadata-names.js';
 import {
   AGENTIC_MAX_ROWS,
   AgenticEvidenceSchema,
@@ -141,7 +142,7 @@ const AssignmentObjectSchema = z
     if (work.mode === 'llm_call' && work.allowed_sources.length) {
       issue('Direct calls cannot carry source access');
     }
-    if (work.output.columns.some((column) => column.name.toLowerCase().startsWith('_dogsled_'))) {
+    if (work.output.columns.some((column) => usesReservedAgenticPrefix(column.name))) {
       issue('Output metadata columns are reserved');
     }
     const keyNames = Object.keys(work.group_key);
@@ -307,7 +308,9 @@ function assignmentEvidenceSources(work: AgentAssignment): Set<string> {
   // Saved input evidence can be cited without granting fresh access to its source.
   for (const row of inputs.flatMap((input) => input.rows)) {
     if (row === null || typeof row !== 'object' || Array.isArray(row)) continue;
-    const prior = AgenticJudgmentSchema.shape._dogsled_evidence.safeParse(row['_dogsled_evidence']);
+    const prior = AgenticJudgmentSchema.shape._dogsled_evidence.safeParse(
+      agenticMetadataValue(row, 'evidence')
+    );
     if (prior.success && prior.data) {
       for (const entry of prior.data) sources.add(entry.source);
     }

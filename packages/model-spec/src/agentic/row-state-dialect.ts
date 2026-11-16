@@ -50,12 +50,19 @@ export interface AgenticRowDialect {
     namespace: string,
     tables: readonly AgenticRowTableShape[]
   ): Promise<boolean>;
+  /** Whether a base table of this name stands in `namespace`, by name alone. The takeover asks
+   * this of each table it could not rename, on its own, with no other table required. */
+  tableExists(db: AgenticRowDb, namespace: string, name: string): Promise<boolean>;
   /** Whether creating a table failed because something else holds its name. `CREATE TABLE IF NOT
    * EXISTS` keeps that object on most engines and refuses on others, and the store reports both
    * alike. Only for an engine that refuses. */
   nameTaken?(error: unknown): boolean;
   /** Statements to run after the tables, for an engine that needs more than them. */
   setup?(namespace: string): readonly string[];
+  /** Tables `setup` creates, which an earlier Core generation named differently too. */
+  setupTables?: readonly string[];
+  /** Renames table `from` in `namespace` to `to` if `from` exists. Fails if `to` exists. */
+  renameTable(namespace: string, from: string, to: string): string;
   /** How many tables hold run headers, as sizes of sets, newest first. A run starts in the first
    * set, in the table a hash of the run picks, and stays where it started. An engine that runs
    * updates of one table one at a time needs several, or every run queues behind every other.
@@ -151,6 +158,18 @@ export const duckDbRowDialect: AgenticRowDialect = {
   identifier: (name) => quoteIdentifier(caseName(name, 'duckdb'), 'duckdb'),
   bind: (index) => `$${index}`,
   clock: 'CAST(epoch(now()) * 1000 AS BIGINT)',
+  renameTable: (namespace, from, to) =>
+    `ALTER TABLE IF EXISTS ${namespace}.${duckDbRowDialect.identifier(from)} RENAME TO ${duckDbRowDialect.identifier(to)}`,
+  async tableExists(db, namespace, name) {
+    const schema = agenticQuotedParts(namespace).at(-1)!.toLowerCase();
+    const table = caseName(name, 'duckdb');
+    const rows = await db.query(
+      'SELECT schema_name, table_name FROM system.main.duckdb_tables() WHERE NOT internal'
+    );
+    return rows.some(
+      (row) => String(row.schema_name).toLowerCase() === schema && String(row.table_name) === table
+    );
+  },
   createTable: (table, columns) =>
     `CREATE TABLE IF NOT EXISTS ${table} (${columns
       .map((column) => `${duckDbRowDialect.identifier(column.name)} ${types[column.type]} NOT NULL`)

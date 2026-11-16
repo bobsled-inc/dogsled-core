@@ -22,6 +22,8 @@ import {
 } from './warehouse-row-dialects.js';
 import type { WarehouseCheckpointOptions } from './warehouse-state.js';
 import { openLimitedRunner } from './warehouse-statement-limit.js';
+import { LEGACY_WAREHOUSE_CURSOR_TABLES } from './legacy-names.js';
+import { WAREHOUSE_CURSORS_TABLE } from './warehouse-cursors.js';
 
 export type WarehouseRowStoreOptions = WarehouseCheckpointOptions & {
   /** How long a finished run stays after its last write. Default: 30 days. */
@@ -34,7 +36,10 @@ export type WarehouseRowStoreOptions = WarehouseCheckpointOptions & {
   groupCommit?: boolean;
 };
 
-const LEGACY_CURSORS_TABLE = '__dogsled_cursors';
+/** The warehouse store's cursor table, then the names it had in earlier Core generations. */
+const OLDER_CURSOR_TABLES = [
+  ...new Set([WAREHOUSE_CURSORS_TABLE, ...LEGACY_WAREHOUSE_CURSOR_TABLES]),
+];
 /** PostgreSQL truncates a longer identifier, and a bound name would then match nothing. */
 const postgresNameBytes = 63;
 
@@ -170,18 +175,23 @@ function legacyCursorReader(
     const connection = await backend.connect();
     try {
       return await connection.use(async (db) => {
-        const found = await db.query(legacyTableQuery(engine, target), [
-          target.schema,
-          caseName(LEGACY_CURSORS_TABLE, engine),
-        ]);
-        if (!found.length) return null;
-        const table = agenticRowTable(dialect, connection.namespace, LEGACY_CURSORS_TABLE);
-        const rows = await db.query(
-          `SELECT ${q('record')} FROM ${table} WHERE ${q('key')} = ${dialect.bind(1)} LIMIT 2`,
-          [digestAgenticState(key)]
-        );
-        if (rows.length > 1) throw new AgenticStateError('corrupt');
-        return rows.length ? parseAgenticCursorRecord(rows[0]!.record) : null;
+        // The first table that exists holds the older progress: the current name once the
+        // warehouse store took its table over, else the name it had before.
+        for (const name of OLDER_CURSOR_TABLES) {
+          const found = await db.query(legacyTableQuery(engine, target), [
+            target.schema,
+            caseName(name, engine),
+          ]);
+          if (!found.length) continue;
+          const table = agenticRowTable(dialect, connection.namespace, name);
+          const rows = await db.query(
+            `SELECT ${q('record')} FROM ${table} WHERE ${q('key')} = ${dialect.bind(1)} LIMIT 2`,
+            [digestAgenticState(key)]
+          );
+          if (rows.length > 1) throw new AgenticStateError('corrupt');
+          return rows.length ? parseAgenticCursorRecord(rows[0]!.record) : null;
+        }
+        return null;
       });
     } finally {
       await connection.close();

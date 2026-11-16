@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createWarehouseCheckpointStore } from '../../../src/agentic/warehouse-state.js';
-import { AgenticRunSnapshotSchema, digestAgenticState } from '../../../src/agentic/state.js';
+import { agenticDefinitionIdentity, AgenticRunSnapshotSchema } from '../../../src/agentic/state.js';
 import { runFixture } from './state-fixture.js';
 import { checkpointIntegrations, checkpointTransport } from '../../support/checkpoint-transport.js';
 
@@ -29,7 +29,7 @@ function snapshot(size: number) {
     revision: 0,
     key: { scope: 'test', model: f.model.name, id: 'batch' },
     definition,
-    identity: digestAgenticState(definition),
+    identity: agenticDefinitionIdentity(definition),
     started_at: new Date(now).toISOString(),
     deadline_at: new Date(now + 600000).toISOString(),
     token_limit: 100000,

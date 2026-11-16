@@ -24,6 +24,11 @@ import {
 import { agenticCheckpointLimitError } from './checkpoint-verified.js';
 import { AGENTIC_DEFAULT_STORE_LIMITS } from './store-limits.js';
 import type { AgenticStateStore, AgenticRunSnapshot } from './state.js';
+import { LEGACY_CHECKPOINT_TABLE_PREFIXES } from './legacy-names.js';
+import { adoptLegacyWarehouseTables } from './legacy-tables.js';
+
+/** Prefix of the two tables that hold one run's checkpoint (`<prefix><hash>_c`, `_p`). */
+export const CHECKPOINT_TABLE_PREFIX = '__dogsled_cp_';
 
 interface Confirmed {
   id: string;
@@ -94,8 +99,8 @@ export function createWarehouseCheckpointStore(
       throwIfCancelled(options.signal);
       const key = AgenticRunKeySchema.parse(rawKey);
       const hash = digestAgenticState(key).slice(0, 48);
-      const control = `${namespace}.${q(`__dogsled_cp_${hash}_c`)}`;
-      const payloads = `${namespace}.${q(`__dogsled_cp_${hash}_p`)}`;
+      const control = `${namespace}.${q(`${CHECKPOINT_TABLE_PREFIX}${hash}_c`)}`;
+      const payloads = `${namespace}.${q(`${CHECKPOINT_TABLE_PREFIX}${hash}_p`)}`;
       let closed = false;
       // Why this session lost ownership. The first cause stays the reported one.
       let lost: AgenticStateError | undefined;
@@ -153,6 +158,19 @@ export function createWarehouseCheckpointStore(
       let timer: ReturnType<typeof setInterval> | undefined;
       try {
         await db.run(`CREATE SCHEMA IF NOT EXISTS ${namespace}`);
+        // A run checkpointed by an earlier Core generation keeps its tables, renamed in place.
+        await adoptLegacyWarehouseTables(
+          db,
+          sqlDialect,
+          target,
+          (['_c', '_p'] as const).map(
+            (part) =>
+              [
+                `${CHECKPOINT_TABLE_PREFIX}${hash}${part}`,
+                LEGACY_CHECKPOINT_TABLE_PREFIXES.map((prefix) => `${prefix}${hash}${part}`),
+              ] as const
+          )
+        );
         await db.run(
           `CREATE TABLE IF NOT EXISTS ${control}${suffix} AS SELECT CAST('' AS ${textType}) AS ${q('owner')}, CAST(0 AS ${intType}) AS ${q('expires')}, CAST('' AS ${textType}) AS ${q('token')}, CAST('' AS ${textType}) AS ${q('snapshot')}`
         );

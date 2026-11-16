@@ -2,8 +2,12 @@
 import { caseName, quoteIdentifier, quoteLiteral } from '../compiler/dialect.js';
 import type { AgenticColumn } from './model.js';
 import { digestAgenticState } from './state.js';
+import { LEGACY_PUBLICATION_TABLE_PREFIXES } from './legacy-names.js';
 
 export type PublicationDialect = 'postgres' | 'snowflake' | 'bigquery' | 'databricks';
+
+/** Prefix of the publication metadata and stage tables Core creates. */
+export const PUBLICATION_TABLE_PREFIX = '_dogsled_pub_';
 export function publicationNames(
   target: string,
   dialect: PublicationDialect,
@@ -36,11 +40,24 @@ export function publicationNames(
     systemSchema === undefined
       ? namespace
       : [...normalized.slice(0, -2), caseName(systemSchema, dialect)].map(q).join('.');
-  const prefix = `_dogsled_pub_${digestAgenticState(sql).slice(0, 24)}`;
+  const digest = digestAgenticState(sql).slice(0, 24);
+  const prefix = `${PUBLICATION_TABLE_PREFIX}${digest}`;
   const ref = (name: string) => `${storageNamespace}.${q(name)}`;
-  if (normalized.at(-1)!.toLowerCase().startsWith('_dogsled_pub_')) {
+  const table = normalized.at(-1)!.toLowerCase();
+  if (
+    [PUBLICATION_TABLE_PREFIX, ...LEGACY_PUBLICATION_TABLE_PREFIXES].some((reserved) =>
+      table.startsWith(reserved)
+    )
+  ) {
     throw new Error('Publication metadata names are reserved');
   }
+  const storageSchema =
+    systemSchema === undefined ? normalized.at(-2)! : caseName(systemSchema, dialect);
+  const legacy = (suffix: string) =>
+    [
+      `${prefix}${suffix}`,
+      LEGACY_PUBLICATION_TABLE_PREFIXES.map((earlier) => `${earlier}${digest}${suffix}`),
+    ] as const;
   return {
     target: sql,
     namespace,
@@ -48,15 +65,22 @@ export function publicationNames(
     schema: normalized.at(-2)!,
     table: normalized.at(-1)!,
     catalog: normalized.length === 3 ? normalized[0] : undefined,
+    /** The metadata tables under their earlier names, for adoption on first use. */
+    legacyTables: [legacy('_control'), legacy('_stages'), legacy('_receipts')],
+    storageTarget: {
+      catalog: normalized.length === 3 ? normalized[0] : undefined,
+      schema: storageSchema,
+    },
     control: ref(`${prefix}_control`),
     manifests: ref(`${prefix}_stages`),
     receipts: ref(`${prefix}_receipts`),
     // PostgreSQL identifiers are limited to 63 bytes. Keep 192 bits of the digest.
-    stage: (id: string, suffix = '') => ref(`_dogsled_pub_${id.slice(0, 48)}${suffix}`),
+    stage: (id: string, suffix = '') =>
+      ref(`${PUBLICATION_TABLE_PREFIX}${id.slice(0, 48)}${suffix}`),
     /** Schema and table names of a stage as the information schema lists them. */
     stageTable: (id: string, suffix = '') => ({
       schema: systemSchema === undefined ? normalized.at(-2)! : caseName(systemSchema, dialect),
-      table: caseName(`_dogsled_pub_${id.slice(0, 48)}${suffix}`, dialect),
+      table: caseName(`${PUBLICATION_TABLE_PREFIX}${id.slice(0, 48)}${suffix}`, dialect),
     }),
   };
 }

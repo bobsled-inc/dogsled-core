@@ -15,6 +15,7 @@ import {
 } from './model.js';
 import { AgenticProfileSchema } from './resolve.js';
 import { jsonEqual } from './json-equal.js';
+import { canonicalAgenticDefinition } from './metadata-names.js';
 import type { AgenticRunSnapshot } from './state.js';
 
 const DefinitionSchema = z.object({
@@ -67,7 +68,10 @@ export function checkpointIsConsistent(run: AgenticRunSnapshot): boolean {
   if (definition.resolved.steps.length !== model.plan.steps.length) return false;
   const output = model.plan.steps.find((step) => step.id === model.output.from)!;
   if (
-    !jsonEqual(definition.resolved.output_columns, [...output.columns, ...AGENTIC_METADATA_COLUMNS])
+    !jsonEqual(
+      canonicalAgenticDefinition(definition.resolved.output_columns),
+      canonicalAgenticDefinition([...output.columns, ...AGENTIC_METADATA_COLUMNS])
+    )
   ) {
     return false;
   }

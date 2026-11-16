@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { agenticMetadataRole, agenticMetadataSpellings } from './metadata-names.js';
 import type { JsonValue } from '@bobsled-inc/protocol';
 import { AgenticColumnsSchema, type AgenticColumn } from './model.js';
 import { AgenticStateError } from './state-errors.js';
@@ -146,9 +147,40 @@ const scalarFields: Record<Exclude<AgenticColumn['type'], 'array' | 'object'>, F
   timestamp: field(z.iso.datetime({ offset: true })),
   date: field(z.iso.date()),
 };
+// Every generation's spelling of a metadata column keeps the same fixed structure.
 const metadataFields = new Map(
-  Object.entries(AgenticJudgmentSchema.shape).map(([name, schema]) => [name, field(schema)])
+  Object.entries(AgenticJudgmentSchema.shape).flatMap(([name, schema]) => {
+    const role = agenticMetadataRole(name)!;
+    return agenticMetadataSpellings(role).map((spelling) => [spelling, field(schema)] as const);
+  })
 );
+
+/**
+ * Renames a row's metadata keys to the spelling `shape` uses, so a row written
+ * by an earlier Core generation (or an executor that still uses one) validates
+ * against the current schema, and the other way round for saved definitions.
+ */
+function metadataSpellingOf(shape: Readonly<Record<string, unknown>>) {
+  const spelling = new Map<string, string>();
+  for (const name of Object.keys(shape)) {
+    const role = agenticMetadataRole(name);
+    if (role !== undefined) spelling.set(role, name);
+  }
+  if (!spelling.size) return undefined;
+  return (value: unknown): unknown => {
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) return value;
+    let renamed: Record<string, unknown> | undefined;
+    for (const [key, item] of Object.entries(value)) {
+      const role = agenticMetadataRole(key);
+      const target = role === undefined ? undefined : spelling.get(role);
+      if (target === undefined || target === key || Object.hasOwn(value, target)) continue;
+      renamed ??= { ...(value as Record<string, unknown>) };
+      delete renamed[key];
+      renamed[target] = item;
+    }
+    return renamed ?? value;
+  };
+}
 const BoundedRowSchema = z.unknown().refine((value): boolean => isBoundedAgenticJson(value), {
   message: 'Expected bounded JSON data',
   abort: true,
@@ -185,5 +217,8 @@ export function createAgenticRowSchema(
         : judgmentSchema(evidenceSources).shape
     );
   }
-  return BoundedRowSchema.pipe(z.object(shape).strict());
+  const respell = metadataSpellingOf(shape);
+  const object = z.object(shape).strict();
+  // Respelling happens on the input side, so JSON Schema (the output side) is unchanged.
+  return (respell ? BoundedRowSchema.transform(respell) : BoundedRowSchema).pipe(object);
 }

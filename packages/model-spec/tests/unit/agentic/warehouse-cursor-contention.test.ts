@@ -94,6 +94,8 @@ class CursorTransport {
         if (sql === `SELECT "TOKEN" FROM ${table} WHERE "KEY" = '' LIMIT 2`) {
           return this.readGuard(attempt);
         }
+        // Looking for a cursor table of an earlier Core generation: the current one exists.
+        if (sql.includes('information_schema.TABLES')) return [{ table_name: params?.[1] }];
         assert.equal(sql, `SELECT "RECORD" FROM ${table} WHERE "KEY" = ? LIMIT 2`);
         assert.equal(params?.length, 1);
         return (this.records.get(String(params![0])) ?? [])
