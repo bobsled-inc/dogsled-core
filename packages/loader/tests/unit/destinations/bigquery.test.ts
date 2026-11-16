@@ -513,6 +513,104 @@ describe('BigQueryDestination', () => {
     expect(alterCall![0].query).toContain('STRING');
   });
 
+  it('ensureTable() adds and widens columns in one ALTER TABLE (table update rate limit)', async () => {
+    const table = createMockTable({
+      exists: true,
+      metadata: {
+        schema: {
+          fields: [
+            { name: 'id', type: 'INT64' },
+            { name: 'amount', type: 'INT64' },
+            { name: 'price', type: 'INT64' },
+            { name: '_time_extracted', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
+          ],
+        },
+      },
+    });
+    const dataset = createMockDataset({ exists: true, tables: new Map([['orders', table]]) });
+    const client = createMockClient(dataset);
+    const dest = new BigQueryDestination({ datasetId: 'test_ds', client, stagingFormat: 'jsonl' });
+    const ddlCount = () =>
+      vi
+        .mocked(client.createQueryJob)
+        .mock.calls.filter((call) => /^\s*ALTER TABLE/i.test(call[0].query)).length;
+
+    // First call reads table metadata: two widenings and one new column.
+    await dest.ensureTable('test_ds', 'orders', [
+      { name: 'id', type: 'integer', primary_key: true },
+      { name: 'amount', type: 'number' },
+      { name: 'price', type: 'number' },
+      { name: 'status', type: 'string' },
+    ]);
+    expect(ddlCount()).toBe(1);
+    expect(vi.mocked(client.createQueryJob).mock.calls[0]![0].query).toBe(
+      'ALTER TABLE `test_ds`.`orders` ADD COLUMN `status` STRING, ' +
+        'ALTER COLUMN `amount` SET DATA TYPE FLOAT64, ALTER COLUMN `price` SET DATA TYPE FLOAT64'
+    );
+
+    // Second call uses the column cache: one more widening and two new columns.
+    await dest.ensureTable('test_ds', 'orders', [
+      { name: 'id', type: 'number', primary_key: true },
+      { name: 'amount', type: 'number' },
+      { name: 'price', type: 'number' },
+      { name: 'status', type: 'string' },
+      { name: 'note', type: 'string' },
+      { name: 'qty', type: 'integer' },
+    ]);
+    expect(ddlCount()).toBe(2);
+    expect(vi.mocked(client.createQueryJob).mock.calls[1]![0].query).toBe(
+      'ALTER TABLE `test_ds`.`orders` ADD COLUMN `note` STRING, ADD COLUMN `qty` INT64, ' +
+        'ALTER COLUMN `id` SET DATA TYPE FLOAT64'
+    );
+
+    // A third call with nothing new issues no DDL at all.
+    await dest.ensureTable('test_ds', 'orders', [
+      { name: 'id', type: 'number', primary_key: true },
+      { name: 'amount', type: 'number' },
+      { name: 'price', type: 'number' },
+      { name: 'status', type: 'string' },
+      { name: 'note', type: 'string' },
+      { name: 'qty', type: 'integer' },
+    ]);
+    expect(ddlCount()).toBe(2);
+  });
+
+  it('ensureTable() rejects widenings BigQuery cannot apply before any DDL', async () => {
+    const table = createMockTable({
+      exists: true,
+      metadata: {
+        schema: {
+          fields: [
+            { name: 'id', type: 'INT64' },
+            { name: 'amount', type: 'INT64' },
+            { name: 'code', type: 'INT64' },
+            { name: '_time_extracted', type: 'TIMESTAMP' },
+            { name: '_bobsled_loaded_at', type: 'TIMESTAMP' },
+          ],
+        },
+      },
+    });
+    const dataset = createMockDataset({ exists: true, tables: new Map([['orders', table]]) });
+    const client = createMockClient(dataset);
+    const dest = new BigQueryDestination({ datasetId: 'test_ds', client, stagingFormat: 'jsonl' });
+
+    // integer -> string is a loader-safe widening, but BigQuery's SET DATA TYPE
+    // rejects INT64 -> STRING, which would also undo the added `status` column.
+    await expect(
+      dest.ensureTable('test_ds', 'orders', [
+        { name: 'id', type: 'integer', primary_key: true },
+        { name: 'amount', type: 'number' },
+        { name: 'code', type: 'string' },
+        { name: 'status', type: 'string' },
+      ])
+    ).rejects.toThrow(
+      'Schema change conflict on `test_ds`.`orders`.code: BigQuery cannot change existing type INT64 to STRING'
+    );
+    expect(client.createQueryJob).not.toHaveBeenCalled();
+    expect(table.setMetadata).not.toHaveBeenCalled();
+  });
+
   it('ensureTable() re-fetches metadata before setMetadata when schema evolves', async () => {
     // Reproduces the bug where ALTER TABLE invalidates the etag in the
     // previously-fetched metadata, causing setMetadata to fail with 412

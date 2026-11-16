@@ -55,9 +55,9 @@ import {
 } from './cross-warehouse-rows.js';
 import { enforceSchemaDrift } from './cross-warehouse-schema.js';
 import {
-  convertJsonlChunksToParquet,
   encodingFor,
   formatMs,
+  prepareStageFiles,
   resolveSourceTimeoutMs,
   resolveStagingFormat,
   runSql,
@@ -714,16 +714,14 @@ async function stageSourceToDestination(
     extractedAt,
     signal
   );
-  const stageFiles =
-    stagingFormat === 'parquet'
-      ? await convertJsonlChunksToParquet(
-          jsonlFiles,
-          source.columns,
-          workDir,
-          stageTableName(source.ref),
-          signal
-        )
-      : jsonlFiles;
+  const stageFiles = await prepareStageFiles(jsonlFiles, {
+    oneFile: target.config.dest === 'bigquery',
+    stagingFormat,
+    columns: source.columns,
+    workDir,
+    baseName: stageTableName(source.ref),
+    ...(signal ? { signal } : {}),
+  });
   if (stageFiles.length === 0) {
     const emptyFile = await emptyJsonlFile(workDir);
     await runDestinationOperation(destination, signal, () =>
@@ -851,16 +849,14 @@ async function stageApiSourceToDestination(
   }
   await buffer.flush();
   const jsonlFiles = buffer.flushAll();
-  const stageFiles =
-    stagingFormat === 'parquet'
-      ? await convertJsonlChunksToParquet(
-          jsonlFiles,
-          source.columns,
-          workDir,
-          stageTableName(source.ref),
-          signal
-        )
-      : jsonlFiles;
+  const stageFiles = await prepareStageFiles(jsonlFiles, {
+    oneFile: target.config.dest === 'bigquery',
+    stagingFormat,
+    columns: source.columns,
+    workDir,
+    baseName: stageTableName(source.ref),
+    ...(signal ? { signal } : {}),
+  });
 
   if (stageFiles.length === 0) {
     const emptyFile = await emptyJsonlFile(workDir);
