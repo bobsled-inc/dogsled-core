@@ -4,6 +4,8 @@ Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/
 
 ## Unreleased
 
+- Core's settings are renamed from `DOGSLED_*` to `BOBSLED_CORE_*`, for example `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS`. The old names are ignored, with a warning at start when one is set without its new twin. Rename each setting and keep its value; `BOBSLED_CORE_MATCH_KEY_SECRET` must keep the same value so match keys and entity ids stay stable. <!-- rename:keep -->
+
 - `local`, `gcs` and `s3` destinations take an optional `stream_subfolder` setting (loader flag `--stream-subfolder`). It adds a folder inside each stream's folder, so a file lands at `<prefix><stream>/<stream_subfolder>/<stream>-<n>.<ext>` instead of `<prefix><stream>/<stream>-<n>.<ext>`. One folder per load can then sit under a stream folder, the layout that tools such as Delta Lake and warehouse external tables read as a table. The setting is off by default, and a destination without it writes exactly the files it wrote before.
 
 - A `custom-token` request that gets 429, 500, 502, 503 or 504 is now retried with the transport's `retry` backoff and `Retry-After` handling, within the 30-second token deadline. Only a token endpoint that answers 400, 401 or 403 is reported as an authentication failure. Any other failure keeps its status as a provider failure with code `EXTRACTOR_HTTP_AUTH_PROVIDER_FAILURE`, and 429 and 5xx are retryable, so an Action reports `rate_limited` or `server_error`. A token request that times out is reported as a retryable timeout, and one that cannot connect as a retryable network failure.

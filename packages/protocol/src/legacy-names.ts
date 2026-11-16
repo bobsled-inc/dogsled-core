@@ -25,3 +25,42 @@ export const BLUEPRINT_EXTENSION_KEY_PREFIXES: readonly string[] = Object.freeze
 
 /** Destination types that are retired and stay rejected. */
 export const RETIRED_DESTINATION_TYPES: readonly string[] = Object.freeze(['bobsled_lakehouse']);
+
+/**
+ * Core settings an earlier Core generation read, by the name that follows its prefix. Core never
+ * reads the old value: setting `DOGSLED_OUTPUT_FORMAT` does nothing. Core warns when an old name
+ * is set while its current twin is not, so a renamed setting is never lost silently. An explicit
+ * list, never a prefix: users keep their own `DOGSLED_*` secrets.
+ */
+export const LEGACY_CORE_SETTING_PREFIX = 'DOGSLED_';
+export const LEGACY_CORE_SETTINGS: readonly string[] = Object.freeze([
+  'OUTPUT_FORMAT',
+  'EXTRACTOR_ALLOW_PRIVATE_HOSTS',
+  'ALLOW_PRIVATE_OAUTH_HOSTS',
+  'ENTITY_GRAPH_ALLOW_REMOTE',
+  'MCP_ALLOW_UNFILTERED',
+  'STATE_BACKEND',
+  'STATE_AUTH_ENV',
+  'CREDENTIALS_TOKEN_COMMAND',
+  'MATCH_KEY_SECRET',
+  'SNOWFLAKE_ACCESS_TOKEN',
+  'SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN',
+  'XWH_STAGING_FORMAT',
+  'XWH_SOURCE_TIMEOUT_S',
+  'MODEL_SPEC_DEBUG_SQL',
+  'QUERY_INFLIGHT_DEDUP',
+  'QUERY_INCREMENTAL_REFRESH',
+  'QUERY_PARTIAL_MATERIALIZATION',
+  'QUERY_MAX_SQL_LIMIT',
+  'MODEL_RUN_CANDIDATES',
+  'AI_TEST_STUB',
+  'EMBED_STUB',
+  'CLI',
+  'BUNDLED_INTEGRATIONS_DIR',
+  'EMBEDDER_TMP_DIR',
+  'PIPELINE_COMMAND',
+  'PIPELINE_CWD',
+  'PIPELINE_TIMEOUT_SECONDS',
+  'INSTALL_ROOT',
+  'INSTALL_DIR',
+]);

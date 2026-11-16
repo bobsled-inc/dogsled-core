@@ -61,7 +61,7 @@ LOG_FORMAT="${LOG_FORMAT:-text}"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --dest)        DEST="$2"; BOBSLED_CORE_DEST_EXPLICIT=1; shift 2 ;;
+    --dest)        DEST="$2"; DEST_EXPLICIT=1; shift 2 ;;
     --bq-project)  BQ_PROJECT="$2"; shift 2 ;;
     --bq-dataset)  BQ_DATASET="$2"; shift 2 ;;
     --bq-location) BQ_LOCATION="$2"; shift 2 ;;
@@ -519,7 +519,7 @@ if [ "$MODE" = "notion" ]; then
   fi
 
   # ── Interactive destination picker (unless --dest was passed) ──
-  if [ "$DEST" = "duckdb" ] && [ -z "${BOBSLED_CORE_DEST_EXPLICIT:-}" ]; then
+  if [ "$DEST" = "duckdb" ] && [ -z "${DEST_EXPLICIT:-}" ]; then
     echo ""
     echo -e "  ${BOLD}Where do you want to load your Notion data?${RESET}"
     echo ""

@@ -15,7 +15,7 @@ import { createMcpGroup } from './groups/mcp.js';
 import { createSetupGroup } from './groups/setup.js';
 import { createSkillGroup } from './groups/skill.js';
 import { createRunnerGroup } from './runner/index.js';
-import { CommandError } from '@bobsled-inc/protocol';
+import { CommandError, warnLegacySettings } from '@bobsled-inc/protocol';
 import { createGroup, maybeRunDelegatedCommand } from './runtime/delegation.js';
 
 // Direct-import commands (no subprocess overhead)
@@ -152,6 +152,7 @@ export function handleCliError(error: unknown): void {
 
 export async function runCli(argv: string[] = process.argv.slice(2)): Promise<void> {
   try {
+    warnLegacySettings();
     await takeOverLocalState(argv);
     const delegation = await maybeRunDelegatedCommand(argv);
     if (delegation.handled) {

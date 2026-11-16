@@ -395,7 +395,7 @@ const S3DestinationSchema = z
  * `dogsled_databricks_workspace`, …) follow the same pattern: one
  * additional schema branch + one additional orchestrator-side
  * expander. The credential plumbing (`iam-impersonate://` resolver,
- * `BOBSLED_CORE_<OFFERING>_CREDENTIALS_*` env-var convention) is a
+ * `DOGSLED_<OFFERING>_CREDENTIALS_*` env-var convention) is a
  * concern of the orchestrator, not Dogsled.
  */
 const BobsledManagedDestinationSchema = z

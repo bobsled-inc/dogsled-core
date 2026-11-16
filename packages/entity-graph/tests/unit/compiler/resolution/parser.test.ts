@@ -277,14 +277,14 @@ describe('resolveResolutionSpec', () => {
     const http = resolve({
       kind: 'http',
       url: 'https://reviewer.example/review',
-      auth_token: '${{ env.BOBSLED_CORE_REVIEWER_TOKEN }}',
+      auth_token: '${{ env.REVIEWER_TOKEN }}',
       timeout_s: 120,
       poll_interval_s: 2,
     });
     expect(http.agentPolicy?.reviewer).toEqual({
       kind: 'http',
       url: 'https://reviewer.example/review',
-      authToken: '${{ env.BOBSLED_CORE_REVIEWER_TOKEN }}',
+      authToken: '${{ env.REVIEWER_TOKEN }}',
       timeoutS: 120,
       pollIntervalS: 2,
     });

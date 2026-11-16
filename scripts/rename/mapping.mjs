@@ -68,6 +68,10 @@ const PREVIEW_TOOLING = [
 
 export const KEEP_LIST = [
   { pattern: '@bobsled-inc', note: 'npm scope and GitHub org' },
+  {
+    pattern: 'DOGSLED_<OFFERING>_CREDENTIALS_',
+    note: "the app's own credential env-var convention, which keeps the Dogsled name (D7)",
+  },
   { pattern: 'bobsled-inc/', note: 'GitHub org path' },
   {
     pattern: 'bobsled_api',
@@ -554,11 +558,27 @@ export const RULES = [
     note: 'design: accept both placeholders.',
   },
   {
+    id: 'user-declared-env-names',
+    category: 'BC-08',
+    kind: 'content',
+    match:
+      /\bDOGSLED_(REVIEWER_TOKEN|BLOB_URL|BLOB_ORIGIN|RUN_TOKEN|MC_SF_[A-Z0-9_]+|MC_BQ_PROJECT|DEST_EXPLICIT)\b/g,
+    replace: '$1',
+    note: 'Names users declare for their own secrets in docs and examples, or a shell local; not Core settings, so they get no Core prefix (review-119 L2).',
+  },
+  {
+    id: 'example-multi-conn-objects',
+    category: 'BC-21',
+    kind: 'content',
+    match: /\bDOGSLED_(MULTI_CONN_[A-Z0-9_]+)\b/g,
+    replace: '$1',
+    note: 'Neutral names for the multi-connection example objects (A6).',
+  },
+  {
     id: 'example-object-names',
     category: 'BC-21',
     kind: 'content',
-    match:
-      /\bDOGSLED_(RAW|MULTI_CONN_DB(?:_OVERRIDE)?|MULTI_CONN_WH|MULTI_CONN_ROLE|AI_WH|LOADER)\b(?!_)/g,
+    match: /\bDOGSLED_(RAW|AI_WH|LOADER)\b(?!_)/g,
     replace: 'BOBSLED_CORE_$1',
     note: 'Example warehouse object names in docs/examples, not settings.',
   },
@@ -989,12 +1009,28 @@ export const RULES = [
 
   // BC-12/BC-14 leftovers in lowercase snake case (fixtures, examples)
   {
+    id: 'example-multi-conn-lower',
+    category: 'BC-21',
+    kind: 'content',
+    match: /\bdogsled_multi_conn/g,
+    replace: 'multi_conn',
+    note: 'Neutral multi-connection datasets and key file (multi_conn_*, multi_conn.p8; A6).',
+  },
+  {
+    id: 'golden-workspace-schema',
+    category: 'BC-21',
+    kind: 'content',
+    match: /\bdogsled_workspace\b/g,
+    replace: 'bobsled_core_workspace',
+    note: 'Golden SQL lowercases the test schema DOGSLED_WORKSPACE, which BC-08 turns into BOBSLED_CORE_WORKSPACE.',
+  },
+  {
     id: 'snake-leftovers',
     category: 'BC-21',
     kind: 'content',
     match: /(?:\b|(?<=\\n))dogsled_([a-z0-9][a-z0-9_]*)/g,
     replace: 'bobsled_$1',
-    exclude: [],
+    exclude: ['**/generated-data.ts'],
     note: 'dogsled_workspace, dogsled_multi_conn_*, dogsled_slot, dogsled_pub, dogsled_internal_id, dogsled_test in Core fixtures.',
   },
   {

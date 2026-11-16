@@ -47,7 +47,8 @@ describe('rename mapping', () => {
     ['packages/dogsled/src/index.ts', 'packages/bobsled-core/src/index.ts'],
     ['Run `dogsled extract --help`.', 'Run `bobsled extract --help`.'],
     ['export DOGSLED_MATCH_KEY_SECRET=x', 'export BOBSLED_CORE_MATCH_KEY_SECRET=x'],
-    ['DOGSLED_<OFFERING>_CREDENTIALS_*', 'BOBSLED_CORE_<OFFERING>_CREDENTIALS_*'],
+    ['DOGSLED_<OFFERING>_CREDENTIALS_*', 'DOGSLED_<OFFERING>_CREDENTIALS_*'],
+    ['DOGSLED_<OFFERING>_HOST', 'BOBSLED_CORE_<OFFERING>_HOST'],
     ['Use the dogsled-init skill.', 'Use the bobsled-init skill.'],
     ['plugins/dogsled-core/skills', 'plugins/bobsled-core/skills'],
     [
@@ -156,6 +157,36 @@ describe('rename mapping', () => {
     );
     expect(bc01("Object.freeze(['model', 'graph', 'dogsled', 'rest'])")).toBe(
       "Object.freeze(['model', 'graph', 'bobsled', 'rest'])"
+    );
+  });
+
+  it('reproduces PR 5: neutral example and user-declared names, and the golden schema', () => {
+    const pr5 = (text, file = 'docs/a.md') =>
+      renameText(text, { file, rules: selectRules(['BC-08', 'BC-20', 'BC-21']) }).text;
+    expect(pr5('DOGSLED_MULTI_CONN_DB.RAW and DOGSLED_MULTI_CONN_WH')).toBe(
+      'MULTI_CONN_DB.RAW and MULTI_CONN_WH'
+    );
+    expect(pr5('dataset: dogsled_multi_conn_staging, key ~/.ssh/dogsled_multi_conn.p8')).toBe(
+      'dataset: multi_conn_staging, key ~/.ssh/multi_conn.p8'
+    );
+    expect(pr5('DOGSLED_RAW and DOGSLED_AI_WH')).toBe('BOBSLED_CORE_RAW and BOBSLED_CORE_AI_WH');
+    expect(pr5('token: ${{ env.DOGSLED_REVIEWER_TOKEN }} and DOGSLED_MC_SF_ACCOUNT')).toBe(
+      'token: ${{ env.REVIEWER_TOKEN }} and MC_SF_ACCOUNT'
+    );
+    expect(
+      pr5('DOGSLED_BLOB_URL DOGSLED_BLOB_ORIGIN DOGSLED_RUN_TOKEN DOGSLED_DEST_EXPLICIT')
+    ).toBe('BLOB_URL BLOB_ORIGIN RUN_TOKEN DEST_EXPLICIT');
+    expect(pr5('the `DOGSLED_<OFFERING>_CREDENTIALS_*` env-var convention')).toBe(
+      'the `DOGSLED_<OFFERING>_CREDENTIALS_*` env-var convention'
+    );
+    expect(pr5("generateSql(spec, 'DOGSLED_WORKSPACE', dialect)", 'a.test.ts')).toBe(
+      "generateSql(spec, 'BOBSLED_CORE_WORKSPACE', dialect)"
+    );
+    expect(pr5('CREATE OR REPLACE VIEW "dogsled_workspace"."stg"', 'a.sql')).toBe(
+      'CREATE OR REPLACE VIEW "bobsled_core_workspace"."stg"'
+    );
+    expect(pr5('"x\\ndogsled_source_kind"', 'packages/skills/src/generated-data.ts')).toBe(
+      '"x\\ndogsled_source_kind"'
     );
   });
 

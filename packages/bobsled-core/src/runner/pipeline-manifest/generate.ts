@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { ProjectIndex } from '@bobsled-inc/project-index';
-import { CommandError } from '@bobsled-inc/protocol';
+import { CommandError, warnLegacySettings } from '@bobsled-inc/protocol';
 
 import {
   discoverModels,
@@ -538,6 +538,7 @@ export interface GenerateProjectManifestOptions extends ResolveProjectPipelinesO
 export async function generateProjectManifest(
   options: GenerateProjectManifestOptions
 ): Promise<BobsledPipelineManifest> {
+  warnLegacySettings();
   const validationCatalog = options.validationCatalog ?? BUILT_IN_VALIDATION_CATALOG;
   const project = await resolveProjectPipelines({ ...options, validationCatalog });
   return generateManifest(

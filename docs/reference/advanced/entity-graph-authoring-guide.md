@@ -284,7 +284,7 @@ agent_policy:
   reviewer:
     kind: http
     url: https://reviewer.example/review
-    auth_token: ${{ env.BOBSLED_CORE_REVIEWER_TOKEN }} # env placeholder — never a literal
+    auth_token: ${{ env.REVIEWER_TOKEN }} # env placeholder — never a literal
     timeout_s: 300
     poll_interval_s: 5
     # — or —

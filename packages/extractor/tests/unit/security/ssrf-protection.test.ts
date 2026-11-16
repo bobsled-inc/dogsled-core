@@ -1,4 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
+import {
+  LEGACY_CORE_SETTING_PREFIX,
+  unmatchedLegacySettings,
+  warnLegacySettings,
+} from '@bobsled-inc/protocol';
 
 import {
   isPrivateHost,
@@ -129,6 +134,27 @@ describe('SSRF Protection', () => {
       } finally {
         if (original === undefined) delete process.env['BOBSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
         else process.env['BOBSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = original;
+      }
+    });
+
+    it('ignores the earlier Core name of the private-host opt-in, warns about it, and honours the current name', () => {
+      const old = `${LEGACY_CORE_SETTING_PREFIX}EXTRACTOR_ALLOW_PRIVATE_HOSTS`;
+      const current = 'BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS';
+      process.env[old] = '1';
+      try {
+        expect(isPrivateHost('127.0.0.1')).toBe(true);
+        expect(unmatchedLegacySettings()).toContainEqual([old, current]);
+        const warn = vi.fn();
+        warnLegacySettings(warn);
+        expect(warn).toHaveBeenCalledWith(
+          `Warning: ${old} is set but ignored; Core reads ${current}. Rename the setting.`
+        );
+        process.env[current] = '1';
+        expect(unmatchedLegacySettings()).not.toContainEqual([old, current]);
+        expect(isPrivateHost('127.0.0.1')).toBe(false);
+      } finally {
+        delete process.env[old];
+        delete process.env[current];
       }
     });
 

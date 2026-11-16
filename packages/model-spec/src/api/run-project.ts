@@ -68,6 +68,7 @@ import {
   type PlannedMaterializedModel,
   type PlannedPublishedModel,
 } from './run-project-helpers.js';
+import { warnLegacySettings } from '@bobsled-inc/protocol';
 
 export type { PlannedPublishedModel } from './run-project-helpers.js';
 
@@ -299,6 +300,7 @@ export async function runProject(
   cwd: string,
   opts: RunProjectOptions = {}
 ): Promise<RunProjectResult> {
+  warnLegacySettings(opts.onWarn);
   if (opts.declaredSecretNames !== undefined) {
     opts = {
       ...opts,

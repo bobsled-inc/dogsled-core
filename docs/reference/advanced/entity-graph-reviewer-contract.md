@@ -16,7 +16,7 @@ agent_policy:
   reviewer: # optional; absent → in-dogsled model judge (agent_policy.model)
     kind: http # http | command
     url: https://reviewer.example/review # kind: http
-    auth_token: ${{ env.BOBSLED_CORE_REVIEWER_TOKEN }} # env placeholder — never a literal
+    auth_token: ${{ env.REVIEWER_TOKEN }} # env placeholder — never a literal
     timeout_s: 300 # default 300; per batch of pairs
     poll_interval_s: 5 # http only; default 5
     # command: 'my-reviewer --json'           # kind: command (mutually exclusive with url)

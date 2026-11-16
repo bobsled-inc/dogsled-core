@@ -392,7 +392,7 @@ describe('ResolutionSpecSchema', () => {
         reviewer: {
           kind: 'http',
           url: 'https://reviewer.example/review',
-          auth_token: '${{ env.BOBSLED_CORE_REVIEWER_TOKEN }}',
+          auth_token: '${{ env.REVIEWER_TOKEN }}',
           timeout_s: 300,
           poll_interval_s: 5,
         },
@@ -404,7 +404,7 @@ describe('ResolutionSpecSchema', () => {
       expect(result.data.agent_policy?.reviewer).toEqual({
         kind: 'http',
         url: 'https://reviewer.example/review',
-        auth_token: '${{ env.BOBSLED_CORE_REVIEWER_TOKEN }}',
+        auth_token: '${{ env.REVIEWER_TOKEN }}',
         timeout_s: 300,
         poll_interval_s: 5,
       });

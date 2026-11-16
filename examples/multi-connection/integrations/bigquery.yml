@@ -1,10 +1,10 @@
 spec_version: '1'
-auth_env_vars: [BOBSLED_CORE_MC_BQ_PROJECT]
+auth_env_vars: [MC_BQ_PROJECT]
 type: integration
 name: bigquery
 source_type: bigquery
 connection:
-  project_id: ${{ env.BOBSLED_CORE_MC_BQ_PROJECT }}
+  project_id: ${{ env.MC_BQ_PROJECT }}
   default_location: US
   dataset: multi_conn_staging
 auth:

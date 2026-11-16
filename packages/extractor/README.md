@@ -472,8 +472,8 @@ Example — running `dogsled extract run` against a self-hosted state backend:
 
 ```sh
 BOBSLED_CORE_STATE_BACKEND=https://state.example.com/api/dogsled/state \
-BOBSLED_CORE_STATE_AUTH_ENV=BOBSLED_CORE_RUN_TOKEN \
-BOBSLED_CORE_RUN_TOKEN=<jwt> \
+BOBSLED_CORE_STATE_AUTH_ENV=RUN_TOKEN \
+RUN_TOKEN=<jwt> \
 dogsled extract run --integration linear --advance-state
 ```
 

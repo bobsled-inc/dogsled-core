@@ -1,16 +1,15 @@
 spec_version: '1'
-auth_env_vars:
-  [BOBSLED_CORE_MC_SF_ACCOUNT, BOBSLED_CORE_MC_SF_PRIVATE_KEY_PATH, BOBSLED_CORE_MC_SF_USER]
+auth_env_vars: [MC_SF_ACCOUNT, MC_SF_PRIVATE_KEY_PATH, MC_SF_USER]
 type: integration
 name: snowflake
 source_type: snowflake
 connection:
-  account_identifier: ${{ env.BOBSLED_CORE_MC_SF_ACCOUNT }}
+  account_identifier: ${{ env.MC_SF_ACCOUNT }}
   warehouse: MULTI_CONN_WH
-  user: ${{ env.BOBSLED_CORE_MC_SF_USER }}
+  user: ${{ env.MC_SF_USER }}
   role: MULTI_CONN_ROLE
   database: MULTI_CONN_DB
   schema: STAGING
 auth:
   type: rsa_key
-  private_key_path: ${{ env.BOBSLED_CORE_MC_SF_PRIVATE_KEY_PATH }}
+  private_key_path: ${{ env.MC_SF_PRIVATE_KEY_PATH }}

@@ -4,6 +4,8 @@ Dogsled reads credentials only from environment variables that your files name,
 for example `${{ env.STRIPE_API_KEY }}` or `$PG_PASSWORD`. Those names are yours to
 choose. The variables on this page change Dogsled's own behavior.
 
+Core's own settings start with `BOBSLED_CORE_`. Core ignores the earlier `DOGSLED_*` names of these settings and prints a warning when one is set without its `BOBSLED_CORE_*` twin, so rename them, keeping their values. <!-- rename:keep -->
+
 ## Output
 
 | Variable                     | Effect                                                                                                          |

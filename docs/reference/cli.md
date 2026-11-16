@@ -4404,7 +4404,7 @@ Options:
   --goto <n>        Jump to lesson number N
   --auto            Auto-advance on success (1.5s delay)
   --cli <cmd>       Override CLI binary (default: BOBSLED_CORE_CLI env or
-                    "dogsled")
+                    "bobsled")
   -h, --help        display help for command
 ```
 
