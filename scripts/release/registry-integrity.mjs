@@ -16,10 +16,14 @@ const SECRET_PATTERNS = [
     /(\b[\w.-]*(?:token|password|passwd|secret|cookie|credential)s?["']?\s+["']?)[^\s"',;}]+/gi,
     '$1[REDACTED]',
   ],
-  // JWTs of any length, UUIDs, and long letter-and-digit runs (npm_, ghs_ and similar tokens)
+  // JWTs of any length, UUIDs, and letter-and-digit runs of 24+ (ghs_ and similar tokens)
   [/\beyJ[\w-]+\.[\w-]+\.[\w-]*/g, '[REDACTED]'],
   [/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, '[REDACTED]'],
   [/(?=[\w-]*\d)(?=[\w-]*[A-Za-z])[\w-]{24,}/g, '[REDACTED]'],
+  // npm tokens, and any 32+ run of the token alphabet (base64 too), digits or not
+  [/\bnpm_[A-Za-z0-9]{20,}/g, '[REDACTED]'],
+  // ('=' counts, so a 32-character base64 value with padding is caught too)
+  [/[A-Za-z0-9+/=_-]{32,}/g, '[REDACTED]'],
 ];
 // Lines that may echo npm configuration or auth headers are dropped, not redacted.
 const CONFIG_LINE = /npmrc|userconfig|_auth|authorization|always-auth/i;

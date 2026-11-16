@@ -297,6 +297,68 @@ describe('registry release integrity', async () => {
       expect(summary).not.toContain(secret);
   });
 
+  // review-127 round 2: shapes without a digit, base64, and lines npm does not mark as errors.
+  const LETTERS = 'QwErTyUiOpAsDfGhJkLzXcVbNmQwErTy';
+  const B64 = 'aB3+dE5/gH7+jK9/mN1+pQ2/sT4+vW6=';
+  const HEX = '9f8e7d6c5b4a39281706f5e4d3c2b1a0';
+  const r2env = {
+    NPM_BOOTSTRAP_TOKEN: 'npmBootLettersOnlyAbcdEfgh',
+    MY_API_KEY: 'Pq7Rs2T',
+    SHORT_SECRET: 'Zx9!',
+  };
+  it.each([
+    [
+      'npm token without a digit',
+      `npm error code E401\nnpm error got npm_${'A'.repeat(36)}`,
+      `npm_${'A'.repeat(36)}`,
+    ],
+    [
+      'mixed-case npm token without a digit',
+      `npm error code E401\nnpm error got npm_${'AbCd'.repeat(9)}`,
+      `npm_${'AbCd'.repeat(9)}`,
+    ],
+    [
+      'letters-only value',
+      `npm error code E401\nnpm error Unauthorized ${LETTERS} rejected`,
+      LETTERS,
+    ],
+    ['base64 value', `npm error code E401\nnpm error Unauthorized ${B64} rejected`, 'aB3+dE5'],
+    ['hex with a keyword', `npm error code E401\nnpm error bad credential id ${HEX}`, HEX],
+    ['hex without a keyword', `npm error code E401\nnpm error rejected ${HEX}`, HEX],
+    [
+      'secret-named environment value',
+      'npm error code E401\nnpm error value npmBootLettersOnlyAbcdEfgh here',
+      'npmBootLettersOnlyAbcdEfgh',
+    ],
+    ['7-character environment value', 'npm error code E401\nnpm error x Pq7Rs2T y', 'Pq7Rs2T'],
+    ['4-character environment value', 'npm error code E401\nnpm error got Zx9! back', 'Zx9!'],
+    [
+      'percent-encoded query secret',
+      `npm error code E401\nnpm error GET https://registry.npmjs.org/x?auth=${encodeURIComponent(B64)}`,
+      'aB3',
+    ],
+    [
+      'secret in a URL path',
+      `npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/-/npm/v1/tokens/token/${LETTERS}`,
+      LETTERS,
+    ],
+    ['secret in the code line', `npm error code ${HEX}\nnpm error message`, HEX],
+    [
+      'Authorization split across lines',
+      `npm error code E401\nnpm error Authorization:\nnpm error   Bearer ${LETTERS}`,
+      LETTERS,
+    ],
+    [
+      'npm warn line',
+      `npm warn config //registry.npmjs.org/:_authToken=${HEX}\nnpm error code E401\nnpm error denied`,
+      HEX,
+    ],
+    ['npm verbose line', `npm verbose stack token=${HEX}\nnpm error code E401`, HEX],
+    ['carriage returns', `npm error code E401\r\nnpm error tok\ren ${LETTERS}`, LETTERS],
+  ])('redacts %s', (_name, stderr, secret) => {
+    expect(npmFailureSummary({ status: 1, stderr, stdout: '' }, r2env)).not.toContain(secret);
+  });
+
   it('replaces secret-named environment values literally, even in plain words', () => {
     const env = {
       ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'plainwordsecret',
@@ -330,10 +392,19 @@ describe('registry release integrity', async () => {
       seed = (seed * 1103515245 + 12345) % 2147483648;
       return seed / 2147483648;
     };
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let trial = 0; trial < 500; trial += 1) {
-      const chars = Array.from({ length: 30 }, () => alphabet[Math.floor(random() * 62)]);
-      const secret = `${chars.join('')}a7`;
+    // Letters only, digits only and base64: no shape may rely on a digit being present.
+    const alphabets = [
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+      '0123456789',
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
+    ];
+    for (let trial = 0; trial < 600; trial += 1) {
+      const alphabet = alphabets[trial % alphabets.length];
+      const chars = Array.from(
+        { length: 32 },
+        () => alphabet[Math.floor(random() * alphabet.length)]
+      );
+      const secret = chars.join('');
       const text = recorded[trial % recorded.length];
       const at = Math.floor(random() * (text.length + 1));
       const stderr = `${text.slice(0, at)}${secret}${text.slice(at)}`;
