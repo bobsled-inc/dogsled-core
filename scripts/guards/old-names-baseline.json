@@ -1,7 +1,7 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 12107,
+    "dogsled-word": 12118,
     "old-warehouse-prefix": 717,
     "track-config": 0,
     "track-env": 0,
@@ -11,7 +11,7 @@
   "areas": {
     ".agents": 958,
     "<root>": 1479,
-    ".github": 65,
+    ".github": 66,
     "apps/explorer": 389,
     "docs": 1507,
     "examples": 421,
@@ -31,8 +31,8 @@
     "packages/protocol": 88,
     "packages/sdk-codegen": 41,
     "packages/skills": 1112,
-    "scripts": 307,
-    "tests": 113,
+    "scripts": 308,
+    "tests": 122,
     "workspace": 30
   }
 }
