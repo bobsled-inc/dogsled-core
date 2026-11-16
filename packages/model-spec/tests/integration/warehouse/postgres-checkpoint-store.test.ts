@@ -46,7 +46,7 @@ vi.mock('@bobsled-inc/connections', async (importOriginal) => {
 });
 
 describe.skipIf(
-  !process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
+  !process.env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres')
 )('warehouse checkpoints', () => {
   const dirs: string[] = [];
   const cleanups: Array<() => Promise<void>> = [];
@@ -60,8 +60,8 @@ describe.skipIf(
     const directory = await mkdtemp(join(tmpdir(), 'warehouse-checkpoint-'));
     dirs.push(directory);
     for (const name of ['HOST', 'DATABASE', 'USER', 'PASSWORD']) {
-      if (!process.env[`DOGSLED_MODEL_SPEC_POSTGRES_${name}`]) {
-        throw new Error(`DOGSLED_MODEL_SPEC_POSTGRES_${name} is required`);
+      if (!process.env[`BOBSLED_CORE_MODEL_SPEC_POSTGRES_${name}`]) {
+        throw new Error(`BOBSLED_CORE_MODEL_SPEC_POSTGRES_${name} is required`);
       }
     }
     const integration: PostgresIntegration = {
@@ -70,14 +70,14 @@ describe.skipIf(
       name: 'lake',
       source_type: 'postgres',
       connection: {
-        host: process.env.DOGSLED_MODEL_SPEC_POSTGRES_HOST!,
-        port: Number(process.env.DOGSLED_MODEL_SPEC_POSTGRES_PORT ?? 5432),
-        database: process.env.DOGSLED_MODEL_SPEC_POSTGRES_DATABASE!,
+        host: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_HOST!,
+        port: Number(process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PORT ?? 5432),
+        database: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_DATABASE!,
       },
       auth: {
         type: 'password',
-        user: process.env.DOGSLED_MODEL_SPEC_POSTGRES_USER!,
-        password: process.env.DOGSLED_MODEL_SPEC_POSTGRES_PASSWORD!,
+        user: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_USER!,
+        password: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PASSWORD!,
       },
     };
     const schema = `checkpoint_test_${randomUUID().replaceAll('-', '')}`;

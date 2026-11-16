@@ -404,14 +404,14 @@ export async function runProject(
   const secretResolver =
     opts.secretResolver ?? (await buildSecretResolver(project.cwd, opts.secrets));
   // Refreshable managed credential — provider wins over the command string,
-  // which in turn wins over the `DOGSLED_CREDENTIALS_TOKEN_COMMAND` env var. The
+  // which in turn wins over the `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND` env var. The
   // env fallback is how the standalone `dogsled model run` subprocess + the Cloud
   // Run Jobs executor receive the SAME `credentials_token_command` the loader
   // gets from dogsled.yml, without threading a flag through every CLI verb. Built
   // once per run and shared by every integration's runner. Undefined leaves the
   // runners on their static credentials (behaviour unchanged).
   const credentialsTokenCommand =
-    opts.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+    opts.credentialsTokenCommand ?? process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
   const tokenProvider: BigQueryTokenProvider | undefined =
     opts.tokenProvider ??
     (credentialsTokenCommand ? createTokenCommandProvider(credentialsTokenCommand) : undefined);

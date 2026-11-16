@@ -74,7 +74,7 @@ The spec is a deterministic standardize → block → score → threshold flow:
   `dogsled-model-spec-cleaning` skill** for the transform catalog — don't guess transform
   names; an unknown transform fails validation.
   For privacy-preserving match keys, use `normalize_email_uid2` before
-  `hmac_sha256`, set `DOGSLED_MATCH_KEY_SECRET` in the runtime environment, and
+  `hmac_sha256`, set `BOBSLED_CORE_MATCH_KEY_SECRET` in the runtime environment, and
   treat the hashed output as a terminal exact-match key only. `pre_hashed: true`
   is available when the source already supplies a digest.
 - **`blocking`** — candidate-pair narrowing (only compare records that share
@@ -385,7 +385,7 @@ dogsled entity-graph serve --port 8765 --runner ./runner.js --allow-writes --jso
 The server binds to loopback by default and is read-only unless
 `--allow-writes` is passed. Remote exposure is intentionally double-gated:
 operators must both pass `--allow-remote` and set
-`DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE=1`, then put the unauthenticated API behind
+`BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE=1`, then put the unauthenticated API behind
 trusted access controls. `assign` and `stage` over HTTP share the same
 primary-key validation and inbox durability as the CLI.
 
@@ -417,7 +417,7 @@ scoring:
       weight: 1
 ```
 
-`hmac_sha256` reads `DOGSLED_MATCH_KEY_SECRET` from the process environment and
+`hmac_sha256` reads `BOBSLED_CORE_MATCH_KEY_SECRET` from the process environment and
 fails validation/compile closed when the secret is missing. Dogsled deliberately
 uses one portable nested keyed SHA-256 construction on every warehouse; it is
 not RFC-2104 HMAC and will not interoperate with externally-computed HMACs.

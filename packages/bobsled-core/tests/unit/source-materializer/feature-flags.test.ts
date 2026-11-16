@@ -9,7 +9,7 @@ describe('feature flags', () => {
 
   it('enables incrementalRefresh via env=1', () => {
     expect(
-      resolveSourceMaterializerFlags({}, { DOGSLED_QUERY_INCREMENTAL_REFRESH: '1' })
+      resolveSourceMaterializerFlags({}, { BOBSLED_CORE_QUERY_INCREMENTAL_REFRESH: '1' })
         .incrementalRefresh
     ).toBe(true);
   });
@@ -20,7 +20,7 @@ describe('feature flags', () => {
 
   it('enables partialMaterialization via env=true', () => {
     expect(
-      resolveSourceMaterializerFlags({}, { DOGSLED_QUERY_PARTIAL_MATERIALIZATION: 'true' })
+      resolveSourceMaterializerFlags({}, { BOBSLED_CORE_QUERY_PARTIAL_MATERIALIZATION: 'true' })
         .partialMaterialization
     ).toBe(true);
   });

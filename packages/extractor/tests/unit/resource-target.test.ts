@@ -98,7 +98,7 @@ describe('V2 resource — extract.integration + load.integration', () => {
     load: {
       // V2 resource load block: defaults + overrides only. The destination
       // binding (integration) lives elsewhere — pipeline / CLI / extractor.yml.
-      overrides: { role: 'LOADER_ROLE', database: 'DOGSLED_RAW' },
+      overrides: { role: 'LOADER_ROLE', database: 'BOBSLED_CORE_RAW' },
       defaults: { load_strategy: 'merge' },
     },
     schema: {

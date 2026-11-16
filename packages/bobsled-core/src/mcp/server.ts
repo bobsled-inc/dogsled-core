@@ -9,9 +9,9 @@
  * `<resource>__documents` / `<resource>__chunks` with citation metadata.
  *
  * **Fail-closed default**: requires `principal` in every request context
- * unless `--allow-unfiltered` flag set AND `DOGSLED_MCP_ALLOW_UNFILTERED=1`
+ * unless `--allow-unfiltered` flag set AND `BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1`
  * env var present. Both required (mirrors the
- * `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` precedent).
+ * `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` precedent).
  */
 
 import { CommandError } from '@bobsled-inc/protocol';
@@ -81,15 +81,15 @@ export class BobsledMcpServer {
     this.allowedSourceTables = new Set(options.allowedSourceTables);
     const env = options.env ?? process.env;
     const flagSet = options.allowUnfiltered === true;
-    const envSet = env['DOGSLED_MCP_ALLOW_UNFILTERED'] === '1';
+    const envSet = env['BOBSLED_CORE_MCP_ALLOW_UNFILTERED'] === '1';
     this.warnHook = options.onWarn ?? (() => undefined);
 
     if (flagSet !== envSet) {
       throw new CommandError(
         flagSet
-          ? '--allow-unfiltered passed but DOGSLED_MCP_ALLOW_UNFILTERED=1 is not set. ' +
+          ? '--allow-unfiltered passed but BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 is not set. ' +
               'Both are required to acknowledge the production risk of running without permission enforcement.'
-          : 'DOGSLED_MCP_ALLOW_UNFILTERED=1 set but --allow-unfiltered flag is missing. ' +
+          : 'BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 set but --allow-unfiltered flag is missing. ' +
               'Both are required to acknowledge the production risk of running without permission enforcement.',
         2
       );
@@ -119,7 +119,7 @@ export class BobsledMcpServer {
     ) {
       throw new CommandError(
         'PermissionsNotConfigured: every MCP tool call requires a principal. ' +
-          'Pass --allow-unfiltered AND set DOGSLED_MCP_ALLOW_UNFILTERED=1 to acknowledge the risk ' +
+          'Pass --allow-unfiltered AND set BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 to acknowledge the risk ' +
           'and run without enforcement until Drop 7.',
         2
       );

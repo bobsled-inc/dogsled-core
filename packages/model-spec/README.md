@@ -1405,15 +1405,15 @@ dogsled model profile suggest cleaning ecom.raw_customers --integration ecom --c
 
 Options:
 
-| Option                      | Description                                                                                                  |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `--integration <handle>`    | Select one integration; required when the project has more than one.                                         |
-| `--runner <path>`           | Use a custom module with `query(sql)` instead of constructing a runner from the integration.                 |
-| `--secrets <path>`          | YAML secret overlay for integration runner construction.                                                     |
-| `--sample-size <rows>`      | Rows to sample. Defaults to `500`; maximum is `100000`.                                                      |
-| `--confidence-min <number>` | Filter inferences, candidates, and suggestions to a confidence from `0` to `1`.                              |
-| `--json`                    | Emit a JSONL-compatible payload. Also auto-activates in CI, non-TTY output, or `DOGSLED_OUTPUT_FORMAT=json`. |
-| `--quiet`                   | Suppress human status logs.                                                                                  |
+| Option                      | Description                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--integration <handle>`    | Select one integration; required when the project has more than one.                                              |
+| `--runner <path>`           | Use a custom module with `query(sql)` instead of constructing a runner from the integration.                      |
+| `--secrets <path>`          | YAML secret overlay for integration runner construction.                                                          |
+| `--sample-size <rows>`      | Rows to sample. Defaults to `500`; maximum is `100000`.                                                           |
+| `--confidence-min <number>` | Filter inferences, candidates, and suggestions to a confidence from `0` to `1`.                                   |
+| `--json`                    | Emit a JSONL-compatible payload. Also auto-activates in CI, non-TTY output, or `BOBSLED_CORE_OUTPUT_FORMAT=json`. |
+| `--quiet`                   | Suppress human status logs.                                                                                       |
 
 Read [Model Profiler User Guide](docs/profiler-user-guide.md) for output shape, runner requirements, and limitations.
 

@@ -46,7 +46,7 @@ export const readWithCli: CliReader = async (
         cwd: root,
         timeout: 120_000,
         maxBuffer: 5 * 1024 * 1024,
-        env: { ...process.env, NO_COLOR: '1', DOGSLED_OUTPUT_FORMAT: 'json' },
+        env: { ...process.env, NO_COLOR: '1', BOBSLED_CORE_OUTPUT_FORMAT: 'json' },
       }
     );
     return JSON.parse(stdout);

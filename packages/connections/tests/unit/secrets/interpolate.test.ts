@@ -182,7 +182,7 @@ describe('interpolateSecrets — deep shapes', () => {
         connection: {
           account_identifier: '${{ env.SF_ACCOUNT }}',
           warehouse_env: 'SF_WAREHOUSE',
-          role: 'DOGSLED_AI_ROLE',
+          role: 'BOBSLED_CORE_AI_ROLE',
         },
         auth: { type: 'pat', token: '${{ env.SF_TOKEN }}' },
       },
@@ -198,7 +198,7 @@ describe('interpolateSecrets — deep shapes', () => {
       connection: {
         account_identifier: 'xt12345.us-east-1',
         warehouse: 'COMPUTE_WH',
-        role: 'DOGSLED_AI_ROLE',
+        role: 'BOBSLED_CORE_AI_ROLE',
       },
       auth: { type: 'pat', token: 'sekret' },
     });

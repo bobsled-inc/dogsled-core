@@ -292,11 +292,11 @@ describe('MCP Stdio Sandbox', () => {
       expect(result['SHELL']).toBe('/bin/bash');
     });
 
-    it('excludes DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS', () => {
-      vi.stubEnv('DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1');
-      const env = { PATH: '/usr/bin', DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1' };
+    it('excludes BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS', () => {
+      vi.stubEnv('BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS', '1');
+      const env = { PATH: '/usr/bin', BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1' };
       const result = resolveStdioEnv(baseTransport, env);
-      expect(result['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS']).toBeUndefined();
+      expect(result['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS']).toBeUndefined();
     });
 
     it('does not leak arbitrary env vars not in allowlist', () => {

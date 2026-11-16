@@ -41,7 +41,7 @@ const fixturePath = fileURLToPath(new URL('../fixtures/mcp/test-server.mjs', imp
 
 describe('MCP SSRF protection', () => {
   it('rejects private IPs via isPrivateHost', async () => {
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     const { isPrivateHost } = await import('../../src/framework/core/index.js');
     expect(isPrivateHost('192.168.1.1')).toBe(true);
     expect(isPrivateHost('10.0.0.1')).toBe(true);

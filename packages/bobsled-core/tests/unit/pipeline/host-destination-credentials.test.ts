@@ -174,7 +174,7 @@ function hostDeclarations(call: ExtractorCall): string[] {
 }
 
 const localApiEnv = {
-  DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+  BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
   NODE_EXTRA_CA_CERTS: CA_CERT_PATH,
 };
 

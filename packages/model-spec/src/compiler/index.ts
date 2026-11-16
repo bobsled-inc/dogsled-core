@@ -90,6 +90,7 @@ export {
 } from './expr/index.js';
 export {
   MATCH_KEY_SECRET_RUNTIME_TOKEN,
+  hasMatchKeySecretPlaceholder,
   emitSha256Expr,
   materializeMatchKeySecretPlaceholders,
   redactMatchKeySecret,

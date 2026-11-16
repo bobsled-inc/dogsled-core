@@ -130,7 +130,7 @@ dogsled entity-graph match --entity company --input ./record.json --mode stage -
 dogsled entity-graph serve --port 8765 --runner ./runner.js --json
 ```
 
-`match` records must include the selected input's `id_fields` as non-null scalar values. Use `source_ref` or `_source_ref` in the record when multiple inputs could match the same field shape. `serve` is loopback and read-only by default; `assign`/`stage` over HTTP require `--allow-writes`, and remote binds require both `--allow-remote` and `DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE=1`.
+`match` records must include the selected input's `id_fields` as non-null scalar values. Use `source_ref` or `_source_ref` in the record when multiple inputs could match the same field shape. `serve` is loopback and read-only by default; `assign`/`stage` over HTTP require `--allow-writes`, and remote binds require both `--allow-remote` and `BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE=1`.
 
 ### 5. Inspect stable IDs
 
@@ -284,7 +284,7 @@ agent_policy:
   reviewer:
     kind: http
     url: https://reviewer.example/review
-    auth_token: ${{ env.DOGSLED_REVIEWER_TOKEN }} # env placeholder — never a literal
+    auth_token: ${{ env.BOBSLED_CORE_REVIEWER_TOKEN }} # env placeholder — never a literal
     timeout_s: 300
     poll_interval_s: 5
     # — or —

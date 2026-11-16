@@ -87,15 +87,17 @@ transports:
 });
 
 describe('custom_api SSRF enforcement', () => {
-  // The shared test setup enables DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1.
+  // The shared test setup enables BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1.
   // Unset it so the public-host guard runs, mirroring production.
   let original: string | undefined;
   beforeAll(() => {
-    original = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    original = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
   });
   afterAll(() => {
-    if (original !== undefined) process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = original;
+    if (original !== undefined) {
+      process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = original;
+    }
   });
 
   it('blocks a custom_api transport pointed at a private host', async () => {

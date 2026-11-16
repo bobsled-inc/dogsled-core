@@ -20,9 +20,9 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   return { ...actual, rm: fsMocks.rm };
 });
 
-const URL_ENV = 'DOGSLED_TEST_BLOB_URL';
-const ORIGIN_ENV = 'DOGSLED_TEST_BLOB_ORIGIN';
-const originalPrivateHostsValue = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+const URL_ENV = 'BOBSLED_CORE_TEST_BLOB_URL';
+const ORIGIN_ENV = 'BOBSLED_CORE_TEST_BLOB_ORIGIN';
+const originalPrivateHostsValue = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
 
 function fileRef() {
   return { path: 'attachment-123', uri: 'vercel-blob://attachment-123' };
@@ -52,7 +52,7 @@ async function tempTarget(): Promise<{ directory: string; target: string }> {
 
 describe('VercelBlobFileStorageClient', () => {
   beforeEach(() => {
-    process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+    process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
     fsMocks.rm.mockClear();
     fsMocks.rm.mockImplementation(fsMocks.realRm!);
   });
@@ -62,9 +62,9 @@ describe('VercelBlobFileStorageClient', () => {
     delete process.env[URL_ENV];
     delete process.env[ORIGIN_ENV];
     if (originalPrivateHostsValue === undefined) {
-      delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+      delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     } else {
-      process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalPrivateHostsValue;
+      process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalPrivateHostsValue;
     }
   });
 

@@ -624,11 +624,11 @@ export function generateSelectSql(
   if (!normalized) {
     // Carry the transpiler's own diagnostic. A bare "transpilation failed"
     // leaves no way to tell a malformed expression from an unsupported
-    // construct; set DOGSLED_MODEL_SPEC_DEBUG_SQL to also dump the emitted statement.
+    // construct; set BOBSLED_CORE_MODEL_SPEC_DEBUG_SQL to also dump the emitted statement.
     const detail = typeof result.error === 'string' ? `: ${result.error}` : '';
     throw new Error(
       `SQL transpilation failed for model "${spec.name}"${detail}` +
-        (process.env.DOGSLED_MODEL_SPEC_DEBUG_SQL ? `\n--- emitted SQL ---\n${rawSql}` : '')
+        (process.env.BOBSLED_CORE_MODEL_SPEC_DEBUG_SQL ? `\n--- emitted SQL ---\n${rawSql}` : '')
     );
   }
   const transpiled = preserveWindowSemantics(rawSql, normalized, spec.name, opts.warnings);

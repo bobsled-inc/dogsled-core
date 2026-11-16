@@ -87,10 +87,10 @@ export function createQueryResourceHttpSpy(options: QueryHttpSpyOptions = {}): Q
   const pendingGates: PendingGate[] = [];
   const waiters: RequestWaiter[] = [];
   const cursorToPageIndex = buildCursorPageIndex(pages);
-  const previousAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+  const previousAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
   let restored = false;
 
-  process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+  process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
 
   const integration: IntegrationSpec = {
     spec_version: '1',
@@ -348,8 +348,8 @@ function requestMethod(input: RequestInfo | URL, init: RequestInit | undefined):
 
 function restoreAllowPrivateHosts(previousValue: string | undefined): void {
   if (previousValue === undefined) {
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     return;
   }
-  process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = previousValue;
+  process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = previousValue;
 }

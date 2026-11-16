@@ -58,7 +58,7 @@ beforeEach(() => {
 
 describe('dogsled model run live/lazy auto-detection', () => {
   it('uses the explicit project root for model execution and source discovery', async () => {
-    const projectRoot = '/tmp/nested-dogsled-project';
+    const projectRoot = '/tmp/nested-bobsled-project';
     const exit = await runBobsledModelRunCommand(['--project-root', projectRoot, '--quiet']);
 
     expect(exit).toBe(0);
@@ -67,8 +67,8 @@ describe('dogsled model run live/lazy auto-detection', () => {
   });
 
   it('forwards the managed credential command to model SQL and publish orchestration', async () => {
-    const previous = process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
-    process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'] = 'mint-snowflake-token --json';
+    const previous = process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
+    process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'] = 'mint-snowflake-token --json';
     try {
       const exit = await runBobsledModelRunCommand(['--quiet']);
 
@@ -80,8 +80,8 @@ describe('dogsled model run live/lazy auto-detection', () => {
         })
       );
     } finally {
-      if (previous === undefined) delete process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
-      else process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'] = previous;
+      if (previous === undefined) delete process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
+      else process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'] = previous;
     }
   });
 

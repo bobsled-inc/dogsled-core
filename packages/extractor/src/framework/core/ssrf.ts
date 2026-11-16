@@ -77,7 +77,7 @@ export async function resolveAndValidateHost(hostname: string, label: string): P
   // Preserve the legacy explicit opt-in semantics for preflight validation.
   // Actual safeFetch sockets still resolve through safeLookup, where metadata
   // and link-local answers remain blocked.
-  if (process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] === '1') {
+  if (process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] === '1') {
     return;
   }
   await resolveValidatedAddresses(hostname, label);

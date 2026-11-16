@@ -453,8 +453,8 @@ describe('extraction input context', () => {
 
   describe.each(['http', 'mcp'] as const)('env references in %s input defaults', (transport) => {
     const sentinel = 'env-sentinel-7f3a9c';
-    const envReference = '${{ env.DOGSLED_TEST_TOKEN }}';
-    const env = { DOGSLED_TEST_TOKEN: sentinel };
+    const envReference = '${{ env.BOBSLED_CORE_TEST_TOKEN }}';
+    const env = { BOBSLED_CORE_TEST_TOKEN: sentinel };
 
     async function runWithDefault(input: 'project_id' | 'query_version') {
       vi.stubGlobal(
@@ -465,7 +465,7 @@ describe('extraction input context', () => {
       const resource = makeContextResource();
       resource.input[input] = { type: 'string', default: envReference };
       const httpIntegration = makeProvider('https://api.example.com', {
-        auth_env_vars: ['DOGSLED_TEST_TOKEN'],
+        auth_env_vars: ['BOBSLED_CORE_TEST_TOKEN'],
       });
       if (transport === 'http') {
         await extractResource({

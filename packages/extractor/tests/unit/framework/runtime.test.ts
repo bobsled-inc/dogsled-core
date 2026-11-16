@@ -468,7 +468,7 @@ describe('applyHttpAuth', () => {
   });
 
   it('rejects oauth2 token URLs on private hosts', async () => {
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     vi.stubGlobal('fetch', vi.fn());
 
     await expect(
@@ -490,7 +490,7 @@ describe('applyHttpAuth', () => {
   });
 
   it('rejects oauth2 token URLs that resolve to private hosts', async () => {
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     vi.stubGlobal('fetch', vi.fn());
     setDnsLookupForTests(async () => ({ address: '127.0.0.1', family: 4 }));
 
@@ -513,7 +513,7 @@ describe('applyHttpAuth', () => {
   });
 
   it('rejects custom-token URLs that resolve to private hosts', async () => {
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     vi.stubGlobal('fetch', vi.fn());
     setDnsLookupForTests(async () => ({ address: '127.0.0.1', family: 4 }));
 

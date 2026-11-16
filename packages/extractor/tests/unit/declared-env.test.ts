@@ -79,7 +79,7 @@ transports:
     try {
       const sourceDir = join(directory, 'custom');
       mkdirSync(sourceDir);
-      vi.stubEnv('DOGSLED_BUNDLED_INTEGRATIONS_DIR', directory);
+      vi.stubEnv('BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR', directory);
       const file = join(sourceDir, 'source.yml');
       writeFileSync(
         file,
@@ -111,9 +111,9 @@ transports:
         'SERVICE_TOKEN',
         'SERVICE_HOST',
       ]);
-      vi.stubEnv('DOGSLED_BUNDLED_INTEGRATIONS_DIR', '');
+      vi.stubEnv('BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR', '');
       expect(loadIntegrationSpec(file).auth_env_vars).toEqual(['SERVICE_TOKEN']);
-      vi.stubEnv('DOGSLED_BUNDLED_INTEGRATIONS_DIR', directory);
+      vi.stubEnv('BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR', directory);
       const flat = join(directory, 'custom.yml');
       writeFileSync(flat, YAML.stringify(loadIntegrationSpec(file)));
       writeFileSync(

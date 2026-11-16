@@ -810,7 +810,7 @@ async function stageApiSourceToDestination(
     collectSecretValues(apiSecrets, secrets);
   }
 
-  // Honor DOGSLED_XWH_SOURCE_TIMEOUT_S for API fetches too, matching warehouse
+  // Honor BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S for API fetches too, matching warehouse
   // staging — otherwise a hung live/lazy fetch would never time out.
   const timeoutMs = resolveSourceTimeoutMs();
   const deadlineMs = timeoutMs === null ? null : Date.now() + timeoutMs;
@@ -911,7 +911,7 @@ async function writeSourceRows(
     flushThreshold: STAGE_FLUSH_THRESHOLD,
     tempDir,
   });
-  // Per-source timeout (opt-in via DOGSLED_XWH_SOURCE_TIMEOUT_S, default no
+  // Per-source timeout (opt-in via BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S, default no
   // limit). The earlier between-rows check only fired after a row arrived; a
   // driver that stalls inside query() or iterator.next() would never trip it.
   // Race each awaited source I/O call against the remaining deadline so a

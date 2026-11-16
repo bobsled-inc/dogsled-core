@@ -349,7 +349,7 @@ export function registerMentionsReviewExportCommand(
       }) => {
         // Explicit flags always win. Beyond that, defer to
         // `resolveOutputFormat` so this command obeys the same priority
-        // cascade as every other entity-graph CLI (DOGSLED_OUTPUT_FORMAT > CI >
+        // cascade as every other entity-graph CLI (BOBSLED_CORE_OUTPUT_FORMAT > CI >
         // non-TTY > human). The only twist: this command's human-mode
         // default is CSV (model-review envelope-parity), not text — so
         // we map `human` → `csv` after the shared helper resolves.

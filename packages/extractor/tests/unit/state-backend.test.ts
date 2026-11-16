@@ -106,24 +106,24 @@ describe('createStateStore', () => {
   });
 
   it('returns an HttpStateStore for http:// URLs (private host allowed via env)', () => {
-    process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS = '1';
+    process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS = '1';
     try {
       const store = createStateStore('http://localhost:3000/state');
       expect(store).toBeInstanceOf(HttpStateStore);
     } finally {
-      delete process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
+      delete process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
     }
   });
 
   it('rejects http://localhost URLs by default (SSRF guard)', () => {
-    delete process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
+    delete process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
     expect(() => createStateStore('http://localhost:3000/state')).toThrow(
-      /private host|DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS/i
+      /private host|BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS/i
     );
   });
 
   it('throws ExtractorConfigError (not plain Error) for private host rejection', () => {
-    delete process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
+    delete process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
     expect(() => createStateStore('http://localhost:3000/state')).toThrow(ExtractorConfigError);
   });
 
@@ -155,7 +155,7 @@ describe('createStateStore', () => {
   });
 
   it('rejects http://127.0.0.1 URLs by default (SSRF guard)', () => {
-    delete process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
+    delete process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
     expect(() => createStateStore('http://127.0.0.1/state')).toThrow(/private host/i);
   });
 
@@ -173,10 +173,10 @@ describe('createStateStore', () => {
 
   it('does not misclassify public hostnames starting with fd/fc/fe80 as loopback (opt-in path)', () => {
     // Regression: `fd.example.com` is a public DNS name, not an IPv6 ULA prefix. When the
-    // operator has opted in to private hosts via DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1
+    // operator has opted in to private hosts via BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1
     // (so the SSRF guard is relaxed), the cleartext-http-bearer check must still fire —
     // isLoopbackOrPrivate treats only IP literals as private.
-    process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS = '1';
+    process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS = '1';
     const envVar = 'TEST_FDNAME_TOKEN';
     process.env[envVar] = 'secret';
     try {
@@ -187,12 +187,12 @@ describe('createStateStore', () => {
       }
     } finally {
       delete process.env[envVar];
-      delete process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
+      delete process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
     }
   });
 
   it('allows bearer token over http to a private host (opt-in)', () => {
-    process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS = '1';
+    process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS = '1';
     const envVar = 'TEST_PRIVATE_TOKEN';
     process.env[envVar] = 'secret';
     try {
@@ -201,7 +201,7 @@ describe('createStateStore', () => {
       ).not.toThrow();
     } finally {
       delete process.env[envVar];
-      delete process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
+      delete process.env.BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
     }
   });
 
@@ -559,14 +559,14 @@ describe('HttpStateStore etag round-trip', () => {
 
 describe('resolveStateStore', () => {
   it('defaults to FileStateStore at the given state dir when no flag or env is set', () => {
-    delete process.env.DOGSLED_STATE_BACKEND;
-    delete process.env.DOGSLED_STATE_AUTH_ENV;
+    delete process.env.BOBSLED_CORE_STATE_BACKEND;
+    delete process.env.BOBSLED_CORE_STATE_AUTH_ENV;
     const store = resolveStateStore({ defaultStateDir: '/tmp/state' });
     expect(store).toBeInstanceOf(FileStateStore);
   });
 
   it('prefers CLI flag over env variable', () => {
-    process.env.DOGSLED_STATE_BACKEND = 'https://env-backend.example.com/state';
+    process.env.BOBSLED_CORE_STATE_BACKEND = 'https://env-backend.example.com/state';
     try {
       const store = resolveStateStore({
         defaultStateDir: '/tmp/state',
@@ -574,17 +574,17 @@ describe('resolveStateStore', () => {
       });
       expect(store).toBeInstanceOf(FileStateStore);
     } finally {
-      delete process.env.DOGSLED_STATE_BACKEND;
+      delete process.env.BOBSLED_CORE_STATE_BACKEND;
     }
   });
 
-  it('uses DOGSLED_STATE_BACKEND when no flag is passed', () => {
-    process.env.DOGSLED_STATE_BACKEND = 'https://env-backend.example.com/state';
+  it('uses BOBSLED_CORE_STATE_BACKEND when no flag is passed', () => {
+    process.env.BOBSLED_CORE_STATE_BACKEND = 'https://env-backend.example.com/state';
     try {
       const store = resolveStateStore({ defaultStateDir: '/tmp/state' });
       expect(store).toBeInstanceOf(HttpStateStore);
     } finally {
-      delete process.env.DOGSLED_STATE_BACKEND;
+      delete process.env.BOBSLED_CORE_STATE_BACKEND;
     }
   });
 
@@ -636,8 +636,8 @@ describe('resolveStateStore', () => {
     }
   });
 
-  it('falls back to DOGSLED_STATE_AUTH_ENV when stateAuthEnv flag is absent', async () => {
-    process.env.DOGSLED_STATE_AUTH_ENV = 'TEST_ENV_AUTH';
+  it('falls back to BOBSLED_CORE_STATE_AUTH_ENV when stateAuthEnv flag is absent', async () => {
+    process.env.BOBSLED_CORE_STATE_AUTH_ENV = 'TEST_ENV_AUTH';
     process.env.TEST_ENV_AUTH = 'auth-from-env';
     const fakeFetch = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
     try {
@@ -650,7 +650,7 @@ describe('resolveStateStore', () => {
       const init = fakeFetch.mock.calls[0]![1] as RequestInit;
       expect(new Headers(init.headers).get('Authorization')).toBe('Bearer auth-from-env');
     } finally {
-      delete process.env.DOGSLED_STATE_AUTH_ENV;
+      delete process.env.BOBSLED_CORE_STATE_AUTH_ENV;
       delete process.env.TEST_ENV_AUTH;
     }
   });

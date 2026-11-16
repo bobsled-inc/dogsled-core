@@ -1,5 +1,8 @@
 import { readProviderResponseBody } from '@bobsled-inc/extractor/core';
-import { DOGSLED_RUNTIME_ERROR_KINDS, type BobsledRuntimeErrorKind } from '@bobsled-inc/protocol';
+import {
+  BOBSLED_CORE_RUNTIME_ERROR_KINDS,
+  type BobsledRuntimeErrorKind,
+} from '@bobsled-inc/protocol';
 
 import type { ActionErrorCode, ActionResult, ExecuteOptions } from '../action-executor.js';
 import {
@@ -43,7 +46,9 @@ const NETWORK_ERROR_CODES = new Set([
   'ENOTFOUND',
   'EPIPE',
 ]);
-const DOGSLED_RUNTIME_ERROR_KIND_SET: ReadonlySet<string> = new Set(DOGSLED_RUNTIME_ERROR_KINDS);
+const BOBSLED_CORE_RUNTIME_ERROR_KIND_SET: ReadonlySet<string> = new Set(
+  BOBSLED_CORE_RUNTIME_ERROR_KINDS
+);
 
 interface RuntimeFailure {
   kind: BobsledRuntimeErrorKind;
@@ -126,7 +131,7 @@ function readRuntimeFailure(error: unknown): RuntimeFailure | undefined {
     providerStatus?: unknown;
   };
   if (name !== 'BobsledRuntimeError') return undefined;
-  if (typeof kind !== 'string' || !DOGSLED_RUNTIME_ERROR_KIND_SET.has(kind)) return undefined;
+  if (typeof kind !== 'string' || !BOBSLED_CORE_RUNTIME_ERROR_KIND_SET.has(kind)) return undefined;
   return {
     kind: kind as BobsledRuntimeErrorKind,
     ...(isHttpStatus(providerStatus) ? { providerStatus } : {}),

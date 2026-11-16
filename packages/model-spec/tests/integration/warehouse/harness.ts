@@ -160,8 +160,8 @@ export function createDuckDbHarness(): WarehouseTestHarness {
 }
 
 export function createSnowflakeHarness(): WarehouseTestHarness {
-  const schema = uniqueName('DOGSLED_MODEL_SPEC_SNOWFLAKE_CI').toUpperCase();
-  const database = requiredEnv('DOGSLED_MODEL_SPEC_SNOWFLAKE_DATABASE');
+  const schema = uniqueName('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_CI').toUpperCase();
+  const database = requiredEnv('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_DATABASE');
   return new BaseWarehouseHarness({
     handle: 'snowflake',
     schema,
@@ -172,14 +172,14 @@ export function createSnowflakeHarness(): WarehouseTestHarness {
       name: 'snowflake',
       source_type: 'snowflake',
       connection: {
-        account_identifier: requiredEnv('DOGSLED_MODEL_SPEC_SNOWFLAKE_ACCOUNT'),
-        user: requiredEnv('DOGSLED_MODEL_SPEC_SNOWFLAKE_USER'),
-        role: requiredEnv('DOGSLED_MODEL_SPEC_SNOWFLAKE_ROLE'),
-        warehouse: requiredEnv('DOGSLED_MODEL_SPEC_SNOWFLAKE_WAREHOUSE'),
+        account_identifier: requiredEnv('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_ACCOUNT'),
+        user: requiredEnv('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_USER'),
+        role: requiredEnv('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_ROLE'),
+        warehouse: requiredEnv('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_WAREHOUSE'),
         database,
         schema,
       },
-      auth: { type: 'pat', token: requiredEnv('DOGSLED_MODEL_SPEC_SNOWFLAKE_PAT') },
+      auth: { type: 'pat', token: requiredEnv('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_PAT') },
     },
     quoteFqName: quoteDotted,
     objectTypeSql: (fqName) => {
@@ -206,8 +206,8 @@ export function createSnowflakeHarness(): WarehouseTestHarness {
 
 export function createBigQueryHarness(): WarehouseTestHarness {
   const schema = uniqueName('bms_bigquery_ci');
-  const projectId = requiredEnv('DOGSLED_MODEL_SPEC_BIGQUERY_PROJECT');
-  const location = process.env.DOGSLED_MODEL_SPEC_BIGQUERY_LOCATION ?? 'US';
+  const projectId = requiredEnv('BOBSLED_CORE_MODEL_SPEC_BIGQUERY_PROJECT');
+  const location = process.env.BOBSLED_CORE_MODEL_SPEC_BIGQUERY_LOCATION ?? 'US';
   return new BaseWarehouseHarness({
     handle: 'bigquery',
     schema,
@@ -359,11 +359,11 @@ ${materializationBlock}
 
 function insertThirdOrderSql(harness: WarehouseTestHarness): string {
   if (harness.handle === 'snowflake') {
-    const database = requiredEnv('DOGSLED_MODEL_SPEC_SNOWFLAKE_DATABASE');
+    const database = requiredEnv('BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_DATABASE');
     return `INSERT INTO ${quoteDotted(`${database}.${harness.schema}.RAW_ORDERS`)} VALUES (3, 30, 'paid', 125.00, '2026-01-03 00:00:00'::TIMESTAMP_NTZ)`;
   }
   if (harness.handle === 'bigquery') {
-    const projectId = requiredEnv('DOGSLED_MODEL_SPEC_BIGQUERY_PROJECT');
+    const projectId = requiredEnv('BOBSLED_CORE_MODEL_SPEC_BIGQUERY_PROJECT');
     return `INSERT INTO ${quoteBigQuery(`${projectId}.${harness.schema}.raw_orders`)} VALUES (3, 30, 'paid', 125.00, TIMESTAMP '2026-01-03 00:00:00 UTC')`;
   }
   return `INSERT INTO ${quoteDotted(`${harness.schema}.raw_orders`)} VALUES (3, 30, 'paid', 125.00, TIMESTAMP '2026-01-03 00:00:00')`;

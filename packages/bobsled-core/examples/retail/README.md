@@ -46,7 +46,7 @@ In the project terminal, explicitly allow this local API and trust its certifica
 
 ```sh
 export RETAIL_DEMO_API_TOKEN=local-retail-demo-token
-export DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1
+export BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1
 export NODE_EXTRA_CA_CERTS="$PWD/.local/localhost-cert.pem"
 dogsled extract validate retail_api --check-env
 dogsled onboarding verify connect

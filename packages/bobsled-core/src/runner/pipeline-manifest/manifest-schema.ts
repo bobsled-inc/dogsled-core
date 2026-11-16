@@ -98,9 +98,9 @@ function spelling<C extends string>(current: C, role: keyof typeof MANIFEST_SPEL
 const currentCommandContractSchema = z
   .object({
     default_command: spelling('dogsled', 'default_command'),
-    command_env: spelling('DOGSLED_PIPELINE_COMMAND', 'command_env'),
-    cwd_env: spelling('DOGSLED_PIPELINE_CWD', 'cwd_env'),
-    timeout_seconds_env: spelling('DOGSLED_PIPELINE_TIMEOUT_SECONDS', 'timeout_seconds_env'),
+    command_env: spelling('BOBSLED_CORE_PIPELINE_COMMAND', 'command_env'),
+    cwd_env: spelling('BOBSLED_CORE_PIPELINE_CWD', 'cwd_env'),
+    timeout_seconds_env: spelling('BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS', 'timeout_seconds_env'),
     default_timeout_seconds: z.literal(1800),
     output: z.literal('jsonl'),
   })

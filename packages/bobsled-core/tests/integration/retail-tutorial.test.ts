@@ -19,9 +19,9 @@ it('walks a fresh retail project through the CLI and local API without paid call
   await new Promise<void>((resolve) => probe.close(() => resolve()));
   const env = {
     ...process.env,
-    DOGSLED_OUTPUT_FORMAT: 'json',
+    BOBSLED_CORE_OUTPUT_FORMAT: 'json',
     RETAIL_DEMO_API_TOKEN: 'local-retail-demo-token',
-    DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+    BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
     NODE_EXTRA_CA_CERTS: join(root, '.local/cert.pem'),
   };
   const run = async (...args: string[]) => {

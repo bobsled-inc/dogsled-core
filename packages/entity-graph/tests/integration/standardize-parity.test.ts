@@ -144,7 +144,7 @@ describe.skipIf(!DUCKDB_AVAILABLE)('standardize TS/SQL parity', () => {
   });
 
   it('matches DuckDB SQL output for the full zero-arg transform catalog', async () => {
-    vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', 'parity-secret');
+    vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', 'parity-secret');
     const integration: IntegrationFile = {
       spec_version: '1',
       type: 'integration',
@@ -195,7 +195,7 @@ describe.skipIf(!DUCKDB_AVAILABLE)('standardize TS/SQL parity', () => {
   });
 
   it('matches two records through normalize_email_uid2 plus hmac_sha256', async () => {
-    vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', 'roundtrip-secret');
+    vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', 'roundtrip-secret');
     const integration: IntegrationFile = {
       spec_version: '1',
       type: 'integration',

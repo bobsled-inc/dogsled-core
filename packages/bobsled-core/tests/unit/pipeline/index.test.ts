@@ -395,8 +395,8 @@ pipelines:
       expect(loadArgs).not.toContain(resolvedSecret);
       const envName =
         _name === 'clickhouse'
-          ? 'DOGSLED_LOADER_CLICKHOUSE_PASSWORD'
-          : 'DOGSLED_LOADER_TURBOPUFFER_API_KEY';
+          ? 'BOBSLED_CORE_LOADER_CLICKHOUSE_PASSWORD'
+          : 'BOBSLED_CORE_LOADER_TURBOPUFFER_API_KEY';
       expect(loadArgs).toContain('$' + envName);
       expect(spawn.mock.calls[1]?.[2].env[envName]).toBe(resolvedSecret);
     }
@@ -736,18 +736,18 @@ pipelines:
       cwd: projectRoot,
       env: expect.objectContaining({
         SF_PASSWORD: 'secret-password',
-        DOGSLED_BUNDLED_INTEGRATIONS_DIR: '/mock/integrations',
+        BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR: '/mock/integrations',
       }),
     });
     expect(spawn.mock.calls[1]?.[2]).toMatchObject({
       cwd: projectRoot,
       env: expect.objectContaining({
         SF_PASSWORD: 'secret-password',
-        DOGSLED_LOADER_SF_PASSWORD: 'secret-password',
+        BOBSLED_CORE_LOADER_SF_PASSWORD: 'secret-password',
       }),
     });
     expect(spawn.mock.calls[1]?.[1]).toEqual(
-      expect.arrayContaining(['--sf-password', '$DOGSLED_LOADER_SF_PASSWORD'])
+      expect.arrayContaining(['--sf-password', '$BOBSLED_CORE_LOADER_SF_PASSWORD'])
     );
   });
 
@@ -844,10 +844,10 @@ pipelines:
     const loadArgs = spawn.mock.calls[1]?.[1] as string[];
     const loadOptions = spawn.mock.calls[1]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(loadArgs).toContain('--sf-workload-identity-token');
-    expect(loadArgs).toContain('$DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    expect(loadArgs).toContain('$BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     expect(loadArgs).not.toContain('vercel-oidc-token');
     expect(loadOptions.env).toMatchObject({
-      DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'vercel-oidc-token',
+      BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'vercel-oidc-token',
     });
   });
 
@@ -1886,7 +1886,7 @@ pipelines:
       SF_TOKEN_COMMAND: 'mint-snowflake-token --json',
       SF_WIF_TOKEN: 'vercel-oidc-token',
       INHERITED_WIF_TOKEN: 'vercel-oidc-token',
-      DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
+      BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
     };
     const originalEnv = { ...inputEnv };
     const promise = runProjectPipeline(
@@ -1908,18 +1908,18 @@ pipelines:
 
     const extractOptions = spawn.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(extractOptions.env).not.toHaveProperty('SF_WIF_TOKEN');
-    expect(extractOptions.env).not.toHaveProperty('DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    expect(extractOptions.env).not.toHaveProperty('BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     const staticArgs = spawn.mock.calls[1]?.[1] as string[];
     const staticOptions = spawn.mock.calls[1]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(staticArgs).toEqual(
-      expect.arrayContaining(['--sf-access-token', '$DOGSLED_SNOWFLAKE_ACCESS_TOKEN'])
+      expect.arrayContaining(['--sf-access-token', '$BOBSLED_CORE_SNOWFLAKE_ACCESS_TOKEN'])
     );
     expect(staticArgs).not.toContain('jwt-static');
     expect(staticOptions.env).toMatchObject({
-      DOGSLED_SNOWFLAKE_ACCESS_TOKEN: 'jwt-static',
+      BOBSLED_CORE_SNOWFLAKE_ACCESS_TOKEN: 'jwt-static',
     });
     expect(staticOptions.env).not.toHaveProperty('SF_WIF_TOKEN');
-    expect(staticOptions.env).not.toHaveProperty('DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    expect(staticOptions.env).not.toHaveProperty('BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     expect(staticArgs).not.toContain('--sf-token-command');
     const refreshArgs = spawn.mock.calls[2]?.[1] as string[];
     const refreshOptions = spawn.mock.calls[2]?.[2] as { env?: NodeJS.ProcessEnv };
@@ -1928,18 +1928,18 @@ pipelines:
     );
     expect(refreshArgs).not.toContain('--sf-access-token');
     expect(refreshOptions.env).not.toHaveProperty('SF_WIF_TOKEN');
-    expect(refreshOptions.env).not.toHaveProperty('DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    expect(refreshOptions.env).not.toHaveProperty('BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     const workloadIdentityArgs = spawn.mock.calls[3]?.[1] as string[];
     const workloadIdentityOptions = spawn.mock.calls[3]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(workloadIdentityArgs).toEqual(
       expect.arrayContaining([
         '--sf-workload-identity-token',
-        '$DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN',
+        '$BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN',
       ])
     );
     expect(workloadIdentityArgs).not.toContain('vercel-oidc-token');
     expect(workloadIdentityOptions.env).toMatchObject({
-      DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'vercel-oidc-token',
+      BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'vercel-oidc-token',
     });
     expect(workloadIdentityOptions.env).not.toHaveProperty('SF_WIF_TOKEN');
     const commitOptions = spawn.mock.calls[4]?.[2] as { env?: NodeJS.ProcessEnv };
@@ -1952,8 +1952,8 @@ pipelines:
       Object.entries(workloadIdentityOptions.env ?? {}).filter(
         ([, value]) => value === 'vercel-oidc-token'
       )
-    ).toEqual([['DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN', 'vercel-oidc-token']]);
-    expect(commitOptions.env).not.toHaveProperty('DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    ).toEqual([['BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN', 'vercel-oidc-token']]);
+    expect(commitOptions.env).not.toHaveProperty('BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     expect(inputEnv).toEqual(originalEnv);
   });
 

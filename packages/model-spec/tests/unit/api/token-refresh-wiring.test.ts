@@ -6,7 +6,7 @@
  * snowflake/bigquery runner tests). We capture the context a DuckDB custom
  * runner is built with, keeping the test free of native drivers while
  * exercising the real threading path. Precedence:
- * `tokenProvider` > `credentialsTokenCommand` > `DOGSLED_CREDENTIALS_TOKEN_COMMAND`.
+ * `tokenProvider` > `credentialsTokenCommand` > `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND`.
  */
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
@@ -91,7 +91,7 @@ describe('runProject — refreshable token wiring', () => {
   });
 
   afterEach(async () => {
-    delete process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+    delete process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
     if (tmpDir) {
       await fs.rm(tmpDir, { recursive: true, force: true });
       tmpDir = '';
@@ -133,8 +133,8 @@ describe('runProject — refreshable token wiring', () => {
     expect(typeof contexts[0]?.tokenProvider).toBe('function');
   });
 
-  it('falls back to DOGSLED_CREDENTIALS_TOKEN_COMMAND for the standalone/Cloud Run path', async () => {
-    process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'] = 'mint-token.sh';
+  it('falls back to BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND for the standalone/Cloud Run path', async () => {
+    process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'] = 'mint-token.sh';
     const projectDir = await writeMinimalProject();
     const { customRunners, contexts } = makeCapturingRunner();
 

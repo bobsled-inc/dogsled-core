@@ -74,7 +74,7 @@ The folders organize the Project; pipeline names and model names remain explicit
 Drawn from `dogsled-overview` and the canonical example projects. Use this as the baseline when the user has no preference:
 
 ```text
-my-dogsled-project/
+my-bobsled-project/
   AGENTS.md                      # Project guide: data meaning, queryable data, vocabulary, conventions, caveats
   dogsled.yml
   extractor.yml
@@ -105,7 +105,7 @@ my-dogsled-project/
 A data-first layout groups every kind of file for one source or subject together instead:
 
 ```text
-my-dogsled-project/
+my-bobsled-project/
   AGENTS.md
   dogsled.yml
   datagolf/

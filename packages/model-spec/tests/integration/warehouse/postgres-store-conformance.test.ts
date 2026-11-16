@@ -11,21 +11,21 @@ import {
 } from '../../support/agentic-store-conformance.js';
 
 const enabled =
-  process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres');
+  process.env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres');
 const integration = (): PostgresIntegration => ({
   spec_version: '1',
   type: 'integration',
   name: 'lake',
   source_type: 'postgres',
   connection: {
-    host: process.env.DOGSLED_MODEL_SPEC_POSTGRES_HOST!,
-    port: Number(process.env.DOGSLED_MODEL_SPEC_POSTGRES_PORT ?? 5432),
-    database: process.env.DOGSLED_MODEL_SPEC_POSTGRES_DATABASE!,
+    host: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_HOST!,
+    port: Number(process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PORT ?? 5432),
+    database: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_DATABASE!,
   },
   auth: {
     type: 'password',
-    user: process.env.DOGSLED_MODEL_SPEC_POSTGRES_USER!,
-    password: process.env.DOGSLED_MODEL_SPEC_POSTGRES_PASSWORD!,
+    user: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_USER!,
+    password: process.env.BOBSLED_CORE_MODEL_SPEC_POSTGRES_PASSWORD!,
   },
 });
 async function sql(statement: string): Promise<void> {

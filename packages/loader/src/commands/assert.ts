@@ -143,7 +143,7 @@ function detectOutputMode(options: { json?: boolean; yaml?: boolean }): LoadAsse
   }
   if (options.yaml) return 'yaml';
   if (options.json) return 'json';
-  const envFormat = process.env['DOGSLED_OUTPUT_FORMAT']?.toLowerCase();
+  const envFormat = process.env['BOBSLED_CORE_OUTPUT_FORMAT']?.toLowerCase();
   if (envFormat === 'json') return 'json';
   if (envFormat === 'yaml') return 'yaml';
   return 'text';

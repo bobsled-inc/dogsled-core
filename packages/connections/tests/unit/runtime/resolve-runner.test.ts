@@ -23,7 +23,7 @@ const snowflakePat: IntegrationFile = {
   connection: {
     account_identifier: 'xt12345',
     warehouse: 'COMPUTE_WH',
-    role: 'DOGSLED_AI_ROLE',
+    role: 'BOBSLED_CORE_AI_ROLE',
   },
   auth: { type: 'pat', token: 'secret' },
 };

@@ -128,7 +128,7 @@ describe('buildDestinationCliArgs — ClickHouse and Turbopuffer', () => {
       '--clickhouse-database',
       'd',
       '--clickhouse-password',
-      '$DOGSLED_LOADER_CLICKHOUSE_PASSWORD',
+      '$BOBSLED_CORE_LOADER_CLICKHOUSE_PASSWORD',
       '--clickhouse-ssl',
       '--clickhouse-vector-index',
     ]);
@@ -146,7 +146,7 @@ describe('buildDestinationCliArgs — ClickHouse and Turbopuffer', () => {
       '--dest',
       'turbopuffer',
       '--turbopuffer-api-key',
-      '$DOGSLED_LOADER_TURBOPUFFER_API_KEY',
+      '$BOBSLED_CORE_LOADER_TURBOPUFFER_API_KEY',
       '--turbopuffer-full-text-columns',
       'a,b',
     ]);

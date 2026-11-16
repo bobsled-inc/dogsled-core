@@ -21,7 +21,7 @@ import {
 } from '../../support/agentic-store-conformance.js';
 import { hostRunners, snowflakeIntegration } from '../../support/row-store-integrations.js';
 
-const baseSchema = process.env.DOGSLED_MODEL_SPEC_CHECKPOINT_SCHEMA;
+const baseSchema = process.env.BOBSLED_CORE_MODEL_SPEC_CHECKPOINT_SCHEMA;
 const snowflake = await snowflakeIntegration();
 const runners = await hostRunners();
 
@@ -42,7 +42,7 @@ const dropSchema = (schema: string) => sql(`DROP SCHEMA IF EXISTS ${qualified(sc
 
 const schemas = new WeakMap<StoreHandle, string>();
 /** Group commit doubles a long suite, so its live proof is a separate opt-in. */
-const groupCommit = process.env.DOGSLED_MODEL_SPEC_GROUP_COMMIT === '1';
+const groupCommit = process.env.BOBSLED_CORE_MODEL_SPEC_GROUP_COMMIT === '1';
 const rows = (schema: string, retentionMs = 86_400_000, leaseMs?: number) =>
   createWarehouseRowStore(snowflake!, {
     schema,

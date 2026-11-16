@@ -296,7 +296,7 @@ describe('SourceSchema — orchestrator extension keys', () => {
     const result = SourceSchema.safeParse({
       ...sourceSpec,
       dogsled_connection_ref: 'product_data',
-      dogsled_internal_id: 42,
+      bobsled_internal_id: 42,
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -304,7 +304,7 @@ describe('SourceSchema — orchestrator extension keys', () => {
       // do not appear on the parsed object — Dogsled itself never reads
       // them, so they're invisible from the consumer's perspective.
       expect(result.data).not.toHaveProperty('dogsled_connection_ref');
-      expect(result.data).not.toHaveProperty('dogsled_internal_id');
+      expect(result.data).not.toHaveProperty('bobsled_internal_id');
     }
   });
 

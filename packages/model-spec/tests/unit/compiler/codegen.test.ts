@@ -49,11 +49,11 @@ describe('generateSql', () => {
     expect(parseResult.ok).toBe(true);
     if (!parseResult.ok) return;
 
-    const sql = generateSql(parseResult.spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(parseResult.spec, 'BOBSLED_CORE_WORKSPACE');
 
     // Verify DDL wrapper
     expect(sql).toContain(
-      'CREATE OR REPLACE VIEW "DOGSLED_WORKSPACE"."STG_ORDERS" COPY GRANTS AS ('
+      'CREATE OR REPLACE VIEW "BOBSLED_CORE_WORKSPACE"."STG_ORDERS" COPY GRANTS AS ('
     );
     expect(sql).toMatch(/\);$/);
 
@@ -76,11 +76,11 @@ describe('generateSql', () => {
     expect(parseResult.ok).toBe(true);
     if (!parseResult.ok) return;
 
-    const sql = generateSql(parseResult.spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(parseResult.spec, 'BOBSLED_CORE_WORKSPACE');
 
     // Verify DDL wrapper
     expect(sql).toContain(
-      'CREATE OR REPLACE VIEW "DOGSLED_WORKSPACE"."ORDER_ITEMS" COPY GRANTS AS ('
+      'CREATE OR REPLACE VIEW "BOBSLED_CORE_WORKSPACE"."ORDER_ITEMS" COPY GRANTS AS ('
     );
     expect(sql).toMatch(/\);$/);
 
@@ -103,10 +103,10 @@ describe('generateSql', () => {
     expect(parseResult.ok).toBe(true);
     if (!parseResult.ok) return;
 
-    const sql = generateSql(parseResult.spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(parseResult.spec, 'BOBSLED_CORE_WORKSPACE');
 
     expect(sql).toContain(
-      'CREATE OR REPLACE VIEW "DOGSLED_WORKSPACE"."STG_CUSTOMERS" COPY GRANTS AS ('
+      'CREATE OR REPLACE VIEW "BOBSLED_CORE_WORKSPACE"."STG_CUSTOMERS" COPY GRANTS AS ('
     );
     expect(sql).toContain('AS CUSTOMER_ID');
     expect(sql).toContain('AS CUSTOMER_NAME');
@@ -122,10 +122,10 @@ describe('generateSql', () => {
     expect(parseResult.ok).toBe(true);
     if (!parseResult.ok) return;
 
-    const sql = generateSql(parseResult.spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(parseResult.spec, 'BOBSLED_CORE_WORKSPACE');
 
     expect(sql).toContain(
-      'CREATE OR REPLACE VIEW "DOGSLED_WORKSPACE"."STG_ACTIVE_ORDERS" COPY GRANTS AS ('
+      'CREATE OR REPLACE VIEW "BOBSLED_CORE_WORKSPACE"."STG_ACTIVE_ORDERS" COPY GRANTS AS ('
     );
     // polyglot normalizes != to <>
     expect(sql).toContain("STATUS <> 'cancelled'");
@@ -156,7 +156,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).toContain('WHERE');
     expect(sql).toContain('T0.QUANTITY > 0');
   });
@@ -166,7 +166,7 @@ describe('generateSql', () => {
     expect(parseResult.ok).toBe(true);
     if (!parseResult.ok) return;
 
-    const sql = generateSql(parseResult.spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(parseResult.spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).not.toContain('WHERE');
   });
 
@@ -177,10 +177,10 @@ describe('generateSql', () => {
       grain: 'order_id',
       trustTier: 'bronze',
       sourceRef: 'stg_orders',
-      source: { fqTableName: 'DOGSLED_WORKSPACE.STG_ORDERS', alias: 't0' },
+      source: { fqTableName: 'BOBSLED_CORE_WORKSPACE.STG_ORDERS', alias: 't0' },
       joins: [
         {
-          fqTableName: 'DOGSLED_WORKSPACE.STG_CUSTOMERS',
+          fqTableName: 'BOBSLED_CORE_WORKSPACE.STG_CUSTOMERS',
           ref: 'stg_customers',
           alias: 't1',
           type: 'left',
@@ -194,14 +194,14 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
 
     expect(sql).toContain(
-      'CREATE OR REPLACE VIEW "DOGSLED_WORKSPACE"."FCT_ORDERS" COPY GRANTS AS ('
+      'CREATE OR REPLACE VIEW "BOBSLED_CORE_WORKSPACE"."FCT_ORDERS" COPY GRANTS AS ('
     );
-    expect(sql).toContain('DOGSLED_WORKSPACE.STG_ORDERS AS T0');
+    expect(sql).toContain('BOBSLED_CORE_WORKSPACE.STG_ORDERS AS T0');
     expect(sql).toContain('LEFT JOIN');
-    expect(sql).toContain('DOGSLED_WORKSPACE.STG_CUSTOMERS AS T1');
+    expect(sql).toContain('BOBSLED_CORE_WORKSPACE.STG_CUSTOMERS AS T1');
   });
 
   it('uses custom target schema', () => {
@@ -234,7 +234,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).toMatch(/^-- Model: stg_orders\n/);
   });
 
@@ -251,7 +251,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).toContain('-- Trust: silver');
   });
 
@@ -268,7 +268,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).toContain('-- Description: Order fact table.');
     expect(sql).toContain('-- Grain: order_id');
   });
@@ -286,7 +286,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).toContain('-- Grain: order_id, line_id');
   });
 
@@ -311,7 +311,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).toContain('-- Refs: stg_orders, stg_customers');
   });
 
@@ -328,7 +328,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    const sql = generateSql(spec, 'DOGSLED_WORKSPACE');
+    const sql = generateSql(spec, 'BOBSLED_CORE_WORKSPACE');
     expect(sql).toContain('-- Model: minimal');
     expect(sql).toContain('-- Description: Minimal model.');
     expect(sql).toContain('-- Grain: id');
@@ -357,7 +357,7 @@ describe('generateSql', () => {
       materialization: 'view',
     };
 
-    expect(() => generateSql(spec, 'DOGSLED_WORKSPACE')).toThrow(
+    expect(() => generateSql(spec, 'BOBSLED_CORE_WORKSPACE')).toThrow(
       'SQL transpilation failed for model "bad_model"'
     );
   });
@@ -3038,7 +3038,7 @@ describe('read_mode is inert in compilation (mixed-model authoring metadata)', (
     const resolved = parseTransformSpecFromParsed(parsed.data, registry);
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) throw new Error(resolved.error);
-    return generateSql(resolved.spec, 'DOGSLED_WORKSPACE');
+    return generateSql(resolved.spec, 'BOBSLED_CORE_WORKSPACE');
   }
 
   it('compiles byte-identically with and without read_mode on every ref site', () => {

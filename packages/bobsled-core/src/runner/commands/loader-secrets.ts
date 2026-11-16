@@ -13,7 +13,7 @@ const SECRET_FLAGS = new Set([
 ]);
 
 function secretEnvName(flag: string): string {
-  return 'DOGSLED_LOADER_' + flag.slice(2).replaceAll('-', '_').toUpperCase();
+  return 'BOBSLED_CORE_LOADER_' + flag.slice(2).replaceAll('-', '_').toUpperCase();
 }
 
 function* secretArgumentIndexes(args: string[]): Generator<number> {

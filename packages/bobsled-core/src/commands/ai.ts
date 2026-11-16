@@ -80,7 +80,7 @@ export function createAiGroup(program: Command): Command {
         ...(configPath ? { configPath: project.configPaths[0]! } : {}),
       }).config;
       const connection = resolveModelConnection(options.connection, config);
-      const stubbed = process.env['DOGSLED_AI_TEST_STUB'] === '1';
+      const stubbed = process.env['BOBSLED_CORE_AI_TEST_STUB'] === '1';
       const providerModels = stubbed ? {} : await resolveProviderModels(connection);
 
       const embedResults = [];

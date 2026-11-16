@@ -53,7 +53,7 @@ const ALLOWED_INHERITED_ENV_KEYS = new Set([
 ]);
 
 /** Keys that must never be passed to stdio child processes, even from spec env. */
-const BLOCKED_ENV_KEYS = new Set(['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS']);
+const BLOCKED_ENV_KEYS = new Set(['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS']);
 const APPROVED_STDIO_ENV_KEYS: Readonly<Record<'npx' | 'uvx', ReadonlySet<string>>> = {
   npx: new Set(['GOOGLE_APPLICATION_CREDENTIALS']),
   uvx: new Set([

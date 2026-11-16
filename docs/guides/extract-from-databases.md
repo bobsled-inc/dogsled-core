@@ -77,7 +77,7 @@ id	name	plan
 Dogsled refuses to connect to private and loopback addresses unless you allow it,
 which protects shared environments from configuration that points at internal
 hosts. To read from a database on your own machine or private network, set
-`DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`.
+`BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`.
 
 `source.sql` replaces `source.table` with your own `SELECT`. Use `schema` (or
 `dataset` for BigQuery, and `database` where it applies) to qualify the table;

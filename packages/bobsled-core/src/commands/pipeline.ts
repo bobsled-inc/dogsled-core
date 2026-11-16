@@ -307,7 +307,7 @@ async function buildExtractEnv(
     const { getIntegrationsDir } = await import('@bobsled-inc/integrations');
     return {
       ...baseEnv,
-      DOGSLED_BUNDLED_INTEGRATIONS_DIR: getIntegrationsDir(),
+      BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR: getIntegrationsDir(),
     };
   } catch {
     return baseEnv;
@@ -477,7 +477,7 @@ async function runSingleDestPipeline(
         {
           cwd: runtimeCwd,
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...childEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
+          env: { ...childEnv, BOBSLED_CORE_EMBEDDER_TMP_DIR: embedTmpDir },
         },
         dependencies
       );
@@ -729,7 +729,7 @@ async function runMultiDestPipeline(
         {
           cwd: runtimeCwd,
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...childEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
+          env: { ...childEnv, BOBSLED_CORE_EMBEDDER_TMP_DIR: embedTmpDir },
         },
         dependencies
       );

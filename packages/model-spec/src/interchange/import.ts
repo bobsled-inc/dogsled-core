@@ -135,7 +135,7 @@ function bobsledExtension(
   const entries = extensions(owner).filter((entry) => isOwnOssieVendor(entry.vendor_name));
   if (entries.length > 1) {
     fail(
-      'invalid_dogsled_extension',
+      'invalid_bobsled_extension',
       path,
       objectReference,
       'An owner can contain only one DOGSLED extension.',
@@ -149,7 +149,7 @@ function bobsledExtension(
     return z.record(z.string(), z.unknown()).parse(parsed);
   } catch (error) {
     fail(
-      'invalid_dogsled_extension',
+      'invalid_bobsled_extension',
       path,
       objectReference,
       `DOGSLED extension data must be a bounded JSON object: ${errorMessage(error)}`,
@@ -168,7 +168,7 @@ function parseDatasetExtension(
   const version = extension['extension_version'];
   if (version !== '1' && version !== '2') {
     fail(
-      version === undefined ? 'invalid_dogsled_extension' : 'unsupported_extension_version',
+      version === undefined ? 'invalid_bobsled_extension' : 'unsupported_extension_version',
       path,
       objectReference,
       'DOGSLED extension_version must be "1" or "2".',
@@ -189,7 +189,7 @@ function parseDatasetExtension(
   const unknown = Object.keys(extension).find((key) => !allowed.has(key));
   if (unknown) {
     fail(
-      'invalid_dogsled_extension',
+      'invalid_bobsled_extension',
       `${path}.${unknown}`,
       objectReference,
       `Unknown DOGSLED dataset property ${unknown}.`,
@@ -200,7 +200,7 @@ function parseDatasetExtension(
     const build = z.record(z.string(), z.unknown()).safeParse(extension['build'] ?? {});
     if (!build.success) {
       fail(
-        'invalid_dogsled_extension',
+        'invalid_bobsled_extension',
         `${path}.build`,
         objectReference,
         'DOGSLED build must be an object.',
@@ -210,7 +210,7 @@ function parseDatasetExtension(
     const rejected = Object.keys(build.data).find((key) => rejectedBuildKeys.has(key));
     if (rejected) {
       fail(
-        'invalid_dogsled_extension',
+        'invalid_bobsled_extension',
         `${path}.build.${rejected}`,
         objectReference,
         `${rejected} needs an explicit final field mapping and is not supported.`,
@@ -263,7 +263,7 @@ function sourceConnection(
   );
   if (bindings.length > 1) {
     fail(
-      'invalid_dogsled_extension',
+      'invalid_bobsled_extension',
       path,
       objectReference,
       'More than one connection binding matched this dataset.',
@@ -278,7 +278,7 @@ function sourceConnection(
   const resolved = bindings[0]?.connection ?? aliased ?? context?.defaultConnection;
   if (resolved && !connectionHandle.test(resolved)) {
     fail(
-      'invalid_dogsled_extension',
+      'invalid_bobsled_extension',
       path,
       objectReference,
       `Invalid connection handle ${resolved}.`,
@@ -375,7 +375,7 @@ function convertFields(
     const parsedFieldExtension = fieldExtensionSchema.safeParse(rawFieldExtension);
     if (!parsedFieldExtension.success) {
       fail(
-        'invalid_dogsled_extension',
+        'invalid_bobsled_extension',
         path,
         objectReference,
         parsedFieldExtension.error.issues.map((issue) => issue.message).join('; '),
@@ -385,7 +385,7 @@ function convertFields(
     const { build_expression, sql_type, ...nativeMetadata } = parsedFieldExtension.data;
     if (extension.kind === 'source' && build_expression) {
       fail(
-        'invalid_dogsled_extension',
+        'invalid_bobsled_extension',
         path,
         objectReference,
         'A source field cannot contain build_expression.',
@@ -580,7 +580,7 @@ function metricExtension(
     );
   }
   fail(
-    'invalid_dogsled_extension',
+    'invalid_bobsled_extension',
     path,
     objectReference,
     'Invalid DOGSLED metric extension.',
@@ -630,7 +630,7 @@ function relationshipExtension(
     );
   }
   fail(
-    'invalid_dogsled_extension',
+    'invalid_bobsled_extension',
     path,
     objectReference,
     'Invalid DOGSLED relationship extension.',

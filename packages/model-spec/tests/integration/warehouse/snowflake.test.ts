@@ -26,8 +26,8 @@ describe.skipIf(!warehouseEnabled('snowflake'))('warehouse materializations — 
 
   it('runs view, table, and incremental merge materializations', async () => {
     if (!harness) throw new Error('harness not initialized');
-    const database = process.env.DOGSLED_MODEL_SPEC_SNOWFLAKE_DATABASE;
-    if (!database) throw new Error('Missing DOGSLED_MODEL_SPEC_SNOWFLAKE_DATABASE');
+    const database = process.env.BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_DATABASE;
+    if (!database) throw new Error('Missing BOBSLED_CORE_MODEL_SPEC_SNOWFLAKE_DATABASE');
 
     await runMaterializationProject(harness);
 

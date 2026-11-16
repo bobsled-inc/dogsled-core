@@ -40,17 +40,17 @@ function requiresRemoteAcknowledgement(host: string | undefined): boolean {
 }
 
 function assertRemoteAcknowledgement(options: ServeOptions): boolean {
-  const envSet = process.env['DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE'] === '1';
+  const envSet = process.env['BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE'] === '1';
   const flagSet = options.allowRemote === true;
   if (flagSet && !envSet) {
     throw new CommandError(
-      '--allow-remote passed but DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE=1 is not set. Both are required to expose the unauthenticated entity graph API off loopback.',
+      '--allow-remote passed but BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE=1 is not set. Both are required to expose the unauthenticated entity graph API off loopback.',
       2
     );
   }
   if (requiresRemoteAcknowledgement(options.host) && !(flagSet && envSet)) {
     throw new CommandError(
-      'entity-graph serve only binds to loopback by default. To bind a non-loopback host, pass --allow-remote and set DOGSLED_ENTITY_GRAPH_ALLOW_REMOTE=1.',
+      'entity-graph serve only binds to loopback by default. To bind a non-loopback host, pass --allow-remote and set BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE=1.',
       2
     );
   }

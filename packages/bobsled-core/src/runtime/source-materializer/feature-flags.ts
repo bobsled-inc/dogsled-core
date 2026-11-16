@@ -15,10 +15,10 @@ export function resolveSourceMaterializerFlags(
   env: NodeJS.ProcessEnv = process.env
 ): SourceMaterializerFeatureFlags {
   return {
-    inFlightDedup: overrides.inFlightDedup ?? enabled(env.DOGSLED_QUERY_INFLIGHT_DEDUP),
+    inFlightDedup: overrides.inFlightDedup ?? enabled(env.BOBSLED_CORE_QUERY_INFLIGHT_DEDUP),
     incrementalRefresh:
-      overrides.incrementalRefresh ?? enabled(env.DOGSLED_QUERY_INCREMENTAL_REFRESH),
+      overrides.incrementalRefresh ?? enabled(env.BOBSLED_CORE_QUERY_INCREMENTAL_REFRESH),
     partialMaterialization:
-      overrides.partialMaterialization ?? enabled(env.DOGSLED_QUERY_PARTIAL_MATERIALIZATION),
+      overrides.partialMaterialization ?? enabled(env.BOBSLED_CORE_QUERY_PARTIAL_MATERIALIZATION),
   };
 }

@@ -37,7 +37,7 @@ function warnDeprecatedCacheMode(raw: unknown, file: string): void {
   if (value.type !== 'source' || value.source_type !== 'api_resource') return;
   if (value.mode !== 'cache') return;
   process.emitWarning(`Source spec ${file} uses deprecated mode: cache; use mode: lazy instead.`, {
-    code: 'DOGSLED_SOURCE_MODE_CACHE_DEPRECATED',
+    code: 'BOBSLED_CORE_SOURCE_MODE_CACHE_DEPRECATED',
   });
 }
 

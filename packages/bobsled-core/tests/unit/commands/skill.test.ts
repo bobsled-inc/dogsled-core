@@ -245,7 +245,7 @@ describe('dogsled skill commands', () => {
     const root = createProject();
     writeFileSync(path.join(root, 'AGENTS.md'), DESCRIBED_GUIDE, 'utf8');
     process.chdir(root);
-    vi.stubEnv('DOGSLED_OUTPUT_FORMAT', 'text');
+    vi.stubEnv('BOBSLED_CORE_OUTPUT_FORMAT', 'text');
     const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
 
     await runCli(['skill', 'validate']);
@@ -257,7 +257,7 @@ describe('dogsled skill commands', () => {
 
   it('prints an info line in text mode when no Project guide exists', async () => {
     process.chdir(createProject());
-    vi.stubEnv('DOGSLED_OUTPUT_FORMAT', 'text');
+    vi.stubEnv('BOBSLED_CORE_OUTPUT_FORMAT', 'text');
     const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
 
     await runCli(['skill', 'validate']);

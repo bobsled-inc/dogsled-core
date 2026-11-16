@@ -22,7 +22,7 @@ const c = {
 
 function parseArgs(argv) {
   const args = {
-    cli: process.env.DOGSLED_CLI ?? 'dogsled',
+    cli: process.env.BOBSLED_CORE_CLI ?? 'dogsled',
     labDir: join(repoRoot, '.dogsled', 'tutor-lab'),
     list: false,
     reset: false,
@@ -538,7 +538,7 @@ Usage:
 
 Options:
   --cli <command>      Command used when executing canonical "dogsled ..." steps.
-                       Default: DOGSLED_CLI or dogsled
+                       Default: BOBSLED_CORE_CLI or dogsled
   --lab-dir <path>    Directory for local DuckDB files and tutor progress.
                        Default: .dogsled/tutor-lab
   --list              Print lesson list and exit
@@ -549,7 +549,7 @@ Options:
 
 Examples:
   node scripts/dogsled-capability-tutor.mjs
-  DOGSLED_CLI="pnpm exec dogsled" node scripts/dogsled-capability-tutor.mjs
+  BOBSLED_CORE_CLI="pnpm exec dogsled" node scripts/dogsled-capability-tutor.mjs
   node scripts/dogsled-capability-tutor.mjs --cli "pnpm exec dogsled"
   node scripts/dogsled-capability-tutor.mjs --reset
   node scripts/dogsled-capability-tutor.mjs --goto 13

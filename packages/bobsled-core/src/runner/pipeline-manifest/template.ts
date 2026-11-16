@@ -180,9 +180,9 @@ export interface BobsledPipelineManifest {
 
 export interface PipelineCommandContract {
   default_command: 'dogsled';
-  command_env: 'DOGSLED_PIPELINE_COMMAND';
-  cwd_env: 'DOGSLED_PIPELINE_CWD';
-  timeout_seconds_env: 'DOGSLED_PIPELINE_TIMEOUT_SECONDS';
+  command_env: 'BOBSLED_CORE_PIPELINE_COMMAND';
+  cwd_env: 'BOBSLED_CORE_PIPELINE_CWD';
+  timeout_seconds_env: 'BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS';
   default_timeout_seconds: 1800;
   output: 'jsonl';
 }
@@ -967,9 +967,9 @@ export function buildPipelineManifestObject(
     dogsled_cli_version: bobsledVersion,
     command_contract: {
       default_command: 'dogsled',
-      command_env: 'DOGSLED_PIPELINE_COMMAND',
-      cwd_env: 'DOGSLED_PIPELINE_CWD',
-      timeout_seconds_env: 'DOGSLED_PIPELINE_TIMEOUT_SECONDS',
+      command_env: 'BOBSLED_CORE_PIPELINE_COMMAND',
+      cwd_env: 'BOBSLED_CORE_PIPELINE_CWD',
+      timeout_seconds_env: 'BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS',
       default_timeout_seconds: 1800,
       output: 'jsonl',
     },

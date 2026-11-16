@@ -233,7 +233,7 @@ describe('CLEANING_FUNCTIONS — cross-dialect emission', () => {
     });
 
     it('emits one portable keyed double-hash construction for hmac_sha256', () => {
-      vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', 'test-secret');
+      vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', 'test-secret');
       try {
         for (const d of ALL_DIALECTS) {
           const sql = emit('hmac_sha256(email)', d);
@@ -250,11 +250,11 @@ describe('CLEANING_FUNCTIONS — cross-dialect emission', () => {
     });
 
     it('requires the new key name and preserves the carried-over value and redaction', () => {
-      vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', 'example-stable-key');
-      vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', '');
+      vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', 'example-stable-key');
+      vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', '');
       try {
-        expect(() => readMatchKeySecret()).toThrow(/DOGSLED_MATCH_KEY_SECRET/);
-        vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', 'example-stable-key');
+        expect(() => readMatchKeySecret()).toThrow(/BOBSLED_CORE_MATCH_KEY_SECRET/);
+        vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', 'example-stable-key');
         expect(readMatchKeySecret()).toBe('example-stable-key');
         const sql = emit('hmac_sha256(email)', 'postgres');
         expect(sql).not.toContain('example-stable-key');
@@ -268,9 +268,9 @@ describe('CLEANING_FUNCTIONS — cross-dialect emission', () => {
     });
 
     it('fails closed when hmac_sha256 has no runtime key', () => {
-      vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', '');
+      vi.stubEnv('BOBSLED_CORE_MATCH_KEY_SECRET', '');
       try {
-        expect(() => emit('hmac_sha256(email)', 'duckdb')).toThrow(/DOGSLED_MATCH_KEY_SECRET/);
+        expect(() => emit('hmac_sha256(email)', 'duckdb')).toThrow(/BOBSLED_CORE_MATCH_KEY_SECRET/);
       } finally {
         vi.unstubAllEnvs();
       }

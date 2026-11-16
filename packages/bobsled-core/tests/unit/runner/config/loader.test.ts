@@ -90,7 +90,7 @@ describe('loadBobsledConfig legacy aliases', () => {
   }
 
   it('reports malformed YAML without quoting the authored source line', () => {
-    const marker = 'synthetic-dogsled-secret-marker';
+    const marker = 'synthetic-bobsled-secret-marker';
     const configPath = writeConfig(`pipelines: [${marker}`);
     let error: unknown;
     try {
@@ -159,7 +159,7 @@ pipelines:
     const validation = await validateBobsledConfig(config, configDir);
     expect(validation.errors).toEqual([]);
     expect(
-      validation.warnings.filter((warning) => warning.includes('DOGSLED_LEGACY_BLUEPRINT_KEY'))
+      validation.warnings.filter((warning) => warning.includes('BOBSLED_CORE_LEGACY_BLUEPRINT_KEY'))
     ).toEqual([]);
   });
 

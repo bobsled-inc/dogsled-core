@@ -102,12 +102,12 @@ describe('resolveRef', () => {
   it('resolves bare ref via model registry', () => {
     const modelReg: ModelRegistry = buildModelRegistry(
       ['stg_orders', 'stg_customers'],
-      'DOGSLED_WORKSPACE'
+      'BOBSLED_CORE_WORKSPACE'
     );
     const result = resolveRef('stg_orders', registry, modelReg);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.fqTableName).toBe('DOGSLED_WORKSPACE.STG_ORDERS');
+      expect(result.fqTableName).toBe('BOBSLED_CORE_WORKSPACE.STG_ORDERS');
     }
   });
 

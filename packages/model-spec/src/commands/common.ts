@@ -143,7 +143,7 @@ export function resolvePathWithinDir(rootDir: string, relativePath: string, labe
 
 /** Resolve the default JSON output mode from environment and terminal context. */
 function resolveJsonDefault(): boolean {
-  const outputFormat = process.env['DOGSLED_OUTPUT_FORMAT']?.trim().toLowerCase();
+  const outputFormat = process.env['BOBSLED_CORE_OUTPUT_FORMAT']?.trim().toLowerCase();
   if (outputFormat === 'json') return true;
   if (outputFormat === 'text') return false;
   if (process.env['CI'] === '1' || process.env['CI'] === 'true') return true;

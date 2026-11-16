@@ -14,7 +14,7 @@ import { makeProvider, makeResource } from '../helpers/fixtures.js';
 import { createFakeServer, type FakeServer } from './helpers/fake-server.js';
 
 describe('extract integration', () => {
-  const originalAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+  const originalAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
   let server: FakeServer;
   let tmpDir: string;
   let stdoutSpy: ReturnType<typeof vi.spyOn>;
@@ -22,7 +22,7 @@ describe('extract integration', () => {
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'extractor-test-'));
-    process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+    process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
     stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
   });
@@ -30,9 +30,9 @@ describe('extract integration', () => {
   afterEach(async () => {
     if (server) await server.close();
     if (originalAllowPrivateHosts === undefined) {
-      delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+      delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     } else {
-      process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
+      process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
     }
     stdoutSpy.mockRestore();
     stderrSpy.mockRestore();

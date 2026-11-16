@@ -80,7 +80,7 @@ export interface RunQueryResult {
   totalMs: number;
 }
 
-const DOGSLED_QUERY_MAX_SQL_LIMIT = 10_000;
+const BOBSLED_CORE_QUERY_MAX_SQL_LIMIT = 10_000;
 const inFlightQueries = new Map<string, Promise<RunQueryResult>>();
 
 function stripSqlComments(sql: string): string {
@@ -561,10 +561,10 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
   const referenced = referencedSources(args.sql);
   const sqlLimit = maxSqlLimitLiteral(args.sql);
 
-  if (sqlLimit !== undefined && sqlLimit > DOGSLED_QUERY_MAX_SQL_LIMIT) {
+  if (sqlLimit !== undefined && sqlLimit > BOBSLED_CORE_QUERY_MAX_SQL_LIMIT) {
     const limitDescription = sqlLimit === Infinity ? 'LIMIT ALL (unbounded)' : `LIMIT ${sqlLimit}`;
     throw new CommandError(
-      `SQL ${limitDescription} exceeds dogsled query's lazy API materialization ceiling of ${DOGSLED_QUERY_MAX_SQL_LIMIT}. Use a numeric LIMIT ≤ ${DOGSLED_QUERY_MAX_SQL_LIMIT} or add a more selective source.filter.`,
+      `SQL ${limitDescription} exceeds dogsled query's lazy API materialization ceiling of ${BOBSLED_CORE_QUERY_MAX_SQL_LIMIT}. Use a numeric LIMIT ≤ ${BOBSLED_CORE_QUERY_MAX_SQL_LIMIT} or add a more selective source.filter.`,
       2
     );
   }

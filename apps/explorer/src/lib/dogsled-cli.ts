@@ -192,7 +192,7 @@ export function spawnBobsledCommand(
     env: {
       ...process.env,
       ...options?.env,
-      DOGSLED_BUNDLED_INTEGRATIONS_DIR: integrationsDir,
+      BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR: integrationsDir,
       FORCE_COLOR: '0',
       NO_COLOR: '1',
     },

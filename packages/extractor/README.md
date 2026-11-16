@@ -449,7 +449,7 @@ This is the same durability step used by multi-destination fan-out runs after ev
 
 ### Pluggable state backends
 
-State persistence is pluggable. Use `--state-backend` (or `DOGSLED_STATE_BACKEND`) to pick where bookmarks live:
+State persistence is pluggable. Use `--state-backend` (or `BOBSLED_CORE_STATE_BACKEND`) to pick where bookmarks live:
 
 | Backend                | URL form                                  | When to use                                                        |
 | ---------------------- | ----------------------------------------- | ------------------------------------------------------------------ |
@@ -464,16 +464,16 @@ HTTP-backend contract:
 
 Auth for HTTP backends:
 
-- `--state-auth-env <VAR>` (or `DOGSLED_STATE_AUTH_ENV`) names an env var that holds a bearer token. The token is sent as `Authorization: Bearer <value>` on every request; CR/LF are stripped defensively.
+- `--state-auth-env <VAR>` (or `BOBSLED_CORE_STATE_AUTH_ENV`) names an env var that holds a bearer token. The token is sent as `Authorization: Bearer <value>` on every request; CR/LF are stripped defensively.
 - The extractor refuses to send a bearer token over cleartext `http://` to a public host — use `https://` for authenticated backends. Loopback addresses (`localhost`, `127.*`, `::1`) are still allowed for local dev.
-- `http(s)://` backends resolving to private/loopback/link-local hosts are rejected unless `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` is set (same escape hatch used elsewhere by the extractor for VPN / on-prem setups).
+- `http(s)://` backends resolving to private/loopback/link-local hosts are rejected unless `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1` is set (same escape hatch used elsewhere by the extractor for VPN / on-prem setups).
 
 Example — running `dogsled extract run` against a self-hosted state backend:
 
 ```sh
-DOGSLED_STATE_BACKEND=https://state.example.com/api/dogsled/state \
-DOGSLED_STATE_AUTH_ENV=DOGSLED_RUN_TOKEN \
-DOGSLED_RUN_TOKEN=<jwt> \
+BOBSLED_CORE_STATE_BACKEND=https://state.example.com/api/dogsled/state \
+BOBSLED_CORE_STATE_AUTH_ENV=BOBSLED_CORE_RUN_TOKEN \
+BOBSLED_CORE_RUN_TOKEN=<jwt> \
 dogsled extract run --integration linear --advance-state
 ```
 

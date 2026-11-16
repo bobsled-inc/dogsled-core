@@ -1,7 +1,7 @@
 spec_version: '0.2'
 name: bq_fct_orders
 type: model
-description: BigQuery fact — orders enriched with customer name and country. Demonstrates target_schema override (dogsled_multi_conn_analytics).
+description: BigQuery fact — orders enriched with customer name and country. Demonstrates target_schema override (multi_conn_analytics).
 grain: order_id
 
 source:
@@ -29,7 +29,7 @@ columns:
   - name: status
     expr: bq_stg_orders.status
 
-target_schema: dogsled_multi_conn_analytics
+target_schema: multi_conn_analytics
 
 materialization:
   type: view

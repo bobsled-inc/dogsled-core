@@ -108,7 +108,7 @@ Servers started as a local process (`type: mcp_stdio`) are limited to reviewed
 commands, because a command line can run any program. This release allows the
 BigQuery and Snowflake MCP servers used by the `bigquery` and `snowflake` library
 integrations. Run any other server over HTTP. MCP servers on your own machine or
-network also need `DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`.
+network also need `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`.
 
 `dogsled mcp` is a shortcut for `dogsled extract mcp`, and also contains
 `dogsled mcp serve`, which runs Dogsled itself as an MCP server: see

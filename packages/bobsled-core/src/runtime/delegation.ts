@@ -51,7 +51,7 @@ export async function runDelegatedCli(
       const { getIntegrationsDir } = await import('@bobsled-inc/integrations');
       spawnOptions.env = {
         ...spawnOptions.env,
-        DOGSLED_BUNDLED_INTEGRATIONS_DIR: getIntegrationsDir(),
+        BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR: getIntegrationsDir(),
       };
     } catch {
       // @bobsled-inc/integrations not available — local-only mode

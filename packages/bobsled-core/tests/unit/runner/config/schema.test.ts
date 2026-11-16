@@ -1279,7 +1279,7 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
   it.each([
     ['whitespace', '   '],
     ['leading hyphen', '-dogsled_managed'],
-    ['trailing underscore', 'dogsled_managed_'],
+    ['trailing underscore', 'bobsled_managed_'],
     ['uppercase', 'Bobsled_Managed'],
     ['double separator', 'dogsled--managed'],
     ['special char', 'dogsled.managed'],
@@ -1357,7 +1357,7 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
           dogsled_connection_ref: 'dogsled_managed',
           // typo of dogsled_connection_ref — not the same field, must
           // fail; strict mode on the schema rejects unknown keys.
-          dogsled_connecton_ref: 'typo',
+          bobsled_connecton_ref: 'typo',
         },
       },
       pipelines: {

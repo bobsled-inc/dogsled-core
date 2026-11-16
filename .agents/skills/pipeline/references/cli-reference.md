@@ -246,7 +246,7 @@ dogsled extract run issues_graphql --integration linear \
 Stub mode for testing without provider credentials:
 
 ```bash
-DOGSLED_EMBED_STUB=1 dogsled pipeline ...   # emits zero-filled vectors
+BOBSLED_CORE_EMBED_STUB=1 dogsled pipeline ...   # emits zero-filled vectors
 ```
 
 ### Model Spec source scaffold pre-fill

@@ -593,10 +593,10 @@ describe('runPipeline', () => {
     const loadArgs = spawn.mock.calls[1]?.[1] as string[];
     expect(loadArgs).toContain('--bq-access-token');
     expect(loadArgs).not.toContain('token-123');
-    expect(spawn.mock.calls[1]?.[2].env.DOGSLED_LOADER_BQ_ACCESS_TOKEN).toBe('token-123');
+    expect(spawn.mock.calls[1]?.[2].env.BOBSLED_CORE_LOADER_BQ_ACCESS_TOKEN).toBe('token-123');
     // Order matters for arg pairs — assert adjacency.
     const tokenIdx = loadArgs.indexOf('--bq-access-token');
-    expect(loadArgs[tokenIdx + 1]).toBe('$DOGSLED_LOADER_BQ_ACCESS_TOKEN');
+    expect(loadArgs[tokenIdx + 1]).toBe('$BOBSLED_CORE_LOADER_BQ_ACCESS_TOKEN');
   });
 
   it('forwards Snowflake static OIDC token to the loader', async () => {
@@ -628,13 +628,13 @@ describe('runPipeline', () => {
     expect(loadArgs).toEqual(
       expect.arrayContaining([
         '--sf-access-token',
-        '$DOGSLED_SNOWFLAKE_ACCESS_TOKEN',
+        '$BOBSLED_CORE_SNOWFLAKE_ACCESS_TOKEN',
         '--sf-account',
         'acme-org',
       ])
     );
     expect(loadArgs).not.toContain('jwt-token');
-    expect(loadOptions.env).toMatchObject({ DOGSLED_SNOWFLAKE_ACCESS_TOKEN: 'jwt-token' });
+    expect(loadOptions.env).toMatchObject({ BOBSLED_CORE_SNOWFLAKE_ACCESS_TOKEN: 'jwt-token' });
   });
 
   it('forwards only the Snowflake token command when both OIDC fields are set', async () => {
@@ -674,7 +674,7 @@ describe('runPipeline', () => {
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
     const env = {
       SF_WIF_TOKEN: 'vercel-oidc-token',
-      DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
+      BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
       UNRELATED_ENV: 'preserve-me',
     };
     const originalEnv = { ...env };
@@ -701,17 +701,17 @@ describe('runPipeline', () => {
     const loadArgs = spawn.mock.calls[1]?.[1] as string[];
     const loadOptions = spawn.mock.calls[1]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(loadArgs).toContain('--sf-workload-identity-token');
-    expect(loadArgs).toContain('$DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    expect(loadArgs).toContain('$BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     expect(loadArgs).not.toContain('vercel-oidc-token');
     expect(loadOptions.env).toEqual(
       expect.objectContaining({
-        DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'vercel-oidc-token',
+        BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'vercel-oidc-token',
         UNRELATED_ENV: 'preserve-me',
       })
     );
     const extractOptions = spawn.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(extractOptions.env).not.toHaveProperty('SF_WIF_TOKEN');
-    expect(extractOptions.env).not.toHaveProperty('DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    expect(extractOptions.env).not.toHaveProperty('BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     expect(loadOptions.env).not.toHaveProperty('SF_WIF_TOKEN');
     expect(env).toEqual(originalEnv);
   });
@@ -887,7 +887,7 @@ describe('runPipeline', () => {
     const env = {
       INHERITED_WIF_TOKEN: token,
       VERCEL_OIDC_TOKEN: token,
-      DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
+      BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
     };
 
     const promise = runPipeline(
@@ -914,10 +914,10 @@ describe('runPipeline', () => {
     const loadEnv = (spawn.mock.calls[1]?.[2] as { env?: NodeJS.ProcessEnv }).env ?? {};
     expect(Object.values(extractEnv)).not.toContain(token);
     expect(loadEnv).toMatchObject({
-      DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: token,
+      BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: token,
     });
     expect(Object.entries(loadEnv).filter(([, value]) => value === token)).toEqual([
-      ['DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN', token],
+      ['BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN', token],
     ]);
     const loadArgs = spawn.mock.calls[1]?.[1] as string[];
     expect(loadArgs).not.toContain(token);
@@ -1257,7 +1257,7 @@ describe('runPipeline', () => {
       .mockReturnValueOnce(loadChild) as Mock;
     const env = {
       SF_WIF_TOKEN: 'vercel-oidc-token',
-      DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
+      BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN: 'stale-dedicated-token',
     };
 
     const promise = runPipeline(
@@ -1297,12 +1297,12 @@ describe('runPipeline', () => {
     expect(spawn.mock.calls[1]?.[2]).toMatchObject({
       stdio: ['pipe', 'pipe', 'pipe'],
       env: expect.objectContaining({
-        DOGSLED_EMBEDDER_TMP_DIR: expect.stringMatching(/dogsled-embed-/),
+        BOBSLED_CORE_EMBEDDER_TMP_DIR: expect.stringMatching(/dogsled-embed-/),
       }),
     });
     const embedOptions = spawn.mock.calls[1]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(embedOptions.env).not.toHaveProperty('SF_WIF_TOKEN');
-    expect(embedOptions.env).not.toHaveProperty('DOGSLED_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
+    expect(embedOptions.env).not.toHaveProperty('BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN');
     expect(spawn.mock.calls[2]?.[0]).toBe('load-cli');
   });
 
@@ -1970,7 +1970,7 @@ describe('runPipeline', () => {
                 '--clickhouse-password',
                 '--turbopuffer-api-key',
               ].includes(flag)
-              ? '$DOGSLED_LOADER_' + flag.slice(2).replaceAll('-', '_').toUpperCase()
+              ? '$BOBSLED_CORE_LOADER_' + flag.slice(2).replaceAll('-', '_').toUpperCase()
               : value;
           })
         )
@@ -2223,7 +2223,7 @@ describe('runPipeline', () => {
 
     await expect(promise).resolves.toBe(0);
     const embedTmpDir = (spawn.mock.calls[1]?.[2] as { env: NodeJS.ProcessEnv }).env[
-      'DOGSLED_EMBEDDER_TMP_DIR'
+      'BOBSLED_CORE_EMBEDDER_TMP_DIR'
     ];
     expect(embedTmpDir).toBeDefined();
     if (!embedTmpDir) {
@@ -2289,7 +2289,7 @@ describe('runPipeline', () => {
 
     await expect(promise).resolves.toBe(1);
     const embedTmpDir = (spawn.mock.calls[1]?.[2] as { env: NodeJS.ProcessEnv }).env[
-      'DOGSLED_EMBEDDER_TMP_DIR'
+      'BOBSLED_CORE_EMBEDDER_TMP_DIR'
     ];
     expect(embedTmpDir).toBeDefined();
     if (!embedTmpDir) {

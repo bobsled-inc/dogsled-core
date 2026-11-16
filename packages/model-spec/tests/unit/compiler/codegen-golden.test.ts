@@ -44,7 +44,7 @@ describe('codegen golden files', () => {
           throw new Error(`Failed to parse ${modelName}.yml for ${dialect}: ${parseResult.error}`);
         }
 
-        const sql = normalizeSql(generateSql(parseResult.spec, 'DOGSLED_WORKSPACE', dialect));
+        const sql = normalizeSql(generateSql(parseResult.spec, 'BOBSLED_CORE_WORKSPACE', dialect));
         await expect(sql).toMatchFileSnapshot(
           path.join(SNAPSHOT_DIR, `${modelName}.${dialect}.sql`)
         );

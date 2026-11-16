@@ -13,7 +13,7 @@ import { mapScenario } from '../../support/agentic-store-scenario.js';
 import { postgresIntegration as integration } from '../../support/row-store-integrations.js';
 
 const enabled =
-  process.env.DOGSLED_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres');
+  process.env.BOBSLED_CORE_MODEL_SPEC_INTEGRATION_WAREHOUSE?.split(',').includes('postgres');
 async function sql<T extends Record<string, unknown>>(statement: string): Promise<T[]> {
   const runner = await resolveRunner(integration());
   try {

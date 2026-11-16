@@ -69,7 +69,7 @@ const INSTALLED_PACKAGE_NAMES: Record<CliTarget, string> = {
   embed: '@bobsled-inc/embedder',
 };
 
-const DOGSLED_MODEL_RUN_CANDIDATES: CandidateEntry[] = [
+const BOBSLED_CORE_MODEL_RUN_CANDIDATES: CandidateEntry[] = [
   { pathSegments: ['packages', 'bobsled-core', 'src', 'commands', 'model-run.ts'], useTsx: true },
   { pathSegments: ['packages', 'bobsled-core', 'dist', 'commands', 'model-run.js'], useTsx: false },
 ];
@@ -205,7 +205,7 @@ export function resolveBobsledModelRunInvocation(
 ): CommandInvocation {
   const workspaceRoot = tryFindWorkspaceRoot(metaUrl);
   if (workspaceRoot) {
-    for (const candidate of DOGSLED_MODEL_RUN_CANDIDATES) {
+    for (const candidate of BOBSLED_CORE_MODEL_RUN_CANDIDATES) {
       const absolutePath = path.join(workspaceRoot, ...candidate.pathSegments);
       if (!fs.existsSync(absolutePath)) continue;
 

@@ -869,7 +869,7 @@ describe('WarehouseResourceV2SpecSchema (three-block)', () => {
     load: {
       overrides: {
         role: 'LOADER_ROLE',
-        database: 'DOGSLED_RAW',
+        database: 'BOBSLED_CORE_RAW',
       },
       defaults: {
         load_strategy: 'merge',
@@ -1075,8 +1075,8 @@ describe('WarehouseResourceV2SpecSchema (three-block)', () => {
           method: 'change_tracking',
           change_tracking: {
             plugin: 'pgoutput',
-            slot_name: 'dogsled_slot',
-            publication_name: 'dogsled_pub',
+            slot_name: 'bobsled_slot',
+            publication_name: 'bobsled_pub',
           },
         },
       },
@@ -1104,8 +1104,8 @@ describe('WarehouseResourceV2SpecSchema (three-block)', () => {
           method: 'change_tracking' as const,
           change_tracking: {
             plugin: 'pgoutput' as const,
-            slot_name: 'dogsled_slot',
-            publication_name: 'dogsled_pub',
+            slot_name: 'bobsled_slot',
+            publication_name: 'bobsled_pub',
           },
         },
       },
@@ -1126,8 +1126,8 @@ describe('WarehouseResourceV2SpecSchema (three-block)', () => {
       expect(replication['method']).toBe('change_tracking');
       expect(replication['primary_key']).toEqual(['id']);
       const ct = replication['change_tracking'] as Record<string, unknown>;
-      expect(ct['slot_name']).toBe('dogsled_slot');
-      expect(ct['publication_name']).toBe('dogsled_pub');
+      expect(ct['slot_name']).toBe('bobsled_slot');
+      expect(ct['publication_name']).toBe('bobsled_pub');
       expect(ct['plugin']).toBe('pgoutput');
     }
   });

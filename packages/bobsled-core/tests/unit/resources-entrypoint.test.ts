@@ -11,14 +11,14 @@ import {
 } from '../../src/resources/index.js';
 
 describe('@bobsled-inc/bobsled-core/resources', () => {
-  const originalAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+  const originalAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
 
   afterEach(() => {
     vi.restoreAllMocks();
     if (originalAllowPrivateHosts === undefined) {
-      delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+      delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     } else {
-      process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
+      process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
     }
   });
 
@@ -32,7 +32,7 @@ describe('@bobsled-inc/bobsled-core/resources', () => {
   });
 
   it('queries a bundled Notion REST resource through HTTP', async () => {
-    process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
+    process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response(
         JSON.stringify({

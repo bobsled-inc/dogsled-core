@@ -434,7 +434,7 @@ describe('buildSnowflakeRunner — oauth auth', () => {
     const integration = oauthIntegration();
     if (integration.auth.type !== 'oauth') throw new Error('expected oauth auth');
     integration.auth.token_url = 'https://169.254.169.254/token';
-    process.env['DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS'] = '1';
+    process.env['BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS'] = '1';
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     try {
       await expect(buildSnowflakeRunner(integration, { sdk })).rejects.toThrow(
@@ -443,7 +443,7 @@ describe('buildSnowflakeRunner — oauth auth', () => {
       expect(fetchSpy).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
-      delete process.env['DOGSLED_ALLOW_PRIVATE_OAUTH_HOSTS'];
+      delete process.env['BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS'];
     }
   });
 });

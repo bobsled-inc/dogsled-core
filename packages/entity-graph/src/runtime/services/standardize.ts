@@ -177,10 +177,10 @@ function sha256Hex(value: string): string {
 }
 
 function readMatchKeySecret(): string {
-  const secret = process.env.DOGSLED_MATCH_KEY_SECRET;
+  const secret = process.env.BOBSLED_CORE_MATCH_KEY_SECRET;
   if (!secret) {
     throw new CommandError(
-      'DOGSLED_MATCH_KEY_SECRET is required when hmac_sha256 standardize transforms are used.',
+      'BOBSLED_CORE_MATCH_KEY_SECRET is required when hmac_sha256 standardize transforms are used.',
       2
     );
   }

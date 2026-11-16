@@ -78,7 +78,7 @@ grouping, secret enumeration, and manifest generation. The lower-level `generate
 its existing `integrations` option for callers that already provide resolved pipelines.
 
 The parser accepts historical v1-v5 manifests plus v6 and rejects malformed or semantically invalid
-graphs with stable issue codes and paths. v6 uses the `DOGSLED_PIPELINE_*` command contract, retains
+graphs with stable issue codes and paths. v6 uses the `BOBSLED_CORE_PIPELINE_*` command contract, retains
 source/model `warehouse` IDs, and can carry an extract-only managed `destination_warehouse` ID
 without changing task commands.
 

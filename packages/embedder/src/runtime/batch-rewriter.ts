@@ -215,7 +215,10 @@ export async function rewriteBatch(options: RewriteBatchOptions): Promise<BatchM
 
   const tmpRoot =
     options.tmpDir ??
-    path.join(process.env['DOGSLED_EMBEDDER_TMP_DIR'] ?? '/tmp', `dogsled-embed-${process.pid}`);
+    path.join(
+      process.env['BOBSLED_CORE_EMBEDDER_TMP_DIR'] ?? '/tmp',
+      `dogsled-embed-${process.pid}`
+    );
   const safeStream = toSafePathSegment(options.message.stream);
   const streamDir = path.join(tmpRoot, safeStream);
   mkdirSync(streamDir, { recursive: true });

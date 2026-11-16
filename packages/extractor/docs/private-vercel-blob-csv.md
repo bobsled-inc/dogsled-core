@@ -18,14 +18,14 @@ must repeat the exact same value. A `.csv` suffix is optional because
 spec_version: '1'
 type: integration
 name: private_attachment
-auth_env_vars: [DOGSLED_BLOB_URL, DOGSLED_BLOB_ORIGIN]
+auth_env_vars: [BOBSLED_CORE_BLOB_URL, BOBSLED_CORE_BLOB_ORIGIN]
 source_type: vercel_blob
 connection:
   blob_ref: attachments/preview-example/project-uuid/attachment-uuid
 auth:
   type: signed_url_env
-  url_env: DOGSLED_BLOB_URL
-  origin_env: DOGSLED_BLOB_ORIGIN
+  url_env: BOBSLED_CORE_BLOB_URL
+  origin_env: BOBSLED_CORE_BLOB_ORIGIN
 ```
 
 ```yaml
@@ -45,7 +45,7 @@ replication:
 output: {}
 ```
 
-At runtime, `DOGSLED_BLOB_URL` contains a fresh, object-scoped signed URL issued by the storage provider, and `DOGSLED_BLOB_ORIGIN`
+At runtime, `BOBSLED_CORE_BLOB_URL` contains a fresh, object-scoped signed URL issued by the storage provider, and `BOBSLED_CORE_BLOB_ORIGIN`
 contains the exact allowed HTTPS origin returned alongside it. The URL and its
 query are attempt-scoped secrets. They must not be written to pipeline YAML,
 state, logs, emitted metadata, or a durable task record. A normal authored

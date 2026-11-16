@@ -226,8 +226,8 @@ describe('buildOperationRequest', () => {
   });
 
   it('rejects public hostnames that resolve to private addresses', async () => {
-    const originalAllowPrivateHosts = process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
-    delete process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    const originalAllowPrivateHosts = process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
+    delete process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'];
     setDnsLookupForTests(async () => ({ address: '127.0.0.1', family: 4 }));
     try {
       await expect(
@@ -248,7 +248,7 @@ describe('buildOperationRequest', () => {
       ).rejects.toThrow('resolves to private address');
     } finally {
       if (originalAllowPrivateHosts !== undefined) {
-        process.env['DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
+        process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = originalAllowPrivateHosts;
       }
     }
   });

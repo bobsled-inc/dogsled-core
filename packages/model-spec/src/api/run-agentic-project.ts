@@ -316,7 +316,7 @@ export async function runAgenticProject(
           secretResolver
         );
         const credentialsTokenCommand =
-          options.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+          options.credentialsTokenCommand ?? process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
         stateStore =
           integration.source_type === 'duckdb'
             ? configuredDuckDbStore(
@@ -361,7 +361,8 @@ export async function runAgenticProject(
             secretResolver
           );
           const credentialsTokenCommand =
-            options.credentialsTokenCommand ?? process.env['DOGSLED_CREDENTIALS_TOKEN_COMMAND'];
+            options.credentialsTokenCommand ??
+            process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];
           ownedPublisher = await createSqlAgenticPublisher(integration, {
             ...(checkpointConfig ? { systemSchema: checkpointConfig.schema } : {}),
             secretResolver,

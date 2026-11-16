@@ -28,7 +28,7 @@ describe('pipeline loader secrets', () => {
     } as PipelineOptions;
     const args = buildLoadArgs(options);
     const reference = args[args.indexOf(flag!) + 1]!;
-    expect(reference).toMatch(/^\$DOGSLED_LOADER_/);
+    expect(reference).toMatch(/^\$BOBSLED_CORE_LOADER_/);
     expect(args.join(' ')).not.toContain('synthetic-private-value');
     expect(buildLoadEnv({}, options)[reference.slice(1)]).toBe('synthetic-private-value');
     const indirect = { ...options, [key!]: '$SOURCE_SECRET' };
@@ -84,7 +84,7 @@ describe('pipeline loader secrets', () => {
     expect(args.join(' ')).not.toContain('synthetic-private-value');
     expect(args.join(' ')).not.toContain('$SOURCE_SECRET');
     const child = buildDestinationLoadEnv({}, destination, env);
-    for (const reference of args.filter((value) => value.startsWith('$DOGSLED_LOADER_'))) {
+    for (const reference of args.filter((value) => value.startsWith('$BOBSLED_CORE_LOADER_'))) {
       expect(child[reference.slice(1)]).toBe('synthetic-private-value');
     }
   });

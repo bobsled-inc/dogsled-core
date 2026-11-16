@@ -20,7 +20,7 @@ describe('TargetFileSchema — integration-ref form (new)', () => {
       ...baseValid,
       overrides: {
         role: 'LOADER_ROLE',
-        database: 'DOGSLED_RAW',
+        database: 'BOBSLED_CORE_RAW',
         schema: 'RAW',
       },
     });

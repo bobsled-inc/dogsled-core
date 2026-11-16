@@ -4,7 +4,7 @@ import {
   RETIRED_DESTINATION_TYPES,
 } from './legacy-names.js';
 
-export const DOGSLED_LEGACY_BLUEPRINT_KEY = 'DOGSLED_LEGACY_BLUEPRINT_KEY';
+export const BOBSLED_CORE_LEGACY_BLUEPRINT_KEY = 'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY';
 export const LEGACY_KEY_CONFLICT = 'LEGACY_KEY_CONFLICT';
 
 export const BLUEPRINT_CONNECTION_REF_KEY = 'dogsled_connection_ref';
@@ -52,7 +52,7 @@ export function isManagedDestinationType(type: unknown): boolean {
 }
 
 export interface LegacyBlueprintDeprecation {
-  readonly code: typeof DOGSLED_LEGACY_BLUEPRINT_KEY;
+  readonly code: typeof BOBSLED_CORE_LEGACY_BLUEPRINT_KEY;
   readonly path: string;
   readonly oldKey: string;
   readonly newKey: string;

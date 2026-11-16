@@ -65,8 +65,8 @@ import {
   parseProjectSkill,
 } from '@bobsled-inc/skills/project';
 
-const registry = loadProjectSkillDocuments('/srv/my-dogsled-project');
-const guide = loadProjectGuideDocument('/srv/my-dogsled-project');
+const registry = loadProjectSkillDocuments('/srv/my-bobsled-project');
+const guide = loadProjectGuideDocument('/srv/my-bobsled-project');
 const manifest = buildProjectSkillDocumentsManifest(registry, guide);
 ```
 

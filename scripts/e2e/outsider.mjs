@@ -73,9 +73,9 @@ export async function runOutsider({ auditOnly = false } = {}) {
         'build',
         '--progress=plain',
         '--build-arg',
-        `DOGSLED_E2E_BEFORE=${await releaseAgeCutoff()}`,
+        `BOBSLED_CORE_E2E_BEFORE=${await releaseAgeCutoff()}`,
         '--build-arg',
-        `DOGSLED_E2E_USER_PG_VERSION=${USER_PG_VERSION}`,
+        `BOBSLED_CORE_E2E_USER_PG_VERSION=${USER_PG_VERSION}`,
         '--tag',
         imageName,
         context,
@@ -94,7 +94,7 @@ export async function runOutsider({ auditOnly = false } = {}) {
       '--volume',
       `${results}:/evidence`,
       '--env',
-      'DOGSLED_E2E_POSTGRES_PORT=5432',
+      'BOBSLED_CORE_E2E_POSTGRES_PORT=5432',
       imageName,
     ];
     if (auditOnly) args.push('S24');

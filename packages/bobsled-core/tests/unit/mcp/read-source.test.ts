@@ -13,7 +13,7 @@ describe('BobsledMcpServer fail-closed default', () => {
           allowUnfiltered: true,
           env: {},
         })
-    ).toThrow(/DOGSLED_MCP_ALLOW_UNFILTERED=1 is not set/);
+    ).toThrow(/BOBSLED_CORE_MCP_ALLOW_UNFILTERED=1 is not set/);
   });
 
   it('rejects env var without --allow-unfiltered', () => {
@@ -21,7 +21,7 @@ describe('BobsledMcpServer fail-closed default', () => {
       () =>
         new BobsledMcpServer({
           allowUnfiltered: false,
-          env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+          env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
         })
     ).toThrow(/--allow-unfiltered flag is missing/);
   });
@@ -31,7 +31,7 @@ describe('BobsledMcpServer fail-closed default', () => {
       () =>
         new BobsledMcpServer({
           allowUnfiltered: true,
-          env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+          env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
         })
     ).not.toThrow();
   });
@@ -58,7 +58,7 @@ describe('BobsledMcpServer fail-closed default', () => {
   it('returns the supplied principal verbatim in unfiltered mode (including empty principal_id)', () => {
     const server = new BobsledMcpServer({
       allowUnfiltered: true,
-      env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+      env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
     });
     expect(server.requirePrincipal(null)).toBeNull();
     expect(server.requirePrincipal({ principal_id: '' })).toEqual({ principal_id: '' });
@@ -68,7 +68,7 @@ describe('BobsledMcpServer fail-closed default', () => {
 describe('readSource MCP tool', () => {
   it('attaches citations for __documents tables', async () => {
     const server = new BobsledMcpServer({
-      env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+      env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
       allowUnfiltered: true,
       allowedSourceTables: new Set(['support__documents', 'support__chunks', 'crm.customers']),
     });
@@ -101,7 +101,7 @@ describe('readSource MCP tool', () => {
 
   it('attaches citations including chunk_id for __chunks tables', async () => {
     const server = new BobsledMcpServer({
-      env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+      env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
       allowUnfiltered: true,
       allowedSourceTables: new Set(['support__documents', 'support__chunks', 'crm.customers']),
     });
@@ -129,7 +129,7 @@ describe('readSource MCP tool', () => {
 
   it('does not attach citations for structured tables', async () => {
     const server = new BobsledMcpServer({
-      env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+      env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
       allowUnfiltered: true,
       allowedSourceTables: new Set(['support__documents', 'support__chunks', 'crm.customers']),
     });
@@ -181,7 +181,7 @@ describe('readSource MCP tool', () => {
 
   it('reports adapter_does_not_apply when adapters exist but none matches', async () => {
     const server = new BobsledMcpServer({
-      env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+      env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
       allowUnfiltered: true,
       allowedSourceTables: new Set(['support__documents', 'support__chunks', 'crm.customers']),
     });
@@ -353,7 +353,7 @@ describe('MCP source authorization before fetch', () => {
     async (source_table) => {
       const server = new BobsledMcpServer({
         allowUnfiltered: true,
-        env: { DOGSLED_MCP_ALLOW_UNFILTERED: '1' },
+        env: { BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },
         allowedSourceTables: new Set(['support__documents']),
       });
       const fetcher = vi.fn().mockResolvedValue({ rows: [] });
