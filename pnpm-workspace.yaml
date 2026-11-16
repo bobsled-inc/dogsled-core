@@ -14,7 +14,7 @@ catalog:
   '@types/pg': 8.23.1
   ai: 6.0.323
   ajv: 8.20.0
-  cron-parser: 5.10.3
+  cron-parser: 5.10.4
   google-auth-library: 9.15.1
   highlight.js: 11.12.0
   js-tiktoken: 1.0.21
@@ -98,7 +98,7 @@ allowBuilds:
 
 catalogs:
   app-packages:
-    compromise: 14.19.0
+    compromise: 14.20.0
     jsonpath-plus: 10.4.0
     yaml: 2.9.1
   aws-sdk:
