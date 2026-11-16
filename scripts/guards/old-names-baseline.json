@@ -1,7 +1,7 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 10495,
+    "dogsled-word": 10493,
     "old-warehouse-prefix": 742,
     "track-config": 6,
     "track-env": 0,
@@ -32,7 +32,7 @@
     "packages/sdk-codegen": 16,
     "packages/skills": 1091,
     "scripts": 201,
-    "tests": 77,
+    "tests": 75,
     "workspace": 25
   }
 }

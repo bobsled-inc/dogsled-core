@@ -117,7 +117,7 @@ describe('release package staging', () => {
     };
     throws(
       () => stripBundledManifestDependencies(staged, [loader]),
-      /@bobsled-inc\/loader needs chalk, but @bobsled-inc\/dogsled does not declare it/
+      /@bobsled-inc\/loader needs chalk, but @bobsled-inc\/bobsled-core does not declare it/
     );
   });
 
@@ -130,7 +130,7 @@ describe('release package staging', () => {
     };
     throws(
       () => stripBundledManifestDependencies(staged, [loader]),
-      /accepts pg >=8\.4\.0, but @bobsled-inc\/dogsled installs pg 8\.20\.0/
+      /accepts pg >=8\.4\.0, but @bobsled-inc\/bobsled-core installs pg 8\.20\.0/
     );
   });
 
