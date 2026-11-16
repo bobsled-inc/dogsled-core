@@ -3,6 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { materializeWarehouseLeaf } from '../../../src/runtime/source-materializer/materialize-warehouse-leaf.js';
 import { METADATA_TABLE } from '../../../src/runtime/source-materializer/metadata.js';
 
+vi.mock('../../../src/runtime/source-materializer/stage-warehouse-source.js', () => ({
+  stageWarehouseSourceIntoDuckDb: vi.fn(async () => ({ rowsAffected: 2 })),
+}));
+
 const METADATA_COLUMNS = [
   'source_name',
   'filter_hash',
@@ -76,5 +80,38 @@ describe('materializeWarehouseLeaf engine schema', () => {
     const { receipt, statements } = await reuseLeaf('duckdb');
     expect(receipt.action).toBe('reused');
     expect(statements[0]).toBe('CREATE SCHEMA IF NOT EXISTS "sources"');
+  });
+
+  it('still creates a missing BigQuery dataset through the metadata store, then stages', async () => {
+    let datasetExists = false;
+    const statements: string[] = [];
+    const handle = async (sql: string) => {
+      statements.push(sql);
+      if (sql.startsWith('CREATE SCHEMA')) datasetExists = true;
+      if (!datasetExists && !sql.startsWith('CREATE')) {
+        throw new Error('Not found: Dataset project:sources was not found in location US');
+      }
+      return [];
+    };
+    const receipt = await materializeWarehouseLeaf({
+      entry: {} as never,
+      sourceName: 'accounts',
+      schema: 'sources',
+      database: {} as never,
+      engineRunner: { run: vi.fn(handle), query: vi.fn(handle) },
+      sourceRunner: {} as never,
+      dialect: 'snowflake',
+      engineDialect: 'bigquery',
+      tempDir: '/tmp',
+      mode: 'lazy',
+      maxAge: '1h',
+      currentFilterHash: 'all',
+      nowIso: '2026-11-17T10:05:00.000Z',
+    });
+    expect(receipt.action).toBe('materialized');
+    expect(statements.filter((sql) => sql.startsWith('CREATE SCHEMA'))).toEqual([
+      'CREATE SCHEMA IF NOT EXISTS `sources`',
+    ]);
+    expect(statements.some((sql) => sql.startsWith('CREATE TABLE IF NOT EXISTS'))).toBe(true);
   });
 });

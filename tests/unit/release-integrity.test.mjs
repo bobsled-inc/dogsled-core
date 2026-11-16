@@ -4,6 +4,7 @@ import {
   npmFailureSummary,
   publishWithIntegrity,
 } from '../../scripts/release/registry-integrity.mjs';
+import { READ_AUTH_NPMRC } from '../../scripts/release/registry-read-auth.mjs';
 
 beforeEach(() => vi.stubEnv('NPM_READ_TOKEN', 'test-read-only-token'));
 afterEach(() => vi.unstubAllEnvs());
@@ -188,7 +189,11 @@ describe('registry release integrity', async () => {
       { status: null, signal: 'SIGTERM', stderr: '' },
       'signal SIGTERM: npm printed no error message',
     ],
-    [{ status: 1, stderr: 'Access denied' }, 'exit status 1: Access denied'],
+    // Only npm's own error lines print: other standard error never does.
+    [
+      { status: 1, stderr: 'Access denied\nGITHUB_TOKEN=ghp_notprinted' },
+      'exit status 1: npm printed no error message',
+    ],
     [
       {
         status: 1,
@@ -198,7 +203,7 @@ describe('registry release integrity', async () => {
       'E401: Unable to authenticate',
     ],
   ])('summarizes npm failure %j', (result, summary) => {
-    expect(npmFailureSummary(result)).toBe(summary);
+    expect(npmFailureSummary(result, {})).toBe(summary);
   });
 
   it('reports each failed registry read and the last npm error, without credentials', async () => {
@@ -222,5 +227,117 @@ describe('registry release integrity', async () => {
       'Registry read 2 of 2 failed: E401: 401 Unauthorized',
     ]);
     expect(JSON.stringify(log.mock.calls)).not.toContain(fakeNpmToken);
+  });
+
+  // review-127 H1: every shape the reviewer's fuzz found must redact.
+  const S = 'S3cr3tValue9f8e7d6c5b4a';
+  it.each([
+    [
+      'URL credentials',
+      `npm error code E401\nnpm error 401 Unauthorized - PUT https://ci-user:${S}@registry.npmjs.org/@bobsled-inc%2fbobsled-core`,
+    ],
+    [
+      'JSON-only stdout',
+      { stdout: JSON.stringify({ error: { code: 'E403', summary: `token ${S} not allowed` } }) },
+    ],
+    ['token colon', `npm error code EOTP\nnpm error token: ${S}`],
+    [
+      'UUID token',
+      'npm error code E401\nnpm error Incorrect or missing password for token 1f2e3d4c-5b6a-7980-a1b2-c3d4e5f6a7b8',
+    ],
+    [
+      'short-header JWT',
+      `npm error code EOIDC\nnpm error id token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZXBvOmJvYnNsZWQifQ.${S}abcdef`,
+    ],
+    [
+      'OIDC exchange JSON',
+      `npm error code E400\nnpm error OIDC token exchange failed: {"token":"${S}"}`,
+    ],
+    [
+      'environment dump without npm prefix',
+      `some warning\nNODE_AUTH_TOKEN=${S}\nGITHUB_TOKEN=${S}\nACTIONS_ID_TOKEN_REQUEST_TOKEN=${S}\nmore`,
+    ],
+    ['cookie', `npm error code E401\nnpm error set-cookie: session=${S}`],
+    ['token header', `npm error code E401\nnpm error x-npm-token ${S}`],
+    [
+      'WWW-Authenticate echo',
+      `npm error code E401\nnpm error 401 Unauthorized: Bearer realm="npm" token="${S}"`,
+    ],
+    ['password=', `npm error code E401\nnpm error password=${S}`],
+    ['GitHub token', `npm error code E403\nnpm error ghs_${S}abcdefgh12345`],
+    [
+      'token past the line cap',
+      `npm error code E401\nnpm error ${'x'.repeat(290)} npm_${'A'.repeat(36)}`,
+    ],
+    [
+      'spawn error message',
+      {
+        error: Object.assign(new Error(`spawnSync npm ETIMEDOUT token=${S}`), {
+          code: 'ETIMEDOUT',
+        }),
+      },
+    ],
+    ['spaced _authToken', `npm error //registry.npmjs.org/:_authToken = ${S}`],
+    ['tab-separated _authToken', `npm error code E401\nnpm error\t_authToken\t${S}`],
+    [
+      'npmrc path with token',
+      `npm error code E401\nnpm error config file /home/runner/work/_temp/.npmrc has //registry.npmjs.org/:_authToken=${S}`,
+    ],
+    [
+      'sigstore subject token',
+      `npm error code E422\nnpm error Error verifying sigstore provenance bundle: subject token ${S}`,
+    ],
+  ])('redacts %s', (_name, input) => {
+    const result =
+      typeof input === 'string'
+        ? { status: 1, stderr: input, stdout: '' }
+        : { status: 1, stderr: '', stdout: '', ...input };
+    const summary = npmFailureSummary(result, {});
+    for (const secret of [S, `npm_${'A'.repeat(10)}`, '1f2e3d4c-5b6a'])
+      expect(summary).not.toContain(secret);
+  });
+
+  it('replaces secret-named environment values literally, even in plain words', () => {
+    const env = {
+      ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'plainwordsecret',
+      NPM_READ_TOKEN: 'readonly',
+      SOME_API_KEY: 'kiwi',
+      CHILD_SESSION: '1',
+      HOME: '/home/runner',
+    };
+    const summary = npmFailureSummary(
+      {
+        status: 1,
+        stderr:
+          'npm error code E401\nnpm error got plainwordsecret and readonly for kiwi at 401\n' +
+          `npm error ${READ_AUTH_NPMRC}`,
+      },
+      env
+    );
+    expect(summary).toBe('E401: got [REDACTED] and [REDACTED] for [REDACTED] at 401');
+  });
+
+  it('never prints a random secret placed anywhere in recorded npm output', () => {
+    const recorded = [
+      'npm error code E404\nnpm error 404 Not Found - PUT https://registry.npmjs.org/@bobsled-inc%2fbobsled-core-preview - Not found\nnpm error 404\nnpm error 404  The requested resource could not be found or you do not have permission to access it.\nnpm error A complete log of this run can be found in: /home/runner/.npm/_logs/debug-0.log',
+      'npm error code E403\nnpm error 403 403 Forbidden - PUT https://registry.npmjs.org/@bobsled-inc%2fbobsled-core - You may not perform that action with these credentials.',
+      'npm error code ENEEDAUTH\nnpm error need auth This command requires you to be logged in to https://registry.npmjs.org/',
+      'npm notice Publishing to https://registry.npmjs.org/ with tag preview and restricted access\nnpm error code E422\nnpm error 422 Unprocessable Entity - PUT https://registry.npmjs.org/@bobsled-inc%2fbobsled-core-preview - Error verifying sigstore provenance bundle',
+    ];
+    // Deterministic generator, so a failure reproduces.
+    let seed = 127;
+    const random = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let trial = 0; trial < 500; trial += 1) {
+      const chars = Array.from({ length: 30 }, () => alphabet[Math.floor(random() * 62)]);
+      const secret = `${chars.join('')}a7`;
+      const text = recorded[trial % recorded.length];
+      const at = Math.floor(random() * (text.length + 1));
+      const stderr = `${text.slice(0, at)}${secret}${text.slice(at)}`;
+      expect(npmFailureSummary({ status: 1, stderr }, {})).not.toContain(secret);
+    }
   });
 });
