@@ -101,7 +101,7 @@ try {
       installDir,
       'node_modules',
       '@bobsled-inc',
-      'dogsled',
+      'bobsled-core',
       'node_modules',
       '@bobsled-inc',
       'ai',
