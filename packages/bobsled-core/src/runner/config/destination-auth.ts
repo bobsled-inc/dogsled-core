@@ -11,7 +11,7 @@ export function validateDatabricksDestinationAuth(
     const oauthSecret = destination.oauth_client_secret !== undefined;
     if (pat === (oauthId && oauthSecret) || oauthId !== oauthSecret) {
       issues.push({
-        path: `dogsled.yml:destinations.${name}`,
+        path: `bobsled.yml:destinations.${name}`,
         message: 'Databricks destination requires exactly one PAT or OAuth M2M credential mode',
       });
     }

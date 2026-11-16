@@ -140,7 +140,7 @@ tables, prefixed by the resource name:
 ### Step 3 — (optional) Embeddings
 
 Add an `embedding:` block under the resource's `source:` and declare a matching
-model role under `platform.models` in `dogsled.yml`. When a pipeline runs with an
+model role under `platform.models` in `bobsled.yml`. When a pipeline runs with an
 embedding, Dogsled auto-chains `extract → embed → load`, adding a
 `text_embedding` vector column to `<resource>__chunks`.
 
@@ -153,7 +153,7 @@ embedding:
 ```
 
 ```yaml
-# dogsled.yml
+# bobsled.yml
 platform:
   models:
     default_embedding_v1:
@@ -185,7 +185,7 @@ dogsled examples init s3-documents-ingestion
 
 ## Managed destinations
 
-A destination with `type: dogsled_managed` uses `dogsled_connection_ref` to name a
+A destination with `type: bobsled_managed` uses `bobsled_connection_ref` to name a
 connection supplied by an orchestrator. Core validates these fields but cannot
 load into a managed destination. For local execution, use a concrete destination
 such as DuckDB or BigQuery. Author the `documents` resource and optional `embedding:`
@@ -207,4 +207,4 @@ resolving entities (`entity-resolution`), point construction at these chunks.
 - Every credential is env indirection (`${{ env.X }}` / `*_env`) — no raw secrets, no literal bucket.
 - The resource sets `source.format: document`, a provider-relative `source.path` glob, `parse.formats`, and `chunk` settings; `integration:` matches the integration `name`.
 - Use `on_error: record` when the user wants a `__parse_errors` table instead of a hard run failure.
-- Embeddings: `source.embedding.role` matches a `platform.models` role declared in `dogsled.yml`.
+- Embeddings: `source.embedding.role` matches a `platform.models` role declared in `bobsled.yml`.

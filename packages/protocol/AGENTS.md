@@ -32,7 +32,7 @@ package instead of a connection runtime.
 | `EnvPlaceholderSchema`                           | Require `$VARNAME` or `${{ env.VARNAME }}` for secret-valued configuration                                     |
 | `ModelConnectionSchema` / `PlatformConfigSchema` | Validate shared model roles and platform metadata without loading connection drivers                           |
 | `validateSqlIdentifier` / `isValidSqlIdentifier` | Validate unquoted identifiers, optionally dot-qualified; bind SQL values separately                            |
-| `isValidStreamSubfolder`                         | Validate the folder a file destination adds inside each stream's folder; the loader and `dogsled.yml` share it |
+| `isValidStreamSubfolder`                         | Validate the folder a file destination adds inside each stream's folder; the loader and `bobsled.yml` share it |
 
 ## Protocol Rules
 

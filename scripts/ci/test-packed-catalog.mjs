@@ -207,12 +207,12 @@ function writeProject(name, source, resources, via) {
   const projectRoot = path.join(process.cwd(), name);
   mkdirSync(projectRoot);
   writeFileSync(
-    path.join(projectRoot, 'dogsled.yml'),
+    path.join(projectRoot, 'bobsled.yml'),
     [
       'destinations:',
       '  managed:',
-      '    type: dogsled_managed',
-      '    dogsled_connection_ref: dogsled-managed',
+      '    type: bobsled_managed',
+      '    bobsled_connection_ref: dogsled-managed',
       'pipelines:',
       '  managed_sync:',
       '    schedule: manual',
@@ -304,7 +304,7 @@ async function assertValidationFailure(projectRoot, expectedFragment) {
 // importing the manifest API would miss a later lazy runtime dependency.
 const ossieRoot = path.join(process.cwd(), 'ossie-project');
 mkdirSync(ossieRoot);
-writeFileSync(path.join(ossieRoot, 'dogsled.yml'), [
+writeFileSync(path.join(ossieRoot, 'bobsled.yml'), [
   'destinations:',
   '  warehouse:',
   '    type: duckdb',
@@ -328,12 +328,12 @@ const ossieDocument = {
       name: 'order_id',
       expression: { dialects: [{ dialect: 'ANSI_SQL', expression: 'order_id' }] },
       custom_extensions: [{
-        vendor_name: 'DOGSLED',
+        vendor_name: 'BOBSLED',
         data: JSON.stringify({ build_expression: 'order_id' }),
       }],
     }],
     custom_extensions: [{
-      vendor_name: 'DOGSLED',
+      vendor_name: 'BOBSLED',
       data: JSON.stringify({
         extension_version: '1',
         kind: 'derived',

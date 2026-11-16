@@ -38,9 +38,9 @@ describe('state', () => {
     });
 
     it('throws CommandError exit 2 on corrupted JSON', () => {
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         'not json',
         'utf-8'
       );
@@ -54,9 +54,9 @@ describe('state', () => {
     });
 
     it('throws CommandError exit 2 on invalid schema', () => {
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         JSON.stringify({ models: { bad: { unexpectedField: true } } }),
         'utf-8'
       );
@@ -423,9 +423,9 @@ describe('state', () => {
           },
         },
       });
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         fileContent,
         'utf-8'
       );
@@ -449,9 +449,9 @@ describe('state', () => {
           },
         },
       });
-      fs.mkdirSync(path.join(tmpDir, '.dogsled/model-spec'), { recursive: true });
+      fs.mkdirSync(path.join(tmpDir, '.bobsled/model-spec'), { recursive: true });
       fs.writeFileSync(
-        path.join(tmpDir, '.dogsled/model-spec', 'run-state.json'),
+        path.join(tmpDir, '.bobsled/model-spec', 'run-state.json'),
         fileContent,
         'utf-8'
       );

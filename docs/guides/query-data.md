@@ -10,7 +10,7 @@ run verified queries by name. The examples continue the `shop` project from
 
 ```bash
 dogsled query "SELECT customer, total_amount FROM analytics.customer_revenue ORDER BY total_amount DESC" \
-  --db-path .dogsled/dogsled.duckdb
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -107,7 +107,7 @@ fetched 10 records and stored them (`action=materialized`).
 - `extract` never calls the API. It reads the table that a pipeline already loaded
   into the destination, and fails if the table is missing.
 
-Lazy sources are stored in the destination named in `.dogsled/config.yml`:
+Lazy sources are stored in the destination named in `.bobsled/config.yml`:
 DuckDB, DuckLake, Snowflake or BigQuery. `dogsled init` writes this file and uses the
 `bronze` schema.
 

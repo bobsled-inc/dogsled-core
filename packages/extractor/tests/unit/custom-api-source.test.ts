@@ -42,9 +42,9 @@ describe('custom_api SourceSchema', () => {
     expect(parsed.transports[0]?.type).toBe('http');
   });
 
-  it('strips the dogsled_source_kind orchestrator marker', () => {
-    const parsed = SourceSchema.parse(customApiSource({ dogsled_source_kind: 'custom_api' }));
-    expect('dogsled_source_kind' in parsed).toBe(false);
+  it('strips the bobsled_source_kind orchestrator marker', () => {
+    const parsed = SourceSchema.parse(customApiSource({ bobsled_source_kind: 'custom_api' }));
+    expect('bobsled_source_kind' in parsed).toBe(false);
     expect(parsed.source_type).toBe('custom_api');
   });
 

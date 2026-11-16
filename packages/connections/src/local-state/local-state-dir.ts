@@ -6,9 +6,9 @@ import * as path from 'node:path';
 import { LEGACY_LOCAL_DATABASE_FILES, LEGACY_LOCAL_STATE_DIRS } from './legacy-names.js';
 
 /** The project's local state folder (settings, local data, run state). */
-export const LOCAL_STATE_DIR = '.dogsled';
+export const LOCAL_STATE_DIR = '.bobsled';
 /** The default local DuckDB file inside it. */
-export const LOCAL_DATABASE_FILE = 'dogsled.duckdb';
+export const LOCAL_DATABASE_FILE = 'bobsled.duckdb';
 
 const NEXT_CONFIG = 'config.yml.takeover';
 const JOURNAL = '.takeover.json';
@@ -87,7 +87,7 @@ const realpath = (file: string) => {
 
 /**
  * The name of the project's local state folder. Before `prepareLocalStateDir` ran for this
- * project, an earlier folder (for example `.dogsled/` once Core uses `.bobsled/`) is read in
+ * project, an earlier folder (for example `.bobsled/` once Core uses `.bobsled/`) is read in
  * place.
  */
 export function localStateDirName(projectRoot: string): string {
@@ -408,7 +408,7 @@ const modified = (dir: string) => {
 };
 
 /**
- * Takes over an earlier local state folder once (`.dogsled/` once Core uses `.bobsled/`), with
+ * Takes over an earlier local state folder once (`.bobsled/` once Core uses `.bobsled/`), with
  * a notice. Only Core's own state at this project root moves: a folder without Core's state, one
  * that project files name in a path, or one another process is using stays where it is and is
  * read in place. Under a lock: settings and the lake catalog's data path are prepared, the folder

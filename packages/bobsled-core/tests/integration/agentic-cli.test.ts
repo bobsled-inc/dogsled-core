@@ -159,7 +159,7 @@ beforeEach(async () => {
   project = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-agentic-cli-'));
   for (const name of [
     'model-spec.yml',
-    'dogsled.yml',
+    'bobsled.yml',
     'models',
     'sources',
     'integrations',

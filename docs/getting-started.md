@@ -40,9 +40,9 @@ npx dogsled init shop --duckdb
 cd shop
 ```
 
-`init` creates a project folder with a `dogsled.yml`, a `.dogsled/` folder for local
+`init` creates a project folder with a `bobsled.yml`, a `.bobsled/` folder for local
 settings and data, and empty `integrations/` and `sources/` folders. `--duckdb`
-makes a single DuckDB file, `.dogsled/dogsled.duckdb`, the default destination.
+makes a single DuckDB file, `.bobsled/bobsled.duckdb`, the default destination.
 Without the flag, Dogsled uses a [DuckLake](https://ducklake.select/) catalog.
 
 ## Add some data
@@ -116,7 +116,7 @@ into the other:
 
 ```bash
 npx dogsled extract run --integration local_files orders --log-format pretty \
-  | npx dogsled load run --dest duckdb --db-path .dogsled/dogsled.duckdb --target-schema raw
+  | npx dogsled load run --dest duckdb --db-path .bobsled/bobsled.duckdb --target-schema raw
 ```
 
 ```text
@@ -137,7 +137,7 @@ Query the new `raw.orders` table:
 
 ```bash
 npx dogsled query "SELECT order_id, customer, amount FROM raw.orders ORDER BY order_id" \
-  --db-path .dogsled/dogsled.duckdb
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -170,7 +170,7 @@ connection:
   schema: analytics
 auth:
   type: file
-  path: .dogsled/dogsled.duckdb
+  path: .bobsled/bobsled.duckdb
 ```
 
 Create `sources/orders.yml`. Sources and models use `spec_version: '0.2'`, while
@@ -238,7 +238,7 @@ Query the model:
 
 ```bash
 npx dogsled query "SELECT * FROM analytics.customer_revenue ORDER BY total_amount DESC" \
-  --db-path .dogsled/dogsled.duckdb
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -297,9 +297,9 @@ Extract, load and query it the same way:
 ```bash
 npx dogsled extract validate jsonplaceholder
 npx dogsled extract run --integration jsonplaceholder users --quiet \
-  | npx dogsled load run --dest duckdb --db-path .dogsled/dogsled.duckdb --target-schema raw
+  | npx dogsled load run --dest duckdb --db-path .bobsled/bobsled.duckdb --target-schema raw
 npx dogsled query "SELECT id, name, city FROM raw.users ORDER BY id LIMIT 3" \
-  --db-path .dogsled/dogsled.duckdb
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -323,8 +323,8 @@ npx dogsled doctor
 
 ```text
 shop/
-  dogsled.yml                     project settings
-  .dogsled/dogsled.duckdb         the local warehouse
+  bobsled.yml                     project settings
+  .bobsled/bobsled.duckdb         the local warehouse
   data/orders.csv                 the CSV source data
   integrations/local_files.yml    file integration
   integrations/jsonplaceholder.yml  HTTP integration
@@ -342,4 +342,4 @@ shop/
 - [Use library integrations](guides/use-library-integrations.md) starts from one of 83 ready-made integrations.
 - [Load data](guides/load-data.md) moves the same pipeline to Postgres, Snowflake or BigQuery.
 - [Build models](guides/build-models.md) covers views, incremental models, seeds and tests.
-- [Run pipelines](guides/run-pipelines.md) puts extract and load into `dogsled.yml`.
+- [Run pipelines](guides/run-pipelines.md) puts extract and load into `bobsled.yml`.

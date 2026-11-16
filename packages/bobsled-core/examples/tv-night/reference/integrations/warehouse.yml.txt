@@ -6,4 +6,4 @@ connection:
   schema: analytics
 auth:
   type: file
-  path: .dogsled/dogsled.duckdb
+  path: .bobsled/bobsled.duckdb

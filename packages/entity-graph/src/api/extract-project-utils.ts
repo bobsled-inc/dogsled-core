@@ -118,7 +118,7 @@ function findBobsledConfigs(startDir: string): string[] {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
   while (dir !== root) {
-    const found = [...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])]
+    const found = [...new Set(['bobsled.yml', 'bobsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS])]
       .map((name) => path.join(dir, name))
       .filter((candidate) => fs.existsSync(candidate));
     if (found.length) return found;
@@ -155,7 +155,7 @@ export function loadPlatformResolution(cwd: string): PlatformResolution {
   const parsed = PlatformConfigSchema.safeParse(platformRaw);
   if (!parsed.success) {
     throw new CommandError(
-      `Invalid dogsled.yml platform block:\n${formatPlatformIssues(parsed.error)}`,
+      `Invalid bobsled.yml platform block:\n${formatPlatformIssues(parsed.error)}`,
       2
     );
   }

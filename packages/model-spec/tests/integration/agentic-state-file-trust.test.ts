@@ -241,7 +241,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     await session.release();
     const file = join(
       project,
-      `.dogsled/model-spec/agentic-state/run-${digestAgenticState(map.key)}.duckdb`
+      `.bobsled/model-spec/agentic-state/run-${digestAgenticState(map.key)}.duckdb`
     );
     await sql(file, [
       'DROP TABLE __dogsled_agentic_runs',
@@ -258,7 +258,7 @@ describe.skipIf(!(await isDuckDbAvailable()))('agentic DuckDB state files', () =
     await session.release();
     const file = join(
       project,
-      `.dogsled/model-spec/agentic-state/run-${digestAgenticState(map.key)}.duckdb`
+      `.bobsled/model-spec/agentic-state/run-${digestAgenticState(map.key)}.duckdb`
     );
     await sql(file, [
       'DROP TABLE __dogsled_agentic_runs',

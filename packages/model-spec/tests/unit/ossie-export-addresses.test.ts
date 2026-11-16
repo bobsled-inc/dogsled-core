@@ -141,7 +141,7 @@ it('keeps ephemeral references project-local and resolves configured schema vari
       { path: 'e.yml', document: ephemeral },
       { path: 'p.yml', document: persisted },
     ])
-  ).toEqual({ temporary: 'dogsled://models/temporary', orders: 'configured.orders' });
+  ).toEqual({ temporary: 'bobsled://models/temporary', orders: 'configured.orders' });
 });
 it('fails without project integration bindings instead of guessing an address', async () => {
   const derived = model();
@@ -245,7 +245,7 @@ it('writes the default 0.1.1 CLI profile to one requested file', async () => {
   const content = readFileSync(output, 'utf8');
   expect(content).toContain('version: 0.1.1');
   expect(content).toContain('semantic_model:');
-  expect(content).not.toContain('DOGSLED');
+  expect(content).not.toContain('BOBSLED');
 });
 
 it('keeps a strict CLI export as a preview when conversion reports warnings', async () => {
@@ -308,7 +308,7 @@ it('uses a project-local reference for a live model', async () => {
     { path: 'orders.yml', document: derived },
   ];
   const addresses = await resolveOssieExportAddresses(root, index, inputs);
-  expect(addresses).toEqual({ orders: 'dogsled://models/orders' });
+  expect(addresses).toEqual({ orders: 'bobsled://models/orders' });
   const exported = exportOssieDocuments(inputs, { addresses });
   expect(exported.diagnostics).toEqual([]);
   const imported = importOssieDocument(exported.files[0]!.document, { sourcePath: 'live.yml' });

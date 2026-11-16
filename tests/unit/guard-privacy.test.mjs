@@ -458,7 +458,7 @@ describe('hosted-consumer-wording', () => {
     'agent host',
     'Lakehouse storage formats',
     'Dogsled Cloud',
-    'dogsled_managed',
+    'bobsled_managed',
   ])('allows neutral wording and documented hooks: %s', (text) =>
     expect(countMatches(text)['hosted-consumer-wording']).toBe(0)
   );

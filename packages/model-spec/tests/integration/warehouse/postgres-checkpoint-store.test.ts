@@ -188,7 +188,7 @@ describe.skipIf(
       stateStore: createWarehouseCheckpointStore(integration, { schema }),
     });
     expect(f.host.executeAgent).not.toHaveBeenCalled();
-    await expect(access(join(directory, '.dogsled/model-spec'))).rejects.toMatchObject({
+    await expect(access(join(directory, '.bobsled/model-spec'))).rejects.toMatchObject({
       code: 'ENOENT',
     });
   });

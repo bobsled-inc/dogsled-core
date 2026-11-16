@@ -36,14 +36,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Resolve dogsled CLI — prefer local build, fall back to global
 if [ -x "$SCRIPT_DIR/dogsled" ]; then
-  DOGSLED="$SCRIPT_DIR/dogsled"
+  BOBSLED="$SCRIPT_DIR/dogsled"
 elif [ -x "$SCRIPT_DIR/../../bin/cli.mjs" ]; then
-  DOGSLED="$SCRIPT_DIR/../../bin/cli.mjs"
+  BOBSLED="$SCRIPT_DIR/../../bin/cli.mjs"
 elif command -v bobsled >/dev/null 2>&1; then
-  DOGSLED="bobsled"
+  BOBSLED="bobsled"
 elif npx --no-install bobsled --version >/dev/null 2>&1; then
   run_bobsled_with_npx() { npx --no-install bobsled "$@"; }
-  DOGSLED="run_bobsled_with_npx"
+  BOBSLED="run_bobsled_with_npx"
 else
   echo "Error: dogsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder."
   exit 1
@@ -187,7 +187,7 @@ query() {
   echo -e "  ${MAGENTA}SQL:${RESET} ${DIM}${sql}${RESET}"
   echo -e "  ${GREEN}Result:${RESET}"
   set_dest_args
-  "$DOGSLED" load query "${DEST_ARGS[@]}" "$sql" 2>/dev/null | sed 's/^/    /'
+  "$BOBSLED" load query "${DEST_ARGS[@]}" "$sql" 2>/dev/null | sed 's/^/    /'
   echo ""
 }
 
@@ -333,7 +333,7 @@ if [ "$MODE" = "synthetic" ]; then
   show_command "dogsled load check $(dest_flags_for_display)"
   echo ""
   set_dest_args
-  "$DOGSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
+  "$BOBSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
   echo ""
 
   # ── Append ──
@@ -370,7 +370,7 @@ if [ "$MODE" = "synthetic" ]; then
   show_command "echo '<protocol>' | dogsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
   echo ""
   set_dest_args
-  echo "$APPEND_INPUT" | "$DOGSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
+  echo "$APPEND_INPUT" | "$BOBSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
   echo ""
 
   ISSUES=$(qualify "issues")
@@ -394,7 +394,7 @@ if [ "$MODE" = "synthetic" ]; then
   echo ""
   echo -e "  ${DIM}Running loader...${RESET}"
   set_dest_args
-  echo "$MERGE_INPUT" | "$DOGSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
+  echo "$MERGE_INPUT" | "$BOBSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
   echo ""
 
   query "SELECT id, title, status, priority FROM ${ISSUES} ORDER BY id"
@@ -417,7 +417,7 @@ if [ "$MODE" = "synthetic" ]; then
   show_command "echo '<protocol>' | dogsled load run $(dest_flags_for_display) --log-format ${LOG_FORMAT}"
   echo ""
   set_dest_args
-  echo "$STALE_INPUT" | "$DOGSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
+  echo "$STALE_INPUT" | "$BOBSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
   echo ""
 
   query "SELECT id, title, status, _time_extracted FROM ${ISSUES} WHERE id = 2"
@@ -436,7 +436,7 @@ if [ "$MODE" = "synthetic" ]; then
 
   echo -e "  ${DIM}Running loader...${RESET}"
   set_dest_args
-  echo "$REFRESH_INPUT" | "$DOGSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
+  echo "$REFRESH_INPUT" | "$BOBSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
   echo ""
 
   query "SELECT id, title, status, priority FROM ${ISSUES} ORDER BY id"
@@ -458,7 +458,7 @@ if [ "$MODE" = "synthetic" ]; then
 
   echo -e "  ${DIM}Running loader with new 'assignee' column...${RESET}"
   set_dest_args
-  echo "$EVOLVE_INPUT" | "$DOGSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
+  echo "$EVOLVE_INPUT" | "$BOBSLED" load run "${DEST_ARGS[@]}" --log-format "$LOG_FORMAT" 2>&1 | sed 's/^/  /'
   echo ""
 
   query "SELECT id, title, assignee FROM ${ISSUES} ORDER BY id"
@@ -577,7 +577,7 @@ if [ "$MODE" = "notion" ]; then
   show_command "dogsled load check $(dest_flags_for_display)"
   echo ""
   set_dest_args
-  "$DOGSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
+  "$BOBSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
   echo ""
 
   # ── Step 2: Extract users ──
@@ -594,7 +594,7 @@ if [ "$MODE" = "notion" ]; then
   show_command "$cmd"
   echo ""
 
-  if "$DOGSLED" pipeline \
+  if "$BOBSLED" pipeline \
       --integration notion \
       "${DEST_ARGS[@]}" \
       --log-format "$PIPE_FMT" \
@@ -617,7 +617,7 @@ if [ "$MODE" = "notion" ]; then
   show_command "$cmd"
   echo ""
 
-  if "$DOGSLED" pipeline \
+  if "$BOBSLED" pipeline \
       --integration notion \
       "${DEST_ARGS[@]}" \
       --log-format "$PIPE_FMT" \
@@ -667,7 +667,7 @@ if [ "$MODE" = "notion" ]; then
   show_command "$cmd"
   echo ""
 
-  if "$DOGSLED" pipeline \
+  if "$BOBSLED" pipeline \
       --integration notion \
       "${DEST_ARGS[@]}" \
       --log-format "$PIPE_FMT" \
@@ -791,7 +791,7 @@ step "Check destination connectivity"
 show_command "dogsled load check $(dest_flags_for_display)"
 echo ""
 set_dest_args
-"$DOGSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
+"$BOBSLED" load check "${DEST_ARGS[@]}" 2>&1 | sed 's/^/  /'
 echo ""
 
 # ── Step 2: Run pipeline for each resource ──
@@ -825,7 +825,7 @@ for resource in "${ALL_RESOURCES[@]}"; do
   show_command "$cmd"
   echo ""
 
-  if "$DOGSLED" pipeline \
+  if "$BOBSLED" pipeline \
       --integration "$INTEGRATION" \
       "${DEST_ARGS[@]}" \
       --log-format "$PIPE_FMT" \
@@ -847,15 +847,15 @@ if [ "$DEST" = "duckdb" ]; then
   query "SELECT table_name, estimated_size AS est_rows FROM duckdb_tables() WHERE schema_name = 'main' ORDER BY table_name"
 
   for resource in "${ALL_RESOURCES[@]}"; do
-    table_exists=$("$DOGSLED" load query --db-path "$DB_PATH" "SELECT count(*) as c FROM information_schema.tables WHERE table_schema='main' AND table_name='${resource}'" 2>/dev/null | grep -c "1" || true)
+    table_exists=$("$BOBSLED" load query --db-path "$DB_PATH" "SELECT count(*) as c FROM information_schema.tables WHERE table_schema='main' AND table_name='${resource}'" 2>/dev/null | grep -c "1" || true)
     if [ "$table_exists" -gt 0 ]; then
-      count=$("$DOGSLED" load query --db-path "$DB_PATH" "SELECT count(*) as total FROM main.${resource}" 2>/dev/null | tail -1 | tr -d ' ')
+      count=$("$BOBSLED" load query --db-path "$DB_PATH" "SELECT count(*) as total FROM main.${resource}" 2>/dev/null | tail -1 | tr -d ' ')
       echo -e "  ${BOLD}${resource}${RESET}: ${count} rows"
       echo -e "  ${DIM}Columns:${RESET}"
-      "$DOGSLED" load query --db-path "$DB_PATH" "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='main' AND table_name='${resource}' ORDER BY ordinal_position" 2>/dev/null | sed 's/^/    /'
+      "$BOBSLED" load query --db-path "$DB_PATH" "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='main' AND table_name='${resource}' ORDER BY ordinal_position" 2>/dev/null | sed 's/^/    /'
       echo ""
       echo -e "  ${DIM}Sample (first 3 rows):${RESET}"
-      "$DOGSLED" load query --db-path "$DB_PATH" "SELECT * FROM main.${resource} LIMIT 3" 2>/dev/null | sed 's/^/    /'
+      "$BOBSLED" load query --db-path "$DB_PATH" "SELECT * FROM main.${resource} LIMIT 3" 2>/dev/null | sed 's/^/    /'
       echo ""
     fi
   done

@@ -59,7 +59,8 @@ function readConfig(): SmokeConfig {
   }
 
   const suffix = randomUUID().replaceAll('-', '').slice(0, 10);
-  const datasetId = process.env['BOBSLED_CORE_XWH_BIGQUERY_DATASET'] ?? `track_xwh_smoke_${suffix}`;
+  const datasetId =
+    process.env['BOBSLED_CORE_XWH_BIGQUERY_DATASET'] ?? `bobsled_xwh_smoke_${suffix}`;
   const tableId = `orders_${suffix}`;
   validateBqIdentifier(datasetId, 'BOBSLED_CORE_XWH_BIGQUERY_DATASET');
   validateBqIdentifier(tableId, 'generated BigQuery table');

@@ -1063,17 +1063,17 @@ describe('BobsledConfigSchema — destinations map', () => {
 
 // ---------------------------------------------------------------------------
 // Orchestrator extension keys on destinations (mirrors V2 SourceSchema's
-// reservation of `x-*` and `dogsled_*` prefixes)
+// reservation of `x-*` and `bobsled_*` prefixes)
 // ---------------------------------------------------------------------------
 
 describe('BobsledConfigSchema — destinations orchestrator-extension keys', () => {
-  it('tolerates dogsled_* keys on a destination block', () => {
+  it('tolerates bobsled_* keys on a destination block', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         warehouse: {
           ...bigqueryDestination(),
-          dogsled_connection_ref: 'warehouse-prod',
-          dogsled_destination_kind: 'dogsled_managed',
+          bobsled_connection_ref: 'warehouse-prod',
+          bobsled_destination_kind: 'bobsled_managed',
         },
       },
       pipelines: minimalValidConfig().pipelines,
@@ -1100,7 +1100,7 @@ describe('BobsledConfigSchema — destinations orchestrator-extension keys', () 
       destinations: {
         warehouse: {
           ...bigqueryDestination(),
-          dogsled_connection_ref: 'warehouse-prod',
+          bobsled_connection_ref: 'warehouse-prod',
           'x-orchestrator': 'langsmith',
         },
       },
@@ -1109,7 +1109,7 @@ describe('BobsledConfigSchema — destinations orchestrator-extension keys', () 
     expect(result.success).toBe(true);
     if (result.success) {
       const parsed = result.data.destinations.warehouse;
-      expect(parsed).not.toHaveProperty('dogsled_connection_ref');
+      expect(parsed).not.toHaveProperty('bobsled_connection_ref');
       expect(parsed).not.toHaveProperty('x-orchestrator');
     }
   });
@@ -1162,7 +1162,7 @@ describe('BobsledConfigSchema — destinations orchestrator-extension keys', () 
       destinations: {
         warehouse: {
           ...destination,
-          dogsled_connection_ref: 'some-slug',
+          bobsled_connection_ref: 'some-slug',
           'x-deployment-id': 'dep_abc',
         },
       },
@@ -1181,13 +1181,13 @@ describe('BobsledConfigSchema — destinations orchestrator-extension keys', () 
 // upload time.
 // ---------------------------------------------------------------------------
 
-describe('BobsledConfigSchema — dogsled_managed destination', () => {
-  it('accepts a minimal `dogsled_managed` destination block', () => {
+describe('BobsledConfigSchema — bobsled_managed destination', () => {
+  it('accepts a minimal `bobsled_managed` destination block', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'dogsled_managed',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'bobsled_managed',
         },
       },
       pipelines: {
@@ -1202,12 +1202,12 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       const dest = result.data.destinations['lakehouse'];
-      // Strip helper must short-circuit on `dogsled_*` types so the
+      // Strip helper must short-circuit on `bobsled_*` types so the
       // ref survives parsing — the orchestrator needs it to look up
       // the connection row and expand the block.
       expect(dest).toEqual({
-        type: 'dogsled_managed',
-        dogsled_connection_ref: 'dogsled_managed',
+        type: 'bobsled_managed',
+        bobsled_connection_ref: 'bobsled_managed',
       });
     }
   });
@@ -1215,10 +1215,10 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
   it('rejects the unsupported destination type with a migration hint', () => {
     const result = DestinationSchema.safeParse({
       type: 'bobsled_lakehouse',
-      dogsled_connection_ref: 'warehouse-prod',
+      bobsled_connection_ref: 'warehouse-prod',
     });
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.error.issues[0]?.message).toContain('use dogsled_managed');
+    if (!result.success) expect(result.error.issues[0]?.message).toContain('use bobsled_managed');
   });
 
   it('normalizes and strips the connection alias on concrete destinations', () => {
@@ -1231,12 +1231,12 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     ).toEqual({ type: 'duckdb', db_path: ':memory:' });
   });
 
-  it('preserves dogsled_connection_ref through preprocess (does NOT strip it)', () => {
+  it('preserves bobsled_connection_ref through preprocess (does NOT strip it)', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'andyup-managed-bq',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'andyup-managed-bq',
         },
       },
       pipelines: {
@@ -1251,17 +1251,17 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.destinations['lakehouse']).toHaveProperty(
-        'dogsled_connection_ref',
+        'bobsled_connection_ref',
         'andyup-managed-bq'
       );
     }
   });
 
-  it('rejects when dogsled_connection_ref is missing', () => {
+  it('rejects when bobsled_connection_ref is missing', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
+          type: 'bobsled_managed',
         },
       },
       pipelines: {
@@ -1278,17 +1278,17 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
 
   it.each([
     ['whitespace', '   '],
-    ['leading hyphen', '-dogsled_managed'],
+    ['leading hyphen', '-bobsled_managed'],
     ['trailing underscore', 'bobsled_managed_'],
     ['uppercase', 'Bobsled_Managed'],
     ['double separator', 'dogsled--managed'],
     ['special char', 'dogsled.managed'],
-  ])('rejects dogsled_connection_ref with %s', (_label, ref) => {
+  ])('rejects bobsled_connection_ref with %s', (_label, ref) => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: ref,
+          type: 'bobsled_managed',
+          bobsled_connection_ref: ref,
         },
       },
       pipelines: {
@@ -1305,7 +1305,7 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
 
   it.each([
     ['kebab-case', 'bobsled-managed'],
-    ['snake_case', 'dogsled_managed'],
+    ['snake_case', 'bobsled_managed'],
     ['mixed separators', 'andyup-prod_bq'],
     ['digits', 'cust-123'],
     ['single char', 'x'],
@@ -1313,8 +1313,8 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: ref,
+          type: 'bobsled_managed',
+          bobsled_connection_ref: ref,
         },
       },
       pipelines: {
@@ -1329,12 +1329,12 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects empty dogsled_connection_ref', () => {
+  it('rejects empty bobsled_connection_ref', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: '',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: '',
         },
       },
       pipelines: {
@@ -1353,9 +1353,9 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'dogsled_managed',
-          // typo of dogsled_connection_ref — not the same field, must
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'bobsled_managed',
+          // typo of bobsled_connection_ref — not the same field, must
           // fail; strict mode on the schema rejects unknown keys.
           bobsled_connecton_ref: 'typo',
         },
@@ -1376,8 +1376,8 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'dogsled_managed',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'bobsled_managed',
           load_strategy: 'full_refresh',
           table_prefix: 'raw_',
         },
@@ -1397,15 +1397,15 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
   it('strips `x-*` extension keys on a managed destination block (still passes strict validation)', () => {
     // Regression: when this branch was first added, the strip helper
     // short-circuited entirely for managed types — preserving
-    // `dogsled_*` correctly but ALSO leaving `x-*` keys in place,
+    // `bobsled_*` correctly but ALSO leaving `x-*` keys in place,
     // which then tripped `.strict()`. The two-axis fix preserves
-    // dogsled_* for managed types only, while always stripping
+    // bobsled_* for managed types only, while always stripping
     // `x-*` (generic OpenAPI extension namespace, ignored by Dogsled).
     const result = BobsledConfigSchema.safeParse({
       destinations: {
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'dogsled_managed',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'bobsled_managed',
           'x-orchestrator': 'langsmith',
           'x-deployment-id': 'dep_abc123',
         },
@@ -1422,9 +1422,9 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       const dest = result.data.destinations['lakehouse'];
-      // dogsled_connection_ref preserved (orchestrator-resolved
+      // bobsled_connection_ref preserved (orchestrator-resolved
       // type's schema) but x-* keys stripped (generic extensions).
-      expect(dest).toHaveProperty('dogsled_connection_ref', 'dogsled_managed');
+      expect(dest).toHaveProperty('bobsled_connection_ref', 'bobsled_managed');
       expect(dest).not.toHaveProperty('x-orchestrator');
       expect(dest).not.toHaveProperty('x-deployment-id');
     }
@@ -1441,8 +1441,8 @@ describe('BobsledConfigSchema — dogsled_managed destination', () => {
           database: 'raw',
         },
         lakehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'dogsled_managed',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'bobsled_managed',
         },
       },
       pipelines: {
@@ -1743,8 +1743,8 @@ describe('BobsledConfigSchema — pipeline type discriminator', () => {
     const accepted = BobsledConfigSchema.safeParse({
       destinations: {
         warehouse: {
-          type: 'dogsled_managed',
-          dogsled_connection_ref: 'warehouse-prod',
+          type: 'bobsled_managed',
+          bobsled_connection_ref: 'warehouse-prod',
         },
       },
       pipelines: {

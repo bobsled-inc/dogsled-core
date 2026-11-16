@@ -1,5 +1,5 @@
 /**
- * Project files for `dogsled.yml` validation and manifest generation.
+ * Project files for `bobsled.yml` validation and manifest generation.
  *
  * One project index serves every check: resources are found by their declared
  * integration and name wherever they live, never by folder or filename. The

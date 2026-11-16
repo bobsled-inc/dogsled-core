@@ -163,7 +163,7 @@ $ dogsled model run customer_event_revenue --secrets secrets.yml
 ✓ [databricks] Published customer_event_revenue (12,345,678 row(s)) in 14m32s; stage=8m12s publish=6m20s format=jsonl substrate=unload-or-stream
 ```
 
-Run state is persisted to `.dogsled/model-spec/run-state.json` under `<publish_handle>.<model_name>` with `lastRunAt`, `publishedSnapshotId`, and `publishedAt`.
+Run state is persisted to `.bobsled/model-spec/run-state.json` under `<publish_handle>.<model_name>` with `lastRunAt`, `publishedSnapshotId`, and `publishedAt`.
 
 ## Runtime Controls
 
@@ -199,7 +199,7 @@ BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS=1     # allow OAuth token endpoint on pri
 - **Concurrency**: do not run two publishes for the same model concurrently. There is no destination lock yet.
 - **Cleanup**: Dogsled drops destination-side `_xwh_stage_*` and `_xwh_result_*` tables in `finally` and removes local streaming temp files on success, failure, SIGINT, and SIGTERM.
 - **Secrets in errors**: resolved secret values with length at least 8 are scrubbed from `onWarn` and `onError` output.
-- **State location**: `.dogsled/model-spec/run-state.json` is per-project state. Commit it only when your deployment workflow intentionally tracks run metadata in Git.
+- **State location**: `.bobsled/model-spec/run-state.json` is per-project state. Commit it only when your deployment workflow intentionally tracks run metadata in Git.
 
 ## See Also
 

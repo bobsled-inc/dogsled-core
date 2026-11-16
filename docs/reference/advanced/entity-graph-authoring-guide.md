@@ -225,7 +225,7 @@ below it as `proposed` (human confirmation), and `defer` as `deferred`.
 `resolve run`'s default behavior never changes — review only happens when you
 invoke it.
 
-Configuration lives in the resolution spec plus a `dogsled.yml` model role:
+Configuration lives in the resolution spec plus a `bobsled.yml` model role:
 
 ```yaml
 # entity-graph/<entity>_resolution.yml
@@ -244,7 +244,7 @@ entity_semantics: # folded into the judge's prompt
   positive_examples: ['Acme Corp ↔ Acme Corporation (same domain)']
   negative_examples: ['Acme US ↔ Acme Japan (regional subsidiaries)']
 
-# dogsled.yml (same directory or any parent)
+# bobsled.yml (same directory or any parent)
 platform:
   models:
     reviewer:

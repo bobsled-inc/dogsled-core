@@ -103,7 +103,7 @@ export const JOURNEYS: Journey[] = [
         title: 'Review and export',
         page: '/pipelines/new?preset=saas-analytics&step=review',
         instruction:
-          'Confirm the generated dogsled.yml and open the export options from the review step.',
+          'Confirm the generated bobsled.yml and open the export options from the review step.',
         pipelinePreset: 'saas-analytics',
       },
       {

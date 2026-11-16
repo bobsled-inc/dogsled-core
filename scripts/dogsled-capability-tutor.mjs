@@ -23,7 +23,7 @@ const c = {
 function parseArgs(argv) {
   const args = {
     cli: process.env.BOBSLED_CORE_CLI ?? 'dogsled',
-    labDir: join(repoRoot, '.dogsled', 'tutor-lab'),
+    labDir: join(repoRoot, '.bobsled', 'tutor-lab'),
     list: false,
     reset: false,
     goto: null,
@@ -165,7 +165,7 @@ const lessons = [
     type: 'note',
     body: [
       'Commands that write files run in the lab directory.',
-      'The default lab is .dogsled/tutor-lab, which is gitignored.',
+      'The default lab is .bobsled/tutor-lab, which is gitignored.',
       'You can change it with --lab-dir ./somewhere-else.',
     ],
   },
@@ -540,7 +540,7 @@ Options:
   --cli <command>      Command used when executing canonical "dogsled ..." steps.
                        Default: BOBSLED_CORE_CLI or dogsled
   --lab-dir <path>    Directory for local DuckDB files and tutor progress.
-                       Default: .dogsled/tutor-lab
+                       Default: .bobsled/tutor-lab
   --list              Print lesson list and exit
   --reset             Clear saved tutor progress before starting
   --goto <n>          Jump to lesson number N (skips prior lessons)

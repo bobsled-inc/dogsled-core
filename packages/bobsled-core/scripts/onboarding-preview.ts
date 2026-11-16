@@ -5,7 +5,7 @@ import { previewScenarios } from './onboarding-preview-fixtures.js';
 import { reviewPage } from './onboarding-preview-page.js';
 
 // Output is a dedicated review folder, never the learner's onboarding artifact.
-const output = resolve(process.argv[2] ?? '.dogsled/ui-review');
+const output = resolve(process.argv[2] ?? '.bobsled/ui-review');
 await mkdir(output, { recursive: true });
 const scenarios = previewScenarios();
 for (const scenario of scenarios) {

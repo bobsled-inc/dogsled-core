@@ -351,7 +351,7 @@ async function buildModelJudge(input: JudgeSelectionInput): Promise<SelectedJudg
     modelClient = await makeClient(policy.legacyModel);
     if (!modelClient) {
       warnings.push(
-        `agent_policy.model '${policy.legacyModel}' is not configured under platform.models in dogsled.yml; no model judge available.`
+        `agent_policy.model '${policy.legacyModel}' is not configured under platform.models in bobsled.yml; no model judge available.`
       );
     } else {
       usageClients.push(modelClient);

@@ -157,9 +157,9 @@ describe('buildDestinationCliArgs — managed destination intent', () => {
   it('rejects an unmaterialized managed destination before building CLI args', () => {
     expect(() =>
       buildDestinationCliArgs({
-        type: 'dogsled_managed',
-        dogsled_connection_ref: 'warehouse-prod',
+        type: 'bobsled_managed',
+        bobsled_connection_ref: 'warehouse-prod',
       })
-    ).toThrow('A "dogsled_managed" destination only runs in Dogsled Cloud.');
+    ).toThrow('A "bobsled_managed" destination only runs in Dogsled Cloud.');
   });
 });

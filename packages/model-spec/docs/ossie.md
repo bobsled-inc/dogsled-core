@@ -6,7 +6,7 @@ metric, and relationship YAML, and verified queries (with `0.2.0.dev0`), for
 editing, validation, compilation, and execution.
 
 Read the [OSI import and export guide](ossie-interchange.md) for the supported
-OSI versions, CLI and SDK commands, DOGSLED extensions, connection mapping,
+OSI versions, CLI and SDK commands, BOBSLED extensions, connection mapping,
 diagnostics, metadata preservation, and export limitations.
 
 ## Move an older raw OSI project file

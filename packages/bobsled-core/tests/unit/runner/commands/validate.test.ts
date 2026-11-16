@@ -60,7 +60,7 @@ describe('registerRunnerValidateCommand', () => {
       })
     );
     vi.mocked(resolveCliBobsledProject).mockImplementation((options) => {
-      const resolved = options.configPath ?? '/tmp/dogsled.yml';
+      const resolved = options.configPath ?? '/tmp/bobsled.yml';
       const projectRoot = options.projectRoot ?? path.dirname(resolved);
       return { projectRoot, configPaths: [resolved] };
     });

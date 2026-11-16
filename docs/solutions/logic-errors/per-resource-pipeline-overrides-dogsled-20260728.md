@@ -16,7 +16,7 @@ tags: [pipeline, resource-overrides, extractor, loader, public-api]
 
 ## Symptom
 
-`dogsled.yml` accepted per-resource `via`, `load_strategy`, `table`, and `inputs`, but the
+`bobsled.yml` accepted per-resource `via`, `load_strategy`, `table`, and `inputs`, but the
 public `runProjectPipeline` path rejected every field except `via`. A library consumer
 would therefore need to parse Dogsled YAML again or invoke lower-level CLI commands to
 avoid dropping valid configuration.

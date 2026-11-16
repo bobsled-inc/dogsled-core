@@ -9,7 +9,7 @@ import type { ApiResourceSpec } from '../types/index.js';
 import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 const BOBSLED_CORE_CONFIG_NAMES = [
-  ...new Set(['dogsled.yml', 'dogsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS]),
+  ...new Set(['bobsled.yml', 'bobsled.yaml', ...ROOT_CONFIG_FILE_SPELLINGS]),
 ];
 const MAX_BOBSLED_CORE_CONFIG_BYTES = 1024 * 1024;
 

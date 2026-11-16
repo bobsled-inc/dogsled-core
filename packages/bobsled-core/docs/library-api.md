@@ -56,8 +56,8 @@ const generated = await generateProjectManifest({ projectRoot: '/srv/project' })
 const persisted = parsePipelineManifest(JSON.parse(await readManifest()));
 ```
 
-`generateProjectManifest` discovers `dogsled.yml`, performs the same full cross-validation used by
-the CLI, resolves extract resources, and emits the canonical v6 `dogsled.pipeline.dag` manifest. The
+`generateProjectManifest` discovers `bobsled.yml`, performs the same full cross-validation used by
+the CLI, resolves extract resources, and emits the canonical v6 `bobsled.pipeline.dag` manifest. The
 default validation catalog is generated at build time and contains no runtime integration YAML or
 execution-package imports, so server and serverless bundlers do not need to trace Dogsled's private
 integration package. Hosts with their own integration registry can inject the same narrow interface:

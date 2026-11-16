@@ -48,7 +48,7 @@ Read only what matches the task:
 
 2. Choose the adoption shape:
    - Keep the old orchestrator and call `dogsled pipeline` when the scheduler must stay in place.
-   - Use `dogsled.yml` and local `dogsled runner run` calls from the existing scheduler.
+   - Use `bobsled.yml` and local `dogsled runner run` calls from the existing scheduler.
    - Use inline resource `extract:` and `load:` blocks for warehouse-to-warehouse jobs.
    - Keep billable extract plans and extract-intents in explicit caller orchestration.
 
@@ -79,7 +79,7 @@ Read only what matches the task:
    - `dogsled model expect run --integration <handle>` to compile `expect:` sentinel SQL
    - `dogsled model expect run --integration <handle> --runner ./runner.js --json` when an executable query runner is available
    - `dogsled clean validate <spec.yml>` and `dogsled clean apply --spec <spec.yml> --dialect <dialect> --json` when cleaning specs are in scope
-   - `dogsled runner validate` for `dogsled.yml`
+   - `dogsled runner validate` for `bobsled.yml`
    - `dogsled runner run <pipeline> --resource <resource>` only after the destination is safe
    - compare counts, schemas, primary keys, representative rows, and translated assertions against the old ETL
 

@@ -39,7 +39,7 @@ export async function doctorSetup(options: {
   });
   const projectRoot = project?.projectRoot ?? path.resolve(options.projectRoot ?? options.cwd);
   const answersPath = resolveSetupAnswersPath(
-    options.answersPath ?? 'dogsled.setup.answers.yml',
+    options.answersPath ?? 'bobsled.setup.answers.yml',
     projectRoot
   );
   const { index } = project ?? { projectRoot };
@@ -50,18 +50,18 @@ export async function doctorSetup(options: {
     checks.push({
       name: 'answers-file',
       status: 'fail',
-      message: 'dogsled.setup.answers.yml is missing.',
+      message: 'bobsled.setup.answers.yml is missing.',
       fix: 'Run `dogsled setup install` or `dogsled setup recommend --write` first.',
     });
     blockers.add('Missing setup answers file');
-    nextActions.add('Create dogsled.setup.answers.yml with `dogsled setup recommend --write`.');
+    nextActions.add('Create bobsled.setup.answers.yml with `dogsled setup recommend --write`.');
   } else {
     const parsed = SetupAnswersSchema.safeParse(parseYaml(readFileSync(answersPath, 'utf-8')));
     if (!parsed.success) {
       checks.push({
         name: 'answers-file',
         status: 'fail',
-        message: 'dogsled.setup.answers.yml is invalid.',
+        message: 'bobsled.setup.answers.yml is invalid.',
         fix: parsed.error.issues
           .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
           .join('; '),
@@ -72,7 +72,7 @@ export async function doctorSetup(options: {
       checks.push({
         name: 'answers-file',
         status: 'pass',
-        message: 'dogsled.setup.answers.yml is present and readable.',
+        message: 'bobsled.setup.answers.yml is present and readable.',
       });
     }
   }
@@ -89,7 +89,7 @@ export async function doctorSetup(options: {
         name: 'goal',
         status: 'fail',
         message: 'No setup goal has been recorded yet.',
-        fix: 'Add goals.summary to dogsled.setup.answers.yml.',
+        fix: 'Add goals.summary to bobsled.setup.answers.yml.',
       });
       blockers.add('Missing setup goal');
     } else {
@@ -146,7 +146,7 @@ export async function doctorSetup(options: {
           message: `Destination field "${field}" still uses a placeholder value.`,
           fix: 'Replace the placeholder with your real destination setting before running pipelines.',
         });
-        nextActions.add('Replace any placeholder destination values in dogsled.setup.answers.yml.');
+        nextActions.add('Replace any placeholder destination values in bobsled.setup.answers.yml.');
       }
     }
   }

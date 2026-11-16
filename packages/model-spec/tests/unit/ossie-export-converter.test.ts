@@ -180,7 +180,7 @@ describe('Ossie export converter', () => {
         },
       ],
     });
-    expect(result.files[0]?.content).not.toContain('DOGSLED');
+    expect(result.files[0]?.content).not.toContain('BOBSLED');
     expect(result.files[0]?.content).not.toContain('datatype:');
     expect(result.files[0]?.content).toContain('vendor_name: DBT');
     expect(result.files[0]?.content).not.toContain('vendor_name: CATALOG');

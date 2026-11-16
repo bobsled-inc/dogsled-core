@@ -38,7 +38,7 @@ function writeBobsledYml(models = true): void {
         `      api_key: $ANTHROPIC_API_KEY`,
       ]
     : [`platform: {}`];
-  fs.writeFileSync(path.join(tmpDir, 'dogsled.yml'), [`version: 1`, ...platform, ``].join('\n'));
+  fs.writeFileSync(path.join(tmpDir, 'bobsled.yml'), [`version: 1`, ...platform, ``].join('\n'));
 }
 
 function makePair(pairId: string): PairContext {

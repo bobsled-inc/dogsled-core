@@ -46,7 +46,7 @@ The `dogsled pipeline` command runs extractor + loader together. It has two exec
 - **Multi-destination fan-out**: extractor stdout is captured once, replayed into multiple loader subprocesses, and extractor state is committed only after every destination succeeds.
 
 A third optional middle stage — the **embedder** — slots between extract and
-load when a `dogsled.yml` pipeline has an `embed:` block. Dogsled spawns the
+load when a `bobsled.yml` pipeline has an `embed:` block. Dogsled spawns the
 embedder subprocess automatically; the extractor pipes through it and each
 loaded record gains `<field>_embedding` (`vector`) columns alongside the
 originals. See "Embed Stage" below.
@@ -85,7 +85,7 @@ dogsled pipeline cost_providers costs dashboards users \
 # Custom input values
 dogsled pipeline repos --integration github --format parquet --input org=bobsled-inc
 
-# Multi-destination fan-out is driven from dogsled.yml via `dogsled runner run`
+# Multi-destination fan-out is driven from bobsled.yml via `dogsled runner run`
 dogsled runner run stripe
 ```
 
@@ -225,7 +225,7 @@ For the multi-destination path, extractor state is deferred until every destinat
 
 ## Embed Stage
 
-When a pipeline has an `embed:` block in `dogsled.yml`, the chain becomes:
+When a pipeline has an `embed:` block in `bobsled.yml`, the chain becomes:
 
 ```text
 dogsled extract ──▶ dogsled embed ──▶ dogsled load
@@ -316,7 +316,7 @@ loaders and any downstream protocol consumer can recover provenance live
 
 ## Multi-Destination Fan-out
 
-Configure fan-out in `dogsled.yml` and run it through the runner:
+Configure fan-out in `bobsled.yml` and run it through the runner:
 
 ```yaml
 destination:
@@ -377,7 +377,7 @@ consumer routed through this compatibility skill receives the complete contract.
 
 ## Pipeline configuration files: orchestration
 
-The root `dogsled.yml` or `dogsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
+The root `bobsled.yml` or `bobsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
 
 An extract pipeline pulls explicitly named resources from one source and loads them into one or more named destinations:
 
@@ -479,7 +479,7 @@ below when the load session needs a non-default warehouse.
 
 ### Managed Snowflake destination warehouse selection
 
-An extract pipeline with one singular `dogsled_managed` destination may select
+An extract pipeline with one singular `bobsled_managed` destination may select
 the Snowflake warehouse used by the destination load session:
 
 ```yaml
@@ -511,7 +511,7 @@ and may resolve to different physical warehouses.
 
 The extractor emits the effective schema policy in each `SCHEMA` message. Choose
 one explicitly before the first write instead of relying on the implicit
-`evolve` default. The policy is a load default, not a `dogsled.yml`
+`evolve` default. The policy is a load default, not a `bobsled.yml`
 `load_strategy` setting.
 
 Set a project-wide policy in `extractor.yml` with `default_load.defaults`:
@@ -715,7 +715,7 @@ Project-local `extractor.yml` normally points at `integrations/`, `resources/`, 
 Project-local resources extend the bundled source catalog one resource at a time. A file under
 `resources/<source>/` overrides a bundled resource with the same declared `name`; bundled siblings
 remain available to discovery, validation, `for_each` dependencies, contextual outputs, and
-`dogsled.yml` resource lists. Adding one local resource never replaces the source's whole bundled
+`bobsled.yml` resource lists. Adding one local resource never replaces the source's whole bundled
 resource tree.
 
 An integration declares one or more transports plus auth. A resource declares one endpoint/tool/query, typed inputs and outputs, extraction mechanics, and table metadata. A representative HTTP resource is:

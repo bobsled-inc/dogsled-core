@@ -15,7 +15,7 @@ The CRM and the billing system both know Ada Labs, with different capitalization
 
 ```bash
 dogsled query "CREATE OR REPLACE TABLE raw.crm_contacts AS SELECT * FROM (VALUES ('c1','Ada Labs','Ada@AdaLabs.example'), ('c2','Grace Corp','ops@grace.example')) t(contact_id, name, email); CREATE OR REPLACE TABLE raw.billing_accounts AS SELECT * FROM (VALUES ('b1','Ada Labs Ltd','ada@adalabs.example '), ('b2','Linus Ltd','billing@linus.example')) t(account_id, name, email); CREATE SCHEMA IF NOT EXISTS entity_graph" \
-  --db-path .dogsled/dogsled.duckdb
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 Declare both tables as sources.
@@ -119,7 +119,7 @@ name:
 dogsled entity-graph resolve validate Customer
 dogsled entity-graph build Customer --runner ./runner.mjs --dialect duckdb --schema entity_graph
 dogsled query "SELECT display_name, source_diversity FROM entity_graph.customer__entity_profile ORDER BY display_name" \
-  --db-path .dogsled/dogsled.duckdb
+  --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -146,7 +146,7 @@ entities merge or split, so that downstream tables can join on it.
 
 ```bash
 ID=$(dogsled query "SELECT entity_id FROM entity_graph.customer__entity_profile WHERE display_name = 'Ada Labs'" \
-  --db-path .dogsled/dogsled.duckdb --yaml | sed -n 's/.*entity_id: //p')
+  --db-path .bobsled/bobsled.duckdb --yaml | sed -n 's/.*entity_id: //p')
 dogsled entity-graph get --entity Customer --id "$ID" \
   --runner ./runner.mjs --dialect duckdb --schema entity_graph --json
 ```

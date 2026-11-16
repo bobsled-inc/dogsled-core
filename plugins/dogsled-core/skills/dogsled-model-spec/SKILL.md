@@ -35,7 +35,7 @@ dogsled model init my-project                           # Scaffold new project
 
 ## Multi-integration projects
 
-Each source pins itself to its owning warehouse via `connection: <handle>`, where the handle matches an `integrations/<handle>.yml` file. A model that joins or unions sources from two different handles is rejected at validation (`CommandError(2)`) — UNLESS the model declares `publish: <handle>` (see "Cross-warehouse publishing" below). `dogsled model run` keeps per-integration state under `<handle>.<model>` keys in `.dogsled/model-spec/run-state.json`; legacy single-handle keys migrate automatically, while leftover unscoped keys in multi-integration projects clear state with a warning and behave as `--full-refresh` on the next run.
+Each source pins itself to its owning warehouse via `connection: <handle>`, where the handle matches an `integrations/<handle>.yml` file. A model that joins or unions sources from two different handles is rejected at validation (`CommandError(2)`) — UNLESS the model declares `publish: <handle>` (see "Cross-warehouse publishing" below). `dogsled model run` keeps per-integration state under `<handle>.<model>` keys in `.bobsled/model-spec/run-state.json`; legacy single-handle keys migrate automatically, while leftover unscoped keys in multi-integration projects clear state with a warning and behave as `--full-refresh` on the next run.
 
 ## Cross-warehouse publishing (`publish:`)
 
@@ -410,7 +410,7 @@ If a bare ref doesn't match a model but matches some source's tail name, the com
 
 ## Pipelines (extract vs models)
 
-Dogsled pipelines are declared per-project in `dogsled.yml` (or equivalent). Two pipeline kinds:
+Dogsled pipelines are declared per-project in `bobsled.yml` (or equivalent). Two pipeline kinds:
 
 ```yaml
 pipelines:

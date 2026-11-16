@@ -37,7 +37,7 @@ Dogsled is a YAML-driven data engineering toolkit with:
 - **Extract**: Pull data from 81+ API integrations using YAML specs with automatic pagination, incremental sync, rate limiting, and SSRF protection
 - **Load**: Push data to 9 destinations (DuckDB, BigQuery, Snowflake, PostgreSQL, ClickHouse, Turbopuffer, local files, S3, GCS) with schema evolution, merge strategies, and batched writes
 - **Model**: SQL-based data transformation with multi-dialect compilation (DuckDB, BigQuery, Snowflake, PostgreSQL) using source → staging → mart DAG patterns
-- **Pipeline**: Composed extract + load in a single command with schedule configuration via dogsled.yml
+- **Pipeline**: Composed extract + load in a single command with schedule configuration via bobsled.yml
 - **Entity Graph**: Entity resolution with standardization, blocking, scoring, threshold-based matching, human review routing, and survivorship rules
 
 ## Available Integrations (${integrations.length} total)
@@ -80,7 +80,7 @@ Dogsled uses Dogsled protocol messages for CLI streaming output: SCHEMA (table d
 ## Your Behavior
 - Be concise and helpful. Answer questions about Dogsled directly.
 - When users ask about a specific integration, list its resources and explain what data it provides.
-- When users ask how to build a pipeline, walk them through the steps: choose integration → select resources → pick destination → configure schedule → export dogsled.yml.
+- When users ask how to build a pipeline, walk them through the steps: choose integration → select resources → pick destination → configure schedule → export bobsled.yml.
 - When users ask about models, explain the source → staging → mart pattern.
 - Suggest relevant Dogsled commands when appropriate.
 - You can reference the Explorer UI pages: /integrations, /models, /pipelines, /pipelines/new, /pipelines/new/export, /data, /terminal, /entity-graph, /setup, /settings.

@@ -118,7 +118,7 @@ describe('indexProjectFiles', () => {
 
   it('allows split pipeline configs and reports guide conflicts within one directory', () => {
     const index = indexProjectFiles([
-      { path: 'dogsled.yml', content: 'pipelines: {}\n' },
+      { path: 'bobsled.yml', content: 'pipelines: {}\n' },
       { path: 'shared/pipelines.yml', content: 'type: pipeline_config\npipelines: {}\n' },
       { path: 'model-spec.yml', content: 'models_dir: models\n' },
       { path: 'golf/AGENTS.md', content: '# Golf\n' },
@@ -194,7 +194,7 @@ describe('indexProjectFiles', () => {
 
 describe('index lookups and errors', () => {
   const index = indexProjectFiles([
-    { path: 'dogsled.yml', content: 'pipelines: {}\n' },
+    { path: 'bobsled.yml', content: 'pipelines: {}\n' },
     { path: 'm/b.yml', content: model('b') },
     { path: 'm/a.yml', content: model('a') },
   ]);
@@ -209,7 +209,7 @@ describe('index lookups and errors', () => {
 
   it('returns entries of non-singleton config kinds', () => {
     expect(entriesOfKind(index, 'pipeline_config').map((entry) => entry.path)).toEqual([
-      'dogsled.yml',
+      'bobsled.yml',
     ]);
     expect(singleEntryOfKind(index, 'model_spec_config')).toBeUndefined();
   });
@@ -327,7 +327,7 @@ describe('index lookups and errors', () => {
     ]);
     const link = (index: typeof empty, path: string) =>
       isBlockingProjectIndexIssue(index, { path, code: 'symlink', message: 'x' });
-    expect(link(empty, 'dogsled.yml')).toBe(true);
+    expect(link(empty, 'bobsled.yml')).toBe(true);
     expect(link(empty, 'model-spec.yml')).toBe(true);
     expect(link(empty, 'notes.yml')).toBe(false);
     expect(link(empty, 'models/linked.yml')).toBe(true);

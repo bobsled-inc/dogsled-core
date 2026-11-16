@@ -1,7 +1,7 @@
 # Explorer
 
 Explorer is a local web app for browsing what Dogsled can do: the integration
-library, prebuilt model packages, a pipeline builder that exports `dogsled.yml`, a
+library, prebuilt model packages, a pipeline builder that exports `bobsled.yml`, a
 terminal that runs `dogsled` commands, data previews of local DuckDB files, and the
 entity graph.
 

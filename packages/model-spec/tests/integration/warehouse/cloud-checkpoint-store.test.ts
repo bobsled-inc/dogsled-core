@@ -63,7 +63,7 @@ describe.skipIf(!integrationPath && !schema)('cloud checkpoint store', () => {
         run: { id, scope, mode: 'resume' },
       });
       expect(calls).not.toHaveBeenCalled();
-      await expect(access(join(directory, '.dogsled/model-spec'))).rejects.toMatchObject({
+      await expect(access(join(directory, '.bobsled/model-spec'))).rejects.toMatchObject({
         code: 'ENOENT',
       });
     } finally {

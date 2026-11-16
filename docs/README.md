@@ -30,7 +30,7 @@ Extract:
 Load and run:
 
 - [Load data](guides/load-data.md): destinations, load strategies and checks.
-- [Run pipelines](guides/run-pipelines.md): `dogsled.yml`, fan-out and scheduling.
+- [Run pipelines](guides/run-pipelines.md): `bobsled.yml`, fan-out and scheduling.
 - [Run in production](guides/run-in-production.md): GitHub Actions, systemd and
   containers, credentials, incremental state and alerts.
 

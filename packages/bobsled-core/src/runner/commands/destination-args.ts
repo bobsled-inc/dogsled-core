@@ -8,7 +8,7 @@ export const SNOWFLAKE_ACCESS_TOKEN_ENV = 'BOBSLED_CORE_SNOWFLAKE_ACCESS_TOKEN';
 export const SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN_ENV =
   'BOBSLED_CORE_SNOWFLAKE_WORKLOAD_IDENTITY_TOKEN';
 export const MANAGED_DESTINATION_CORE_ERROR =
-  'A "dogsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Dogsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".';
+  'A "bobsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Dogsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".';
 
 export interface SnowflakePipelineAuthOptions {
   workloadIdentityToken?: string;
@@ -306,13 +306,13 @@ function buildRawDestinationCliArgs(
       }
       args.push(...buildFileDestinationCliArgs(destination, resolveValue));
       break;
-    case 'dogsled_managed':
+    case 'bobsled_managed':
       // Orchestrator-resolved intent type — must be expanded into a
       // concrete warehouse-native destination block (e.g. bigquery)
       // before reaching CLI args. Reaching this branch means the
       // host application skipped the expansion step;
       // failing loud here is preferable to producing a `--dest
-      // dogsled_managed` CLI invocation that would later error in
+      // bobsled_managed` CLI invocation that would later error in
       // the loader registry with a vaguer "no loader registered"
       // message.
       throw new CommandError(MANAGED_DESTINATION_CORE_ERROR, 2);

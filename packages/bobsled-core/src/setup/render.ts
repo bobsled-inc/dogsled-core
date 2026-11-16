@@ -171,8 +171,8 @@ Continue Dogsled setup for this repo.
 Please:
 
 - read \`AGENTS.md\`
-- read \`dogsled.setup.answers.yml\`
-- read \`dogsled.setup.summary.md\`
+- read \`bobsled.setup.answers.yml\`
+- read \`bobsled.setup.summary.md\`
 - tell me what is already configured
 - tell me what is still missing
 - finish setup if enough information is available
@@ -183,7 +183,7 @@ function buildTroubleshooting(): string {
   return `# Cowork Troubleshooting
 
 - Run \`dogsled setup doctor\` for a plain-English readiness report.
-- Run \`dogsled runner validate\` if \`dogsled.yml\` changed.
+- Run \`dogsled runner validate\` if \`bobsled.yml\` changed.
 - Never place raw secrets into repo files; store only secret references or placeholders.`;
 }
 
@@ -247,7 +247,7 @@ export async function renderSetupFiles(answersInput: SetupAnswers): Promise<Rend
   }
 
   return [
-    { path: 'dogsled.yml', content: bobsledConfig },
+    { path: 'bobsled.yml', content: bobsledConfig },
     { path: 'README.md', content: buildReadme(recommended.repoName, recommended) + '\n' },
     {
       path: 'AGENTS.md',
@@ -261,8 +261,8 @@ export async function renderSetupFiles(answersInput: SetupAnswers): Promise<Rend
       content: buildSecretChecklist(recommended.credentialRefs) + '\n',
     },
     { path: 'docs/cowork-troubleshooting.md', content: buildTroubleshooting() + '\n' },
-    { path: 'dogsled.setup.answers.yml', content: stringify(normalizedAnswers) },
-    { path: 'dogsled.setup.summary.md', content: buildSummary(recommended) + '\n' },
+    { path: 'bobsled.setup.answers.yml', content: stringify(normalizedAnswers) },
+    { path: 'bobsled.setup.summary.md', content: buildSummary(recommended) + '\n' },
     {
       path: 'dogsled.dashboard.state.json',
       content: buildDashboardState(normalizedAnswers, recommended) + '\n',
@@ -308,7 +308,7 @@ export function installCoworkAssets(targetDir: string): string[] {
       copied.push(path.relative(targetDir, destination));
     }
 
-    const answersPath = path.join(targetDir, 'dogsled.setup.answers.yml');
+    const answersPath = path.join(targetDir, 'bobsled.setup.answers.yml');
     const starter = SetupAnswersSchema.parse({
       project: {
         repo_state: 'new',

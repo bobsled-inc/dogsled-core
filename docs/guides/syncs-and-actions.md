@@ -67,7 +67,7 @@ Without it, the call is made and the result has `"status": "success"`. `--descri
 
 A sync reads new rows from a table or view (a _projection_) in cursor order, maps
 each row to an action's inputs, and calls the action. It keeps a checkpoint, a
-receipt per row and the failed rows under `.dogsled/sync-state/<sync>/`.
+receipt per row and the failed rows under `.bobsled/sync-state/<sync>/`.
 
 The examples use a DuckDB file with a projection of contacts that are ready to
 send:
@@ -144,7 +144,7 @@ nothing, because the checkpoint is past both rows:
 
 ```bash
 dogsled sync run contacts_to_webhook
-cat .dogsled/sync-state/contacts_to_webhook/checkpoint.json
+cat .bobsled/sync-state/contacts_to_webhook/checkpoint.json
 ```
 
 ```text

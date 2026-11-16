@@ -201,7 +201,7 @@ it('uses the same probe input scope for attempts and successful checks', async (
       throw new Error('offline');
     })
   ).rejects.toThrow('offline');
-  await writeFile(join(root, 'dogsled.yml'), 'pipelines: []\n');
+  await writeFile(join(root, 'bobsled.yml'), 'pipelines: []\n');
   expect((await inspectOnboarding(root)).steps.find((s) => s.id === 'connect')?.status).toBe(
     'failed'
   );

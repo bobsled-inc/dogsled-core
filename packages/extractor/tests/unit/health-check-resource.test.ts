@@ -27,10 +27,10 @@ afterEach(() => {
 });
 
 describe('readScopedHealthResource', () => {
-  it('reads the first scoped resource from dogsled.yml for the integration', () => {
+  it('reads the first scoped resource from bobsled.yml for the integration', () => {
     const projectRoot = bobsledTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-health-')));
     fs.writeFileSync(
-      path.join(projectRoot, 'dogsled.yml'),
+      path.join(projectRoot, 'bobsled.yml'),
       [
         'pipelines:',
         '  vantage:',
@@ -48,7 +48,7 @@ describe('readScopedHealthResource', () => {
 
   it('ignores oversized Dogsled configs', () => {
     const projectRoot = bobsledTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-health-')));
-    fs.writeFileSync(path.join(projectRoot, 'dogsled.yml'), 'x'.repeat(1024 * 1024 + 1));
+    fs.writeFileSync(path.join(projectRoot, 'bobsled.yml'), 'x'.repeat(1024 * 1024 + 1));
 
     expect(readScopedHealthResource(projectRoot, 'vantage')).toBeUndefined();
   });

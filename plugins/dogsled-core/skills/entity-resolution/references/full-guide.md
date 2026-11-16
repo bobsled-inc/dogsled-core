@@ -10,7 +10,7 @@ Entity resolution in Dogsled is **two files authored together**:
 1. a `type: resolution` **spec** per entity, at
    `entity-graph/<name>_resolution.yml`, that declares HOW to collapse
    duplicates; and
-2. a `type: entity-graph` **pipeline** in `dogsled.yml` that RUNS that spec on
+2. a `type: entity-graph` **pipeline** in `bobsled.yml` that RUNS that spec on
    a schedule and writes the outputs back to a warehouse connection.
 
 A resolution spec does nothing on its own — the pipeline is what executes it.
@@ -237,7 +237,7 @@ thresholds:
   auto_reject: 0.1
 ```
 
-## 2. The entity-graph pipeline — `dogsled.yml`
+## 2. The entity-graph pipeline — `bobsled.yml`
 
 Use the pipeline shape in `docs/reference/project-files.md` and validate with
 `dogsled runner validate`.

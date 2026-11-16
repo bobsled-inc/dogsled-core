@@ -79,7 +79,7 @@ const SourceTransportSchema = z
     return { id: value.id, ...result.data };
   });
 
-// Host application extension namespaces (e.g. `dogsled_source_kind`) and
+// Host application extension namespaces (e.g. `bobsled_source_kind`) and
 // OpenAPI-style `x-*` keys are tolerated and stripped before strict validation,
 // mirroring the extractor's `SourceSchema` so a self-describing source.yml
 // validates identically here and at extract time.

@@ -110,7 +110,7 @@ it('does not dispatch from a visible reservation when directory durability is un
       })
     ).rejects.toThrow('unavailable');
     expect(f.host.executeAgent).not.toHaveBeenCalled();
-    expect(fs.existsSync(join(directory, '.dogsled/model-spec/run-state.json'))).toBe(true);
+    expect(fs.existsSync(join(directory, '.bobsled/model-spec/run-state.json'))).toBe(true);
   } finally {
     fault.armed = false;
     fault.active = false;

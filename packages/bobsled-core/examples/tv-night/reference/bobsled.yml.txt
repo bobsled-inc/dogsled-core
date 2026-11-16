@@ -1,7 +1,7 @@
 destinations:
   warehouse:
     type: duckdb
-    db_path: .dogsled/dogsled.duckdb
+    db_path: .bobsled/bobsled.duckdb
     schema: raw
 pipelines:
   tv:

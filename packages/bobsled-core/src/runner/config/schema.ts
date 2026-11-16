@@ -54,7 +54,7 @@ const SourceHandleSchema = z
     'Source handle must be snake_case (matches a bundled integration name)'
   );
 const PipelineScalarInputValueSchema = z.union([z.string(), z.number().finite(), z.boolean()]);
-// Cap on array input length so a hostile or malformed dogsled.yml can't materialize
+// Cap on array input length so a hostile or malformed bobsled.yml can't materialize
 // a multi-megabyte argv slot when piped to the extractor. 1000 entries is
 // comfortably above the largest realistic fan-out target list (e.g. all repos
 // in a large org) while still bounded for memory/argv safety.
@@ -98,10 +98,10 @@ const SharedDestinationFields = {
  * Dogsled (e.g. an internal control plane, a SaaS scheduler) reads them.
  *
  * - `x-*`        — generic, OpenAPI-style extension namespace.
- * - `dogsled_*`  — fields used by a host application's managed ELT
- *                  adapter (e.g. `dogsled_connection_ref` linking the
+ * - `bobsled_*`  — fields used by a host application's managed ELT
+ *                  adapter (e.g. `bobsled_connection_ref` linking the
  *                  destination to a host-managed connection row,
- *                  `dogsled_destination_kind` carrying a platform-side
+ *                  `bobsled_destination_kind` carrying a platform-side
  *                  hint).
  *
  * Mirrors the same convention used by V2 SourceSchema in
@@ -116,7 +116,7 @@ const SharedDestinationFields = {
  * intent the host application expands into a concrete
  * warehouse-native destination block before Dogsled CLI runs. For these
  * types the orchestrator's own host fields (e.g.
- * `dogsled_connection_ref`) ARE the schema, so the strip step below
+ * `bobsled_connection_ref`) ARE the schema, so the strip step below
  * preserves them for the matching managed-destination schema
  * branch. `x-*` extension keys are always stripped regardless of type.
  */
@@ -130,9 +130,9 @@ function stripDestinationExtensionKeys(input: unknown): unknown {
   //     namespace, never part of any destination's schema. Stripping
   //     applies even to managed types so authoring `x-foo: bar` still
   //     validates under the strict branch.
-  //   - `dogsled_*` is stripped for real warehouse types (where it's
+  //   - `bobsled_*` is stripped for real warehouse types (where it's
   //     an orchestrator extension), but PRESERVED for managed types
-  //     (where `dogsled_connection_ref` and friends ARE the schema).
+  //     (where `bobsled_connection_ref` and friends ARE the schema).
   const type = obj['type'];
   const isManagedDestination = isManagedDestinationType(type);
   const out: Record<string, unknown> = {};
@@ -382,7 +382,7 @@ const S3DestinationSchema = z
  * The host application expands this into a concrete warehouse-native
  * destination block (currently always `type: bigquery`, looked up from
  * the matching managed connection row keyed by
- * `dogsled_connection_ref`) before Dogsled CLI runs. Dogsled CLI itself
+ * `bobsled_connection_ref`) before Dogsled CLI runs. Dogsled CLI itself
  * never sees this intent type at runtime — there is no
  * matching loader in `packages/loader/src/runtime/destinations/`. The
  * value of having Dogsled validate this shape at parse time is
@@ -391,8 +391,8 @@ const S3DestinationSchema = z
  * types fail loud with "unknown loader" instead of silently
  * mis-routing the load.
  *
- * Future managed offerings (`dogsled_snowflake_warehouse`,
- * `dogsled_databricks_workspace`, …) follow the same pattern: one
+ * Future managed offerings (`bobsled_snowflake_warehouse`,
+ * `bobsled_databricks_workspace`, …) follow the same pattern: one
  * additional schema branch + one additional orchestrator-side
  * expander. The credential plumbing (`iam-impersonate://` resolver,
  * `DOGSLED_<OFFERING>_CREDENTIALS_*` env-var convention) is a
@@ -400,7 +400,7 @@ const S3DestinationSchema = z
  */
 const BobsledManagedDestinationSchema = z
   .object({
-    type: z.literal('dogsled_managed'),
+    type: z.literal('bobsled_managed'),
     /**
      * Slug of the host-managed connection row to
      * expand from. Required: this destination is meaningful only when
@@ -411,7 +411,7 @@ const BobsledManagedDestinationSchema = z
      * parse time means a malformed ref produces a clear error at
      * upload, not a confusing "row not found" later in expansion.
      */
-    dogsled_connection_ref: z
+    bobsled_connection_ref: z
       .string()
       .regex(
         /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/,
@@ -566,7 +566,7 @@ export const EmbedConfigSchema = createEmbedConfigSchema(EnvPlaceholderSchema);
 //     selector shape — but dispatches to `@bobsled-inc/entity-graph/api` at
 //     run time instead of the Model Spec model runner.
 //
-// `type:` defaults to `extract` if omitted — every existing dogsled.yml keeps
+// `type:` defaults to `extract` if omitted — every existing bobsled.yml keeps
 // validating without edits. The default is injected by `preprocess` so the
 // discriminator is a clean `z.literal(...)` (a `.default()` ZodDefault would
 // confuse `z.discriminatedUnion`).
@@ -636,7 +636,7 @@ const EntityGraphPhasesSchema = z
 // Declares one warehouse text column to chunk into the entity-graph `__chunks`
 // table, which the `extract_mentions` phase then links to resolved entities.
 // Consumed by entity-graph execution hosts. Snake_case keys match the rest of
-// `dogsled.yml` (e.g. `load_strategy`, `table_prefix`). Tokenizer values mirror
+// `bobsled.yml` (e.g. `load_strategy`, `table_prefix`). Tokenizer values mirror
 // `@bobsled-inc/document-parsers` `ChunkOptions`.
 const ChunkSourceSchema = z
   .object({
@@ -738,7 +738,7 @@ export const ModelsPipelineConfigSchema = z
   .strict();
 
 /**
- * Schema for a `type: entity-graph` pipeline entry in `dogsled.yml`. Mirrors
+ * Schema for a `type: entity-graph` pipeline entry in `bobsled.yml`. Mirrors
  * `ModelsPipelineConfigSchema` (connection + schedule + wildcard selector +
  * enabled) with entity-graph-specific additions:
  *
@@ -916,10 +916,10 @@ const PipelineMapSchema = z.record(z.string(), PipelineConfigSchema).superRefine
 const BobsledConfigObjectSchema = z
   .object({
     // Declares this file as the project's pipeline configuration so it can
-    // live outside the project root. An untyped root `dogsled.yml` is still the
+    // live outside the project root. An untyped root `bobsled.yml` is still the
     // pipeline configuration.
     type: z.literal('pipeline_config').optional(),
-    // `destinations:` is optional so a model-only `dogsled.yml` (no extract
+    // `destinations:` is optional so a model-only `bobsled.yml` (no extract
     // pipelines) doesn't have to declare an unused destination. Extract
     // pipelines still require at least one destination — that's enforced by
     // the cross-field `superRefine` below, where we know which pipelines are

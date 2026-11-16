@@ -146,7 +146,7 @@ dogsled extract run --integration snowflake_source orders | \
   dogsled load run --load-file load-orders.yml
 ```
 
-Project pipelines can bind a destination in `dogsled.yml` or use
+Project pipelines can bind a destination in `bobsled.yml` or use
 `extractor.yml`'s `default_load.integration`. A resource's `load:` block contains
 only `overrides` and `defaults`; it must not contain `integration`.
 

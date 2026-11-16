@@ -63,7 +63,7 @@ export function acquireLocalRunOwnership(
       'unavailable',
       {
         reason: 'state_directory',
-        message: 'Cannot open or lock the local agentic state directory (.dogsled/model-spec).',
+        message: 'Cannot open or lock the local agentic state directory (.bobsled/model-spec).',
         hint: 'Check that the directory is writable and that no other run holds the lock.',
       },
       { cause: error }
@@ -235,7 +235,7 @@ function lockError(error: FileOwnershipError, runId: string): AgenticStateError 
     return new AgenticStateError('unavailable', {
       reason: 'lock_recovery_pending',
       message: `A crash interrupted lock recovery for run "${runId}".`,
-      hint: 'Confirm that no Dogsled process is using this project, then delete the agentic-*.lock.recovery file in .dogsled/model-spec.',
+      hint: 'Confirm that no Dogsled process is using this project, then delete the agentic-*.lock.recovery file in .bobsled/model-spec.',
     });
   }
   return new AgenticStateError('unavailable', {
@@ -248,7 +248,7 @@ function lockError(error: FileOwnershipError, runId: string): AgenticStateError 
 function stateDirectoryFull(amount: string): AgenticStateError {
   return new AgenticStateError('limit', {
     reason: 'state_directory_full',
-    message: `The local agentic state directory (.dogsled/model-spec) holds ${amount}.`,
+    message: `The local agentic state directory (.bobsled/model-spec) holds ${amount}.`,
     hint: 'Stop all runs, back up the directory, then remove snapshot files that run-state.json no longer references.',
   });
 }

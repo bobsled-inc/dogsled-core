@@ -60,7 +60,7 @@ If a user asks for something _not_ in this list (e.g. federation / query-in-plac
 ```text
 my-bobsled-project/
   AGENTS.md            # Project guide (optional): what the data means, what is queryable, vocabulary, conventions, caveats
-  dogsled.yml            # Optional default orchestration file
+  bobsled.yml            # Optional default orchestration file
   extractor.yml        # Extractor settings: state and batch folders, load defaults
   model-spec.yml              # Model Spec settings: seed, Entity Graph, and target folders, checkpoint store
   .env                 # Secrets (never committed); referenced from YAML as $VAR_NAME
@@ -95,7 +95,7 @@ my-bobsled-project/
 
 Things to remember:
 
-- **This is the conventional layout, not a requirement.** Dogsled finds typed definitions anywhere, so files can also be grouped by source or subject, such as `golf/datagolf/pga/`. Untyped YAML under a recognized kind folder inherits that kind. The root `dogsled.yml` and `dogsled.yaml` stay valid legacy pipeline configs. Nonroot pipeline fragments declare `type: pipeline_config`.
+- **This is the conventional layout, not a requirement.** Dogsled finds typed definitions anywhere, so files can also be grouped by source or subject, such as `golf/datagolf/pga/`. Untyped YAML under a recognized kind folder inherits that kind. The root `bobsled.yml` and `bobsled.yaml` stay valid legacy pipeline configs. Nonroot pipeline fragments declare `type: pipeline_config`.
 - **Pipeline configuration can be split by domain.** Dogsled merges root configs and typed fragments by pipeline and destination name. A repeated name or single-owner section fails and reports both paths. With no config file, the Project has no pipelines and Dogsled creates no file.
 - **Names remain semantic fields.** A folder does not create a name, namespace, integration owner, warehouse, or schema. Keep required `name` and `integration` fields explicit.
 - **`model-spec.yml`'s directory keys** (`sources_dir`, `models_dir`, `metrics_dir`, `relationships_dir`, `vqs_dir`, `integrations_dir`) are accepted but no longer limit where files live. Dogsled discovers CSVs below `seeds/`; `seeds_dir` remains an explicit legacy override. `entity_graph_dir` (legacy `mdm_dir`) still locates Entity Graph specs.
@@ -259,7 +259,7 @@ If the change is about _what runs and when_, update the owning pipeline config f
 | Bootstrap a new Dogsled repo from scratch                                                          | `dogsled-init`                           |
 | Author, modify, filter, schedule, run, or diagnose an extract pipeline                             | `extract-pipelines`                      |
 | Add another pipeline to an existing repo                                                           | `dogsled-add-pipeline`                   |
-| Turn a plain-English goal into `dogsled.yml`                                                       | `dogsled-generate-yml`                   |
+| Turn a plain-English goal into `bobsled.yml`                                                       | `dogsled-generate-yml`                   |
 | Look up what an integration offers                                                                 | `explore-integration`                    |
 | Add a new integration the catalog doesn't have                                                     | `add-integration`                        |
 | Add a REST/GraphQL API source not in the catalog (author it in YAML, no connector module)          | `add-custom-api-integration`             |

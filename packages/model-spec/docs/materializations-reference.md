@@ -229,7 +229,7 @@ materialization:
 
 ## State and run semantics
 
-Model Spec persists per-model materialization metadata in `.dogsled-model-spec-state/state.json` (or `.dogsled/model-spec/run-state.json` for multi-integration projects, scoped under `<handle>.<model>` keys). State tracks `materialization`, `selectSignature`, `columns`, and `lastRunAt` (`src/compiler/state.ts:37-53`). The compiler uses prior state to detect transitions (`planTransition`) and schema changes (`planSchemaChange`).
+Model Spec persists per-model materialization metadata in `.dogsled-model-spec-state/state.json` (or `.bobsled/model-spec/run-state.json` for multi-integration projects, scoped under `<handle>.<model>` keys). State tracks `materialization`, `selectSignature`, `columns`, and `lastRunAt` (`src/compiler/state.ts:37-53`). The compiler uses prior state to detect transitions (`planTransition`) and schema changes (`planSchemaChange`).
 
 On error, state does not advance — the user can fix and re-run safely. `--full-refresh` clears state for the run; on re-run, all models behave as first-run.
 

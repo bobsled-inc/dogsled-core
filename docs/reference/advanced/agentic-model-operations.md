@@ -163,7 +163,7 @@ target, publication stops with an error that names the column. Enable column
 mapping on the target first (`ALTER TABLE … SET TBLPROPERTIES
 ('delta.columnMapping.mode' = 'name')`), or rebuild the target.
 
-By default, local execution checkpoints live under `.dogsled/model-spec/`: one DuckDB file per run
+By default, local execution checkpoints live under `.bobsled/model-spec/`: one DuckDB file per run
 when `@duckdb/node-api` is installed, and JSON files otherwise. See
 [where state is stored](../../../packages/model-spec/docs/agentic-state.md#where-state-is-stored).
 Keep that directory on persistent local storage across restarts. Local locking supports one host, not
@@ -182,7 +182,7 @@ instead of this setting:
 ```yaml
 checkpoint_store:
   integration: analytics_warehouse
-  schema: track_checkpoints
+  schema: bobsled_checkpoints
   lease_seconds: 300
 ```
 

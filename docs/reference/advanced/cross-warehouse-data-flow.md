@@ -78,7 +78,7 @@ Streaming fallback:
 
 - Source and destination credentials enter through `${{ env.VAR }}` interpolation in `integrations/<handle>.yml`, optionally layered with `--secrets <path>`.
 - Resolved credentials live in process memory on runner/destination objects for the duration of the publish.
-- Dogsled does not write credentials to `.dogsled/model-spec/run-state.json`, checkpoints, staging files, or docs.
+- Dogsled does not write credentials to `.bobsled/model-spec/run-state.json`, checkpoints, staging files, or docs.
 - OAuth source credentials are rejected for published models because long publishes can outlive token TTLs.
 
 ## Logging And Redaction
@@ -125,7 +125,7 @@ Customers with data-residency constraints should place the shared staging URI an
 Useful audit artifacts:
 
 - `dogsled model run` stderr or JSON output
-- `.dogsled/model-spec/run-state.json` with per-model `lastRunAt`, `publishedSnapshotId`, and `publishedAt`
+- `.bobsled/model-spec/run-state.json` with per-model `lastRunAt`, `publishedSnapshotId`, and `publishedAt`
 - Destination warehouse query history under the service principal identity
 - Source warehouse query/export history for UNLOAD-capable sources
 - Object-store access logs for the shared staging prefix, when enabled

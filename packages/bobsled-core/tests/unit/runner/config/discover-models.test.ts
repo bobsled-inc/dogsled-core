@@ -214,7 +214,7 @@ describe('discoverModels — Ossie', () => {
                   name: 'order_id',
                   custom_extensions: [
                     {
-                      vendor_name: 'DOGSLED',
+                      vendor_name: 'BOBSLED',
                       data: JSON.stringify({ build_expression: 'order_id' }),
                     },
                   ],
@@ -223,7 +223,7 @@ describe('discoverModels — Ossie', () => {
               ],
               custom_extensions: [
                 {
-                  vendor_name: 'DOGSLED',
+                  vendor_name: 'BOBSLED',
                   data: JSON.stringify({
                     extension_version: '1',
                     kind: 'derived',

@@ -171,15 +171,15 @@ export const PIPELINE_MANIFEST_COMPAT_VERSIONS = [7] as const;
 export type PipelineManifestVersion = (typeof PIPELINE_MANIFEST_COMPAT_VERSIONS)[number];
 
 export interface BobsledPipelineManifest {
-  kind: 'dogsled.pipeline.dag';
+  kind: 'bobsled.pipeline.dag';
   version: typeof PIPELINE_MANIFEST_VERSION;
-  dogsled_cli_version: string;
+  bobsled_cli_version: string;
   command_contract: PipelineCommandContract;
   pipelines: BobsledPipelineEntry[];
 }
 
 export interface PipelineCommandContract {
-  default_command: 'dogsled';
+  default_command: 'bobsled';
   command_env: 'BOBSLED_CORE_PIPELINE_COMMAND';
   cwd_env: 'BOBSLED_CORE_PIPELINE_CWD';
   timeout_seconds_env: 'BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS';
@@ -307,7 +307,7 @@ type PipelineManifestNode = ExtractNode | EmbeddedModelNode;
 export interface ModelDagNode {
   /** `model_<lowercased model name>` — unique within the pipeline. */
   id: string;
-  kind: 'dogsled.model.run';
+  kind: 'bobsled.model.run';
   /** Model name, authored case (matches the `command` argument). */
   model: string;
   /** Selector metadata carried through for `tag:` selection. Omitted when empty. */
@@ -320,7 +320,7 @@ export interface ModelDagNode {
 export interface EntityGraphNode {
   /** `phase_<phase>` — unique within the pipeline. */
   id: string;
-  kind: 'dogsled.entity_graph.run';
+  kind: 'bobsled.entity_graph.run';
   phase: EntityGraphPhase;
   command: string[];
   emits: readonly ['entity_graph_runs'];
@@ -328,7 +328,7 @@ export interface EntityGraphNode {
 
 interface ExtractNode {
   id: string;
-  kind: 'dogsled.runner.run_resource';
+  kind: 'bobsled.runner.run_resource';
   pipeline: string;
   integration: string;
   /**
@@ -356,7 +356,7 @@ interface ExtractNode {
 
 interface EmbeddedModelNode {
   id: 'model';
-  kind: 'dogsled.model.run';
+  kind: 'bobsled.model.run';
   integration: string;
   models: string[];
   command: string[];
@@ -369,7 +369,7 @@ interface PipelineManifestEdge {
   to: string;
 }
 
-export const PIPELINE_MANIFEST_PATH = 'dogsled.pipeline.dag.json';
+export const PIPELINE_MANIFEST_PATH = 'bobsled.pipeline.dag.json';
 
 function safeNodeToken(value: string): string {
   const normalized = value
@@ -394,7 +394,7 @@ function buildExtractNode(
   const primary = resources[0]!;
   const node: ExtractNode = {
     id: nodeIdForResource(index, primary),
-    kind: 'dogsled.runner.run_resource',
+    kind: 'bobsled.runner.run_resource',
     pipeline: input.pipelineName,
     integration: input.integration,
     resource: primary,
@@ -562,7 +562,7 @@ function topoSortBucket(
 function buildModelNode(input: PipelineTemplateInput): EmbeddedModelNode {
   return {
     id: 'model',
-    kind: 'dogsled.model.run',
+    kind: 'bobsled.model.run',
     integration: input.integration,
     models: input.modelSequence,
     command: ['model', 'run', ...input.modelSequence, '--integration', input.integration, '--json'],
@@ -692,7 +692,7 @@ function buildModelPipelineManifest(input: ModelPipelineTemplateInput): ModelPip
     seenIds.set(id, modelNode.name);
     const node: ModelDagNode = {
       id,
-      kind: 'dogsled.model.run',
+      kind: 'bobsled.model.run',
       model: modelNode.name,
       command: ['model', 'run', modelNode.name, '--integration', input.connection, '--json'],
       emits: ['model_runs'],
@@ -864,7 +864,7 @@ function buildEntityGraphPipelineManifest(
       phase === 'resolve' && input.defaultRunMode === 'incremental' ? ['--incremental'] : [];
     return {
       id,
-      kind: 'dogsled.entity_graph.run',
+      kind: 'bobsled.entity_graph.run',
       phase,
       command: [
         ...ENTITY_GRAPH_PHASE_COMMAND_PREFIX[phase],
@@ -962,11 +962,11 @@ export function buildPipelineManifestObject(
   reverseEtlPipelines: ReverseEtlPipelineTemplateInput[] = []
 ): BobsledPipelineManifest {
   return {
-    kind: 'dogsled.pipeline.dag',
+    kind: 'bobsled.pipeline.dag',
     version: PIPELINE_MANIFEST_VERSION,
-    dogsled_cli_version: bobsledVersion,
+    bobsled_cli_version: bobsledVersion,
     command_contract: {
-      default_command: 'dogsled',
+      default_command: 'bobsled',
       command_env: 'BOBSLED_CORE_PIPELINE_COMMAND',
       cwd_env: 'BOBSLED_CORE_PIPELINE_CWD',
       timeout_seconds_env: 'BOBSLED_CORE_PIPELINE_TIMEOUT_SECONDS',

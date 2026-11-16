@@ -44,7 +44,7 @@ it('rejects reads and writes through a symlink outside the project', async () =>
   const root = await project();
   const outside = await mkdtemp(join(tmpdir(), 'tv-outside-'));
   roots.push(outside);
-  await symlink(outside, join(root, '.dogsled'));
+  await symlink(outside, join(root, '.bobsled'));
   await expect(writeArtifact(root, '<html>safe</html>')).rejects.toThrow(/symbolic|symlink/i);
 });
 it('does not mark a recorded transformation as a completed live run', async () => {
@@ -56,10 +56,10 @@ it('does not mark a recorded transformation as a completed live run', async () =
 });
 it('preserves completed checks when the database changes', async () => {
   const root = await project();
-  await mkdir(join(root, '.dogsled'), { recursive: true });
-  await writeFile(join(root, '.dogsled/dogsled.duckdb'), 'first database');
+  await mkdir(join(root, '.bobsled'), { recursive: true });
+  await writeFile(join(root, '.bobsled/bobsled.duckdb'), 'first database');
   await saveCheckpoint(root, 'query', { mode: 'offline', tables: [], receipts: [] });
-  await writeFile(join(root, '.dogsled/dogsled.duckdb'), 'changed database contents');
+  await writeFile(join(root, '.bobsled/bobsled.duckdb'), 'changed database contents');
   expect((await inspectOnboarding(root)).steps.find((s) => s.id === 'query')?.status).toBe(
     'complete'
   );
@@ -67,9 +67,9 @@ it('preserves completed checks when the database changes', async () => {
 
 it('does not accept a checkpoint with an unsupported format version', async () => {
   const root = await project();
-  await mkdir(join(root, '.dogsled/onboarding'), { recursive: true });
+  await mkdir(join(root, '.bobsled/onboarding'), { recursive: true });
   await writeFile(
-    join(root, '.dogsled/onboarding/load.json'),
+    join(root, '.bobsled/onboarding/load.json'),
     JSON.stringify({
       step: 'load',
       mode: 'offline',
@@ -85,7 +85,7 @@ it('does not accept a checkpoint with an unsupported format version', async () =
 it('keeps a connection check current when only the local database changes', async () => {
   const root = await project();
   await saveCheckpoint(root, 'connect', { mode: 'live', tables: [], receipts: [] });
-  await writeFile(join(root, '.dogsled/dogsled.duckdb'), 'new ETL tables');
+  await writeFile(join(root, '.bobsled/bobsled.duckdb'), 'new ETL tables');
   expect((await inspectOnboarding(root)).steps.find((s) => s.id === 'connect')?.status).toBe(
     'complete'
   );
@@ -115,7 +115,7 @@ it('preserves the probe snapshot when preferences, sources and later chapter fil
     join(root, 'data/tv-night/question.json'),
     JSON.stringify({ original: 'What should I watch next?', preferences: 'Sci-fi' })
   );
-  await writeFile(join(root, 'dogsled.yml'), 'pipelines: []\n');
+  await writeFile(join(root, 'bobsled.yml'), 'pipelines: []\n');
   await writeFile(join(root, 'resources/api/catalog.yml'), 'name: shows\nintegration: tvmaze\n');
   await writeFile(join(root, 'models/shows.yml'), 'name: shows\n');
   expect((await inspectOnboarding(root)).steps.find((s) => s.id === 'connect')?.status).toBe(
@@ -152,7 +152,7 @@ it('preserves all legacy chapter snapshots and inspections after normal project 
       receipts: [],
     });
     // Old checkpoints have no scoped probe hash or database fingerprint.
-    const path = join(root, `.dogsled/onboarding/${step.id}.json`);
+    const path = join(root, `.bobsled/onboarding/${step.id}.json`);
     const record = JSON.parse(await readFile(path, 'utf8'));
     delete record.probeInputHash;
     delete record.databaseFingerprint;
@@ -162,7 +162,7 @@ it('preserves all legacy chapter snapshots and inspections after normal project 
   const before = await inspectOnboarding(root);
   await mkdir(join(root, 'models'));
   await writeFile(join(root, 'models/next.yml'), 'name: next\n');
-  await writeFile(join(root, '.dogsled/dogsled.duckdb'), 'new chapter data');
+  await writeFile(join(root, '.bobsled/bobsled.duckdb'), 'new chapter data');
   const after = await buildOnboardingSnapshot(root);
   expect(after.state.steps.every((step) => step.status === 'complete')).toBe(true);
   expect(after.progress?.reviewed).toEqual(steps.map((step) => step.id));

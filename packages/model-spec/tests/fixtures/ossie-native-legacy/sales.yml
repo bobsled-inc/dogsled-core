@@ -12,31 +12,31 @@ datasets:
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: order_id }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"BIGINT"}'
       - name: customer_id
         datatype: Integer
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"BIGINT"}'
       - name: gross_amount
         datatype: Decimal
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: gross_amount }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"DECIMAL(18,2)"}'
       - name: discount
         datatype: Decimal
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: discount }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"DECIMAL(18,2)"}'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"1","kind":"source","connection":"warehouse"}'
 
   - name: raw_customers
@@ -48,17 +48,17 @@ datasets:
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"BIGINT"}'
       - name: customer_name
         datatype: String
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: customer_name }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"VARCHAR"}'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"1","kind":"source","connection":"warehouse"}'
 
   - name: clean_orders
@@ -71,14 +71,14 @@ datasets:
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: order_id }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"build_expression":"order_id","sql_type":"BIGINT"}'
       - name: customer_id
         datatype: Integer
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"build_expression":"customer_id","sql_type":"BIGINT"}'
       - name: net_amount
         description: Gross amount less the discount
@@ -86,10 +86,10 @@ datasets:
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: net_amount }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"build_expression":"gross_amount - discount","sql_type":"DECIMAL(18,2)"}'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: |
           {
             "extension_version": "1",
@@ -111,17 +111,17 @@ datasets:
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: customer_id }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"build_expression":"customer_id","sql_type":"BIGINT"}'
       - name: customer_name
         datatype: String
         expression:
           dialects: [{ dialect: ANSI_SQL, expression: customer_name }]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"build_expression":"customer_name","sql_type":"VARCHAR"}'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: |
           {
             "extension_version": "1",
@@ -149,5 +149,5 @@ relationships:
     from_columns: [customer_id]
     to_columns: [customer_id]
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"join_type":"left","description":"Each order belongs to one customer"}'

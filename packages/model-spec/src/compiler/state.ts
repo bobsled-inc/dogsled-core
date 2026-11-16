@@ -1,7 +1,7 @@
 /**
  * Run state tracking for incremental materializations and trust tiers.
  *
- * Persists model run metadata to `.dogsled/model-spec/run-state.json` for
+ * Persists model run metadata to `.bobsled/model-spec/run-state.json` for
  * first-run detection, change tracking, and trust tier management.
  */
 

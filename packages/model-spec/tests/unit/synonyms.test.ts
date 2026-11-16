@@ -258,7 +258,7 @@ describe('synonyms in Ossie import', () => {
     });
   });
 
-  it('still reads metric synonyms from the DOGSLED extension of older exports', () => {
+  it('still reads metric synonyms from the BOBSLED extension of older exports', () => {
     const { content } = exported(request({ metrics: [without(metric, 'synonyms', 'ai_context')] }));
     const older = content.replace(
       '{"extension_version":"2","datasets"',

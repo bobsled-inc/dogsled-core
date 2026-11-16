@@ -42,7 +42,7 @@ Read these files:
 - `packages/integrations/sources/<name>/meta.yml` — display name, category, auth setup, docs URL
 - `packages/integrations/sources/<name>/source.yml` — transport(s), base URL, auth type, `default_transport`
 
-`source.yml` lists every transport as a `transports[]` entry with an `id` (`graphql`, `mcp`, `rest`, …). Sources with two or more entries are **multi-transport** — each entity has one variant per transport, and pipelines pick between them with `via:`. Note the transport ids; agents authoring `dogsled.yml` need them.
+`source.yml` lists every transport as a `transports[]` entry with an `id` (`graphql`, `mcp`, `rest`, …). Sources with two or more entries are **multi-transport** — each entity has one variant per transport, and pipelines pick between them with `via:`. Note the transport ids; agents authoring `bobsled.yml` need them.
 
 ### Step 2: List all resources
 
@@ -52,8 +52,8 @@ ls packages/integrations/sources/<name>/resources/
 
 Two shapes show up here:
 
-- **Flat `<entity>.yml` files** — single-transport entities. Reference the file's `name:` field directly in `dogsled.yml` `resources:`.
-- **`<entity>/` folders containing `<transport>.yml` files** (e.g. `issues/graphql.yml`, `issues/mcp.yml`) — multi-transport entities. Two ways to reference them in `dogsled.yml`:
+- **Flat `<entity>.yml` files** — single-transport entities. Reference the file's `name:` field directly in `bobsled.yml` `resources:`.
+- **`<entity>/` folders containing `<transport>.yml` files** (e.g. `issues/graphql.yml`, `issues/mcp.yml`) — multi-transport entities. Two ways to reference them in `bobsled.yml`:
   1. Bare entity name + pipeline `via:` — `resources: [issues]` with `via: mcp` resolves to `issues_mcp`. Used when a whole pipeline picks one transport.
   2. Variant spec name — `resources: [issues_mcp]` directly. Used when one pipeline mixes transports.
 

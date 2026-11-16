@@ -37,7 +37,7 @@ export async function resolveOssieExportAddresses(
       (model.model_kind !== 'agentic' && model.materialization.type === 'ephemeral') ||
       (live && !getPublishTarget(model.publish))
     ) {
-      addresses[model.name] = `dogsled://models/${model.name}`;
+      addresses[model.name] = `bobsled://models/${model.name}`;
       continue;
     }
     if (getPublishTarget(model.publish)) {

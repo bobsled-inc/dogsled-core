@@ -10,7 +10,7 @@ export async function probeInputHash(root: string): Promise<string> {
   for (const path of await inputFiles(root, 'data/tv-night')) {
     if (
       !/^(sources|integrations|resources)\/.*\.ya?ml$/.test(path) &&
-      path !== '.dogsled/config.yml'
+      path !== '.bobsled/config.yml'
     ) {
       continue;
     }
@@ -29,7 +29,7 @@ export async function probeInputHash(root: string): Promise<string> {
   );
   const needed = records.filter(
     (r) =>
-      r.path === '.dogsled/config.yml' ||
+      r.path === '.bobsled/config.yml' ||
       sources.includes(r) ||
       sources.some(
         ({ value: source }) =>

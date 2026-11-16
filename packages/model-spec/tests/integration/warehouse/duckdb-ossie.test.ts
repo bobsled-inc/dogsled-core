@@ -14,7 +14,7 @@ import {
 } from './harness.js';
 import { warehouseEnabled } from './setup.js';
 
-const extension = (data: object) => [{ vendor_name: 'DOGSLED', data: JSON.stringify(data) }];
+const extension = (data: object) => [{ vendor_name: 'BOBSLED', data: JSON.stringify(data) }];
 const expression = (name: string) => ({ dialects: [{ dialect: 'ANSI_SQL', expression: name }] });
 
 describe.skipIf(!warehouseEnabled('duckdb'))('Ossie mixed project — DuckDB execution', () => {

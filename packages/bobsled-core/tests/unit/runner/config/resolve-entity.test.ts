@@ -138,7 +138,7 @@ describe('resolveEntityVariant', () => {
     resolveEntityVariant(pipeline, lib, openBobsledProject(projectRoot), errors);
 
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.path).toBe('dogsled.yml:pipelines.p.resources.issues');
+    expect(errors[0]?.path).toBe('bobsled.yml:pipelines.p.resources.issues');
     expect(errors[0]?.message).toContain('"issues"');
     expect(errors[0]?.message).toMatch(/multiple transport variants/);
     expect(errors[0]?.message).toMatch(/issues_graphql/);
@@ -151,7 +151,7 @@ describe('resolveEntityVariant', () => {
     resolveEntityVariant(pipeline, lib, openBobsledProject(projectRoot), errors);
 
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.path).toBe('dogsled.yml:pipelines.p.resources.issues');
+    expect(errors[0]?.path).toBe('bobsled.yml:pipelines.p.resources.issues');
     expect(errors[0]?.message).toMatch(/No variant for entity "issues"/);
     expect(errors[0]?.message).toMatch(/with via "rest"/);
     expect(errors[0]?.message).toMatch(/graphql → issues_graphql/);

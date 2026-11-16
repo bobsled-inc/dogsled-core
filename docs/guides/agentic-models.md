@@ -54,7 +54,7 @@ materialization:
 
 - `sources` names the SQL models or sources that feed the model. Prepare and filter
   the input in ordinary SQL models first.
-- `llm.profile` names a [model role](embeddings-and-ai.md) in `dogsled.yml`.
+- `llm.profile` names a [model role](embeddings-and-ai.md) in `bobsled.yml`.
 - `plan.steps` run in order. `map.group_by` decides how rows are grouped into
   assignments: here, one assignment per pair. `execution.mode` is `llm_call` for a
   single structured answer, or `agent_loop` for an executor that reads more context

@@ -25,7 +25,7 @@ afterEach(() => {
 describe('checkProjectFiles', () => {
   it('counts recognized files when the project has no problems', () => {
     const root = project({
-      'dogsled.yml': 'pipelines: {}\n',
+      'bobsled.yml': 'pipelines: {}\n',
       'models/orders.yml': 'spec_version: "0.2"\ntype: model\nname: orders\n',
     });
 
@@ -36,7 +36,7 @@ describe('checkProjectFiles', () => {
 
   it('warns about skipped files and errors on problems that stop Dogsled', () => {
     const root = project({
-      'dogsled.yml': 'pipelines: {}\n',
+      'bobsled.yml': 'pipelines: {}\n',
       'docs/post.md': '---\ntype: page\n---\nBody\n',
       'models/typo.yml': 'type: modle\nname: typo\n',
     });

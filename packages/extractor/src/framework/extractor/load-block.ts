@@ -47,7 +47,7 @@ export const LoadBlockSchema = z
  * The `load:` block on a V2 resource. A resource isn't tied to a destination
  * (the same data can land in many warehouses), so this block carries only
  * defaults and overrides — never the destination integration. The destination
- * binding comes from the pipeline (dogsled.yml), CLI `--load-integration`, or
+ * binding comes from the pipeline (bobsled.yml), CLI `--load-integration`, or
  * `extractor.yml` `default_load.integration`.
  */
 export const ResourceLoadBlockSchema = z

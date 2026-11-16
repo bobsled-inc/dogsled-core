@@ -7,9 +7,9 @@ import {
 export const BOBSLED_CORE_LEGACY_BLUEPRINT_KEY = 'BOBSLED_CORE_LEGACY_BLUEPRINT_KEY';
 export const LEGACY_KEY_CONFLICT = 'LEGACY_KEY_CONFLICT';
 
-export const BLUEPRINT_CONNECTION_REF_KEY = 'dogsled_connection_ref';
-export const BLUEPRINT_SOURCE_KIND_KEY = 'dogsled_source_kind';
-export const MANAGED_DESTINATION_TYPE = 'dogsled_managed';
+export const BLUEPRINT_CONNECTION_REF_KEY = 'bobsled_connection_ref';
+export const BLUEPRINT_SOURCE_KIND_KEY = 'bobsled_source_kind';
+export const MANAGED_DESTINATION_TYPE = 'bobsled_managed';
 
 function aliasesTo(spellings: readonly string[], current: string): Record<string, string> {
   if (!spellings.includes(current)) {

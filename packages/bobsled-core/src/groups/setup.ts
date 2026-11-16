@@ -105,7 +105,7 @@ export function createSetupGroup(): Command {
     .command('recommend')
     .description('Recommend integrations, a destination, schedules, and required secret refs')
     .option('--goal <text>', 'Plain-English setup goal')
-    .option('--answers <path>', 'Path to dogsled.setup.answers.yml', 'dogsled.setup.answers.yml')
+    .option('--answers <path>', 'Path to bobsled.setup.answers.yml', 'bobsled.setup.answers.yml')
     .option('--write', 'Write the normalized recommendation back to the answers file')
     .option('--json', 'Output as JSON')
     .option('--verbose', 'Enable verbose output')
@@ -180,9 +180,9 @@ export function createSetupGroup(): Command {
   group
     .command('render')
     .description(
-      'Render dogsled.yml, repo docs, resume files, and dashboard state from setup answers'
+      'Render bobsled.yml, repo docs, resume files, and dashboard state from setup answers'
     )
-    .option('--answers <path>', 'Path to dogsled.setup.answers.yml', 'dogsled.setup.answers.yml')
+    .option('--answers <path>', 'Path to bobsled.setup.answers.yml', 'bobsled.setup.answers.yml')
     .option('--out-dir <dir>', 'Target directory', '.')
     .option('--json', 'Output as JSON')
     .option('--verbose', 'Enable verbose output')
@@ -227,8 +227,8 @@ export function createSetupGroup(): Command {
   group
     .command('doctor')
     .description('Explain setup blockers and stale generated files in plain English and JSON')
-    .option('--answers <path>', 'Path to dogsled.setup.answers.yml', 'dogsled.setup.answers.yml')
-    .option('--config <path>', 'Path to dogsled.yml')
+    .option('--answers <path>', 'Path to bobsled.setup.answers.yml', 'bobsled.setup.answers.yml')
+    .option('--config <path>', 'Path to bobsled.yml')
     .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
     .option('--json', 'Output as JSON')
     .option('--verbose', 'Enable verbose output')

@@ -2,7 +2,7 @@
 
 ## Pipeline configuration files: orchestration
 
-The root `dogsled.yml` or `dogsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
+The root `bobsled.yml` or `bobsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
 
 An extract pipeline pulls explicitly named resources from one source and loads them into one or more named destinations:
 
@@ -104,7 +104,7 @@ below when the load session needs a non-default warehouse.
 
 ### Managed Snowflake destination warehouse selection
 
-An extract pipeline with one singular `dogsled_managed` destination may select
+An extract pipeline with one singular `bobsled_managed` destination may select
 the Snowflake warehouse used by the destination load session:
 
 ```yaml
@@ -136,7 +136,7 @@ and may resolve to different physical warehouses.
 
 The extractor emits the effective schema policy in each `SCHEMA` message. Choose
 one explicitly before the first write instead of relying on the implicit
-`evolve` default. The policy is a load default, not a `dogsled.yml`
+`evolve` default. The policy is a load default, not a `bobsled.yml`
 `load_strategy` setting.
 
 Set a project-wide policy in `extractor.yml` with `default_load.defaults`:
@@ -340,7 +340,7 @@ Project-local `extractor.yml` normally points at `integrations/`, `resources/`, 
 Project-local resources extend the bundled source catalog one resource at a time. A file under
 `resources/<source>/` overrides a bundled resource with the same declared `name`; bundled siblings
 remain available to discovery, validation, `for_each` dependencies, contextual outputs, and
-`dogsled.yml` resource lists. Adding one local resource never replaces the source's whole bundled
+`bobsled.yml` resource lists. Adding one local resource never replaces the source's whole bundled
 resource tree.
 
 An integration declares one or more transports plus auth. A resource declares one endpoint/tool/query, typed inputs and outputs, extraction mechanics, and table metadata. A representative HTTP resource is:

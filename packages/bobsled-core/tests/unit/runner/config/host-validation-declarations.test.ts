@@ -49,7 +49,7 @@ platform:
 
 function modelProject(): string {
   return project({
-    'dogsled.yml': 'pipelines: {}\n',
+    'bobsled.yml': 'pipelines: {}\n',
     'settings/runtime.yml': RUNTIME_SETTINGS,
   });
 }
@@ -75,7 +75,7 @@ describe('host-declared names for Project validation', () => {
 
   it('accepts the standard ai-gateway key name without a declaration', async () => {
     const projectRoot = project({
-      'dogsled.yml': 'pipelines: {}\n',
+      'bobsled.yml': 'pipelines: {}\n',
       'settings/runtime.yml': RUNTIME_SETTINGS.split('    classifier:')[0]!,
     });
     await expect(validateProjectPipelines({ projectRoot })).resolves.toMatchObject({
@@ -213,12 +213,12 @@ describe('host-managed model auth', () => {
 
   it('still rejects a pipeline embedding that uses an undeclared key', async () => {
     const projectRoot = project({
-      'dogsled.yml': EMBEDDING_PIPELINE,
+      'bobsled.yml': EMBEDDING_PIPELINE,
       'settings/runtime.yml': RUNTIME_SETTINGS,
     });
     const options = { projectRoot, hostManagedModelAuth: true };
     const result = await validateProjectPipelines(options);
-    expect(messages(result)).toEqual(['dogsled.yml:pipelines.stripe.embed.api_key']);
+    expect(messages(result)).toEqual(['bobsled.yml:pipelines.stripe.embed.api_key']);
     expect(result.status === 'invalid' ? result.issues[0]!.message : '').toBe(
       'Undeclared API key environment variable: HOST_EMBED_KEY. Add HOST_EMBED_KEY to auth_env_vars.'
     );
@@ -245,7 +245,7 @@ describe('host-managed model auth', () => {
 
   it('lets the pipeline SDK resolve undeclared profile keys only with the option', async () => {
     const projectRoot = project({
-      'dogsled.yml': EMBEDDING_PIPELINE.replace(/    embed:[\s\S]*$/u, ''),
+      'bobsled.yml': EMBEDDING_PIPELINE.replace(/    embed:[\s\S]*$/u, ''),
       'settings/runtime.yml': RUNTIME_SETTINGS,
     });
     const resolved: unknown[] = [];
@@ -279,7 +279,7 @@ describe('host-managed model auth', () => {
 
 describe('integration and action declaration warnings', () => {
   const files = {
-    'dogsled.yml': 'pipelines: {}\n',
+    'bobsled.yml': 'pipelines: {}\n',
     'integrations/custom.yml': `spec_version: '1'
 type: integration
 name: custom

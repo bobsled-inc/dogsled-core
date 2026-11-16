@@ -35,10 +35,10 @@ datasets:
             - dialect: ANSI_SQL
               expression: id
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"BIGINT","build_expression":"id"}'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"2","kind":"derived","grain":["id"],"build":{"source":{"ref":"warehouse.raw_orders"},"materialization":{"type":"table"}}}'
 `;
 
@@ -60,12 +60,12 @@ datasets:
         expression:
           dialects: [{dialect: ANSI_SQL, expression: id}]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"BIGINT"}'
           - vendor_name: CATALOG
             data: 'keep field data'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"2","kind":"source","source_type":"warehouse_table","connection":"warehouse"}'
       - vendor_name: DBT
         data: '{"materialized":"table"}'
@@ -79,17 +79,17 @@ datasets:
         expression:
           dialects: [{dialect: ANSI_SQL, expression: customer_id}]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"BIGINT"}'
       - name: amount
         datatype: Decimal
         expression:
           dialects: [{dialect: ANSI_SQL, expression: amount}]
         custom_extensions:
-          - vendor_name: DOGSLED
+          - vendor_name: BOBSLED
             data: '{"sql_type":"DECIMAL(18,2)"}'
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"2","kind":"source","source_type":"warehouse_table","connection":"warehouse"}'
 metrics:
   - name: revenue
@@ -97,7 +97,7 @@ metrics:
     expression:
       dialects: [{dialect: ANSI_SQL, expression: "SUM({orders.amount})"}]
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"2","datasets":["orders"],"expression":"SUM({warehouse.orders.amount})"}'
       - vendor_name: CATALOG
         data: 'keep metric data'
@@ -108,7 +108,7 @@ relationships:
     from_columns: [customer_id]
     to_columns: [id]
     custom_extensions:
-      - vendor_name: DOGSLED
+      - vendor_name: BOBSLED
         data: '{"extension_version":"2","left_side":"from","relationship_type":"many_to_one","join_type":"left"}'
       - vendor_name: CATALOG
         data: 'keep relationship data'
@@ -154,7 +154,7 @@ describe('Ossie import converter', () => {
     expect(result.diagnostics[0]?.remedy).toEqual(expect.any(String));
   });
 
-  it('imports a complete 0.2.0.dev0 derived model with DOGSLED version 2 data', () => {
+  it('imports a complete 0.2.0.dev0 derived model with BOBSLED version 2 data', () => {
     const result = importOssieDocuments({
       documents: [{ path: 'sales.yml', content: derivedDev }],
     });
@@ -301,7 +301,7 @@ describe('Ossie import converter', () => {
       },
     ],
     ['metadata with more than 100,000 nodes', () => ({ values: Array(100_000).fill(null) })],
-  ])('rejects %s in a DOGSLED extension', (_name, value) => {
+  ])('rejects %s in a BOBSLED extension', (_name, value) => {
     const result = importOssieDocuments({
       documents: [
         {
@@ -401,7 +401,7 @@ describe('Ossie import converter', () => {
         {
           path: 'plain-relationship.yml',
           content: semanticDev.replace(
-            `      - vendor_name: DOGSLED
+            `      - vendor_name: BOBSLED
         data: '{"extension_version":"2","left_side":"from","relationship_type":"many_to_one","join_type":"left"}'
 `,
             ''

@@ -84,7 +84,7 @@ export function validateForEachIteration(
         resourceSpecIsAvailable(pipeline.source, resource.name, lib, project)
       ) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
           message:
             `Resource "${resource.requestedName ?? resource.name}" declares for_each_parent ` +
             `"${resource.forEachParent}", but its resource spec has no extract.for_each edge. ` +
@@ -105,7 +105,7 @@ export function validateForEachIteration(
         )?.name ?? name;
       if (resolvePipelineName(resource.forEachParent) !== resolvePipelineName(parent)) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
           message:
             `Resource "${resource.requestedName ?? resource.name}" declares for_each_parent ` +
             `"${resource.forEachParent}", but its resource spec iterates "${parent}". ` +
@@ -117,7 +117,7 @@ export function validateForEachIteration(
 
     if (!caps.supports_for_each_iteration) {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
         message:
           `Resource "${resource.name}" iterates "${parent}" via extract.for_each, but runner ` +
           `"${pipeline.runner}" does not support for_each iteration. Switch to a runner that ` +
@@ -128,7 +128,7 @@ export function validateForEachIteration(
 
     if (!inPipeline.has(parent)) {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
         message:
           `Resource "${resource.name}" iterates for_each parent "${parent}", which is not ` +
           `selected in pipeline "${pipeline.name}". The parent must run in the same pipeline so ` +

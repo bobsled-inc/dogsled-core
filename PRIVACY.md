@@ -14,7 +14,7 @@ configures:
 - extractors read local documents, APIs, databases, warehouses, object stores,
   and MCP tools;
 - optional embedding and AI features send selected content to the provider
-  configured in `dogsled.yml`;
+  configured in `bobsled.yml`;
 - loaders write records to the configured local, database, warehouse, search,
   vector, or object-storage destination;
 - operators can run `dogsled runner run` from their own workflow steps, using
@@ -61,7 +61,7 @@ have their own network behavior; review them before loading them. A local execut
 module is trusted application code and is not sandboxed by Dogsled.
 
 Agentic checkpoints retain frozen inputs, model definitions, accepted and
-intermediate results, evidence, and usage under `.dogsled/model-spec/` or the configured
+intermediate results, evidence, and usage under `.bobsled/model-spec/` or the configured
 checkpoint store. Warehouse payload encoding is not encryption. Published findings,
 publication stages, receipts, and shared input cursors can remain in the output
 database. These records can contain source data and personal information.

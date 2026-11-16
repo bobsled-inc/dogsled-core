@@ -103,7 +103,7 @@ export async function resolveEntityGraphRunner(
   // which in turn wins over the `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND` env var. The
   // env fallback is how the standalone `dogsled entity-graph` subprocess + the
   // Cloud Run Jobs executor receive the SAME `credentials_token_command` the
-  // loader gets from dogsled.yml, uniformly across every entity-graph phase.
+  // loader gets from bobsled.yml, uniformly across every entity-graph phase.
   // Undefined leaves the runner on its static credentials (unchanged).
   const credentialsTokenCommand =
     options.credentialsTokenCommand ?? process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'];

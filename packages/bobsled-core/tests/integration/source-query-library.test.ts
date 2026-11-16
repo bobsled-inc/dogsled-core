@@ -284,8 +284,8 @@ describe('source-query library export', () => {
     expect(result.receipts[0]).toContain('action=live');
   });
 
-  it('runs with injected defaultDestination and no .dogsled/config.yml', async () => {
-    // No .dogsled/config.yml and no sources/ dir — both defaults are injected.
+  it('runs with injected defaultDestination and no .bobsled/config.yml', async () => {
+    // No .bobsled/config.yml and no sources/ dir — both defaults are injected.
     const root = await mkdtemp(join(tmpdir(), 'sq-dest-'));
     const queryResourceImpl = vi.fn().mockResolvedValue({
       records: [{ id: 1 }],
@@ -322,7 +322,7 @@ describe('source-query library export', () => {
 
     // A lazy source persisted into the injected DuckDB destination is reused on
     // the second call, proving the destination was driven from defaultDestination
-    // rather than a (nonexistent) .dogsled/config.yml.
+    // rather than a (nonexistent) .bobsled/config.yml.
     expect(queryResourceImpl).toHaveBeenCalledTimes(1);
     expect(first.receipts[0]).toContain('target=duckdb');
     expect(second.rows[0]?.n).toBe(1n);

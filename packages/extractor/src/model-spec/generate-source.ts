@@ -29,7 +29,7 @@ const TYPE_MAP: Record<ColumnType, string> = {
 
 /**
  * Per-resource embed config resolved by the pipeline orchestrator from the
- * `embed:` block in `dogsled.yml`. Mirrors the shape carried in the runtime
+ * `embed:` block in `bobsled.yml`. Mirrors the shape carried in the runtime
  * SCHEMA message but flattened so the scaffold generator does not need to
  * know about the discriminated union over provider auth.
  */
@@ -346,7 +346,7 @@ export function generateModelSpecSource(
     const existingNames = new Set(columns.map((c) => c.name));
     for (const field of embedConfig.fields) {
       // Skip silently when the embed binding references a field the resource
-      // never emits — likely a typo in `dogsled.yml`. Producing a synthetic
+      // never emits — likely a typo in `bobsled.yml`. Producing a synthetic
       // VECTOR column whose `embedded_from.column` doesn't exist on the
       // source would leave the scaffold internally inconsistent.
       if (!(field.field in resource.output)) {

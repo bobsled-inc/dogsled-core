@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import { SETUP_ANSWERS_FILE_SPELLINGS } from './legacy-names.js';
 
-export const SETUP_ANSWERS_FILE = 'dogsled.setup.answers.yml';
+export const SETUP_ANSWERS_FILE = 'bobsled.setup.answers.yml';
 
 /**
  * The setup answers file to read: the given path, or, when that is the default name and missing,

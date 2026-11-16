@@ -142,7 +142,7 @@ previews. Pass `--strict` to fail instead of dropping information, and
 integrations.
 
 With `0.2.0.dev0`, the export also carries the project's verified queries in a
-`DOGSLED` extension, and import writes them back as `type: vq` files under
+`BOBSLED` extension, and import writes them back as `type: vq` files under
 `verified_queries/`. A query goes in only when every model or source it refers to
 is exported; a query that refers to none goes in only with `--all`. `0.1.1` leaves
 verified queries out and warns. See

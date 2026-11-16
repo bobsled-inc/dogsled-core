@@ -75,7 +75,7 @@ async function runDoctorCommand(input: {
       .option('--quiet', 'Quiet', false)
       .option('--no-color', 'Disable ANSI colour codes');
     registerDoctorCommand(program);
-    await program.parseAsync(['doctor', '--json', '--config', join(input.cwd, 'dogsled.yml')], {
+    await program.parseAsync(['doctor', '--json', '--config', join(input.cwd, 'bobsled.yml')], {
       from: 'user',
     });
     return { exitCode: process.exitCode == null ? 0 : Number(process.exitCode), stdout };
@@ -208,7 +208,7 @@ describe('Entity graph SDK — end-to-end acceptance (programmatic seams)', () =
     const cwd = mkdtempSync(join(tmpdir(), 'dogsled-doctor-cli-'));
     try {
       mkdirSync(join(cwd, 'generated'), { recursive: true });
-      writeFileSync(join(cwd, 'dogsled.yml'), 'pipelines: {}\n');
+      writeFileSync(join(cwd, 'bobsled.yml'), 'pipelines: {}\n');
       const result = await runDoctorCommand({
         cwd,
         env: { NODE_ENV: 'production', BOBSLED_CORE_MCP_ALLOW_UNFILTERED: '1' },

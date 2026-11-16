@@ -4,11 +4,11 @@ The lazy/live source-query engine that powers the `dogsled source-query` (alias
 `vq`) CLI is also importable as a library. This lets a host application drive the
 engine directly — injecting source definitions, the default destination, a
 warehouse SQL runner, and API secrets in memory, without requiring a
-`sources/*.yml` tree or a `.dogsled/config.yml` on disk.
+`sources/*.yml` tree or a `.bobsled/config.yml` on disk.
 
 All injection points are **additive and optional**. When omitted, the engine
 behaves exactly like the CLI: it loads `sources/*.yml` from `projectRoot`, reads
-the default destination from `.dogsled/config.yml`, and resolves API secrets from
+the default destination from `.bobsled/config.yml`, and resolves API secrets from
 `process.env`.
 
 ## Export surface
@@ -140,7 +140,7 @@ const engine = new LazyQueryEngine({
   projectRoot: '/tmp/ephemeral-project', // only used for the scratch temp dir
   apiResourceEntries,
 
-  // 2. Inject the default destination instead of reading .dogsled/config.yml.
+  // 2. Inject the default destination instead of reading .bobsled/config.yml.
   //    `dest` selects the kind; remaining fields mirror default_destination.
   defaultDestination: {
     dest: 'duckdb',

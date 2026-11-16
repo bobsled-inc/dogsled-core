@@ -865,7 +865,7 @@ describe('WarehouseResourceV2SpecSchema (three-block)', () => {
     },
     // V2 resource load block carries only overrides and defaults — never the
     // destination integration. The destination binding comes from the pipeline
-    // (dogsled.yml), CLI --load-integration, or extractor.yml default_load.
+    // (bobsled.yml), CLI --load-integration, or extractor.yml default_load.
     load: {
       overrides: {
         role: 'LOADER_ROLE',

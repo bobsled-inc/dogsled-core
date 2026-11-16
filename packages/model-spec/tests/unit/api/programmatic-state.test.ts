@@ -2,8 +2,8 @@
  * Programmatic run-state I/O on `runProject`.
  *
  * When the caller supplies `opts.state`, Dogsled must:
- *   - skip reading `.dogsled/model-spec/run-state.json` entirely (even when present);
- *   - skip writing `.dogsled/model-spec/run-state.json` entirely;
+ *   - skip reading `.bobsled/model-spec/run-state.json` entirely (even when present);
+ *   - skip writing `.bobsled/model-spec/run-state.json` entirely;
  *   - return the post-run state on `result.state` for the orchestrator to persist.
  *
  * Stateless orchestrators (host application) extract a bundle into a tempdir on
@@ -118,7 +118,7 @@ describe('runProject — programmatic state I/O', () => {
       };
       if (mode === 'disk') {
         await writeFile(
-          path.join(projectDir, '.dogsled/model-spec/run-state.json'),
+          path.join(projectDir, '.bobsled/model-spec/run-state.json'),
           JSON.stringify(state)
         );
       }
@@ -135,7 +135,7 @@ describe('runProject — programmatic state I/O', () => {
     }
   );
 
-  it('returns the new state on result.state and skips writing .dogsled/model-spec/run-state.json when state is supplied', async () => {
+  it('returns the new state on result.state and skips writing .bobsled/model-spec/run-state.json when state is supplied', async () => {
     const projectDir = await writeMinimalProject();
     const { customRunners, run } = makeMockRunner();
 
@@ -152,17 +152,17 @@ describe('runProject — programmatic state I/O', () => {
 
     // Critical: the orchestrator owns persistence. Dogsled must not have written
     // the file behind the caller's back.
-    expect(fsSync.existsSync(path.join(projectDir, '.dogsled/model-spec', 'run-state.json'))).toBe(
+    expect(fsSync.existsSync(path.join(projectDir, '.bobsled/model-spec', 'run-state.json'))).toBe(
       false
     );
   });
 
   it('ignores a stale on-disk run-state.json when state is supplied programmatically', async () => {
-    // Spec scenario 6: the tempdir may contain a stale .dogsled/model-spec/run-state.json
+    // Spec scenario 6: the tempdir may contain a stale .bobsled/model-spec/run-state.json
     // from a different project. Dogsled must not read it.
     const projectDir = await writeMinimalProject();
     await writeFile(
-      path.join(projectDir, '.dogsled/model-spec', 'run-state.json'),
+      path.join(projectDir, '.bobsled/model-spec', 'run-state.json'),
       JSON.stringify({
         models: {
           'duckdb.some_unrelated_model': {
@@ -215,7 +215,7 @@ describe('runProject — programmatic state I/O', () => {
     expect(second.state.models['duckdb.stg_orders']?.lastRunAt).toBeDefined();
     expect(run2).toHaveBeenCalled();
     // Still no disk write.
-    expect(fsSync.existsSync(path.join(projectDir, '.dogsled/model-spec', 'run-state.json'))).toBe(
+    expect(fsSync.existsSync(path.join(projectDir, '.bobsled/model-spec', 'run-state.json'))).toBe(
       false
     );
     void run1;
@@ -242,7 +242,7 @@ describe('runProject — programmatic state I/O', () => {
 
     expect(result.ok).toBe(true);
     // fullRefresh wins on the read side — but writes still bypass disk.
-    expect(fsSync.existsSync(path.join(projectDir, '.dogsled/model-spec', 'run-state.json'))).toBe(
+    expect(fsSync.existsSync(path.join(projectDir, '.bobsled/model-spec', 'run-state.json'))).toBe(
       false
     );
     expect(result.state.models['duckdb.stg_orders']?.lastRunAt).not.toBe(
@@ -312,7 +312,7 @@ describe('runProject — programmatic state I/O', () => {
 
     expect(result.ok).toBe(true);
     // Default behavior: state is persisted to disk.
-    expect(fsSync.existsSync(path.join(projectDir, '.dogsled/model-spec', 'run-state.json'))).toBe(
+    expect(fsSync.existsSync(path.join(projectDir, '.bobsled/model-spec', 'run-state.json'))).toBe(
       true
     );
   });

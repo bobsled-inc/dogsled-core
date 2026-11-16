@@ -140,7 +140,7 @@ export function validateResourceSourceAlignment(
     if (declaredIntegration === undefined) continue;
     if (declaredIntegration !== pipeline.source) {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
         message:
           `Resource "${name}" declares extract.integration as "${declaredIntegration}" ` +
           `but pipeline "${pipeline.name}" binds it to source "${pipeline.source}". Either ` +
@@ -179,7 +179,7 @@ export function validateResourceResolution(
     if (isPathLikeResource(name)) {
       if (escapesSourceFolder(name)) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
           message:
             `Resource "${name}" escapes resources/${pipeline.source}/ via path traversal. ` +
             `Use a name relative to the source's resource directory.`,
@@ -188,7 +188,7 @@ export function validateResourceResolution(
       }
       if (!findProjectResource(project, pipeline.source, name)) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
           message: `Resource "${name}" not found at resources/${pipeline.source}/${name}.yml`,
         });
       }
@@ -209,7 +209,7 @@ export function validateResourceResolution(
       const entityMsg =
         entityOnly.length > 0 ? ` Or reference by entity with via: ${entityOnly.join(', ')}.` : '';
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources`,
         message: `Resource "${name}" not found in source "${pipeline.source}" (bundled or project-local).${variantMsg}${entityMsg}`,
       });
       continue;

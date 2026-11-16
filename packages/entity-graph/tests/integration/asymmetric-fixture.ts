@@ -248,7 +248,7 @@ outputs:
 // strict SourceSpecSchema parse) builds the right FQ table name:
 //   buildFqName('main', 'neon_accounts', 'duckdb') → "main"."neon_accounts"
 // In production (BigQuery) the equivalent is the dataset name prefix, e.g.
-//   buildFqName('dogsled_managed', 'demo_daily__accounts', 'bigquery')
+//   buildFqName('bobsled_managed', 'demo_daily__accounts', 'bigquery')
 // ---------------------------------------------------------------------------
 
 export const NO_COL_INTEGRATION_HANDLE = 'main';

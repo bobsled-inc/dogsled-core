@@ -1,6 +1,6 @@
 ---
 name: dogsled-add-pipeline
-description: Add a pipeline to an existing Dogsled repository. Use when a user asks to add a new extract, model, or scheduled pipeline to an existing dogsled.yml.
+description: Add a pipeline to an existing Dogsled repository. Use when a user asks to add a new extract, model, or scheduled pipeline to an existing bobsled.yml.
 exposed: true
 triggers:
   - add pipeline

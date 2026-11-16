@@ -292,10 +292,10 @@ describe('ResourceSpecSchema first-class resource fields', () => {
 });
 
 describe('SourceSchema — orchestrator extension keys', () => {
-  it('accepts top-level keys with the `dogsled_` prefix and strips them', () => {
+  it('accepts top-level keys with the `bobsled_` prefix and strips them', () => {
     const result = SourceSchema.safeParse({
       ...sourceSpec,
-      dogsled_connection_ref: 'product_data',
+      bobsled_connection_ref: 'product_data',
       bobsled_internal_id: 42,
     });
     expect(result.success).toBe(true);
@@ -303,7 +303,7 @@ describe('SourceSchema — orchestrator extension keys', () => {
       // Extension keys are stripped before strict validation runs and
       // do not appear on the parsed object — Dogsled itself never reads
       // them, so they're invisible from the consumer's perspective.
-      expect(result.data).not.toHaveProperty('dogsled_connection_ref');
+      expect(result.data).not.toHaveProperty('bobsled_connection_ref');
       expect(result.data).not.toHaveProperty('bobsled_internal_id');
     }
   });

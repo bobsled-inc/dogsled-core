@@ -72,14 +72,14 @@ function parse<T>(schema: z.ZodType<T>, data: unknown, where: string): T {
 }
 function onlyKeys(data: Record<string, unknown>, keys: Set<string>, where: string): void {
   for (const key of Object.keys(data)) {
-    if (!keys.has(key)) fail(where, `Unsupported DOGSLED property ${key}`);
+    if (!keys.has(key)) fail(where, `Unsupported BOBSLED property ${key}`);
   }
 }
 /** Native schemas sometimes strip unknown keys. Extensions must not silently lose settings. */
 export function assertNoDiscardedKeys(input: unknown, output: unknown, where: string): void {
   if (!input || typeof input !== 'object' || !output || typeof output !== 'object') return;
   for (const key of Object.keys(input)) {
-    if (!Object.hasOwn(output, key)) fail(where, `Unsupported DOGSLED property ${key}`);
+    if (!Object.hasOwn(output, key)) fail(where, `Unsupported BOBSLED property ${key}`);
     assertNoDiscardedKeys(Reflect.get(input, key), Reflect.get(output, key), `${where}.${key}`);
   }
 }
@@ -129,10 +129,10 @@ function fieldFor(
   if (!derived && !sql_type) {
     fail(
       where,
-      'Source fields require DOGSLED sql_type; logical types do not specify physical precision'
+      'Source fields require BOBSLED sql_type; logical types do not specify physical precision'
     );
   }
-  if (derived && !build_expression) fail(where, 'Derived fields require DOGSLED build_expression');
+  if (derived && !build_expression) fail(where, 'Derived fields require BOBSLED build_expression');
   if (!derived && build_expression) fail(where, 'Source fields cannot have a build_expression');
   // A computed semantic field is not necessarily an output column. Until that
   // distinction is represented, fail rather than compile a misleading schema.
@@ -142,7 +142,7 @@ function fieldFor(
     if (!new RegExp(`^(?:${escaped}|"${escaped}"|\x60${escaped}\x60)$`).test(text)) {
       fail(
         where,
-        'Dogsled output fields must read their finished column; put build formulas in DOGSLED build_expression'
+        'Dogsled output fields must read their finished column; put build formulas in BOBSLED build_expression'
       );
     }
   }
@@ -161,13 +161,13 @@ function fieldFor(
 export function translateOssieDocument(
   document: unknown,
   filePath: string,
-  vendor = 'DOGSLED'
+  vendor = 'BOBSLED'
 ): TranslatedOssieDocument {
   const doc = validateOssieDocument(document, filePath);
   if (Object.keys(bobsledExtension(doc, filePath, false, vendor)).length) {
     fail(
       filePath,
-      'Document-level DOGSLED execution settings are unsupported; use dataset extensions'
+      'Document-level BOBSLED execution settings are unsupported; use dataset extensions'
     );
   }
   const entries: TranslatedOssieEntry[] = [];
@@ -182,11 +182,11 @@ export function translateOssieDocument(
     datasets.set(dataset.name, dataset);
     const extension = bobsledExtension(dataset, where, true, vendor);
     if (extension['extension_version'] !== '1') {
-      fail(where, 'Unsupported DOGSLED extension_version; expected "1"');
+      fail(where, 'Unsupported BOBSLED extension_version; expected "1"');
     }
     const kind = extension['kind'];
     if (kind !== 'source' && kind !== 'derived') {
-      fail(where, 'DOGSLED kind must be source or derived (agentic is unsupported)');
+      fail(where, 'BOBSLED kind must be source or derived (agentic is unsupported)');
     }
     const columns = fieldsFor(dataset, kind === 'derived', where, vendor);
     let native: unknown;
@@ -227,8 +227,8 @@ export function translateOssieDocument(
       derivedNames.add(dataset.name);
       const materialization = (native as z.infer<typeof TransformSpecSchema>).materialization.type;
       if (isOssieLocalUri(dataset.source)) {
-        if (currentOssieUri(dataset.source) !== `dogsled://models/${dataset.name}`) {
-          fail(where, 'Project-local source must be dogsled://models/<dataset-name>');
+        if (currentOssieUri(dataset.source) !== `bobsled://models/${dataset.name}`) {
+          fail(where, 'Project-local source must be bobsled://models/<dataset-name>');
         }
         // Live closures are validated by the existing runtime. Persisted outputs
         // cannot substitute a local reference for their actual warehouse address.
@@ -240,7 +240,7 @@ export function translateOssieDocument(
           fail(where, 'Persisted models require a warehouse source address');
         }
       } else if (materialization === 'ephemeral') {
-        fail(where, 'Ephemeral models require dogsled://models/<dataset-name>');
+        fail(where, 'Ephemeral models require bobsled://models/<dataset-name>');
       }
     } else {
       const { extension_version: _version, kind: _kind, ...settings } = extension;
@@ -274,9 +274,9 @@ export function translateOssieDocument(
       if (
         sourceType === 'api_resource' &&
         currentOssieUri(dataset.source) !==
-          `dogsled://sources/${String(settings['connection'])}/${dataset.name}`
+          `bobsled://sources/${String(settings['connection'])}/${dataset.name}`
       ) {
-        fail(where, 'API sources require dogsled://sources/<connection>/<dataset-name>');
+        fail(where, 'API sources require bobsled://sources/<connection>/<dataset-name>');
       }
     }
     origins.push({

@@ -35,9 +35,9 @@ const regular = (checksum: string) => ({
 describe('durable agentic execution', { timeout: 60_000 }, () => {
   it('rejects a retired agentic state index', async () => {
     const dir = root();
-    fs.mkdirSync(join(dir, '.dogsled/model-spec'), { recursive: true });
+    fs.mkdirSync(join(dir, '.bobsled/model-spec'), { recursive: true });
     fs.writeFileSync(
-      join(dir, '.dogsled/model-spec/run-state.json'),
+      join(dir, '.bobsled/model-spec/run-state.json'),
       JSON.stringify({ models: {}, agentic: { version: 1, runs: {} } })
     );
     const lease = await createLocalAgenticStateStore(dir).acquire(key);
@@ -128,7 +128,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
       expect(resumed.chargedTokens).toBe(4);
       expect(f.host.prepare).not.toHaveBeenCalled();
       expect(f.host.executeAgent).not.toHaveBeenCalled();
-      if (stateStore) expect(fs.existsSync(join(dir, '.dogsled/model-spec'))).toBe(false);
+      if (stateStore) expect(fs.existsSync(join(dir, '.bobsled/model-spec'))).toBe(false);
     }
   );
 
@@ -262,12 +262,12 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
     };
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow('missing');
     await executeAgenticRun(f.host, f.context(), { ...options, run: { id: 'run', mode: 'start' } });
-    const file = join(dir, '.dogsled/model-spec/run-state.json');
+    const file = join(dir, '.bobsled/model-spec/run-state.json');
     const state = JSON.parse(fs.readFileSync(file, 'utf8'));
     const ref = state.agentic.runs[digestAgenticState(key)];
-    fs.writeFileSync(join(dir, '.dogsled/model-spec', ref), '{}');
+    fs.writeFileSync(join(dir, '.bobsled/model-spec', ref), '{}');
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow('corrupt');
-    fs.unlinkSync(join(dir, '.dogsled/model-spec', ref));
+    fs.unlinkSync(join(dir, '.bobsled/model-spec', ref));
     await expect(executeAgenticRun(f.host, f.context(), options)).rejects.toThrow('corrupt');
     state.agentic.runs[digestAgenticState(key)] = '../../outside.json';
     fs.writeFileSync(file, JSON.stringify(state));
@@ -277,8 +277,8 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
   it('rejects a symlink state directory and symlink artifacts', async () => {
     const dir = root();
     const outside = root();
-    fs.mkdirSync(join(dir, '.dogsled'));
-    fs.symlinkSync(outside, join(dir, '.dogsled/model-spec'));
+    fs.mkdirSync(join(dir, '.bobsled'));
+    fs.symlinkSync(outside, join(dir, '.bobsled/model-spec'));
     await expect(createLocalAgenticStateStore(dir).acquire(key)).rejects.toThrow('unavailable');
   });
 
@@ -286,7 +286,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
     const dir = root();
     const outside = fs.mkdtempSync(join(tmpdir(), 'dogsled-outside-'));
     try {
-      fs.symlinkSync(outside, join(dir, '.dogsled'));
+      fs.symlinkSync(outside, join(dir, '.bobsled'));
       expect(() => saveState(dir, { models: {} })).toThrow(/inside the project/);
       expect(fs.existsSync(join(outside, 'model-spec'))).toBe(false);
     } finally {
@@ -433,8 +433,8 @@ it('saves the deadline before preparation and keeps it after an interrupted prep
 
 it('stops before writing when orphan files exhaust the local artifact budget', async () => {
   const dir = root();
-  fs.mkdirSync(join(dir, '.dogsled/model-spec'), { recursive: true });
-  const fd = fs.openSync(join(dir, '.dogsled/model-spec/orphan.tmp'), 'w');
+  fs.mkdirSync(join(dir, '.bobsled/model-spec'), { recursive: true });
+  const fd = fs.openSync(join(dir, '.bobsled/model-spec/orphan.tmp'), 'w');
   fs.ftruncateSync(fd, 256 * 1024 * 1024);
   fs.closeSync(fd);
   const f = runFixture(1);
@@ -448,7 +448,7 @@ it('stops before writing when orphan files exhaust the local artifact budget', a
     })
   ).rejects.toThrow('limit');
   expect(f.host.prepare).not.toHaveBeenCalled();
-  expect(fs.existsSync(join(dir, '.dogsled/model-spec/run-state.json'))).toBe(false);
+  expect(fs.existsSync(join(dir, '.bobsled/model-spec/run-state.json'))).toBe(false);
 });
 
 it('drops removed known optional model fields while preserving unknown fields', () => {

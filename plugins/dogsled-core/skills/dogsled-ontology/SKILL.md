@@ -140,7 +140,7 @@ Import does not fetch IRIs or guess connections. Pass `--connection warehouse` t
 choose a connection for standard semantic sources. When a bundle includes semantic
 models, its mappings bind to the imported native files. Embedded legacy mappings are split
 into separate mapping files. Allowed foreign mapping extensions stay inert.
-Native bindings use a versioned `DOGSLED` mapping extension. Rules and identities
+Native bindings use a versioned `BOBSLED` mapping extension. Rules and identities
 survive conversion; comments and source folder layout are not exchange guarantees.
 
 The ontology and mapping schema revision is

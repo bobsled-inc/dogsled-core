@@ -22,8 +22,8 @@ Recommend a small first scope, such as one source and one useful model.
 
 Before writing files, inspect the selected project, its Project guide, Project
 Skills, configuration, connections, resources, sources and models. Read any saved
-setup summary and `dogsled.setup.answers.yml`. A project can use nested typed
-files without a root `dogsled.yml`; do not treat that as an empty project. Reuse
+setup summary and `bobsled.setup.answers.yml`. A project can use nested typed
+files without a root `bobsled.yml`; do not treat that as an empty project. Reuse
 working definitions and preserve unrelated files. Resume from the missing step
 instead of initializing again.
 

@@ -460,7 +460,7 @@ describe('publishCrossWarehouse', () => {
     // for this published model. `planTransition` returns `kind: 'recreate'`
     // carrying a DROP VIEW preDdl that must execute before CREATE TABLE.
     await writeFile(
-      path.join(projectDir, '.dogsled/model-spec', 'run-state.json'),
+      path.join(projectDir, '.bobsled/model-spec', 'run-state.json'),
       JSON.stringify({
         models: {
           'mart.customer_orders': {

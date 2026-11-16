@@ -4,7 +4,7 @@ Jev selects one answer from a fixed set of choices. Dogsled runs one classificat
 
 ## Configure a profile
 
-In `dogsled.yml`:
+In `bobsled.yml`:
 
 ```yaml
 platform:

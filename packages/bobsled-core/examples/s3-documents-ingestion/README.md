@@ -50,7 +50,7 @@ The document extractor emits Dogsled protocol streams that load as warehouse tab
 ## Adding embeddings
 
 Uncomment the `embedding:` block in `resources/<provider>/documents.yml` and
-declare a matching model role under `platform.models` in your `dogsled.yml`:
+declare a matching model role under `platform.models` in your `bobsled.yml`:
 
 ```yaml
 platform:

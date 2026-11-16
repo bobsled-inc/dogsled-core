@@ -120,7 +120,7 @@ export interface RunProjectOptions {
    * Shell command that prints a fresh `{"access_token","expires_at"}` token —
    * the SAME `credentials_token_command` the loader consumes. Converted to a
    * {@link tokenProvider} when one isn't supplied directly. Used by the Dogsled
-   * CLI to forward `credentials_token_command` from dogsled.yml to model runs.
+   * CLI to forward `credentials_token_command` from bobsled.yml to model runs.
    */
   credentialsTokenCommand?: string;
   /**
@@ -150,7 +150,7 @@ export interface RunProjectOptions {
   /**
    * Prior `RunState` supplied in-memory. Presence (not truthiness — `{ models: {} }`
    * is a valid value meaning "first run") flips Dogsled into programmatic mode:
-   * `.dogsled/model-spec/run-state.json` is neither read nor written. The new state is returned
+   * `.bobsled/model-spec/run-state.json` is neither read nor written. The new state is returned
    * on `result.state` for the caller to persist.
    *
    * Combined with `fullRefresh: true`, the supplied state is preserved on the
@@ -409,7 +409,7 @@ export async function runProject(
   // which in turn wins over the `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND` env var. The
   // env fallback is how the standalone `dogsled model run` subprocess + the Cloud
   // Run Jobs executor receive the SAME `credentials_token_command` the loader
-  // gets from dogsled.yml, without threading a flag through every CLI verb. Built
+  // gets from bobsled.yml, without threading a flag through every CLI verb. Built
   // once per run and shared by every integration's runner. Undefined leaves the
   // runners on their static credentials (behaviour unchanged).
   const credentialsTokenCommand =

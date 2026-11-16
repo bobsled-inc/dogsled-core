@@ -18,16 +18,16 @@ Files with fixed names at the root:
 
 | File                                  | Kind                                                                                               |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `dogsled.yml` or `dogsled.yaml`       | Pipelines, destinations, AI model roles. A file elsewhere with `type: pipeline_config` adds to it. |
+| `bobsled.yml` or `bobsled.yaml`       | Pipelines, destinations, AI model roles. A file elsewhere with `type: pipeline_config` adds to it. |
 | `extractor.yml`                       | Extraction folder settings.                                                                        |
 | `model-spec.yml` or `model-spec.yaml` | Model folder settings.                                                                             |
 | `extract-intents.yml` or `.yaml`      | Plans for paid APIs.                                                                               |
 | `AGENTS.md`                           | The Project guide.                                                                                 |
 | `skills/<name>/SKILL.md`              | A Project Skill.                                                                                   |
 
-`.dogsled/config.yml` holds local settings and is not a project file.
+`.bobsled/config.yml` holds local settings and is not a project file.
 
-## dogsled.yml
+## bobsled.yml
 
 | Key               | Description                                                                                                                                                         |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -37,7 +37,7 @@ Files with fixed names at the root:
 | `platform.models` | [AI roles](../guides/embeddings-and-ai.md): `auth_env_vars` permits custom key names (also in embed configs). Standard names work by default.                       |
 | `platform.budget` | `ai_cost_daily_usd`, `per_source_rpm`.                                                                                                                              |
 
-Secrets in `dogsled.yml` must be environment references (`$NAME`). Each destination declares its referenced names in `auth_env_vars`.
+Secrets in `bobsled.yml` must be environment references (`$NAME`). Each destination declares its referenced names in `auth_env_vars`.
 
 ### Destinations
 
@@ -53,7 +53,7 @@ Secrets in `dogsled.yml` must be environment references (`$NAME`). Each destinat
 | `turbopuffer`     | `api_key`, `region`, `namespace_prefix`, `distance_metric`, `full_text_columns`                                                                                                                                                          |
 | `local`           | `format` (`parquet`, `jsonl`, `csv`), `stream_subfolder`                                                                                                                                                                                 |
 | `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`                                                                                                                                                                                         |
-| `dogsled_managed` | `dogsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/dogsled-cloud.md))                                                                                                                                  |
+| `bobsled_managed` | `bobsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/dogsled-cloud.md))                                                                                                                                  |
 
 Every destination also accepts `load_strategy`, `schema_behavior` and
 `table_prefix`.
@@ -185,7 +185,7 @@ Sources and their columns also take `ai_context` and `synonyms`. See
   specs; see [Entity graph](../guides/entity-graph.md).
 - `agents/`: agent definitions read by Dogsled Cloud. Core recognizes them and does
   not run them.
-- `.dogsled/config.yml`: `default_destination` for lazy API sources, with `dest`
+- `.bobsled/config.yml`: `default_destination` for lazy API sources, with `dest`
   (`ducklake`, `duckdb`, `bigquery` or `snowflake`) and that destination's fields:
   `dbPath`, `catalogUrl`, `targetSchema`, `projectId`, `datasetId`, `account`,
   `username`, `privateKeyPath`, `warehouse`, `database`.

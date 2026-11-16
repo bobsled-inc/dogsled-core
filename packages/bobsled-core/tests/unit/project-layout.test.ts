@@ -124,7 +124,7 @@ Orders come from DuckDB.
 `;
 
 const CONVENTIONAL: Record<string, string> = {
-  'dogsled.yml': PIPELINES,
+  'bobsled.yml': PIPELINES,
   'integrations/duckdb.yml': INTEGRATION,
   'sources/raw_orders.yml': SOURCE,
   'models/stg_orders.yml': MODEL,
@@ -166,7 +166,7 @@ afterEach(() => {
 describe('conventional and data-first project layouts', () => {
   it('resolves an authored private Blob source and guarded Snowflake table', async () => {
     const root = project({
-      'dogsled.yml': `destinations:
+      'bobsled.yml': `destinations:
   staging:
     auth_env_vars: [SNOWFLAKE_TOKEN]
     type: snowflake
@@ -228,7 +228,7 @@ output: {}
 
   it('rejects an ownership marker on a non-Snowflake destination', async () => {
     const root = project({
-      'dogsled.yml': `destinations:
+      'bobsled.yml': `destinations:
   warehouse:
     type: duckdb
     db_path: ./data.duckdb
@@ -295,7 +295,7 @@ pipelines:
 
     expect(findBobsledProject(conventional)).toEqual({
       projectRoot: conventional,
-      configPaths: [path.join(conventional, 'dogsled.yml')],
+      configPaths: [path.join(conventional, 'bobsled.yml')],
       index: expect.objectContaining({ root: conventional }),
     });
     expect(findBobsledProject(dataFirst)).toEqual({
@@ -394,10 +394,10 @@ describe('project files that cannot be loaded', () => {
   });
 
   it('rejects duplicate pipelines across root and nested fragments with both owners', async () => {
-    const root = project({ ...DATA_FIRST, 'dogsled.yml': PIPELINES });
+    const root = project({ ...DATA_FIRST, 'bobsled.yml': PIPELINES });
 
     await expect(resolveProjectPipelines({ projectRoot: root })).rejects.toThrow(
-      /Duplicate pipeline "github_issues" is declared in both dogsled\.yml and settings\/pipelines\.yml/
+      /Duplicate pipeline "github_issues" is declared in both bobsled\.yml and settings\/pipelines\.yml/
     );
   });
 

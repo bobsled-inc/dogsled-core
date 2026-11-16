@@ -128,7 +128,7 @@ Custom S3 endpoints require `static_env` credentials with every name declared, i
 
 Markdown parser `md:1.1.0` preserves blank lines before lists. Version `md:1.2.0` removes nested image badges inside links and their target URLs. Reparse existing documents to use the changed output.
 
-Ossie `0.2.0.dev0` export now carries verified queries in a semantic-model `DOGSLED` extension, and import restores them as native `type: vq` files under `verified_queries/`. Export includes a query only when every dataset it refers to is selected. The `0.1.1` profile leaves verified queries out with a warning.
+Ossie `0.2.0.dev0` export now carries verified queries in a semantic-model `BOBSLED` extension, and import restores them as native `type: vq` files under `verified_queries/`. Export includes a query only when every dataset it refers to is selected. The `0.1.1` profile leaves verified queries out with a warning.
 
 Extraction output mapped `from: { input: ... }` now records the inputs each request actually used, including declared defaults and each incremental window's generated bounds, for HTTP and MCP resources. Input values are never resolved from environment references, so a default that holds one is copied only as its literal text, and a request that templates it fails validation.
 

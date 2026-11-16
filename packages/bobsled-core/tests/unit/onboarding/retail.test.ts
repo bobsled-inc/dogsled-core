@@ -104,8 +104,8 @@ it('checks a retail pilot without writing progress and rejects injected ticket I
     { ticketId: 'case-0001' }
   );
   expect(result.receipts.join(' ')).toContain('Pilot');
-  await expect(access(join(root, '.dogsled/onboarding/transform.json'))).rejects.toThrow();
-  await expect(access(join(root, '.dogsled/onboarding/transform.attempt.json'))).rejects.toThrow();
+  await expect(access(join(root, '.bobsled/onboarding/transform.json'))).rejects.toThrow();
+  await expect(access(join(root, '.bobsled/onboarding/transform.attempt.json'))).rejects.toThrow();
   for (const changed of [
     { analysis_mode: 'fixture' },
     { product_id: 'invented' },

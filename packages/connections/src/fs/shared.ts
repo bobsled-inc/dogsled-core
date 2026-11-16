@@ -30,7 +30,7 @@ export function assertSafeHandle(handle: string, fieldName = 'handle'): void {
 
 /**
  * Extensions the loaders accept, in preference order. If both exist we emit
- * a warning and use the first (matching `dogsled.yml` behavior).
+ * a warning and use the first (matching `bobsled.yml` behavior).
  */
 export const YAML_EXTENSIONS = ['.yml', '.yaml'] as const;
 

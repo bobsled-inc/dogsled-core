@@ -64,7 +64,7 @@ const CAPABILITIES = [
       'One-command ELT',
       'Cron-based scheduling',
       'Resource selection',
-      'dogsled.yml config file',
+      'bobsled.yml config file',
     ],
   },
   {

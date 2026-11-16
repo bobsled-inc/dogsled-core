@@ -1,6 +1,6 @@
 ---
 name: dogsled-generate-yml
-description: Generate a dogsled.yml pipeline configuration from a plain-English goal. Use when a user describes data to sync, sources, destinations, schedules, or analytics and wants Dogsled configuration.
+description: Generate a bobsled.yml pipeline configuration from a plain-English goal. Use when a user describes data to sync, sources, destinations, schedules, or analytics and wants Dogsled configuration.
 argument-hint: '<goal> — e.g., "sync stripe and hubspot to bigquery every 4 hours"'
 exposed: true
 triggers:
@@ -21,7 +21,7 @@ Translate the goal into pipeline intent, then route each pipeline type to its au
 ## Workflow
 
 1. Parse the goal into source integrations, destination, exact resources, transport preference, schedule, and optional embeddings/models.
-2. Inspect the repository and its pipeline config files. Keep the root `dogsled.yml` or `dogsled.yaml` when it already owns the related pipeline. For a domain-specific fragment, add a typed `pipeline_config` file. Discover capabilities with:
+2. Inspect the repository and its pipeline config files. Keep the root `bobsled.yml` or `bobsled.yaml` when it already owns the related pipeline. For a domain-specific fragment, add a typed `pipeline_config` file. Discover capabilities with:
    ```bash
    dogsled integrations list
    dogsled integrations show <source>
@@ -35,7 +35,7 @@ Translate the goal into pipeline intent, then route each pipeline type to its au
    ```
 7. Explain required environment variables, local execution boundaries, and the safe first-run command from `extract-pipelines`.
 
-Do not default unspecified resources to “all.” Inspect the integration and either select the resources justified by the goal or ask for the missing choice. Writing `dogsled.yml` is an implementation action; when authorized, edit it with the repository workflow rather than printing shell redirection instructions.
+Do not default unspecified resources to “all.” Inspect the integration and either select the resources justified by the goal or ask for the missing choice. Writing `bobsled.yml` is an implementation action; when authorized, edit it with the repository workflow rather than printing shell redirection instructions.
 
 ## Extract-pipeline capability contract
 

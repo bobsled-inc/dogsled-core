@@ -160,7 +160,7 @@ it('walks a fresh retail project through the CLI and local API without paid call
     await copyFile(join(reference, 'fixture-executor.mjs.txt'), join(root, 'fixture-executor.mjs'));
     // The fixture path needs a role shape, but must never contact a provider.
     await writeFile(
-      join(root, 'dogsled.yml'),
+      join(root, 'bobsled.yml'),
       'pipelines: {}\nplatform:\n  models:\n    review:\n      provider: openai\n      model: example-model\n      api_key: $RETAIL_TEST_UNUSED_KEY\n      auth_env_vars: [RETAIL_TEST_UNUSED_KEY]\n'
     );
     await run(
@@ -190,7 +190,7 @@ it('walks a fresh retail project through the CLI and local API without paid call
     expect(result).toContain('fixture');
     expect(result).toContain('null');
     await run('onboarding', 'render');
-    const html = await readFile(join(root, '.dogsled/onboarding/index.html'), 'utf8');
+    const html = await readFile(join(root, '.bobsled/onboarding/index.html'), 'utf8');
     const artifacts = join(packageRoot, 'test-results/retail-tutorial');
     await mkdir(artifacts, { recursive: true });
     await writeFile(join(artifacts, 'index.html'), html);

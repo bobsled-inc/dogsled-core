@@ -257,7 +257,7 @@ Usage: dogsled doctor [options]
 Check Dogsled project health
 
 Options:
-  --config <path>        Path to dogsled.yml
+  --config <path>        Path to bobsled.yml
   --project-root <path>  Dogsled Project root (default: current directory)
   --no-guide             Skip Project guide validation
   --json                 Emit JSON
@@ -1442,7 +1442,7 @@ Options:
 ```text
 Usage: dogsled model ossie [options] [command]
 
-Import/export Ossie using native Dogsled files and DOGSLED extensions
+Import/export Ossie using native Dogsled files and BOBSLED extensions
 
 Options:
   -h, --help                       display help for command
@@ -4049,7 +4049,7 @@ Run a small embedding and structured-generation probe
 
 Options:
   --connection <role>    platform.models role to test
-  --config <path>        Path to dogsled.yml
+  --config <path>        Path to bobsled.yml
   --project-root <path>  Dogsled Project root (default: current directory)
   --json                 Emit JSON
   --yaml                 Emit YAML
@@ -4103,7 +4103,7 @@ Commands:
                        validation rules
   recommend [options]  Recommend integrations, a destination, schedules, and
                        required secret refs
-  render [options]     Render dogsled.yml, repo docs, resume files, and
+  render [options]     Render bobsled.yml, repo docs, resume files, and
                        dashboard state from setup answers
   doctor [options]     Explain setup blockers and stale generated files in plain
                        English and JSON
@@ -4137,8 +4137,8 @@ Recommend integrations, a destination, schedules, and required secret refs
 
 Options:
   --goal <text>     Plain-English setup goal
-  --answers <path>  Path to dogsled.setup.answers.yml (default:
-                    "dogsled.setup.answers.yml")
+  --answers <path>  Path to bobsled.setup.answers.yml (default:
+                    "bobsled.setup.answers.yml")
   --write           Write the normalized recommendation back to the answers file
   --json            Output as JSON
   --verbose         Enable verbose output
@@ -4151,12 +4151,12 @@ Options:
 ```text
 Usage: dogsled setup render [options]
 
-Render dogsled.yml, repo docs, resume files, and dashboard state from setup
+Render bobsled.yml, repo docs, resume files, and dashboard state from setup
 answers
 
 Options:
-  --answers <path>  Path to dogsled.setup.answers.yml (default:
-                    "dogsled.setup.answers.yml")
+  --answers <path>  Path to bobsled.setup.answers.yml (default:
+                    "bobsled.setup.answers.yml")
   --out-dir <dir>   Target directory (default: ".")
   --json            Output as JSON
   --verbose         Enable verbose output
@@ -4172,9 +4172,9 @@ Usage: dogsled setup doctor [options]
 Explain setup blockers and stale generated files in plain English and JSON
 
 Options:
-  --answers <path>       Path to dogsled.setup.answers.yml (default:
-                         "dogsled.setup.answers.yml")
-  --config <path>        Path to dogsled.yml
+  --answers <path>       Path to bobsled.setup.answers.yml (default:
+                         "bobsled.setup.answers.yml")
+  --config <path>        Path to bobsled.yml
   --project-root <path>  Dogsled Project root (default: current directory)
   --json                 Output as JSON
   --verbose              Enable verbose output
@@ -4306,8 +4306,8 @@ Options:
   -h, --help                display help for command
 
 Commands:
-  validate [options]        Validate dogsled.yml configuration
-  run [options] <pipeline>  Run a single pipeline from dogsled.yml
+  validate [options]        Validate bobsled.yml configuration
+  run [options] <pipeline>  Run a single pipeline from bobsled.yml
   help [command]            display help for command
 ```
 
@@ -4316,10 +4316,10 @@ Commands:
 ```text
 Usage: dogsled runner validate [options]
 
-Validate dogsled.yml configuration
+Validate bobsled.yml configuration
 
 Options:
-  --config <path>        Path to dogsled.yml
+  --config <path>        Path to bobsled.yml
   --project-root <path>  Dogsled Project root (default: current directory)
   --yaml                 Output as YAML
   --strict               Treat warnings as errors
@@ -4334,10 +4334,10 @@ Options:
 ```text
 Usage: dogsled runner run [options] <pipeline>
 
-Run a single pipeline from dogsled.yml
+Run a single pipeline from bobsled.yml
 
 Options:
-  --config <path>                 Path to dogsled.yml
+  --config <path>                 Path to bobsled.yml
   --project-root <path>           Dogsled Project root (default: current
                                   directory)
   --full-refresh                  Ignore bookmarks and extract from the

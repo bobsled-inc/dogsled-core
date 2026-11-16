@@ -50,16 +50,16 @@ describe('custom_api source schema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('tolerates the dogsled_source_kind extension key by stripping it', () => {
+  it('tolerates the bobsled_source_kind extension key by stripping it', () => {
     const result = SourceSpecSchema.safeParse({
       ...baseSource,
       source_type: 'custom_api',
-      dogsled_source_kind: 'custom_api',
+      bobsled_source_kind: 'custom_api',
       auth_env_vars: ['LANGSMITH_API_KEY'],
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect('dogsled_source_kind' in result.data).toBe(false);
+      expect('bobsled_source_kind' in result.data).toBe(false);
     }
   });
 

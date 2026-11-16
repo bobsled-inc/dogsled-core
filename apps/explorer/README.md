@@ -108,13 +108,13 @@ Full model bundle exploration with tabs:
 3. **Resources** — pick specific API resources per integration (with Select All toggle, incremental indicators)
 4. **Destination** — choose DuckDB, BigQuery, Snowflake, PostgreSQL, ClickHouse, Turbopuffer, Local Files, S3, or GCS with destination-specific config fields
 5. **Schedule** — hourly, every 4h, daily, weekly, or custom
-6. **Review** — see generated `dogsled.yml`, copy to clipboard, link to Export Options or Run in Terminal
+6. **Review** — see generated `bobsled.yml`, copy to clipboard, link to Export Options or Run in Terminal
 
 ### Export (`/pipelines/new/export`)
 
 Export your pipeline configuration as YAML or CLI commands:
 
-- **dogsled.yml** — ready-to-use pipeline configuration file
+- **bobsled.yml** — ready-to-use pipeline configuration file
 - **CLI Commands** — copy-paste commands for manual execution
 
 The main terminal CTA also runs every selected integration in sequence, instead of only the first integration in the config.

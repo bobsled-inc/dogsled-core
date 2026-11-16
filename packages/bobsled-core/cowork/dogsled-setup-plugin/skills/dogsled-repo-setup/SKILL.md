@@ -19,4 +19,4 @@ Rules:
 - ask one question at a time
 - recommend defaults instead of giving a long taxonomy
 - store only secret references or placeholders
-- leave a concise `dogsled.setup.summary.md` behind in the repo
+- leave a concise `bobsled.setup.summary.md` behind in the repo

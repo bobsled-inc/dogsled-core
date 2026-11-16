@@ -9,7 +9,7 @@
  *   3. Second run, strategy changed — DROP + recreate, new strategy SQL.
  *   4. Second run, target_schema changed — DROP against PRIOR destination.
  *   5. on_schema_change: fail, columns added — existing fail message intact.
- *   6. Stale .dogsled/model-spec/run-state.json present — Dogsled ignores the file.
+ *   6. Stale .bobsled/model-spec/run-state.json present — Dogsled ignores the file.
  *   7. Partial failure + state-write throws — covered in programmatic-state.test.ts.
  */
 import * as fs from 'node:fs/promises';

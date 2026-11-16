@@ -86,7 +86,7 @@ export function bobsledExtension(
   value: { custom_extensions?: { vendor_name: string; data: string }[] },
   where: string,
   required = false,
-  vendor = 'DOGSLED'
+  vendor = 'BOBSLED'
 ): Record<string, unknown> {
   // Core's own vendor tag is read in every generation's spelling.
   const own = (name: string) =>

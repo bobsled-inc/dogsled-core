@@ -31,7 +31,7 @@ fixed directory.
 - OSI content takes precedence, followed by an explicit Dogsled type, then the
   nearest exact conventional folder for an untyped document. Conventional
   object folders infer their kind at any depth. Historical root files
-  `dogsled.yml`/`dogsled.yaml`, `model-spec.yml`, `extractor.yml`, `extract-intents.yml`,
+  `bobsled.yml`/`bobsled.yaml`, `model-spec.yml`, `extractor.yml`, `extract-intents.yml`,
   root `AGENTS.md`, and `skills/<name>/SKILL.md` retain their behavior. An
   untyped nonroot pipeline config content cue is rejected only when no kind
   applies. Folder names set only a kind, never an identity.

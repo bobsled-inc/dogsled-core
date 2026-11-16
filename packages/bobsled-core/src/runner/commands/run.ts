@@ -36,8 +36,8 @@ function buildOutputOptions(
 export function registerRunCommand(runner: Command): void {
   runner
     .command('run <pipeline>')
-    .description('Run a single pipeline from dogsled.yml')
-    .option('--config <path>', 'Path to dogsled.yml')
+    .description('Run a single pipeline from bobsled.yml')
+    .option('--config <path>', 'Path to bobsled.yml')
     .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
     .option('--full-refresh', 'Ignore bookmarks and extract from the beginning')
     .option(

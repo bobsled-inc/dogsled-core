@@ -62,7 +62,7 @@ describe('writeRenderedSetupFiles', () => {
 
     expect(files.find((file) => file.path === AGENTS_PATH)?.preserveExisting).toBe(true);
     expect(files.find((file) => file.path === STARTER_SKILL_PATH)?.preserveExisting).toBe(true);
-    expect(files.find((file) => file.path === 'dogsled.yml')?.preserveExisting).toBeUndefined();
+    expect(files.find((file) => file.path === 'bobsled.yml')?.preserveExisting).toBeUndefined();
   });
 
   it('writes every file into a fresh directory and preserves nothing', async () => {
@@ -89,7 +89,7 @@ describe('writeRenderedSetupFiles', () => {
     expect(readFileSync(path.join(root, AGENTS_PATH), 'utf-8')).toBe(authored);
     expect(result.preserved).toEqual([AGENTS_PATH]);
     expect(result.written).not.toContain(AGENTS_PATH);
-    expect(result.written).toContain('dogsled.yml');
+    expect(result.written).toContain('bobsled.yml');
   });
 
   it('keeps AGENTS.md symlinked to CLAUDE.md intact and never writes through it', async () => {
@@ -127,7 +127,7 @@ describe('writeRenderedSetupFiles', () => {
     mkdirSync(path.join(root, 'Skills'));
 
     expect(() => writeRenderedSetupFiles(files, root)).toThrow(/existing path casing/);
-    expect(existsSync(path.join(root, 'dogsled.yml'))).toBe(false);
+    expect(existsSync(path.join(root, 'bobsled.yml'))).toBe(false);
   });
 
   it('preserves an edited starter Skill and still configures adapters', async () => {
@@ -147,27 +147,27 @@ describe('writeRenderedSetupFiles', () => {
     ).toBe(true);
   });
 
-  it('overwrites dogsled.yml on a second render and preserves authored files in order', async () => {
+  it('overwrites bobsled.yml on a second render and preserves authored files in order', async () => {
     const root = createRoot();
     const files = await renderExample();
     writeRenderedSetupFiles(files, root);
-    writeFileSync(path.join(root, 'dogsled.yml'), 'stale: true\n', 'utf-8');
+    writeFileSync(path.join(root, 'bobsled.yml'), 'stale: true\n', 'utf-8');
 
     const result = writeRenderedSetupFiles(files, root);
 
-    expect(readFileSync(path.join(root, 'dogsled.yml'), 'utf-8')).toBe(
-      contentOf(files, 'dogsled.yml')
+    expect(readFileSync(path.join(root, 'bobsled.yml'), 'utf-8')).toBe(
+      contentOf(files, 'bobsled.yml')
     );
-    expect(result.written).toContain('dogsled.yml');
+    expect(result.written).toContain('bobsled.yml');
     expect(result.preserved).toEqual([AGENTS_PATH, STARTER_SKILL_PATH]);
   });
 
-  it('refuses to write dogsled.yml through a symbolic link', async () => {
+  it('refuses to write bobsled.yml through a symbolic link', async () => {
     const root = createRoot();
     const files = await renderExample();
     const target = 'keep: me\n';
     writeFileSync(path.join(root, 'other.yml'), target, 'utf-8');
-    symlinkSync('other.yml', path.join(root, 'dogsled.yml'));
+    symlinkSync('other.yml', path.join(root, 'bobsled.yml'));
 
     let caught: unknown;
     try {
@@ -179,9 +179,9 @@ describe('writeRenderedSetupFiles', () => {
     expect(caught).toBeInstanceOf(CommandError);
     expect((caught as CommandError).exitCode).toBe(EXIT_VALIDATION);
     expect((caught as CommandError).message).toBe(
-      'Refusing to write through symbolic link "dogsled.yml"'
+      'Refusing to write through symbolic link "bobsled.yml"'
     );
-    expect(lstatSync(path.join(root, 'dogsled.yml')).isSymbolicLink()).toBe(true);
+    expect(lstatSync(path.join(root, 'bobsled.yml')).isSymbolicLink()).toBe(true);
     expect(readFileSync(path.join(root, 'other.yml'), 'utf-8')).toBe(target);
     expect(existsSync(path.join(root, 'README.md'))).toBe(false);
   });
@@ -189,11 +189,11 @@ describe('writeRenderedSetupFiles', () => {
   it('rejects non-file generated targets before overwriting earlier files', async () => {
     const root = createRoot();
     const files = await renderExample();
-    writeFileSync(path.join(root, 'dogsled.yml'), 'keep: me\n', 'utf-8');
+    writeFileSync(path.join(root, 'bobsled.yml'), 'keep: me\n', 'utf-8');
     mkdirSync(path.join(root, 'README.md'));
 
     expect(() => writeRenderedSetupFiles(files, root)).toThrow(/must be a regular file/);
-    expect(readFileSync(path.join(root, 'dogsled.yml'), 'utf-8')).toBe('keep: me\n');
+    expect(readFileSync(path.join(root, 'bobsled.yml'), 'utf-8')).toBe('keep: me\n');
   });
 
   it('rejects hard-linked generated targets without changing the other link', async () => {
@@ -202,7 +202,7 @@ describe('writeRenderedSetupFiles', () => {
     const files = await renderExample();
     const otherLink = path.join(outside, 'authored.yml');
     writeFileSync(otherLink, 'keep: me\n', 'utf-8');
-    linkSync(otherLink, path.join(root, 'dogsled.yml'));
+    linkSync(otherLink, path.join(root, 'bobsled.yml'));
 
     expect(() => writeRenderedSetupFiles(files, root)).toThrow(/must not be a hard link/);
     expect(readFileSync(otherLink, 'utf-8')).toBe('keep: me\n');

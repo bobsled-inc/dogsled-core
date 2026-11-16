@@ -21,7 +21,7 @@ connection:
   schema: analytics
 auth:
   type: file
-  path: .dogsled/dogsled.duckdb
+  path: .bobsled/bobsled.duckdb
 ```
 
 `connection.schema` is where models are created. Models can run on DuckDB,
@@ -141,7 +141,7 @@ materialization:
 
 ```bash
 dogsled model run daily_revenue --integration warehouse
-dogsled query "SELECT * FROM analytics.daily_revenue ORDER BY order_day" --db-path .dogsled/dogsled.duckdb
+dogsled query "SELECT * FROM analytics.daily_revenue ORDER BY order_day" --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -207,7 +207,7 @@ async function withRunner(method, sql) {
     name: 'warehouse',
     source_type: 'duckdb',
     connection: { schema: 'analytics' },
-    auth: { type: 'file', path: '.dogsled/dogsled.duckdb' },
+    auth: { type: 'file', path: '.bobsled/bobsled.duckdb' },
   });
   try {
     return await runner[method](sql);
@@ -223,7 +223,7 @@ export const query = (sql) => withRunner('query', sql);
 ```bash
 dogsled model seed validate
 dogsled model seed load --dialect duckdb --runner ./runner.mjs
-dogsled query "SELECT * FROM analytics.regions ORDER BY customer" --db-path .dogsled/dogsled.duckdb
+dogsled query "SELECT * FROM analytics.regions ORDER BY customer" --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text

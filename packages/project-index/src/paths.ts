@@ -9,8 +9,8 @@ export type ProjectFileFormat = 'yaml' | 'json' | 'markdown' | 'other';
  * classified by that type wherever it lives.
  */
 const CONVENTIONAL_ROOT_FILES: ReadonlyMap<string, ProjectFileKind> = new Map([
-  ['dogsled.yml', 'pipeline_config'],
-  ['dogsled.yaml', 'pipeline_config'],
+  ['bobsled.yml', 'pipeline_config'],
+  ['bobsled.yaml', 'pipeline_config'],
   // Every Core generation's root configuration name is read as pipeline configuration.
   ...ROOT_CONFIG_FILE_SPELLINGS.map((name): [string, ProjectFileKind] => [name, 'pipeline_config']),
   ['model-spec.yml', 'model_spec_config'],

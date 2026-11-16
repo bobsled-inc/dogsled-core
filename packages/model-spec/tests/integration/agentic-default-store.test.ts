@@ -45,7 +45,7 @@ function project(): string {
   projects.push(directory);
   return directory;
 }
-const stateDirectory = (root: string) => join(root, '.dogsled/model-spec');
+const stateDirectory = (root: string) => join(root, '.bobsled/model-spec');
 const runFile = (root: string, id = hash) =>
   join(stateDirectory(root), `agentic-state/run-${id}.duckdb`);
 const cursorFile = (root: string) => join(stateDirectory(root), 'agentic-state/cursors.duckdb');

@@ -197,7 +197,7 @@ function parseResourceInputMatrixConcurrencyArg(args: string[]): unknown {
 
 function makeProject(bobsledYml: string): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-'));
-  fs.writeFileSync(path.join(dir, 'dogsled.yml'), bobsledYml, 'utf8');
+  fs.writeFileSync(path.join(dir, 'bobsled.yml'), bobsledYml, 'utf8');
   return dir;
 }
 
@@ -405,8 +405,8 @@ pipelines:
   it('rejects an unmaterialized managed destination before spawning a pipeline', async () => {
     const projectRoot = makeProject(`destinations:
   warehouse:
-    type: dogsled_managed
-    dogsled_connection_ref: warehouse-prod
+    type: bobsled_managed
+    bobsled_connection_ref: warehouse-prod
 pipelines:
   github:
     schedule: daily
@@ -423,7 +423,7 @@ pipelines:
         { projectRoot, pipelineName: 'github' },
         { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
       )
-    ).rejects.toThrow('A "dogsled_managed" destination only runs in Dogsled Cloud.');
+    ).rejects.toThrow('A "bobsled_managed" destination only runs in Dogsled Cloud.');
     expect(spawn).not.toHaveBeenCalled();
   });
 
@@ -2189,7 +2189,7 @@ pipelines:
         { projectRoot, pipelineName: 'github' },
         { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
       )
-    ).rejects.toThrow(/dogsled.yml:pipelines.github.resources.0.table/);
+    ).rejects.toThrow(/bobsled.yml:pipelines.github.resources.0.table/);
     expect(spawn).not.toHaveBeenCalled();
   });
 
@@ -2491,7 +2491,7 @@ pipelines:
     );
   });
 
-  it.each([undefined, 'dogsled.yml'])(
+  it.each([undefined, 'bobsled.yml'])(
     'authorizes host embedding keys before config validation (%s)',
     async (configPath) => {
       const projectRoot = makeProject(`destinations:
@@ -2629,7 +2629,7 @@ pipelines:
       (caught: unknown) => caught as Error
     );
     expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain('a destination setting in dogsled.yml');
+    expect((error as Error).message).toContain('a destination setting in bobsled.yml');
     expect((error as Error).message).not.toContain(secret);
   });
 

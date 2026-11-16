@@ -28,7 +28,7 @@ const extension = z
     ontology_mapping: z.object({ bindings: OntologyBindingsSchema }).strict(),
   })
   .strict();
-const vendor = 'DOGSLED';
+const vendor = 'BOBSLED';
 function failure(error: unknown): ConversionResult {
   return {
     ok: false,
@@ -67,7 +67,7 @@ export function exportOntologyDocuments(
             .array(z.object({ vendor_name: z.string(), data: z.string() }).strict())
             .parse(native['custom_extensions'] ?? []);
           if (extensions.some((e) => isOwnOssieVendor(e.vendor_name))) {
-            throw new Error('Conflicting DOGSLED mapping extension.');
+            throw new Error('Conflicting BOBSLED mapping extension.');
           }
           document['custom_extensions'] = [
             ...extensions,
@@ -144,7 +144,7 @@ export function importOntologyDocuments(
           .array(z.object({ vendor_name: z.string(), data: z.string() }).strict())
           .parse(raw['custom_extensions'] ?? []);
         const own = extensions.filter((e) => isOwnOssieVendor(e.vendor_name));
-        if (own.length > 1) throw new Error('Duplicate DOGSLED mapping extensions.');
+        if (own.length > 1) throw new Error('Duplicate BOBSLED mapping extensions.');
         if (own[0]) {
           const value: unknown = JSON.parse(own[0].data);
           assertBounded(value);

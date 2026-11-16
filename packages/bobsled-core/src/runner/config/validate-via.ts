@@ -17,7 +17,7 @@ export function validateViaSelections(
 
   if (pipeline.via !== undefined && !transportIds.has(pipeline.via)) {
     errors.push({
-      path: `dogsled.yml:pipelines.${pipeline.name}.via`,
+      path: `bobsled.yml:pipelines.${pipeline.name}.via`,
       message:
         `transport "${pipeline.via}" not found on source "${pipeline.source}". ` +
         `Available: ${available}.`,
@@ -29,7 +29,7 @@ export function validateViaSelections(
     if (resourceVia === undefined) continue;
     if (!transportIds.has(resourceVia)) {
       errors.push({
-        path: `dogsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.via`,
+        path: `bobsled.yml:pipelines.${pipeline.name}.resources.${resource.name}.via`,
         message:
           `transport "${resourceVia}" not found on source "${pipeline.source}". ` +
           `Available: ${available}.`,

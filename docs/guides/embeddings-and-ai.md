@@ -3,7 +3,7 @@
 Dogsled calls AI models in four places: embedding text while loading, embedding
 document chunks, agentic models, and entity-graph steps such as mention
 extraction. All of them use _model roles_: named connections that you declare once
-in `dogsled.yml` and refer to by name.
+in `bobsled.yml` and refer to by name.
 
 ## Declare model roles
 

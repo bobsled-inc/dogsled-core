@@ -74,7 +74,7 @@ export async function run(ctx) {
       [`${spelling}_source_kind`]: 'bobsled_api',
       transports,
     });
-    await ctx.write('dogsled.yml', {
+    await ctx.write('bobsled.yml', {
       destinations: {
         warehouse: {
           type: `${spelling}_managed`,
@@ -138,9 +138,9 @@ export async function run(ctx) {
     transports,
   });
   assert.equal(scanProject(ctx.project).issues.length, 0);
-  await ctx.write('dogsled.yml', {
+  await ctx.write('bobsled.yml', {
     destinations: {
-      warehouse: { type: 'dogsled_managed', [refB]: 'old', [refA]: 'new' },
+      warehouse: { type: 'bobsled_managed', [refB]: 'old', [refA]: 'new' },
     },
     pipelines: {},
   });
@@ -149,21 +149,21 @@ export async function run(ctx) {
   assert.match(destinationConflict.stdout + destinationConflict.stderr, /LEGACY_KEY_CONFLICT/);
   const rejected = BobsledConfigSchema.safeParse({
     destinations: {
-      warehouse: { type: 'bobsled_lakehouse', dogsled_connection_ref: 'warehouse-demo' },
+      warehouse: { type: 'bobsled_lakehouse', bobsled_connection_ref: 'warehouse-demo' },
     },
     pipelines: {},
   });
   assert.equal(rejected.success, false);
-  assert.match(rejected.error.message, /use dogsled_managed/);
-  await ctx.write('dogsled.yml', {
+  assert.match(rejected.error.message, /use bobsled_managed/);
+  await ctx.write('bobsled.yml', {
     destinations: {
-      warehouse: { type: 'bobsled_lakehouse', dogsled_connection_ref: 'warehouse-demo' },
+      warehouse: { type: 'bobsled_lakehouse', bobsled_connection_ref: 'warehouse-demo' },
     },
     pipelines: {},
   });
   const retired = await ctx.cli(['doctor', '--json'], { expected: null });
   assert.notEqual(retired.code, 0);
-  assert.match(retired.stdout + retired.stderr, /use dogsled_managed/);
+  assert.match(retired.stdout + retired.stderr, /use bobsled_managed/);
 
   const currentManifest = buildPipelineManifestObject(
     [
@@ -193,12 +193,12 @@ export async function run(ctx) {
   assert.equal(trackManifest.success, true);
   assert.equal(trackManifest.data.kind, currentManifest.kind);
   await rm(path.join(ctx.project, 'integrations'), { recursive: true });
-  await ctx.write('dogsled.yml', 'pipelines: [\n');
+  await ctx.write('bobsled.yml', 'pipelines: [\n');
   const broken = await ctx.cli(['doctor', '--json'], { expected: null });
   assert.notEqual(broken.code, 0);
   assert.match(broken.stdout + broken.stderr, /line\s+\d+/i);
   assert.doesNotMatch(broken.stdout + broken.stderr, /^\s+at .+:\d+:\d+\)?$/m);
-  await rm(path.join(ctx.project, 'dogsled.yml'));
+  await rm(path.join(ctx.project, 'bobsled.yml'));
   await ctx.write('track.yml', 'pipelines: {}\n');
   const old = await ctx.cli(['doctor', '--json'], { expected: null });
   assert.doesNotMatch(old.stdout + old.stderr, /Could not find a \w+ Project/);

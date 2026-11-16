@@ -14,7 +14,7 @@ import {
 } from '../../../src/edit/index.js';
 
 const nativeExtension = (data: Record<string, unknown>) => ({
-  vendor_name: 'DOGSLED',
+  vendor_name: 'BOBSLED',
   data: JSON.stringify(data, null, 2),
 });
 const field = (name: string) => ({
@@ -209,7 +209,7 @@ describe('Ossie edits through existing public APIs', () => {
 
   it('does not turn an ephemeral query reference into a non-live view', () => {
     const document = fixture();
-    document.datasets[0]!.source = 'dogsled://models/orders';
+    document.datasets[0]!.source = 'bobsled://models/orders';
     document.datasets[0]!.custom_extensions[0] = nativeExtension({
       extension_version: '1',
       kind: 'derived',

@@ -148,7 +148,7 @@ FROM raw.raw_users AS t0;
 
 Same YAML specs, different SQL dialect. Quoting, casing, and function calls adapt automatically.
 
-When a project declares multiple integrations, each source pins itself to one via `connection: <handle>` (matching the `name` of a `type: integration` file, wherever it lives). Running `dogsled model compile` without `--integration` fans out: every declared integration compiles its own subgraph in the correct dialect, and integrations that no model references are skipped with a warning. A model that joins or unions sources from two different handles is rejected by default; add `publish: <target-handle>` when the model should be staged by Dogsled and landed in a specific warehouse. `dogsled model run` keeps per-integration state under `<handle>.<model>` keys in `.dogsled/model-spec/run-state.json`.
+When a project declares multiple integrations, each source pins itself to one via `connection: <handle>` (matching the `name` of a `type: integration` file, wherever it lives). Running `dogsled model compile` without `--integration` fans out: every declared integration compiles its own subgraph in the correct dialect, and integrations that no model references are skipped with a warning. A model that joins or unions sources from two different handles is rejected by default; add `publish: <target-handle>` when the model should be staged by Dogsled and landed in a specific warehouse. `dogsled model run` keeps per-integration state under `<handle>.<model>` keys in `.bobsled/model-spec/run-state.json`.
 
 ### Cross-Warehouse Publish
 
@@ -1708,7 +1708,7 @@ inputs accordingly when a group requires unchanged context rows.
 
 Storage follows the execution configuration:
 
-- Local file checkpoints share one `agentic_cursors` index in `.dogsled/model-spec/run-state.json`.
+- Local file checkpoints share one `agentic_cursors` index in `.bobsled/model-spec/run-state.json`.
 - The default DuckDB publisher shares one `_dogsled_agentic_publication.cursors`
   table across models when no separate checkpoint store is supplied.
 - A configured warehouse checkpoint store shares one `__dogsled_cursors` table in
@@ -1749,6 +1749,6 @@ not supported.
 Dogsled supports importing and exporting semantic models in the Open Semantic
 Interchange (OSI) format. Use [OSI import and export](docs/ossie-interchange.md)
 to convert between OSI documents and native source, model, metric, and relationship
-YAML, and verified queries (with `0.2.0.dev0`). The guide covers the CLI and SDK, incomplete imports, DOGSLED extensions,
+YAML, and verified queries (with `0.2.0.dev0`). The guide covers the CLI and SDK, incomplete imports, BOBSLED extensions,
 metadata preservation, export limitations, and migration from older raw OSI
 project files.

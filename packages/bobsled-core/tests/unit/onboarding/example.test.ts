@@ -22,7 +22,7 @@ it('starts without bundled records or active models', () => {
   ).toBe(true);
 });
 it('fetches a bounded index page and fans out episodes and cast from those shows', () => {
-  const pipeline = read('reference/dogsled.yml.txt').pipelines.tv;
+  const pipeline = read('reference/bobsled.yml.txt').pipelines.tv;
   expect(pipeline.resources[0].input_matrix.axes.page).toEqual([0]);
   const shows = read('reference/resources/tvmaze/shows.yml.txt');
   expect(shows.api.endpoint).toBe('/shows');

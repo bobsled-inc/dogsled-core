@@ -11,6 +11,7 @@ import {
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { CommandError } from '@bobsled-inc/protocol';
+import { ROOT_CONFIG_FILE_SPELLINGS } from '@bobsled-inc/project-index';
 
 /** Only ordinary project files are accepted; never follow a source/output symlink. */
 export async function containedPath(root: string, name: string): Promise<string> {
@@ -95,9 +96,8 @@ export async function inputFiles(root: string, dataDirectory = 'data'): Promise<
     await walk(dir, 0);
   }
   for (const name of [
-    'dogsled.yml',
-    'dogsled.yaml',
-    '.dogsled/config.yml',
+    ...ROOT_CONFIG_FILE_SPELLINGS,
+    '.bobsled/config.yml',
     'executor.mjs',
     'runner.mjs',
   ]) {
@@ -116,7 +116,7 @@ export async function inputFiles(root: string, dataDirectory = 'data'): Promise<
 
 export async function databaseFingerprint(
   root: string,
-  databasePath = '.dogsled/dogsled.duckdb'
+  databasePath = '.bobsled/bobsled.duckdb'
 ): Promise<string> {
   const path = await containedPath(root, databasePath);
   const stat = await lstat(path).catch((e: NodeJS.ErrnoException) => {

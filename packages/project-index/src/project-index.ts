@@ -376,7 +376,7 @@ function isInBobsledFolder(index: ProjectIndex, issuePath: string): boolean {
  * a conventional folder, or one the project's `model-spec.yml` or `extractor.yml`
  * configures. Dogsled never follows a symbolic link. A link stops loaders where
  * Dogsled read or rejected links before: a root configuration file such as
- * `dogsled.yml`, a YAML file in one of those folders, or anything under
+ * `bobsled.yml`, a YAML file in one of those folders, or anything under
  * `skills/`. Problems with other files (documentation front matter, templated
  * YAML, files owned by other tools, other links) are reported but do not stop
  * loading.

@@ -82,7 +82,7 @@ describeAgenticStoreConformance({
   crashWorker: (handle) => [worker, 'file', project(handle)],
   damage: async (handle) => {
     const { writeFileSync } = await import('node:fs');
-    const directory = join(project(handle), '.dogsled/model-spec');
+    const directory = join(project(handle), '.bobsled/model-spec');
     const snapshot = readdirSync(directory).find((name) => /^[a-f0-9]{64}-.*\.json$/.test(name));
     writeFileSync(join(directory, snapshot!), '{}');
   },
@@ -94,7 +94,7 @@ const runFile = (handle: StoreHandle, key: Parameters<typeof digestAgenticState>
     type: 'file' as const,
     path: join(
       project(handle),
-      `.dogsled/model-spec/agentic-state/run-${digestAgenticState(key)}.duckdb`
+      `.bobsled/model-spec/agentic-state/run-${digestAgenticState(key)}.duckdb`
     ),
     read_only: false,
   },

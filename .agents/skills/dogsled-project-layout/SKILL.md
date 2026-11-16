@@ -27,7 +27,7 @@ Dogsled reads an explicit top-level YAML `type` at any valid path. A typed defin
 
 - Untyped YAML files can inherit a kind from the nearest exact ancestor named `sources`, `models`, `integrations`, `resources`, `actions`, `targets`, `syncs`, `metrics`, `relationships`, `vqs`, `agents`, or `seeds`.
 - Dogsled recognizes raw OSI documents before type or folder inference. Import them into native files for new work. A legacy direct reader remains for existing projects. A conflicting OSI and Dogsled marker is an error.
-- The root `dogsled.yml` and `dogsled.yaml` remain valid untyped pipeline configurations. Pipeline configuration is never inferred from a `pipelines` or `settings` folder; every nonroot fragment declares `type: pipeline_config`.
+- The root `bobsled.yml` and `bobsled.yaml` remain valid untyped pipeline configurations. Pipeline configuration is never inferred from a `pipelines` or `settings` folder; every nonroot fragment declares `type: pipeline_config`.
 - Existing root `model-spec.yml`, `extractor.yml`, and `extract-intents.yml` conventions remain valid. `AGENTS.md` is a guide at the root or under any directory; a Markdown file can also declare `type: guide` in its front matter. A conventional Skill is `skills/<name>/SKILL.md`; another Markdown file declares `type: skill`.
 - Keep `name` explicit where its schema requires one. A Resource outside `resources/<integration>/` declares `integration: <name>`.
 
@@ -38,7 +38,7 @@ Two more consequences:
 - Dogsled merges all indexed pipeline configuration files by key. Put a nonroot fragment anywhere, declare `type: pipeline_config`, and keep each pipeline name, destination name, and single-owner top-level section in one file. Duplicate owners fail with both paths.
 - Run Dogsled from the Project root. The aggregate loader resolves every fragment against that root. `--config` selects one file explicitly and keeps its single-file behavior.
 - A file that declares a Dogsled type but cannot be read (malformed, over 1 MiB, or not UTF-8), and any problem inside a Dogsled folder (`models/`, `sources/`, `integrations/`, `resources/`, `skills/`, and the other conventional folders), stops every Dogsled command until you fix it.
-- Dogsled never follows symbolic links. A linked root configuration file (`dogsled.yml`, `model-spec.yml`, `extractor.yml`), a linked YAML file in a Dogsled folder, or any link under `skills/` stops commands, so copy the file instead. Files Dogsled does not load, such as documentation, charts, templated YAML, and other links, are skipped and listed by `dogsled doctor`.
+- Dogsled never follows symbolic links. A linked root configuration file (`bobsled.yml`, `model-spec.yml`, `extractor.yml`), a linked YAML file in a Dogsled folder, or any link under `skills/` stops commands, so copy the file instead. Files Dogsled does not load, such as documentation, charts, templated YAML, and other links, are skipped and listed by `dogsled doctor`.
 
 Dogsled discovers CSV files below any exact `seeds/` path segment. A bare CSV has a path identity and does not create a warehouse target. A YAML seed specification still requires `name` and a relative `payload.path`. Only a specification-backed CSV can participate in a requested warehouse load. Entity Graph specs retain their `entity_graph_dir` setting.
 
@@ -82,7 +82,7 @@ Drawn from `dogsled-overview` and the canonical example projects. Use this as th
 ```text
 my-bobsled-project/
   AGENTS.md                      # Project guide: data meaning, queryable data, vocabulary, conventions, caveats
-  dogsled.yml
+  bobsled.yml
   extractor.yml
   model-spec.yml
 
@@ -113,7 +113,7 @@ A data-first layout groups every kind of file for one source or subject together
 ```text
 my-bobsled-project/
   AGENTS.md
-  dogsled.yml
+  bobsled.yml
   datagolf/
     integration.yml              # type: integration
     players/
@@ -175,7 +175,7 @@ Don't ask when:
 If the user asks to "clean up" or you spot a flat-with-mixed-origin folder:
 
 1. Group files into the chosen axis — keep changes layout-only, apart from the `type:` lines below.
-2. Moving a file needs no configuration change, because Dogsled finds it by type. Add a type to any file that leaves its conventional location: a moved `dogsled.yml`, `model-spec.yml`, or `extractor.yml`, a Skill leaving `skills/<name>/SKILL.md`, and a resource leaving `resources/<integration>/` (it also needs `integration:`).
+2. Moving a file needs no configuration change, because Dogsled finds it by type. Add a type to any file that leaves its conventional location: a moved `bobsled.yml`, `model-spec.yml`, or `extractor.yml`, a Skill leaving `skills/<name>/SKILL.md`, and a resource leaving `resources/<integration>/` (it also needs `integration:`).
 3. Verify with `dogsled-troubleshoot` before committing.
 4. Land the reorganization as its own commit, separate from any content change.
 

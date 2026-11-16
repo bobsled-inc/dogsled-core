@@ -1,10 +1,10 @@
 spec_version: '2'
 type: source
 # Self-describing custom API source — no bundled connector module is required.
-# `source_type` is read by Dogsled; `dogsled_source_kind` is the orchestrator/
+# `source_type` is read by Dogsled; `bobsled_source_kind` is the orchestrator/
 # host application marker (stripped + ignored by the Dogsled CLI).
 source_type: custom_api
-dogsled_source_kind: custom_api
+bobsled_source_kind: custom_api
 name: langsmith
 description: LangSmith observability and evaluation platform by LangChain.
 # Declares the env vars the inline transport interpolates, in lieu of a

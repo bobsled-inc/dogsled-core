@@ -364,7 +364,7 @@ export function validateModelPipelineMembership(
     return;
   }
   // Look up model ownership case-insensitively — the Model Spec DAG canonicalizes
-  // model names to lowercase, so a `dogsled.yml` pipeline may list a model in a
+  // model names to lowercase, so a `bobsled.yml` pipeline may list a model in a
   // different case than the spec's `name:`. Exact-case lookups would wrongly
   // reject such pipelines (and must match the case-insensitive expansion in
   // `buildModelNodes` / `computeSyntheticModelPipelines`).
@@ -389,7 +389,7 @@ export function validateModelPipelineMembership(
       const conn = connectionByCanonical.get(canonical);
       if (conn === undefined && !connectionByCanonical.has(canonical)) {
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.models`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.models`,
           message: `Model "${modelName}" not found as a derived model in the project (no type: model file declares that name).`,
         });
         continue;
@@ -397,7 +397,7 @@ export function validateModelPipelineMembership(
       if (conn !== pipeline.connection) {
         const actual = conn ?? '<unresolved>';
         errors.push({
-          path: `dogsled.yml:pipelines.${pipeline.name}.models`,
+          path: `bobsled.yml:pipelines.${pipeline.name}.models`,
           message: `Model "${modelName}" belongs to connection "${actual}" but pipeline "${pipeline.name}" declares connection "${pipeline.connection}".`,
         });
       }

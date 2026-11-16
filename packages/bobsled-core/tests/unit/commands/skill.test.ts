@@ -301,7 +301,7 @@ describe('dogsled skill commands', () => {
 describe('resolveSkillProjectRoot', () => {
   it('uses the supplied working directory even when an ancestor has a Dogsled config', () => {
     const root = createRoot();
-    writeFileSync(path.join(root, 'dogsled.yml'), 'pipelines: {}\n', 'utf8');
+    writeFileSync(path.join(root, 'bobsled.yml'), 'pipelines: {}\n', 'utf8');
     const nested = path.join(root, 'notes', 'skills');
     mkdirSync(nested, { recursive: true });
 

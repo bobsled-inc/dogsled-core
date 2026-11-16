@@ -18,7 +18,7 @@
  *      visible to the model SELECTs.
  *
  * The load-bearing constraint: the source cache destination
- * (`.dogsled/config.yml` `default_destination`, or the injected
+ * (`.bobsled/config.yml` `default_destination`, or the injected
  * `defaultDestination`) and the model integration destination
  * (`integrations/<handle>.yml`) must point at the SAME file-based DuckDB. A
  * `:memory:` database is rejected — it would not be shared across the two
@@ -102,7 +102,7 @@ export interface RunProjectWithLazySourcesArgs {
   apiResourceEntries?: ApiResourceEntry[];
   /**
    * Optional injected default destination, forwarded to the destination
-   * resolver to bypass `.dogsled/config.yml`. Must be a file-based DuckDB for
+   * resolver to bypass `.bobsled/config.yml`. Must be a file-based DuckDB for
    * the shared-DuckDB seam. Defaults to the on-disk read.
    */
   defaultDestination?: { dest: string } & Record<string, unknown>;

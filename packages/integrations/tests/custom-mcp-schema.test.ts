@@ -61,16 +61,16 @@ describe('custom_mcp source schema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('tolerates the dogsled_source_kind extension key by stripping it', () => {
+  it('tolerates the bobsled_source_kind extension key by stripping it', () => {
     const result = SourceSpecSchema.safeParse({
       ...baseMcpSource,
       source_type: 'custom_mcp',
-      dogsled_source_kind: 'custom_mcp',
+      bobsled_source_kind: 'custom_mcp',
       auth_env_vars: ['MY_TEAM_MCP_TOKEN'],
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect('dogsled_source_kind' in result.data).toBe(false);
+      expect('bobsled_source_kind' in result.data).toBe(false);
     }
   });
 

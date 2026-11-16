@@ -52,7 +52,7 @@ materialization:
   type: view               # view | table | incremental | ephemeral
 `;
 
-const GITIGNORE = `.dogsled/model-spec/
+const GITIGNORE = `.bobsled/model-spec/
 dist/
 `;
 
@@ -80,7 +80,7 @@ type: integration
 name: example
 source_type: duckdb
 connection:
-  path: .dogsled/model-spec/warehouse.duckdb
+  path: .bobsled/model-spec/warehouse.duckdb
 auth:
   type: file
 `;

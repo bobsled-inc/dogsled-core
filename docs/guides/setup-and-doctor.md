@@ -18,7 +18,7 @@ Destination: bigquery
 ⚠ Missing items: HUBSPOT_ACCESS_TOKEN, STRIPE_SECRET_KEY, GCP_SERVICE_ACCOUNT_JSON
 ```
 
-`--write` saves the answers to `dogsled.setup.answers.yml`. Edit that file to change
+`--write` saves the answers to `bobsled.setup.answers.yml`. Edit that file to change
 any choice, then render the project files:
 
 ```bash
@@ -27,16 +27,16 @@ dogsled setup render
 
 ```text
 ✓ Rendered 10 setup files.
-dogsled.yml
+bobsled.yml
 README.md
 AGENTS.md
 skills/project-overview/SKILL.md
 ...
 ```
 
-`render` writes `dogsled.yml` with the destination and one pipeline per source, a
+`render` writes `bobsled.yml` with the destination and one pipeline per source, a
 `README.md`, step-by-step notes under `docs/`, a summary
-(`dogsled.setup.summary.md`) and `dogsled.dashboard.state.json`. It creates
+(`bobsled.setup.summary.md`) and `dogsled.dashboard.state.json`. It creates
 `AGENTS.md` and `skills/project-overview/SKILL.md` only if they do not exist yet,
 and reports them as preserved otherwise, and links the skill for agents as
 `dogsled skill configure` does. Rendering again refreshes the generated files from

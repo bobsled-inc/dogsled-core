@@ -79,7 +79,7 @@ From a repository checkout, generate the separate visual-review page:
 pnpm --filter @bobsled-inc/bobsled-core exec tsx scripts/onboarding-preview.ts
 ```
 
-Open `packages/bobsled-core/.dogsled/ui-review/index.html`, or pass a dedicated output
+Open `packages/bobsled-core/.bobsled/ui-review/index.html`, or pass a dedicated output
 folder as the final argument. The generated folder is local and ignored by Git.
 The tool uses the production renderer and canonical snapshot schema with synthetic
 fixtures. It does not call services or create real tutorial checkpoints.
