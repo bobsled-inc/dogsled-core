@@ -144,7 +144,8 @@ it.skipIf(process.platform === 'win32')(
       join(root, 'bin/cli.mjs')
     );
     const command = new URL('../../../src/commands/extract-file-storage.ts', import.meta.url).href;
-    const runtime = new URL('../../../../bobsled-core/src/runtime/process.ts', import.meta.url).href;
+    const runtime = new URL('../../../../bobsled-core/src/runtime/process.ts', import.meta.url)
+      .href;
     const extractStub = `export async function extractFileStorageResource({signal}) {
     await new Promise((resolve, reject) => {
       const keepAlive = setInterval(() => {}, 1000);
