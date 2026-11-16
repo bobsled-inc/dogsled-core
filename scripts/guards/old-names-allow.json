@@ -3,14 +3,23 @@
   "keep": [
     {
       "pattern": "Dogsled Cloud",
+      "files": [
+        "docs/guides/hosted-runs.md",
+        "tests/unit/guard-privacy.test.mjs"
+      ],
       "note": "The hosted app keeps the Dogsled brand (D7); the Hosted runs page names it."
     },
     {
       "pattern": "dogsled.it",
+      "files": [
+        "tests/unit/guard-privacy.test.mjs",
+        "tests/unit/security-runtime-policy.test.mjs"
+      ],
       "note": "App domain (D7)."
     },
     {
       "pattern": "dogsled\\.it",
+      "files": ["scripts/guards/privacy.mjs"],
       "note": "Escaped app domain in the privacy guard and its tests (D7)."
     },
     {
@@ -34,18 +43,6 @@
       "note": "Dogsled-operated hosts blocked by the runtime network policy (D7)."
     },
     {
-      "pattern": "_DOGSLED_LIVE",
-      "note": "App-owned live database name (D7)."
-    },
-    {
-      "pattern": "@dogsled/",
-      "note": "Dogsled app workspace scope named in comments (D7)."
-    },
-    {
-      "pattern": "dogsled-logo.png",
-      "note": "Old Explorer logo file name, kept by the rename tooling and its tests; Explorer now uses a text-only header."
-    },
-    {
       "pattern": "'bobsled-inc/dogsled-core'",
       "files": [
         ".github/workflows/preview-publish.yml",
@@ -53,10 +50,6 @@
         "tests/unit/release-preview.test.mjs"
       ],
       "note": "Preview publishing runs in dogsled-core until the export."
-    },
-    {
-      "pattern": "bobsled-dogsled",
-      "note": "Vercel team and project slug."
     }
   ],
   "exceptions": [
@@ -91,15 +84,9 @@
       "reason": "Project scan test: a track.yml file must not be treated as a project config."
     },
     {
-      "path": "CHANGELOG.md",
-      "patternId": "dogsled-word",
-      "pattern": "DOGSLED_\\*",
-      "reason": "Upgrade note names the earlier settings prefix that users must rename."
-    },
-    {
       "path": "docs/guides/hosted-runs.md",
       "patternId": "dogsled-word",
-      "pattern": "dogsled_",
+      "pattern": "`dogsled_`",
       "reason": "Documents the earlier host-field spellings that Core still accepts (rename:keep)."
     },
     {
@@ -129,19 +116,19 @@
     {
       "path": "examples/explorer-smoke/showcase.mjs",
       "patternId": "dogsled-word",
-      "pattern": "Dogsled",
+      "pattern": "\\(\\?:Track\\|Dogsled\\)",
       "reason": "Showcase asserts the old product name never appears in the Explorer."
     },
     {
       "path": "examples/golden-path-quickstart/showcase.mjs",
       "patternId": "dogsled-word",
-      "pattern": "Dogsled",
+      "pattern": "\\(\\?:Track\\|Dogsled\\)",
       "reason": "Showcase asserts the old product name never appears in CLI output."
     },
     {
       "path": "examples/old-formats/showcase.mjs",
       "patternId": "dogsled-word",
-      "pattern": "dogsled",
+      "pattern": "\\['dogsled', 'bobsled'\\]",
       "reason": "Old-formats showcase feeds earlier spellings that Core must keep reading."
     },
     {
@@ -405,7 +392,7 @@
     {
       "path": "tests/unit/guard-privacy.test.mjs",
       "patternId": "dogsled-word",
-      "pattern": "Dogsled",
+      "pattern": "proprietary Dogsled app|'Dogsled app\\.'",
       "reason": "Privacy guard fixtures: the Dogsled app and the private staging repository."
     },
     {

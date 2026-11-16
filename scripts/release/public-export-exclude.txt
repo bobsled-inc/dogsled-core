@@ -13,3 +13,4 @@ scripts/release/public-export.mjs # Private staging export boundary and verifica
 scripts/release/public-export-exclude.txt # Private staging export boundary policy.
 tests/unit/public-export.test.mjs # Private export boundary regression suite.
 .github/workflows/public-export.yml # Private staging export dry-run workflow.
+docs/solutions/ # Dated internal design notes from development; not user documentation.

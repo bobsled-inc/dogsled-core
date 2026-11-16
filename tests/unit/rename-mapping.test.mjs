@@ -99,7 +99,6 @@ describe('rename mapping', () => {
     'Hosted on Dogsled Cloud at https://main.dogsled.it',
     'docs.bobsled.com',
     'Vercel bobsled-dogsled',
-    'comment about @dogsled/lakehouse-execution',
     '<img src="/dogsled-logo.png">',
     'pg slot track_customers_slot and track_total_hits',
   ])('keeps %s', (text) => {
