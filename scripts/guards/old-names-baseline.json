@@ -1,7 +1,7 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 10501,
+    "dogsled-word": 10495,
     "old-warehouse-prefix": 742,
     "track-config": 6,
     "track-env": 0,
@@ -14,7 +14,7 @@
     ".github": 58,
     "apps/explorer": 295,
     "docs": 1451,
-    "examples": 373,
+    "examples": 369,
     "packages/ai": 12,
     "packages/api-resource": 8,
     "packages/bobsled-core": 2055,
@@ -31,7 +31,7 @@
     "packages/protocol": 51,
     "packages/sdk-codegen": 16,
     "packages/skills": 1091,
-    "scripts": 203,
+    "scripts": 201,
     "tests": 77,
     "workspace": 25
   }
