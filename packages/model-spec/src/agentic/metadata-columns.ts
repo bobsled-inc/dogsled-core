@@ -6,7 +6,8 @@ import { agenticMetadataRole, isAgenticMetadataName } from './metadata-names.js'
  * `_bobsled_reason`), position by position, so the strict schema check that
  * follows sees the current names. Only a column whose current name is a
  * metadata column of the same role is renamed; anything else is left for the
- * schema check to report. `columns` is updated in place.
+ * schema check to report. A target with both an earlier and the current column of one role
+ * stops with an error naming them. `columns` is updated in place.
  */
 export async function renameLegacyMetadataColumns(
   columns: Record<string, unknown>[],
@@ -15,6 +16,21 @@ export async function renameLegacyMetadataColumns(
   rename: (from: string, to: string) => Promise<unknown>,
   table: string
 ): Promise<void> {
+  // Both generations of one metadata column: Core cannot know which holds the data, so it stops
+  // rather than merge or drop either.
+  const byRole = new Map<string, string[]>();
+  for (const column of columns) {
+    const name = String(column['column_name']);
+    const role = agenticMetadataRole(name);
+    if (role) byRole.set(role, [...(byRole.get(role) ?? []), name]);
+  }
+  for (const names of byRole.values()) {
+    if (names.length > 1) {
+      throw new Error(
+        `Agentic target ${table} has both ${names.map((name) => `\`${name}\``).join(' and ')}; keep the one with your data and drop the other.`
+      );
+    }
+  }
   for (const [index, column] of columns.entries()) {
     const wanted = expected[index];
     const actual = String(column['column_name']);
