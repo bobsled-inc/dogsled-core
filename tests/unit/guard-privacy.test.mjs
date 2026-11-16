@@ -210,14 +210,14 @@ describe('private-github-repo', () => {
     ).toBe(1);
   });
 
-  it('allows links to the current repository', () => {
+  it('flags links to the private staging repository', () => {
     const url = 'https://github.com/bobsled-inc/dogsled-core'; // rename:keep
-    expect(countMatches(url)['private-github-repo']).toBe(0);
+    expect(countMatches(url)['private-github-repo']).toBe(1);
   });
 
-  it('allows the current repository .git URL', () => {
+  it('flags the private staging repository .git URL', () => {
     const url = 'git@github.com/bobsled-inc/dogsled-core.git'; // rename:keep
-    expect(countMatches(url)['private-github-repo']).toBe(0);
+    expect(countMatches(url)['private-github-repo']).toBe(1);
   });
 
   it('allows the public repo name bobsled-core', () => {

@@ -1,5 +1,5 @@
 ---
-module: dogsled extract pipelines
+module: bobsled extract pipelines
 date: 2026-07-28
 problem_type: logic_error
 component: public runProjectPipeline projection
@@ -18,7 +18,7 @@ tags: [pipeline, resource-overrides, extractor, loader, public-api]
 
 `bobsled.yml` accepted per-resource `via`, `load_strategy`, `table`, and `inputs`, but the
 public `runProjectPipeline` path rejected every field except `via`. A library consumer
-would therefore need to parse Dogsled YAML again or invoke lower-level CLI commands to
+would therefore need to parse Bobsled Core YAML again or invoke lower-level CLI commands to
 avoid dropping valid configuration.
 
 Naive forwarding introduced further hazards: arrays joined with commas no longer matched

@@ -22,7 +22,7 @@ const event = (author_association = 'NONE') => ({
 });
 const botComment = {
   user: { login: 'github-actions[bot]', type: 'Bot' },
-  body: '<!-- dogsled-contribution-policy -->',
+  body: '<!-- bobsled-core-contribution-policy -->',
 };
 
 function api(files, comments = []) {

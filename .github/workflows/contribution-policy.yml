@@ -66,7 +66,7 @@ jobs:
             }
             if (changed <= 12) return;
             await request('POST', `${root}/issues/${number}/labels`, { labels: ['contribution-policy'] });
-            const marker = '<!-- dogsled-contribution-policy -->';
+            const marker = '<!-- bobsled-core-contribution-policy -->';
             for (let page = 1; page <= 100; page += 1) {
               const comments = await request('GET', `${root}/issues/${number}/comments?per_page=100&page=${page}`);
               if (!Array.isArray(comments)) throw new Error('Invalid comments response.');

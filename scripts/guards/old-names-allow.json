@@ -89,6 +89,366 @@
       "patternId": "track-config",
       "pattern": "'track\\.yml'",
       "reason": "Project scan test: a track.yml file must not be treated as a project config."
+    },
+    {
+      "path": "CHANGELOG.md",
+      "patternId": "dogsled-word",
+      "pattern": "DOGSLED_\\*",
+      "reason": "Upgrade note names the earlier settings prefix that users must rename."
+    },
+    {
+      "path": "docs/guides/hosted-runs.md",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled_",
+      "reason": "Documents the earlier host-field spellings that Core still accepts (rename:keep)."
+    },
+    {
+      "path": "docs/guides/hosted-runs.md",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled_connection_ref",
+      "reason": "Documents the earlier host-field spellings that Core still accepts (rename:keep)."
+    },
+    {
+      "path": "docs/guides/hosted-runs.md",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled_managed",
+      "reason": "Documents the earlier host-field spellings that Core still accepts (rename:keep)."
+    },
+    {
+      "path": "docs/guides/hosted-runs.md",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled_source_kind",
+      "reason": "Documents the earlier host-field spellings that Core still accepts (rename:keep)."
+    },
+    {
+      "path": "docs/reference/environment-variables.md",
+      "patternId": "dogsled-word",
+      "pattern": "DOGSLED_\\*",
+      "reason": "Names the earlier settings prefix that Core ignores with a warning."
+    },
+    {
+      "path": "examples/explorer-smoke/showcase.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "Dogsled",
+      "reason": "Showcase asserts the old product name never appears in the Explorer."
+    },
+    {
+      "path": "examples/golden-path-quickstart/showcase.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "Dogsled",
+      "reason": "Showcase asserts the old product name never appears in CLI output."
+    },
+    {
+      "path": "examples/old-formats/showcase.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled",
+      "reason": "Old-formats showcase feeds earlier spellings that Core must keep reading."
+    },
+    {
+      "path": "examples/old-formats/showcase.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled_connection_ref",
+      "reason": "Old-formats showcase feeds earlier spellings that Core must keep reading."
+    },
+    {
+      "path": "examples/old-formats/showcase.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled_source_kind",
+      "reason": "Old-formats showcase feeds earlier spellings that Core must keep reading."
+    },
+    {
+      "path": "packages/bobsled-core/src/commands/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/project-skills/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/runner/config/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/runner/config/legacy-names.ts",
+      "patternId": "old-warehouse-prefix",
+      "pattern": "_{1,2}(?:[Tt][Rr][Aa][Cc][Kk]|[Dd][Oo][Gg][Ss][Ll][Ee][Dd])_[A-Za-z0-9_]+",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/runner/config/schema.ts",
+      "patternId": "dogsled-word",
+      "pattern": "DOGSLED_<OFFERING>_CREDENTIALS_\\*",
+      "reason": "Names the app-owned DOGSLED_<OFFERING>_CREDENTIALS_* env convention (D7)."
+    },
+    {
+      "path": "packages/bobsled-core/src/runner/pipeline-manifest/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/runner/pipeline-manifest/legacy-names.ts",
+      "patternId": "track-kind",
+      "pattern": "\\btrack\\.(?:model|pipeline|runner|entity_graph)\\.",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/runtime/source-materializer/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/runtime/source-materializer/legacy-names.ts",
+      "patternId": "old-warehouse-prefix",
+      "pattern": "_{1,2}(?:[Tt][Rr][Aa][Cc][Kk]|[Dd][Oo][Gg][Ss][Ll][Ee][Dd])_[A-Za-z0-9_]+",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/src/setup/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/tests/unit/commands/init-local.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "dogsled\\.yml",
+      "reason": "Asserts Core never writes the earlier root config name."
+    },
+    {
+      "path": "packages/bobsled-core/tests/unit/project-skills/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/tests/unit/runner/config/legacy-names.config.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/tests/unit/runner/legacy-names.project.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/tests/unit/runner/pipeline-manifest/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/bobsled-core/tests/unit/runner/pipeline-manifest/legacy-names.test.ts",
+      "patternId": "track-kind",
+      "pattern": "\\btrack\\.(?:model|pipeline|runner|entity_graph)\\.",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/connections/src/local-state/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/extractor/tests/unit/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/integrations/tests/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/loader/src/runtime/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/loader/src/runtime/legacy-names.ts",
+      "patternId": "old-warehouse-prefix",
+      "pattern": "_{1,2}(?:[Tt][Rr][Aa][Cc][Kk]|[Dd][Oo][Gg][Ss][Ll][Ee][Dd])_[A-Za-z0-9_]+",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/loader/tests/unit/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/loader/tests/unit/legacy-names.test.ts",
+      "patternId": "old-warehouse-prefix",
+      "pattern": "_{1,2}(?:[Tt][Rr][Aa][Cc][Kk]|[Dd][Oo][Gg][Ss][Ll][Ee][Dd])_[A-Za-z0-9_]+",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/src/agentic/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/src/agentic/legacy-names.ts",
+      "patternId": "old-warehouse-prefix",
+      "pattern": "_{1,2}(?:[Tt][Rr][Aa][Cc][Kk]|[Dd][Oo][Gg][Ss][Ll][Ee][Dd])_[A-Za-z0-9_]+",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/src/compiler/expr/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/src/compiler/expr/legacy-names.ts",
+      "patternId": "old-warehouse-prefix",
+      "pattern": "_{1,2}(?:[Tt][Rr][Aa][Cc][Kk]|[Dd][Oo][Gg][Ss][Ll][Ee][Dd])_[A-Za-z0-9_]+",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/src/interchange/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/tests/unit/agentic/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/tests/unit/agentic/legacy-names.test.ts",
+      "patternId": "old-warehouse-prefix",
+      "pattern": "_{1,2}(?:[Tt][Rr][Aa][Cc][Kk]|[Dd][Oo][Gg][Ss][Ll][Ee][Dd])_[A-Za-z0-9_]+",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/model-spec/tests/unit/interchange/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/project-index/src/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/project-index/src/legacy-names.ts",
+      "patternId": "track-config",
+      "pattern": "\\btrack\\.ya?ml\\b|\\.track\\/",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/project-index/tests/unit/legacy-names.config-files.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/project-index/tests/unit/legacy-names.config-files.test.ts",
+      "patternId": "track-config",
+      "pattern": "\\btrack\\.ya?ml\\b|\\.track\\/",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/project-index/tests/unit/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/protocol/src/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/protocol/tests/unit/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/skills/src/project/legacy-names.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "packages/skills/tests/project/legacy-names.test.ts",
+      "patternId": "dogsled-word",
+      "pattern": "[Dd][Oo][Gg][Ss][Ll][Ee][Dd]",
+      "reason": "COMPAT reader: lists the earlier spellings Core keeps reading; the rename never rewrites this file."
+    },
+    {
+      "path": "scripts/guards/privacy.mjs",
+      "patternId": "dogsled-word",
+      "pattern": ":dogsled",
+      "reason": "Privacy rule that detects wording about the proprietary Dogsled app."
+    },
+    {
+      "path": "tests/unit/guard-privacy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "Dogsled",
+      "reason": "Privacy guard fixtures: the Dogsled app and the private staging repository."
+    },
+    {
+      "path": "tests/unit/guard-privacy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "git@github\\.com\\/bobsled-inc\\/dogsled-core\\.git",
+      "reason": "Privacy guard fixtures: the Dogsled app and the private staging repository."
+    },
+    {
+      "path": "tests/unit/guard-privacy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "https:\\/\\/github\\.com\\/bobsled-inc\\/dogsled-core",
+      "reason": "Privacy guard fixtures: the Dogsled app and the private staging repository."
+    },
+    {
+      "path": "tests/unit/security-runtime-policy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "https:\\/\\/dogsled\\.cloud",
+      "reason": "Runtime-policy fixtures: maintainer domains that must stay blocked."
+    },
+    {
+      "path": "tests/unit/security-runtime-policy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "https:\\/\\/dogsled\\.co\\/api",
+      "reason": "Runtime-policy fixtures: maintainer domains that must stay blocked."
+    },
+    {
+      "path": "tests/unit/security-runtime-policy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "https:\\/\\/dogsled\\.com\\/api",
+      "reason": "Runtime-policy fixtures: maintainer domains that must stay blocked."
+    },
+    {
+      "path": "tests/unit/security-runtime-policy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "https:\\/\\/events\\.dogsled\\.cloud\\/collect",
+      "reason": "Runtime-policy fixtures: maintainer domains that must stay blocked."
+    },
+    {
+      "path": "tests/unit/security-runtime-policy.test.mjs",
+      "patternId": "dogsled-word",
+      "pattern": "https:\\/\\/telemetry\\.dogsled\\.ai\\/collect",
+      "reason": "Runtime-policy fixtures: maintainer domains that must stay blocked."
     }
   ]
 }
