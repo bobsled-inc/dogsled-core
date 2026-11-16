@@ -721,12 +721,10 @@ export class BigQueryDestination implements DatabaseDestination {
       desiredClustering.length > 0 &&
       JSON.stringify(currentClustering) !== JSON.stringify(desiredClustering)
     ) {
-      // Re-fetch metadata if schema was altered — ALTER TABLE invalidates the etag,
-      // causing setMetadata to fail with 412 Precondition Failed
-      const schemaChanged = newColumnDefs.length > 0 || columnsToWiden.length > 0;
-      const baseMetadata = schemaChanged
-        ? (await this.bqRetry(() => table.getMetadata()))[0]
-        : metadata;
+      // Re-fetch metadata first: any ALTER TABLE since it was read (new or widened columns, the
+      // loaded-at takeover's rename or marker) changes the etag, and setMetadata then fails
+      // with 412 Precondition Failed.
+      const [baseMetadata] = await this.bqRetry(() => table.getMetadata());
       await this.bqRetry(() =>
         table.setMetadata({ ...baseMetadata, clustering: { fields: desiredClustering } })
       );
