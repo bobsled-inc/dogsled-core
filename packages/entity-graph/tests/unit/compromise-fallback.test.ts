@@ -3,6 +3,32 @@ import { describe, it, expect } from 'vitest';
 import { createCompromiseFallback } from '../../src/runtime/mention/compromise-fallback.js';
 
 describe('createCompromiseFallback', () => {
+  it('preserves exact source spans with the real compromise runtime, including quoted names', async () => {
+    const text = '"Alice Wong" traveled to Tokyo. Acme Corp opened an office.';
+    const spans = await createCompromiseFallback().extract({
+      text,
+      chunkId: 'c1',
+      documentId: 'd1',
+      documentVersionId: 'd1@v1',
+    });
+
+    expect(
+      spans.map(({ entity_type, entity_name, span_start, span_end }) => ({
+        entity_type,
+        entity_name,
+        span_start,
+        span_end,
+      }))
+    ).toEqual([
+      { entity_type: 'person', entity_name: '"Alice Wong"', span_start: 0, span_end: 12 },
+      { entity_type: 'company', entity_name: 'Acme Corp', span_start: 32, span_end: 41 },
+      { entity_type: 'location', entity_name: 'Tokyo.', span_start: 25, span_end: 31 },
+    ]);
+    for (const span of spans) {
+      expect(text.slice(span.span_start, span.span_end)).toBe(span.entity_name);
+    }
+  });
+
   it('extracts person / company / place spans via the injected nlp factory', async () => {
     const fakeNlp = (_text: string) => ({
       people: () => ({
