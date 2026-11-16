@@ -1,4 +1,8 @@
+import { once } from 'node:events';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import * as path from 'node:path';
+import { finished } from 'node:stream/promises';
 
 import { runCancellable, throwIfCancelled, type SqlRunnerModule } from '@bobsled-inc/connections';
 import { createDuckDbWriter } from '@bobsled-inc/loader';
@@ -55,6 +59,65 @@ export async function convertJsonlChunksToParquet(
       }
     }
   });
+}
+
+/**
+ * Join a stage's JSONL chunks into one file. Every load job counts toward
+ * BigQuery's per-table limits (about five table updates every ten seconds and
+ * 1,500 table operations a day), so a BigQuery stage loads with one job instead
+ * of one job and one loaded-at UPDATE per 10,000-row chunk.
+ */
+async function joinJsonlChunks(
+  jsonlFiles: string[],
+  workDir: string,
+  baseName: string,
+  signal?: AbortSignal
+): Promise<string[]> {
+  if (jsonlFiles.length <= 1) return jsonlFiles;
+  const outputPath = path.join(workDir, `${baseName}-stage.jsonl`);
+  const output = createWriteStream(outputPath);
+  // A write error surfaces through `once(output, 'drain')` or `finished(output)`.
+  output.on('error', () => undefined);
+  try {
+    for (const file of jsonlFiles) {
+      throwIfCancelled(signal);
+      // Each chunk line already ends with a newline, so chunks join cleanly.
+      for await (const data of createReadStream(file)) {
+        if (!output.write(data)) await once(output, 'drain');
+      }
+    }
+  } finally {
+    output.end();
+    await finished(output);
+  }
+  await Promise.all(jsonlFiles.map((file) => rm(file, { force: true })));
+  return [outputPath];
+}
+
+/** The files to load for one stage: one file on BigQuery, Parquet when requested. */
+export async function prepareStageFiles(
+  jsonlFiles: string[],
+  options: {
+    oneFile: boolean;
+    stagingFormat: 'jsonl' | 'parquet';
+    columns: SchemaColumn[];
+    workDir: string;
+    baseName: string;
+    signal?: AbortSignal;
+  }
+): Promise<string[]> {
+  const chunks = options.oneFile
+    ? await joinJsonlChunks(jsonlFiles, options.workDir, options.baseName, options.signal)
+    : jsonlFiles;
+  return options.stagingFormat === 'parquet'
+    ? await convertJsonlChunksToParquet(
+        chunks,
+        options.columns,
+        options.workDir,
+        options.baseName,
+        options.signal
+      )
+    : chunks;
 }
 
 export function encodingFor(format: 'jsonl' | 'parquet'): BatchEncoding {
