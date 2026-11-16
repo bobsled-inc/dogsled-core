@@ -16,7 +16,7 @@ describe('edit/model-editor', () => {
   let modelPath: string;
 
   beforeEach(() => {
-    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-edit-model-'));
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-edit-model-'));
     fs.mkdirSync(path.join(projectDir, 'models'), { recursive: true });
     modelPath = path.join(projectDir, 'models', 'stg_orders.yml');
     fs.writeFileSync(modelPath, modelYaml(), 'utf-8');

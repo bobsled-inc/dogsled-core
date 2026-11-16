@@ -14,7 +14,7 @@ vi.mock('../../../src/runner/commands/validation.js', () => ({
 import * as fmt from '../../../src/lib/output/formatter.js';
 import { registerDoctorCommand } from '../../../src/commands/doctor.js';
 it('preserves validation warnings in doctor JSON without failing a valid project', async () => {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-doctor-warnings-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-doctor-warnings-'));
   const output = vi.spyOn(fmt, 'output').mockImplementation(() => {});
   const previous = process.exitCode;
   try {

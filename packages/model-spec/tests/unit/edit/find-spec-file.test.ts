@@ -17,7 +17,7 @@ describe('edit/find-spec-file', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-edit-find-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-edit-find-'));
     fs.mkdirSync(path.join(tmpDir, 'sources', 'ecom'), { recursive: true });
     fs.mkdirSync(path.join(tmpDir, 'sources', 'crm'), { recursive: true });
     fs.mkdirSync(path.join(tmpDir, 'models', 'staging'), { recursive: true });

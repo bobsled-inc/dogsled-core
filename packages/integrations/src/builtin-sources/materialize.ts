@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 
 import { BUILT_IN_SOURCE_FILES, BUILT_IN_SOURCES_SHA256 } from './generated-data.js';
 
-const PREFIX = 'dogsled-integrations-';
+const PREFIX = 'bobsled-integrations-';
 const FALLBACK_ROOTS_KEY = Symbol.for('@bobsled-inc/integrations/materialized-sources');
 
 let verifiedRoot: string | undefined;
@@ -75,7 +75,7 @@ function removeOnExit(path: string): void {
  * (extractor subprocesses, the `integrations` copy command). Lookups never use it.
  *
  * The copy is shared per user and content version:
- * `<tmpdir>/dogsled-integrations-<uid>-<sha256 prefix>/sources`. It is built in a
+ * `<tmpdir>/bobsled-integrations-<uid>-<sha256 prefix>/sources`. It is built in a
  * private `mkdtemp` sibling and renamed into place, and reused only when it is a
  * real directory owned by this user with mode 0700 and exactly the embedded
  * content. Otherwise this process uses its own private copy, removed on exit.

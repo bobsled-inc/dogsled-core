@@ -6,7 +6,7 @@ import { scanProject } from '@bobsled-inc/project-index';
 import { checkProjectModelReferences } from '../../../src/runtime/doctor/project-models.js';
 const roots: string[] = [];
 function project(source: boolean) {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-doctor-models-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-doctor-models-'));
   roots.push(root);
   mkdirSync(path.join(root, 'models'));
   writeFileSync(

@@ -69,7 +69,7 @@ async function queryDuckDb(
 
 describe('publishCrossWarehouse — api_resource staging', () => {
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-xwh-api-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-xwh-api-'));
   });
 
   afterEach(async () => {

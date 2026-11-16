@@ -1,6 +1,6 @@
 # Entity Graph Demo
 
-Self-contained demo workspace for the Dogsled Explorer entity graph surface. Not a production artifact — a fixture the UI and devs can drive end-to-end against DuckDB.
+Self-contained demo workspace for the Bobsled Core Explorer entity graph surface. Not a production artifact — a fixture the UI and devs can drive end-to-end against DuckDB.
 
 ## What's here
 

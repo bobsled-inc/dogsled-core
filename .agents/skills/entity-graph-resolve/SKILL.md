@@ -27,7 +27,7 @@ dogsled entity-graph relationships extract company --runner ./runner.js --fallba
 dogsled entity-graph relationships review export --runner ./runner.js --schema entity_graph --yaml
 dogsled entity-graph relationships review apply relationship_decisions.yml --runner ./runner.js --json
 dogsled entity-graph relationships compact --runner ./runner.js --schema entity_graph --json
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 ## Operating Rules

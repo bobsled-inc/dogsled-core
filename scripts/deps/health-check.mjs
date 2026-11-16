@@ -88,7 +88,7 @@ async function main() {
 
   const report = {
     schemaVersion: 1,
-    product: 'dogsled-core',
+    product: 'bobsled-core',
     runId,
     runUrl,
     findings,

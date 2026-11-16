@@ -48,7 +48,7 @@ for X?", "are there prebuilt models for Stripe?", or "give me the
 standard analytics shape for this source".
 
 If the source is **not** one of the 23 below, there is no starter
-bundle — author models from scratch with `dogsled-author-model-spec-model` instead.
+bundle — author models from scratch with `bobsled-author-model-spec-model` instead.
 
 ## The three layers
 
@@ -351,4 +351,4 @@ After authoring, compile the bundle against the target dialect
 (`dogsled model compile` or the unified CLI equivalent) to catch broken
 `source.ref`s and missing columns before running a model pipeline. For
 materialization choices and the full Model Spec authoring grammar, see
-`dogsled-author-model-spec-model`.
+`bobsled-author-model-spec-model`.

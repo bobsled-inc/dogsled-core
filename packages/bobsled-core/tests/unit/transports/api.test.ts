@@ -653,7 +653,7 @@ describe('executeApiAction', () => {
   });
 
   it('rejects oversized integration specs before parsing', async () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-api-action-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'bobsled-api-action-'));
     mkdirSync(join(tempDir, 'integrations'));
     writeFileSync(
       join(tempDir, 'integrations', 'salesforce.yml'),
@@ -688,7 +688,7 @@ describe('executeApiAction', () => {
   });
 
   it('prefers the canonical local integration layout over bundled integrations', async () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-api-action-layout-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'bobsled-api-action-layout-'));
     mkdirSync(join(tempDir, 'integrations', 'salesforce'), { recursive: true });
     writeFileSync(
       join(tempDir, 'integrations', 'salesforce', 'integration.yml'),
@@ -756,7 +756,7 @@ describe('executeApiAction', () => {
   });
 
   it('finds local integrations from an explicit project root when run in a nested directory', async () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-api-action-nested-layout-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'bobsled-api-action-nested-layout-'));
     const nestedDir = join(tempDir, 'apps', 'operator');
     mkdirSync(join(tempDir, 'integrations', 'salesforce'), { recursive: true });
     mkdirSync(nestedDir, { recursive: true });

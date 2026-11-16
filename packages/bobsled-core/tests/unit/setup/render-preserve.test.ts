@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 function createRoot(): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-setup-preserve-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-setup-preserve-'));
   roots.push(root);
   return root;
 }

@@ -19,7 +19,7 @@ let originalCwd: string;
 
 beforeEach(async () => {
   originalCwd = process.cwd();
-  workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-init-local-'));
+  workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-init-local-'));
   process.chdir(workDir);
 });
 
@@ -226,7 +226,7 @@ describe('runLocalInit (DuckLake default)', () => {
       const projectName = `demo-paths-${destination}`;
       await runLocalInit({ destination, projectName }, {});
       const projectRoot = path.join(workDir, projectName);
-      const elsewhere = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-init-cwd-'));
+      const elsewhere = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-init-cwd-'));
       const previousCwd = process.cwd();
       process.chdir(elsewhere);
       try {

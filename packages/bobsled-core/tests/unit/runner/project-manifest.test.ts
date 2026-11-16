@@ -45,7 +45,7 @@ describe('public project manifest compiler', () => {
     filesystem.realpathSync
       .mockReset()
       .mockImplementation(filesystem.actualRealpathSync as typeof fs.realpathSync);
-    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-manifest-'));
+    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-project-manifest-'));
   });
 
   afterEach(() => {
@@ -613,7 +613,7 @@ pipelines:
   });
 
   it('rejects in-root config symlinks that resolve outside the project root', async () => {
-    const outsideRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-outside-'));
+    const outsideRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-project-outside-'));
     const outsideConfig = path.join(outsideRoot, 'bobsled.yml');
     fs.writeFileSync(outsideConfig, 'destinations: {}\npipelines: {}\n');
     const linkedConfig = path.join(projectRoot, 'bobsled.yml');

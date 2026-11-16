@@ -275,7 +275,7 @@ describe('maybeRunDelegatedCommand', () => {
       const deps = {
         ...makeDeps(0),
         resolveBobsledModelRunInvocation: vi.fn((_metaUrl: string, args: string[]) => ({
-          command: 'dogsled-model-run-cli',
+          command: 'bobsled-model-run-cli',
           args,
         })),
       };
@@ -288,7 +288,7 @@ describe('maybeRunDelegatedCommand', () => {
         ['--json']
       );
       expect(deps.spawn).toHaveBeenCalledWith(
-        'dogsled-model-run-cli',
+        'bobsled-model-run-cli',
         ['--json'],
         expect.objectContaining({ stdio: 'inherit' })
       );
@@ -298,7 +298,7 @@ describe('maybeRunDelegatedCommand', () => {
       const deps = {
         ...makeDeps(0),
         resolveBobsledModelRunInvocation: vi.fn((_metaUrl: string, args: string[]) => ({
-          command: 'dogsled-model-run-cli',
+          command: 'bobsled-model-run-cli',
           args,
         })),
       };
@@ -314,7 +314,7 @@ describe('maybeRunDelegatedCommand', () => {
         ['--integration', 'help']
       );
       expect(deps.spawn).toHaveBeenCalledWith(
-        'dogsled-model-run-cli',
+        'bobsled-model-run-cli',
         ['--integration', 'help'],
         expect.objectContaining({ stdio: 'inherit' })
       );
@@ -324,7 +324,7 @@ describe('maybeRunDelegatedCommand', () => {
       const deps = {
         ...makeDeps(0),
         resolveBobsledModelRunInvocation: vi.fn((_metaUrl: string, args: string[]) => ({
-          command: 'dogsled-model-run-cli',
+          command: 'bobsled-model-run-cli',
           args,
         })),
       };

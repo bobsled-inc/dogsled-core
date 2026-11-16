@@ -179,7 +179,7 @@ export async function publishCrossWarehouse(
   collectSecretValues(target.integration.integration, secrets);
 
   const safeModelDir = model.node.name.replace(/[^A-Za-z0-9_-]/g, '_');
-  const workDir = await fs.mkdtemp(path.join(os.tmpdir(), `dogsled-xwh-${safeModelDir}-`));
+  const workDir = await fs.mkdtemp(path.join(os.tmpdir(), `bobsled-xwh-${safeModelDir}-`));
   // mkdtemp creates 0700 on POSIX, but enforce explicitly so callers on
   // platforms that don't honor that default still get private staging.
   try {

@@ -6,8 +6,8 @@ pipeline configuration. No AI provider call or account is needed.
 1. With Dogsled installed, copy the example from the checkout root:
 
    ```bash
-   cp -R examples/doctor-skills /tmp/dogsled-doctor-skills
-   cd /tmp/dogsled-doctor-skills
+   cp -R examples/doctor-skills /tmp/bobsled-doctor-skills
+   cd /tmp/bobsled-doctor-skills
    dogsled skill configure
    dogsled skill validate
    dogsled skill list

@@ -25,7 +25,7 @@ import {
 const roots: string[] = [];
 
 function createProject(suffix = ''): string {
-  const parent = mkdtempSync(path.join(os.tmpdir(), 'dogsled-adapters-'));
+  const parent = mkdtempSync(path.join(os.tmpdir(), 'bobsled-adapters-'));
   roots.push(parent);
   const root = path.join(parent, `project with spaces${suffix}`);
   const skillDirectory = path.join(root, 'skills', 'example-skill');
@@ -88,7 +88,7 @@ describe('Project Skill adapters', () => {
 
     const copy = path.join(root, '.agents', 'skills', 'example-skill');
     expect(lstatSync(copy).isDirectory()).toBe(true);
-    expect(existsSync(path.join(copy, '.dogsled-project-skill.json'))).toBe(true);
+    expect(existsSync(path.join(copy, '.bobsled-project-skill.json'))).toBe(true);
 
     writeFileSync(path.join(copy, 'SKILL.md'), '# locally edited');
     writeFileSync(

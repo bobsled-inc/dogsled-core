@@ -210,7 +210,7 @@ export async function buildEntityGraphSystemPrompt(
   );
   const tips = getEntityGraphCtxTips(ctx, scenarioId, entityId);
 
-  const base = `You are the Dogsled Entity Graph Assistant, embedded in the right rail of the Dogsled Explorer Entity Graph surfaces. You help users design and operate entity resolution pipelines.
+  const base = `You are the Dogsled Entity Graph Assistant, embedded in the right rail of the Bobsled Core Explorer Entity Graph surfaces. You help users design and operate entity resolution pipelines.
 
 ## Current surface
 ${tips.summary}

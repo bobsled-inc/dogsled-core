@@ -13,7 +13,7 @@ if (
   process.env.GITHUB_REPOSITORY !== 'bobsled-inc/dogsled-core' ||
   process.env.GITHUB_ACTIONS !== 'true'
 )
-  throw new Error('Publication requires the dogsled-core release workflow.');
+  throw new Error('Publication requires the bobsled-core release workflow.');
 
 const bootstrap = process.argv[3] === '--bootstrap';
 if (process.argv[3] && !bootstrap) throw new Error('Unknown publication mode.');

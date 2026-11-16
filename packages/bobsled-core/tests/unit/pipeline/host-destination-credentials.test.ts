@@ -62,7 +62,7 @@ afterEach(() => {
 });
 
 function makeProject(destinations: string, destinationNames: string[]): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-host-dest-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-host-dest-'));
   tempDirs.push(root);
   fs.mkdirSync(path.join(root, 'integrations'));
   fs.mkdirSync(path.join(root, 'resources'));

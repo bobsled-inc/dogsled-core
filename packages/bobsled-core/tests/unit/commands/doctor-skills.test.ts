@@ -11,7 +11,7 @@ const roots: string[] = [];
 const canDropReadPermission = process.platform !== 'win32' && process.getuid?.() !== 0;
 
 function projectWithSkill(document?: string): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-doctor-skills-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-doctor-skills-'));
   roots.push(root);
   if (document) {
     const directory = path.join(root, 'skills', 'example-skill');

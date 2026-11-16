@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawnBobsledCommand, validateCommand } from '../../../lib/dogsled-cli.js';
+import { spawnBobsledCommand, validateCommand } from '../../../lib/bobsled-cli.js';
 import { isPlainObject } from '../../../lib/guards.js';
 import { shellQuote } from '../../../lib/pipeline-export-content.js';
 

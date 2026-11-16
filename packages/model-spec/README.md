@@ -332,7 +332,7 @@ const preview = addModelColumn({
 });
 ```
 
-Supported edit functions cover source columns, model columns, model/source metadata, metrics, relationships, and verified queries. See [Programmatic Edit API](docs/programmatic-edit-api.md) for the full reference and the `dogsled-model-spec-edit` skill for agent usage.
+Supported edit functions cover source columns, model columns, model/source metadata, metrics, relationships, and verified queries. See [Programmatic Edit API](docs/programmatic-edit-api.md) for the full reference and the `bobsled-model-spec-edit` skill for agent usage.
 
 ## Concepts
 
@@ -529,7 +529,7 @@ native unit limits and semantics. Redshift retains its previous epoch/divisor
 emulation: month/year use approximate durations, and microsecond, millisecond,
 and quarter use day scaling.
 
-The whole window grammar is native: `PARTITION BY`, `ORDER BY` with `NULLS FIRST`/`NULLS LAST`, `ROWS`/`RANGE`/`GROUPS` frames including `INTERVAL` offsets, the frame `EXCLUDE` clause, and model-level named windows. Do not wrap a window expression in `raw_sql()` — that costs cross-dialect mapping and blanks the column's lineage. Constructs a target does not support are rejected at compile time with `[unsupported_feature:<capability>]`; see the [window support table](../../.agents/skills/dogsled-model-spec-expressions/references/model-spec.md#per-dialect-support).
+The whole window grammar is native: `PARTITION BY`, `ORDER BY` with `NULLS FIRST`/`NULLS LAST`, `ROWS`/`RANGE`/`GROUPS` frames including `INTERVAL` offsets, the frame `EXCLUDE` clause, and model-level named windows. Do not wrap a window expression in `raw_sql()` — that costs cross-dialect mapping and blanks the column's lineage. Constructs a target does not support are rejected at compile time with `[unsupported_feature:<capability>]`; see the [window support table](../../.agents/skills/bobsled-model-spec-expressions/references/model-spec.md#per-dialect-support).
 
 ```yaml
 # Trailing seven days, bounded by time rather than by row count

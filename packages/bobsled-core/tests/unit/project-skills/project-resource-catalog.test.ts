@@ -20,7 +20,7 @@ afterEach(async () => {
 
 describe('discoverProjectResourceNames', () => {
   it('names nested Resources by identity and by path, ignoring unrelated files', () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-resource-catalog-'));
+    const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-resource-catalog-'));
     roots.push(root);
     const directory = path.join(root, 'resources', 'product', 'admin');
     mkdirSync(directory, { recursive: true });
@@ -34,7 +34,7 @@ describe('discoverProjectResourceNames', () => {
   });
 
   it('names Resources outside resources/ by their declared integration', () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-resource-catalog-'));
+    const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-resource-catalog-'));
     roots.push(root);
     mkdirSync(path.join(root, 'crm', 'hubspot'), { recursive: true });
     writeFileSync(
@@ -46,7 +46,7 @@ describe('discoverProjectResourceNames', () => {
   });
 
   it('owns untyped-integration Resources by the extractor resources folder', () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-resource-catalog-'));
+    const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-resource-catalog-'));
     roots.push(root);
     writeFileSync(path.join(root, 'extractor.yml'), 'resources_dir: data/resources\n');
     mkdirSync(path.join(root, 'data', 'resources', 'stripe'), { recursive: true });
@@ -62,7 +62,7 @@ describe('discoverProjectResourceNames', () => {
   });
 
   it('refuses a linked Resource instead of following or skipping it', () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-resource-catalog-'));
+    const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-resource-catalog-'));
     roots.push(root);
     const directory = path.join(root, 'resources', 'product');
     mkdirSync(directory, { recursive: true });

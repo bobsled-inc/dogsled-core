@@ -72,7 +72,7 @@ describe('resolveEntityVariant', () => {
 
   let projectRoot: string;
   beforeEach(() => {
-    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-resolve-entity-'));
+    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-resolve-entity-'));
   });
   afterEach(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });

@@ -254,7 +254,7 @@ async function main(): Promise<void> {
   );
 
   step('Creating local temporary workspace');
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-xwh-live-bq-duck-'));
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-xwh-live-bq-duck-'));
   const projectDir = path.join(tmpDir, 'project');
   const paths = {
     local: path.join(tmpDir, 'local.duckdb'),

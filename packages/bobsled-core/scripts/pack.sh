@@ -9,8 +9,8 @@ BOBSLED_CORE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$BOBSLED_CORE_DIR/../.." && pwd)"
 
 VERSION="$(node -p "require('$BOBSLED_CORE_DIR/package.json').version")"
-ZIP_NAME="dogsled-v${VERSION}.zip"
-STAGING_DIR=$(mktemp -d -t dogsled-pack.XXXXXX)
+ZIP_NAME="bobsled-v${VERSION}.zip"
+STAGING_DIR=$(mktemp -d -t bobsled-pack.XXXXXX)
 trap 'rm -rf "$STAGING_DIR"' EXIT
 OUTPUT_DIR="${1:?Usage: pack.sh <output-directory>}"
 mkdir -p "$OUTPUT_DIR"
@@ -248,7 +248,7 @@ else
 fi
 
 echo "▸ Verifying packed artifact…"
-VERIFY_DIR=$(mktemp -d -t dogsled-verify.XXXXXX)
+VERIFY_DIR=$(mktemp -d -t bobsled-verify.XXXXXX)
 trap 'rm -rf "$STAGING_DIR" "$VERIFY_DIR"' EXIT
 
 cd "$VERIFY_DIR"

@@ -148,7 +148,7 @@ export async function runDatabaseLoader(
   }
 
   const ownedTempDir = await fs.mkdtemp(
-    path.join(providedTempRoot ?? os.tmpdir(), 'dogsled-loader-')
+    path.join(providedTempRoot ?? os.tmpdir(), 'bobsled-loader-')
   );
 
   const destination =

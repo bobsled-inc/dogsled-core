@@ -13,8 +13,8 @@ local config. It checks exact counts and revenue on both engines.
 1. Copy the committed project to a disposable directory, then start its local database:
 
    ```bash
-   cp -R examples/multi-warehouse-ecom /tmp/dogsled-multi-warehouse-ecom
-   cd /tmp/dogsled-multi-warehouse-ecom
+   cp -R examples/multi-warehouse-ecom /tmp/bobsled-multi-warehouse-ecom
+   cd /tmp/bobsled-multi-warehouse-ecom
    docker compose up -d --wait
    export SHOWCASE_PG_PORT=$(docker compose port postgres 5432 | sed 's/.*://')
    export SHOWCASE_PG_HOST=127.0.0.1 SHOWCASE_PG_USER=postgres SHOWCASE_PG_PASSWORD=unused-local-only

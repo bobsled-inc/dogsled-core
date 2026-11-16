@@ -229,7 +229,7 @@ materialization:
 
 ## State and run semantics
 
-Model Spec persists per-model materialization metadata in `.dogsled-model-spec-state/state.json` (or `.bobsled/model-spec/run-state.json` for multi-integration projects, scoped under `<handle>.<model>` keys). State tracks `materialization`, `selectSignature`, `columns`, and `lastRunAt` (`src/compiler/state.ts:37-53`). The compiler uses prior state to detect transitions (`planTransition`) and schema changes (`planSchemaChange`).
+Model Spec persists per-model materialization metadata in `.bobsled-model-spec-state/state.json` (or `.bobsled/model-spec/run-state.json` for multi-integration projects, scoped under `<handle>.<model>` keys). State tracks `materialization`, `selectSignature`, `columns`, and `lastRunAt` (`src/compiler/state.ts:37-53`). The compiler uses prior state to detect transitions (`planTransition`) and schema changes (`planSchemaChange`).
 
 On error, state does not advance — the user can fix and re-run safely. `--full-refresh` clears state for the run; on re-run, all models behave as first-run.
 
@@ -245,4 +245,4 @@ Aside: at the API layer (`runProject`), schema-drift `fail` and unsupported tran
 
 - `AGENTS.md` and `README.md` cover the YAML schema overview.
 - `docs/tutorials/snowflake-materializations.md` provides a multi-step tutorial.
-- `.agents/skills/dogsled-model-spec/SKILL.md` contains the agent-facing skill.
+- `.agents/skills/bobsled-model-spec/SKILL.md` contains the agent-facing skill.

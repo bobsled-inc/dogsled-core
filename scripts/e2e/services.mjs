@@ -14,7 +14,7 @@ export async function postgres() {
   if (process.env.BOBSLED_CORE_E2E_POSTGRES_PORT)
     return Number(process.env.BOBSLED_CORE_E2E_POSTGRES_PORT);
   if (postgresPort) return postgresPort;
-  container = `dogsled-e2e-${randomUUID()}`;
+  container = `bobsled-e2e-${randomUUID()}`;
   await command(
     'docker',
     [

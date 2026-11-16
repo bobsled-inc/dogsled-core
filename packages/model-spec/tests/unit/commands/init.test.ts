@@ -10,7 +10,7 @@ describe('init command scaffolding', () => {
   let projectDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-init-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-init-'));
     projectDir = path.join(tmpDir, 'test-project');
   });
 

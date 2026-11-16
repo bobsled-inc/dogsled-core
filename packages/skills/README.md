@@ -25,8 +25,8 @@ which is bundled into the JS output. There is zero filesystem I/O at
 runtime when using the package root or `/dogsled` subpath.
 
 The same generation command also writes the installable Claude Code and Codex
-plugin under `plugins/dogsled-core/`, with host-specific marketplace catalogs. See the
-[plugin installation guide](../../plugins/dogsled-core/README.md). Plugin skill copies
+plugin under `plugins/bobsled-core/`, with host-specific marketplace catalogs. See the
+[plugin installation guide](../../plugins/bobsled-core/README.md). Plugin skill copies
 are generated from the authored sources and include expanded document references.
 
 ## Internal Dogsled catalog API
@@ -41,7 +41,7 @@ import {
 } from '@bobsled-inc/skills';
 
 const manifest = listSkills();
-const skill = getSkill('dogsled-add-pipeline');
+const skill = getSkill('bobsled-add-pipeline');
 const integrationKinds = getCatalog('integration-kinds');
 ```
 
@@ -104,7 +104,7 @@ import { getSkill, listSkills } from '@bobsled-inc/skills/bobsled';
 
 const available = listSkills();
 const entityResolution = getSkill('entity-resolution');
-const cleaning = getSkill('dogsled-model-spec-cleaning');
+const cleaning = getSkill('bobsled-model-spec-cleaning');
 ```
 
 For entity graph work, the two most important exposed skills are:
@@ -112,7 +112,7 @@ For entity graph work, the two most important exposed skills are:
 - `entity-resolution` — resolution spec authoring, full vs incremental runs,
   review workflow, `get`/`match`/`serve` access-plane commands, PII scan, and
   right-to-erasure operations.
-- `dogsled-model-spec-cleaning` — Model Spec cleaning expressions and entity-graph
+- `bobsled-model-spec-cleaning` — Model Spec cleaning expressions and entity-graph
   `standardize.transforms`, including address normalization, UID2-compatible
   email normalization, `hmac_sha256`, and `pre_hashed` match keys.
 

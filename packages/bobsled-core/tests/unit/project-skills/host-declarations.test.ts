@@ -91,7 +91,7 @@ Synthetic skill body.
 }
 
 function project(files: Readonly<Record<string, string>>): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-skill-host-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-skill-host-'));
   roots.push(root);
   for (const [name, content] of Object.entries(files)) {
     const target = path.join(root, name);

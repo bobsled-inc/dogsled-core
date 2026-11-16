@@ -20,7 +20,7 @@ const onMerge = parse(onMergeSource);
 const ci = parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8'));
 
 describe('release workflow boundaries', () => {
-  it('requires a manual dispatch in dogsled-core on every job', () => {
+  it('requires a manual dispatch in bobsled-core on every job', () => {
     expect(Object.keys(workflow.on)).toEqual(['workflow_dispatch']);
     for (const job of Object.values(workflow.jobs))
       expect(job.if).toContain("github.repository == 'bobsled-inc/dogsled-core'");

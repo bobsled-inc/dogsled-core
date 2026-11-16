@@ -31,7 +31,7 @@ dogsled entity-graph resolve profile <entity...> --runner ./runner.js --json
 1. Generate or validate the SDK:
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 dogsled sdk generate --lang ts --ir-only --json
 ```
 

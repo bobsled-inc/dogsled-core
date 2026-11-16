@@ -286,7 +286,7 @@ describe('extract integration', () => {
         handler: () => ({
           body: [
             { id: 1, name: 'dogsled' },
-            { id: 2, name: 'dogsled-agents' },
+            { id: 2, name: 'bobsled-agents' },
             { id: 3, name: 'demo-repo' },
           ],
         }),

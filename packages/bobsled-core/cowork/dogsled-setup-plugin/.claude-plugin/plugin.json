@@ -1,7 +1,0 @@
-{
-  "name": "dogsled-setup",
-  "description": "Guided Dogsled repo setup for Cowork using local files and local CLI execution only.",
-  "author": {
-    "name": "Dogsled maintainers"
-  }
-}

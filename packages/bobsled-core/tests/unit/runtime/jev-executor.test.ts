@@ -278,7 +278,7 @@ describe('Jev secret resolution', () => {
   });
 
   it('keeps the CLI typesafe executor on its documented environment resolver', async () => {
-    const directory = await mkdtemp(path.join(os.tmpdir(), 'dogsled-jev-cli-'));
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'bobsled-jev-cli-'));
     try {
       vi.stubEnv('KEY', 'cli-env-key');
       const f = fixture();

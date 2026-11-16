@@ -134,7 +134,7 @@ describe('loadIndexedMetadataRegistry', () => {
   });
 
   function project(files: Record<string, string>): string {
-    const root = mkdtempSync(join(tmpdir(), 'dogsled-model-spec-metadata-'));
+    const root = mkdtempSync(join(tmpdir(), 'bobsled-model-spec-metadata-'));
     roots.push(root);
     for (const [target, source] of Object.entries(files)) {
       mkdirSync(dirname(join(root, target)), { recursive: true });

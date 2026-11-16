@@ -53,7 +53,7 @@ describe('Dogsled Skills public API', () => {
     );
     expect(authoritative?.content).toContain('Use `manual` for an on-demand pipeline');
 
-    for (const name of ['pipeline', 'dogsled-add-pipeline', 'dogsled-generate-yml']) {
+    for (const name of ['pipeline', 'bobsled-add-pipeline', 'bobsled-generate-yml']) {
       const compatibilitySkill = getSkill(name)?.content;
       expect(compatibilitySkill).toContain('single authoritative source');
       expect(compatibilitySkill).toContain(
@@ -66,8 +66,8 @@ describe('Dogsled Skills public API', () => {
     for (const name of [
       'add-custom-api-integration',
       'etl-migration',
-      'dogsled-overview',
-      'dogsled-troubleshoot',
+      'bobsled-overview',
+      'bobsled-troubleshoot',
     ]) {
       expect(getSkill(name)?.content).toContain('extract-pipelines');
     }
@@ -75,13 +75,13 @@ describe('Dogsled Skills public API', () => {
 
   it('advertises canonical brand-bearing IDs without old aliases', () => {
     for (const name of [
-      'dogsled-overview',
-      'dogsled-init',
-      'dogsled-add-pipeline',
-      'dogsled-generate-yml',
-      'dogsled-model-spec',
-      'dogsled-model-spec-edit',
-      'dogsled-author-model-spec-model',
+      'bobsled-overview',
+      'bobsled-init',
+      'bobsled-add-pipeline',
+      'bobsled-generate-yml',
+      'bobsled-model-spec',
+      'bobsled-model-spec-edit',
+      'bobsled-author-model-spec-model',
     ]) {
       expect(getSkill(name)).not.toBeNull();
     }

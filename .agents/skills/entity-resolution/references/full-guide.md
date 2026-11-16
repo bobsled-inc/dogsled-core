@@ -35,7 +35,7 @@ The spec is a deterministic standardize → block → score → threshold flow:
   lineage). Reference each as `connection.table`.
 - **`standardize`** — per-field cleaning applied before matching (lowercase,
   trim, `normalize_email`, `strip_legal_suffixes`, …). **Load the
-  `dogsled-model-spec-cleaning` skill** for the transform catalog — don't guess transform
+  `bobsled-model-spec-cleaning` skill** for the transform catalog — don't guess transform
   names; an unknown transform fails validation.
   For privacy-preserving match keys, use `normalize_email_uid2` before
   `hmac_sha256`, set `BOBSLED_CORE_MATCH_KEY_SECRET` in the runtime environment, and
@@ -354,7 +354,7 @@ trusted access controls. `assign` and `stage` over HTTP share the same
 primary-key validation and inbox durability as the CLI.
 
 Dogsled-maintained agents use the same bundled guidance: load `entity-resolution`
-for the resolution/access-plane workflow and `dogsled-model-spec-cleaning` for standardization
+for the resolution/access-plane workflow and `bobsled-model-spec-cleaning` for standardization
 transforms. The Dogsled MCP entity-graph tools
 (`entity_search`, `entity_get`, `entity_match`, `entity_relationships`,
 `entity_explain`) are read-only; use CLI/HTTP `match --mode stage|assign` only
@@ -520,7 +520,7 @@ entity=..., decisions=[...])`. It's approval-gated: high-confidence
 - **`entity-graph-construction`** — the next stage: link unstructured
   documents to the resolved `__entity_profile` and extract typed, evidence-cited
   relationships (mention + relationship extraction under an ontology).
-- **`dogsled-model-spec-cleaning`** — the standardize / cleaning transform catalog used by
+- **`bobsled-model-spec-cleaning`** — the standardize / cleaning transform catalog used by
   the spec's `standardize` block.
-- **`dogsled-model-spec`** — the broader data-model reference (sources, models,
+- **`bobsled-model-spec`** — the broader data-model reference (sources, models,
   materializations) for the tables you resolve across.

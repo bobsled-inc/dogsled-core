@@ -9,7 +9,7 @@ import { probeInputHash } from './probe-inputs.js';
 
 export const tvNight: TutorialDefinition = {
   id: 'tv-night',
-  skill: 'dogsled-tutorials',
+  skill: 'bobsled-tutorials',
   example: 'tv-night',
   dataDirectory: 'data/tv-night',
   databasePath: '.bobsled/bobsled.duckdb',

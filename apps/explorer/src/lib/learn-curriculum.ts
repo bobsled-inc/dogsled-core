@@ -46,7 +46,7 @@ export interface LearnModule {
 
 export type LearnModuleGroup =
   | 'foundations'
-  | 'dogsled-model-spec-context'
+  | 'bobsled-model-spec-context'
   | 'entity-graph'
   | 'mcp-extraction'
   | 'advanced-elt'
@@ -66,7 +66,7 @@ export const LEARN_MODULE_GROUPS: LearnModuleGroupDefinition[] = [
       'CLI basics, local projects, and the Explorer surfaces that make Dogsled inspectable.',
   },
   {
-    id: 'dogsled-model-spec-context',
+    id: 'bobsled-model-spec-context',
     label: 'Model Spec and Context',
     description: 'Model specs, semantic context, verified queries, and local data inspection.',
   },

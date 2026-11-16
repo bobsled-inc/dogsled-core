@@ -56,7 +56,7 @@ interface FileStorageResources {
 async function acquireFileStorageResources(): Promise<FileStorageResources> {
   const engine = await DuckDbEngine.create();
   try {
-    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'dogsled-file-source-'));
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'bobsled-file-source-'));
     return { engine, tempDir };
   } catch (error) {
     await engine.close();

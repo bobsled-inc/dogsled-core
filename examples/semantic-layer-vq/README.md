@@ -29,8 +29,8 @@ are loaded and validated, not computed by a metric CLI.
 3. From the checkout root in that query terminal, copy the complete API project:
 
    ```bash
-   cp -R examples/semantic-layer-vq/api-query /tmp/dogsled-semantic-queries
-   cd /tmp/dogsled-semantic-queries
+   cp -R examples/semantic-layer-vq/api-query /tmp/bobsled-semantic-queries
+   cd /tmp/bobsled-semantic-queries
    dogsled vq revenue_by_customer --param start_date=2025-01-01 --param end_date=2025-12-31
    dogsled vq top_products --param category=electronics
    ```

@@ -259,7 +259,7 @@ describe('runProject view-write verification', () => {
   let tmpDir = '';
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-model-spec-view-verify-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-model-spec-view-verify-'));
   });
 
   afterEach(async () => {

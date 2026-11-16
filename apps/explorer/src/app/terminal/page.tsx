@@ -35,7 +35,7 @@ const COMMAND_SUGGESTIONS = [
   { cmd: 'examples', args: ['--list'], label: 'List examples' },
 ];
 
-const TERMINAL_HISTORY_STORAGE_KEY = 'dogsled-explorer-terminal-history';
+const TERMINAL_HISTORY_STORAGE_KEY = 'bobsled-explorer-terminal-history';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -294,7 +294,7 @@ export default function TerminalPage() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = 'dogsled-terminal-output.txt';
+    anchor.download = 'bobsled-terminal-output.txt';
     anchor.click();
     URL.revokeObjectURL(url);
   };

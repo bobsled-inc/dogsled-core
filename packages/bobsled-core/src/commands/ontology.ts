@@ -76,7 +76,7 @@ export async function serveOntologyMcp(options: Options): Promise<void> {
           result = {
             protocolVersion: '2024-11-05',
             capabilities: { tools: {} },
-            serverInfo: { name: 'dogsled-ontology', version: '1' },
+            serverInfo: { name: 'bobsled-ontology', version: '1' },
           };
         } else if (request.method === 'ping') result = {};
         else if (request.method === 'tools/list') result = { tools: server.tools };

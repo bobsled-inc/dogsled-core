@@ -15,8 +15,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 2. In that second terminal, copy the committed project and enter it:
 
    ```bash
-   cp -R examples/mock-api-pipeline /tmp/dogsled-mock-api-pipeline
-   cd /tmp/dogsled-mock-api-pipeline
+   cp -R examples/mock-api-pipeline /tmp/bobsled-mock-api-pipeline
+   cd /tmp/bobsled-mock-api-pipeline
    ```
 
 3. Validate the integration and its first resource, then load all three streams:

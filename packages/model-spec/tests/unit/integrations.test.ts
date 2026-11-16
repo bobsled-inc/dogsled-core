@@ -76,7 +76,7 @@ describe('validateSourceIntegrationRefs', () => {
 
 describe('loadAllIntegrations target field adaptation', () => {
   it('resolves env-template target database, schema, and warehouse fields when env vars are set', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-integrations-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-integrations-'));
     const previous = {
       database: process.env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE,
       schema: process.env.BOBSLED_CORE_MODEL_SPEC_TEST_SCHEMA,
@@ -122,7 +122,7 @@ auth:
   });
 
   it('throws CommandError(2) when an explicit env template cannot be resolved', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-integrations-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-integrations-'));
     const previous = process.env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE;
     try {
       delete process.env.BOBSLED_CORE_MODEL_SPEC_TEST_DATABASE;

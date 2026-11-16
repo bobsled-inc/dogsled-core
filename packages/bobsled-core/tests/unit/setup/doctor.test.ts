@@ -24,7 +24,7 @@ import { SetupAnswersSchema } from '../../../src/setup/types.js';
 const tempDirs: string[] = [];
 
 function createTempDir(): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-setup-doctor-'));
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-setup-doctor-'));
   tempDirs.push(dir);
   return dir;
 }

@@ -12,7 +12,7 @@ afterEach(async () => {
   );
 });
 async function moduleFile(contents: string) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'dogsled-executor-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'bobsled-executor-'));
   directories.push(directory);
   const file = path.join(directory, 'executor.mjs');
   await writeFile(file, contents);

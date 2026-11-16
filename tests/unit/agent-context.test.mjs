@@ -32,7 +32,7 @@ function git(root, ...args) {
 }
 
 function createFixture() {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-agent-context-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-agent-context-'));
   fixtures.push(root);
   write(root, 'AGENTS.md', '# Fixture\n');
   write(root, 'packages/extractor/AGENTS.md', '# Extractor\n');

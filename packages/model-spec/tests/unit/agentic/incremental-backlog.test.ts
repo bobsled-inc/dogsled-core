@@ -23,7 +23,7 @@ const backlog = Array.from({ length: 5 }, (_, index) => ({
 }));
 
 function fixture() {
-  const dir = mkdtempSync(join(tmpdir(), 'dogsled-backlog-'));
+  const dir = mkdtempSync(join(tmpdir(), 'bobsled-backlog-'));
   dirs.push(dir);
   const f = runFixture(5);
   f.model.limits.tokens = null;

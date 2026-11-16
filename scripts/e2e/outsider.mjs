@@ -20,8 +20,8 @@ export async function releaseAgeCutoff(now = Date.now()) {
 }
 
 export async function runOutsider({ auditOnly = false } = {}) {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'dogsled-outsider-'));
-  const containerName = `dogsled-e2e-outsider-${randomUUID()}`;
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'bobsled-outsider-'));
+  const containerName = `bobsled-e2e-outsider-${randomUUID()}`;
   const imageName = containerName;
   try {
     const { stageBobsledPackage } = await import('../release/stage-package.mjs');

@@ -16,7 +16,7 @@ import {
 const roots: string[] = [];
 
 function createProject(): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-skills-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-project-skills-'));
   roots.push(root);
   const skillDirectory = path.join(root, 'skills', 'use-orders');
   mkdirSync(skillDirectory, { recursive: true });

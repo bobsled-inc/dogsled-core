@@ -17,7 +17,7 @@ import type { ProjectSkill } from '@bobsled-inc/skills/project';
 
 import { COPY_MARKER_SPELLINGS } from './legacy-names.js';
 
-export const COPY_MARKER_FILE = '.dogsled-project-skill.json';
+export const COPY_MARKER_FILE = '.bobsled-project-skill.json';
 /** Every marker name a managed copy may carry, the current one first. */
 const COPY_MARKER_FILES = [...new Set([COPY_MARKER_FILE, ...COPY_MARKER_SPELLINGS])];
 

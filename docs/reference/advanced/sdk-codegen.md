@@ -37,7 +37,7 @@ The SDK is **executor-backed**: it owns typed filters, includes, and the query b
 ## Generate
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk
 ```
 
 | Flag                   | Use                                                          |
@@ -55,7 +55,7 @@ The Python emitter is available as a library export from `@bobsled-inc/sdk-codeg
 ## Generated Files
 
 ```text
-generated/dogsled-sdk/
+generated/bobsled-sdk/
 ├── index.ts          # Re-exports everything below.
 ├── runtime.ts        # EntityFindRequest, EntityQueryBuilder, BobsledEntityExecutor.
 ├── client.ts         # createBobsledClient(executor) factory.
@@ -86,7 +86,7 @@ import {
   createBobsledClient,
   type EntityFindRequest,
   type BobsledEntityExecutor,
-} from './generated/dogsled-sdk/index.js';
+} from './generated/bobsled-sdk/index.js';
 
 const executor: BobsledEntityExecutor = {
   async find(request) {
@@ -141,7 +141,7 @@ interface EntityFindRequest<TFilter extends object> {
 The generated TypeScript SDK also exports a runtime allowlist:
 
 ```ts
-import { RELATIONSHIPS_BY_ENTITY } from './generated/dogsled-sdk/index.js';
+import { RELATIONSHIPS_BY_ENTITY } from './generated/bobsled-sdk/index.js';
 
 RELATIONSHIPS_BY_ENTITY.customer; // readonly ['competes_with', ...]
 ```
@@ -178,7 +178,7 @@ import type {
   EntityFindRequest,
   EntityFindResult,
   BobsledEntityExecutor,
-} from './generated/dogsled-sdk/index.js';
+} from './generated/bobsled-sdk/index.js';
 
 export const duckdbExecutor: BobsledEntityExecutor = {
   async find(request) {
@@ -355,7 +355,7 @@ The v1 CLI does not ship a deletion-bypass flag. Treat removals as reviewed majo
 ## CI Pattern
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 pnpm exec tsc --noEmit
 ```
 

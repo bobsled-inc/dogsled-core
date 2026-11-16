@@ -94,7 +94,7 @@ describe('runProject cancellation', () => {
   let tmpDir = '';
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-model-spec-cancel-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-model-spec-cancel-'));
   });
 
   afterEach(async () => {

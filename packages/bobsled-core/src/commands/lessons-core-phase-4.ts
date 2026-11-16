@@ -3,7 +3,7 @@ import type { Lesson } from './lessons.js';
 export const PHASE_4_LESSONS: Lesson[] = [
   // ── Phase 4: Model Spec Data Modeling ────────────────────────────────────────────
   {
-    id: 'dogsled-model-spec-intro-note',
+    id: 'bobsled-model-spec-intro-note',
     title: 'Model Spec Introduction',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',
@@ -23,7 +23,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'YAML→SQL means one definition serves every warehouse',
   },
   {
-    id: 'dogsled-model-spec-validate',
+    id: 'bobsled-model-spec-validate',
     title: 'Validate Models',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -32,7 +32,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'validate is free and fast — run it before every compile',
   },
   {
-    id: 'dogsled-model-spec-view-compile',
+    id: 'bobsled-model-spec-view-compile',
     title: 'Compile a View',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -41,7 +41,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Views are computed at query time — always fresh, zero storage',
   },
   {
-    id: 'dogsled-model-spec-view-note',
+    id: 'bobsled-model-spec-view-note',
     title: 'Views Explained',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',
@@ -64,7 +64,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Views trade read speed for freshness',
   },
   {
-    id: 'dogsled-model-spec-table-compile',
+    id: 'bobsled-model-spec-table-compile',
     title: 'Compile a Table',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -73,7 +73,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Tables store computed results — fast reads, stale until re-run',
   },
   {
-    id: 'dogsled-model-spec-table-note',
+    id: 'bobsled-model-spec-table-note',
     title: 'Tables Explained',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',
@@ -95,7 +95,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Tables trade freshness for read speed',
   },
   {
-    id: 'dogsled-model-spec-run',
+    id: 'bobsled-model-spec-run',
     title: 'Run All Models',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -104,7 +104,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'model run creates/refreshes all views and tables in dependency order',
   },
   {
-    id: 'dogsled-model-spec-lineage',
+    id: 'bobsled-model-spec-lineage',
     title: 'View Lineage',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -113,7 +113,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Lineage reveals how data flows through your models',
   },
   {
-    id: 'dogsled-model-spec-materializations-note',
+    id: 'bobsled-model-spec-materializations-note',
     title: 'Seven Materialization Types',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',
@@ -134,7 +134,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Materialization is the operational contract for a model',
   },
   {
-    id: 'dogsled-model-spec-incremental-compile',
+    id: 'bobsled-model-spec-incremental-compile',
     title: 'Compile Incremental Merge',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -143,7 +143,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'incremental + unique_key turns a model into a resumable upsert',
   },
   {
-    id: 'dogsled-model-spec-incremental-note',
+    id: 'bobsled-model-spec-incremental-note',
     title: 'Incremental Mechanics',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',
@@ -159,7 +159,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Incremental models are stateful; make the state boundary obvious',
   },
   {
-    id: 'dogsled-model-spec-snapshot-compile',
+    id: 'bobsled-model-spec-snapshot-compile',
     title: 'Compile Snapshot Model',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -168,7 +168,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Snapshots preserve how important attributes changed over time',
   },
   {
-    id: 'dogsled-model-spec-ephemeral-compile',
+    id: 'bobsled-model-spec-ephemeral-compile',
     title: 'Compile Ephemeral Model',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -177,7 +177,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Ephemeral models reduce clutter when a transform only exists to compose another model',
   },
   {
-    id: 'dogsled-model-spec-cleaning-note',
+    id: 'bobsled-model-spec-cleaning-note',
     title: 'Cleaning Functions',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',
@@ -195,7 +195,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Named cleaning functions make agent-authored models consistent',
   },
   {
-    id: 'dogsled-model-spec-cleaning-compile',
+    id: 'bobsled-model-spec-cleaning-compile',
     title: 'Compile Cleaning Model',
     section: 'Phase 4: Model Spec Data Modeling',
     cwd: 'learn-sandbox',
@@ -204,7 +204,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'The YAML stays portable while SQL changes per warehouse',
   },
   {
-    id: 'dogsled-model-spec-expression-note',
+    id: 'bobsled-model-spec-expression-note',
     title: 'Expression DSL',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',
@@ -222,7 +222,7 @@ export const PHASE_4_LESSONS: Lesson[] = [
     think: 'Agents can author expressions once and let the compiler handle dialect details',
   },
   {
-    id: 'dogsled-model-spec-json-note',
+    id: 'bobsled-model-spec-json-note',
     title: 'JSON Flattening',
     type: 'note',
     section: 'Phase 4: Model Spec Data Modeling',

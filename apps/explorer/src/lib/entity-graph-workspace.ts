@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { spawnBobsledCommand, collectOutput, getWorkspaceRoot } from './dogsled-cli';
+import { spawnBobsledCommand, collectOutput, getWorkspaceRoot } from './bobsled-cli';
 import {
   readEntityGraphSql,
   withEntityGraphWorkspaceQuery,

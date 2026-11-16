@@ -103,12 +103,12 @@ export async function auditPackedConsumers({ tarball, outputDir, repoRoot, now =
   const results = [];
   mkdirSync(outputDir, { recursive: true });
   for (const [mode, drivers] of Object.entries(versions)) {
-    const scratch = mkdtempSync(path.join(os.tmpdir(), `dogsled-consumer-${mode}-`));
+    const scratch = mkdtempSync(path.join(os.tmpdir(), `bobsled-consumer-${mode}-`));
     const evidence = path.join(outputDir, mode);
     mkdirSync(evidence, { recursive: true });
     try {
       const manifest = {
-        name: `dogsled-consumer-${mode}`,
+        name: `bobsled-consumer-${mode}`,
         private: true,
         type: 'module',
         dependencies: { [BOBSLED_CORE_PACKAGE_NAME]: `file:${path.resolve(tarball)}`, ...drivers },

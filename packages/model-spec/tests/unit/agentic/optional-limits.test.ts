@@ -136,7 +136,7 @@ describe('optional agentic limits', () => {
 });
 
 it('resumes an unlimited run from local files', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'dogsled-unlimited-'));
+  const directory = await mkdtemp(join(tmpdir(), 'bobsled-unlimited-'));
   try {
     const f = runFixture(1);
     f.model.limits = {};

@@ -15,7 +15,7 @@ export interface RunRecord {
   dbPath?: string;
 }
 
-const RUN_HISTORY_STORAGE_KEY = 'dogsled-explorer-run-history';
+const RUN_HISTORY_STORAGE_KEY = 'bobsled-explorer-run-history';
 const MAX_RUN_HISTORY = 50;
 
 function isFiniteNumber(value: unknown): value is number {

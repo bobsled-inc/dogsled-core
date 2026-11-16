@@ -32,7 +32,7 @@ function write(name: string, document: unknown) {
   writeFileSync(filename, JSON.stringify(document));
 }
 beforeEach(() => {
-  root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-local-query-'));
+  root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-local-query-'));
   write('integrations/api.yml', integration);
   write('resources/records.yml', resource);
 });

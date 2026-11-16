@@ -9,7 +9,7 @@ hosted production control plane.
 
 - Use wrappers in `src/lib/integrations.ts` and `src/lib/models.ts`; they clear
   package YAML caches after server-side reads.
-- Spawn Dogsled only through `src/lib/dogsled-cli.ts` and preserve its command allowlist.
+- Spawn Dogsled only through `src/lib/bobsled-cli.ts` and preserve its command allowlist.
 - Keep durable curriculum content under `src/lib/learn-curriculum.ts`; journeys are
   short product tours.
 - Do not import the Dogsled CLI runtime into Next.js pages.

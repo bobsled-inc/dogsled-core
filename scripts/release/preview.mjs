@@ -10,7 +10,7 @@
  * and a package.json that differs only in `name`. Then it installs the preview
  * tarball and runs its imports and CLI help.
  *
- * `publish` runs only in GitHub Actions, in dogsled-core, from the rename
+ * `publish` runs only in GitHub Actions, in bobsled-core, from the rename
  * branch. It publishes with the preview dist-tag and checks the registry
  * integrity against the reviewed tarball.
  */

@@ -16,7 +16,7 @@
     var(--branded-gradient-blue) 0%,
     var(--branded-gradient-purple) 94%
   );
-  --brand-icon-fill: url(#dogsled-gradient-brand);
+  --brand-icon-fill: url(#bobsled-gradient-brand);
   --brand-indicator: var(--gradient-brand);
   --primary-fill: var(--gradient-brand);
   --icon-secondary: #b2b1b8;

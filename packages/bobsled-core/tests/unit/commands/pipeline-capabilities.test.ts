@@ -166,11 +166,11 @@ describe('validateDestinationCapabilities', () => {
 
 describe('pruneStaleCaptureDirs', () => {
   it('removes only stale completed capture dirs and keeps active or unrelated entries', () => {
-    const tempDir = makeTempDir('dogsled-capture-prune-test-');
-    const staleDir = path.join(tempDir, 'dogsled-capture-stale');
-    const freshDir = path.join(tempDir, 'dogsled-capture-fresh');
-    const activeDir = path.join(tempDir, 'dogsled-capture-active');
-    const captureFile = path.join(tempDir, 'dogsled-capture-file');
+    const tempDir = makeTempDir('bobsled-capture-prune-test-');
+    const staleDir = path.join(tempDir, 'bobsled-capture-stale');
+    const freshDir = path.join(tempDir, 'bobsled-capture-fresh');
+    const activeDir = path.join(tempDir, 'bobsled-capture-active');
+    const captureFile = path.join(tempDir, 'bobsled-capture-file');
     const unrelatedDir = path.join(tempDir, 'keep-me');
 
     fs.mkdirSync(staleDir);
@@ -206,7 +206,7 @@ describe('updateManifestDestination', () => {
       streams: new Map([['repos', { records_emitted: 1, rows_loaded: 1 }]]),
     };
 
-    const killedManifest = createManifest('github', '/tmp/dogsled-capture/output.jsonl', [
+    const killedManifest = createManifest('github', '/tmp/bobsled-capture/output.jsonl', [
       { name: 'warehouse', type: 'local', format: 'csv' },
     ]);
     updateManifestDestination(killedManifest, 'warehouse', 143, summary, undefined, 'SIGTERM');
@@ -217,7 +217,7 @@ describe('updateManifestDestination', () => {
       rows_loaded: { repos: 1 },
     });
 
-    const failedManifest = createManifest('github', '/tmp/dogsled-capture/output.jsonl', [
+    const failedManifest = createManifest('github', '/tmp/bobsled-capture/output.jsonl', [
       { name: 'warehouse', type: 'local', format: 'csv' },
     ]);
     updateManifestDestination(failedManifest, 'warehouse', 143, summary);

@@ -271,13 +271,13 @@ function extractExplicitRepoName(goal: string): string | undefined {
 
 /** Build a fallback repo name when the user has not named the repo directly. */
 function deriveRepoName(goal: string, sources: SetupSource[]): string {
-  if (sources.length === 0) return 'dogsled-pipelines';
+  if (sources.length === 0) return 'bobsled-pipelines';
   const integrationPart = sources
     .slice(0, 2)
     .map((source) => source.integration)
     .join('-');
   const goalPart = slugify(goal).slice(0, 20);
-  return slugify(`${integrationPart}-${goalPart || 'pipelines'}`) || 'dogsled-pipelines';
+  return slugify(`${integrationPart}-${goalPart || 'pipelines'}`) || 'bobsled-pipelines';
 }
 
 /** Compute remaining setup blockers from the normalized answers state. */

@@ -33,7 +33,7 @@ echo "3. Extract and compact document-derived relationships"
 echo
 echo "4. Generate the local TypeScript SDK"
 mkdir -p .tmp
-SDK_RECEIPT="$("${BOBSLED_CORE_CMD[@]}" sdk generate --lang ts --out ./generated/dogsled-sdk --json)"
+SDK_RECEIPT="$("${BOBSLED_CORE_CMD[@]}" sdk generate --lang ts --out ./generated/bobsled-sdk --json)"
 printf '%s\n' "$SDK_RECEIPT" >.tmp/sdk-generate.json
 
 echo
@@ -52,4 +52,4 @@ const receipt = {
 fs.writeFileSync('.smoke-receipt.json', JSON.stringify(receipt, null, 2) + '\n');
 NODE
 
-echo "Done. Generated SDK: $ROOT_DIR/generated/dogsled-sdk"
+echo "Done. Generated SDK: $ROOT_DIR/generated/bobsled-sdk"

@@ -115,7 +115,7 @@ Settings apply in this order: destination, then pipeline, then resource.
 `bobsled.yml` destinations accept these `type` values: `duckdb`, `bigquery`,
 `snowflake`, `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`,
 `local`, `gcs` and `s3`, plus `bobsled_managed`, which only Dogsled Cloud can run
-(see [Dogsled Cloud and Core](dogsled-cloud.md)). For DuckLake, SQLite and the other
+(see [Dogsled Cloud and Core](hosted-runs.md)). For DuckLake, SQLite and the other
 `load run` destinations, pipe `extract run` into `load run` instead. The fields of
 each type are in the [project file reference](../reference/project-files.md#destinations).
 

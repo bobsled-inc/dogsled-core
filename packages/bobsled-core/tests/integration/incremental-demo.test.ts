@@ -59,7 +59,7 @@ describe('incremental-demo e2e', () => {
     process.env['BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS'] = '1';
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
-    projectRoot = await mkdtemp(join(tmpdir(), 'dogsled-incremental-demo-'));
+    projectRoot = await mkdtemp(join(tmpdir(), 'bobsled-incremental-demo-'));
     await writeProject(projectRoot);
     integrationSpecLoader = await loadFixtureSpecs(server.port);
   });

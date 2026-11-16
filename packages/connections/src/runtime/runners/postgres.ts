@@ -135,7 +135,7 @@ export async function buildPostgresRunner(
       host: connection.host,
       port: connection.port,
       database: connection.database,
-      application_name: connection.application_name ?? 'dogsled-model-spec',
+      application_name: connection.application_name ?? 'bobsled-model-spec',
     };
 
     if (connection.ssl?.mode === 'disable') {

@@ -14,7 +14,7 @@ describe('RecordFilterTracker.from + matches', () => {
   it('passes every record when filters are undefined or empty', () => {
     const tracker = RecordFilterTracker.from(undefined, {});
     expect(tracker.matches({ name: 'dogsled' })).toBe(true);
-    expect(tracker.matches({ name: 'dogsled-agents' })).toBe(true);
+    expect(tracker.matches({ name: 'bobsled-agents' })).toBe(true);
   });
 
   it('skips filters whose input is missing or empty (pass-through semantics)', () => {
@@ -29,7 +29,7 @@ describe('RecordFilterTracker.from + matches', () => {
 
   it('matches records whose field value is in the allowed set (delimited string input)', () => {
     const tracker = RecordFilterTracker.from([repoNameFilter], {
-      repo_names: 'dogsled, dogsled-agents',
+      repo_names: 'dogsled, bobsled-agents',
     });
     expect(tracker.matches({ name: 'dogsled' })).toBe(true);
     expect(tracker.matches({ name: 'demo-repo' })).toBe(false);
@@ -40,7 +40,7 @@ describe('RecordFilterTracker.from + matches', () => {
       repo_names: ['dogsled', 'demo-repo'],
     });
     expect(tracker.matches({ name: 'demo-repo' })).toBe(true);
-    expect(tracker.matches({ name: 'dogsled-agents' })).toBe(false);
+    expect(tracker.matches({ name: 'bobsled-agents' })).toBe(false);
   });
 
   it('decodes JSON-array strings emitted by targeted resource inputs', () => {
@@ -48,7 +48,7 @@ describe('RecordFilterTracker.from + matches', () => {
       repo_names: JSON.stringify(['dogsled', 'demo-repo']),
     });
     expect(tracker.matches({ name: 'dogsled' })).toBe(true);
-    expect(tracker.matches({ name: 'dogsled-agents' })).toBe(false);
+    expect(tracker.matches({ name: 'bobsled-agents' })).toBe(false);
   });
 
   it('keeps an explicitly encoded empty array as a filter that matches nothing', () => {
@@ -79,7 +79,7 @@ describe('RecordFilterTracker.from + matches', () => {
     });
     expect(tracker.matches({ name: 'dogsled', visibility: 'private' })).toBe(true);
     expect(tracker.matches({ name: 'dogsled', visibility: 'public' })).toBe(false);
-    expect(tracker.matches({ name: 'dogsled-agents', visibility: 'private' })).toBe(false);
+    expect(tracker.matches({ name: 'bobsled-agents', visibility: 'private' })).toBe(false);
   });
 });
 
@@ -102,7 +102,7 @@ describe('RecordFilterTracker.emptyResultWarning', () => {
 
   it('returns the warning when every record returned by the API is rejected', () => {
     const tracker = RecordFilterTracker.from([repoNameFilter], { repo_names: 'dogsled' });
-    expect(tracker.matches({ name: 'dogsled-agents' })).toBe(false);
+    expect(tracker.matches({ name: 'bobsled-agents' })).toBe(false);
     expect(tracker.matches({ name: 'demo-repo' })).toBe(false);
     const warning = tracker.emptyResultWarning('repos', 1, 0);
     expect(warning).toContain('Resource "repos" emitted 0 records');

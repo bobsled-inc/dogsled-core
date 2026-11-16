@@ -655,7 +655,7 @@ describe('contract schema conformance', () => {
     // Simulate what health-check.mjs builds
     const report = {
       schemaVersion: 1,
-      product: 'dogsled-core',
+      product: 'bobsled-core',
       runId: 123,
       runUrl: 'https://github.com/bobsled-inc/dogsled-core/actions/runs/123',
       findings: [],

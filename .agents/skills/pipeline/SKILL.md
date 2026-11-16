@@ -23,7 +23,7 @@ This skill owns composition across extract → optional embed → load. The `ext
 - Extract behavior and runner orchestration → `extract-pipelines`.
 - Embedding fields/providers/model roles → `ai-model-roles` plus the embed guidance below.
 - Destination configuration and load strategy → `loader`.
-- Model Spec model materialization → `dogsled-model-spec`; it is not extraction.
+- Model Spec model materialization → `bobsled-model-spec`; it is not extraction.
 
 For direct composition, stdout carries Dogsled protocol data and stderr carries structured logs:
 

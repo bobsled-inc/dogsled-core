@@ -196,7 +196,7 @@ function parseResourceInputMatrixConcurrencyArg(args: string[]): unknown {
 }
 
 function makeProject(bobsledYml: string): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-project-'));
   fs.writeFileSync(path.join(dir, 'bobsled.yml'), bobsledYml, 'utf8');
   return dir;
 }
@@ -298,7 +298,7 @@ pipelines:
   });
 
   it('runs a pipeline from a nested fragment when rooted above golf/datagolf/pga', async () => {
-    const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-nested-pipeline-'));
+    const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-nested-pipeline-'));
     tempDirs.push(projectRoot);
     const fragmentPath = path.join(projectRoot, 'golf', 'datagolf', 'pga', 'pipelines.yml');
     fs.mkdirSync(path.dirname(fragmentPath), { recursive: true });

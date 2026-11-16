@@ -16,7 +16,7 @@ afterEach(async () => {
 
 describe('setup Project Skills', () => {
   it('writes a starter Skill and configures both adapters', async () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-setup-skills-'));
+    const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-setup-skills-'));
     roots.push(root);
     const answers = SetupAnswersSchema.parse({
       project: { repo_name: 'example', repo_state: 'new' },

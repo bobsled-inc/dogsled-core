@@ -88,7 +88,7 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
       <PageHeader
-        title="Dogsled Explorer"
+        title="Bobsled Core Explorer"
         description="Learn Dogsled through the curriculum, quick guides, runnable demos, and the underlying integration and model catalogs."
       />
 

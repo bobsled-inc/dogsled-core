@@ -9,7 +9,7 @@ import {
   isEntityGraphTableSuffix,
   type LearnStepKind,
 } from '../src/lib/learn-curriculum';
-import { validateCommand } from '../src/lib/dogsled-cli';
+import { validateCommand } from '../src/lib/bobsled-cli';
 
 const VALID_STEP_KINDS = new Set<LearnStepKind>([
   'concept',

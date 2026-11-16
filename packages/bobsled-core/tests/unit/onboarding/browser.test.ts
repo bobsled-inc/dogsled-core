@@ -178,8 +178,8 @@ it('keeps canonical brand paint and current chapter icons aligned during navigat
   const snapshot = renderFixture();
   snapshot.progress!.reviewed = ['connect'];
   const { document, dom, click } = open(snapshot);
-  expect(document.querySelectorAll('#dogsled-gradient-brand')).toHaveLength(1);
-  expect(document.querySelector('#dogsled-gradient-brand')?.getAttribute('gradientTransform')).toBe(
+  expect(document.querySelectorAll('#bobsled-gradient-brand')).toHaveLength(1);
+  expect(document.querySelector('#bobsled-gradient-brand')?.getAttribute('gradientTransform')).toBe(
     'rotate(210, 0.5, 0.5)'
   );
   const currentIcon = document.querySelector('[data-chapter-link="load"] .current-icon')!;
@@ -190,7 +190,7 @@ it('keeps canonical brand paint and current chapter icons aligned during navigat
       .getComputedStyle(document.documentElement)
       .getPropertyValue('--brand-icon-fill')
       .trim()
-  ).toBe('url(#dogsled-gradient-brand)');
+  ).toBe('url(#bobsled-gradient-brand)');
   expect(dom.window.getComputedStyle(reviewedIcon).display).not.toBe('none');
   expect(
     dom.window.getComputedStyle(document.documentElement).getPropertyValue('--icon-positive').trim()
@@ -253,7 +253,7 @@ it('uses blue brand accents in dark mode and restores the light gradient', () =>
       .getComputedStyle(document.documentElement)
       .getPropertyValue('--brand-icon-fill')
       .trim()
-  ).toBe('url(#dogsled-gradient-brand)');
+  ).toBe('url(#bobsled-gradient-brand)');
 });
 
 it('keeps narrow chapter navigation hidden until opened and dismisses it after choosing a chapter', () => {

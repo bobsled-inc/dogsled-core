@@ -15,8 +15,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 2. In that second terminal, copy the committed project and enter it:
 
    ```bash
-   cp -R examples/postgres-pipeline /tmp/dogsled-postgres-pipeline
-   cd /tmp/dogsled-postgres-pipeline
+   cp -R examples/postgres-pipeline /tmp/bobsled-postgres-pipeline
+   cd /tmp/bobsled-postgres-pipeline
    ```
 
 3. Start and configure the disposable Postgres service:

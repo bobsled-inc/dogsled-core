@@ -80,7 +80,7 @@ describe('file storage extractor setup cleanup', () => {
     engine = { close: vi.fn(async () => undefined) };
     mocks.createClient.mockResolvedValue(client);
     mocks.createEngine.mockResolvedValue(engine);
-    mocks.mkdtemp.mockResolvedValue('/tmp/dogsled-file-source-test');
+    mocks.mkdtemp.mockResolvedValue('/tmp/bobsled-file-source-test');
     mocks.rm.mockResolvedValue(undefined);
   });
 

@@ -22,7 +22,7 @@ for (const filePath of listTrackedFiles((candidate) =>
   if (telemetryImport.test(content)) {
     findings.push(
       createFinding({
-        tool: 'dogsled-policy',
+        tool: 'bobsled-policy',
         rule: 'undeclared-runtime-telemetry',
         severity: 'high',
         message: 'Runtime source imports an analytics or telemetry SDK.',
@@ -35,7 +35,7 @@ for (const filePath of listTrackedFiles((candidate) =>
   if (bobsledEndpoint.test(content)) {
     findings.push(
       createFinding({
-        tool: 'dogsled-policy',
+        tool: 'bobsled-policy',
         rule: 'bobsled-operated-runtime-endpoint',
         severity: 'high',
         message: 'Runtime source contains a Bobsled-operated endpoint.',
@@ -48,7 +48,7 @@ for (const filePath of listTrackedFiles((candidate) =>
   if (privateRegistry.test(content)) {
     findings.push(
       createFinding({
-        tool: 'dogsled-policy',
+        tool: 'bobsled-policy',
         rule: 'private-runtime-registry',
         severity: 'high',
         message: 'Runtime source references a retired private package registry.',
@@ -75,7 +75,7 @@ for (const pkg of listWorkspacePackages().filter(
     if (scripts[lifecycle] !== undefined) {
       findings.push(
         createFinding({
-          tool: 'dogsled-policy',
+          tool: 'bobsled-policy',
           rule: 'published-lifecycle-script',
           severity: 'high',
           message: `${pkg.name} declares the ${lifecycle} lifecycle script.`,

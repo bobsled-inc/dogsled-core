@@ -53,7 +53,7 @@ dogsled entity-graph relationships compact \
   --json
 
 # 4. Generate the app-local TypeScript SDK.
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 
 # 5. Verify generated SDK calls against the seeded local graph.
 pnpm exec tsx src/verify.ts
@@ -62,7 +62,7 @@ pnpm exec tsx src/verify.ts
 ## App Code
 
 ```ts
-import { createBobsledClient, type BobsledEntityExecutor } from './generated/dogsled-sdk/index.js';
+import { createBobsledClient, type BobsledEntityExecutor } from './generated/bobsled-sdk/index.js';
 
 const executor: BobsledEntityExecutor = {
   async find(request) {

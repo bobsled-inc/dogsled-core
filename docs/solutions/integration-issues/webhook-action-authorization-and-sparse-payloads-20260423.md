@@ -1,5 +1,5 @@
 ---
-module: dogsled-action-system
+module: bobsled-action-system
 date: 2026-04-23
 problem_type: integration_issue
 component: webhook action transport

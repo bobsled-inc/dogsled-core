@@ -4205,7 +4205,7 @@ Usage: dogsled setup export [options]
 Export the bundled Cowork plugin and docs as a directory or zip bundle
 
 Options:
-  --output <path>    Output path (default: "./dogsled-cowork-kit.zip")
+  --output <path>    Output path (default: "./bobsled-cowork-kit.zip")
   --format <format>  dir or zip (default: "zip")
   --json             Output as JSON
   --verbose          Enable verbose output

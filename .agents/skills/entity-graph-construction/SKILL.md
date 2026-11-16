@@ -46,7 +46,7 @@ Managed destinations use `type: bobsled_managed` and `bobsled_connection_ref` to
 name a connection supplied by an orchestrator. Core validates these hooks but
 cannot load into a managed destination. For local execution, configure a concrete
 destination and run the work with `dogsled entity-graph build`.
-See [Dogsled Cloud and Core](../../../docs/guides/dogsled-cloud.md).
+See [Dogsled Cloud and Core](../../../docs/guides/hosted-runs.md).
 
 ## Shape
 
@@ -252,4 +252,4 @@ evidence). Read public edges from `__entity_relationship`, never the internal
   documents into `<resource>__chunks`, the input for mention extraction.
 - **`entity-resolution`** — upstream: resolve entities into `__entity_profile`,
   the table mentions resolve against. Construction runs only after this.
-- **`dogsled-model-spec`** — the broader data-model reference for the tables involved.
+- **`bobsled-model-spec`** — the broader data-model reference for the tables involved.

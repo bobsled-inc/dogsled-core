@@ -1,5 +1,5 @@
 rules:
-  - id: dogsled-node-command-exec
+  - id: bobsled-node-command-exec
     languages: [javascript, typescript]
     severity: ERROR
     message: Review command-string execution; prefer exact executable and argument arrays.
@@ -22,7 +22,7 @@ rules:
               - pattern: $CHILD_PROCESS.exec($COMMAND, ...)
               - pattern: $CHILD_PROCESS.execSync($COMMAND, ...)
 
-  - id: dogsled-child-process-shell
+  - id: bobsled-child-process-shell
     languages: [javascript, typescript]
     severity: ERROR
     message: Review shell-enabled subprocess execution for injection.
@@ -38,7 +38,7 @@ rules:
         - packages/entity-graph/src/api/external-reviewer-client.ts
         - packages/bobsled-core/src/commands/learn.ts
 
-  - id: dogsled-dynamic-code-execution
+  - id: bobsled-dynamic-code-execution
     languages: [javascript, typescript]
     severity: ERROR
     message: Review dynamic code execution and prove its input is not attacker-controlled.
@@ -50,7 +50,7 @@ rules:
         - packages/extractor/src/runtime/clients/gcs-file-client.ts
         - packages/extractor/src/runtime/clients/s3-file-client.ts
 
-  - id: dogsled-follow-http-redirects
+  - id: bobsled-follow-http-redirects
     languages: [javascript, typescript]
     severity: WARNING
     message: Redirect-following HTTP requests require per-hop SSRF validation.

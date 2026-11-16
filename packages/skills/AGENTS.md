@@ -12,7 +12,7 @@ Bundled Dogsled Skill generation plus Project Skill document schemas and bounded
 - A user's exact-case root `AGENTS.md` is the separate optional Project guide. It
   never belongs in the Built-in Skill manifest or a Project Skill directory.
 - `content/catalogs/*.json` values and exposed skill names are append-only contracts.
-- `src/generated-data.ts`, `plugins/dogsled-core/skills/`, plugin manifests, and marketplace
+- `src/generated-data.ts`, `plugins/bobsled-core/skills/`, plugin manifests, and marketplace
   catalogs are generated; never edit them directly. `generate:manifest` updates both
   the runtime manifest and the installable plugin from the same exposed skills.
 - Transclusions are resolved during generation so bundled Skill bodies are

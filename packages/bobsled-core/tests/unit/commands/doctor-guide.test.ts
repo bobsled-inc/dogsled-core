@@ -26,7 +26,7 @@ const PROJECT_SKILLS_MODULE = '../../../src/project-skills/index.js';
 const canDropReadPermission = process.platform !== 'win32' && process.getuid?.() !== 0;
 
 function project(guide?: string): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-doctor-guide-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-doctor-guide-'));
   roots.push(root);
   if (guide !== undefined) writeFileSync(path.join(root, 'AGENTS.md'), guide, 'utf8');
   return root;

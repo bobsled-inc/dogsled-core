@@ -185,7 +185,7 @@ describe('security evidence primitives', () => {
   it('preserves repository-contained compatibility symlinks in clean exports', () => {
     const reviewRoot = path.join(repoRoot, '.security-review');
     mkdirSync(reviewRoot, { recursive: true });
-    const tempDir = mkdtempSync(path.join(reviewRoot, 'dogsled-security-export-'));
+    const tempDir = mkdtempSync(path.join(reviewRoot, 'bobsled-security-export-'));
     try {
       const result = spawnSync(
         process.execPath,
@@ -206,7 +206,7 @@ describe('security evidence primitives', () => {
   });
 
   it('security snapshots keep every recorded hash valid when source has a public manifest', () => {
-    const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'dogsled-snapshot-manifest-')));
+    const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'bobsled-snapshot-manifest-')));
     try {
       for (const relative of ['scripts/security/export-worktree.mjs', 'scripts/security/lib.mjs']) {
         const destination = path.join(root, relative);
@@ -269,7 +269,7 @@ describe('security evidence primitives', () => {
   });
 
   it('records a timed-out command as failed rather than passed', () => {
-    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-security-timeout-'));
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-security-timeout-'));
     try {
       const result = captureCommand({
         id: 'timeout',
@@ -288,7 +288,7 @@ describe('security evidence primitives', () => {
   });
 
   it('records an explicit tool version for wrapped scanners', () => {
-    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-security-version-'));
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-security-version-'));
     try {
       const result = captureCommand({
         id: 'version',
@@ -307,7 +307,7 @@ describe('security evidence primitives', () => {
   });
 
   it('normalization marks an unavailable tool as incomplete', () => {
-    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-security-normalize-'));
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-security-normalize-'));
     const rawDir = path.join(tempDir, 'raw');
     try {
       writeFileSync(path.join(tempDir, 'placeholder'), '');
@@ -353,7 +353,7 @@ describe('security evidence primitives', () => {
   });
 
   it('normalization preserves verified remediation records', () => {
-    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-security-remediation-'));
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-security-remediation-'));
     const rawDir = path.join(tempDir, 'raw');
     try {
       writeFileSync(path.join(tempDir, 'placeholder'), '');
@@ -497,7 +497,7 @@ describe('maintainer decision packet', () => {
 
 describe('secret scanner source selection', () => {
   it.each([true, false])('uses current Git files only when Git exists: %s', (withGit) => {
-    const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'dogsled-secretlint-source-')));
+    const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'bobsled-secretlint-source-')));
     try {
       for (const relative of [
         'scripts/security/secretlint-tracked.mjs',

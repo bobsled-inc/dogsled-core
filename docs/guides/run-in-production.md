@@ -133,7 +133,7 @@ jobs:
     timeout-minutes: 120
     environment: production
     concurrency:
-      group: dogsled-production
+      group: bobsled-production
       cancel-in-progress: false
     permissions:
       contents: read
@@ -608,12 +608,12 @@ environment variables by the platform:
 
 ```bash
 docker run --rm -e HELPDESK_TOKEN \
-  -v dogsled-extract-state:/project/.extractor \
-  -v dogsled-model-state:/project/.bobsled/model-spec \
+  -v bobsled-extract-state:/project/.extractor \
+  -v bobsled-model-state:/project/.bobsled/model-spec \
   my-bobsled-project runner run helpdesk_tickets
 docker run --rm \
-  -v dogsled-extract-state:/project/.extractor \
-  -v dogsled-model-state:/project/.bobsled/model-spec \
+  -v bobsled-extract-state:/project/.extractor \
+  -v bobsled-model-state:/project/.bobsled/model-spec \
   my-bobsled-project model run --integration warehouse --json
 ```
 

@@ -45,7 +45,7 @@ function exportCoworkAssets(targetPath: string, format: 'dir' | 'zip'): void {
     return;
   }
 
-  const tempDir = path.join(path.dirname(targetPath), `.dogsled-setup-export-${Date.now()}`);
+  const tempDir = path.join(path.dirname(targetPath), `.bobsled-setup-export-${Date.now()}`);
   mkdirSync(tempDir, { recursive: true });
   cpSync(assetsDir, path.join(tempDir, 'cowork'), { recursive: true });
 
@@ -318,7 +318,7 @@ export function createSetupGroup(): Command {
   group
     .command('export')
     .description('Export the bundled Cowork plugin and docs as a directory or zip bundle')
-    .option('--output <path>', 'Output path', './dogsled-cowork-kit.zip')
+    .option('--output <path>', 'Output path', './bobsled-cowork-kit.zip')
     .option('--format <format>', 'dir or zip', 'zip')
     .option('--json', 'Output as JSON')
     .option('--verbose', 'Enable verbose output')

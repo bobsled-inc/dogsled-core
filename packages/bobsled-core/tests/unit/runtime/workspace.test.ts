@@ -18,7 +18,7 @@ const require = createRequire(import.meta.url);
 const tsxImportPath = require.resolve('tsx/esm');
 
 function makeTempDir(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-workspace-test-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-workspace-test-'));
   tempDirs.push(dir);
   return dir;
 }

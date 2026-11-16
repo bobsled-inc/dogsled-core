@@ -414,7 +414,7 @@ describe('runLoader', () => {
     const sentinelContent = await fs.readFile(sentinelPath, 'utf-8');
     expect(sentinelContent).toBe('do-not-delete');
 
-    // The owned temp subdirectory (dogsled-loader-*) should be cleaned up
+    // The owned temp subdirectory (bobsled-loader-*) should be cleaned up
     const remaining = await fs.readdir(callerTempRoot);
     expect(remaining).toEqual(['sentinel.txt']);
   });

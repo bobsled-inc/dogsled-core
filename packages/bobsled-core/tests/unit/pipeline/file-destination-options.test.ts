@@ -30,7 +30,7 @@ const GCS_LANDING = `  archive:
 `;
 
 function makeProject(destinations: string, destinationNames: string[]): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-file-dest-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-file-dest-'));
   tempDirs.push(root);
   fs.mkdirSync(path.join(root, 'integrations'));
   fs.mkdirSync(path.join(root, 'resources'));

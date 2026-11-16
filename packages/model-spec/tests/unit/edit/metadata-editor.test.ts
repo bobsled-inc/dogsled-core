@@ -10,7 +10,7 @@ describe('edit/metadata-editor', () => {
   let projectDir: string;
 
   beforeEach(() => {
-    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-edit-metadata-'));
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-edit-metadata-'));
     fs.mkdirSync(path.join(projectDir, 'metrics'), { recursive: true });
     fs.mkdirSync(path.join(projectDir, 'relationships'), { recursive: true });
     fs.mkdirSync(path.join(projectDir, 'vqs'), { recursive: true });

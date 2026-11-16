@@ -239,13 +239,13 @@ export function registerDoctorCommand(program: Command): void {
         ...(configPath ? { configPath: project.configPaths[0]! } : {}),
       });
       const checks: DoctorCheck[] = validation.warnings.map((message) => ({
-        name: 'dogsled-config.warning',
+        name: 'bobsled-config.warning',
         status: 'warn',
         message,
       }));
       for (const issue of validation.errors) {
         checks.push({
-          name: 'dogsled-config',
+          name: 'bobsled-config',
           status: 'error',
           message: `${issue.path}: ${issue.message}`,
           filePath: issue.filePath,

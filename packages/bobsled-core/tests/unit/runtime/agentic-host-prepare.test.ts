@@ -36,7 +36,7 @@ import type { AgenticProbeContext } from '@bobsled-inc/model-spec/agentic';
 
 let directory: string;
 beforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), 'dogsled-prepare-'));
+  directory = await mkdtemp(path.join(os.tmpdir(), 'bobsled-prepare-'));
   await writeFile(path.join(directory, 'executor.mjs'), 'export async function executeAgent() {}');
   mocks.query.mockReset().mockResolvedValue([{ pair_id: 'p1' }]);
   mocks.close.mockReset().mockResolvedValue(undefined);

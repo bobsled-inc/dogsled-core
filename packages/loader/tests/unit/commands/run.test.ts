@@ -1163,7 +1163,7 @@ describe('runDatabaseLoader: checkpoint', () => {
     const stdout = new BufferingWritable();
     const stderr = new BufferingWritable();
     const tmpDir = await import('node:os').then((os) => os.tmpdir());
-    const checkpointDir = `${tmpDir}/dogsled-test-ckpt-${Date.now()}`;
+    const checkpointDir = `${tmpDir}/bobsled-test-ckpt-${Date.now()}`;
 
     try {
       const result = await runDatabaseLoader(

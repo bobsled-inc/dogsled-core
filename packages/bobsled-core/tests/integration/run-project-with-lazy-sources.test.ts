@@ -192,7 +192,7 @@ materialization: { type: table, strategy: replace_processed_keys, keys: [id] }
   });
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-lazy-derived-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-lazy-derived-'));
   });
 
   afterEach(async () => {

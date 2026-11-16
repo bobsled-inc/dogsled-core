@@ -15,7 +15,7 @@ You need Node.js 24 or later and pnpm.
 
 ```bash
 git clone https://github.com/bobsled-inc/dogsled-core.git
-cd dogsled-core
+cd bobsled-core
 pnpm run setup
 pnpm --filter @bobsled-inc/explorer dev
 ```

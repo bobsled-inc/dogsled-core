@@ -148,7 +148,7 @@ function run(store: SyncStateStore): ReturnType<typeof runSync> {
 }
 
 beforeEach(() => {
-  projectRoot = mkdtempSync(join(tmpdir(), 'dogsled-sync-run-'));
+  projectRoot = mkdtempSync(join(tmpdir(), 'bobsled-sync-run-'));
   mocks.executeAction.mockReset();
   mocks.executeAction.mockResolvedValue(successResult());
 });

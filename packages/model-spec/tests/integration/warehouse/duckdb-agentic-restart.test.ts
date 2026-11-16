@@ -14,7 +14,7 @@ import { warehouseEnabled } from './setup.js';
 it.skipIf(!warehouseEnabled('duckdb'))(
   'restarts failed incremental work, publishes once, and advances the cursor only after success',
   async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'dogsled-restart-'));
+    const directory = await mkdtemp(join(tmpdir(), 'bobsled-restart-'));
     const integration: DuckDbIntegration = {
       spec_version: '1',
       type: 'integration',

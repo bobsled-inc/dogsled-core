@@ -15,8 +15,8 @@ interface Connection {
   config: Record<string, string>;
 }
 
-const CONNECTION_STORAGE_KEY = 'dogsled-explorer-connections';
-const SECRETS_STORAGE_KEY = 'dogsled-explorer-connection-secrets';
+const CONNECTION_STORAGE_KEY = 'bobsled-explorer-connections';
+const SECRETS_STORAGE_KEY = 'bobsled-explorer-connection-secrets';
 
 const CONNECTION_TYPES: {
   type: ConnectionType;

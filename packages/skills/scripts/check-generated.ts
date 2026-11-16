@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { renderGeneratedDataModule } from './build-manifest.js';
 import { renderPluginFiles, REPO_ROOT } from './build-plugins.js';
 
-const SKILL_TREE = 'plugins/dogsled-core/skills';
+const SKILL_TREE = 'plugins/bobsled-core/skills';
 
 export function expectedGeneratedFiles(): Record<string, string> {
   return {

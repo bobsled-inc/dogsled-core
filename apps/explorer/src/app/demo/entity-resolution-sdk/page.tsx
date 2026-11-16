@@ -84,7 +84,7 @@ const STEPS: ReadonlyArray<{
     title: 'Generate the typed SDK',
     description:
       'Reads the IR via `inventoryEntityGraph()`, emits branded IDs + `Profile` interfaces + `FindFilter` shapes + `EntityQueryBuilder` + `createBobsledClient()` into the consumer repo.',
-    code: 'dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json',
+    code: 'dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json',
     language: 'bash',
     href: null,
   },
@@ -108,7 +108,7 @@ const STEPS: ReadonlyArray<{
   },
 ] as const;
 
-const APP_CODE = `import { createBobsledClient, type BobsledEntityExecutor } from './generated/dogsled-sdk';
+const APP_CODE = `import { createBobsledClient, type BobsledEntityExecutor } from './generated/bobsled-sdk';
 
 const executor: BobsledEntityExecutor = {
   async find(request) {

@@ -30,7 +30,7 @@ function buildSystemPrompt(): string {
     .map((m) => `  ${m.name}: ${m.displayName} — ${m.description} (${m.martCount} marts)`)
     .join('\n');
 
-  return `You are the Dogsled Explorer assistant, a helpful guide for the Dogsled data engineering toolkit. You help users understand Dogsled's capabilities, explore integrations, configure pipelines, and learn about data modeling.
+  return `You are the Bobsled Core Explorer assistant, a helpful guide for the Dogsled data engineering toolkit. You help users understand Dogsled's capabilities, explore integrations, configure pipelines, and learn about data modeling.
 
 ## What is Dogsled?
 Dogsled is a YAML-driven data engineering toolkit with:

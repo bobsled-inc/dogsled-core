@@ -14,7 +14,7 @@ export default function JourneysPage() {
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <PageHeader
         title="Journeys"
-        description="Follow a guided path through Dogsled Explorer instead of piecing the demo together page by page."
+        description="Follow a guided path through Bobsled Core Explorer instead of piecing the demo together page by page."
       />
 
       <div className="grid gap-4 lg:grid-cols-2">

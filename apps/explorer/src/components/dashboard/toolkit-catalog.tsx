@@ -23,7 +23,7 @@ interface Destination {
   description: string;
 }
 
-const VISITED_STORAGE_KEY = 'dogsled-explorer-visited';
+const VISITED_STORAGE_KEY = 'bobsled-explorer-visited';
 
 export function DashboardToolkitCatalog({
   capabilities,
@@ -157,7 +157,7 @@ export function DashboardToolkitCatalog({
               <h2 className="mt-2 text-xl font-semibold">From discovery to a runnable pipeline</h2>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 Follow the same flow most developers use the first time they kick the tires on
-                Dogsled Explorer.
+                Bobsled Core Explorer.
               </p>
             </div>
             <Badge variant="accent">New session</Badge>

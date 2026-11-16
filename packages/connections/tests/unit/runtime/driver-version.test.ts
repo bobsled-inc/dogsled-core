@@ -10,7 +10,7 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 function installed(name: string, version: string) {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-driver-version-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-driver-version-'));
   roots.push(root);
   const dir = path.join(root, 'node_modules', name);
   mkdirSync(path.join(dir, 'dist'), { recursive: true });

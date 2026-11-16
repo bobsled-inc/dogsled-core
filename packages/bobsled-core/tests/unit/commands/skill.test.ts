@@ -18,7 +18,7 @@ const DESCRIBED_GUIDE =
 const EMPTY_BODY_ISSUE = { path: 'AGENTS.md', message: 'Markdown body must not be empty' };
 
 function createRoot(): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-skill-command-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-skill-command-'));
   roots.push(root);
   return root;
 }

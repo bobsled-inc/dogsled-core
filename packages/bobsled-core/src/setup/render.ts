@@ -323,9 +323,9 @@ export function installCoworkAssets(targetDir: string): string[] {
   try {
     const copied: string[] = [];
     const assetsDir = getCoworkAssetsDir();
-    const pluginTarget = path.join(targetDir, '.claude', 'plugins', 'dogsled-setup');
+    const pluginTarget = path.join(targetDir, '.claude', 'plugins', 'bobsled-setup');
     mkdirSync(path.dirname(pluginTarget), { recursive: true });
-    cpSync(path.join(assetsDir, 'dogsled-setup-plugin'), pluginTarget, { recursive: true });
+    cpSync(path.join(assetsDir, 'bobsled-setup-plugin'), pluginTarget, { recursive: true });
     copied.push(path.relative(targetDir, pluginTarget));
 
     const docsTarget = path.join(targetDir, 'docs');

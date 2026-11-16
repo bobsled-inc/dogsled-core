@@ -1,6 +1,6 @@
 # Keep generated plugin bundles collapsed in GitHub reviews.
-plugins/dogsled-core/skills/** linguist-generated=true
-plugins/dogsled-core/plugin.json linguist-generated=true
-plugins/dogsled-core/.claude-plugin/plugin.json linguist-generated=true
+plugins/bobsled-core/skills/** linguist-generated=true
+plugins/bobsled-core/plugin.json linguist-generated=true
+plugins/bobsled-core/.claude-plugin/plugin.json linguist-generated=true
 .agents/plugins/marketplace.json linguist-generated=true
 .claude-plugin/marketplace.json linguist-generated=true

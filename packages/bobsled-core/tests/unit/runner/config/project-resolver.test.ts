@@ -14,7 +14,7 @@ import {
 const roots: string[] = [];
 
 function project(files: Readonly<Record<string, string>>): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-config-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-project-config-'));
   roots.push(root);
   for (const [name, content] of Object.entries(files)) {
     const target = path.join(root, name);

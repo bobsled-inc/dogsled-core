@@ -57,7 +57,7 @@ function collectDisclosure() {
   commands.push(
     command({
       id: 'clean-export',
-      tool: 'dogsled-export',
+      tool: 'bobsled-export',
       adapter: 'metadata',
       command: process.execPath,
       args: [
@@ -142,7 +142,7 @@ function collectDisclosure() {
   commands.push(
     command({
       id: 'repository-policy',
-      tool: 'dogsled-policy',
+      tool: 'bobsled-policy',
       adapter: 'policy',
       command: process.execPath,
       args: [path.join(repoRoot, 'scripts/security/policy.mjs')],

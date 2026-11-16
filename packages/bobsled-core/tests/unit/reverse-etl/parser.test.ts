@@ -76,7 +76,7 @@ interface SyncFixture {
 const projectRoots: string[] = [];
 
 function makeTempProject(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-reverse-etl-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-reverse-etl-'));
   projectRoots.push(dir);
   fs.mkdirSync(path.join(dir, 'syncs'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'actions'), { recursive: true });
@@ -230,7 +230,7 @@ describe('parseReverseEtlProject', () => {
     expect(result.syncs).toEqual([]);
     expect(result.actions).toEqual([]);
     expect(result.errors.map((error) => error.kind)).toEqual(
-      expect.arrayContaining(['sync', 'action', 'dogsled-config'])
+      expect.arrayContaining(['sync', 'action', 'bobsled-config'])
     );
     expect(result.errors.map((error) => error.file)).toEqual(
       expect.arrayContaining([

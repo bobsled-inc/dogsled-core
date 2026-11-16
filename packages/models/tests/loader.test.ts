@@ -417,7 +417,7 @@ describe('@bobsled-inc/models', () => {
   });
 
   it('installs package files into a project directory with a raw schema override', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'dogsled-models-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'bobsled-models-'));
     tempDirs.push(cwd);
 
     const result = installModelPackage('github', {

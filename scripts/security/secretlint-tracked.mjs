@@ -58,7 +58,7 @@ const files = relativeFiles
   .map((relative) => path.join(scanRoot, relative));
 const reports = [];
 const chunkSize = 200;
-const tempDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-secretlint-'));
+const tempDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-secretlint-'));
 try {
   for (let index = 0; index < files.length; index += chunkSize) {
     const chunk = files.slice(index, index + chunkSize);

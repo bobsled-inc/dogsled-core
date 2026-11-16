@@ -256,5 +256,5 @@ cursor value as `cursor_param`. Three other strategies exist:
   declared environment variables, and compares the resources with an OpenAPI
   document when one is configured.
 
-The [CLI reference](../reference/cli.md#dogsled-extract) lists every flag, and
+The [CLI reference](../reference/cli.md#bobsled-extract) lists every flag, and
 [Project files](../reference/project-files.md#resources) lists every resource field.

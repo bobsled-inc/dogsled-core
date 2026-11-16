@@ -72,7 +72,7 @@ For a service that is compatible with PostgreSQL or MySQL, use that destination.
 `bobsled.yml` pipelines accept a subset: `duckdb`, `bigquery`, `snowflake`,
 `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`, `local`, `gcs` and
 `s3` (see [Run pipelines](../guides/run-pipelines.md#destination-types)). The flags
-for each destination are in the [CLI reference](cli.md#dogsled-load-run).
+for each destination are in the [CLI reference](cli.md#bobsled-load-run).
 
 ## Model warehouses
 

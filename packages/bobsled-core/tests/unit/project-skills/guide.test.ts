@@ -9,7 +9,7 @@ import { buildProjectSkillsManifest, loadProjectGuide } from '../../../src/proje
 const roots: string[] = [];
 
 function createProject(guide?: string): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-project-guide-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-project-guide-'));
   roots.push(root);
   const skillDirectory = path.join(root, 'skills', 'use-orders');
   mkdirSync(skillDirectory, { recursive: true });

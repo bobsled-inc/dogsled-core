@@ -38,7 +38,7 @@ const REQUIRED_ASSET_PREFIXES = [
   'package/node_modules/@bobsled-inc/entity-graph/fixtures/b2b-company-master/',
   'package/examples/demo/',
   'package/examples/s3-documents-ingestion/',
-  'package/cowork/dogsled-setup-plugin/',
+  'package/cowork/bobsled-setup-plugin/',
 ];
 
 function run(command, args, options) {
@@ -99,8 +99,8 @@ const outputDir = ensureDir(
 );
 const tarballDir = ensureDir(path.join(outputDir, 'tarballs'));
 const inspectionDir = ensureDir(path.join(outputDir, 'inspection'));
-const stageRoot = mkdtempSync(path.join(os.tmpdir(), 'dogsled-release-stage-'));
-const scratch = mkdtempSync(path.join(os.tmpdir(), 'dogsled-release-smoke-'));
+const stageRoot = mkdtempSync(path.join(os.tmpdir(), 'bobsled-release-stage-'));
+const scratch = mkdtempSync(path.join(os.tmpdir(), 'bobsled-release-smoke-'));
 const violations = [];
 const artifacts = [];
 let sbomStatus = 'unavailable';
@@ -189,7 +189,7 @@ try {
       writeFileSync(
         path.join(scratch, 'package.json'),
         `${JSON.stringify({
-          name: 'dogsled-security-release-smoke',
+          name: 'bobsled-security-release-smoke',
           private: true,
           type: 'module',
         })}\n`

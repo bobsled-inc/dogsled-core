@@ -48,7 +48,7 @@ If you are writing docs, prompts, or skills for agents, do not describe those co
 | Agent-review the unreviewed gray zone    | `resolve review [entity...] --runner ./runner.js`                        | Model judge from `agent_policy.model` or external reviewer from `agent_policy.reviewer`; `--dry-run` returns the bundle without writing. See below. |
 | Rebuild identity outputs after review    | `resolve cluster`, then `resolve profile`                                | `profile` materializes `__entity_profile` and `__entity_quality`.                                                                                   |
 | Export document mention review rows      | `mentions review export --runner ./runner.js --json`                     | Run `mentions extract` first; then emits the model-review envelope plus mention columns.                                                            |
-| Generate a typed SDK                     | `dogsled sdk generate --lang ts --out ./generated/dogsled-sdk`           | Run after profiles are fresh; generated SDK keys match entity spec names.                                                                           |
+| Generate a typed SDK                     | `dogsled sdk generate --lang ts --out ./generated/bobsled-sdk`           | Run after profiles are fresh; generated SDK keys match entity spec names.                                                                           |
 | Read one golden entity                   | `get --entity <name> --id <entity_id> --runner ./runner.js --json`       | Returns the golden profile plus quality and crosswalk context.                                                                                      |
 | Lookup/stage/assign one source record    | `match --entity <name> --input ./record.json --mode <mode>`              | `lookup` is read-only; `stage`/`assign` mutate `__match_inbox`/identity tables and require valid IDs.                                               |
 | Serve the access API locally             | `serve --port 8765 --runner ./runner.js --json`                          | Loopback/read-only by default. Add `--allow-writes` only for trusted local write flows.                                                             |
@@ -116,7 +116,7 @@ dogsled entity-graph resolve cluster company --runner ./runner.js --json
 dogsled entity-graph resolve profile company --runner ./runner.js --json
 dogsled entity-graph mentions extract company --runner ./runner.js --fallback compromise --json
 dogsled entity-graph mentions review export --runner ./runner.js --schema entity_graph --json
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 Use `review list` or `review decide` when an agent should make a few explicit decisions instead of producing a whole file.

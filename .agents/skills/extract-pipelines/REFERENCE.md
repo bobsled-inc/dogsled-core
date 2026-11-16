@@ -542,4 +542,4 @@ Do not put `--limit` on a real state-advancing acceptance run: it is a safe prev
 - Scheduling failure: inspect the caller’s scheduler; the toolkit runs pipelines locally and does not generate scheduling workflows.
 - Protocol corruption: stdout is data messages only; human/diagnostic logging belongs on stderr.
 
-Route local environment readiness and runtime diagnosis to `dogsled-troubleshoot`, connector implementation to the relevant `add-*` skill, destination internals to `loader`, and model materialization to Model Spec skills.
+Route local environment readiness and runtime diagnosis to `bobsled-troubleshoot`, connector implementation to the relevant `add-*` skill, destination internals to `loader`, and model materialization to Model Spec skills.
