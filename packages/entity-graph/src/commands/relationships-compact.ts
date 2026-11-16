@@ -100,7 +100,7 @@ export function buildRelationshipsCompactSql(options: RelationshipsCompactOption
 /**
  * Discover relationship ontology specs in the project's `mdmDir` and
  * return the directed exclusivity pairs they declare. Returns an empty
- * array when the directory is not a Dogsled project, no ontology spec
+ * array when the directory is not a Bobsled Core project, no ontology spec
  * exists, or the project loader fails — the compaction command treats
  * absence of an ontology as "skip ontology-driven conflict marking" and
  * preserves the legacy decision-only ranking.

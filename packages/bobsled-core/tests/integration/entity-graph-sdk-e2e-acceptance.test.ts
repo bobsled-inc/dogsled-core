@@ -1,8 +1,8 @@
 /**
  * Entity graph SDK end-to-end acceptance test (programmatic variant).
  *
- * The plan calls for a full `dogsled init --local` → CRM seed → entity-graph
- * run → `dogsled sdk generate` → `dogsled.entity.Customer.findBy(...)`
+ * The plan calls for a full `bobsled init --local` → CRM seed → entity-graph
+ * run → `bobsled sdk generate` → `bobsled.entity.Customer.findBy(...)`
  * traversal — that requires real DuckLake, real seed CRM data, and the
  * full SDK runtime. This test is the programmatic equivalent:
  * it verifies the seams between the key entity graph SDK components through library APIs.
@@ -69,7 +69,7 @@ async function runDoctorCommand(input: {
     }
     const program = new Command();
     program
-      .name('dogsled')
+      .name('bobsled')
       .option('--json', 'Emit JSON', false)
       .option('--verbose', 'Verbose', false)
       .option('--quiet', 'Quiet', false)

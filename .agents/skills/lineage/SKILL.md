@@ -1,6 +1,6 @@
 ---
 name: lineage
-description: Inspect and reason about Dogsled lineage for Model Spec models and Entity Graph attributes. Use when changing source schemas, model columns, joins, filters, resolution inputs, survivorship rules, or when a PR needs lineage risk notes.
+description: Inspect and reason about Bobsled Core lineage for Model Spec models and Entity Graph attributes. Use when changing source schemas, model columns, joins, filters, resolution inputs, survivorship rules, or when a PR needs lineage risk notes.
 ---
 
 # Lineage
@@ -10,21 +10,21 @@ Use this skill to answer "what depends on this?" before changing data contracts.
 ## Quick Triage
 
 1. Identify the change surface:
-   - Model Spec model/source change: use `dogsled model lineage`.
-   - Entity profile/survivorship change: use `dogsled entity-graph lineage`.
+   - Model Spec model/source change: use `bobsled model lineage`.
+   - Entity profile/survivorship change: use `bobsled entity-graph lineage`.
    - Both: run model lineage first, then entity graph lineage.
 2. Prefer structured output for agent work: JSON for strict automation, YAML for human-reviewed agent notes.
 3. Treat `isComplete=false` as a risk signal, not as a failure.
 
 ## Model Spec Model Lineage
 
-Run these from the Dogsled project root:
+Run these from the Bobsled Core project root:
 
 ```bash
-dogsled model lineage --integration <handle> --json
-dogsled model lineage --integration <handle> --column <model.column> --json
-dogsled model lineage --integration <handle> --yaml
-dogsled model lineage --integration <handle> --column <model.column> --yaml
+bobsled model lineage --integration <handle> --json
+bobsled model lineage --integration <handle> --column <model.column> --json
+bobsled model lineage --integration <handle> --yaml
+bobsled model lineage --integration <handle> --column <model.column> --yaml
 ```
 
 Inspect:
@@ -46,19 +46,19 @@ Lineage includes explicit expressions, `include_all_columns` passthrough when so
 Preview before writing:
 
 ```bash
-dogsled entity-graph lineage compile --dry-run --json
+bobsled entity-graph lineage compile --dry-run --json
 ```
 
 Persist after pipeline/schema changes:
 
 ```bash
-dogsled entity-graph lineage compile --runner ./runner.js --json
+bobsled entity-graph lineage compile --runner ./runner.js --json
 ```
 
 Query one attribute:
 
 ```bash
-dogsled entity-graph lineage --entity <entity> --attribute <attribute> --runner ./runner.js --json
+bobsled entity-graph lineage --entity <entity> --attribute <attribute> --runner ./runner.js --json
 ```
 
 Inspect:

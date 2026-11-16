@@ -64,7 +64,7 @@ describe('query resources', () => {
         queryResources.github.issues.list({
           input: {
             owner: 'bobsled-inc',
-            repo: 'dogsled',
+            repo: 'bobsled',
           },
           filter: {
             state: 'open',
@@ -75,7 +75,7 @@ describe('query resources', () => {
       resource: 'issues',
       input: {
         owner: 'bobsled-inc',
-        repo: 'dogsled',
+        repo: 'bobsled',
       },
       filter: {
         state: 'open',
@@ -89,7 +89,7 @@ describe('query resources', () => {
         queryResources.github.branches.list({
           input: {
             owner: 'bobsled-inc',
-            repo: 'dogsled',
+            repo: 'bobsled',
           },
           filter: {
             protected: true,
@@ -100,7 +100,7 @@ describe('query resources', () => {
       resource: 'branches',
       input: {
         owner: 'bobsled-inc',
-        repo: 'dogsled',
+        repo: 'bobsled',
       },
       filter: {
         protected: true,
@@ -179,7 +179,7 @@ describe('query resources', () => {
         queryResources.github.pullRequests.list({
           input: {
             owner: 'bobsled-inc',
-            repo: 'dogsled',
+            repo: 'bobsled',
           },
           filter: {
             state: 'all',
@@ -190,7 +190,7 @@ describe('query resources', () => {
       resource: 'pull_requests',
       input: {
         owner: 'bobsled-inc',
-        repo: 'dogsled',
+        repo: 'bobsled',
       },
       filter: {
         state: 'all',

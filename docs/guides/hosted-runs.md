@@ -1,6 +1,6 @@
 # Dogsled Cloud and Core
 
-Dogsled Cloud is the hosted product built on Dogsled Core. It runs the same project
+Dogsled Cloud is the hosted product built on Bobsled Core. It runs the same project
 files and adds a web app and an AI assistant for building and running pipelines.
 Cloud also provides scheduling, background agents, access control, and audit for teams.
 In Cloud, a project is called a Blueprint.
@@ -27,13 +27,13 @@ destinations:
 this destination, but Core cannot load into it:
 
 ```bash
-dogsled runner validate
-dogsled runner run shop_files || echo "exit code $?"
+bobsled runner validate
+bobsled runner run shop_files || echo "exit code $?"
 ```
 
 ```text
 ✓ Configuration is valid
-A "bobsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Dogsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".
+A "bobsled_managed" destination only runs in Dogsled Cloud. To run this pipeline with Bobsled Core, replace it with a concrete destination type such as "duckdb" or "bigquery".
 exit code 2
 ```
 
@@ -59,10 +59,10 @@ with `LEGACY_KEY_CONFLICT`. The retired `type: bobsled_lakehouse` is still rejec
 ## Models and entity-graph pipelines
 
 Pipelines with `type: models` or `type: entity-graph` are schedules for an
-orchestrator. Core validates them; run their work yourself with `dogsled model run`
-or `dogsled entity-graph build`. See [Run pipelines](run-pipelines.md).
+orchestrator. Core validates them; run their work yourself with `bobsled model run`
+or `bobsled entity-graph build`. See [Run pipelines](run-pipelines.md).
 
-## Embedding Dogsled in a host
+## Embedding Bobsled Core in a host
 
 A host application can use Core as a library. The package exports, among others,
 `@bobsled-inc/bobsled-core/pipeline` (run pipelines), `/manifest` (a portable pipeline

@@ -165,7 +165,7 @@ describe('pinned Ossie authoring translator', () => {
     mutate(doc);
     expect(() => translateOssieDocument(doc, 'sales.yml')).toThrow(pattern);
   });
-  it('keeps schema validity distinct from Dogsled execution support', () => {
+  it('keeps schema validity distinct from Bobsled Core execution support', () => {
     const doc = fixture();
     doc.datasets[0]!.custom_extensions = [];
     expect(() => validateOssieDocument(doc, 'sales.yml')).not.toThrow();

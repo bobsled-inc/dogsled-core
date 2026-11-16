@@ -36,11 +36,11 @@ export function buildAgentGuide(
 
 ## Repo Purpose
 
-This repo is a Dogsled Project. Project files are the source of truth. Pipeline configuration is optional. An optional root \`bobsled.yml\` can hold all pipeline configuration, or typed \`pipeline_config\` fragments can split it across the Project.
+This repo is a Bobsled Core Project. Project files are the source of truth. Pipeline configuration is optional. An optional root \`bobsled.yml\` can hold all pipeline configuration, or typed \`pipeline_config\` fragments can split it across the Project.
 
-Declare \`type\` to place a YAML file anywhere. If a file is untyped, Dogsled uses the nearest exact conventional folder to infer only its kind, not its name or namespace. Nested domain folders work the same way; for example, an untyped file under \`golf/datagolf/pga/metrics/\` is inferred as a metric.
+Declare \`type\` to place a YAML file anywhere. If a file is untyped, Bobsled Core uses the nearest exact conventional folder to infer only its kind, not its name or namespace. Nested domain folders work the same way; for example, an untyped file under \`golf/datagolf/pga/metrics/\` is inferred as a metric.
 
-Local Project commands use the current directory as the Project root. From a nested directory, pass \`--project-root /path/to/project\`. If you also pass \`--config\`, its path is relative to the Project root and selects one file. Prefer \`dogsled setup\` and \`dogsled runner\` commands over manual workflow edits.
+Local Project commands use the current directory as the Project root. From a nested directory, pass \`--project-root /path/to/project\`. If you also pass \`--config\`, its path is relative to the Project root and selects one file. Prefer \`bobsled setup\` and \`bobsled runner\` commands over manual workflow edits.
 
 ## About this data
 
@@ -73,11 +73,11 @@ ${sources.map((source) => `- \`${source.integration}\` — schedule: \`${source.
 
 ## Project Skills
 
-Project-owned agent guidance lives under \`skills/\`. Edit that directory only. Run \`dogsled skill validate\` after changes and \`dogsled skill sync\` to refresh agent discovery adapters.
+Project-owned agent guidance lives under \`skills/\`. Edit that directory only. Run \`bobsled skill validate\` after changes and \`bobsled skill sync\` to refresh agent discovery adapters.
 
 ## Core Commands
 
-- \`dogsled setup doctor\`
-- \`dogsled runner validate\`
-- \`dogsled runner run <pipeline>\``;
+- \`bobsled setup doctor\`
+- \`bobsled runner validate\`
+- \`bobsled runner run <pipeline>\``;
 }

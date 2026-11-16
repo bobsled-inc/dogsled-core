@@ -1,6 +1,6 @@
 # Agent Skills
 
-`.agents/skills/` is Dogsled's only authored skill source. Each skill lives at
+`.agents/skills/` is Bobsled Core's only authored skill source. Each skill lives at
 `.agents/skills/<name>/SKILL.md` with YAML frontmatter and agent-agnostic Markdown
 instructions.
 
@@ -32,7 +32,7 @@ when redirecting JSON or YAML so the package-manager banner is not included.
   adjacent `references/` files and load only what the task requires.
 - Keep instructions portable. Avoid model-specific tool names and permission syntax.
 - Use `{{include: <repo-relative path>}}` or
-  `{{include-section: <path>#<heading>}}` only when the bundled Dogsled Skill
+  `{{include-section: <path>#<heading>}}` only when the bundled Bobsled Core Skill
   manifest must flatten a reference for downstream consumers.
 - Mark downstream skills with `exposed: true` and include useful `triggers`.
 - Preserve security and approval boundaries even when shortening prose.

@@ -77,33 +77,33 @@ export const prompts = Object.fromEntries(
 );
 const commands: Record<string, [string, string][]> = {
   connect: [
-    ['Inspect the API', 'dogsled source-query "SELECT * FROM sources.external_reviews LIMIT 5"'],
+    ['Inspect the API', 'bobsled source-query "SELECT * FROM sources.external_reviews LIMIT 5"'],
   ],
   load: [
     [
       'Load warehouse exports',
-      'dogsled pipeline --integration local_files --dest duckdb --db-path data.duckdb',
+      'bobsled pipeline --integration local_files --dest duckdb --db-path data.duckdb',
     ],
   ],
   model: [
-    ['Read business relationships', 'dogsled ontology describe retail --concept SalesLine --yaml'],
-    ['Validate ontology mappings', 'dogsled ontology validate --strict --json'],
-    ['Build product performance', 'dogsled model run +product_performance --integration warehouse'],
+    ['Read business relationships', 'bobsled ontology describe retail --concept SalesLine --yaml'],
+    ['Validate ontology mappings', 'bobsled ontology validate --strict --json'],
+    ['Build product performance', 'bobsled model run +product_performance --integration warehouse'],
   ],
   query: [
     [
       'Compare products',
-      'dogsled query "SELECT * FROM product_performance ORDER BY net_sales_per_in_stock_day DESC NULLS LAST LIMIT 5" --db-path data.duckdb',
+      'bobsled query "SELECT * FROM product_performance ORDER BY net_sales_per_in_stock_day DESC NULLS LAST LIMIT 5" --db-path data.duckdb',
     ],
   ],
   federate: [
     [
       'Prepare support evidence',
-      'dogsled model run prepared_support_cases --integration warehouse',
+      'bobsled model run prepared_support_cases --integration warehouse',
     ],
   ],
   transform: [
-    ['Check an approved pilot', 'dogsled onboarding verify transform --ticket-id case-0001'],
+    ['Check an approved pilot', 'bobsled onboarding verify transform --ticket-id case-0001'],
   ],
 };
 export const teaching = Object.fromEntries(

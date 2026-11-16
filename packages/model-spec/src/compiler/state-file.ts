@@ -21,7 +21,7 @@ const SelectStateColumnSchema = z
     not_null: z.boolean().default(false),
   })
   // Same forward-compat rationale as `ModelRunStateSchema`: per-column fields
-  // added by a newer Dogsled version (e.g. semantic tags, sensitivity flags)
+  // added by a newer Bobsled Core version (e.g. semantic tags, sensitivity flags)
   // must survive a round-trip through an older reader, not be silently
   // dropped on the next saveState().
   .passthrough();
@@ -36,7 +36,7 @@ const ModelRunStateSchema = z
     publishedSnapshotId: z.string().optional(),
     publishedAt: z.string().optional(),
     // ---- Config snapshot for transition-drift detection. -------------------
-    // Optional so state written by older Dogsled versions still loads. A missing
+    // Optional so state written by older Bobsled Core versions still loads. A missing
     // field means "don't know" — `planConfigDrift` proceeds without recreating,
     // because forcing a destructive rebuild on an upgrade would be worse than
     // letting one drift slip through until the next legitimate change.
@@ -47,14 +47,14 @@ const ModelRunStateSchema = z
     targetSchema: z.string().optional(),
     targetDatabase: z.string().optional(),
     /**
-     * Fully-qualified destination name as Dogsled materialized it on the last
+     * Fully-qualified destination name as Bobsled Core materialized it on the last
      * successful run. Used to DROP the *prior* destination when target_schema
      * or target_database change, so the old table doesn't sit orphaned.
      */
     priorFqName: z.string().optional(),
   })
   // Pass through unknown fields rather than stripping them. State written by
-  // a newer Dogsled version that adds further fields must still round-trip
+  // a newer Bobsled Core version that adds further fields must still round-trip
   // cleanly through an older reader/writer pair (spec §3, "degrade gracefully").
   .passthrough();
 
@@ -62,7 +62,7 @@ const RunStateSchema = z
   .object({
     models: z.record(z.string(), ModelRunStateSchema),
   })
-  // Root-level metadata added by a newer Dogsled version (envelope version,
+  // Root-level metadata added by a newer Bobsled Core version (envelope version,
   // run-context provenance, etc.) survives the load → save round-trip
   // instead of being silently stripped.
   .passthrough();

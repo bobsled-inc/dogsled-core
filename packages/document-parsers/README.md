@@ -2,7 +2,7 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Deterministic document parsing, chunking, and identity helpers used by Dogsled
+Deterministic document parsing, chunking, and identity helpers used by Bobsled Core
 ingestion. The default registry supports text, Markdown, HTML, PDF, DOCX, PPTX,
 and email documents.
 

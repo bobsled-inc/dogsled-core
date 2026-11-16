@@ -63,7 +63,7 @@ least one of `model` or `models`.
    ratios or cross-model aggregates.
 2. **Write the expression.** Use `{model_name}` tokens to reference
    models. The compiler validates every token resolves to a real
-   model at `dogsled model validate` time. Cross-dialect SQL
+   model at `bobsled model validate` time. Cross-dialect SQL
    functions are auto-transpiled (see the `bobsled-author-model-spec-model` skill
    and `bobsled-model-spec-expressions` reference for the function catalog).
 3. **Add synonyms (encouraged).** The query planner uses synonyms
@@ -72,7 +72,7 @@ least one of `model` or `models`.
    "subscription revenue" for an `mrr` metric).
 4. **Tag for discoverability.** Tags drive Data Estate UI filtering;
    `finance`, `growth`, `core-kpi` are typical.
-5. **Validate.** `dogsled model validate --integration <handle>`
+5. **Validate.** `bobsled model validate --integration <handle>`
    checks model refs and basic structure.
 
 ## Concrete example

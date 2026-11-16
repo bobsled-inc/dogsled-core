@@ -217,7 +217,7 @@ async function openStore(): Promise<AgenticStateStore> {
 
 const collect = (globalThis as { gc?: () => void }).gc;
 
-/** What a phase reports when it fails. Dogsled's state errors are safe to print; a driver's message
+/** What a phase reports when it fails. Bobsled Core's state errors are safe to print; a driver's message
  * can name the account, so only its kind goes in the result, and the rest to stderr. */
 function failureOf(error: unknown): string {
   if (error instanceof AgenticStateError) {
@@ -226,7 +226,7 @@ function failureOf(error: unknown): string {
   process.stderr.write(
     `${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`
   );
-  return `${error instanceof Error ? error.name : 'failed'} from outside Dogsled`;
+  return `${error instanceof Error ? error.name : 'failed'} from outside Bobsled Core`;
 }
 
 async function main(): Promise<void> {

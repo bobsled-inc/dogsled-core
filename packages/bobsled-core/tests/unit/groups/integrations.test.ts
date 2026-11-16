@@ -31,14 +31,14 @@ describe('createIntegrationsGroup', () => {
     });
 
     async function runWithRootJson(args: string[]): Promise<string> {
-      const program = new Command('dogsled').option('--json', 'Emit JSON', false);
+      const program = new Command('bobsled').option('--json', 'Emit JSON', false);
       program.addCommand(createIntegrationsGroup());
       const chunks: string[] = [];
       vi.spyOn(process.stdout, 'write').mockImplementation((chunk: string | Uint8Array) => {
         chunks.push(String(chunk));
         return true;
       });
-      await program.parseAsync(['node', 'dogsled', ...args]);
+      await program.parseAsync(['node', 'bobsled', ...args]);
       return chunks.join('');
     }
 
@@ -65,11 +65,11 @@ describe('createIntegrationsGroup', () => {
     const dir = mkdtempSync(join(tmpdir(), 'bobsled-integrations-init-'));
     try {
       vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-      const program = new Command('dogsled');
+      const program = new Command('bobsled');
       program.addCommand(createIntegrationsGroup());
       await program.parseAsync([
         'node',
-        'dogsled',
+        'bobsled',
         'integrations',
         'init',
         'github',

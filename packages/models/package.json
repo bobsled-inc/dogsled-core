@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "packages/models"
   },
   "engines": {
@@ -50,9 +50,9 @@
     "typescript": "catalog:dev-packages",
     "vitest": "catalog:testing"
   },
-  "description": "Installable model, metric, and relationship bundles for Dogsled integrations.",
+  "description": "Installable model, metric, and relationship bundles for Bobsled Core integrations.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
@@ -61,8 +61,8 @@
     "marts",
     "semantic-layer"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   }
 }

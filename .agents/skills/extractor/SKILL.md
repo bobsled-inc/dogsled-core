@@ -1,33 +1,33 @@
 ---
 name: extractor
-description: YAML-driven API data extraction CLI. Use when writing extractor YAML configs, using the dogsled extract CLI, or doing API data extraction work.
+description: YAML-driven API data extraction CLI. Use when writing extractor YAML configs, using the bobsled extract CLI, or doing API data extraction work.
 ---
 
-# Dogsled Extractor — API Data Extraction Reference
+# Bobsled Core Extractor — API Data Extraction Reference
 
 Declare API connections and resources in YAML, then extract structured data with a single CLI command.
 
 ## Quick Reference
 
 ```bash
-dogsled extract init [dir]                                # Scaffold new project
-dogsled extract validate [target]                         # Validate YAML specs + input completeness
-dogsled extract validate --integration github             # Validate single integration
-dogsled extract validate --format json                    # Machine-readable output
-dogsled extract validate --check-env                      # Also check env vars exist
-dogsled extract check <integration>                       # Diff YAML against OpenAPI spec (uses meta.yml openapi_url)
-dogsled extract check <integration> --openapi <url>       # Diff against specific OpenAPI spec URL or file
-dogsled extract check <integration> --severity warn       # Only show warnings and errors
-dogsled extract check <integration> --format json         # Machine-readable output
-dogsled extract discover --integration github             # List resources
-dogsled extract discover --integration github --probe     # Probe API for schema
-dogsled extract run --integration github                  # Full extraction preview
-dogsled extract run issues --integration github           # Single resource
-dogsled extract run issues --integration github --limit 5 # Limit records
-dogsled extract run issues --integration github --advance-state # Persist bookmark
-dogsled extract run issues --integration github --full-refresh  # Ignore saved state for this run
-dogsled extract lookup --integration github --resource issues --input id=42  # Single record
-dogsled extract topup --integration github --resource issues --since 2024-01-01 # Incremental from date
+bobsled extract init [dir]                                # Scaffold new project
+bobsled extract validate [target]                         # Validate YAML specs + input completeness
+bobsled extract validate --integration github             # Validate single integration
+bobsled extract validate --format json                    # Machine-readable output
+bobsled extract validate --check-env                      # Also check env vars exist
+bobsled extract check <integration>                       # Diff YAML against OpenAPI spec (uses meta.yml openapi_url)
+bobsled extract check <integration> --openapi <url>       # Diff against specific OpenAPI spec URL or file
+bobsled extract check <integration> --severity warn       # Only show warnings and errors
+bobsled extract check <integration> --format json         # Machine-readable output
+bobsled extract discover --integration github             # List resources
+bobsled extract discover --integration github --probe     # Probe API for schema
+bobsled extract run --integration github                  # Full extraction preview
+bobsled extract run issues --integration github           # Single resource
+bobsled extract run issues --integration github --limit 5 # Limit records
+bobsled extract run issues --integration github --advance-state # Persist bookmark
+bobsled extract run issues --integration github --full-refresh  # Ignore saved state for this run
+bobsled extract lookup --integration github --resource issues --input id=42  # Single record
+bobsled extract topup --integration github --resource issues --since 2024-01-01 # Incremental from date
 ```
 
 Global flags: `-v/--verbose`, `-q/--quiet`, `--log-format <json|pretty>`

@@ -20,7 +20,7 @@ The GitHub sample uses unauthenticated public API access, so it is rate limited 
 
 The default walkthrough does not require Bedrock, embedding, or API credentials.'s connection-free path is extract/load/query only; embeddings can be layered on later when a supported embedder config is present.
 
-If you are running from a source checkout without a standalone `dogsled` binary, `walkthrough.sh` uses the repo-local CLI automatically. You can also set `BOBSLED_CORE_CLI` explicitly:
+If you are running from a source checkout without a standalone `bobsled` binary, `walkthrough.sh` uses the repo-local CLI automatically. You can also set `BOBSLED_CORE_CLI` explicitly:
 
 ```bash
 BOBSLED_CORE_CLI="node ../../packages/bobsled-core/dist/index.js" ./walkthrough.sh
@@ -31,11 +31,11 @@ BOBSLED_CORE_CLI="node ../../packages/bobsled-core/dist/index.js" ./walkthrough.
 Run the same flow by hand:
 
 ```bash
-dogsled extract validate
-dogsled extract run --integration local_docs first_pdf \
-  | dogsled load run --dest duckdb --db-path ./first-ingest.duckdb --target-schema main
+bobsled extract validate
+bobsled extract run --integration local_docs first_pdf \
+  | bobsled load run --dest duckdb --db-path ./first-ingest.duckdb --target-schema main
 
-dogsled query \
+bobsled query \
   "SELECT source_uri, parser_version FROM first_pdf__documents" \
   --db-path ./first-ingest.duckdb
 ```
@@ -43,10 +43,10 @@ dogsled query \
 Then run the public API sample:
 
 ```bash
-dogsled extract run --integration github_public public_repos --limit 5 \
-  | dogsled load run --dest duckdb --db-path ./first-ingest.duckdb --target-schema main
+bobsled extract run --integration github_public public_repos --limit 5 \
+  | bobsled load run --dest duckdb --db-path ./first-ingest.duckdb --target-schema main
 
-dogsled query \
+bobsled query \
   "SELECT name, stargazers_count FROM public_repos ORDER BY stargazers_count DESC LIMIT 5" \
   --db-path ./first-ingest.duckdb
 ```

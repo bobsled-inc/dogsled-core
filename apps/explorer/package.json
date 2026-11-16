@@ -42,7 +42,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "apps/explorer"
   }
 }

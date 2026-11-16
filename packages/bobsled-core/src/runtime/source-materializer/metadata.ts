@@ -82,7 +82,7 @@ function queryRows(runner: SqlRunnerModule, sql: string): Promise<Array<Record<s
 }
 
 function normalizeLoadedAt(value: unknown): string {
-  // Dogsled always writes `loaded_at` as a UTC ISO-8601 string (see upsertRow in
+  // Bobsled Core always writes `loaded_at` as a UTC ISO-8601 string (see upsertRow in
   // materializer.ts, which passes `new Date().toISOString()`). Some dialects —
   // DuckDB, SQLite — strip the trailing `Z` when storing TIMESTAMP, so a
   // timezone-less round-trip means UTC by contract, not local time.

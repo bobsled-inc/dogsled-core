@@ -458,7 +458,7 @@ export interface SnowflakeRunnerModule extends SqlRunnerModule {
 }
 
 /**
- * Resolve a pipeline warehouse selector for Dogsled's built-in Snowflake runner.
+ * Resolve a pipeline warehouse selector for Bobsled Core's built-in Snowflake runner.
  * Custom runners receive the stable selector unchanged through their factory
  * context; only the built-in adapter translates a declared ID to the physical
  * session warehouse.

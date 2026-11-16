@@ -224,7 +224,7 @@ function transformSourceReferences(
 ): string {
   if (hasUserSourcesNamespace(sql)) {
     throw new CommandError(
-      'SQL uses "sources" as a CTE/table alias, but "sources" is reserved for Dogsled source references. Rename the alias before running dogsled query.',
+      'SQL uses "sources" as a CTE/table alias, but "sources" is reserved for Bobsled Core source references. Rename the alias before running bobsled query.',
       2
     );
   }
@@ -553,8 +553,8 @@ function destinationForFilterSlice(
 }
 
 export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResult> {
-  // `dogsled query` is the ad-hoc SQL escape hatch. Session context belongs to
-  // saved artifacts (`dogsled vq run`) where runtime scope is part of the
+  // `bobsled query` is the ad-hoc SQL escape hatch. Session context belongs to
+  // saved artifacts (`bobsled vq run`) where runtime scope is part of the
   // artifact contract, so do not add `--session` here.
   const started = Date.now();
   const nowIso = args.nowIso ?? new Date().toISOString();
@@ -564,14 +564,14 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
   if (sqlLimit !== undefined && sqlLimit > BOBSLED_CORE_QUERY_MAX_SQL_LIMIT) {
     const limitDescription = sqlLimit === Infinity ? 'LIMIT ALL (unbounded)' : `LIMIT ${sqlLimit}`;
     throw new CommandError(
-      `SQL ${limitDescription} exceeds dogsled query's lazy API materialization ceiling of ${BOBSLED_CORE_QUERY_MAX_SQL_LIMIT}. Use a numeric LIMIT ≤ ${BOBSLED_CORE_QUERY_MAX_SQL_LIMIT} or add a more selective source.filter.`,
+      `SQL ${limitDescription} exceeds bobsled query's lazy API materialization ceiling of ${BOBSLED_CORE_QUERY_MAX_SQL_LIMIT}. Use a numeric LIMIT ≤ ${BOBSLED_CORE_QUERY_MAX_SQL_LIMIT} or add a more selective source.filter.`,
       2
     );
   }
 
   if (referenced.size === 0) {
     throw new CommandError(
-      'query references no sources.*; "dogsled query" is for sources.* reads',
+      'query references no sources.*; "bobsled query" is for sources.* reads',
       2
     );
   }

@@ -1,8 +1,8 @@
 # Agentic model discovery and dispatch
 
-Dogsled recognizes `model_kind: agentic` in the model dependency graph. A derived
+Bobsled Core recognizes `model_kind: agentic` in the model dependency graph. A derived
 model can prepare its input, and another derived model can reference its declared
-output columns, including Dogsled metadata. Agentic plans do not enter the SQL
+output columns, including Bobsled Core metadata. Agentic plans do not enter the SQL
 compiler.
 
 The executable path accepts a fake or caller-supplied executor.
@@ -26,7 +26,7 @@ references fail validation.
 The model's selected output step supplies its public column schema. Authors do
 not repeat that schema on downstream derived models. Model selectors retain their
 existing meaning: a bare name selects that model, while `+name` includes upstream
-dependencies. Dogsled's host manifest discovery follows the same agentic edges and
+dependencies. Bobsled Core's host manifest discovery follows the same agentic edges and
 keeps the existing shape of externally supplied model metadata.
 
 Pipeline discovery infers an agentic model's warehouse from the source aliases
@@ -170,7 +170,7 @@ Calls may finish in any order. One coordinator saves each returned result and it
 usage before that work is complete. It serializes checkpoint changes so parallel
 calls do not overwrite each other's state. Final results follow prepared input
 order. Required failure stops new calls and cancels active calls. Executors must
-honor cancellation: Dogsled waits for them to settle before releasing the store.
+honor cancellation: Bobsled Core waits for them to settle before releasing the store.
 Outputs returned after cancellation are not accepted; their attempts remain
 charged. Each execution window includes preparation, dispatch waits, and assignment
 retries. A later explicit retry starts a new window.
@@ -230,7 +230,7 @@ These are bounded reads, not a claim of exhaustive source coverage.
 The reference loop is in `examples/agentic-pairs/loop-executor.mjs`. It uses
 structured read, search, and finish decisions. It does not evaluate model-generated
 code or expose a shell, arbitrary SQL, files, or direct URL fetching to the model.
-Both this executor and any supplied local module are trusted host code. Dogsled
+Both this executor and any supplied local module are trusted host code. Bobsled Core
 does not provide an OS sandbox for an untrusted module. Retrieved text cannot add
 capabilities to the reference loop.
 

@@ -144,7 +144,7 @@ it('uses the same engine for a different definition, chapter order, database and
   expect(snapshot.progress?.current).toBe('describe-items');
   expect(snapshot.progress?.history[0]?.rows).toEqual([{ item_id: 0 }]);
   const html = renderOnboardingHtml(snapshot, tutorial);
-  expect(html).toContain('Learn Dogsled with Items');
+  expect(html).toContain('Learn Bobsled Core with Items');
   expect(html).toContain('Count items');
   expect(html).toContain('Describe items');
   expect(html).toContain('sample.duckdb');

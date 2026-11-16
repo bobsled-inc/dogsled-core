@@ -187,7 +187,8 @@ export async function runMcpServe(options: McpServeOptions): Promise<void> {
               tools: [
                 {
                   name: 'read_source',
-                  description: 'Read rows from a Dogsled source table with permission metadata.',
+                  description:
+                    'Read rows from a Bobsled Core source table with permission metadata.',
                   inputSchema: {
                     type: 'object',
                     properties: {
@@ -253,7 +254,7 @@ export async function runMcpServe(options: McpServeOptions): Promise<void> {
 export function registerMcpServeCommand(parent: Command): void {
   parent
     .command('serve')
-    .description('Serve Dogsled MCP tools over stdio')
+    .description('Serve Bobsled Core MCP tools over stdio')
     .requiredOption('--transport <transport>', 'MCP transport: stdio')
     .requiredOption('--runner <path>', 'Path to SQL runner module with query(sql)')
     .option('--allow-unfiltered', 'Allow no-principal MCP reads with env double-gate', false)

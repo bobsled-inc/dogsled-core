@@ -1,9 +1,9 @@
 /**
- * `dogsled entity-graph review` command group.
+ * `bobsled entity-graph review` command group.
  *
  * Provides export and apply subcommands for human review workflow:
- *   dogsled entity-graph review export [entity...] --format=csv|json|yaml
- *   dogsled entity-graph review apply --input=file.csv|json|yaml
+ *   bobsled entity-graph review export [entity...] --format=csv|json|yaml
+ *   bobsled entity-graph review apply --input=file.csv|json|yaml
  *
  * Exit codes:
  *   0 = success

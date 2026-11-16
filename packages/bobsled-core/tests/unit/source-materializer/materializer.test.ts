@@ -426,7 +426,7 @@ describe('materializeSource', () => {
         queryResourceImpl: vi.fn(),
         integrationSpecLoader: () => ({ integration: {} as never, resource: {} as never }),
       })
-    ).rejects.toThrow(/mode: extract.*run dogsled pipeline/);
+    ).rejects.toThrow(/mode: extract.*run bobsled pipeline/);
   });
 
   it('re-materializes fresh metadata when the physical table is missing', async () => {

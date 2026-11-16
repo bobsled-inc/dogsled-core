@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { SKILLS_MANIFEST_SCHEMA_VERSION, getCatalog, getSkill, listSkills } from '../src/index.js';
 
-describe('Dogsled Skills public API', () => {
+describe('Bobsled Core Skills public API', () => {
   it('listSkills() returns a manifest with the current schema version', () => {
     const manifest = listSkills();
     expect(manifest.schema_version).toBe(SKILLS_MANIFEST_SCHEMA_VERSION);

@@ -64,7 +64,7 @@ Billing supports daily granularity and a maximum one-year bounded query. The
 extractor uses UTC `from` (inclusive) and `to` (exclusive) bounds. Projects,
 deployments, sandboxes, and sessions use provider pagination. The default
 extractor rate is one request per second with one request in flight; this is a
-Dogsled default and is not a Vercel quota. Published platform limits include
+Bobsled Core default and is not a Vercel quota. Published platform limits include
 deployment retrieval at 500 requests/minute (2,000/minute for Enterprise),
 runtime logs at 100/minute, and sandbox control-plane requests at
 1,000/10,000/100,000 per minute for Hobby/Pro/Enterprise. Vercel does not

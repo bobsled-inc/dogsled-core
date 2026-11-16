@@ -56,7 +56,7 @@ describe('workspace resolution', () => {
 
     expect(tryFindWorkspaceRoot(metaUrl)).toBeNull();
     expect(() => findWorkspaceRoot(metaUrl)).toThrowError(
-      new CommandError('Unable to locate the workspace root for the unified dogsled CLI.')
+      new CommandError('Unable to locate the workspace root for the unified bobsled CLI.')
     );
   });
 
@@ -167,8 +167,8 @@ describe('workspace resolution', () => {
 
   it('runs the installed entity graph CLI, not its library entry', () => {
     const root = makeTempDir();
-    const metaFile = path.join(root, 'dogsled', 'dist', 'index.js');
-    const packageDir = path.join(root, 'dogsled', 'node_modules', '@bobsled-inc', 'entity-graph');
+    const metaFile = path.join(root, 'bobsled', 'dist', 'index.js');
+    const packageDir = path.join(root, 'bobsled', 'node_modules', '@bobsled-inc', 'entity-graph');
     writeFile(metaFile);
     writeFile(path.join(packageDir, 'dist', 'index.js'), 'export {};\n');
     writeFile(path.join(packageDir, 'dist', 'cli.js'), '#!/usr/bin/env node\n');
@@ -204,10 +204,10 @@ describe('workspace resolution', () => {
 
   it('falls back to installed package dependencies outside the repository', () => {
     const root = makeTempDir();
-    const metaFile = path.join(root, 'dogsled', 'dist', 'index.js');
+    const metaFile = path.join(root, 'bobsled', 'dist', 'index.js');
     const extractorRuntime = path.join(
       root,
-      'dogsled',
+      'bobsled',
       'node_modules',
       '@bobsled-inc',
       'extractor',
@@ -217,7 +217,7 @@ describe('workspace resolution', () => {
     );
     const extractorCli = path.join(
       root,
-      'dogsled',
+      'bobsled',
       'node_modules',
       '@bobsled-inc',
       'extractor',

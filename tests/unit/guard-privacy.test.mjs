@@ -211,13 +211,13 @@ describe('private-github-repo', () => {
   });
 
   it('allows links to the current repository', () => {
-    expect(countMatches('https://github.com/bobsled-inc/dogsled-core')['private-github-repo']).toBe(
+    expect(countMatches('https://github.com/bobsled-inc/bobsled-core')['private-github-repo']).toBe(
       0
     );
   });
 
   it('allows the current repository .git URL', () => {
-    expect(countMatches('git@github.com/bobsled-inc/dogsled-core.git')['private-github-repo']).toBe(
+    expect(countMatches('git@github.com/bobsled-inc/bobsled-core.git')['private-github-repo']).toBe(
       0
     );
   });
@@ -435,7 +435,7 @@ describe('hosted-consumer-wording', () => {
     'Lakehouse\n// agent',
     String.raw`Lakehouse\nagent`,
     'closed-source app',
-    'proprietary Dogsled app',
+    'proprietary Bobsled Core app',
     String.raw`closed\nsource\napplication`,
   ])('detects consumer wording in %s', (text) => {
     expect(countMatches(text)['hosted-consumer-wording']).toBe(1);
@@ -451,7 +451,7 @@ describe('hosted-consumer-wording', () => {
         'The Lakehouse',
         ' * agent consumes metadata.',
         'Another proprietary',
-        'Dogsled app.',
+        'Bobsled Core app.',
       ]).get('hosted-consumer-wording')
     ).toEqual([
       { file: 'doc.md', line: 2, column: 5 },

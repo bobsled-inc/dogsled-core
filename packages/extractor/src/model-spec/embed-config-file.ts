@@ -1,5 +1,5 @@
 /**
- * Loader for the JSON file the `dogsled pipeline` orchestrator writes when it
+ * Loader for the JSON file the `bobsled pipeline` orchestrator writes when it
  * relays the pipeline's resolved `embed:` block to the extractor subprocess.
  * The file is consumed only by `--emit-model-spec-source` to pre-fill embedding
  * columns in the printed scaffold.
@@ -20,7 +20,7 @@ const EmbedFieldSchema = z
   })
   .strict();
 
-// Permissive — the same JSON file is also consumed by `dogsled embed`, which
+// Permissive — the same JSON file is also consumed by `bobsled embed`, which
 // validates the full discriminated union (provider auth variants, api_key,
 // region, base_url, etc.). The scaffold only needs the shared core fields.
 const EmbedConfigFileSchema = z

@@ -22,7 +22,7 @@ bash scripts/prepare-claude-code-review.sh
 That script:
 
 - installs workspace deps
-- builds the latest unified `Dogsled` CLI from the current checkout
+- builds the latest unified `Bobsled Core` CLI from the current checkout
 - creates a fresh `.runtime/customer-resolution` workdir
 - loads seeds and runs resolution up to the review queue
 - exports:
@@ -39,7 +39,7 @@ bash scripts/apply-claude-code-review.sh
 
 That script:
 
-- imports the completed CSV with `dogsled entity-graph review apply`
+- imports the completed CSV with `bobsled entity-graph review apply`
 - runs clustering
 - refreshes survivorship
 - runs truthset regression

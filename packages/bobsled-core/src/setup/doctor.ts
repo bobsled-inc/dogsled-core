@@ -51,10 +51,10 @@ export async function doctorSetup(options: {
       name: 'answers-file',
       status: 'fail',
       message: 'bobsled.setup.answers.yml is missing.',
-      fix: 'Run `dogsled setup install` or `dogsled setup recommend --write` first.',
+      fix: 'Run `bobsled setup install` or `bobsled setup recommend --write` first.',
     });
     blockers.add('Missing setup answers file');
-    nextActions.add('Create bobsled.setup.answers.yml with `dogsled setup recommend --write`.');
+    nextActions.add('Create bobsled.setup.answers.yml with `bobsled setup recommend --write`.');
   } else {
     const parsed = SetupAnswersSchema.safeParse(parseYaml(readFileSync(answersPath, 'utf-8')));
     if (!parsed.success) {
@@ -162,10 +162,10 @@ export async function doctorSetup(options: {
     checks.push({
       name: 'bobsled-config',
       status: 'fail',
-      message: `Dogsled Project configuration is invalid: ${validation.errors.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
-      fix: 'Fix the validation issues or rerun `dogsled setup render`.',
+      message: `Bobsled Core Project configuration is invalid: ${validation.errors.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
+      fix: 'Fix the validation issues or rerun `bobsled setup render`.',
     });
-    blockers.add('Dogsled Project validation errors');
+    blockers.add('Bobsled Core Project validation errors');
   } else if (validation.project?.configPaths.length === 0) {
     checks.push({
       name: 'bobsled-config',
@@ -184,8 +184,8 @@ export async function doctorSetup(options: {
 
   const ready = blockers.size === 0;
   if (ready) {
-    nextActions.add('Run `dogsled runner validate`.');
-    nextActions.add('Run a pipeline locally with `dogsled runner run <pipeline> --json`.');
+    nextActions.add('Run `bobsled runner validate`.');
+    nextActions.add('Run a pipeline locally with `bobsled runner run <pipeline> --json`.');
   }
 
   return {

@@ -1,7 +1,7 @@
 /**
  * Public Resource operations for server hosts.
  *
- * This entry point stays separate from the Dogsled package root so callers that
+ * This entry point stays separate from the Bobsled Core package root so callers that
  * only need project metadata do not load the Resource execution runtime.
  */
 export {

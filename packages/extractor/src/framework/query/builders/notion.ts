@@ -6,7 +6,7 @@ type NotionPropertyType = 'checkbox' | 'date' | 'number' | 'rich_text' | 'select
 export const notionFilterBuilder: FilterBuilder = {
   id: 'notion/database-query',
   label: 'Notion database query',
-  description: 'Builds Notion database query filters from Dogsled query predicates.',
+  description: 'Builds Notion database query filters from Bobsled Core query predicates.',
   integrations: ['notion'],
   build(config, predicates) {
     const filters = predicates.flatMap((predicate) => buildNotionPredicate(config, predicate));

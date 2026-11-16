@@ -1,31 +1,31 @@
-# Run Dogsled in production
+# Run Bobsled Core in production
 
-Dogsled Core is a command-line tool. It has no server and no scheduler. In
-production, a scheduler that you already use starts `dogsled` on a schedule: a
+Bobsled Core is a command-line tool. It has no server and no scheduler. In
+production, a scheduler that you already use starts `bobsled` on a schedule: a
 GitHub Actions workflow, cron, a systemd timer, Airflow or a Kubernetes CronJob.
 This guide shows how to set that up so that runs are repeatable, keep their
 credentials out of your files, and pick up where the last run stopped.
 
-## How Dogsled runs
+## How Bobsled Core runs
 
 Each scheduled run is one or more commands, for example:
 
 ```bash
-npx --no-install dogsled runner validate --strict
-npx --no-install dogsled runner run helpdesk_tickets
-npx --no-install dogsled model run --integration warehouse --json
+npx --no-install bobsled runner validate --strict
+npx --no-install bobsled runner run helpdesk_tickets
+npx --no-install bobsled model run --integration warehouse --json
 ```
 
 `runner run` runs one extract pipeline from `bobsled.yml` and exits.
-`model run` builds the models on one model integration and exits. Run Dogsled with
-`npx --no-install dogsled` in production. Without `--no-install`, npx downloads
-and runs a package from the npm registry when Dogsled is not installed in the
-folder, and an unrelated npm package is called `dogsled`. A run needs three
+`model run` builds the models on one model integration and exits. Run Bobsled Core with
+`npx --no-install bobsled` in production. Without `--no-install`, npx downloads
+and runs a package from the npm registry when Bobsled Core is not installed in the
+folder, and an unrelated npm package is called `bobsled`. A run needs three
 things:
 
 - **The project files.** Keep them in a Git repository, for example
   `example-org/my-bobsled-project`, together with a `package.json` and
-  `package-lock.json` that pin the Dogsled version.
+  `package-lock.json` that pin the Bobsled Core version.
 - **Credentials**, as environment variables. Project files name the variables;
   the scheduler sets their values.
 - **Somewhere to keep state** between runs. Incremental resources save a cursor
@@ -41,7 +41,7 @@ pipeline sets `table_prefix`; see [Run pipelines](run-pipelines.md#run-it).
 
 ### Pin the version
 
-Install Dogsled into the project repository with an exact version, together with
+Install Bobsled Core into the project repository with an exact version, together with
 the driver for your warehouse, and commit both npm files:
 
 ```bash
@@ -50,7 +50,7 @@ git add package.json package-lock.json
 ```
 
 `npm ci` then installs exactly what the lockfile lists on every run. Upgrade
-Dogsled with a pull request that changes the version, so that the validation job
+Bobsled Core with a pull request that changes the version, so that the validation job
 below checks the project against the new version before it reaches production.
 Do not use an unpinned `npx @bobsled-inc/bobsled-core` in production. Other warehouses
 need other drivers, for example `snowflake-sdk` for Snowflake; see the
@@ -58,7 +58,7 @@ need other drivers, for example `snowflake-sdk` for Snowflake; see the
 
 ### Declare the secrets
 
-Dogsled reads a credential only from an environment variable that a project file
+Bobsled Core reads a credential only from an environment variable that a project file
 declares. An integration lists the names it uses in `auth_env_vars`, and a
 destination in `bobsled.yml` does the same:
 
@@ -79,11 +79,11 @@ The scheduler maps each secret to a variable with the same name. A name that is
 not declared is refused. `runner validate --strict` fails on an undeclared name in
 an integration. It does not check the names that destinations in `bobsled.yml`
 use: `runner run` refuses an undeclared destination name when it starts, with exit
-code `2`. Dogsled keeps the values out of its output, logs and state files.
+code `2`. Bobsled Core keeps the values out of its output, logs and state files.
 [Environment variables](../reference/environment-variables.md#state-and-credentials)
 has the full rules.
 
-An API's `base_url` must use HTTPS. Dogsled refuses loopback and private
+An API's `base_url` must use HTTPS. Bobsled Core refuses loopback and private
 addresses, such as an API inside your own network, unless the run sets
 `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`; see
 [Network safety](../reference/environment-variables.md#network-safety).
@@ -98,7 +98,7 @@ It has two jobs:
 - `validate` checks every pull request. It has no secrets and no cloud access.
 
 ```yaml
-name: Dogsled
+name: Bobsled Core
 
 on:
   schedule:
@@ -123,9 +123,9 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
-      - run: npx --no-install dogsled runner validate --strict
-      - run: npx --no-install dogsled extract validate helpdesk
-      - run: npx --no-install dogsled model validate --integration warehouse
+      - run: npx --no-install bobsled runner validate --strict
+      - run: npx --no-install bobsled extract validate helpdesk
+      - run: npx --no-install bobsled model validate --integration warehouse
 
   run:
     if: github.event_name != 'pull_request'
@@ -149,7 +149,7 @@ jobs:
           node-version: 24
       - run: npm ci
       - name: Check the project
-        run: npx --no-install dogsled runner validate --strict
+        run: npx --no-install bobsled runner validate --strict
       - name: Sign in to Google Cloud
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
@@ -165,11 +165,11 @@ jobs:
       - name: Extract and load
         env:
           HELPDESK_TOKEN: ${{ secrets.HELPDESK_TOKEN }}
-        run: npx --no-install dogsled runner run helpdesk_tickets
+        run: npx --no-install bobsled runner run helpdesk_tickets
       - name: Save extraction state
         run: gcloud storage cp .extractor/state.json "$STATE_PREFIX/state.json"
       - name: Build models
-        run: npx --no-install dogsled model run --integration warehouse --json
+        run: npx --no-install bobsled model run --integration warehouse --json
       - name: Save model state
         if: always() && steps.restore.outcome == 'success'
         run: gcloud storage cp .bobsled/model-spec/run-state.json "$STATE_PREFIX/run-state.json"
@@ -180,7 +180,7 @@ jobs:
         run: |
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           curl --fail --silent --show-error -X POST -H 'Content-Type: application/json' \
-            --data "{\"text\":\"Dogsled run failed: $run_url\"}" "$ALERT_WEBHOOK_URL"
+            --data "{\"text\":\"Bobsled Core run failed: $run_url\"}" "$ALERT_WEBHOOK_URL"
 ```
 
 What each part does:
@@ -201,7 +201,7 @@ What each part does:
 - **Validation in pull requests.** The `validate` job names no environment and no
   secrets. Validation does not need them: it reads the files and checks the
   declarations, but not the values. Pull requests from forks never receive
-  secrets. Never run Dogsled on `pull_request_target`.
+  secrets. Never run Bobsled Core on `pull_request_target`.
 - **The installed version.** `npm ci` installs the locked packages, and
   `npx --no-install` runs that copy. It fails instead of downloading another one.
 - **No overlapping runs.** The `concurrency` group lets one `run` job work at a
@@ -218,7 +218,7 @@ What each part does:
 
 Models pipelines (`type: models`) in `bobsled.yml` are instructions for an
 orchestrator. `runner run` does not build them; it exits with code `2` and prints
-the `dogsled model run` command to use instead. See
+the `bobsled model run` command to use instead. See
 [Run pipelines](run-pipelines.md#models-and-entity-graph-pipelines).
 
 GitHub runs scheduled workflows on the default branch, in UTC, and can start them
@@ -230,7 +230,7 @@ turns off scheduled workflows after 60 days without activity.
 The `run` job signs in to Google Cloud with Workload Identity Federation, so no
 service-account key is stored in GitHub. `google-github-actions/auth` exchanges
 GitHub's token for short-lived Google credentials and points Application Default
-Credentials at them. Dogsled's BigQuery destination uses Application Default
+Credentials at them. Bobsled Core's BigQuery destination uses Application Default
 Credentials when it has no credential fields, and the model integration asks for
 them with `auth.type: adc`:
 
@@ -331,13 +331,13 @@ steps:
 The key file sits in the runner's temporary folder, outside the checkout, so it
 cannot be committed by mistake. GitHub empties that folder at the end of the job.
 If the key is encrypted, add `private_key_passphrase` to both files and declare its
-variable too. Install the `snowflake-sdk` driver next to Dogsled, as in
+variable too. Install the `snowflake-sdk` driver next to Bobsled Core, as in
 [Pin the version](#pin-the-version). Keep the state files somewhere your runner
 can reach, for example S3 with `aws s3 cp` in the same steps as above.
 
 ## Keep state between runs
 
-Dogsled keeps two state files in the project folder:
+Bobsled Core keeps two state files in the project folder:
 
 - `.extractor/state.json` holds the extraction cursors.
 - `.bobsled/model-spec/run-state.json` records what `model run` built.
@@ -367,7 +367,7 @@ holds one entry per `<integration>/<stream>`:
 }
 ```
 
-Without this file, Dogsled treats every resource as never run: it reads everything
+Without this file, Bobsled Core treats every resource as never run: it reads everything
 again, and an `append` resource loads duplicate rows.
 
 ### Model state
@@ -415,7 +415,7 @@ workflow saves it whenever the restore step worked. It saves `state.json` only w
 
 - With one destination, the extractor saves the cursor when extraction finishes,
   even if the load that follows fails. A state file from a failed run can be ahead
-  of the data in the warehouse. With several destinations, Dogsled saves the
+  of the data in the warehouse. With several destinations, Bobsled Core saves the
   cursor only after every destination has loaded.
 - If one resource fails, `runner run` fails, but the cursors of the resources that
   succeeded have already moved. Not saving them means the next run reads those
@@ -427,7 +427,7 @@ resources that run on a schedule.
 
 ### Alternative: an HTTPS state backend
 
-Dogsled can also read and write the state over HTTPS instead of a local file. Set
+Bobsled Core can also read and write the state over HTTPS instead of a local file. Set
 two variables on the `runner run` step:
 
 ```yaml
@@ -437,28 +437,28 @@ two variables on the `runner run` step:
     BOBSLED_CORE_STATE_BACKEND: https://state.example.com/v1/state/my-bobsled-project
     BOBSLED_CORE_STATE_AUTH_ENV: STATE_TOKEN
     STATE_TOKEN: ${{ secrets.STATE_TOKEN }}
-  run: npx --no-install dogsled runner run helpdesk_tickets
+  run: npx --no-install bobsled runner run helpdesk_tickets
 ```
 
-Dogsled sends `GET` to that URL before extracting and `PUT` with the whole state
+Bobsled Core sends `GET` to that URL before extracting and `PUT` with the whole state
 after it, with `Authorization: Bearer` and the value of the variable named in
 `BOBSLED_CORE_STATE_AUTH_ENV`. The server returns the state as JSON, or `404` if there is
-none yet. Dogsled treats `404` as empty state, so a wrong URL makes the run read
-everything again rather than fail. It returns an `ETag` header; Dogsled sends it back in `If-Match`, and the
+none yet. Bobsled Core treats `404` as empty state, so a wrong URL makes the run read
+everything again rather than fail. It returns an `ETag` header; Bobsled Core sends it back in `If-Match`, and the
 server answers `412` if another run wrote in between. The URL must be a public
-HTTPS address unless you set `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`. Dogsled
+HTTPS address unless you set `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`. Bobsled Core
 Core does not include such a server: you run it yourself. With this backend,
-Dogsled saves the cursor itself as described above, so you cannot hold it back
+Bobsled Core saves the cursor itself as described above, so you cannot hold it back
 after a failed run. The backend holds only the extraction cursors: keep
 `run-state.json` with the copy steps above. Use it when you already have a service
 that stores state for your jobs.
 
 ### OAuth refresh tokens
 
-Some OAuth providers issue a new refresh token each time Dogsled uses the old one.
-For `oauth2` integrations with `grant_type: authorization_code`, Dogsled saves the
+Some OAuth providers issue a new refresh token each time Bobsled Core uses the old one.
+For `oauth2` integrations with `grant_type: authorization_code`, Bobsled Core saves the
 new token in `auth-state.json` next to the state file. It does not send it to an
-HTTPS state backend. On a fresh runner that file is missing, and Dogsled uses the
+HTTPS state backend. On a fresh runner that file is missing, and Bobsled Core uses the
 refresh token from your secret again. If the provider has already invalidated that
 token, the run fails. Run such integrations on a machine that keeps its files, or
 check that the provider accepts a refresh token more than once. Never cache, upload
@@ -494,11 +494,11 @@ loaded per stream, and an error message for each failed stream:
 ```
 
 The logs contain counts, names and error messages, not the rows themselves.
-Dogsled does not print credential values, and GitHub also masks the values of the
+Bobsled Core does not print credential values, and GitHub also masks the values of the
 secrets it passes to a step. Do not add `set -x` or print the environment in a
 step that has secrets.
 
-Dogsled Core has no built-in alerts. Use your scheduler's: GitHub notifies the
+Bobsled Core has no built-in alerts. Use your scheduler's: GitHub notifies the
 user who last changed the `schedule` when a scheduled run fails, depending on
 their notification settings. The last step of the workflow posts the run's link to
 a chat or incident webhook when an earlier step fails. Store the webhook URL as a
@@ -521,32 +521,32 @@ Put the commands in a script in the project, `run-bobsled.sh`:
 ```sh
 #!/bin/sh
 set -eu
-npx --no-install dogsled runner validate --strict
-npx --no-install dogsled runner run helpdesk_tickets
-npx --no-install dogsled model run --integration warehouse --json
+npx --no-install bobsled runner validate --strict
+npx --no-install bobsled runner run helpdesk_tickets
+npx --no-install bobsled model run --integration warehouse --json
 ```
 
 Run it from a systemd service and timer. The credentials live in an environment
 file that only the service user can read (`chmod 600`):
 
 ```ini
-# /etc/systemd/system/dogsled.service
+# /etc/systemd/system/bobsled.service
 [Unit]
-Description=Dogsled pipelines
+Description=Bobsled Core pipelines
 
 [Service]
 Type=oneshot
-User=dogsled
+User=bobsled
 WorkingDirectory=/srv/my-bobsled-project
-EnvironmentFile=/etc/dogsled/production.env
+EnvironmentFile=/etc/bobsled/production.env
 ExecStart=/bin/sh run-bobsled.sh
 TimeoutStartSec=2h
 ```
 
 ```ini
-# /etc/systemd/system/dogsled.timer
+# /etc/systemd/system/bobsled.timer
 [Unit]
-Description=Run Dogsled pipelines daily
+Description=Run Bobsled Core pipelines daily
 
 [Timer]
 OnCalendar=*-*-* 06:17:00
@@ -557,11 +557,11 @@ WantedBy=timers.target
 ```
 
 ```bash
-sudo systemctl enable --now dogsled.timer
+sudo systemctl enable --now bobsled.timer
 ```
 
 A timer does not start the service again while the previous run is still active,
-so runs do not overlap. `journalctl -u dogsled` shows the logs.
+so runs do not overlap. `journalctl -u bobsled` shows the logs.
 
 With cron instead, set `PATH` to include the folder with `node` and `npx`, because
 cron starts commands with a short `PATH`. Load the environment file inside the
@@ -570,7 +570,7 @@ overlap:
 
 ```text
 PATH=/usr/local/bin:/usr/bin:/bin
-17 6 * * * cd /srv/my-bobsled-project && flock -n /run/lock/dogsled.lock sh -c 'set -a; . /etc/dogsled/production.env; set +a; exec sh run-bobsled.sh'
+17 6 * * * cd /srv/my-bobsled-project && flock -n /run/lock/bobsled.lock sh -c 'set -a; . /etc/bobsled/production.env; set +a; exec sh run-bobsled.sh'
 ```
 
 ### A container
@@ -587,7 +587,7 @@ COPY --chown=node:node package.json package-lock.json ./
 RUN npm ci
 COPY --chown=node:node . .
 RUN mkdir -p .extractor .bobsled/model-spec
-ENTRYPOINT ["npx", "--no-install", "dogsled"]
+ENTRYPOINT ["npx", "--no-install", "bobsled"]
 ```
 
 Add a `.dockerignore` so that local data, state and credentials never enter the
@@ -596,7 +596,7 @@ image:
 ```text
 .git
 node_modules
-.dogsled
+.bobsled
 .extractor
 output
 **/*.env
@@ -628,7 +628,7 @@ DAG with `max_active_runs=1`. Both keep runs from overlapping.
 
 ## Checklist
 
-- Pin Dogsled and the warehouse drivers in `package.json` and `package-lock.json`,
+- Pin Bobsled Core and the warehouse drivers in `package.json` and `package-lock.json`,
   and install them with `npm ci`.
 - Declare every credential variable in `auth_env_vars`, and give secrets only to
   the steps that need them.
@@ -640,7 +640,7 @@ DAG with `max_active_runs=1`. Both keep runs from overlapping.
   `model run`.
 - Keep `node_modules/`, `.extractor/` and `.bobsled/` out of Git. Never commit or
   cache `auth-state.json`.
-- Run Dogsled with `npx --no-install dogsled`.
+- Run Bobsled Core with `npx --no-install bobsled`.
 - Run `runner validate --strict` in pull requests, without secrets.
 - Allow one run at a time, and set a time limit.
 - Pin CI actions and base images to a commit or digest.

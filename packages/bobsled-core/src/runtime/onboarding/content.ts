@@ -42,7 +42,7 @@ export function agentRequest(
   review = false
 ): string {
   if (review && chapter.status === 'complete' && chapter.evidence) {
-    return `I have reviewed the saved result for “${chapterTitle(chapter, tutorial)}”. Run dogsled onboarding review ${chapter.id} --checkpoint ${checkpointId(chapter.evidence)}, then dogsled onboarding render. If the saved results have changed, refresh the page and let me review them first. Do not rerun checks or paid work. Pause before starting the next chapter.`;
+    return `I have reviewed the saved result for “${chapterTitle(chapter, tutorial)}”. Run bobsled onboarding review ${chapter.id} --checkpoint ${checkpointId(chapter.evidence)}, then bobsled onboarding render. If the saved results have changed, refresh the page and let me review them first. Do not rerun checks or paid work. Pause before starting the next chapter.`;
   }
-  return `${tutorial.prompts[chapter.id]} Teach only this step: explain the Dogsled capability, show the actual files and query, let me make one small choice, then run and inspect the result with me. Stop and wait for my reply before the next step.`;
+  return `${tutorial.prompts[chapter.id]} Teach only this step: explain the Bobsled Core capability, show the actual files and query, let me make one small choice, then run and inspect the result with me. Stop and wait for my reply before the next step.`;
 }

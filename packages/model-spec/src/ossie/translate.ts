@@ -89,7 +89,9 @@ function fieldsFor(
   where: string,
   vendor: string
 ): Record<string, unknown>[] {
-  if (!dataset.fields?.length) fail(where, 'Dogsled requires an explicit, non-empty fields list');
+  if (!dataset.fields?.length) {
+    fail(where, 'Bobsled Core requires an explicit, non-empty fields list');
+  }
   const names = new Set<string>();
   const columns = dataset.fields.map((field) => {
     const key = field.name.toLowerCase();
@@ -142,7 +144,7 @@ function fieldFor(
     if (!new RegExp(`^(?:${escaped}|"${escaped}"|\x60${escaped}\x60)$`).test(text)) {
       fail(
         where,
-        'Dogsled output fields must read their finished column; put build formulas in BOBSLED build_expression'
+        'Bobsled Core output fields must read their finished column; put build formulas in BOBSLED build_expression'
       );
     }
   }
@@ -298,7 +300,7 @@ export function translateOssieDocument(
     if (!ansi) {
       fail(
         where,
-        'Dogsled metric mapping requires an ANSI_SQL expression; other alternatives remain in the authored document'
+        'Bobsled Core metric mapping requires an ANSI_SQL expression; other alternatives remain in the authored document'
       );
     }
     const parsedExpression = tryParseExpr(ansi.expression);
@@ -345,7 +347,7 @@ export function translateOssieDocument(
     const extension = bobsledExtension(relationship, where, false, vendor);
     onlyKeys(extension, new Set(['join_type', 'description', 'tags']), where);
     if (!derivedNames.has(relationship.from) || !derivedNames.has(relationship.to)) {
-      fail(where, 'Dogsled relationships require derived datasets in this document');
+      fail(where, 'Bobsled Core relationships require derived datasets in this document');
     }
     if (relationship.from_columns.length !== relationship.to_columns.length) {
       fail(where, 'Relationship column arrays must have equal length');

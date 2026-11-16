@@ -20,7 +20,7 @@ vi.mock('node:fs', () => ({
 function findTempMainOffenders(): string[] {
   const offenders: string[] = [];
 
-  for (const file of globSync('packages/{dogsled,loader}/src/**/*.ts')) {
+  for (const file of globSync('packages/{bobsled,loader}/src/**/*.ts')) {
     const text = readFileSync(file, 'utf8');
     const matches = text.matchAll(
       /CREATE\s+(?:OR\s+REPLACE\s+)?TEMP\s+(?:TABLE|VIEW)\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\s(]+)/gi
@@ -42,7 +42,7 @@ describe('DuckDB temp table naming', () => {
     fsMockState.files.clear();
   });
 
-  it('qualifies every CREATE TEMP TABLE or VIEW in dogsled/loader source with temp.main', () => {
+  it('qualifies every CREATE TEMP TABLE or VIEW in bobsled/loader source with temp.main', () => {
     fsMockState.files.set(
       'packages/bobsled-core/src/runtime/source-materializer/materializer.ts',
       'const scratchSql = `CREATE TEMP TABLE temp.main."issues_scratch_123" AS SELECT 1`;'

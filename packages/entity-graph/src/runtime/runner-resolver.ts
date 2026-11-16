@@ -101,7 +101,7 @@ export async function resolveEntityGraphRunner(
   const interpolated = await interpolateSecrets(options.integration.integration, secretResolver);
   // Refreshable managed credential — provider wins over the command string,
   // which in turn wins over the `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND` env var. The
-  // env fallback is how the standalone `dogsled entity-graph` subprocess + the
+  // env fallback is how the standalone `bobsled entity-graph` subprocess + the
   // Cloud Run Jobs executor receive the SAME `credentials_token_command` the
   // loader gets from bobsled.yml, uniformly across every entity-graph phase.
   // Undefined leaves the runner on its static credentials (unchanged).

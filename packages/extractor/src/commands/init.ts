@@ -1,5 +1,5 @@
 /**
- * `dogsled extract init` command.
+ * `bobsled extract init` command.
  */
 
 import * as fs from 'node:fs';

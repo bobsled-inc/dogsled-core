@@ -1,6 +1,6 @@
 # Programmatic source-query API (`@bobsled-inc/bobsled-core/source-query`)
 
-The lazy/live source-query engine that powers the `dogsled source-query` (alias
+The lazy/live source-query engine that powers the `bobsled source-query` (alias
 `vq`) CLI is also importable as a library. This lets a host application drive the
 engine directly — injecting source definitions, the default destination, a
 warehouse SQL runner, and API secrets in memory, without requiring a
@@ -56,8 +56,8 @@ import type {
 
 ## Planning deployed definitions without a project directory
 
-Hosts that store committed Dogsled definitions in a database can pass the parsed
-source and model objects directly to Dogsled. No temporary project directory is
+Hosts that store committed Bobsled Core definitions in a database can pass the parsed
+source and model objects directly to Bobsled Core. No temporary project directory is
 needed.
 
 `analyzeDeployedModelProject` validates all definitions and returns, for every
@@ -73,10 +73,10 @@ also returns a self-contained DuckDB SELECT plus source bindings. Every source
 binding has a request-local `sources.__bobsled_source_N` table, so two
 Connections can safely use the same source name. `entry` is the original
 deployed source used to fetch rows. `runtimeEntry` is the same source bound to
-the internal table for Dogsled's query-time runner.
+the internal table for Bobsled Core's query-time runner.
 
 This planner is intentionally DuckDB-only. Its SQL is a fixed contract for
-Dogsled's query-time DuckDB runner, not portable warehouse SQL. The planner does
+Bobsled Core's query-time DuckDB runner, not portable warehouse SQL. The planner does
 not accept a dialect option.
 
 The planner only validates definitions, analyzes dependencies, assigns safe
@@ -245,7 +245,7 @@ const sql = await resolveModelReferences(querySql, projectRoot, { project });
 The brick preserves `BIGINT` precision (values are carried as strings through the
 JSONL hop and cast back to the declared column type on load), and matches source
 columns case-insensitively (warehouses like Snowflake return upper-cased keys).
-The `dogsled model run` CLI uses this same brick internally for live mixed views;
+The `bobsled model run` CLI uses this same brick internally for live mixed views;
 exposing it lets a host application stage
 warehouse leaves into its own engine and keep its existing query-time fold.
 

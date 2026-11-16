@@ -1,7 +1,7 @@
 # Build models
 
 A model is a YAML file that describes a table or view: where it reads from, its
-columns as SQL expressions, and how to materialize it. Dogsled compiles models to
+columns as SQL expressions, and how to materialize it. Bobsled Core compiles models to
 SQL for your warehouse, works out the order from the references between them, and
 runs them. This guide continues the `shop` project from
 [Get started](../getting-started.md), which already has an `orders` source and a
@@ -49,7 +49,7 @@ Database sources for `extract run` use `password_env` instead; see
 [Extract from databases](extract-from-databases.md).
 
 When a project has more than one model integration, pass `--integration <name>` to
-every `dogsled model` command.
+every `bobsled model` command.
 
 ## Sources and models
 
@@ -82,11 +82,11 @@ materialization:
 ```
 
 Every model needs a `description` and a `grain` (the columns that identify a row).
-`dogsled model validate` names any field that is missing or wrong:
+`bobsled model validate` names any field that is missing or wrong:
 
 ```bash
-dogsled model validate --integration warehouse
-dogsled model run --integration warehouse
+bobsled model validate --integration warehouse
+bobsled model run --integration warehouse
 ```
 
 ```text
@@ -99,8 +99,8 @@ Validated 2 model(s): 2 passed
 ✓ Executed 2 model operation(s).
 ```
 
-`top_customers` depends on `customer_revenue`, so Dogsled builds that first. Run
-one model with `dogsled model run top_customers`, and see the plan without running
+`top_customers` depends on `customer_revenue`, so Bobsled Core builds that first. Run
+one model with `bobsled model run top_customers`, and see the plan without running
 it with `--dry-run`.
 
 ## Materializations
@@ -140,8 +140,8 @@ materialization:
 ```
 
 ```bash
-dogsled model run daily_revenue --integration warehouse
-dogsled query "SELECT * FROM analytics.daily_revenue ORDER BY order_day" --db-path .bobsled/bobsled.duckdb
+bobsled model run daily_revenue --integration warehouse
+bobsled query "SELECT * FROM analytics.daily_revenue ORDER BY order_day" --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -160,7 +160,7 @@ all.
 
 ## Seeds
 
-Seeds are small CSV files that Dogsled loads as tables, such as mappings and
+Seeds are small CSV files that Bobsled Core loads as tables, such as mappings and
 reference lists.
 
 Create `seeds/data/regions.csv`:
@@ -192,10 +192,10 @@ materialization:
   on_conflict: replace
 ```
 
-`dogsled model seed load` compiles the seed to SQL. To run it, it needs a small
+`bobsled model seed load` compiles the seed to SQL. To run it, it needs a small
 runner module that executes SQL in your warehouse.
 
-Create `runner.mjs`. It uses Dogsled's DuckDB connection:
+Create `runner.mjs`. It uses Bobsled Core's DuckDB connection:
 
 ```js
 import { buildDuckDbRunner } from '@bobsled-inc/bobsled-core/connections';
@@ -221,9 +221,9 @@ export const query = (sql) => withRunner('query', sql);
 ```
 
 ```bash
-dogsled model seed validate
-dogsled model seed load --dialect duckdb --runner ./runner.mjs
-dogsled query "SELECT * FROM analytics.regions ORDER BY customer" --db-path .bobsled/bobsled.duckdb
+bobsled model seed validate
+bobsled model seed load --dialect duckdb --runner ./runner.mjs
+bobsled query "SELECT * FROM analytics.regions ORDER BY customer" --db-path .bobsled/bobsled.duckdb
 ```
 
 ```text
@@ -234,16 +234,16 @@ linus	north
 ```
 
 To use a seed in a model, declare its table as a source, like any other table.
-`dogsled model seed diff` compares the loaded table with the CSV; it needs
+`bobsled model seed diff` compares the loaded table with the CSV; it needs
 `unique_columns` or primary-key columns in the seed's schema.
 
 ## Test your models
 
 Columns marked `primary_key: true` or `not_null: true`, and the `tests:` list, become
-data tests. `dogsled model test` prints their SQL:
+data tests. `bobsled model test` prints their SQL:
 
 ```bash
-dogsled model test customer_revenue --integration warehouse
+bobsled model test customer_revenue --integration warehouse
 ```
 
 ```text
@@ -266,7 +266,7 @@ expect:
     column: customer
     values: [ada, grace, linus]
 EOF
-dogsled model expect run --integration warehouse --runner ./runner.mjs
+bobsled model expect run --integration warehouse --runner ./runner.mjs
 ```
 
 ```text
@@ -282,7 +282,7 @@ runner, it exits with code 2 when an expectation fails. The expectation kinds ar
 ## Lineage
 
 ```bash
-dogsled model lineage top_customers --integration warehouse
+bobsled model lineage top_customers --integration warehouse
 ```
 
 ```text
@@ -295,25 +295,25 @@ prints the full graph.
 
 ## Other model commands
 
-- `dogsled model compile -o build/` writes the SQL to files; `--include-metadata`
+- `bobsled model compile -o build/` writes the SQL to files; `--include-metadata`
   adds metrics, relationships and verified queries as JSON.
-- `dogsled model dry-run` runs the compiled `SELECT`s without creating anything:
+- `bobsled model dry-run` runs the compiled `SELECT`s without creating anything:
   `--mode parse`, `limit0` (default) or `sample` with `--row-limit`.
-- `dogsled model profile <table> --integration <name>` samples a table and reports
+- `bobsled model profile <table> --integration <name>` samples a table and reports
   column types, formats, keys and anomalies; `profile suggest cleaning <table>`
   proposes cleaning expressions.
-- `dogsled model generate --fromsql query.sql --sources sources/` turns a Snowflake
+- `bobsled model generate --fromsql query.sql --sources sources/` turns a Snowflake
   `SELECT` statement into model files; each common table expression becomes an
   ephemeral model.
-- `dogsled model init` scaffolds a model project with example files.
-- `dogsled model models list` lists prebuilt model packages, and
+- `bobsled model init` scaffolds a model project with example files.
+- `bobsled model models list` lists prebuilt model packages, and
   `model models install <package>` copies one into your project.
-- `dogsled model ossie import` and `export` exchange models with the Open Semantic
+- `bobsled model ossie import` and `export` exchange models with the Open Semantic
   Interchange format. See [Semantic model](semantic-model.md).
 
 ## Models across warehouses
 
 A model can join sources from different warehouses. `execution.engine` names the
-integration that runs the join; Dogsled copies the other inputs into it first.
+integration that runs the join; Bobsled Core copies the other inputs into it first.
 `BOBSLED_CORE_XWH_STAGING_FORMAT` (`jsonl` or `parquet`) and
 `BOBSLED_CORE_XWH_SOURCE_TIMEOUT_S` control that copy.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Dogsled Modeling CLI entrypoint.
+ * Bobsled Core Modeling CLI entrypoint.
  *
  * Standalone compiler for YAML-defined data models.
  * Emits SQL for the supported warehouse dialects.
@@ -32,9 +32,9 @@ export function buildProgram(): Command {
   const program = new Command();
 
   program
-    .name('dogsled model')
+    .name('bobsled model')
     .version('0.0.1')
-    .description('Dogsled Modeling — compile YAML data models into warehouse SQL')
+    .description('Bobsled Core Modeling — compile YAML data models into warehouse SQL')
     .option('-v, --verbose', 'Verbose output')
     .option('-q, --quiet', 'Suppress non-error output');
 

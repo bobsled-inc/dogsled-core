@@ -80,7 +80,7 @@ describe('incremental_filter authored vs substituted forms', () => {
   // Regression: persisting the substituted form to `ModelRunState` made
   // drift detection a false positive every time the user added/reordered
   // joins (which shifts `t{n}` indices) and a one-time false positive
-  // every time the alias-resolution wiring changed across Dogsled versions.
+  // every time the alias-resolution wiring changed across Bobsled Core versions.
   // The fix keeps `incremental_filter` substituted for codegen and adds
   // `authored_incremental_filter` (raw YAML form) for state persistence.
 
@@ -230,12 +230,12 @@ describe('incremental_filter ref-to-alias substitution', () => {
   // The substitution itself is dialect-agnostic (a regex string rewrite in
   // the parser, before codegen), but the substituted `t0`/`t1` alias then
   // flows through each dialect's AST emitter. This matrix proves the
-  // round-trip end-to-end on every dialect Dogsled ships, against all three
+  // round-trip end-to-end on every dialect Bobsled Core ships, against all three
   // incremental strategies. The pre-fix behavior would have leaked the
   // bare `stg_customers.signup_date` into every WHERE clause regardless
   // of dialect — we negate that.
   // ---------------------------------------------------------------------
-  // Dogsled's AST emitter doesn't quote identifiers inside WHERE clauses on
+  // Bobsled Core's AST emitter doesn't quote identifiers inside WHERE clauses on
   // any dialect (column quoting is only applied in the SELECT projection
   // and FROM-clause table refs). What changes per-dialect is identifier
   // *casing*: Snowflake uppercases, every other dialect lowercases. The

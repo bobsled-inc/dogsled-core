@@ -627,7 +627,7 @@ export class SnowflakeDestination implements DatabaseDestination {
     if (!(await this.schemaExists(conn, metadataSchema))) {
       throw new CommandError(
         `Snowflake staging schema ${qualifiedSchema} does not exist. Create it before loading; ` +
-          'Dogsled does not create administrator-provisioned staging schemas.',
+          'Bobsled Core does not create administrator-provisioned staging schemas.',
         2
       );
     }
@@ -693,7 +693,7 @@ export class SnowflakeDestination implements DatabaseDestination {
     }
     const ownershipMarker = requestedOwnershipMarker ?? this.tableOwnershipMarkers.get(cacheKey);
     const ownerGuarded = ownershipMarker !== undefined;
-    // Ordinary Dogsled tables keep the historical case-insensitive quoting
+    // Ordinary Bobsled Core tables keep the historical case-insensitive quoting
     // behavior. A reserved staging table is an exact external resource: the
     // opaque table token may contain lower-case or mixed-case characters, and
     // Snowflake treats a quoted case change as a different identifier.

@@ -80,7 +80,7 @@ export default function BobsledModelingPage() {
     <div className="mx-auto flex max-w-6xl gap-8 p-6">
       <div className="min-w-0 flex-1">
         <PageHeader
-          breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Modeling' }]}
+          breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Modeling' }]}
           title="Modeling"
           description="YAML-driven data modeling for any warehouse. Define sources, models, joins, and tests in declarative specs — the compiler handles dialect-correct SQL."
           actions={
@@ -286,7 +286,7 @@ materialization:
         <Section id="data-tests" title="Data Tests">
           <P>
             Add a <Code>tests</Code> block to any model to generate assertion SQL. Tests run via{' '}
-            <Code>dogsled model test</Code>.
+            <Code>bobsled model test</Code>.
           </P>
           <CodeBlock
             code={`tests:
@@ -306,7 +306,7 @@ materialization:
 
         <Section id="cli-reference" title="CLI Reference">
           <P>
-            Use <Code>dogsled model</Code> for all data modeling operations.{' '}
+            Use <Code>bobsled model</Code> for all data modeling operations.{' '}
             <Link href="/terminal" className="text-primary hover:underline">
               Run in Terminal →
             </Link>
@@ -314,46 +314,46 @@ materialization:
 
           <SubSection id="cli-compile" title="Compile">
             <CodeBlock
-              code={`dogsled model compile                        # All models to stdout
-dogsled model compile stg_orders             # Single model
-dogsled model compile -o target/             # Write to files
-dogsled model compile --dialect bigquery     # Target dialect
-dogsled model compile --strict               # Reject implicit raw_sql fallbacks`}
+              code={`bobsled model compile                        # All models to stdout
+bobsled model compile stg_orders             # Single model
+bobsled model compile -o target/             # Write to files
+bobsled model compile --dialect bigquery     # Target dialect
+bobsled model compile --strict               # Reject implicit raw_sql fallbacks`}
             />
           </SubSection>
 
           <SubSection id="cli-run" title="Run">
             <CodeBlock
-              code={`dogsled model run --runner ./runner.js       # Compile + execute
-dogsled model run --full-refresh             # Force table rebuild`}
+              code={`bobsled model run --runner ./runner.js       # Compile + execute
+bobsled model run --full-refresh             # Force table rebuild`}
             />
           </SubSection>
 
           <SubSection id="cli-validate" title="Validate &amp; Lineage">
             <CodeBlock
-              code={`dogsled model validate                       # Check specs without compiling
-dogsled model lineage [model_name]           # Show dependency graph`}
+              code={`bobsled model validate                       # Check specs without compiling
+bobsled model lineage [model_name]           # Show dependency graph`}
             />
           </SubSection>
 
           <SubSection id="cli-bundles" title="Model Bundles">
             <CodeBlock
-              code={`dogsled model models list                    # Browse prebuilt integration model bundles
-dogsled model models info stripe             # Inspect one bundle
-dogsled model models install stripe          # Write bundle specs into the current project`}
+              code={`bobsled model models list                    # Browse prebuilt integration model bundles
+bobsled model models info stripe             # Inspect one bundle
+bobsled model models install stripe          # Write bundle specs into the current project`}
             />
           </SubSection>
 
           <SubSection id="cli-seeds" title="Seeds">
             <CodeBlock
-              code={`dogsled model seed validate [--json]
-dogsled model seed load [--runner ./r.js] [--json]
-dogsled model seed diff --runner ./r.js [--json]`}
+              code={`bobsled model seed validate [--json]
+bobsled model seed load [--runner ./r.js] [--json]
+bobsled model seed diff --runner ./r.js [--json]`}
             />
           </SubSection>
 
           <SubSection id="cli-init" title="Init">
-            <CodeBlock code={`dogsled model init my-project              # Scaffold new project`} />
+            <CodeBlock code={`bobsled model init my-project              # Scaffold new project`} />
           </SubSection>
         </Section>
       </div>

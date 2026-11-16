@@ -1,5 +1,5 @@
 /**
- * Core types for the Dogsled Extractor.
+ * Core types for the Bobsled Core Extractor.
  */
 
 import type { z } from 'zod';

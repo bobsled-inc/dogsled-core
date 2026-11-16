@@ -5,7 +5,7 @@ import type { IntegrationSpec } from '../types/index.js';
 /**
  * Return an integration spec with `default_transport` overridden to the
  * supplied transport id. Throws `CommandError` if `via` does not match any
- * transport on the spec — the Dogsled-side cross-validator already enforces
+ * transport on the spec — the Bobsled Core-side cross-validator already enforces
  * this for pipelines authored in bobsled.yml (see `validateViaSelections` in
  * the pipeline loader), but the extractor still defends its own boundary
  * because it is invokable standalone.
@@ -53,7 +53,7 @@ export function parseResourceViaPair(value: string): { resource: string; via: st
 
 /**
  * Validate every entry in a per-resource via override map against the source
- * integration's declared transports. Dogsled-side cross-validation already
+ * integration's declared transports. Bobsled Core-side cross-validation already
  * covers this for pipelines authored in bobsled.yml, but the extractor still
  * defends its own boundary because `--resource-via` is invokable directly.
  *

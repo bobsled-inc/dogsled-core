@@ -172,7 +172,7 @@ export function loadActions(
 }
 
 /**
- * Same as `loadActions`, with Dogsled's built-in actions read from the data
+ * Same as `loadActions`, with Bobsled Core's built-in actions read from the data
  * embedded in the package, so no files or temporary folders are needed.
  */
 export function loadBuiltInActions(projectActions?: string | ProjectIndex): Action[] {

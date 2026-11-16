@@ -1,8 +1,8 @@
 # Environment variables
 
-Dogsled reads credentials only from environment variables that your files name,
+Bobsled Core reads credentials only from environment variables that your files name,
 for example `${{ env.STRIPE_API_KEY }}` or `$PG_PASSWORD`. Those names are yours to
-choose. The variables on this page change Dogsled's own behavior.
+choose. The variables on this page change Bobsled Core's own behavior.
 
 Core's own settings start with `BOBSLED_CORE_`. Core ignores the earlier `DOGSLED_*` names of these settings and prints a warning when one is set without its `BOBSLED_CORE_*` twin, so rename them, keeping their values. <!-- rename:keep -->
 
@@ -21,7 +21,7 @@ Core's own settings start with `BOBSLED_CORE_`. Core ignores the earlier `DOGSLE
 | `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS` | `1` lets extraction, actions and the state backend connect to loopback and private addresses, which are refused by default. Needed for databases, APIs and MCP servers on your own machine or network. |
 | `BOBSLED_CORE_ALLOW_PRIVATE_OAUTH_HOSTS`     | `1` allows Snowflake OAuth token endpoints on private addresses.                                                                                                                                       |
 | `BOBSLED_CORE_ENTITY_GRAPH_ALLOW_REMOTE`     | `1`, together with `entity-graph serve --allow-remote`, lets the entity API listen on a non-loopback address.                                                                                          |
-| `BOBSLED_CORE_MCP_ALLOW_UNFILTERED`          | `1`, together with `mcp serve --allow-unfiltered`, allows MCP reads from declared sources without a permission adapter or principal. `dogsled doctor` warns when it is set.                            |
+| `BOBSLED_CORE_MCP_ALLOW_UNFILTERED`          | `1`, together with `mcp serve --allow-unfiltered`, allows MCP reads from declared sources without a permission adapter or principal. `bobsled doctor` warns when it is set.                            |
 
 ## State and credentials
 
@@ -29,7 +29,7 @@ Core's own settings start with `BOBSLED_CORE_`. Core ignores the earlier `DOGSLE
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `BOBSLED_CORE_STATE_BACKEND`             | Where extraction state is kept: `file://<path>` or an `https://` endpoint. `--state-backend` wins.                                                                 |
 | `BOBSLED_CORE_STATE_AUTH_ENV`            | The name of the variable that holds the bearer token for an HTTPS state backend. `--state-auth-env` wins.                                                          |
-| `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND` | A command that prints a fresh warehouse access token as JSON (`access_token`, and `expires_at` or `expires_in`). `dogsled model run` uses it for model warehouses. |
+| `BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND` | A command that prints a fresh warehouse access token as JSON (`access_token`, and `expires_at` or `expires_in`). `bobsled model run` uses it for model warehouses. |
 | `BOBSLED_CORE_MATCH_KEY_SECRET`          | The key for `hmac_sha256` match-key transforms in models and entity resolution. Required when you use them.                                                        |
 
 ## Models and queries
@@ -45,10 +45,10 @@ Core's own settings start with `BOBSLED_CORE_`. Core ignores the earlier `DOGSLE
 
 | Variable                    | Effect                                                                                                           |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `BOBSLED_CORE_AI_TEST_STUB` | `1` makes `dogsled ai test` return zero vectors without calling the provider.                                    |
+| `BOBSLED_CORE_AI_TEST_STUB` | `1` makes `bobsled ai test` return zero vectors without calling the provider.                                    |
 | `BOBSLED_CORE_EMBED_STUB`   | `1` makes embedding return synthetic vectors without calling the provider. Not for production data.              |
 | `OPENAI_API_KEY`            | Read directly by the entity graph's semantic triage, which embeds candidate pairs with `text-embedding-3-small`. |
-| `BOBSLED_CORE_CLI`          | The command `dogsled learn` uses to run lessons. `--cli` wins.                                                   |
+| `BOBSLED_CORE_CLI`          | The command `bobsled learn` uses to run lessons. `--cli` wins.                                                   |
 
 CLI integration placeholders and `*_env` fields resolve only names declared in `auth_env_vars`. Bundled `<name>/source.yml` files also use declarations from their `meta.yml` `auth_setup`. Pipeline destinations and webhook actions declare their own names. API/MCP reserved names, such as `SLACK_BOT_TOKEN`, `GITHUB_TOKEN` and `AWS_SECRET_ACCESS_KEY`, stay blocked in explicit maps and cannot be enabled from Project YAML, including through `auth_env_vars`. Such a name resolves only when the host supplies it for the run with `declaredEnvNames` on `runProjectPipeline` or `declaredSecretNames` with an injected secrets map. In a CLI run with no host, it also resolves for a built-in source when the integration and every selected resource are the shipped files. A Project copy of a built-in source, or a Project resource on one, should use a different variable name.
 

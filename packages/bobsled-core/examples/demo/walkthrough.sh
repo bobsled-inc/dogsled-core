@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ──────────────────────────────────────────────────────────────────────────────
-# dogsled demo walkthrough
+# bobsled demo walkthrough
 #
 # Detects which API tokens are set, extracts data from those integrations to local
 # parquet, compiles Model Spec models, and (if duckdb is installed) runs sample
@@ -22,12 +22,12 @@ if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
 fi
 
 if command -v bobsled >/dev/null 2>&1; then
-  dogsled() { command bobsled "$@"; }
+  bobsled() { command bobsled "$@"; }
 else
   if npx --no-install bobsled --version >/dev/null 2>&1; then
-    dogsled() { npx --no-install bobsled "$@"; }
+    bobsled() { npx --no-install bobsled "$@"; }
   else
-    echo "dogsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder." >&2
+    echo "bobsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder." >&2
     exit 1
   fi
 fi
@@ -73,7 +73,7 @@ for integration in github slack notion linear; do
 done
 
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║                 dogsled demo walkthrough                    ║"
+echo "║                 bobsled demo walkthrough                    ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo
 
@@ -96,16 +96,16 @@ echo
 
 echo "── Step 1: Validate extractor specs and Model Spec models ──"
 for integration in "${ACTIVE_INTEGRATIONS[@]}"; do
-  dogsled extract validate "$integration"
+  bobsled extract validate "$integration"
 done
-dogsled model validate
+bobsled model validate
 echo
 
 # ── Step 1.5: Test auth ──────────────────────────────────────────────────────
 
 echo "── Step 1.5: Test API auth ──"
 for integration in "${ACTIVE_INTEGRATIONS[@]}"; do
-  dogsled extract scaffold-test "$integration" || echo "  scaffold test failed for $integration"
+  bobsled extract scaffold-test "$integration" || echo "  scaffold test failed for $integration"
 done
 echo
 
@@ -119,7 +119,7 @@ for integration in "${ACTIVE_INTEGRATIONS[@]}"; do
   for resource in ${INTEGRATION_RESOURCES[$integration]}; do
     echo "  extracting $integration/$resource ..."
     # shellcheck disable=SC2086
-    dogsled pipeline "$resource" \
+    bobsled pipeline "$resource" \
       --integration "$integration" \
       --format parquet \
       --output-dir "$OUTPUT_DIR" \
@@ -137,7 +137,7 @@ echo
 echo "── Step 3: Compile Model Spec models to SQL ──"
 rm -rf "$COMPILED_DIR"
 mkdir -p "$COMPILED_DIR"
-dogsled model compile -o "$COMPILED_DIR"
+bobsled model compile -o "$COMPILED_DIR"
 echo
 echo "Models and compiled SQL:"
 for sql_file in $(find "$COMPILED_DIR" -name '*.sql' -type f | sort); do

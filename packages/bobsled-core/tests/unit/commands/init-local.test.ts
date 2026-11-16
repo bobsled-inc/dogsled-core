@@ -178,7 +178,7 @@ describe('runLocalInit (DuckLake default)', () => {
     const readme = await fs.readFile(path.join(workDir, 'demo-duckdb', 'README.md'), 'utf-8');
     expect(config).toContain('dest: duckdb');
     expect(config).toContain('dbPath: .bobsled/bobsled.duckdb');
-    expect(readme).toContain('dogsled load run --dest duckdb --db-path .bobsled/bobsled.duckdb');
+    expect(readme).toContain('bobsled load run --dest duckdb --db-path .bobsled/bobsled.duckdb');
     // No lake directory.
     await expect(
       fs.access(path.join(workDir, 'demo-duckdb', '.bobsled', 'lake'))
@@ -294,12 +294,12 @@ describe('runLocalInit (DuckLake default)', () => {
     await runLocalInit({ local: true, projectName: 'demo' }, {});
     const readme = await fs.readFile(path.join(workDir, 'demo', 'README.md'), 'utf-8');
 
-    expect(readme).toContain('dogsled extract run --integration <name> <resource>');
+    expect(readme).toContain('bobsled extract run --integration <name> <resource>');
     expect(readme).toContain(
-      'dogsled load run --dest ducklake --ducklake-catalog-url ducklake:.bobsled/lake/catalog.ducklake'
+      'bobsled load run --dest ducklake --ducklake-catalog-url ducklake:.bobsled/lake/catalog.ducklake'
     );
-    expect(readme).not.toContain('dogsled load run --dest duckdb');
-    expect(readme).not.toContain('dogsled extract --all');
-    expect(readme).not.toContain('dogsled load --all');
+    expect(readme).not.toContain('bobsled load run --dest duckdb');
+    expect(readme).not.toContain('bobsled extract --all');
+    expect(readme).not.toContain('bobsled load --all');
   });
 });

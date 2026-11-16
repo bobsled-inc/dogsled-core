@@ -552,7 +552,7 @@ describe('release-health.yml workflow', () => {
   );
 
   it('N2: has a repository guard', () => {
-    expect(workflow).toContain("github.repository == 'bobsled-inc/dogsled-core'");
+    expect(workflow).toContain("github.repository == 'bobsled-inc/bobsled-core'");
   });
 
   it('S1: the audit job has contents: read and NO id-token', () => {
@@ -657,7 +657,7 @@ describe('contract schema conformance', () => {
       schemaVersion: 1,
       product: 'bobsled-core',
       runId: 123,
-      runUrl: 'https://github.com/bobsled-inc/dogsled-core/actions/runs/123',
+      runUrl: 'https://github.com/bobsled-inc/bobsled-core/actions/runs/123',
       findings: [],
     };
     const keys = new Set(Object.keys(report));

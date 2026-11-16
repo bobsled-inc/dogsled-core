@@ -24,7 +24,7 @@ const __dirname = dirname(__filename);
 
 const GENERATED_PATH = join(__dirname, '..', 'src', 'generated-data.ts');
 
-describe('Dogsled Skills generated-data.ts drift guard', () => {
+describe('Bobsled Core Skills generated-data.ts drift guard', () => {
   it('matches the build output — run `pnpm --filter @bobsled-inc/skills generate:manifest` if this fails', () => {
     const committed = readFileSync(GENERATED_PATH, 'utf-8');
     const fresh = renderGeneratedDataModule();

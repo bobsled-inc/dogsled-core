@@ -35,7 +35,7 @@ export function debug(msg: string, verbose: boolean): void {
 
 /**
  * JSON replacer for warehouse values. DuckDB returns BIGINT columns as bigint,
- * which JSON.stringify rejects; write them as strings, as `dogsled query` does.
+ * which JSON.stringify rejects; write them as strings, as `bobsled query` does.
  */
 export function bigintAsString(_key: string, value: unknown): unknown {
   return typeof value === 'bigint' ? value.toString() : value;

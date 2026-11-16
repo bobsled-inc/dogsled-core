@@ -178,10 +178,10 @@ function actionlintAdapter(raw, context) {
 }
 
 function policyAdapter(raw, context) {
-  const parsed = parseJson(raw, 'Dogsled policy');
+  const parsed = parseJson(raw, 'Bobsled Core policy');
   if (parsed === null) return [];
   if (!Array.isArray(parsed.findings))
-    throw new Error('Dogsled policy output must contain findings[]');
+    throw new Error('Bobsled Core policy output must contain findings[]');
   return parsed.findings.map((finding) => createFinding({ ...finding, tool: context.tool }));
 }
 

@@ -1,13 +1,13 @@
 # Project files
 
-This page lists the files in a Dogsled project and their fields. The guides show
-each file in use; this page is for looking things up. `dogsled doctor` and the
+This page lists the files in a Bobsled Core project and their fields. The guides show
+each file in use; this page is for looking things up. `bobsled doctor` and the
 `validate` commands report any field that is missing, misspelled or of the wrong
 type.
 
-## How Dogsled finds files
+## How Bobsled Core finds files
 
-Dogsled reads YAML and Markdown files anywhere under the project root, skipping
+Bobsled Core reads YAML and Markdown files anywhere under the project root, skipping
 hidden folders and `node_modules`. A file's kind comes from its top-level `type`
 field or, when there is none, from the nearest conventional folder in its path:
 `integrations`, `resources`, `sources`, `models`, `seeds`, `metrics`,

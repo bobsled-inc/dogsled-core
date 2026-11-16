@@ -1,6 +1,6 @@
 # Concepts
 
-A Dogsled project is a folder of YAML and Markdown files. The `dogsled` command line
+A Bobsled Core project is a folder of YAML and Markdown files. The `bobsled` command line
 reads those files and does three kinds of work: it **extracts** records from
 sources, **loads** them into a destination, and builds **models** on top of the
 loaded tables. This page explains the pieces and how they connect.
@@ -44,17 +44,17 @@ these files; they are environment variable references such as
 
 A **resource** describes one endpoint, table, file pattern or MCP tool: how to call
 it, how to paginate, which fields to keep and their types, the primary key, and how
-to read only what changed (incremental cursors). Dogsled ships 83
+to read only what changed (incremental cursors). Bobsled Core ships 83
 [library integrations](reference/connectors.md#library-integrations) with their
 resources; your own files override them by name.
 
 ## The protocol
 
-`dogsled extract run` writes newline-delimited JSON messages to standard output:
+`bobsled extract run` writes newline-delimited JSON messages to standard output:
 `SCHEMA` (columns and keys of a stream), `RECORD` (one row), `STATE` (where the
 extraction stopped) and `BATCH` (a pointer to a file of records). Logs and metrics go
-to standard error. `dogsled load run` reads the same messages, so the two connect
-with a pipe, and `dogsled embed` can sit between them. See the
+to standard error. `bobsled load run` reads the same messages, so the two connect
+with a pipe, and `bobsled embed` can sit between them. See the
 [protocol reference](reference/protocol.md).
 
 ## Destinations and load strategies
@@ -69,13 +69,13 @@ loaded with a strategy: `append`, `merge` (upsert on the primary key) or
 
 Incremental resources remember the highest cursor value they have seen, in
 `.extractor/state.json` by default, so the next run asks only for changes. State is
-saved with `--advance-state`, or after a successful `dogsled pipeline` or
-`dogsled runner run`.
+saved with `--advance-state`, or after a successful `bobsled pipeline` or
+`bobsled runner run`.
 
 ## Pipelines
 
 A **pipeline** in `bobsled.yml` names a source integration, its resources and one or
-more destinations. `dogsled runner run <pipeline>` runs it. Dogsled Core has no
+more destinations. `bobsled runner run <pipeline>` runs it. Bobsled Core has no
 scheduler: the `schedule` field is for whatever runs your jobs.
 
 ## Sources and models
@@ -83,7 +83,7 @@ scheduler: the `schedule` field is for whatever runs your jobs.
 A **source** declares a table that already exists in a warehouse, through a model
 integration that says which warehouse and schema to use. A **model** is a YAML file
 with a source, columns written as SQL expressions, and a materialization (view,
-table, incremental and others). Dogsled compiles models to the warehouse's SQL
+table, incremental and others). Bobsled Core compiles models to the warehouse's SQL
 dialect, orders them by their references, and runs them. Agentic models
 (`model_kind: agentic`) send prepared rows to an AI executor and store typed
 results.
@@ -111,7 +111,7 @@ server.
 ## Guidance for agents
 
 A root `AGENTS.md` explains the project's data, and `skills/<name>/SKILL.md` files
-teach agents specific tasks. Dogsled validates both and links skills where Codex and
+teach agents specific tasks. Bobsled Core validates both and links skills where Codex and
 Claude look for them.
 
 ## Output and exit codes

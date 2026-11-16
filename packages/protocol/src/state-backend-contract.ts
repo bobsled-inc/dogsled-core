@@ -1,5 +1,5 @@
 /**
- * HTTP state backend contract shared between `@bobsled-inc/extractor` (consumer, Dogsled CLI)
+ * HTTP state backend contract shared between `@bobsled-inc/extractor` (consumer, Bobsled Core CLI)
  * and any implementing server (host application control plane, OSS self-hosted service, etc.).
  *
  * Endpoint: `GET` / `PUT` on `STATE_BACKEND_PATH`.

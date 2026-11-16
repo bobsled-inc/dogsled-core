@@ -154,12 +154,12 @@ export function assertSnowflakeWorkloadIdentityUsable(options: {
 }): void {
   if (options.expiresAt === undefined || options.now >= options.expiresAt) {
     throw new Error(
-      'Snowflake workload identity token expired; retry the Dogsled attempt with a current token.'
+      'Snowflake workload identity token expired; retry the Bobsled Core attempt with a current token.'
     );
   }
   if (options.connection && options.connection.isClosed()) {
     throw new Error(
-      'Snowflake workload identity connection is closed; retry the Dogsled attempt with a current token.'
+      'Snowflake workload identity connection is closed; retry the Bobsled Core attempt with a current token.'
     );
   }
 }

@@ -1,6 +1,6 @@
 ---
 name: dependency-maintenance
-description: Fix Dogsled dependency findings (release-age exemptions, consumer-audit exceptions, overrides, advisories, Dependabot PRs and third-party notices) under the repository's dependency rules.
+description: Fix Bobsled Core dependency findings (release-age exemptions, consumer-audit exceptions, overrides, advisories, Dependabot PRs and third-party notices) under the repository's dependency rules.
 ---
 
 # Dependency maintenance

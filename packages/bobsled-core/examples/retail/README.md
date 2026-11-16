@@ -2,7 +2,7 @@
 
 Build a local data project for a fictional home-goods retailer. Compare sales and
 stock, add customer reviews from a separate API, and use AI to classify a small
-support batch. All records are synthetic. Start with `dogsled onboarding guide
+support batch. All records are synthetic. Start with `bobsled onboarding guide
 --tutorial retail`, or ask your agent to start the retail tutorial.
 
 The starter includes source files, not a completed database or models. Ask your
@@ -10,7 +10,7 @@ agent to explain and build each chapter, then inspect its saved HTML evidence.
 Completed teaching templates remain in the installed package; `onboarding guide`
 returns `templatesPath`. Read a template when its lesson needs it.
 
-Requires Node.js 24+, the Dogsled CLI and OpenSSL for a local development
+Requires Node.js 24+, the Bobsled Core CLI and OpenSSL for a local development
 certificate. No external service is needed for Chapters 1–5. The optional AI
 chapter requires a supported provider account, consent and a chosen model.
 
@@ -21,7 +21,7 @@ Inspect `context/business-definitions.md`, the seven CSV exports under
 
 ```sh
 node validate.mjs
-dogsled extract validate local_files
+bobsled extract validate local_files
 ```
 
 Create a short-lived local certificate. Keep its key in ignored `.local/`:
@@ -48,9 +48,9 @@ In the project terminal, explicitly allow this local API and trust its certifica
 export RETAIL_DEMO_API_TOKEN=local-retail-demo-token
 export BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1
 export NODE_EXTRA_CA_CERTS="$PWD/.local/localhost-cert.pem"
-dogsled extract validate retail_api --check-env
-dogsled onboarding verify connect
-dogsled onboarding render
+bobsled extract validate retail_api --check-env
+bobsled onboarding verify connect
+bobsled onboarding render
 ```
 
 The source is lazy: this first query fetches all 96 reviews before applying the
@@ -63,8 +63,8 @@ and the review/product keys. Keep the API running for Chapter 5. Never set
 Explain the local resource mappings and destination, then load the seven exports:
 
 ```sh
-dogsled pipeline --integration local_files --dest duckdb --db-path data.duckdb
-dogsled onboarding verify load
+bobsled pipeline --integration local_files --dest duckdb --db-path data.duckdb
+bobsled onboarding verify load
 ```
 
 Inspect 24 products, four suppliers, four locations, 657 orders, 759 lines,
@@ -79,9 +79,9 @@ refers to its catalog supplier. One line can contain several units. Counting
 lines therefore does not answer “How many units of this product sold?”
 
 ```sh
-dogsled ontology list --json
-dogsled ontology describe retail --concept SalesLine --yaml
-dogsled ontology validate --strict --json
+bobsled ontology list --json
+bobsled ontology describe retail --concept SalesLine --yaml
+bobsled ontology validate --strict --json
 ```
 
 Follow the path `SalesLine → Product → Supplier` in the result. The mapping
@@ -101,9 +101,9 @@ reference definitions as teaching material. Add the relevant metrics and
 relationships after explaining their business meaning.
 
 ```sh
-dogsled model validate --integration warehouse
-dogsled model run +product_performance --integration warehouse
-dogsled onboarding verify model
+bobsled model validate --integration warehouse
+bobsled model run +product_performance --integration warehouse
+bobsled onboarding verify model
 ```
 
 Explain the dependency chain, cancelled-order filter, refund subtraction and
@@ -114,8 +114,8 @@ calendar-day denominator. Show how those expressions affect an actual product.
 Compare products and discuss what additional evidence would help:
 
 ```sh
-dogsled query "SELECT product_id, product_name, net_sales, in_stock_days, net_sales_per_in_stock_day FROM product_performance ORDER BY net_sales_per_in_stock_day DESC NULLS LAST LIMIT 5" --db-path data.duckdb
-dogsled onboarding verify query
+bobsled query "SELECT product_id, product_name, net_sales, in_stock_days, net_sales_per_in_stock_day FROM product_performance ORDER BY net_sales_per_in_stock_day DESC NULLS LAST LIMIT 5" --db-path data.duckdb
+bobsled onboarding verify query
 ```
 
 A high observed sales rate does not prove unmet demand. Do not equate reference
@@ -127,11 +127,11 @@ Keep the API environment from Chapter 1. Load reviews and support, then build
 `product_review_summary` and `prepared_support_cases`:
 
 ```sh
-dogsled pipeline --integration retail_api --dest duckdb --db-path data.duckdb
-dogsled model run product_review_summary --integration warehouse
-dogsled model run prepared_support_cases --integration warehouse
-dogsled source-query "SELECT p.product_id, p.product_name, r.rating, r.review_text FROM product_performance p JOIN sources.external_reviews r USING (product_id) WHERE r.product_id = 'lmp-009' ORDER BY r.review_id LIMIT 10"
-dogsled onboarding verify federate
+bobsled pipeline --integration retail_api --dest duckdb --db-path data.duckdb
+bobsled model run product_review_summary --integration warehouse
+bobsled model run prepared_support_cases --integration warehouse
+bobsled source-query "SELECT p.product_id, p.product_name, r.rating, r.review_text FROM product_performance p JOIN sources.external_reviews r USING (product_id) WHERE r.product_id = 'lmp-009' ORDER BY r.review_id LIMIT 10"
+bobsled onboarding verify federate
 ```
 
 Inspect both the direct API/warehouse join and the materialized review summary.
@@ -143,7 +143,7 @@ have intentionally ambiguous product identity. Keep their product IDs null.
 First obtain consent and provider/model choices using the Retail guide. Configure
 the `review` role in `bobsled.yml` through environment references. Adapt the
 `support_batch` and `support_case_classifications` templates. Put the model-backed
-executor template at `executor.mjs`; its Dogsled and `zod` imports must resolve
+executor template at `executor.mjs`; its Bobsled Core and `zod` imports must resolve
 from the project, using the installed package or a source-workspace link.
 
 Start with `case-0001` as a pilot. A useful three-case batch also includes a stock
@@ -151,17 +151,17 @@ availability case and one ambiguous case; inspect the prepared source before
 choosing and ask the learner to approve that batch.
 
 ```sh
-dogsled model run support_batch --integration warehouse
-dogsled model run support_case_classifications --integration warehouse \
+bobsled model run support_batch --integration warehouse
+bobsled model run support_case_classifications --integration warehouse \
   --agent-executor ./executor.mjs --agent-run-id retail-pilot \
   --agent-tokens-per-assignment 16384
-dogsled onboarding verify transform --ticket-id case-0001
+bobsled onboarding verify transform --ticket-id case-0001
 ```
 
 Inspect the pilot before more calls. For the remaining approved cases, change
 `support_batch` to include only their IDs and build it. Run classifications under
 a new run ID. The replace-by-key strategy preserves the pilot. Rebuild the batch
-with every approved ID, then run `dogsled onboarding verify transform`. Never
+with every approved ID, then run `bobsled onboarding verify transform`. Never
 rerun the pilot just to build the final comparison.
 
 Inspect exact quotes, categories and product identity before marking reviewed.
@@ -172,7 +172,7 @@ If the learner skips AI, leave that chapter incomplete and explain the choice.
 ## Review and resume
 
 After each check, render the page, show the result and pause. Review only evidence
-the learner inspected, using its checkpoint hash. Resume with `dogsled onboarding
+the learner inspected, using its checkpoint hash. Resume with `bobsled onboarding
 status` and the journal. Rendering does not rerun checks or AI calls. Stop the
 local API with Ctrl-C when finished.
 

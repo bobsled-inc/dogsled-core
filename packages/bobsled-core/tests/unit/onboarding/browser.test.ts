@@ -121,8 +121,8 @@ it('copies a guarded review request without inventing journal progress', async (
   const { document, click, copied } = open();
   click('#review-chapter');
   await Promise.resolve();
-  expect(copied[0]).toMatch(/dogsled onboarding review load --checkpoint [a-f0-9]{64}/);
-  expect(copied[0]).toContain('dogsled onboarding render');
+  expect(copied[0]).toMatch(/bobsled onboarding review load --checkpoint [a-f0-9]{64}/);
+  expect(copied[0]).toContain('bobsled onboarding render');
   expect(document.querySelector('#load')?.getAttribute('data-reviewed')).toBe('false');
   expect(document.querySelector('#review-chapter')?.textContent).toBe('Mark as reviewed');
   const snapshot = renderFixture();

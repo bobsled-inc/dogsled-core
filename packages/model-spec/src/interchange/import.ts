@@ -282,7 +282,7 @@ function sourceConnection(
       path,
       objectReference,
       `Invalid connection handle ${resolved}.`,
-      'Use a non-empty Dogsled connection handle.'
+      'Use a non-empty Bobsled Core connection handle.'
     );
   }
   if (imported && resolved && imported !== resolved) {
@@ -303,7 +303,7 @@ function sourceConnection(
       'error',
       path,
       objectReference,
-      'This source has no Dogsled connection.',
+      'This source has no Bobsled Core connection.',
       'Supply a dataset binding, connection alias, or default connection.'
     );
   }
@@ -463,7 +463,7 @@ function convertFields(
         'warning',
         `${path}.label`,
         objectReference,
-        'Dogsled does not preserve the Ossie field label in this release.',
+        'Bobsled Core does not preserve the Ossie field label in this release.',
         'Keep the label in the source Ossie document if it is still needed.'
       );
     }
@@ -525,7 +525,7 @@ function addNativeIssues(
       `${basePath}.${issue.path.join('.')}`,
       ref(documentPath, dataset),
       issue.message,
-      'Complete the missing or invalid Dogsled property in the generated draft.'
+      'Complete the missing or invalid Bobsled Core property in the generated draft.'
     );
   }
 }
@@ -694,7 +694,7 @@ function convertMetric(
       'native_identifier_not_supported',
       path,
       objectReference,
-      `Metric name ${metric.name} is not a valid Dogsled identifier.`,
+      `Metric name ${metric.name} is not a valid Bobsled Core identifier.`,
       'Rename the metric and update its references.'
     );
   }
@@ -708,7 +708,7 @@ function convertMetric(
       'error',
       path,
       objectReference,
-      'Dogsled cannot determine which datasets this metric uses.',
+      'Bobsled Core cannot determine which datasets this metric uses.',
       'Add BOBSLED dataset references or qualify a dataset in the metric expression.'
     );
     return undefined;
@@ -723,7 +723,7 @@ function convertMetric(
       'error',
       path,
       objectReference,
-      'Dogsled cannot select one native metric expression.',
+      'Bobsled Core cannot select one native metric expression.',
       'Add an ANSI_SQL expression or a BOBSLED native expression.'
     );
     return undefined;
@@ -752,7 +752,7 @@ function convertMetric(
       path,
       objectReference,
       parsed.error.issues.map((issue) => issue.message).join('; '),
-      'Complete the metric in the generated Dogsled draft.'
+      'Complete the metric in the generated Bobsled Core draft.'
     );
     return undefined;
   }
@@ -772,7 +772,7 @@ function convertRelationship(
       'native_identifier_not_supported',
       path,
       objectReference,
-      `Relationship name ${relationship.name} is not a valid Dogsled identifier.`,
+      `Relationship name ${relationship.name} is not a valid Bobsled Core identifier.`,
       'Rename the relationship and update its references.'
     );
   }
@@ -866,7 +866,7 @@ function convertRelationship(
       path,
       objectReference,
       parsed.error.issues.map((issue) => issue.message).join('; '),
-      'Complete the relationship in the generated Dogsled draft.'
+      'Complete the relationship in the generated Bobsled Core draft.'
     );
     return undefined;
   }
@@ -879,7 +879,7 @@ function validateNativeIdentity(name: string, documentPath: string, dataset: str
     'native_identifier_not_supported',
     `${documentPath}#datasets.${dataset}.name`,
     ref(documentPath, dataset),
-    `Dataset name ${name} is not a valid Dogsled identifier.`,
+    `Dataset name ${name} is not a valid Bobsled Core identifier.`,
     'Rename the dataset and update its references.'
   );
 }
@@ -898,7 +898,7 @@ function convertSemanticModel(
     'warning',
     `${documentPath}#semantic_model.${model.name}`,
     ref(documentPath),
-    'Dogsled preserves supported verified queries but does not preserve other semantic-model-level data.',
+    'Bobsled Core preserves supported verified queries but does not preserve other semantic-model-level data.',
     'Keep the original Ossie document if this container data is still needed.'
   );
   const targets = new Map<string, DatasetTarget>();
@@ -925,7 +925,7 @@ function convertSemanticModel(
         'warning',
         `${path}.unique_keys`,
         objectReference,
-        'Dogsled does not preserve Ossie unique_keys in this release.',
+        'Bobsled Core does not preserve Ossie unique_keys in this release.',
         'Keep unique key definitions in the original Ossie document.'
       );
     }

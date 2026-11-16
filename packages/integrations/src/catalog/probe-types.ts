@@ -1,5 +1,5 @@
 /**
- * Request-planning projection of a Dogsled API source/resource.
+ * Request-planning projection of a Bobsled Core API source/resource.
  *
  * This is deliberately smaller than a full extractor specification: it has
  * enough information to build one HTTP request, and has no pagination,

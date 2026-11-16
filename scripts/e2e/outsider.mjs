@@ -8,7 +8,7 @@ import { command, root } from './harness.mjs';
 import { postgres, postgresContainerName, stopServices } from './services.mjs';
 
 // A pg release that predates the locked one, so a project that already has it
-// proves Dogsled shares the project's driver instead of nesting its own.
+// proves Bobsled Core shares the project's driver instead of nesting its own.
 export const USER_PG_VERSION = '8.16.3';
 
 export async function releaseAgeCutoff(now = Date.now()) {
@@ -37,7 +37,7 @@ export async function runOutsider({ auditOnly = false } = {}) {
     if (tarballs.length !== 1) throw new Error('Expected exactly one CLI tarball');
     const context = path.join(directory, 'context');
     await mkdir(path.join(context, 'suite/examples'), { recursive: true });
-    await cp(path.join(pack, tarballs[0]), path.join(context, 'dogsled.tgz'));
+    await cp(path.join(pack, tarballs[0]), path.join(context, 'bobsled.tgz'));
     await cp(path.join(root, 'scripts/e2e'), path.join(context, 'suite/scripts/e2e'), {
       recursive: true,
     });
@@ -66,7 +66,7 @@ export async function runOutsider({ auditOnly = false } = {}) {
     if (!container) throw new Error('Outsider launcher requires its task-owned Postgres container');
     const results = path.join(root, 'test-results/e2e/outsider');
     await mkdir(results, { recursive: true });
-    await cp(path.join(pack, tarballs[0]), path.join(results, 'dogsled.tgz'));
+    await cp(path.join(pack, tarballs[0]), path.join(results, 'bobsled.tgz'));
     const build = await command(
       'docker',
       [

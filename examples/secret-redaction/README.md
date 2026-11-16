@@ -1,6 +1,6 @@
 # Secret redaction
 
-Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:secret-redaction`.
+Prerequisites: Node.js 24+, an installed `bobsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:secret-redaction`.
 
 1. From the checkout root, start the fictional HTTPS API in one terminal:
 
@@ -22,8 +22,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 3. Load one fictional event using environment-based authentication:
 
    ```bash
-   dogsled pipeline --integration shop_api --resource events --dest duckdb --db-path data.duckdb --verbose --log-format json
-   dogsled query 'SELECT * FROM events' --db-path data.duckdb
+   bobsled pipeline --integration shop_api --resource events --dest duckdb --db-path data.duckdb --verbose --log-format json
+   bobsled query 'SELECT * FROM events' --db-path data.duckdb
    ```
 
    Expect one row. The integration stores the environment-variable reference,

@@ -1,7 +1,7 @@
 /**
  * Schema discovery for DW/DB sources.
  *
- * Used by `dogsled extract discover` to introspect warehouse schemas and suggest
+ * Used by `bobsled extract discover` to introspect warehouse schemas and suggest
  * resource configurations including primary keys and cursor fields.
  */
 

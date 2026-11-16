@@ -551,7 +551,7 @@ describe('resolvePipelines', () => {
           source: 'github',
           destination: 'warehouse',
           resources: ['issues'],
-          inputs: { since: '2024-01-01', repo_names: ['dogsled', 'demo-repo'] },
+          inputs: { since: '2024-01-01', repo_names: ['bobsled', 'demo-repo'] },
           load_strategy: 'merge',
           schema_behavior: 'strict',
           buffer_size: 10_000,
@@ -563,7 +563,7 @@ describe('resolvePipelines', () => {
 
     const pipelines = resolvePipelines(config);
     expect(pipelines[0]).toMatchObject({
-      inputs: { since: '2024-01-01', repo_names: ['dogsled', 'demo-repo'] },
+      inputs: { since: '2024-01-01', repo_names: ['bobsled', 'demo-repo'] },
       loadStrategy: 'merge',
       schemaBehavior: 'strict',
       bufferSize: 10_000,
@@ -699,7 +699,7 @@ describe('validateBobsledConfig', () => {
     expect(result.errors).toEqual([]);
   });
 
-  it('reports a broken file in a Dogsled folder as a validation error instead of throwing', async () => {
+  it('reports a broken file in a Bobsled Core folder as a validation error instead of throwing', async () => {
     fs.mkdirSync(path.join(projectRoot, 'models'), { recursive: true });
     fs.writeFileSync(path.join(projectRoot, 'models', 'scratch.yml'), 'type: model\nname: [\n');
 

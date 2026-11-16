@@ -19,7 +19,7 @@ export function checkProjectModelReferences(index: ProjectIndex): DoctorCheck[] 
         name: 'project.models',
         status: 'error',
         message:
-          'Model definitions or dependencies are invalid; run dogsled model validate for diagnostics.',
+          'Model definitions or dependencies are invalid; run bobsled model validate for diagnostics.',
       },
     ];
   }
@@ -29,7 +29,7 @@ export function checkProjectModelReferences(index: ProjectIndex): DoctorCheck[] 
       {
         name: 'project.models',
         status: 'error',
-        message: 'Source definitions are invalid; run dogsled model validate for diagnostics.',
+        message: 'Source definitions are invalid; run bobsled model validate for diagnostics.',
       },
     ];
   }

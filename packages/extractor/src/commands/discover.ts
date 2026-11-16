@@ -1,5 +1,5 @@
 /**
- * `dogsled extract discover` command.
+ * `bobsled extract discover` command.
  */
 
 import type { Command } from 'commander';
@@ -88,9 +88,9 @@ export function registerDiscoverCommand(program: Command): void {
 
         if (isLegacyMcpIntegration(integration)) {
           throw new CommandError(
-            'MCP discovery is available only through `dogsled extract mcp`. ' +
-              'Use `dogsled extract mcp list-tools`, `dogsled extract mcp discover`, or ' +
-              '`dogsled extract mcp verify-redaction` for MCP authoring.'
+            'MCP discovery is available only through `bobsled extract mcp`. ' +
+              'Use `bobsled extract mcp list-tools`, `bobsled extract mcp discover`, or ' +
+              '`bobsled extract mcp verify-redaction` for MCP authoring.'
           );
         }
 
@@ -128,9 +128,9 @@ export function registerDiscoverCommand(program: Command): void {
           });
           if (!firstResource) {
             throw new CommandError(
-              'MCP discovery is available only through `dogsled extract mcp`. ' +
-                'Use `dogsled extract mcp list-tools`, `dogsled extract mcp discover`, or ' +
-                '`dogsled extract mcp verify-redaction` for MCP authoring.'
+              'MCP discovery is available only through `bobsled extract mcp`. ' +
+                'Use `bobsled extract mcp list-tools`, `bobsled extract mcp discover`, or ' +
+                '`bobsled extract mcp verify-redaction` for MCP authoring.'
             );
           }
 

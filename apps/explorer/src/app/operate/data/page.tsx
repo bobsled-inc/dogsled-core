@@ -223,7 +223,7 @@ export default function OperateDataPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <PageHeader
-        breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Data' }]}
+        breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Data' }]}
         title="Pipeline Data"
         description="Query DuckDB databases from extracted pipeline data. Add connections in the Connections page to query additional databases."
       />

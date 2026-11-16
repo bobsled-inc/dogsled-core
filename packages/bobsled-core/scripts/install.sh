@@ -6,10 +6,10 @@ if [ -z "${HOME:-}" ] && [ -z "${BOBSLED_CORE_INSTALL_ROOT:-}" ]; then
   echo "Error: HOME is not set and BOBSLED_CORE_INSTALL_ROOT is not specified." >&2
   exit 1
 fi
-INSTALL_ROOT="${BOBSLED_CORE_INSTALL_ROOT:-$HOME/.dogsled}"
+INSTALL_ROOT="${BOBSLED_CORE_INSTALL_ROOT:-$HOME/.bobsled}"
 INSTALL_DIR="${BOBSLED_CORE_INSTALL_DIR:-$INSTALL_ROOT/bin}"
-APP_DIR="$INSTALL_ROOT/dogsled"
-BINARY="dogsled"
+APP_DIR="$INSTALL_ROOT/bobsled"
+BINARY="bobsled"
 
 # Guard against dangerous install roots that could cause data loss via rm -rf.
 RESOLVED_ROOT="$(cd "$INSTALL_ROOT" 2>/dev/null && pwd -P || echo "$INSTALL_ROOT")"
@@ -53,7 +53,7 @@ const preGypBin = path.join(
 );
 
 if (!fs.existsSync(preGypBin)) {
-  console.error('Error: DuckDB installer not found in the dogsled package.');
+  console.error('Error: DuckDB installer not found in the bobsled package.');
   process.exit(1);
 }
 
@@ -98,7 +98,7 @@ if [ "$NODE_MAJOR" -lt 20 ]; then
 fi
 
 if [ ! -f "$SCRIPT_DIR/$BINARY" ] || [ ! -d "$SCRIPT_DIR/dist" ] || [ ! -d "$SCRIPT_DIR/node_modules" ]; then
-  echo "Error: dogsled package contents not found in $SCRIPT_DIR. Re-extract the zip and try again." >&2
+  echo "Error: bobsled package contents not found in $SCRIPT_DIR. Re-extract the zip and try again." >&2
   exit 1
 fi
 
@@ -121,7 +121,7 @@ chmod +x "$APP_DIR/$BINARY"
 ensure_duckdb_binding
 ln -sf "$APP_DIR/$BINARY" "$INSTALL_DIR/$BINARY"
 
-echo "Installed dogsled to $INSTALL_DIR/$BINARY"
+echo "Installed bobsled to $INSTALL_DIR/$BINARY"
 
 if ! echo "$PATH" | tr ':' '\n' | grep -Fqx "$INSTALL_DIR"; then
   SHELL_NAME="$(basename "${SHELL:-/bin/bash}")"
@@ -132,7 +132,7 @@ if ! echo "$PATH" | tr ':' '\n' | grep -Fqx "$INSTALL_DIR"; then
   esac
 
   echo ""
-  echo "Add dogsled to your PATH by running:"
+  echo "Add bobsled to your PATH by running:"
   echo ""
   echo "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> ~/$RC_FILE && source ~/$RC_FILE"
   echo ""

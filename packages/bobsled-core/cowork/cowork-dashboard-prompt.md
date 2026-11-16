@@ -1,6 +1,6 @@
-# Dogsled Dashboard Prompt
+# Bobsled Core Dashboard Prompt
 
-Build or refresh the local Dogsled operations dashboard for this repo.
+Build or refresh the local Bobsled Core operations dashboard for this repo.
 
 Please:
 

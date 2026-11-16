@@ -30,10 +30,10 @@ local config. It checks exact counts and revenue on both engines.
 
    ```bash
    cat destinations.json
-   dogsled pipeline --integration local_exports --resource customers products orders --destinations-json "$(cat destinations.json)" --log-format json
-   dogsled model validate
-   dogsled model run --json
-   dogsled query 'SELECT count(*) AS n, SUM(amount) AS total FROM mixed_order_report' --db-path data.duckdb
+   bobsled pipeline --integration local_exports --resource customers products orders --destinations-json "$(cat destinations.json)" --log-format json
+   bobsled model validate
+   bobsled model run --json
+   bobsled query 'SELECT count(*) AS n, SUM(amount) AS total FROM mixed_order_report' --db-path data.duckdb
    docker compose exec postgres psql -U postgres -d showcase -c 'SELECT count(*), SUM(amount) FROM ecommerce.postgres_order_summary'
    ```
 
@@ -58,11 +58,11 @@ local config. It checks exact counts and revenue on both engines.
 
    The port shown above is the initial placeholder; the configure command replaces it.
    `secrets.example.yml` lists only the environment variables used by this local
-   example. Install Dogsled in the copied project if its public runner imports
+   example. Install Bobsled Core in the copied project if its public runner imports
    cannot resolve. No cloud account is configured by these files.
 
 3. Remove this example's service with `docker compose down --volumes`.
 
 Known limitation: the VQ CLI currently queries API sources. The warehouse VQ here
-is validated as metadata and its exact SQL is run using `dogsled query`; the verified-query example
+is validated as metadata and its exact SQL is run using `bobsled query`; the verified-query example
 separately proves parameterized VQ CLI execution against the local API.

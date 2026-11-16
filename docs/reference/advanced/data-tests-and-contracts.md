@@ -1,19 +1,19 @@
 # Data Tests And Contracts
 
-Dogsled's data quality surface is intentionally split into small contracts that agents can author, validate, and execute independently. Use this guide when adding new pipeline quality gates, migrating assertions from an existing ETL, or deciding which Dogsled command should own a data contract.
+Bobsled Core's data quality surface is intentionally split into small contracts that agents can author, validate, and execute independently. Use this guide when adding new pipeline quality gates, migrating assertions from an existing ETL, or deciding which Bobsled Core command should own a data contract.
 
 ## Contract Layers
 
 | Layer                         | Authoring surface                                                                            | Validation or execution                                                                        | What it protects                                                                     |
 | ----------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Field metadata contract       | Extractor `output:` fields, Model Spec source/model columns, Entity Graph semantic overrides | Schema parsing plus semantic checks                                                            | Shared names, types, descriptions, semantic roles, PII, ownership, and quality notes |
-| Extractor semantic metadata   | Integration resource YAML                                                                    | `dogsled extract validate --semantic-check` or `--semantic-check=strict`                       | Source fields are understandable before protocol records are emitted                 |
-| Model semantic metadata       | Model Spec model and source YAML                                                             | `dogsled model validate --semantic-check` or `--semantic-check=strict`                         | Model columns preserve or intentionally change source semantics                      |
-| Model test SQL                | Model `tests:` blocks and column constraints                                                 | `dogsled model test --integration <handle>`                                                    | Generates row-returning SQL checks for established model tests                       |
-| Model expectations            | Model `expect:` blocks                                                                       | `dogsled model expect run --integration <handle>` and optionally `--runner ./runner.js --json` | Compiles or executes sentinel SQL with pass, warn, and fail statuses                 |
+| Extractor semantic metadata   | Integration resource YAML                                                                    | `bobsled extract validate --semantic-check` or `--semantic-check=strict`                       | Source fields are understandable before protocol records are emitted                 |
+| Model semantic metadata       | Model Spec model and source YAML                                                             | `bobsled model validate --semantic-check` or `--semantic-check=strict`                         | Model columns preserve or intentionally change source semantics                      |
+| Model test SQL                | Model `tests:` blocks and column constraints                                                 | `bobsled model test --integration <handle>`                                                    | Generates row-returning SQL checks for established model tests                       |
+| Model expectations            | Model `expect:` blocks                                                                       | `bobsled model expect run --integration <handle>` and optionally `--runner ./runner.js --json` | Compiles or executes sentinel SQL with pass, warn, and fail statuses                 |
 | Entity Graph metadata catalog | Resolution specs plus inherited Model Spec metadata and `semantic_overrides`                 | Entity Graph compile tests and dialect-aware SQL rendering                                     | Downstream identity artifacts carry machine-readable semantic context                |
 
-For an ETL migration, preserve the old quality gate first, then map it to the nearest Dogsled layer. A dbt `not_null` or `unique` test usually maps to model `tests:` or `expect:`. A row-count threshold maps to `expect: { kind: row_count_between }`. A schema assertion maps to `schema_contains`. Cleaning transforms map to model column expressions using the built-in cleaning primitives (see the Cleaning via Models section below).
+For an ETL migration, preserve the old quality gate first, then map it to the nearest Bobsled Core layer. A dbt `not_null` or `unique` test usually maps to model `tests:` or `expect:`. A row-count threshold maps to `expect: { kind: row_count_between }`. A schema assertion maps to `schema_contains`. Cleaning transforms map to model column expressions using the built-in cleaning primitives (see the Cleaning via Models section below).
 
 ## Field Metadata Contract
 
@@ -54,17 +54,17 @@ Semantic checks are lightweight contract checks for metadata completeness and dr
 Extractor validation:
 
 ```bash
-dogsled extract validate <integration> --semantic-check
-dogsled extract validate <integration> --semantic-check=strict --format json
+bobsled extract validate <integration> --semantic-check
+bobsled extract validate <integration> --semantic-check=strict --format json
 ```
 
-Extractor semantic checks inspect every resource `output:` field. They warn when `description` or `semantic_role` is missing, and role warnings include an inferred candidate when Dogsled can infer one from the field name and type. In strict mode, semantic findings fail validation with exit code `2`.
+Extractor semantic checks inspect every resource `output:` field. They warn when `description` or `semantic_role` is missing, and role warnings include an inferred candidate when Bobsled Core can infer one from the field name and type. In strict mode, semantic findings fail validation with exit code `2`.
 
 Model validation:
 
 ```bash
-dogsled model validate --integration <handle> --semantic-check
-dogsled model validate --integration <handle> --semantic-check=strict
+bobsled model validate --integration <handle> --semantic-check
+bobsled model validate --integration <handle> --semantic-check=strict
 ```
 
 Model semantic checks inspect source and model columns. They report missing descriptions, missing semantic roles, and direct-projection divergence where a model column's description or semantic role differs from the source column it selects. In warn mode these are warnings; in strict mode they become validation errors.
@@ -76,8 +76,8 @@ Use strict mode for CI or pre-cutover gates. Use warn mode during early profilin
 Model `tests:` blocks generate SQL that returns failing rows. A passing test returns zero rows. The command prints SQL only; execution is left to the caller or orchestration layer.
 
 ```bash
-dogsled model test --integration duckdb
-dogsled model test stg_orders --integration duckdb
+bobsled model test --integration duckdb
+bobsled model test stg_orders --integration duckdb
 ```
 
 Supported explicit test types:
@@ -116,14 +116,14 @@ Model expectations compile to sentinel SQL that returns exactly one `violation_c
 Compile without executing:
 
 ```bash
-dogsled model expect run --integration duckdb
-dogsled model expect run --integration duckdb --model stg_customers
+bobsled model expect run --integration duckdb
+bobsled model expect run --integration duckdb --model stg_customers
 ```
 
 Execute with a runner:
 
 ```bash
-dogsled model expect run --integration duckdb --runner ./runner.js --json
+bobsled model expect run --integration duckdb --runner ./runner.js --json
 ```
 
 Runner module contract:
@@ -252,7 +252,7 @@ Model `where:` handles row filtering and `dedupe:` handles deduplication (compil
 The profiler's suggest cleaning command outputs `model_expr` for each suggestion — a ready-to-use Model Spec column expression that agents can drop directly into a staging model:
 
 ```bash
-dogsled model profile suggest cleaning raw.customers --integration duckdb --json
+bobsled model profile suggest cleaning raw.customers --integration duckdb --json
 ```
 
 ## Entity Graph Metadata Catalog
@@ -276,7 +276,7 @@ Use this catalog as a downstream contract for review queues, survivorship, and a
 1. Author or import field metadata at the earliest source boundary.
 2. Run extractor validation with `--semantic-check=strict` before relying on resource output in downstream specs.
 3. Preserve existing ETL quality gates by mapping them to `tests:`, `expect:`, or staging model cleaning expressions.
-4. Run `dogsled model validate --semantic-check=strict` before compiling or executing models.
-5. Use `dogsled model test` for generated SQL review and `dogsled model expect run --runner ./runner.js --json` for executable quality gates.
-6. Use `dogsled model profile suggest cleaning <table> --integration <handle> --json` to get `model_expr` suggestions for noisy source columns — drop these into a staging model.
-7. Keep non-Dogsled assertions external until they have an equivalent Dogsled contract; document that gap in the handoff or PR.
+4. Run `bobsled model validate --semantic-check=strict` before compiling or executing models.
+5. Use `bobsled model test` for generated SQL review and `bobsled model expect run --runner ./runner.js --json` for executable quality gates.
+6. Use `bobsled model profile suggest cleaning <table> --integration <handle> --json` to get `model_expr` suggestions for noisy source columns — drop these into a staging model.
+7. Keep non-Bobsled Core assertions external until they have an equivalent Bobsled Core contract; document that gap in the handoff or PR.

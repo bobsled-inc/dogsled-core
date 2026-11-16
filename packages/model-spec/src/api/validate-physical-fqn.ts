@@ -19,7 +19,7 @@
  *
  * Normalization: case-fold and strip identifier-quoting characters
  * (`"`, `` ` ``). This is the broadest common denominator across the
- * dialects Dogsled supports — Snowflake treats unquoted identifiers as
+ * dialects Bobsled Core supports — Snowflake treats unquoted identifiers as
  * upper-case, Postgres as lower-case, but quoted identifiers preserve
  * case verbatim on both. For commit-time collision detection we don't
  * need dialect-aware identifier canonicalization; we just need to
@@ -75,7 +75,7 @@ export function collectPhysicalFqnCollisions(
 ): PhysicalFqnCollision[] {
   type Entry = PhysicalFqnCollisionModel;
   // Key shape: `${integration_handle}\x00${normalized_fqn}` — the NUL
-  // separator can't appear in either a Dogsled integration handle or a SQL
+  // separator can't appear in either a Bobsled Core integration handle or a SQL
   // identifier, so it's a safe joiner that avoids accidental ambiguity
   // (e.g. an integration handle that contains a dot).
   const groups = new Map<string, Entry[]>();

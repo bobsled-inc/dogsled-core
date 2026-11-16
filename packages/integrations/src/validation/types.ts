@@ -1,5 +1,5 @@
 /**
- * Compact, generated metadata used by Dogsled's project validation path.
+ * Compact, generated metadata used by Bobsled Core's project validation path.
  *
  * This is intentionally independent of the discovery/probe catalog: it keeps
  * concrete resource specs instead of merging transport variants, and contains

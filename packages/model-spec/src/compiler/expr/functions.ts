@@ -63,7 +63,7 @@ export interface FunctionSignature {
 export type DialectEmitter = string | ((args: string[], dialect: SupportedDialect) => string);
 
 export interface FunctionDef {
-  /** Canonical lowercase name used in the Dogsled expression layer. */
+  /** Canonical lowercase name used in the Bobsled Core expression layer. */
   readonly name: string;
   /** Minimum number of arguments (inclusive). */
   readonly minArgs: number;

@@ -47,7 +47,7 @@ export interface CurrentRunConfigSnapshot {
  * Returns `proceed` when:
  *   - `prior` is undefined (first run);
  *   - the relevant prior fields are undefined ("don't know" path — state
- *     written by older Dogsled versions that didn't track these fields).
+ *     written by older Bobsled Core versions that didn't track these fields).
  *     Spec §3 is explicit: don't force a destructive rebuild on upgrade.
  */
 export function planConfigDrift(
@@ -61,7 +61,7 @@ export function planConfigDrift(
   if (changes.length === 0) return { kind: 'proceed' };
 
   // Pick the destination to drop. Prefer the explicit prior fqName written
-  // by drift-aware Dogsled versions; fall back to the current fqName when an
+  // by drift-aware Bobsled Core versions; fall back to the current fqName when an
   // older state file didn't track it (this happens after upgrade with prior
   // state that *did* persist the changed field somehow — rare but defined).
   const dropTarget = prior.priorFqName ?? current.fqName;
@@ -95,7 +95,7 @@ export function planConfigDrift(
  * recreate-worthy drift.
  *
  * Each comparison guards on `prior` field being defined — a missing prior
- * field means "older Dogsled version didn't track this," not "the value used
+ * field means "older Bobsled Core version didn't track this," not "the value used
  * to be undefined." The latter is indistinguishable from the former in the
  * persisted JSON, and forcing a recreate on upgrade is the higher-blast-
  * radius wrong answer.
@@ -126,7 +126,7 @@ function collectConfigChanges(prior: ModelRunState, current: CurrentRunConfigSna
     prior.strategy !== undefined
   ) {
     // Filter added or removed (the strategy guard above keeps this from
-    // firing for state written by old Dogsled versions that didn't track
+    // firing for state written by old Bobsled Core versions that didn't track
     // incrementalFilter at all — those have `prior.strategy === undefined`).
     changes.push(
       prior.incrementalFilter === undefined
@@ -148,7 +148,7 @@ function collectConfigChanges(prior: ModelRunState, current: CurrentRunConfigSna
   }
 
   // Gate on `prior.targetSchema` rather than `prior.targetDatabase` to
-  // distinguish "older Dogsled version, no fields tracked" (both undefined,
+  // distinguish "older Bobsled Core version, no fields tracked" (both undefined,
   // no signal) from "drift-aware single-database prior" (targetSchema set,
   // targetDatabase legitimately absent). The latter is the case a stricter
   // `prior.targetDatabase !== undefined` guard would miss — gaining an

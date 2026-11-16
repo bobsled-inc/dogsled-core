@@ -26,7 +26,7 @@
     "deps:expiries": "node ./scripts/deps-expiries.mjs",
     "security:audit": "audit-ci --config ./audit-ci.json",
     "guard:privacy": "node ./scripts/guards/privacy.mjs",
-    "guard:dogsled": "node ./scripts/guards/old-names.mjs",
+    "guard:bobsled": "node ./scripts/guards/old-names.mjs",
     "security:fast": "node ./scripts/security/secretlint-tracked.mjs && node ./scripts/security/fast.mjs && node ./scripts/guards/privacy.mjs && vitest run --config ./vitest.security.config.mjs",
     "security:collect": "node ./scripts/security/collect.mjs",
     "security:normalize": "node ./scripts/security/normalize.mjs",
@@ -94,19 +94,19 @@
   },
   "description": "Extract, load and model data with YAML project files.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
     "agent-native"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git"
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git"
   }
 }

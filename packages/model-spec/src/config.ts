@@ -144,7 +144,7 @@ export function parseProjectConfig(
     const removedPresent = (['dialect', 'schema'] as const).filter((k) => k in rawRecord);
     if (removedPresent.length > 0) {
       throw new CommandError(
-        `${filePath} contains removed fields: ${removedPresent.map((k) => `"${k}"`).join(', ')}. Move these into integrations/<handle>.yml. Run \`dogsled model init\` or see the \`bobsled-model-spec\` skill.`,
+        `${filePath} contains removed fields: ${removedPresent.map((k) => `"${k}"`).join(', ')}. Move these into integrations/<handle>.yml. Run \`bobsled model init\` or see the \`bobsled-model-spec\` skill.`,
         2
       );
     }

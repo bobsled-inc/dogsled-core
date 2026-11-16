@@ -2,7 +2,7 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Dependency-light request planning shared by Dogsled extraction and its
+Dependency-light request planning shared by Bobsled Core extraction and its
 catalog-only API resource probe.
 
 This private workspace validates scalar inputs, applies defaults, interpolates

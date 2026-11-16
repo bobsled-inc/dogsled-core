@@ -40,11 +40,11 @@ afterEach(() => {
 });
 
 describe('scanProject', () => {
-  it.each(['yml', 'yaml'])('recognizes Dogsled config extensions .%s', (extension) => {
-    write(`dogsled.${extension}`, 'pipelines: {}\n');
+  it.each(['yml', 'yaml'])('recognizes Bobsled Core config extensions .%s', (extension) => {
+    write(`bobsled.${extension}`, 'pipelines: {}\n');
     write(`model-spec.${extension}`, 'models_dir: models\n');
     expect(kinds(scanProject(root))).toEqual([
-      [`dogsled.${extension}`, 'pipeline_config'],
+      [`bobsled.${extension}`, 'pipeline_config'],
       [`model-spec.${extension}`, 'model_spec_config'],
     ]);
   });
@@ -315,7 +315,7 @@ describe('findConfigurationEntry', () => {
     symlinkSync(path.join(root, 'shared', 'model-spec.yml'), path.join(root, 'model-spec.yml'));
 
     expect(() => findConfigurationEntry(root, 'model_spec_config')).toThrow(
-      /model-spec\.yml: Dogsled does not follow symbolic links\./
+      /model-spec\.yml: Bobsled Core does not follow symbolic links\./
     );
   });
 

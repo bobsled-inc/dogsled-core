@@ -8,7 +8,7 @@ description: Author a generic custom_api source for any REST/GraphQL API purely
 
 # Add a custom API integration (`custom_api`)
 
-Use this when a user wants to pull from a REST or GraphQL API that Dogsled does
+Use this when a user wants to pull from a REST or GraphQL API that Bobsled Core does
 **not** ship a bundled connector for. A `custom_api` source is **fully
 self-describing**: you author a `source.yml` with an inline transport
 (`base_url` + `auth`) and one declarative resource per endpoint. There is **no
@@ -47,8 +47,8 @@ transport with `base_url` + `auth`. Auth types: `bearer`, `api-key`, `basic`,
 ```yaml
 spec_version: '2'
 type: source
-source_type: custom_api # Dogsled-visible marker
-bobsled_source_kind: custom_api # orchestrator/host application marker (Dogsled ignores it)
+source_type: custom_api # Bobsled Core-visible marker
+bobsled_source_kind: custom_api # orchestrator/host application marker (Bobsled Core ignores it)
 name: <source-name>
 description: <one line>
 auth_env_vars: # env vars the transport interpolates
@@ -82,7 +82,7 @@ auth:
   token: ${{ env.<ENV_VAR_NAME> }}
 ```
 
-OAuth2 client credentials instead (Dogsled fetches and caches the token):
+OAuth2 client credentials instead (Bobsled Core fetches and caches the token):
 
 ```yaml
 auth:
@@ -97,7 +97,7 @@ auth:
 
 Set `resource` only when the authorization server mints an audience-bound token
 only for a named resource (RFC 8707 Resource Indicators) and otherwise returns a
-token the API rejects. Dogsled sends it as a `resource` form parameter in the
+token the API rejects. Bobsled Core sends it as a `resource` form parameter in the
 token request; a token is never reused for a different `resource`.
 
 > **SSRF:** `base_url` and every request go through the extractor's public-host
@@ -204,7 +204,7 @@ fan-out chain. The path is evaluated against that resource's declared, mapped
 `output`, never its raw response, inputs, request headers, auth, or environment.
 The child type must match the referenced output type, `from` cannot be combined
 with `path` or `paths`, and nested paths require declared `properties`/`items` at
-every traversed segment. Dogsled does not modify primary keys automatically; use an
+every traversed segment. Bobsled Core does not modify primary keys automatically; use an
 explicit composite key when child IDs are only unique within a parent. A targeted
 child run can reconstruct only an immediate-parent field exactly matched by an
 explicit `for_each` input binding; all other ancestry must be co-scheduled.
@@ -263,11 +263,11 @@ raw variants. Cross-linked from `starter-models-notion`.
 ### Step 4 — Validate → verify → extract
 
 ```bash
-dogsled extract validate <source-name>
-dogsled extract verify <source-name>
-dogsled extract verify <source-name> --mock
+bobsled extract validate <source-name>
+bobsled extract verify <source-name>
+bobsled extract verify <source-name> --mock
 # then, with the env var exported:
-dogsled extract run <source-name> --resource <entity> --limit 5
+bobsled extract run <source-name> --resource <entity> --limit 5
 ```
 
 `verify` cross-checks every `${{ env.X }}` reference against the source's
@@ -277,7 +277,7 @@ Runtime interpolation also requires declarations for `optional_headers`. A decla
 ## Incremental sync (cursors)
 
 By default a resource does a **full refresh** every run. To pull only new or
-changed records, add an `extract.incremental` block. Dogsled persists a per-stream
+changed records, add an `extract.incremental` block. Bobsled Core persists a per-stream
 **bookmark** as a `STATE` protocol message and, on the next run, uses it to ask
 the API for only the rows past the last cursor value.
 
@@ -289,7 +289,7 @@ Core rules:
   `SCHEMA` message's `cursor_field` and the `topup` backfill command only honor
   that placement.
 - `cursor_field` **must** be one of the declared `output` fields — it is the
-  column whose value Dogsled tracks as the high-water mark.
+  column whose value Bobsled Core tracks as the high-water mark.
 - After a run the bookmark advances to the largest `cursor_field` value seen and
   is emitted as a `STATE` message (`{ cursor_field, cursor_type, cursor_value }`).
   Durable runs persist it. **`--limit` runs are always preview-only and never
@@ -309,7 +309,7 @@ Choose one of four strategies via `strategy:`. Quick pick:
 
 ### `cursor` — saved cursor sent back as a request parameter (default; HTTP only)
 
-The simplest and most common case. Dogsled sends the saved cursor value back as a
+The simplest and most common case. Bobsled Core sends the saved cursor value back as a
 request parameter named by `cursor_param`, so the API returns only newer rows.
 
 | field          | required | meaning                                                          |
@@ -387,7 +387,7 @@ extract:
 Use when the cursor must be expressed as an explicit time range, or when you
 want bounded backfill windows. `since_argument` / `until_argument` /
 `filter_argument` are the **names of the request parameters** that receive the
-window bounds — Dogsled sets them directly on each request (query-string params
+window bounds — Bobsled Core sets them directly on each request (query-string params
 for `GET`, body fields for a `POST` with `request_body`, tool arguments for
 MCP). No `${{ input.X }}` wiring is required.
 
@@ -437,7 +437,7 @@ nest into `request_body`), e.g. `since_argument: filter.start_time`.
 
 ### `server_filter` — time windows routed through the `query:` block (HTTP + MCP)
 
-Same fields as `filter`, but the bounds are not sent as raw parameters. Dogsled
+Same fields as `filter`, but the bounds are not sent as raw parameters. Bobsled Core
 converts the window into `cursor_field gte <since>` / `lte <until>` and emits
 them through the resource's `query.filters` block, reusing its `bind` / `compile`
 targets. Use this when the resource already exposes a `query:` filter surface.
@@ -544,11 +544,11 @@ durations (e.g. `2h`, `1d`) are valid **only** for `timestamp` cursors.
 Each step proves a different thing — only two live runs prove resumption:
 
 ```bash
-dogsled extract validate <source>        # shape only: the incremental block parses
-dogsled extract verify <source> --mock   # request shaping only — NOT cross-run resumption
+bobsled extract validate <source>        # shape only: the incremental block parses
+bobsled extract verify <source> --mock   # request shaping only — NOT cross-run resumption
 # the two runs below need live credentials and prove the bookmark advances:
-dogsled extract run <source> --resource <r>   # first run: full fetch, records the bookmark
-dogsled extract run <source> --resource <r>   # second run: resumes from the bookmark
+bobsled extract run <source> --resource <r>   # first run: full fetch, records the bookmark
+bobsled extract run <source> --resource <r>   # second run: resumes from the bookmark
 ```
 
 `verify --mock` runs a single pass from empty state, so it confirms the
@@ -577,9 +577,9 @@ For exact extract-predicate and query-filter operator vocabularies,
 
 ### Static request matrices and input projections
 
-Use a dogsled pipeline `input_matrix` when one endpoint must be requested for a
+Use a bobsled pipeline `input_matrix` when one endpoint must be requested for a
 bounded set of typed combinations. The matrix keeps one Resource stream and
-table. Dogsled expands axes in authored order and limits in-flight requests with
+table. Bobsled Core expands axes in authored order and limits in-flight requests with
 `concurrency`:
 
 ```yaml
@@ -595,7 +595,7 @@ resources:
 
 Each axis must name a Resource input and each value must pass that input's type,
 enum, and range checks. Axes cannot be empty or exceed 10,000 Cartesian tuples.
-Dogsled rejects duplicate normalized tuples and conflicts with `inputs`.
+Bobsled Core rejects duplicate normalized tuples and conflicts with `inputs`.
 Matrices support explicit `extract.incremental.strategy: full_refresh` only.
 The integration rate limiter covers all tuples and retries. A matrix can also
 compose with `extract.for_each`, which runs every tuple for each parent record.
@@ -706,9 +706,9 @@ Then:
 
 ```bash
 export LANGSMITH_API_KEY=ls__...
-dogsled extract validate langsmith
-dogsled extract verify langsmith
-dogsled extract run langsmith --resource datasets --limit 5
+bobsled extract validate langsmith
+bobsled extract verify langsmith
+bobsled extract run langsmith --resource datasets --limit 5
 ```
 
 ## Quality checklist

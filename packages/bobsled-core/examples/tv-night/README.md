@@ -1,12 +1,12 @@
-# TV Night: learn Dogsled by finding your next show
+# TV Night: learn Bobsled Core by finding your next show
 
 Build a small data project that answers your own question, such as “I liked The Expanse. What should I watch next with similar complexity and intrigue?” Your question stays visible while the answer gains evidence.
 
-You and your agent create the files together. There are no bundled records or active finished models. Teaching templates stay inside the Dogsled installation and are not copied into your project. Your project contains the working files you build in `integrations/`, `resources/`, `sources/`, `models/`, `metrics/`, `relationships/`, `context/` and `queries/`.
+You and your agent create the files together. There are no bundled records or active finished models. Teaching templates stay inside the Bobsled Core installation and are not copied into your project. Your project contains the working files you build in `integrations/`, `resources/`, `sources/`, `models/`, `metrics/`, `relationships/`, `context/` and `queries/`.
 
-## Welcome to the Dogsled tutorial
+## Welcome to the Bobsled Core tutorial
 
-Welcome to Dogsled! In this tutorial, you’ll build a data project to help answer “What should I watch next?” You’ll bring in TV show data, organize it into models you can ask questions about, and add Wikipedia context to compare your options. Along the way, you’ll learn how to connect sources, build pipelines and use AI to turn text into useful data.
+Welcome to Bobsled Core! In this tutorial, you’ll build a data project to help answer “What should I watch next?” You’ll bring in TV show data, organize it into models you can ask questions about, and add Wikipedia context to compare your options. Along the way, you’ll learn how to connect sources, build pipelines and use AI to turn text into useful data.
 
 We’ll build it together, one chapter at a time. Your agent will explain the files and queries, help you run them, and pause so you can explore the results before moving on.
 
@@ -28,11 +28,11 @@ The agent opens the generated HTML in the browser as soon as it is ready, then r
 
 ### For the guiding agent
 
-`dogsled examples init tv-night` leaves teaching templates out of the project. Run `dogsled onboarding guide` to obtain `templatesPath`, the read-only template directory inside the Dogsled installation. Paths described below as setup references or inactive examples are relative to that directory, not the learner’s project. Read only the templates needed for the current chapter and author the working files with the learner. Do not copy the template folder. Reveal complete model solutions only when the learner asks for them.
+`bobsled examples init tv-night` leaves teaching templates out of the project. Run `bobsled onboarding guide` to obtain `templatesPath`, the read-only template directory inside the Bobsled Core installation. Paths described below as setup references or inactive examples are relative to that directory, not the learner’s project. Read only the templates needed for the current chapter and author the working files with the learner. Do not copy the template folder. Reveal complete model solutions only when the learner asks for them.
 
 ## Before Chapter 1
 
-The agent checks the installed Dogsled CLI and local database setup. In this repository, run the local `packages/bobsled-core/bin/cli.mjs` with Node; installed users run `dogsled`. Use a dedicated tutorial directory. Keep existing work on resume.
+The agent checks the installed Bobsled Core CLI and local database setup. In this repository, run the local `packages/bobsled-core/bin/cli.mjs` with Node; installed users run `bobsled`. Use a dedicated tutorial directory. Keep existing work on resume.
 
 Save the recommendation question and viewing preferences separately in `data/tv-night/question.json`:
 
@@ -55,24 +55,24 @@ Also ask whether to stop on failure or allow up to two additional recovery attem
 
 If the learner wants a cap, set `cost_budget_usd` on `platform.models.show_review`. The executor automatically selects `enforce` when this setting is present. The cap applies per call; explain the total allowance using the planned call count. Check pricing support now. If pricing is unavailable, explain the supported alternatives before proceeding; never silently drop a requested or existing cap.
 
-Run `dogsled doctor --json` for configuration checks. This does not prove credentials work. If you choose a live `dogsled ai test --connection show_review --json`, agree on that small paid probe separately and include it in the approved call count and any chosen cost allowance. Do not discover an invalid key halfway through the tutorial.
+Run `bobsled doctor --json` for configuration checks. This does not prove credentials work. If you choose a live `bobsled ai test --connection show_review --json`, agree on that small paid probe separately and include it in the approved call count and any chosen cost allowance. Do not discover an invalid key halfway through the tutorial.
 
 The six chapters teach API connections, ETL pipelines, semantic models, querying, query federation and agentic transformations. An optional watchlist-matching exercise follows. At every chapter the agent explains the goal, shows a file and command, offers one useful choice, runs the work, gives a precise inspection task, recaps and pauses.
 
 After each verified chapter:
 
 ```sh
-dogsled onboarding verify connect
-dogsled onboarding render
+bobsled onboarding verify connect
+bobsled onboarding render
 ```
 
-Replace `connect` with the chapter's step ID. Only after the learner confirms inspection, run `dogsled onboarding review connect` and render again. The page keeps execution checks separate from learner inspection. Saved history contains real query results, not invented before/after answers. File and database changes do not reset completed chapters or learner inspections. Results are timestamped snapshots from saved checks, not live data. Rendering refreshes the page without rerunning checks. Run an explicit chapter check to replace a snapshot; changed results need inspection again. Do not silently repeat paid work.
+Replace `connect` with the chapter's step ID. Only after the learner confirms inspection, run `bobsled onboarding review connect` and render again. The page keeps execution checks separate from learner inspection. Saved history contains real query results, not invented before/after answers. File and database changes do not reset completed chapters or learner inspections. Results are timestamped snapshots from saved checks, not live data. Rendering refreshes the page without rerunning checks. Run an explicit chapter check to replace a snapshot; changed results need inspection again. Do not silently repeat paid work.
 
 ## Chapter 1 of 6: connect to an API
 
 **Goal:** fetch one familiar show and understand a reusable API connection.
 
-Dogsled lets you connect to an API and make its responses available as data you can load or query. You configure the connection, the request and how response fields become columns. Here, you’ll connect to TVmaze and inspect one familiar show.
+Bobsled Core lets you connect to an API and make its responses available as data you can load or query. You configure the connection, the request and how response fields become columns. Here, you’ll connect to TVmaze and inspect one familiar show.
 
 An **integration** stores the shared connection settings. A **resource** describes an endpoint and maps its JSON response into columns. A **source** lets models and queries refer to that data. A resource can supply ETL ingestion or a query-time API request.
 
@@ -81,9 +81,9 @@ Show `integrations/tvmaze.yml`, `resources/tvmaze/probe.yml`, and `sources/tvmaz
 Use the user's favourite show as the probe when they named one. Look up its real ID; do not infer the ID from a title. The inactive example uses The Good Place, ID 2790. Set the resource's show ID and the source filter consistently. Configure `integrations/warehouse.yml` and `.bobsled/config.yml` from the setup references so query-time results have a local cache.
 
 ```sh
-dogsled extract run probe --integration tvmaze --limit 1
-dogsled onboarding verify connect
-dogsled onboarding render
+bobsled extract run probe --integration tvmaze --limit 1
+bobsled onboarding verify connect
+bobsled onboarding render
 ```
 
 **Inspect:** open the connection table, find the chosen show, compare its ID and name with the resource definition. The agent must point to the actual returned row. Explain that the cache is a reusable local copy, not a bundled dataset.
@@ -92,11 +92,11 @@ dogsled onboarding render
 
 ## Chapter 2 of 6: build an ETL pipeline
 
-**Goal:** learn how to create and run an ETL pipeline in Dogsled.
+**Goal:** learn how to create and run an ETL pipeline in Bobsled Core.
 
 Before any catalog load, show the pipeline files, expected tables and scope choice in a final response, then wait. Confirmation that Chapter 1 made sense is not approval of an unseen Chapter 2 plan. A partial shows load is not a finished ETL: say which tables and checks remain.
 
-Dogsled lets you create ETL pipelines that fetch data from a source, turn it into rows, and load it into a database. In this chapter, you’ll build one to load TV shows and episodes from TVmaze into DuckDB. ETL stands for extract, transform and load.
+Bobsled Core lets you create ETL pipelines that fetch data from a source, turn it into rows, and load it into a database. In this chapter, you’ll build one to load TV shows and episodes from TVmaze into DuckDB. ETL stands for extract, transform and load.
 
 ETL means fetch data, turn it into rows, and load it. Start with one TVmaze index page (up to 250 shows); choose the page internally and explain that this is an ID-ordered sample, not a popularity or similarity ranking. Fetch the catalog first and inspect genre coverage before choosing child requests. Offer “small sample” or “broader discovery” with request counts, rather than asking a beginner to choose page numbers.
 
@@ -117,11 +117,11 @@ where:
 
 `for_each` passes each retained show's ID to the episode resource. A show and its episodes can then be joined on `shows.id = episodes.show_id`. Cast is optional: fetch it when it supports a cast preference or matching exercise. Do not spend requests on it merely to make the dataset look larger.
 
-The default rate of two requests per second is our gentle tutorial setting, not Dogsled's capacity. One catalog page plus episode requests for 250 shows is about 251 requests; adding cast roughly doubles it. Report actual progress and row counts. Full refresh uses the complete desired page list and replaces the tutorial tables; it does not append pages.
+The default rate of two requests per second is our gentle tutorial setting, not Bobsled Core's capacity. One catalog page plus episode requests for 250 shows is about 251 requests; adding cast roughly doubles it. Report actual progress and row counts. Full refresh uses the complete desired page list and replaces the tutorial tables; it does not append pages.
 
 ```sh
-dogsled runner validate
-dogsled runner run tv
+bobsled runner validate
+bobsled runner run tv
 ```
 
 Show and run this first exploration query without waiting for the learner to ask whether querying is possible:
@@ -132,7 +132,7 @@ FROM raw.shows s JOIN raw.episodes e ON s.id = e.show_id
 ORDER BY s.name, e.season, e.number LIMIT 10;
 ```
 
-Use `dogsled query` with `--db-path .bobsled/bobsled.duckdb`. Then verify `load` and render.
+Use `bobsled query` with `--db-path .bobsled/bobsled.duckdb`. Then verify `load` and render.
 
 **Inspect:** select Raw shows, find a real multi-genre show, and inspect its full genre list. Then select Raw episodes and find the same show ID. State exact names and expected values from this run.
 
@@ -142,7 +142,7 @@ Use `dogsled query` with `--db-path .bobsled/bobsled.duckdb`. Then verify `load`
 
 **Goal:** give the data reusable meaning that both humans and agents can inspect.
 
-Dogsled lets you build semantic models: reusable definitions that explain what your data means and how to query it. You configure fields, descriptions, relationships between records and named calculations called metrics. Here, you’ll model shows and episodes so later questions use those shared definitions.
+Bobsled Core lets you build semantic models: reusable definitions that explain what your data means and how to query it. You configure fields, descriptions, relationships between records and named calculations called metrics. Here, you’ll model shows and episodes so later questions use those shared definitions.
 
 Show the existing source files and the planned derived model, relationship and metric before editing or creating them. A source describes existing data; a model defines a reusable transformation, materialized as a table or view. A relationship describes a join; a metric names a calculation. SQL is a way to express transformations or ask a one-off question.
 
@@ -160,8 +160,8 @@ existing warehouse sources. Never join the episode's own `id` to a show ID or
 match shows by title alone.
 
 ```sh
-dogsled ontology describe tv_night --concept Episode --yaml
-dogsled ontology validate --strict --json
+bobsled ontology describe tv_night --concept Episode --yaml
+bobsled ontology validate --strict --json
 ```
 
 Inspect the `Episode → Show → ProductionStatus` path. If a query returns 20
@@ -182,10 +182,10 @@ Offer one relevant decision: regular episodes or specials, strict runtime limit 
 Create the show-to-episode relationship and a fetched-episode count metric with a description and synonyms. Show its result for a familiar show. Compare raw and modeled rows, and explain a real change or explicitly say when the added value is meaning rather than changed values.
 
 ```sh
-dogsled model validate --integration warehouse
-dogsled model run shows episodes --integration warehouse
-dogsled onboarding verify model
-dogsled onboarding render
+bobsled model validate --integration warehouse
+bobsled model run shows episodes --integration warehouse
+bobsled onboarding verify model
+bobsled onboarding render
 ```
 
 **Inspect:** recap the source files updated and derived files created, with a short YAML excerpt explaining each change. Open a source field description and the corresponding derived field, then inspect the relationship and metric definition. Keep the data comparison brief. Explain where the agent reads semantic guidance; metadata alone does not change SQL results.
@@ -196,7 +196,7 @@ dogsled onboarding render
 
 **Goal:** ask questions of your modeled data, understand the SQL behind an answer, and decide when to save reusable logic as another model. The TV shortlist is the worked example.
 
-Open with: “Dogsled lets you query the models and metrics you’ve built. You can ask me questions in plain English; I’ll use those definitions to run a query and show you the SQL and results. You can also use your own SQL tool, such as DuckDB UI, if you prefer. In this chapter, you’ll explore your data and learn when to save a useful query as another model.”
+Open with: “Bobsled Core lets you query the models and metrics you’ve built. You can ask me questions in plain English; I’ll use those definitions to run a query and show you the SQL and results. You can also use your own SQL tool, such as DuckDB UI, if you prefer. In this chapter, you’ll explore your data and learn when to save a useful query as another model.”
 
 Offer a few questions supported by the actual models and metrics, such as “Which shows match my preferred genres?”, “Which shows have the shortest average episode runtime?”, and “How many fetched episodes does each show have?” Say “Choose one of these, or ask your own question.” Put the introduction and invitation in the final response and wait before executing. If the learner already asked a specific query question, use it instead of asking again. Setup preferences alone do not authorize choosing their first question.
 
@@ -228,7 +228,7 @@ Verify `query` and render. The page now records the actual shortlist in its hist
 
 Use this structure after building models, adapting every detail to the actual files. This is a teaching example, not a required sampling policy. Do not create a grouping rule or a model merely to match this example.
 
-> Dogsled lets you build new models from existing ones. We extended the `shows` model with two models: `shows` → `candidates` → `watch_next`.
+> Bobsled Core lets you build new models from existing ones. We extended the `shows` model with two models: `shows` → `candidates` → `watch_next`.
 >
 > **The `candidates` model** is defined in `models/candidates.yml`. Its `source.ref` reads the existing `shows` model. Its `where` rule keeps science-fiction records and excludes the known favorite. A `CASE` expression creates a new `discovery_group` column from the genre tags. `materialization.type: view` makes this a reusable database view: it stores the query definition rather than a separate copy of the results.
 >
@@ -246,13 +246,13 @@ materialization:
 
 Explain that `PARTITION BY` groups rows, `ORDER BY id` gives each group a repeatable order, and `= 1` keeps its first row. Then name the actual command used to build the models and its verified outcome. Do not copy these settings if the learner’s model uses different rules.
 
-Finish briefly: “The saved query in `queries/shortlist.sql` reads the built model; it does not define the selection logic. The result check passed. Inspect `source.ref` and `qualify` in `models/watch_next.yml`: can you see how it builds on `candidates`?” Mention row counts only if verified. Then explain which Dogsled capability the next chapter adds. Avoid a separate paragraph comparing individual shows.
+Finish briefly: “The saved query in `queries/shortlist.sql` reads the built model; it does not define the selection logic. The result check passed. Inspect `source.ref` and `qualify` in `models/watch_next.yml`: can you see how it builds on `candidates`?” Mention row counts only if verified. Then explain which Bobsled Core capability the next chapter adds. Avoid a separate paragraph comparing individual shows.
 
 ## Chapter 5 of 6: query across sources
 
 **Goal:** configure and query a second data source, joining its records with local modeled data.
 
-Explain: “Dogsled lets you query across multiple data sources. This is called query federation. We’ll run one query combining our TV datasets in DuckDB with article data from Wikipedia.” Before running SQL, show the natural-language question: “Show my shortlisted series with their runtimes and Wikipedia introductions.” Afterward explain which fields came from which source, and offer another question such as “For shows under my runtime limit, show the available Wikipedia context.” Keep the generated SQL visible for inspection.
+Explain: “Bobsled Core lets you query across multiple data sources. This is called query federation. We’ll run one query combining our TV datasets in DuckDB with article data from Wikipedia.” Before running SQL, show the natural-language question: “Show my shortlisted series with their runtimes and Wikipedia introductions.” Afterward explain which fields came from which source, and offer another question such as “For shows under my runtime limit, show the available Wikipedia context.” Keep the generated SQL visible for inspection.
 
 Make the central lesson explicit: **one SQL query joins two different data sources—our local DuckDB database and the Wikipedia API.** The API source is not just another table we loaded during ETL.
 
@@ -274,17 +274,17 @@ WHERE l.review_status = 'accepted';
 
 Walk through the query before executing it:
 
-| Query reference                | Where the data lives                        | Role in this query                                  |
-| ------------------------------ | ------------------------------------------- | --------------------------------------------------- |
-| `analytics.watch_next s`       | Local DuckDB                                | Supplies the selected show’s ID and name.           |
-| `analytics.show_links l`       | Local DuckDB                                | Maps `show_id` to the accepted Wikipedia `page_id`. |
-| `sources.wikipedia_articles a` | Wikipedia API, fetched or cached by Dogsled | Supplies article title, revision and text.          |
+| Query reference                | Where the data lives                             | Role in this query                                  |
+| ------------------------------ | ------------------------------------------------ | --------------------------------------------------- |
+| `analytics.watch_next s`       | Local DuckDB                                     | Supplies the selected show’s ID and name.           |
+| `analytics.show_links l`       | Local DuckDB                                     | Maps `show_id` to the accepted Wikipedia `page_id`. |
+| `sources.wikipedia_articles a` | Wikipedia API, fetched or cached by Bobsled Core | Supplies article title, revision and text.          |
 
 Explain both joins: `s.id = l.show_id` connects the local show to its identity mapping; `l.page_id = a.page_id` joins that mapping to the API’s article record. The result’s `name` comes from the local model; `title`, `revision_id` and `article_text` come from the API source. There are three named relations here, but two data sources: DuckDB and Wikipedia. The accepted identity mapping makes their different IDs joinable.
 
-Show how `integrations/wikipedia.yml`, `resources/wikipedia/articles.yml` and `sources/wikipedia_articles.yml` expose the API response as queryable rows. Dogsled requests the rows or uses a valid cache, then joins them locally. Wikipedia never receives this SQL. In the recap, restate which side is local and which is an API, and use actual receipts to distinguish a fresh fetch from cache reuse.
+Show how `integrations/wikipedia.yml`, `resources/wikipedia/articles.yml` and `sources/wikipedia_articles.yml` expose the API response as queryable rows. Bobsled Core requests the rows or uses a valid cache, then joins them locally. Wikipedia never receives this SQL. In the recap, restate which side is local and which is an API, and use actual receipts to distinguish a fresh fetch from cache reuse.
 
-Save this in `queries/context.sql`. Run with `dogsled source-query`; show local versus remote columns, then run again and compare fresh-fetch versus cache receipts. The join executes locally. Do not describe a join of only saved files as a live API query.
+Save this in `queries/context.sql`. Run with `bobsled source-query`; show local versus remote columns, then run again and compare fresh-fetch versus cache receipts. The join executes locally. Do not describe a join of only saved files as a live API query.
 
 Verify `federate` and render. **Inspect:** select Shows with article context, find each finalist, then expand one passage and inspect the source/revision and receipts. State the actual table row to inspect.
 
@@ -292,7 +292,7 @@ Verify `federate` and render. **Inspect:** select Shows with article context, fi
 
 ## Chapter 6 of 6: build an agentic transformation
 
-Dogsled supports agentic models: models that use AI and your instructions to turn input data into structured output. Here, each show gets a judgment against the learner’s preference, a short explanation, and references to supporting passages. Explain this purpose before fetching text or discussing provider calls. For a preference such as “sci-fi sagas with politics and intrigue,” explain which parts the evidence supports and which remain unknown.
+Bobsled Core supports agentic models: models that use AI and your instructions to turn input data into structured output. Here, each show gets a judgment against the learner’s preference, a short explanation, and references to supporting passages. Explain this purpose before fetching text or discussing provider calls. For a preference such as “sci-fi sagas with politics and intrigue,” explain which parts the evidence supports and which remain unknown.
 
 **Required sequence:** prepare → pilot → inspect → finish approved runs → review quality → explain the build → pause. After a failed run is recovered, return to this sequence and finish the teaching recap. A request to run the remaining shows does not waive the recap.
 
@@ -308,9 +308,9 @@ Construct this JSON with code or SQL, copying text directly from the saved sourc
 
 ### Define a small assessment
 
-Use the same preference for every finalist. The AI returns `show_id`, `revision_id`, `fit`, `explanation`, and `passage_ids` (an array of up to six selected IDs). The executor adds `support_excerpt` and Dogsled evidence metadata from the saved input. Do not add unrelated theme/ending fields or duplicate quote fields. Use `supported` for direct evidence, `mixed` for partial support, `contradicted` only for explicit contrary evidence, and `unknown` for insufficient evidence. An unknown assessment is a valid result, with an empty passage list. A technically valid response still needs a review of its reasoning. Require an explanation that identifies the requested qualities supported by the passages, the qualities unsupported or unknown, and why the overall fit follows. A label such as “mixed” by itself is not an explanation. Do not confuse missing evidence with explicit contrary evidence. Keep the schema small; this is a review of meaning, not a word-count test.
+Use the same preference for every finalist. The AI returns `show_id`, `revision_id`, `fit`, `explanation`, and `passage_ids` (an array of up to six selected IDs). The executor adds `support_excerpt` and Bobsled Core evidence metadata from the saved input. Do not add unrelated theme/ending fields or duplicate quote fields. Use `supported` for direct evidence, `mixed` for partial support, `contradicted` only for explicit contrary evidence, and `unknown` for insufficient evidence. An unknown assessment is a valid result, with an empty passage list. A technically valid response still needs a review of its reasoning. Require an explanation that identifies the requested qualities supported by the passages, the qualities unsupported or unknown, and why the overall fit follows. A label such as “mixed” by itself is not an explanation. Do not confuse missing evidence with explicit contrary evidence. Keep the schema small; this is a review of meaning, not a word-count test.
 
-Create `executor.mjs` from the package teaching template. Use the provider profile chosen at setup. The executor requests structured output with a configurable `maxOutputTokens` allowance, default 4,096. Change that local setting only after explaining its effect and checking the approved token/cost scope. It never silently shrinks output to fit an assignment. Its preflight input estimate is conservative, not measured usage. Neither a parse error nor unknown usage proves that output tokens ran out. Do not patch Dogsled or guess a provider-specific executor route.
+Create `executor.mjs` from the package teaching template. Use the provider profile chosen at setup. The executor requests structured output with a configurable `maxOutputTokens` allowance, default 4,096. Change that local setting only after explaining its effect and checking the approved token/cost scope. It never silently shrinks output to fit an assignment. Its preflight input estimate is conservative, not measured usage. Neither a parse error nor unknown usage proves that output tokens ran out. Do not patch Bobsled Core or guess a provider-specific executor route.
 
 ### Run one show, inspect it, then run the rest
 
@@ -321,16 +321,16 @@ Create `assessment_inputs` as a view over the complete `article_inputs`, with `w
 Validate the files and confirm the scope query returns exactly one approved show. Run:
 
 ```sh
-dogsled model validate --integration warehouse
-dogsled model run article_inputs assessment_inputs --integration warehouse
-dogsled query "SELECT show_id, revision_id FROM analytics.assessment_inputs" --db-path .bobsled/bobsled.duckdb
-dogsled model run show_notes --integration warehouse --agent-executor ./executor.mjs --agent-run-id tv-pilot
-dogsled model run recommendations --integration warehouse
+bobsled model validate --integration warehouse
+bobsled model run article_inputs assessment_inputs --integration warehouse
+bobsled query "SELECT show_id, revision_id FROM analytics.assessment_inputs" --db-path .bobsled/bobsled.duckdb
+bobsled model run show_notes --integration warehouse --agent-executor ./executor.mjs --agent-run-id tv-pilot
+bobsled model run recommendations --integration warehouse
 ```
 
-Then run `dogsled onboarding verify transform --show-id <actual-pilot-id>`. This checks that show’s saved output without completing or resetting the chapter and without making an AI call. Explain the output fields and inspect whether the selected passages support the judgment. Pause for the learner’s inspection. If the pilot fails, stop the batch and diagnose that one show first.
+Then run `bobsled onboarding verify transform --show-id <actual-pilot-id>`. This checks that show’s saved output without completing or resetting the chapter and without making an AI call. Explain the output fields and inspect whether the selected passages support the judgment. Pause for the learner’s inspection. If the pilot fails, stop the batch and diagnose that one show first.
 
-Once inspected, process the remaining approved shows one at a time. Update only `assessment_inputs.where` to the next single show ID. Run `dogsled model run assessment_inputs --integration warehouse` to rebuild that view, then repeat the scope query and confirm it returns exactly that one show before running `show_notes` under a new run ID. Rebuild `recommendations` and check that show with `onboarding verify transform --show-id <id>`. Repeat for the other approved shows, stopping on a failure. Dogsled publishes a run only after all its assignments succeed: one show per run keeps each successful result saved even if a later show fails. These runs remain within the originally approved batch of calls; no extra call is needed. Editing YAML alone does not update an existing database view. Do not run the successful pilot again. After changing instructions or provider, test one affected show before expanding. Use additional attempts only within the explicitly approved recovery allowance; otherwise ask before spending. Diagnose the failure before a new attempt. Keep routine adjustments within the approved settings and dollar/token limits. Show the safe error and measured usage when available. Reaching an output allowance is relevant evidence, but a parse failure alone does not prove truncation. Do not silently change models, remove limits or increase the approved call count. Retry only failed or explicitly rejected show IDs; preserve successful notes and their original run IDs. Do not enable SDK automatic retries or use resume to bypass a no-retry policy. After any recovery, return to explaining what was built before presenting the final recommendation.
+Once inspected, process the remaining approved shows one at a time. Update only `assessment_inputs.where` to the next single show ID. Run `bobsled model run assessment_inputs --integration warehouse` to rebuild that view, then repeat the scope query and confirm it returns exactly that one show before running `show_notes` under a new run ID. Rebuild `recommendations` and check that show with `onboarding verify transform --show-id <id>`. Repeat for the other approved shows, stopping on a failure. Bobsled Core publishes a run only after all its assignments succeed: one show per run keeps each successful result saved even if a later show fails. These runs remain within the originally approved batch of calls; no extra call is needed. Editing YAML alone does not update an existing database view. Do not run the successful pilot again. After changing instructions or provider, test one affected show before expanding. Use additional attempts only within the explicitly approved recovery allowance; otherwise ask before spending. Diagnose the failure before a new attempt. Keep routine adjustments within the approved settings and dollar/token limits. Show the safe error and measured usage when available. Reaching an output allowance is relevant evidence, but a parse failure alone does not prove truncation. Do not silently change models, remove limits or increase the approved call count. Retry only failed or explicitly rejected show IDs; preserve successful notes and their original run IDs. Do not enable SDK automatic retries or use resume to bypass a no-retry policy. After any recovery, return to explaining what was built before presenting the final recommendation.
 
 ### Explain results and failures clearly
 
@@ -346,10 +346,10 @@ Show which shows passed, failed or remain unknown. Do not describe a five-show r
 Run the final comparison only when the remaining results are ready:
 
 ```sh
-dogsled model run recommendations --integration warehouse
-dogsled query "SELECT * FROM analytics.recommendations" --db-path .bobsled/bobsled.duckdb
-dogsled onboarding verify transform
-dogsled onboarding render
+bobsled model run recommendations --integration warehouse
+bobsled query "SELECT * FROM analytics.recommendations" --db-path .bobsled/bobsled.duckdb
+bobsled onboarding verify transform
+bobsled onboarding render
 ```
 
 **Inspect:** explain the model definitions first, then compare one supported assessment and one unknown. Follow a selected passage ID to its saved text and discuss whether it supports the reason. The reference check proves traceability, not truth or recommendation quality. Keep spoilers collapsed. If inputs change without a new AI run, identify the old notes as saved results rather than silently rerunning them. Do not claim the best show in the catalog from a five-show comparison.
@@ -358,7 +358,7 @@ dogsled onboarding render
 
 Deliver this in the final response after the remaining runs, including after recovery. The earlier pilot explanation does not replace this recap. Spend most of the response on the model definitions; keep the show comparison secondary.
 
-1. Explain the capability learned: Dogsled turns prepared input rows into structured assessments using a saved agentic model definition.
+1. Explain the capability learned: Bobsled Core turns prepared input rows into structured assessments using a saved agentic model definition.
 2. Walk through the actual chain `article_inputs → assessment_inputs → show_notes → recommendations`. Link each definition and explain its input, rule and output type. `article_inputs` stores prepared evidence; `assessment_inputs` is the view selecting one approved show; `show_notes` stores AI assessments; `recommendations` joins saved assessments to catalog data. Use the actual materialization settings rather than assuming every model is a table.
 3. Show a short excerpt from the learner’s `show_notes.yml`. Explain `model_kind: agentic`, `llm.profile`, the preference instructions, required output columns and `materialization.strategy: replace_processed_keys`. Explain how processing one show preserves earlier rows. Do not substitute a SELECT query for this configuration explanation.
 4. Explain the executor as a separate file: it calls the configured provider, validates the structured response, and attaches original text for selected passage IDs. The AI chooses references; code copies the exact text. Querying the saved `recommendations` view does not call AI. Executing `show_notes` can make new paid calls.
@@ -373,7 +373,7 @@ After all finalists pass the technical checks and the learner inspects the model
 
 **Goal:** match titles the user has watched to catalog records, then avoid recommending those shows again.
 
-Dogsled supports entity resolution: finding records from different sources that refer to the same thing. You configure the matching rules and how uncertain matches are reviewed. Here, you’ll link watchlist entries to catalog records so already-watched shows can be excluded.
+Bobsled Core supports entity resolution: finding records from different sources that refer to the same thing. You configure the matching rules and how uncertain matches are reviewed. Here, you’ll link watchlist entries to catalog records so already-watched shows can be excluded.
 
 Ask for a short pasted list or CSV with `watch_id`, `title`, optional `year`, `country`, and any real external IDs. Preserve the user's original text. Do not invent viewing history. Without a user list, offer a clearly labelled title-matching exercise using live search results, such as the different series named Ghosts; verify actual candidates before teaching it.
 
@@ -389,15 +389,15 @@ Build `analytics.watchlist_matches` from the engine outputs and applied decision
 
 ## Tutorial scope
 
-Keep tutorial work inside the learner's project. Do not suggest, recommend, offer to make, or perform changes to Dogsled's source code, installed packages, or a sibling development checkout to unblock the tutorial. A product limitation is not a tutorial coding exercise. Explain it briefly and offer supported configuration choices, an approved observe-mode run without a dollar cap, or skipping/pausing the affected lesson. Never remove an existing cap without the learner choosing that option. Keep prepared work so the tutorial can resume. Product fixes belong in a separate development task explicitly requested by the user, not an option proposed by this skill.
+Keep tutorial work inside the learner's project. Do not suggest, recommend, offer to make, or perform changes to Bobsled Core's source code, installed packages, or a sibling development checkout to unblock the tutorial. A product limitation is not a tutorial coding exercise. Explain it briefly and offer supported configuration choices, an approved observe-mode run without a dollar cap, or skipping/pausing the affected lesson. Never remove an existing cap without the learner choosing that option. Keep prepared work so the tutorial can resume. Product fixes belong in a separate development task explicitly requested by the user, not an option proposed by this skill.
 
 ## Exploring the project
 
-Lead each recap with what was built in Dogsled and how. Give most of the explanation to the actual files created or changed: link each path, identify its change, explain the important keys or expressions, and show how the files work together. Then show one short excerpt and the command that used these definitions. Source definitions and saved SQL deserve explanation alongside pipeline and model files.
+Lead each recap with what was built in Bobsled Core and how. Give most of the explanation to the actual files created or changed: link each path, identify its change, explain the important keys or expressions, and show how the files work together. Then show one short excerpt and the command that used these definitions. Source definitions and saved SQL deserve explanation alongside pipeline and model files.
 
 For a model, explain the source and the columns, expressions, filters, relationships or materialization actually configured. For ETL, explain the pipeline, resource mappings and source definitions; semantic models come later. End with a short data check: row counts if useful, one result link and one inspection task tied to a file setting. Offer more exploration without making a long data checklist the main lesson. Finish with what the learner can now do, what the next chapter adds, and a pause.
 
-The HTML follows [Dogsled’s visual style](DESIGN.md): compact tables, clear status labels, and light and dark themes. It shows the original question, chapter progress, actual answer history, working files, declared lineage, source attribution and bounded table previews. File previews are read-only snapshots, not live editing. The file tree shows working project files; teaching templates stay in the Dogsled installation. Secrets and data dumps are excluded. Model descriptions and SQL remain inspectable.
+The HTML follows [Bobsled Core’s visual style](DESIGN.md): compact tables, clear status labels, and light and dark themes. It shows the original question, chapter progress, actual answer history, working files, declared lineage, source attribution and bounded table previews. File previews are read-only snapshots, not live editing. The file tree shows working project files; teaching templates stay in the Bobsled Core installation. Secrets and data dumps are excluded. Model descriptions and SQL remain inspectable.
 
 Use the HTML table previews and queries run with your agent to inspect the tutorial’s data.
 
@@ -409,6 +409,6 @@ duckdb -ui .bobsled/bobsled.duckdb
 
 The tutorial does not start or manage DuckDB UI. Close that database session before continuing ETL or model writes to avoid file locks. This is optional; every chapter can be completed without it.
 
-The HTML itself runs no database queries. Its search/sort controls operate on saved previews (up to 500 rows per table). It reports total counts and generation time. Regenerate with `dogsled onboarding render` after changes. Rendering does not refresh query results. Run an explicit chapter check to update the saved snapshot; do not interpret saved previews as the current database.
+The HTML itself runs no database queries. Its search/sort controls operate on saved previews (up to 500 rows per table). It reports total counts and generation time. Regenerate with `bobsled onboarding render` after changes. Rendering does not refresh query results. Run an explicit chapter check to update the saved snapshot; do not interpret saved previews as the current database.
 
 Source limitations: TVmaze samples are incomplete; Wikipedia coverage differs; interpretations require review. Preserve the attribution in DATA-LICENSES.md. Data and model output are local; no tracking or remote artwork is added.

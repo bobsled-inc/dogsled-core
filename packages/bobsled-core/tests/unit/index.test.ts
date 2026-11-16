@@ -7,7 +7,7 @@ describe('buildProgram', () => {
   it('wires the root command and subcommands', () => {
     const program = buildProgram();
 
-    expect(program.name()).toBe('dogsled');
+    expect(program.name()).toBe('bobsled');
     expect(program.options.map((option) => option.long)).toContain('--project-root');
     expect(program.commands.map((command) => command.name())).toContain('extract');
     expect(program.commands.map((command) => command.name())).toContain('embed');

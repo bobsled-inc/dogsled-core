@@ -231,7 +231,7 @@ export function createSetupGroup(): Command {
     .description('Explain setup blockers and stale generated files in plain English and JSON')
     .option('--answers <path>', 'Path to bobsled.setup.answers.yml', 'bobsled.setup.answers.yml')
     .option('--config <path>', 'Path to bobsled.yml')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option('--json', 'Output as JSON')
     .option('--verbose', 'Enable verbose output')
     .option('--quiet', 'Suppress non-error output')

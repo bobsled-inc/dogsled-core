@@ -56,7 +56,7 @@ beforeEach(() => {
   vi.mocked(loadApiResourceEntries).mockReset().mockResolvedValue([]);
 });
 
-describe('dogsled model run live/lazy auto-detection', () => {
+describe('bobsled model run live/lazy auto-detection', () => {
   it('uses the explicit project root for model execution and source discovery', async () => {
     const projectRoot = '/tmp/nested-bobsled-project';
     const exit = await runBobsledModelRunCommand(['--project-root', projectRoot, '--quiet']);

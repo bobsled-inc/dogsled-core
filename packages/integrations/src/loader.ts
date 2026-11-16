@@ -267,7 +267,7 @@ export function getResourcePath(sourceName: string, resourceName: string): strin
 
 /**
  * Build (or fetch from cache) a Map of canonical `entity` names to the list of
- * variants that share that entity for a single source. Used by Dogsled to resolve
+ * variants that share that entity for a single source. Used by Bobsled Core to resolve
  * pipeline `resources: [<entity>]` references against the right transport
  * variant (e.g. `issues` + `via: mcp` → `issues_mcp`). Reads the embedded YAML directly
  * rather than the heavier Zod parsing path, so this stays cheap

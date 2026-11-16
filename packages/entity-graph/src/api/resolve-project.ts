@@ -74,7 +74,7 @@ export interface ResolveWorkflowOptions extends EntityGraphProjectOptions {
    * `(source_type, auth_type)`. Mirrors `@bobsled-inc/model-spec`'s
    * `runProject({ customRunners })` injection point so host orchestrators can
    * drive entity-graph runs against BigQuery WIF / Snowflake OIDC /
-   * Sledhouse OIDC with pre-minted, encrypted tokens — auth types Dogsled's
+   * Sledhouse OIDC with pre-minted, encrypted tokens — auth types Bobsled Core's
    * built-in drivers cannot always satisfy in hosted environments.
    *
    * Only consulted on the `integration` resolver branch — when `runner:

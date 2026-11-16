@@ -1,5 +1,5 @@
 /**
- * `dogsled init` — scaffold a new Dogsled project.
+ * `bobsled init` — scaffold a new Bobsled Core project.
  *
  * Initialization is always local: it creates a self-contained project that
  * boots with no account and no remote configuration. DuckLake is the default
@@ -15,7 +15,7 @@ import type { GlobalOptions } from '../types/index.js';
 export function registerInitCommand(program: Command): void {
   program
     .command('init')
-    .description('Initialize a new Dogsled project')
+    .description('Initialize a new Bobsled Core project')
     .argument(
       '[project-name]',
       'Project directory name (created relative to the current directory)'

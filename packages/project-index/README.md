@@ -2,7 +2,7 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Type-based discovery for Dogsled project files. Dogsled scans a project once,
+Type-based discovery for Bobsled Core project files. Bobsled Core scans a project once,
 reads each YAML file's top-level `type` and each Markdown file's front matter
 `type`, and hands every file to the loader for that type. Files can live in
 any folder layout:
@@ -25,7 +25,7 @@ create semantic names or namespaces. Untyped YAML uses the nearest exact
 conventional folder for its kind. Root `bobsled.yml` and `bobsled.yaml` remain
 legacy pipeline configs and may omit `type`; nested pipeline fragments must
 declare `type: pipeline_config`. A Project may have no pipeline config or
-several fragments. Dogsled merges their `pipelines` and `destinations` by name;
+several fragments. Bobsled Core merges their `pipelines` and `destinations` by name;
 each other top-level section has one owner. Root `model-spec.yml`, `extractor.yml`,
 and `extract-intents.yml` retain their legacy conventions. `AGENTS.md` is a
 guide in any directory, and `skills/<name>/SKILL.md` remains the conventional
@@ -43,7 +43,7 @@ Project Skill path. Other Markdown files declare `type: guide` or
 | `model`, `seed`, `metric`, `relationship`, `entity_relationship`, `vq`                                                                                       | YAML     | Model Spec objects.                                                                                         |
 | `resource`, `action`, `sync`, `target`                                                                                                                       | YAML     | Extraction and activation objects.                                                                          |
 | `resolution`, `relationship_ontology`, `mention_extraction`, `relationship_extraction`, `agent_task_profile`, `survivorship`, `truthset`, `object`, `policy` | YAML     | Entity Graph specs.                                                                                         |
-| `agent`                                                                                                                                                      | YAML     | Recognized for host applications; Dogsled loads nothing from it.                                            |
+| `agent`                                                                                                                                                      | YAML     | Recognized for host applications; Bobsled Core loads nothing from it.                                       |
 | `skill`, `guide`                                                                                                                                             | Markdown | A Project Skill or guide, declared in front matter or inferred at a conventional path.                      |
 
 The root `AGENTS.md` remains Project-wide. Nested `AGENTS.md` guides add

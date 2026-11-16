@@ -36,7 +36,7 @@ Provider SDKs remain outside model-spec. No new workspace dependency is required
 | Owner               | Responsibility                                                                                 |
 | ------------------- | ---------------------------------------------------------------------------------------------- |
 | Author              | Sources, steps, grouping, instructions, output columns, profiles and keys                      |
-| Dogsled host        | Discover input schemas, bind profiles, prepare bounded data, supply callbacks and cancellation |
+| Bobsled Core host   | Discover input schemas, bind profiles, prepare bounded data, supply callbacks and cancellation |
 | Executor            | Perform one assignment and return an explicit outcome with usage                               |
 | State store         | Freeze references, select accepted attempts, save results and completion, maintain limits      |
 | Publication adapter | Check required completion, replace processed keys atomically, reconcile publication receipts   |
@@ -102,7 +102,7 @@ the existing schemas. Their presence does not establish warehouse support.
 `resolveAgenticModel(definition, { inputs, platform })` takes a registry of normalized
 input column lists keyed by existing source/model references. It copies the inferred
 schema into each resolved step. Later steps read the declared output columns plus
-Dogsled metadata. Authors do not write a second input schema.
+Bobsled Core metadata. Authors do not write a second input schema.
 
 The profile comes from `platform.models[step.llm.profile ?? model.llm.profile]`.
 Missing profiles fail with the shared validation error contract before any call.
@@ -218,7 +218,7 @@ explicit, with an unavailable or interrupted reason.
 
 New runs use spend-cap accounting:
 
-- When an attempt starts, Dogsled saves a charge equal to its input estimate (about
+- When an attempt starts, Bobsled Core saves a charge equal to its input estimate (about
   four bytes per token). An interrupted attempt keeps that charge.
 - When it finishes, measured usage replaces the estimate. Unknown usage keeps the
   estimate. Hosts that supply `priceUsage` also get a charge in US dollars.
@@ -228,7 +228,7 @@ New runs use spend-cap accounting:
 - Every valid answer that finishes is accepted, even when it pushed the run over
   its cap or finished after the deadline. Caps and deadlines stop new dispatch only.
   Answers that finished before another assignment failed for good are saved too.
-- A cost cap cannot be applied to a run saved with the older accounting; Dogsled
+- A cost cap cannot be applied to a run saved with the older accounting; Bobsled Core
   refuses `maxCostUsd` for such a run instead of ignoring it.
 
 Runs saved before this change have no `accounting` marker. They keep the original
@@ -267,26 +267,26 @@ with code `invalid_executor_output`; it is never accepted. If the assignment the
 fails for good, the message lists the invalid fields, by name only.
 
 `formatAgenticError(error)` renders an error and its safe causes. A cause that is
-not a Dogsled error is shown only by its type, a system code such as `ENOSPC`, and
+not a Bobsled Core error is shown only by its type, a system code such as `ENOSPC`, and
 a numeric HTTP status, for example `caused by: APICallError (status 429)`. The CLI
 and `runProject` results use it.
 
 ## Reserved metadata
 
-Executor rows contain the three nullable judgment fields below. Dogsled supplies
+Executor rows contain the three nullable judgment fields below. Bobsled Core supplies
 `_bobsled_run_id` only after acceptance. An executor cannot return that field.
 
-| Column                | Contract                                                                        |
-| --------------------- | ------------------------------------------------------------------------------- |
-| `_bobsled_run_id`     | Non-null string assigned by Dogsled; untouched rows retain their original value |
-| `_bobsled_evidence`   | Null or a nonempty array of evidence objects                                    |
-| `_bobsled_confidence` | Null or a number from 0 to 1; not a calibrated probability                      |
-| `_bobsled_reason`     | Null or `{ summary, supporting_factors, conflicting_factors }`                  |
+| Column                | Contract                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `_bobsled_run_id`     | Non-null string assigned by Bobsled Core; untouched rows retain their original value |
+| `_bobsled_evidence`   | Null or a nonempty array of evidence objects                                         |
+| `_bobsled_confidence` | Null or a number from 0 to 1; not a calibrated probability                           |
+| `_bobsled_reason`     | Null or `{ summary, supporting_factors, conflicting_factors }`                       |
 
 Evidence contains `source`, `reference`, nullable `support_excerpt`, and
 `retrieved_at`. A record or document reference need not be a URL. Sources must
 identify prepared input, permitted source access, or evidence retained in the
-prepared input. Retaining a citation does not grant fresh access to its source. Dogsled never invents citations,
+prepared input. Retaining a citation does not grant fresh access to its source. Bobsled Core never invents citations,
 reasons or confidence, and never averages confidence values. Metadata structure
 checks do not prove that a citation supports a claim.
 

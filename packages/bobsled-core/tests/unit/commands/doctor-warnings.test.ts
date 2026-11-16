@@ -20,7 +20,7 @@ it('preserves validation warnings in doctor JSON without failing a valid project
   try {
     const program = new Command();
     registerDoctorCommand(program);
-    await program.parseAsync(['node', 'dogsled', 'doctor', '--project-root', root, '--json']);
+    await program.parseAsync(['node', 'bobsled', 'doctor', '--project-root', root, '--json']);
     expect(output).toHaveBeenCalledWith(
       expect.objectContaining({
         valid: true,

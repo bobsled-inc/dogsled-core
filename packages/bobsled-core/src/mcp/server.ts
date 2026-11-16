@@ -1,9 +1,9 @@
 /**
- * Dogsled-as-MCP-server.
+ * Bobsled Core-as-MCP-server.
  *
- * This is the OUTBOUND MCP surface — Dogsled exposing data to MCP clients
+ * This is the OUTBOUND MCP surface — Bobsled Core exposing data to MCP clients
  * (agents). Distinct from `packages/extractor/src/runtime/mcp-*.ts` which is
- * Dogsled-as-MCP-CLIENT (consuming Notion/Atlassian/etc.).
+ * Bobsled Core-as-MCP-CLIENT (consuming Notion/Atlassian/etc.).
  *
  * v1 ships a single `read_source` tool that returns rows from
  * `<resource>__documents` / `<resource>__chunks` with citation metadata.

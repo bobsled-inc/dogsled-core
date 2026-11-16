@@ -1,6 +1,6 @@
 # Mock API pipeline
 
-Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:mock-api-pipeline`.
+Prerequisites: Node.js 24+, an installed `bobsled` CLI and OpenSSL. Run the automated walkthrough from a built checkout with `pnpm e2e:mock-api-pipeline`.
 
 1. From the checkout root, start the fictional HTTPS API in one terminal:
 
@@ -22,10 +22,10 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 3. Validate the integration and its first resource, then load all three streams:
 
    ```bash
-   dogsled extract validate shop_api
-   dogsled extract health-check shop_api --resource products
-   dogsled pipeline --integration shop_api --dest duckdb --db-path data.duckdb --batch --batch-format jsonl --batch-size 100 --log-format json
-   dogsled query 'SELECT count(*) AS n FROM orders' --db-path data.duckdb
+   bobsled extract validate shop_api
+   bobsled extract health-check shop_api --resource products
+   bobsled pipeline --integration shop_api --dest duckdb --db-path data.duckdb --batch --batch-format jsonl --batch-size 100 --log-format json
+   bobsled query 'SELECT count(*) AS n FROM orders' --db-path data.duckdb
    ```
 
    Expect 20 products, 500 orders and 30 customers: 550 extracted records across
@@ -35,7 +35,7 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 4. Select just one resource into a separate database:
 
    ```bash
-   dogsled pipeline --integration shop_api --resource products --dest duckdb --db-path selected.duckdb --log-format json
+   bobsled pipeline --integration shop_api --resource products --dest duckdb --db-path selected.duckdb --log-format json
    ```
 
    Expect one stream and 20 products. Stop the API with Ctrl-C.

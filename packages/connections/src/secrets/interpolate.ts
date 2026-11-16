@@ -31,7 +31,7 @@ import type { SecretResolver } from './types.js';
 
 /**
  * Whole-string env-token pattern. Mirrors the syntax already established by
- * Dogsled's extractor/loader (see
+ * Bobsled Core's extractor/loader (see
  * `packages/extractor/src/runtime/warehouse-extractor.ts`).
  */
 const WHOLE_ENV_TEMPLATE_RE = /^\s*\$\{\{\s*env\.([A-Za-z_][A-Za-z0-9_]*)\s*\}\}\s*$/;

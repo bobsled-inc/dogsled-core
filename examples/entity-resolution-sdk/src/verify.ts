@@ -2,10 +2,10 @@ import { createBobsledClient } from '../generated/bobsled-sdk/index.js';
 import { createExampleExecutor } from './executor.js';
 import * as runner from '../runner.js';
 
-const dogsled = createBobsledClient(createExampleExecutor(runner));
+const bobsled = createBobsledClient(createExampleExecutor(runner));
 
 try {
-  const acme = await dogsled.entity.Customer.findBy({ domain: 'acme.com' })
+  const acme = await bobsled.entity.Customer.findBy({ domain: 'acme.com' })
     .withRelationship('document_mentions_customer')
     .first();
 

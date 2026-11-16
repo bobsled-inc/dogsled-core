@@ -131,7 +131,7 @@ export interface RunProjectWithLazySourcesResult {
   run: RunProjectResult;
 }
 
-/** Source leaf modes Phase 1 hydrates. `extract` is left to `dogsled pipeline`. */
+/** Source leaf modes Phase 1 hydrates. `extract` is left to `bobsled pipeline`. */
 const HYDRATED_MODES = new Set(['live', 'lazy']);
 
 /**

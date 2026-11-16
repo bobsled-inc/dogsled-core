@@ -542,8 +542,8 @@ function issueOwner(
 }
 
 /**
- * Load and fully cross-validate a Dogsled project through the same resolver used
- * by `dogsled runner validate`.
+ * Load and fully cross-validate a Bobsled Core project through the same resolver used
+ * by `bobsled runner validate`.
  */
 export async function resolveProjectPipelines(
   options: ResolveProjectPipelinesOptions
@@ -553,7 +553,7 @@ export async function resolveProjectPipelines(
   throw new BobsledProjectValidationError(result.issues, result.warnings);
 }
 
-/** Validate a complete Dogsled Project without throwing for configuration errors. */
+/** Validate a complete Bobsled Core Project without throwing for configuration errors. */
 export async function validateProjectPipelines(
   options: ResolveProjectPipelinesOptions
 ): Promise<ProjectPipelineValidationResult> {

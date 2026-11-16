@@ -8,14 +8,14 @@ export function renderPipelineCommand(args: string[], multiline = false): string
   const quotedArgs = args.map(shellQuote);
 
   if (!multiline) {
-    return `dogsled pipeline ${quotedArgs.join(' ')}`;
+    return `bobsled pipeline ${quotedArgs.join(' ')}`;
   }
 
-  return `dogsled pipeline \\\n  ${quotedArgs.join(' \\\n  ')}`;
+  return `bobsled pipeline \\\n  ${quotedArgs.join(' \\\n  ')}`;
 }
 
 export function generateCliCommands(config: PipelineConfig): string {
-  const lines = ['# Install Dogsled CLI', 'npm install -g @bobsled-inc/bobsled-core', ''];
+  const lines = ['# Install Bobsled Core CLI', 'npm install -g @bobsled-inc/bobsled-core', ''];
   for (const integration of config.selectedIntegrations) {
     lines.push(`# Extract + Load ${integration.replace(/_/g, ' ')} data`);
     lines.push(
@@ -37,7 +37,7 @@ export function generateCliCommands(config: PipelineConfig): string {
       ? `${config.selectedIntegrations[0]}__${config.resources[config.selectedIntegrations[0]]?.[0] ?? 'table'}`
       : 'my_table';
     lines.push(
-      `dogsled load query --db-path ${shellQuote(config.destination.db_path ?? './pipeline.duckdb')} ${shellQuote(`SELECT COUNT(*) FROM ${table}`)}`
+      `bobsled load query --db-path ${shellQuote(config.destination.db_path ?? './pipeline.duckdb')} ${shellQuote(`SELECT COUNT(*) FROM ${table}`)}`
     );
   }
 

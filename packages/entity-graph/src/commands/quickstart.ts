@@ -143,15 +143,15 @@ async function quickstartHandler(options: QuickstartOptions): Promise<void> {
     next_commands: [
       {
         label: 'validate',
-        command: `dogsled entity-graph resolve validate ${commandTarget}${schemaFlag}${outFlag}`,
+        command: `bobsled entity-graph resolve validate ${commandTarget}${schemaFlag}${outFlag}`,
       },
       {
         label: 'preview_sql',
-        command: `dogsled entity-graph resolve compile ${commandTarget}${schemaFlag}${outFlag}`,
+        command: `bobsled entity-graph resolve compile ${commandTarget}${schemaFlag}${outFlag}`,
       },
       {
         label: 'dry_run',
-        command: `dogsled entity-graph resolve run --dry-run ${commandTarget}${schemaFlag}${outFlag}`,
+        command: `bobsled entity-graph resolve run --dry-run ${commandTarget}${schemaFlag}${outFlag}`,
       },
     ],
     warnings: context.warnings,

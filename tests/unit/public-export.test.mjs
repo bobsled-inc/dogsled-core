@@ -513,7 +513,7 @@ describe('public scripts and root commit', () => {
     const root = fixture('scripts/guards/old-names.mjs # Staging guard.\n');
     const source = JSON.stringify({
       scripts: {
-        'guard:dogsled': 'node ./scripts/guards/old-names.mjs',
+        'guard:bobsled': 'node ./scripts/guards/old-names.mjs',
         'guard:privacy': 'node ./scripts/guards/privacy.mjs',
         'security:fast': 'node ./scripts/security/fast.mjs && node ./scripts/guards/privacy.mjs',
       },
@@ -524,7 +524,7 @@ describe('public scripts and root commit', () => {
       '    steps:',
       '      - run: pnpm security:fast',
       '      - name: Report old names (report-only until the rename is done)',
-      '        run: pnpm guard:dogsled',
+      '        run: pnpm guard:bobsled',
       '      - name: Build',
       '        run: pnpm build',
       '',
@@ -534,7 +534,7 @@ describe('public scripts and root commit', () => {
     write(root, 'scripts/guards/old-names.mjs', 'Private guard\n');
     const result = exportCommit({ root, commit: commit(root), output: output(root) });
     const data = JSON.parse(readFileSync(path.join(output(root), 'package.json'), 'utf8'));
-    expect(data.scripts['guard:dogsled']).toBeUndefined();
+    expect(data.scripts['guard:bobsled']).toBeUndefined();
     expect(data.scripts['guard:privacy']).toBe('node ./scripts/guards/privacy.mjs');
     expect(readFileSync(path.join(output(root), '.github/workflows/ci.yml'), 'utf8')).toBe(
       [
@@ -591,11 +591,11 @@ describe('public scripts and root commit', () => {
   });
 
   it.each([
-    [{ 'guard:dogsled': 'node ./scripts/guards/old-names.mjs --strict' }, /package.json/],
+    [{ 'guard:bobsled': 'node ./scripts/guards/old-names.mjs --strict' }, /package.json/],
     [
       {
-        'guard:dogsled': 'node ./scripts/guards/old-names.mjs',
-        'security:fast': 'pnpm guard:dogsled',
+        'guard:bobsled': 'node ./scripts/guards/old-names.mjs',
+        'security:fast': 'pnpm guard:bobsled',
       },
       /security:fast/,
     ],
@@ -610,12 +610,12 @@ describe('public scripts and root commit', () => {
     write(
       root,
       'package.json',
-      JSON.stringify({ scripts: { 'guard:dogsled': 'node ./scripts/guards/old-names.mjs' } })
+      JSON.stringify({ scripts: { 'guard:bobsled': 'node ./scripts/guards/old-names.mjs' } })
     );
     write(
       root,
       '.github/workflows/ci.yml',
-      'jobs:\n  x:\n    steps:\n      - run: pnpm guard:dogsled\n'
+      'jobs:\n  x:\n    steps:\n      - run: pnpm guard:bobsled\n'
     );
     expect(() => exportCommit({ root, commit: commit(root), output: output(root) })).toThrow(
       /ci.yml/

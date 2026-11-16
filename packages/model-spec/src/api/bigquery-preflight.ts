@@ -69,7 +69,7 @@ export async function preflightBigQueryPlan(
           modelName: '__bigquery_preflight__',
           status: 'failed' as const,
           error:
-            'BigQuery source-schema preflight requires a query-capable runner so Dogsled can inspect INFORMATION_SCHEMA.COLUMNS before executing model SQL.',
+            'BigQuery source-schema preflight requires a query-capable runner so Bobsled Core can inspect INFORMATION_SCHEMA.COLUMNS before executing model SQL.',
           exitCode: 2,
         },
       ],
@@ -217,7 +217,7 @@ export function missingUpstreamMessage(
   if (matches(options.publishedModels)) {
     return (
       `${prefix}. It is published after this integration's local SQL runs, so build it ` +
-      `in a previous run (dogsled model run ${upstream}) before ${model}.`
+      `in a previous run (bobsled model run ${upstream}) before ${model}.`
     );
   }
   return (

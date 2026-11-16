@@ -2,10 +2,10 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Installable semantic bundles for Dogsled integrations. Each bundle turns integration
+Installable semantic bundles for Bobsled Core integrations. Each bundle turns integration
 resources into generated source definitions, staging models, curated marts,
 named metrics, and declared relationships that can be reviewed and committed
-with the rest of a Dogsled project.
+with the rest of a Bobsled Core project.
 
 ## Install
 
@@ -13,12 +13,12 @@ Install `@bobsled-inc/bobsled-core`; this code ships inside it.
 
 ## Usage
 
-Install a complete bundle through the Dogsled CLI:
+Install a complete bundle through the Bobsled Core CLI:
 
 ```bash
-dogsled model models list
-dogsled model models info stripe
-dogsled model models install stripe
+bobsled model models list
+bobsled model models info stripe
+bobsled model models install stripe
 ```
 
 Use `--metrics-dir` or `--relationships-dir` with `models install` when the

@@ -199,9 +199,9 @@ export interface ValidationResult {
 }
 
 /**
- * Locate the Dogsled project for `startDir`: the nearest directory at or above
+ * Locate the Bobsled Core project for `startDir`: the nearest directory at or above
  * it that holds a root `bobsled.yml`/`bobsled.yaml`, or else `startDir` itself when
- * it contains Dogsled Project files. Pipeline configuration is optional.
+ * it contains Bobsled Core Project files. Pipeline configuration is optional.
  */
 export function findBobsledProject(startDir?: string): BobsledProjectLocation | null {
   const start = path.resolve(startDir ?? process.cwd());
@@ -656,7 +656,7 @@ export function computeSyntheticModelPipelines(
   const trigger = pipelineTriggerFor(defaultSchedule);
   // `defaults.models.schedule: manual` propagates the manual trigger to every
   // synthetic pipeline — orphan models become addressable through
-  // `dogsled runner dispatch` / `dogsled model run` but no cron is registered.
+  // `bobsled runner dispatch` / `bobsled model run` but no cron is registered.
   const cron = trigger === 'manual' ? null : parseToCron(defaultSchedule);
 
   return sortedConnections.map((connection) => {
@@ -677,7 +677,7 @@ export function computeSyntheticModelPipelines(
 
 /**
  * Combined entry point: resolve all model pipelines (authored + synthetic) for
- * a given Dogsled config + project root. The manifest generator uses this; the
+ * a given Bobsled Core config + project root. The manifest generator uses this; the
  * host application will too once it imports the library export.
  *
  * Returns authored pipelines first (preserving bobsled.yml ordering), followed

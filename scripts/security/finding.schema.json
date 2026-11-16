@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/bobsled-inc/dogsled-core/schemas/security-finding-v1.json",
-  "title": "Dogsled normalized security finding",
+  "$id": "https://github.com/bobsled-inc/bobsled-core/schemas/security-finding-v1.json",
+  "title": "Bobsled Core normalized security finding",
   "type": "object",
   "required": [
     "schemaVersion",

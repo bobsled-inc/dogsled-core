@@ -46,7 +46,7 @@ describe('readScopedHealthResource', () => {
     expect(readScopedHealthResource(projectRoot, 'hubspot')).toBeUndefined();
   });
 
-  it('ignores oversized Dogsled configs', () => {
+  it('ignores oversized Bobsled Core configs', () => {
     const projectRoot = bobsledTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-health-')));
     fs.writeFileSync(path.join(projectRoot, 'bobsled.yml'), 'x'.repeat(1024 * 1024 + 1));
 

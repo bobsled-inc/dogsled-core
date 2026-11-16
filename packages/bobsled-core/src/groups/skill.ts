@@ -24,7 +24,7 @@ function addOutputOptions(command: Command): Command {
 export function createSkillGroup(): Command {
   const group = new Command('skill')
     .description('Inspect and configure Project Skills')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)');
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)');
 
   addOutputOptions(group.command('list').description('List validated Project Skills')).action(
     async (options: SkillOutputOptions, command: Command) => {

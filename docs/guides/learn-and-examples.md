@@ -2,7 +2,7 @@
 
 ## The interactive tutorial
 
-`dogsled learn` is a step-by-step tutorial in your terminal. It has 150 lessons in 19
+`bobsled learn` is a step-by-step tutorial in your terminal. It has 150 lessons in 19
 sections, from the CLI basics through extraction, loading, models, verified
 queries, entity resolution and MCP extraction. Each lesson explains a step, runs
 the command, and shows the result.
@@ -11,13 +11,13 @@ The tutorial uses sample data from this repository, so it runs from a source
 checkout:
 
 ```bash
-git clone https://github.com/bobsled-inc/dogsled-core.git
+git clone https://github.com/bobsled-inc/bobsled-core.git
 cd bobsled-core
 pnpm run setup
 node packages/bobsled-core/bin/cli.mjs learn --cli "node $PWD/packages/bobsled-core/bin/cli.mjs"
 ```
 
-`--cli` tells the tutorial how to run `dogsled`; leave it out if `dogsled` is on your
+`--cli` tells the tutorial how to run `bobsled`; leave it out if `bobsled` is on your
 `PATH`, or set `BOBSLED_CORE_CLI`. Other options:
 
 - `--list` shows every section and your progress.
@@ -41,10 +41,10 @@ pnpm e2e:golden-path-quickstart
 pnpm e2e
 ```
 
-Two further example projects ship with the npm package. `dogsled examples list`
-shows them and `dogsled examples init <name>` copies one into a new folder:
+Two further example projects ship with the npm package. `bobsled examples list`
+shows them and `bobsled examples init <name>` copies one into a new folder:
 
 ```bash
-dogsled examples list
-dogsled examples init s3-documents-ingestion
+bobsled examples list
+bobsled examples init s3-documents-ingestion
 ```

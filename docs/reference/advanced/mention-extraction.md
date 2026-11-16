@@ -14,7 +14,7 @@ Mentions are what make `customer.documents()` a single typed call instead of a m
 
 ## Prerequisites
 
-- Resolved entities materialized in `__entity_profile` (run `dogsled entity-graph resolve profile <entity...>` first — see the [Entity graph](../../guides/entity-graph.md)).
+- Resolved entities materialized in `__entity_profile` (run `bobsled entity-graph resolve profile <entity...>` first — see the [Entity graph](../../guides/entity-graph.md)).
 - Chunks materialized in `<resource>__chunks` from document ingest.
 - A configured `mention_disambiguation_v1` model role with a per-call budget (see [Embeddings and AI providers](../../guides/embeddings-and-ai.md)).
 
@@ -108,7 +108,7 @@ The function returns an array of `MentionRow`s ready to insert into `__document_
 
 ## Candidate Lookup Strategies
 
-Dogsled ships a common `CandidateRetrievalStrategy` interface with dialect-specific SQL builders:
+Bobsled Core ships a common `CandidateRetrievalStrategy` interface with dialect-specific SQL builders:
 
 | Dialect   | Strategy                                                                                    |
 | --------- | ------------------------------------------------------------------------------------------- |
@@ -167,7 +167,7 @@ The limiter sits in front of the LLM call. Pair it with the `mode: 'fallback'` p
 Use `mentions inspect` when a count, review export row, or demo story row needs a source-level explanation:
 
 ```bash
-dogsled entity-graph mentions inspect \
+bobsled entity-graph mentions inspect \
   --runner ./runner.js \
   --schema entity_graph \
   --chunk-id <chunk_id> \
@@ -180,14 +180,14 @@ The command returns source URI, document and chunk IDs, chunk index, excerpt or 
 ## Review Queue Export
 
 ```bash
-dogsled entity-graph mentions review export \
+bobsled entity-graph mentions review export \
   --runner ./runner.js \
   --schema entity_graph \
   --csv \
   > review/document_mentions.csv
 ```
 
-The CSV header is **byte-for-byte parity** with `dogsled model review export`, with mention-specific columns appended:
+The CSV header is **byte-for-byte parity** with `bobsled model review export`, with mention-specific columns appended:
 
 ```csv
 review_id,decision,confidence,mention_id,chunk_id,document_id,entity_type,entity_name,resolved_entity_id,resolution_method,notes
@@ -224,11 +224,11 @@ Chunker configuration is part of the chunk identity (`chunkerConfigHash` + `CHUN
 3. A follow-up worker or batch job marks orphans `superseded_at = now()` via parameterized SQL with identifier validation.
 4. Re-extraction lands on the new chunks once the cache-substrate manifest read paths complete.
 
-Run `dogsled doctor --json` before and after a chunker config change to confirm.
+Run `bobsled doctor --json` before and after a chunker config change to confirm.
 
 ## Operational Health Checks
 
-`dogsled doctor` runs this check for this surface today:
+`bobsled doctor` runs this check for this surface today:
 
 | Check                          | What it verifies                                                |
 | ------------------------------ | --------------------------------------------------------------- |

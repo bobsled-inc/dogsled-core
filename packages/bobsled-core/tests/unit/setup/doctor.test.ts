@@ -154,7 +154,7 @@ describe('doctorSetup', () => {
         dataset: 'raw',
       },
       credentials: {
-        // dogsled setup install seeds the starter answers file with an empty list here.
+        // bobsled setup install seeds the starter answers file with an empty list here.
         required_secret_refs: [],
       },
       status: {

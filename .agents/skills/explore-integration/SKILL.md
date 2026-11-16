@@ -1,6 +1,6 @@
 ---
 name: explore-integration
-description: Look up a Dogsled integration's full details — resources, auth setup, schemas, pagination, and related model bundles. Use when you need to quickly understand what an integration offers.
+description: Look up a Bobsled Core integration's full details — resources, auth setup, schemas, pagination, and related model bundles. Use when you need to quickly understand what an integration offers.
 argument-hint: '<integration-name> — e.g., "stripe", "hubspot", "github"'
 exposed: true
 triggers:
@@ -17,7 +17,7 @@ triggers:
 
 # Explore Integration — Quick Integration Lookup
 
-Quickly look up everything about a Dogsled integration without leaving the terminal.
+Quickly look up everything about a Bobsled Core integration without leaving the terminal.
 
 ## Usage
 

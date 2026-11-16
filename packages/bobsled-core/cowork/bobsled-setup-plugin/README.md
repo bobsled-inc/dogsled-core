@@ -1,12 +1,12 @@
-# Dogsled Setup Plugin
+# Bobsled Core Setup Plugin
 
-Use this plugin when you want Claude Cowork to create or configure a Dogsled repo for data extracts.
+Use this plugin when you want Claude Cowork to create or configure a Bobsled Core repo for data extracts.
 
 What this plugin does:
 
 - asks what business systems you want to pull data from
 - recommends integrations, destinations, schedules, and starter resources
-- installs or scaffolds the Dogsled repo if needed
+- installs or scaffolds the Bobsled Core repo if needed
 - writes the setup files for you
 - validates the repo
 - prepares local configuration for first use

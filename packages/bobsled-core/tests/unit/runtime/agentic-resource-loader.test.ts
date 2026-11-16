@@ -132,7 +132,7 @@ describe('host supplied agent resource definitions', () => {
     expect(JSON.stringify(result)).not.toContain('synthetic-host-key');
   });
 
-  it('keeps paid source approval in Dogsled when the host supplies the resource', async () => {
+  it('keeps paid source approval in Bobsled Core when the host supplies the resource', async () => {
     const specs = loadQueryableResourceSpecs('exa', 'search', { includeBillable: true });
     const fetch = vi.spyOn(globalThis, 'fetch');
     const loader = vi.fn(() => specs);

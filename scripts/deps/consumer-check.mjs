@@ -44,7 +44,7 @@ async function main() {
   mkdirSync(outputDir, { recursive: true });
 
   // --- Build the packed tarball ---
-  process.stdout.write('Staging and packing the Dogsled tarball...\n');
+  process.stdout.write('Staging and packing the Bobsled Core tarball...\n');
   const stageRoot = mkdtempSync(path.join(os.tmpdir(), 'health-check-stage-'));
   const stageDir = path.join(stageRoot, 'package');
   let tarball;

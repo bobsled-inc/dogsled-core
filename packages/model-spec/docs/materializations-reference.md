@@ -77,7 +77,7 @@ This transition could lose data or history and must be performed explicitly.
 
 To migrate:
   DROP TABLE IF EXISTS "ANALYTICS"."FCT_ORDERS";
-  -- then re-run: dogsled model run fct_orders
+  -- then re-run: bobsled model run fct_orders
 
 Dialect: snowflake
 ```

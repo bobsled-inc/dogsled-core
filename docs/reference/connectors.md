@@ -1,12 +1,12 @@
 # Connectors
 
-This page lists what Dogsled can read from and write to. Each section links to the
+This page lists what Bobsled Core can read from and write to. Each section links to the
 guide that shows how to use it.
 
 ## Library integrations
 
-Dogsled ships 83 ready-made integrations. Run `dogsled integrations list` for the
-current list with resource counts, and `dogsled integrations show <name>` for the
+Bobsled Core ships 83 ready-made integrations. Run `bobsled integrations list` for the
+current list with resource counts, and `bobsled integrations show <name>` for the
 resources and credentials of one. See
 [Use library integrations](../guides/use-library-integrations.md).
 
@@ -27,7 +27,7 @@ resources and credentials of one. See
 recorded fixtures, but has not been run against the provider.
 
 `bobsled_api` reads the data shares of a data-sharing account (its `shares`
-resource). Run `dogsled integrations show bobsled_api` for its settings.
+resource). Run `bobsled integrations show bobsled_api` for its settings.
 
 `bigquery` and `snowflake` read through local MCP servers and `google_drive`
 through an MCP server over HTTP; `linear` and `notion` offer MCP next to their
@@ -49,7 +49,7 @@ and documents: `pdf`, `docx`, `pptx`, `html`, `md`, `txt` and `eml`.
 
 ## Destinations
 
-`dogsled load run --dest` accepts:
+`bobsled load run --dest` accepts:
 
 | Destination                                   | Value                  | Driver package                                |
 | --------------------------------------------- | ---------------------- | --------------------------------------------- |
@@ -57,7 +57,7 @@ and documents: `pdf`, `docx`, `pptx`, `html`, `md`, `txt` and `eml`.
 | Amazon S3, Google Cloud Storage               | `s3`, `gcs`            | `@aws-sdk/client-s3`, `@google-cloud/storage` |
 | DuckDB, DuckLake                              | `duckdb`, `ducklake`   | —                                             |
 | SQLite                                        | `sqlite`               | `better-sqlite3`                              |
-| PostgreSQL, pgvector                          | `postgres`, `pgvector` | `pg` (installed with Dogsled)                 |
+| PostgreSQL, pgvector                          | `postgres`, `pgvector` | `pg` (installed with Bobsled Core)            |
 | Snowflake                                     | `snowflake`            | `snowflake-sdk`                               |
 | BigQuery                                      | `bigquery`             | `@google-cloud/bigquery`                      |
 | MySQL                                         | `mysql`                | `mysql2`                                      |
@@ -77,7 +77,7 @@ for each destination are in the [CLI reference](cli.md#bobsled-load-run).
 ## Model warehouses
 
 SQL models run on DuckDB, PostgreSQL, Snowflake, BigQuery, Databricks and
-ClickHouse (`source_type` of the model integration). `dogsled model compile` and
+ClickHouse (`source_type` of the model integration). `bobsled model compile` and
 `seed load --dialect` also produce SQL for MySQL, Redshift and pgvector. See
 [Build models](../guides/build-models.md).
 

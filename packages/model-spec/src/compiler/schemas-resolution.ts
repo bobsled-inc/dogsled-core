@@ -340,7 +340,7 @@ export const ResolutionSpecSchema = z
         }),
         z.object({
           // Probabilistic record linkage (Fellegi–Sunter). m/u can be learned
-          // from labeled truthsets with `dogsled entity-graph truthset train`;
+          // from labeled truthsets with `bobsled entity-graph truthset train`;
           // unsupervised EM training remains a follow-up.
           method: z.literal('fellegi_sunter'),
           // Prior probability that two random records are a match (λ).
@@ -504,7 +504,7 @@ export const ResolutionSpecSchema = z
       .object({
         enabled: z.boolean(),
         // User-facing judge tier for the review phase (cross-repo contract §5).
-        //   absent  ⇒ model (default): the in-Dogsled model judge / panel serves
+        //   absent  ⇒ model (default): the in-Bobsled Core model judge / panel serves
         //             the phase — an external reviewer (reviewerOverride or the
         //             spec's `reviewer:`) still wins when present, exactly as
         //             before this field existed. Backward-compatible.
@@ -518,7 +518,7 @@ export const ResolutionSpecSchema = z
         //             the missing piece); it never falls back to the model judge.
         judge: z.enum(['model', 'agent']).optional(),
         // External reviewer transport (cross-repo contract §2). Absent ⇒ the
-        // in-Dogsled model judge (`model:`) / panel behavior is unchanged.
+        // in-Bobsled Core model judge (`model:`) / panel behavior is unchanged.
         reviewer: AgentReviewerSchema.optional(),
         instructions_path: z.string().min(1).optional(),
         approval_policy: z.enum(['always', 'never', 'on_failure']).optional(),

@@ -15,7 +15,7 @@ elif [ -f "$ROOT_DIR/../../packages/bobsled-core/bin/cli.mjs" ]; then
 elif command -v bobsled >/dev/null 2>&1; then
   BOBSLED_CORE_CMD=(bobsled)
 else
-  echo "Dogsled CLI not found. Run pnpm setup, install @bobsled-inc/bobsled-core, or set BOBSLED_CORE_CLI."
+  echo "Bobsled Core CLI not found. Run pnpm setup, install @bobsled-inc/bobsled-core, or set BOBSLED_CORE_CLI."
   exit 1
 fi
 

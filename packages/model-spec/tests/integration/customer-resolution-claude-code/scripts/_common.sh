@@ -37,7 +37,7 @@ install_latest_cli() {
     pnpm --dir "$REPO_ROOT" install >/dev/null
   fi
 
-  echo "Building the latest dogsled CLI from the current checkout..." >&2
+  echo "Building the latest bobsled CLI from the current checkout..." >&2
   pnpm --dir "$REPO_ROOT/packages/bobsled-core" build >/dev/null
 
   if [[ ! -f "$CLI_BIN" ]]; then
@@ -50,7 +50,7 @@ install_latest_cli() {
     pnpm --dir "$REPO_ROOT" run setup >/dev/null
   fi
 
-  echo "Using dogsled CLI version $(node "$CLI_BIN" --version)" >&2
+  echo "Using bobsled CLI version $(node "$CLI_BIN" --version)" >&2
 }
 
 reset_workdir() {

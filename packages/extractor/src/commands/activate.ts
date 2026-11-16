@@ -90,7 +90,7 @@ export function registerActivateCommand(program: Command): void {
       const syncName = options.syncName ?? 'activate';
       const action = ActionSpecSchema.parse(readYaml(options.action));
       if (action.transport !== 'api') {
-        throw new CommandError('dogsled extract activate supports API actions only.', 2);
+        throw new CommandError('bobsled extract activate supports API actions only.', 2);
       }
       const integration = IntegrationSpecSchema.parse(readYaml(options.integration));
       const limit = options.limit ? Number.parseInt(options.limit, 10) : undefined;

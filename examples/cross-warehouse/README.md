@@ -4,8 +4,8 @@ This example shows Model Spec models that read from Databricks and Snowflake, th
 
 ```sh
 cp secrets.example.yml secrets.yml
-dogsled model validate --integration databricks
-dogsled model run customer_event_revenue --integration databricks --secrets secrets.yml --dry-run
+bobsled model validate --integration databricks
+bobsled model run customer_event_revenue --integration databricks --secrets secrets.yml --dry-run
 ```
 
 Fill `secrets.yml` or export the same variables in your shell and omit `--secrets` before running without `--dry-run`.

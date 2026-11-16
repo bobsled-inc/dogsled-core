@@ -15,7 +15,7 @@ triggers:
 
 # Add a custom API integration (`custom_api`)
 
-Use this when a user wants to pull from a REST or GraphQL API that Dogsled does
+Use this when a user wants to pull from a REST or GraphQL API that Bobsled Core does
 **not** ship a bundled connector for. A `custom_api` source is **fully
 self-describing**: you author a `source.yml` with an inline transport
 (`base_url` + `auth`) and one declarative resource per endpoint. There is **no
@@ -54,8 +54,8 @@ transport with `base_url` + `auth`. Auth types: `bearer`, `api-key`, `basic`,
 ```yaml
 spec_version: '2'
 type: source
-source_type: custom_api # Dogsled-visible marker
-bobsled_source_kind: custom_api # orchestrator/host application marker (Dogsled ignores it)
+source_type: custom_api # Bobsled Core-visible marker
+bobsled_source_kind: custom_api # orchestrator/host application marker (Bobsled Core ignores it)
 name: <source-name>
 description: <one line>
 auth_env_vars: # env vars the transport interpolates
@@ -89,7 +89,7 @@ auth:
   token: ${{ env.<ENV_VAR_NAME> }}
 ```
 
-OAuth2 client credentials instead (Dogsled fetches and caches the token):
+OAuth2 client credentials instead (Bobsled Core fetches and caches the token):
 
 ```yaml
 auth:
@@ -104,7 +104,7 @@ auth:
 
 Set `resource` only when the authorization server mints an audience-bound token
 only for a named resource (RFC 8707 Resource Indicators) and otherwise returns a
-token the API rejects. Dogsled sends it as a `resource` form parameter in the
+token the API rejects. Bobsled Core sends it as a `resource` form parameter in the
 token request; a token is never reused for a different `resource`.
 
 > **SSRF:** `base_url` and every request go through the extractor's public-host
@@ -211,7 +211,7 @@ fan-out chain. The path is evaluated against that resource's declared, mapped
 `output`, never its raw response, inputs, request headers, auth, or environment.
 The child type must match the referenced output type, `from` cannot be combined
 with `path` or `paths`, and nested paths require declared `properties`/`items` at
-every traversed segment. Dogsled does not modify primary keys automatically; use an
+every traversed segment. Bobsled Core does not modify primary keys automatically; use an
 explicit composite key when child IDs are only unique within a parent. A targeted
 child run can reconstruct only an immediate-parent field exactly matched by an
 explicit `for_each` input binding; all other ancestry must be co-scheduled.
@@ -270,11 +270,11 @@ raw variants. Cross-linked from `starter-models-notion`.
 ### Step 4 — Validate → verify → extract
 
 ```bash
-dogsled extract validate <source-name>
-dogsled extract verify <source-name>
-dogsled extract verify <source-name> --mock
+bobsled extract validate <source-name>
+bobsled extract verify <source-name>
+bobsled extract verify <source-name> --mock
 # then, with the env var exported:
-dogsled extract run <source-name> --resource <entity> --limit 5
+bobsled extract run <source-name> --resource <entity> --limit 5
 ```
 
 `verify` cross-checks every `${{ env.X }}` reference against the source's
@@ -305,9 +305,9 @@ For exact extract-predicate and query-filter operator vocabularies,
 
 ### Static request matrices and input projections
 
-Use a dogsled pipeline `input_matrix` when one endpoint must be requested for a
+Use a bobsled pipeline `input_matrix` when one endpoint must be requested for a
 bounded set of typed combinations. The matrix keeps one Resource stream and
-table. Dogsled expands axes in authored order and limits in-flight requests with
+table. Bobsled Core expands axes in authored order and limits in-flight requests with
 `concurrency`:
 
 ```yaml
@@ -323,7 +323,7 @@ resources:
 
 Each axis must name a Resource input and each value must pass that input's type,
 enum, and range checks. Axes cannot be empty or exceed 10,000 Cartesian tuples.
-Dogsled rejects duplicate normalized tuples and conflicts with `inputs`.
+Bobsled Core rejects duplicate normalized tuples and conflicts with `inputs`.
 Matrices support explicit `extract.incremental.strategy: full_refresh` only.
 The integration rate limiter covers all tuples and retries. A matrix can also
 compose with `extract.for_each`, which runs every tuple for each parent record.
@@ -434,9 +434,9 @@ Then:
 
 ```bash
 export LANGSMITH_API_KEY=ls__...
-dogsled extract validate langsmith
-dogsled extract verify langsmith
-dogsled extract run langsmith --resource datasets --limit 5
+bobsled extract validate langsmith
+bobsled extract verify langsmith
+bobsled extract run langsmith --resource datasets --limit 5
 ```
 
 ## Quality checklist

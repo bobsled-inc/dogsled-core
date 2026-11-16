@@ -90,7 +90,7 @@ function validateBobsledInvocation(invocation: BobsledInvocation): string | null
 }
 
 function formatBobsledInvocation(invocation: BobsledInvocation): string {
-  return ['dogsled', invocation.command, ...invocation.args.map(shellQuote)].join(' ');
+  return ['bobsled', invocation.command, ...invocation.args.map(shellQuote)].join(' ');
 }
 
 async function streamBobsledInvocation(

@@ -1,6 +1,6 @@
 ---
 name: entity-graph-authoring
-description: Author and iterate on Dogsled OSS entity graph specs. Use when creating or editing resolution, review, survivorship, truthset, or agent task profiles, debugging pair routing, or choosing which current entity graph CLI commands to run.
+description: Author and iterate on Bobsled Core OSS entity graph specs. Use when creating or editing resolution, review, survivorship, truthset, or agent task profiles, debugging pair routing, or choosing which current entity graph CLI commands to run.
 ---
 
 # Entity Graph Authoring
@@ -39,7 +39,7 @@ Use this skill for spec authoring and debugging work. For one-shot operational r
 
 ## Agent-Facing Guidance
 
-- For a single next step, start with `dogsled entity-graph agent triage ... --json`.
+- For a single next step, start with `bobsled entity-graph agent triage ... --json`.
 - For review automation, default `agent review-batch` to `--mode propose`.
 - Use repo-native task profiles under `entity-graph/agent/*.yml` whenever the repo already stores policy, limits, or output paths.
 - If a user asks for the simplification roadmap, distinguish clearly between shipped commands and planned commands.

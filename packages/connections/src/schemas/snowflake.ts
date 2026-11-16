@@ -6,7 +6,7 @@
  *   - `rsa_key`          — key-pair JWT (dbt's default; Snowflake recommended)
  *   - `oauth`            — OAuth 2.0 client_credentials grant
  *   - `workload_identity` — generic custom-runner workload identity token
- *   - `sledhouse_oidc`   — Dogsled-managed OIDC; **no built-in runner**, requires
+ *   - `sledhouse_oidc`   — platform-managed OIDC; **no built-in runner**, requires
  *                          a host-registered CustomRunnerFactory
  */
 
@@ -200,7 +200,7 @@ export const SnowflakeOAuthAuthSchema = z
 /**
  * Generic Snowflake workload identity authentication.
  *
- * This is a custom-runner contract, not a Dogsled built-in runner. The token
+ * This is a custom-runner contract, not a Bobsled Core built-in runner. The token
  * remains outside integration YAML and is supplied by the host's registered
  * CustomRunnerFactory.
  */
@@ -211,7 +211,7 @@ export const SnowflakeWorkloadIdentityAuthSchema = z
   .strict();
 
 /**
- * Snowflake auth via Dogsled-managed OIDC.
+ * Snowflake auth via platform-managed OIDC.
  *
  * Model Spec ships NO built-in runner for this variant — it exists in the schema so
  * that `integrations/<handle>.yml` files using it validate cleanly, but

@@ -1554,7 +1554,7 @@ describe('queryResource injected secrets satisfy env.* auth templates', () => {
         filter: { state: 'open' },
         secrets: { GH_TOKEN: 'injected-correct-token' },
       })
-    ).rejects.toThrow(/Dogsled could not validate the request/);
+    ).rejects.toThrow(/Bobsled Core could not validate the request/);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

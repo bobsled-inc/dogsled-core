@@ -1,12 +1,12 @@
-# Dogsled Pipeline — End-to-End Extract + Load
+# Bobsled Core Pipeline — End-to-End Extract + Load
 
-The `dogsled pipeline` command runs extractor + loader together. It has two execution modes:
+The `bobsled pipeline` command runs extractor + loader together. It has two execution modes:
 
 - **Single destination**: extractor stdout is piped directly into one loader subprocess.
 - **Multi-destination fan-out**: extractor stdout is captured once, replayed into multiple loader subprocesses, and extractor state is committed only after every destination succeeds.
 
 A third optional middle stage — the **embedder** — slots between extract and
-load when a `bobsled.yml` pipeline has an `embed:` block. Dogsled spawns the
+load when a `bobsled.yml` pipeline has an `embed:` block. Bobsled Core spawns the
 embedder subprocess automatically; the extractor pipes through it and each
 loaded record gains `<field>_embedding` (`vector`) columns alongside the
 originals. See "Embed Stage" below.
@@ -15,16 +15,16 @@ originals. See "Embed Stage" below.
 
 ```bash
 # Extract all resources for an integration to local parquet
-dogsled pipeline --integration github --format parquet
+bobsled pipeline --integration github --format parquet
 
 # Extract specific resources
-dogsled pipeline repos issues pull_requests --integration github --format parquet
+bobsled pipeline repos issues pull_requests --integration github --format parquet
 
 # Load into DuckDB
-dogsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline --integration github --dest duckdb --db-path ./data.duckdb
 
 # Load into BigQuery with table prefix
-dogsled pipeline --integration vantage \
+bobsled pipeline --integration vantage \
   --dest bigquery \
   --project-id my-project \
   --dataset-id raw \
@@ -33,30 +33,30 @@ dogsled pipeline --integration vantage \
   --load-strategy full_refresh
 
 # Write logs to file (also prints to terminal)
-dogsled pipeline --integration github --format parquet --log-file ./pipeline.log
+bobsled pipeline --integration github --format parquet --log-file ./pipeline.log
 
 # Watch logs live in another terminal
 tail -f ./pipeline.log
 
 # Retry only failed/remaining resources (skip already-loaded ones)
-dogsled pipeline cost_providers costs dashboards users \
+bobsled pipeline cost_providers costs dashboards users \
   --integration vantage --dest bigquery ...
 
 # Custom input values
-dogsled pipeline repos --integration github --format parquet --input org=bobsled-inc
+bobsled pipeline repos --integration github --format parquet --input org=bobsled-inc
 
-# Multi-destination fan-out is driven from bobsled.yml via `dogsled runner run`
-dogsled runner run stripe
+# Multi-destination fan-out is driven from bobsled.yml via `bobsled runner run`
+bobsled runner run stripe
 ```
 
 ## How It Works
 
 ```
-dogsled pipeline repos --integration github --format parquet
+bobsled pipeline repos --integration github --format parquet
         │
         ▼
 ┌──────────────────┐     stdout (JSONL)     ┌──────────────────┐
-│  dogsled extract │ ──────────────────────▶ │  dogsled load  │
+│  bobsled extract │ ──────────────────────▶ │  bobsled load  │
 │  (subprocess)    │                         │  (subprocess)    │
 └──────────────────┘     stderr (logs)       └──────────────────┘
         │                    │                        │
@@ -66,17 +66,17 @@ dogsled pipeline repos --integration github --format parquet
 
 Single-destination pipeline spawns two child processes:
 
-1. **Extractor** — runs `dogsled extract run <resources>` with the specified integration
-2. **Loader** — runs `dogsled load run` with the specified destination config
+1. **Extractor** — runs `bobsled extract run <resources>` with the specified integration
+2. **Loader** — runs `bobsled load run` with the specified destination config
 
 Extractor stdout is piped directly to loader stdin. Both stderr streams write structured JSON logs.
 
 Multi-destination fan-out works differently:
 
 1. Extractor stdout is captured to a temp JSONL file.
-2. Dogsled replays that file into one loader subprocess per named destination.
-3. If every loader exits successfully, Dogsled runs `dogsled extract commit-state` against the captured `STATE` messages.
-4. If any loader fails, Dogsled exits non-zero and leaves extractor state unadvanced so the next run can retry safely.
+2. Bobsled Core replays that file into one loader subprocess per named destination.
+3. If every loader exits successfully, Bobsled Core runs `bobsled extract commit-state` against the captured `STATE` messages.
+4. If any loader fails, Bobsled Core exits non-zero and leaves extractor state unadvanced so the next run can retry safely.
 
 ## Options
 
@@ -130,7 +130,7 @@ Use `--table-prefix` to namespace tables when loading multiple integrations into
 
 ```bash
 export VANTAGE_API_TOKEN=...
-dogsled pipeline --integration vantage \
+bobsled pipeline --integration vantage \
   --dest bigquery \
   --project-id my-project \
   --dataset-id my_dataset \
@@ -140,7 +140,7 @@ dogsled pipeline --integration vantage \
   --log-file ~/vantage.log
 
 export GITHUB_TOKEN=ghp_...
-dogsled pipeline --integration github \
+bobsled pipeline --integration github \
   --dest bigquery \
   --project-id my-project \
   --dataset-id my_dataset \
@@ -159,26 +159,26 @@ If a pipeline run partially fails (e.g. rate limiting), specify only the remaini
 grep '"level":"error"' ~/pipeline.log
 
 # Re-run only the failed/remaining resources
-dogsled pipeline cost_providers costs dashboards \
+bobsled pipeline cost_providers costs dashboards \
   --integration vantage --dest bigquery ...
 ```
 
 **Important:** If a resource uses `for_each` (parent-child extraction), include the parent resource in the retry list even if it already loaded. For example, `costs` depends on `cost_reports` — include both:
 
 ```bash
-dogsled pipeline cost_reports costs --integration vantage ...
+bobsled pipeline cost_reports costs --integration vantage ...
 ```
 
 ### Incremental Updates
 
-For the single-destination path, `dogsled pipeline` passes `--advance-state` to the extractor. Subsequent runs automatically resume from the last durable cursor position:
+For the single-destination path, `bobsled pipeline` passes `--advance-state` to the extractor. Subsequent runs automatically resume from the last durable cursor position:
 
 ```bash
 # First run: extracts all repos
-dogsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
 
 # Second run: only extracts repos updated since last run
-dogsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
+bobsled pipeline repos --integration github --dest duckdb --db-path ./data.duckdb
 ```
 
 For the multi-destination path, extractor state is deferred until every destination loader succeeds. That is why retries remain safe even when one destination succeeds and another fails.
@@ -188,7 +188,7 @@ For the multi-destination path, extractor state is deferred until every destinat
 When a pipeline has an `embed:` block in `bobsled.yml`, the chain becomes:
 
 ```text
-dogsled extract ──▶ dogsled embed ──▶ dogsled load
+bobsled extract ──▶ bobsled embed ──▶ bobsled load
 ```
 
 The embedder reads SCHEMA/RECORD/BATCH messages from extractor stdout,
@@ -222,7 +222,7 @@ Provider notes:
   must be an env-var placeholder (raw values are rejected).
 - `amazon-bedrock`: `model` + `region` are required; `api_key` is optional —
   set it to `$AWS_BEARER_TOKEN_BEDROCK` for Bedrock API-key auth, or omit and
-  Dogsled falls back to the AWS SDK credential chain (`AWS_PROFILE`, instance
+  Bobsled Core falls back to the AWS SDK credential chain (`AWS_PROFILE`, instance
   role, SSO, etc.).
 - `ollama`: local/free; `base_url` defaults to `http://127.0.0.1:11434/api`.
 
@@ -237,16 +237,16 @@ type from the SCHEMA message automatically.
 Standalone:
 
 ```bash
-# Inside a pipeline run, Dogsled wires this for you. Standalone use:
-dogsled extract run issues_graphql --integration linear \
-  | dogsled embed run --config embed.json \
-  | dogsled load run --dest duckdb --db-path ./data.duckdb
+# Inside a pipeline run, Bobsled Core wires this for you. Standalone use:
+bobsled extract run issues_graphql --integration linear \
+  | bobsled embed run --config embed.json \
+  | bobsled load run --dest duckdb --db-path ./data.duckdb
 ```
 
 Stub mode for testing without provider credentials:
 
 ```bash
-BOBSLED_CORE_EMBED_STUB=1 dogsled pipeline ...   # emits zero-filled vectors
+BOBSLED_CORE_EMBED_STUB=1 bobsled pipeline ...   # emits zero-filled vectors
 ```
 
 ### Model Spec source scaffold pre-fill
@@ -305,20 +305,20 @@ pipelines:
 Run it locally:
 
 ```bash
-dogsled runner run stripe
+bobsled runner run stripe
 ```
 
 Operational notes:
 
 - `destination` and `destinations` are mutually exclusive per pipeline.
 - Named file destinations (`local`, `gcs`, `s3`) must set `format` explicitly.
-- JSON logs remain machine-parseable in fan-out mode; Dogsled wraps loader log lines with a `destination` field instead of prefixing plain text.
+- JSON logs remain machine-parseable in fan-out mode; Bobsled Core wraps loader log lines with a `destination` field instead of prefixing plain text.
 
 ## Troubleshooting
 
 **"The --format option is required for local and gcs destinations"** — Add `--format parquet` (or jsonl, csv, arrow).
 
-**Pipeline hangs** — Check if the API token is valid. Run the extractor standalone first: `dogsled extract run repos --integration github --limit 5`
+**Pipeline hangs** — Check if the API token is valid. Run the extractor standalone first: `bobsled extract run repos --integration github --limit 5`
 
 **429 Too Many Requests** — The extractor retries with exponential backoff automatically. If it still fails, the integration's `rate_limit.requests_per_second` may be too high for the API. Lower it in `integration.yml`.
 

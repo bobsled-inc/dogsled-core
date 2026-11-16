@@ -186,7 +186,7 @@ describe('mentions review export', () => {
     ).toThrow(/Invalid SQL identifier/);
   });
 
-  it('registers dogsled entity-graph mentions review export', async () => {
+  it('registers bobsled entity-graph mentions review export', async () => {
     let buf = '';
     const program = new Command();
     program.exitOverride();

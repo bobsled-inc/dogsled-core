@@ -58,10 +58,10 @@ describe('planConfigDrift', () => {
       expect(decision).toEqual({ kind: 'proceed' });
     });
 
-    it('proceeds when the prior state lacks all tracked fields (older Dogsled version)', () => {
-      // Spec §3: "model that has prior state from a previous Dogsled version
+    it('proceeds when the prior state lacks all tracked fields (older Bobsled Core version)', () => {
+      // Spec §3: "model that has prior state from a previous Bobsled Core version
       // (i.e. lacks the newly-tracked config fields) must NOT trigger a
-      // spurious recreate on its first run under the new Dogsled version."
+      // spurious recreate on its first run under the new Bobsled Core version."
       const prior: ModelRunState = {
         lastRunAt: '2026-03-10T12:00:00.000Z',
         materialization: 'incremental',
@@ -242,7 +242,7 @@ describe('planConfigDrift', () => {
       expect(decision.changes).toContain('incremental_filter removed');
     });
 
-    it('does not fire filter-added drift for old Dogsled state that lacks strategy', () => {
+    it('does not fire filter-added drift for old Bobsled Core state that lacks strategy', () => {
       const prior: ModelRunState = {
         lastRunAt: '2026-03-10T12:00:00.000Z',
         materialization: 'incremental',

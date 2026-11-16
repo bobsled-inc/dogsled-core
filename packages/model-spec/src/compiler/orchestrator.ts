@@ -74,7 +74,7 @@ export interface CompileAllOptions {
    * dynamic_table): inlining drops MERGE/SCD-2/incremental_filter semantics
    * and turns the upstream into a one-shot SELECT. The exploded SQL is
    * suitable for syntactic / schema validation, not for parity with what
-   * `dogsled model run` would actually do.
+   * `bobsled model run` would actually do.
    */
   inlineDeps?: boolean | ReadonlySet<string>;
 }

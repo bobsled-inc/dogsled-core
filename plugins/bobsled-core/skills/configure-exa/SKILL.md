@@ -13,7 +13,7 @@ Use this skill when a user wants Exa web search calls to be budgeted and explici
 2. Recommend a seed schema with `query` and optionally `num_results`.
 3. Generate the `extract-intents.yml` step block for `exa/search`.
 4. Warn that Exa pricing varies by search mode and returned content depth; estimates should be treated as upper bounds.
-5. Recommend `dogsled extract estimate --plan <name>` before `dogsled extract run --plan <name>`.
+5. Recommend `bobsled extract estimate --plan <name>` before `bobsled extract run --plan <name>`.
 
 ## Seed Schema
 

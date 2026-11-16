@@ -45,7 +45,7 @@ and **`relationship_extraction`**.
 Managed destinations use `type: bobsled_managed` and `bobsled_connection_ref` to
 name a connection supplied by an orchestrator. Core validates these hooks but
 cannot load into a managed destination. For local execution, configure a concrete
-destination and run the work with `dogsled entity-graph build`.
+destination and run the work with `bobsled entity-graph build`.
 See [Dogsled Cloud and Core](../../../docs/guides/hosted-runs.md).
 
 ## Shape
@@ -196,7 +196,7 @@ Roles are swappable (`provider: anthropic` / `openai` / `bedrock`) with no spec
 changes — `moonshotai/kimi-k2` via OpenRouter is the documented default for
 extraction. Secrets are env-var indirection (`$OPENROUTER_API_KEY`), never raw.
 
-On Dogsled-managed connections the chunk/embedding feed and warehouse are
+On platform-managed connections the chunk/embedding feed and warehouse are
 supplied by the platform; author the specs as above and the platform wires the
 runner — no local credentials needed.
 
@@ -207,11 +207,11 @@ the phases in order (CLI shown; on the managed agent these map to the
 entity-graph run surface — mentions before relationships):
 
 ```bash
-dogsled entity-graph mentions extract Customer --schema entity_graph        # → __document_mentions
-dogsled entity-graph relationships extract Customer --schema entity_graph   # → __entity_relationship_evidence (append-only)
-dogsled entity-graph relationships review export --schema entity_graph --yaml
-dogsled entity-graph relationships review apply ./review/decisions.yml      # confirm/reject/supersede
-dogsled entity-graph relationships compact --schema entity_graph            # rebuild public __entity_relationship
+bobsled entity-graph mentions extract Customer --schema entity_graph        # → __document_mentions
+bobsled entity-graph relationships extract Customer --schema entity_graph   # → __entity_relationship_evidence (append-only)
+bobsled entity-graph relationships review export --schema entity_graph --yaml
+bobsled entity-graph relationships review apply ./review/decisions.yml      # confirm/reject/supersede
+bobsled entity-graph relationships compact --schema entity_graph            # rebuild public __entity_relationship
 ```
 
 `mentions extract` writes `__document_mentions` (one row per detected mention,

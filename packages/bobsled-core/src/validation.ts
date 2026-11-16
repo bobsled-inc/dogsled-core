@@ -57,7 +57,7 @@ export interface ValidationEntityVariant {
 }
 
 /**
- * The metadata-only integration surface consumed by Dogsled project validation.
+ * The metadata-only integration surface consumed by Bobsled Core project validation.
  * Implementations must throw from `getIntegration`/`getResources` for an
  * unknown source and return empty arrays for unknown entities.
  */
@@ -114,7 +114,7 @@ function resourceSpecFromSnapshot(
   };
 }
 
-/** Build Dogsled's legacy narrow validation interface from a generated snapshot. */
+/** Build Bobsled Core's legacy narrow validation interface from a generated snapshot. */
 export function createValidationCatalog(
   snapshot: ValidationCatalogSnapshot | readonly ValidationCatalogSourceSnapshot[]
 ): ValidationCatalog {

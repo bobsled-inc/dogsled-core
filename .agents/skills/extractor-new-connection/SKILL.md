@@ -11,7 +11,7 @@ This skill guides you through creating a new API connection and its resource spe
 
 - API documentation for the target API
 - Authentication credentials (stored as environment variables)
-- The `@bobsled-inc/extractor` CLI installed (`dogsled extract`)
+- The `@bobsled-inc/extractor` CLI installed (`bobsled extract`)
 
 ## Step 1: Gather API Information
 
@@ -110,7 +110,7 @@ The `cursor_field` MUST be listed in `schema.columns`. The extractor tracks the 
 ## Step 5: Validate
 
 ```bash
-dogsled extract validate --connection {name} --format json
+bobsled extract validate --connection {name} --format json
 ```
 
 Fix any errors. If `--check-env` flag is used, also verifies that referenced env vars are set.
@@ -119,13 +119,13 @@ Fix any errors. If `--check-env` flag is used, also verifies that referenced env
 
 ```bash
 # Quick test with record limit
-dogsled extract run --connection {name} --limit 5
+bobsled extract run --connection {name} --limit 5
 
 # Probe API connectivity (if credentials are available)
-dogsled extract discover --connection {name} --probe
+bobsled extract discover --connection {name} --probe
 
 # Test a single resource
-dogsled extract run --connection {name} --resource {resource} --limit 5
+bobsled extract run --connection {name} --resource {resource} --limit 5
 ```
 
 ## Guardrails Checklist

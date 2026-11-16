@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Regression guard for the runtime bug reported against Dogsled CLI:
+ * Regression guard for the runtime bug reported against Bobsled Core CLI:
  *
  *   LOG (error): Extraction failed for airports (postgres):
  *                Dynamic require of "events" is not supported

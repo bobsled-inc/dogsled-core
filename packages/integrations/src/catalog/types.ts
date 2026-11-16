@@ -2,7 +2,7 @@
  * Catalog manifest — types, schema version, and JSON Schema constant.
  *
  * Lives alongside `manifest.ts` (build logic). Kept in its own module so the
- * build-logic file stays comfortably under Dogsled's per-file size guideline.
+ * build-logic file stays comfortably under Bobsled Core's per-file size guideline.
  */
 
 import type { CatalogProbeApi, CatalogProbeAuth, CatalogProbeInputField } from './probe-types.js';
@@ -152,7 +152,7 @@ export interface CatalogManifest {
 
 export const CATALOG_MANIFEST_JSON_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'Dogsled Catalog Manifest',
+  title: 'Bobsled Core Catalog Manifest',
   type: 'object',
   additionalProperties: false,
   required: ['schema_version', 'summary', 'sources'],

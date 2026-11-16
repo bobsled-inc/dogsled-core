@@ -1,5 +1,5 @@
 /**
- * `lineageProject` — Layer 3 orchestrator for `dogsled model lineage`.
+ * `lineageProject` — Layer 3 orchestrator for `bobsled model lineage`.
  *
  * Returns per-integration lineage data (DAG nodes + effective trust tiers)
  * without doing any rendering. The CLI layer composes `renderLineage` for

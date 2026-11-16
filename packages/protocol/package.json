@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "packages/protocol"
   },
   "engines": {
@@ -48,9 +48,9 @@
     "@vitest/coverage-v8": "catalog:testing",
     "vitest": "catalog:testing"
   },
-  "description": "Structured message protocol shared by Dogsled extractors, loaders, and pipelines.",
+  "description": "Structured message protocol shared by Bobsled Core extractors, loaders, and pipelines.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
@@ -59,8 +59,8 @@
     "jsonl",
     "streaming"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   }
 }

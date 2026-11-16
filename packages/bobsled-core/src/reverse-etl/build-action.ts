@@ -3,7 +3,7 @@
  *
  * Managed reverse-ETL (DB-driven, no `syncs/*.yml` / `actions/*.yml` on disk)
  * cannot use the disk parser (`parseReverseEtlProject`) or
- * `resolveAction(spec, projectRoot)`. These helpers assemble the same Dogsled
+ * `resolveAction(spec, projectRoot)`. These helpers assemble the same Bobsled Core
  * `Action` objects from in-memory inputs so a host application's
  * managed destination flow can stop hand-rolling the shapes.
  *
@@ -43,7 +43,7 @@ export interface BuildReverseEtlActionOptions {
 }
 
 /**
- * Build a Dogsled `Action` from a user-authored `ActionSpec` template plus an
+ * Build a Bobsled Core `Action` from a user-authored `ActionSpec` template plus an
  * integration slug — the in-memory equivalent of resolving an action off disk.
  *
  * Mirrors the app's `buildActionFromSpec` / `buildRestAction`:

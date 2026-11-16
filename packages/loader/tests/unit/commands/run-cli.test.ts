@@ -315,7 +315,7 @@ describe('registerRunCommand Snowflake workload identity option', () => {
     try {
       await program.parseAsync([
         'node',
-        'dogsled load',
+        'bobsled load',
         'run',
         '--dest',
         'snowflake',

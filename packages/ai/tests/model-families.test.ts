@@ -18,7 +18,7 @@ describe('AI Gateway model families', () => {
     }
   });
 
-  it('keeps family, version, and retired IDs aligned with Dogsled', () => {
+  it('keeps family, version, and retired IDs aligned with Bobsled Core', () => {
     const bobsledModelIds = {
       'alibaba/qwen': ['alibaba/qwen3.8-27b'],
       'anthropic/claude-opus': ['anthropic/claude-opus-5.5', 'anthropic/claude-opus-5'],

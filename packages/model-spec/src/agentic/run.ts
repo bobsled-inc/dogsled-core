@@ -273,7 +273,7 @@ async function executeOwnedAgenticRun(
         } catch {
           throw new AgenticStateError('corrupt', {
             reason: 'invalid_checkpoint',
-            message: `The saved checkpoint for run "${key.id}" failed validation. It may be damaged or written by a different Dogsled version.`,
+            message: `The saved checkpoint for run "${key.id}" failed validation. It may be damaged or written by a different Bobsled Core version.`,
           });
         }
       });

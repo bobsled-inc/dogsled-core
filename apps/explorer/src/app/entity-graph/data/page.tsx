@@ -190,7 +190,7 @@ export default function EntityGraphDataPage() {
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <PageHeader
         breadcrumbs={[
-          { label: 'Dogsled', href: '/' },
+          { label: 'Bobsled Core', href: '/' },
           { label: 'Entity Graph', href: '/entity-graph' },
           { label: 'Data' },
         ]}

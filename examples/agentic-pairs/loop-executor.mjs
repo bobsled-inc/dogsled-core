@@ -174,7 +174,7 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
       await request.budget.settle(receipt, usage);
       if (usage.status === 'unknown') {
         total = usage;
-        // Provider errors and missing usage are usually transient; let Dogsled retry.
+        // Provider errors and missing usage are usually transient; let Bobsled Core retry.
         if (!result.ok && result.error === 'schema_violation')
           return failure('invalid_output', 'validation', true);
         const code = result.ok
@@ -286,7 +286,7 @@ export function createLoopExecutor(call = generateStructured, { maxTurns } = {})
         history.push({ request: decision, response });
       } catch (error) {
         if (signal.aborted) return failure('source_failed', 'cancellation');
-        // Dogsled's source gate sends only safe reasons, such as a bad argument name.
+        // Bobsled Core's source gate sends only safe reasons, such as a bad argument name.
         refuse(error instanceof Error ? error.message : 'The source request failed.');
       }
     }

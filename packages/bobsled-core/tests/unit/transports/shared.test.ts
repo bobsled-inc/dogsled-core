@@ -102,7 +102,7 @@ describe('classifyTransportError', () => {
   it('keeps a runtime auth failure without a status an auth error', () => {
     expect(classifyTransportError(runtimeError({ kind: 'auth' }))).toEqual({
       code: 'auth_error',
-      message: 'Dogsled could not authenticate with the provider.',
+      message: 'Bobsled Core could not authenticate with the provider.',
       retryable: false,
     });
   });

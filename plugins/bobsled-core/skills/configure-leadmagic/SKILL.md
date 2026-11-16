@@ -14,7 +14,7 @@ Use this skill when a user wants LeadMagic to verify work emails from name and c
 2. Recommend a v1 seed schema with those exact fields.
 3. Generate the `extract-intents.yml` step block for `leadmagic/email_finder`.
 4. Warn that LeadMagic only charges on successful matches, so estimates should be treated as upper bounds.
-5. Recommend `dogsled extract estimate --plan <name>` before `dogsled extract run --plan <name>`.
+5. Recommend `bobsled extract estimate --plan <name>` before `bobsled extract run --plan <name>`.
 
 ## Seed Schema
 

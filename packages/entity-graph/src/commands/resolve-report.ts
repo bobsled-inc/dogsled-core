@@ -1,5 +1,5 @@
 /**
- * `dogsled entity-graph resolve report` handler.
+ * `bobsled entity-graph resolve report` handler.
  *
  * Extracted from resolve.ts to keep that module under the source-file budget.
  */

@@ -1,7 +1,7 @@
 /**
  * `@bobsled-inc/skills` — package root entry point.
  *
- * Re-exports the internal Dogsled Skills manifest API. The `./dogsled` subpath is
+ * Re-exports the internal Bobsled Core Skills manifest API. The `./bobsled` subpath is
  * the same clean island for consumers that want only the manifest
  * surface without any transitive workspace dependencies. Mirrors the
  * `@bobsled-inc/integrations` / `@bobsled-inc/integrations/catalog`

@@ -2,12 +2,12 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Generates typed SDK files from a Dogsled entity graph inventory.
+Generates typed SDK files from a Bobsled Core entity graph inventory.
 
 ## CLI
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
+bobsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 The emitted TypeScript SDK includes:
@@ -44,8 +44,8 @@ const executor: BobsledEntityExecutor = {
   },
 };
 
-const dogsled = createBobsledClient(executor);
-const customer = await dogsled.entity.customer
+const bobsled = createBobsledClient(executor);
+const customer = await bobsled.entity.customer
   .findBy({ domain: 'acme.com' })
   .withDocuments()
   .first();

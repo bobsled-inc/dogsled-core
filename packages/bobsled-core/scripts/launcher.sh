@@ -6,7 +6,7 @@ SYMLINK_DEPTH=0
 while [ -L "$SOURCE" ]; do
   SYMLINK_DEPTH=$((SYMLINK_DEPTH + 1))
   if [ "$SYMLINK_DEPTH" -gt 10 ]; then
-    echo "Error: Too many symlink levels resolving dogsled launcher" >&2
+    echo "Error: Too many symlink levels resolving bobsled launcher" >&2
     exit 1
   fi
   SOURCE_DIR="$(cd "$(dirname "$SOURCE")" && pwd)"

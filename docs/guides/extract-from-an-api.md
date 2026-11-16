@@ -1,6 +1,6 @@
 # Extract from an API
 
-This guide shows how to write an integration for a REST API that Dogsled does not
+This guide shows how to write an integration for a REST API that Bobsled Core does not
 ship: authentication, pagination and incremental loads. The examples use a fictional
 help-desk API at `https://api.example.com/v1` that returns tickets.
 
@@ -9,10 +9,10 @@ start from that instead: see [Use library integrations](use-library-integrations
 
 ## Scaffold the files
 
-`dogsled extract init` writes an `extractor.yml`, an integration and one resource:
+`bobsled extract init` writes an `extractor.yml`, an integration and one resource:
 
 ```bash
-dogsled extract init . --integration helpdesk
+bobsled extract init . --integration helpdesk
 rm resources/helpdesk/items.yml
 ```
 
@@ -53,7 +53,7 @@ transport:
 
 `${{ env.HELPDESK_TOKEN }}` reads the token from an environment variable when the
 request is sent. List the name in `auth_env_vars` before using it. The value stays
-out of your files. Dogsled also keeps it out of its output, logs and state files.
+out of your files. Bobsled Core also keeps it out of its output, logs and state files.
 
 ## Describe a resource
 
@@ -106,9 +106,9 @@ extract:
 - `record_path` selects the list of records in each response.
 - `output` maps each column to a JSONPath inside one record, with a type: `string`,
   `integer`, `number`, `boolean`, `timestamp`, `array` or `object`.
-- `pagination` tells Dogsled how to ask for the next page. Here it adds
+- `pagination` tells Bobsled Core how to ask for the next page. Here it adds
   `page=2`, `page=3` and so on until it reaches `meta.total_pages`.
-- `incremental` makes later runs ask only for changes. Dogsled remembers the
+- `incremental` makes later runs ask only for changes. Bobsled Core remembers the
   highest `updated_at` it has seen and sends it as `updated_since`.
 - `primary_key` lets the loader merge changed rows instead of appending duplicates.
 
@@ -118,10 +118,10 @@ Check the files, and that every environment variable they use is set:
 
 ```bash
 export HELPDESK_TOKEN=your-token
-dogsled extract validate helpdesk --check-env
+bobsled extract validate helpdesk --check-env
 ```
 
-`dogsled extract scaffold-test helpdesk` then calls the API with your credentials and
+`bobsled extract scaffold-test helpdesk` then calls the API with your credentials and
 reads the first page of each resource. That confirms that authentication and the
 `record_path` work before you run a full extraction:
 
@@ -132,13 +132,13 @@ Result: 1 passed of 1 resources
 
 ## Run it
 
-Extract the tickets and load them into DuckDB. `--advance-state` tells Dogsled to
+Extract the tickets and load them into DuckDB. `--advance-state` tells Bobsled Core to
 save the incremental cursor when the extraction succeeds:
 
 ```bash
-dogsled extract run --integration helpdesk tickets --advance-state --quiet \
-  | dogsled load run --dest duckdb --db-path helpdesk.duckdb
-dogsled query "SELECT id, status, updated_at FROM tickets ORDER BY id" --db-path helpdesk.duckdb
+bobsled extract run --integration helpdesk tickets --advance-state --quiet \
+  | bobsled load run --dest duckdb --db-path helpdesk.duckdb
+bobsled query "SELECT id, status, updated_at FROM tickets ORDER BY id" --db-path helpdesk.duckdb
 ```
 
 ```text
@@ -171,9 +171,9 @@ The next run sends `updated_since=2026-01-07T00:00:00.000Z`, so the API returns 
 tickets that changed since then. Here, ticket 1 was closed and ticket 8 was opened:
 
 ```bash
-dogsled extract run --integration helpdesk tickets --advance-state --quiet \
-  | dogsled load run --dest duckdb --db-path helpdesk.duckdb
-dogsled query "SELECT count(*) AS tickets, count(*) FILTER (WHERE status = 'open') AS open FROM tickets" \
+bobsled extract run --integration helpdesk tickets --advance-state --quiet \
+  | bobsled load run --dest duckdb --db-path helpdesk.duckdb
+bobsled query "SELECT count(*) AS tickets, count(*) FILTER (WHERE status = 'open') AS open FROM tickets" \
   --db-path helpdesk.duckdb
 ```
 
@@ -192,9 +192,9 @@ only after a successful load, capture the extraction to a file, load the file, a
 then commit the state from the same file:
 
 ```bash
-dogsled extract run --integration helpdesk tickets --quiet > capture.jsonl
-dogsled load run --dest duckdb --db-path helpdesk.duckdb < capture.jsonl
-dogsled extract commit-state --integration helpdesk --capture-file capture.jsonl
+bobsled extract run --integration helpdesk tickets --quiet > capture.jsonl
+bobsled load run --dest duckdb --db-path helpdesk.duckdb < capture.jsonl
+bobsled extract commit-state --integration helpdesk --capture-file capture.jsonl
 ```
 
 To start again from the beginning, add `--full-refresh` to `extract run`. To keep
@@ -245,13 +245,13 @@ cursor value as `cursor_param`. Three other strategies exist:
 
 ## Other extract commands
 
-- `dogsled extract discover helpdesk` lists the resources of an integration.
-- `dogsled extract health-check helpdesk` makes one lightweight request.
-- `dogsled extract lookup --integration helpdesk --resource <name> --input id=42`
+- `bobsled extract discover helpdesk` lists the resources of an integration.
+- `bobsled extract health-check helpdesk` makes one lightweight request.
+- `bobsled extract lookup --integration helpdesk --resource <name> --input id=42`
   fetches single records when a resource defines a `lookup` operation.
-- `dogsled extract topup --integration helpdesk --resource tickets --since 2d`
+- `bobsled extract topup --integration helpdesk --resource tickets --since 2d`
   extracts a cursor range without moving the saved state.
-- `dogsled extract verify helpdesk` runs the offline checks that library
+- `bobsled extract verify helpdesk` runs the offline checks that library
   integrations must pass, such as a `meta.yml` with a documentation link and the
   declared environment variables, and compares the resources with an OpenAPI
   document when one is configured.

@@ -149,7 +149,7 @@ function writeHumanSummary(result: RunProjectResult, options: OutputOptions): nu
     for (const group of result.byIntegration) {
       // The SQL plan itself is data, not chrome — write it to stdout directly
       // so consumers can pipe it into a `.sql` file. Diagnostic chrome above
-      // and below goes through fmt.info per Dogsled conventions.
+      // and below goes through fmt.info per Bobsled Core conventions.
       if (multi) process.stdout.write(`-- integration: ${group.handle}\n`);
       const statementModels = new Set(group.statements.map((statement) => statement.modelName));
       for (const statement of group.statements) {
@@ -373,7 +373,7 @@ function requireValue(args: string[], index: number, flag: string): string {
 }
 
 function shouldAutoActivateJson(options: ParsedModelRunArgs): boolean {
-  // Mirrors the Dogsled-wide convention: JSON mode auto-activates in CI,
+  // Mirrors the Bobsled Core-wide convention: JSON mode auto-activates in CI,
   // when stdout is not a TTY, or when BOBSLED_CORE_OUTPUT_FORMAT=json is set.
   // --yaml or explicit --json take precedence and disable auto-activation.
   if (options.json || options.yaml) return false;
@@ -426,7 +426,7 @@ export async function runBobsledModelRunCommand(args: string[]): Promise<number>
   ]);
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--help' || args[index] === '-h' || args[index] === 'help') {
-      process.stdout.write(`Usage: dogsled model run [models...] [options]
+      process.stdout.write(`Usage: bobsled model run [models...] [options]
 
 Run models in dependency order.
 
@@ -434,7 +434,7 @@ Run models in dependency order.
   --full-refresh                   Rebuild models
   --dry-run                        Show the plan without execution
   --secrets <path>                  Load secret environment values
-  --project-root <path>             Select the Dogsled Project root
+  --project-root <path>             Select the Bobsled Core Project root
   --agent-allow-billable-source <ref>  Allow paid queries for this source (repeatable)
   --agent-executor <path|typesafe>  Local executor module or built-in Jev classification
   --agent-run-id <id>               Run identity (default: new UUID)
@@ -543,7 +543,7 @@ Run models in dependency order.
       credentialsTokenCommand: process.env['BOBSLED_CORE_CREDENTIALS_TOKEN_COMMAND'],
       crossWarehousePublisher: publishCrossWarehouse,
       // Route runProject's lifecycle callbacks through the formatter so
-      // --quiet, --verbose, --json all behave consistently across Dogsled CLI.
+      // --quiet, --verbose, --json all behave consistently across Bobsled Core CLI.
       onInfo: silent ? undefined : (msg: string) => fmt.info(msg, outputOptions),
       onSuccess: silent ? undefined : (msg: string) => fmt.success(msg, outputOptions),
       onError: machineOutput ? undefined : (msg: string) => fmt.error(msg, outputOptions),

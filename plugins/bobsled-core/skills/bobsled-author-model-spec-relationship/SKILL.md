@@ -72,7 +72,7 @@ that point at the same underlying table.
    `one_to_one`, `one_to_many`, `many_to_one`, `many_to_many`. This
    drives the Data Estate UI and helps the query planner reason
    about join fan-out before generating SQL.
-5. **Validate.** `dogsled model validate --integration <handle>`
+5. **Validate.** `bobsled model validate --integration <handle>`
    checks that both models exist; column existence inside the join
    pairs is **not** validated (see caveats below).
 

@@ -19,7 +19,7 @@ describe('pipeline export content helpers', () => {
   it('quotes CLI arguments that contain spaces', () => {
     expect(
       renderPipelineCommand(['--db-path', './My Data/pipeline.duckdb', '--resource', 'customers'])
-    ).toBe("dogsled pipeline --db-path './My Data/pipeline.duckdb' --resource customers");
+    ).toBe("bobsled pipeline --db-path './My Data/pipeline.duckdb' --resource customers");
   });
 
   it('exports no workflow generator or deploy bundle', () => {
@@ -53,7 +53,7 @@ describe('pipeline export content helpers', () => {
 
   it('uses positional SQL for load query snippets', () => {
     expect(generateCliCommands(TEST_CONFIG)).toContain(
-      `dogsled load query --db-path './My Data/pipeline.duckdb' 'SELECT COUNT(*) FROM stripe__customers'`
+      `bobsled load query --db-path './My Data/pipeline.duckdb' 'SELECT COUNT(*) FROM stripe__customers'`
     );
     expect(generateCliCommands(TEST_CONFIG)).not.toContain('--sql');
   });

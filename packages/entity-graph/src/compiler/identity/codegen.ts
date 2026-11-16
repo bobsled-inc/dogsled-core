@@ -83,7 +83,7 @@ function combinePreambles(...parts: string[]): string {
 
 /**
  * Compile a resolution spec through the threshold stage.
- * This is the `dogsled entity-graph resolve run` pipeline — standardize through routing.
+ * This is the `bobsled entity-graph resolve run` pipeline — standardize through routing.
  */
 export function compileResolutionRun(
   spec: ResolvedResolutionSpec,
@@ -226,7 +226,7 @@ export function compileResolutionRun(
 
 /**
  * Compile the entity serving profile stage.
- * This is the `dogsled entity-graph resolve profile` pipeline — entity profile, trust, activations.
+ * This is the `bobsled entity-graph resolve profile` pipeline — entity profile, trust, activations.
  */
 export function compileResolutionProfile(
   spec: ResolvedResolutionSpec,
@@ -256,7 +256,7 @@ export function compileResolutionProfile(
 
 /**
  * Compile the clustering stage.
- * This is the `dogsled entity-graph resolve cluster` pipeline — clusters + crosswalks.
+ * This is the `bobsled entity-graph resolve cluster` pipeline — clusters + crosswalks.
  */
 export function compileResolutionCluster(
   spec: ResolvedResolutionSpec,
@@ -311,7 +311,7 @@ export function compileResolutionCluster(
 
 /**
  * Compile the full resolution pipeline (run + cluster).
- * Used for compile-to-file output (`dogsled entity-graph resolve compile`).
+ * Used for compile-to-file output (`bobsled entity-graph resolve compile`).
  */
 export function compileResolution(
   spec: ResolvedResolutionSpec,

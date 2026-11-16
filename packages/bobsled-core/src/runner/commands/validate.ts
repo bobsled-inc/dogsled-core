@@ -14,7 +14,7 @@ export function registerRunnerValidateCommand(runner: Command): void {
     .command('validate')
     .description('Validate bobsled.yml configuration')
     .option('--config <path>', 'Path to bobsled.yml')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option('--yaml', 'Output as YAML')
     .option('--strict', 'Treat warnings as errors')
     .option('--json', 'Output as JSON')
@@ -48,7 +48,7 @@ export function registerRunnerValidateCommand(runner: Command): void {
         });
         if (!project) {
           throw new CommandError(
-            'No Dogsled Project found. Pass --project-root <path> to select one.',
+            'No Bobsled Core Project found. Pass --project-root <path> to select one.',
             2
           );
         }

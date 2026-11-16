@@ -1,6 +1,6 @@
 # Use library integrations
 
-Dogsled ships 83 ready-made integrations for common APIs. Each one is an
+Bobsled Core ships 83 ready-made integrations for common APIs. Each one is an
 integration file plus a set of resources, already mapped to typed columns, and
 each lists the environment variables it needs. This guide shows how to find one,
 run it, and copy it into your project when you want to change it. The full list is
@@ -9,7 +9,7 @@ in the [connector reference](../reference/connectors.md#library-integrations).
 ## Find an integration
 
 ```bash
-dogsled integrations list --category finance
+bobsled integrations list --category finance
 ```
 
 ```text
@@ -27,7 +27,7 @@ zuora        api   finance   6 resources
 Show an integration's resources and the credentials it needs:
 
 ```bash
-dogsled integrations show github
+bobsled integrations show github
 ```
 
 ```text
@@ -46,7 +46,7 @@ GITHUB_TOKEN — Personal access token or GitHub App token
 Show one resource, with its endpoint and columns:
 
 ```bash
-dogsled integrations show github issues
+bobsled integrations show github issues
 ```
 
 ```text
@@ -65,9 +65,9 @@ repository that `repos` returns, so you select both:
 
 ```bash
 export GITHUB_TOKEN=<your token>
-dogsled extract run --integration github repos issues --input org=octo-org --quiet \
-  | dogsled load run --dest duckdb --db-path github.duckdb
-dogsled query "SELECT repository_full_name, count(*) AS issues FROM issues GROUP BY 1 ORDER BY 1" \
+bobsled extract run --integration github repos issues --input org=octo-org --quiet \
+  | bobsled load run --dest duckdb --db-path github.duckdb
+bobsled query "SELECT repository_full_name, count(*) AS issues FROM issues GROUP BY 1 ORDER BY 1" \
   --db-path github.duckdb
 ```
 
@@ -86,7 +86,7 @@ To check an integration without credentials or network access, run its recorded
 fixtures through the extractor:
 
 ```bash
-dogsled extract verify github --mock
+bobsled extract verify github --mock
 ```
 
 ```text
@@ -97,11 +97,11 @@ github  (19 resources, 19 mock resources, 19 mock fixtures, 0 errors
 
 ## Customize it
 
-`dogsled integrations init` copies the integration and the resources you choose
+`bobsled integrations init` copies the integration and the resources you choose
 into your project:
 
 ```bash
-dogsled integrations init github --resources repos,issues
+bobsled integrations init github --resources repos,issues
 ```
 
 ```text
@@ -117,11 +117,11 @@ A file in your project takes the place of the built-in file with the same name, 
 you can edit the copied resources: drop columns, change defaults, or add
 incremental settings. Resources you did not copy still come from the library.
 
-Run `dogsled extract validate github` after editing.
+Run `bobsled extract validate github` after editing.
 
 ## Generate an integration from OpenAPI
 
-If an API publishes an OpenAPI document, `dogsled extract generate` writes an
+If an API publishes an OpenAPI document, `bobsled extract generate` writes an
 integration and one resource per `GET` endpoint. It reads a local file or an HTTPS
 URL. For a small fictional inventory API:
 
@@ -165,8 +165,8 @@ paths:
 ```
 
 ```bash
-dogsled extract generate openapi.yaml --integration inventory
-dogsled extract validate inventory
+bobsled extract generate openapi.yaml --integration inventory
+bobsled extract validate inventory
 ```
 
 ```text
@@ -184,12 +184,12 @@ response property to a typed column and detects page-number pagination from the
 `--tags` limits generation to tagged operations, and `--dry-run` prints the YAML
 instead of writing files.
 
-Later, `dogsled extract check inventory --openapi openapi.yaml` compares your edited
+Later, `bobsled extract check inventory --openapi openapi.yaml` compares your edited
 files with a newer version of the document and reports drift.
 
 ## Request a new integration
 
 If an API you need is missing, open a connector request in
-[GitHub Discussions](https://github.com/bobsled-inc/dogsled-core/discussions/new?category=connector-requests)
+[GitHub Discussions](https://github.com/bobsled-inc/bobsled-core/discussions/new?category=connector-requests)
 with the API, its authentication type, the objects you need and a synthetic
 response sample.

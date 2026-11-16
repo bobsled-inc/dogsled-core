@@ -478,7 +478,7 @@ describe('maintainer decision packet', () => {
     const verification = { verified: true, violations: [] };
     const cleanPacket = buildPacket(normalizedFixture(), verification);
     expect(cleanPacket).toContain(
-      '- [x] Retired GAR settings are absent from user npm configuration; Dogsled Next uses npmjs.org.'
+      '- [x] Retired GAR settings are absent from user npm configuration; Bobsled Core Next uses npmjs.org.'
     );
 
     const staleGar = createFinding({

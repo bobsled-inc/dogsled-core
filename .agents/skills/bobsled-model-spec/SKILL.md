@@ -10,7 +10,7 @@ triggers:
   - materialization strategy
   - write a data model spec
   - compile run test lineage
-  - dogsled model cli
+  - bobsled model cli
   - how do model spec yaml specs work
 ---
 

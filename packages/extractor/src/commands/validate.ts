@@ -1,6 +1,6 @@
 import { assertDeclaredEnvironmentReferences } from '@bobsled-inc/protocol';
 /**
- * `dogsled extract validate` command.
+ * `bobsled extract validate` command.
  */
 
 import * as path from 'node:path';

@@ -39,14 +39,14 @@ describe('published inventory', () => {
     const sbom = {
       bomFormat: 'CycloneDX',
       components: [],
-      metadata: { component: { 'bom-ref': 'dogsled' } },
+      metadata: { component: { 'bom-ref': 'bobsled' } },
     };
     mergeBundledComponents(sbom, packages);
     expect(sbom.components).toHaveLength(packages.length);
     expect(sbom.components.find((component) => component.name === 'commander')).toMatchObject({
       type: 'library',
       purl: expect.stringMatching(/^pkg:npm\/commander@/),
-      properties: [{ name: 'dogsled:inlined', value: 'true' }],
+      properties: [{ name: 'bobsled:inlined', value: 'true' }],
       licenses: expect.any(Array),
     });
     mergeBundledComponents(sbom, packages);

@@ -54,7 +54,7 @@ describe('retry release ancestry', () => {
       GITHUB_SHA: r.base,
       RELEASE_MODE: 'bootstrap',
       GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'bobsled-inc/dogsled-core',
+      GITHUB_REPOSITORY: 'bobsled-inc/bobsled-core',
     };
     const tag = spawnSync(process.execPath, ['scripts/release/version.mjs', 'verify-candidate'], {
       cwd: r.root,

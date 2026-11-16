@@ -1,7 +1,7 @@
 /**
  * Programmatic run-state I/O on `runProject`.
  *
- * When the caller supplies `opts.state`, Dogsled must:
+ * When the caller supplies `opts.state`, Bobsled Core must:
  *   - skip reading `.bobsled/model-spec/run-state.json` entirely (even when present);
  *   - skip writing `.bobsled/model-spec/run-state.json` entirely;
  *   - return the post-run state on `result.state` for the orchestrator to persist.
@@ -150,7 +150,7 @@ describe('runProject — programmatic state I/O', () => {
     expect(result.state.models['duckdb.stg_orders']).toBeDefined();
     expect(result.state.models['duckdb.stg_orders']?.materialization).toBe('view');
 
-    // Critical: the orchestrator owns persistence. Dogsled must not have written
+    // Critical: the orchestrator owns persistence. Bobsled Core must not have written
     // the file behind the caller's back.
     expect(fsSync.existsSync(path.join(projectDir, '.bobsled/model-spec', 'run-state.json'))).toBe(
       false
@@ -159,7 +159,7 @@ describe('runProject — programmatic state I/O', () => {
 
   it('ignores a stale on-disk run-state.json when state is supplied programmatically', async () => {
     // Spec scenario 6: the tempdir may contain a stale .bobsled/model-spec/run-state.json
-    // from a different project. Dogsled must not read it.
+    // from a different project. Bobsled Core must not read it.
     const projectDir = await writeMinimalProject();
     await writeFile(
       path.join(projectDir, '.bobsled/model-spec', 'run-state.json'),
@@ -183,7 +183,7 @@ describe('runProject — programmatic state I/O', () => {
     });
 
     expect(result.ok).toBe(true);
-    // The stale entry must not appear in the post-run state — Dogsled read from
+    // The stale entry must not appear in the post-run state — Bobsled Core read from
     // `priorState`, not from disk.
     expect(result.state.models['duckdb.some_unrelated_model']).toBeUndefined();
     expect(result.state.models['duckdb.stg_orders']).toBeDefined();
@@ -252,7 +252,7 @@ describe('runProject — programmatic state I/O', () => {
 
   it('preserves prior-state entries for models not in the current run filter', async () => {
     // Spec §"Edge cases", item 3: "A model in the prior state that isn't in
-    // the current run's `models:` filter. Dogsled should preserve the prior
+    // the current run's `models:` filter. Bobsled Core should preserve the prior
     // entry untouched in the post-run state."
     const projectDir = await writeMinimalProject();
     const { customRunners } = makeMockRunner();
@@ -271,7 +271,7 @@ describe('runProject — programmatic state I/O', () => {
     const priorState: RunState = {
       models: {
         // Not part of this project — emulates the orchestrator persisting a
-        // union of state across multiple projects/runs. Dogsled must round-
+        // union of state across multiple projects/runs. Bobsled Core must round-
         // trip this entry through to `result.state` even though it's never
         // touched by the current invocation.
         'duckdb.some_other_model': { ...untouched },

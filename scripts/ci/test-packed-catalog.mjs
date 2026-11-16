@@ -57,7 +57,7 @@ try {
   });
   const tarballs = readdirSync(packDir).filter((entry) => entry.endsWith('.tgz'));
   if (tarballs.length !== 1) {
-    throw new Error('Expected one packed Dogsled tarball; npm pack output was ' + packOutput);
+    throw new Error('Expected one packed Bobsled Core tarball; npm pack output was ' + packOutput);
   }
 
   writeFileSync(
@@ -85,10 +85,10 @@ try {
     "await import('@aws-sdk/client-s3');",
     "const catalog = await import('@bobsled-inc/bobsled-core/integrations/catalog');",
     "if (typeof catalog.probeApiResource !== 'function') {",
-    "  throw new Error('probeApiResource export missing from packed Dogsled package');",
+    "  throw new Error('probeApiResource export missing from packed Bobsled Core package');",
     '}',
     "if (typeof catalog.buildCatalogManifest !== 'function') {",
-    "  throw new Error('buildCatalogManifest export missing from packed Dogsled package');",
+    "  throw new Error('buildCatalogManifest export missing from packed Bobsled Core package');",
     '}',
   ].join('\n');
   execFileSync(process.execPath, ['--input-type=module', '--eval', catalogSmokeScript], {
@@ -197,10 +197,10 @@ const {
 const { BUILT_IN_VALIDATION_CATALOG } = await import('@bobsled-inc/bobsled-core/validation');
 
 if (!BUILT_IN_VALIDATION_CATALOG.getIntegration('posthog').resource_names.includes('events')) {
-  throw new Error('PostHog validation metadata missing from public Dogsled surface');
+  throw new Error('PostHog validation metadata missing from public Bobsled Core surface');
 }
 if (!BUILT_IN_VALIDATION_CATALOG.getIntegration('notion').resource_names.includes('pages_rest')) {
-  throw new Error('Notion validation metadata missing from public Dogsled surface');
+  throw new Error('Notion validation metadata missing from public Bobsled Core surface');
 }
 
 function writeProject(name, source, resources, via) {
@@ -433,7 +433,7 @@ await assertValidationFailure(
   ].map((match) => match[1]);
   if (betterCallSnapshots.length !== 1) {
     throw new Error(
-      `Expected one better-call snapshot with Dogsled and better-auth, found ${betterCallSnapshots.join(', ') || 'none'}`
+      `Expected one better-call snapshot with Bobsled Core and better-auth, found ${betterCallSnapshots.join(', ') || 'none'}`
     );
   }
   if (!betterCallSnapshots[0].includes('(zod@4.')) {
@@ -454,7 +454,7 @@ await assertValidationFailure(
   });
   if (leakedDependencies.length > 0) {
     throw new Error(
-      `Staged Dogsled manifest leaked inlined AI dependencies: ${leakedDependencies.join(', ')}`
+      `Staged Bobsled Core manifest leaked inlined AI dependencies: ${leakedDependencies.join(', ')}`
     );
   }
 

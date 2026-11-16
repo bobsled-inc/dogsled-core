@@ -3,15 +3,15 @@
 This committed project contains a fictional guide, one Skill and a valid empty
 pipeline configuration. No AI provider call or account is needed.
 
-1. With Dogsled installed, copy the example from the checkout root:
+1. With Bobsled Core installed, copy the example from the checkout root:
 
    ```bash
    cp -R examples/doctor-skills /tmp/bobsled-doctor-skills
    cd /tmp/bobsled-doctor-skills
-   dogsled skill configure
-   dogsled skill validate
-   dogsled skill list
-   dogsled doctor --json
+   bobsled skill configure
+   bobsled skill validate
+   bobsled skill list
+   bobsled doctor --json
    ```
 
    Expect `shop-overview` in the list, valid Skills and `valid: true` from doctor.
@@ -21,7 +21,7 @@ pipeline configuration. No AI provider call or account is needed.
    ```bash
    mkdir -p models
    cp broken-model.example.txt models/broken.yml
-   dogsled doctor --json
+   bobsled doctor --json
    ```
 
    Expect a nonzero exit and a structured error naming `missing_source`.
@@ -30,7 +30,7 @@ pipeline configuration. No AI provider call or account is needed.
 
    ```bash
    rm models/broken.yml
-   dogsled doctor --json
+   bobsled doctor --json
    ```
 
    Expect `valid: true` again. `pnpm e2e:doctor-skills` runs these same steps in a

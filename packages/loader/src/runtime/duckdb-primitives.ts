@@ -207,7 +207,7 @@ export function mapDuckDbType(column: ColumnType | SchemaColumn): string {
 /** Regex matching valid DuckDB memory-limit values (e.g. "512MB", "2.5GiB"). */
 export const MEMORY_LIMIT_PATTERN = /^\d+(\.\d+)?\s*(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$/i;
 
-/** Build a SQL column definition string for a Dogsled protocol schema column. */
+/** Build a SQL column definition string for a Bobsled Core protocol schema column. */
 export function buildColumnDef(col: SchemaColumn): string {
   return `${quoteIdentifier(col.name)} ${mapDuckDbType(col)}`;
 }

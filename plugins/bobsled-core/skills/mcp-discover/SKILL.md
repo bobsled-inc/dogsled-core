@@ -1,12 +1,12 @@
 ---
 name: mcp-discover
-description: Discover MCP server tools and scaffold Dogsled source/resource YAML
-  using dogsled extract mcp commands.
+description: Discover MCP server tools and scaffold Bobsled Core source/resource
+  YAML using bobsled extract mcp commands.
 ---
 
 # MCP Discover
 
-Use this skill when adding or extending a Dogsled Source from an MCP server.
+Use this skill when adding or extending a Bobsled Core Source from an MCP server.
 
 ## Workflow
 
@@ -27,7 +27,7 @@ Never put literal secrets in YAML. Use env-var indirection.
 ### 2. List Tools
 
 ```bash
-dogsled extract mcp list-tools <integration> --format json
+bobsled extract mcp list-tools <integration> --format json
 ```
 
 Prefer read-only list/search/get tools. This command enumerates the tools exposed by the configured MCP transport and does not write files.
@@ -37,13 +37,13 @@ Prefer read-only list/search/get tools. This command enumerates the tools expose
 Preview the full server:
 
 ```bash
-dogsled extract mcp discover <integration> --format json
+bobsled extract mcp discover <integration> --format json
 ```
 
 Write scaffold files after reviewing the preview:
 
 ```bash
-dogsled extract mcp discover <integration> --write
+bobsled extract mcp discover <integration> --write
 ```
 
 Use `--no-dry-run` when you want to rely only on declared `outputSchema` and avoid probing tools that do not expose one. `--concurrency <n>` controls dry-run probe parallelism.
@@ -62,9 +62,9 @@ Open every generated resource and inspect `_scaffold_metadata`.
 ### 5. Validate
 
 ```bash
-dogsled extract validate <integration>
-dogsled extract verify <integration>
-dogsled extract verify <integration> --mock
+bobsled extract validate <integration>
+bobsled extract verify <integration>
+bobsled extract verify <integration> --mock
 pnpm --filter @bobsled-inc/extractor test:unit
 pnpm --filter @bobsled-inc/integrations test:unit
 ```
@@ -76,7 +76,7 @@ Fix all validation errors. Warnings about `_scaffold_metadata` mean the resource
 For any server/tool that required dry-run shape inference:
 
 ```bash
-dogsled extract mcp verify-redaction <integration> --tool <tool_name> --format json
+bobsled extract mcp verify-redaction <integration> --tool <tool_name> --format json
 ```
 
 Inspect the JSON payload and confirm sentinel secrets, tokens, and emails are redacted by `redactSensitiveValues` before using dry-run output as scaffold evidence.

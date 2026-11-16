@@ -111,7 +111,7 @@ updateVq({
 
 - Use `dryRun: true` for previews and diffs.
 - Leave `skipValidation` unset for normal edits.
-- Run `dogsled model validate` after substantial edits.
+- Run `bobsled model validate` after substantial edits.
 - Use lineage before removing source or model columns.
 - Use the returned `{ filePath, content }` instead of re-reading after a successful edit.
 
@@ -127,13 +127,13 @@ pnpm --filter @bobsled-inc/model-spec test -- tests/unit/edit
 After using the API to edit a real Model Spec project, run project validation:
 
 ```bash
-dogsled model validate --integration <handle>
+bobsled model validate --integration <handle>
 ```
 
 If the edit changes model expressions or removes columns, also run lineage:
 
 ```bash
-dogsled model lineage --integration <handle> --json
+bobsled model lineage --integration <handle> --json
 ```
 
 Full docs: `packages/model-spec/docs/programmatic-edit-api.md`.

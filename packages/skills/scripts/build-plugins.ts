@@ -12,7 +12,7 @@ const PLUGIN_PATH = 'plugins/bobsled-core';
 // Bump this when publishing a changed plugin bundle; CLI releases are separate.
 const PLUGIN_VERSION = '0.1.0';
 const DESCRIPTION =
-  'Set up local Dogsled Core projects, build data pipelines and models, and diagnose failures.';
+  'Set up local Bobsled Core projects, build data pipelines and models, and diagnose failures.';
 
 /** These paths are generated, committed, and installed without a build step. */
 export function renderPluginFiles(): Record<string, string> {
@@ -23,9 +23,9 @@ export function renderPluginFiles(): Record<string, string> {
     name: 'bobsled-core',
     version: PLUGIN_VERSION,
     description: DESCRIPTION,
-    author: { name: 'Dogsled maintainers' },
-    homepage: 'https://github.com/bobsled-inc/dogsled-core',
-    repository: 'https://github.com/bobsled-inc/dogsled-core',
+    author: { name: 'Bobsled Core maintainers' },
+    homepage: 'https://github.com/bobsled-inc/bobsled-core',
+    repository: 'https://github.com/bobsled-inc/bobsled-core',
     license: 'Apache-2.0',
   };
   files[`${PLUGIN_PATH}/.claude-plugin/plugin.json`] = json(identity);
@@ -35,23 +35,23 @@ export function renderPluginFiles(): Record<string, string> {
     extensions: {
       'com.openai': {
         interface: {
-          displayName: 'Dogsled Core',
-          shortDescription: 'Build local data pipelines and models with Dogsled Core',
-          developerName: 'Dogsled maintainers',
+          displayName: 'Bobsled Core',
+          shortDescription: 'Build local data pipelines and models with Bobsled Core',
+          developerName: 'Bobsled Core maintainers',
           category: 'Developer Tools',
         },
       },
     },
   });
   files['.claude-plugin/marketplace.json'] = json({
-    name: 'dogsled',
+    name: 'bobsled',
     description: DESCRIPTION,
-    owner: { name: 'Dogsled maintainers' },
+    owner: { name: 'Bobsled Core maintainers' },
     plugins: [{ name: 'bobsled-core', source: `./${PLUGIN_PATH}`, description: DESCRIPTION }],
   });
   files['.agents/plugins/marketplace.json'] = json({
-    name: 'dogsled',
-    interface: { displayName: 'Dogsled' },
+    name: 'bobsled',
+    interface: { displayName: 'Bobsled Core' },
     plugins: [
       {
         name: 'bobsled-core',
@@ -79,7 +79,7 @@ export function renderPluginFiles(): Record<string, string> {
           }
           const skillPath = relative(source, absolute);
           const destination = skillPath.startsWith('..')
-            ? `https://github.com/bobsled-inc/dogsled-core/blob/main/${repoPath.split(sep).join('/')}`
+            ? `https://github.com/bobsled-inc/bobsled-core/blob/main/${repoPath.split(sep).join('/')}`
             : relative(dirname(documentPath), absolute).split(sep).join('/');
           return `${start}${destination}${anchor ? `#${anchor}` : ''}${end}`;
         });

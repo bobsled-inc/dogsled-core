@@ -1,5 +1,5 @@
 /**
- * `diffSeeds` — Layer 3 for `dogsled model seed diff`: compare warehouse state
+ * `diffSeeds` — Layer 3 for `bobsled model seed diff`: compare warehouse state
  * with the local seed CSVs. Values are compared in canonical form per column
  * type (see `compiler/seed/compare.ts`).
  */

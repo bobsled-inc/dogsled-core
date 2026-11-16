@@ -215,7 +215,7 @@ function buildPreliminaryContext(
       integrationName,
       resource.tableResourceName ?? resource.name
     ),
-    description: `Raw ${integrationName} ${resource.name} records as extracted by Dogsled.`,
+    description: `Raw ${integrationName} ${resource.name} records as extracted by Bobsled Core.`,
     trust_tier: 'bronze',
     schema: {
       columns: outputFields.map(([fieldName, field]) => buildSourceColumn(fieldName, field)),

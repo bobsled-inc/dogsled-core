@@ -2,7 +2,7 @@
 
 ## Pipeline configuration files: orchestration
 
-The root `bobsled.yml` or `bobsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Dogsled merges those fragments by declared pipeline and destination names.
+The root `bobsled.yml` or `bobsled.yaml` can own the whole configuration. Larger Projects can split it into nested fragments with `type: pipeline_config`; Bobsled Core merges those fragments by declared pipeline and destination names.
 
 An extract pipeline pulls explicitly named resources from one source and loads them into one or more named destinations:
 
@@ -42,7 +42,7 @@ Rules:
 ### Static input matrices
 
 Use `input_matrix` when one Resource needs a fixed set of typed request
-combinations. Dogsled expands the axes in authored order and sends every tuple
+combinations. Bobsled Core expands the axes in authored order and sends every tuple
 through one extractor stream and destination table:
 
 ```yaml
@@ -71,7 +71,7 @@ first release supports matrices only on Resources with explicit
 `extract.incremental.strategy: full_refresh`, because tuple-specific state is
 not yet partitioned for cursor or filter strategies.
 
-Use one matrix per Resource. Dogsled includes the failing tuple in structured
+Use one matrix per Resource. Bobsled Core includes the failing tuple in structured
 progress diagnostics and keeps all successful tuples in the same output stream.
 
 ### Snowflake source warehouse selection
@@ -94,7 +94,7 @@ pipelines:
 `warehouse` is a stable key from the source connection's `warehouses` map. Use
 the key (for example `large`), never the provider warehouse name stored as its
 value (for example `LARGE_WH`). Omit the field to keep the source connection's
-default warehouse. Dogsled rejects unknown IDs, sources without a warehouse map,
+default warehouse. Bobsled Core rejects unknown IDs, sources without a warehouse map,
 non-Snowflake sources, and per-resource `warehouse` overrides.
 
 This selector changes only the Snowflake **source extraction session**. It does
@@ -121,10 +121,10 @@ pipelines:
 
 `destination_warehouse` is a stable ID from the managed destination connection,
 not a physical Snowflake name. The managed orchestrator validates the ID and
-resolves it once for execution; Dogsled preserves the ID in manifest v6 and
+resolves it once for execution; Bobsled Core preserves the ID in manifest v6 and
 accepts the resolved physical name only through its trusted programmatic API.
 Omitting the field keeps the saved destination default. It is not supported for
-concrete Dogsled destinations, missing destinations, `destinations` fan-out,
+concrete Bobsled Core destinations, missing destinations, `destinations` fan-out,
 model pipelines, or resource overrides.
 
 A Snowflake-to-Snowflake extract may set both selectors. `warehouse` applies
@@ -243,20 +243,20 @@ Accepted values:
 ### Repairing an existing schema drift
 
 `strict` is intentionally a detector and does not alter the destination. For
-Snowflake, Dogsled provides a narrowly scoped, one-shot reconciliation operation
+Snowflake, Bobsled Core provides a narrowly scoped, one-shot reconciliation operation
 for a known stream. The targeted loader form is
-`dogsled load run --dest snowflake --reconcile-schema <stream>`. An end-to-end
+`bobsled load run --dest snowflake --reconcile-schema <stream>`. An end-to-end
 run must provide protocol input and can resolve a project destination
 integration like this:
 
 ```bash
-dogsled extract run --integration <source> --full-refresh <stream> \
-  | dogsled load run --load-integration <snowflake_destination> \
+bobsled extract run --integration <source> --full-refresh <stream> \
+  | bobsled load run --load-integration <snowflake_destination> \
       --load-strategy full_refresh \
       --reconcile-schema <stream>
 ```
 
-Managed/background agents that cannot invoke a shell use the public Dogsled
+Managed/background agents that cannot invoke a shell use the public Bobsled Core
 runner API instead of trying to call the loader CLI directly:
 
 ```typescript
@@ -275,7 +275,7 @@ await runProjectPipeline({
 or entity resource names as `resources`, resolves them to the exact protocol
 stream names, and must be a subset of the selected resources. A managed task
 adapter should map its validated one-shot repair override to these typed API
-fields. The generated managed manifest command remains unchanged. Dogsled's MCP
+fields. The generated managed manifest command remains unchanged. Bobsled Core's MCP
 server currently exposes read-only `read_source` (and entity-graph reads); it
 does not execute pipelines or loader writes, so an MCP client must use the
 managed adapter's programmatic runner surface.
@@ -313,7 +313,7 @@ cursors for that run.
 
 ### Resource discovery and transports
 
-Use `dogsled integrations show <source>` to discover resources, variants, required environment variables, and transport ids. For a multi-transport source, a canonical entity such as `issues` may have variants such as `issues_graphql` and `issues_mcp`.
+Use `bobsled integrations show <source>` to discover resources, variants, required environment variables, and transport ids. For a multi-transport source, a canonical entity such as `issues` may have variants such as `issues_graphql` and `issues_mcp`.
 
 Resolution precedence is: strict variant name first; otherwise per-resource `via` → pipeline `via` → bundled resource `via` → source `default_transport`. A project-local resource under `resources/<source>/` overrides only the bundled resource with the same declared name; bundled siblings remain available. Single-transport sources ignore `via`. HTTP/REST/GraphQL is normally best for throughput and API-native pagination; MCP is useful when that is the available auth/tool surface. Do not claim one is cheaper or faster without provider evidence.
 
@@ -327,7 +327,7 @@ pipelines:
     resources: [charges, customers]
 ```
 
-Local `dogsled runner run` and `dogsled pipeline` support fan-out by extracting once and replaying to each loader; durable extractor state commits only after every destination succeeds. Scheduling and remote orchestration belong to the caller.
+Local `bobsled runner run` and `bobsled pipeline` support fan-out by extracting once and replaying to each loader; durable extractor state commits only after every destination succeeds. Scheduling and remote orchestration belong to the caller.
 
 An optional `embed:` block sits between extract and load and adds vector fields. It does not change extraction, filters, or cursor semantics. Route provider/model/stream configuration to `pipeline` or `ai-model-roles`, and destination configuration to `loader`. A model pipeline (`type: models`) materializes Model Spec models and is outside this skill.
 
@@ -488,7 +488,7 @@ Compile modes are:
 - `direct_arg`: put the value in an MCP/tool argument.
 - `filter_dsl`: build the provider's native filter expression/DSL.
 
-For `extract.where` pushdown, Dogsled matches the predicate field/operator against `query.filters.<field>.compile`. Matching `http_query` and `direct_arg` bindings push down and are removed from client-side evaluation; unmatched predicates remain client-side. `filter_dsl` is available to the query-resource backend but is not an `extract.where` pushdown mode. A pushed binding therefore carries correctness responsibility: verify that its provider parameter/tool argument has semantics equivalent to the authored predicate.
+For `extract.where` pushdown, Bobsled Core matches the predicate field/operator against `query.filters.<field>.compile`. Matching `http_query` and `direct_arg` bindings push down and are removed from client-side evaluation; unmatched predicates remain client-side. `filter_dsl` is available to the query-resource backend but is not an `extract.where` pushdown mode. A pushed binding therefore carries correctness responsibility: verify that its provider parameter/tool argument has semantics equivalent to the authored predicate.
 
 ## Incremental extraction and state
 
@@ -506,7 +506,7 @@ Choose the strategy explicitly:
 
 For both `filter` and `server_filter`, `initial_lookback_seconds` is mandatory for the first run unless a bookmark or explicit since override already exists; omission causes the run to fail. `lookback_seconds` (default `0`) replays before an existing bookmark for late arrivals. `window_size_seconds` splits the range into positive-sized windows and requires `until_argument`. `value_format` defaults to `iso8601` and may be `iso8601`, `date`, `unix_seconds`, or `unix_milliseconds`; it must match the provider request format and the cursor field's value semantics.
 
-Prefer `extract.incremental` over the accepted legacy top-level placement. The cursor field must be a declared output field. Incremental metadata plus a primary key lets Dogsled infer merge semantics; confirm the resolved load strategy during validation rather than assuming it.
+Prefer `extract.incremental` over the accepted legacy top-level placement. The cursor field must be a declared output field. Incremental metadata plus a primary key lets Bobsled Core infer merge semantics; confirm the resolved load strategy during validation rather than assuming it.
 
 State safety rules:
 
@@ -521,12 +521,12 @@ State safety rules:
 
 Use this order:
 
-1. `dogsled extract validate <source> --semantic-check=strict` — YAML, references, output semantics.
-2. `dogsled extract verify <source>` and `--mock` — static/OpenAPI/fixture and mocked behavior.
-3. For a new or changed HTTP API integration, run `dogsled extract scaffold-test <source>` with credentials. It intentionally rejects MCP, warehouse/database, and file-storage sources; use their source-specific checks plus a bounded extractor preview instead.
-4. `dogsled runner validate --strict` — resolve pipelines, resources, inputs, transports, destinations, and secrets.
+1. `bobsled extract validate <source> --semantic-check=strict` — YAML, references, output semantics.
+2. `bobsled extract verify <source>` and `--mock` — static/OpenAPI/fixture and mocked behavior.
+3. For a new or changed HTTP API integration, run `bobsled extract scaffold-test <source>` with credentials. It intentionally rejects MCP, warehouse/database, and file-storage sources; use their source-specific checks plus a bounded extractor preview instead.
+4. `bobsled runner validate --strict` — resolve pipelines, resources, inputs, transports, destinations, and secrets.
 5. Verify required environment references without printing secret values.
-6. Point the pipeline at a disposable destination, then run one resource with `dogsled runner run <pipeline> --resource <resource>`.
+6. Point the pipeline at a disposable destination, then run one resource with `bobsled runner run <pipeline> --resource <resource>`.
 7. Verify rows, schema, table names/load strategy, cursor behavior, stderr summaries, and destination queries.
 8. Restore the intended destination and review pipeline configuration changes. Scheduling belongs to the caller.
 
@@ -534,7 +534,7 @@ Do not put `--limit` on a real state-advancing acceptance run: it is a safe prev
 
 ## Troubleshooting map
 
-- Unknown/duplicate resource: inspect `dogsled integrations show`, strict variant names, `via` resolution, and the explicit `resources:` list.
+- Unknown/duplicate resource: inspect `bobsled integrations show`, strict variant names, `via` resolution, and the explicit `resources:` list.
 - Missing secret/auth failure: compare integration auth metadata and `$ENV_VAR` references; rerun validation. Never print secret values.
 - Zero records: inspect inputs, pagination, `record_path`, output mapping, predicate summaries, relative-duration clock behavior, and pushdown equivalence.
 - Repeated/omitted records: inspect pagination tokens/order, primary keys, incremental cursor ordering/lookback, and whether a preview run was mistaken for state advancement.

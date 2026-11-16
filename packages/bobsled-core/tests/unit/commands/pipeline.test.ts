@@ -257,7 +257,7 @@ describe('registerPipelineCommand', () => {
     const error = await program
       .parseAsync([
         'node',
-        'dogsled',
+        'bobsled',
         'pipeline',
         '--integration',
         'github',
@@ -288,7 +288,7 @@ describe('registerPipelineCommand', () => {
       await expect(
         program.parseAsync([
           'node',
-          'dogsled',
+          'bobsled',
           'pipeline',
           '--integration',
           'github',
@@ -317,7 +317,7 @@ describe('registerPipelineCommand', () => {
     }) as Mock;
     registerPipelineCommand(program, (resourceNames, options) =>
       runPipeline(resourceNames, options, {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
         env: { VERCEL_OIDC_TOKEN: token },
       })
@@ -326,7 +326,7 @@ describe('registerPipelineCommand', () => {
     const error = await program
       .parseAsync([
         'node',
-        'dogsled',
+        'bobsled',
         'pipeline',
         '--integration',
         'github',
@@ -357,7 +357,7 @@ describe('registerPipelineCommand', () => {
       const spawn = createAutoClosingFanOutSpawn();
       registerPipelineCommand(program, (resourceNames, options) =>
         runPipeline(resourceNames, options, {
-          metaUrl: 'file:///dogsled/tests/mock.ts',
+          metaUrl: 'file:///bobsled/tests/mock.ts',
           spawn,
           env: { VERCEL_OIDC_TOKEN: token },
         })
@@ -366,7 +366,7 @@ describe('registerPipelineCommand', () => {
       const error = await program
         .parseAsync([
           'node',
-          'dogsled',
+          'bobsled',
           'pipeline',
           '--integration',
           'github',
@@ -396,7 +396,7 @@ describe('registerPipelineCommand', () => {
     await expect(
       program.parseAsync([
         'node',
-        'dogsled',
+        'bobsled',
         'pipeline',
         '--integration',
         'x',
@@ -416,7 +416,7 @@ describe('registerPipelineCommand', () => {
     await expect(
       program.parseAsync([
         'node',
-        'dogsled',
+        'bobsled',
         'pipeline',
         '--integration',
         'x',
@@ -436,7 +436,7 @@ describe('registerPipelineCommand', () => {
     await expect(
       program.parseAsync([
         'node',
-        'dogsled',
+        'bobsled',
         'pipeline',
         '--integration',
         'x',
@@ -456,7 +456,7 @@ describe('registerPipelineCommand', () => {
     await expect(
       program.parseAsync([
         'node',
-        'dogsled',
+        'bobsled',
         'pipeline',
         '--integration',
         'x',
@@ -478,7 +478,7 @@ describe('registerPipelineCommand', () => {
       await expect(
         program.parseAsync([
           'node',
-          'dogsled',
+          'bobsled',
           'pipeline',
           '--integration',
           'x',
@@ -524,7 +524,7 @@ describe('runPipeline', () => {
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
 
     const promise = runPipeline(['repos'], baseOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -582,7 +582,7 @@ describe('runPipeline', () => {
         datasetId: 'ds',
         bqAccessToken: 'token-123',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -615,7 +615,7 @@ describe('runPipeline', () => {
         sfWarehouse: 'compute_wh',
         sfDatabase: 'raw',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -654,7 +654,7 @@ describe('runPipeline', () => {
         sfWarehouse: 'compute_wh',
         sfDatabase: 'raw',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -690,7 +690,7 @@ describe('runPipeline', () => {
         sfWarehouse: 'compute_wh',
         sfDatabase: 'raw',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, env }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, env }
     );
 
     await waitForSpawns(spawn);
@@ -733,7 +733,7 @@ describe('runPipeline', () => {
           sfWarehouse: 'compute_wh',
           sfDatabase: 'raw',
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/workload identity token.*non-empty/i);
     expect(spawn).not.toHaveBeenCalled();
@@ -752,7 +752,7 @@ describe('runPipeline', () => {
         dest: 'local',
         sfWorkloadIdentityToken: token,
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     ).then(
       () => new Error('expected destination validation failure'),
       (reason: unknown) => reason
@@ -777,7 +777,7 @@ describe('runPipeline', () => {
           destinations,
           sfWorkloadIdentityToken: token,
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       ).then(
         () => new Error('expected mixed-mode validation failure'),
         (reason: unknown) => reason
@@ -803,7 +803,7 @@ describe('runPipeline', () => {
         dest: 'snowflake',
         sfWorkloadIdentityToken: malformedReference,
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     ).then(
       () => new Error('expected malformed reference validation failure'),
       (reason: unknown) => reason
@@ -842,7 +842,7 @@ describe('runPipeline', () => {
           sfPassword: 'password-fixture',
           sfWorkloadIdentityToken: '$MISSING_WIF_TOKEN',
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, env: {} }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, env: {} }
       )
     ).rejects.toThrow(/workload identity token.*password/i);
     expect(spawn).not.toHaveBeenCalled();
@@ -872,7 +872,7 @@ describe('runPipeline', () => {
             },
           ],
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, env: {} }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, env: {} }
       )
     ).rejects.toThrow(/workload identity token.*access token/i);
     expect(spawn).not.toHaveBeenCalled();
@@ -901,7 +901,7 @@ describe('runPipeline', () => {
         sfWarehouse: 'compute_wh',
         sfDatabase: 'raw',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, env }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, env }
     );
 
     await waitForSpawns(spawn, 2);
@@ -946,7 +946,7 @@ describe('runPipeline', () => {
         logFile,
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
         env: { SF_WIF_TOKEN: 'vercel-oidc-token' },
       }
@@ -1010,7 +1010,7 @@ describe('runPipeline', () => {
         logFile,
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
         env: { SF_WIF_TOKEN: 'vercel-oidc-token' },
       }
@@ -1067,7 +1067,7 @@ describe('runPipeline', () => {
         sfWarehouse: 'compute_wh',
         sfDatabase: 'raw',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -1104,7 +1104,7 @@ describe('runPipeline', () => {
         sfWarehouse: 'compute_wh',
         sfDatabase: 'raw',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -1144,7 +1144,7 @@ describe('runPipeline', () => {
         sfWarehouse: 'compute_wh',
         sfDatabase: 'raw',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -1175,7 +1175,7 @@ describe('runPipeline', () => {
           sfWarehouse: 'compute_wh',
           sfDatabase: 'raw',
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/workload identity.*token command.*access token/i);
     expect(spawn).not.toHaveBeenCalled();
@@ -1195,7 +1195,7 @@ describe('runPipeline', () => {
         datasetId: 'ds',
         bqTokenCommand: 'mint-token --json',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -1224,7 +1224,7 @@ describe('runPipeline', () => {
         bqAccessToken: 'token-123',
         bqTokenCommand: 'mint-token --json',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -1268,7 +1268,7 @@ describe('runPipeline', () => {
         workloadIdentitySourceEnvNames: ['SF_WIF_TOKEN'],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
         env,
       }
@@ -1325,7 +1325,7 @@ describe('runPipeline', () => {
         emitModelSpecSource: true,
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -1355,7 +1355,7 @@ describe('runPipeline', () => {
     const promise = runPipeline(
       ['repos'],
       { ...baseOptions, emitModelSpecSource: true },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 2);
@@ -1391,7 +1391,7 @@ describe('runPipeline', () => {
         logFormat: 'pretty',
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -1443,7 +1443,7 @@ describe('runPipeline', () => {
         }),
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -1480,7 +1480,7 @@ describe('runPipeline', () => {
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
 
     const promise = runPipeline([], baseOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -1497,7 +1497,7 @@ describe('runPipeline', () => {
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
 
     const promise = runPipeline([], baseOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -1514,7 +1514,7 @@ describe('runPipeline', () => {
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
 
     const promise = runPipeline([], baseOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -1533,7 +1533,7 @@ describe('runPipeline', () => {
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
 
     const promise = runPipeline([], baseOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -1551,7 +1551,7 @@ describe('runPipeline', () => {
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
 
     const promise = runPipeline([], baseOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
     await waitForSpawns(spawn);
@@ -1584,7 +1584,7 @@ describe('runPipeline', () => {
     };
 
     const promise = runPipeline(['users', 'repos'], fullOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -1628,7 +1628,7 @@ describe('runPipeline', () => {
         startDate: '2026-03-01',
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -1655,7 +1655,7 @@ describe('runPipeline', () => {
         endDate: '2026-03-31',
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -1684,7 +1684,7 @@ describe('runPipeline', () => {
     };
 
     const promise = runPipeline([], fullOptions, {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -1715,7 +1715,7 @@ describe('runPipeline', () => {
           integration: 'github',
         },
         {
-          metaUrl: 'file:///dogsled/tests/mock.ts',
+          metaUrl: 'file:///bobsled/tests/mock.ts',
           spawn,
         }
       )
@@ -1737,7 +1737,7 @@ describe('runPipeline', () => {
           gcsBucket: 'my-bucket',
         },
         {
-          metaUrl: 'file:///dogsled/tests/mock.ts',
+          metaUrl: 'file:///bobsled/tests/mock.ts',
           spawn,
         }
       )
@@ -1759,7 +1759,7 @@ describe('runPipeline', () => {
         dbPath: './demo.duckdb',
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -1939,7 +1939,7 @@ describe('runPipeline', () => {
         .mockReturnValueOnce(loadChild) as Mock;
 
       const promise = runPipeline([], options, {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
         env: {
           SF_PASSWORD: 'sf-secret',
@@ -2021,7 +2021,7 @@ describe('runPipeline', () => {
         ],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -2102,7 +2102,7 @@ describe('runPipeline', () => {
           { name: 'archive', type: 'local', format: 'csv' },
         ],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -2138,7 +2138,7 @@ describe('runPipeline', () => {
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
         onSummary(stage, summary) {
           if (stage === 'load') {
@@ -2203,7 +2203,7 @@ describe('runPipeline', () => {
         ],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -2271,7 +2271,7 @@ describe('runPipeline', () => {
         ],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -2337,7 +2337,7 @@ describe('runPipeline', () => {
           ]),
         },
         {
-          metaUrl: 'file:///dogsled/tests/mock.ts',
+          metaUrl: 'file:///bobsled/tests/mock.ts',
           spawn,
         }
       );
@@ -2419,7 +2419,7 @@ describe('runPipeline', () => {
           ]),
         },
         {
-          metaUrl: 'file:///dogsled/tests/mock.ts',
+          metaUrl: 'file:///bobsled/tests/mock.ts',
           spawn,
         }
       );
@@ -2489,7 +2489,7 @@ describe('runPipeline', () => {
         ],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -2531,7 +2531,7 @@ describe('runPipeline', () => {
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -2581,7 +2581,7 @@ describe('runPipeline', () => {
         ],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -2634,7 +2634,7 @@ describe('runPipeline', () => {
           { name: 'archive', type: 'local', format: 'csv', table_prefix: 'archive__' },
         ],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -2713,7 +2713,7 @@ describe('runPipeline', () => {
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
         signal: controller.signal,
         onStage(stage, status) {
@@ -2761,7 +2761,7 @@ describe('runPipeline', () => {
           { name: 'archive', type: 'local', format: 'csv' },
         ],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -2820,7 +2820,7 @@ describe('runPipeline', () => {
         ...baseOptions,
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -2853,7 +2853,7 @@ describe('runPipeline', () => {
         preserveCaptureOnFailure: false,
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -2881,7 +2881,7 @@ describe('runPipeline', () => {
         ...baseOptions,
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -2922,7 +2922,7 @@ describe('runPipeline', () => {
           dest: 'snowflake',
           sfWorkloadIdentityToken: 'vercel-oidc-token',
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       );
     } catch (error) {
       returnedError = error;
@@ -2950,7 +2950,7 @@ describe('runPipeline', () => {
           dest: 'snowflake',
           sfWorkloadIdentityToken: 'vercel-oidc-token',
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       );
     } catch (error) {
       returnedError = error;
@@ -2982,7 +2982,7 @@ describe('runPipeline', () => {
         ...baseOptions,
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -3040,7 +3040,7 @@ describe('runPipeline', () => {
           { name: 'archive', type: 'local', format: 'jsonl' },
         ],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -3103,7 +3103,7 @@ describe('runPipeline', () => {
         ...baseOptions,
         destinations: [{ name: 'warehouse', type: 'local', format: 'csv' }],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -3136,7 +3136,7 @@ describe('runPipeline', () => {
             { name: 'warehouse', type: 'local', format: 'csv', load_strategy: 'merge' },
           ],
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       );
       throw new Error('expected merge validation error');
     } catch (error) {

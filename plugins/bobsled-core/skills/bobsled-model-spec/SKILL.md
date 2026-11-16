@@ -9,33 +9,33 @@ description: Define sources, models, joins, materializations, and use the Model
 
 Compile YAML data model specs into warehouse SQL. Define sources, transformations, joins, and materializations declaratively.
 
-> **CLI:** Use `dogsled model <command>`. The public CLI entry point is `dogsled`.
+> **CLI:** Use `bobsled model <command>`. The public CLI entry point is `bobsled`.
 
 ## Quick Reference
 
 ```bash
-dogsled model compile --integration snowflake           # All models -> stdout (dialect derived from integration)
-dogsled model compile stg_customers --integration duckdb  # Single model
-dogsled model compile -o target/ --integration bigquery # Write to target/<integration>/MODEL.sql
-dogsled model compile --strict --integration snowflake  # Reject implicit raw_sql fallbacks
+bobsled model compile --integration snowflake           # All models -> stdout (dialect derived from integration)
+bobsled model compile stg_customers --integration duckdb  # Single model
+bobsled model compile -o target/ --integration bigquery # Write to target/<integration>/MODEL.sql
+bobsled model compile --strict --integration snowflake  # Reject implicit raw_sql fallbacks
 
-dogsled model run --integration snowflake --secrets secrets.yml   # Execute via @bobsled-inc/connections resolveRunner
-dogsled model run --integration duckdb --full-refresh             # Force table rebuild
+bobsled model run --integration snowflake --secrets secrets.yml   # Execute via @bobsled-inc/connections resolveRunner
+bobsled model run --integration duckdb --full-refresh             # Force table rebuild
 
-dogsled model test --integration duckdb                 # Generate test SQL
-dogsled model validate --integration duckdb             # Check specs + cross-refs (no compile)
+bobsled model test --integration duckdb                 # Generate test SQL
+bobsled model validate --integration duckdb             # Check specs + cross-refs (no compile)
 
-dogsled model lineage --integration duckdb              # Full dependency graph
-dogsled model lineage fct_orders --integration duckdb   # Subgraph from a model
+bobsled model lineage --integration duckdb              # Full dependency graph
+bobsled model lineage fct_orders --integration duckdb   # Subgraph from a model
 
-dogsled model init my-project                           # Scaffold new project
+bobsled model init my-project                           # Scaffold new project
 ```
 
 `--integration <handle>` is always optional. Omit it to fan out over **every** declared integration — `compile`/`run`/`validate`/`test`/`lineage` each emit a per-integration block (or write under `target/<handle>/`) and skip integrations that no model references with a warning. Pass `--integration <handle>` to narrow the run to that one integration. The legacy `--dialect` / `--schema` / `--runner` flags are **removed** — dialect and target schema now come from `integrations/<handle>.yml`, and the SQL runner is constructed automatically from the integration via `@bobsled-inc/connections`.
 
 ## Multi-integration projects
 
-Each source pins itself to its owning warehouse via `connection: <handle>`, where the handle matches an `integrations/<handle>.yml` file. A model that joins or unions sources from two different handles is rejected at validation (`CommandError(2)`) — UNLESS the model declares `publish: <handle>` (see "Cross-warehouse publishing" below). `dogsled model run` keeps per-integration state under `<handle>.<model>` keys in `.bobsled/model-spec/run-state.json`; legacy single-handle keys migrate automatically, while leftover unscoped keys in multi-integration projects clear state with a warning and behave as `--full-refresh` on the next run.
+Each source pins itself to its owning warehouse via `connection: <handle>`, where the handle matches an `integrations/<handle>.yml` file. A model that joins or unions sources from two different handles is rejected at validation (`CommandError(2)`) — UNLESS the model declares `publish: <handle>` (see "Cross-warehouse publishing" below). `bobsled model run` keeps per-integration state under `<handle>.<model>` keys in `.bobsled/model-spec/run-state.json`; legacy single-handle keys migrate automatically, while leftover unscoped keys in multi-integration projects clear state with a warning and behave as `--full-refresh` on the next run.
 
 ## Cross-warehouse publishing (`publish:`)
 
@@ -64,9 +64,9 @@ materialization:
 Run with:
 
 ```bash
-dogsled model run customer_event_revenue --secrets secrets.yml
-dogsled model run customer_event_revenue --dry-run         # show plan, don't stage
-dogsled model run customer_event_revenue --full-refresh    # clear run state before rewriting
+bobsled model run customer_event_revenue --secrets secrets.yml
+bobsled model run customer_event_revenue --dry-run         # show plan, don't stage
+bobsled model run customer_event_revenue --full-refresh    # clear run state before rewriting
 ```
 
 **Environment flags**:
@@ -110,7 +110,7 @@ my-project/
 
 ## Project config (`model-spec.yml`)
 
-`model-spec.yml` holds optional settings. Dogsled finds sources, models, metrics, relationships, VQs, and integrations by their declared `type` anywhere in the project, so those directory keys are accepted but no longer limit where files live. Dogsled discovers CSV seeds below any `seeds/` directory; `seeds_dir` remains an explicit legacy override. `entity_graph_dir` and `targets_dir` still locate Entity Graph specs and load targets. A `model-spec.yml` moved out of the project root declares `type: model_spec_config`. The accepted keys are exactly:
+`model-spec.yml` holds optional settings. Bobsled Core finds sources, models, metrics, relationships, VQs, and integrations by their declared `type` anywhere in the project, so those directory keys are accepted but no longer limit where files live. Bobsled Core discovers CSV seeds below any `seeds/` directory; `seeds_dir` remains an explicit legacy override. `entity_graph_dir` and `targets_dir` still locate Entity Graph specs and load targets. A `model-spec.yml` moved out of the project root declares `type: model_spec_config`. The accepted keys are exactly:
 
 ```yaml
 type: model_spec_config # required only when the file is not the root model-spec.yml
@@ -131,13 +131,13 @@ vqs_dir: vqs # default: vqs
 
 Each YAML file declares a `spec_version:` literal. Values are kind-specific — not all `0.2`.
 
-| File kind                                              | `spec_version:` | Where                                                           |
-| ------------------------------------------------------ | --------------- | --------------------------------------------------------------- |
-| Model Spec source / model / metric / relationship / VQ | `'0.2'`         | `sources/`, `models/`, `metrics/`, `relationships/`, `vqs/`     |
-| Dogsled integration                                    | `'2'`           | `integrations/<handle>.yml` (when using the new Dogsled schema) |
-| Dogsled warehouse/file resource                        | `'1'`           | extractor `resources/*.yml` for warehouse and file source kinds |
+| File kind                                              | `spec_version:` | Where                                                                |
+| ------------------------------------------------------ | --------------- | -------------------------------------------------------------------- |
+| Model Spec source / model / metric / relationship / VQ | `'0.2'`         | `sources/`, `models/`, `metrics/`, `relationships/`, `vqs/`          |
+| Bobsled Core integration                               | `'2'`           | `integrations/<handle>.yml` (when using the new Bobsled Core schema) |
+| Bobsled Core warehouse/file resource                   | `'1'`           | extractor `resources/*.yml` for warehouse and file source kinds      |
 
-The Dogsled integration shape shown under "Integrations" below uses `spec_version: '1'` for the legacy Model Spec-managed integration schema; the Dogsled-managed `2` shape is documented in `packages/bobsled-core`. Pick the one your project uses.
+The Bobsled Core integration shape shown under "Integrations" below uses `spec_version: '1'` for the legacy Model Spec-managed integration schema; the platform-managed `2` shape is documented in `packages/bobsled-core`. Pick the one your project uses.
 
 ## Integrations
 
@@ -325,7 +325,7 @@ GCP_SA_KEY: /Users/me/.gcp/key.json
 Then:
 
 ```bash
-dogsled model run --integration snowflake --secrets secrets.yml
+bobsled model run --integration snowflake --secrets secrets.yml
 ```
 
 ## Source Spec Schema
@@ -391,7 +391,7 @@ matching query embedding.
     # distance_metric: cosine     # optional, reserved: cosine | l2 | dot
 ```
 
-For source models, `dogsled pipeline … --emit-model-spec-source` pre-fills this
+For source models, `bobsled pipeline … --emit-model-spec-source` pre-fills this
 shape from the pipeline's `embed:` block. For derived (silver/gold)
 models, re-author `embedded_from` on the re-projected column.
 
@@ -410,7 +410,7 @@ If a bare ref doesn't match a model but matches some source's tail name, the com
 
 ## Pipelines (extract vs models)
 
-Dogsled pipelines are declared per-project in `bobsled.yml` (or equivalent). Two pipeline kinds:
+Bobsled Core pipelines are declared per-project in `bobsled.yml` (or equivalent). Two pipeline kinds:
 
 ```yaml
 pipelines:

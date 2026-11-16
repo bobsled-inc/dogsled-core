@@ -16,7 +16,7 @@ it('validates a project without a database and returns JSON', async () => {
     registerOntologyCommand(program);
     await program.parseAsync([
       'node',
-      'dogsled',
+      'bobsled',
       'ontology',
       'validate',
       '--project-root',
@@ -41,7 +41,7 @@ it('honors a project root passed before the command group', async () => {
     );
     const program = new Command().option('--project-root <path>');
     registerOntologyCommand(program);
-    await program.parseAsync(['node', 'dogsled', '--project-root', root, 'ontology', 'list']);
+    await program.parseAsync(['node', 'bobsled', '--project-root', root, 'ontology', 'list']);
     expect(JSON.parse(output.mock.calls.map((c) => String(c[0])).join('')).entries).toEqual([
       expect.objectContaining({ name: 'target_only' }),
     ]);
@@ -62,7 +62,7 @@ it('previews imports without requiring a connection option', async () => {
     );
     const program = new Command();
     registerOntologyCommand(program);
-    await program.parseAsync(['node', 'dogsled', 'ontology', 'import', input, '--json']);
+    await program.parseAsync(['node', 'bobsled', 'ontology', 'import', input, '--json']);
     expect(JSON.parse(output.mock.calls.map((c) => String(c[0])).join(''))).toMatchObject({
       ok: true,
       files: [

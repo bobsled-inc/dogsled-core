@@ -5,7 +5,7 @@ S3 or Google Cloud Storage bucket, parse and token-chunk them, and load the
 results into your warehouse. Optionally embed each chunk for semantic search.
 
 ```bash
-dogsled examples init s3-documents-ingestion
+bobsled examples init s3-documents-ingestion
 cd s3-documents-ingestion
 ```
 
@@ -22,8 +22,8 @@ export AWS_ACCESS_KEY_ID=...
 export AWS_SECRET_ACCESS_KEY=...
 # Option B — explicit keys: set auth.type: static_env in the integration first.
 
-dogsled extract validate s3_documents
-dogsled extract run --integration s3_documents documents | dogsled load run --dest duckdb --db-path documents.duckdb
+bobsled extract validate s3_documents
+bobsled extract run --integration s3_documents documents | bobsled load run --dest duckdb --db-path documents.duckdb
 ```
 
 ## Google Cloud Storage
@@ -35,13 +35,13 @@ For an explicit service account key, keep its variable name in `auth_env_vars`.
 gcloud auth application-default login          # provides ADC
 # Or set auth.type: service_account_json + GCS_SERVICE_ACCOUNT_JSON in the integration.
 
-dogsled extract validate gcs_documents
-dogsled extract run --integration gcs_documents documents | dogsled load run --dest duckdb --db-path documents.duckdb
+bobsled extract validate gcs_documents
+bobsled extract run --integration gcs_documents documents | bobsled load run --dest duckdb --db-path documents.duckdb
 ```
 
 ## What you get
 
-The document extractor emits Dogsled protocol streams that load as warehouse tables:
+The document extractor emits Bobsled Core protocol streams that load as warehouse tables:
 
 - `documents__documents` — one row per file (`document_id`, source URI, format, text, byte length, …)
 - `documents__chunks` — N rows per file (`chunk_id`, `document_id`, `text`, `token_count`, …)
@@ -60,9 +60,9 @@ platform:
       model: amazon.titan-embed-text-v2:0
 ```
 
-When a pipeline runs with an `embed:` block, Dogsled auto-chains
+When a pipeline runs with an `embed:` block, Bobsled Core auto-chains
 `extract -> embed -> load`, adding a `text_embedding` vector column to
-`documents__chunks`. With Dogsled, create the S3/GCS connection in the app and
+`documents__chunks`. With Bobsled Core, create the S3/GCS connection in the app and
 the same flow runs against your managed warehouse — no local credentials
 needed.
 

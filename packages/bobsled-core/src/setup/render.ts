@@ -30,7 +30,7 @@ import type {
 export { writeRenderedSetupFiles } from './render-files.js';
 
 const ROOT_CONFIG_FILE = 'bobsled.yml';
-const DASHBOARD_STATE_FILE = 'dogsled.dashboard.state.json';
+const DASHBOARD_STATE_FILE = 'bobsled.dashboard.state.json';
 
 const PERMISSION_ERROR_CODES = new Set(['EACCES', 'EPERM', 'EROFS']);
 
@@ -52,7 +52,7 @@ function buildBobsledConfig(recommended: ReturnType<typeof recommendSetup>): str
         pipelineEntry['resources'] = source.resources;
       } else {
         // Pipelines must declare resources. With no explicit selection, leave
-        // an empty list so `dogsled setup doctor` flags it for the operator.
+        // an empty list so `bobsled setup doctor` flags it for the operator.
         pipelineEntry['resources'] = [];
       }
       return [source.integration, pipelineEntry];
@@ -138,13 +138,13 @@ ${remaining}
 
 ## Next Step
 
-Open this repo in Cowork and ask it to continue Dogsled setup from the local files.`;
+Open this repo in Cowork and ask it to continue Bobsled Core setup from the local files.`;
 }
 
 function buildReadme(repoName: string, recommended: ReturnType<typeof recommendSetup>): string {
   return `# ${repoName}
 
-Dogsled-managed data pipelines for ${recommended.goal}
+platform-managed data pipelines for ${recommended.goal}
 
 ## Pipelines
 
@@ -152,9 +152,9 @@ ${buildPipelineTable(recommended.sources, recommended.destination)}
 
 ## Manual Operations
 
-- Validate config: \`dogsled runner validate\`
-- Check setup blockers: \`dogsled setup doctor\`
-- Run one pipeline locally: \`dogsled runner run <pipeline>\`
+- Validate config: \`bobsled runner validate\`
+- Check setup blockers: \`bobsled setup doctor\`
+- Run one pipeline locally: \`bobsled runner run <pipeline>\`
 
 ## Secrets
 
@@ -164,18 +164,18 @@ ${recommended.credentialRefs.map((ref) => `- \`${ref.name}\``).join('\n')}`;
 function buildStartHere(): string {
   return `# Start Here
 
-This repo was set up with the Dogsled Cowork flow.
+This repo was set up with the Bobsled Core Cowork flow.
 
 ## What You Should Do
 
 1. Open this repo in Claude Cowork.
-2. Ask Cowork to continue Dogsled setup from the local files.
+2. Ask Cowork to continue Bobsled Core setup from the local files.
 3. Answer any remaining questions.
 4. Add any missing credentials Cowork asks for.
 
 ## Suggested Prompt
 
-Continue Dogsled setup for this repo.
+Continue Bobsled Core setup for this repo.
 
 Please:
 
@@ -191,8 +191,8 @@ Please:
 function buildTroubleshooting(): string {
   return `# Cowork Troubleshooting
 
-- Run \`dogsled setup doctor\` for a plain-English readiness report.
-- Run \`dogsled runner validate\` if \`bobsled.yml\` changed.
+- Run \`bobsled setup doctor\` for a plain-English readiness report.
+- Run \`bobsled runner validate\` if \`bobsled.yml\` changed.
 - Never place raw secrets into repo files; store only secret references or placeholders.`;
 }
 
@@ -218,7 +218,7 @@ function buildDashboardState(
   );
 }
 
-/** Render the Dogsled setup artifacts from a setup answers object. */
+/** Render the Bobsled Core setup artifacts from a setup answers object. */
 export async function renderSetupFiles(answersInput: SetupAnswers): Promise<RenderedSetupFile[]> {
   const answers = SetupAnswersSchema.parse(answersInput);
   const recommended = recommendSetup({ answers });
@@ -381,7 +381,7 @@ export function installCoworkAssets(targetDir: string): string[] {
       throw new CommandError(
         `Permission denied writing to "${targetDir}".\n` +
           `If this directory is read-only or on a mounted volume, use:\n\n` +
-          `  dogsled setup install --dir /path/to/writable/directory\n\n` +
+          `  bobsled setup install --dir /path/to/writable/directory\n\n` +
           `Then copy the generated files into your repo.`,
         2
       );

@@ -69,7 +69,7 @@ type CandidateRead =
     };
 
 const utf8Decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
-const SYMLINK_MESSAGE = 'Dogsled does not follow symbolic links.';
+const SYMLINK_MESSAGE = 'Bobsled Core does not follow symbolic links.';
 const OPEN_FLAGS = constants.O_RDONLY | constants.O_NONBLOCK | (constants.O_NOFOLLOW ?? 0);
 
 function errorMessage(error: unknown): string {

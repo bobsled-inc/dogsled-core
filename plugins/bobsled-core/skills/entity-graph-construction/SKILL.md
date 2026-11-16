@@ -40,8 +40,8 @@ and **`relationship_extraction`**.
 Managed destinations use `type: bobsled_managed` and `bobsled_connection_ref` to
 name a connection supplied by an orchestrator. Core validates these hooks but
 cannot load into a managed destination. For local execution, configure a concrete
-destination and run the work with `dogsled entity-graph build`.
-See [Dogsled Cloud and Core](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/hosted-runs.md).
+destination and run the work with `bobsled entity-graph build`.
+See [Dogsled Cloud and Core](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/hosted-runs.md).
 
 ## Shape
 
@@ -191,7 +191,7 @@ Roles are swappable (`provider: anthropic` / `openai` / `bedrock`) with no spec
 changes — `moonshotai/kimi-k2` via OpenRouter is the documented default for
 extraction. Secrets are env-var indirection (`$OPENROUTER_API_KEY`), never raw.
 
-On Dogsled-managed connections the chunk/embedding feed and warehouse are
+On platform-managed connections the chunk/embedding feed and warehouse are
 supplied by the platform; author the specs as above and the platform wires the
 runner — no local credentials needed.
 
@@ -202,11 +202,11 @@ the phases in order (CLI shown; on the managed agent these map to the
 entity-graph run surface — mentions before relationships):
 
 ```bash
-dogsled entity-graph mentions extract Customer --schema entity_graph        # → __document_mentions
-dogsled entity-graph relationships extract Customer --schema entity_graph   # → __entity_relationship_evidence (append-only)
-dogsled entity-graph relationships review export --schema entity_graph --yaml
-dogsled entity-graph relationships review apply ./review/decisions.yml      # confirm/reject/supersede
-dogsled entity-graph relationships compact --schema entity_graph            # rebuild public __entity_relationship
+bobsled entity-graph mentions extract Customer --schema entity_graph        # → __document_mentions
+bobsled entity-graph relationships extract Customer --schema entity_graph   # → __entity_relationship_evidence (append-only)
+bobsled entity-graph relationships review export --schema entity_graph --yaml
+bobsled entity-graph relationships review apply ./review/decisions.yml      # confirm/reject/supersede
+bobsled entity-graph relationships compact --schema entity_graph            # rebuild public __entity_relationship
 ```
 
 `mentions extract` writes `__document_mentions` (one row per detected mention,
@@ -235,9 +235,9 @@ Mentions are what make `customer.documents()` a single typed call instead of a m
 
 ## Prerequisites
 
-- Resolved entities materialized in `__entity_profile` (run `dogsled entity-graph resolve profile <entity...>` first — see the [Entity graph](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/entity-graph.md)).
+- Resolved entities materialized in `__entity_profile` (run `bobsled entity-graph resolve profile <entity...>` first — see the [Entity graph](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/entity-graph.md)).
 - Chunks materialized in `<resource>__chunks` from document ingest.
-- A configured `mention_disambiguation_v1` model role with a per-call budget (see [Embeddings and AI providers](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/embeddings-and-ai.md)).
+- A configured `mention_disambiguation_v1` model role with a per-call budget (see [Embeddings and AI providers](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/embeddings-and-ai.md)).
 
 ## Two-Stage Pipeline
 
@@ -329,7 +329,7 @@ The function returns an array of `MentionRow`s ready to insert into `__document_
 
 ## Candidate Lookup Strategies
 
-Dogsled ships a common `CandidateRetrievalStrategy` interface with dialect-specific SQL builders:
+Bobsled Core ships a common `CandidateRetrievalStrategy` interface with dialect-specific SQL builders:
 
 | Dialect   | Strategy                                                                                    |
 | --------- | ------------------------------------------------------------------------------------------- |
@@ -388,7 +388,7 @@ The limiter sits in front of the LLM call. Pair it with the `mode: 'fallback'` p
 Use `mentions inspect` when a count, review export row, or demo story row needs a source-level explanation:
 
 ```bash
-dogsled entity-graph mentions inspect \
+bobsled entity-graph mentions inspect \
   --runner ./runner.js \
   --schema entity_graph \
   --chunk-id <chunk_id> \
@@ -401,14 +401,14 @@ The command returns source URI, document and chunk IDs, chunk index, excerpt or 
 ## Review Queue Export
 
 ```bash
-dogsled entity-graph mentions review export \
+bobsled entity-graph mentions review export \
   --runner ./runner.js \
   --schema entity_graph \
   --csv \
   > review/document_mentions.csv
 ```
 
-The CSV header is **byte-for-byte parity** with `dogsled model review export`, with mention-specific columns appended:
+The CSV header is **byte-for-byte parity** with `bobsled model review export`, with mention-specific columns appended:
 
 ```csv
 review_id,decision,confidence,mention_id,chunk_id,document_id,entity_type,entity_name,resolved_entity_id,resolution_method,notes
@@ -445,11 +445,11 @@ Chunker configuration is part of the chunk identity (`chunkerConfigHash` + `CHUN
 3. A follow-up worker or batch job marks orphans `superseded_at = now()` via parameterized SQL with identifier validation.
 4. Re-extraction lands on the new chunks once the cache-substrate manifest read paths complete.
 
-Run `dogsled doctor --json` before and after a chunker config change to confirm.
+Run `bobsled doctor --json` before and after a chunker config change to confirm.
 
 ## Operational Health Checks
 
-`dogsled doctor` runs this check for this surface today:
+`bobsled doctor` runs this check for this surface today:
 
 | Check                          | What it verifies                                                |
 | ------------------------------ | --------------------------------------------------------------- |
@@ -481,11 +481,11 @@ Outputs:
 
 ## See Also
 
-- [Entity graph](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/entity-graph.md) — full workflow context.
-- [SDK Codegen](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/sdk-codegen.md) — query mentions back through `customer.documents()`.
-- [MCP `read_source`](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/mcp-read-source.md) — agent-side reads of the underlying chunks.
-- [Embeddings and AI providers](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/embeddings-and-ai.md) — set `mention_disambiguation_v1` and its budget.
-- [Entity Graph Authoring Guide](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/entity-graph-authoring-guide.md) — the resolve / cluster / profile loop.
+- [Entity graph](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/entity-graph.md) — full workflow context.
+- [SDK Codegen](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/reference/advanced/sdk-codegen.md) — query mentions back through `customer.documents()`.
+- [MCP `read_source`](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/reference/advanced/mcp-read-source.md) — agent-side reads of the underlying chunks.
+- [Embeddings and AI providers](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/embeddings-and-ai.md) — set `mention_disambiguation_v1` and its budget.
+- [Entity Graph Authoring Guide](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/reference/advanced/entity-graph-authoring-guide.md) — the resolve / cluster / profile loop.
 
 # Relationship Extraction — Document Evidence to Public Entity Edges
 
@@ -553,7 +553,7 @@ Rules:
 
 ## Candidate-Pair Discipline
 
-Extraction is pair-first. Dogsled only asks the model about candidate pairs built from already-resolved mentions in a chunk:
+Extraction is pair-first. Bobsled Core only asks the model about candidate pairs built from already-resolved mentions in a chunk:
 
 - unresolved mentions are excluded;
 - self-relations are rejected;
@@ -595,7 +595,7 @@ Rejected rows are audit material; they should not be patched into the evidence t
 Export review rows:
 
 ```bash
-dogsled entity-graph relationships review export \
+bobsled entity-graph relationships review export \
   --runner ./runner.js \
   --schema entity_graph \
   --yaml
@@ -615,7 +615,7 @@ The persisted `review_flag` from extraction wins when present; numeric threshold
 Apply reviewed decisions:
 
 ```bash
-dogsled entity-graph relationships review apply ./review/relationship_decisions.yml \
+bobsled entity-graph relationships review apply ./review/relationship_decisions.yml \
   --runner ./runner.js \
   --json
 ```
@@ -634,7 +634,7 @@ rows:
 Rebuild the public table:
 
 ```bash
-dogsled entity-graph relationships compact \
+bobsled entity-graph relationships compact \
   --runner ./runner.js \
   --schema entity_graph \
   --json
@@ -643,7 +643,7 @@ dogsled entity-graph relationships compact \
 Use dry-run mode to inspect generated SQL before mutating warehouse state:
 
 ```bash
-dogsled entity-graph relationships compact \
+bobsled entity-graph relationships compact \
   --schema entity_graph \
   --dry-run \
   --json
@@ -653,9 +653,9 @@ Compaction performs log-odds aggregation over accepted evidence, applies review 
 
 ## See Also
 
-- [Entity graph](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/entity-graph.md) — public contracts and end-to-end flow.
-- [Mention Extraction](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/mention-extraction.md) — the `__document_mentions` rows used as relationship inputs.
-- [SDK Codegen](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/reference/advanced/sdk-codegen.md) — typed relationship traversal through generated clients.
+- [Entity graph](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/guides/entity-graph.md) — public contracts and end-to-end flow.
+- [Mention Extraction](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/reference/advanced/mention-extraction.md) — the `__document_mentions` rows used as relationship inputs.
+- [SDK Codegen](https://github.com/bobsled-inc/bobsled-core/blob/main/docs/reference/advanced/sdk-codegen.md) — typed relationship traversal through generated clients.
 
 ## Quality checklist
 

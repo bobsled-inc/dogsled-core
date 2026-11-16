@@ -17,7 +17,7 @@ import {
   SCHEMA_BEHAVIORS,
   STREAM_SUBFOLDER_RULE,
 } from '@bobsled-inc/protocol';
-// `/schema` keeps Dogsled's configuration surface safe for server-side / Lambda
+// `/schema` keeps Bobsled Core's configuration surface safe for server-side / Lambda
 // consumers. The embedder root re-exports
 // `runEmbedder`, which transitively loads `@bobsled-inc/loader`'s DuckDB
 // primitives at module-init — those static imports try to dlopen
@@ -33,7 +33,7 @@ const DestinationFormatSchema = z.enum(['parquet', 'jsonl', 'csv']);
 const LoadStrategySchema = z.enum(['append', 'merge', 'full_refresh']);
 export const SchemaBehaviorSchema = z.enum(SCHEMA_BEHAVIORS);
 export type SchemaBehavior = z.infer<typeof SchemaBehaviorSchema>;
-/** Canonical pipeline runner ids emitted by Dogsled after config parsing. */
+/** Canonical pipeline runner ids emitted by Bobsled Core after config parsing. */
 export const PipelineRunnerSchema = z.enum(['managed']);
 
 const DestinationNameSchema = z
@@ -94,8 +94,8 @@ const SharedDestinationFields = {
 
 /**
  * Reserved prefixes for orchestrator-specific extension keys on a
- * destination block. Dogsled ignores these — the orchestrator wrapping
- * Dogsled (e.g. an internal control plane, a SaaS scheduler) reads them.
+ * destination block. Bobsled Core ignores these — the orchestrator wrapping
+ * Bobsled Core (e.g. an internal control plane, a SaaS scheduler) reads them.
  *
  * - `x-*`        — generic, OpenAPI-style extension namespace.
  * - `bobsled_*`  — fields used by a host application's managed ELT
@@ -114,7 +114,7 @@ const SharedDestinationFields = {
  * A managed destination type (an exact list in @bobsled-inc/protocol
  * legacy-names.ts, never a prefix) is NOT a real warehouse — it's an
  * intent the host application expands into a concrete
- * warehouse-native destination block before Dogsled CLI runs. For these
+ * warehouse-native destination block before Bobsled Core CLI runs. For these
  * types the orchestrator's own host fields (e.g.
  * `bobsled_connection_ref`) ARE the schema, so the strip step below
  * preserves them for the matching managed-destination schema
@@ -164,10 +164,10 @@ const BigQueryDestinationSchema = z
      * `$VARNAME` env-var placeholder that the runner resolves at load
      * time. Mirrors dbt-bigquery's `oauth-secrets` Temporary Token
      * method. When set, bypasses ADC and the GitHub-secret path —
-     * Dogsled's BigQuery loader passes the resolved value to
+     * Bobsled Core's BigQuery loader passes the resolved value to
      * `new BigQuery({ token })` directly.
      *
-     * The orchestrator wrapping Dogsled is responsible for minting +
+     * The orchestrator wrapping Bobsled Core is responsible for minting +
      * shipping the token; refresh-while-running is not supported.
      * Tokens valid for the duration of the load (~1h default).
      */
@@ -206,7 +206,7 @@ const SnowflakeDestinationSchema = z
     private_key_passphrase: EnvPlaceholderSchema.optional(),
     /**
      * Pre-minted short-lived Snowflake OIDC JWT, expressed as an env-var
-     * placeholder. The orchestrator issues the token; Dogsled passes the
+     * placeholder. The orchestrator issues the token; Bobsled Core passes the
      * resolved value to snowflake-sdk as `authenticator: 'OAUTH'` + `token`.
      */
     credentials_access_token: EnvPlaceholderSchema.optional(),
@@ -382,11 +382,11 @@ const S3DestinationSchema = z
  * The host application expands this into a concrete warehouse-native
  * destination block (currently always `type: bigquery`, looked up from
  * the matching managed connection row keyed by
- * `bobsled_connection_ref`) before Dogsled CLI runs. Dogsled CLI itself
+ * `bobsled_connection_ref`) before Bobsled Core CLI runs. Bobsled Core CLI itself
  * never sees this intent type at runtime — there is no
  * matching loader in `packages/loader/src/runtime/destinations/`. The
- * value of having Dogsled validate this shape at parse time is
- * structural — bundles authored against this offering pass Dogsled's
+ * value of having Bobsled Core validate this shape at parse time is
+ * structural — bundles authored against this offering pass Bobsled Core's
  * schema check at upload, and orchestrators that don't expand managed
  * types fail loud with "unknown loader" instead of silently
  * mis-routing the load.
@@ -396,7 +396,7 @@ const S3DestinationSchema = z
  * additional schema branch + one additional orchestrator-side
  * expander. The credential plumbing (`iam-impersonate://` resolver,
  * `DOGSLED_<OFFERING>_CREDENTIALS_*` env-var convention) is a
- * concern of the orchestrator, not Dogsled.
+ * concern of the orchestrator, not Bobsled Core.
  */
 const BobsledManagedDestinationSchema = z
   .object({
@@ -559,7 +559,7 @@ export const EmbedConfigSchema = createEmbedConfigSchema(EnvPlaceholderSchema);
 //   - `extract` (default for back-compat): pulls data from an integration
 //     into one or more destinations.
 //   - `models`: schedules materialization of derived Model Spec models for a given
-//     connection (the v1 surface for Dogsled-side scheduling of model pipelines).
+//     connection (the v1 surface for Bobsled Core-side scheduling of model pipelines).
 //   - `entity-graph`: schedules entity-graph workflows (resolve, cluster) for
 //     identity resolution specs defined under `entity-graph/` in the project.
 //     Mirrors `models` structurally — same connection + schedule + wildcard
@@ -661,8 +661,8 @@ const PipelineDescriptionSchema = z.string().max(2000);
 // pipelines, and on `defaults.models.schedule`. Authors get a pipeline that is
 // still part of the project's deployable surface (a GitHub Actions workflow
 // with `workflow_dispatch:`) but no cron is created. The CLI emits manual
-// pipelines through the same `dogsled runner dispatch` /
-// `dogsled runner run` entry points as scheduled ones.
+// pipelines through the same `bobsled runner dispatch` /
+// `bobsled runner run` entry points as scheduled ones.
 export const MANUAL_SCHEDULE = 'manual' as const;
 
 export type PipelineTrigger = 'schedule' | 'manual';
@@ -712,7 +712,7 @@ export const ExtractPipelineConfigSchema = z
     warehouse: z.string().min(1).optional(),
     /**
      * Stable managed-connection warehouse ID for destination load compute.
-     * The managed orchestrator validates and resolves this ID; Dogsled only
+     * The managed orchestrator validates and resolves this ID; Bobsled Core only
      * preserves it as pipeline-scoped execution metadata.
      */
     destination_warehouse: z.string().min(1).optional(),
@@ -849,7 +849,7 @@ export const PipelineConfigSchema = z
 
 // Project-level fallback for orphan models (derived models with non-view
 // materialization that no `type: models` pipeline mentions). The host application
-// expands this into synthetic pipelines at parse time; Dogsled validates the
+// expands this into synthetic pipelines at parse time; Bobsled Core validates the
 // shape so a malformed `defaults.models.schedule` fails loud at compile time
 // rather than silently falling through to host application.
 export const DefaultsModelsSchema = z
@@ -900,14 +900,14 @@ export const ModelsSchema = z
 // by the manifest generator (e.g. `_models_default_<connection>`). Authored
 // pipelines that try to claim that prefix are rejected at parse time so a
 // hand-written `_models_default_bigquery` can never collide with the synthetic
-// one Dogsled would emit.
+// one Bobsled Core would emit.
 const PipelineMapSchema = z.record(z.string(), PipelineConfigSchema).superRefine((map, ctx) => {
   for (const name of Object.keys(map)) {
     if (name.startsWith('_')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: [name],
-        message: `Pipeline name "${name}" is invalid: the leading "_" prefix is reserved for synthetic pipelines emitted by Dogsled (e.g. "_models_default_<connection>"). Choose a name without a leading underscore.`,
+        message: `Pipeline name "${name}" is invalid: the leading "_" prefix is reserved for synthetic pipelines emitted by Bobsled Core (e.g. "_models_default_<connection>"). Choose a name without a leading underscore.`,
       });
     }
   }

@@ -2,7 +2,7 @@
 
 This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
-Provider-neutral AI primitives for Dogsled. The package resolves configured model
+Provider-neutral AI primitives for Bobsled Core. The package resolves configured model
 roles, enforces call and daily budgets, and exposes structured generation,
 streaming, and embedding helpers.
 
@@ -25,7 +25,7 @@ const result = await generateStructured(connection, {
 });
 ```
 
-Provider credentials are resolved through Dogsled connection configuration. Do not
+Provider credentials are resolved through Bobsled Core connection configuration. Do not
 put raw credentials in project files.
 
 ## Bounded structured calls

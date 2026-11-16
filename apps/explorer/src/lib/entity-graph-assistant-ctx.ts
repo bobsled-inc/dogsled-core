@@ -185,7 +185,7 @@ function buildDefaultTips(ctx: EntityGraphCtx): EntityGraphCtxTips {
       return {
         title: sharedTitle,
         summary: 'Bobsled Core Explorer Entity Graph hub - explain the flow',
-        lead: 'Design once, resolve continuously. Dogsled Entity Graph standardizes records, scores candidates, and surfaces golden records across sources.',
+        lead: 'Design once, resolve continuously. Bobsled Core Entity Graph standardizes records, scores candidates, and surfaces golden records across sources.',
         bullets: [
           'Design builds the YAML spec: sources, standardization, blocking, scoring, thresholds.',
           'Resolve runs the pipeline in DuckDB and routes ambiguous pairs to review.',

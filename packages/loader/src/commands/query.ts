@@ -181,7 +181,7 @@ export function registerQueryCommand(program: Command): void {
             const dbPath = options.dbPath as string | undefined;
             if (!dbPath) {
               emitError(
-                '--db-path is required for DuckDB query. To query Dogsled API sources, use `dogsled source-query <sql>` instead.'
+                '--db-path is required for DuckDB query. To query Bobsled Core API sources, use `bobsled source-query <sql>` instead.'
               );
               return;
             }

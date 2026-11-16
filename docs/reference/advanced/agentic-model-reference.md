@@ -63,7 +63,7 @@ and has a different purpose.
 
 Every step must preserve the grouping and materialization keys and their types.
 The selected output must contain every grain and replacement-key column as a
-non-null scalar. For intermediate steps, Dogsled uses the model grain when those
+non-null scalar. For intermediate steps, Bobsled Core uses the model grain when those
 columns exist; otherwise it uses grouping and replacement keys together.
 
 A direct call makes one model call and has no source callback or extra tools.
@@ -104,7 +104,7 @@ All fields are optional. `null` or omission means no limit.
 
 A cap stops new work; it does not cut off work that is already running.
 
-1. Before each assignment starts, Dogsled compares what the run has spent so
+1. Before each assignment starts, Bobsled Core compares what the run has spent so
    far with the cap.
 2. Under the cap, the assignment starts.
 3. At or over the cap, no new assignment starts. Assignments that are already
@@ -116,7 +116,7 @@ Raise the cap and resume the run to continue. The resumed run keeps all saved
 answers and does not repeat them:
 
 ```bash
-dogsled model run +pair_assessments --agent-executor ./executor.mjs \
+bobsled model run +pair_assessments --agent-executor ./executor.mjs \
   --agent-run-id <id> --agent-resume --agent-max-cost 50
 ```
 
@@ -128,18 +128,18 @@ changed definition.
 flight when it reaches the cap, roughly `--agent-concurrency` times the cost of
 one assignment.
 
-**Up-front check.** Before the first model call of a run, Dogsled estimates the
+**Up-front check.** Before the first model call of a run, Bobsled Core estimates the
 input size of the first step at about four bytes per token. If that estimate
 alone is above the cap, the run stops before any model call with
 `estimate_exceeds_cap`. The estimate counts input only, so the real cost is
 higher.
 
 **Unreported usage.** When a provider does not report usage for an attempt,
-Dogsled charges that attempt's input estimate. An interrupted attempt keeps the
+Bobsled Core charges that attempt's input estimate. An interrupted attempt keeps the
 estimate it was charged when it started.
 
 **Pricing.** `max_cost_usd` needs a known price for every model profile the plan
-uses. The CLI uses Dogsled's built-in price table. If a model has no price, the
+uses. The CLI uses Bobsled Core's built-in price table. If a model has no price, the
 run stops before any model call with `pricing_unknown`; use `tokens` as the cap
 for that model instead. Library hosts supply prices through
 `AgenticHost.priceUsage`.
@@ -150,10 +150,10 @@ for that model instead. Library hosts supply prices through
 `model_calls_per_assignment`, at model or step level, are still accepted but are
 ignored by new runs. So are the CLI `--agent-tokens-per-assignment` option and the
 host `tokensPerAssignment` option. Executors bound their own loops; the reference
-loop executor stops after 16 turns. `dogsled model run` prints a warning naming each ignored field.
+loop executor stops after 16 turns. `bobsled model run` prints a warning naming each ignored field.
 If a loop runs out of turns, the failure explains how to raise the limit.
 
-Runs saved by an earlier Dogsled version keep the per-attempt reservation rules
+Runs saved by an earlier Bobsled Core version keep the per-attempt reservation rules
 they started with when you resume them.
 
 ## Output types and metadata
@@ -165,11 +165,11 @@ integers. Timestamps use ISO strings with an offset; dates use `YYYY-MM-DD`.
 Vector values, SQL expressions, and warehouse-specific type names are not part
 of the executor output contract.
 
-Dogsled adds four columns to the published table:
+Bobsled Core adds four columns to the published table:
 
 | Column                | Meaning                                                                           |
 | --------------------- | --------------------------------------------------------------------------------- |
-| `_bobsled_run_id`     | Run that produced this row; set by Dogsled after acceptance                       |
+| `_bobsled_run_id`     | Run that produced this row; set by Bobsled Core after acceptance                  |
 | `_bobsled_evidence`   | Null or a nonempty list of evidence observations                                  |
 | `_bobsled_confidence` | Null or a number from 0 to 1; not a calibrated probability                        |
 | `_bobsled_reason`     | Null or an object with `summary`, `supporting_factors`, and `conflicting_factors` |
@@ -179,7 +179,7 @@ when unknown. It must not return `_bobsled_run_id`. Evidence contains `source`,
 `reference`, nullable `support_excerpt`, and `retrieved_at`. Sources must refer to
 supplied input, permitted context, retained evidence, or declared tools.
 Retrieval times come from actual observations. Shape validation does not prove
-that a citation supports a claim. Dogsled does not invent evidence or average
+that a citation supports a claim. Bobsled Core does not invent evidence or average
 confidence values.
 
 Each prepared input and the model's final output hold at most what the run's state
@@ -188,7 +188,7 @@ Snowflake, which includes the DuckDB run files the CLI uses by default, and 1,00
 and 1 MiB elsewhere. Each row, and each assignment and outcome sent to an executor, holds at
 most 16,384 JSON values, 16 levels, and 1 MiB, and one assignment holds at most 1,000
 rows. When a limit is exceeded, the error names the input, the limit, and the row.
-Dogsled never truncates silently: split oversized work upstream, or use an
+Bobsled Core never truncates silently: split oversized work upstream, or use an
 incremental input to process a large table in batches. The whole run checkpoint is
 limited to 128 MiB on the row store and 16 MiB elsewhere. See
 [row store limits](../../../packages/model-spec/docs/agentic-state.md#row-store-limits)

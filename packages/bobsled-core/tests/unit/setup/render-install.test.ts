@@ -73,7 +73,7 @@ describe('installCoworkAssets', () => {
         expect(error).toMatchObject({ exitCode: 2 });
         expect((error as Error).message).toContain(`Permission denied writing to "${dir}".`);
         expect((error as Error).message).toContain(
-          'dogsled setup install --dir /path/to/writable/directory'
+          'bobsled setup install --dir /path/to/writable/directory'
         );
       }
     }

@@ -286,7 +286,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -313,7 +313,7 @@ pipelines:
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'pga_events' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -382,7 +382,7 @@ pipelines:
 
       const promise = runProjectPipeline(
         { projectRoot, pipelineName: 'github', env },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       );
 
       await waitForSpawns(spawn);
@@ -421,7 +421,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github' },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow('A "bobsled_managed" destination only runs in Dogsled Cloud.');
     expect(spawn).not.toHaveBeenCalled();
@@ -474,7 +474,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'private_warehouse' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, resolvePipeline }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, resolvePipeline }
     );
 
     await waitForSpawns(spawn);
@@ -548,7 +548,7 @@ pipelines:
         destinationWarehouse: 'LOAD_MEDIUM',
         queryTag: 'managed:run-42',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, resolvePipeline }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, resolvePipeline }
     );
 
     await waitForSpawns(spawn);
@@ -604,7 +604,7 @@ pipelines:
       await expect(
         runProjectPipeline(
           { projectRoot, pipelineName: 'sync', destinationWarehouse: 'LOAD_MEDIUM' },
-          { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, resolvePipeline }
+          { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, resolvePipeline }
         )
       ).rejects.toThrow(/singular materialized Snowflake destination/);
       expect(spawn).not.toHaveBeenCalled();
@@ -650,7 +650,7 @@ pipelines:
           pipelineName: 'private_warehouse',
           queryTag: 'unsafe\nmetadata',
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, resolvePipeline }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, resolvePipeline }
       )
     ).rejects.toThrow(/control characters/);
     expect(spawn).not.toHaveBeenCalled();
@@ -680,7 +680,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn, resolvePipeline }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn, resolvePipeline }
     );
 
     await waitForSpawns(spawn);
@@ -724,7 +724,7 @@ pipelines:
         pipelineName: 'stripe',
         env: { SF_PASSWORD: 'secret-password' },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -784,7 +784,7 @@ pipelines:
           SF_OIDC_TOKEN_COMMAND: 'mint-snowflake-token --json',
         },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -833,7 +833,7 @@ pipelines:
         pipelineName: 'stripe',
         env: { VERCEL_OIDC_TOKEN: 'vercel-oidc-token' },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -879,7 +879,7 @@ pipelines:
         pipelineName: 'stripe',
         env: { VERCEL_OIDC_TOKEN: '  \t' },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     expect(result.status).toBe('failure');
@@ -920,7 +920,7 @@ pipelines:
         env: { VERCEL_OIDC_TOKEN: 'vercel-oidc-token' },
       },
       {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       }
     );
@@ -966,7 +966,7 @@ pipelines:
         fullRefresh: true,
         logFormat: 'json',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -1013,7 +1013,7 @@ pipelines:
         reconcileSchema: ['issues'],
         env: { SF_PASSWORD: 'secret-password' },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1053,7 +1053,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github', reconcileSchema: ['issues'] },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/--reconcile-schema requires fullRefresh: true/);
     expect(spawn).not.toHaveBeenCalled();
@@ -1086,7 +1086,7 @@ pipelines:
           fullRefresh: true,
           reconcileSchema: ['pull_requests'],
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/must be included in the selected resources: pull_requests/);
     expect(spawn).not.toHaveBeenCalled();
@@ -1110,7 +1110,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github', fullRefresh: true, reconcileSchema: ['issues'] },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/--reconcile-schema is only supported for Snowflake destinations/);
     expect(spawn).not.toHaveBeenCalled();
@@ -1140,7 +1140,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github', fullRefresh: true, reconcileSchema: ['issues'] },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/Unsupported destination\(s\): archive/);
     expect(spawn).not.toHaveBeenCalled();
@@ -1158,7 +1158,7 @@ pipelines:
     destination: warehouse
     inputs:
       org: bobsled-inc
-      repo_names: [dogsled, demo-repo]
+      repo_names: [bobsled, demo-repo]
     resources: [repos]
 `);
     tempDirs.push(projectRoot);
@@ -1172,7 +1172,7 @@ pipelines:
         projectRoot,
         pipelineName: 'github',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -1181,7 +1181,7 @@ pipelines:
     await expect(promise).resolves.toMatchObject({ exitCode: 0, status: 'success' });
 
     expect(spawn.mock.calls[0]?.[1]).toEqual(
-      expect.arrayContaining(['--input', 'repo_names=dogsled,demo-repo'])
+      expect.arrayContaining(['--input', 'repo_names=bobsled,demo-repo'])
     );
   });
 
@@ -1209,7 +1209,7 @@ pipelines:
           projectRoot,
           pipelineName: 'github',
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/contains a comma/);
 
@@ -1244,7 +1244,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1285,7 +1285,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1317,7 +1317,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1353,7 +1353,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github', fullRefresh: true },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1393,7 +1393,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractStderr.end(
@@ -1449,7 +1449,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'attachment', env: { SF_PASSWORD: 'test-password' } },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1479,7 +1479,7 @@ pipelines:
     resources:
       - resource: issues
         inputs:
-          repo: 'dogsled:demo=1,part'
+          repo: 'bobsled:demo=1,part'
           state: closed
           per_page: 50
       - pull_requests
@@ -1492,7 +1492,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1505,7 +1505,7 @@ pipelines:
     expect(extractArgs).toEqual(expect.arrayContaining(['--input', 'org=bobsled-inc']));
     expect(parseResourceInputsArg(extractArgs)).toEqual({
       issues: {
-        repo: 'dogsled:demo=1,part',
+        repo: 'bobsled:demo=1,part',
         state: 'closed',
         per_page: '50',
       },
@@ -1537,7 +1537,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1584,7 +1584,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1644,7 +1644,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github', resources: ['issues'] },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1686,7 +1686,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'linear' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1728,7 +1728,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -1789,7 +1789,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -1891,7 +1891,7 @@ pipelines:
     const originalEnv = { ...inputEnv };
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'stripe', env: inputEnv },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -1991,7 +1991,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github', fullRefresh: true },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn, 1);
@@ -2040,7 +2040,7 @@ pipelines:
         pipelineName: 'github',
         resources: ['issues', 'pull_requests'],
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -2080,7 +2080,7 @@ pipelines:
           pipelineName: 'github',
           resources: ['pull_requests'],
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/for_each child "pull_requests" without its required parent "issues"/);
     expect(spawn).not.toHaveBeenCalled();
@@ -2117,7 +2117,7 @@ pipelines:
         state: initialState,
         signal: controller.signal,
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -2161,7 +2161,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github' },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/unknown input.*labels.*issues/i);
     expect(spawn).not.toHaveBeenCalled();
@@ -2187,13 +2187,13 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github' },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/bobsled.yml:pipelines.github.resources.0.table/);
     expect(spawn).not.toHaveBeenCalled();
   });
 
-  it('still fails with Dogsled diagnostics when an override references an unknown transport', async () => {
+  it('still fails with Bobsled Core diagnostics when an override references an unknown transport', async () => {
     const projectRoot = makeProject(`destinations:
   warehouse:
     type: duckdb
@@ -2214,7 +2214,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'linear' },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/transport "bogus" not found on source "linear"/);
     expect(spawn).not.toHaveBeenCalled();
@@ -2245,7 +2245,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'linear' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -2281,7 +2281,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'linear', resources: ['issues'] },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -2316,7 +2316,7 @@ pipelines:
           pipelineName: 'linear',
           resources: ['issues', 'issues_mcp'],
         },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/resolves to duplicate resources: issues_mcp/);
     expect(spawn).not.toHaveBeenCalled();
@@ -2346,7 +2346,7 @@ pipelines:
       await expect(
         runProjectPipeline(
           { projectRoot, pipelineName: 'github', resources },
-          { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+          { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
         )
       ).rejects.toThrow(message);
       expect(spawn).not.toHaveBeenCalled();
@@ -2374,7 +2374,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github' },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/require database destinations.*file destination.*warehouse/i);
     expect(spawn).not.toHaveBeenCalled();
@@ -2399,7 +2399,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'linear', resources: ['cycles'] },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow(/for_each child "cycles" without its required parent "teams"/);
     expect(spawn).not.toHaveBeenCalled();
@@ -2429,7 +2429,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'linear' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -2464,7 +2464,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     extractChild.emit('close', 0);
@@ -2645,7 +2645,7 @@ pipelines:
 
     await expect(
       runProjectPipeline({ projectRoot, pipelineName: 'nightly_models' })
-    ).rejects.toThrow('dogsled model run --integration warehouse');
+    ).rejects.toThrow('bobsled model run --integration warehouse');
   });
 
   it('names the listed models and explains entity-graph pipelines', async () => {
@@ -2672,10 +2672,10 @@ pipelines:
     }
 
     await expect(runProjectPipeline({ projectRoot, pipelineName: 'marts' })).rejects.toThrow(
-      'dogsled model run orders_daily customers --integration warehouse'
+      'bobsled model run orders_daily customers --integration warehouse'
     );
     await expect(runProjectPipeline({ projectRoot, pipelineName: 'identity' })).rejects.toThrow(
-      'dogsled entity-graph build Customer'
+      'bobsled entity-graph build Customer'
     );
   });
 
@@ -2703,7 +2703,7 @@ pipelines:
         projectRoot,
         pipelineName: 'linear_mcp',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -2739,7 +2739,7 @@ pipelines:
         projectRoot,
         pipelineName: 'stripe',
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -2785,7 +2785,7 @@ pipelines:
           events.push(event);
         },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -2892,7 +2892,7 @@ pipelines:
           }
         },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -2933,7 +2933,7 @@ pipelines: {}
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'missing', maxRecords: 0 },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).rejects.toThrow('maxRecords must be a positive safe integer');
     expect(spawn).not.toHaveBeenCalled();
@@ -2967,7 +2967,7 @@ pipelines:
         pipelineName: 'github',
         state: { streams: {} },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -3017,7 +3017,7 @@ pipelines:
     await expect(
       runProjectPipeline(
         { projectRoot, pipelineName: 'github', signal: controller.signal },
-        { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+        { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
       )
     ).resolves.toMatchObject({ exitCode: 1, status: 'cancelled' });
     expect(spawn).not.toHaveBeenCalled();
@@ -3043,7 +3043,7 @@ pipelines:
     const controller = new AbortController();
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github', signal: controller.signal },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -3087,7 +3087,7 @@ pipelines:
           if (event.type === 'stage_completed' && event.stage === 'load') controller.abort();
         },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -3131,7 +3131,7 @@ pipelines:
           }
         },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -3183,7 +3183,7 @@ pipelines:
           throw new Error('consumer callback failed');
         },
       },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -3232,7 +3232,7 @@ pipelines:
 
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github', logFormat: 'json' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
     await waitForSpawns(spawn);
     loadChild.stderr!.write(`${JSON.stringify({ level: 'error', event: providerError })}\n`);
@@ -3264,7 +3264,7 @@ pipelines:
     const spawn = vi.fn().mockReturnValueOnce(extractChild).mockReturnValueOnce(loadChild) as Mock;
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);
@@ -3323,7 +3323,7 @@ pipelines:
       }) as Mock;
     const promise = runProjectPipeline(
       { projectRoot, pipelineName: 'github' },
-      { metaUrl: 'file:///dogsled/tests/mock.ts', spawn }
+      { metaUrl: 'file:///bobsled/tests/mock.ts', spawn }
     );
 
     await waitForSpawns(spawn);

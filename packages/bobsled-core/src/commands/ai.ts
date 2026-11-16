@@ -44,13 +44,13 @@ function writeOutput(payload: unknown, options: AiOutputOptions): void {
 }
 
 export function createAiGroup(program: Command): Command {
-  const command = new Command('ai').description('Test Dogsled model-role connections');
+  const command = new Command('ai').description('Test Bobsled Core model-role connections');
 
   command
     .command('test')
     .requiredOption('--connection <role>', 'platform.models role to test')
     .option('--config <path>', 'Path to bobsled.yml')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .option('--json', 'Emit JSON')
     .option('--yaml', 'Emit YAML')
     .description('Run a small embedding and structured-generation probe')
@@ -69,7 +69,7 @@ export function createAiGroup(program: Command): Command {
       });
       if (!project) {
         throw new CommandError(
-          'Could not find a Dogsled Project. Pass --project-root <path> or --config <path>.',
+          'Could not find a Bobsled Core Project. Pass --project-root <path> or --config <path>.',
           EXIT_ERROR
         );
       }
@@ -96,7 +96,7 @@ export function createAiGroup(program: Command): Command {
         } else {
           for await (const result of embedMany(
             connection,
-            [{ id: 'sample', text: 'Dogsled model connection health check' }],
+            [{ id: 'sample', text: 'Bobsled Core model connection health check' }],
             { platform: config.platform, projectKey, modelOverride: providerModels.embeddingModel }
           )) {
             embedResults.push(result);

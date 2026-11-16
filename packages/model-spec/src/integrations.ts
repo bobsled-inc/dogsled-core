@@ -312,7 +312,7 @@ export function validateSourceIntegrationRefs(
 }
 
 /**
- * Build the `SecretResolver` `dogsled model run` feeds into `resolveRunner` /
+ * Build the `SecretResolver` `bobsled model run` feeds into `resolveRunner` /
  * `interpolateSecrets`. When `--secrets <path>` is provided, the file's flat
  * `string → string` map overlays on top of `process.env`; otherwise the
  * resolver is a plain `EnvSecretResolver`.

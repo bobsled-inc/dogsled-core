@@ -17,7 +17,7 @@ env:
 jobs:
   policy:
     if: >-
-      github.repository == 'bobsled-inc/dogsled-core' && github.event.repository.private == false &&
+      github.repository == 'bobsled-inc/bobsled-core' && github.event.repository.private == false &&
       github.event.pull_request.user.login != 'dependabot[bot]' &&
       !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
@@ -52,10 +52,10 @@ jobs:
 
           async function applyContributionPolicy({ event, repository, request }) {
             const pr = event.pull_request;
-            if (repository !== 'bobsled-inc/dogsled-core' || event.repository?.private !== false || !pr || pr.user?.login === 'dependabot[bot]' || ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(pr.author_association)) return;
+            if (repository !== 'bobsled-inc/bobsled-core' || event.repository?.private !== false || !pr || pr.user?.login === 'dependabot[bot]' || ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(pr.author_association)) return;
             const number = pr.number;
             if (!Number.isSafeInteger(number) || number <= 0) throw new Error('Invalid pull request number.');
-            const root = `/repos/bobsled-inc/dogsled-core`;
+            const root = `/repos/bobsled-inc/bobsled-core`;
             let changed = 0;
             for (let page = 1; page <= 30; page += 1) {
               const files = await request('GET', `${root}/pulls/${number}/files?per_page=100&page=${page}`);
@@ -75,7 +75,7 @@ jobs:
               if (page === 100) throw new Error('Comment pagination limit reached.');
             }
             await request('POST', `${root}/issues/${number}/comments`, {
-              body: `${marker}\nThanks for the proposal. Dogsled currently accepts outside code only for small fixes that maintainers can verify directly from the patch, usually around twelve changed lines. This patch exceeds that guide after excluding lockfiles. Please read the [contribution policy](https://github.com/bobsled-inc/dogsled-core/blob/main/CONTRIBUTING.md). Maintainers decide whether to proceed; this notice does not close the PR. Bugs belong in issues and ideas or connector requests in Discussions. Accepted fixes require DCO sign-off.`,
+              body: `${marker}\nThanks for the proposal. Bobsled Core currently accepts outside code only for small fixes that maintainers can verify directly from the patch, usually around twelve changed lines. This patch exceeds that guide after excluding lockfiles. Please read the [contribution policy](https://github.com/bobsled-inc/bobsled-core/blob/main/CONTRIBUTING.md). Maintainers decide whether to proceed; this notice does not close the PR. Bugs belong in issues and ideas or connector requests in Discussions. Accepted fixes require DCO sign-off.`,
             });
           }
 

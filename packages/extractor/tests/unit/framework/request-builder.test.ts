@@ -5,8 +5,8 @@ import { buildOperationRequest, parseInputFlags } from '../../../src/framework/r
 
 describe('parseInputFlags', () => {
   it('parses repeated key=value flags into an input map', () => {
-    expect(parseInputFlags(['repo=dogsled', 'limit=10'])).toEqual({
-      repo: 'dogsled',
+    expect(parseInputFlags(['repo=bobsled', 'limit=10'])).toEqual({
+      repo: 'bobsled',
       limit: '10',
     });
   });

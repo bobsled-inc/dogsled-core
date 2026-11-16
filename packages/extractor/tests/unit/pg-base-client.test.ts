@@ -126,7 +126,7 @@ describe('parsePgCompatibleConfig', () => {
   // The YAML/Zod connection schema marks `schema` as optional (it's a
   // "default" for unqualified table names, not a required selector). The
   // runtime parser used to require it anyway, so a valid YAML would pass
-  // `dogsled extract validate` and then crash on first connect. Cover both
+  // `bobsled extract validate` and then crash on first connect. Cover both
   // sides of the contract explicitly.
   const baseRawConfig = {
     host: 'db.example.com',

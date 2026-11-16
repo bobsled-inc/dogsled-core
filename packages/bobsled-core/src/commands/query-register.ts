@@ -18,7 +18,7 @@ export function registerSourceQueryCommand(program: Command): void {
   program
     .command('source-query <sql...>')
     .description('Run a SQL query over sources.* with lazy API resource materialization')
-    .option('--project-root <path>', 'Dogsled Project root (default: current directory)')
+    .option('--project-root <path>', 'Bobsled Core Project root (default: current directory)')
     .action(async (sqlParts: string[], options: { projectRoot?: string }, command: Command) => {
       const globalOptions = command.optsWithGlobals<GlobalOptions>();
       const projectRoot = options.projectRoot ?? globalOptions.projectRoot ?? process.cwd();

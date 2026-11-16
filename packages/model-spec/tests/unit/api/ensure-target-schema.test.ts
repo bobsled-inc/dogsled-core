@@ -5,7 +5,7 @@
  * for every distinct destination schema the plan writes to — matching dbt's
  * `create_schema` hook and `@bobsled-inc/loader`'s `initialize()`/`ensureTable()`.
  *
- * The runner is mocked so we assert the exact SQL Dogsled emits (and its order),
+ * The runner is mocked so we assert the exact SQL Bobsled Core emits (and its order),
  * not real warehouse behavior.
  */
 import * as fs from 'node:fs/promises';

@@ -261,13 +261,13 @@ async function main(): Promise<void> {
     mart: path.join(tmpDir, 'mart.duckdb'),
   };
   detail(`Temp directory: ${tmpDir}`);
-  detail(`Generated Dogsled project: ${projectDir}`);
+  detail(`Generated Bobsled Core project: ${projectDir}`);
   detail(`Local DuckDB source path: ${paths.local}`);
   detail(`DuckDB mart path: ${paths.mart}`);
   detail(`BigQuery source: ${config.projectId}.${config.datasetId}.${config.tableId}`);
 
   try {
-    step('Writing generated Dogsled project files');
+    step('Writing generated Bobsled Core project files');
     await writeSmokeProject(projectDir, config, paths);
     await logGeneratedProject(projectDir);
 
@@ -277,7 +277,7 @@ async function main(): Promise<void> {
 
     await setupBigQuery(config);
 
-    step('Running Dogsled cross-warehouse publish');
+    step('Running Bobsled Core cross-warehouse publish');
     detail('Input sources: bigquery.orders + local.customers');
     detail('Target integration: mart');
     detail('Expected target table: main.customer_order_revenue');
@@ -285,11 +285,11 @@ async function main(): Promise<void> {
       integration: 'mart',
       crossWarehousePublisher: publishCrossWarehouse,
     });
-    detail(`Dogsled run result:\n${formatJson(result)}`);
+    detail(`Bobsled Core run result:\n${formatJson(result)}`);
     if (!result.ok) {
       fail(`Cross-warehouse run failed:\n${JSON.stringify(result, null, 2)}`);
     }
-    detail('Dogsled cross-warehouse publish completed successfully.');
+    detail('Bobsled Core cross-warehouse publish completed successfully.');
 
     step('Querying DuckDB mart output');
     const martSql = [

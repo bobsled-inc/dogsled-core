@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  * Import-safety guard for `@bobsled-inc/bobsled-core/schema`.
  *
  * The schema/catalog entry point exists so that consumers which only need to
- * validate or synthesize Dogsled config (e.g. a web app's config routes) can do
+ * validate or synthesize Bobsled Core config (e.g. a web app's config routes) can do
  * so WITHOUT pulling in the execution barrels (`./sync`, `./actions`, the
  * package root), which transitively reach `@bobsled-inc/extractor`'s runtime
  * barrel and — historically — eagerly loaded the DuckDB native binding at

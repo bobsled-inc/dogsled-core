@@ -35,7 +35,7 @@ const SAAS_PIPELINE_CONFIG: PipelineConfig = {
 };
 
 const SAAS_PIPELINE_TERMINAL_COMMAND = buildPipelineRunCommands(SAAS_PIPELINE_CONFIG)
-  .map(({ command, args }) => `dogsled ${command} ${args.map(shellQuote).join(' ')}`.trim())
+  .map(({ command, args }) => `bobsled ${command} ${args.map(shellQuote).join(' ')}`.trim())
   .join('\n');
 
 export const FEATURED_JOURNEY_ID = 'saas-pipeline';
@@ -43,7 +43,7 @@ export const FEATURED_JOURNEY_ID = 'saas-pipeline';
 export const JOURNEYS: Journey[] = [
   {
     id: 'bobsled-overview',
-    title: 'What can Dogsled do?',
+    title: 'What can Bobsled Core do?',
     description: 'Take a fast product tour from the dashboard through a concrete Stripe example.',
     estimatedMinutes: 6,
     outcome: 'You will see how integrations, models, and guided exploration connect together.',
@@ -51,7 +51,7 @@ export const JOURNEYS: Journey[] = [
       {
         title: 'Start on the dashboard',
         page: '/',
-        instruction: 'Scan the launchpad to understand the five core ways to explore Dogsled.',
+        instruction: 'Scan the launchpad to understand the five core ways to explore Bobsled Core.',
       },
       {
         title: 'Browse integrations',
@@ -125,7 +125,8 @@ export const JOURNEYS: Journey[] = [
     title: 'Explore Models',
     description: 'Move from a bundle list into the DAG, compiled files, and source integration.',
     estimatedMinutes: 8,
-    outcome: 'You will know how Dogsled bundles source, staging, and mart layers for a connector.',
+    outcome:
+      'You will know how Bobsled Core bundles source, staging, and mart layers for a connector.',
     steps: [
       {
         title: 'Open the catalog',
@@ -164,7 +165,8 @@ export const JOURNEYS: Journey[] = [
     title: 'Entity Resolution',
     description: 'Step through the full Entity Graph configurator from overview to generated YAML.',
     estimatedMinutes: 10,
-    outcome: 'You will understand how Dogsled’s resolution pipeline is assembled stage by stage.',
+    outcome:
+      'You will understand how Bobsled Core’s resolution pipeline is assembled stage by stage.',
     steps: [
       {
         title: 'Overview',
@@ -212,7 +214,8 @@ export const JOURNEYS: Journey[] = [
   {
     id: 'cli-power-user',
     title: 'CLI Power User',
-    description: 'Use the embedded terminal to tour the highest-value Dogsled CLI entrypoints.',
+    description:
+      'Use the embedded terminal to tour the highest-value Bobsled Core CLI entrypoints.',
     estimatedMinutes: 7,
     outcome: 'You will leave with a mental map of the CLI surface area and where to go next.',
     steps: [
@@ -221,27 +224,27 @@ export const JOURNEYS: Journey[] = [
         page: buildTerminalHref({ command: 'integrations', args: ['list'] }),
         instruction:
           'Start broad and confirm how to inspect the available connectors from the CLI.',
-        terminalCmd: 'dogsled integrations list',
+        terminalCmd: 'bobsled integrations list',
       },
       {
         title: 'Show Stripe',
         page: buildTerminalHref({ command: 'integrations', args: ['show', 'stripe'] }),
         instruction:
           'Inspect one connector deeply so you can see the resource and auth metadata the CLI exposes.',
-        terminalCmd: 'dogsled integrations show stripe',
+        terminalCmd: 'bobsled integrations show stripe',
       },
       {
         title: 'Check extract help',
         page: buildTerminalHref({ command: 'extract', args: ['--help'] }),
         instruction: 'Jump to the extraction command surface and note the operational flags.',
-        terminalCmd: 'dogsled extract --help',
+        terminalCmd: 'bobsled extract --help',
       },
       {
         title: 'Describe setup catalog',
         page: buildTerminalHref({ command: 'setup', args: ['describe', '--json'] }),
         instruction:
-          'Use the machine-readable setup catalog to understand how Dogsled exposes structured config.',
-        terminalCmd: 'dogsled setup describe --json',
+          'Use the machine-readable setup catalog to understand how Bobsled Core exposes structured config.',
+        terminalCmd: 'bobsled setup describe --json',
       },
     ],
   },

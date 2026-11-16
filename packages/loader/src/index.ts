@@ -14,9 +14,9 @@ export function buildProgram(): Command {
   const program = new Command();
 
   program
-    .name('dogsled load')
+    .name('bobsled load')
     .version('0.0.1')
-    .description('Dogsled Loader — convert extractor protocol streams into destination files')
+    .description('Bobsled Core Loader — convert extractor protocol streams into destination files')
     .showHelpAfterError();
 
   registerRunCommand(program);
@@ -43,7 +43,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === realpathSync(process.a
   const effectiveArgv = shouldInjectRun ? ['run', ...argv] : argv;
 
   try {
-    await buildProgram().parseAsync(['node', 'dogsled load', ...effectiveArgv]);
+    await buildProgram().parseAsync(['node', 'bobsled load', ...effectiveArgv]);
   } catch (error) {
     handleRunError(error);
   }

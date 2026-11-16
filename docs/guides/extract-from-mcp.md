@@ -1,7 +1,7 @@
 # Extract from MCP servers
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server exposes tools
-that return data. Dogsled can call those tools as resources and load their results
+that return data. Bobsled Core can call those tools as resources and load their results
 like any other source. The examples use the MCP project's reference server, which
 has a `get-structured-content` tool that returns simulated weather for a city.
 
@@ -31,7 +31,7 @@ default_transport: mcp
 List the server's tools:
 
 ```bash
-dogsled extract mcp list-tools everything
+bobsled extract mcp list-tools everything
 ```
 
 ```text
@@ -44,7 +44,7 @@ get-sum	Returns the sum of two numbers
 
 ## Scaffold resources
 
-`dogsled extract mcp discover everything --write` writes one resource file per tool
+`bobsled extract mcp discover everything --write` writes one resource file per tool
 under `resources/everything/`. To learn a tool's output shape, it reads the tool's
 output schema, or calls the tool once when there is none. Pass `--no-dry-run` to
 stop it from calling tools. The scaffolds are marked for review; edit them before
@@ -81,9 +81,9 @@ extract:
 `spec_version` or `integration` field.
 
 ```bash
-dogsled extract run --integration everything weather --input location=Chicago --quiet \
-  | dogsled load run --dest duckdb --db-path mcp.duckdb
-dogsled query "SELECT temperature, conditions, humidity FROM weather" --db-path mcp.duckdb
+bobsled extract run --integration everything weather --input location=Chicago --quiet \
+  | bobsled load run --dest duckdb --db-path mcp.duckdb
+bobsled query "SELECT temperature, conditions, humidity FROM weather" --db-path mcp.duckdb
 ```
 
 ```text
@@ -98,8 +98,8 @@ For tools that return pages of results, `extract.pagination` supports
 
 ## Check redaction
 
-`dogsled extract mcp verify-redaction everything --tool <tool>` calls one tool with
-no arguments and prints the result after Dogsled's redaction, so that you can check
+`bobsled extract mcp verify-redaction everything --tool <tool>` calls one tool with
+no arguments and prints the result after Bobsled Core's redaction, so that you can check
 what would reach your logs and tables before you extract.
 
 ## Local servers
@@ -110,6 +110,6 @@ BigQuery and Snowflake MCP servers used by the `bigquery` and `snowflake` librar
 integrations. Run any other server over HTTP. MCP servers on your own machine or
 network also need `BOBSLED_CORE_EXTRACTOR_ALLOW_PRIVATE_HOSTS=1`.
 
-`dogsled mcp` is a shortcut for `dogsled extract mcp`, and also contains
-`dogsled mcp serve`, which runs Dogsled itself as an MCP server: see
+`bobsled mcp` is a shortcut for `bobsled extract mcp`, and also contains
+`bobsled mcp serve`, which runs Bobsled Core itself as an MCP server: see
 [Entity graph](entity-graph.md#serve-entities-to-agents).

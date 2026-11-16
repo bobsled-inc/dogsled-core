@@ -1,7 +1,7 @@
 /**
  * Barrel export for metadata entities (metrics / relationships / VQs).
  *
- * Consumed by `dogsled model compile --include-metadata`, `dogsled model validate`, and the
+ * Consumed by `bobsled model compile --include-metadata`, `bobsled model validate`, and the
  * Model Spec programmatic library API. Entity schemas live under `./metric.ts`,
  * `./relationship.ts`, `./vq.ts`; directory loaders and cross-reference
  * validation live in `./registry.ts` and `./cross-references.ts`.

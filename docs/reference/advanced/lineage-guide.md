@@ -1,6 +1,6 @@
-# Dogsled Lineage Guide
+# Bobsled Core Lineage Guide
 
-Lineage in Dogsled has two complementary layers:
+Lineage in Bobsled Core has two complementary layers:
 
 - **Model Spec model lineage**: static model and column lineage from YAML model specs. Use it before changing model expressions, source schemas, joins, or filters.
 - **Entity Graph lineage**: persisted attribute provenance for mastered entity profiles. Use it before changing survivorship rules, resolution inputs, or upstream columns that feed golden records.
@@ -9,31 +9,31 @@ Together they answer two different questions:
 
 | Question                                            | Command family                 |
 | --------------------------------------------------- | ------------------------------ |
-| What models depend on this model or source?         | `dogsled model lineage`        |
-| What columns feed this model column?                | `dogsled model lineage`        |
-| What entity attributes depend on this source field? | `dogsled entity-graph lineage` |
-| Which attributes have incomplete provenance?        | `dogsled entity-graph lineage` |
+| What models depend on this model or source?         | `bobsled model lineage`        |
+| What columns feed this model column?                | `bobsled model lineage`        |
+| What entity attributes depend on this source field? | `bobsled entity-graph lineage` |
+| Which attributes have incomplete provenance?        | `bobsled entity-graph lineage` |
 
 ## Quick Start: Model Lineage
 
 Show the dependency DAG for one integration:
 
 ```bash
-dogsled model lineage --integration duckdb
+bobsled model lineage --integration duckdb
 ```
 
 Emit machine-readable model and column lineage:
 
 ```bash
-dogsled model lineage --integration duckdb --json
-dogsled model lineage --integration duckdb --yaml
+bobsled model lineage --integration duckdb --json
+bobsled model lineage --integration duckdb --yaml
 ```
 
 Focus on one model column:
 
 ```bash
-dogsled model lineage --integration duckdb --column fct_orders.ORDER_ID --json
-dogsled model lineage --integration duckdb --column fct_orders.ORDER_ID --yaml
+bobsled model lineage --integration duckdb --column fct_orders.ORDER_ID --json
+bobsled model lineage --integration duckdb --column fct_orders.ORDER_ID --yaml
 ```
 
 The JSON and YAML envelopes have the same shape and include:
@@ -41,7 +41,7 @@ The JSON and YAML envelopes have the same shape and include:
 - `integrations[].models[]`: model DAG nodes, model refs, source refs, materialization, declared trust tier, and effective trust tier
 - `integrations[].columnLineage[]`: one row per output column, with upstream column refs and `isComplete`
 
-Use `isComplete=false` as a review signal. It means Dogsled found a lineage boundary it will not guess through, such as explicit `raw_sql`, a subquery, or a reshape operation that changes row/column shape.
+Use `isComplete=false` as a review signal. It means Bobsled Core found a lineage boundary it will not guess through, such as explicit `raw_sql`, a subquery, or a reshape operation that changes row/column shape.
 
 ## What Model Spec Column Lineage Traces
 
@@ -61,19 +61,19 @@ Model Spec lineage walks parsed model expression ASTs and records upstream `colu
 Preview attribute provenance without writing to the warehouse:
 
 ```bash
-dogsled entity-graph lineage compile --dry-run --json
+bobsled entity-graph lineage compile --dry-run --json
 ```
 
 Persist schema-level provenance to `entity_graph.lineage`:
 
 ```bash
-dogsled entity-graph lineage compile --runner ./runner.js --json
+bobsled entity-graph lineage compile --runner ./runner.js --json
 ```
 
 Query one mastered attribute:
 
 ```bash
-dogsled entity-graph lineage --entity company --attribute name --runner ./runner.js --json
+bobsled entity-graph lineage --entity company --attribute name --runner ./runner.js --json
 ```
 
 Entity Graph lineage rows are schema-level by default (`entity_id = null`). They map survivorship attributes to resolution input refs and source columns, including standardization transforms and `is_complete`.
@@ -87,7 +87,7 @@ Use this workflow before removing, renaming, or materially changing a source fie
 1. Run Model Spec lineage for the model or column you plan to change.
 
    ```bash
-   dogsled model lineage --integration duckdb --column stg_orders.ORDER_ID --json
+   bobsled model lineage --integration duckdb --column stg_orders.ORDER_ID --json
    ```
 
    Use `--yaml` instead when the output will be read directly in an agent handoff or PR note.
@@ -95,13 +95,13 @@ Use this workflow before removing, renaming, or materially changing a source fie
 2. If the change feeds mastered entities, compile entity lineage in dry-run mode.
 
    ```bash
-   dogsled entity-graph lineage compile --dry-run --json
+   bobsled entity-graph lineage compile --dry-run --json
    ```
 
 3. Query persisted entity lineage for affected attributes.
 
    ```bash
-   dogsled entity-graph lineage --entity company --attribute name --runner ./runner.js --json
+   bobsled entity-graph lineage --entity company --attribute name --runner ./runner.js --json
    ```
 
 4. Treat these as merge blockers until reviewed:
@@ -112,7 +112,7 @@ Use this workflow before removing, renaming, or materially changing a source fie
 5. After merging and running the updated pipeline, refresh persisted lineage.
 
    ```bash
-   dogsled entity-graph lineage compile --runner ./runner.js --json
+   bobsled entity-graph lineage compile --runner ./runner.js --json
    ```
 
 ## Agent Checklist

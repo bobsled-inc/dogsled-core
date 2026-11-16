@@ -16,20 +16,20 @@ Use this skill when work involves `relationship_ontology`, `relationship_extract
 1. Run relationship extraction:
 
 ```bash
-dogsled entity-graph relationships extract --runner ./runner.js --schema entity_graph --yaml
+bobsled entity-graph relationships extract --runner ./runner.js --schema entity_graph --yaml
 ```
 
 1. Export review rows:
 
 ```bash
-dogsled entity-graph relationships review export --runner ./runner.js --schema entity_graph --yaml
+bobsled entity-graph relationships review export --runner ./runner.js --schema entity_graph --yaml
 ```
 
 1. Apply reviewed decisions and re-compact:
 
 ```bash
-dogsled entity-graph relationships review apply relationship_decisions.yml --runner ./runner.js
-dogsled entity-graph relationships compact --runner ./runner.js
+bobsled entity-graph relationships review apply relationship_decisions.yml --runner ./runner.js
+bobsled entity-graph relationships compact --runner ./runner.js
 ```
 
 ## Rules

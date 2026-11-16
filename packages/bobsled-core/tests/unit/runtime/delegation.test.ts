@@ -37,7 +37,7 @@ describe('runDelegatedCli', () => {
     const spawn = vi.fn().mockReturnValue(child) as Mock;
 
     const exitCodePromise = runDelegatedCli('extract', ['run', '--integration', 'github'], {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -58,7 +58,7 @@ describe('runDelegatedCli', () => {
     const spawn = vi.fn().mockReturnValue(child) as Mock;
 
     const exitCodePromise = runDelegatedCli('model', ['compile'], {
-      metaUrl: 'file:///dogsled/tests/mock.ts',
+      metaUrl: 'file:///bobsled/tests/mock.ts',
       spawn,
     });
 
@@ -77,7 +77,7 @@ describe('maybeRunDelegatedCommand', () => {
       queueMicrotask(() => child.emit('close', exitCode));
       return child;
     }) as Mock;
-    return { metaUrl: 'file:///dogsled/tests/mock.ts', spawn };
+    return { metaUrl: 'file:///bobsled/tests/mock.ts', spawn };
   }
 
   it.each(['estimate', 'check', 'commit-state', 'activate', 'mcp'])(
@@ -177,7 +177,7 @@ describe('maybeRunDelegatedCommand', () => {
       const child = createMockChild();
       const spawn = vi.fn().mockReturnValue(child) as Mock;
       const resultPromise = maybeRunDelegatedCommand(['mcp', 'discover'], {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn,
       });
 
@@ -187,7 +187,7 @@ describe('maybeRunDelegatedCommand', () => {
       await expect(resultPromise).resolves.toEqual({ handled: true, exitCode: 143 });
     });
 
-    it('leaves mcp serve for the Dogsled CLI direct command', async () => {
+    it('leaves mcp serve for the Bobsled Core CLI direct command', async () => {
       const result = await maybeRunDelegatedCommand(['mcp', 'serve'], makeDeps());
       expect(result).toEqual({ handled: false });
     });
@@ -257,7 +257,7 @@ describe('maybeRunDelegatedCommand', () => {
       const child = createMockChild();
       Object.assign(child, { exitCode: null, signalCode: null });
       const deps = {
-        metaUrl: 'file:///dogsled/tests/mock.ts',
+        metaUrl: 'file:///bobsled/tests/mock.ts',
         spawn: vi.fn().mockReturnValue(child) as Mock,
         resolveBobsledModelRunInvocation: vi.fn(() => ({ command: 'model-run', args: [] })),
       };
@@ -271,7 +271,7 @@ describe('maybeRunDelegatedCommand', () => {
       expect(process.listenerCount('SIGTERM')).toBe(before);
     });
 
-    it('delegates model run to the Dogsled-owned child entrypoint', async () => {
+    it('delegates model run to the Bobsled Core-owned child entrypoint', async () => {
       const deps = {
         ...makeDeps(0),
         resolveBobsledModelRunInvocation: vi.fn((_metaUrl: string, args: string[]) => ({
@@ -284,7 +284,7 @@ describe('maybeRunDelegatedCommand', () => {
 
       expect(result).toEqual({ handled: true, exitCode: 0 });
       expect(deps.resolveBobsledModelRunInvocation).toHaveBeenCalledWith(
-        'file:///dogsled/tests/mock.ts',
+        'file:///bobsled/tests/mock.ts',
         ['--json']
       );
       expect(deps.spawn).toHaveBeenCalledWith(
@@ -310,7 +310,7 @@ describe('maybeRunDelegatedCommand', () => {
 
       expect(result).toEqual({ handled: true, exitCode: 0 });
       expect(deps.resolveBobsledModelRunInvocation).toHaveBeenCalledWith(
-        'file:///dogsled/tests/mock.ts',
+        'file:///bobsled/tests/mock.ts',
         ['--integration', 'help']
       );
       expect(deps.spawn).toHaveBeenCalledWith(
@@ -320,19 +320,22 @@ describe('maybeRunDelegatedCommand', () => {
       );
     });
 
-    it.each(['--help', '-h', 'help'])('delegates model run %s to Dogsled help', async (helpArg) => {
-      const deps = {
-        ...makeDeps(0),
-        resolveBobsledModelRunInvocation: vi.fn((_metaUrl: string, args: string[]) => ({
-          command: 'bobsled-model-run-cli',
-          args,
-        })),
-      };
-      const result = await maybeRunDelegatedCommand(['model', 'run', helpArg], deps);
+    it.each(['--help', '-h', 'help'])(
+      'delegates model run %s to Bobsled Core help',
+      async (helpArg) => {
+        const deps = {
+          ...makeDeps(0),
+          resolveBobsledModelRunInvocation: vi.fn((_metaUrl: string, args: string[]) => ({
+            command: 'bobsled-model-run-cli',
+            args,
+          })),
+        };
+        const result = await maybeRunDelegatedCommand(['model', 'run', helpArg], deps);
 
-      expect(result).toEqual({ handled: true, exitCode: 0 });
-      expect(deps.spawn).toHaveBeenCalled();
-    });
+        expect(result).toEqual({ handled: true, exitCode: 0 });
+        expect(deps.spawn).toHaveBeenCalled();
+      }
+    );
 
     it('returns handled: false for unrecognized subcommands', async () => {
       const result = await maybeRunDelegatedCommand(['model', 'unknown'], makeDeps());

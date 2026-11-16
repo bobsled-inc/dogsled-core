@@ -164,7 +164,7 @@ function clampConfidence(value: number): number {
 }
 
 /**
- * Create the in-Dogsled model judge for one entity, or `undefined` when the
+ * Create the in-Bobsled Core model judge for one entity, or `undefined` when the
  * role is not configured under `platform.models` (mirrors
  * `createAiMentionLlmCall` — the caller decides how to degrade).
  */

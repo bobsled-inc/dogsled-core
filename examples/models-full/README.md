@@ -10,12 +10,12 @@ For a manual walkthrough, copy this directory to a new folder, install
 `@bobsled-inc/bobsled-core` locally, then run:
 
 ```bash
-dogsled model seed load --dialect duckdb --schema main --runner ./runner.mjs --json
-dogsled query "CREATE OR REPLACE TABLE benchmarks AS SELECT i AS customer_id, 1000 AS target FROM range(1,51) AS t(i)" --db-path auxiliary.duckdb
-dogsled model validate --integration local_duckdb
-dogsled model run --integration local_duckdb --json
-dogsled model expect run --integration local_duckdb --runner ./runner.mjs --json
-dogsled model lineage --integration local_duckdb --json
+bobsled model seed load --dialect duckdb --schema main --runner ./runner.mjs --json
+bobsled query "CREATE OR REPLACE TABLE benchmarks AS SELECT i AS customer_id, 1000 AS target FROM range(1,51) AS t(i)" --db-path auxiliary.duckdb
+bobsled model validate --integration local_duckdb
+bobsled model run --integration local_duckdb --json
+bobsled model expect run --integration local_duckdb --runner ./runner.mjs --json
+bobsled model lineage --integration local_duckdb --json
 ```
 
 The query command prepares `main.benchmarks` in `auxiliary.duckdb` before the mixed

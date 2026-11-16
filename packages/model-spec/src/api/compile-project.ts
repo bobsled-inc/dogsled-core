@@ -1,5 +1,5 @@
 /**
- * `compileProject` — Layer 3 orchestrator for `dogsled model compile`.
+ * `compileProject` — Layer 3 orchestrator for `bobsled model compile`.
  *
  * Accepts a Model Spec project directory (or a pre-loaded `LoadedProject`) and returns
  * typed per-integration `CompileResult[]` groups. Does not touch stdout; the

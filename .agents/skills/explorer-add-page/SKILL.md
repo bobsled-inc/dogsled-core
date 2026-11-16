@@ -145,7 +145,7 @@ Use Heroicons (outline style, 24x24 viewBox, strokeWidth 1.5). Pick from: https:
 If the page is a primary feature, add it to `apps/explorer/src/app/page.tsx`:
 
 - Add a quick action card in the quick actions section
-- Or add to the capabilities overview if it's a core Dogsled capability
+- Or add to the capabilities overview if it's a core Bobsled Core capability
 
 ### Step 6: Update docs
 

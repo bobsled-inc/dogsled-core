@@ -52,25 +52,25 @@ Each stream is keyed as `integration/resource`. Check:
 **Full refresh** (re-extract everything, ignore the saved bookmark for this run):
 
 ```bash
-dogsled extract run {resource} --integration {name} --full-refresh
+bobsled extract run {resource} --integration {name} --full-refresh
 ```
 
 **Durable incremental run** (advance the saved bookmark):
 
 ```bash
-dogsled extract run {resource} --integration {name} --advance-state
+bobsled extract run {resource} --integration {name} --advance-state
 ```
 
 **Preview run** (emit `STATE`, but leave the saved bookmark unchanged):
 
 ```bash
-dogsled extract run {resource} --integration {name} --limit 5
+bobsled extract run {resource} --integration {name} --limit 5
 ```
 
 **Topup from a specific date** (incremental from a given point):
 
 ```bash
-dogsled extract topup --integration {name} --resource {resource} --since 2024-01-01
+bobsled extract topup --integration {name} --resource {resource} --since 2024-01-01
 ```
 
 **Manual state edit** (advanced — use with caution):
@@ -103,7 +103,7 @@ If `cursor_type` is omitted, it is auto-detected from the first value seen. The 
 - `run` and `topup` emit `STATE` messages for incremental resources.
 - Durable bookmarks only advance when `--advance-state` is passed.
 - `--limit` runs are preview-only and never persist durable state.
-- In `dogsled pipeline` multi-destination fan-out mode, Dogsled captures extractor `STATE` messages and runs `dogsled extract commit-state` only after every destination loader succeeds.
+- In `bobsled pipeline` multi-destination fan-out mode, Bobsled Core captures extractor `STATE` messages and runs `bobsled extract commit-state` only after every destination loader succeeds.
 
 If a fan-out pipeline appears to re-extract data after one destination failed, that is expected: extractor state intentionally stayed behind so the failed destination can catch up on retry.
 

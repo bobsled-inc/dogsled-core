@@ -17,7 +17,7 @@ export default function LearnPage() {
     <div className="mx-auto max-w-6xl space-y-8 p-6">
       <PageHeader
         title="Learn"
-        description="A visual curriculum for Dogsled concepts, runnable commands, local SQL inspection, Entity Graph outputs, and credential-aware extraction paths."
+        description="A visual curriculum for Bobsled Core concepts, runnable commands, local SQL inspection, Entity Graph outputs, and credential-aware extraction paths."
         breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Learn' }]}
       />
 

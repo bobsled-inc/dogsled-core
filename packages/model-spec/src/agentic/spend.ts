@@ -51,7 +51,7 @@ export function assertAgenticPricing(
       const model = `${profile.connection.provider}/${profile.connection.model}`;
       throw new AgenticStateError('limit', {
         reason: 'pricing_unknown',
-        message: `A cost cap (limits.max_cost_usd or --agent-max-cost) needs model pricing, but Dogsled has no price for profile "${profile.name}" (${model}) used by step "${step.id}".`,
+        message: `A cost cap (limits.max_cost_usd or --agent-max-cost) needs model pricing, but Bobsled Core has no price for profile "${profile.name}" (${model}) used by step "${step.id}".`,
         hint: 'Use limits.tokens as the cap for this model instead, or remove the cost cap.',
       });
     }

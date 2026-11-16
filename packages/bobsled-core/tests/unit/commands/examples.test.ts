@@ -29,7 +29,7 @@ afterEach(() => {
   }
 });
 
-describe('dogsled examples', () => {
+describe('bobsled examples', () => {
   it('makes copied shell scripts executable, including nested ones', () => {
     const root = project({
       'walkthrough.sh': '#!/bin/sh\n',
@@ -53,8 +53,8 @@ describe('dogsled examples', () => {
       'cd demo',
       "export GITHUB_TOKEN='<your-token>'",
       './walkthrough.sh',
-      'dogsled model validate',
-      'dogsled model compile -o ./compiled',
+      'bobsled model validate',
+      'bobsled model compile -o ./compiled',
       'See README.md for the full walkthrough.',
     ]);
   });
@@ -64,7 +64,7 @@ describe('dogsled examples', () => {
     expect(exampleNextSteps(root, 'docs')).toEqual([
       'cd docs',
       "export S3_BUCKET='<your-bucket>'",
-      'dogsled extract validate s3_documents',
+      'bobsled extract validate s3_documents',
       'See README.md for the full walkthrough.',
     ]);
   });

@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobsled-inc/dogsled-core.git",
+    "url": "git+https://github.com/bobsled-inc/bobsled-core.git",
     "directory": "packages/skills"
   },
   "engines": {
@@ -64,9 +64,9 @@
     "@vitest/coverage-v8": "catalog:testing",
     "vitest": "catalog:testing"
   },
-  "description": "Private Skill documents and Dogsled-maintained agent guidance bundled with Dogsled.",
+  "description": "Private Skill documents and Bobsled Core-maintained agent guidance bundled with Bobsled Core.",
   "keywords": [
-    "dogsled",
+    "bobsled",
     "data-engineering",
     "etl",
     "elt",
@@ -75,8 +75,8 @@
     "automation",
     "workflows"
   ],
-  "homepage": "https://github.com/bobsled-inc/dogsled-core#readme",
+  "homepage": "https://github.com/bobsled-inc/bobsled-core#readme",
   "bugs": {
-    "url": "https://github.com/bobsled-inc/dogsled-core/issues"
+    "url": "https://github.com/bobsled-inc/bobsled-core/issues"
   }
 }

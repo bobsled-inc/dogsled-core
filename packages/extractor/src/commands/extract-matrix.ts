@@ -216,7 +216,7 @@ export async function extractResourcesWithMatrices(
               `for_each parent "${forEach.resource}" did not run in this extraction ` +
               `process — cannot fan out ${resource.name}. Parent and child must extract ` +
               `together in the same process. Select both resources, for example: ` +
-              `dogsled extract run --integration ${integrationName} ${forEach.resource} ${resource.name}.`;
+              `bobsled extract run --integration ${integrationName} ${forEach.resource} ${resource.name}.`;
             await logger.error(`Failed: ${integrationName}/${resource.name}: ${message}`);
             failedResources += 1;
             resourceResults.push({

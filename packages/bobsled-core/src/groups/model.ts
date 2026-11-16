@@ -13,7 +13,7 @@ const MODEL_COMMANDS = [
   ['validate', 'Validate model specs for correctness'],
   ['seed', 'Manage reference data (seeds)'],
   ['models', 'Browse and install prebuilt model bundles'],
-  ['ossie', 'Import and export Ossie with native Dogsled models'],
+  ['ossie', 'Import and export Ossie with native Bobsled Core models'],
 ] as const;
 
 export const MODEL_SUBCOMMANDS = MODEL_COMMANDS.map(([name]) => name);

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Builds dogsled and its delegated CLIs, stages only the public runtime artifacts
+# Builds bobsled and its delegated CLIs, stages only the public runtime artifacts
 # needed to execute them and creates a distributable zip in the output directory.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,7 +16,7 @@ OUTPUT_DIR="${1:?Usage: pack.sh <output-directory>}"
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 DEPLOY_DIR="$STAGING_DIR/deploy"
-PACKAGE_DIR="$STAGING_DIR/dogsled"
+PACKAGE_DIR="$STAGING_DIR/bobsled"
 
 copy_package_dist() {
   local package_name="$1"
@@ -145,9 +145,9 @@ pnpm --config.inject-workspace-packages=true deploy --filter @bobsled-inc/bobsle
 echo "▸ Staging curated runtime package…"
 cp -R "$DEPLOY_DIR/node_modules" "$PACKAGE_DIR/"
 cp -R "$BOBSLED_CORE_DIR/dist" "$PACKAGE_DIR/"
-cp "$SCRIPT_DIR/launcher.sh" "$PACKAGE_DIR/dogsled"
+cp "$SCRIPT_DIR/launcher.sh" "$PACKAGE_DIR/bobsled"
 cp "$SCRIPT_DIR/install.sh" "$PACKAGE_DIR/install.sh"
-chmod +x "$PACKAGE_DIR/dogsled" "$PACKAGE_DIR/install.sh"
+chmod +x "$PACKAGE_DIR/bobsled" "$PACKAGE_DIR/install.sh"
 
 mkdir -p "$PACKAGE_DIR/node_modules/@bobsled-inc"
 # pnpm deploy stages @bobsled-inc/bobsled-core into node_modules, but we copy its
@@ -238,7 +238,7 @@ EYML
 
 echo "▸ Creating zip…"
 cd "$STAGING_DIR"
-zip -yrq "$ZIP_NAME" dogsled
+zip -yrq "$ZIP_NAME" bobsled
 
 echo "▸ Generating SHA-256 checksum…"
 if command -v sha256sum >/dev/null 2>&1; then
@@ -255,35 +255,35 @@ cd "$VERIFY_DIR"
 unzip -q "$STAGING_DIR/$ZIP_NAME"
 
 # 1. CLI runs
-node dogsled/dist/index.js --help > /dev/null
-echo "  ✓ dogsled --help works"
+node bobsled/dist/index.js --help > /dev/null
+echo "  ✓ bobsled --help works"
 
 # 2. Validate bundled examples
-(cd dogsled/examples/demo && node "$VERIFY_DIR/dogsled/dist/index.js" extract validate > /dev/null)
-echo "  ✓ dogsled extract validate works"
+(cd bobsled/examples/demo && node "$VERIFY_DIR/bobsled/dist/index.js" extract validate > /dev/null)
+echo "  ✓ bobsled extract validate works"
 
 # 3. DuckDB binding present (warn-only — binding is platform-specific and
 #    installed by install.sh on the user's machine)
-if ! find dogsled/node_modules -name "duckdb.node" -print -quit | grep -q .; then
+if ! find bobsled/node_modules -name "duckdb.node" -print -quit | grep -q .; then
   echo "  ⚠ duckdb.node not bundled (will be installed by install.sh)"
 else
   echo "  ✓ duckdb.node present"
 fi
 
 # 4. Model validate works
-(cd dogsled/examples/demo && node "$VERIFY_DIR/dogsled/dist/index.js" model validate > /dev/null)
-echo "  ✓ dogsled model validate works"
+(cd bobsled/examples/demo && node "$VERIFY_DIR/bobsled/dist/index.js" model validate > /dev/null)
+echo "  ✓ bobsled model validate works"
 
 # 5. Loader delegation resolves. `load --help` is the cheapest subcommand
 # that loads the loader CLI subprocess end-to-end; a broken @bobsled-inc/loader
 # staging path would fail here even if the rest of the zip is fine.
-node "$VERIFY_DIR/dogsled/dist/index.js" load --help > /dev/null
-echo "  ✓ dogsled load --help works"
+node "$VERIFY_DIR/bobsled/dist/index.js" load --help > /dev/null
+echo "  ✓ bobsled load --help works"
 
 # 6. Entity graph delegation resolves. `entity-graph --help` should load the staged
 # @bobsled-inc/entity-graph CLI and its shared model-spec helpers successfully.
-node "$VERIFY_DIR/dogsled/dist/index.js" entity-graph --help > /dev/null
-echo "  ✓ dogsled entity-graph --help works"
+node "$VERIFY_DIR/bobsled/dist/index.js" entity-graph --help > /dev/null
+echo "  ✓ bobsled entity-graph --help works"
 
 cd "$STAGING_DIR"
 

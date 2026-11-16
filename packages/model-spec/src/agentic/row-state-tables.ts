@@ -206,7 +206,7 @@ export const agenticTableReplaced = (cause?: unknown): AgenticStateError =>
     'corrupt',
     {
       reason: 'state_table_replaced',
-      message: 'The agentic checkpoint store is not as Dogsled created it.',
+      message: 'The agentic checkpoint store is not as Bobsled Core created it.',
       hint: 'Stop all writers and inspect the store before resuming. It must hold nothing else.',
     },
     cause === undefined ? undefined : { cause }

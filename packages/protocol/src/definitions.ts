@@ -1,5 +1,5 @@
 /**
- * @bobsled-inc/protocol — Shared Dogsled protocol message types.
+ * @bobsled-inc/protocol — Shared Bobsled Core protocol message types.
  *
  * Single source of truth for the JSONL message protocol used between
  * @bobsled-inc/extractor (producer) and @bobsled-inc/loader (consumer).
@@ -339,7 +339,7 @@ export type FailureReason = (typeof FAILURE_REASONS)[number];
  * Structured reasons a resource/stream can be skipped during extraction.
  * Mirrors the `data.reason` payloads emitted on `resource_skip` PROGRESS
  * events by the extractor (see `@bobsled-inc/extractor` extract command). A
- * typed enum lets Dogsled PIPELINE_SUMMARY consumers and host applications
+ * typed enum lets Bobsled Core PIPELINE_SUMMARY consumers and host applications
  * branch on the skip cause instead of substring-matching
  * a warn log line.
  */

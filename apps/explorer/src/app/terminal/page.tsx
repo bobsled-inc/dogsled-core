@@ -316,9 +316,9 @@ export default function TerminalPage() {
   return (
     <div className="mx-auto flex h-[calc(100vh-2rem)] max-w-6xl flex-col gap-4 p-6">
       <PageHeader
-        breadcrumbs={[{ label: 'Dogsled', href: '/' }, { label: 'Terminal' }]}
+        breadcrumbs={[{ label: 'Bobsled Core', href: '/' }, { label: 'Terminal' }]}
         title="Terminal"
-        description="Execute Dogsled commands with streaming output, then jump straight into the resulting DuckDB tables."
+        description="Execute Bobsled Core commands with streaming output, then jump straight into the resulting DuckDB tables."
         actions={
           activeTab === 'terminal' ? (
             <>
@@ -518,7 +518,7 @@ export default function TerminalPage() {
           {protocolStats.totalStreams > 0 && (
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Dogsled protocol activity
+                Bobsled Core protocol activity
               </div>
               <div className="flex flex-wrap gap-2">
                 {protocolStats.streams.map((stream) => (
@@ -540,7 +540,7 @@ export default function TerminalPage() {
           >
             {outputs.length === 0 && !running && !error && (
               <div className="text-xs text-muted-foreground">
-                Enter a Dogsled command below, or click a quick command above.
+                Enter a Bobsled Core command below, or click a quick command above.
                 <br />
                 <span className="text-[10px]">Example: integrations list --type api</span>
               </div>
@@ -562,7 +562,7 @@ export default function TerminalPage() {
           {(metricRows.length > 0 || protocolStats.totalStreams > 0) && (
             <details className="rounded-2xl border border-border bg-card p-4">
               <summary className="cursor-pointer list-none text-sm font-medium">
-                Dogsled protocol stats
+                Bobsled Core protocol stats
               </summary>
               <div className="mt-3 space-y-4">
                 <div className="grid gap-3 sm:grid-cols-4">
@@ -643,7 +643,7 @@ export default function TerminalPage() {
           )}
 
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-primary">dogsled</span>
+            <span className="font-mono text-xs text-primary">bobsled</span>
             <input
               type="text"
               value={input}

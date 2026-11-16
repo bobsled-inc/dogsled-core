@@ -26,7 +26,7 @@ describe.skipIf(!CLI_READY)('entity-graph CLI (e2e)', { timeout: SPAWN_TEST_TIME
   it('prints help and exits 0', () => {
     const result = run(['--help'], projectDir);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Dogsled Entity Graph');
+    expect(result.stdout).toContain('Bobsled Core Entity Graph');
     expect(result.stdout).toContain('relate');
     expect(result.stdout).toContain('object');
     expect(result.stdout).toContain('explain');

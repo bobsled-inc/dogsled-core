@@ -10,7 +10,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Bobsled Core Explorer',
-  description: 'Explore and demo the Dogsled data engineering toolkit',
+  description: 'Explore and demo the Bobsled Core data engineering toolkit',
 };
 
 // `buildNavItems()` reads the workspace via `existsSync()` to decide whether to

@@ -32,7 +32,7 @@ is an equivalent alias for `execution.engine: bigquery`.
 
 ```sh
 cp secrets.example.yml secrets.yml   # fill in
-dogsled model run --secrets secrets.yml --integration bigquery
+bobsled model run --secrets secrets.yml --integration bigquery
 ```
 
 Set `XWH_SHARED_STAGING_URI` to a bucket both warehouses can reach for the native
@@ -53,8 +53,8 @@ Every run pulls A, B, and C into `./data/lake.duckdb`, builds `D` as a view, and
 recomputes from a fresh API fetch (live) or cache (lazy) — nothing is persisted.
 
 ```sh
-dogsled model run --secrets secrets.yml      # auto-selects the lake engine
-dogsled query "SELECT * FROM signup_account_events LIMIT 5"
+bobsled model run --secrets secrets.yml      # auto-selects the lake engine
+bobsled query "SELECT * FROM signup_account_events LIMIT 5"
 ```
 
 > A source read by both a warehouse-engine model and the live (lake) model can't

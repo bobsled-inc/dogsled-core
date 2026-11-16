@@ -1,5 +1,5 @@
 /**
- * `dogsled sdk generate` CLI.
+ * `bobsled sdk generate` CLI.
  *
  * Reads the entity-graph IR from disk via `readIr()`, then emits TypeScript
  * SDK files. Python emitter retained as a library export (skip per user

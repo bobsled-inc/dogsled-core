@@ -38,11 +38,11 @@ or troubleshooting detail:
 # Add a custom MCP server source (`custom_mcp`)
 
 Use this when a user wants to extract data from a remote MCP server that
-Dogsled does **not** ship a bundled connector for. A `custom_mcp` source is
+Bobsled Core does **not** ship a bundled connector for. A `custom_mcp` source is
 **fully self-describing**: you author a `source.yml` with an inline
 `mcp_http` transport (`url` + `auth`) and one declarative resource per
 tool you want to call. There is **no per-connector code module** and
-**no catalog entry required** — the YAML runs directly against Dogsled's
+**no catalog entry required** — the YAML runs directly against Bobsled Core's
 generic MCP extractor.
 
 ## When to use a different skill
@@ -62,7 +62,7 @@ generic MCP extractor.
 ## What a `custom_mcp` source is
 
 - **YAML-only.** No per-connector code, no catalog entry.
-- **One inline transport of `type: mcp_http`.** Dogsled's
+- **One inline transport of `type: mcp_http`.** Bobsled Core's
   `McpHttpTransportSchema` accepts `url` (HTTPS-only), optional `auth`,
   `headers`, `timeout_ms`, `retry`, `rate_limit`. `mcp_stdio` is
   **rejected at strict-schema time** for `custom_mcp` — the hosted
@@ -73,7 +73,7 @@ generic MCP extractor.
   custom_mcp sources may only declare mcp_http transports (got "mcp_stdio")
   ```
 
-- **One resource per tool.** Dogsled's `McpToolConfigSchema` defines the
+- **One resource per tool.** Bobsled Core's `McpToolConfigSchema` defines the
   `tool:` block — `tool_name` (required), `arguments` (optional, with
   `${{ input.X }}` / `${{ env.X }}` interpolation), `timeout_ms`. The
   outer resource declares `input:` for tool argument inputs and
@@ -99,7 +99,7 @@ generic MCP extractor.
 
 Declare the kind, the env vars the transport interpolates, and one
 inline `mcp_http` transport. Auth is one of `none`, `bearer`, or
-`api-key` (Dogsled's `McpTransportAuthSchema` also supports `oauth2`
+`api-key` (Bobsled Core's `McpTransportAuthSchema` also supports `oauth2`
 client_credentials; if you need that, hand-author the transport — this
 skill stays focused on the simple shapes).
 
@@ -108,8 +108,8 @@ Bearer auth (most common — Linear, Notion, GitHub MCP):
 ```yaml
 spec_version: '2'
 type: source
-source_type: custom_mcp # Dogsled-visible marker
-bobsled_source_kind: custom_mcp # orchestrator / host application marker (Dogsled ignores it)
+source_type: custom_mcp # Bobsled Core-visible marker
+bobsled_source_kind: custom_mcp # orchestrator / host application marker (Bobsled Core ignores it)
 name: <source-name>
 description: <one line>
 auth_env_vars: # env vars the transport interpolates
@@ -276,7 +276,7 @@ a request parameter, which MCP tools do not have).
 ## Incremental sync (cursors)
 
 By default a resource does a **full refresh** every run. To pull only new or
-changed records, add an `extract.incremental` block. Dogsled persists a per-stream
+changed records, add an `extract.incremental` block. Bobsled Core persists a per-stream
 **bookmark** as a `STATE` protocol message and, on the next run, uses it to ask
 the API for only the rows past the last cursor value.
 
@@ -288,7 +288,7 @@ Core rules:
   `SCHEMA` message's `cursor_field` and the `topup` backfill command only honor
   that placement.
 - `cursor_field` **must** be one of the declared `output` fields — it is the
-  column whose value Dogsled tracks as the high-water mark.
+  column whose value Bobsled Core tracks as the high-water mark.
 - After a run the bookmark advances to the largest `cursor_field` value seen and
   is emitted as a `STATE` message (`{ cursor_field, cursor_type, cursor_value }`).
   Durable runs persist it. **`--limit` runs are always preview-only and never
@@ -308,7 +308,7 @@ Choose one of four strategies via `strategy:`. Quick pick:
 
 ### `cursor` — saved cursor sent back as a request parameter (default; HTTP only)
 
-The simplest and most common case. Dogsled sends the saved cursor value back as a
+The simplest and most common case. Bobsled Core sends the saved cursor value back as a
 request parameter named by `cursor_param`, so the API returns only newer rows.
 
 | field          | required | meaning                                                          |
@@ -386,7 +386,7 @@ extract:
 Use when the cursor must be expressed as an explicit time range, or when you
 want bounded backfill windows. `since_argument` / `until_argument` /
 `filter_argument` are the **names of the request parameters** that receive the
-window bounds — Dogsled sets them directly on each request (query-string params
+window bounds — Bobsled Core sets them directly on each request (query-string params
 for `GET`, body fields for a `POST` with `request_body`, tool arguments for
 MCP). No `${{ input.X }}` wiring is required.
 
@@ -436,7 +436,7 @@ nest into `request_body`), e.g. `since_argument: filter.start_time`.
 
 ### `server_filter` — time windows routed through the `query:` block (HTTP + MCP)
 
-Same fields as `filter`, but the bounds are not sent as raw parameters. Dogsled
+Same fields as `filter`, but the bounds are not sent as raw parameters. Bobsled Core
 converts the window into `cursor_field gte <since>` / `lte <until>` and emits
 them through the resource's `query.filters` block, reusing its `bind` / `compile`
 targets. Use this when the resource already exposes a `query:` filter surface.
@@ -543,11 +543,11 @@ durations (e.g. `2h`, `1d`) are valid **only** for `timestamp` cursors.
 Each step proves a different thing — only two live runs prove resumption:
 
 ```bash
-dogsled extract validate <source>        # shape only: the incremental block parses
-dogsled extract verify <source> --mock   # request shaping only — NOT cross-run resumption
+bobsled extract validate <source>        # shape only: the incremental block parses
+bobsled extract verify <source> --mock   # request shaping only — NOT cross-run resumption
 # the two runs below need live credentials and prove the bookmark advances:
-dogsled extract run <source> --resource <r>   # first run: full fetch, records the bookmark
-dogsled extract run <source> --resource <r>   # second run: resumes from the bookmark
+bobsled extract run <source> --resource <r>   # first run: full fetch, records the bookmark
+bobsled extract run <source> --resource <r>   # second run: resumes from the bookmark
 ```
 
 `verify --mock` runs a single pass from empty state, so it confirms the
@@ -557,12 +557,12 @@ resumes. Confirm resumption with two real runs.
 ## Step 4 — Validate → verify → extract
 
 ```bash
-dogsled extract validate <source-name>
-dogsled extract verify <source-name>
-dogsled extract verify <source-name> --mock
+bobsled extract validate <source-name>
+bobsled extract verify <source-name>
+bobsled extract verify <source-name> --mock
 # then, with the env var exported:
 export <ENV_VAR_NAME>=...
-dogsled extract run <source-name> --resource <entity> --limit 5
+bobsled extract run <source-name> --resource <entity> --limit 5
 ```
 
 - `validate` — schema-level check (source/transport/resource shapes,
@@ -699,10 +699,10 @@ Then run:
 
 ```bash
 export LINEAR_API_KEY=lin_api_...
-dogsled extract validate linear_mcp
-dogsled extract verify linear_mcp
-dogsled extract run linear_mcp --resource teams --limit 5
-dogsled extract run linear_mcp --resource cycles --limit 5
+bobsled extract validate linear_mcp
+bobsled extract verify linear_mcp
+bobsled extract run linear_mcp --resource teams --limit 5
+bobsled extract run linear_mcp --resource cycles --limit 5
 ```
 
 ## Common gotchas
@@ -726,7 +726,7 @@ dogsled extract run linear_mcp --resource cycles --limit 5
   `record_path: $`. If it returns `{ items: [...] }`, use
   `record_path: $.items`. If it returns `{ data: { things: [...] } }`,
   use `record_path: $.data.things`.
-- **OAuth2 MCP servers.** Dogsled's `McpTransportAuthSchema` accepts
+- **OAuth2 MCP servers.** Bobsled Core's `McpTransportAuthSchema` accepts
   `type: oauth2` with `grant_type: client_credentials`, `token_url`,
   `client_id`, `client_secret`. This skill stays focused on
   none/bearer/api-key; for OAuth2, hand-author the transport block from
@@ -754,8 +754,8 @@ Before handing back to the user:
 - [ ] Incremental tools set `extract.incremental` with `filter` or
       `server_filter` and a `cursor_field` that exists in `output` (the
       `cursor` strategy is HTTP-only).
-- [ ] `dogsled extract validate <source>` returns clean.
-- [ ] `dogsled extract verify <source>` returns clean.
+- [ ] `bobsled extract validate <source>` returns clean.
+- [ ] `bobsled extract verify <source>` returns clean.
 
 ## Related
 

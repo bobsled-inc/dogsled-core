@@ -65,7 +65,7 @@ function collectDisclosure() {
         '--out',
         path.relative(repoRoot, exportDir),
       ],
-      versionOverride: 'dogsled security export schema 1',
+      versionOverride: 'bobsled security export schema 1',
       versionArgs: ['--version'],
     })
   );
@@ -135,7 +135,7 @@ function collectDisclosure() {
       adapter: 'policy',
       command: process.execPath,
       args: [path.join(repoRoot, 'scripts/security/npm-config-audit.mjs')],
-      versionOverride: 'dogsled npm-config audit schema 1',
+      versionOverride: 'bobsled npm-config audit schema 1',
       versionArgs: ['--version'],
     })
   );
@@ -147,7 +147,7 @@ function collectDisclosure() {
       command: process.execPath,
       args: [path.join(repoRoot, 'scripts/security/policy.mjs')],
       findingExitCodes: [1],
-      versionOverride: 'dogsled repository policy schema 1',
+      versionOverride: 'bobsled repository policy schema 1',
       versionArgs: ['--version'],
     })
   );
@@ -331,7 +331,7 @@ function collectPrivacy() {
       command: process.execPath,
       args: [path.join(repoRoot, 'scripts/security/privacy-inventory.mjs')],
       findingExitCodes: [1],
-      versionOverride: 'dogsled privacy inventory schema 1',
+      versionOverride: 'bobsled privacy inventory schema 1',
       versionArgs: ['--version'],
     }),
   ];

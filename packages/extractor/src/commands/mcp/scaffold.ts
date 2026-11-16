@@ -62,7 +62,7 @@ export function writeMcpScaffold(input: McpScaffoldInput): McpScaffoldResult {
   const firstClassResource = input.transportId !== undefined && input.transportId !== 'default';
   const spec = {
     _scaffold_metadata: {
-      generated_by: 'dogsled extract mcp discover',
+      generated_by: 'bobsled extract mcp discover',
       review_required: true,
       shape: input.shape,
     },

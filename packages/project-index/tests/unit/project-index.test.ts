@@ -56,7 +56,7 @@ describe('indexProjectFiles', () => {
     ]);
   });
 
-  it('keeps the type an oversized file declares so a Dogsled file still stops loaders', () => {
+  it('keeps the type an oversized file declares so a Bobsled Core file still stops loaders', () => {
     const padding = 'x'.repeat(64);
     const index = indexProjectFiles(
       [
@@ -238,7 +238,7 @@ describe('index lookups and errors', () => {
     expect(error.message).toContain('b.yml: type: source is ambiguous');
   });
 
-  it('reports problems with files Dogsled does not own without stopping loaders', () => {
+  it('reports problems with files Bobsled Core does not own without stopping loaders', () => {
     const index = indexProjectFiles([
       { path: 'charts/api/Chart.yaml', content: 'apiVersion: v2\ntype: application\nname: api\n' },
       {
@@ -262,7 +262,7 @@ describe('index lookups and errors', () => {
     expect(entriesOfKind(index, 'model').map((entry) => entry.path)).toEqual(['models/orders.yml']);
   });
 
-  it('stops loaders for a broken file that declares a Dogsled type or lives in a Dogsled folder', () => {
+  it('stops loaders for a broken file that declares a Bobsled Core type or lives in a Bobsled Core folder', () => {
     const index = indexProjectFiles([
       { path: 'golf/players.yml', content: 'type: model\nname: players\ncolumns: [\n' },
       { path: 'models/typo.yml', content: 'type: modle\nname: typo\n' },
@@ -321,7 +321,7 @@ describe('index lookups and errors', () => {
     ).toEqual(['docs/post.md']);
   });
 
-  it('blocks on a link where Dogsled read or rejected links, and always on an incomplete scan or bad path', () => {
+  it('blocks on a link where Bobsled Core read or rejected links, and always on an incomplete scan or bad path', () => {
     const configured = indexProjectFiles([
       { path: 'model-spec.yml', content: 'models_dir: data/models\n' },
     ]);

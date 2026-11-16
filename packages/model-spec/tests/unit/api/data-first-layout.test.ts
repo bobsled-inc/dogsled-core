@@ -156,7 +156,7 @@ describe('data-first project layouts', () => {
     });
   });
 
-  it('rejects an unknown type in a Dogsled folder with its path before loading anything', async () => {
+  it('rejects an unknown type in a Bobsled Core folder with its path before loading anything', async () => {
     const root = copyExample('data-first');
     fs.mkdirSync(path.join(root, 'metrics'));
     fs.writeFileSync(path.join(root, 'metrics/typo.yml'), 'type: metrc\nname: x\n');
@@ -167,7 +167,7 @@ describe('data-first project layouts', () => {
     });
   });
 
-  it('rejects a malformed file that declares a Dogsled type wherever it lives', async () => {
+  it('rejects a malformed file that declares a Bobsled Core type wherever it lives', async () => {
     const root = copyExample('data-first');
     fs.writeFileSync(
       path.join(root, 'bigquery/semantic/broken.yml'),

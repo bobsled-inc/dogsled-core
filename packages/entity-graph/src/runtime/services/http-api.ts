@@ -134,7 +134,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 function openApi(host: string, port: number): Record<string, unknown> {
   return {
     openapi: '3.1.0',
-    info: { title: 'Dogsled Entity Graph API', version: '1.0.0' },
+    info: { title: 'Bobsled Core Entity Graph API', version: '1.0.0' },
     servers: [{ url: `http://${host}:${port}` }],
     paths: {
       '/healthz': { get: { responses: { '200': { description: 'OK' } } } },

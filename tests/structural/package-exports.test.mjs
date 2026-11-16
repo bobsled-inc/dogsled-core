@@ -114,8 +114,8 @@ describe('package exports maps', () => {
   });
 
   it('loads the SFTP client from the built package without a static ssh2 import', async () => {
-    const dogsled = packages.find((pkg) => pkg.name === '@bobsled-inc/bobsled-core');
-    const entry = path.join(dogsled.dir, dogsled.packageJson.exports['./sftp'].import);
+    const bobsled = packages.find((pkg) => pkg.name === '@bobsled-inc/bobsled-core');
+    const entry = path.join(bobsled.dir, bobsled.packageJson.exports['./sftp'].import);
     if (!existsSync(entry)) {
       return;
     }

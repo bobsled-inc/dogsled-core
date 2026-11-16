@@ -227,7 +227,7 @@ function lockError(error: FileOwnershipError, runId: string): AgenticStateError 
   if (error.reason === 'busy') {
     return new AgenticStateError('conflict', {
       reason: 'run_in_progress',
-      message: `Run "${runId}" is still active in another Dogsled process${error.ownerPid ? ` (pid ${error.ownerPid})` : ''}.`,
+      message: `Run "${runId}" is still active in another Bobsled Core process${error.ownerPid ? ` (pid ${error.ownerPid})` : ''}.`,
       hint: 'Wait for that process to finish or stop it, then resume.',
     });
   }
@@ -235,12 +235,12 @@ function lockError(error: FileOwnershipError, runId: string): AgenticStateError 
     return new AgenticStateError('unavailable', {
       reason: 'lock_recovery_pending',
       message: `A crash interrupted lock recovery for run "${runId}".`,
-      hint: 'Confirm that no Dogsled process is using this project, then delete the agentic-*.lock.recovery file in .bobsled/model-spec.',
+      hint: 'Confirm that no Bobsled Core process is using this project, then delete the agentic-*.lock.recovery file in .bobsled/model-spec.',
     });
   }
   return new AgenticStateError('unavailable', {
     reason: 'lock_foreign_host',
-    message: `Run "${runId}" is locked by a Dogsled process on another host or in an unknown format.`,
+    message: `Run "${runId}" is locked by a Bobsled Core process on another host or in an unknown format.`,
     hint: 'Local checkpoints support one host. Use a warehouse checkpoint_store for multiple hosts.',
   });
 }

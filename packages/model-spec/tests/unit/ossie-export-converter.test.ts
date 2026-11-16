@@ -491,7 +491,7 @@ describe('Ossie export converter', () => {
     expect(unsupported).toMatchObject({ ok: false, ready: false, files: [] });
     expect(unsupported.diagnostics[0]?.message).toContain('include_all_columns');
   });
-  it('leaves out properties Dogsled ignores and warns once per dataset', () => {
+  it('leaves out properties Bobsled Core ignores and warns once per dataset', () => {
     const unionModel = {
       ...model,
       name: 'all_orders',

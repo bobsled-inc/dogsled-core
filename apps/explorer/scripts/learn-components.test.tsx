@@ -14,7 +14,7 @@ test('LearnModuleCard renders module progress and route', () => {
     <LearnModuleCard module={module} completedCount={1} percent={25} isComplete={false} />
   );
 
-  assert.match(html, /Dogsled Foundations/);
+  assert.match(html, /Bobsled Core Foundations/);
   assert.match(html, /1\/4 complete/);
   assert.match(html, /href="\/learn\/foundations"/);
 });

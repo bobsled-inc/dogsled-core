@@ -210,7 +210,7 @@ describe('BigQueryDestination — merge keeps one row per key across partitions'
     const replay = await createMergeReplay(issueColumns);
     try {
       await replay.dest.ensureTable('test_ds', 'issues', issueColumns, { keyProperties: ['id'] });
-      // A table Dogsled adopted: ensureTable adds _time_extracted, leaving existing rows NULL.
+      // A table Bobsled Core adopted: ensureTable adds _time_extracted, leaving existing rows NULL.
       await replay.exec(`INSERT INTO test_ds.issues (id, title) VALUES (1, 'legacy')`);
 
       await replay.merge('issues', [{ id: 1, title: 'fresh', _time_extracted: day2 }], ['id']);

@@ -18,7 +18,7 @@ pnpm --filter @bobsled-inc/explorer lint        # Linting
 
 ## Architecture
 
-The explorer is a Next.js 15 app (App Router) at `apps/explorer/` in the monorepo. It reads integration and model data from workspace packages and spawns Dogsled CLI subprocesses.
+The explorer is a Next.js 15 app (App Router) at `apps/explorer/` in the monorepo. It reads integration and model data from workspace packages and spawns Bobsled Core CLI subprocesses.
 
 ```
 apps/explorer/src/
@@ -44,7 +44,7 @@ apps/explorer/src/
     integrations.ts             # Wraps @bobsled-inc/integrations with clearCache()
     models.ts                   # Wraps @bobsled-inc/models with clearModelPackageCache()
     bobsled-cli.ts                # CLI subprocess spawning + workspace discovery
-    protocol-parser.ts          # Dogsled protocol message parser
+    protocol-parser.ts          # Bobsled Core protocol message parser
     use-command.ts              # React hook for SSE command streaming
 ```
 
@@ -56,7 +56,7 @@ Every server-side call to `@bobsled-inc/integrations` or `@bobsled-inc/models` M
 
 ### CLI Subprocess Spawning
 
-`lib/bobsled-cli.ts` discovers workspace root via `pnpm-workspace.yaml`, resolves Dogsled CLI from `packages/bobsled-core/dist/index.js` or falls back to `npx tsx packages/bobsled-core/src/index.ts`. Sets `BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR` and `NO_COLOR=1`.
+`lib/bobsled-cli.ts` discovers workspace root via `pnpm-workspace.yaml`, resolves Bobsled Core CLI from `packages/bobsled-core/dist/index.js` or falls back to `npx tsx packages/bobsled-core/src/index.ts`. Sets `BOBSLED_CORE_BUNDLED_INTEGRATIONS_DIR` and `NO_COLOR=1`.
 
 ### Command Security
 
@@ -68,7 +68,7 @@ Every server-side call to `@bobsled-inc/integrations` or `@bobsled-inc/models` M
 
 ### ESM Compatibility
 
-`tsconfig.json` overrides monorepo's `NodeNext` with `bundler` for Next.js. `eslint.config.mjs` disables `dogsled/import-extension` rule (no `.js` extensions needed).
+`tsconfig.json` overrides monorepo's `NodeNext` with `bundler` for Next.js. `eslint.config.mjs` disables `bobsled/import-extension` rule (no `.js` extensions needed).
 
 ### Pipeline Config Passing
 

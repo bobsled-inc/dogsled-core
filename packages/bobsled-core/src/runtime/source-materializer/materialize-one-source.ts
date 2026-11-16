@@ -17,7 +17,7 @@ import type { SourceMaterializerFeatureFlags } from './feature-flags.js';
  * Hydrate a single `api_resource` source into `destination` using `runner`.
  *
  * Extracted verbatim from the per-source block that lived inline in
- * `runQueryCommand` so both the flat `dogsled query` path and the new model
+ * `runQueryCommand` so both the flat `bobsled query` path and the new model
  * orchestrator share one wiring of `materializeSource`: metadata store,
  * refresh leases, table-existence probe, and (for transient live sources)
  * the metadata-less fast path.

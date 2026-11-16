@@ -81,7 +81,7 @@ async function resolveDefaultPipelineRunProject(
         : '';
       throw new CommandError(
         `Pipeline "${options.pipelineName}" is a models pipeline, which runs under an orchestrator. ` +
-          `Run its models locally with: dogsled model run${models} --integration ${modelPipeline.connection}`,
+          `Run its models locally with: bobsled model run${models} --integration ${modelPipeline.connection}`,
         2
       );
     }
@@ -94,7 +94,7 @@ async function resolveDefaultPipelineRunProject(
         : '';
       throw new CommandError(
         `Pipeline "${options.pipelineName}" is an entity-graph pipeline, which runs under an orchestrator. ` +
-          `Run it locally with: dogsled entity-graph build${entities} (see --help for runner options)`,
+          `Run it locally with: bobsled entity-graph build${entities} (see --help for runner options)`,
         2
       );
     }

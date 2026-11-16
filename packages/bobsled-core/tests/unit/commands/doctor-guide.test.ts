@@ -127,7 +127,7 @@ describe('checkProjectGuide', () => {
     const previousExitCode = process.exitCode;
     const program = new Command();
     program
-      .name('dogsled')
+      .name('bobsled')
       .option('--json', 'Emit JSON', false)
       .option('--verbose', 'Verbose', false)
       .option('--quiet', 'Quiet', false)

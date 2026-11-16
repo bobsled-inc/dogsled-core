@@ -1,9 +1,9 @@
 # Entity Graph External Reviewer Contract
 
-Dogsled's agent review phase (`entity-graph resolve review`) can ship the
+Bobsled Core's agent review phase (`entity-graph resolve review`) can ship the
 unreviewed gray-zone pairs to an **external reviewer** — any agent you host or
-run locally — instead of the in-dogsled model judge. This page is the wire
-contract for bringing your own reviewer: the request Dogsled sends, the response
+run locally — instead of the built-in model judge. This page is the wire
+contract for bringing your own reviewer: the request Bobsled Core sends, the response
 it expects, and what happens when things go wrong.
 
 The reviewer is configured in the resolution spec:
@@ -13,7 +13,7 @@ The reviewer is configured in the resolution spec:
 agent_policy:
   enabled: true
   judge: agent # optional tier selector; absent → model (see below)
-  reviewer: # optional; absent → in-dogsled model judge (agent_policy.model)
+  reviewer: # optional; absent → built-in model judge (agent_policy.model)
     kind: http # http | command
     url: https://reviewer.example/review # kind: http
     auth_token: ${{ env.REVIEWER_TOKEN }} # env placeholder — never a literal
@@ -30,8 +30,8 @@ the same run.
 
 | `judge`                      | Who serves the phase                                                                                                                                                                                                                                                            |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| absent (**default → model**) | Today's precedence, unchanged: an external transport (`reviewerOverride` > `agent_policy.reviewer`) still wins when present; otherwise the in-dogsled model judge / panel serves. Backward-compatible for every existing spec.                                                  |
-| `model`                      | **Pin the in-dogsled model judge.** `reviewerOverride` **and** `agent_policy.reviewer` are ignored (a host cannot upgrade a pinned-model entity; an ignored override is surfaced as a warning).                                                                                 |
+| absent (**default → model**) | Today's precedence, unchanged: an external transport (`reviewerOverride` > `agent_policy.reviewer`) still wins when present; otherwise the built-in model judge / panel serves. Backward-compatible for every existing spec.                                                    |
+| `model`                      | **Pin the built-in model judge.** `reviewerOverride` **and** `agent_policy.reviewer` are ignored (a host cannot upgrade a pinned-model entity; an ignored override is surfaced as a warning).                                                                                   |
 | `agent`                      | **Require an external/tool-using reviewer transport** (`reviewerOverride` > `agent_policy.reviewer`). If neither is available the phase **skips** with `skipped_reason: 'no_judge_configured'` and a warning naming the missing piece — it never falls back to the model judge. |
 
 A host-injected `llmClient` (the programmatic/test escape hatch) still wins over
@@ -42,12 +42,12 @@ Judge precedence in `resolve review` (once the tier lane is chosen): a
 host-injected `llmClient` > `reviewerOverride` (programmatic) >
 `agent_policy.reviewer` > `agent_policy.model` (single judge and/or panel).
 External reviewer decisions are written with `decision_source: 'agent'`; the
-in-dogsled model judge writes `'agent_auto'`.
+built-in model judge writes `'agent_auto'`.
 
 ## Request — `entity_graph_review_request.v1`
 
 Both transports receive the same JSON document. Over `http` it is the POST
-body; over `command` it arrives on stdin. Dogsled sends one request per batch of
+body; over `command` it arrives on stdin. Bobsled Core sends one request per batch of
 pairs (`agent_policy.batch_size`, default 100).
 
 ```jsonc
@@ -56,7 +56,7 @@ pairs (`agent_policy.batch_size`, default 100).
   "job": {
     "entity": "company", // entity being resolved
     "max_pairs": 200, // number of pairs in THIS request
-    "timeout_s": 300, // your deadline: Dogsled stops waiting after this
+    "timeout_s": 300, // your deadline: Bobsled Core stops waiting after this
     "max_cost_usd": 50.0, // optional (additive); present only when agent_policy.max_cost_usd is set
   },
   "context": {
@@ -72,7 +72,7 @@ pairs (`agent_policy.batch_size`, default 100).
     "target_schema": "entity_graph",
     "dialect": "duckdb",
   },
-  // PairContext[], camelCase — exactly Dogsled's type.
+  // PairContext[], camelCase — exactly Bobsled Core's type.
   "pairs": [
     {
       "pairId": "a1|b1",
@@ -92,7 +92,7 @@ pairs (`agent_policy.batch_size`, default 100).
 
 ## Response — decisions
 
-A decision has this shape (camelCase, exactly Dogsled's `PairDecision` type):
+A decision has this shape (camelCase, exactly Bobsled Core's `PairDecision` type):
 
 ```jsonc
 {
@@ -125,10 +125,10 @@ no-op:
 }
 ```
 
-Dogsled accumulates `usage` across every batch of a run. When `job.max_cost_usd`
-is set and the accumulated `cost_usd` reaches it, Dogsled stops dispatching
+Bobsled Core accumulates `usage` across every batch of a run. When `job.max_cost_usd`
+is set and the accumulated `cost_usd` reaches it, Bobsled Core stops dispatching
 further batches (the remaining pairs stay in the queue for the next run) —
-matching the in-dogsled model judge's cost-ceiling behavior. Unrecognized keys are
+matching the built-in model judge's cost-ceiling behavior. Unrecognized keys are
 ignored; malformed `usage` is treated as absent.
 
 ### `http` transport
@@ -146,14 +146,14 @@ Respond either **synchronously** (small batches):
 { "decisions": [ PairDecision, ... ] }
 ```
 
-or **asynchronously** — acknowledge, then let Dogsled poll:
+or **asynchronously** — acknowledge, then let Bobsled Core poll:
 
 ```text
 202 Accepted
 { "job_id": "abc123" }
 ```
 
-Dogsled then polls `GET {url}/{job_id}` (same bearer token) every
+Bobsled Core then polls `GET {url}/{job_id}` (same bearer token) every
 `poll_interval_s` seconds until `timeout_s` is exhausted:
 
 ```jsonc
@@ -169,7 +169,7 @@ transport failure.
 
 ### `command` transport
 
-Dogsled executes a local argv array such as `command: [node, reviewer.mjs]` without a shell, with only PATH, system-root, temporary-directory and locale variables. Quoted command strings remain supported without expansion. The process receives request JSON on stdin and must print one JSON document to stdout:
+Bobsled Core executes a local argv array such as `command: [node, reviewer.mjs]` without a shell, with only PATH, system-root, temporary-directory and locale variables. Quoted command strings remain supported without expansion. The process receives request JSON on stdin and must print one JSON document to stdout:
 
 ```json
 { "decisions": [] }
@@ -235,7 +235,7 @@ spec validation time.
 
 ## Programmatic use
 
-Hosts embedding Dogsled can skip YAML entirely:
+Hosts embedding Bobsled Core can skip YAML entirely:
 
 ```ts
 import { reviewResolveProject } from '@bobsled-inc/entity-graph/api';

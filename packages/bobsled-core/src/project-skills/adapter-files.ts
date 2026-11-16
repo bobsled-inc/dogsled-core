@@ -99,7 +99,7 @@ export function readLinkTarget(destination: string): string | undefined {
   return stat?.isSymbolicLink() ? readlinkSync(destination).split(path.sep).join('/') : undefined;
 }
 
-/** The Skill file a Dogsled-managed copy was made from, read from its marker. */
+/** The Skill file a platform-managed copy was made from, read from its marker. */
 export function managedCopySource(destination: string): string | undefined {
   const stat = lstatIfPresent(destination);
   return stat?.isDirectory() ? readMarker(destination)?.source : undefined;
@@ -122,7 +122,7 @@ export function inspectAdapterEntry(
 
   const marker = readMarker(destination);
   if (!marker || marker.source !== expectedSource) {
-    return { kind: 'conflict', message: 'destination is not a Dogsled-managed copy' };
+    return { kind: 'conflict', message: 'destination is not a platform-managed copy' };
   }
   const skillFile = path.join(destination, 'SKILL.md');
   if (

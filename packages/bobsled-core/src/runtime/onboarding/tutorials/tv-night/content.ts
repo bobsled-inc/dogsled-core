@@ -5,9 +5,9 @@ export const descriptions = {
   model:
     'Define your fields, ontology concepts, relationships and metrics. Keep missing values unknown and separate a show ending from its story reaching a conclusion.',
   query:
-    'Dogsled lets you query the models and metrics you built. Ask your agent a question in plain English or use your own SQL tool. Choose your first question before running it; later, save useful selection rules as another model.',
+    'Bobsled Core lets you query the models and metrics you built. Ask your agent a question in plain English or use your own SQL tool. Choose your first question before running it; later, save useful selection rules as another model.',
   federate:
-    'Join your local shortlist to selected Wikipedia articles through an API source. Dogsled fetches or reuses cached article rows and joins them locally; the request receipts explain which happened.',
+    'Join your local shortlist to selected Wikipedia articles through an API source. Bobsled Core fetches or reuses cached article rows and joins them locally; the request receipts explain which happened.',
   transform:
     'Assess every finalist against the same preference using article passages. Compare supporting evidence and unknowns, then query your recommendations.',
   resolve:
@@ -20,7 +20,7 @@ export const prompts = {
   model:
     'Help me describe the fields, add an ontology and mapping for Episode, Show and ProductionStatus, and validate them. Explain why episode counts differ from show counts and why Ended does not prove story closure. Then define relationships and metrics and build shows and episodes models from the raw tables. Verify model and refresh this page.',
   query:
-    'Introduce how Dogsled queries my models and metrics. Offer example questions and invite my own. Wait for my question before running a query; after exploration, help me decide whether to save useful rules as a model.',
+    'Introduce how Bobsled Core queries my models and metrics. Offer example questions and invite my own. Wait for my question before running a query; after exploration, help me decide whether to save useful rules as a model.',
   federate:
     'Link selected shows to Wikidata and Wikipedia. Configure a bounded Wikipedia API source and join its articles to the local shows. Verify federate and refresh this page.',
   transform:

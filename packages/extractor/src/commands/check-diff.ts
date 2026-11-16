@@ -1,5 +1,5 @@
 /**
- * OpenAPI spec diffing logic for `dogsled extract check`.
+ * OpenAPI spec diffing logic for `bobsled extract check`.
  *
  * Pure diff logic — no CLI concerns. Compares integration + resource YAML
  * specs against an OpenAPI document to detect drift.

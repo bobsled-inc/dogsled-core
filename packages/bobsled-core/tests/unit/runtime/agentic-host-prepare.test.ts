@@ -135,7 +135,7 @@ describe('bounded agent input preparation', () => {
       undefined,
       { signal: expect.any(AbortSignal) }
     );
-    // Dogsled keeps the ordered prefix that fits; the extra row signals more remain.
+    // Bobsled Core keeps the ordered prefix that fits; the extra row signals more remain.
     expect(rows).toHaveLength(3);
   });
   it('stops a batch one row past the byte limit instead of failing', async () => {

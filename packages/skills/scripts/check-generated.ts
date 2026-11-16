@@ -47,7 +47,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const drift = findGeneratedDrift(REPO_ROOT, expectedGeneratedFiles());
   if (drift.length > 0) {
     process.stderr.write(
-      `Generated Dogsled skills are out of date:\n${drift.map((path) => `- ${path}`).join('\n')}\n` +
+      `Generated Bobsled Core skills are out of date:\n${drift.map((path) => `- ${path}`).join('\n')}\n` +
         'Run pnpm --filter @bobsled-inc/skills generate:manifest and commit the generated files.\n'
     );
     process.exitCode = 3;

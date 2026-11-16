@@ -71,7 +71,7 @@ best to collaborate. Not every conflict represents a code of conduct violation,
 and this Code of Conduct reinforces encouraged behaviors and norms that can
 help avoid conflicts and minimize harm.
 
-To report a possible violation, email `maintainers@dogsledai.com` with the subject
+To report a possible violation, email `maintainers@bobsled.co` with the subject
 `Code of Conduct report`. Reports will be handled confidentially by the project
 maintainers. Do not report conduct incidents in a public issue.
 

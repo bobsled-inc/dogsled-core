@@ -43,7 +43,7 @@ export function registerOssieBindings(
       );
       if (node && node.materialization !== 'ephemeral' && dependency?.executionMode !== 'on_read') {
         throw new CommandError(
-          `${origin.filePath}: Ossie dataset "${origin.name}" uses a Dogsled query reference but has no live source and is not ephemeral. Use the finished warehouse address.`,
+          `${origin.filePath}: Ossie dataset "${origin.name}" uses a Bobsled Core query reference but has no live source and is not ephemeral. Use the finished warehouse address.`,
           2
         );
       }
@@ -109,8 +109,8 @@ export function validateOssieBindings(
     ) {
       throw new CommandError(
         `${binding.filePath}: Ossie dataset "${node.name}" declares source "${binding.source}", ` +
-          `but Dogsled resolves its output to "${resolved ?? '(unresolved)'}". ` +
-          'Update the source or Dogsled destination settings so they identify the same table.',
+          `but Bobsled Core resolves its output to "${resolved ?? '(unresolved)'}". ` +
+          'Update the source or Bobsled Core destination settings so they identify the same table.',
         2
       );
     }

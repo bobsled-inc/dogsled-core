@@ -42,7 +42,7 @@ DuckDB compile mode is useful for checking the portable part of the graph withou
 
 ```bash
 cd examples/snowflake-materializations
-pnpm exec dogsled model compile \
+pnpm exec bobsled model compile \
   stg_orders dim_customers_from_orders fct_orders_incremental \
   --integration duckdb
 ```
@@ -68,14 +68,14 @@ The tutorial assumes the integration's target schema is `ANALYTICS` and the sour
 
 ```bash
 cd examples/snowflake-materializations
-pnpm exec dogsled model compile --integration snowflake
-pnpm exec dogsled model run --integration snowflake
+pnpm exec bobsled model compile --integration snowflake
+pnpm exec bobsled model run --integration snowflake
 ```
 
 To force a full rebuild of the incremental table:
 
 ```bash
-pnpm exec dogsled model run --integration snowflake --full-refresh
+pnpm exec bobsled model run --integration snowflake --full-refresh
 ```
 
 ## What Each Model Does
@@ -84,17 +84,17 @@ pnpm exec dogsled model run --integration snowflake --full-refresh
 
 `dim_customers_from_orders.yml` creates a physical table. Use tables for curated objects that many downstream consumers read repeatedly.
 
-`fct_orders_incremental.yml` creates an incremental merge table keyed by `ORDER_ID`. On the first run, Dogsled creates the table. On later runs, it emits a warehouse-native `MERGE` using `unique_key: ORDER_ID` and the `incremental_filter`.
+`fct_orders_incremental.yml` creates an incremental merge table keyed by `ORDER_ID`. On the first run, Bobsled Core creates the table. On later runs, it emits a warehouse-native `MERGE` using `unique_key: ORDER_ID` and the `incremental_filter`.
 
-`hot_customer_revenue.yml` creates a Snowflake Dynamic Table. Dynamic Tables are best for hot downstream consumers where Snowflake should manage refreshes after Dogsled creates the object.
+`hot_customer_revenue.yml` creates a Snowflake Dynamic Table. Dynamic Tables are best for hot downstream consumers where Snowflake should manage refreshes after Bobsled Core creates the object.
 
 ## Operational Notes
 
 Dynamic Tables and BigQuery materialized views consume warehouse credits or query processing per refresh. Use a target lag of `1 hour` or longer unless you have a tight freshness SLA.
 
-Snowflake `view` to `table` transitions preserve grants with `COPY GRANTS` when Dogsled recreates the object. `COPY GRANTS` copies privileges only; it does not copy future grants, masking policies, row access policies, or ownership. On BigQuery, dataset-level IAM is unaffected by table recreation, but row-level policies and column policy tags may need recreation.
+Snowflake `view` to `table` transitions preserve grants with `COPY GRANTS` when Bobsled Core recreates the object. `COPY GRANTS` copies privileges only; it does not copy future grants, masking policies, row access policies, or ownership. On BigQuery, dataset-level IAM is unaffected by table recreation, but row-level policies and column policy tags may need recreation.
 
-Snowflake DDL auto-commits. If a `DROP` succeeds and the following `CREATE OR REPLACE` fails, the object is gone; fix the error and re-run `dogsled model run`.
+Snowflake DDL auto-commits. If a `DROP` succeeds and the following `CREATE OR REPLACE` fails, the object is gone; fix the error and re-run `bobsled model run`.
 
 BigQuery materialized view `max_staleness` must stay within the materialized-view range of 30 minutes to 3 days. A view that has not refreshed within the allowed staleness window can fail at query time while streaming-buffer data is still unavailable.
 
@@ -113,13 +113,13 @@ materialization:
   on_schema_change: fail # default
 ```
 
-If a downstream change drops a column from `columns:`, the next `dogsled model run` aborts with `CommandError(3)` and a remediation message:
+If a downstream change drops a column from `columns:`, the next `bobsled model run` aborts with `CommandError(3)` and a remediation message:
 
 ```text
 Schema drift detected for model `fct_orders_incremental`.
 ...
 To proceed, either:
-  - rebuild the table: dogsled model run fct_orders_incremental --full-refresh
+  - rebuild the table: bobsled model run fct_orders_incremental --full-refresh
   - opt into auto-rebuild: set `on_schema_change: full_refresh` in fct_orders_incremental.yml
 ```
 
@@ -136,6 +136,6 @@ materialization:
   type: table
 ```
 
-On the next `dogsled model run`, Model Spec emits `DROP VIEW IF EXISTS "ANALYTICS"."STG_ORDERS"` followed by `CREATE OR REPLACE TABLE ... COPY GRANTS`, preserving privileges on Snowflake. You can switch back to `view` the same way — `view` ↔ `table` is the only auto-recreate transition. Other transitions (e.g. `incremental` → `table`) abort with `CommandError(3)` and require manual `DROP` to confirm intent.
+On the next `bobsled model run`, Model Spec emits `DROP VIEW IF EXISTS "ANALYTICS"."STG_ORDERS"` followed by `CREATE OR REPLACE TABLE ... COPY GRANTS`, preserving privileges on Snowflake. You can switch back to `view` the same way — `view` ↔ `table` is the only auto-recreate transition. Other transitions (e.g. `incremental` → `table`) abort with `CommandError(3)` and require manual `DROP` to confirm intent.
 
 See `docs/materializations-reference.md` for the full transition matrix and `COPY GRANTS` caveats.

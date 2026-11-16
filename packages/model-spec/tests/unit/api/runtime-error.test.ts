@@ -55,7 +55,7 @@ describe('model-spec runtime failure boundary', () => {
       code: 'MODEL_PROJECT_LOAD_VALIDATION_FAILED',
       operation: 'model.project.load',
       retryable: false,
-      message: 'Dogsled could not validate the request.',
+      message: 'Bobsled Core could not validate the request.',
     });
     expect((result as BobsledRuntimeError).cause).toBeInstanceOf(CommandError);
     expect((result as BobsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
@@ -73,7 +73,7 @@ describe('model-spec runtime failure boundary', () => {
       code: 'MODEL_PROJECT_LOAD_FILESYSTEM_ENOTDIR',
       operation: 'model.project.load',
       retryable: false,
-      message: 'Dogsled could not complete the operation.',
+      message: 'Bobsled Core could not complete the operation.',
     });
     expect((result as BobsledRuntimeError).cause).toMatchObject({ code: 'ENOTDIR' });
   });
@@ -97,7 +97,7 @@ describe('model-spec runtime failure boundary', () => {
       code: 'MODEL_PROJECT_VALIDATE_VALIDATION_FAILED',
       operation: 'model.project.validate',
       retryable: false,
-      message: 'Dogsled could not validate the request.',
+      message: 'Bobsled Core could not validate the request.',
     });
     expect((result as BobsledRuntimeError).cause).toMatchObject({ exitCode: 2 });
   });
@@ -128,7 +128,7 @@ describe('model-spec runtime failure boundary', () => {
       code: 'MODEL_PROJECT_VALIDATE_FAILURE',
       operation: 'model.project.validate',
       retryable: false,
-      message: 'Dogsled could not complete the operation.',
+      message: 'Bobsled Core could not complete the operation.',
     });
     expect((result as BobsledRuntimeError).cause).toMatchObject({
       message: 'metadata registry read failed',

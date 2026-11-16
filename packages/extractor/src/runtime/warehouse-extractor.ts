@@ -802,7 +802,7 @@ async function validatePostgresChangeTrackingSetup(params: {
 
   if (slot['plugin'] !== 'pgoutput') {
     throw new Error(
-      `Logical replication slot "${config.slot_name}" uses plugin "${String(slot['plugin'] ?? '')}", but Dogsled only supports "pgoutput".`
+      `Logical replication slot "${config.slot_name}" uses plugin "${String(slot['plugin'] ?? '')}", but Bobsled Core only supports "pgoutput".`
     );
   }
 

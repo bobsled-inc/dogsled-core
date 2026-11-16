@@ -137,7 +137,7 @@ const PARSE_ERRORS_OUTPUT: FileResourceSpec['output'] = {
 };
 
 /**
- * Permission Evidence (`__acl`) Contract. Dogsled OSS extracts and stores ACL evidence
+ * Permission Evidence (`__acl`) Contract. Bobsled Core OSS extracts and stores ACL evidence
  * whenever a source backend exposes it; OSS does NOT enforce. Emitting the schema even
  * when no rows are produced keeps the downstream consumer contract stable so app-layer
  * consumers can rely on the column shape regardless of which providers have ACL

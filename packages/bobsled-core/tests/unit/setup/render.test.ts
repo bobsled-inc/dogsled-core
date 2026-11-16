@@ -55,7 +55,7 @@ describe('renderSetupFiles', () => {
     const bobsledConfig = files.find((file) => file.path === 'bobsled.yml');
     const agentGuide = files.find((file) => file.path === 'AGENTS.md');
     const summary = files.find((file) => file.path === 'bobsled.setup.summary.md');
-    const state = files.find((file) => file.path === 'dogsled.dashboard.state.json');
+    const state = files.find((file) => file.path === 'bobsled.dashboard.state.json');
     const starterSkill = files.find((file) => file.path === 'skills/project-overview/SKILL.md');
 
     expect(bobsledConfig?.content).toContain('destination:');
@@ -66,7 +66,7 @@ describe('renderSetupFiles', () => {
     expect(summary?.content).toContain('HUBSPOT_ACCESS_TOKEN');
     expect(state?.content).toContain('"status": "needs_credentials"');
     expect(starterSkill?.content).toContain('name: project-overview');
-    expect(agentGuide?.content).toContain('dogsled skill sync');
+    expect(agentGuide?.content).toContain('bobsled skill sync');
     for (const heading of [
       '## About this data',
       '## Queryable data',

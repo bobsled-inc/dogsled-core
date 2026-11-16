@@ -14,7 +14,7 @@ Use this skill when a user wants to buy People Data Labs enrichment against a ch
 2. Recommend a v1 seed schema. Prefer `linkedin_url` for `person_enrich`.
 3. Generate or update the `extract-intents.yml` step block.
 4. Warn that PDL is match-billed and estimates are upper bounds when a provider only charges on successful matches.
-5. Recommend `dogsled extract estimate --plan <name>` before `dogsled extract run --plan <name>`.
+5. Recommend `bobsled extract estimate --plan <name>` before `bobsled extract run --plan <name>`.
 
 ## Seed Schema
 

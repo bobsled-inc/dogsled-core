@@ -14,12 +14,12 @@ import {
 import { getErrorMessage, ResponseBodyLimitError } from '../framework/core/index.js';
 import { RateLimitTimeoutError } from './rate-limiter.js';
 
-/** Construct the shared Dogsled failure contract at an extractor boundary. */
+/** Construct the shared Bobsled Core failure contract at an extractor boundary. */
 export function toExtractorRuntimeError(options: BobsledRuntimeErrorOptions): BobsledRuntimeError {
   return new BobsledRuntimeError(options);
 }
 
-/** Preserve the original provider/runtime cause for the parent Dogsled process. */
+/** Preserve the original provider/runtime cause for the parent Bobsled Core process. */
 export function serializeExtractorErrorCause(error: unknown): SerializedErrorCause | undefined {
   return serializeErrorCause(error instanceof BobsledRuntimeError ? error.cause : error);
 }
