@@ -205,7 +205,7 @@ describe('Entity graph SDK — end-to-end acceptance (programmatic seams)', () =
   });
 
   it('doctor exits with validation code when production allows unfiltered MCP', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'dogsled-doctor-cli-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'bobsled-doctor-cli-'));
     try {
       mkdirSync(join(cwd, 'generated'), { recursive: true });
       writeFileSync(join(cwd, 'bobsled.yml'), 'pipelines: {}\n');

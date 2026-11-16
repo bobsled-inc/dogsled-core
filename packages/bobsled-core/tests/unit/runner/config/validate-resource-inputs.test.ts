@@ -14,7 +14,7 @@ describe('validateResourceInputOverrides', () => {
   let projectRoot: string;
 
   beforeEach(() => {
-    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-resource-inputs-'));
+    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-resource-inputs-'));
   });
 
   afterEach(() => {
@@ -115,7 +115,7 @@ describe('validateResourceInputOverrides', () => {
   });
 
   it('refuses project-local resource symlinks without reading them', () => {
-    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-resource-outside-'));
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-resource-outside-'));
     const outsideResource = path.join(outside, 'items.yml');
     fs.writeFileSync(
       outsideResource,

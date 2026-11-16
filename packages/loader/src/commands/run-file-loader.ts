@@ -93,7 +93,7 @@ export async function runFileLoader(
   }
 
   const ownedTempDir = await fs.mkdtemp(
-    path.join(providedTempRoot ?? os.tmpdir(), 'dogsled-loader-')
+    path.join(providedTempRoot ?? os.tmpdir(), 'bobsled-loader-')
   );
 
   const bufferRootDir = path.join(ownedTempDir, 'buffer');

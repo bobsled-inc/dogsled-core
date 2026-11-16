@@ -222,7 +222,7 @@ function mockBigQueryRunner(queryLog: string[]): SqlRunnerModule {
 
 describe('cross-warehouse BigQuery + DuckDB smoke', () => {
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-xwh-bq-duck-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-xwh-bq-duck-'));
   });
 
   afterEach(async () => {

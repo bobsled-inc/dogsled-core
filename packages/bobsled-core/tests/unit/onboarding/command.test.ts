@@ -14,7 +14,7 @@ it('exposes the bundled agent guide without needing a project or plugin', async 
   registerOnboardingCommand(program);
   await program.parseAsync(['node', 'dogsled', 'onboarding', 'guide']);
   expect(output.mock.calls[0]?.[0]).toMatchObject({
-    name: 'dogsled-tutorials',
+    name: 'bobsled-tutorials',
     content: expect.stringContaining('Teaching contract'),
   });
   expect(output.mock.calls[0]?.[0].content).toContain('end the turn and wait');
@@ -94,7 +94,7 @@ it('returns the retail guide and its own read-only templates', async () => {
   registerOnboardingCommand(program);
   await program.parseAsync(['node', 'dogsled', 'onboarding', 'guide', '--tutorial', 'retail']);
   const guide = output.mock.calls[0]?.[0];
-  expect(guide.name).toBe('dogsled-retail');
+  expect(guide.name).toBe('bobsled-retail');
   expect(guide.content).toContain('one pilot');
   expect(guide.templatesPath).toContain('examples/retail/reference');
   expect(existsSync(join(guide.templatesPath, 'model-backed-executor.mjs.txt'))).toBe(true);

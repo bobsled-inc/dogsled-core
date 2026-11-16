@@ -5,9 +5,9 @@ small CSV file into a local DuckDB database, build a model on top of it, and the
 add a second source from a public API. It takes about ten minutes and needs no
 account, API key, or warehouse.
 
-To set up your own data with an agent, use the `dogsled-get-started` skill. It
+To set up your own data with an agent, use the `bobsled-get-started` skill. It
 guides connections, sources, pipelines and models in a new or existing project.
-The `dogsled-tutorials` skill is the separate entry point for example lessons.
+The `bobsled-tutorials` skill is the separate entry point for example lessons.
 
 For a guided experience with your coding agent and a local data explorer, try [TV Night](guides/tv-night.md). Connect to TVmaze, build your ETL and models, then improve your TV recommendations together.
 
@@ -18,8 +18,8 @@ You need Node.js 24 or later and npm.
 Create a folder and install the `@bobsled-inc/bobsled-core` package into it:
 
 ```bash
-mkdir dogsled-quickstart
-cd dogsled-quickstart
+mkdir bobsled-quickstart
+cd bobsled-quickstart
 npm init -y > /dev/null
 npm install @bobsled-inc/bobsled-core
 npx dogsled --version

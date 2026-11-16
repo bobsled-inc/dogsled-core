@@ -4,7 +4,7 @@ import { prepareCheck, validate } from './checks.js';
 import { page, renderAnswer } from './display.js';
 export const retail: TutorialDefinition = {
   id: 'retail',
-  skill: 'dogsled-retail',
+  skill: 'bobsled-retail',
   example: 'retail',
   dataDirectory: 'data/retail',
   databasePath: 'data.duckdb',

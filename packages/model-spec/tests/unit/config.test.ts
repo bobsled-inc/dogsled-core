@@ -10,7 +10,7 @@ describe('config', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-config-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-config-'));
   });
 
   afterEach(() => {

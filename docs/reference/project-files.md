@@ -53,7 +53,7 @@ Secrets in `bobsled.yml` must be environment references (`$NAME`). Each destinat
 | `turbopuffer`     | `api_key`, `region`, `namespace_prefix`, `distance_metric`, `full_text_columns`                                                                                                                                                          |
 | `local`           | `format` (`parquet`, `jsonl`, `csv`), `stream_subfolder`                                                                                                                                                                                 |
 | `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`                                                                                                                                                                                         |
-| `bobsled_managed` | `bobsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/dogsled-cloud.md))                                                                                                                                  |
+| `bobsled_managed` | `bobsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/hosted-runs.md))                                                                                                                                    |
 
 Every destination also accepts `load_strategy`, `schema_behavior` and
 `table_prefix`.

@@ -15,8 +15,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 2. In that second terminal, copy the committed project and enter it:
 
    ```bash
-   cp -R examples/incremental-cursors /tmp/dogsled-incremental-cursors
-   cd /tmp/dogsled-incremental-cursors
+   cp -R examples/incremental-cursors /tmp/bobsled-incremental-cursors
+   cd /tmp/bobsled-incremental-cursors
    ```
 
 3. Load the first 100 events and inspect the persisted cursor:

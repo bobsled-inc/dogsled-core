@@ -15,8 +15,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 2. In that second terminal, copy the committed project and enter it:
 
    ```bash
-   cp -R examples/secret-redaction /tmp/dogsled-secret-redaction
-   cd /tmp/dogsled-secret-redaction
+   cp -R examples/secret-redaction /tmp/bobsled-secret-redaction
+   cd /tmp/bobsled-secret-redaction
    ```
 
 3. Load one fictional event using environment-based authentication:

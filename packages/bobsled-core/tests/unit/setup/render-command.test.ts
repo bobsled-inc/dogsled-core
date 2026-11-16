@@ -30,7 +30,7 @@ afterEach(async () => {
 });
 
 function createRootWithAnswers(): { root: string; answersPath: string } {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-setup-render-cmd-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-setup-render-cmd-'));
   roots.push(root);
   const answersPath = path.join(root, 'answers.yml');
   writeFileSync(answersPath, ANSWERS_YAML, 'utf-8');

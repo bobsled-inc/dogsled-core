@@ -74,13 +74,13 @@ The [installation guide](docs/getting-started.md#install-dogsled) also covers gl
 
 ### Set up your own data with your coding agent
 
-Install the [Dogsled Core plugin for Claude Code or Codex](plugins/dogsled-core/README.md),
+Install the [Dogsled Core plugin for Claude Code or Codex](plugins/bobsled-core/README.md),
 open your project folder in the agent, and ask:
 
-> Use dogsled-get-started to install Dogsled and set up my project.
+> Use bobsled-get-started to install Dogsled and set up my project.
 
 The skill checks Node.js 24+ and installs Dogsled in your project if needed.
-Use **`dogsled-get-started`** to set up your Dogsled environment with your own
+Use **`bobsled-get-started`** to set up your Dogsled environment with your own
 connections, sources, pipelines and models. It can create a project or continue
 an existing one, then validate the setup and help you run a first useful query.
 
@@ -91,13 +91,13 @@ The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
 semantic models, query across sources, and try an agentic transformation. An
 optional chapter teaches entity resolution.
 
-Install the [Dogsled Core plugin for Claude Code or Codex](plugins/dogsled-core/README.md)
+Install the [Dogsled Core plugin for Claude Code or Codex](plugins/bobsled-core/README.md)
 to make the built-in skills available without copying files from this repository.
 
 After installing Dogsled, open Claude Code or Codex in your project folder and
-invoke the **`dogsled-tutorials`** skill, or ask:
+invoke the **`bobsled-tutorials`** skill, or ask:
 
-> Use the dogsled-tutorials skill for TV Night.
+> Use the bobsled-tutorials skill for TV Night.
 
 The skill already includes the chapter order, setup, choices and inspection pauses.
 You do not need to repeat those instructions. If the skill is not available in your

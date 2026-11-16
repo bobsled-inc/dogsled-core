@@ -1,4 +1,4 @@
-# Dogsled Explorer
+# Bobsled Core Explorer
 
 A local-first web UI for exploring, configuring, and demoing the [Dogsled](../../README.md) data engineering toolkit. Browse integrations, model bundles, journeys, runs, docs, pipelines, data previews, and the Entity Graph demo surface from your browser. The user guide is [docs/guides/explorer.md](../../docs/guides/explorer.md); this README describes the app for contributors.
 

@@ -115,13 +115,13 @@ up to an hour for the largest baseline cases.
 To compare with an earlier commit, run the same benchmark files there:
 
 ```sh
-git worktree add /tmp/dogsled-baseline <baseline-commit>
+git worktree add /tmp/bobsled-baseline <baseline-commit>
 cp packages/model-spec/tests/unit/agentic/warehouse-checkpoint.bench.test.ts \
-  /tmp/dogsled-baseline/packages/model-spec/tests/unit/agentic/
+  /tmp/bobsled-baseline/packages/model-spec/tests/unit/agentic/
 cp packages/model-spec/tests/support/{agentic-benchmark,checkpoint-transport,snapshot-validations}.ts \
-  /tmp/dogsled-baseline/packages/model-spec/tests/support/
-(cd /tmp/dogsled-baseline && pnpm install --frozen-lockfile && pnpm build)
-(cd /tmp/dogsled-baseline/packages/model-spec && CHECKPOINT_BENCHMARK=1 \
+  /tmp/bobsled-baseline/packages/model-spec/tests/support/
+(cd /tmp/bobsled-baseline && pnpm install --frozen-lockfile && pnpm build)
+(cd /tmp/bobsled-baseline/packages/model-spec && CHECKPOINT_BENCHMARK=1 \
   npx vitest run tests/unit/agentic/warehouse-checkpoint.bench.test.ts)
 ```
 

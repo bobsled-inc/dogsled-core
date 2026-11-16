@@ -15,7 +15,7 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 function fixture() {
-  const dir = mkdtempSync(join(tmpdir(), 'dogsled-cursors-'));
+  const dir = mkdtempSync(join(tmpdir(), 'bobsled-cursors-'));
   dirs.push(dir);
   const f = runFixture(2);
   f.model.sources.pairs!.incremental = { cursor_field: 'updated_at' };

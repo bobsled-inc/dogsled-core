@@ -91,7 +91,7 @@ export async function command(executable, args, options = {}) {
 }
 
 export async function context(name) {
-  const project = await mkdtemp(path.join(os.tmpdir(), `dogsled-e2e-${name}-`));
+  const project = await mkdtemp(path.join(os.tmpdir(), `bobsled-e2e-${name}-`));
   const home = path.resolve(
     process.env.BOBSLED_CORE_E2E_HOME ?? path.join(root, 'test-results/e2e/home')
   );

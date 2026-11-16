@@ -24,7 +24,7 @@ describe('state', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-state-test-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-state-test-'));
   });
 
   afterEach(() => {
@@ -69,7 +69,7 @@ describe('state', () => {
       }
     });
 
-    it.each(['.bms', '.dogsled-context'])('ignores retired state directory %s', (legacyDir) => {
+    it.each(['.bms', '.bobsled-context'])('ignores retired state directory %s', (legacyDir) => {
       const legacyState: RunState = {
         models: {
           legacy_model: {

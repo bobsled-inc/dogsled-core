@@ -15,8 +15,8 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 2. In that second terminal, copy the committed project and enter it:
 
    ```bash
-   cp -R examples/fan-out /tmp/dogsled-fan-out
-   cd /tmp/dogsled-fan-out
+   cp -R examples/fan-out /tmp/bobsled-fan-out
+   cd /tmp/bobsled-fan-out
    ```
 
 3. Start disposable Postgres on a random loopback port and configure the copied project:

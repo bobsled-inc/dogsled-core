@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const tempDirs: string[] = [];
 
 function createTempDir(): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-setup-render-'));
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-setup-render-'));
   tempDirs.push(dir);
   return dir;
 }

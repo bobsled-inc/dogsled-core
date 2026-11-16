@@ -16,7 +16,7 @@ import { INLINED_AI_DEPENDENCY_NAMES } from '../release/package-set.mjs';
 import { runBundledIntegrationsSmoke } from './bundled-integrations-smoke.mjs';
 import { stageBobsledPackage } from '../release/stage-package.mjs';
 
-const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'dogsled-packed-catalog-'));
+const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'bobsled-packed-catalog-'));
 const stageDir = path.join(temporaryRoot, 'stage');
 const packDir = path.join(temporaryRoot, 'pack');
 const installDir = path.join(temporaryRoot, 'install');
@@ -64,7 +64,7 @@ try {
     path.join(installDir, 'package.json'),
     JSON.stringify(
       {
-        name: 'dogsled-packed-catalog-smoke',
+        name: 'bobsled-packed-catalog-smoke',
         private: true,
         type: 'module',
       },
@@ -212,7 +212,7 @@ function writeProject(name, source, resources, via) {
       'destinations:',
       '  managed:',
       '    type: bobsled_managed',
-      '    bobsled_connection_ref: dogsled-managed',
+      '    bobsled_connection_ref: bobsled-managed',
       'pipelines:',
       '  managed_sync:',
       '    schedule: manual',
@@ -409,7 +409,7 @@ await assertValidationFailure(
     path.join(peerGraphDir, 'package.json'),
     JSON.stringify(
       {
-        name: 'dogsled-packed-peer-graph-smoke',
+        name: 'bobsled-packed-peer-graph-smoke',
         private: true,
         type: 'module',
         dependencies: {

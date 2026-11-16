@@ -17,7 +17,7 @@ export class AgentContextError extends Error {
 const ROUTES = [
   {
     match: /^\.agents\/|^packages\/skills\//,
-    skills: ['dogsled-publish-skill'],
+    skills: ['bobsled-publish-skill'],
     risks: ['generated_manifest'],
     checks: [
       'pnpm --filter @bobsled-inc/skills generate:manifest',
@@ -43,7 +43,7 @@ const ROUTES = [
   },
   {
     match: /^packages\/model-spec\//,
-    skills: ['dogsled-model-spec-edit', 'lineage'],
+    skills: ['bobsled-model-spec-edit', 'lineage'],
     risks: ['public_contract'],
   },
   {

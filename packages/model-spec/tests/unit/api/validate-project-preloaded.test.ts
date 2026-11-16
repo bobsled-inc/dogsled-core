@@ -24,7 +24,7 @@ describe('validateProject / compileProject — preloaded integrations bypass dis
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-preloaded-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-preloaded-'));
 
     fs.writeFileSync(
       path.join(tmpDir, 'model-spec.yml'),

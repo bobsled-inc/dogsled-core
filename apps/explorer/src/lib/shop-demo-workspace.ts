@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { spawn } from 'node:child_process';
 import { DuckDBInstance } from '@duckdb/node-api';
-import { getWorkspaceRoot } from './dogsled-cli';
+import { getWorkspaceRoot } from './bobsled-cli';
 
 export const SHOP_DEMO_DIR = path.join('workspace', 'shop-demo');
 export const SHOP_DEMO_DB = 'demo.db';

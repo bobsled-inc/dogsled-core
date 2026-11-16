@@ -460,7 +460,7 @@ describe('reserved compiler namespace', () => {
 
 describe('recursion and the model DAG', () => {
   const writeProject = (specs: ReadonlyArray<Record<string, unknown>>): string[] => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-recursion-dag-'));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-model-spec-recursion-dag-'));
     return specs.map((spec) => {
       const filePath = path.join(dir, `${spec.name as string}.yml`);
       fs.writeFileSync(filePath, stringify(spec), 'utf-8');

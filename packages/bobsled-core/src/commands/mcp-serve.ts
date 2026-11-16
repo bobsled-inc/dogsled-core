@@ -175,7 +175,7 @@ export async function runMcpServe(options: McpServeOptions): Promise<void> {
           writeJson({
             jsonrpc: '2.0',
             id: requestId(request),
-            result: { protocolVersion: '2024-11-05', serverInfo: { name: 'dogsled' } },
+            result: { protocolVersion: '2024-11-05', serverInfo: { name: 'bobsled' } },
           });
           continue;
         }

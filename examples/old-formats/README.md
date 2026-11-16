@@ -9,7 +9,7 @@ lakehouse destination with a canonical replacement hint, rejects a v6 manifest,
 and checks malformed YAML produces a structured CLI failure.
 
 The test intentionally contains old identifiers so consumers can reproduce them.
-See "Field name spellings" in `docs/guides/dogsled-cloud.md`.
+See "Field name spellings" in `docs/guides/hosted-runs.md`.
 
 Known limitation: an old root configuration filename currently lacks a dedicated
 migration diagnostic. The test checks it does not crash; the missing migration

@@ -14,7 +14,7 @@ import {
 const directories: string[] = [];
 
 function project(files: Record<string, string>): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-example-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-example-'));
   directories.push(root);
   for (const [file, content] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });

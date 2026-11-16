@@ -153,9 +153,9 @@ describe('neon-host', () => {
   });
 });
 
-describe('dogsled-subdomain', () => {
+describe('app-subdomain', () => {
   it('catches *.dogsled.it subdomains', () => {
-    expect(countMatches('customer.dogsled.it')['dogsled-subdomain']).toBe(1);
+    expect(countMatches('customer.dogsled.it')['app-subdomain']).toBe(1);
   });
 });
 
@@ -210,14 +210,20 @@ describe('private-github-repo', () => {
     ).toBe(1);
   });
 
-  it('allows links to the future public repo dogsled-core', () => {
+  it('allows links to the current repository', () => {
     expect(countMatches('https://github.com/bobsled-inc/dogsled-core')['private-github-repo']).toBe(
       0
     );
   });
 
-  it('allows dogsled-core.git', () => {
+  it('allows the current repository .git URL', () => {
     expect(countMatches('git@github.com/bobsled-inc/dogsled-core.git')['private-github-repo']).toBe(
+      0
+    );
+  });
+
+  it('allows the public repo name bobsled-core', () => {
+    expect(countMatches('https://github.com/bobsled-inc/bobsled-core')['private-github-repo']).toBe(
       0
     );
   });

@@ -21,7 +21,7 @@ async function freshModules() {
 
 function sharedCopy(): string {
   const owner = typeof process.getuid === 'function' ? String(process.getuid()) : 'user';
-  return join(tempRoot, `dogsled-integrations-${owner}-${BUILT_IN_SOURCES_SHA256.slice(0, 16)}`);
+  return join(tempRoot, `bobsled-integrations-${owner}-${BUILT_IN_SOURCES_SHA256.slice(0, 16)}`);
 }
 
 beforeEach(() => {

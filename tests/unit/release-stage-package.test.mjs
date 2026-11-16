@@ -139,7 +139,7 @@ describe('release package staging', () => {
       await import('node:fs');
     const os = await import('node:os');
     const path = await import('node:path');
-    const outputDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-stage-assets-'));
+    const outputDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-stage-assets-'));
     try {
       const entityGraph = path.join(outputDir, 'node_modules/@bobsled-inc/entity-graph');
       mkdirSync(entityGraph, { recursive: true });

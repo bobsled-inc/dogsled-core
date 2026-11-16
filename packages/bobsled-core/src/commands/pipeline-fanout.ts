@@ -166,7 +166,7 @@ export function pruneStaleCaptureDirs(
   }
 
   for (const entry of entries) {
-    if (!entry.startsWith('dogsled-capture-')) {
+    if (!entry.startsWith('bobsled-capture-')) {
       continue;
     }
 

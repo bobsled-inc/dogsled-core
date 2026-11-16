@@ -6,9 +6,9 @@ export function explorerFetch(input: RequestInfo | URL, init?: RequestInit): Pro
     const url = new URL(input instanceof Request ? input.url : String(input), window.location.href);
     if (url.origin === window.location.origin) {
       const token = document.querySelector<HTMLMetaElement>(
-        'meta[name="dogsled-explorer-token"]'
+        'meta[name="bobsled-explorer-token"]'
       )?.content;
-      if (token) headers.set('x-dogsled-explorer-token', token);
+      if (token) headers.set('x-bobsled-explorer-token', token);
     }
   }
   return fetch(input, { ...init, headers });

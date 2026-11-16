@@ -61,7 +61,7 @@ More:
 - [Explorer](guides/explorer.md): the local web app.
 - [Tutorial and examples](guides/learn-and-examples.md): `dogsled learn` and the
   example projects.
-- [Dogsled Cloud and Core](guides/dogsled-cloud.md): fields that only Dogsled Cloud
+- [Dogsled Cloud and Core](guides/hosted-runs.md): fields that only Dogsled Cloud
   reads.
 
 ## Reference

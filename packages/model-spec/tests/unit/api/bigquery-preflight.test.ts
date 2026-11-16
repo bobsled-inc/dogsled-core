@@ -142,7 +142,7 @@ function columnsForInformationSchemaQuery(
 
 describe('BigQuery model preflight', () => {
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-model-spec-bq-preflight-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-model-spec-bq-preflight-'));
   });
 
   afterEach(async () => {

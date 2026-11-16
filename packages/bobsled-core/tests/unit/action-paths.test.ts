@@ -14,7 +14,7 @@ describe('resolveActionProjectRoot', () => {
   });
 
   it('uses the current directory instead of searching parent projects', () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-action-paths-config-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'bobsled-action-paths-config-'));
     const nestedDir = join(tempDir, 'apps', 'operator');
     mkdirSync(nestedDir, { recursive: true });
     writeFileSync(
@@ -40,7 +40,7 @@ describe('resolveActionProjectRoot', () => {
   });
 
   it('uses an explicit project root', () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-action-paths-actions-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'bobsled-action-paths-actions-'));
     const nestedDir = join(tempDir, 'apps', 'operator');
     mkdirSync(join(tempDir, 'actions'), { recursive: true });
     mkdirSync(nestedDir, { recursive: true });
@@ -68,7 +68,7 @@ describe('resolveActionProjectRoot', () => {
   });
 
   it('keeps an explicit config file as the legacy root selector', () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-action-paths-project-config-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'bobsled-action-paths-project-config-'));
     const nestedDir = join(tempDir, 'crm', 'hubspot');
     mkdirSync(nestedDir, { recursive: true });
     writeFileSync(join(tempDir, 'bobsled.yml'), 'pipelines: {}\n', 'utf-8');
@@ -82,7 +82,7 @@ describe('resolveActionProjectRoot', () => {
   });
 
   it('does not mistake nested GitHub action folders for project-local action specs', () => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'dogsled-action-paths-github-actions-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'bobsled-action-paths-github-actions-'));
     const nestedDir = join(tempDir, 'apps', 'operator');
     mkdirSync(join(tempDir, 'actions', 'track-action'), { recursive: true });
     mkdirSync(nestedDir, { recursive: true });

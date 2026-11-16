@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawnBobsledCommand, collectOutput } from '@/lib/dogsled-cli';
+import { spawnBobsledCommand, collectOutput } from '@/lib/bobsled-cli';
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { goal?: string };

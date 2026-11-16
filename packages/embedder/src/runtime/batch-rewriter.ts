@@ -217,7 +217,7 @@ export async function rewriteBatch(options: RewriteBatchOptions): Promise<BatchM
     options.tmpDir ??
     path.join(
       process.env['BOBSLED_CORE_EMBEDDER_TMP_DIR'] ?? '/tmp',
-      `dogsled-embed-${process.pid}`
+      `bobsled-embed-${process.pid}`
     );
   const safeStream = toSafePathSegment(options.message.stream);
   const streamDir = path.join(tmpRoot, safeStream);

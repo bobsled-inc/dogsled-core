@@ -171,7 +171,7 @@ export async function extractDocumentResource(
   const maxBytes = (source.parse?.max_file_size_mb ?? DEFAULT_MAX_FILE_SIZE_MB) * 1024 * 1024;
 
   const client = await createFileStorageClient(integration);
-  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'dogsled-document-'));
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'bobsled-document-'));
   // See extractFileStorageResource: full_refresh rereads every file.
   const readAllFiles = opts.fullRefresh === true || resource.replication.method === 'full_refresh';
   const existingState = readAllFiles ? {} : getDocumentState(state, integrationName, resource.name);

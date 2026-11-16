@@ -14,11 +14,11 @@ describe('Explorer browser token', () => {
       headers: { 'content-type': 'application/json' },
       body: '{}',
     });
-    expect(fetcher.mock.calls[0]![1].headers.get('x-dogsled-explorer-token')).toBe(
+    expect(fetcher.mock.calls[0]![1].headers.get('x-bobsled-explorer-token')).toBe(
       'launch-test-token'
     );
     expect(fetcher.mock.calls[0]![1].headers.get('content-type')).toBe('application/json');
     await explorerFetch('https://example.com/api', { method: 'POST' });
-    expect(fetcher.mock.calls[1]![1].headers.has('x-dogsled-explorer-token')).toBe(false);
+    expect(fetcher.mock.calls[1]![1].headers.has('x-bobsled-explorer-token')).toBe(false);
   });
 });

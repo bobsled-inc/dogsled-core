@@ -7,3 +7,9 @@ export const SETUP_ANSWERS_FILE_SPELLINGS: readonly string[] = Object.freeze([
   'dogsled.setup.answers.yml',
   'bobsled.setup.answers.yml',
 ]);
+
+/** Setup dashboard state file names, old and new; render rewrites the one a project already has. */
+export const SETUP_DASHBOARD_STATE_FILE_SPELLINGS: readonly string[] = Object.freeze([
+  'dogsled.dashboard.state.json',
+  'bobsled.dashboard.state.json',
+]);

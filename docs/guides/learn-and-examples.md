@@ -12,7 +12,7 @@ checkout:
 
 ```bash
 git clone https://github.com/bobsled-inc/dogsled-core.git
-cd dogsled-core
+cd bobsled-core
 pnpm run setup
 node packages/bobsled-core/bin/cli.mjs learn --cli "node $PWD/packages/bobsled-core/bin/cli.mjs"
 ```

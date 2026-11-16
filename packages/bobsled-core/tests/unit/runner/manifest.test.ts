@@ -25,7 +25,7 @@ describe('manifest helpers', () => {
   it('creates pending destination entries with allowlisted fields only', () => {
     const manifest = createManifest(
       'github',
-      '/tmp/dogsled-capture-123/output.jsonl',
+      '/tmp/bobsled-capture-123/output.jsonl',
       [
         { name: 'warehouse', type: 'local', format: 'csv', load_strategy: 'append' },
         {
@@ -42,7 +42,7 @@ describe('manifest helpers', () => {
 
     expect(manifest.integration).toBe('github');
     expect(manifest.pipeline_name).toBe('nightly');
-    expect(manifest.capture_file).toBe('/tmp/dogsled-capture-123/output.jsonl');
+    expect(manifest.capture_file).toBe('/tmp/bobsled-capture-123/output.jsonl');
     expect(manifest.commit_state).toEqual({ status: 'pending' });
     expect(manifest.destinations).toEqual([
       {
@@ -63,7 +63,7 @@ describe('manifest helpers', () => {
   });
 
   it('writes parseable json with restricted permissions', () => {
-    const tempDir = makeTempDir('dogsled-manifest-test-');
+    const tempDir = makeTempDir('bobsled-manifest-test-');
     const manifestPath = getManifestPath(tempDir);
     const manifest = createManifest('stripe', path.join(tempDir, 'output.jsonl'), [
       { name: 'warehouse', type: 'local', format: 'csv' },
@@ -80,10 +80,10 @@ describe('manifest helpers', () => {
 
   it('warns instead of throwing when writes fail', () => {
     const warning = vi.fn();
-    const manifest = createManifest('notion', '/tmp/dogsled-capture-123/output.jsonl', [
+    const manifest = createManifest('notion', '/tmp/bobsled-capture-123/output.jsonl', [
       { name: 'warehouse', type: 'local', format: 'jsonl' },
     ]);
-    const tempDir = makeTempDir('dogsled-manifest-missing-parent-');
+    const tempDir = makeTempDir('bobsled-manifest-missing-parent-');
     const manifestPath = path.join(tempDir, 'missing', 'manifest.json');
 
     expect(() => writeManifest(manifestPath, manifest, warning)).not.toThrow();
@@ -92,7 +92,7 @@ describe('manifest helpers', () => {
 
   it('cleans up the temp file when the atomic replace fails', () => {
     const warning = vi.fn();
-    const tempDir = makeTempDir('dogsled-manifest-rename-failure-');
+    const tempDir = makeTempDir('bobsled-manifest-rename-failure-');
     const manifestPath = getManifestPath(tempDir);
     const manifest = createManifest('github', path.join(tempDir, 'output.jsonl'), [
       { name: 'warehouse', type: 'local', format: 'jsonl' },

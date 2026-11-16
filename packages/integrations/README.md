@@ -78,7 +78,7 @@ const queryable = listQueryResources();
 const capabilities = buildQueryCapabilitiesManifest();
 const githubIssues = getQuerySpec('github', 'issues');
 const openIssues = await queryResources.github.issues.list({
-  input: { owner: 'bobsled-inc', repo: 'dogsled-core' },
+  input: { owner: 'bobsled-inc', repo: 'bobsled-core' },
   filter: { state: 'open', updated_at: { $gte: '2026-04-01T00:00:00Z' } },
   limit: 25,
 });

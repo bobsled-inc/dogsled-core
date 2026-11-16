@@ -15,7 +15,7 @@ const roots: string[] = [];
 
 /** A project on disk holding `files`, keyed by project-relative path. */
 function project(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'dogsled-load-specs-'));
+  const root = mkdtempSync(join(tmpdir(), 'bobsled-load-specs-'));
   roots.push(root);
   for (const [relativePath, content] of Object.entries(files)) {
     mkdirSync(dirname(join(root, relativePath)), { recursive: true });

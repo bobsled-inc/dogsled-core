@@ -9,7 +9,7 @@ import { checkProjectFiles, servingCheckName } from '../../../src/commands/docto
 const roots: string[] = [];
 
 function project(files: Record<string, string>): string {
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-doctor-files-')));
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-doctor-files-')));
   roots.push(root);
   for (const [relativePath, content] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(root, relativePath)), { recursive: true });

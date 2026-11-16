@@ -7,7 +7,7 @@ name: notify_contact
 tags: [example, contacts]
 description: Send a contact row to an HTTPS webhook endpoint.
 webhook:
-  url: https://example.com/dogsled-sync-webhook
+  url: https://example.com/bobsled-sync-webhook
   method: POST
   request_body:
     email: ${{ input.email }}

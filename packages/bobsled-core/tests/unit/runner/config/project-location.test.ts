@@ -14,7 +14,7 @@ import { resolveCliBobsledProject } from '../../../../src/runner/config/cli-proj
 const roots: string[] = [];
 
 function project(files: Record<string, string>): string {
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-location-')));
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-location-')));
   roots.push(root);
   for (const [relativePath, content] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(root, relativePath)), { recursive: true });

@@ -21,7 +21,7 @@ afterEach(() => {
 
 describe('loadRunnerModule', () => {
   it('does not leak absolute paths when the runner file is missing', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'dogsled-model-spec-runner-'));
+    const dir = mkdtempSync(join(tmpdir(), 'bobsled-model-spec-runner-'));
     tempDirs.push(dir);
 
     const runnerPath = join(dir, 'missing-runner.mjs');
@@ -38,7 +38,7 @@ describe('loadRunnerModule', () => {
   });
 
   it('sanitizes absolute paths from runner import failures', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'dogsled-model-spec-runner-'));
+    const dir = mkdtempSync(join(tmpdir(), 'bobsled-model-spec-runner-'));
     tempDirs.push(dir);
 
     const runnerPath = join(dir, 'broken-runner.mjs');
@@ -66,7 +66,7 @@ export default async function run(sql) {
   });
 
   it('preserves optional close hooks from runner modules', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'dogsled-model-spec-runner-'));
+    const dir = mkdtempSync(join(tmpdir(), 'bobsled-model-spec-runner-'));
     tempDirs.push(dir);
 
     const runnerPath = join(dir, 'closable-runner.mjs');

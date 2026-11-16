@@ -47,9 +47,9 @@ export const LEARN_MODULES: LearnModule[] = [
     ],
   },
   {
-    id: 'dogsled-model-spec-context',
+    id: 'bobsled-model-spec-context',
     title: 'Model Spec and Context as Code',
-    group: 'dogsled-model-spec-context',
+    group: 'bobsled-model-spec-context',
     description: 'Connect model specs, semantic context, verified queries, and data previews.',
     outcome:
       'You can inspect model DAGs, compiled SQL, semantic artifacts, and queryable demo tables.',

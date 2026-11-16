@@ -62,7 +62,7 @@ describe('createIntegrationsGroup', () => {
   });
 
   it('init copies the library source spec and the selected resources', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'dogsled-integrations-init-'));
+    const dir = mkdtempSync(join(tmpdir(), 'bobsled-integrations-init-'));
     try {
       vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
       const program = new Command('dogsled');

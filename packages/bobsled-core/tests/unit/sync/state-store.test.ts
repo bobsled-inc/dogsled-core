@@ -18,7 +18,7 @@ let tempDir: string | undefined;
 let outsideDir: string | undefined;
 
 function makeStore(): FileSyncStateStore {
-  tempDir = mkdtempSync(join(tmpdir(), 'dogsled-sync-state-'));
+  tempDir = mkdtempSync(join(tmpdir(), 'bobsled-sync-state-'));
   return new FileSyncStateStore(tempDir);
 }
 
@@ -78,7 +78,7 @@ describe('FileSyncStateStore', () => {
 
   it('rejects an intermediate symlink before writing a checkpoint', async () => {
     const store = makeStore();
-    outsideDir = mkdtempSync(join(tmpdir(), 'dogsled-sync-outside-'));
+    outsideDir = mkdtempSync(join(tmpdir(), 'bobsled-sync-outside-'));
     symlinkSync(outsideDir, join(tempDir!, 'contacts_to_webhook'));
 
     await expect(
@@ -94,7 +94,7 @@ describe('FileSyncStateStore', () => {
 
   it('rejects symlink leaves for reads and appends', async () => {
     const store = makeStore();
-    outsideDir = mkdtempSync(join(tmpdir(), 'dogsled-sync-outside-'));
+    outsideDir = mkdtempSync(join(tmpdir(), 'bobsled-sync-outside-'));
     const syncDir = join(tempDir!, 'contacts_to_webhook');
     mkdirSync(join(syncDir, 'receipts'), { recursive: true });
 

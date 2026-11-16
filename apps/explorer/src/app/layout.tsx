@@ -9,7 +9,7 @@ import { isEntityGraphWorkspaceReady } from '@/lib/entity-graph-workspace';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Dogsled Explorer',
+  title: 'Bobsled Core Explorer',
   description: 'Explore and demo the Dogsled data engineering toolkit',
 };
 
@@ -36,11 +36,11 @@ function buildNavItems(): readonly NavItem[] {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const navItems = buildNavItems();
-  const token = (await headers()).get('x-dogsled-explorer-token') ?? '';
+  const token = (await headers()).get('x-bobsled-explorer-token') ?? '';
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="dogsled-explorer-token" content={token} />
+        <meta name="bobsled-explorer-token" content={token} />
       </head>
       <body className="antialiased">
         <ThemeProvider>

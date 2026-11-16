@@ -6,8 +6,8 @@
   },
   "plugins": [
     {
-      "name": "dogsled-core",
-      "source": "./plugins/dogsled-core",
+      "name": "bobsled-core",
+      "source": "./plugins/bobsled-core",
       "description": "Set up local Dogsled Core projects, build data pipelines and models, and diagnose failures."
     }
   ]

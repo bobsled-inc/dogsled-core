@@ -79,7 +79,7 @@ function packageJsonHasWorkspaces(path: string): boolean {
   }
 }
 
-const TUTOR_PROGRESS_FILE = '.dogsled-tutor-progress.json';
+const TUTOR_PROGRESS_FILE = '.bobsled-tutor-progress.json';
 
 function getProgressPath(): string {
   const root = findProjectRoot();

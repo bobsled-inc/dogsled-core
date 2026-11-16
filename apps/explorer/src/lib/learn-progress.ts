@@ -8,8 +8,8 @@ import {
   type LearnModule,
 } from './learn-curriculum';
 
-export const LEARN_PROGRESS_STORAGE_KEY = 'dogsled-explorer-learn-progress';
-const LEARN_PROGRESS_EVENT = 'dogsled-explorer:learn-progress-change';
+export const LEARN_PROGRESS_STORAGE_KEY = 'bobsled-explorer-learn-progress';
+const LEARN_PROGRESS_EVENT = 'bobsled-explorer:learn-progress-change';
 
 export interface LearnModuleProgress {
   completedStepIds: string[];

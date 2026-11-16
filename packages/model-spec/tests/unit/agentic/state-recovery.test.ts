@@ -284,7 +284,7 @@ describe('durable agentic execution', { timeout: 60_000 }, () => {
 
   it('rejects a symlinked parent before creating nested state outside the project', () => {
     const dir = root();
-    const outside = fs.mkdtempSync(join(tmpdir(), 'dogsled-outside-'));
+    const outside = fs.mkdtempSync(join(tmpdir(), 'bobsled-outside-'));
     try {
       fs.symlinkSync(outside, join(dir, '.bobsled'));
       expect(() => saveState(dir, { models: {} })).toThrow(/inside the project/);

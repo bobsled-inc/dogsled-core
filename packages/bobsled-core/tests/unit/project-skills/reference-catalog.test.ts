@@ -101,7 +101,7 @@ source:
 };
 
 function writeProject(files: Readonly<Record<string, string>>): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-reference-names-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-reference-names-'));
   roots.push(root);
   for (const [name, content] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(root, name)), { recursive: true });

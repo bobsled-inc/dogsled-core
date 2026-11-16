@@ -925,7 +925,7 @@ describe('runPipeline', () => {
 
   it('redacts WIF tokens from single-destination loader diagnostics', async () => {
     const stderrWrite = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-pipeline-log-'));
+    const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-pipeline-log-'));
     tempDirs.push(logDir);
     const logFile = path.join(logDir, 'pipeline.log');
     const extractChild = createMockChild({ stdout: new PassThrough() });
@@ -973,7 +973,7 @@ describe('runPipeline', () => {
 
   it('redacts WIF tokens from fan-out diagnostics and manifests', async () => {
     const stderrWrite = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-pipeline-log-'));
+    const logDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-pipeline-log-'));
     tempDirs.push(logDir);
     const logFile = path.join(logDir, 'pipeline.log');
     const extractStdout = new PassThrough();
@@ -1297,7 +1297,7 @@ describe('runPipeline', () => {
     expect(spawn.mock.calls[1]?.[2]).toMatchObject({
       stdio: ['pipe', 'pipe', 'pipe'],
       env: expect.objectContaining({
-        BOBSLED_CORE_EMBEDDER_TMP_DIR: expect.stringMatching(/dogsled-embed-/),
+        BOBSLED_CORE_EMBEDDER_TMP_DIR: expect.stringMatching(/bobsled-embed-/),
       }),
     });
     const embedOptions = spawn.mock.calls[1]?.[2] as { env?: NodeJS.ProcessEnv };
@@ -2232,7 +2232,7 @@ describe('runPipeline', () => {
     expect(
       spawn.mock.calls.filter((call) => call[0] === 'embed-cli' && call[1][0] === 'run')
     ).toHaveLength(1);
-    expect(embedTmpDir).toMatch(/dogsled-embed-/);
+    expect(embedTmpDir).toMatch(/bobsled-embed-/);
     expect(fs.existsSync(embedTmpDir)).toBe(false);
   });
 
@@ -2295,7 +2295,7 @@ describe('runPipeline', () => {
     if (!embedTmpDir) {
       throw new Error('expected embed temp dir');
     }
-    expect(embedTmpDir).toMatch(/dogsled-embed-/);
+    expect(embedTmpDir).toMatch(/bobsled-embed-/);
     expect(fs.existsSync(embedTmpDir)).toBe(true);
     expect(fs.existsSync(path.join(embedTmpDir, 'embed-config.json'))).toBe(true);
     fs.rmSync(embedTmpDir, { recursive: true, force: true });

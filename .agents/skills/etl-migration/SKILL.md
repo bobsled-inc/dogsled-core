@@ -34,7 +34,7 @@ Read only what matches the task:
 - Extraction specs: [Extractor reference](../../../packages/extractor/README.md)
 - Loading specs: [Loader reference](../../../packages/loader/README.md)
 - Model validation and expectations: [Model Spec reference](../../../packages/model-spec/README.md)
-- Pipeline repo operations: the Project guide and `dogsled-troubleshoot`
+- Pipeline repo operations: the Project guide and `bobsled-troubleshoot`
 
 ## Migration Workflow
 

@@ -204,7 +204,7 @@ describe('detectModelReferences (pure)', () => {
 
 describe('resolveModelReferences (front-end + real engine)', () => {
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-model-query-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-model-query-'));
   });
 
   afterEach(async () => {

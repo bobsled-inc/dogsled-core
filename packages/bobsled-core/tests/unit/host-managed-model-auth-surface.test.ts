@@ -112,7 +112,7 @@ createJevExecutor({ fetch });
 
 it('exposes host declaration and secret resolver options on every public host entry point', () => {
   const packageRoot = path.resolve(import.meta.dirname, '../..');
-  const directory = mkdtempSync(path.join(os.tmpdir(), 'dogsled-host-model-auth-'));
+  const directory = mkdtempSync(path.join(os.tmpdir(), 'bobsled-host-model-auth-'));
   try {
     mkdirSync(path.join(directory, 'node_modules/@bobsled-inc'), { recursive: true });
     symlinkSync(packageRoot, path.join(directory, 'node_modules/@bobsled-inc/bobsled-core'), 'dir');

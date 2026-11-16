@@ -45,7 +45,7 @@ describe('validateResourceResolution — path traversal containment', () => {
   let projectRoot: string;
 
   beforeEach(() => {
-    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-resolve-resource-'));
+    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-resolve-resource-'));
     fs.mkdirSync(path.join(projectRoot, 'resources', 'linear'), { recursive: true });
   });
 
@@ -111,7 +111,7 @@ describe('validateResourceSourceAlignment — traversal containment', () => {
   let projectRoot: string;
 
   beforeEach(() => {
-    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-resolve-resource-'));
+    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-resolve-resource-'));
   });
 
   afterEach(() => {

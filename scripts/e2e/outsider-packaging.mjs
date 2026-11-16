@@ -141,15 +141,15 @@ export async function verifyShippedAssets(cli = cliPath) {
     const installed = JSON.parse(
       (await run(['setup', 'install', '--dir', 'repo', '--json'])).stdout
     );
-    assert.ok(installed.copied.includes('.claude/plugins/dogsled-setup'));
+    assert.ok(installed.copied.includes('.claude/plugins/bobsled-setup'));
     assert.ok(
       existsSync(
-        path.join(ctx.project, 'repo/.claude/plugins/dogsled-setup/.claude-plugin/plugin.json')
+        path.join(ctx.project, 'repo/.claude/plugins/bobsled-setup/.claude-plugin/plugin.json')
       )
     );
     await run(['setup', 'export', '--format', 'dir', '--output', 'kit', '--json']);
     assert.ok(
-      existsSync(path.join(ctx.project, 'kit/dogsled-setup-plugin/.claude-plugin/plugin.json'))
+      existsSync(path.join(ctx.project, 'kit/bobsled-setup-plugin/.claude-plugin/plugin.json'))
     );
 
     await run(['entity-graph', 'fixtures', 'copy', 'b2b-company-master', '--output', 'fixture']);

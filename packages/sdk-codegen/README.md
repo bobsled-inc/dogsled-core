@@ -7,7 +7,7 @@ Generates typed SDK files from a Dogsled entity graph inventory.
 ## CLI
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 The emitted TypeScript SDK includes:
@@ -36,7 +36,7 @@ The Python emitter produces pydantic v2 profile models for library consumers. Th
 Generated TypeScript clients are executor-backed. Apps own the warehouse/API connection and return profile rows plus requested includes.
 
 ```ts
-import { createBobsledClient, type BobsledEntityExecutor } from './generated/dogsled-sdk/index.js';
+import { createBobsledClient, type BobsledEntityExecutor } from './generated/bobsled-sdk/index.js';
 
 const executor: BobsledEntityExecutor = {
   async find(request) {

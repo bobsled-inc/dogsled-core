@@ -670,7 +670,7 @@ async function runMultiDestPipeline(
   // Clean up stale capture directories from previous failed runs
   pruneStaleCaptureDirs();
 
-  const captureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-capture-'));
+  const captureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-capture-'));
   fs.chmodSync(captureDir, 0o700);
   const capturePath = path.join(captureDir, 'output.jsonl');
   const captureStream = fs.createWriteStream(capturePath, { flags: 'wx', mode: 0o600 });

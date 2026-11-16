@@ -52,7 +52,7 @@ dogsled entity-graph relationships compact --runner ./runner.js --schema entity_
 1. Generate the SDK:
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk --json
 ```
 
 1. Run quality gates:

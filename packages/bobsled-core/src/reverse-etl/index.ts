@@ -27,7 +27,7 @@ export {
   type BuildSalesforceUpsertActionOptions,
 } from './build-action.js';
 
-export type ReverseEtlAssetKind = 'sync' | 'action' | 'dogsled-config';
+export type ReverseEtlAssetKind = 'sync' | 'action' | 'bobsled-config';
 
 export interface ReverseEtlParseError {
   kind: ReverseEtlAssetKind;
@@ -192,14 +192,14 @@ function validateBobsledConfigCollisions(
     for (const sync of syncs) {
       if (pipelineNames.has(sync.name)) {
         errors.push({
-          kind: 'dogsled-config',
+          kind: 'bobsled-config',
           file: loaded.pipelinePathByName.get(sync.name) ?? loaded.configPaths[0] ?? '.',
           message: `Sync "${sync.name}" collides with pipeline "${sync.name}" in ${loaded.pipelinePathByName.get(sync.name) ?? 'Project pipeline config'}`,
         });
       }
     }
   } catch (error) {
-    pushError(errors, 'dogsled-config', '.', error);
+    pushError(errors, 'bobsled-config', '.', error);
   }
 }
 

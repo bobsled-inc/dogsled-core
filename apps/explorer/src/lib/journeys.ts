@@ -42,7 +42,7 @@ export const FEATURED_JOURNEY_ID = 'saas-pipeline';
 
 export const JOURNEYS: Journey[] = [
   {
-    id: 'dogsled-overview',
+    id: 'bobsled-overview',
     title: 'What can Dogsled do?',
     description: 'Take a fast product tour from the dashboard through a concrete Stripe example.',
     estimatedMinutes: 6,

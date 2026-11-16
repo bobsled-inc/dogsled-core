@@ -80,7 +80,7 @@ export const ENTITY_GRAPH_SDK_MODULE: LearnModule = {
       id: 'entity-graph-sdk-generate',
       kind: 'command',
       title: 'Generate the typed SDK',
-      body: '`dogsled sdk generate --lang ts --out ./generated/dogsled-sdk` writes a complete TypeScript SDK into the consumer repo. The emitted code includes branded ID types (e.g. `type CustomerId = string & { readonly __brand: "CustomerId" }`), per-entity `Profile` interfaces, strict `FindFilter` shapes, an executor-backed `EntityQueryBuilder`, and a `createBobsledClient()` factory. Generated code targets `tsc >=5.0 <5.5` and is `tsc --noEmit`-clean. Python output is supported as a library export today; the v1 CLI ships TypeScript only.',
+      body: '`dogsled sdk generate --lang ts --out ./generated/bobsled-sdk` writes a complete TypeScript SDK into the consumer repo. The emitted code includes branded ID types (e.g. `type CustomerId = string & { readonly __brand: "CustomerId" }`), per-entity `Profile` interfaces, strict `FindFilter` shapes, an executor-backed `EntityQueryBuilder`, and a `createBobsledClient()` factory. Generated code targets `tsc >=5.0 <5.5` and is `tsc --noEmit`-clean. Python output is supported as a library export today; the v1 CLI ships TypeScript only.',
       cliLessonId: 'entity-graph-sdk-generate',
       command: command('sdk', ['--help']),
       action: terminalAction('Open SDK Generate Help', command('sdk', ['--help'])),

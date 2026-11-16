@@ -51,7 +51,7 @@ const PROFILE_ERRORS = [
 const EMBED_ERROR = 'Undeclared API key environment variable: HOST_EMBED_KEY';
 
 function project(files: Readonly<Record<string, string>>): string {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'dogsled-host-call-sites-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bobsled-host-call-sites-'));
   roots.push(root);
   for (const [name, content] of Object.entries(files)) {
     const target = path.join(root, name);
@@ -63,7 +63,7 @@ function project(files: Readonly<Record<string, string>>): string {
 
 function configErrors(result: ReturnType<typeof parseReverseEtlProject>): string[] {
   return result.errors
-    .filter((error) => error.kind === 'dogsled-config')
+    .filter((error) => error.kind === 'bobsled-config')
     .map((error) => error.message);
 }
 

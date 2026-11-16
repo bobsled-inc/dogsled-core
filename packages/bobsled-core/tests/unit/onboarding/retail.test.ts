@@ -12,7 +12,7 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 it('scaffolds retail without completed models and renders through the shared engine', async () => {
-  expect(getTutorial('retail').skill).toBe('dogsled-retail');
+  expect(getTutorial('retail').skill).toBe('bobsled-retail');
   const root = await mkdtemp(join(tmpdir(), 'retail-tutorial-'));
   roots.push(root);
   copyExample('retail', root);

@@ -172,7 +172,7 @@ new record belongs to; `--mode assign` and `--mode stage` write the match.
 ## Generate a typed SDK
 
 ```bash
-dogsled sdk generate --lang ts --out ./generated/dogsled-sdk
+dogsled sdk generate --lang ts --out ./generated/bobsled-sdk
 ```
 
 ```text
@@ -215,4 +215,4 @@ itself: your application passes an executor that runs the requests. See
 | `agent`                                                                        | Bounded tasks for coding agents: triage, review batches, onboarding.                                                                                   |
 | `diff`                                                                         | Compare entity-graph specs with a Git ref.                                                                                                             |
 
-The [CLI reference](../reference/cli.md#dogsled-entity-graph) lists every flag.
+The [CLI reference](../reference/cli.md#bobsled-entity-graph) lists every flag.

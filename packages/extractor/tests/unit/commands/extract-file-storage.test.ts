@@ -135,7 +135,7 @@ it.skipIf(process.platform === 'win32')(
     const { createRequire } = await import('node:module');
     const require = createRequire(import.meta.url);
     const tsx = require.resolve('tsx');
-    const root = await mkdtemp(join(tmpdir(), 'dogsled-interrupt-'));
+    const root = await mkdtemp(join(tmpdir(), 'bobsled-interrupt-'));
     await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module' }));
     await mkdir(join(root, 'bin'));
     await mkdir(join(root, 'dist'));

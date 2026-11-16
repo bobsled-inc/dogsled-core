@@ -201,7 +201,7 @@ describe('pipeline smoke', () => {
   });
 
   function makeProject(baseUrl: string): { projectDir: string; caCertPath: string } {
-    const projectDir = makeTempDir('dogsled-pipeline-smoke-');
+    const projectDir = makeTempDir('bobsled-pipeline-smoke-');
     const caCertPath = path.join(projectDir, 'fake-ca.pem');
     const integrationSpec = makeProvider(baseUrl, { name: 'test_api' });
     const resource = makeResource({
@@ -240,7 +240,7 @@ describe('pipeline smoke', () => {
   }
 
   function makeEmbeddingProject(baseUrl: string): { projectDir: string; caCertPath: string } {
-    const projectDir = makeTempDir('dogsled-pipeline-embed-smoke-');
+    const projectDir = makeTempDir('bobsled-pipeline-embed-smoke-');
     const caCertPath = path.join(projectDir, 'fake-ca.pem');
     const integrationSpec = makeProvider(baseUrl, { name: 'test_api' });
     const resource = makeResource({

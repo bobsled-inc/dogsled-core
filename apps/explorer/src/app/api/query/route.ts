@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawnBobsledCommand, collectOutput, getWorkspaceRoot } from '@/lib/dogsled-cli';
+import { spawnBobsledCommand, collectOutput, getWorkspaceRoot } from '@/lib/bobsled-cli';
 import { parseLoaderQueryTable } from '@/lib/loader-query-parser';
 import { resolveSafePathWithinRoot } from '@/lib/path-safety';
 

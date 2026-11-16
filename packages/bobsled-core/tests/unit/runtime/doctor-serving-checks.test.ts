@@ -31,7 +31,7 @@ describe('checkMcpUnfilteredInProduction', () => {
 
 describe('checkSdkStale', () => {
   function withFixture(fn: (dir: string) => void): void {
-    const dir = mkdtempSync(join(tmpdir(), 'dogsled-doctor-sdk-'));
+    const dir = mkdtempSync(join(tmpdir(), 'bobsled-doctor-sdk-'));
     try {
       fn(dir);
     } finally {

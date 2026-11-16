@@ -153,7 +153,7 @@ function prepareInvocationState(
       2
     );
   }
-  const directory = fs.mkdtempSync(path.join(projectRoot, '.dogsled-runtime-state-'));
+  const directory = fs.mkdtempSync(path.join(projectRoot, '.bobsled-runtime-state-'));
   try {
     fs.chmodSync(directory, 0o700);
     fs.writeFileSync(

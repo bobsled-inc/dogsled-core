@@ -2,7 +2,7 @@
 module: explorer
 date: 2026-04-16
 problem_type: security_issue
-component: lib/dogsled-cli.ts, api/command/route.ts
+component: lib/bobsled-cli.ts, api/command/route.ts
 symptoms:
   - 'Web UI needs to execute CLI commands on the server'
   - 'Arbitrary command injection risk via POST /api/command endpoint'
@@ -15,7 +15,7 @@ tags: [security, command-injection, subprocess, whitelisting, api-safety]
 
 ## Symptom
 
-The Dogsled Explorer needs a terminal page that runs `dogsled` CLI commands via a web API. The `/api/command` endpoint accepts a POST body with `{ command, args }` and spawns a subprocess. Without validation, this is a direct command injection vulnerability — any string could be executed on the server.
+The Bobsled Core Explorer needs a terminal page that runs `dogsled` CLI commands via a web API. The `/api/command` endpoint accepts a POST body with `{ command, args }` and spawns a subprocess. Without validation, this is a direct command injection vulnerability — any string could be executed on the server.
 
 ## Investigation
 
@@ -29,7 +29,7 @@ Any HTTP endpoint that spawns subprocesses must validate the command before exec
 
 ## Solution
 
-Hard-coded `ALLOWED_COMMANDS` Set in `lib/dogsled-cli.ts`:
+Hard-coded `ALLOWED_COMMANDS` Set in `lib/bobsled-cli.ts`:
 
 ```typescript
 const ALLOWED_COMMANDS = new Set([
@@ -86,7 +86,7 @@ Key design decisions:
 1. **Never use `exec()` or template strings** for subprocess commands in web contexts
 2. **Always validate at the API boundary** — Client-side validation is cosmetic, server-side is mandatory
 3. **Whitelist approach** — New Dogsled commands must be explicitly added to `ALLOWED_COMMANDS`
-4. **Review trigger** — Any change to `dogsled-cli.ts` or `api/command/route.ts` should trigger security review
+4. **Review trigger** — Any change to `bobsled-cli.ts` or `api/command/route.ts` should trigger security review
 5. **Consider per-command arg validation** — Future enhancement: validate allowed flags per command (e.g., `extract` should not accept `--output /etc/passwd`)
 
 ## Related Issues

@@ -1449,7 +1449,7 @@ assert.equal(delegatedCommand(['activate', 'receipts'], shell).helpInformation()
   });
 
   it('PR change-type validator accepts escaped markdown code spans from live PR bodies', () => {
-    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'dogsled-pr-change-type-'));
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'bobsled-pr-change-type-'));
     const eventPath = path.join(tempDir, 'event.json');
 
     writeFileSync(

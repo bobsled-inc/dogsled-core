@@ -160,7 +160,7 @@ export async function doctorSetup(options: {
   });
   if (!validation.valid) {
     checks.push({
-      name: 'dogsled-config',
+      name: 'bobsled-config',
       status: 'fail',
       message: `Dogsled Project configuration is invalid: ${validation.errors.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
       fix: 'Fix the validation issues or rerun `dogsled setup render`.',
@@ -168,7 +168,7 @@ export async function doctorSetup(options: {
     blockers.add('Dogsled Project validation errors');
   } else if (validation.project?.configPaths.length === 0) {
     checks.push({
-      name: 'dogsled-config',
+      name: 'bobsled-config',
       status: 'warn',
       message: 'No pipeline configuration is present yet.',
       fix: 'Add a pipeline configuration when the project needs scheduled or manual pipelines.',
@@ -176,7 +176,7 @@ export async function doctorSetup(options: {
     nextActions.add('Add a typed pipeline configuration when the project needs a pipeline.');
   } else {
     checks.push({
-      name: 'dogsled-config',
+      name: 'bobsled-config',
       status: 'pass',
       message: `Pipeline configuration is valid for ${validation.pipelines.length} pipeline(s).`,
     });

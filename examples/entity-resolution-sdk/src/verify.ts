@@ -1,4 +1,4 @@
-import { createBobsledClient } from '../generated/dogsled-sdk/index.js';
+import { createBobsledClient } from '../generated/bobsled-sdk/index.js';
 import { createExampleExecutor } from './executor.js';
 import * as runner from '../runner.js';
 

@@ -26,9 +26,6 @@ function extractHostHeaderHostname(value: string | null): string | null {
 }
 
 export function middleware(request: NextRequest): NextResponse {
-  if (request.method === 'GET' && request.nextUrl.pathname === '/dogsled-logo.png') {
-    return NextResponse.next();
-  }
   const hostHostname = extractHostHeaderHostname(request.headers.get('host'));
   if (!hostnameMatchesLoopback(hostHostname)) {
     return NextResponse.json({ error: 'Explorer only accepts loopback requests' }, { status: 403 });
@@ -54,11 +51,11 @@ export function middleware(request: NextRequest): NextResponse {
     ) {
       return NextResponse.json({ error: 'JSON content type required' }, { status: 415 });
     }
-    if (request.headers.get('x-dogsled-explorer-token') !== launchToken) {
+    if (request.headers.get('x-bobsled-explorer-token') !== launchToken) {
       return NextResponse.json({ error: 'Explorer launch token required' }, { status: 403 });
     }
   }
   const headers = new Headers(request.headers);
-  headers.set('x-dogsled-explorer-token', launchToken);
+  headers.set('x-bobsled-explorer-token', launchToken);
   return NextResponse.next({ request: { headers } });
 }

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_ITEMS, type NavItem, type NavItemIcon, type NavSubItem } from './sidebar-nav-items';
@@ -347,15 +346,7 @@ export function Sidebar({ items = NAV_ITEMS }: SidebarProps = {}) {
     <aside className="sticky top-0 z-40 flex w-full flex-col border-b border-border bg-card md:h-screen md:w-56 md:border-b-0 md:border-r">
       <div className="border-b border-border p-4">
         <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/dogsled-logo.png"
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 rounded-md"
-            priority
-          />
-          <span className="text-sm font-semibold tracking-tight">Dogsled Explorer</span>
+          <span className="text-sm font-semibold tracking-tight">Bobsled Core Explorer</span>
         </Link>
       </div>
 
@@ -408,7 +399,7 @@ export function Sidebar({ items = NAV_ITEMS }: SidebarProps = {}) {
 
       <div className="mt-auto hidden border-t border-border p-3 md:block">
         <ThemeToggle />
-        <div className="mt-2 text-[10px] text-muted-foreground">Dogsled Explorer v0.1</div>
+        <div className="mt-2 text-[10px] text-muted-foreground">Bobsled Core Explorer v0.1</div>
       </div>
     </aside>
   );

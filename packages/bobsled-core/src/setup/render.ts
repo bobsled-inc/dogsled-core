@@ -14,7 +14,10 @@ import { recommendSetup } from './recommend.js';
 import { starterProjectSkillFile } from './project-skills.js';
 import { buildAgentGuide, formatDestination } from './agent-guide.js';
 import { SETUP_ANSWERS_FILE } from './answers-path.js';
-import { SETUP_ANSWERS_FILE_SPELLINGS } from './legacy-names.js';
+import {
+  SETUP_ANSWERS_FILE_SPELLINGS,
+  SETUP_DASHBOARD_STATE_FILE_SPELLINGS,
+} from './legacy-names.js';
 
 import type {
   RenderedSetupFile,
@@ -27,6 +30,7 @@ import type {
 export { writeRenderedSetupFiles } from './render-files.js';
 
 const ROOT_CONFIG_FILE = 'bobsled.yml';
+const DASHBOARD_STATE_FILE = 'dogsled.dashboard.state.json';
 
 const PERMISSION_ERROR_CODES = new Set(['EACCES', 'EPERM', 'EROFS']);
 
@@ -269,7 +273,7 @@ export async function renderSetupFiles(answersInput: SetupAnswers): Promise<Rend
     { path: SETUP_ANSWERS_FILE, content: stringify(normalizedAnswers) },
     { path: 'bobsled.setup.summary.md', content: buildSummary(recommended) + '\n' },
     {
-      path: 'dogsled.dashboard.state.json',
+      path: DASHBOARD_STATE_FILE,
       content: buildDashboardState(normalizedAnswers, recommended) + '\n',
     },
   ];
@@ -282,7 +286,7 @@ function existingSpelling(outDir: string, current: string, spellings: readonly s
 }
 
 /**
- * Point the rendered root config and answers file at the names the target directory already uses,
+ * Point the rendered root config, answers file and dashboard state at the names the target directory already uses,
  * so re-running setup in a project from an earlier Core generation rewrites its files in place
  * instead of adding a second root config next to them.
  */
@@ -295,6 +299,10 @@ export function renderIntoExistingSpellings(
     [
       SETUP_ANSWERS_FILE,
       existingSpelling(outDir, SETUP_ANSWERS_FILE, SETUP_ANSWERS_FILE_SPELLINGS),
+    ],
+    [
+      DASHBOARD_STATE_FILE,
+      existingSpelling(outDir, DASHBOARD_STATE_FILE, SETUP_DASHBOARD_STATE_FILE_SPELLINGS),
     ],
   ]);
   return files.map((file) => {
@@ -323,9 +331,9 @@ export function installCoworkAssets(targetDir: string): string[] {
   try {
     const copied: string[] = [];
     const assetsDir = getCoworkAssetsDir();
-    const pluginTarget = path.join(targetDir, '.claude', 'plugins', 'dogsled-setup');
+    const pluginTarget = path.join(targetDir, '.claude', 'plugins', 'bobsled-setup');
     mkdirSync(path.dirname(pluginTarget), { recursive: true });
-    cpSync(path.join(assetsDir, 'dogsled-setup-plugin'), pluginTarget, { recursive: true });
+    cpSync(path.join(assetsDir, 'bobsled-setup-plugin'), pluginTarget, { recursive: true });
     copied.push(path.relative(targetDir, pluginTarget));
 
     const docsTarget = path.join(targetDir, 'docs');

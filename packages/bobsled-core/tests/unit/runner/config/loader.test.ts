@@ -33,7 +33,7 @@ function validateBobsledConfig(config: BobsledConfig, projectRoot: string) {
 }
 
 /** An empty project, for checks that only read bundled integrations. */
-const emptyProjectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-empty-project-'));
+const emptyProjectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-empty-project-'));
 afterAll(() => fs.rmSync(emptyProjectRoot, { recursive: true, force: true }));
 
 // ---------------------------------------------------------------------------
@@ -77,7 +77,7 @@ describe('loadBobsledConfig legacy aliases', () => {
   let configDir: string;
 
   beforeEach(() => {
-    configDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-loader-aliases-'));
+    configDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-loader-aliases-'));
   });
 
   afterEach(() => {
@@ -684,7 +684,7 @@ describe('validateBobsledConfig', () => {
     vi.mocked(integrations.getResources).mockImplementation(makeLib().getResources);
     vi.mocked(integrations.listEntities).mockImplementation(makeLib().listEntities);
     vi.mocked(integrations.getEntityVariants).mockImplementation(makeLib().getEntityVariants);
-    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-loader-test-'));
+    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-loader-test-'));
   });
 
   afterEach(() => {
@@ -1773,7 +1773,7 @@ describe('validateBobsledConfig — model pipeline membership', () => {
     vi.mocked(integrations.getResources).mockImplementation(makeLib().getResources);
     vi.mocked(integrations.listEntities).mockImplementation(makeLib().listEntities);
     vi.mocked(integrations.getEntityVariants).mockImplementation(makeLib().getEntityVariants);
-    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-loader-models-'));
+    projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-loader-models-'));
   });
 
   afterEach(() => {
@@ -1981,7 +1981,7 @@ describe('validateBobsledConfig — model pipeline membership', () => {
   });
 
   it('reports problems in a separate Model Spec project as validation errors instead of throwing', async () => {
-    const modelSpecRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-separate-model-spec-'));
+    const modelSpecRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-separate-model-spec-'));
     try {
       fs.mkdirSync(path.join(modelSpecRoot, 'models'), { recursive: true });
       fs.mkdirSync(path.join(modelSpecRoot, 'notes'), { recursive: true });

@@ -225,7 +225,7 @@ function results(result: Awaited<ReturnType<typeof runProject>>): string[] {
 
 describe('BigQuery preflight in DAG order', () => {
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-model-spec-bq-dag-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-model-spec-bq-dag-'));
   });
 
   afterEach(async () => {

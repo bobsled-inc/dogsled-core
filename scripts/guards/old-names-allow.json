@@ -43,7 +43,7 @@
     },
     {
       "pattern": "dogsled-logo.png",
-      "note": "Explorer logo until the Explorer PR switches to a text wordmark."
+      "note": "Old Explorer logo file name, kept by the rename tooling and its tests; Explorer now uses a text-only header."
     },
     {
       "pattern": "'bobsled-inc/dogsled-core'",

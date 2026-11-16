@@ -191,7 +191,9 @@ export default function DocsPage() {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight">Dogsled Explorer Documentation</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Bobsled Core Explorer Documentation
+            </h1>
             <P>
               A local-first web UI for exploring, configuring, and demoing the Dogsled data
               engineering toolkit. Browse {integrations.length} integrations, {models.length} model

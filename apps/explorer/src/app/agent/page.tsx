@@ -14,8 +14,8 @@ interface ChatMessage {
   streaming?: boolean;
 }
 
-const AGENT_HISTORY_STORAGE_KEY = 'dogsled-explorer-agent-history';
-const AGENT_SESSIONS_KEY = 'dogsled-explorer-agent-sessions';
+const AGENT_HISTORY_STORAGE_KEY = 'bobsled-explorer-agent-history';
+const AGENT_SESSIONS_KEY = 'bobsled-explorer-agent-sessions';
 const MAX_SESSIONS = 10;
 
 interface AgentSession {

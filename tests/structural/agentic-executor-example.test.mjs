@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 
 it('runs the separate executor tests through Dogsled public exports', () => {
   const root = path.resolve(import.meta.dirname, '../..');
-  const directory = mkdtempSync(path.join(os.tmpdir(), 'dogsled-executor-test-'));
+  const directory = mkdtempSync(path.join(os.tmpdir(), 'bobsled-executor-test-'));
   try {
     mkdirSync(path.join(directory, 'node_modules/@bobsled-inc'), { recursive: true });
     symlinkSync(

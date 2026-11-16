@@ -8,7 +8,7 @@ import { stringify } from 'yaml';
 import { buildManifest, parseSkill, resolveTransclusions } from './build-manifest.js';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const PLUGIN_PATH = 'plugins/dogsled-core';
+const PLUGIN_PATH = 'plugins/bobsled-core';
 // Bump this when publishing a changed plugin bundle; CLI releases are separate.
 const PLUGIN_VERSION = '0.1.0';
 const DESCRIPTION =
@@ -20,7 +20,7 @@ export function renderPluginFiles(): Record<string, string> {
   const files: Record<string, string> = {};
   const json = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
   const identity = {
-    name: 'dogsled-core',
+    name: 'bobsled-core',
     version: PLUGIN_VERSION,
     description: DESCRIPTION,
     author: { name: 'Dogsled maintainers' },
@@ -47,14 +47,14 @@ export function renderPluginFiles(): Record<string, string> {
     name: 'dogsled',
     description: DESCRIPTION,
     owner: { name: 'Dogsled maintainers' },
-    plugins: [{ name: 'dogsled-core', source: `./${PLUGIN_PATH}`, description: DESCRIPTION }],
+    plugins: [{ name: 'bobsled-core', source: `./${PLUGIN_PATH}`, description: DESCRIPTION }],
   });
   files['.agents/plugins/marketplace.json'] = json({
     name: 'dogsled',
     interface: { displayName: 'Dogsled' },
     plugins: [
       {
-        name: 'dogsled-core',
+        name: 'bobsled-core',
         source: { source: 'local', path: `./${PLUGIN_PATH}` },
         policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' },
         category: 'Developer Tools',

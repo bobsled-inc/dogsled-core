@@ -15,7 +15,7 @@ it.each([
 ])(
   'handles %i failed SQLite downloads with %i attempts and exit %i',
   (failures, attempts, status) => {
-    const root = mkdtempSync(join(tmpdir(), 'dogsled-sqlite-'));
+    const root = mkdtempSync(join(tmpdir(), 'bobsled-sqlite-'));
     try {
       const pkg = join(root, 'node_modules/.pnpm/better-sqlite3@0.0.0/node_modules/better-sqlite3');
       mkdirSync(join(pkg, 'node_modules/.bin'), { recursive: true });

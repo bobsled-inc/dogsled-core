@@ -2,7 +2,7 @@ import type {
   EntityFindRequest,
   EntityFindResult,
   BobsledEntityExecutor,
-} from '../generated/dogsled-sdk/index.js';
+} from '../generated/bobsled-sdk/index.js';
 
 interface ExampleRow {
   readonly [column: string]: unknown;

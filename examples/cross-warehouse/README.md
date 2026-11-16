@@ -20,4 +20,4 @@ Fill `secrets.yml` or export the same variables in your shell and omit `--secret
 
 The integration YAMLs include `cross_warehouse_staging.uri: ${{ env.XWH_SHARED_STAGING_URI }}` to demonstrate the native UNLOAD substrate. Use a shared object-store prefix that the source warehouse can write and the destination can read. Remove those blocks to force the streaming fallback.
 
-Native UNLOAD writes Parquet to the staging URI. Streaming fallback writes bounded temp chunks under `$TMPDIR/dogsled-xwh-<model>-*`, then loads destination-side staging tables before the destination evaluates the model SELECT.
+Native UNLOAD writes Parquet to the staging URI. Streaming fallback writes bounded temp chunks under `$TMPDIR/bobsled-xwh-<model>-*`, then loads destination-side staging tables before the destination evaluates the model SELECT.

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawnBobsledCommand, collectOutput } from '@/lib/dogsled-cli';
+import { spawnBobsledCommand, collectOutput } from '@/lib/bobsled-cli';
 
 export async function GET() {
   try {

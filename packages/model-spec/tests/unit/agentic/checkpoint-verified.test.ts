@@ -943,7 +943,7 @@ describe('a run on verified state', () => {
   });
 
   it('hands stores, publishers and hosts data they can write to', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'dogsled-verified-'));
+    const dir = mkdtempSync(join(tmpdir(), 'bobsled-verified-'));
     try {
       const f = runFixture(2);
       f.model.sources.pairs!.incremental = { cursor_field: 'updated_at' };

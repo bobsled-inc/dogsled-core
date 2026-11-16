@@ -8,7 +8,7 @@ import {
   getEntityGraphEntityDefinition,
   getEntityGraphScenarioDefinition,
 } from './entity-graph-scenarios';
-import { getWorkspaceRoot } from './dogsled-cli';
+import { getWorkspaceRoot } from './bobsled-cli';
 import {
   escapeSqlLiteral,
   getEntityGraphRunnerPath,

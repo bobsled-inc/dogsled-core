@@ -44,7 +44,7 @@ describe('model-spec runtime failure boundary', () => {
   });
 
   it('wraps a CommandError from a real project load', async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'dogsled-runtime-error-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'bobsled-runtime-error-'));
     paths.push(cwd);
     writeFileSync(join(cwd, 'model-spec.yml'), 'unknown_key: true\n');
 
@@ -62,7 +62,7 @@ describe('model-spec runtime failure boundary', () => {
   });
 
   it('wraps a native filesystem error from a real project load', async () => {
-    const cwd = join(mkdtempSync(join(tmpdir(), 'dogsled-runtime-error-')), 'not-a-directory');
+    const cwd = join(mkdtempSync(join(tmpdir(), 'bobsled-runtime-error-')), 'not-a-directory');
     paths.push(join(cwd, '..'));
     writeFileSync(cwd, 'not a directory');
 

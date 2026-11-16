@@ -57,7 +57,7 @@ dogsled runner run <pipeline> --resource <resource>
 
 If an applicable check fails, do not run past it. `scaffold-test` is
 not applicable to MCP, warehouse/database, or file-storage sources. Use
-`dogsled-troubleshoot` for runtime failures and local setup problems.
+`bobsled-troubleshoot` for runtime failures and local setup problems.
 
 ## Authoritative reference
 

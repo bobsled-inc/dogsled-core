@@ -162,7 +162,7 @@ materialization:
 
 describe('publishCrossWarehouse', () => {
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'dogsled-xwh-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bobsled-xwh-'));
   });
 
   afterEach(async () => {

@@ -108,7 +108,7 @@ export function buildEmbedArgs(
 }
 
 function createEmbedTempDir(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-embed-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-embed-'));
   fs.chmodSync(dir, 0o700);
   return dir;
 }

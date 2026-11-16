@@ -78,7 +78,7 @@ name: notify_contact
 integration: custom_webhook
 description: Send a contact row to an HTTPS webhook endpoint.
 webhook:
-  url: https://example.com/dogsled-sync-webhook
+  url: https://example.com/bobsled-sync-webhook
   method: POST
 input:
   email:
@@ -150,7 +150,7 @@ const DATA_FIRST: Record<string, string> = {
 const roots: string[] = [];
 
 function project(files: Record<string, string>): string {
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-layout-')));
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'bobsled-layout-')));
   roots.push(root);
   for (const [relativePath, content] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(root, relativePath)), { recursive: true });

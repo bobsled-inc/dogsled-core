@@ -6,7 +6,7 @@ import path from 'node:path';
 
 import { resolveSafePathWithinRoot } from '../src/lib/entity-graph-workspace';
 import { getRelativeEntityGraphDatabasePath } from '../src/lib/entity-graph-workspace-inventory';
-import { spawnBobsledCommand } from '../src/lib/dogsled-cli';
+import { spawnBobsledCommand } from '../src/lib/bobsled-cli';
 import { getEntityGraphRunsLogPath, readRunLog } from '../src/lib/entity-graph-workspace';
 
 test('resolveSafePathWithinRoot rejects writes through symlinked parent directories', async () => {
