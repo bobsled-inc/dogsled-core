@@ -66,13 +66,13 @@ export interface ApplyReviewDecisionsOptions extends EntityGraphProjectOptions {
   secrets?: string;
   /**
    * In-memory runner registry keyed by `(source_type, auth_type)`. Mirrors
-   * `runResolveProject({ customRunners })` so `@dogsled/lakehouse-execution`
-   * can drive applies against BigQuery WIF / Snowflake OIDC with pre-minted
-   * encrypted tokens. Only consulted on the `integration` resolver branch.
+   * `runResolveProject({ customRunners })` so a host-provided runner can
+   * drive applies, for example against BigQuery WIF or Snowflake OIDC with
+   * pre-minted tokens. Only consulted on the `integration` resolver branch.
    */
   customRunners?: CustomRunnerRegistry;
   /**
-   * Decision-trace ("why") context, injected by the host (e.g. agents-elt) at
+   * Decision-trace ("why") context, injected by the host application at
    * execution time. Persisted ONLY into the warehouse `audit_log` payload —
    * never a metadata DB. `precedentRefs` falls back to the bundle's
    * `precedent_refs` when omitted here.
@@ -150,8 +150,8 @@ export interface ApplyReviewDecisionsResult {
  * updated golden rows when the runner supports `query()`.
  *
  * The structural twin of `runResolveProject`: same options/`customRunners`
- * shape, same runner lifecycle, so `@dogsled/lakehouse-execution` drives it
- * the same way it drives resolve/cluster.
+ * shape, same runner lifecycle, so a host-provided runner drives it the same
+ * way it drives resolve/cluster.
  */
 export async function applyReviewDecisions(
   options: ApplyReviewDecisionsOptions

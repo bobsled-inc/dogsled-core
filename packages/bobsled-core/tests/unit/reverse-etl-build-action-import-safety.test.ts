@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest';
  * `process.dlopen` import-safety probe for the in-memory reverse-ETL action
  * builders, reached via the boundary-safe `@bobsled-inc/bobsled-core/schema` entry.
  *
- * Managed reverse-ETL consumers (the host application's Next.js/Vercel routes,
- * agents-elt) import these builders where `libduckdb` is unavailable. This test
+ * Managed reverse-ETL consumers (for example a host application's
+ * serverless routes and workers) import these builders where `libduckdb` is unavailable. This test
  * spawns a fresh Node process, wraps `process.dlopen` so any attempt to load a
  * `*duckdb*.node` native binding throws, then imports the built schema entry
  * AND invokes both builders. Unlike the static-graph guard in

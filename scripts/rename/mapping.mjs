@@ -109,10 +109,6 @@ export const KEEP_LIST = [
     note: 'app domain blocked by the runtime policy and privacy guard (D7); contact emails are renamed by BC-17',
   },
   {
-    pattern: '@dogsled/',
-    note: 'Dogsled app workspace scope (e.g. @dogsled/lakehouse-execution) named in comments (D7)',
-  },
-  {
     pattern: 'dogsled\\.(?:co|ai|cloud|com|it)',
     paths: ['scripts/security/policy.mjs'],
     note: 'Dogsled-operated hosts stay blocked by the runtime network policy (D7)',

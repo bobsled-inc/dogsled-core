@@ -79,14 +79,23 @@ describe('old-name guard', () => {
   });
 
   it('allows the keep list, and file-limited entries only in their files', () => {
-    expect(count('docs/a.md', 'Dogsled Cloud at https://main.dogsled.it')['dogsled-word']).toBe(0);
-    expect(count('docs/a.md', 'comment on @dogsled/lakehouse-execution')['dogsled-word']).toBe(0);
+    expect(count('docs/guides/hosted-runs.md', 'Dogsled Cloud')['dogsled-word']).toBe(0);
+    expect(count('docs/a.md', 'Dogsled Cloud at https://main.dogsled.it')['dogsled-word']).toBe(2);
+    expect(
+      count('tests/unit/security-runtime-policy.test.mjs', 'https://main.dogsled.it')[
+        'dogsled-word'
+      ]
+    ).toBe(0);
     const policyHost = 'https://dogsledai.com';
     expect(count('tests/unit/security-runtime-policy.test.mjs', policyHost)['dogsled-word']).toBe(
       0
     );
     expect(count('docs/a.md', policyHost)['dogsled-word']).toBe(1);
-    expect(count('docs/a.md', 'Dogsled Cloud and dogsled')['dogsled-word']).toBe(1);
+    expect(count('docs/guides/hosted-runs.md', 'Dogsled Cloud and dogsled')['dogsled-word']).toBe(
+      1
+    );
+    // The app's internal package scope is not kept: public code must not name it.
+    expect(count('docs/a.md', 'see @dogsled/some-package')['dogsled-word']).toBe(1);
   });
 
   it('rejects malformed allow lists', () => {
