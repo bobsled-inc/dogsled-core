@@ -126,9 +126,13 @@ export async function materializeWarehouseLeaf(
   // its metadata table. The brick's destination creates this schema on stage,
   // but the probe runs first — so self-contained host callers (who haven't
   // pre-created it) would otherwise hit a missing-schema error on the read.
-  await args.engineRunner.run(
-    `CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(args.schema, engineDialect)}`
-  );
+  // On BigQuery the metadata store's first read creates the dataset only when it
+  // is missing, so a freshness probe issues no dataset DDL once it exists.
+  if (engineDialect !== 'bigquery') {
+    await args.engineRunner.run(
+      `CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(args.schema, engineDialect)}`
+    );
+  }
 
   const store = new DuckDBMetadataStore({
     runner: args.engineRunner,

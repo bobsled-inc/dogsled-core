@@ -130,7 +130,12 @@ its own connection messages to standard error.
 ## BigQuery
 
 BigQuery uses a service-account key file with `--key-filename`, or Application
-Default Credentials when you leave it out:
+Default Credentials when you leave it out.
+
+Besides running jobs and writing tables, the account needs `bigquery.tables.get`
+and `bigquery.tables.list` on the dataset: Core reads the dataset's
+`INFORMATION_SCHEMA.COLUMNS` to check its own metadata table before it changes
+anything. The BigQuery Data Viewer and Data Editor roles include both.
 
 ```bash
 bobsled load run --dest bigquery --project-id <project> --dataset-id <dataset> \

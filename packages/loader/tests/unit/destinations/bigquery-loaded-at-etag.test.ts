@@ -64,4 +64,68 @@ describe('BigQuery loaded-at takeover and table metadata', () => {
       expect.objectContaining({ etag: 'after-rename', clustering: { fields: ['id'] } })
     );
   });
+
+  function destinationWith(fields: Array<{ name: string; type: string; description?: string }>) {
+    const table: BigQueryTableLike = {
+      exists: vi.fn().mockResolvedValue([true]),
+      load: vi.fn().mockResolvedValue([{ status: {} }]),
+      getMetadata: vi.fn(async () => [{ schema: { fields } }]),
+      setMetadata: vi.fn().mockResolvedValue(undefined),
+    };
+    const job = { getQueryResults: vi.fn().mockResolvedValue([[]]) };
+    const queries: string[] = [];
+    const createQueryJob = vi.fn(async ({ query }: { query: string }) => {
+      queries.push(query);
+      // A table with a search index or row access policy refuses the rename.
+      if (query.includes('RENAME COLUMN')) throw new Error('Cannot rename column on this table');
+      return [job];
+    });
+    const dataset: BigQueryDatasetLike = {
+      exists: vi.fn().mockResolvedValue([true]),
+      create: vi.fn(),
+      table: vi.fn(() => table),
+      createQueryJob,
+    };
+    const client: BigQueryClientLike = { dataset: vi.fn(() => dataset), createQueryJob };
+    const dest = new BigQueryDestination({ datasetId: 'ds', client, stagingFormat: 'jsonl' });
+    return { dest, queries };
+  }
+
+  it('adds the current column, copies into it, then marks the copy when the rename is refused', async () => {
+    const { dest, queries } = destinationWith([
+      { name: 'id', type: 'INT64' },
+      { name: '_time_extracted', type: 'TIMESTAMP' },
+      { name: '_legacy_loaded_at', type: 'TIMESTAMP' },
+    ]);
+    await dest.initialize();
+
+    await dest.ensureTable('ds', 'accounts', [{ name: 'id', type: 'integer', primary_key: true }]);
+
+    expect(queries).toEqual([
+      'ALTER TABLE `ds`.`accounts` RENAME COLUMN `_legacy_loaded_at` TO `_bobsled_loaded_at`',
+      'ALTER TABLE `ds`.`accounts` ADD COLUMN `_bobsled_loaded_at` TIMESTAMP',
+      'UPDATE `ds`.`accounts` SET `_bobsled_loaded_at` = `_legacy_loaded_at` ' +
+        'WHERE `_bobsled_loaded_at` IS NULL AND `_legacy_loaded_at` IS NOT NULL',
+      'ALTER TABLE `ds`.`accounts` ALTER COLUMN `_legacy_loaded_at` ' +
+        "SET OPTIONS (description = 'Core copied this column into _bobsled_loaded_at')",
+    ]);
+  });
+
+  it('fails a widening BigQuery rejects before the takeover renames anything', async () => {
+    const { dest, queries } = destinationWith([
+      { name: 'id', type: 'INT64' },
+      { name: 'code', type: 'INT64' },
+      { name: '_time_extracted', type: 'TIMESTAMP' },
+      { name: '_legacy_loaded_at', type: 'TIMESTAMP' },
+    ]);
+    await dest.initialize();
+
+    await expect(
+      dest.ensureTable('ds', 'accounts', [
+        { name: 'id', type: 'integer', primary_key: true },
+        { name: 'code', type: 'string' },
+      ])
+    ).rejects.toThrow('BigQuery cannot change existing type INT64 to STRING');
+    expect(queries).toEqual([]);
+  });
 });

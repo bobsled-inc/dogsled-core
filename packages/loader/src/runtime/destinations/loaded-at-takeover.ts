@@ -4,8 +4,8 @@ import type { LoaderLogger } from '../logger.js';
 import { LEGACY_LOADED_AT_COLUMNS, LEGACY_UNIQUE_INDEX_PREFIXES } from '../legacy-names.js';
 
 /**
- * Taking over an earlier loaded-at column (for example `_bobsled_loaded_at`
- * once Core writes `_bobsled_loaded_at`), the first time a run sees a table:
+ * Taking over an earlier loaded-at column (one named in
+ * `LEGACY_LOADED_AT_COLUMNS`), the first time a run sees a table:
  *
  * - only the current column: nothing to do;
  * - only an earlier column: rename it in place;

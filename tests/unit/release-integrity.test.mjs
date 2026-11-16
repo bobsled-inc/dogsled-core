@@ -1,6 +1,9 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { publishWithIntegrity } from '../../scripts/release/registry-integrity.mjs';
+import {
+  npmFailureSummary,
+  publishWithIntegrity,
+} from '../../scripts/release/registry-integrity.mjs';
 
 beforeEach(() => vi.stubEnv('NPM_READ_TOKEN', 'test-read-only-token'));
 afterEach(() => vi.unstubAllEnvs());
@@ -145,5 +148,79 @@ describe('registry release integrity', async () => {
       'required'
     );
     expect(run).not.toHaveBeenCalled();
+  });
+
+  // Fake credentials, shaped like the real ones, that must never reach the log.
+  const fakeNpmToken = `npm_${'A1b2C3d4'.repeat(4)}abcd`;
+  const leakyStderr = [
+    'npm notice Publishing to https://registry.npmjs.org/ with tag preview and restricted access',
+    'npm error code E404',
+    'npm error 404 Not Found - PUT https://registry.npmjs.org/@example%2ftoolkit - Not found',
+    'npm error 404',
+    "npm error 404  '@example/toolkit@0.1.0' is not in this registry.",
+    `npm error //registry.npmjs.org/:_authToken=${fakeNpmToken}`,
+    'npm error authorization: Bearer fake-oidc-exchange-token',
+    `npm error token ${fakeNpmToken} was rejected`,
+    'npm error A complete log of this run can be found in: /home/runner/.npm/_logs/debug-0.log',
+  ].join('\n');
+
+  it('reports npm code and message for a failed publish, without credentials', async () => {
+    const run = vi.fn().mockReturnValue({ status: 1, stdout: '', stderr: leakyStderr });
+    const failure = await publishWithIntegrity(request, run).catch((error) => error);
+    expect(failure.message).toBe(
+      'npm publish failed for @example/toolkit@0.1.0: E404: ' +
+        '404 Not Found - PUT https://registry.npmjs.org/@example%2ftoolkit - Not found | ' +
+        "404 '@example/toolkit@0.1.0' is not in this registry. | " +
+        'token [REDACTED] was rejected'
+    );
+    for (const secret of [fakeNpmToken, 'fake-oidc-exchange-token', '_authToken', '_logs'])
+      expect(failure.message).not.toContain(secret);
+  });
+
+  it.each([
+    [{ status: 1, stderr: 'npm ERR! code E403\nnpm ERR! 403 Forbidden' }, 'E403: 403 Forbidden'],
+    [
+      { error: Object.assign(new Error('spawnSync npm ETIMEDOUT'), { code: 'ETIMEDOUT' }) },
+      'ETIMEDOUT: spawnSync npm ETIMEDOUT',
+    ],
+    [{ status: 1, stderr: '' }, 'exit status 1: npm printed no error message'],
+    [
+      { status: null, signal: 'SIGTERM', stderr: '' },
+      'signal SIGTERM: npm printed no error message',
+    ],
+    [{ status: 1, stderr: 'Access denied' }, 'exit status 1: Access denied'],
+    [
+      {
+        status: 1,
+        stderr: '',
+        stdout: JSON.stringify({ error: { code: 'E401', summary: 'Unable to authenticate' } }),
+      },
+      'E401: Unable to authenticate',
+    ],
+  ])('summarizes npm failure %j', (result, summary) => {
+    expect(npmFailureSummary(result)).toBe(summary);
+  });
+
+  it('reports each failed registry read and the last npm error, without credentials', async () => {
+    const viewFailure = {
+      status: 1,
+      stdout: '',
+      stderr: `npm error code E401\nnpm error 401 Unauthorized\nnpm error //registry.npmjs.org/:_authToken=${fakeNpmToken}`,
+    };
+    const run = vi.fn().mockReturnValueOnce(ok()).mockReturnValue(viewFailure);
+    const log = vi.fn();
+    const failure = await publishWithIntegrity(request, run, {
+      wait: async () => {},
+      delays: [1000],
+      log,
+    }).catch((error) => error);
+    expect(failure.message).toBe(
+      'Cannot verify the registry tarball integrity: npm view failed (E401: 401 Unauthorized).'
+    );
+    expect(log.mock.calls.map(([line]) => line)).toEqual([
+      'Registry read 1 of 2 failed: E401: 401 Unauthorized',
+      'Registry read 2 of 2 failed: E401: 401 Unauthorized',
+    ]);
+    expect(JSON.stringify(log.mock.calls)).not.toContain(fakeNpmToken);
   });
 });

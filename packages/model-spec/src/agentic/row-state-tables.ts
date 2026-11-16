@@ -249,8 +249,8 @@ async function assertAgenticRowTables(
 
 /**
  * Takes over the tables an earlier Core generation created in this schema, by renaming each one
- * whose current name is free (`__bobsled_agentic_runs` once Core writes `__bobsled_agentic_runs`,
- * and so on), so saved runs, rows and cursors resume. Never drops a table: where both names
+ * whose current name is free (the earlier prefixes are `LEGACY_AGENTIC_TABLE_PREFIXES`), so
+ * saved runs, rows and cursors resume. Never drops a table: where both names
  * exist the rename fails and the current table is kept. Runs only while setup is incomplete.
  */
 async function adoptLegacyAgenticRowTables(

@@ -14,9 +14,13 @@ import {
   SYSTEM_COLUMNS,
   SYSTEM_COLUMN_NAMES,
   enforceSchemaContract,
-  reverseMapDbType,
 } from './database.js';
 import { takeOverBigQueryLoadedAt } from './bigquery-loaded-at.js';
+import {
+  assertBigQueryWidenings,
+  compareBigQueryColumns,
+  removedBigQueryColumns,
+} from './bigquery-schema-changes.js';
 import { withRetry, type RetryOptions } from '../retry.js';
 import {
   RefreshableTokenSource,
@@ -35,7 +39,6 @@ import { quoteBqIdentifier } from './bigquery-identifiers.js';
 import {
   buildBigQuerySchemaField,
   getExistingBigQueryType,
-  normalizeBqType,
   mapBigQueryType,
 } from './bigquery-type-mapping.js';
 import type { BatchEncoding, SchemaColumn } from '@bobsled-inc/protocol';
@@ -436,20 +439,7 @@ export class BigQueryDestination implements DatabaseDestination {
     addColumnDefs: string[],
     columnsToWiden: SchemaComparisonResult['typeConflicts']
   ): Promise<void> {
-    // Of the loader's safe widenings, BigQuery's SET DATA TYPE accepts only
-    // INT64 -> FLOAT64. Fail on the others before any DDL, so a rejected
-    // statement never takes the added columns down with it.
-    const unsupported = columnsToWiden.find(
-      (conflict) =>
-        normalizeBqType(conflict.existingType) !== 'INT64' ||
-        mapBigQueryType(conflict.expectedColumnType) !== 'FLOAT64'
-    );
-    if (unsupported) {
-      throw new Error(
-        `Schema change conflict on ${qualifiedTable}.${unsupported.column}: ` +
-          `BigQuery cannot change existing type ${unsupported.existingType} to ${unsupported.expectedType}`
-      );
-    }
+    assertBigQueryWidenings(qualifiedTable, columnsToWiden);
     const actions = [
       ...addColumnDefs.map((def) => `ADD COLUMN ${def}`),
       ...columnsToWiden.map(
@@ -497,36 +487,10 @@ export class BigQueryDestination implements DatabaseDestination {
       const qualifiedTable = `${quoteBqIdentifier(safeSchema)}.${quoteBqIdentifier(safeTable)}`;
 
       // Build comparison from cached types
-      const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
-      const newColumns: SchemaColumn[] = [];
-      const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
-      const requestedNames = new Set(columns.map((c) => c.name));
-      const removedColumns: string[] = [];
-
-      for (const col of columns) {
-        const existingType = cachedColumns.get(col.name);
-        const expectedType = mapBigQueryType(col);
-
-        if (existingType === undefined) {
-          newColumns.push(col);
-        } else if (normalizeBqType(existingType) !== normalizeBqType(expectedType)) {
-          typeConflicts.push({
-            column: col.name,
-            existingType: existingType,
-            expectedType: expectedType,
-            existingColumnType: reverseMapDbType(existingType),
-            expectedColumnType: col.type,
-          });
-        }
-      }
-
-      for (const existingName of cachedColumns.keys()) {
-        if (!requestedNames.has(existingName) && !systemColumnNames.has(existingName)) {
-          removedColumns.push(existingName);
-        }
-      }
-
-      const comparison: SchemaComparisonResult = { newColumns, removedColumns, typeConflicts };
+      const comparison: SchemaComparisonResult = {
+        ...compareBigQueryColumns(columns, cachedColumns),
+        removedColumns: removedBigQueryColumns(columns, cachedColumns),
+      };
       const { columnsToAdd, columnsToWiden } = enforceSchemaContract(
         options?.schemaBehavior,
         comparison,
@@ -617,6 +581,20 @@ export class BigQueryDestination implements DatabaseDestination {
     if (ownershipMarker !== undefined) assertOwnedBigQueryMetadata(metadata, ownershipMarker);
     const existingFields = metadata.schema?.fields ?? [];
     const existingMap = new Map(existingFields.map((f) => [f.name, getExistingBigQueryType(f)]));
+
+    // Compare the requested columns before the loaded-at takeover, so a schema
+    // conflict or a widening BigQuery rejects fails the load before any DDL.
+    // The takeover touches only the loaded-at column, never a requested one.
+    const { newColumns, typeConflicts } = compareBigQueryColumns(columns, existingMap);
+    assertBigQueryWidenings(
+      qualifiedTable,
+      enforceSchemaContract(
+        options?.schemaBehavior,
+        { newColumns, removedColumns: [], typeConflicts },
+        qualifiedTable
+      ).columnsToWiden
+    );
+
     const fillLoadedAt = await takeOverBigQueryLoadedAt({
       table: qualifiedTable,
       existing: existingMap,
@@ -644,36 +622,8 @@ export class BigQueryDestination implements DatabaseDestination {
     }
     this.partitionColumnCache.set(cacheKey, actualPartitionCol);
 
-    // Build schema comparison
-    const systemColumnNames: Set<string> = new Set(SYSTEM_COLUMN_NAMES);
-    const newColumns: SchemaColumn[] = [];
-    const typeConflicts: SchemaComparisonResult['typeConflicts'] = [];
-    const requestedNames = new Set(columns.map((c) => c.name));
-    const removedColumns: string[] = [];
-
-    for (const col of columns) {
-      const existingType = existingMap.get(col.name);
-      const expectedType = mapBigQueryType(col);
-
-      if (existingType === undefined) {
-        newColumns.push(col);
-      } else if (normalizeBqType(existingType) !== normalizeBqType(expectedType)) {
-        typeConflicts.push({
-          column: col.name,
-          existingType: existingType,
-          expectedType: expectedType,
-          existingColumnType: reverseMapDbType(existingType),
-          expectedColumnType: col.type,
-        });
-      }
-    }
-
-    for (const existingName of existingMap.keys()) {
-      if (!requestedNames.has(existingName) && !systemColumnNames.has(existingName)) {
-        removedColumns.push(existingName);
-      }
-    }
-
+    // Removed columns are read after the takeover, which may have renamed the loaded-at column.
+    const removedColumns = removedBigQueryColumns(columns, existingMap);
     const comparison: SchemaComparisonResult = { newColumns, removedColumns, typeConflicts };
     const { columnsToAdd, columnsToWiden } = enforceSchemaContract(
       options?.schemaBehavior,

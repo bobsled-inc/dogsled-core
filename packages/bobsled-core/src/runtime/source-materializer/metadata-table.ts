@@ -145,16 +145,17 @@ async function tableExists(runner: SqlRunnerModule, ref: string): Promise<boolea
   }
 }
 
-/**
- * Take over an earlier metadata table (for example `_bobsled_source_metadata`
- * once Core writes `_bobsled_source_metadata`) by renaming it in place, so
- * cursors, ETags and snapshot leases survive. Never drops a table: when both
- * exist the current one wins and the earlier one is left alone.
- */
+/** Schemas settled per connection, for callers that do not name a destination. */
 const settledByRunner = new WeakMap<SqlRunnerModule, Set<string>>();
 /** Destinations settled in this process, so a query on a new connection adds no probe. */
 const settledDestinations = new Set<string>();
 
+/**
+ * Take over an earlier metadata table (one named in `LEGACY_METADATA_TABLES`)
+ * by renaming it to `METADATA_TABLE` in place, so cursors, ETags and snapshot
+ * leases survive. Never drops a table: when both exist the current one wins
+ * and the earlier one is left alone.
+ */
 export async function adoptLegacyMetadataTable(args: {
   runner: SqlRunnerModule;
   schema: string;

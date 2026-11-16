@@ -73,8 +73,9 @@ export function redactText(value) {
   redacted = redacted.split(realpathSync(repoRoot)).join('<repo>');
   redacted = redacted.split(homeDir).join('<home>');
   for (const pattern of TOKEN_PATTERNS) {
-    redacted = redacted.replace(pattern, (match, prefix) =>
-      prefix ? `${prefix}[REDACTED]` : '[REDACTED]'
+    // Without a capture group the second argument is the match offset, not a prefix.
+    redacted = redacted.replace(pattern, (_match, prefix) =>
+      typeof prefix === 'string' ? `${prefix}[REDACTED]` : '[REDACTED]'
     );
   }
   return redacted;

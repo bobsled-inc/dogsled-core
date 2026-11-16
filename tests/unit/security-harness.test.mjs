@@ -266,6 +266,7 @@ describe('security evidence primitives', () => {
     expect(redacted).toContain('<repo>');
     expect(redacted).not.toContain('super-secret-value');
     expect(redacted).not.toContain('secret-value');
+    expect(redacted).toBe('<repo> [REDACTED] https://example.test?token=[REDACTED]');
   });
 
   it('records a timed-out command as failed rather than passed', () => {
