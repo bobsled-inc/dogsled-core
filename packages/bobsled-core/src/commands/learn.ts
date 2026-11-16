@@ -738,7 +738,7 @@ export function registerLearnCommand(program: Command): void {
       }) => {
         const globalOpts = program.opts<GlobalOptions>();
         const outputOpts = fmt.toOutputOptions(globalOpts);
-        const cli = opts.cli ?? process.env['BOBSLED_CORE_CLI'] ?? 'dogsled';
+        const cli = opts.cli ?? process.env['BOBSLED_CORE_CLI'] ?? 'bobsled';
 
         // --reset
         if (opts.reset) {

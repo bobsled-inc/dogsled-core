@@ -21,9 +21,11 @@ if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
   exit 1
 fi
 
-if ! command -v dogsled >/dev/null 2>&1; then
-  if npx --no-install dogsled --version >/dev/null 2>&1; then
-    dogsled() { npx --no-install dogsled "$@"; }
+if command -v bobsled >/dev/null 2>&1; then
+  dogsled() { command bobsled "$@"; }
+else
+  if npx --no-install bobsled --version >/dev/null 2>&1; then
+    dogsled() { npx --no-install bobsled "$@"; }
   else
     echo "dogsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder." >&2
     exit 1

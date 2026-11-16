@@ -117,6 +117,57 @@ describe('rename mapping', () => {
     expect(rename(policy, 'scripts/security/policy.mjs')).toBe(policy);
   });
 
+  it('renames every shape of the package folder and name that PR 4 met, within BC-01', () => {
+    const bc01 = (text, file = 'tests/a.mjs') =>
+      renameText(text, { file, rules: selectRules(['BC-01']) }).text;
+    expect(bc01(String.raw`/but @bobsled-inc\/dogsled installs pg/`)).toBe(
+      String.raw`/but @bobsled-inc\/bobsled-core installs pg/`
+    );
+    expect(bc01("new URL('../../../../dogsled/src/runtime/process.ts', import.meta.url)")).toBe(
+      "new URL('../../../../bobsled-core/src/runtime/process.ts', import.meta.url)"
+    );
+    expect(bc01("const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'dogsled'];")).toBe(
+      "const PACKAGE_PATH = ['node_modules', '@bobsled-inc', 'bobsled-core'];"
+    );
+    expect(
+      bc01("path.join(installDir, 'node_modules', '@bobsled-inc',\n      'dogsled',\n      'x')")
+    ).toBe(
+      "path.join(installDir, 'node_modules', '@bobsled-inc',\n      'bobsled-core',\n      'x')"
+    );
+    expect(bc01("join(dir, '..',\n  '..',\n  'dogsled',\n  'examples')")).toBe(
+      "join(dir, '..',\n  '..',\n  'bobsled-core',\n  'examples')"
+    );
+    expect(bc01("  ['dogsled', 'dogsled/dist/index.js'],")).toBe(
+      "  ['dogsled', 'bobsled-core/dist/index.js'],"
+    );
+    expect(bc01('"test:unit:ci:dogsled": "x"', 'package.json')).toBe('"test:unit:ci:bobsled": "x"');
+    expect(bc01("const bin = path.join(prefix, 'bin', 'dogsled');")).toBe(
+      "const bin = path.join(prefix, 'bin', 'bobsled');"
+    );
+    expect(bc01("[{ name: 'x', bin: { dogsled: './bin/cli.mjs' } }]")).toBe(
+      "[{ name: 'x', bin: { bobsled: './bin/cli.mjs' } }]"
+    );
+    expect(
+      bc01('elif command -v dogsled >/dev/null 2>&1; then\n  DOGSLED_CMD=(dogsled)', 'a.sh')
+    ).toBe('elif command -v bobsled >/dev/null 2>&1; then\n  DOGSLED_CMD=(bobsled)');
+    expect(bc01('      dogsled: bobsledPlugin,')).toBe('      bobsled: bobsledPlugin,');
+    expect(bc01('/* eslint-disable dogsled/no-console */')).toBe(
+      '/* eslint-disable bobsled/no-console */'
+    );
+    expect(bc01("Object.freeze(['model', 'graph', 'dogsled', 'rest'])")).toBe(
+      "Object.freeze(['model', 'graph', 'bobsled', 'rest'])"
+    );
+  });
+
+  it('never reads the n of a \\n escape as an identifier character', () => {
+    expect(
+      renameText('openDogsledProject()', { file: 'a.ts', rules: selectRules(['BC-05']) }).text
+    ).toBe('openBobsledProject()');
+    expect(
+      renameText(String.raw`"a\nDogsled b"`, { file: 'a.ts', rules: selectRules(['BC-05']) }).text
+    ).toBe(String.raw`"a\nDogsled b"`);
+  });
+
   it('keeps the CI unit legs and their scripts in step', () => {
     expect(rename('leg: [model, graph, dogsled, rest]', '.github/workflows/ci.yml')).toBe(
       'leg: [model, graph, bobsled, rest]'

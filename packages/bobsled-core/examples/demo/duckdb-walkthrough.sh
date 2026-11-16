@@ -39,10 +39,10 @@ if [ -x "$SCRIPT_DIR/dogsled" ]; then
   DOGSLED="$SCRIPT_DIR/dogsled"
 elif [ -x "$SCRIPT_DIR/../../bin/cli.mjs" ]; then
   DOGSLED="$SCRIPT_DIR/../../bin/cli.mjs"
-elif command -v dogsled >/dev/null 2>&1; then
-  DOGSLED="dogsled"
-elif npx --no-install dogsled --version >/dev/null 2>&1; then
-  run_bobsled_with_npx() { npx --no-install dogsled "$@"; }
+elif command -v bobsled >/dev/null 2>&1; then
+  DOGSLED="bobsled"
+elif npx --no-install bobsled --version >/dev/null 2>&1; then
+  run_bobsled_with_npx() { npx --no-install bobsled "$@"; }
   DOGSLED="run_bobsled_with_npx"
 else
   echo "Error: dogsled CLI not found. Install it with 'npm install @bobsled-inc/bobsled-core' in this folder or a parent folder."

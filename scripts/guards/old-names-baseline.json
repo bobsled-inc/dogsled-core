@@ -1,7 +1,7 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 9558,
+    "dogsled-word": 9551,
     "old-warehouse-prefix": 742,
     "track-config": 6,
     "track-env": 0,
@@ -17,7 +17,7 @@
     "examples": 289,
     "packages/ai": 12,
     "packages/api-resource": 7,
-    "packages/bobsled-core": 1854,
+    "packages/bobsled-core": 1847,
     "packages/connections": 24,
     "packages/document-parsers": 7,
     "packages/embedder": 35,
