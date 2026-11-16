@@ -1,8 +1,8 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 12159,
-    "old-warehouse-prefix": 724,
+    "dogsled-word": 12183,
+    "old-warehouse-prefix": 742,
     "track-config": 6,
     "track-env": 0,
     "track-kind": 5,
@@ -25,7 +25,7 @@
     "packages/extractor": 551,
     "packages/integrations": 298,
     "packages/loader": 462,
-    "packages/model-spec": 1976,
+    "packages/model-spec": 2018,
     "packages/models": 19,
     "packages/project-index": 97,
     "packages/protocol": 70,
