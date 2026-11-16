@@ -41,6 +41,7 @@ import {
 } from './source-materializer/sql-pushdown.js';
 import { createSqlRunnerFor } from './source-materializer/sql-runner-bridge.js';
 import { partialTableName } from './source-materializer/partial-snapshot.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 export interface RunQueryArgs {
   projectRoot: string;
@@ -697,7 +698,7 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
   const runMaterializedQuery = async (): Promise<RunQueryResult> => {
     const runner = serializeSqlRunner(await createSqlRunnerImpl({ destination: representative }));
     const receipts: string[] = [];
-    const tempDir = join(args.projectRoot, '.dogsled', 'tmp');
+    const tempDir = join(localStateDir(args.projectRoot), 'tmp');
     await mkdir(tempDir, { recursive: true });
 
     try {

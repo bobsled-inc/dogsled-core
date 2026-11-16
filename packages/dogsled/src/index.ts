@@ -26,6 +26,7 @@ import { registerInitCommand } from './commands/init.js';
 import { registerSourceQueryCommand } from './commands/query-register.js';
 import { registerSyncCommand } from './commands/sync.js';
 import { registerVqCommand } from './commands/vq.js';
+import { takeOverLocalState } from './runtime/local-state-takeover.js';
 
 declare const __CLI_VERSION__: string | undefined;
 
@@ -151,6 +152,7 @@ export function handleCliError(error: unknown): void {
 
 export async function runCli(argv: string[] = process.argv.slice(2)): Promise<void> {
   try {
+    await takeOverLocalState(argv);
     const delegation = await maybeRunDelegatedCommand(argv);
     if (delegation.handled) {
       process.exitCode = delegation.exitCode ?? 0;

@@ -74,6 +74,7 @@ import {
 import { formatReceipt, type Receipt } from './materializer.js';
 import type { SourceMaterializerFeatureFlags } from './feature-flags.js';
 import { quoteIdentifier } from './sql-utils.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 export interface RunProjectWithLazySourcesArgs {
   /** Model Spec project root (holds `sources/`, `models/`, `integrations/`, `model-spec.yml`). */
@@ -515,7 +516,7 @@ export async function runProjectWithLazySources(
     }
 
     const representative = destinations[0]!;
-    const tempDir = join(args.projectRoot, '.dogsled', 'tmp');
+    const tempDir = join(localStateDir(args.projectRoot), 'tmp');
     await mkdir(tempDir, { recursive: true });
 
     const runner = await createSqlRunnerImpl({ destination: representative });

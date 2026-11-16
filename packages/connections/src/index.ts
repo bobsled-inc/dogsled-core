@@ -183,3 +183,16 @@ export {
 export type { BigQueryAccessToken, BigQueryTokenProvider } from './runtime/refreshable-token.js';
 
 export { assertDriverVersion } from './runtime/driver-version.js';
+export {
+  LOCAL_DATABASE_FILE,
+  LOCAL_STATE_DIR,
+  LOCAL_STATE_GITIGNORE,
+  writeLocalStateGitignore,
+  localStateTakeoverRoot,
+  localDatabaseFile,
+  localStateDir,
+  localStateDirName,
+  prepareLocalStateDir,
+  type LakeDataPathStore,
+} from './local-state/local-state-dir.js';
+export { duckDbFileInUse, duckDbLakeDataPathStore } from './local-state/duckdb-lake.js';

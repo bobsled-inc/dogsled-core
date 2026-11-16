@@ -1,12 +1,12 @@
 {
   "version": 1,
   "patterns": {
-    "dogsled-word": 12183,
+    "dogsled-word": 12182,
     "old-warehouse-prefix": 742,
     "track-config": 6,
     "track-env": 0,
     "track-kind": 5,
-    "dogsled-path": 718
+    "dogsled-path": 723
   },
   "areas": {
     ".agents": 958,
@@ -17,15 +17,15 @@
     "examples": 415,
     "packages/ai": 17,
     "packages/api-resource": 9,
-    "packages/connections": 40,
+    "packages/connections": 48,
     "packages/document-parsers": 9,
-    "packages/dogsled": 3467,
+    "packages/dogsled": 3466,
     "packages/embedder": 45,
-    "packages/entity-graph": 122,
+    "packages/entity-graph": 121,
     "packages/extractor": 551,
     "packages/integrations": 298,
     "packages/loader": 462,
-    "packages/model-spec": 2018,
+    "packages/model-spec": 2016,
     "packages/models": 19,
     "packages/project-index": 97,
     "packages/protocol": 70,

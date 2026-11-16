@@ -25,6 +25,7 @@ import { resolveSyncIntegration } from '../sync/run.js';
 
 import type { GlobalOptions, OutputOptions } from '../types/index.js';
 import type { SyncSpec } from '../sync/index.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 interface SyncOutputOptions {
   yaml?: boolean;
@@ -179,7 +180,7 @@ export function registerSyncCommand(program: Command): void {
         projectRoot,
         opts.stateDir
           ? resolve(projectRoot, opts.stateDir)
-          : join(projectRoot, '.dogsled', 'sync-state')
+          : join(localStateDir(projectRoot), 'sync-state')
       );
       const limit = opts.limit ? Number.parseInt(opts.limit, 10) : undefined;
       if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {

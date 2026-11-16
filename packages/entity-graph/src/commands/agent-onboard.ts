@@ -40,6 +40,7 @@ import {
   requireQueryRunner,
   requireRunnerPath,
 } from './agent-support.js';
+import { localStateDir } from '@bobsled-inc/connections';
 
 interface OnboardResourceSummary {
   name: string;
@@ -666,7 +667,7 @@ function countReviewMarkers(content: string): number {
 }
 
 function getManifestPath(entity: string): string {
-  return path.join(process.cwd(), '.dogsled', 'onboard', `${entity}.json`);
+  return path.join(localStateDir(process.cwd()), 'onboard', `${entity}.json`);
 }
 
 function writeManifest(manifest: OnboardManifest): string {

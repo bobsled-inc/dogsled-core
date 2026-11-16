@@ -9,6 +9,7 @@ import { recommendSetup } from './recommend.js';
 import { SetupAnswersSchema } from './types.js';
 
 import type { SetupDoctorReport, SetupAnswers } from './types.js';
+import { resolveSetupAnswersPath } from './answers-path.js';
 
 const PLACEHOLDER_PATTERNS: readonly RegExp[] = [
   /\breplace-me\b/i,
@@ -37,7 +38,10 @@ export async function doctorSetup(options: {
     cwd: options.cwd,
   });
   const projectRoot = project?.projectRoot ?? path.resolve(options.projectRoot ?? options.cwd);
-  const answersPath = path.resolve(projectRoot, options.answersPath ?? 'dogsled.setup.answers.yml');
+  const answersPath = resolveSetupAnswersPath(
+    options.answersPath ?? 'dogsled.setup.answers.yml',
+    projectRoot
+  );
   const { index } = project ?? { projectRoot };
 
   let answers: SetupAnswers | undefined;
