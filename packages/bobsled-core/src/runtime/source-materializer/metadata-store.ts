@@ -10,8 +10,8 @@ import {
   type MetadataDialect,
   type MetadataRow,
   type SnapshotKind,
-  METADATA_TABLE,
 } from './metadata.js';
+import { METADATA_TABLE } from './metadata-table.js';
 import { escapeLiteral, isMissingTableError, tableRef, validateIdentifier } from './sql-utils.js';
 
 const DEFAULT_LEASE_SECONDS = 60;
@@ -219,15 +219,18 @@ export interface DuckDBMetadataStoreOptions {
   runner: SqlRunnerModule;
   dialect?: MetadataDialect;
   defaultLeaseSeconds?: number;
+  /** Schemas whose metadata table the caller has already ensured. */
+  ensuredSchemas?: Iterable<string>;
 }
 
 export class DuckDBMetadataStore implements MetadataStore {
-  private readonly ensuredSchemas = new Set<string>();
+  private readonly ensuredSchemas: Set<string>;
   private readonly runner: SqlRunnerModule;
   private readonly dialect: MetadataDialect;
   private readonly defaultLeaseSeconds: number;
 
   constructor(options: DuckDBMetadataStoreOptions) {
+    this.ensuredSchemas = new Set(options.ensuredSchemas);
     this.runner = options.runner;
     this.dialect = options.dialect ?? 'duckdb';
     this.defaultLeaseSeconds = options.defaultLeaseSeconds ?? DEFAULT_LEASE_SECONDS;

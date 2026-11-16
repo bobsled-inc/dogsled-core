@@ -704,11 +704,16 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
     try {
       const schemas = new Map<string, ResolvedDestination>();
       for (const destination of destinations) schemas.set(destination.schema, destination);
+      const ensuredMetadataSchemas = new Set<string>();
       for (const destination of schemas.values()) {
         if (destination.schema === 'temp') continue;
-        await runner.run(
-          `CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(destination.schema, destination.sqlRunnerKind)}`
-        );
+        // On BigQuery, ensureMetadataTable creates the dataset only when it is
+        // missing, so a lazy query issues no dataset DDL once it exists.
+        if (destination.sqlRunnerKind !== 'bigquery') {
+          await runner.run(
+            `CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(destination.schema, destination.sqlRunnerKind)}`
+          );
+        }
         await ensureMetadataTable({
           runner,
           schema: destination.schema,
@@ -716,6 +721,7 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
           // Each query opens a new connection: the takeover is settled per warehouse instead.
           destination: destinationIdentity(destination),
         });
+        ensuredMetadataSchemas.add(destination.schema);
       }
 
       const executeMaterializedQuery = async (
@@ -752,6 +758,7 @@ export async function runQueryCommand(args: RunQueryArgs): Promise<RunQueryResul
                   tempDir,
                   currentFilterHash,
                   isTransientLive,
+                  metadataTableEnsured: ensuredMetadataSchemas.has(destination.schema),
                   ...(queryLimit !== undefined ? { queryLimit } : {}),
                   ...(canonicalTableBySource.has(sourceName)
                     ? { canonicalTable: canonicalTableBySource.get(sourceName)! }
