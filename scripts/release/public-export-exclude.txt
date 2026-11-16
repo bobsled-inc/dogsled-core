@@ -1,0 +1,15 @@
+scripts/rename/ # Private staging rename and sync tooling.
+tests/unit/rename-mapping.test.mjs # Regression suite only for the private rename tooling.
+tests/unit/rename-branch-isolation.test.mjs # Private rename-branch workflow isolation suite.
+.github/workflows/preview-publish.yml # Private preview publication flow.
+scripts/release/preview.mjs # Private preview package staging and publication adapter.
+tests/unit/release-preview.test.mjs # Regression suite only for the private preview adapter.
+scripts/guards/old-names.mjs # Private rename guard implementation.
+scripts/guards/old-names-allow.json # Private rename guard allow list.
+scripts/guards/old-names-baseline.json # Private rename guard baseline.
+tests/unit/guard-old-names.test.mjs # Private rename guard regression suite.
+scripts/guards/lib.mjs.private.json # Optional exact guard metadata only for private staging files.
+scripts/release/public-export.mjs # Private staging export boundary and verification tool.
+scripts/release/public-export-exclude.txt # Private staging export boundary policy.
+tests/unit/public-export.test.mjs # Private export boundary regression suite.
+.github/workflows/public-export.yml # Private staging export dry-run workflow.

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "selfReferences": [
+    {
+      "path": "scripts/rename/mapping.mjs",
+      "reason": "Rename tooling on rename/bobsled-core spells old names and contacts by design."
+    },
+    {
+      "path": "scripts/rename/rename.mjs",
+      "reason": "Rename tooling on rename/bobsled-core spells old names and contacts by design."
+    },
+    {
+      "path": "tests/unit/rename-mapping.test.mjs",
+      "reason": "Rename tooling tests spell old names and contacts by design."
+    },
+    {
+      "path": "scripts/guards/old-names-allow.json",
+      "reason": "Old-name guard allow list names the app domains."
+    },
+    {
+      "path": "tests/unit/guard-old-names.test.mjs",
+      "reason": "Old-name guard tests name the app domains."
+    },
+    {
+      "path": "scripts/release/public-export.mjs",
+      "reason": "Private export tool names the root-commit identity (D8)."
+    },
+    {
+      "path": "tests/unit/public-export.test.mjs",
+      "reason": "Private export tool tests assert the root-commit identity."
+    }
+  ],
+  "exceptions": []
+}
