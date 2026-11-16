@@ -16,7 +16,7 @@
     },
     {
       "rule": "email-address",
-      "files": ["packages/dogsled/THIRD_PARTY_NOTICES.md"],
+      "files": ["packages/bobsled-core/THIRD_PARTY_NOTICES.md"],
       "values": [
         "michael.hart.au@gmail.com",
         "tj@vision-media.ca",
@@ -34,7 +34,7 @@
       "rule": "email-address",
       "files": [
         "scripts/release/embedded-notices.json",
-        "packages/dogsled/THIRD_PARTY_NOTICES.md"
+        "packages/bobsled-core/THIRD_PARTY_NOTICES.md"
       ],
       "values": ["sindresorhus@gmail.com"],
       "reason": "Required upstream MIT attribution in the reviewed AI SDK type-helper file licenses."

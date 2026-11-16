@@ -518,8 +518,8 @@ supplying this store. Import both Model Spec entry points from the same Dogsled 
 share the checkpoint verification cache.
 
 ```typescript
-import { createWarehouseRowStore } from '@bobsled-inc/dogsled/model-spec/agentic';
-import { runProject } from '@bobsled-inc/dogsled/model-spec/project';
+import { createWarehouseRowStore } from '@bobsled-inc/bobsled-core/model-spec/agentic';
+import { runProject } from '@bobsled-inc/bobsled-core/model-spec/project';
 
 const stateStore = createWarehouseRowStore(integration, {
   schema: 'track_checkpoints',
@@ -769,7 +769,7 @@ lease, a warehouse that hangs on every attempt stops the run in about eight minu
 
 Library hosts can resolve the logical catalog/schema with
 `resolveWarehouseCheckpointTarget(integration, { database, schema })` from
-`@bobsled-inc/dogsled/model-spec/agentic`; the runtime uses the same resolver for checkpoint
+`@bobsled-inc/bobsled-core/model-spec/agentic`; the runtime uses the same resolver for checkpoint
 and cursor storage.
 
 If the warehouse session loses ownership, Dogsled cancels active assignments and

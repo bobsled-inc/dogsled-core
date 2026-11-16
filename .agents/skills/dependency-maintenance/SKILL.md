@@ -41,7 +41,7 @@ Step-by-step fixes are in [references/playbooks.md](references/playbooks.md).
   versions inside this workspace only. Published consumers never see them.
 - **Workspace audit.** `pnpm security:audit` runs audit-ci on the lockfile at
   `high`, with `audit-ci.json` as its allowlist.
-- **Packed-consumer audit.** Packs `@bobsled-inc/dogsled`, installs it in clean
+- **Packed-consumer audit.** Packs `@bobsled-inc/bobsled-core`, installs it in clean
   npm projects with every optional warehouse driver at its oldest (`floor`) and
   newest (`latest`) version allowed by the internal peer ranges and the release
   age, and audits those trees. This is what a user's install resolves, so it can
@@ -65,7 +65,7 @@ Step-by-step fixes are in [references/playbooks.md](references/playbooks.md).
   `dependencies`, which does not release on its own; the next release includes
   them. To release one now, add exactly one `change-type: patch`,
   `change-type: minor` or `change-type: major` label.
-- **Third-party notices.** `packages/dogsled/THIRD_PARTY_NOTICES.md` is generated
+- **Third-party notices.** `packages/bobsled-core/THIRD_PARTY_NOTICES.md` is generated
   from the bundled build inputs. CI and releases fail when it is stale.
 
 ## Pick a playbook

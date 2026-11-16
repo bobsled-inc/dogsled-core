@@ -252,8 +252,8 @@ export type {
 export type { FileSystem } from './types.js';
 export type { WindowExpr } from './expr/types.js';
 export type {
-  DogsledExpr,
-  DogsledExprKind,
+  BobsledExpr,
+  BobsledExprKind,
   FunctionCallExpr,
   ColumnRefExpr,
   RawSqlExpr,

@@ -103,7 +103,7 @@ export {
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
-export { CommandError, DogsledRuntimeError } from '../errors.js';
+export { CommandError, BobsledRuntimeError } from '../errors.js';
 
 // Publish/execution accessors — re-exported so orchestrators (e.g. the Dogsled
 // live-source bridge) can reproduce the publisher's "is this model published?"

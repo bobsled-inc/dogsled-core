@@ -15,7 +15,7 @@ function getRepoRoot(): string {
 
 async function runTrack(args: string[]): Promise<void> {
   const repoRoot = getRepoRoot();
-  const entrypoint = path.join(repoRoot, 'packages/dogsled/src/index.ts');
+  const entrypoint = path.join(repoRoot, 'packages/bobsled-core/src/index.ts');
   const child = spawn('pnpm', ['exec', 'tsx', entrypoint, 'model', ...args], {
     cwd: getWorkspaceRoot(),
     stdio: 'inherit',

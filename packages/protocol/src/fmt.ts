@@ -1,7 +1,7 @@
 /**
  * Minimal output-format primitives shared across all `@bobsled-inc/*`
  * packages. Both sdk-codegen and entity-graph (leaf packages with no
- * dependency on `@bobsled-inc/dogsled`) route their CLI output through
+ * dependency on `@bobsled-inc/bobsled-core`) route their CLI output through
  * these helpers so they never call `process.stdout.write` /
  * `process.stderr.write` directly. This preserves dependency layering:
  * Dogsled depends on protocol, never the reverse.

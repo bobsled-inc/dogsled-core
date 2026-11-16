@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AuthEnvVarsSchema, getEnvironmentDeclarationError } from '../src/declared-environment.js';
-import { DogsledRuntimeError } from '../src/runtime-error.js';
+import { BobsledRuntimeError } from '../src/runtime-error.js';
 import { ModelConnectionSchema } from '../src/config-contracts.js';
 import { validateModelProviderConfig } from '../src/model-provider-security.js';
 
@@ -23,7 +23,7 @@ describe('declaration validation and diagnostics', () => {
   it('unwraps only the safe declaration diagnostic', () => {
     const message = 'Undeclared environment variable: TOKEN. Add TOKEN to auth_env_vars.';
     const wrap = (cause: Error) =>
-      new DogsledRuntimeError({
+      new BobsledRuntimeError({
         kind: 'validation',
         code: 'TEST',
         operation: 'test',

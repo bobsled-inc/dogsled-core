@@ -16,7 +16,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import ssh2 from 'ssh2';
 import type { SFTPWrapper } from 'ssh2';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -145,14 +145,14 @@ function file(relative: string, size: number | undefined = 1): ListedFile {
 async function expectSftpCode(
   promise: Promise<unknown>,
   code: string
-): Promise<DogsledRuntimeError> {
+): Promise<BobsledRuntimeError> {
   const error = await promise.then(
     () => undefined,
     (reason: unknown) => reason
   );
-  expect(error).toBeInstanceOf(DogsledRuntimeError);
-  expect((error as DogsledRuntimeError).code).toBe(code);
-  return error as DogsledRuntimeError;
+  expect(error).toBeInstanceOf(BobsledRuntimeError);
+  expect((error as BobsledRuntimeError).code).toBe(code);
+  return error as BobsledRuntimeError;
 }
 
 describe('SFTP client against a real ssh2 server', () => {

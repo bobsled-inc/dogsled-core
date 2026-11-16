@@ -1,11 +1,11 @@
 import {
   CommandError,
-  DogsledRuntimeError,
-  type DogsledRuntimeErrorOptions,
+  BobsledRuntimeError,
+  type BobsledRuntimeErrorOptions,
 } from '@bobsled-inc/protocol';
 
-export { CommandError, DogsledRuntimeError };
-export type { DogsledRuntimeErrorOptions };
+export { CommandError, BobsledRuntimeError };
+export type { BobsledRuntimeErrorOptions };
 
 export interface ModelSpecRuntimeErrorContext {
   codePrefix: string;
@@ -20,11 +20,11 @@ const LOAD_ERROR_CONTEXT: ModelSpecRuntimeErrorContext = {
 export function toModelSpecRuntimeError(
   cause: unknown,
   context: ModelSpecRuntimeErrorContext = LOAD_ERROR_CONTEXT
-): DogsledRuntimeError {
-  if (cause instanceof DogsledRuntimeError) return cause;
+): BobsledRuntimeError {
+  if (cause instanceof BobsledRuntimeError) return cause;
   const error = cause instanceof Error ? cause : new Error(String(cause));
   if (error instanceof CommandError) {
-    return new DogsledRuntimeError({
+    return new BobsledRuntimeError({
       kind: error.exitCode === 2 ? 'validation' : 'internal',
       code:
         error.exitCode === 2
@@ -37,7 +37,7 @@ export function toModelSpecRuntimeError(
   }
   const errno = (error as NodeJS.ErrnoException).code;
   if (typeof errno === 'string') {
-    return new DogsledRuntimeError({
+    return new BobsledRuntimeError({
       kind: 'internal',
       code: `${context.codePrefix}_FILESYSTEM_${errno}`,
       operation: context.operation,
@@ -45,7 +45,7 @@ export function toModelSpecRuntimeError(
       cause: error,
     });
   }
-  return new DogsledRuntimeError({
+  return new BobsledRuntimeError({
     kind: error.name === 'AbortError' ? 'cancellation' : 'internal',
     code:
       error.name === 'AbortError'

@@ -81,8 +81,8 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import { readFileSync } from 'node:fs';
-          const pkg = JSON.parse(readFileSync('packages/dogsled/package.json', 'utf8'));
-          if (pkg.name !== '@bobsled-inc/dogsled' || !['restricted', 'public'].includes(pkg.publishConfig?.access)) throw new Error('Apply the reviewed version/access release PR first.');
+          const pkg = JSON.parse(readFileSync('packages/bobsled-core/package.json', 'utf8'));
+          if (pkg.name !== '@bobsled-inc/bobsled-core' || !['restricted', 'public'].includes(pkg.publishConfig?.access)) throw new Error('Apply the reviewed version/access release PR first.');
           JS
       - name: Plan immutable version
         id: plan
@@ -155,7 +155,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        leg: [model, graph, dogsled, rest]
+        leg: [model, graph, bobsled, rest]
     permissions:
       contents: read
     steps:
@@ -248,8 +248,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          if ! git diff --quiet -- packages/dogsled/package.json; then
-            git add packages/dogsled/package.json
+          if ! git diff --quiet -- packages/bobsled-core/package.json; then
+            git add packages/bobsled-core/package.json
             git commit -m "Release $RELEASE_TAG"
           fi
           git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"

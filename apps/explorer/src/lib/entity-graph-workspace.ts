@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { spawnDogsledCommand, collectOutput, getWorkspaceRoot } from './dogsled-cli';
+import { spawnBobsledCommand, collectOutput, getWorkspaceRoot } from './dogsled-cli';
 import {
   readEntityGraphSql,
   withEntityGraphWorkspaceQuery,
@@ -246,10 +246,10 @@ export async function readRunLog(
 }
 
 /** Re-export shared CLI helpers so Entity Graph routes only need to import from this file. */
-export { spawnDogsledCommand, collectOutput };
+export { spawnBobsledCommand, collectOutput };
 
 export function spawnEntityGraphCommand(args: string[], scenario?: EntityGraphScenarioId) {
-  return spawnDogsledCommand('entity-graph', args, { cwd: getEntityGraphWorkspaceRoot(scenario) });
+  return spawnBobsledCommand('entity-graph', args, { cwd: getEntityGraphWorkspaceRoot(scenario) });
 }
 
 const CLUSTER_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;

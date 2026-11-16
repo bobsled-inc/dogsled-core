@@ -131,7 +131,7 @@ a shared version label is not a guarantee of compatibility.
 
 ## Library and MCP access
 
-Import config-only APIs from `@bobsled-inc/dogsled/ontology`:
+Import config-only APIs from `@bobsled-inc/bobsled-core/ontology`:
 
 - `parseOntologyDocument(value)` validates a native document.
 - `loadOntologyCatalog(index)` reads an existing Project Index and reports diagnostics.

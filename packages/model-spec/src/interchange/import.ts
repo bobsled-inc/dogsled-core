@@ -127,7 +127,7 @@ function fail(
   throw new ImportFailure(code, path, message, objectReference, remedy);
 }
 
-function dogsledExtension(
+function bobsledExtension(
   owner: { custom_extensions?: OssieCustomExtension[] },
   path: string,
   objectReference: ConversionObjectReference
@@ -163,7 +163,7 @@ function parseDatasetExtension(
   path: string,
   objectReference: ConversionObjectReference
 ): DatasetExtension {
-  const extension = dogsledExtension(dataset, path, objectReference);
+  const extension = bobsledExtension(dataset, path, objectReference);
   if (!extension) return { kind: 'source', settings: {} };
   const version = extension['extension_version'];
   if (version !== '1' && version !== '2') {
@@ -371,7 +371,7 @@ function convertFields(
     }
     seen.add(field.name.toLowerCase());
     addLegacyVendorDiagnostic(result, field, path, objectReference);
-    const rawFieldExtension = dogsledExtension(field, path, objectReference) ?? {};
+    const rawFieldExtension = bobsledExtension(field, path, objectReference) ?? {};
     const parsedFieldExtension = fieldExtensionSchema.safeParse(rawFieldExtension);
     if (!parsedFieldExtension.success) {
       fail(
@@ -550,7 +550,7 @@ function metricExtension(
   path: string,
   objectReference: ConversionObjectReference
 ): { datasets?: string[]; expression?: string; synonyms?: string[]; tags?: string[] } {
-  const extension = dogsledExtension(metric, path, objectReference);
+  const extension = bobsledExtension(metric, path, objectReference);
   if (!extension) return {};
   if (extension['extension_version'] === undefined) {
     const parsed = z
@@ -599,7 +599,7 @@ function relationshipExtension(
   description?: string;
   tags?: string[];
 } {
-  const extension = dogsledExtension(relationship, path, objectReference);
+  const extension = bobsledExtension(relationship, path, objectReference);
   if (!extension) return {};
   const base = {
     join_type: z.enum(['inner', 'left']).optional(),

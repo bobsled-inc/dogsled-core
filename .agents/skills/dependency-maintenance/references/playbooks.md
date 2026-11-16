@@ -175,7 +175,7 @@ in the lockfile diff and each package's release notes, and look closely at:
   (`npm view <name>@<version> scripts --json`);
 - licence changes, which also change the third-party notices;
 - packages bundled into the published build, which change
-  `packages/dogsled/THIRD_PARTY_NOTICES.md`;
+  `packages/bobsled-core/THIRD_PARTY_NOTICES.md`;
 - the security pins: an update that conflicts with an `overrides` entry fails
   the install or build (see "Override bump").
 
@@ -192,7 +192,7 @@ because a bundled package version changed.
 
 1. Check out the PR branch, then run `pnpm install --frozen-lockfile`,
    `pnpm build` and `node scripts/release/third-party-notices.mjs`. Review
-   the diff of `packages/dogsled/THIRD_PARTY_NOTICES.md`: only the changed
+   the diff of `packages/bobsled-core/THIRD_PARTY_NOTICES.md`: only the changed
    packages should move.
 2. If generation fails:
    - `No license text for <id>`: the package ships no licence file. Confirm

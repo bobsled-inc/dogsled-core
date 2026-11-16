@@ -1,7 +1,7 @@
 # Cutting a release
 
-Dogsled publishes `@bobsled-inc/dogsled` with 15 workspace packages embedded in its tarball.
-Only `packages/dogsled/package.json` advances its version.
+Dogsled publishes `@bobsled-inc/bobsled-core` with 15 workspace packages embedded in its tarball.
+Only `packages/bobsled-core/package.json` advances its version.
 
 ## Merges release
 
@@ -65,7 +65,7 @@ Publication runs in `npm-release`, which npm's trusted publisher is bound to.
 The workflow pushes the verified tag with hooks disabled. It does not push release bookkeeping to `main`.
 
 After changing bundled dependencies, build and run `node scripts/release/third-party-notices.mjs`.
-Review [THIRD_PARTY_NOTICES.md](../packages/dogsled/THIRD_PARTY_NOTICES.md) before dispatching the release.
+Review [THIRD_PARTY_NOTICES.md](../packages/bobsled-core/THIRD_PARTY_NOTICES.md) before dispatching the release.
 
 Preparation sets npm fetch timeouts and retries, and time limits on the install, packed-catalog and release-verification steps, so a stalled registry connection fails within minutes instead of using up the job.
 The packed-catalog check retries once on its own. Before a tag is pushed, re-run the failed prepare job.

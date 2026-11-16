@@ -1,4 +1,4 @@
-import { DogsledRuntimeError, type DogsledRuntimeErrorKind } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError, type BobsledRuntimeErrorKind } from '@bobsled-inc/protocol';
 
 /**
  * Connection-level SFTP failure codes. Apps switch on `error.code` to show a
@@ -22,7 +22,7 @@ export const SFTP_ERROR_CODES = [
 ] as const;
 export type SftpErrorCode = (typeof SFTP_ERROR_CODES)[number];
 
-const SPECS: Record<SftpErrorCode, { kind: DogsledRuntimeErrorKind; retryable: boolean }> = {
+const SPECS: Record<SftpErrorCode, { kind: BobsledRuntimeErrorKind; retryable: boolean }> = {
   SFTP_HOST_KEY_MISMATCH: { kind: 'validation', retryable: false },
   SFTP_HOST_KEY_TYPE_UNAVAILABLE: { kind: 'validation', retryable: false },
   SFTP_AUTH_FAILED: { kind: 'auth', retryable: false },
@@ -39,8 +39,8 @@ const SPECS: Record<SftpErrorCode, { kind: DogsledRuntimeErrorKind; retryable: b
   SFTP_FILE_CHANGED: { kind: 'validation', retryable: false },
 };
 
-export function sftpError(code: SftpErrorCode, op: string, cause?: unknown): DogsledRuntimeError {
-  return new DogsledRuntimeError({
+export function sftpError(code: SftpErrorCode, op: string, cause?: unknown): BobsledRuntimeError {
+  return new BobsledRuntimeError({
     ...SPECS[code],
     code,
     operation: `extractor.sftp.${op}`,

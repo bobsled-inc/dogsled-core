@@ -2,7 +2,7 @@
  * Public library API surface for `@bobsled-inc/entity-graph`.
  *
  * Imported via `@bobsled-inc/entity-graph/api`. Used by `@bobsled-inc/sdk-codegen`,
- * the `@bobsled-inc/dogsled` runtime when dispatching
+ * the `@bobsled-inc/bobsled-core` runtime when dispatching
  * `type: entity-graph` pipelines, and any future consumer that needs
  * programmatic access to the compiled entity-graph inventory or the
  * resolve/compile/run/cluster/profile workflows.

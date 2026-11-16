@@ -9,9 +9,9 @@ export const DOGSLED_RUNTIME_ERROR_KINDS = [
   'internal',
 ] as const;
 
-export type DogsledRuntimeErrorKind = (typeof DOGSLED_RUNTIME_ERROR_KINDS)[number];
+export type BobsledRuntimeErrorKind = (typeof DOGSLED_RUNTIME_ERROR_KINDS)[number];
 
-export const DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<DogsledRuntimeErrorKind, string> = {
+export const DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<BobsledRuntimeErrorKind, string> = {
   auth: 'Dogsled could not authenticate with the provider.',
   validation: 'Dogsled could not validate the request.',
   provider: 'The provider could not complete the operation.',
@@ -20,8 +20,8 @@ export const DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES: Record<DogsledRuntimeErrorKi
   internal: 'Dogsled could not complete the operation.',
 };
 
-export interface DogsledRuntimeErrorOptions {
-  kind: DogsledRuntimeErrorKind;
+export interface BobsledRuntimeErrorOptions {
+  kind: BobsledRuntimeErrorKind;
   code: string;
   operation: string;
   retryable: boolean;
@@ -93,18 +93,18 @@ function serializeErrorCauseAtDepth(
  * The original Error remains available only as the native `cause`; consumers
  * use the explicit fields and never infer behavior from provider text.
  */
-export class DogsledRuntimeError extends Error {
-  readonly kind: DogsledRuntimeErrorKind;
+export class BobsledRuntimeError extends Error {
+  readonly kind: BobsledRuntimeErrorKind;
   readonly code: string;
   readonly operation: string;
   readonly retryable: boolean;
   readonly providerStatus?: number;
   readonly publicMessage: string;
 
-  constructor(options: DogsledRuntimeErrorOptions) {
+  constructor(options: BobsledRuntimeErrorOptions) {
     const publicMessage = DOGSLED_RUNTIME_ERROR_PUBLIC_MESSAGES[options.kind];
     super(publicMessage, { cause: options.cause });
-    this.name = 'DogsledRuntimeError';
+    this.name = 'BobsledRuntimeError';
     this.kind = options.kind;
     this.code = options.code;
     this.operation = options.operation;

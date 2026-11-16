@@ -16,7 +16,7 @@ const exampleDir = join(
   '..',
   '..',
   '..',
-  'dogsled',
+  'bobsled-core',
   'examples',
   's3-documents-ingestion'
 );

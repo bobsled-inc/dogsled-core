@@ -15,7 +15,7 @@ import {
   getIntegrationFromExplorerCommand,
   getIntegrationsFromExplorerCommand,
   isExplorerCommandSequence,
-  isExplorerDogsledCommand,
+  isExplorerBobsledCommand,
   type ExplorerCommand,
 } from '@/lib/command-links';
 import { clearRuns, loadRuns, type RunRecord } from '@/lib/run-history';
@@ -187,7 +187,7 @@ export default function TerminalPage() {
 
     try {
       const parsed = JSON.parse(cmd) as unknown;
-      if (isExplorerDogsledCommand(parsed)) {
+      if (isExplorerBobsledCommand(parsed)) {
         setLastCommand(parsed);
         addToHistory(formatCommandInput(parsed));
         void executeRun(parsed.command, parsed.args);

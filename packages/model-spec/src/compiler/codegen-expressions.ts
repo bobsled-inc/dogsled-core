@@ -7,7 +7,7 @@ import {
 } from './dialect.js';
 import type { SupportedDialect } from './dialect.js';
 import { emitExpr, mapExpr, parseExprField, parseWindowFrameClause } from './expr/index.js';
-import type { DogsledExpr, WindowFrameSpec, WindowOrderByItem } from './expr/index.js';
+import type { BobsledExpr, WindowFrameSpec, WindowOrderByItem } from './expr/index.js';
 import type { ResolvedFlattenJson, ResolvedTransformSpec, SourceEntryRegistry } from './parser.js';
 import { dangerousExprRegex, dangerousExprMsg } from './schemas-shared.js';
 import { terminateSqlLineComment } from './sql-expression-syntax.js';
@@ -81,14 +81,14 @@ export function transpileOrEmit(
  * from a spec field.
  */
 export function prepareAstForEmit(
-  ast: DogsledExpr,
+  ast: BobsledExpr,
   targetDialect: SupportedDialect,
   options?: {
     flattenAliases?: ReadonlySet<string>;
     namedWindows?: ReadonlyMap<string, ResolvedNamedWindow>;
     modelName?: string;
   }
-): DogsledExpr {
+): BobsledExpr {
   const flattened = normalizeFlattenValueRefs(ast, targetDialect, options?.flattenAliases);
   if (options?.namedWindows && !supportsDialectCapability(targetDialect, 'namedWindowClause')) {
     return inlineNamedWindows(flattened, options.namedWindows, options.modelName ?? 'unknown');
@@ -125,7 +125,7 @@ export interface CodegenOptions {
 
 /** A model-level named window resolved into emitter-ready pieces. */
 interface ResolvedNamedWindow {
-  partitionBy?: DogsledExpr[];
+  partitionBy?: BobsledExpr[];
   orderBy?: WindowOrderByItem[];
   frame?: WindowFrameSpec;
 }
@@ -145,7 +145,7 @@ export function resolveNamedWindows(
   opts: CodegenOptions
 ): ReadonlyMap<string, ResolvedNamedWindow> | undefined {
   if (!spec.windows || spec.windows.length === 0) return undefined;
-  const verbatim = (text: string): DogsledExpr => ({ kind: 'raw_sql', sql: text, explicit: true });
+  const verbatim = (text: string): BobsledExpr => ({ kind: 'raw_sql', sql: text, explicit: true });
   const resolved = new Map<string, ResolvedNamedWindow>();
   for (const w of spec.windows) {
     let frame: WindowFrameSpec | undefined;
@@ -182,10 +182,10 @@ export function resolveNamedWindows(
  * argument is expanded too.
  */
 function inlineNamedWindows(
-  expr: DogsledExpr,
+  expr: BobsledExpr,
   namedWindows: ReadonlyMap<string, ResolvedNamedWindow>,
   modelName: string
-): DogsledExpr {
+): BobsledExpr {
   return mapExpr(expr, (node) => {
     if (node.kind !== 'window' || node.windowName === undefined) return node;
     const spec = namedWindows.get(node.windowName.toLocaleLowerCase());

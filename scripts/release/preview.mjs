@@ -31,7 +31,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DOGSLED_PACKAGE_NAME } from './package-set.mjs';
+import { BOBSLED_CORE_PACKAGE_NAME } from './package-set.mjs';
 import { publishWithIntegrity } from './registry-integrity.mjs';
 
 export const PREVIEW_PACKAGE_NAME = '@bobsled-inc/bobsled-core-preview';
@@ -168,7 +168,7 @@ export function stagePreview(gateDir, outDir) {
   if (
     gate.passed !== true ||
     gate.artifacts?.length !== 1 ||
-    artifact.package !== DOGSLED_PACKAGE_NAME
+    artifact.package !== BOBSLED_CORE_PACKAGE_NAME
   )
     throw new Error('The release gate did not pass for the one publishable package.');
   assertPreviewVersion(artifact.version);

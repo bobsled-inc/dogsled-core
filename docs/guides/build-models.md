@@ -198,7 +198,7 @@ runner module that executes SQL in your warehouse.
 Create `runner.mjs`. It uses Dogsled's DuckDB connection:
 
 ```js
-import { buildDuckDbRunner } from '@bobsled-inc/dogsled/connections';
+import { buildDuckDbRunner } from '@bobsled-inc/bobsled-core/connections';
 
 async function withRunner(method, sql) {
   const runner = await buildDuckDbRunner({

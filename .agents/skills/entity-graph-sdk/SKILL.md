@@ -60,7 +60,7 @@ dogsled sdk generate --lang ts --out ./generated/dogsled-sdk --json
 ```bash
 pnpm --filter @bobsled-inc/entity-graph test:unit
 pnpm --filter @bobsled-inc/sdk-codegen test:unit
-pnpm --filter @bobsled-inc/dogsled test:unit
+pnpm --filter @bobsled-inc/bobsled-core test:unit
 pnpm precommit
 ```
 

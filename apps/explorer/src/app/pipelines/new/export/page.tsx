@@ -8,7 +8,7 @@ import {
   buildPipelineRunArgs,
   isPipelineConfig,
   type PipelineConfig,
-  generateDogsledYml,
+  generateBobsledYml,
 } from '@/lib/pipelineExport';
 import { generateCliCommands } from '@/lib/pipeline-export-content';
 import {
@@ -67,7 +67,7 @@ function ExportPageInner() {
   }, [encodedValidation]);
 
   const content =
-    selectedFormat === 'dogsled-yml' ? generateDogsledYml(config) : generateCliCommands(config);
+    selectedFormat === 'dogsled-yml' ? generateBobsledYml(config) : generateCliCommands(config);
 
   const handleCopy = () => {
     void navigator.clipboard

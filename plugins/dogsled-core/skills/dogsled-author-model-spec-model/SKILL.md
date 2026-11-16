@@ -444,7 +444,7 @@ SDK usage, addresses, conflicts, and preservation of foreign extensions.
 import {
   exportOssieDocument,
   importOssieDocuments,
-} from '@bobsled-inc/dogsled/model-spec/interchange';
+} from '@bobsled-inc/bobsled-core/model-spec/interchange';
 
 const imported = importOssieDocuments({
   documents: [{ path: 'sales.yml', content: yamlText }],

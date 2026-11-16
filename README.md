@@ -1,7 +1,7 @@
 # Dogsled Core
 
 [![CI](https://github.com/bobsled-inc/dogsled-core/actions/workflows/ci.yml/badge.svg)](https://github.com/bobsled-inc/dogsled-core/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@bobsled-inc/dogsled.svg)](https://www.npmjs.com/package/@bobsled-inc/dogsled)
+[![npm](https://img.shields.io/npm/v/@bobsled-inc/bobsled-core.svg)](https://www.npmjs.com/package/@bobsled-inc/bobsled-core)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 **Dogsled Core is an open-source command-line toolkit for moving and transforming data.**
@@ -41,13 +41,13 @@ The [ten-minute tutorial](docs/getting-started.md) loads a CSV file into a local
 DuckDB database, builds a model and queries it. You need **Node.js 24 or later
 and npm**. The exercise needs no Dogsled account, AI provider or external warehouse.
 
-Install the `@bobsled-inc/dogsled` package and create a project:
+Install the `@bobsled-inc/bobsled-core` package and create a project:
 
 ```bash
 mkdir my-data
 cd my-data
 npm init -y
-npm install @bobsled-inc/dogsled
+npm install @bobsled-inc/bobsled-core
 npx dogsled init shop --duckdb
 cd shop
 npx dogsled doctor
@@ -114,9 +114,9 @@ data reads need no API key; the optional AI chapter uses your own provider accou
 and asks for consent before making calls.
 
 For the CLI fallback in a source checkout, [build the repository](CONTRIBUTING.md#develop-and-verify-a-small-fix)
-and have your agent use `node packages/dogsled/bin/cli.mjs onboarding guide` from
+and have your agent use `node packages/bobsled-core/bin/cli.mjs onboarding guide` from
 the repository root instead of `npx`, so it reads the checkout’s version.
-See the [full walkthrough](packages/dogsled/examples/tv-night/README.md) for the
+See the [full walkthrough](packages/bobsled-core/examples/tv-night/README.md) for the
 chapter instructions.
 
 ## How a project works

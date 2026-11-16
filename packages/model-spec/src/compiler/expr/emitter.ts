@@ -1,5 +1,5 @@
 /**
- * Expression AST emitter — walks a DogsledExpr tree and produces
+ * Expression AST emitter — walks a BobsledExpr tree and produces
  * dialect-specific SQL text.
  *
  * For function_call nodes the emitter consults the FUNCTION_CATALOG to
@@ -22,7 +22,7 @@ import { isDangerousRawSql } from '../schemas.js';
 import { terminateSqlLineComment } from '../sql-expression-syntax.js';
 import { FUNCTION_CATALOG } from './functions.js';
 import type {
-  DogsledExpr,
+  BobsledExpr,
   FrameBound,
   JsonPathAccessExpr,
   JsonPathStep,
@@ -63,7 +63,7 @@ const OP_PRECEDENCE: Record<string, number> = {
  * `isRight` is true when the child is the right operand — this matters for
  * non-commutative operators at the same precedence level (e.g. `a - (b - c)`).
  */
-function needsParens(parentOp: string, child: DogsledExpr, isRight: boolean): boolean {
+function needsParens(parentOp: string, child: BobsledExpr, isRight: boolean): boolean {
   if (child.kind !== 'binary_op') return false;
   const parentPrec = OP_PRECEDENCE[parentOp] ?? 0;
   const childPrec = OP_PRECEDENCE[child.op] ?? 0;
@@ -77,12 +77,12 @@ function needsParens(parentOp: string, child: DogsledExpr, isRight: boolean): bo
 // ---------------------------------------------------------------------------
 
 /**
- * Recursively emit a DogsledExpr as dialect-specific SQL text.
+ * Recursively emit a BobsledExpr as dialect-specific SQL text.
  *
  * The returned string is *not* wrapped in parentheses unless the node is
  * explicitly a `parenthesized` expression.
  */
-export function emitExpr(expr: DogsledExpr, dialect: SupportedDialect): string {
+export function emitExpr(expr: BobsledExpr, dialect: SupportedDialect): string {
   const canonicalDialect = getCanonicalDialect(dialect);
   switch (expr.kind) {
     // ----- Leaf nodes -------------------------------------------------------
@@ -323,7 +323,7 @@ export function emitExpr(expr: DogsledExpr, dialect: SupportedDialect): string {
 
   // Exhaustive check — if TypeScript is happy this is unreachable.
   const _exhaustive: never = expr;
-  throw new Error(`Unknown expression kind: ${(_exhaustive as DogsledExpr).kind}`);
+  throw new Error(`Unknown expression kind: ${(_exhaustive as BobsledExpr).kind}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -357,7 +357,7 @@ function emitTypeRef(ref: TypeRef, dialect: SupportedDialect): string {
  */
 function emitFunctionCall(
   name: string,
-  args: readonly DogsledExpr[],
+  args: readonly BobsledExpr[],
   distinct: boolean,
   dialect: SupportedDialect
 ): string {
@@ -554,7 +554,7 @@ function buildJsonPath(steps: readonly JsonPathStep[]): string {
  * of a shorthand cast (`expr::TYPE`). Binary and unary operators, and certain
  * predicates must be wrapped to avoid ambiguity.
  */
-function needsShorthandCastParens(expr: DogsledExpr): boolean {
+function needsShorthandCastParens(expr: BobsledExpr): boolean {
   return (
     expr.kind === 'binary_op' ||
     expr.kind === 'unary_op' ||

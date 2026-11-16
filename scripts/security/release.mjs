@@ -16,9 +16,9 @@ import {
   BUNDLED_EXTERNAL_PACKAGE_NAMES,
   EXPECTED_INTERNAL_PACKAGE_COUNT,
   INTERNAL_PACKAGE_NAMES,
-  DOGSLED_PACKAGE_NAME,
+  BOBSLED_CORE_PACKAGE_NAME,
 } from '../release/package-set.mjs';
-import { stageDogsledPackage } from '../release/stage-package.mjs';
+import { stageBobsledPackage } from '../release/stage-package.mjs';
 import {
   ensureDir,
   executablePath,
@@ -80,8 +80,8 @@ if (args.execute !== true) {
   process.exit(0);
 }
 
-if (publishable.length !== 1 || publishable[0].name !== DOGSLED_PACKAGE_NAME) {
-  throw new Error(`Expected ${DOGSLED_PACKAGE_NAME} to be the one publishable package.`);
+if (publishable.length !== 1 || publishable[0].name !== BOBSLED_CORE_PACKAGE_NAME) {
+  throw new Error(`Expected ${BOBSLED_CORE_PACKAGE_NAME} to be the one publishable package.`);
 }
 const [dogsled] = publishable;
 const dirty = execFileSync('git', ['status', '--porcelain'], {
@@ -111,7 +111,7 @@ let consumerAudit;
 try {
   const stageDir = path.join(stageRoot, 'package');
   execFileSync('pnpm', ['security:audit'], { cwd: repoRoot, stdio: 'inherit' });
-  const { manifest: stagedManifest } = stageDogsledPackage(stageDir);
+  const { manifest: stagedManifest } = stageBobsledPackage(stageDir);
 
   checkThirdPartyNotices();
 
@@ -125,7 +125,7 @@ try {
     'postpack',
   ]) {
     if (stagedManifest.scripts?.[lifecycle] !== undefined) {
-      violations.push(`${DOGSLED_PACKAGE_NAME} declares lifecycle script ${lifecycle}`);
+      violations.push(`${BOBSLED_CORE_PACKAGE_NAME} declares lifecycle script ${lifecycle}`);
     }
   }
 
@@ -133,11 +133,11 @@ try {
     cwd: stageDir,
     timeout: 5 * 60 * 1000,
   });
-  if (!recordFailure(violations, `${DOGSLED_PACKAGE_NAME} pack`, pack)) {
+  if (!recordFailure(violations, `${BOBSLED_CORE_PACKAGE_NAME} pack`, pack)) {
     const tarballName = pack.stdout.trim().split(/\r?\n/).at(-1);
     const tarball = path.join(tarballDir, tarballName);
     if (!tarballName || !existsSync(tarball)) {
-      violations.push(`${DOGSLED_PACKAGE_NAME} did not produce a tarball`);
+      violations.push(`${BOBSLED_CORE_PACKAGE_NAME} did not produce a tarball`);
     } else {
       const entries = execFileSync('tar', ['-tzf', tarball], { encoding: 'utf8' })
         .split(/\r?\n/)
@@ -146,7 +146,7 @@ try {
 
       for (const entry of entries) {
         if (isForbiddenPackageEntry(entry)) {
-          violations.push(`${DOGSLED_PACKAGE_NAME} tarball contains forbidden entry ${entry}`);
+          violations.push(`${BOBSLED_CORE_PACKAGE_NAME} tarball contains forbidden entry ${entry}`);
         }
       }
 
@@ -176,7 +176,7 @@ try {
         violations.push('Packed consumer dependency audit has unhandled high/critical findings.');
 
       artifacts.push({
-        package: DOGSLED_PACKAGE_NAME,
+        package: BOBSLED_CORE_PACKAGE_NAME,
         version: stagedManifest.version,
         tarball: path.relative(outputDir, tarball),
         sha256: sha256File(tarball),
@@ -203,7 +203,7 @@ try {
           const installedRoot = path.join(
             scratch,
             'node_modules',
-            ...DOGSLED_PACKAGE_NAME.split('/')
+            ...BOBSLED_CORE_PACKAGE_NAME.split('/')
           );
           const installedManifest = JSON.parse(
             readFileSync(path.join(installedRoot, 'package.json'), 'utf8')
@@ -269,7 +269,7 @@ try {
           }
 
           try {
-            dataSmoke = smokePackedData(scratch, DOGSLED_PACKAGE_NAME);
+            dataSmoke = smokePackedData(scratch, BOBSLED_CORE_PACKAGE_NAME);
           } catch (error) {
             violations.push(`Packed data smoke failed: ${error.message}`);
           }

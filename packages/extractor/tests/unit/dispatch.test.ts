@@ -1,4 +1,4 @@
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/runtime/document-extraction.js', () => ({
@@ -114,7 +114,7 @@ describe('classifySourceKind', () => {
 describe('dispatchSourceKind document failures', () => {
   it('reports a document connection failure as a failed resource with its code', async () => {
     vi.mocked(extractDocumentResource).mockRejectedValueOnce(
-      new DogsledRuntimeError({
+      new BobsledRuntimeError({
         kind: 'provider',
         code: 'SFTP_CONNECTION_LOST',
         operation: 'extractor.sftp.download',

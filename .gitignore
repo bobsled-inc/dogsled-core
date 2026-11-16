@@ -163,8 +163,8 @@ workspace/entity-graph-demo/.runs.jsonl
 service-account*.json
 secrets.yml
 .npmrc.local
-!packages/dogsled/tests/integration/fixtures/fake-server-cert.pem
-!packages/dogsled/tests/integration/fixtures/fake-server-key.pem
+!packages/bobsled-core/tests/integration/fixtures/fake-server-cert.pem
+!packages/bobsled-core/tests/integration/fixtures/fake-server-key.pem
 
 # Local review artifacts
 docs/superpowers/

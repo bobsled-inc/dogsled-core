@@ -5,7 +5,7 @@ import * as path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { LocalFileStorageClient } from '../../src/runtime/clients/local-file-client.js';
 import { ControlLogger } from '../../src/runtime/control.js';
@@ -114,7 +114,7 @@ async function runExtraction(args: RunArgs = {}) {
 
 describe('extractDocumentResource', () => {
   it('fails the run on a connection-level download error instead of recording a parse error', async () => {
-    const lost = new DogsledRuntimeError({
+    const lost = new BobsledRuntimeError({
       kind: 'provider',
       code: 'SFTP_CONNECTION_LOST',
       operation: 'extractor.sftp.download',

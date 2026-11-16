@@ -33,7 +33,7 @@ import { lookupResource } from '../../src/runtime/lookup.js';
 import { McpExtractorClient } from '../../src/runtime/mcp-client.js';
 import { paginateMcpTool } from '../../src/runtime/mcp-pagination.js';
 import { extractRecords } from '../../src/runtime/response-mapper.js';
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import type { IntegrationSpec, ResourceSpec } from '../../src/types/index.js';
 
@@ -184,7 +184,7 @@ describe('MCP runtime', () => {
         operation: { input: {}, tool: { tool_name: 'list_items' } },
         signal: AbortSignal.abort(reason),
       })
-      .catch((value) => value as DogsledRuntimeError);
+      .catch((value) => value as BobsledRuntimeError);
 
     expect(error).toMatchObject({ kind: 'cancellation', code: 'EXTRACTOR_MCP_CANCELLED' });
     expect(error.cause).toBe(reason);
@@ -613,8 +613,8 @@ describe('MCP error classification via fixture server', () => {
         retryable: false,
         message: 'The provider could not complete the operation.',
       });
-      expect((error as DogsledRuntimeError).cause).toBeInstanceOf(Error);
-      expect((error as DogsledRuntimeError).cause).not.toBeInstanceOf(ExtractorTransientError);
+      expect((error as BobsledRuntimeError).cause).toBeInstanceOf(Error);
+      expect((error as BobsledRuntimeError).cause).not.toBeInstanceOf(ExtractorTransientError);
     }
   );
 });
@@ -663,10 +663,10 @@ describe('MCP security', () => {
       message: 'The provider could not complete the operation.',
     });
     expect(attempts).toBe(1);
-    expect((error as DogsledRuntimeError).cause).toEqual(
+    expect((error as BobsledRuntimeError).cause).toEqual(
       new Error('Something went wrong in the tool')
     );
-    expect((error as DogsledRuntimeError).cause).not.toBeInstanceOf(ExtractorTransientError);
+    expect((error as BobsledRuntimeError).cause).not.toBeInstanceOf(ExtractorTransientError);
   });
 
   it('throws on unsupported MCP pagination type', async () => {

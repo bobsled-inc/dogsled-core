@@ -8,7 +8,10 @@ assert.equal(existsSync('/suite/node_modules'), false);
 const lock = JSON.parse(readFileSync('/consumer/package-lock.json', 'utf8'));
 let bundled = 0;
 for (const [name, info] of Object.entries(lock.packages)) {
-  if (!name.includes('node_modules/@bobsled-inc/') || name === 'node_modules/@bobsled-inc/dogsled')
+  if (
+    !name.includes('node_modules/@bobsled-inc/') ||
+    name === 'node_modules/@bobsled-inc/bobsled-core'
+  )
     continue;
   assert.equal(info.inBundle, true, `Internal package was not bundled: ${name}`);
   assert.ok(

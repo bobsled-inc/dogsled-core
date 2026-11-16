@@ -45,7 +45,7 @@ pnpm exec tsc --noEmit
 
 - The v1 CLI supports `--lang ts`. The Python emitter is a library export only.
 - Generated SDK files are checked-in app artifacts; do not hand-edit them.
-- The SDK is executor-backed. Apps provide the warehouse/API/MCP executor through `DogsledEntityExecutor`.
+- The SDK is executor-backed. Apps provide the warehouse/API/MCP executor through `BobsledEntityExecutor`.
 - Entity spec names define SDK keys. A `company` spec means `dogsled.entity.company`.
 - Additions are minor; renames, deletions, and type changes are major and require downstream coordination.
 - Every generated profile should expose `_quality` with confidence, freshness, source diversity, and profile coverage.

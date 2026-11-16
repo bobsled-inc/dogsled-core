@@ -7,7 +7,7 @@ description: Update the bundled Skill manifest after changing a Skill, catalog, 
 
 Dogsled bundles `.agents/skills/<name>/SKILL.md` files whose front matter contains
 `exposed: true`. Skills without that field are contributor guidance and are not
-included in the runtime manifest. Users install `@bobsled-inc/dogsled`. The Skills
+included in the runtime manifest. Users install `@bobsled-inc/bobsled-core`. The Skills
 workspace is embedded in that package.
 
 1. Edit the Skill, catalog, or canonical document.

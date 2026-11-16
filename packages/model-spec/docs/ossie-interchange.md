@@ -331,7 +331,7 @@ DOGSLED verified-query extension is restored as native files.
 import {
   exportOssieDocument,
   importOssieDocuments,
-} from '@bobsled-inc/dogsled/model-spec/interchange';
+} from '@bobsled-inc/bobsled-core/model-spec/interchange';
 
 const imported = importOssieDocuments({
   documents: [{ path: 'sales.yml', content: yamlText }],

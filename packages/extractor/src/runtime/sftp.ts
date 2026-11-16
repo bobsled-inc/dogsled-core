@@ -2,7 +2,7 @@
  * Narrow public entry for the SFTP client, so a host does not load the whole extractor.
  */
 
-export { DogsledRuntimeError } from '@bobsled-inc/protocol';
+export { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 export type {
   DownloadedFile,

@@ -18,7 +18,7 @@ const FILE_SIZE_LIMIT = 400;
 
 const customRules = {
   /** Warn when a file exceeds FILE_SIZE_LIMIT lines. */
-  'dogsled/file-size-limit': {
+  'bobsled/file-size-limit': {
     meta: {
       type: 'suggestion',
       messages: {
@@ -47,7 +47,7 @@ const customRules = {
   },
 
   /** Forbid console.log/error/warn — use fmt.* from lib/output/formatter.ts. */
-  'dogsled/no-console': {
+  'bobsled/no-console': {
     meta: {
       type: 'problem',
       messages: {
@@ -81,7 +81,7 @@ const customRules = {
   },
 
   /** Forbid process.exit() — use process.exitCode = N; return; instead. */
-  'dogsled/no-process-exit': {
+  'bobsled/no-process-exit': {
     meta: {
       type: 'problem',
       messages: {
@@ -113,7 +113,7 @@ const customRules = {
   },
 
   /** Require .js extension on relative imports (ESM requirement). */
-  'dogsled/import-extension': {
+  'bobsled/import-extension': {
     meta: {
       type: 'problem',
       messages: {
@@ -151,9 +151,9 @@ const customRules = {
 // ---------------------------------------------------------------------------
 // Build the custom plugin object for ESLint flat config
 // ---------------------------------------------------------------------------
-const dogsledPlugin = {
+const bobsledPlugin = {
   rules: Object.fromEntries(
-    Object.entries(customRules).map(([key, rule]) => [key.replace('dogsled/', ''), rule])
+    Object.entries(customRules).map(([key, rule]) => [key.replace('bobsled/', ''), rule])
   ),
 };
 
@@ -178,7 +178,7 @@ const eslintConfig = [
     },
     plugins: {
       '@typescript-eslint': typescriptEslintPlugin,
-      dogsled: dogsledPlugin,
+      bobsled: bobsledPlugin,
     },
     rules: {
       // --- TypeScript rules ---
@@ -205,19 +205,19 @@ const eslintConfig = [
       curly: [ERROR, 'multi-line'],
 
       // --- Custom agent-friendly rules ---
-      'dogsled/file-size-limit': WARN,
-      'dogsled/no-console': ERROR,
-      'dogsled/no-process-exit': ERROR,
-      'dogsled/import-extension': ERROR,
+      'bobsled/file-size-limit': WARN,
+      'bobsled/no-console': ERROR,
+      'bobsled/no-process-exit': ERROR,
+      'bobsled/import-extension': ERROR,
     },
   },
   // Relax rules for test files — console, large files, and bare imports are acceptable
   {
     files: ['**/tests/**/*.ts', '**/*.test.ts'],
     rules: {
-      'dogsled/file-size-limit': OFF,
-      'dogsled/no-console': OFF,
-      'dogsled/import-extension': OFF,
+      'bobsled/file-size-limit': OFF,
+      'bobsled/no-console': OFF,
+      'bobsled/import-extension': OFF,
     },
   },
 ];

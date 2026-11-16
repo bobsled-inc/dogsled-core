@@ -24,11 +24,11 @@ export async function runOutsider({ auditOnly = false } = {}) {
   const containerName = `dogsled-e2e-outsider-${randomUUID()}`;
   const imageName = containerName;
   try {
-    const { stageDogsledPackage } = await import('../release/stage-package.mjs');
+    const { stageBobsledPackage } = await import('../release/stage-package.mjs');
     const stage = path.join(directory, 'stage');
     const pack = path.join(directory, 'pack');
     await mkdir(pack);
-    stageDogsledPackage(stage, { build: false });
+    stageBobsledPackage(stage, { build: false });
     await command('pnpm', ['--config.node-linker=hoisted', 'pack', '--pack-destination', pack], {
       cwd: stage,
       timeout: 180_000,

@@ -2,7 +2,7 @@
 
 ## Problem
 
-`packages/dogsled/tests/unit/runtime/delegation.test.ts` used a fixed `setTimeout(..., 50)` to emit the mocked child process `close` event. That passed in focused runs but could time out in the full `pnpm precommit` workflow when `runDelegatedCli()` spent longer resolving the dynamic `@bobsled-inc/integrations` import before `waitForProcess()` attached its listener.
+`packages/bobsled-core/tests/unit/runtime/delegation.test.ts` used a fixed `setTimeout(..., 50)` to emit the mocked child process `close` event. That passed in focused runs but could time out in the full `pnpm precommit` workflow when `runDelegatedCli()` spent longer resolving the dynamic `@bobsled-inc/integrations` import before `waitForProcess()` attached its listener.
 
 ## Solution
 

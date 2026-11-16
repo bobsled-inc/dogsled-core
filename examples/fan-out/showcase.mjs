@@ -53,9 +53,9 @@ export async function run(ctx) {
     assert.equal(count, 200);
     assert.equal(api.requests.filter((request) => request.path === '/customers').length, 2);
     api.assertAuth();
-    const { DogsledConfigSchema } = await publicApi('manifest');
+    const { BobsledConfigSchema } = await publicApi('manifest');
     assert.equal(
-      DogsledConfigSchema.safeParse({
+      BobsledConfigSchema.safeParse({
         destinations: { lake: { type: 'ducklake', catalog_url: 'ducklake:catalog.ducklake' } },
         pipelines: {},
       }).success,

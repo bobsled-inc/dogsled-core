@@ -1,12 +1,12 @@
 # @bobsled-inc/loader
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Reads the Dogsled protocol from standard input and loads it into a destination: local files, S3, GCS, DuckDB, DuckLake, SQLite, PostgreSQL, pgvector, Snowflake, BigQuery, MySQL, SQL Server, Databricks, ClickHouse, Elasticsearch, Chroma or Turbopuffer.
 
 ## Installation
 
-Install `@bobsled-inc/dogsled`; this code ships inside it.
+Install `@bobsled-inc/bobsled-core`; this code ships inside it.
 
 ## Quick Start
 

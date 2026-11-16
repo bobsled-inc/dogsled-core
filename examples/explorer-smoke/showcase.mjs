@@ -107,8 +107,8 @@ export async function run(ctx) {
     await page.getByRole('button', { name: 'Copied!', exact: true }).waitFor({ state: 'visible' });
     const yaml = await page.evaluate(() => navigator.clipboard.readText());
     const exported = parse(yaml);
-    const { DogsledConfigSchema } = await publicApi('manifest');
-    const checked = DogsledConfigSchema.safeParse(exported);
+    const { BobsledConfigSchema } = await publicApi('manifest');
+    const checked = BobsledConfigSchema.safeParse(exported);
     assert.equal(checked.success, true, checked.error?.message);
     assert.ok(Object.keys(exported.pipelines).length >= 1);
     await writeFile(path.join(artifacts, 'exported.dogsled.yml'), yaml);

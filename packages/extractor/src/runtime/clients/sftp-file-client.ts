@@ -2,7 +2,7 @@ import type { Socket } from 'node:net';
 import { mkdir, open, readFile, stat, type FileHandle } from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { assertDeclaredEnvironmentReferences, DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { assertDeclaredEnvironmentReferences, BobsledRuntimeError } from '@bobsled-inc/protocol';
 import type {
   Client,
   ConnectConfig,
@@ -119,7 +119,7 @@ function classifyConnectFailure(error: Error | undefined, facts: HandshakeFacts)
   return 'SFTP_CONNECTION_LOST';
 }
 
-function lostConnectionError(error: Error | undefined, op: string): DogsledRuntimeError {
+function lostConnectionError(error: Error | undefined, op: string): BobsledRuntimeError {
   const level = (error as { level?: string } | undefined)?.level;
   return sftpError(level === 'client-timeout' ? 'SFTP_TIMEOUT' : 'SFTP_CONNECTION_LOST', op, error);
 }
@@ -159,10 +159,10 @@ function assertPinned(attrs: Stats | undefined, expected: ExpectedRemoteFile): v
 }
 
 export class SftpFileStorageClient implements FileStorageClient {
-  private failure?: DogsledRuntimeError;
+  private failure?: BobsledRuntimeError;
   private closed = false;
   private realBase?: Promise<string>;
-  private readonly pending = new Set<(error: DogsledRuntimeError) => void>();
+  private readonly pending = new Set<(error: BobsledRuntimeError) => void>();
 
   private constructor(
     private readonly connection: SftpFileStorageConnection,
@@ -235,7 +235,7 @@ export class SftpFileStorageClient implements FileStorageClient {
       sawBanner: false,
     };
     // After the handshake, connection-level events go to the client instead.
-    const session: { client?: SftpFileStorageClient; lost?: DogsledRuntimeError } = {};
+    const session: { client?: SftpFileStorageClient; lost?: BobsledRuntimeError } = {};
     const sftp = await new Promise<SFTPWrapper>((resolve, reject) => {
       let settled = false;
       const fail = (error: Error | undefined) => {
@@ -493,7 +493,7 @@ export class SftpFileStorageClient implements FileStorageClient {
   }
 
   /** Destroy the connection and reject every pending operation with `error`. */
-  private fail(error: DogsledRuntimeError): void {
+  private fail(error: BobsledRuntimeError): void {
     if (this.failure) return;
     this.failure = error;
     if (this.ssh) this.ssh.destroy();
@@ -567,7 +567,7 @@ export class SftpFileStorageClient implements FileStorageClient {
   }
 
   private fileError(error: unknown, filePath: string): unknown {
-    if (error instanceof DogsledRuntimeError) return error;
+    if (error instanceof BobsledRuntimeError) return error;
     const status = sftpStatus(error);
     const cause = error instanceof Error ? error : undefined;
     // A local disk failure (e.g. ENOSPC) fails the run: skipping files would let a
@@ -598,7 +598,7 @@ export class SftpFileStorageClient implements FileStorageClient {
     try {
       attrs = await this.run<Stats>('stat', (done) => this.sftp.stat(root, done), signal);
     } catch (error) {
-      if (error instanceof DogsledRuntimeError) throw error;
+      if (error instanceof BobsledRuntimeError) throw error;
       if (sftpStatus(error) === SFTP_STATUS_NO_SUCH_FILE) throw this.rootError(error);
       // Some servers refuse STAT but allow folder reads; the walk reports its own errors.
       return undefined;
@@ -627,7 +627,7 @@ export class SftpFileStorageClient implements FileStorageClient {
       // STAT already found the path, and OpenSSH answers ENOTDIR with NO_SUCH_FILE,
       // so only a refusal is an error here.
       if (sftpStatus(error) === SFTP_STATUS_PERMISSION_DENIED) throw this.rootError(error);
-      if (error instanceof DogsledRuntimeError) throw error;
+      if (error instanceof BobsledRuntimeError) throw error;
       return false;
     }
     await this.run<void>('close', (done) => this.sftp.close(handle, done), signal).catch(

@@ -12,7 +12,7 @@ fixed directory.
 
 - Depends only on `@bobsled-inc/protocol` and `yaml`. It must stay free of
   schemas, compilers, connection runtimes, and other workspace packages:
-  hosts import it through `@bobsled-inc/dogsled/project-index` to classify
+  hosts import it through `@bobsled-inc/bobsled-core/project-index` to classify
   content without loading the rest of Dogsled.
 - The index decides a file's kind; it never validates a kind's schema. Each
   loader validates its entries and reports duplicate identities with both

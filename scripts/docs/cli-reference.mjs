@@ -13,7 +13,7 @@ Object.assign(process.env, { NO_COLOR: '1', DOGSLED_OUTPUT_FORMAT: 'text' });
 
 const programs = new Map();
 for (const [name, entry] of [
-  ['dogsled', 'dogsled/dist/index.js'],
+  ['dogsled', 'bobsled-core/dist/index.js'],
   ['entity-graph', 'entity-graph/dist/cli.js'],
   ['model', 'model-spec/dist/index.js'],
   ['extract', 'extractor/dist/index.js'],
@@ -52,8 +52,8 @@ export function delegatedCommand(args, command) {
   return program;
 }
 
-const { runDogsledModelRunCommand } = await import(
-  pathToFileURL(path.join(root, 'packages/dogsled/dist/commands/model-run.js')).href
+const { runBobsledModelRunCommand } = await import(
+  pathToFileURL(path.join(root, 'packages/bobsled-core/dist/commands/model-run.js')).href
 );
 let modelRunHelp = '';
 const write = process.stdout.write;
@@ -62,7 +62,7 @@ try {
     modelRunHelp += chunk;
     return true;
   };
-  await runDogsledModelRunCommand(['--help']);
+  await runBobsledModelRunCommand(['--help']);
 } finally {
   process.stdout.write = write;
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emitExpr, parseExprField } from '../../../../src/compiler/expr/index.js';
 import { TIMESTAMP_TRUNC_CASES } from './timestamp-trunc-expectations.js';
-import type { DogsledExpr } from '../../../../src/compiler/expr/types.js';
+import type { BobsledExpr } from '../../../../src/compiler/expr/types.js';
 import type { SupportedDialect } from '../../../../src/compiler/dialect.js';
 
 const ALL_DIALECTS: SupportedDialect[] = [
@@ -16,28 +16,28 @@ const ALL_DIALECTS: SupportedDialect[] = [
 describe('Expression emitter', () => {
   describe('column references', () => {
     it('snowflake: uppercases column names', () => {
-      const expr: DogsledExpr = { kind: 'column_ref', column: 'my_col' };
+      const expr: BobsledExpr = { kind: 'column_ref', column: 'my_col' };
       expect(emitExpr(expr, 'snowflake')).toBe('MY_COL');
     });
 
     it('bigquery: lowercases column names', () => {
-      const expr: DogsledExpr = { kind: 'column_ref', column: 'MY_COL' };
+      const expr: BobsledExpr = { kind: 'column_ref', column: 'MY_COL' };
       expect(emitExpr(expr, 'bigquery')).toBe('my_col');
     });
 
     it('postgres: lowercases column names', () => {
-      const expr: DogsledExpr = { kind: 'column_ref', column: 'MY_COL' };
+      const expr: BobsledExpr = { kind: 'column_ref', column: 'MY_COL' };
       expect(emitExpr(expr, 'postgres')).toBe('my_col');
     });
 
     it('qualified columns include table', () => {
-      const expr: DogsledExpr = { kind: 'column_ref', table: 'orders', column: 'id' };
+      const expr: BobsledExpr = { kind: 'column_ref', table: 'orders', column: 'id' };
       expect(emitExpr(expr, 'snowflake')).toBe('ORDERS.ID');
       expect(emitExpr(expr, 'bigquery')).toBe('orders.id');
     });
 
     it('qualified star', () => {
-      const expr: DogsledExpr = { kind: 'literal_star', table: 'orders' };
+      const expr: BobsledExpr = { kind: 'literal_star', table: 'orders' };
       expect(emitExpr(expr, 'snowflake')).toBe('ORDERS.*');
       expect(emitExpr(expr, 'bigquery')).toBe('orders.*');
     });
@@ -45,17 +45,17 @@ describe('Expression emitter', () => {
 
   describe('leaf nodes', () => {
     it('string escapes single quotes', () => {
-      const expr: DogsledExpr = { kind: 'literal_string', value: "it's" };
+      const expr: BobsledExpr = { kind: 'literal_string', value: "it's" };
       expect(emitExpr(expr, 'snowflake')).toBe("'it''s'");
     });
 
     it('number integer', () => {
-      const expr: DogsledExpr = { kind: 'literal_number', value: 42, raw: '42' };
+      const expr: BobsledExpr = { kind: 'literal_number', value: 42, raw: '42' };
       expect(emitExpr(expr, 'snowflake')).toBe('42');
     });
 
     it('number decimal preserves raw', () => {
-      const expr: DogsledExpr = { kind: 'literal_number', value: 100.0, raw: '100.0' };
+      const expr: BobsledExpr = { kind: 'literal_number', value: 100.0, raw: '100.0' };
       expect(emitExpr(expr, 'snowflake')).toBe('100.0');
     });
 
@@ -378,7 +378,7 @@ describe('Expression emitter', () => {
     });
 
     it('escapes single-quote in key names for postgres/duckdb', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'json_path_access',
         base: { kind: 'column_ref', column: 'data' },
         steps: [{ kind: 'key', name: "evil'injection" }],
@@ -389,7 +389,7 @@ describe('Expression emitter', () => {
     });
 
     it('escapes single-quote in bigquery/mysql json path literal', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'json_path_access',
         base: { kind: 'column_ref', column: 'data' },
         steps: [{ kind: 'key', name: "evil'key" }],
@@ -399,7 +399,7 @@ describe('Expression emitter', () => {
     });
 
     it('quotes non-identifier key names on snowflake', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'json_path_access',
         base: { kind: 'column_ref', column: 'DATA' },
         steps: [{ kind: 'key', name: 'weird key' }],
@@ -408,7 +408,7 @@ describe('Expression emitter', () => {
     });
 
     it('backtick-quotes non-identifier key names on databricks', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'json_path_access',
         base: { kind: 'column_ref', column: 'data' },
         steps: [{ kind: 'key', name: 'weird-key' }],
@@ -417,7 +417,7 @@ describe('Expression emitter', () => {
     });
 
     it('rejects key names with newlines', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'json_path_access',
         base: { kind: 'column_ref', column: 'DATA' },
         steps: [{ kind: 'key', name: 'a\nb' }],
@@ -491,7 +491,7 @@ describe('Expression emitter', () => {
 
   describe('precedence-aware parenthesization', () => {
     it('wraps lower-precedence children: (a + b) * c', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'binary_op',
         op: '*',
         left: {
@@ -506,7 +506,7 @@ describe('Expression emitter', () => {
     });
 
     it('does not wrap same-or-higher precedence left child: a * b + c', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'binary_op',
         op: '+',
         left: {
@@ -521,7 +521,7 @@ describe('Expression emitter', () => {
     });
 
     it('wraps right child at same precedence for non-commutative ops: a - (b - c)', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'binary_op',
         op: '-',
         left: { kind: 'column_ref', column: 'a' },
@@ -536,7 +536,7 @@ describe('Expression emitter', () => {
     });
 
     it('does not wrap left child at same precedence: a - b + c', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'binary_op',
         op: '+',
         left: {
@@ -551,7 +551,7 @@ describe('Expression emitter', () => {
     });
 
     it('wraps OR inside AND: a AND (b OR c)', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'binary_op',
         op: 'AND',
         left: { kind: 'column_ref', column: 'a' },
@@ -566,7 +566,7 @@ describe('Expression emitter', () => {
     });
 
     it('NOT wraps binary operand: NOT (a AND b)', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'unary_op',
         op: 'NOT',
         operand: {
@@ -580,7 +580,7 @@ describe('Expression emitter', () => {
     });
 
     it('NOT does not wrap column ref: NOT x', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'unary_op',
         op: 'NOT',
         operand: { kind: 'column_ref', column: 'x' },
@@ -589,7 +589,7 @@ describe('Expression emitter', () => {
     });
 
     it('nested: (a + b) * (c - d)', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'binary_op',
         op: '*',
         left: {
@@ -749,29 +749,29 @@ describe('Expression emitter', () => {
 
     it('does not quote qualified column refs (table.col)', () => {
       // Qualified refs are always safe — the table prefix disambiguates
-      const expr: DogsledExpr = { kind: 'column_ref', table: 'events', column: 'trigger' };
+      const expr: BobsledExpr = { kind: 'column_ref', table: 'events', column: 'trigger' };
       expect(emitExpr(expr, 'bigquery')).toBe('events.trigger');
     });
   });
 
   describe('raw_sql security checks', () => {
     it('rejects dangerous raw_sql in top-level expressions', () => {
-      const expr: DogsledExpr = { kind: 'raw_sql', sql: 'DROP TABLE users' };
+      const expr: BobsledExpr = { kind: 'raw_sql', sql: 'DROP TABLE users' };
       expect(() => emitExpr(expr, 'snowflake')).toThrow(/dangerous SQL/);
     });
 
     it('rejects semicolons in raw_sql expressions', () => {
-      const expr: DogsledExpr = { kind: 'raw_sql', sql: 'col; DROP TABLE users' };
+      const expr: BobsledExpr = { kind: 'raw_sql', sql: 'col; DROP TABLE users' };
       expect(() => emitExpr(expr, 'snowflake')).toThrow(/dangerous SQL/);
     });
 
     it('allows safe raw_sql expressions', () => {
-      const expr: DogsledExpr = { kind: 'raw_sql', sql: 'LATERAL FLATTEN(INPUT => PAYLOAD)' };
+      const expr: BobsledExpr = { kind: 'raw_sql', sql: 'LATERAL FLATTEN(INPUT => PAYLOAD)' };
       expect(emitExpr(expr, 'snowflake')).toBe('LATERAL FLATTEN(INPUT => PAYLOAD)');
     });
 
     it('rejects dangerous raw_sql in window frame expressions', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'window',
         fn: { kind: 'function_call', name: 'ROW_NUMBER', args: [] },
         orderBy: [{ expr: { kind: 'column_ref', column: 'id' }, direction: 'ASC' }],
@@ -781,7 +781,7 @@ describe('Expression emitter', () => {
     });
 
     it('rejects semicolons in window frame raw_sql', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'window',
         fn: { kind: 'function_call', name: 'SUM', args: [{ kind: 'column_ref', column: 'amt' }] },
         orderBy: [{ expr: { kind: 'column_ref', column: 'id' }, direction: 'ASC' }],
@@ -791,7 +791,7 @@ describe('Expression emitter', () => {
     });
 
     it('allows safe window frame raw_sql', () => {
-      const expr: DogsledExpr = {
+      const expr: BobsledExpr = {
         kind: 'window',
         fn: { kind: 'function_call', name: 'SUM', args: [{ kind: 'column_ref', column: 'amt' }] },
         orderBy: [{ expr: { kind: 'column_ref', column: 'id' }, direction: 'ASC' }],

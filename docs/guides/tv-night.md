@@ -20,7 +20,7 @@ npx dogsled onboarding render
 
 The page starts empty. There are no bundled records or finished models. Your agent helps you connect to TVmaze, fetch around 250 shows and their episodes (cast is optional), and load local tables. Public data reads need no API key. The agent helps configure your AI provider and key at the start; paid enrichment stays optional.
 
-Follow the [walkthrough](../../packages/dogsled/examples/tv-night/README.md). Each lesson explains a Dogsled capability, shows the actual files and SQL, offers a small choice, and pauses for you to inspect the result. Your original question is saved in `data/tv-night/question.json` and shown in the HTML. The example answer develops alongside the lessons: a small catalog becomes a shortlist, then recommendations with supported explanations and checked identities. An ended show is not necessarily a concluded story.
+Follow the [walkthrough](../../packages/bobsled-core/examples/tv-night/README.md). Each lesson explains a Dogsled capability, shows the actual files and SQL, offers a small choice, and pauses for you to inspect the result. Your original question is saved in `data/tv-night/question.json` and shown in the HTML. The example answer develops alongside the lessons: a small catalog becomes a shortlist, then recommendations with supported explanations and checked identities. An ended show is not necessarily a concluded story.
 
 The HTML shows your original question, chapter progress, answer history, working YAML and SQL files, model dependencies, and saved data previews. The six chapters end with evidence for every shortlisted show and a recommendation query. An optional exercise matches your watchlist to real TVmaze search candidates. Run `npx dogsled onboarding status` to check progress and `npx dogsled onboarding render` to refresh the page. Completed checks and learner inspections stay recorded when files or data change. The page shows timestamped check snapshots, not live database results. Run an explicit chapter check to refresh a snapshot or retry a failed check; rendering alone does not rerun work. API failures do not silently fall back to packaged data. After inspecting a result, tell your agent you are ready; it records the inspection with `dogsled onboarding review <step>`.
 
@@ -35,8 +35,8 @@ It explains why episode counts are not show counts, and why “Ended” does not
 that a story reaches a conclusion. Its mapping uses the existing warehouse source
 fields, including `episodes.show_id` and `shows.id`.
 
-The agent adapts the [ontology template](../../packages/dogsled/examples/tv-night/reference/context/tv-night.ontology.yml.txt)
-and [mapping template](../../packages/dogsled/examples/tv-night/reference/context/tv-night.mapping.yml.txt)
+The agent adapts the [ontology template](../../packages/bobsled-core/examples/tv-night/reference/context/tv-night.ontology.yml.txt)
+and [mapping template](../../packages/bobsled-core/examples/tv-night/reference/context/tv-night.mapping.yml.txt)
 with the learner at that chapter. They stay inactive in the starter. Inspect them
 with `dogsled ontology describe tv_night --concept Episode --yaml` and validate
 with `dogsled ontology validate --strict`. No database or provider call is needed
@@ -47,7 +47,7 @@ for these definition checks.
 TV Night uses the shared `onboarding` engine for progress, saved checks, inspection
 history and the offline chapter explorer. Its lessons, SQL checks, passage
 validation and display content live under
-`packages/dogsled/src/runtime/onboarding/tutorials/tv-night/`.
+`packages/bobsled-core/src/runtime/onboarding/tutorials/tv-night/`.
 
 New projects identify themselves with `"tutorial": "tv-night"` in
 `data/tv-night/manifest.json`. Existing manifests without that field, version 2

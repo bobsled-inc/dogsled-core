@@ -163,7 +163,7 @@ export function resolveMarkdownType(declaredType: string): ProjectFileKind | und
 }
 
 /** True for a declared type whose file Dogsled itself loads (not a host-owned kind). */
-export function isDogsledFileType(declaredType: string): boolean {
+export function isBobsledFileType(declaredType: string): boolean {
   const kind = RETIRED_MODEL_TYPES.has(declaredType)
     ? 'model'
     : (YAML_TYPE_KINDS.get(declaredType) ?? MARKDOWN_TYPE_KINDS.get(declaredType));

@@ -10,12 +10,12 @@ it('runs the separate executor tests through Dogsled public exports', () => {
   try {
     mkdirSync(path.join(directory, 'node_modules/@bobsled-inc'), { recursive: true });
     symlinkSync(
-      path.join(root, 'packages/dogsled'),
-      path.join(directory, 'node_modules/@bobsled-inc/dogsled'),
+      path.join(root, 'packages/bobsled-core'),
+      path.join(directory, 'node_modules/@bobsled-inc/bobsled-core'),
       'dir'
     );
     symlinkSync(
-      path.join(root, 'packages/dogsled/node_modules/zod'),
+      path.join(root, 'packages/bobsled-core/node_modules/zod'),
       path.join(directory, 'node_modules/zod'),
       'dir'
     );

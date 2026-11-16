@@ -398,7 +398,7 @@ function profileExtensions(
   return kept;
 }
 
-function dogsledExtension(data: Record<string, unknown>): OssieCustomExtension {
+function bobsledExtension(data: Record<string, unknown>): OssieCustomExtension {
   assertBounded(data);
   return { vendor_name: OSSIE_VENDOR, data: JSON.stringify(data) };
 }
@@ -501,7 +501,7 @@ function outputFields(
       reference
     );
     if (version === '0.2.0.dev0' && Object.keys(payload).length) {
-      customExtensions.push(dogsledExtension(payload));
+      customExtensions.push(bobsledExtension(payload));
     } else if (version === '0.1.1' && Object.keys(payload).length) {
       warn(
         result,
@@ -589,7 +589,7 @@ function outputDataset(
     } = dataset.document;
     if (version === '0.2.0.dev0') {
       customExtensions.push(
-        dogsledExtension({ extension_version: '2', kind: 'source', ...settings })
+        bobsledExtension({ extension_version: '2', kind: 'source', ...settings })
       );
     } else {
       warn(
@@ -631,7 +631,7 @@ function outputDataset(
       } = dataset.document;
       if (version === '0.2.0.dev0') {
         customExtensions.push(
-          dogsledExtension({ extension_version: '2', kind: 'derived', grain, build })
+          bobsledExtension({ extension_version: '2', kind: 'derived', grain, build })
         );
       } else {
         warn(
@@ -740,7 +740,7 @@ function outputMetrics(
     );
     if (version === '0.2.0.dev0') {
       customExtensions.push(
-        dogsledExtension({
+        bobsledExtension({
           extension_version: '2',
           datasets: names,
           expression,
@@ -826,7 +826,7 @@ function outputRelationships(
     }
     if (version === '0.2.0.dev0') {
       customExtensions.push(
-        dogsledExtension({
+        bobsledExtension({
           extension_version: '2',
           left_side: flip ? 'to' : 'from',
           relationship_type: relationshipType,

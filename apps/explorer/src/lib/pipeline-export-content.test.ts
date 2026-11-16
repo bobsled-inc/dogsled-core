@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { generateCliCommands, renderPipelineCommand } from './pipeline-export-content';
 import * as pipelineExports from './pipeline-export-content';
 import { parse } from 'yaml';
-import { generateDogsledYml } from './pipelineExport';
+import { generateBobsledYml } from './pipelineExport';
 import type { PipelineConfig } from './pipelineExport';
 
 const TEST_CONFIG: PipelineConfig = {
@@ -31,7 +31,7 @@ describe('pipeline export content helpers', () => {
   });
 
   it('exports typed local pipeline configuration with no retired runner settings', () => {
-    expect(parse(generateDogsledYml(TEST_CONFIG))).toEqual({
+    expect(parse(generateBobsledYml(TEST_CONFIG))).toEqual({
       destinations: { default: TEST_CONFIG.destination },
       pipelines: {
         stripe: {
@@ -47,7 +47,7 @@ describe('pipeline export content helpers', () => {
 
   it('preserves an empty selection without inventing a resource wildcard', () => {
     expect(
-      parse(generateDogsledYml({ ...TEST_CONFIG, resources: {} })).pipelines.stripe.resources
+      parse(generateBobsledYml({ ...TEST_CONFIG, resources: {} })).pipelines.stripe.resources
     ).toEqual([]);
   });
 

@@ -23,7 +23,7 @@ import { parseArgs } from 'node:util';
 
 import { auditPackedConsumers } from '../security/consumer-audit.mjs';
 import { explainPaths, validateConsumerExceptions } from '../security/consumer-policy.mjs';
-import { stageDogsledPackage } from '../release/stage-package.mjs';
+import { stageBobsledPackage } from '../release/stage-package.mjs';
 import { repoRoot } from '../security/lib.mjs';
 import { classifyConsumerFindings } from './health-findings.mjs';
 
@@ -49,7 +49,7 @@ async function main() {
   const stageDir = path.join(stageRoot, 'package');
   let tarball;
   try {
-    stageDogsledPackage(stageDir);
+    stageBobsledPackage(stageDir);
     const tarballDir = path.join(stageRoot, 'tarballs');
     mkdirSync(tarballDir, { recursive: true });
     const packOutput = execFileSync('npm', ['pack', '--pack-destination', tarballDir], {

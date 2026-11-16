@@ -1,4 +1,4 @@
-/* eslint-disable dogsled/no-console */
+/* eslint-disable bobsled/no-console */
 /**
  * Generate YAML mart files from TypeScript model package definitions.
  *

@@ -1,4 +1,4 @@
-export const DOGSLED_PACKAGE_NAME = '@bobsled-inc/dogsled';
+export const BOBSLED_CORE_PACKAGE_NAME = '@bobsled-inc/bobsled-core';
 
 export const INTERNAL_PACKAGE_NAMES = [
   '@bobsled-inc/ai',

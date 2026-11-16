@@ -66,7 +66,7 @@ pnpm install
 
 The runners resolve runtime dependencies from other workspace packages:
 
-- DuckDB comes from `packages/dogsled`
+- DuckDB comes from `packages/bobsled-core`
 - BigQuery comes from `packages/loader`
 
 ## Run It

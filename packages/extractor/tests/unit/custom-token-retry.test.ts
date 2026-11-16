@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { clearRuntimeAuthCaches } from '../../src/framework/runtime/index.js';
 import { ExtractorClient } from '../../src/runtime/client.js';
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { makeProvider, makeResource } from '../helpers/fixtures.js';
 
@@ -54,10 +54,10 @@ function client(retry?: Record<string, unknown>): ExtractorClient {
   });
 }
 
-async function requestError(target: ExtractorClient): Promise<DogsledRuntimeError> {
+async function requestError(target: ExtractorClient): Promise<BobsledRuntimeError> {
   const error = await target.request({ operation: resource }).catch((value: unknown) => value);
-  expect(error).toBeInstanceOf(DogsledRuntimeError);
-  return error as DogsledRuntimeError;
+  expect(error).toBeInstanceOf(BobsledRuntimeError);
+  return error as BobsledRuntimeError;
 }
 
 describe('custom-token request failures', () => {

@@ -1,5 +1,5 @@
 /**
- * DogsledExpr — discriminated-union AST for SQL expressions.
+ * BobsledExpr — discriminated-union AST for SQL expressions.
  *
  * Every node carries a `kind` tag so consumers can pattern-match exhaustively.
  * The tree is intentionally dialect-agnostic; dialect-specific rendering is the
@@ -30,8 +30,8 @@ export interface TypeRef {
 
 /** A single WHEN … THEN branch inside a CASE expression. */
 export interface CaseWhen {
-  readonly condition: DogsledExpr;
-  readonly result: DogsledExpr;
+  readonly condition: BobsledExpr;
+  readonly result: BobsledExpr;
 }
 
 export type JsonPathStep =
@@ -76,20 +76,20 @@ export interface LiteralStarExpr {
 export interface BinaryOpExpr {
   readonly kind: 'binary_op';
   readonly op: BinaryOp;
-  readonly left: DogsledExpr;
-  readonly right: DogsledExpr;
+  readonly left: BobsledExpr;
+  readonly right: BobsledExpr;
 }
 
 export interface UnaryOpExpr {
   readonly kind: 'unary_op';
   readonly op: UnaryOp;
-  readonly operand: DogsledExpr;
+  readonly operand: BobsledExpr;
 }
 
 export interface FunctionCallExpr {
   readonly kind: 'function_call';
   readonly name: string;
-  readonly args: readonly DogsledExpr[];
+  readonly args: readonly BobsledExpr[];
   readonly distinct?: boolean;
   /** IGNORE NULLS / RESPECT NULLS modifier (window functions like FIRST_VALUE, LAST_VALUE). */
   readonly nullsHandling?: 'ignore' | 'respect';
@@ -97,7 +97,7 @@ export interface FunctionCallExpr {
 
 export interface CastExpr {
   readonly kind: 'cast';
-  readonly expr: DogsledExpr;
+  readonly expr: BobsledExpr;
   readonly targetType: TypeRef;
   /** True when parsed from PostgreSQL-style `::` cast shorthand. Affects emitter output for Snowflake, Postgres, and DuckDB. */
   readonly shorthand?: boolean;
@@ -105,41 +105,41 @@ export interface CastExpr {
 
 export interface JsonPathAccessExpr {
   readonly kind: 'json_path_access';
-  readonly base: DogsledExpr;
+  readonly base: BobsledExpr;
   readonly steps: readonly JsonPathStep[];
 }
 
 export interface CaseExpr {
   readonly kind: 'case';
-  readonly operand?: DogsledExpr;
+  readonly operand?: BobsledExpr;
   readonly whens: readonly CaseWhen[];
-  readonly elseExpr?: DogsledExpr;
+  readonly elseExpr?: BobsledExpr;
 }
 
 export interface BetweenExpr {
   readonly kind: 'between';
-  readonly expr: DogsledExpr;
-  readonly low: DogsledExpr;
-  readonly high: DogsledExpr;
+  readonly expr: BobsledExpr;
+  readonly low: BobsledExpr;
+  readonly high: BobsledExpr;
   readonly negated?: boolean;
 }
 
 export interface InListExpr {
   readonly kind: 'in_list';
-  readonly expr: DogsledExpr;
-  readonly list: readonly DogsledExpr[];
+  readonly expr: BobsledExpr;
+  readonly list: readonly BobsledExpr[];
   readonly negated?: boolean;
 }
 
 export interface IsNullExpr {
   readonly kind: 'is_null';
-  readonly expr: DogsledExpr;
+  readonly expr: BobsledExpr;
   readonly negated?: boolean;
 }
 
 export interface ParenthesizedExpr {
   readonly kind: 'parenthesized';
-  readonly expr: DogsledExpr;
+  readonly expr: BobsledExpr;
 }
 
 export interface RawSqlExpr {
@@ -158,7 +158,7 @@ export interface SubqueryExpr {
 /** `expr [NOT] IN (SELECT ...)` — subquery variant of IN. */
 export interface InSubqueryExpr {
   readonly kind: 'in_subquery';
-  readonly expr: DogsledExpr;
+  readonly expr: BobsledExpr;
   readonly subquerySql: string;
   readonly negated?: boolean;
 }
@@ -188,7 +188,7 @@ export interface IntervalExpr {
 export type IntervalUnit = 'YEAR' | 'MONTH' | 'WEEK' | 'DAY' | 'HOUR' | 'MINUTE' | 'SECOND';
 
 export interface WindowOrderByItem {
-  readonly expr: DogsledExpr;
+  readonly expr: BobsledExpr;
   readonly direction?: 'ASC' | 'DESC';
   /**
    * NULLS FIRST / NULLS LAST modifier. Left undefined the target's default
@@ -207,7 +207,7 @@ export type FrameBound =
   | 'CURRENT ROW'
   | 'UNBOUNDED PRECEDING'
   | 'UNBOUNDED FOLLOWING'
-  | { readonly offset: DogsledExpr; readonly direction: 'PRECEDING' | 'FOLLOWING' };
+  | { readonly offset: BobsledExpr; readonly direction: 'PRECEDING' | 'FOLLOWING' };
 
 /**
  * Window frame EXCLUDE clause (SQL:2003). Selects which rows in the frame are
@@ -227,7 +227,7 @@ export interface WindowFrameSpec {
 export interface WindowExpr {
   readonly kind: 'window';
   readonly fn: FunctionCallExpr;
-  readonly partitionBy?: readonly DogsledExpr[];
+  readonly partitionBy?: readonly BobsledExpr[];
   readonly orderBy?: readonly WindowOrderByItem[];
   readonly frame?: WindowFrameSpec | RawSqlExpr;
   readonly windowName?: string;
@@ -237,7 +237,7 @@ export interface WindowExpr {
 // Union type
 // ---------------------------------------------------------------------------
 
-export type DogsledExpr =
+export type BobsledExpr =
   | ColumnRefExpr
   | LiteralStringExpr
   | LiteralNumberExpr
@@ -262,4 +262,4 @@ export type DogsledExpr =
   | WindowExpr;
 
 /** All possible `kind` values for exhaustive switch checks. */
-export type DogsledExprKind = DogsledExpr['kind'];
+export type BobsledExprKind = BobsledExpr['kind'];

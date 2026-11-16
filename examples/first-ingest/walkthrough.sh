@@ -10,12 +10,12 @@ GITHUB_PROTOCOL="$ROOT_DIR/public_repos.protocol.jsonl"
 if [ -n "${DOGSLED_CLI:-}" ]; then
   # shellcheck disable=SC2206
   DOGSLED_CMD=(${DOGSLED_CLI})
-elif [ -f "$ROOT_DIR/../../packages/dogsled/bin/cli.mjs" ]; then
-  DOGSLED_CMD=(node "$ROOT_DIR/../../packages/dogsled/bin/cli.mjs")
+elif [ -f "$ROOT_DIR/../../packages/bobsled-core/bin/cli.mjs" ]; then
+  DOGSLED_CMD=(node "$ROOT_DIR/../../packages/bobsled-core/bin/cli.mjs")
 elif command -v dogsled >/dev/null 2>&1; then
   DOGSLED_CMD=(dogsled)
 else
-  echo "Dogsled CLI not found. Run pnpm setup, install @bobsled-inc/dogsled, or set DOGSLED_CLI."
+  echo "Dogsled CLI not found. Run pnpm setup, install @bobsled-inc/bobsled-core, or set DOGSLED_CLI."
   exit 1
 fi
 

@@ -82,7 +82,7 @@ export function validateOssieDocument(document: unknown, filePath: string): Ossi
   return documentSchema.parse(document);
 }
 
-export function dogsledExtension(
+export function bobsledExtension(
   value: { custom_extensions?: { vendor_name: string; data: string }[] },
   where: string,
   required = false,

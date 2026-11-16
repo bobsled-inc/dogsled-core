@@ -30,7 +30,7 @@ export async function run(ctx) {
   await mkdir(path.join(cwd, 'node_modules/@bobsled-inc'), { recursive: true });
   await symlink(
     path.dirname(path.dirname(cliPath)),
-    path.join(cwd, 'node_modules/@bobsled-inc/dogsled'),
+    path.join(cwd, 'node_modules/@bobsled-inc/bobsled-core'),
     'dir'
   );
   await ctx.cli(['extract', 'validate', 'local_files'], { cwd });

@@ -1,7 +1,7 @@
 # @bobsled-inc/skills
 
-This is a private workspace bundled inside `@bobsled-inc/dogsled`. Users
-install only `@bobsled-inc/dogsled`; they do not install this package.
+This is a private workspace bundled inside `@bobsled-inc/bobsled-core`. Users
+install only `@bobsled-inc/bobsled-core`; they do not install this package.
 
 The workspace contains two separate Skill concepts:
 
@@ -48,7 +48,7 @@ const integrationKinds = getCatalog('integration-kinds');
 A clean-island subpath is also available:
 
 ```ts
-import { listSkills } from '@bobsled-inc/skills/dogsled';
+import { listSkills } from '@bobsled-inc/skills/bobsled';
 ```
 
 ## Internal Project document API
@@ -84,7 +84,7 @@ versions reject unknown top-level fields.
 
 This low-level subpath owns strict Skill schemas, bounded file loading,
 deterministic hashes, and injected reference validation. Dogsled project
-integration is exposed from `@bobsled-inc/dogsled/project-skills`.
+integration is exposed from `@bobsled-inc/bobsled-core/project-skills`.
 
 ## Which skills are exposed?
 
@@ -100,7 +100,7 @@ or name, then keep the selected Skill body in the agent context while editing
 YAML or invoking Dogsled commands:
 
 ```ts
-import { getSkill, listSkills } from '@bobsled-inc/skills/dogsled';
+import { getSkill, listSkills } from '@bobsled-inc/skills/bobsled';
 
 const available = listSkills();
 const entityResolution = getSkill('entity-resolution');
@@ -140,7 +140,7 @@ self-contained skill body.
 ## Release model
 
 - This workspace is private and is embedded in the single published
-  `@bobsled-inc/dogsled` package.
+  `@bobsled-inc/bobsled-core` package.
 - The manifest carries a combined SHA256 hash across every skill body
   and catalog. Any edit to a source skill, a transcluded doc, or a
   catalog value bumps the hash — consumers can cache on it.

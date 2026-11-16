@@ -14,7 +14,7 @@ import { pathToFileURL } from 'node:url';
 
 import { parse as parseYaml } from 'yaml';
 
-import { DOGSLED_PACKAGE_NAME } from '../release/package-set.mjs';
+import { BOBSLED_CORE_PACKAGE_NAME } from '../release/package-set.mjs';
 import { repoRoot } from './shared.mjs';
 
 // esbuild already ships with tsup (pinned by the workspace override), so the
@@ -127,7 +127,7 @@ process.stdout.write(
  * that folder contained, and that lookups write nothing to the temp directory.
  */
 export async function runBundledIntegrationsSmoke(installDir) {
-  const packageDir = path.join(installDir, 'node_modules', ...DOGSLED_PACKAGE_NAME.split('/'));
+  const packageDir = path.join(installDir, 'node_modules', ...BOBSLED_CORE_PACKAGE_NAME.split('/'));
   const sourcesDir = path.join(
     packageDir,
     'node_modules',
@@ -146,14 +146,14 @@ export async function runBundledIntegrationsSmoke(installDir) {
   const bundlePath = path.join(
     functionDir,
     '_libs',
-    `${DOGSLED_PACKAGE_NAME.replace('/', '+')}+integrations.mjs`
+    `${BOBSLED_CORE_PACKAGE_NAME.replace('/', '+')}+integrations.mjs`
   );
   mkdirSync(path.dirname(bundlePath), { recursive: true });
   writeFileSync(
     entryPath,
     [
-      `export * as integrations from '${DOGSLED_PACKAGE_NAME}/integrations';`,
-      `export * as actions from '${DOGSLED_PACKAGE_NAME}/actions';`,
+      `export * as integrations from '${BOBSLED_CORE_PACKAGE_NAME}/integrations';`,
+      `export * as actions from '${BOBSLED_CORE_PACKAGE_NAME}/actions';`,
       '',
     ].join('\n')
   );

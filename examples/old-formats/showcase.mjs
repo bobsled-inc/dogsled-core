@@ -57,7 +57,7 @@ export async function run(ctx) {
   const {
     validateProjectPipelines,
     safeParsePipelineManifest,
-    DogsledConfigSchema,
+    BobsledConfigSchema,
     buildPipelineManifestObject,
   } = await publicApi('manifest');
   const transports = [
@@ -147,7 +147,7 @@ export async function run(ctx) {
   const destinationConflict = await ctx.cli(['doctor', '--json'], { expected: null });
   assert.notEqual(destinationConflict.code, 0);
   assert.match(destinationConflict.stdout + destinationConflict.stderr, /LEGACY_KEY_CONFLICT/);
-  const rejected = DogsledConfigSchema.safeParse({
+  const rejected = BobsledConfigSchema.safeParse({
     destinations: {
       warehouse: { type: 'bobsled_lakehouse', dogsled_connection_ref: 'warehouse-demo' },
     },

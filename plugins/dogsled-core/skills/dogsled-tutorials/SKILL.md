@@ -199,7 +199,7 @@ The agent opens the generated HTML in the browser as soon as it is ready, then r
 
 ## Before Chapter 1
 
-The agent checks the installed Dogsled CLI and local database setup. In this repository, run the local `packages/dogsled/bin/cli.mjs` with Node; installed users run `dogsled`. Use a dedicated tutorial directory. Keep existing work on resume.
+The agent checks the installed Dogsled CLI and local database setup. In this repository, run the local `packages/bobsled-core/bin/cli.mjs` with Node; installed users run `dogsled`. Use a dedicated tutorial directory. Keep existing work on resume.
 
 Save the recommendation question and viewing preferences separately in `data/tv-night/question.json`:
 
@@ -564,7 +564,7 @@ Lead each recap with what was built in Dogsled and how. Give most of the explana
 
 For a model, explain the source and the columns, expressions, filters, relationships or materialization actually configured. For ETL, explain the pipeline, resource mappings and source definitions; semantic models come later. End with a short data check: row counts if useful, one result link and one inspection task tied to a file setting. Offer more exploration without making a long data checklist the main lesson. Finish with what the learner can now do, what the next chapter adds, and a pause.
 
-The HTML follows [Dogsled’s visual style](https://github.com/bobsled-inc/dogsled-core/blob/main/packages/dogsled/examples/tv-night/DESIGN.md): compact tables, clear status labels, and light and dark themes. It shows the original question, chapter progress, actual answer history, working files, declared lineage, source attribution and bounded table previews. File previews are read-only snapshots, not live editing. The file tree shows working project files; teaching templates stay in the Dogsled installation. Secrets and data dumps are excluded. Model descriptions and SQL remain inspectable.
+The HTML follows [Dogsled’s visual style](https://github.com/bobsled-inc/dogsled-core/blob/main/packages/bobsled-core/examples/tv-night/DESIGN.md): compact tables, clear status labels, and light and dark themes. It shows the original question, chapter progress, actual answer history, working files, declared lineage, source attribution and bounded table previews. File previews are read-only snapshots, not live editing. The file tree shows working project files; teaching templates stay in the Dogsled installation. Secrets and data dumps are excluded. Model descriptions and SQL remain inspectable.
 
 Use the HTML table previews and queries run with your agent to inspect the tutorial’s data.
 

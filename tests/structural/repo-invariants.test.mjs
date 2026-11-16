@@ -261,7 +261,7 @@ describe('workspace package conventions', () => {
       workspacePackages
         .filter((pkg) => pkg.packageJson.bin !== undefined)
         .map((pkg) => ({ name: pkg.name, bin: pkg.packageJson.bin })),
-      [{ name: '@bobsled-inc/dogsled', bin: { dogsled: './bin/cli.mjs' } }]
+      [{ name: '@bobsled-inc/bobsled-core', bin: { dogsled: './bin/cli.mjs' } }]
     );
   });
 
@@ -334,10 +334,10 @@ describe('publish hygiene', () => {
 
     if (
       publishablePackages.length !== 1 ||
-      publishablePackages[0]?.name !== '@bobsled-inc/dogsled'
+      publishablePackages[0]?.name !== '@bobsled-inc/bobsled-core'
     ) {
       violations.push(
-        'expected @bobsled-inc/dogsled to be the one publishable package under packages/'
+        'expected @bobsled-inc/bobsled-core to be the one publishable package under packages/'
       );
     }
 
@@ -417,7 +417,9 @@ describe('publish hygiene', () => {
   });
 
   it('keeps every supporting workspace private and out of npm publication', () => {
-    const internalPackages = workspacePackages.filter((pkg) => pkg.name !== '@bobsled-inc/dogsled');
+    const internalPackages = workspacePackages.filter(
+      (pkg) => pkg.name !== '@bobsled-inc/bobsled-core'
+    );
     const violations = [];
 
     if (internalPackages.length !== 15) {
@@ -443,12 +445,12 @@ describe('publish hygiene', () => {
   });
 
   it('bundles the complete internal workspace set into Dogsled', () => {
-    const dogsledPackage = publishablePackages[0];
+    const bobsledPackage = publishablePackages[0];
     const internalNames = workspacePackages
-      .filter((pkg) => pkg.name !== '@bobsled-inc/dogsled')
+      .filter((pkg) => pkg.name !== '@bobsled-inc/bobsled-core')
       .map((pkg) => pkg.name)
       .sort();
-    const bundled = [...(dogsledPackage?.packageJson.bundleDependencies ?? [])].sort();
+    const bundled = [...(bobsledPackage?.packageJson.bundleDependencies ?? [])].sort();
 
     deepStrictEqual(
       bundled,
@@ -457,7 +459,7 @@ describe('publish hygiene', () => {
     );
     for (const name of internalNames) {
       deepStrictEqual(
-        dogsledPackage.packageJson.dependencies?.[name],
+        bobsledPackage.packageJson.dependencies?.[name],
         'workspace:*',
         `Dogsled must stage ${name} from the workspace`
       );
@@ -712,7 +714,7 @@ describe('CLI identity hygiene', () => {
     assertNoViolations(
       violations,
       'Active repo surfaces must not refer to the legacy bx identity except for the explicit fixture allowlist.',
-      'packages/dogsled/AGENTS.md -> Two Command Strategies'
+      'packages/bobsled-core/AGENTS.md -> Two Command Strategies'
     );
   });
 });
@@ -982,7 +984,7 @@ describe('release and dependency policy guardrails', () => {
       'utf8'
     );
     const archiveScript = readFileSync(
-      path.join(repoRoot, 'packages/dogsled/scripts/pack.sh'),
+      path.join(repoRoot, 'packages/bobsled-core/scripts/pack.sh'),
       'utf8'
     );
 
@@ -1384,7 +1386,7 @@ await import('./scripts/docs/cli-reference.mjs');`;
 
   it('CLI reference routing matches the runtime delegated subcommand lists', () => {
     const delegation = readFileSync(
-      path.join(repoRoot, 'packages/dogsled/src/runtime/delegation.ts'),
+      path.join(repoRoot, 'packages/bobsled-core/src/runtime/delegation.ts'),
       'utf8'
     );
     const table = delegation.match(/const GROUP_SUBCOMMANDS = \{([\s\S]*?)\} satisfies/)?.[1];
@@ -1419,7 +1421,7 @@ for (const [group, file, constant, entry] of [
   ['entity-graph', 'entity-graph', 'ENTITY_GRAPH_SUBCOMMANDS', 'entity-graph/dist/cli.js'],
   ['mcp', 'mcp', 'MCP_SUBCOMMANDS', 'extractor/dist/index.js'],
 ]) {
-  const lists = await import('./packages/dogsled/src/groups/' + file + '.ts');
+  const lists = await import('./packages/bobsled-core/src/groups/' + file + '.ts');
   const { buildProgram } = await import('./packages/' + entry);
   let program = buildProgram();
   if (group === 'mcp') program = program.commands.find((command) => command.name() === 'mcp');

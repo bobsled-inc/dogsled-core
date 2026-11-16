@@ -1,11 +1,11 @@
-import { isExplorerDogsledCommand, type ExplorerDogsledCommand } from './command-links.js';
+import { isExplorerBobsledCommand, type ExplorerBobsledCommand } from './command-links.js';
 import { loadStoredJson, removeStoredValue, saveStoredJson } from '@/lib/storage';
 
 export interface RunRecord {
   id: string;
   command: string;
   args: string[];
-  sequence?: ExplorerDogsledCommand[];
+  sequence?: ExplorerBobsledCommand[];
   startedAt: number;
   endedAt: number;
   exitCode: number | null;
@@ -38,8 +38,8 @@ function isOptionalStringArray(value: unknown): value is string[] | undefined {
   return value === undefined || isStringArray(value);
 }
 
-function isOptionalSequence(value: unknown): value is ExplorerDogsledCommand[] | undefined {
-  return value === undefined || (Array.isArray(value) && value.every(isExplorerDogsledCommand));
+function isOptionalSequence(value: unknown): value is ExplorerBobsledCommand[] | undefined {
+  return value === undefined || (Array.isArray(value) && value.every(isExplorerBobsledCommand));
 }
 
 function isRunRecord(value: unknown): value is RunRecord {

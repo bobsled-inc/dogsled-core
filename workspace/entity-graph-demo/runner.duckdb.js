@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '../..');
-const require = createRequire(join(repoRoot, 'packages/dogsled/package.json'));
+const require = createRequire(join(repoRoot, 'packages/bobsled-core/package.json'));
 const { DuckDBInstance } = require('@duckdb/node-api');
 
 const dbPath = join(__dirname, 'company_resolution.db');

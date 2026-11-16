@@ -42,7 +42,7 @@ Prerequisites: Node.js 24+, an installed `dogsled` CLI and OpenSSL. Run the auto
 5. Use the committed integration, sources, models and expectation runner:
 
    ```bash
-   npm install @bobsled-inc/dogsled pg
+   npm install @bobsled-inc/bobsled-core pg
    dogsled model validate --integration local_pg
    dogsled model run --integration local_pg --json
    dogsled model expect run --integration local_pg --runner ./runner.mjs --json

@@ -98,7 +98,7 @@ Create `apps/explorer/src/app/api/<page-name>/route.ts`.
 Follow these conventions:
 
 - Import from `@/lib/integrations` or `@/lib/models` (wrappers with cache clearing)
-- For CLI subprocess calls, use `spawnDogsledCommand` from `@/lib/dogsled-cli`
+- For CLI subprocess calls, use `spawnBobsledCommand` from `@/lib/dogsled-cli`
 - Return `NextResponse.json()` for simple responses
 - Return SSE `ReadableStream` for streaming responses
 - Handle errors with proper status codes

@@ -79,7 +79,7 @@ describe('release package staging', () => {
 
   it('keeps external dependencies and driver peers out of bundled internal manifests', () => {
     const staged = {
-      name: '@bobsled-inc/dogsled',
+      name: '@bobsled-inc/bobsled-core',
       dependencies: { chalk: '5.6.2', zod: '4.3.6' },
       optionalDependencies: { pg: '>=8.4.0' },
     };
@@ -103,14 +103,14 @@ describe('release package staging', () => {
     });
     deepStrictEqual(connections, { name: '@bobsled-inc/connections', dependencies: {} });
     deepStrictEqual(staged, {
-      name: '@bobsled-inc/dogsled',
+      name: '@bobsled-inc/bobsled-core',
       dependencies: { chalk: '5.6.2', zod: '4.3.6' },
       optionalDependencies: { pg: '>=8.4.0' },
     });
   });
 
   it('rejects a bundled dependency that the top-level manifest does not declare', () => {
-    const staged = { name: '@bobsled-inc/dogsled', dependencies: { zod: '4.3.6' } };
+    const staged = { name: '@bobsled-inc/bobsled-core', dependencies: { zod: '4.3.6' } };
     const loader = {
       name: '@bobsled-inc/loader',
       dependencies: { '@bobsled-inc/protocol': '0.20.224', chalk: '5.6.2', zod: '4.3.6' },
@@ -122,7 +122,7 @@ describe('release package staging', () => {
   });
 
   it('rejects an installed driver range that differs from the bundled peer range', () => {
-    const staged = { name: '@bobsled-inc/dogsled', optionalDependencies: { pg: '8.20.0' } };
+    const staged = { name: '@bobsled-inc/bobsled-core', optionalDependencies: { pg: '8.20.0' } };
     const loader = {
       name: '@bobsled-inc/loader',
       peerDependencies: { pg: '>=8.4.0' },

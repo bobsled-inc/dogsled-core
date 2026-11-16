@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
-import { DogsledRuntimeError } from '@bobsled-inc/protocol';
+import { BobsledRuntimeError } from '@bobsled-inc/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Emitter } from '../../src/runtime/emitter.js';
@@ -287,7 +287,7 @@ describe('file storage extractor', () => {
       download: async (file, target, options) => {
         downloads += 1;
         if (downloads === 2) {
-          throw new DogsledRuntimeError({
+          throw new BobsledRuntimeError({
             kind: 'provider',
             code: 'SFTP_CONNECTION_LOST',
             operation: 'extractor.sftp.download',
@@ -340,7 +340,7 @@ describe('file storage extractor', () => {
       list: (options) => realClient.list(options),
       download: async () => {
         controller.abort(Object.assign(new Error('Received SIGTERM'), { name: 'AbortError' }));
-        throw new DogsledRuntimeError({
+        throw new BobsledRuntimeError({
           kind: 'cancellation',
           code: 'SFTP_CANCELLED',
           operation: 'extractor.sftp.download',

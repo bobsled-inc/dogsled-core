@@ -120,6 +120,6 @@ skills and missing or stale links.
 
 ## Use them from code
 
-The `@bobsled-inc/dogsled/project-skills` export loads, validates and hashes the
+The `@bobsled-inc/bobsled-core/project-skills` export loads, validates and hashes the
 guide and skills for a host application: `loadProjectSkills`, `getProjectSkill`,
 `loadProjectGuide`, `validateProjectSkills` and `buildProjectSkillsManifest`.

@@ -62,9 +62,9 @@ pnpm exec tsx src/verify.ts
 ## App Code
 
 ```ts
-import { createDogsledClient, type DogsledEntityExecutor } from './generated/dogsled-sdk/index.js';
+import { createBobsledClient, type BobsledEntityExecutor } from './generated/dogsled-sdk/index.js';
 
-const executor: DogsledEntityExecutor = {
+const executor: BobsledEntityExecutor = {
   async find(request) {
     // request looks like:
     //   {
@@ -73,11 +73,11 @@ const executor: DogsledEntityExecutor = {
     //     includes: { documents: true, relationships: ['customer_has_deal'] },
     //     limit: 1,
     //   }
-    return queryDogsledEntityGraph(request);
+    return queryBobsledEntityGraph(request);
   },
 };
 
-const dogsled = createDogsledClient(executor);
+const dogsled = createBobsledClient(executor);
 
 const acme = await dogsled.entity.customer
   .findBy({ domain: 'acme.com' })
@@ -117,7 +117,7 @@ Agents should prefer `--json` or `--yaml` when consuming this queue directly. CS
 | Document-derived relationships           | `relationships extract --fallback compromise` and compact.                |
 | Quality scoring on every result          | `acme.profile._quality.{confidence,freshness_age_seconds,...}`.           |
 | Typed app-code surface                   | Branded `CustomerId`, strict `findBy` filter shapes.                      |
-| Executor-backed SDK (no embedded driver) | The consumer-supplied `DogsledEntityExecutor`.                            |
+| Executor-backed SDK (no embedded driver) | The consumer-supplied `BobsledEntityExecutor`.                            |
 | Review queue for low-confidence mentions | `mentions review export` envelope.                                        |
 
 ## Related Guides

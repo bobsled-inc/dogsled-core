@@ -1,8 +1,8 @@
-import { createDogsledClient } from '../generated/dogsled-sdk/index.js';
+import { createBobsledClient } from '../generated/dogsled-sdk/index.js';
 import { createExampleExecutor } from './executor.js';
 import * as runner from '../runner.js';
 
-const dogsled = createDogsledClient(createExampleExecutor(runner));
+const dogsled = createBobsledClient(createExampleExecutor(runner));
 
 try {
   const acme = await dogsled.entity.Customer.findBy({ domain: 'acme.com' })

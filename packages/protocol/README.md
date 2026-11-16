@@ -1,6 +1,6 @@
 # @bobsled-inc/protocol
 
-This workspace is bundled inside `@bobsled-inc/dogsled` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
+This workspace is bundled inside `@bobsled-inc/bobsled-core` and is not published on its own. User documentation is in [`docs/`](../../docs/README.md); this README describes the package for contributors.
 
 Dogsled protocol message types shared between `@bobsled-inc/extractor` (producer) and `@bobsled-inc/loader` (consumer).
 

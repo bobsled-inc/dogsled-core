@@ -35,7 +35,7 @@ instead of initializing again.
 ## Prepare the environment
 
 Check Node.js 24+ and the installed Dogsled CLI. If needed, install
-`@bobsled-inc/dogsled` in the user's project and use `npx dogsled`. Install optional
+`@bobsled-inc/bobsled-core` in the user's project and use `npx dogsled`. Install optional
 warehouse drivers next to Dogsled only for the chosen destination.
 
 For a new project, use `dogsled-init` for the guided setup flow or minimal

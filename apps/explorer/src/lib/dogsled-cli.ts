@@ -132,17 +132,17 @@ function findWorkspaceRoot(): string {
   throw new Error('Could not find workspace root (pnpm-workspace.yaml)');
 }
 
-function resolveDogsledCli(): { command: string; baseArgs: string[]; root: string } {
+function resolveBobsledCli(): { command: string; baseArgs: string[]; root: string } {
   const root = findWorkspaceRoot();
 
   // Try compiled dist first (preferred — no tsx needed)
-  const distPath = path.join(root, 'packages', 'dogsled', 'dist', 'index.js');
+  const distPath = path.join(root, 'packages', 'bobsled-core', 'dist', 'index.js');
   if (fs.existsSync(distPath)) {
     return { command: process.execPath, baseArgs: [distPath], root };
   }
 
   // Fall back to src via npx tsx (avoids static import of tsx)
-  const srcPath = path.join(root, 'packages', 'dogsled', 'src', 'index.ts');
+  const srcPath = path.join(root, 'packages', 'bobsled-core', 'src', 'index.ts');
   if (fs.existsSync(srcPath)) {
     return { command: 'npx', baseArgs: ['tsx', srcPath], root };
   }
@@ -169,21 +169,21 @@ export function validateCommand(command: string): boolean {
   return ALLOWED_COMMANDS.has(command);
 }
 
-export interface SpawnDogsledCommandOptions {
+export interface SpawnBobsledCommandOptions {
   cwd?: string;
   env?: Record<string, string | undefined>;
 }
 
-export function spawnDogsledCommand(
+export function spawnBobsledCommand(
   command: string,
   args: string[],
-  options?: SpawnDogsledCommandOptions
+  options?: SpawnBobsledCommandOptions
 ): ChildProcess {
   if (!validateCommand(command)) {
     throw new Error(`Command not allowed: ${command}`);
   }
 
-  const { command: bin, baseArgs, root } = resolveDogsledCli();
+  const { command: bin, baseArgs, root } = resolveBobsledCli();
   const integrationsDir = path.join(root, 'packages', 'integrations', 'integrations');
 
   return spawn(bin, [...baseArgs, command, ...args], {

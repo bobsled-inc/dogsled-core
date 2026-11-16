@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { generateStructured } from '@bobsled-inc/dogsled/ai';
+import { generateStructured } from '@bobsled-inc/bobsled-core/ai';
 import {
   AgentAssignmentSchema,
   AgenticEvidenceSchema,
   createAgenticRowSchema,
   parseAgentAssignmentOutcome,
   AGENTIC_MAX_ROWS,
-} from '@bobsled-inc/dogsled/model-spec/agentic';
+} from '@bobsled-inc/bobsled-core/model-spec/agentic';
 
 const SYSTEM = [
   'Complete one prepared data assessment. Return only the requested structured rows.',

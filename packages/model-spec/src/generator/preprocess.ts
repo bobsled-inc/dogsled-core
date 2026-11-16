@@ -3,7 +3,7 @@
  *
  * `node-sql-parser` does not understand Snowflake's `col:path` syntax. We mask
  * the entire `<root>:<path>` expression with `__MODEL_SPEC_JSONP_<n>__` placeholders
- * before parsing and restore the original text when emitting DogsledExpr —
+ * before parsing and restore the original text when emitting BobsledExpr —
  * which natively understands the colon syntax.
  *
  * The regex anchors on a word boundary, so any preceding table qualifier

@@ -6,7 +6,7 @@ import path from 'node:path';
 
 import { resolveSafePathWithinRoot } from '../src/lib/entity-graph-workspace';
 import { getRelativeEntityGraphDatabasePath } from '../src/lib/entity-graph-workspace-inventory';
-import { spawnDogsledCommand } from '../src/lib/dogsled-cli';
+import { spawnBobsledCommand } from '../src/lib/dogsled-cli';
 import { getEntityGraphRunsLogPath, readRunLog } from '../src/lib/entity-graph-workspace';
 
 test('resolveSafePathWithinRoot rejects writes through symlinked parent directories', async () => {
@@ -29,8 +29,8 @@ test('resolveSafePathWithinRoot rejects writes through symlinked parent director
   }
 });
 
-test('spawnDogsledCommand rejects commands outside the allowlist', () => {
-  assert.throws(() => spawnDogsledCommand('totally-not-allowed', []), /Command not allowed/);
+test('spawnBobsledCommand rejects commands outside the allowlist', () => {
+  assert.throws(() => spawnBobsledCommand('totally-not-allowed', []), /Command not allowed/);
 });
 
 test('resolveSafePathWithinRoot rejects null bytes in the subpath', async () => {

@@ -155,7 +155,7 @@ describe('emitTypeScriptSdk', () => {
     const runtimeFile = files.find((f) => f.path === 'runtime.ts');
     const clientFile = files.find((f) => f.path === 'client.ts');
 
-    expect(runtimeFile?.content).toContain('export interface DogsledEntityExecutor');
+    expect(runtimeFile?.content).toContain('export interface BobsledEntityExecutor');
     expect(runtimeFile?.content).toContain('get?<TProfile>(request: EntityGetRequest)');
     expect(runtimeFile?.content).toContain('match?<TRecord extends object>');
     expect(runtimeFile?.content).toContain('export interface EntityMatchOptions');
@@ -164,7 +164,7 @@ describe('emitTypeScriptSdk', () => {
     expect(runtimeFile?.content).toContain('withDocuments()');
     expect(runtimeFile?.content).toContain('withRelationship<K extends TRelationshipName>');
     expect(runtimeFile?.content).toContain('is not valid for entity');
-    expect(clientFile?.content).toContain('export function createDogsledClient');
+    expect(clientFile?.content).toContain('export function createBobsledClient');
     expect(clientFile?.content).toContain('export const RELATIONSHIPS_BY_ENTITY');
     expect(clientFile?.content).toContain('export interface CustomerFindFilter');
     expect(clientFile?.content).toContain('findBy(filter: CustomerFindFilter)');

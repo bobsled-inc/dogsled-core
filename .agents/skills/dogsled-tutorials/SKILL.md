@@ -170,4 +170,4 @@ For genuine entity resolution, follow the `entity-resolution` skill with loaded 
 
 ## Walkthrough
 
-{{include: packages/dogsled/examples/tv-night/README.md}}
+{{include: packages/bobsled-core/examples/tv-night/README.md}}

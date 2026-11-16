@@ -130,7 +130,7 @@ Each YAML file declares a `spec_version:` literal. Values are kind-specific — 
 | Dogsled integration                                    | `'2'`           | `integrations/<handle>.yml` (when using the new Dogsled schema) |
 | Dogsled warehouse/file resource                        | `'1'`           | extractor `resources/*.yml` for warehouse and file source kinds |
 
-The Dogsled integration shape shown under "Integrations" below uses `spec_version: '1'` for the legacy Model Spec-managed integration schema; the Dogsled-managed `2` shape is documented in `packages/dogsled`. Pick the one your project uses.
+The Dogsled integration shape shown under "Integrations" below uses `spec_version: '1'` for the legacy Model Spec-managed integration schema; the Dogsled-managed `2` shape is documented in `packages/bobsled-core`. Pick the one your project uses.
 
 ## Integrations
 

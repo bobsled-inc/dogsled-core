@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { generateStructured } from '@bobsled-inc/dogsled/ai';
+import { generateStructured } from '@bobsled-inc/bobsled-core/ai';
 import {
   AgentAssignmentSchema,
   AgenticEvidenceSchema,
@@ -7,7 +7,7 @@ import {
   createAgenticRowSchema,
   parseAgentAssignmentOutcome,
   AGENTIC_MAX_ROWS,
-} from '@bobsled-inc/dogsled/model-spec/agentic';
+} from '@bobsled-inc/bobsled-core/model-spec/agentic';
 
 const SYSTEM = [
   'Complete the assessment with a bounded sequence of decisions.',

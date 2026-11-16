@@ -4,7 +4,7 @@ import {
   getEntityGraphWorkspaceRoot,
   getEntityGraphRunnerPath,
   isEntityGraphWorkspaceReady,
-  spawnDogsledCommand,
+  spawnBobsledCommand,
 } from '@/lib/entity-graph-workspace';
 import {
   isInvalidEntityGraphInputError,
@@ -147,7 +147,7 @@ export async function POST(req: Request) {
 
   const startedAt = new Date().toISOString();
   const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  let currentChild: ReturnType<typeof spawnDogsledCommand> | null = null;
+  let currentChild: ReturnType<typeof spawnBobsledCommand> | null = null;
   let cancelled = false;
   let lastFailure: RunFailure | null = null;
 
@@ -198,7 +198,7 @@ export async function POST(req: Request) {
           send({ stream: 'step', data: { index: idx, label: step.label, status: 'start' } });
 
           try {
-            currentChild = spawnDogsledCommand(step.command, step.argv, {
+            currentChild = spawnBobsledCommand(step.command, step.argv, {
               cwd: getEntityGraphWorkspaceRoot(scenarioId),
             });
           } catch (err) {
