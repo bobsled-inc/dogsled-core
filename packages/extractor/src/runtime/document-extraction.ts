@@ -257,7 +257,13 @@ export async function extractDocumentResource(
       // Failed reads count too, so a path full of unreadable files cannot make one
       // run download without bound.
       if (filesAttempted >= maxFiles) {
-        await logger.warn(maxFilesReachedMessage(resource.name, maxFiles, readAllFiles));
+        await logger.warn(
+          maxFilesReachedMessage(
+            resource.name,
+            maxFiles,
+            resource.replication.method === 'full_refresh'
+          )
+        );
         break;
       }
       filesAttempted += 1;

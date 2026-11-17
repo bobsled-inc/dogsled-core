@@ -243,7 +243,7 @@ function sftpProvider(): Provider {
         await writeFile(path.join(root, file.key), file.body);
       }
       const hostKey = generateTestKey('ed25519');
-      process.env['LISTING_CAP_SFTP_PASSWORD'] = 'secret';
+      vi.stubEnv('LISTING_CAP_SFTP_PASSWORD', 'secret');
       const server = await startTestSftpServer({ root, hostKeys: [hostKey], password: 'secret' });
       const open = () =>
         withPrivateHostAllowlist(['127.0.0.1'], () =>
@@ -338,6 +338,7 @@ function bookmarkedUris(state: ExtractorState): string[] {
 const storages: Storage[] = [];
 
 afterEach(async () => {
+  vi.unstubAllEnvs();
   await Promise.all(storages.splice(0).map((storage) => storage.close()));
 });
 
@@ -392,6 +393,8 @@ describe.each([s3Provider(), gcsProvider(), sftpProvider()])(
       expect(capWarnings(first)).toHaveLength(1);
       expect(capWarnings(first)[0]).toContain('orders');
       expect(capWarnings(first)[0]).toContain(String(CAP));
+      expect(capWarnings(first)[0]).toContain('next run continues');
+      expect(capWarnings(first)[0]).not.toContain('narrow');
 
       const second = await run();
       expect(second.records).toHaveLength(DAYS.length - CAP);
@@ -430,16 +433,32 @@ describe('limit edge cases on the S3 client', () => {
     expect(bookmarkedUris(state)).toHaveLength(DAYS.length);
   });
 
-  it('does not count oversize files toward the limit or warn about them as left over', async () => {
+  const oversizeLimits = { max_files_per_run: CAP, max_file_size_bytes: 100 };
+  const oversizeBody = (index: number) => `id,name\n${index + 1},${'x'.repeat(200)}\n`;
+
+  it('does not count an oversize file toward the limit', async () => {
     const files = storedFiles(DAYS.slice(0, CAP + 1), (index) =>
-      index === CAP ? `id,name\n${index + 1},${'x'.repeat(200)}\n` : undefined
+      index === 0 ? oversizeBody(index) : undefined
     );
     const result = await runStructured({
       client: fakeS3Client(files),
       integration: provider.integration,
-      resource: ordersResource(provider.path, {
-        limits: { max_files_per_run: CAP, max_file_size_bytes: 100 },
-      }),
+      resource: ordersResource(provider.path, { limits: oversizeLimits }),
+      state: { streams: {} },
+    });
+    expect(result.records).toHaveLength(CAP);
+    expect(capWarnings(result)).toEqual([]);
+    expect(result.warnings.some((message) => message.includes('max_file_size_bytes'))).toBe(true);
+  });
+
+  it('does not warn when only oversize files are left past the limit', async () => {
+    const files = storedFiles(DAYS.slice(0, CAP + 1), (index) =>
+      index === CAP ? oversizeBody(index) : undefined
+    );
+    const result = await runStructured({
+      client: fakeS3Client(files),
+      integration: provider.integration,
+      resource: ordersResource(provider.path, { limits: oversizeLimits }),
       state: { streams: {} },
     });
     expect(result.records).toHaveLength(CAP);
@@ -485,9 +504,34 @@ describe('limit edge cases on the S3 client', () => {
     expect(capWarnings(second)).toHaveLength(1);
     expect(capWarnings(first)[0]).toContain('narrow');
   });
+
+  it('lets the next run continue after a one-off full refresh of an incremental resource', async () => {
+    const files = storedFiles();
+    const state: ExtractorState = { streams: {} };
+    const resource = ordersResource(provider.path);
+    const run = (fullRefresh?: boolean) =>
+      runStructured({
+        client: fakeS3Client(files),
+        integration: provider.integration,
+        resource,
+        state,
+        fullRefresh,
+      });
+
+    const refreshed = await run(true);
+    expect(refreshed.records).toHaveLength(CAP);
+    expect(capWarnings(refreshed)).toHaveLength(1);
+    expect(capWarnings(refreshed)[0]).not.toContain('narrow');
+
+    const next = await run();
+    expect(next.records).toHaveLength(DAYS.length - CAP);
+    expect(capWarnings(next)).toEqual([]);
+  });
 });
 
 describe('document resource over more than max_files_per_run matching files', () => {
+  const DOC_CAP = 2;
+
   function documentResource(): FileResourceSpec {
     return {
       spec_version: '1',
@@ -504,10 +548,64 @@ describe('document resource over more than max_files_per_run matching files', ()
         permissions: { capture: false, enforcement: { enabled: false } },
       },
       replication: { method: 'incremental_append', cursor: { field: 'last_modified' } },
-      limits: { max_files_per_run: 2 },
+      limits: { max_files_per_run: DOC_CAP },
       extract: {},
       output: { document_id: { type: 'string' } },
     } as unknown as FileResourceSpec;
+  }
+
+  const s3Documents = s3Provider();
+  const s3DocumentResource = (limits = DOC_CAP): FileResourceSpec => {
+    const resource = documentResource();
+    return {
+      ...resource,
+      source: { ...resource.source, path: 'docs/*.md' },
+      limits: { max_files_per_run: limits },
+    } as FileResourceSpec;
+  };
+
+  function markdownFiles(names: string[]): StoredFile[] {
+    return names.map((name) => ({
+      key: `docs/${name}.md`,
+      body: `# ${name}\n\nBody of ${name}.\n`,
+      modified: new Date('2026-01-01T00:00:00.000Z'),
+    }));
+  }
+
+  async function runDocuments(args: {
+    integration: IntegrationSpec;
+    resource: FileResourceSpec;
+    state: ExtractorState;
+    client?: FileStorageClient;
+  }) {
+    if (args.client) vi.mocked(createFileStorageClient).mockResolvedValueOnce(args.client);
+    const stdout = new FakeWritable();
+    const stderr = new FakeWritable();
+    await extractDocumentResource({
+      integration: args.integration,
+      resource: args.resource,
+      integrationName: 'docs_source',
+      emitter: new Emitter('stdout', 'output', { stdoutStream: stdout }),
+      logger: new ControlLogger({ stream: stderr }),
+      state: args.state,
+      stateStore: createStateStore(args.state),
+      advanceState: true,
+      startedAt: Date.now(),
+    });
+    const recordsIn = (stream: string) =>
+      messagesOf(stdout).filter(
+        (message) => message.type === 'RECORD' && message['stream'] === stream
+      );
+    return {
+      documents: recordsIn('docs__documents').map((message) =>
+        String((message['record'] as Record<string, unknown>)['source_uri'])
+      ),
+      parseErrors: recordsIn('docs__parse_errors').length,
+      capWarnings: messagesOf(stderr)
+        .filter((message) => message.type === 'LOG' && message.level === 'warn')
+        .map((message) => String(message.message))
+        .filter((message) => message.includes('max_files_per_run')),
+    };
   }
 
   it('reads the newer documents on the next run and warns only when it stops early', async () => {
@@ -517,53 +615,75 @@ describe('document resource over more than max_files_per_run matching files', ()
         await writeFile(path.join(baseDir, name), `# ${name}\n\nbody of ${name}.\n`);
       }
       const state: ExtractorState = { streams: {} };
-      const run = async () => {
-        const stdout = new FakeWritable();
-        const stderr = new FakeWritable();
-        await extractDocumentResource({
+      const run = () =>
+        runDocuments({
           integration: {
             spec_version: '1',
             type: 'integration',
-            name: 'local_docs',
+            name: 'docs_source',
             source_type: 'local',
             connection: { base_directory: baseDir },
             auth: { type: 'none' },
           } as unknown as IntegrationSpec,
           resource: documentResource(),
-          integrationName: 'local_docs',
-          emitter: new Emitter('stdout', 'output', { stdoutStream: stdout }),
-          logger: new ControlLogger({ stream: stderr }),
           state,
-          stateStore: createStateStore(state),
-          advanceState: true,
-          startedAt: Date.now(),
         });
-        const documents = messagesOf(stdout)
-          .filter((message) => message.type === 'RECORD' && message['stream'] === 'docs__documents')
-          .map((message) => String((message['record'] as Record<string, unknown>)['source_uri']));
-        const warnings = messagesOf(stderr)
-          .filter((message) => message.type === 'LOG' && message.level === 'warn')
-          .map((message) => String(message.message))
-          .filter((message) => message.includes('max_files_per_run'));
-        return { documents, warnings };
-      };
 
       const first = await run();
-      expect(first.documents).toHaveLength(2);
+      expect(first.documents).toHaveLength(DOC_CAP);
 
       const second = await run();
-      expect(second.documents).toHaveLength(2);
+      expect(second.documents).toHaveLength(DOC_CAP);
       expect(second.documents.filter((uri) => first.documents.includes(uri))).toEqual([]);
 
       const third = await run();
       expect(third.documents).toHaveLength(0);
 
-      expect(first.warnings).toHaveLength(1);
-      expect(first.warnings[0]).toContain('docs');
-      expect(second.warnings).toEqual([]);
-      expect(third.warnings).toEqual([]);
+      expect(first.capWarnings).toHaveLength(1);
+      expect(first.capWarnings[0]).toContain('docs');
+      expect(second.capWarnings).toEqual([]);
+      expect(third.capWarnings).toEqual([]);
     } finally {
       await rm(baseDir, { recursive: true, force: true });
     }
+  });
+
+  it('does not warn when the files left past the limit are already read', async () => {
+    const files = markdownFiles(['01', '02', '03', '04']);
+    const state: ExtractorState = { streams: {} };
+
+    const seeded = await runDocuments({
+      client: fakeS3Client(files.slice(DOC_CAP)),
+      integration: s3Documents.integration,
+      resource: s3DocumentResource(10),
+      state,
+    });
+    expect(seeded.documents).toHaveLength(files.length - DOC_CAP);
+
+    const result = await runDocuments({
+      client: fakeS3Client(files),
+      integration: s3Documents.integration,
+      resource: s3DocumentResource(),
+      state,
+    });
+    expect(result.documents).toHaveLength(DOC_CAP);
+    expect(result.capWarnings).toEqual([]);
+  });
+
+  it('stops trying to download at the limit even when every download fails', async () => {
+    const attempted: string[] = [];
+    const result = await runDocuments({
+      client: fakeS3Client(markdownFiles(['01', '02', '03', '04']), {
+        failDownloads: true,
+        onDownload: (key) => attempted.push(key),
+      }),
+      integration: s3Documents.integration,
+      resource: s3DocumentResource(),
+      state: { streams: {} },
+    });
+    expect(result.documents).toHaveLength(0);
+    expect(result.parseErrors).toBe(DOC_CAP);
+    expect(attempted).toHaveLength(DOC_CAP);
+    expect(result.capWarnings).toHaveLength(1);
   });
 });

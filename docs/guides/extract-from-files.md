@@ -312,12 +312,15 @@ Each run reads at most 10,000 files, and skips files larger than 5 GiB with a
 warning (document resources record them in `__parse_errors`). Change these limits
 with `limits.max_files_per_run` and `limits.max_file_size_bytes` on the resource.
 
-The file limit counts the files a run reads. An incremental run lists the whole
-path and does not count the files it skips because it already read them, so a
-path with more matching files than the limit still yields its newer files. When
-more files are waiting than one run may read, the run reads up to the limit,
-logs a warning, and the next run continues with the rest. A file that fails to
-read still counts. A `full_refresh` resource starts over on every run, so it
-reads the same first files each time and never reaches the rest; it logs the
-same warning. Raise `limits.max_files_per_run` or narrow `source.path` so every
-file fits in one run.
+The file limit counts the files a run tries to read. An incremental run lists
+the whole path and does not count the files it skips because it already read
+them, so a path with more matching files than the limit still gives its newer
+files to later runs. When more files are ready than one run may read, the run
+reads up to the limit, logs a warning, and the next run continues with the rest.
+A file that fails to read counts too, and counts again on each run, because it
+is never marked as read. A `full_refresh` resource starts at the front on every
+run, so it reads the same first files each time and never reaches the rest; it
+logs the warning too. Raise `limits.max_files_per_run` or narrow `source.path`
+so every file fits in one run. Every run lists the whole path, so it reports
+every oversize file in it, and a document resource with `parse.on_error: fail`
+stops at the first one.

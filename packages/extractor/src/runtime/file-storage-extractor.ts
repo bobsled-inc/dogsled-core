@@ -123,12 +123,12 @@ function bookmarkFor(file: ListedFile): FileBookmark {
 export function maxFilesReachedMessage(
   resourceName: string,
   maxFiles: number,
-  readAllFiles: boolean
+  alwaysStartsOver: boolean
 ): string {
-  const advice = readAllFiles
-    ? 'A full read starts over each run, so the files left over are never read. Raise limits.max_files_per_run or narrow source.path.'
-    : 'The next run continues with them. Raise limits.max_files_per_run to read more files in one run.';
-  return `Resource ${resourceName} stopped at limits.max_files_per_run (${maxFiles}) with more files waiting. ${advice}`;
+  const advice = alwaysStartsOver
+    ? 'Every run of this resource reads the first files again, so the rest are never read. Raise limits.max_files_per_run or narrow source.path.'
+    : 'The next run continues with them, unless files that fail to read use up the limit again. Raise limits.max_files_per_run to read more files in one run.';
+  return `Resource ${resourceName} stopped at limits.max_files_per_run (${maxFiles}) with more files to read. ${advice}`;
 }
 
 export function safeStagePath(tempDir: string, file: ListedFile): string {
@@ -205,7 +205,13 @@ export async function extractFileStorageResource({
       // Failed reads count too, so a path full of unreadable files cannot make one
       // run download without bound.
       if (filesAttempted >= maxFiles) {
-        await logger.warn(maxFilesReachedMessage(resource.name, maxFiles, readAllFiles));
+        await logger.warn(
+          maxFilesReachedMessage(
+            resource.name,
+            maxFiles,
+            resource.replication.method === 'full_refresh'
+          )
+        );
         break;
       }
       filesAttempted += 1;
