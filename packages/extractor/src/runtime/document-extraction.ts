@@ -30,6 +30,7 @@ import { ExtractorDataError } from './errors.js';
 import { createFileStorageClient } from './file-storage-client.js';
 import {
   getFileStorageSourceType,
+  maxFilesReachedMessage,
   safeStagePath,
   shouldProcessFile,
   streamKey,
@@ -185,6 +186,7 @@ export async function extractDocumentResource(
   const aclStream = `${resource.name}__acl`;
   const capturePermissions = source.permissions?.capture ?? true;
 
+  let filesAttempted = 0;
   let filesProcessed = 0;
   let documentsEmitted = 0;
   let chunksEmitted = 0;
@@ -223,8 +225,9 @@ export async function extractDocumentResource(
   }
 
   try {
-    for await (const file of client.list({ path: source.path, maxFiles })) {
-      if (filesProcessed >= maxFiles) break;
+    // The listing has no cap. max_files_per_run counts the files this run reads, so a
+    // capped listing would stop among files already read and never reach newer ones.
+    for await (const file of client.list({ path: source.path })) {
       // Strip query string + fragment so pre-signed URLs don't leak credentials into
       // the __parse_errors data stream or any thrown error message in this loop.
       const safeUri = sanitizeUriForError(file.uri);
@@ -251,6 +254,13 @@ export async function extractDocumentResource(
       if (!readAllFiles && !shouldProcessFile(file, existingState.files?.[file.uri])) {
         continue;
       }
+      // Failed reads count too, so a path full of unreadable files cannot make one
+      // run download without bound.
+      if (filesAttempted >= maxFiles) {
+        await logger.warn(maxFilesReachedMessage(resource.name, maxFiles, readAllFiles));
+        break;
+      }
+      filesAttempted += 1;
 
       const stagedPath = safeStagePath(tempDir, file);
       let bytes: Uint8Array;

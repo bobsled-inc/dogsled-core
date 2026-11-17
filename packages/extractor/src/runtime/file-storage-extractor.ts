@@ -120,6 +120,17 @@ function bookmarkFor(file: ListedFile): FileBookmark {
   };
 }
 
+export function maxFilesReachedMessage(
+  resourceName: string,
+  maxFiles: number,
+  readAllFiles: boolean
+): string {
+  const advice = readAllFiles
+    ? 'A full read starts over each run, so the files left over are never read. Raise limits.max_files_per_run or narrow source.path.'
+    : 'The next run continues with them. Raise limits.max_files_per_run to read more files in one run.';
+  return `Resource ${resourceName} stopped at limits.max_files_per_run (${maxFiles}) with more files waiting. ${advice}`;
+}
+
 export function safeStagePath(tempDir: string, file: ListedFile): string {
   // Strip traversal segments before joining; provider controls file.path
   const sanitized = file.path
@@ -170,16 +181,18 @@ export async function extractFileStorageResource({
 
   let filesListed = 0;
   let filesSkipped = 0;
+  let filesAttempted = 0;
   let filesProcessed = 0;
   let bytesDownloaded = 0;
   let recordCount = 0;
   let schemaEmitted = false;
 
   try {
-    for await (const file of client.list({ path: resource.source.path, maxFiles, signal })) {
+    // The listing has no cap. max_files_per_run counts the files this run reads, so a
+    // capped listing would stop among files already read and never reach newer ones.
+    for await (const file of client.list({ path: resource.source.path, signal })) {
       signal?.throwIfAborted();
       filesListed += 1;
-      if (filesProcessed >= maxFiles) break;
       if (file.size !== undefined && file.size > maxFileSize) {
         filesSkipped += 1;
         await logger.warn(`Skipping ${file.uri}: file size exceeds max_file_size_bytes`);
@@ -189,6 +202,13 @@ export async function extractFileStorageResource({
         filesSkipped += 1;
         continue;
       }
+      // Failed reads count too, so a path full of unreadable files cannot make one
+      // run download without bound.
+      if (filesAttempted >= maxFiles) {
+        await logger.warn(maxFilesReachedMessage(resource.name, maxFiles, readAllFiles));
+        break;
+      }
+      filesAttempted += 1;
 
       const stagedPath = safeStagePath(tempDir, file);
       let downloadedBytes = 0;
