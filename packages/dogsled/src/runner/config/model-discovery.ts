@@ -51,10 +51,23 @@ export function discoverProjectModels(
   config: DogsledConfig,
   project: DogsledProject
 ): Map<string, DiscoveredModel> {
+  return discoverModels(modelProjectIndex(config, project));
+}
+
+const modelProjectIndexes = new WeakMap<DogsledProject, Map<string, ProjectIndex>>();
+
+/**
+ * The index of the Model Spec project a Dogsled config points at. A separate Model Spec
+ * project is scanned once per opened Dogsled project, so every check shares one scan.
+ */
+export function modelProjectIndex(config: DogsledConfig, project: DogsledProject): ProjectIndex {
   const modelRoot = path.resolve(resolveModelProjectRoot(config, project.root));
-  return discoverModels(
-    modelRoot === project.root ? project.index : openDogsledProject(modelRoot).index
-  );
+  if (modelRoot === project.root) return project.index;
+  const indexes = modelProjectIndexes.get(project) ?? new Map<string, ProjectIndex>();
+  modelProjectIndexes.set(project, indexes);
+  const index = indexes.get(modelRoot) ?? openDogsledProject(modelRoot).index;
+  indexes.set(modelRoot, index);
+  return index;
 }
 
 /**

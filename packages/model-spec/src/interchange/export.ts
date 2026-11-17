@@ -6,7 +6,8 @@ import { AgenticModelSpecSchema, getModelOutputColumns } from '../agentic/model.
 import { discardedKeyPaths } from '../compiler/discarded-keys.js';
 import { SourceSpecSchema, TransformSpecSchema } from '../compiler/schemas.js';
 import { MetricSpecSchema } from '../entities/metric.js';
-import { RelationshipSpecSchema } from '../entities/relationship.js';
+import { RelationshipSpecSchema, RelationshipTypeSchema } from '../entities/relationship.js';
+import { datasetPrimaryKey, relationshipKeyWarnings } from '../entities/relationship-keys.js';
 import {
   aiContextSynonyms,
   mergeSynonyms,
@@ -17,6 +18,7 @@ import { logicalTypeForSqlType } from '../ossie/types.js';
 import { InterchangeSchema, type OssieCustomExtension } from './storage.js';
 import {
   assertBounded,
+  blocksStrictConversion,
   diagnostic,
   errorMessage,
   file,
@@ -568,11 +570,7 @@ function outputDataset(
     objectReference(dataset.name)
   );
   const fields = outputFields(dataset, version, result);
-  const primaryKey = z
-    .array(z.record(z.string(), z.unknown()))
-    .parse(dataset.outputColumns)
-    .filter((column) => column['primary_key'] === true)
-    .map((column) => String(column['name']));
+  const primaryKey = datasetPrimaryKey(dataset.document, dataset.outputColumns);
   if (dataset.kind === 'source') {
     const {
       spec_version: _specVersion,
@@ -805,8 +803,31 @@ function outputRelationships(
     const joinColumns = z
       .array(z.object({ left: z.string(), right: z.string() }))
       .parse(relationship['join_columns']);
-    const relationshipType = String(relationship['relationship_type']);
+    const relationshipType = RelationshipTypeSchema.parse(relationship['relationship_type']);
     const flip = relationshipType === 'one_to_many';
+    const keyWarnings = relationshipKeyWarnings(
+      {
+        name,
+        left_model: leftReference,
+        right_model: rightReference,
+        join_columns: joinColumns,
+        relationship_type: relationshipType,
+      },
+      (reference) => {
+        const dataset = byReference.get(reference)!;
+        return datasetPrimaryKey(dataset.document, dataset.outputColumns);
+      }
+    );
+    for (const warning of keyWarnings) {
+      warn(
+        result,
+        warning.code,
+        `${path}.join_columns`,
+        warning.message,
+        warning.remedy,
+        objectReference(byReference.get(warning.dataset)!.name)
+      );
+    }
     const customExtensions = profileExtensions(
       ownerExtensions(relationship),
       version,
@@ -1056,9 +1077,7 @@ export function exportOssieDocument(request: ExportOssieDocumentRequest): Conver
       file(`ossie/${identity(`${version}\0${request.semanticModelName}`)}.yml`, document)
     );
     result.ok = true;
-    result.ready = !(
-      request.strict && result.diagnostics.some((entry) => entry.severity === 'warning')
-    );
+    result.ready = !(request.strict && result.diagnostics.some(blocksStrictConversion));
   } catch (error) {
     result.files = [];
     if (error instanceof ExportFailure || error instanceof VerifiedQueryFailure) {

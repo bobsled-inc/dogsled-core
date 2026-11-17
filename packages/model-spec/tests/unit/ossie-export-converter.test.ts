@@ -468,6 +468,113 @@ describe('Ossie export converter', () => {
     ).toBe(kind === 'one_to_one' || kind === 'many_to_many');
   });
 
+  it('warns when an exported relationship does not join on its one side primary key', () => {
+    const keyless = {
+      ...model,
+      columns: model.columns.map(({ name, type, expr }) => ({ name, type, expr })),
+    };
+    const relationships = [
+      { ...relationship, name: 'keyless_orders_to_raw', relationship_type: 'one_to_many' },
+      { ...relationship, join_columns: [{ left: 'amount', right: 'amount' }] },
+    ];
+    const result = exportOssieDocument(
+      request({
+        ossieVersion: '0.2.0.dev0',
+        strict: true,
+        project: { ...request().project, models: [keyless], relationships },
+      })
+    );
+
+    expect(result).toMatchObject({ ok: true, ready: true });
+    expect(
+      result.diagnostics.map(({ code, severity, path, objectReference }) => [
+        code,
+        severity,
+        path,
+        objectReference.dataset,
+      ])
+    ).toEqual([
+      [
+        'relationship_target_key_mismatch',
+        'warning',
+        'project#relationships.completed_to_raw.join_columns',
+        'raw_orders',
+      ],
+      [
+        'relationship_target_key_missing',
+        'warning',
+        'project#relationships.keyless_orders_to_raw.join_columns',
+        'completed_orders',
+      ],
+    ]);
+  });
+
+  it('uses an agentic model grain as its primary key', () => {
+    const toResearch = (name: string, column: string) => ({
+      ...relationship,
+      name,
+      left_model: 'completed_orders',
+      right_model: 'researched_orders',
+      join_columns: [{ left: column, right: column }],
+    });
+    const result = exportOssieDocument(
+      request({
+        ossieVersion: '0.2.0.dev0',
+        project: {
+          ...request().project,
+          models: [model, agenticModel],
+          metrics: [],
+          relationships: [
+            toResearch('orders_to_research', 'order_id'),
+            toResearch('summaries_to_research', 'summary'),
+          ],
+          addresses: {
+            ...request().project.addresses,
+            researched_orders: 'ANALYTICS.MART.RESEARCHED_ORDERS',
+          },
+        },
+      })
+    );
+
+    expect(result).toMatchObject({ ok: true, ready: true });
+    const document = result.files[0]?.document as {
+      datasets: Array<{ name: string; primary_key?: string[] }>;
+    };
+    expect(document.datasets.find((dataset) => dataset.name === 'researched_orders')).toMatchObject(
+      { primary_key: ['order_id'] }
+    );
+    expect(
+      result.diagnostics
+        .filter((entry) => entry.code.startsWith('relationship_target_key'))
+        .map((entry) => [entry.code, entry.path])
+    ).toEqual([
+      [
+        'relationship_target_key_mismatch',
+        'project#relationships.summaries_to_research.join_columns',
+      ],
+    ]);
+  });
+
+  it('checks keys only for relationships the export includes', () => {
+    const result = exportOssieDocument(
+      request({
+        ossieVersion: '0.2.0.dev0',
+        selection: { selectors: [{ kind: 'model', name: 'completed_orders' }] },
+        project: {
+          ...request().project,
+          relationships: [{ ...relationship, join_columns: [{ left: 'amount', right: 'amount' }] }],
+        },
+      })
+    );
+
+    expect(result.diagnostics.map((entry) => entry.code)).toContain(
+      'export_object_partially_selected'
+    );
+    expect(result.diagnostics.map((entry) => entry.code)).not.toContain(
+      'relationship_target_key_mismatch'
+    );
+  });
+
   it('is deterministic and rejects unsupported wildcard outputs', () => {
     const first = exportOssieDocument(request({ ossieVersion: '0.2.0.dev0' }));
     const reordered = request({ ossieVersion: '0.2.0.dev0' });

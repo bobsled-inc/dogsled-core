@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { parse as parseYaml, stringify } from 'yaml';
 import { CommandError } from '../errors.js';
+import { isRelationshipKeyWarningCode } from '../entities/relationship-keys.js';
 import { boundedJsonProblem, type BoundedJsonLimits } from './storage.js';
 
 export const OSSIE_VENDOR = 'DOGSLED';
@@ -88,6 +89,13 @@ export function diagnostic(
   remedy = 'Review the diagnostic and update the input before converting again.'
 ): ConversionDiagnostic {
   return { code, severity, path, objectReference, message, remedy };
+}
+/**
+ * Strict conversion blocks on warnings about meaning that the conversion loses. Relationship
+ * key warnings describe the native project instead, so they never block.
+ */
+export function blocksStrictConversion(entry: ConversionDiagnostic): boolean {
+  return entry.severity === 'warning' && !isRelationshipKeyWarningCode(entry.code);
 }
 export function extensions(
   metadata: Record<string, unknown>

@@ -73,19 +73,37 @@ that point at the same underlying table.
 2. **Declare every join column pair.** A single-column join is one
    pair under `join_columns:`. Multi-column joins list multiple
    pairs; each becomes an `AND` in the generated `ON` clause.
-3. **Pick `join_type`.** `inner` is the default; use `left` to
+3. **Join the one side on its primary key.** The one side must be
+   unique on its join columns: the `right_model` of a `many_to_one`,
+   the `left_model` of a `one_to_many`, and both models of a
+   `one_to_one` (`many_to_many` has none). Mark that model's or
+   source's key columns `primary_key: true` (an agentic model's key is
+   its `grain`) and join on exactly those columns, every column of a
+   composite key included. Warehouses that
+   trust declared keys, such as Snowflake semantic views, never check
+   them against the data, so a missing or different key returns wrong
+   numbers rather than an error.
+4. **Pick `join_type`.** `inner` is the default; use `left` to
    preserve rows on the left side when the right side may not match.
    `right` and `full` are deliberately not supported — reorder the
    models for a `right`, and `full` is rarely analytically meaningful.
-4. **Pick `relationship_type`.** Be explicit about cardinality:
+5. **Pick `relationship_type`.** Be explicit about cardinality:
    `one_to_one`, `one_to_many`, `many_to_one`, `many_to_many`. This
    drives the Data Estate UI and helps the query planner reason
    about join fan-out before generating SQL.
-5. **Validate.** `dogsled model validate --integration <handle>`
+6. **Validate.** `dogsled model validate --integration <handle>`
    checks that both models exist; column existence inside the join
    pairs is **not** validated (see caveats below).
+   `dogsled runner validate` and Ossie export warn with
+   `relationship_target_key_missing` when the one side declares no
+   primary key, and with `relationship_target_key_mismatch` when its
+   join columns are not its primary key (compared as a set, ignoring
+   order and case).
 
 ## Concrete example
+
+`dim_customers` marks `customer_id` with `primary_key: true`, so this
+`many_to_one` joins its one side on its primary key.
 
 ```yaml
 spec_version: '0.2'
@@ -108,7 +126,8 @@ tags:
   - shop-domain
 ```
 
-A multi-column composite-key example:
+A multi-column composite-key example, where `fct_orders` marks both
+`tenant_id` and `order_id` with `primary_key: true`:
 
 ```yaml
 spec_version: '0.2'
@@ -137,7 +156,8 @@ relationship_type: many_to_one
   in the referenced model's `schema.columns`. A column typo slips
   through and fails only at query time.
 - Composite-key joins must list every key column. Missing one
-  silently produces a fan-out join at query time.
+  silently produces a fan-out join at query time; the primary-key
+  warning catches it when the one side declares its full key.
 
 ## Related skills
 

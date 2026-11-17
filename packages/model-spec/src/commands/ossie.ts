@@ -14,7 +14,13 @@ import {
   writeConversionFile,
   writeConversionFiles,
 } from '../interchange/files.js';
-import { diagnostic, errorMessage, record, type ConversionResult } from '../interchange/common.js';
+import {
+  blocksStrictConversion,
+  diagnostic,
+  errorMessage,
+  record,
+  type ConversionResult,
+} from '../interchange/common.js';
 import * as out from '../output.js';
 import { CommandError } from '../errors.js';
 import { resolveOssieExportAddresses } from '../api/ossie-export-addresses.js';
@@ -43,8 +49,7 @@ function report(
   if ([options.human, options.json, options.yaml].filter(Boolean).length > 1) {
     throw new Error('Choose one of --human, --json, or --yaml');
   }
-  const strictWarning =
-    options.strict && result.diagnostics.some((entry) => entry.severity === 'warning');
+  const strictWarning = options.strict && result.diagnostics.some(blocksStrictConversion);
   if (options.out && result.ok && !strictWarning) writer(result, options.out);
   if (options.human) {
     const lines = [

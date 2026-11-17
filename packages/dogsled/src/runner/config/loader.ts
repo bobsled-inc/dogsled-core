@@ -65,6 +65,7 @@ import {
   projectResourceIssues,
   type DogsledProject,
 } from './project-files.js';
+import { projectRelationshipKeyWarnings } from './relationship-keys.js';
 import { resolveEntityVariant } from './resolve-entity.js';
 import { validateForEachIteration } from './resolve-for-each.js';
 import { validateResourceResolution, validateResourceSourceAlignment } from './resolve-resource.js';
@@ -1104,6 +1105,10 @@ export async function validateDogsledConfig(
   for (const mp of modelPipelines) {
     validateModelWarehouseSelections(mp, lib, errors);
   }
+
+  // 8c. Warn when a relationship's one side does not join on its declared
+  //     primary key; warehouses that trust declared keys return wrong numbers.
+  warnings.push(...(await projectRelationshipKeyWarnings(config, project)));
 
   // 9. Validate for_each iteration: the runner supports it AND every for_each
   //    child's parent is selected in the same pipeline (so the parent runs

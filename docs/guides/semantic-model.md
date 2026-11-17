@@ -84,6 +84,19 @@ join_columns:
 relationship_type: many_to_one
 ```
 
+The "one" side of a relationship must be unique on its join columns: the
+`right_model` of a `many_to_one`, the `left_model` of a `one_to_many`, and both
+models of a `one_to_one`. Mark that model's key columns `primary_key: true` and join
+on exactly those columns, as `customer_revenue` does with `customer`. An agentic
+model's key is its `grain`. Warehouses
+that trust declared keys, such as Snowflake semantic views, never check them against
+the data, so a relationship that joins on anything else returns wrong numbers rather
+than an error. `dogsled runner validate` and Ossie export warn with
+`relationship_target_key_missing` when the one side declares no primary key, and with
+`relationship_target_key_mismatch` when its join columns are not its primary key.
+Column names compare as a set, ignoring order and case. `many_to_many` relationships
+are not checked.
+
 `dogsled model validate` checks that each metric and relationship points at models
 and columns that exist:
 

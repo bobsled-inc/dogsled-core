@@ -82,6 +82,7 @@ source:
 columns:
   - name: request_status
     expr: stg_pylon__feature_requests.request_status
+    primary_key: true
     semantic_role: categorical
     description: Feature request status (new, in_progress, closed, archived).
   - name: request_count

@@ -188,6 +188,18 @@ keeps `many_to_one`, reverses `one_to_many`, and projects `one_to_one` and
 `relationship_cardinality_projected`. DOGSLED version `2` data preserves the
 exact native cardinality in the draft profile.
 
+Export also checks each relationship it includes against the declared primary keys.
+The one side of a relationship, the `right_model` of `many_to_one`, the `left_model`
+of `one_to_many` and both models of `one_to_one`, must join on exactly the columns
+marked `primary_key: true`, or an agentic model's `grain`, compared as a set and
+ignoring case. Otherwise the report
+has `relationship_target_key_missing`, when that dataset declares no primary key, or
+`relationship_target_key_mismatch`, when it joins on other columns. Warehouses that
+trust declared keys, such as Snowflake semantic views, never check them against the
+data, so fix these before handing the document to one. They describe the native
+model rather than lost meaning, so they never change `ok` or `ready`, and `--strict`
+still writes the file. Relationships that the selection leaves out are not checked.
+
 ## Example mapping
 
 A native derived model stays readable:
@@ -242,7 +254,7 @@ datasets:
 | Column name and description                                                         | Standard field name and description                        |
 | Exact native type, when declared                                                    | DOGSLED field `sql_type`, plus standard logical `datatype` |
 | Build formula                                                                       | DOGSLED field `build_expression`                           |
-| Derived primary-key flags                                                           | Standard dataset `primary_key`                             |
+| Derived primary-key flags, or an agentic model's `grain`                            | Standard dataset `primary_key`                             |
 | Native grain                                                                        | DOGSLED dataset `grain`                                    |
 | Source connection, resource settings and field metadata                             | DOGSLED source/field settings                              |
 | Parent, joins, filters, aggregation, sorting, unions, variables and materialization | DOGSLED dataset `build`, using native schema keys          |

@@ -381,10 +381,12 @@ source:
 columns:
   - name: status
     expr: stg_smartlead__campaign_leads.status
+    primary_key: true
     semantic_role: categorical
     description: Campaign lead status bucket.
   - name: is_unsubscribed
     expr: stg_smartlead__campaign_leads.is_unsubscribed
+    primary_key: true
     semantic_role: categorical
     description: Whether leads in the bucket have unsubscribed.
   - name: lead_count

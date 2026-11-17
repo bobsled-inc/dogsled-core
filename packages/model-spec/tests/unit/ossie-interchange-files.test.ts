@@ -263,3 +263,76 @@ it('exports and imports verified queries through the CLI', async () => {
   expect(parse(readFileSync(join(destination, queryFile.path), 'utf8'))).toEqual(query);
   expect(indexProjectFiles(result.files).entries.some((entry) => entry.kind === 'vq')).toBe(true);
 });
+
+it('writes a strict CLI export that only has relationship key warnings', async () => {
+  const root = temp();
+  writeFileSync(
+    join(root, 'warehouse.yml'),
+    stringify({
+      spec_version: '1',
+      type: 'integration',
+      name: 'warehouse',
+      source_type: 'duckdb',
+      connection: { schema: 'main' },
+      auth: { type: 'file', path: './never-opened.duckdb' },
+    })
+  );
+  for (const [name, columns] of [
+    ['orders', ['id', 'customer_id']],
+    ['customers', ['id']],
+  ] as const) {
+    writeFileSync(
+      join(root, `${name}.yml`),
+      stringify({
+        spec_version: '0.2',
+        type: 'source',
+        source_type: 'warehouse_table',
+        name,
+        connection: 'warehouse',
+        table: `PUBLIC.${name.toUpperCase()}`,
+        schema: { columns: columns.map((column) => ({ name: column, type: 'INTEGER' })) },
+      })
+    );
+  }
+  writeFileSync(
+    join(root, 'orders_to_customers.yml'),
+    stringify({
+      spec_version: '0.2',
+      type: 'relationship',
+      name: 'orders_to_customers',
+      left_model: 'warehouse.orders',
+      right_model: 'warehouse.customers',
+      join_columns: [{ left: 'customer_id', right: 'id' }],
+      relationship_type: 'many_to_one',
+    })
+  );
+  const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+  const command = new Command();
+  registerOssieCommand(command);
+  const output = join(root, 'export.yml');
+  await command.parseAsync(
+    [
+      'ossie',
+      'export',
+      '--all',
+      '--project',
+      root,
+      '--name',
+      'sales',
+      '--ossie-version',
+      '0.2.0.dev0',
+      '--strict',
+      '--out',
+      output,
+    ],
+    { from: 'user' }
+  );
+  const report = stdout.mock.calls.map(([value]) => String(value)).join('');
+  expect(process.exitCode ?? 0, report).toBe(0);
+  expect(JSON.parse(report)).toMatchObject({
+    ok: true,
+    ready: true,
+    diagnostics: [{ code: 'relationship_target_key_missing', severity: 'warning' }],
+  });
+  expect(parse(readFileSync(output, 'utf8')).relationships).toHaveLength(1);
+});

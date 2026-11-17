@@ -90,6 +90,12 @@ export {
   loadRelationshipsDirectory,
   loadVqsDirectory,
   validateMetadataReferences,
+  RELATIONSHIP_KEY_WARNING_CODES,
+  datasetPrimaryKey,
+  relationshipKeyWarnings,
+  type KeyedRelationship,
+  type RelationshipKeyWarning,
+  type RelationshipKeyWarningCode,
   type MetadataRegistry,
   type MetadataValidationContext,
   type MetricSpec,
@@ -99,6 +105,10 @@ export {
   type VqSpec,
   type VqSqlToken,
 } from '../entities/index.js';
+export {
+  indexedRelationshipKeyWarnings,
+  type IndexedRelationshipKeyWarning,
+} from './relationship-keys.js';
 
 // ---------------------------------------------------------------------------
 // Errors

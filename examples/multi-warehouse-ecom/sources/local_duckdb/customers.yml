@@ -8,5 +8,6 @@ schema:
   columns:
     - name: id
       type: INTEGER
+      primary_key: true
     - name: name
       type: STRING

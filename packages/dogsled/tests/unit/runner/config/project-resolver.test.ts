@@ -170,6 +170,54 @@ describe('validateProjectPipelines', () => {
     expect(result.warnings).toEqual(result.project.warnings);
   });
 
+  it.each([
+    ['the Project', '', {}],
+    [
+      'a separate Model Spec project',
+      'analytics/',
+      { 'dogsled.yml': 'models:\n  project: analytics\n' },
+    ],
+  ])(
+    'warns when a relationship in %s does not join on its one side primary key',
+    async (_, folder, config) => {
+      const root = project({
+        ...config,
+        [`${folder}sources/customers.yml`]: [
+          "spec_version: '0.2'",
+          'type: source',
+          'source_type: warehouse_table',
+          'name: customers',
+          'connection: warehouse',
+          'table: ANALYTICS.RAW.CUSTOMERS',
+          'schema:',
+          '  columns:',
+          '    - { name: id, type: BIGINT }',
+          '',
+        ].join('\n'),
+        [`${folder}relationships/orders_to_customers.yml`]: [
+          "spec_version: '0.2'",
+          'type: relationship',
+          'name: orders_to_customers',
+          'left_model: orders',
+          'right_model: warehouse.customers',
+          'join_columns:',
+          '  - { left: customer_id, right: id }',
+          'relationship_type: many_to_one',
+          '',
+        ].join('\n'),
+      });
+
+      const result = await validateProjectPipelines({ projectRoot: root });
+
+      expect(result.status).toBe('valid');
+      expect(result.warnings).toEqual([
+        expect.stringMatching(
+          new RegExp(`^${folder}relationships/orders_to_customers\\.yml: Relationship `, 'u')
+        ),
+      ]);
+    }
+  );
+
   it('returns structured duplicate ownership with both project relative file paths', async () => {
     const pipeline = modelsPipeline('warehouse').trim().replaceAll('\n', '\n    ');
     const root = project({

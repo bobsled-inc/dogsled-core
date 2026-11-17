@@ -103,3 +103,12 @@ export {
   type MetadataRegistry,
 } from './registry.js';
 export { validateMetadataReferences, type MetadataValidationContext } from './cross-references.js';
+export {
+  RELATIONSHIP_KEY_WARNING_CODES,
+  datasetPrimaryKey,
+  isRelationshipKeyWarningCode,
+  relationshipKeyWarnings,
+  type KeyedRelationship,
+  type RelationshipKeyWarning,
+  type RelationshipKeyWarningCode,
+} from './relationship-keys.js';

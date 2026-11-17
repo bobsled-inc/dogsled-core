@@ -166,3 +166,71 @@ it('keeps dependent model references valid when a scope renames a source', () =>
     ref: 'db.items',
   });
 });
+
+it('checks the keys of only the relationships a mapping scope binds', () => {
+  const relationship = (name: string) => ({
+    path: `${name}.yml`,
+    document: {
+      spec_version: '0.2',
+      type: 'relationship',
+      name,
+      left_model: 'derived',
+      right_model: 'db.raw',
+      join_columns: [{ left: 'id', right: 'id' }],
+      relationship_type: 'many_to_one',
+    },
+  });
+  const result = exportOssieDocuments(
+    [
+      {
+        path: 'mapping.yml',
+        document: {
+          spec_version: '0.2',
+          type: 'ontology_mapping',
+          name: 'mapping',
+          ontology_ref: { name: 'sales' },
+          semantic_model_ref: {
+            name: 'data',
+            bindings: {
+              datasets: { items: 'db.raw', derived: 'derived' },
+              relationships: ['bound'],
+            },
+          },
+          concept_mappings: [],
+        },
+      },
+      {
+        path: 'source.yml',
+        document: {
+          spec_version: '0.2',
+          type: 'source',
+          name: 'raw',
+          connection: 'db',
+          source_type: 'warehouse_table',
+          table: 'RAW.ITEMS',
+          schema: { columns: [{ name: 'id', type: 'BIGINT' }] },
+        },
+      },
+      {
+        path: 'model.yml',
+        document: {
+          spec_version: '0.2',
+          type: 'model',
+          name: 'derived',
+          description: 'Derived items',
+          grain: ['id'],
+          source: { ref: 'db.raw' },
+          materialization: { type: 'ephemeral' },
+          columns: [{ name: 'id', type: 'BIGINT', expr: 'id' }],
+        },
+      },
+      relationship('bound'),
+      relationship('unbound'),
+    ],
+    { ossieVersion: '0.2.0.dev0', strict: true }
+  );
+  expect(result).toMatchObject({ ok: true, ready: true });
+  expect(result.diagnostics.map((d) => [d.code, d.path])).toEqual([
+    ['relationship_target_key_missing', 'project#relationships.bound.join_columns'],
+  ]);
+});
