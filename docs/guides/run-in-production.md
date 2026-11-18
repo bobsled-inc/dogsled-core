@@ -451,10 +451,10 @@ Core does not include such a server: you run it yourself. With this backend,
 Dogsled saves the cursor itself as described above, so you cannot hold it back
 after a failed run. The backend holds only the extraction cursors: keep
 `run-state.json` with the copy steps above. Use it when you already have a service
-that stores state for your jobs. Dogsled does not load a state document over
-8 MiB, and then every resource that shares it fails at the start of a run. Each
-file that a file resource has read adds a few hundred bytes to the document, so a
-few tens of thousands of files fill it.
+that stores state for your jobs. Dogsled cannot load a state document over
+8 MiB, so every resource that shares one fails at the start of a run. Each file
+that a file resource has read adds a few hundred bytes to the document, so a few
+tens of thousands of files fill it.
 
 ### OAuth refresh tokens
 
