@@ -289,6 +289,20 @@ function messagesOf(stream: FakeWritable): Message[] {
 interface RunResult {
   records: Array<{ stream?: string; record: Record<string, unknown> }>;
   warnings: string[];
+  states: Message[];
+}
+
+function seededBookmarks(count: number): Record<string, { last_modified: string; etag: string }> {
+  return Object.fromEntries(
+    Array.from({ length: count }, (_, index) => [
+      `s3://raw/archive/${index}.csv`,
+      { last_modified: '2026-01-01T00:00:00.000Z', etag: `"etag-${index}"` },
+    ])
+  );
+}
+
+function stateKeys(message: Message | undefined): string[] {
+  return Object.keys((message?.['value'] ?? {}) as object).sort();
 }
 
 async function runStructured(args: {
@@ -319,6 +333,7 @@ async function runStructured(args: {
     warnings: messagesOf(stderr)
       .filter((message) => message.type === 'LOG' && message.level === 'warn')
       .map((message) => String(message.message)),
+    states: messagesOf(stdout).filter((message) => message.type === 'STATE'),
   };
 }
 
@@ -392,7 +407,7 @@ describe.each([s3Provider(), gcsProvider(), sftpProvider()])(
       expect(first.records).toHaveLength(CAP);
       expect(capWarnings(first)).toHaveLength(1);
       expect(capWarnings(first)[0]).toContain('orders');
-      expect(capWarnings(first)[0]).toContain(String(CAP));
+      expect(capWarnings(first)[0]).toContain(`(${CAP})`);
       expect(capWarnings(first)[0]).toContain('next run continues');
       expect(capWarnings(first)[0]).not.toContain('narrow');
 
@@ -527,6 +542,28 @@ describe('limit edge cases on the S3 client', () => {
     expect(next.records).toHaveLength(DAYS.length - CAP);
     expect(capWarnings(next)).toEqual([]);
   });
+
+  it('leaves the list of files read out of the STATE message', async () => {
+    const state: ExtractorState = {
+      streams: {
+        'exports/orders': {
+          last_run_at: '2026-01-01T00:00:00.000Z',
+          record_count: 0,
+          files: seededBookmarks(20_000),
+        },
+      },
+    };
+    const result = await runStructured({
+      client: fakeS3Client(storedFiles()),
+      integration: provider.integration,
+      resource: ordersResource(provider.path),
+      state,
+    });
+
+    expect(result.states).toHaveLength(1);
+    expect(stateKeys(result.states[0])).toEqual(['last_run_at', 'record_count']);
+    expect(bookmarkedUris(state)).toHaveLength(20_000 + CAP);
+  });
 });
 
 describe('document resource over more than max_files_per_run matching files', () => {
@@ -577,6 +614,7 @@ describe('document resource over more than max_files_per_run matching files', ()
     resource: FileResourceSpec;
     state: ExtractorState;
     client?: FileStorageClient;
+    fullRefresh?: boolean;
   }) {
     if (args.client) vi.mocked(createFileStorageClient).mockResolvedValueOnce(args.client);
     const stdout = new FakeWritable();
@@ -590,6 +628,7 @@ describe('document resource over more than max_files_per_run matching files', ()
       state: args.state,
       stateStore: createStateStore(args.state),
       advanceState: true,
+      fullRefresh: args.fullRefresh,
       startedAt: Date.now(),
     });
     const recordsIn = (stream: string) =>
@@ -605,6 +644,7 @@ describe('document resource over more than max_files_per_run matching files', ()
         .filter((message) => message.type === 'LOG' && message.level === 'warn')
         .map((message) => String(message.message))
         .filter((message) => message.includes('max_files_per_run')),
+      states: messagesOf(stdout).filter((message) => message.type === 'STATE'),
     };
   }
 
@@ -668,6 +708,97 @@ describe('document resource over more than max_files_per_run matching files', ()
     });
     expect(result.documents).toHaveLength(DOC_CAP);
     expect(result.capWarnings).toEqual([]);
+  });
+
+  it('does not count an oversize file toward the limit', async () => {
+    const [first, ...rest] = markdownFiles(['01', '02', '03', '04']);
+    const files = [{ ...first!, body: `# 01\n\n${'x'.repeat(200)}\n` }, ...rest];
+    const resource = s3DocumentResource();
+    const result = await runDocuments({
+      client: fakeS3Client(files),
+      integration: s3Documents.integration,
+      resource: {
+        ...resource,
+        source: {
+          ...resource.source,
+          parse: { formats: ['md'], on_error: 'record', max_file_size_mb: 0.0001 },
+        },
+      } as FileResourceSpec,
+      state: { streams: {} },
+    });
+    expect(result.parseErrors).toBe(1);
+    expect(result.documents).toHaveLength(DOC_CAP);
+    expect(result.capWarnings).toHaveLength(1);
+  });
+
+  it('keeps full_refresh documents reading the first files only, and warns that the rest are left out', async () => {
+    const files = markdownFiles(['01', '02', '03', '04']);
+    const state: ExtractorState = { streams: {} };
+    const resource = {
+      ...s3DocumentResource(),
+      replication: { method: 'full_refresh' },
+    } as FileResourceSpec;
+    const run = () =>
+      runDocuments({
+        client: fakeS3Client(files),
+        integration: s3Documents.integration,
+        resource,
+        state,
+      });
+
+    const first = await run();
+    const second = await run();
+
+    expect(first.documents).toHaveLength(DOC_CAP);
+    expect(second.documents).toEqual(first.documents);
+    expect(first.capWarnings).toHaveLength(1);
+    expect(second.capWarnings).toHaveLength(1);
+    expect(first.capWarnings[0]).toContain('narrow');
+  });
+
+  it('lets the next run continue after a one-off full refresh of an incremental document resource', async () => {
+    const files = markdownFiles(['01', '02', '03', '04']);
+    const state: ExtractorState = { streams: {} };
+    const run = (fullRefresh?: boolean) =>
+      runDocuments({
+        client: fakeS3Client(files),
+        integration: s3Documents.integration,
+        resource: s3DocumentResource(),
+        state,
+        fullRefresh,
+      });
+
+    const refreshed = await run(true);
+    expect(refreshed.documents).toHaveLength(DOC_CAP);
+    expect(refreshed.capWarnings).toHaveLength(1);
+    expect(refreshed.capWarnings[0]).not.toContain('narrow');
+
+    const next = await run();
+    expect(next.documents).toHaveLength(files.length - DOC_CAP);
+    expect(next.capWarnings).toEqual([]);
+  });
+
+  it('leaves the list of files read out of the STATE message', async () => {
+    const state: ExtractorState = {
+      streams: {
+        'docs_source/docs': {
+          last_run_at: '2026-01-01T00:00:00.000Z',
+          record_count: 0,
+          files: seededBookmarks(20_000),
+        },
+      },
+    };
+    const result = await runDocuments({
+      client: fakeS3Client(markdownFiles(['01', '02', '03'])),
+      integration: s3Documents.integration,
+      resource: s3DocumentResource(),
+      state,
+    });
+
+    expect(result.states).toHaveLength(1);
+    expect(stateKeys(result.states[0])).toEqual(['last_run_at', 'record_count']);
+    const saved = state.streams['docs_source/docs'] as { files?: Record<string, unknown> };
+    expect(Object.keys(saved.files ?? {})).toHaveLength(20_000 + DOC_CAP);
   });
 
   it('stops trying to download at the limit even when every download fails', async () => {

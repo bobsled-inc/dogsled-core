@@ -468,7 +468,12 @@ export async function extractDocumentResource(
       state.streams[streamKey(integrationName, resource.name)] = bookmark;
       await stateStore.save(state);
     }
-    await emitter.emitState(resource.name, bookmark);
+    // The STATE message leaves out the per-file map. The loader ignores it, and it grows with
+    // the path until the message passes the loader's line limit. The state file keeps it.
+    await emitter.emitState(resource.name, {
+      last_run_at: bookmark.last_run_at,
+      record_count: bookmark.record_count,
+    });
 
     return { documentsEmitted, chunksEmitted, parseErrorsEmitted, bookmark };
   } finally {

@@ -312,15 +312,23 @@ Each run reads at most 10,000 files, and skips files larger than 5 GiB with a
 warning (document resources record them in `__parse_errors`). Change these limits
 with `limits.max_files_per_run` and `limits.max_file_size_bytes` on the resource.
 
-The file limit counts the files a run tries to read. An incremental run lists
-the whole path and does not count the files it skips because it already read
-them, so a path with more matching files than the limit still gives its newer
-files to later runs. When more files are ready than one run may read, the run
-reads up to the limit, logs a warning, and the next run continues with the rest.
-A file that fails to read counts too, and counts again on each run, because it
-is never marked as read. A `full_refresh` resource starts at the front on every
-run, so it reads the same first files each time and never reaches the rest; it
-logs the warning too. Raise `limits.max_files_per_run` or narrow `source.path`
-so every file fits in one run. Every run lists the whole path, so it reports
-every oversize file in it, and a document resource with `parse.on_error: fail`
-stops at the first one.
+The file limit counts the files a run tries to read. An incremental run does not
+count the files it skips because it already read them, so a path with more
+matching files than the limit still gives its newer files to later runs. When
+more files are ready than one run may read, the run reads up to the limit, logs a
+warning, and the next run continues with the rest. A file that fails to download
+counts too, and counts again on each run, because it is never marked as read. A
+`full_refresh` resource starts at the front on every run, so it reads the same
+first files each time and never reaches the rest; it logs the warning too. A
+one-off full refresh of an incremental resource stops at the limit as well, so the
+table holds only those files until later runs add the rest. Raise
+`limits.max_files_per_run` or narrow `source.path` so every file fits in one run.
+A run lists the path until it reaches the file that would pass the limit, or the
+end of the path. It reports every oversize file it passes, and a document
+resource with `parse.on_error: fail` stops at the first one.
+
+Saved state keeps one entry of a few hundred bytes for every file a resource has
+read, and keeps it after the file is gone. A resource that has read a million
+files carries a state file of hundreds of megabytes. The HTTPS state backend
+cannot load a state document over 8 MiB, which a few tens of thousands of files
+fill.
