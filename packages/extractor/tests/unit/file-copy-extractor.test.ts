@@ -393,6 +393,22 @@ describe('copy extractor: S3 and GCS time-based state', () => {
     expect(second.metrics[0]?.metrics).toMatchObject({ files_processed: 0, bytes_downloaded: 0 });
   });
 
+  it('reports files_processed and bytes_downloaded as 0 when a run copies nothing', async () => {
+    // Dogsled tells a copy from other file Resources by these two metrics, so a quiet run must
+    // still carry them: the keys present, with the value 0.
+    const files = [file('a.csv', 0)];
+    const state: ExtractorState = { streams: {} };
+    const emptyListing = await run(fakeStore([]).client, { streams: {} });
+    await run(fakeStore(files).client, state);
+    const nothingNew = await run(fakeStore(files).client, state);
+
+    for (const quiet of [emptyListing, nothingNew]) {
+      expect(quiet.metrics).toHaveLength(1);
+      expect(quiet.metrics[0]?.metrics).toHaveProperty('files_processed', 0);
+      expect(quiet.metrics[0]?.metrics).toHaveProperty('bytes_downloaded', 0);
+    }
+  });
+
   it('does not save state for a limited run', async () => {
     const files = [file('a.csv', 0), file('b.csv', 1)];
     const state: ExtractorState = { streams: {} };
