@@ -392,8 +392,13 @@ function pickClosestUnionVariant(variants: ZodIssue[][]): ZodIssue[] | null {
 
   let best: ZodIssue[] | null = null;
   let bestScore = 0;
+  // A variant that says it is the wrong one says nothing about the keys, so it does not count.
   const someVariantAcceptsRootKeys = variants.some(
-    (variant) => Array.isArray(variant) && variant.length > 0 && !hasRootUnrecognizedKeys(variant)
+    (variant) =>
+      Array.isArray(variant) &&
+      variant.length > 0 &&
+      !hasRootUnrecognizedKeys(variant) &&
+      !variant.some(isWrongVariantTypeRefine)
   );
 
   for (const variant of variants) {

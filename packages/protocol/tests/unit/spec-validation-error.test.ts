@@ -191,6 +191,20 @@ describe('formatZodIssues', () => {
     expect(out).not.toContain('schema:');
   });
 
+  it('does not let a variant that rules itself out hide a root key error in the others', () => {
+    const named = z.object({ name: z.string() }).strict();
+    // Stops at once, before it reads any key, with the wrong-variant marker.
+    const notThisKind = z.any().refine(() => false, { abort: true, path: ['type'] });
+    const schema = z.union([notThisKind.pipe(named), named]);
+
+    // `name` is missing too, so no variant is left to return on its own.
+    const result = schema.safeParse({ nmae: 'typo' });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(formatZodIssues(result.error, { schema })).toContain('nmae: Unrecognized key');
+  });
+
   it('does not pick a sibling variant that only matches before a type refine', () => {
     const transportCore = z.discriminatedUnion('type', [
       z.object({
