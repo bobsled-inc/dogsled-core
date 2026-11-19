@@ -52,6 +52,13 @@ export async function runDryRun(
   const seenStreams = new Set<string>();
 
   for await (const message of readProtocol(input)) {
+    if (message.type === 'FILE') {
+      // A dry run never deletes the temp file, so the sender would wait on it for good.
+      throw new CommandError(
+        `Stream "${message.stream}" copies files, so --dry-run cannot preview it. Run without --dry-run.`,
+        2
+      );
+    }
     if (message.type === 'SCHEMA') {
       seenStreams.add(message.stream);
       const effectiveStrategy =

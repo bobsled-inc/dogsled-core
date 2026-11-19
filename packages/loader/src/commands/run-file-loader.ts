@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { Writable } from 'node:stream';
 
 import { createDestination } from '../runtime/destinations/index.js';
+import { normalizeDestinationPath } from '../runtime/destinations/types.js';
 import { sanitizeStreamName } from '../runtime/utils.js';
 import type { DuckDbWriter } from '../runtime/duckdb-writer.js';
 import { getFormatDef } from '../runtime/formats.js';
@@ -15,7 +16,7 @@ import { type FileDestConfig } from '../schemas/config.js';
 import { CommandError } from '@bobsled-inc/protocol';
 import { createLogger } from '../runtime/logger.js';
 
-import type { BatchEncoding, SchemaMessage } from '@bobsled-inc/protocol';
+import type { BatchEncoding, FileMessage, SchemaMessage } from '@bobsled-inc/protocol';
 import { buildTempFileName, nextOutputIndex } from './run-helpers.js';
 import type { PublishedFile, RunLoaderDependencies, RunLoaderResult } from './run.js';
 
@@ -52,6 +53,34 @@ export function fileUriToPath(uri: string): string {
     throw new Error(`Unsupported batch URI "${uri}". Only file:// URIs are supported.`);
   }
   return fileURLToPath(url);
+}
+
+/** Files written at once for FILE messages. */
+const COPY_CONCURRENCY = 8;
+
+/**
+ * Where a copied file goes: `<stream>/<subfolder>/<key>`. The key comes from the sender, so it
+ * must already be a clean path. A key the destination would rewrite, such as one with a
+ * backslash or a `..` folder, is refused instead of landing somewhere the sender did not name.
+ */
+function copyDestinationPath(stream: string, subfolder: string, relativeKey: string): string {
+  const named = relativeKey.slice(0, 200).replace(/\p{Cc}/gu, (char) => {
+    return `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
+  });
+  const refuse = (why: string): never => {
+    throw new CommandError(`Refusing to copy "${named}": ${why}.`, 2);
+  };
+  if (/\p{Cc}/u.test(relativeKey)) refuse('its name has a control character');
+  if (relativeKey.includes('\\')) refuse('its name has a backslash');
+  if (relativeKey.split('/').some((part) => part === '' || part === '.' || part === '..')) {
+    refuse('its name has an empty, "." or ".." folder');
+  }
+  const destinationPath = `${stream}/${subfolder}${relativeKey}`;
+  const normalized = normalizeDestinationPath(destinationPath);
+  if (normalized !== destinationPath || !normalized.startsWith(`${stream}/`)) {
+    refuse('the destination would change its name');
+  }
+  return destinationPath;
 }
 
 export const DEFAULT_JSONL_ENCODING: BatchEncoding = Object.freeze({ format: 'jsonl' as const });
@@ -192,8 +221,70 @@ export async function runFileLoader(
     }
   };
 
+  const copying = new Set<Promise<void>>();
+  let copyFailure: { error: unknown } | undefined;
+
+  const copyOne = async (message: FileMessage): Promise<void> => {
+    const stream = sanitizeStreamName(message.stream);
+    const destinationPath = copyDestinationPath(stream, streamSubfolder, message.relative_key);
+    const sourcePath = fileUriToPath(message.uri);
+    // This loader moves or deletes the file it is given, so it takes only a temp file the
+    // extractor made, which sits in a folder with this prefix.
+    if (!path.basename(path.dirname(sourcePath)).startsWith('dogsled-copy-')) {
+      throw new CommandError(
+        `Refusing to copy "${message.relative_key.slice(0, 200)}": its temp file is not in a ` +
+          'dogsled-copy- folder.',
+        2
+      );
+    }
+    const info = await fs.lstat(sourcePath);
+    if (!info.isFile() || info.size !== message.size) {
+      throw new CommandError(
+        `Refusing to copy "${message.relative_key.slice(0, 200)}": its temp file is not a file of ` +
+          `the size the message states (${message.size} bytes).`,
+        2
+      );
+    }
+    const publishStart = performance.now();
+    const uri = await destination.publish(sourcePath, destinationPath, { copy: true });
+    const publishMs = performance.now() - publishStart;
+    // The sender counts a deleted temp file as written, so delete it only after the write.
+    await fs.rm(sourcePath, { force: true });
+
+    publishedFiles.push({ stream, destinationPath, uri });
+    flushCounts.set(stream, (flushCounts.get(stream) ?? 0) + 1);
+    totalFlushBytes += info.size;
+    logger.metric('flush_bytes', info.size, { stream });
+    logger.metric('publish_ms', Math.round(publishMs), { stream });
+    logger.info(`${stream}: wrote ${uri}`);
+  };
+
+  const startCopy = async (message: FileMessage): Promise<void> => {
+    while (copying.size >= COPY_CONCURRENCY && copyFailure === undefined) {
+      await Promise.race(copying);
+    }
+    if (copyFailure !== undefined) throw copyFailure.error;
+    const task: Promise<void> = copyOne(message)
+      .catch((error: unknown) => {
+        copyFailure ??= { error };
+        // The sender waits for its files to be written, so it may send nothing more. Stop
+        // reading now, or this run would wait on it for good.
+        if (!input.destroyed && !input.readableEnded) {
+          input.destroy(error instanceof Error ? error : new Error(String(error)));
+        }
+      })
+      .finally(() => copying.delete(task));
+    copying.add(task);
+  };
+
+  const finishCopies = async (): Promise<void> => {
+    await Promise.all(copying);
+    if (copyFailure !== undefined) throw copyFailure.error;
+  };
+
   try {
     for await (const message of readProtocol(input)) {
+      if (copyFailure !== undefined) throw copyFailure.error;
       switch (message.type) {
         case 'SCHEMA': {
           const safeStream = sanitizeStreamName(message.stream);
@@ -236,7 +327,12 @@ export async function runFileLoader(
         case 'REPLACE':
           // File destinations publish each flush as new files and apply no load strategy.
           break;
+        case 'FILE':
+          await startCopy(message);
+          break;
         case 'STATE': {
+          // STATE says the stream's earlier files are done, so wait for their writes.
+          await finishCopies();
           const safeStream = sanitizeStreamName(message.stream);
           const buffer = buffers.get(safeStream);
           const flushedPath = (await buffer?.flush()) ?? null;
@@ -250,6 +346,8 @@ export async function runFileLoader(
         }
       }
     }
+
+    await finishCopies();
 
     for (const [stream, buffer] of buffers) {
       const flushedPath = await buffer.flush();

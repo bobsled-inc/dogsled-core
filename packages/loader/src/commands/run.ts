@@ -668,6 +668,12 @@ export async function runDatabaseLoader(
           }
           break;
         }
+        case 'FILE':
+          throw new CommandError(
+            `Stream "${message.stream}" copies files, which needs a file destination (local, s3 or gcs). ` +
+              `${rawConfig.dest} loads rows.`,
+            2
+          );
         case 'REPLACE': {
           const safeStream = prefixedTableName(message.stream);
           replacements.add(safeStream, message, schemas.get(safeStream)?.columns);

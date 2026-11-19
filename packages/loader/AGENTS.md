@@ -85,6 +85,7 @@ These destinations should fail fast with user-facing validation errors when `vec
 - **local**: Moves converted file into output directory
 - **gcs**: Dynamic import of `@google-cloud/storage` (optional peer dep)
 - **Path safety**: Destination paths normalized and reject traversal outside configured root/prefix
+- **FILE copy**: `runFileLoader` writes each FILE's temp file as it is to `<stream>/[<stream_subfolder>/]<relative_key>` with `publish(..., { copy: true })`, which sets no content type. Up to 8 writes run at once. A temp file is deleted only after its write, because the extractor counts a deleted file as written. A failed write ends the run, and the loader stops reading so it cannot wait on an extractor that waits on it. A temp file must sit in a folder named `dogsled-copy-…`, since the loader moves or deletes it, and `--dry-run` fails on FILE. Refused keys: a backslash, a control character, an empty, `.` or `..` folder, or an S3 or GCS key over 1,024 bytes. Database destinations fail on FILE
 - **Stream subfolder**: Opt-in `streamSubfolder` (`--stream-subfolder`, `stream_subfolder`) places files at `<stream>/<subfolder>/<stream>-<n>.<ext>`. Its rule is `isValidStreamSubfolder` in `@bobsled-inc/protocol`, shared with the `dogsled.yml` schema. Unset, the path is exactly `<stream>/<stream>-<n>.<ext>`
 
 ## Format Notes

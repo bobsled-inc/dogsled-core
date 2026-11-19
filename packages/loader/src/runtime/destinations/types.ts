@@ -1,7 +1,22 @@
 import * as path from 'node:path';
 
+export interface PublishOptions {
+  /** Write a file as it is: do not label it with the output format's content type. */
+  copy?: boolean;
+}
+
 export interface FileDestination {
-  publish(localPath: string, destPath: string): Promise<string>;
+  publish(localPath: string, destPath: string, options?: PublishOptions): Promise<string>;
+}
+
+/** S3 and GCS reject an object key over 1,024 bytes. */
+export function assertObjectKeyLength(key: string): void {
+  const bytes = Buffer.byteLength(key);
+  if (bytes > 1024) {
+    throw new Error(
+      `Object key is ${bytes} bytes, over the 1,024 bytes S3 and GCS allow: ${key.slice(0, 80)}...`
+    );
+  }
 }
 
 export function normalizeDestinationPath(destPath: string): string {

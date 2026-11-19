@@ -2,7 +2,12 @@ import * as path from 'node:path';
 
 import { contentTypeForFormat, type OutputFormat } from '../formats.js';
 import { withRetry } from '../retry.js';
-import { normalizeDestinationPath, type FileDestination } from './types.js';
+import {
+  assertObjectKeyLength,
+  normalizeDestinationPath,
+  type FileDestination,
+  type PublishOptions,
+} from './types.js';
 
 export interface GcsBucketLike {
   upload(
@@ -67,16 +72,17 @@ export class GcsDestination implements FileDestination {
     this.providedStorage = options.storage;
   }
 
-  async publish(localPath: string, destPath: string): Promise<string> {
+  async publish(localPath: string, destPath: string, options?: PublishOptions): Promise<string> {
     const normalizedPath = normalizeDestinationPath(destPath);
     const objectPath = this.prefix ? path.posix.join(this.prefix, normalizedPath) : normalizedPath;
+    assertObjectKeyLength(objectPath);
     const storage = await this.getStorage();
 
     const uploadOptions: { destination: string; validation: string; contentType?: string } = {
       destination: objectPath,
       validation: 'crc32c',
     };
-    if (this.format) {
+    if (this.format && !options?.copy) {
       uploadOptions.contentType = contentTypeForFormat(this.format);
     }
 
