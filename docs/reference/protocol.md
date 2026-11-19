@@ -96,6 +96,34 @@ values. `key` must be a column of the stream, and `values` holds 1 to 1,000
 strings. Table destinations apply it. File destinations write each run's rows as
 new files and ignore it.
 
+`FILE` copies one file as it is. A file Resource with `source.kind: copy` sends
+one per file. `uri` names a temp file the extractor made. The loader writes its
+bytes to `<stream>/<relative_key>` at the destination, then deletes the temp
+file, and the extractor treats a deleted file as written:
+
+```json
+{
+  "_v": 1,
+  "type": "FILE",
+  "stream": "drops",
+  "uri": "file:///tmp/dogsled-copy-PNkFzY/2026_report-4e4d49d0b7.csv",
+  "relative_key": "2026/report.csv",
+  "size": 20
+}
+```
+
+`relative_key` is the file's path below the folder the Resource's `path` starts
+in. `size` is its size in bytes, and the loader refuses a temp file of another
+size. The loader also refuses a key with a backslash, a control character, or an
+empty, `.` or `..` folder, and a final S3 or GCS key over 1,024 bytes. A FILE has
+no `SCHEMA` and no `RECORD`. Only `local`, `s3` and `gcs` destinations take it. A
+table destination, or a loader from before this message, fails on it instead of
+skipping the file. A FILE needs one loader: another loader that reads the same
+messages would find the temp file gone. The loader takes only a temp file that sits in a
+folder named `dogsled-copy-…`, because it moves or deletes the file it is given. While it
+waits for the loader, the extractor writes an empty line about once a second. Readers skip
+it, and the write fails when the loader has gone.
+
 ## Control messages (standard error)
 
 `LOG` carries a level (`debug`, `info`, `warn`, `error`) and a message; `METRIC`

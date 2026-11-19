@@ -20,6 +20,7 @@ import {
 import type {
   BatchMessage,
   EmbeddedFromMetadata,
+  FileMessage,
   LineageMessage,
   LineageUpstreamEntry,
   LogMessage,
@@ -83,7 +84,7 @@ function validateIdentifier(
 
 function readStream(
   value: RawEnvelope,
-  messageType: 'SCHEMA' | 'RECORD' | 'STATE' | 'BATCH' | 'METRIC' | 'LINEAGE' | 'REPLACE'
+  messageType: 'SCHEMA' | 'RECORD' | 'STATE' | 'BATCH' | 'METRIC' | 'LINEAGE' | 'REPLACE' | 'FILE'
 ): string {
   if (typeof value['stream'] !== 'string') {
     failValidation(`${messageType} message must include a stream`);
@@ -447,6 +448,22 @@ function parseReplaceMessage(value: RawEnvelope): ReplaceMessage {
   return { _v: PROTOCOL_VERSION, type: 'REPLACE', stream, key, values: [...values] };
 }
 
+// Only the shape is checked here. A consumer decides whether it may write the key.
+function parseFileMessage(value: RawEnvelope): FileMessage {
+  const stream = readStream(value, 'FILE');
+  const { uri, relative_key: relativeKey, size } = value;
+  if (typeof uri !== 'string' || !uri.startsWith('file://')) {
+    failValidation('FILE message uri must be a file:// URI');
+  }
+  if (typeof relativeKey !== 'string' || relativeKey.length === 0 || relativeKey.includes('\0')) {
+    failValidation('FILE message must include a non-empty relative_key without null bytes');
+  }
+  if (typeof size !== 'number' || !Number.isSafeInteger(size) || size < 0) {
+    failValidation('FILE message size must be a non-negative integer');
+  }
+  return { _v: PROTOCOL_VERSION, type: 'FILE', stream, uri, relative_key: relativeKey, size };
+}
+
 function parseStateMessage(value: RawEnvelope): StateMessage {
   const stream = readStream(value, 'STATE');
 
@@ -801,6 +818,8 @@ function parseStdoutEnvelope(message: RawEnvelope): StdoutMessage | UnsupportedS
       return parseLineageMessage(message);
     case 'REPLACE':
       return parseReplaceMessage(message);
+    case 'FILE':
+      return parseFileMessage(message);
     default:
       return {
         envelopeType: message['type'],
