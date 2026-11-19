@@ -13,6 +13,7 @@ import {
   snowflakeRowDialect,
   waitForSnowflakeLockQueue,
 } from '../../../src/agentic/warehouse-row-dialects.js';
+import { executeImmediateScript as script } from '../../support/snowflake-script.js';
 
 // Fake timers do not reach node:timers/promises, which the lock queue's wait uses.
 vi.mock('node:timers/promises', async (original) => ({
@@ -34,14 +35,6 @@ const values = { key_hash: 'hash', record: "it's", version: 0, active: true };
 function fakeDb(query: AgenticRowDb['query'] = async () => []) {
   return { run: vi.fn(async (_sql: string) => ({})), query: vi.fn(query) };
 }
-/** The script inside `EXECUTE IMMEDIATE`, as Snowflake reads the literal: one pass, because
- * `\\n` is a backslash and an n, not a backslash and a new line. */
-const script = (sql: string): string =>
-  /^EXECUTE IMMEDIATE '(.*)'$/s
-    .exec(sql)![1]!
-    .replace(/\\(.)|''/gs, (match, escaped?: string) =>
-      match === "''" ? "'" : escaped === 'n' ? '\n' : escaped!
-    );
 
 describe('PostgreSQL row dialect', () => {
   const dialect = postgresRowDialect;
