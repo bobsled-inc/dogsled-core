@@ -2,16 +2,12 @@ import type { SqlRunnerModule } from '@bobsled-inc/connections';
 import type { AgenticPublicationContext } from '../../src/agentic/publication.js';
 import { checkpointTransport } from './checkpoint-transport.js';
 import { publicationWarehouse } from './publication-warehouse.js';
+import { unescapeSnowflake } from './snowflake-script.js';
 
-const escapes: Record<string, string> = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f' };
 type Dialect = 'snowflake' | 'postgres';
 /** Reverses literal escaping: doubled quotes, plus backslash sequences except in PostgreSQL. */
 const unescape = (text: string, dialect: Dialect) =>
-  dialect === 'postgres'
-    ? text.replaceAll("''", "'")
-    : text.replace(/''|\\(.)/g, (match, next?: string) =>
-        match === "''" ? "'" : (escapes[next!] ?? next!)
-      );
+  dialect === 'postgres' ? text.replaceAll("''", "'") : unescapeSnowflake(text);
 
 /** Stateful double for the shared cursor table. One writer; no SQL engine. */
 function cursorTable(dialect: Dialect) {

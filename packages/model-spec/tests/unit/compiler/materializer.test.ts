@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   materializeSql,
@@ -6,6 +6,12 @@ import {
   planTransition,
 } from '../../../src/compiler/materializer.js';
 import { CommandError } from '../../../src/errors.js';
+import { quoteLiteral } from '../../../src/compiler/dialect.js';
+import {
+  MATCH_KEY_SECRET_RUNTIME_TOKEN,
+  materializeMatchKeySecretPlaceholders,
+} from '../../../src/compiler/expr/functions-cleaning.js';
+import { executeImmediateScript } from '../../support/snowflake-script.js';
 
 import type { SupportedDialect } from '../../../src/compiler/dialect.js';
 import type { ResolvedTransformSpec } from '../../../src/compiler/parser.js';
@@ -293,18 +299,68 @@ describe('materializeSql', () => {
   // -----------------------------------------------------------------------
 
   describe('incremental delete_insert', () => {
-    it('snowflake: BEGIN/DELETE/INSERT/COMMIT', () => {
-      const spec = makeSpec({
-        materialization: 'incremental',
-        materializationConfig: { strategy: 'delete_insert', unique_key: 'id' },
-      });
-      const result = materializeSql(SELECT_SQL, spec, 'MY_SCHEMA', 'snowflake');
+    // Runners such as the Snowflake SQL API give each call its own session,
+    // so the transaction must reach the warehouse as one statement.
+    const spec = makeSpec({
+      materialization: 'incremental',
+      materializationConfig: { strategy: 'delete_insert', unique_key: 'id' },
+    });
 
-      expect(result).toHaveLength(4);
-      expect(result[0]).toBe('BEGIN;');
-      expect(result[1]).toContain('DELETE FROM');
-      expect(result[2]).toContain('INSERT INTO');
-      expect(result[3]).toBe('COMMIT;');
+    it('snowflake: deletes and inserts in one EXECUTE IMMEDIATE block, keeping quotes and $$', () => {
+      const select = "SELECT id AS ID, 'it''s $$ a \\ b' AS NAME FROM raw.users";
+      const [statement, ...rest] = materializeSql(select, spec, 'MY_SCHEMA', 'snowflake');
+
+      expect(rest).toEqual([]);
+      expect(executeImmediateScript(statement!)).toBe(
+        [
+          'BEGIN',
+          'BEGIN TRANSACTION;',
+          `DELETE FROM "MY_SCHEMA"."TEST_MODEL" WHERE (ID) IN (SELECT ID FROM (${select}) AS __source);`,
+          `INSERT INTO "MY_SCHEMA"."TEST_MODEL"\n${select};`,
+          'COMMIT;',
+          'EXCEPTION WHEN OTHER THEN ROLLBACK; RAISE;',
+          'END;',
+        ].join('\n')
+      );
+    });
+
+    it('other warehouses: delete and insert inside a transaction on one connection', () => {
+      expect(materializeSql(SELECT_SQL, spec, 'MY_SCHEMA', 'postgres')).toEqual([
+        'BEGIN;',
+        expect.stringContaining('DELETE FROM'),
+        expect.stringContaining('INSERT INTO'),
+        'COMMIT;',
+      ]);
+      expect(materializeSql(SELECT_SQL, spec, 'MY_SCHEMA', 'mysql')[0]).toBe('START TRANSACTION;');
+    });
+
+    it('snowflake: decodes tabs in the model SQL inside the block', () => {
+      const select = 'SELECT\tid AS ID FROM raw.users';
+      const [statement] = materializeSql(select, spec, 'MY_SCHEMA', 'snowflake');
+      expect(executeImmediateScript(statement!)).toContain(
+        `INSERT INTO "MY_SCHEMA"."TEST_MODEL"\n${select};`
+      );
+    });
+
+    it('snowflake: keeps a match-key secret with quotes and backslashes exact inside the block', () => {
+      const secret = "p'ss\\word";
+      vi.stubEnv('DOGSLED_MATCH_KEY_SECRET', secret);
+      try {
+        const key = quoteLiteral(MATCH_KEY_SECRET_RUNTIME_TOKEN, 'snowflake');
+        const [statement] = materializeSql(
+          `SELECT SHA2(${key} || email) AS ID FROM raw.users`,
+          spec,
+          'MY_SCHEMA',
+          'snowflake'
+        );
+        const script = executeImmediateScript(
+          materializeMatchKeySecretPlaceholders(statement!, 'snowflake')
+        );
+        expect(script).toContain(`SHA2(${quoteLiteral(secret, 'snowflake')} || email)`);
+        expect(script).not.toContain(MATCH_KEY_SECRET_RUNTIME_TOKEN);
+      } finally {
+        vi.unstubAllEnvs();
+      }
     });
   });
 
