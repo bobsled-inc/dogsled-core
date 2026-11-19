@@ -6,7 +6,7 @@
  * agents can suggest by name instead of hand-rolling raw SQL.
  */
 
-import { getCanonicalDialect, quoteLiteral } from '../dialect.js';
+import { escapeSqlString, getCanonicalDialect, quoteLiteral } from '../dialect.js';
 import type { SupportedDialect } from '../dialect.js';
 import {
   USPS_DIRECTIONALS,
@@ -435,9 +435,14 @@ export function materializeMatchKeySecretPlaceholders(
   dialect: SupportedDialect
 ): string {
   if (!sql.includes(MATCH_KEY_SECRET_RUNTIME_TOKEN)) return sql;
+  const token = quoteLiteral(MATCH_KEY_SECRET_RUNTIME_TOKEN, dialect);
+  const secret = quoteLiteral(readMatchKeySecret(), dialect);
+  // Inside an EXECUTE IMMEDIATE literal the token is escaped once more, so the secret must be too.
   return sql
-    .split(quoteLiteral(MATCH_KEY_SECRET_RUNTIME_TOKEN, dialect))
-    .join(quoteLiteral(readMatchKeySecret(), dialect));
+    .split(escapeSqlString(token, dialect))
+    .join(escapeSqlString(secret, dialect))
+    .split(token)
+    .join(secret);
 }
 
 /**

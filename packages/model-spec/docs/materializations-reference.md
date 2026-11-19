@@ -198,7 +198,7 @@ CREATE MATERIALIZED VIEW "analytics"."fct_orders" AS (
 Three strategies, dispatched in `materializer.ts:287-305`.
 
 - `merge` (default) — emits `MERGE INTO` with `WHEN MATCHED THEN UPDATE` / `WHEN NOT MATCHED THEN INSERT`. Requires `unique_key`. On MySQL, Model Spec emits `INSERT ... ON DUPLICATE KEY UPDATE` instead since MySQL has no `MERGE` (`generateMergeDdl` L506-511).
-- `delete_insert` — `DELETE FROM ... WHERE unique_key IN (...)` followed by `INSERT INTO`, wrapped in a `BEGIN` / `COMMIT` (`START TRANSACTION` / `COMMIT` on MySQL). Requires `unique_key`. Useful when the source emits "batches" you want to fully replace.
+- `delete_insert` — `DELETE FROM ... WHERE unique_key IN (...)` followed by `INSERT INTO`, wrapped in a `BEGIN` / `COMMIT` (`START TRANSACTION` / `COMMIT` on MySQL). Snowflake gets the transaction as one `EXECUTE IMMEDIATE` Snowflake Scripting block that rolls back on any error, so it holds on runners that give each statement its own session, such as the Snowflake SQL API. Requires `unique_key`. Useful when the source emits "batches" you want to fully replace.
 - `append` — `INSERT INTO` only. Requires `incremental_filter` (without it, every row duplicates each run). Use the `self` keyword in `incremental_filter` to reference the model's own table — it is substituted to the fully-qualified table name at run time.
 
 ```yaml

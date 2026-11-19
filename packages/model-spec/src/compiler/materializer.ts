@@ -8,6 +8,7 @@ import {
   caseName,
   getCanonicalDialect,
   quoteIdentifier,
+  quoteLiteral,
   supportsDialectCapability,
 } from './dialect.js';
 import { CommandError } from '../errors.js';
@@ -564,14 +565,26 @@ function generateDeleteInsertDdl(
   }
 
   const casedKeys = keys.map((k) => caseName(k, dialect));
-  const beginTxn = getCanonicalDialect(dialect) === 'mysql' ? 'START TRANSACTION;' : 'BEGIN;';
-
-  return [
-    beginTxn,
+  const statements = [
     `DELETE FROM ${fqName} WHERE (${casedKeys.join(', ')}) IN (SELECT ${casedKeys.join(', ')} FROM (${selectSql}) AS __source);`,
     `INSERT INTO ${fqName}\n${selectSql};`,
-    'COMMIT;',
   ];
+  const canonical = getCanonicalDialect(dialect);
+
+  // A runner may give each call its own session, as the Snowflake SQL API does.
+  if (canonical === 'snowflake') {
+    const script = [
+      'BEGIN',
+      'BEGIN TRANSACTION;',
+      ...statements,
+      'COMMIT;',
+      'EXCEPTION WHEN OTHER THEN ROLLBACK; RAISE;',
+      'END;',
+    ].join('\n');
+    return [`EXECUTE IMMEDIATE ${quoteLiteral(script, dialect)};`];
+  }
+
+  return [canonical === 'mysql' ? 'START TRANSACTION;' : 'BEGIN;', ...statements, 'COMMIT;'];
 }
 
 function generateMergeDdl(
