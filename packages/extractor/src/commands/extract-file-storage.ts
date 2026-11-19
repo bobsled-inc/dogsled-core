@@ -1,9 +1,16 @@
 import { DogsledRuntimeError } from '@bobsled-inc/protocol';
 
-import type { FileResourceSpec, ExtractorState, IntegrationSpec } from '../types/index.js';
+import { isFileCopyResource } from '../framework/extractor/index.js';
+import type {
+  FileCopyResourceSpec,
+  FileResourceSpec,
+  ExtractorState,
+  IntegrationSpec,
+} from '../types/index.js';
 import type { ControlLogger } from '../runtime/control.js';
 import type { Emitter } from '../runtime/emitter.js';
 import {
+  ExtractorConfigError,
   classifyFailureReason,
   serializeExtractorErrorCause,
   type ResourceCircuitBreaker,
@@ -28,19 +35,21 @@ export async function runFileStorageResourceExtraction({
   state,
   stateStore,
   advanceState,
+  stateWriteDisabled,
   fullRefresh,
   limit,
   startedAt,
   circuitBreaker,
 }: {
   integration: IntegrationSpec;
-  resource: FileResourceSpec;
+  resource: FileResourceSpec | FileCopyResourceSpec;
   integrationName: string;
   emitter: Emitter;
   logger: ControlLogger;
   state: ExtractorState;
   stateStore: StateStore;
   advanceState: boolean;
+  stateWriteDisabled?: boolean;
   fullRefresh?: boolean;
   limit?: number;
   startedAt: number;
@@ -63,9 +72,8 @@ export async function runFileStorageResourceExtraction({
   process.on('SIGINT', onSigint);
   process.on('SIGTERM', onSigterm);
   try {
-    const result = await extractFileStorageResource({
+    const shared = {
       integration,
-      resource,
       integrationName,
       emitter,
       logger,
@@ -75,25 +83,41 @@ export async function runFileStorageResourceExtraction({
       fullRefresh,
       limit,
       signal: controller.signal,
-    });
+    };
+    let recordCount = 0;
+    let completed: string;
+    if (isFileCopyResource(resource)) {
+      if (stateWriteDisabled) {
+        throw new ExtractorConfigError(
+          `Resource "${resource.name}" copies files, so it cannot run with --no-state-write: it ` +
+            'saves its state only after the loader has written every file. A pipeline with a ' +
+            'list of destinations runs the extractor that way, so give the pipeline one destination.'
+        );
+      }
+      // Loaded only for a copy, like the dialect clients of warehouse sources.
+      const { extractFileCopyResource } = await import('../runtime/file-copy-extractor.js');
+      const copied = await extractFileCopyResource({ ...shared, resource });
+      completed = `${copied.filesCopied} file(s), ${copied.bytesCopied} bytes copied`;
+    } else {
+      recordCount = (await extractFileStorageResource({ ...shared, resource })).recordCount;
+      completed = `${recordCount} records`;
+    }
     controller.signal.throwIfAborted();
     const duration = Date.now() - startedAt;
-    await logger.info(
-      `Completed: ${integrationName}/${resource.name} (${result.recordCount} records)`
-    );
+    await logger.info(`Completed: ${integrationName}/${resource.name} (${completed})`);
     circuitBreaker.recordSuccess();
     await logger.progress('resource_complete', resource.name, {
-      records_emitted: result.recordCount,
+      records_emitted: recordCount,
       api_calls: 0,
       duration_ms: duration,
     });
     return {
-      recordsEmitted: result.recordCount,
+      recordsEmitted: recordCount,
       failed: false,
       resourceResult: {
         resource: resource.name,
         status: 'success',
-        records_emitted: result.recordCount,
+        records_emitted: recordCount,
         api_calls: 0,
         duration_ms: duration,
       },
@@ -124,7 +148,7 @@ export async function reportFileStorageFailure({
 }: {
   error: unknown;
   integrationName: string;
-  resource: FileResourceSpec;
+  resource: { name: string };
   logger: ControlLogger;
   startedAt: number;
   circuitBreaker: ResourceCircuitBreaker;

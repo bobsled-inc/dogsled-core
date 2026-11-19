@@ -537,6 +537,7 @@ export async function extractResourcesWithMatrices(
         state,
         stateStore,
         advanceState: shouldAdvanceDurableState(opts),
+        stateWriteDisabled: opts.noStateWrite === true || opts.stateWrite === false,
         fullRefresh: opts.fullRefresh,
         limit: opts.limit,
         warehouse: opts.warehouse,

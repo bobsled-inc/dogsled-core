@@ -29,7 +29,7 @@ import {
   sshKeyFingerprint,
 } from '../../framework/core/index.js';
 import { ExtractorConfigError, ExtractorDataError } from '../errors.js';
-import { globToRegExp } from './path-glob.js';
+import { fixedFolder, globToRegExp } from './path-glob.js';
 import { sftpError, type SftpErrorCode } from './sftp-errors.js';
 
 const READY_TIMEOUT_MS = 20_000;
@@ -321,7 +321,7 @@ export class SftpFileStorageClient implements FileStorageClient {
     const literal = options.path.replace(/[*?].*$/, '');
     // A glob walks from the folder before its first wildcard and keeps only matching paths.
     const matcher = literal === options.path ? undefined : globToRegExp(options.path, 'SFTP');
-    const prefix = matcher ? literal.slice(0, literal.lastIndexOf('/') + 1) : literal;
+    const prefix = matcher ? fixedFolder(options.path) : literal;
     const root = remoteJoin(this.connection.base_directory, prefix);
     if (!matcher && prefix !== '' && !prefix.endsWith('/')) {
       // A path without a glob may name one file; a folder is walked as before.

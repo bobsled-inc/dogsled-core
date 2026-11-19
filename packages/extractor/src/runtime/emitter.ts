@@ -7,6 +7,7 @@ import { PROTOCOL_VERSION } from '@bobsled-inc/protocol';
 import type {
   BatchEncoding,
   BatchMessage,
+  FileMessage,
   RecordMessage,
   ReplaceMessage,
   SchemaBehavior,
@@ -95,6 +96,31 @@ export class Emitter {
   }
 
   /**
+   * Emit a FILE message: the loader writes the temp file at `uri` to `relativeKey` under the
+   * stream's folder at its destination, then deletes the temp file.
+   */
+  async emitFile(stream: string, uri: string, relativeKey: string, size: number): Promise<void> {
+    const message = {
+      _v: PROTOCOL_VERSION,
+      type: 'FILE',
+      stream,
+      uri,
+      relative_key: relativeKey,
+      size,
+    } satisfies FileMessage;
+
+    await this.writeMessage(stream, message);
+  }
+
+  /**
+   * Write an empty line, which readers skip. A run that is only waiting for its reader calls this
+   * so that a reader that has gone makes a write fail, as it would for any message.
+   */
+  async ping(): Promise<void> {
+    if (this.mode === 'stdout') await this.enqueueWrite('__stdout__', this.stdoutStream, '\n');
+  }
+
+  /**
    * Emit a BATCH message referencing finalized batch files.
    */
   async emitBatch(stream: string, encoding: BatchEncoding, manifest: string[]): Promise<void> {
@@ -139,7 +165,8 @@ export class Emitter {
 
   private async writeMessage(
     stream: string,
-    message: SchemaMessage | RecordMessage | StateMessage | BatchMessage | ReplaceMessage
+    message:
+      SchemaMessage | RecordMessage | StateMessage | BatchMessage | ReplaceMessage | FileMessage
   ): Promise<void> {
     const line = JSON.stringify(message) + '\n';
 

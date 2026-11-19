@@ -295,6 +295,8 @@ export interface DownloadProgress {
 
 export interface DownloadFileOptions {
   signal?: AbortSignal;
+  /** GCS only: keep a gzip-encoded object's stored bytes. Without it the client decompresses them. */
+  asStored?: boolean;
   /** SFTP only: fail with SFTP_FILE_CHANGED unless the remote file still has this size and mtime. */
   expected?: ExpectedRemoteFile;
   /** SFTP only, requires `expected`: pass the same object and target to resume after a retryable failure. */

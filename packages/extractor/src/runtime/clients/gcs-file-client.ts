@@ -4,6 +4,7 @@ import * as path from 'node:path';
 
 import type {
   DownloadedFile,
+  DownloadFileOptions,
   FileStorageClient,
   ListedFile,
   ListFilesOptions,
@@ -31,7 +32,7 @@ function readRequiredEnv(name: string | undefined, field: string): string {
 type GcsFile = {
   name: string;
   metadata?: { updated?: string; generation?: string; etag?: string; size?: string | number };
-  download(options: { destination: string }): Promise<unknown>;
+  download(options: { destination: string; decompress?: boolean }): Promise<unknown>;
 };
 
 function toIsoString(value: string | undefined): string | undefined {
@@ -124,12 +125,17 @@ export class GcsFileStorageClient implements FileStorageClient {
     } while (pageToken);
   }
 
-  async download(file: ListedFile, targetPath: string): Promise<DownloadedFile> {
+  async download(
+    file: ListedFile,
+    targetPath: string,
+    options?: DownloadFileOptions
+  ): Promise<DownloadedFile> {
     await mkdir(path.dirname(targetPath), { recursive: true });
     await this.bucket
       .file(file.path, file.generation ? { generation: file.generation } : undefined)
       .download({
         destination: targetPath,
+        ...(options?.asStored ? { decompress: false } : {}),
       });
     return { file, path: targetPath, bytes_downloaded: file.size ?? 0 };
   }

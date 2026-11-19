@@ -226,3 +226,30 @@ it.skipIf(process.platform === 'win32')(
     }
   }
 );
+
+describe('runFileStorageResourceExtraction copy Resources', () => {
+  it('refuses a copy that runs with --no-state-write and reads nothing', async () => {
+    mocks.extract.mockClear();
+    const args = commandArgs({ streams: {} });
+    const result = await runFileStorageResourceExtraction({
+      ...args,
+      resource: {
+        spec_version: '1',
+        type: 'resource',
+        name: 'drops',
+        source: { kind: 'copy', path: 'incoming/**/*' },
+        replication: { method: 'incremental_append', cursor: { field: 'last_modified' } },
+      } as never,
+      stateWriteDisabled: true,
+    });
+
+    expect(result).toMatchObject({
+      failed: true,
+      resourceResult: {
+        status: 'error',
+        error: expect.stringContaining('copies files, so it cannot run with --no-state-write'),
+      },
+    });
+    expect(mocks.extract).not.toHaveBeenCalled();
+  });
+});

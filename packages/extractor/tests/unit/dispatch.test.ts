@@ -47,6 +47,13 @@ const fileDocumentAliasResource = {
   source: { path: 'pdfs/**/*', format: 'document' },
 } as unknown as ResourceSpec;
 
+const fileCopyResource = {
+  spec_version: '1',
+  type: 'resource',
+  name: 'drops',
+  source: { kind: 'copy', path: 'incoming/**/*' },
+} as unknown as ResourceSpec;
+
 const warehouseResource = {
   spec_version: '1',
   type: 'resource',
@@ -87,6 +94,10 @@ describe('classifySourceKind', () => {
     expect(classifySourceKind(fileIntegration, fileDocumentAliasResource)).toBe(
       'file_storage_document'
     );
+  });
+
+  it('classifies file storage with kind: copy as file_storage_copy', () => {
+    expect(classifySourceKind(fileIntegration, fileCopyResource)).toBe('file_storage_copy');
   });
 
   it('classifies warehouse integrations as warehouse', () => {
