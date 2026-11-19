@@ -1,9 +1,9 @@
 # Extract from files
 
 Dogsled reads CSV, JSON Lines and Parquet files, and parses documents (PDF, Word,
-PowerPoint, HTML, Markdown, text and email) into text chunks. Files can come from a
-local folder, Amazon S3, Google Cloud Storage, an SFTP server or a private Vercel
-Blob object.
+PowerPoint, HTML, Markdown, text and email) into text chunks. It can also copy files
+of any kind without reading them. Files can come from a local folder, Amazon S3,
+Google Cloud Storage, an SFTP server or a private Vercel Blob object.
 
 ## Read a folder of CSV files
 
@@ -211,6 +211,87 @@ destinations apply this; file destinations write each run's rows as new files.
 `__acl` rows now carry `document_id`. ACL rows loaded before this change have none,
 so run one `--full-refresh` after upgrading if you capture permissions.
 
+## Copy files as they are
+
+Set `source.kind: copy` to move files without reading them. Each new file arrives at
+the destination with the same bytes, whatever it is: CSV, gzip, Parquet, PDF, ZIP or
+a file with no content at all. The source can be a local folder, S3, GCS or SFTP. The
+destination must be a `local`, `s3` or `gcs` file destination.
+
+Create `resources/files/drops.yml`:
+
+```yaml
+spec_version: '1'
+type: resource
+name: drops
+integration: files
+source:
+  kind: copy
+  path: incoming/**/*
+replication:
+  method: incremental_append
+  cursor: { field: last_modified, lookback_seconds: 3600 }
+limits:
+  max_file_size_bytes: 1073741824
+  max_files_per_run: 500
+```
+
+A copy has no `format`, `compression`, `options`, `include_filename`,
+`include_file_metadata` or `output`, and Dogsled refuses a Resource that sets one.
+`replication` must be `incremental_append` with `cursor.field: last_modified`.
+
+Run it with a destination, with `dogsled pipeline` or a `dogsled.yml` pipeline:
+
+```bash
+dogsled pipeline --integration files --resource drops --dest local --format jsonl --output-dir copies
+```
+
+```text
+[INFO] Completed: files/drops (1 file(s), 8 bytes copied)
+```
+
+The loader's `format` does not change a copy, though a file destination still needs
+one. A file lands at `<prefix>/<resource name>/<path below the folder before the first
+wildcard>`. With `path: incoming/**/*`, the file `incoming/2026/report.csv` becomes
+`<prefix>/drops/2026/report.csv`. A `stream_subfolder` on the destination adds a
+folder after the resource name, as it does for rows. A file that exists at the
+destination is replaced. On a disk that ignores case, such as a default macOS disk, names that
+differ only in case replace each other.
+
+The loader refuses a name it would have to change: one with a backslash, a control
+character, or an empty, `.` or `..` folder, or one that makes an S3 or GCS key over
+1,024 bytes. The run then fails and names the file. S3 and GCS folder placeholders,
+which are keys that end in `/`, are skipped with a warning.
+
+**Which files a run takes.** On S3 and GCS the server sets each file's
+`last_modified`. A run remembers the newest one it copied (the watermark) and the
+files it copied within `lookback_seconds` of it (1 hour unless you set it). The
+next run takes files at or after the watermark minus the lookback, except those it
+copied unchanged, oldest first. The lookback catches a file that lands late with an
+older time, such as a slow upload. A file whose time is older than that window, behind
+the newest copied file, is not taken. A change to `path` or to the bucket starts the copy
+over, since the files the new path matches may be older than the watermark. SFTP and local folders let a client set any time,
+so they keep a record of each file, like other file Resources.
+
+**Limits.** A file over `max_file_size_bytes` (5 GiB unless you set it) fails the run
+and names the file; a copy never skips one without saying so. A run copies at most
+`max_files_per_run` files (10,000 unless you set it), oldest first, and the next run
+takes the rest. `--limit` caps the files in a run instead and saves no state.
+
+**How a run moves data.** The extractor downloads each file as it is stored, up to 8
+at a time, to a temporary file and sends a [`FILE` message](../reference/protocol.md#data-messages-standard-output).
+It pauses new downloads while the files waiting on disk would pass 1 GiB, though one
+file is always taken, so a larger file still copies on its own. The loader writes up to
+8 files at a time and deletes each temporary file after its write. The extractor saves
+state only after every file it sent is gone, so a failed run copies the same files
+again. Its `STATE` line carries the run time only, and the saved state holds the rest. A copy needs a loader reading the extractor's output: the extractor run alone
+waits for files that nothing deletes. A pipeline with a copy Resource can have one
+destination, and it must be a `local`, `s3` or `gcs` one. A `dogsled.yml` pipeline that lists several is refused, and so is a run with
+`--destinations-json`.
+
+S3 and GCS objects keep their bytes but not their metadata, such as content type. GCS
+objects stored with `Content-Encoding: gzip` are copied still compressed.
+
 ## Cloud storage
 
 The resource files stay the same. Only the integration changes. Credentials are
@@ -309,5 +390,6 @@ A private Vercel Blob object uses `source_type: vercel_blob` with
 It reads one object per resource.
 
 Each run reads at most 10,000 files, and skips files larger than 5 GiB with a
-warning (document resources record them in `__parse_errors`). Change these limits
-with `limits.max_files_per_run` and `limits.max_file_size_bytes` on the resource.
+warning (document resources record them in `__parse_errors`; a copy fails the run
+instead). Change these limits with `limits.max_files_per_run` and
+`limits.max_file_size_bytes` on the resource.
