@@ -34,7 +34,7 @@ const GCS_ARCHIVE = `  archive:
     format: parquet
 `;
 
-function makeProject(destinations: string, destinationNames: string[]): string {
+function makeProject(destinations: string, destinationNames: string[], limits = ''): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-copy-dest-'));
   tempDirs.push(root);
   fs.mkdirSync(path.join(root, 'integrations'));
@@ -63,7 +63,7 @@ source:
 replication:
   method: incremental_append
   cursor: { field: last_modified }
-`
+${limits}`
   );
   const destination =
     destinationNames.length === 1
@@ -152,6 +152,28 @@ describe('a copy Resource in a pipeline', () => {
         }
       )
     ).rejects.toThrow(REFUSAL);
+    expect(spawned).toEqual([]);
+  });
+
+  it('is refused when its largest file cannot go to S3 in one write, before any process starts', async () => {
+    const projectRoot = makeProject(
+      S3_LANDING,
+      ['landing'],
+      'limits: { max_file_size_bytes: 6000000000 }\n'
+    );
+    const spawned: string[][] = [];
+
+    await expect(
+      runProjectPipeline(
+        { projectRoot, pipelineName: 'drops', quiet: true },
+        {
+          spawn: (_command, args) => {
+            spawned.push([...args]);
+            return fakeChild(true);
+          },
+        }
+      )
+    ).rejects.toThrow(/allows files of up to 6000000000 bytes, but S3 takes at most 5368709120/);
     expect(spawned).toEqual([]);
   });
 
