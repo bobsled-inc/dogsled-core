@@ -87,11 +87,19 @@ export async function runFileStorageResourceExtraction({
     let recordCount = 0;
     let completed: string;
     if (isFileCopyResource(resource)) {
+      if (!emitter.writesToPipe) {
+        throw new ExtractorConfigError(
+          `Resource "${resource.name}" copies files, so it must write to a pipe that a loader ` +
+            'reads, not to a file or a terminal. Run it with "dogsled pipeline --dest local" ' +
+            '(or --dest s3, --dest gcs), or pipe its output into "dogsled load run".'
+        );
+      }
       if (stateWriteDisabled) {
         throw new ExtractorConfigError(
           `Resource "${resource.name}" copies files, so it cannot run with --no-state-write: it ` +
-            'saves its state only after the loader has written every file. A pipeline with a ' +
-            'list of destinations runs the extractor that way, so give the pipeline one destination.'
+            'saves its state only after the loader has written every file. A pipeline runs the ' +
+            'extractor that way for several destinations, and for --destinations-json even with ' +
+            'one, so give it a single destination.'
         );
       }
       // Loaded only for a copy, like the dialect clients of warehouse sources.

@@ -228,18 +228,21 @@ it.skipIf(process.platform === 'win32')(
 );
 
 describe('runFileStorageResourceExtraction copy Resources', () => {
+  const copyResource = {
+    spec_version: '1',
+    type: 'resource',
+    name: 'drops',
+    source: { kind: 'copy', path: 'incoming/**/*' },
+    replication: { method: 'incremental_append', cursor: { field: 'last_modified' } },
+  } as never;
+
   it('refuses a copy that runs with --no-state-write and reads nothing', async () => {
     mocks.extract.mockClear();
     const args = commandArgs({ streams: {} });
     const result = await runFileStorageResourceExtraction({
       ...args,
-      resource: {
-        spec_version: '1',
-        type: 'resource',
-        name: 'drops',
-        source: { kind: 'copy', path: 'incoming/**/*' },
-        replication: { method: 'incremental_append', cursor: { field: 'last_modified' } },
-      } as never,
+      emitter: { writesToPipe: true } as never,
+      resource: copyResource,
       stateWriteDisabled: true,
     });
 
@@ -248,6 +251,25 @@ describe('runFileStorageResourceExtraction copy Resources', () => {
       resourceResult: {
         status: 'error',
         error: expect.stringContaining('copies files, so it cannot run with --no-state-write'),
+      },
+    });
+    expect(mocks.extract).not.toHaveBeenCalled();
+  });
+
+  it('refuses a copy whose output goes to a file or a terminal, where no loader can read it', async () => {
+    mocks.extract.mockClear();
+    const args = commandArgs({ streams: {} });
+    const result = await runFileStorageResourceExtraction({
+      ...args,
+      emitter: { writesToPipe: false } as never,
+      resource: copyResource,
+    });
+
+    expect(result).toMatchObject({
+      failed: true,
+      resourceResult: {
+        status: 'error',
+        error: expect.stringMatching(/must write to a pipe that a loader reads.*dogsled pipeline/),
       },
     });
     expect(mocks.extract).not.toHaveBeenCalled();

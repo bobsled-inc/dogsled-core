@@ -1,10 +1,14 @@
+import { execFileSync } from 'node:child_process';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { Writable } from 'node:stream';
+
 import { describe, expect, it } from 'vitest';
 
 import { Emitter } from '../../src/runtime/emitter.js';
 import { buildSchemaMessage } from '../../src/runtime/schema-message.js';
 import { FakeWritable } from '../helpers/fixtures.js';
-
-import type { Writable } from 'node:stream';
 
 describe('Emitter', () => {
   it('emits SCHEMA, RECORD, and STATE messages to stdout', async () => {
@@ -414,5 +418,58 @@ describe('buildSchemaMessage for file Resources', () => {
     expect(
       buildSchemaMessage({ ...fileResource, replication: { method: 'full_refresh' } }).load_strategy
     ).toBe('full_refresh');
+  });
+});
+
+describe('Emitter.writesToPipe', () => {
+  it('is false for file output, which no loader reads', () => {
+    expect(new Emitter('file', 'output').writesToPipe).toBe(false);
+  });
+
+  it('is true for a stream that is not a file descriptor', () => {
+    expect(new Emitter('stdout', 'output', { stdoutStream: new FakeWritable() }).writesToPipe).toBe(
+      true
+    );
+  });
+
+  it.skipIf(process.platform === 'win32')(
+    'is false when standard output is a terminal or a device',
+    () => {
+      const fd = fs.openSync('/dev/null', 'w');
+      try {
+        const stream = Object.assign(new Writable({ write: (_chunk, _enc, done) => done() }), {
+          fd,
+        });
+        expect(new Emitter('stdout', 'output', { stdoutStream: stream }).writesToPipe).toBe(false);
+      } finally {
+        fs.closeSync(fd);
+      }
+    }
+  );
+
+  it.skipIf(process.platform === 'win32')('is true when standard output is a pipe', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emitter-fifo-'));
+    const fifo = path.join(dir, 'pipe');
+    execFileSync('mkfifo', [fifo]);
+    const fd = fs.openSync(fifo, 'r+'); // read and write, so opening does not wait for a reader
+    try {
+      const stream = Object.assign(new Writable({ write: (_chunk, _enc, done) => done() }), { fd });
+      expect(new Emitter('stdout', 'output', { stdoutStream: stream }).writesToPipe).toBe(true);
+    } finally {
+      fs.closeSync(fd);
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('is false when standard output is a regular file', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emitter-pipe-'));
+    const fd = fs.openSync(path.join(dir, 'out.jsonl'), 'w');
+    try {
+      const stream = Object.assign(new Writable({ write: (_chunk, _enc, done) => done() }), { fd });
+      expect(new Emitter('stdout', 'output', { stdoutStream: stream }).writesToPipe).toBe(false);
+    } finally {
+      fs.closeSync(fd);
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

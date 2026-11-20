@@ -113,6 +113,23 @@ export class Emitter {
   }
 
   /**
+   * Whether another process may be reading what this emitter writes. A copy needs a reader: it
+   * waits for it to delete each temp file. Nothing reads output that goes to a file, a terminal
+   * or a device, so those are refused. Anything else, such as a pipe or a socket, is allowed.
+   */
+  get writesToPipe(): boolean {
+    if (this.mode !== 'stdout') return false;
+    const fd = (this.stdoutStream as { fd?: unknown }).fd;
+    if (typeof fd !== 'number') return true; // not a file descriptor, such as a stream in a test
+    try {
+      const info = fs.fstatSync(fd);
+      return !(info.isFile() || info.isCharacterDevice());
+    } catch {
+      return true; // cannot tell, so do not refuse
+    }
+  }
+
+  /**
    * Write an empty line, which readers skip. A run that is only waiting for its reader calls this
    * so that a reader that has gone makes a write fail, as it would for any message.
    */
