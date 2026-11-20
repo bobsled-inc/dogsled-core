@@ -73,9 +73,10 @@ A copy Resource (`source.kind: copy`) writes each file as it is, to
 `<prefix><stream>/<relative key>` or, with `stream_subfolder`,
 `<prefix><stream>/<stream_subfolder>/<relative key>`. The stream is the Resource name,
 and the relative key is the file's path below the folder that `path` starts in. Only
-`local`, `s3` and `gcs` destinations take a copy, and a pipeline with a copy Resource
-and more than one destination is refused when the project is validated. See
-[Copy files as they are](../guides/extract-from-files.md#copy-files-as-they-are).
+`local`, `s3` and `gcs` destinations take a copy. Validation also accepts `dogsled_managed`,
+which Dogsled Cloud expands before it runs the project, and refuses every other type. A
+pipeline with a copy Resource and more than one destination is refused when the project is
+validated. See [Copy files as they are](../guides/extract-from-files.md#copy-files-as-they-are).
 
 A `gcs` or `s3` destination also takes `object_metadata`, a map of text values stored as
 metadata on each file a copy writes. Keys use lowercase letters, digits and dashes, and

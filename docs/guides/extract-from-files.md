@@ -216,7 +216,10 @@ so run one `--full-refresh` after upgrading if you capture permissions.
 Set `source.kind: copy` to move files without reading them. Each new file arrives at
 the destination with the same bytes, whatever it is: CSV, gzip, Parquet, PDF, ZIP or
 a file with no content at all. The source can be a local folder, S3, GCS or SFTP. The
-destination must be a `local`, `s3` or `gcs` file destination.
+destination must be a `local`, `s3` or `gcs` file destination. Validation also accepts a
+`dogsled_managed` destination, which Dogsled Cloud turns into a concrete one before it
+runs the project. Core cannot run that one, and the loader refuses any destination that
+cannot write a file.
 
 Create `resources/files/drops.yml`:
 
@@ -364,11 +367,13 @@ warning that names the file, and the copy goes on.
 
 A file at an existing key replaces the earlier copy and its metadata. A `local` destination
 keeps no metadata, so it takes no `object_metadata`, and a write that is not a copy carries
-none. A value that starts with `$` in `dogsled.yml` is an environment variable reference,
-declared in `auth_env_vars` like any other field. Validation measures it as written, and the
-loader measures it again with its value when it starts. On the command line, pass
-`--object-metadata '{"team":"data"}'` to `dogsled load run`. The loader takes those values as
-text and expands no `$NAME` in them.
+none.
+
+Values are literal text. A value that starts with `$`, or holds `${{ env.NAME }}`, is written
+as it is, never read as an environment variable reference, so it needs no `auth_env_vars`
+entry, and no environment value can reach an object's metadata through it. Put a run ID or a
+pipeline name in the value itself. On the command line, pass `--object-metadata '{"team":"data"}'` to
+`dogsled load run`.
 
 ## Cloud storage
 

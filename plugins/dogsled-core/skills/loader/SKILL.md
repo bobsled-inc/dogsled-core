@@ -116,7 +116,7 @@ A file Resource with `source.kind: copy` sends one `FILE` message per file, not 
 
 A copy takes one destination. A `dogsled.yml` pipeline with a copy Resource and more than one destination is refused when the project is validated, and a pipeline with one destination works. `--destinations-json` is refused for any list, even one entry, when the extractor starts.
 
-A copy to S3 or GCS stores `dogsled-source` (the file's key in the source) and `dogsled-source-modified` as metadata on each file. An `s3` or `gcs` destination can add its own entries with `object_metadata` (`--object-metadata '<json object>'`): text values, stored percent-encoded. The loader takes them as text and expands no `$NAME` in them. Keys use lowercase letters, digits and dashes, and the whole is at most 2,048 bytes, counting 11 more for each key. The loader leaves `dogsled-source` off a file whose key would not fit, with a warning. A `local` destination keeps none.
+A copy to S3 or GCS stores `dogsled-source` (the file's key in the source) and `dogsled-source-modified` as metadata on each file. An `s3` or `gcs` destination can add its own entries with `object_metadata` (`--object-metadata '<json object>'`): text values, stored percent-encoded. Values are literal text: a `$NAME` or `${{ env.NAME }}` is written as it is, never read as an environment reference. Keys use lowercase letters, digits and dashes, and the whole is at most 2,048 bytes, counting 11 more for each key. The loader leaves `dogsled-source` off a file whose key would not fit, with a warning. A `local` destination keeps none.
 
 ## Schema Evolution
 
