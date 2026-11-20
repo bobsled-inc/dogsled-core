@@ -322,8 +322,53 @@ A copy sends no rows, so `PIPELINE_SUMMARY` shows 0 records. Read the `METRIC` l
 instead: `files_processed` and `bytes_downloaded` are in every successful run, and are 0
 when it copied nothing.
 
-S3 and GCS objects keep their bytes but not their metadata, such as content type. GCS
+S3 and GCS objects keep their bytes but not their own metadata, such as content type. GCS
 objects stored with `Content-Encoding: gzip` are copied still compressed.
+
+### Object metadata
+
+An `s3` or `gcs` destination can tag every file a copy writes. Add `object_metadata` to the
+destination in `dogsled.yml`:
+
+```yaml
+destinations:
+  archive:
+    type: s3
+    bucket: example-bucket
+    prefix: raw/
+    format: parquet
+    object_metadata:
+      team: data
+      cost-center: '4021'
+```
+
+The loader stores these entries on each copied object. A copy to S3 or GCS also stores two
+entries of its own, with or without `object_metadata`, so anyone who can read an object's
+metadata can see where the file came from:
+
+| Key                       | Value                                                                                                    |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `dogsled-source`          | The file's key in the source, with no bucket, scheme or host. Left out when it would not fit, see below  |
+| `dogsled-source-modified` | The time the source says the file changed, as an ISO 8601 date-time. Left out when the source gives none |
+
+Keys use lowercase letters, digits and dashes. Values are text and are not empty. A value is
+stored percent-encoded, because S3 keeps only US-ASCII: decode it with `decodeURIComponent`.
+
+S3 allows 2,048 bytes of metadata on one object, and GCS gets the same limit, so a Resource
+works on both. Each value counts as encoded. S3 does not say whether it counts the
+`x-amz-meta-` that comes before each key, so each key counts 11 bytes more. Project
+validation refuses `object_metadata` that leaves no room for the two keys a copy adds and a
+24-character time. A source key can be 1,024 bytes long, so it has no room set aside: for a
+file whose key would pass the limit, the loader leaves `dogsled-source` off and logs a
+warning that names the file, and the copy goes on.
+
+A file at an existing key replaces the earlier copy and its metadata. A `local` destination
+keeps no metadata, so it takes no `object_metadata`, and a write that is not a copy carries
+none. A value that starts with `$` in `dogsled.yml` is an environment variable reference,
+declared in `auth_env_vars` like any other field. Validation measures it as written, and the
+loader measures it again with its value when it starts. On the command line, pass
+`--object-metadata '{"team":"data"}'` to `dogsled load run`. The loader takes those values as
+text and expands no `$NAME` in them.
 
 ## Cloud storage
 

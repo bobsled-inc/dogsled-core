@@ -106,15 +106,22 @@ file, and the extractor treats a deleted file as written:
   "_v": 1,
   "type": "FILE",
   "stream": "drops",
-  "uri": "file:///tmp/dogsled-copy-IbuDBq/1",
+  "uri": "file:///tmp/dogsled-copy-0SiVZT/1",
   "relative_key": "2026/report.csv",
-  "size": 20
+  "size": 20,
+  "source_key": "2026/report.csv",
+  "modified": "2026-11-19T19:35:54.922Z"
 }
 ```
 
 `relative_key` is the file's path below the folder the Resource's `path` starts
 in. `size` is its size in bytes, and the loader refuses a temp file of another
-size. The loader also refuses a key with a backslash, a control character, or an
+size. `source_key` is the file's key in the source, with no bucket, scheme or host: for
+the path `incoming/**/*` it is `incoming/2026/report.csv` where `relative_key` is
+`2026/report.csv`. `modified` is the time the source says the file last changed, as an
+ISO 8601 date-time with a zone: up to nine fraction digits, then `Z` or `±HH:MM`. Both
+are optional, and a sender leaves one out when it has none. A writer may record them: an S3 or GCS destination stores them as object
+metadata. The loader also refuses a key with a backslash, a control character, or an
 empty, `.` or `..` folder, and a final S3 or GCS key over 1,024 bytes. A FILE has
 no `SCHEMA` and no `RECORD`. Only `local`, `s3` and `gcs` destinations take it. A
 table destination, or a loader from before this message, fails on it instead of

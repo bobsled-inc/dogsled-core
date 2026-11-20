@@ -52,7 +52,7 @@ Secrets in `dogsled.yml` must be environment references (`$NAME`). Each destinat
 | `clickhouse`      | `host`, `port`, `database`, `username`, `password`, `ssl`, `vector_index`                                                                                                                                                                |
 | `turbopuffer`     | `api_key`, `region`, `namespace_prefix`, `distance_metric`, `full_text_columns`                                                                                                                                                          |
 | `local`           | `format` (`parquet`, `jsonl`, `csv`), `stream_subfolder`                                                                                                                                                                                 |
-| `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`                                                                                                                                                                                         |
+| `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`, `object_metadata`                                                                                                                                                                      |
 | `dogsled_managed` | `dogsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/dogsled-cloud.md))                                                                                                                                  |
 
 Every destination also accepts `load_strategy`, `schema_behavior` and
@@ -76,6 +76,11 @@ and the relative key is the file's path below the folder that `path` starts in. 
 `local`, `s3` and `gcs` destinations take a copy, and a pipeline with a copy Resource
 and more than one destination is refused when the project is validated. See
 [Copy files as they are](../guides/extract-from-files.md#copy-files-as-they-are).
+
+A `gcs` or `s3` destination also takes `object_metadata`, a map of text values stored as
+metadata on each file a copy writes. Keys use lowercase letters, digits and dashes, and
+`dogsled-source` and `dogsled-source-modified` are left to the copy. See
+[Object metadata](../guides/extract-from-files.md#object-metadata).
 
 ### Pipelines
 

@@ -18,6 +18,7 @@ package instead of a connection runtime.
 | `BatchMessage`                                   | Reference extractor-created JSONL or Parquet files (skip JS-level parsing)                                     |
 | `ReplaceMessage`                                 | Replace a slice of a stream's rows (`key` in `values`) before the slice's new rows are written                 |
 | `FileMessage`                                    | Copy one file as it is: the loader writes a temp file's bytes to `<stream>/<relative_key>`, then deletes it    |
+| `objectMetadataProblem` / `encodeMetadataValue`  | Check a destination's `object_metadata` and percent-encode a value; the loader and `dogsled.yml` share them    |
 | `LogMessage`                                     | Structured log entry (stderr only)                                                                             |
 | `MetricMessage`                                  | Extraction run metrics (stderr only)                                                                           |
 | `StdoutMessage`                                  | Union of SCHEMA, RECORD, STATE, BATCH, LINEAGE, REPLACE, FILE — data channel                                   |
