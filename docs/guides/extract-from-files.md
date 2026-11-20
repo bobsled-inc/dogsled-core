@@ -263,31 +263,63 @@ character, or an empty, `.` or `..` folder, or one that makes an S3 or GCS key o
 1,024 bytes. The run then fails and names the file. S3 and GCS folder placeholders,
 which are keys that end in `/`, are skipped with a warning.
 
-**Which files a run takes.** On S3 and GCS the server sets each file's
-`last_modified`. A run remembers the newest one it copied (the watermark) and the
-files it copied within `lookback_seconds` of it (1 hour unless you set it). The
-next run takes files at or after the watermark minus the lookback, except those it
-copied unchanged, oldest first. The lookback catches a file that lands late with an
-older time, such as a slow upload. A file whose time is older than that window, behind
-the newest copied file, is not taken. A change to `path` or to the bucket starts the copy
-over, since the files the new path matches may be older than the watermark. SFTP and local folders let a client set any time,
-so they keep a record of each file, like other file Resources.
+**Which files a run takes.** On S3 and GCS the server sets each file's time. A run
+remembers the newest one it copied (the watermark) and the files it copied within
+`lookback_seconds` of it (1 hour unless you set it). The next run takes files at or
+after the watermark minus the lookback, except those it copied unchanged, oldest first.
+The lookback catches a file that lands late with an older time, such as a slow upload.
+S3 dates an object from the start of its upload, so set `lookback_seconds` longer than
+your slowest upload. A file whose time is older than that window, behind the newest
+copied file, is not taken. The watermark never passes the present, so a store with a fast clock cannot hide
+later files. GCS uses the time an object was created, because its modified time also
+moves when only its metadata does, as a storage class change does. A change to the
+source type, endpoint, bucket, host, base directory or `path` starts the copy over,
+since the files it now reads may be older than the watermark. SFTP and local folders let a client set
+any time, so they keep a record of each file, like other file Resources.
 
 **Limits.** A file over `max_file_size_bytes` (5 GiB unless you set it) fails the run
-and names the file; a copy never skips one without saying so. A run copies at most
-`max_files_per_run` files (10,000 unless you set it), oldest first, and the next run
-takes the rest. `--limit` caps the files in a run instead and saves no state.
+and names the file; a copy never skips one without saying so. S3 takes at most 5 GiB in
+one write, so `dogsled.yml` validation refuses a larger limit for an S3 destination. A
+run copies at most `max_files_per_run` files (10,000 unless you set it), oldest first,
+and the next run takes the rest. `--limit` caps the files in a run instead and saves no
+state. A file the source cannot read, such as an S3 object in an archive storage class,
+fails the run until it is restored or moved out of the folder.
 
-**How a run moves data.** The extractor downloads each file as it is stored, up to 8
-at a time, to a temporary file and sends a [`FILE` message](../reference/protocol.md#data-messages-standard-output).
-It pauses new downloads while the files waiting on disk would pass 1 GiB, though one
-file is always taken, so a larger file still copies on its own. The loader writes up to
-8 files at a time and deletes each temporary file after its write. The extractor saves
-state only after every file it sent is gone, so a failed run copies the same files
-again. Its `STATE` line carries the run time only, and the saved state holds the rest. A copy needs a loader reading the extractor's output: the extractor run alone
-waits for files that nothing deletes. A pipeline with a copy Resource can have one
-destination, and it must be a `local`, `s3` or `gcs` one. A `dogsled.yml` pipeline that lists several is refused, and so is a run with
-`--destinations-json`.
+The saved state grows with the files inside the lookback window on S3 and GCS, and with
+every file on SFTP and local folders. A state backend that loads state over HTTP refuses
+more than 8 MiB, so keep `lookback_seconds` small for a bucket that takes tens of
+thousands of files in an hour.
+
+**How a run moves data.** The extractor downloads each file as it is stored to a
+temporary file and sends a [`FILE` message](../reference/protocol.md#data-messages-standard-output).
+It downloads up to 8 files at a time, or one at a time from SFTP, so `read_concurrency`
+still caps the reads on the connection. It pauses new downloads while the files waiting
+on disk would pass 1 GiB, though one file is always taken, so a larger file still copies
+on its own. The loader writes up to 8 files at a time and deletes each temporary file
+after its write. A file removed between the listing and the download fails the run, and
+the next run lists again. The extractor saves state only after every file it
+sent is gone, so a failed run copies the same files again. Its `STATE` line carries the
+run time only, and the saved state holds the rest. A file that is still being written
+when a run reads it from a local folder or an SFTP server is copied as it stands, and
+copied again when its size or time next changes.
+
+A copy needs a loader reading the extractor's output through a pipe. Run it with
+`dogsled pipeline`, or pipe `dogsled extract run` into `dogsled load run`. It refuses to
+write to a terminal or a file, including `--output file`, and a run that has no loader
+reading its pipe waits until you stop it. To preview a copy, pipe it into a loader that
+writes to a folder you can delete:
+
+```bash
+dogsled extract run --integration files drops --limit 5 | dogsled load run --dest local --format jsonl --output-dir preview
+```
+
+A pipeline with a copy Resource takes one destination, of type `local`, `s3` or `gcs`.
+A `dogsled.yml` pipeline that lists several is refused when the project is validated,
+and so is any `--destinations-json` run, even with one entry.
+
+A copy sends no rows, so `PIPELINE_SUMMARY` shows 0 records. Read the `METRIC` line
+instead: `files_processed` and `bytes_downloaded` are in every successful run, and are 0
+when it copied nothing.
 
 S3 and GCS objects keep their bytes but not their metadata, such as content type. GCS
 objects stored with `Content-Encoding: gzip` are copied still compressed.

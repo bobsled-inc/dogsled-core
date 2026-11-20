@@ -106,7 +106,7 @@ file, and the extractor treats a deleted file as written:
   "_v": 1,
   "type": "FILE",
   "stream": "drops",
-  "uri": "file:///tmp/dogsled-copy-PNkFzY/2026_report-4e4d49d0b7.csv",
+  "uri": "file:///tmp/dogsled-copy-IbuDBq/1",
   "relative_key": "2026/report.csv",
   "size": 20
 }
@@ -119,10 +119,14 @@ empty, `.` or `..` folder, and a final S3 or GCS key over 1,024 bytes. A FILE ha
 no `SCHEMA` and no `RECORD`. Only `local`, `s3` and `gcs` destinations take it. A
 table destination, or a loader from before this message, fails on it instead of
 skipping the file. A FILE needs one loader: another loader that reads the same
-messages would find the temp file gone. The loader takes only a temp file that sits in a
-folder named `dogsled-copy-…`, because it moves or deletes the file it is given. While it
-waits for the loader, the extractor writes an empty line about once a second. Readers skip
-it, and the write fails when the loader has gone.
+messages would find the temp file gone. Because the loader moves or deletes the file it
+is given, it takes only a regular file with one link, in a folder named `dogsled-copy-…`
+that is a real folder, belongs to the loader's user, and is closed to writes by others
+(Windows skips the owner and mode checks). The extractor makes its folder that way. While
+it waits for the loader, the extractor writes an empty line about once a second. Readers
+skip it, and the write fails once the reader has closed its end of the pipe. Under
+`dogsled pipeline` the pipeline holds that end, so it stops the extractor with a signal
+instead.
 
 ## Control messages (standard error)
 

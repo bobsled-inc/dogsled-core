@@ -69,6 +69,14 @@ underscores, and is never `.` or `..`. It can also be an environment placeholder
 
 Leave it out and the output is unchanged.
 
+A copy Resource (`source.kind: copy`) writes each file as it is, to
+`<prefix><stream>/<relative key>` or, with `stream_subfolder`,
+`<prefix><stream>/<stream_subfolder>/<relative key>`. The stream is the Resource name,
+and the relative key is the file's path below the folder that `path` starts in. Only
+`local`, `s3` and `gcs` destinations take a copy, and a pipeline with a copy Resource
+and more than one destination is refused when the project is validated. See
+[Copy files as they are](../guides/extract-from-files.md#copy-files-as-they-are).
+
 ### Pipelines
 
 Extract pipelines (`type: extract`, the default) take `schedule`, `source`,
@@ -121,6 +129,7 @@ Authentication and pagination types are listed in
 | HTTP API            | `spec_version`, `type: resource`, `name`, `integration`, `description`, `input`, `api` (`endpoint`, `method`, `query_params`, `headers`, `request_body`), `output`, `extract` (`record_path`, `pagination`, `incremental`, `table`), and optional `lookup`, `query`, `billing`, `load` |
 | MCP tool            | `type: resource`, `name`, `via`, `tool` (`tool_name`, `arguments`), `input`, `output`, `extract`                                                                                                                                                                                       |
 | Files and documents | `source` (`path`, `format`, `options`, `compression`, `parse`, `chunk`, `embedding`, `ingest`, `permissions`), `replication`, `limits`, `output`, `extract.table`                                                                                                                      |
+| File copy           | `source` (`kind: copy`, `path`), `replication` (`incremental_append`, `cursor.field: last_modified`, `cursor.lookback_seconds`), `limits`. No `format`, `compression`, `options` or `output`. `local`, `s3`, `gcs` and `sftp` integrations only                                        |
 | Database table      | `extract` (`integration`, `source`, `replication`), `schema` (`primary_key`, `columns`), optional `load`                                                                                                                                                                               |
 
 `output` maps each column to a `type` (`string`, `integer`, `number`, `boolean`,

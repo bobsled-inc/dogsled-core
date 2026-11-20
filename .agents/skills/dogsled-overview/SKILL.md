@@ -42,7 +42,7 @@ A Dogsled project has four concerns:
 3. **Entity graph (optional)** — identity resolution, survivorship, truthsets, and agent-task workflows that sit on top of loaded data via `@bobsled-inc/entity-graph`.
 4. **Orchestration** — pipelines tie ELT and model materialization together under one schedule (or on-demand), all run by the `dogsled` CLI.
 
-Components communicate through the **Dogsled protocol**, a JSONL stream of typed messages (`SCHEMA`, `RECORD`, `STATE`, `BATCH`, `LOG`, `METRIC`). Extractor → optional embedder → loader is the canonical pipe; every component works standalone or composed.
+Components communicate through the **Dogsled protocol**, a JSONL stream of typed messages (`SCHEMA`, `RECORD`, `STATE`, `BATCH`, `FILE`, `LOG`, `METRIC`). `FILE` names a file to copy as it is, with no rows. Extractor → optional embedder → loader is the canonical pipe; every component works standalone or composed.
 
 ```text
               Dogsled protocol (JSONL on stdout)

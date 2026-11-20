@@ -62,7 +62,7 @@ Condensed steps:
 - **Atomic state writes**: `state.ts` uses write-tmp-then-rename for crash safety
 - **Message protocol**: stdout = data (SCHEMA/RECORD/STATE), stderr = control (LOG/METRIC). Version field `_v: 1` on every message
 - **Load strategy resolution**: `emitSchema()` derives `load_strategy` via cascade: YAML override > fullRefresh flag > file `incremental_append` (append) > incremental+PKs inference > full_refresh. `resolveLoadStrategy()` helper in `schema-message.ts`
-- **Copy Resources**: `source.kind: copy` runs `runtime/file-copy-extractor.ts`, which sends one FILE message per file instead of rows. S3 and GCS keep `{watermark, recent}` in state, and SFTP and local keep the per-file `files` map. The run waits for the loader to delete every temp file before it saves state and sends STATE, so a copy refuses `--no-state-write`, the flag a pipeline with a list of destinations uses. Download concurrency is 8 and the temp-file budget is 1 GiB
+- **Copy Resources**: `source.kind: copy` runs `runtime/file-copy-extractor.ts`, which sends one FILE message per file and saves state only after the loader has deleted every temp file. It needs a loader on a pipe, so it refuses `--no-state-write` and output to a file or terminal. Behaviour and limits are in `docs/guides/extract-from-files.md`
 - **Warehouse client factory**: Dynamic `import()` in `warehouse-client.ts` lazy-loads dialect clients to avoid unnecessary dependency loading
 - **CDC metadata normalization**: `warehouse-extractor.ts` normalizes Snowflake METADATA$, BigQuery \_CHANGE_TYPE, and Delta CDF columns to standard `_change_type` / `_is_update`
 - **Error taxonomy**: `errors.ts` classifies errors as transient (retryable), config (fail-fast), or data (fail-fast)

@@ -6,7 +6,7 @@ const base = {
   _v: 1,
   type: 'FILE',
   stream: 'drops',
-  uri: 'file:///tmp/dogsled-copy-1/report-0a1b2c3d4e.csv',
+  uri: 'file:///tmp/dogsled-copy-abc123/1',
   relative_key: '2026/report.csv',
   size: 120,
 };
