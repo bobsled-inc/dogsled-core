@@ -79,3 +79,37 @@ describe('file destination options in dogsled.yml', () => {
     ).toBe(false);
   });
 });
+
+describe('object_metadata in dogsled.yml', () => {
+  const objectStores = [fileDestinations[1], fileDestinations[2]];
+  const parse = (destination: Record<string, unknown>) =>
+    DogsledConfigSchema.safeParse({ destinations: { warehouse: destination }, pipelines });
+
+  it.each(objectStores)('accepts object_metadata on a $type destination', (destination) => {
+    const metadata = { team: 'data', 'cost-center': '4021' };
+
+    expect(parse({ ...destination, object_metadata: metadata }).success).toBe(true);
+    expect(
+      NamedDestinationSchema.safeParse({
+        name: 'landing',
+        ...destination,
+        object_metadata: metadata,
+      }).success
+    ).toBe(true);
+  });
+
+  it('does not take object_metadata on a local destination, which keeps none', () => {
+    expect(parse({ ...fileDestinations[0], object_metadata: { team: 'data' } }).success).toBe(
+      false
+    );
+  });
+
+  it.each([
+    ['an upper-case key', { Team: 'data' }],
+    ['a key a copy sets', { 'dogsled-source-modified': 'x' }],
+    ['a value that is not text', { team: 7 }],
+    ['more than S3 keeps on one object', { note: 'x'.repeat(2000) }],
+  ])('refuses %s', (_label, object_metadata) => {
+    expect(parse({ ...fileDestinations[2], object_metadata }).success).toBe(false);
+  });
+});

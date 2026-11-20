@@ -4,6 +4,7 @@ import {
   isValidStreamSubfolder,
   LOAD_STRATEGIES,
   normalizeStreamSubfolder,
+  objectMetadataProblem,
   SCHEMA_BEHAVIORS,
   STREAM_SUBFOLDER_RULE,
 } from '@bobsled-inc/protocol';
@@ -54,6 +55,18 @@ const streamSubfolder = z
   .refine(isValidStreamSubfolder, STREAM_SUBFOLDER_RULE)
   .optional();
 
+/**
+ * Opt-in metadata for the files a copy writes to a gcs or s3 destination: keys of lowercase
+ * letters, digits and dashes, text values, and a size S3 accepts. The loader adds two keys more.
+ */
+const objectMetadata = z
+  .record(z.string(), z.string())
+  .superRefine((value, context) => {
+    const problem = objectMetadataProblem(value);
+    if (problem) context.addIssue({ code: 'custom', message: problem });
+  })
+  .optional();
+
 const LocalDestConfigSchema = z.object({
   dest: z.literal('local'),
   format: z.enum(OUTPUT_FORMATS),
@@ -70,6 +83,7 @@ const GcsDestConfigSchema = z.object({
   gcsBucket: z.string().trim().min(1),
   gcsPrefix: z.string().trim().min(1).optional(),
   streamSubfolder,
+  objectMetadata,
   bufferSize,
   logFormat,
 });
@@ -84,6 +98,7 @@ const S3DestConfigSchema = z.object({
   s3RoleArn: z.string().trim().min(1).optional(),
   s3ExternalId: z.string().trim().min(1).optional(),
   streamSubfolder,
+  objectMetadata,
   bufferSize,
   logFormat,
 });

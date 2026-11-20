@@ -8,6 +8,7 @@ import {
   isSchemaBehavior,
   isValidStreamSubfolder,
   normalizeStreamSubfolder,
+  objectMetadataProblem,
   PlatformConfigSchema,
   SCHEMA_BEHAVIORS,
   STREAM_SUBFOLDER_RULE,
@@ -338,6 +339,21 @@ const FileDestinationFields = {
   stream_subfolder: StreamSubfolderSchema.optional(),
 } as const;
 
+/**
+ * Opt-in metadata for the files a copy writes to a gcs or s3 destination. Keys use lowercase
+ * letters, digits and dashes, values are text, and the whole stays within what S3 keeps on one
+ * object. A copy adds two keys of its own, `dogsled-source` and `dogsled-source-modified`.
+ */
+const ObjectMetadataSchema = z.record(z.string(), z.string()).superRefine((value, context) => {
+  const problem = objectMetadataProblem(value);
+  if (problem) context.addIssue({ code: 'custom', message: problem });
+});
+
+const ObjectStoreDestinationFields = {
+  ...FileDestinationFields,
+  object_metadata: ObjectMetadataSchema.optional(),
+} as const;
+
 // File destinations require an explicit format (no implicit default).
 const LocalDestinationSchema = z
   .object({
@@ -354,7 +370,7 @@ const GcsDestinationSchema = z
     bucket: z.string(),
     prefix: z.string().optional(),
     format: DestinationFormatSchema,
-    ...FileDestinationFields,
+    ...ObjectStoreDestinationFields,
     ...SharedDestinationFields,
   })
   .strict();
@@ -365,7 +381,7 @@ const S3DestinationSchema = z
     bucket: z.string(),
     prefix: z.string().optional(),
     format: DestinationFormatSchema,
-    ...FileDestinationFields,
+    ...ObjectStoreDestinationFields,
     ...SharedDestinationFields,
   })
   .strict();

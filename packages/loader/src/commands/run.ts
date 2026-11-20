@@ -793,6 +793,10 @@ export function registerRunCommand(program: Command, runHandler: RunHandler = ru
       '--stream-subfolder <path>',
       'Folder added inside each stream folder for local, gcs and s3 destinations (for example data/run-1)'
     )
+    .option(
+      '--object-metadata <json>',
+      'JSON object of text values stored as metadata on each file a copy writes to gcs and s3 destinations (for example \'{"team":"data"}\'); no $NAME in a value is expanded'
+    )
     .option('--db-path <path>', 'DuckDB database file path')
     .option('--ducklake-catalog-url <url>', 'DuckLake catalog URL')
     .option('--ducklake-data-path <path>', 'DuckLake data path')

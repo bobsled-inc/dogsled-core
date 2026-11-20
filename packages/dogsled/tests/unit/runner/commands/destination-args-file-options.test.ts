@@ -91,3 +91,39 @@ describe('buildDestinationCliArgs: file destination options', () => {
     ).toContain('data/run-7');
   });
 });
+
+describe('buildDestinationCliArgs: object metadata', () => {
+  it.each(['s3', 'gcs'] as const)(
+    'emits --object-metadata for a %s destination as JSON, in key order, with values resolved',
+    (type) => {
+      const args = buildDestinationCliArgs(
+        {
+          type,
+          bucket: 'example-bucket',
+          format: 'parquet',
+          auth_env_vars: ['RUN_ID'],
+          object_metadata: { team: 'data', 'run-id': '$RUN_ID' },
+        },
+        { valueResolver: (value) => (value === '$RUN_ID' ? 'run-1' : value) }
+      );
+
+      expect(args.slice(args.indexOf('--object-metadata'))).toEqual([
+        '--object-metadata',
+        '{"run-id":"run-1","team":"data"}',
+      ]);
+    }
+  );
+
+  it('adds no argument when there is no metadata, or an empty object', () => {
+    for (const object_metadata of [undefined, {}]) {
+      expect(
+        buildDestinationCliArgs({
+          type: 's3',
+          bucket: 'example-bucket',
+          format: 'parquet',
+          object_metadata,
+        })
+      ).not.toContain('--object-metadata');
+    }
+  });
+});

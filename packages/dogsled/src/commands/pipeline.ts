@@ -155,6 +155,8 @@ export interface PipelineOptions {
   s3Prefix?: string;
   /** Folder added inside each stream's folder on local, gcs and s3 destinations. */
   streamSubfolder?: string;
+  /** Metadata stored on each file a copy writes to a gcs or s3 destination. */
+  objectMetadata?: Record<string, string>;
   startDate?: string;
   endDate?: string;
   sfAccount?: string;

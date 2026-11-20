@@ -9,6 +9,7 @@ import { contentTypeForFormat, type OutputFormat } from '../formats.js';
 import { isRetryableError, withRetry } from '../retry.js';
 import {
   assertObjectKeyLength,
+  encodeObjectMetadata,
   normalizeDestinationPath,
   type FileDestination,
   type PublishOptions,
@@ -126,6 +127,7 @@ export class S3Destination implements FileDestination {
     assertObjectKeyLength(objectKey);
     const contentType =
       this.format && !options?.copy ? contentTypeForFormat(this.format) : undefined;
+    const metadata = options?.copy ? encodeObjectMetadata(options.metadata) : undefined;
     const client = await this.getClient();
 
     await withRetry(async () => {
@@ -137,6 +139,7 @@ export class S3Destination implements FileDestination {
           Body: body,
           ChecksumAlgorithm: 'SHA256' as const,
           ContentType: contentType,
+          ...(metadata ? { Metadata: metadata } : {}),
         };
         if (this.providedClient) {
           await client.send({ input });

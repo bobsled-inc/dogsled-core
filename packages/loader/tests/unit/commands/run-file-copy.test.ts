@@ -46,7 +46,13 @@ describe('runFileLoader: FILE messages', () => {
   });
 
   /** A temp file the extractor made, and the FILE line that names it. */
-  async function staged(name: string, body: Buffer, key = name, claimedSize = body.length) {
+  async function staged(
+    name: string,
+    body: Buffer,
+    key = name,
+    claimedSize = body.length,
+    extra: Record<string, unknown> = {}
+  ) {
     // The extractor keeps its temp files in a folder with this prefix.
     const folder = path.join(tempDir, 'dogsled-copy-test');
     await fs.mkdir(folder, { recursive: true, mode: 0o700 });
@@ -59,6 +65,7 @@ describe('runFileLoader: FILE messages', () => {
       uri: pathToFileURL(file).href,
       relative_key: key,
       size: claimedSize,
+      ...extra,
     })}\n`;
     return { file, line, key, body };
   }
@@ -142,6 +149,196 @@ describe('runFileLoader: FILE messages', () => {
       },
     ]);
     expect(await exists(file.file)).toBe(false);
+  });
+
+  const s3Config = (objectMetadata?: Record<string, string>): FileDestConfig => ({
+    dest: 's3',
+    format: 'parquet',
+    outputDir: '/unused',
+    s3Bucket: 'landing-bucket',
+    bufferSize: 1,
+    logFormat: 'text',
+    ...(objectMetadata ? { objectMetadata } : {}),
+  });
+  const gcsConfig = (objectMetadata?: Record<string, string>): FileDestConfig => ({
+    dest: 'gcs',
+    format: 'parquet',
+    outputDir: '/unused',
+    gcsBucket: 'landing-bucket',
+    bufferSize: 1,
+    logFormat: 'text',
+    ...(objectMetadata ? { objectMetadata } : {}),
+  });
+  const source = { source_key: 'incoming/2026/café.pdf', modified: '2026-11-20T15:24:53.408Z' };
+  // Each value is US-ASCII on the object: a space and an accented letter are percent-encoded.
+  const expectedMetadata = {
+    team: 'data',
+    'run-id': 'run%201',
+    'dogsled-source': 'incoming/2026/caf%C3%A9.pdf',
+    'dogsled-source-modified': '2026-11-20T15:24:53.408Z',
+  };
+
+  it('stores the configured metadata, the source key and the modified time on an S3 object', async () => {
+    const inputs: Array<Record<string, unknown>> = [];
+    const client = {
+      async send(command: { input: Record<string, unknown> }) {
+        for await (const chunk of command.input['Body'] as AsyncIterable<Buffer>) void chunk;
+        inputs.push(command.input);
+        return {};
+      },
+    };
+    const file = await staged('a.pdf', Buffer.from('%PDF'), '2026/café.pdf', 4, source);
+
+    await load(
+      [file.line],
+      new S3Destination({ bucket: 'landing-bucket', format: 'parquet', client }),
+      s3Config({ team: 'data', 'run-id': 'run 1' })
+    );
+
+    expect(inputs).toHaveLength(1);
+    expect(inputs[0]).toMatchObject({
+      Key: 'drops/2026/café.pdf',
+      ChecksumAlgorithm: 'SHA256',
+      Metadata: expectedMetadata,
+    });
+  });
+
+  it('stores the same metadata on a GCS object, and leaves out what the sender did not give', async () => {
+    const uploads: Array<Record<string, unknown>> = [];
+    const storage = {
+      bucket: () => ({
+        async upload(_localPath: string, options: Record<string, unknown>) {
+          uploads.push(options);
+        },
+      }),
+    };
+    const dated = await staged('a.pdf', Buffer.from('%PDF'), '2026/café.pdf', 4, source);
+    const undated = await staged('b.pdf', Buffer.from('%PDF'), 'b.pdf', 4, { source_key: 'b.pdf' });
+    // A sender that gives no source key must not get the relative key written in its place.
+    const bare = await staged('c.pdf', Buffer.from('%PDF'), 'c.pdf');
+
+    await load(
+      [dated.line, undated.line, bare.line],
+      new GcsDestination({ bucket: 'landing-bucket', format: 'parquet', storage }),
+      gcsConfig({ team: 'data', 'run-id': 'run 1' })
+    );
+
+    const byKey = new Map(uploads.map((upload) => [upload['destination'], upload]));
+    expect(byKey.get('drops/2026/café.pdf')).toMatchObject({
+      validation: 'crc32c',
+      metadata: { metadata: expectedMetadata },
+    });
+    expect(byKey.get('drops/b.pdf')?.['metadata']).toEqual({
+      metadata: { team: 'data', 'run-id': 'run%201', 'dogsled-source': 'b.pdf' },
+    });
+    expect(byKey.get('drops/c.pdf')?.['metadata']).toEqual({
+      metadata: { team: 'data', 'run-id': 'run%201' },
+    });
+  });
+
+  it('stores the source key and modified time on every copy, with no object_metadata set', async () => {
+    const inputs: Array<Record<string, unknown>> = [];
+    const client = {
+      async send(command: { input: Record<string, unknown> }) {
+        for await (const chunk of command.input['Body'] as AsyncIterable<Buffer>) void chunk;
+        inputs.push(command.input);
+        return {};
+      },
+    };
+    const file = await staged('a.pdf', Buffer.from('%PDF'), 'a.pdf', 4, source);
+
+    await load(
+      [file.line],
+      new S3Destination({ bucket: 'landing-bucket', format: 'parquet', client }),
+      s3Config()
+    );
+
+    expect(inputs[0]?.['Metadata']).toEqual({
+      'dogsled-source': 'incoming/2026/caf%C3%A9.pdf',
+      'dogsled-source-modified': '2026-11-20T15:24:53.408Z',
+    });
+  });
+
+  it('leaves dogsled-source off files whose key would not fit, says so once, and still writes them', async () => {
+    const inputs: Array<Record<string, unknown>> = [];
+    const client = {
+      async send(command: { input: Record<string, unknown> }) {
+        for await (const chunk of command.input['Body'] as AsyncIterable<Buffer>) void chunk;
+        inputs.push(command.input);
+        return {};
+      },
+    };
+    // A legal key of about 700 bytes. Each character takes 3 bytes, and 9 once percent-encoded, so
+    // it would pass the 2,048 bytes an object may hold by itself. It is no reason to stop a run.
+    const longKey = `incoming/${'界'.repeat(230)}.pdf`;
+    const short = await staged('a.pdf', Buffer.from('%PDF'), 'a.pdf', 4, {
+      source_key: 'incoming/a.pdf',
+      modified: source.modified,
+    });
+    const long = await staged('b.pdf', Buffer.from('%PDF'), 'b.pdf', 4, {
+      source_key: longKey,
+      modified: source.modified,
+    });
+    const longer = await staged('c.pdf', Buffer.from('%PDF'), 'c.pdf', 4, {
+      source_key: `${longKey}.1`,
+      modified: source.modified,
+    });
+    const stderr = new BufferingWritable();
+
+    await load(
+      [short.line, long.line, longer.line],
+      new S3Destination({ bucket: 'landing-bucket', format: 'parquet', client }),
+      s3Config(),
+      new BufferingWritable(),
+      stderr
+    );
+
+    const metadataByKey = new Map(inputs.map((input) => [input['Key'], input['Metadata']]));
+    expect(metadataByKey.get('drops/a.pdf')).toEqual({
+      'dogsled-source': 'incoming/a.pdf',
+      'dogsled-source-modified': source.modified,
+    });
+    for (const key of ['drops/b.pdf', 'drops/c.pdf']) {
+      expect(metadataByKey.get(key)).toEqual({ 'dogsled-source-modified': source.modified });
+    }
+    // One warning names a file, and the run ends with a count, so a stream that loses the entry
+    // on every file does not log a line for each.
+    const warnings = stderr
+      .toString()
+      .split('\n')
+      .filter((line) => line.includes('WARN'));
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toMatch(
+      /^\[loader\] WARN drops: left dogsled-source off "[bc]\.pdf": it would take the object's metadata past 2048 bytes$/
+    );
+    expect(warnings[1]).toBe('[loader] WARN drops: left dogsled-source off 2 files in all');
+    expect(await exists(long.file)).toBe(false);
+    expect(await exists(longer.file)).toBe(false);
+  });
+
+  it('refuses a write whose own object_metadata passes what S3 keeps, and writes nothing', async () => {
+    const sends: unknown[] = [];
+    const client = {
+      async send(command: unknown) {
+        sends.push(command);
+        return {};
+      },
+    };
+    // The config check refuses this before a run starts. It is built by hand here to reach the
+    // last check, which no key a file can have should ever reach.
+    const file = await staged('a.pdf', Buffer.from('%PDF'), 'a.pdf', 4, source);
+
+    await expect(
+      load(
+        [file.line],
+        new S3Destination({ bucket: 'landing-bucket', format: 'parquet', client }),
+        s3Config({ note: 'x'.repeat(2100) })
+      )
+    ).rejects.toThrow(
+      /Failed to load stream "drops" to s3: Object metadata is \d+ bytes, over the 2048/
+    );
+    expect(sends).toEqual([]);
+    expect(await exists(file.file)).toBe(true);
   });
 
   it('uploads to GCS as stored, with the CRC32C check and no content type', async () => {

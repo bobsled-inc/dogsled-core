@@ -162,6 +162,20 @@ describe('file destination options through runProjectPipeline', () => {
     ]);
   });
 
+  it('passes object_metadata to the loader, for a single destination and for each loader of a fan-out', async () => {
+    const metadata = '    object_metadata:\n      team: data\n      run-id: a1\n';
+    const expected = ['--object-metadata', '{"run-id":"a1","team":"data"}'];
+
+    const single = await loaderArgs(makeProject(`${S3_LANDING}${metadata}`, ['landing']));
+    expect(single.loaders[0]).toEqual(expect.arrayContaining(expected));
+
+    const fanOut = await loaderArgs(
+      makeProject(`${S3_LANDING}${metadata}${GCS_LANDING}${metadata}`, ['landing', 'archive'])
+    );
+    expect(fanOut.loaders).toHaveLength(2);
+    for (const args of fanOut.loaders) expect(args).toEqual(expect.arrayContaining(expected));
+  });
+
   it('passes the option to every loader of a fan-out', async () => {
     const projectRoot = makeProject(
       `${S3_LANDING}    stream_subfolder: data/run-1\n${GCS_LANDING}    stream_subfolder: data/run-1\n`,
@@ -192,6 +206,7 @@ describe('file destination options through runProjectPipeline', () => {
 
       for (const args of loaders) {
         expect(args).not.toContain('--stream-subfolder');
+        expect(args).not.toContain('--object-metadata');
       }
       const s3 = loaders.find((args) => args.includes('s3'))!;
       expect(s3.slice(s3.indexOf('--dest'))).toEqual(

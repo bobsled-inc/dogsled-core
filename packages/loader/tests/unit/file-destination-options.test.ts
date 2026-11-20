@@ -66,3 +66,41 @@ describe('file destination options: stream subfolder', () => {
     expect('streamSubfolder' in result.data).toBe(false);
   });
 });
+
+describe('file destination options: object metadata', () => {
+  it.each([fileDestinations[1], fileDestinations[2]])(
+    'keeps object metadata for the $dest destination',
+    (dest) => {
+      const result = parse({
+        ...dest,
+        format: 'parquet',
+        objectMetadata: { team: 'data', 'cost-center': '4021' },
+      });
+      expect(
+        result.success && 'objectMetadata' in result.data && result.data.objectMetadata
+      ).toEqual({ team: 'data', 'cost-center': '4021' });
+    }
+  );
+
+  it('leaves it off a local destination, which keeps no metadata', () => {
+    const result = parse({
+      ...fileDestinations[0],
+      format: 'parquet',
+      objectMetadata: { team: 'data' },
+    });
+    // The parse must succeed and drop the key: a failed parse would also read as "left off".
+    expect(result.success).toBe(true);
+    expect(result.success && 'objectMetadata' in result.data).toBe(false);
+  });
+
+  it.each([
+    ['an upper-case key', { Team: 'data' }],
+    ['a key a copy sets', { 'dogsled-source': 'x' }],
+    ['an empty value', { team: '' }],
+    ['more than S3 keeps', { note: 'x'.repeat(2000) }],
+  ])('rejects %s', (_label, objectMetadata) => {
+    expect(parse({ ...fileDestinations[2], format: 'parquet', objectMetadata }).success).toBe(
+      false
+    );
+  });
+});

@@ -67,6 +67,66 @@ describe('file destination CLI options', () => {
     }
   );
 
+  it.each(destinations.filter(({ dest }) => dest !== 'local'))(
+    'passes --object-metadata into the $dest config',
+    async ({ dest, extra }) => {
+      const { config, error } = await runWith([
+        '--dest',
+        dest,
+        '--format',
+        'parquet',
+        ...extra,
+        '--object-metadata',
+        '{"team":"data","run-id":"a1"}',
+      ]);
+
+      expect(error).toBeUndefined();
+      expect(config).toMatchObject({ dest, objectMetadata: { team: 'data', 'run-id': 'a1' } });
+    }
+  );
+
+  it('keeps --object-metadata values as text and expands no $NAME in them', async () => {
+    // dogsled.yml resolves its placeholders before it starts the loader. A second pass would
+    // read a resolved value that holds a dollar sign as another placeholder, and a name it did
+    // not declare could reach the object's metadata.
+    vi.stubEnv('OBJECT_METADATA_PROBE', 'expanded');
+    try {
+      const { config, error } = await runWith([
+        '--dest',
+        's3',
+        '--format',
+        'parquet',
+        '--s3-bucket',
+        'example-bucket',
+        '--object-metadata',
+        '{"owner":"$OBJECT_METADATA_PROBE","price":"$5"}',
+      ]);
+
+      expect(error).toBeUndefined();
+      expect(config).toMatchObject({
+        objectMetadata: { owner: '$OBJECT_METADATA_PROBE', price: '$5' },
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it.each(['not json', '["a"]', '7'])('rejects --object-metadata %j', async (value) => {
+    const { stderr, exitCode } = await runRejected([
+      '--dest',
+      's3',
+      '--format',
+      'parquet',
+      '--s3-bucket',
+      'example-bucket',
+      '--object-metadata',
+      value,
+    ]);
+
+    expect(stderr).toContain('--object-metadata must be a JSON object of text values');
+    expect(exitCode).toBe(2);
+  });
+
   it.each(destinations)('leaves the option unset for $dest by default', async ({ dest, extra }) => {
     const { config, error } = await runWith(['--dest', dest, '--format', 'parquet', ...extra]);
 

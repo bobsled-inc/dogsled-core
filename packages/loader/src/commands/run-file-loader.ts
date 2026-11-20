@@ -13,7 +13,13 @@ import { getFormatDef } from '../runtime/formats.js';
 import { readProtocol } from '../runtime/protocol-reader.js';
 import { RecordBuffer } from '../runtime/record-buffer.js';
 import { type FileDestConfig } from '../schemas/config.js';
-import { CommandError } from '@bobsled-inc/protocol';
+import {
+  CommandError,
+  COPY_METADATA_MODIFIED_KEY,
+  COPY_METADATA_SOURCE_KEY,
+  OBJECT_METADATA_MAX_BYTES,
+  objectMetadataBytes,
+} from '@bobsled-inc/protocol';
 import { createLogger } from '../runtime/logger.js';
 
 import type { BatchEncoding, FileMessage, SchemaMessage } from '@bobsled-inc/protocol';
@@ -234,6 +240,46 @@ export async function runFileLoader(
     }
   };
 
+  // Only S3 and GCS keep metadata on an object. A copy tells them when its source says the file
+  // changed and where it came from, besides what the destination block asks for. Those two go on
+  // only if they fit, so that a long source key leaves its own entry off and never stops a run.
+  // The entries from the destination block fit already: the config check left room for them.
+  const objectMetadata =
+    rawConfig.dest === 's3' || rawConfig.dest === 'gcs' ? (rawConfig.objectMetadata ?? {}) : null;
+  // A stream whose destination block leaves no room would lose an entry on every file. It gets
+  // one warning that names the first file, and a count when the run ends.
+  const leftOff = new Map<string, { stream: string; key: string; count: number }>();
+  const copyMetadata = (
+    message: FileMessage,
+    stream: string
+  ): Record<string, string> | undefined => {
+    if (objectMetadata === null) return undefined;
+    let metadata: Record<string, string> = { ...objectMetadata };
+    const added: Array<[string, string | undefined]> = [
+      [COPY_METADATA_MODIFIED_KEY, message.modified],
+      [COPY_METADATA_SOURCE_KEY, message.source_key],
+    ];
+    for (const [key, value] of added) {
+      if (value === undefined) continue;
+      const next = { ...metadata, [key]: value };
+      if (objectMetadataBytes(next) <= OBJECT_METADATA_MAX_BYTES) {
+        metadata = next;
+        continue;
+      }
+      const seen = leftOff.get(`${stream}\0${key}`);
+      if (seen) {
+        seen.count += 1;
+      } else {
+        leftOff.set(`${stream}\0${key}`, { stream, key, count: 1 });
+        logger.warn(
+          `${stream}: left ${key} off "${printableKey(message.relative_key)}": it would take the ` +
+            `object's metadata past ${OBJECT_METADATA_MAX_BYTES} bytes`
+        );
+      }
+    }
+    return metadata;
+  };
+
   const copying = new Set<Promise<void>>();
   let copyFailure: { error: unknown } | undefined;
 
@@ -281,7 +327,10 @@ export async function runFileLoader(
       );
     }
     const publishStart = performance.now();
-    const uri = await destination.publish(sourcePath, destinationPath, { copy: true });
+    const uri = await destination.publish(sourcePath, destinationPath, {
+      copy: true,
+      metadata: copyMetadata(message, stream),
+    });
     const publishMs = performance.now() - publishStart;
     // The sender counts a deleted temp file as written, so delete it only after the write.
     await fs.rm(sourcePath, { force: true });
@@ -386,6 +435,9 @@ export async function runFileLoader(
     }
 
     await finishCopies();
+    for (const { stream, key, count } of leftOff.values()) {
+      if (count > 1) logger.warn(`${stream}: left ${key} off ${count} files in all`);
+    }
 
     for (const [stream, buffer] of buffers) {
       const flushedPath = await buffer.flush();

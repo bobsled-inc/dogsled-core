@@ -19,7 +19,10 @@ import { type ResolvedPipeline, type ResolvedResource } from '../runner/config/l
 import { resolveProjectPipelines } from '../runner/config/project-resolver.js';
 import { getWorkloadIdentitySourceEnvNames } from '../commands/pipeline-load-args.js';
 import { resolveEnvPlaceholder } from '../runner/commands/env-placeholders.js';
-import { MANAGED_DESTINATION_CORE_ERROR } from '../runner/commands/destination-args.js';
+import {
+  MANAGED_DESTINATION_CORE_ERROR,
+  resolveObjectMetadata,
+} from '../runner/commands/destination-args.js';
 import {
   emptyPipelineRunMetrics,
   pipelineRunMetricsFromSummary,
@@ -972,13 +975,20 @@ function resolveNamedDestination(
 }
 
 function fileDestinationOptions(
-  destination: { stream_subfolder?: string | undefined },
+  destination: {
+    stream_subfolder?: string | undefined;
+    object_metadata?: Record<string, string> | undefined;
+  },
   env: NodeJS.ProcessEnv
-): Pick<PipelineOptions, 'streamSubfolder'> {
+): Pick<PipelineOptions, 'streamSubfolder' | 'objectMetadata'> {
+  const objectMetadata = resolveObjectMetadata(destination.object_metadata, (value) =>
+    resolveValue(value, env)!
+  );
   return {
     ...(destination.stream_subfolder
       ? { streamSubfolder: resolveValue(destination.stream_subfolder, env)! }
       : {}),
+    ...(objectMetadata ? { objectMetadata } : {}),
   };
 }
 

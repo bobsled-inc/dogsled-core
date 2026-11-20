@@ -4,6 +4,7 @@ import { contentTypeForFormat, type OutputFormat } from '../formats.js';
 import { withRetry } from '../retry.js';
 import {
   assertObjectKeyLength,
+  encodeObjectMetadata,
   normalizeDestinationPath,
   type FileDestination,
   type PublishOptions,
@@ -16,6 +17,7 @@ export interface GcsBucketLike {
       destination: string;
       validation?: boolean | string;
       contentType?: string;
+      metadata?: { metadata: Record<string, string> };
     }
   ): Promise<unknown>;
 }
@@ -78,12 +80,22 @@ export class GcsDestination implements FileDestination {
     assertObjectKeyLength(objectPath);
     const storage = await this.getStorage();
 
-    const uploadOptions: { destination: string; validation: string; contentType?: string } = {
+    const metadata = options?.copy ? encodeObjectMetadata(options.metadata) : undefined;
+    const uploadOptions: {
+      destination: string;
+      validation: string;
+      contentType?: string;
+      metadata?: { metadata: Record<string, string> };
+    } = {
       destination: objectPath,
       validation: 'crc32c',
     };
     if (this.format && !options?.copy) {
       uploadOptions.contentType = contentTypeForFormat(this.format);
+    }
+    if (metadata) {
+      // Custom metadata goes under `metadata.metadata`; the outer `metadata` is the object resource.
+      uploadOptions.metadata = { metadata };
     }
 
     await withRetry(
