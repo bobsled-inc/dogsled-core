@@ -52,6 +52,7 @@ import {
 } from './pipeline-summary.js';
 import {
   setupPipelineSignalForwarding,
+  stopStagesAfterLoaderExit,
   terminateAndSettlePipelineChildren,
   throwIfPipelineAborted,
   type PipelineExecutionControl,
@@ -573,8 +574,7 @@ async function runSingleDestPipeline(
   // stdin via the pipe. The loader will finish processing and exit on its own.
   // Only kill extract if the loader exits early (e.g. an error).
   loadChild.on('close', () => {
-    if (!extractChild.killed) extractChild.kill('SIGTERM');
-    if (embedChild && !embedChild.killed) embedChild.kill('SIGTERM');
+    stopStagesAfterLoaderExit(embedChild ? [extractChild, embedChild] : [extractChild]);
   });
   extractChild.on('close', (code) => {
     if ((code ?? 0) !== 0) {
