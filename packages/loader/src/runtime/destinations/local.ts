@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -52,7 +53,19 @@ export class LocalDestination implements FileDestination {
         'code' in error &&
         (error as { code: string }).code === 'EXDEV'
       ) {
-        await this.fs.copyFile(localPath, absoluteDestination);
+        // The file is on another device. Copy it beside its destination and rename it there, so
+        // a reader never sees half a file, and a crash leaves an earlier copy of it whole.
+        const beside = path.join(
+          path.dirname(absoluteDestination),
+          `.dogsled-${randomBytes(6).toString('hex')}.tmp`
+        );
+        try {
+          await this.fs.copyFile(localPath, beside);
+          await this.fs.rename(beside, absoluteDestination);
+        } catch (copyError) {
+          await this.fs.unlink(beside).catch(() => undefined);
+          throw copyError;
+        }
         await this.fs.unlink(localPath);
       } else {
         throw error;

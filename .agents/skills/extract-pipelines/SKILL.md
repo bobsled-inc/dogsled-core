@@ -55,6 +55,14 @@ dogsled runner validate --strict
 dogsled runner run <pipeline> --resource <resource>
 ```
 
+A file Resource with `source.kind: copy` cannot be previewed with `dogsled extract run` alone. It writes `FILE` lines and then waits for a loader to read them, and it refuses to write to a terminal or a file. Pipe the preview into a loader instead. `--limit` still caps the files and saves no state:
+
+```bash
+dogsled extract run --integration <source> <resource> --limit 5 | dogsled load run --dest local --format jsonl --output-dir ./preview
+```
+
+A pipeline with a copy Resource takes one destination, of type `local`, `s3` or `gcs`. `PIPELINE_SUMMARY` counts rows, so it shows 0 records for a copy. Read the `METRIC` line instead. It carries `files_processed` and `bytes_downloaded`, which are both 0 when a run copied nothing.
+
 If an applicable check fails, do not run past it. `scaffold-test` is
 not applicable to MCP, warehouse/database, or file-storage sources. Use
 `dogsled-troubleshoot` for runtime failures and local setup problems.

@@ -31,6 +31,10 @@ import { loadExtractorConfig, resolveExtractorConfig } from '../config.js';
 import { normalizeSpec } from '../schemas/normalize.js';
 import { ExtractIntentsSchema } from '../schemas/extract-intents.js';
 import { IntegrationSpecSchema } from '../schemas/integration.js';
+import {
+  FileCopyResourceSpecSchema,
+  isCopyResourceDocument,
+} from '../framework/extractor/file-copy-resource.js';
 import { ResourceSpecSchema } from '../schemas/resource.js';
 
 import type {
@@ -283,7 +287,14 @@ function loadSpecCore<T>(
     throw new CommandError(error.message, 2);
   }
 
-  const result = schema.safeParse(normalized.data);
+  // A copy Resource is parsed on its own: the union of Resource kinds would show the errors of
+  // another kind, not the plain message for the setting a copy refuses.
+  const result =
+    kind === 'resource' && isCopyResourceDocument(normalized.data)
+      ? (FileCopyResourceSpecSchema.safeParse(normalized.data) as ReturnType<
+          typeof schema.safeParse
+        >)
+      : schema.safeParse(normalized.data);
   if (!result.success) {
     throw new CommandError(formatSpecValidationMessage(kind, filePath, result.error, { schema }));
   }

@@ -52,7 +52,7 @@ Secrets in `dogsled.yml` must be environment references (`$NAME`). Each destinat
 | `clickhouse`      | `host`, `port`, `database`, `username`, `password`, `ssl`, `vector_index`                                                                                                                                                                |
 | `turbopuffer`     | `api_key`, `region`, `namespace_prefix`, `distance_metric`, `full_text_columns`                                                                                                                                                          |
 | `local`           | `format` (`parquet`, `jsonl`, `csv`), `stream_subfolder`                                                                                                                                                                                 |
-| `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`                                                                                                                                                                                         |
+| `gcs`, `s3`       | `bucket`, `prefix`, `format`, `stream_subfolder`, `object_metadata`                                                                                                                                                                      |
 | `dogsled_managed` | `dogsled_connection_ref` (Dogsled Cloud only; see [Dogsled Cloud and Core](../guides/dogsled-cloud.md))                                                                                                                                  |
 
 Every destination also accepts `load_strategy`, `schema_behavior` and
@@ -68,6 +68,21 @@ characters. Each segment holds letters, digits, dots, dashes, equals signs or
 underscores, and is never `.` or `..`. It can also be an environment placeholder.
 
 Leave it out and the output is unchanged.
+
+A copy Resource (`source.kind: copy`) writes each file as it is, to
+`<prefix><stream>/<relative key>` or, with `stream_subfolder`,
+`<prefix><stream>/<stream_subfolder>/<relative key>`. The stream is the Resource name,
+and the relative key is the file's path below the folder that `path` starts in. Only
+`local`, `s3` and `gcs` destinations take a copy. Validation also accepts `dogsled_managed`,
+which Dogsled Cloud expands before it runs the project, and refuses every other type. A
+pipeline with a copy Resource and more than one destination is refused when the project is
+validated. See [Copy files as they are](../guides/extract-from-files.md#copy-files-as-they-are).
+
+A `gcs` or `s3` destination also takes `object_metadata`, a map of text values stored as
+metadata on each file a copy writes. Keys use lowercase letters, digits and dashes, and
+`dogsled-source` and `dogsled-source-modified` are left to the copy, which adds them only
+when `object_metadata` is set: with none, a copied file gets no tags. See
+[Object metadata](../guides/extract-from-files.md#object-metadata).
 
 ### Pipelines
 
@@ -121,6 +136,7 @@ Authentication and pagination types are listed in
 | HTTP API            | `spec_version`, `type: resource`, `name`, `integration`, `description`, `input`, `api` (`endpoint`, `method`, `query_params`, `headers`, `request_body`), `output`, `extract` (`record_path`, `pagination`, `incremental`, `table`), and optional `lookup`, `query`, `billing`, `load` |
 | MCP tool            | `type: resource`, `name`, `via`, `tool` (`tool_name`, `arguments`), `input`, `output`, `extract`                                                                                                                                                                                       |
 | Files and documents | `source` (`path`, `format`, `options`, `compression`, `parse`, `chunk`, `embedding`, `ingest`, `permissions`), `replication`, `limits`, `output`, `extract.table`                                                                                                                      |
+| File copy           | `source` (`kind: copy`, `path`), `replication` (`incremental_append`, `cursor.field: last_modified`, `cursor.lookback_seconds`), `limits`. No `format`, `compression`, `options` or `output`. `local`, `s3`, `gcs` and `sftp` integrations only                                        |
 | Database table      | `extract` (`integration`, `source`, `replication`), `schema` (`primary_key`, `columns`), optional `load`                                                                                                                                                                               |
 
 `output` maps each column to a `type` (`string`, `integer`, `number`, `boolean`,

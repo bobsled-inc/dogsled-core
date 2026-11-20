@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { SpecNameSchema, WarehouseOutputFieldSchema } from '../core/index.js';
 
+import type { FileCopyResourceSpec } from './file-copy-resource.js';
+
 const FileFormatStructuredSchema = z.enum(['csv', 'jsonl', 'parquet']);
 const FileCompressionSchema = z.enum(['none', 'gzip']).default('none').optional();
 
@@ -94,7 +96,7 @@ export const PermissionsCaptureSchema = z
   })
   .strict();
 
-const PathTraversalRefine = (path: string, ctx: z.RefinementCtx) => {
+export const PathTraversalRefine = (path: string, ctx: z.RefinementCtx) => {
   if (path.includes('..')) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -200,7 +202,7 @@ export const FileReplicationSchema = z
     }
   });
 
-const FileLimitsSchema = z
+export const FileLimitsSchema = z
   .object({
     max_file_size_bytes: z.number().int().positive().default(5_368_709_120).optional(),
     max_files_per_run: z.number().int().positive().default(10_000).optional(),
@@ -273,7 +275,9 @@ export type IngestConfig = z.infer<typeof IngestConfigSchema>;
 export type PermissionsCapture = z.infer<typeof PermissionsCaptureSchema>;
 export type FileResourceSpec = z.infer<typeof FileResourceSpecSchema>;
 
-export function isFileStorageResource(resource: unknown): resource is FileResourceSpec {
+export function isFileStorageResource(
+  resource: unknown
+): resource is FileResourceSpec | FileCopyResourceSpec {
   if (!resource || typeof resource !== 'object' || Array.isArray(resource)) {
     return false;
   }
@@ -287,9 +291,11 @@ export function isFileStorageResource(resource: unknown): resource is FileResour
   }
   const source = candidate.source as Record<string, unknown>;
   // Either the `format` enum (csv/jsonl/parquet/document) or `kind` discriminator
-  // is enough; a resource with `path` and a document-marker is still a file storage
-  // resource even if `format` is absent.
-  return 'path' in source && ('format' in source || source.kind === 'document');
+  // is enough; a resource with `path` and a document or copy marker is still a file
+  // storage resource even if `format` is absent.
+  return (
+    'path' in source && ('format' in source || source.kind === 'document' || source.kind === 'copy')
+  );
 }
 
 export function isDocumentFileSource(source: FileSourceConfig): source is DocumentFileSourceConfig {

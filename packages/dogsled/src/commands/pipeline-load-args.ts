@@ -206,6 +206,9 @@ function buildRawLoadArgs(options: PipelineOptions): string[] {
   if (options.streamSubfolder) {
     args.push('--stream-subfolder', options.streamSubfolder);
   }
+  if (options.objectMetadata && Object.keys(options.objectMetadata).length > 0) {
+    args.push('--object-metadata', JSON.stringify(options.objectMetadata));
+  }
   if (options.bufferSize) {
     args.push('--buffer-size', String(options.bufferSize));
   }

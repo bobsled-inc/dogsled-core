@@ -307,9 +307,35 @@ export interface ReplaceMessage {
   values: string[];
 }
 
+/**
+ * Copy one file as it is. `uri` names a temp file the producer owns. The consumer writes
+ * its bytes to `<stream>/<relative_key>` at the destination and then deletes the temp file;
+ * the producer treats a deleted file as written, so it must not delete the file itself
+ * until then. `size` is the file's size in bytes. A consumer that cannot copy files must
+ * fail instead of ignoring the message.
+ */
+export interface FileMessage {
+  _v: ProtocolVersion;
+  type: 'FILE';
+  stream: string;
+  uri: string;
+  relative_key: string;
+  size: number;
+  /** The file's key in the source, with no bucket, scheme or host. A writer may record it. */
+  source_key?: string;
+  /** When the source says the file was last modified, as an ISO 8601 date-time. Absent if it says nothing. */
+  modified?: string;
+}
+
 /** Data messages emitted on stdout. */
 export type StdoutMessage =
-  SchemaMessage | RecordMessage | StateMessage | BatchMessage | LineageMessage | ReplaceMessage;
+  | SchemaMessage
+  | RecordMessage
+  | StateMessage
+  | BatchMessage
+  | LineageMessage
+  | ReplaceMessage
+  | FileMessage;
 
 // ── Failure reasons ──
 

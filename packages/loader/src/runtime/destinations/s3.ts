@@ -7,7 +7,13 @@ import type { S3ClientConfig } from '@aws-sdk/client-s3';
 
 import { contentTypeForFormat, type OutputFormat } from '../formats.js';
 import { isRetryableError, withRetry } from '../retry.js';
-import { normalizeDestinationPath, type FileDestination } from './types.js';
+import {
+  assertObjectKeyLength,
+  encodeObjectMetadata,
+  normalizeDestinationPath,
+  type FileDestination,
+  type PublishOptions,
+} from './types.js';
 
 const S3_TRANSIENT_ERROR_NAMES = new Set([
   'ThrottlingException',
@@ -115,10 +121,13 @@ export class S3Destination implements FileDestination {
     this.providedClient = options.client;
   }
 
-  async publish(localPath: string, destPath: string): Promise<string> {
+  async publish(localPath: string, destPath: string, options?: PublishOptions): Promise<string> {
     const normalizedPath = normalizeDestinationPath(destPath);
     const objectKey = this.prefix ? path.posix.join(this.prefix, normalizedPath) : normalizedPath;
-    const contentType = this.format ? contentTypeForFormat(this.format) : undefined;
+    assertObjectKeyLength(objectKey);
+    const contentType =
+      this.format && !options?.copy ? contentTypeForFormat(this.format) : undefined;
+    const metadata = options?.copy ? encodeObjectMetadata(options.metadata) : undefined;
     const client = await this.getClient();
 
     await withRetry(async () => {
@@ -130,6 +139,7 @@ export class S3Destination implements FileDestination {
           Body: body,
           ChecksumAlgorithm: 'SHA256' as const,
           ContentType: contentType,
+          ...(metadata ? { Metadata: metadata } : {}),
         };
         if (this.providedClient) {
           await client.send({ input });

@@ -71,6 +71,37 @@ export function setupPipelineSignalForwarding(
   };
 }
 
+/**
+ * Stop a child the pipeline no longer needs: SIGTERM now, and SIGKILL after a grace period if
+ * it has not exited by then. A child that is already gone is left alone.
+ */
+export function stopPipelineChild(child: ChildProcess, graceMs = 5_000): void {
+  const settled = (): boolean =>
+    typeof child.exitCode === 'number' ||
+    (child.signalCode !== null && child.signalCode !== undefined);
+  if (settled()) return;
+  if (!child.killed) child.kill('SIGTERM');
+  const timer = setTimeout(() => {
+    if (!settled()) child.kill('SIGKILL');
+  }, graceMs);
+  timer.unref();
+  child.once('close', () => clearTimeout(timer));
+}
+
+/**
+ * The loader has exited, so nothing reads the output of the stages before it. Drop that output, so
+ * a write a stage is blocked on can finish and the stage can act on the signal, then stop each stage.
+ * The pipe is removed first: a pipe to a stage that has gone would otherwise pause the output
+ * again when its input closes, after this call.
+ */
+export function stopStagesAfterLoaderExit(stages: ChildProcess[]): void {
+  for (const stage of stages) {
+    stage.stdout?.unpipe();
+    stage.stdout?.resume();
+    stopPipelineChild(stage);
+  }
+}
+
 export async function terminateAndSettlePipelineChildren(
   started: StartedPipelineChild[]
 ): Promise<void> {

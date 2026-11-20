@@ -91,3 +91,63 @@ describe('buildDestinationCliArgs: file destination options', () => {
     ).toContain('data/run-7');
   });
 });
+
+describe('buildDestinationCliArgs: object metadata', () => {
+  it.each(['s3', 'gcs'] as const)(
+    'emits --object-metadata for a %s destination as JSON, in key order, with values as written',
+    (type) => {
+      const args = buildDestinationCliArgs(
+        {
+          type,
+          bucket: 'example-bucket',
+          format: 'parquet',
+          object_metadata: { team: 'data', 'run-id': 'a1' },
+        },
+        { valueResolver: (value) => value }
+      );
+
+      expect(args.slice(args.indexOf('--object-metadata'))).toEqual([
+        '--object-metadata',
+        '{"run-id":"a1","team":"data"}',
+      ]);
+    }
+  );
+
+  it.each(['s3', 'gcs'] as const)(
+    'sends the metadata of a %s destination as text: no value is resolved or needs declaring',
+    (type) => {
+      // The resolver stands in for the environment. If it were asked about a metadata value,
+      // it would put a secret on the object. The destination declares no auth_env_vars.
+      const leaky = (value: string) => (/\$/.test(value) ? 'leaked-secret' : value);
+
+      const args = buildDestinationCliArgs(
+        {
+          type,
+          bucket: 'example-bucket',
+          format: 'parquet',
+          object_metadata: { owner: '$OWNER', price: '$5', note: '${{ env.NAME }}' },
+        },
+        { valueResolver: leaky }
+      );
+
+      expect(args.slice(args.indexOf('--object-metadata'))).toEqual([
+        '--object-metadata',
+        '{"note":"${{ env.NAME }}","owner":"$OWNER","price":"$5"}',
+      ]);
+      expect(args.join(' ')).not.toContain('leaked-secret');
+    }
+  );
+
+  it('adds no argument when there is no metadata, or an empty object', () => {
+    for (const object_metadata of [undefined, {}]) {
+      expect(
+        buildDestinationCliArgs({
+          type: 's3',
+          bucket: 'example-bucket',
+          format: 'parquet',
+          object_metadata,
+        })
+      ).not.toContain('--object-metadata');
+    }
+  });
+});

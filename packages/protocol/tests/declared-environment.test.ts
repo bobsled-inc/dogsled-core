@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AuthEnvVarsSchema, getEnvironmentDeclarationError } from '../src/declared-environment.js';
+import {
+  assertDeclaredEnvironmentReferences,
+  AuthEnvVarsSchema,
+  collectEnvironmentReferences,
+  getEnvironmentDeclarationError,
+} from '../src/declared-environment.js';
 import { DogsledRuntimeError } from '../src/runtime-error.js';
 import { ModelConnectionSchema } from '../src/config-contracts.js';
 import { validateModelProviderConfig } from '../src/model-provider-security.js';
@@ -19,6 +24,20 @@ describe('declaration validation and diagnostics', () => {
     ]) {
       expect(AuthEnvVarsSchema.safeParse([name]).success).toBe(false);
     }
+  });
+  it('reads no reference in object_metadata, which a copy writes as literal text', () => {
+    const destination = {
+      type: 's3',
+      bucket: '$BUCKET',
+      object_metadata: { note: '${{ env.NAME }}', price: '$5', owner: '$OWNER' },
+    };
+
+    expect([...collectEnvironmentReferences(destination)]).toEqual(['BUCKET']);
+    expect(() => assertDeclaredEnvironmentReferences(destination, ['BUCKET'])).not.toThrow();
+    // Anywhere else, the same text is still a reference that must be declared.
+    expect(() =>
+      assertDeclaredEnvironmentReferences({ prefix: '${{ env.NAME }}' }, ['BUCKET'])
+    ).toThrow('Undeclared environment variable: NAME');
   });
   it('unwraps only the safe declaration diagnostic', () => {
     const message = 'Undeclared environment variable: TOKEN. Add TOKEN to auth_env_vars.';

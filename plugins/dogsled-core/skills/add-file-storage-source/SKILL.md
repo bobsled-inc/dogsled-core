@@ -26,6 +26,9 @@ When to use a different skill:
 - The source is a warehouse / database → `add-warehouse-source`.
 - You want to _write_ files **to** S3/GCS (a destination, not a source) →
   `add-file-destination`.
+- You want to move files unchanged, without parsing them → a `source.kind: copy`
+  file Resource, not a document Resource. See
+  [Copy files as they are](https://github.com/bobsled-inc/dogsled-core/blob/main/docs/guides/extract-from-files.md#copy-files-as-they-are).
 
 ## Shape
 

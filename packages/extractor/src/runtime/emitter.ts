@@ -7,6 +7,7 @@ import { PROTOCOL_VERSION } from '@bobsled-inc/protocol';
 import type {
   BatchEncoding,
   BatchMessage,
+  FileMessage,
   RecordMessage,
   ReplaceMessage,
   SchemaBehavior,
@@ -95,6 +96,56 @@ export class Emitter {
   }
 
   /**
+   * Emit a FILE message: the loader writes the temp file at `uri` to `relativeKey` under the
+   * stream's folder at its destination, then deletes the temp file.
+   */
+  async emitFile(
+    stream: string,
+    uri: string,
+    relativeKey: string,
+    size: number,
+    source: { key?: string; modified?: string } = {}
+  ): Promise<void> {
+    const message = {
+      _v: PROTOCOL_VERSION,
+      type: 'FILE',
+      stream,
+      uri,
+      relative_key: relativeKey,
+      size,
+      ...(source.key === undefined ? {} : { source_key: source.key }),
+      ...(source.modified === undefined ? {} : { modified: source.modified }),
+    } satisfies FileMessage;
+
+    await this.writeMessage(stream, message);
+  }
+
+  /**
+   * Whether another process may be reading what this emitter writes. A copy needs a reader: it
+   * waits for it to delete each temp file. Nothing reads output that goes to a file, a terminal
+   * or a device, so those are refused. Anything else, such as a pipe or a socket, is allowed.
+   */
+  get writesToPipe(): boolean {
+    if (this.mode !== 'stdout') return false;
+    const fd = (this.stdoutStream as { fd?: unknown }).fd;
+    if (typeof fd !== 'number') return true; // not a file descriptor, such as a stream in a test
+    try {
+      const info = fs.fstatSync(fd);
+      return !(info.isFile() || info.isCharacterDevice());
+    } catch {
+      return true; // cannot tell, so do not refuse
+    }
+  }
+
+  /**
+   * Write an empty line, which readers skip. A run that is only waiting for its reader calls this
+   * so that a reader that has gone makes a write fail, as it would for any message.
+   */
+  async ping(): Promise<void> {
+    if (this.mode === 'stdout') await this.enqueueWrite('__stdout__', this.stdoutStream, '\n');
+  }
+
+  /**
    * Emit a BATCH message referencing finalized batch files.
    */
   async emitBatch(stream: string, encoding: BatchEncoding, manifest: string[]): Promise<void> {
@@ -139,7 +190,8 @@ export class Emitter {
 
   private async writeMessage(
     stream: string,
-    message: SchemaMessage | RecordMessage | StateMessage | BatchMessage | ReplaceMessage
+    message:
+      SchemaMessage | RecordMessage | StateMessage | BatchMessage | ReplaceMessage | FileMessage
   ): Promise<void> {
     const line = JSON.stringify(message) + '\n';
 

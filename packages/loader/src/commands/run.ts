@@ -668,6 +668,12 @@ export async function runDatabaseLoader(
           }
           break;
         }
+        case 'FILE':
+          throw new CommandError(
+            `Failed to load stream "${message.stream}" to ${rawConfig.dest}: it copies files, which ` +
+              `needs a local, s3 or gcs destination, and ${rawConfig.dest} loads rows.`,
+            2
+          );
         case 'REPLACE': {
           const safeStream = prefixedTableName(message.stream);
           replacements.add(safeStream, message, schemas.get(safeStream)?.columns);
@@ -786,6 +792,10 @@ export function registerRunCommand(program: Command, runHandler: RunHandler = ru
     .option(
       '--stream-subfolder <path>',
       'Folder added inside each stream folder for local, gcs and s3 destinations (for example data/run-1)'
+    )
+    .option(
+      '--object-metadata <json>',
+      'JSON object of text values stored as metadata on each file a copy writes to gcs and s3 destinations (for example \'{"team":"data"}\'); no $NAME in a value is expanded'
     )
     .option('--db-path <path>', 'DuckDB database file path')
     .option('--ducklake-catalog-url <url>', 'DuckLake catalog URL')

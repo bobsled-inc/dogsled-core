@@ -45,7 +45,9 @@ import {
   VercelBlobFileStorageIntegrationSpecSchema,
 } from './file-storage-integration.js';
 export * from './file-storage-integration.js';
+import { FileCopyResourceSpecSchema } from './file-copy-resource.js';
 import { FileResourceSpecSchema } from './file-resource.js';
+export { FileCopyResourceSpecSchema, isFileCopyResource } from './file-copy-resource.js';
 export { FileResourceSpecSchema, isFileStorageResource } from './file-resource.js';
 import { LoadBlockSchema, ResourceLoadBlockSchema } from './load-block.js';
 import { createLookupOnlyApiResourceSpecSchema } from './lookup-only-resource.js';
@@ -1149,6 +1151,7 @@ export const ResourceSpecSchema = z.union([
   LookupOnlyApiResourceSpecSchema,
   ApiResourceSpecSchema,
   FileResourceSpecSchema,
+  FileCopyResourceSpecSchema,
   WarehouseResourceSpecSchema,
 ]);
 
@@ -1181,6 +1184,7 @@ export type SourceSpec = z.infer<typeof SourceSchema>;
 // Narrowed resource types
 export type ApiResourceSpec = z.infer<typeof ApiResourceSpecSchema>;
 export type LookupOnlyApiResourceSpec = z.infer<typeof LookupOnlyApiResourceSpecSchema>;
+export type { FileCopyResourceSpec } from './file-copy-resource.js';
 export type { FileResourceSpec } from './file-resource.js';
 /** ApiResourceSpec narrowed to HTTP resources (api block guaranteed present). */
 export type HttpApiResourceSpec = ApiResourceSpec & { api: NonNullable<ApiResourceSpec['api']> };
