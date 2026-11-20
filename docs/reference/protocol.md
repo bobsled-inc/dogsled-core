@@ -120,8 +120,9 @@ size. `source_key` is the file's key in the source, with no bucket, scheme or ho
 the path `incoming/**/*` it is `incoming/2026/report.csv` where `relative_key` is
 `2026/report.csv`. `modified` is the time the source says the file last changed, as an
 ISO 8601 date-time with a zone: up to nine fraction digits, then `Z` or `±HH:MM`. Both
-are optional, and a sender leaves one out when it has none. A writer may record them: an S3 or GCS destination stores them as object
-metadata. The loader also refuses a key with a backslash, a control character, or an
+are optional, and a sender leaves one out when it has none. A writer may record them: an S3
+or GCS destination stores them as object metadata, but only when its `object_metadata` is
+set. The loader also refuses a key with a backslash, a control character, or an
 empty, `.` or `..` folder, and a final S3 or GCS key over 1,024 bytes. A FILE has
 no `SCHEMA` and no `RECORD`. Only `local`, `s3` and `gcs` destinations take it. A
 table destination, or a loader from before this message, fails on it instead of

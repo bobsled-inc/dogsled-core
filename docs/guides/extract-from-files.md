@@ -345,14 +345,17 @@ destinations:
       cost-center: '4021'
 ```
 
-The loader stores these entries on each copied object. A copy to S3 or GCS also stores two
-entries of its own, with or without `object_metadata`, so anyone who can read an object's
-metadata can see where the file came from:
+The loader stores these entries on each copied object, and two more of its own that say
+where the file came from:
 
 | Key                       | Value                                                                                                    |
 | ------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `dogsled-source`          | The file's key in the source, with no bucket, scheme or host. Left out when it would not fit, see below  |
 | `dogsled-source-modified` | The time the source says the file changed, as an ISO 8601 date-time. Left out when the source gives none |
+
+Those two go on only when the destination sets `object_metadata`. With none, or an empty
+map, a copied file gets no tags at all, so nothing about its source goes with it, such as
+the folders above the one it was copied from.
 
 Keys use lowercase letters, digits and dashes. Values are text and are not empty. A value is
 stored percent-encoded, because S3 keeps only US-ASCII: decode it with `decodeURIComponent`.

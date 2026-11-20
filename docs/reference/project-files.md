@@ -80,7 +80,8 @@ validated. See [Copy files as they are](../guides/extract-from-files.md#copy-fil
 
 A `gcs` or `s3` destination also takes `object_metadata`, a map of text values stored as
 metadata on each file a copy writes. Keys use lowercase letters, digits and dashes, and
-`dogsled-source` and `dogsled-source-modified` are left to the copy. See
+`dogsled-source` and `dogsled-source-modified` are left to the copy, which adds them only
+when `object_metadata` is set: with none, a copied file gets no tags. See
 [Object metadata](../guides/extract-from-files.md#object-metadata).
 
 ### Pipelines
