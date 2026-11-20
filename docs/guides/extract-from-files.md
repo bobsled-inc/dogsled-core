@@ -256,7 +256,8 @@ wildcard>`. With `path: incoming/**/*`, the file `incoming/2026/report.csv` beco
 `<prefix>/drops/2026/report.csv`. A `stream_subfolder` on the destination adds a
 folder after the resource name, as it does for rows. A file that exists at the
 destination is replaced. On a disk that ignores case, such as a default macOS disk, names that
-differ only in case replace each other.
+differ only in case replace each other, and so do names that differ only in the
+Unicode form of an accented letter.
 
 The loader refuses a name it would have to change: one with a backslash, a control
 character, or an empty, `.` or `..` folder, or one that makes an S3 or GCS key over

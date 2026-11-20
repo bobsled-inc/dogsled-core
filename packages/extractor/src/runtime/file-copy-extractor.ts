@@ -365,7 +365,8 @@ export async function extractFileCopyResource({
     };
 
     for (const file of selected) {
-      const bytes = file.size ?? 0;
+      // A file with no listed size could be as large as a file may be, so it is reserved that much.
+      const bytes = file.size ?? maxFileSize;
       await admit(bytes);
       if (failure !== undefined) break;
       downloading += bytes;

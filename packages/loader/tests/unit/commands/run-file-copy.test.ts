@@ -285,6 +285,17 @@ describe('runFileLoader: FILE messages', () => {
       size,
     })}\n`;
 
+  it('leaves alone a file that a uri places on another host', async () => {
+    const line = fileLine('/share/dogsled-copy-x/1', 'a.csv', 1).replace(
+      'file:///share',
+      'file://files.example.com/share'
+    );
+
+    await expect(load([line], { publish: async () => 'never' })).rejects.toThrow(
+      'its temp file is on another host'
+    );
+  });
+
   it('leaves alone a file in a folder that is a link to another folder', async () => {
     const elsewhere = path.join(tempDir, 'elsewhere');
     await fs.mkdir(elsewhere, { mode: 0o700 });

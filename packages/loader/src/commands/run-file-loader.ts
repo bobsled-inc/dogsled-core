@@ -240,14 +240,18 @@ export async function runFileLoader(
   const copyOne = async (message: FileMessage): Promise<void> => {
     const stream = sanitizeStreamName(message.stream);
     const destinationPath = copyDestinationPath(stream, streamSubfolder, message.relative_key);
-    const sourcePath = fileUriToPath(message.uri);
-    const folder = path.dirname(sourcePath);
     const refuse = (why: string): never => {
       throw new CommandError(
         `Refusing to copy "${printableKey(message.relative_key)}": ${why}.`,
         2
       );
     };
+    // A host other than this machine would name a path on a share, which the checks below
+    // cannot vouch for.
+    const host = new URL(message.uri).hostname;
+    if (host !== '' && host !== 'localhost') refuse('its temp file is on another host');
+    const sourcePath = fileUriToPath(message.uri);
+    const folder = path.dirname(sourcePath);
     // This loader moves or deletes the file it is given, so it takes only a temp file the
     // extractor made. That sits in a folder with this prefix which only the extractor's user can
     // write to. A link in place of the folder, a folder others can write to, or a file with a

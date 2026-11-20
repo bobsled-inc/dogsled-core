@@ -63,7 +63,7 @@ interface StoredFile {
 }
 
 /** An S3-like store in memory. Counts downloads that overlap and the bytes held on disk. */
-function fakeStore(files: StoredFile[], options: { failOn?: string } = {}) {
+function fakeStore(files: StoredFile[], options: { failOn?: string; unlistedSize?: boolean } = {}) {
   const probe = {
     activeDownloads: 0,
     peakDownloads: 0,
@@ -79,7 +79,7 @@ function fakeStore(files: StoredFile[], options: { failOn?: string } = {}) {
           uri: `s3://landing-bucket/${file.key}`,
           last_modified: file.modified,
           etag: file.etag,
-          size: file.body.length,
+          size: options.unlistedSize ? undefined : file.body.length,
         } satisfies ListedFile;
       }
     },
@@ -355,6 +355,25 @@ describe('copy extractor: S3 and GCS time-based state', () => {
     );
     expect(run2.loader.copies).toHaveLength(20);
     expect(narrow.probe.peakHeldBytes).toBeLessThanOrEqual(350);
+  });
+
+  it('reserves the largest size a file may have for a file whose listing gives none', async () => {
+    const files = ['a', 'b', 'c'].map((name, index) => file(`${name}.bin`, index, 'x'.repeat(100)));
+    const store = fakeStore(files, { unlistedSize: true });
+
+    const { loader } = await run(
+      store.client,
+      { streams: {} },
+      {
+        spec: resource({ limits: { max_file_size_bytes: 5000 } }),
+        onDeleted: (bytes) => (store.probe.heldBytes -= bytes),
+        budget: 6000,
+      }
+    );
+
+    expect(keys(loader)).toEqual(['a.bin', 'b.bin', 'c.bin']);
+    // Two such files would need 10,000 bytes of the 6,000 budget, so they go one at a time.
+    expect(store.probe.peakDownloads).toBe(1);
   });
 
   it('always admits one file, even one bigger than the whole budget', async () => {
