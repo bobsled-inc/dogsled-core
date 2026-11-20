@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -63,7 +64,12 @@ interface StoredFile {
 
 /** An S3-like store in memory. Counts downloads that overlap and the bytes held on disk. */
 function fakeStore(files: StoredFile[], options: { failOn?: string } = {}) {
-  const probe = { activeDownloads: 0, peakDownloads: 0, heldBytes: 0, peakHeldBytes: 0 };
+  const probe = {
+    activeDownloads: 0,
+    peakDownloads: 0,
+    heldBytes: 0,
+    peakHeldBytes: 0,
+  };
   const client: FileStorageClient = {
     async *list({ path: pattern }) {
       const matcher = globToRegExp(pattern, 'fake');
@@ -117,6 +123,7 @@ class LoaderStandIn extends FakeWritable {
 
   override write(chunk: string): boolean {
     super.write(chunk);
+    if (chunk.trim() === '') return true; // the keep-alive line, which readers skip
     const message = JSON.parse(chunk) as Record<string, unknown>;
     this.messages.push(message);
     if (message['type'] === 'FILE' && this.consumes) this.consuming.push(this.consume(message));
@@ -166,6 +173,8 @@ async function run(
     budget?: number;
     limit?: number;
     advanceState?: boolean;
+    signal?: AbortSignal;
+    nowMs?: () => number;
   } = {}
 ) {
   if (client) vi.mocked(createFileStorageClient).mockResolvedValueOnce(client);
@@ -185,6 +194,9 @@ async function run(
     stagingBudgetBytes: options.budget,
     pollMs: 2,
     pingMs: options.pingMs,
+    signal: options.signal,
+    // After every time in these tests, so the clock does not decide what they expect.
+    nowMs: options.nowMs ?? (() => Date.UTC(2030, 0, 1)),
   });
   await loader.settled();
   const metrics = stderr.chunks
@@ -265,6 +277,21 @@ describe('copy extractor: S3 and GCS time-based state', () => {
     const second = await run(fakeStore(files).client, state, { spec });
 
     expect(second.loader.copies).toEqual([]);
+  });
+
+  it('keeps the watermark at the present, so a file dated in the future cannot hide later ones', async () => {
+    const state: ExtractorState = { streams: {} };
+    const ahead = file('clock.csv', 60 * 24); // a store whose clock runs a day ahead
+
+    await run(fakeStore([file('a.csv', 0), ahead]).client, state, {
+      nowMs: () => Date.parse(at(60)),
+    });
+    expect(state.streams['landing/drops']).toMatchObject({ watermark: at(60) });
+
+    const files = [file('a.csv', 0), ahead, file('late.csv', 100)];
+    const second = await run(fakeStore(files).client, state, { nowMs: () => Date.parse(at(120)) });
+
+    expect(keys(second.loader)).toEqual(['late.csv']);
   });
 
   it('finishes a backlog past the cap on the next run, oldest first, ties by key', async () => {
@@ -394,8 +421,7 @@ describe('copy extractor: S3 and GCS time-based state', () => {
   });
 
   it('reports files_processed and bytes_downloaded as 0 when a run copies nothing', async () => {
-    // Dogsled tells a copy from other file Resources by these two metrics, so a quiet run must
-    // still carry them: the keys present, with the value 0.
+    // A copy run always reports both metrics, with the value 0 when it copies nothing.
     const files = [file('a.csv', 0)];
     const state: ExtractorState = { streams: {} };
     const emptyListing = await run(fakeStore([]).client, { streams: {} });
@@ -430,17 +456,79 @@ describe('copy extractor: names, scope and the reader', () => {
     expect(keys(loader)).toEqual([longName]);
   });
 
-  it('starts over when the path changes, so a wider path takes the older files too', async () => {
-    const files = [file('old.txt', 0), file('new.csv', 500)];
+  it.each(['s3', 'sftp'] as const)(
+    'starts over when the path changes, so a wider path takes the older files too (%s)',
+    async (sourceType) => {
+      const files = [file('old.txt', 0), file('new.csv', 500)];
+      const state: ExtractorState = { streams: {} };
+      const source = integration(sourceType);
+      const narrow = resource({ source: { kind: 'copy', path: 'incoming/*.csv' } });
+      const wide = resource({ source: { kind: 'copy', path: 'incoming/*' } });
+
+      const first = await run(fakeStore(files).client, state, { spec: narrow, source });
+      expect(keys(first.loader)).toEqual(['new.csv']);
+
+      const second = await run(fakeStore(files).client, state, { spec: wide, source });
+      expect(keys(second.loader)).toEqual(['new.csv', 'old.txt']);
+    }
+  );
+
+  it('starts over when the bucket changes', async () => {
+    const files = [file('a.csv', 0)];
     const state: ExtractorState = { streams: {} };
-    const narrow = resource({ source: { kind: 'copy', path: 'incoming/*.csv' } });
-    const wide = resource({ source: { kind: 'copy', path: 'incoming/*' } });
+    await run(fakeStore(files).client, state);
 
-    const first = await run(fakeStore(files).client, state, { spec: narrow });
-    expect(keys(first.loader)).toEqual(['new.csv']);
+    const other = {
+      ...integration('s3'),
+      connection: { bucket: 'other-bucket' },
+    } as IntegrationSpec;
+    const again = await run(fakeStore(files).client, state, { source: other });
 
-    const second = await run(fakeStore(files).client, state, { spec: wide });
-    expect(keys(second.loader)).toEqual(['new.csv', 'old.txt']);
+    expect(keys(again.loader)).toEqual(['a.csv']);
+  });
+
+  it('removes its temp folder when the process exits before it can clean up', async () => {
+    const before = new Set(process.listeners('exit'));
+    const loader = new LoaderStandIn(undefined, 15, false); // nothing deletes the files
+    const controller = new AbortController();
+
+    const settled = run(
+      fakeStore([file('a.csv', 0)]).client,
+      { streams: {} },
+      {
+        loader,
+        signal: controller.signal,
+      }
+    ).catch((error: unknown) => error);
+    await vi.waitFor(() => expect(loader.messages.some((m) => m['type'] === 'FILE')).toBe(true));
+    const sent = loader.messages.find((message) => message['type'] === 'FILE')!;
+    const folder = path.dirname(fileURLToPath(sent['uri'] as string));
+    const added = process.listeners('exit').filter((listener) => !before.has(listener));
+    expect(added).toHaveLength(1);
+    expect(existsSync(folder)).toBe(true);
+
+    added[0]!(0); // what the process runs as it exits
+    expect(existsSync(folder)).toBe(false);
+
+    controller.abort();
+    await settled;
+    expect(process.listeners('exit').filter((listener) => !before.has(listener))).toHaveLength(0);
+  });
+
+  it('prints a file name with control characters as escapes', async () => {
+    const files = [file('evil\u001b[2Kname.bin', 0, 'x'.repeat(32))];
+
+    const error = await run(
+      fakeStore(files).client,
+      { streams: {} },
+      {
+        spec: resource({ limits: { max_file_size_bytes: 10 } }),
+      }
+    ).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain('evil\\u001b[2Kname.bin');
+    expect((error as Error).message).not.toContain('\u001b');
   });
 
   it('sends a STATE line with the run time only, since the saved state holds the rest', async () => {
@@ -507,6 +595,50 @@ describe('copy extractor: GCS', () => {
   });
 });
 
+describe('copy extractor: GCS creation time', () => {
+  it('does not copy an object again when only its metadata time moves', async () => {
+    const stored = Buffer.from('a');
+    const objects = [
+      { name: 'incoming/a.csv', created: at(0) },
+      { name: 'incoming/b.csv', created: at(120) },
+    ].map(({ name, created }) => ({
+      name,
+      metadata: {
+        updated: created,
+        timeCreated: created,
+        etag: `etag-${name}`,
+        generation: `generation-${name}`,
+        size: stored.length,
+      },
+      async download(options: { destination: string }) {
+        await writeFile(options.destination, stored);
+      },
+    }));
+    const client = await GcsFileStorageClient.create(
+      { bucket: 'landing-bucket' },
+      { type: 'adc' },
+      {
+        bucket: {
+          getFiles: async () => [objects, undefined],
+          file: (name: string) => objects.find((object) => object.name === name),
+        },
+      }
+    );
+    const state = { streams: {} } as ExtractorState;
+    const source = integration('gcs');
+
+    const first = await run(client, state, { source });
+    expect(keys(first.loader)).toEqual(['a.csv', 'b.csv']);
+
+    // A lifecycle rule that moves the old object to colder storage changes its `updated` time,
+    // but not its content or the time it was created.
+    objects[0]!.metadata.updated = at(130);
+    const again = await run(client, state, { source });
+
+    expect(again.loader.copies).toEqual([]);
+  });
+});
+
 describe('copy extractor: SFTP', () => {
   it('keeps a record of each file instead of a watermark, since a client can set any time', async () => {
     const files = [file('a.csv', 0), file('b.csv', 1)];
@@ -521,6 +653,44 @@ describe('copy extractor: SFTP', () => {
     files[0] = file('a.csv', 0, 'changed');
     const second = await run(fakeStore(files).client, state, { source });
     expect(keys(second.loader)).toEqual(['a.csv']);
+  });
+
+  it('copies a file again that a structured Resource of the same name already read', async () => {
+    const files = [file('a.csv', 0)];
+    const state: ExtractorState = { streams: {} };
+    const source = integration('sftp');
+    await run(fakeStore(files).client, state, { source });
+    // State a structured Resource wrote has the same file bookmarks but no scope.
+    delete state.streams['landing/drops']!.scope;
+
+    const again = await run(fakeStore(files).client, state, { source });
+
+    expect(keys(again.loader)).toEqual(['a.csv']);
+  });
+
+  it('reads one file at a time, so read_concurrency still caps the reads on the connection', async () => {
+    const files = [file('a.csv', 0), file('b.csv', 1), file('c.csv', 2)];
+    const store = fakeStore(files);
+
+    const { loader } = await run(store.client, { streams: {} }, { source: integration('sftp') });
+
+    expect(keys(loader)).toEqual(['a.csv', 'b.csv', 'c.csv']);
+    expect(store.probe.peakDownloads).toBe(1);
+  });
+
+  it('starts over when the base directory changes, since the same relative path is another file', async () => {
+    const files = [file('a.csv', 0)];
+    const state: ExtractorState = { streams: {} };
+    const at = (baseDirectory: string) =>
+      ({
+        ...integration('sftp'),
+        connection: { host: 'sftp.example.com', base_directory: baseDirectory },
+      }) as IntegrationSpec;
+    await run(fakeStore(files).client, state, { source: at('/incoming') });
+
+    const again = await run(fakeStore(files).client, state, { source: at('/other') });
+
+    expect(keys(again.loader)).toEqual(['a.csv']);
   });
 });
 

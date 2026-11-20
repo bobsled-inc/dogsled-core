@@ -1,4 +1,5 @@
 import { setMaxListeners } from 'node:events';
+import { rmSync } from 'node:fs';
 import { access, mkdtemp, rm, stat } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -16,14 +17,13 @@ import { ExtractorConfigError, ExtractorDataError } from './errors.js';
 import { createFileStorageClient } from './file-storage-client.js';
 import {
   bookmarkFor,
-  getFileState,
   getFileStorageSourceType,
   shouldProcessFile,
   streamKey,
 } from './file-storage-extractor.js';
 import type { StateStore, StreamBookmark } from './state.js';
 
-/** Downloads that run at once. */
+/** Downloads that run at once. SFTP reads one file at a time: its downloads share one connection. */
 const MAX_DOWNLOADS = 8;
 
 /**
@@ -58,6 +58,8 @@ export interface FileCopyOptions {
   pollMs?: number;
   /** How often to write an empty line while waiting. */
   pingMs?: number;
+  /** The present, in milliseconds. The watermark never moves past it. */
+  nowMs?: () => number;
 }
 
 export interface FileCopyResult {
@@ -71,12 +73,22 @@ interface Tracker {
   next(copied: ListedFile[]): Partial<StreamBookmark>;
 }
 
+/** A name from the source, made safe to print: control and format characters become \uXXXX. */
+const printable = (text: string): string =>
+  text.replace(
+    /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu,
+    (char) => `\\u${char.codePointAt(0)!.toString(16).padStart(4, '0')}`
+  );
+
+/** When this version of a file was written, if the store says; else its modified time. */
+const timeOf = (file: ListedFile): string | Date | undefined => file.created ?? file.last_modified;
+
 function modifiedMs(file: ListedFile): number {
-  const time =
-    file.last_modified === undefined ? Number.NaN : new Date(file.last_modified).getTime();
+  const stamp = timeOf(file);
+  const time = stamp === undefined ? Number.NaN : new Date(stamp).getTime();
   if (Number.isNaN(time)) {
     throw new ExtractorDataError(
-      `${file.uri} has no usable last_modified time, so a copy cannot tell whether it is new.`
+      `${printable(file.uri)} has no usable last_modified time, so a copy cannot tell whether it is new.`
     );
   }
   return time;
@@ -89,13 +101,14 @@ const versionOf = (file: ListedFile): string => file.generation ?? file.etag ?? 
  * S3 and GCS set `last_modified` on the server, so it only moves forward. A run takes files at
  * or after the watermark minus the lookback, except those it already copied unchanged (`recent`).
  * The lookback catches a file that lands late with an older time, such as a slow upload.
- * `scope` is the bucket and path: a run for another scope starts over, because the files its
- * path now matches may be older than the watermark.
+ * `scope` is where the copy reads from: a run for another scope starts over, because the files
+ * it now reads may be older than the watermark.
  */
 function watermarkTracker(
   previous: StreamBookmark | undefined,
   lookbackMs: number,
-  scope: string
+  scope: string,
+  nowMs: () => number
 ): Tracker {
   const prior = previous?.scope === scope ? previous : undefined;
   const recent = new Map(Object.entries(prior?.recent ?? {}));
@@ -111,9 +124,11 @@ function watermarkTracker(
     },
     next(copied) {
       // The watermark never moves back: a late file inside the window would pull it behind
-      // files already copied.
+      // files already copied. It never moves past the present either: a store whose clock runs
+      // ahead would otherwise carry it beyond files that arrive later, and skip them for good.
+      const now = nowMs();
       let watermark = oldWatermark ?? Number.NEGATIVE_INFINITY;
-      for (const file of copied) watermark = Math.max(watermark, modifiedMs(file));
+      for (const file of copied) watermark = Math.max(watermark, Math.min(modifiedMs(file), now));
       if (watermark === Number.NEGATIVE_INFINITY) return {};
       const windowStart = watermark - lookbackMs;
       const inWindow = new Map<string, string>();
@@ -135,11 +150,17 @@ function watermarkTracker(
   };
 }
 
-/** SFTP and local folders let a client set any time, so each file keeps its own bookmark. */
-function bookmarkTracker(files: ReturnType<typeof getFileState>['files'] = {}): Tracker {
+/**
+ * SFTP and local folders let a client set any time, so each file keeps its own bookmark. State
+ * from another `scope`, or from a structured Resource of the same name, which has none, says
+ * nothing about which files a copy took, so it is not used.
+ */
+function bookmarkTracker(previous: StreamBookmark | undefined, scope: string): Tracker {
+  const files = previous?.scope === scope ? (previous.files ?? {}) : {};
   return {
     wants: (file) => shouldProcessFile(file, files[file.uri]),
     next: (copied) => ({
+      scope,
       files: {
         ...files,
         ...Object.fromEntries(copied.map((file) => [file.uri, bookmarkFor(file)])),
@@ -149,8 +170,10 @@ function bookmarkTracker(files: ReturnType<typeof getFileState>['files'] = {}): 
 }
 
 function oldestFirst(files: ListedFile[]): ListedFile[] {
-  const time = (file: ListedFile): number =>
-    file.last_modified === undefined ? 0 : new Date(file.last_modified).getTime();
+  const time = (file: ListedFile): number => {
+    const stamp = timeOf(file);
+    return stamp === undefined ? 0 : new Date(stamp).getTime();
+  };
   return files.sort(
     (a, b) => time(a) - time(b) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
   );
@@ -186,6 +209,7 @@ export async function extractFileCopyResource({
   stagingBudgetBytes = COPY_STAGING_BUDGET_BYTES,
   pollMs = DEFAULT_POLL_MS,
   pingMs = DEFAULT_PING_MS,
+  nowMs = Date.now,
 }: FileCopyOptions): Promise<FileCopyResult> {
   const sourceType = getFileStorageSourceType(integration);
   if (sourceType === undefined || sourceType === 'vercel_blob') {
@@ -198,24 +222,29 @@ export async function extractFileCopyResource({
   const lookbackMs =
     (resource.replication.cursor.lookback_seconds ?? COPY_DEFAULT_LOOKBACK_SECONDS) * 1000;
   const readAll = fullRefresh === true;
-  const bucket = (integration as { connection?: { bucket?: unknown } }).connection?.bucket;
+  const connection = (integration as { connection?: Record<string, unknown> | undefined })
+    .connection;
+  // A copy starts over when any part of where it reads from changes.
+  const scope = JSON.stringify([
+    sourceType,
+    ...['endpoint', 'bucket', 'host', 'port', 'base_directory'].map((name) =>
+      String(connection?.[name] ?? '')
+    ),
+    resource.source.path,
+  ]);
   const tracker = timeBased
-    ? watermarkTracker(
-        readAll ? undefined : state.streams[key],
-        lookbackMs,
-        `${String(bucket ?? '')}/${resource.source.path}`
-      )
-    : bookmarkTracker(
-        readAll ? undefined : getFileState(state, integrationName, resource.name).files
-      );
+    ? watermarkTracker(readAll ? undefined : state.streams[key], lookbackMs, scope, nowMs)
+    : bookmarkTracker(readAll ? undefined : state.streams[key], scope);
   const maxFiles = Math.min(resource.limits?.max_files_per_run ?? 10_000, limit ?? Infinity);
   const maxFileSize = resource.limits?.max_file_size_bytes ?? 5_368_709_120;
+  const maxDownloads = sourceType === 'sftp' ? 1 : MAX_DOWNLOADS;
   const folder = fixedFolder(resource.source.path);
   // Each download and each SFTP read listens to the signal.
   if (signal) setMaxListeners(0, signal);
 
   const client = await createFileStorageClient(integration);
   let tempDir: string | undefined;
+  let removeAtExit: (() => void) | undefined;
   try {
     // List everything: a client's `maxFiles` counts files from the start of the listing,
     // including ones an earlier run already copied.
@@ -226,7 +255,7 @@ export async function extractFileCopyResource({
       listed += 1;
       if (file.path.endsWith('/')) {
         // A folder placeholder, such as the empty object the S3 console makes for a folder.
-        await logger.warn(`Skipping ${file.uri}: it is a folder, not a file`);
+        await logger.warn(`Skipping ${printable(file.uri)}: it is a folder, not a file`);
         continue;
       }
       if (!tracker.wants(file)) continue;
@@ -241,19 +270,31 @@ export async function extractFileCopyResource({
     for (const file of selected) {
       if (!file.path.startsWith(folder)) {
         throw new ExtractorDataError(
-          `${file.uri} is not under "${folder}", the folder ${resource.source.path} starts in, ` +
-            'so a copy cannot name it.'
+          `${printable(file.uri)} is not under "${folder}", the folder ${resource.source.path} ` +
+            'starts in, so a copy cannot name it.'
         );
       }
       if (file.size !== undefined && file.size > maxFileSize) {
         throw new ExtractorDataError(
-          `${file.uri} is ${file.size} bytes, over max_file_size_bytes (${maxFileSize}). ` +
-            'Raise limits.max_file_size_bytes, or remove the file.'
+          `${printable(file.uri)} is ${file.size} bytes, over max_file_size_bytes ` +
+            `(${maxFileSize}). Raise limits.max_file_size_bytes, or move the file out of the ` +
+            'copied folder.'
         );
       }
     }
 
-    tempDir = await mkdtemp(path.join(os.tmpdir(), 'dogsled-copy-'));
+    const created = await mkdtemp(path.join(os.tmpdir(), 'dogsled-copy-'));
+    tempDir = created;
+    // A reader that fails can end this process on an unhandled write error, before the `finally`
+    // below runs. Removing the folder at exit keeps the copied files from piling up in tmp.
+    removeAtExit = () => {
+      try {
+        rmSync(created, { recursive: true, force: true });
+      } catch {
+        // Nothing more can be done as the process ends.
+      }
+    };
+    process.once('exit', removeAtExit);
     const staged = new Map<string, number>(); // temp file -> bytes, until the loader deletes it
     let downloading = 0; // bytes reserved for downloads in flight
     const active = new Set<Promise<void>>();
@@ -273,8 +314,9 @@ export async function extractFileCopyResource({
       }
       if (!stallTold && staged.size > 0 && Date.now() - lastProgress > STALL_NOTICE_MS) {
         stallTold = true;
-        await logger.info(
-          `Waiting for the loader to write ${staged.size} file(s). A copy needs a loader reading this output.`
+        await logger.warn(
+          `Waiting for the loader to write ${staged.size} file(s). A copy needs a loader reading ` +
+            'this output; if none is, stop the run and use "dogsled pipeline".'
         );
       }
     };
@@ -292,7 +334,7 @@ export async function extractFileCopyResource({
         signal?.throwIfAborted();
         await dropDeleted();
         if (failure !== undefined || (active.size === 0 && staged.size === 0)) return;
-        if (active.size < MAX_DOWNLOADS && heldBytes() + bytes <= stagingBudgetBytes) return;
+        if (active.size < maxDownloads && heldBytes() + bytes <= stagingBudgetBytes) return;
         await Promise.race([...active, sleep(pollMs, undefined, { signal })]);
         await keepAlive();
       }
@@ -301,13 +343,13 @@ export async function extractFileCopyResource({
     const copyOne = async (file: ListedFile): Promise<void> => {
       // The name is only for this run: the loader gets the key from the message, and a key can be
       // longer than a file name may be.
-      const target = path.join(tempDir!, String((sequence += 1)));
+      const target = path.join(created, String((sequence += 1)));
       const downloaded = await client.download(file, target, { signal, asStored: true });
       const bytes = (await stat(downloaded.path)).size;
       if (bytes > maxFileSize) {
         throw new ExtractorDataError(
-          `${file.uri} is ${bytes} bytes, over max_file_size_bytes (${maxFileSize}). ` +
-            'Raise limits.max_file_size_bytes, or remove the file.'
+          `${printable(file.uri)} is ${bytes} bytes, over max_file_size_bytes (${maxFileSize}). ` +
+            'Raise limits.max_file_size_bytes, or move the file out of the copied folder.'
         );
       }
       staged.set(downloaded.path, bytes);
@@ -376,6 +418,7 @@ export async function extractFileCopyResource({
 
     return { filesCopied, bytesCopied };
   } finally {
+    if (removeAtExit) process.removeListener('exit', removeAtExit);
     try {
       await client.close();
     } finally {

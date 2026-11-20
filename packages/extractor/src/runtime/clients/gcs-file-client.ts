@@ -31,7 +31,13 @@ function readRequiredEnv(name: string | undefined, field: string): string {
 
 type GcsFile = {
   name: string;
-  metadata?: { updated?: string; generation?: string; etag?: string; size?: string | number };
+  metadata?: {
+    updated?: string;
+    timeCreated?: string;
+    generation?: string;
+    etag?: string;
+    size?: string | number;
+  };
   download(options: { destination: string; decompress?: boolean }): Promise<unknown>;
 };
 
@@ -115,6 +121,7 @@ export class GcsFileStorageClient implements FileStorageClient {
           path: file.name,
           uri: `gs://${this.bucketName}/${file.name}`,
           last_modified: toIsoString(file.metadata?.updated),
+          created: toIsoString(file.metadata?.timeCreated),
           etag: file.metadata?.etag,
           generation: file.metadata?.generation,
           size: Number.isFinite(size) ? size : undefined,

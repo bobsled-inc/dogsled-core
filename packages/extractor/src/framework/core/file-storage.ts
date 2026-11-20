@@ -254,6 +254,11 @@ export interface ListedFile {
   path: string;
   uri: string;
   last_modified?: string | Date;
+  /**
+   * When this version of the content was written, for a store that keeps that apart from
+   * `last_modified`. GCS gives `timeCreated`; its `updated` time also moves when only metadata does.
+   */
+  created?: string;
   etag?: string;
   generation?: string;
   size?: number;
