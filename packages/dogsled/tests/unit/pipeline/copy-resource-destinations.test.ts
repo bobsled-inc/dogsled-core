@@ -8,6 +8,7 @@ import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { runProjectPipeline } from '../../../src/pipeline/index.js';
+import { loadDogsledConfig, validateDogsledConfig } from '../../../src/runner/config/loader.js';
 
 const tempDirs: string[] = [];
 
@@ -34,7 +35,17 @@ const GCS_ARCHIVE = `  archive:
     format: parquet
 `;
 
-function makeProject(destinations: string, destinationNames: string[], limits = ''): string {
+const MANAGED_WAREHOUSE = `  warehouse:
+    type: dogsled_managed
+    dogsled_connection_ref: warehouse-prod
+`;
+
+function makeProject(
+  destinations: string,
+  destinationNames: string[],
+  limits = '',
+  pipelineExtras = ''
+): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-copy-dest-'));
   tempDirs.push(root);
   fs.mkdirSync(path.join(root, 'integrations'));
@@ -79,7 +90,7 @@ pipelines:
     source: files
     ${destination}
     resources: [drops]
-`
+${pipelineExtras}`
   );
   return root;
 }
@@ -192,8 +203,38 @@ describe('a copy Resource in a pipeline', () => {
         }
       )
     ).rejects.toThrow(
-      'Resource "drops" copies files, so its destination must be local, s3 or gcs, but "warehouse" is duckdb.'
+      'Resource "drops" copies files, so its destination must be local, s3, gcs or dogsled_managed, but "warehouse" is duckdb.'
     );
     expect(spawned).toEqual([]);
+  });
+});
+
+describe('validating a copy Resource with a managed destination', () => {
+  // Dogsled Cloud validates a project before it turns a dogsled_managed destination into a
+  // concrete one, so validation has to let a copy through there.
+  const validate = async (projectRoot: string) =>
+    validateDogsledConfig(loadDogsledConfig(path.join(projectRoot, 'dogsled.yml')), projectRoot);
+
+  it('accepts a dogsled_managed destination on a managed runner', async () => {
+    const projectRoot = makeProject(MANAGED_WAREHOUSE, ['warehouse'], '', '    runner: managed\n');
+
+    const result = await validate(projectRoot);
+
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toBe(true);
+  });
+
+  it('still refuses a concrete destination that cannot write a file', async () => {
+    const projectRoot = makeProject(DUCKDB_WAREHOUSE, ['warehouse'], '', '    runner: managed\n');
+
+    const result = await validate(projectRoot);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        message:
+          'Resource "drops" copies files, so its destination must be local, s3, gcs or dogsled_managed, but "warehouse" is duckdb.',
+      })
+    );
   });
 });

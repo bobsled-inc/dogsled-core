@@ -7,6 +7,13 @@ import type { DogsledConfig } from './schema.js';
 /** The destinations that can write a file as it is. */
 const FILE_DESTINATION_TYPES = new Set(['local', 's3', 'gcs']);
 
+/**
+ * Dogsled Cloud turns a `dogsled_managed` destination into a concrete one when it runs a
+ * project, after the project is validated, so validation cannot tell what it will be. Core
+ * cannot run one, and the loader refuses a destination that cannot write a file.
+ */
+const MANAGED_DESTINATION_TYPE = 'dogsled_managed';
+
 /** The most S3 takes in one write, which is how the loader writes a file. */
 const S3_MAX_OBJECT_BYTES = 5 * 1024 ** 3;
 
@@ -43,12 +50,16 @@ export function validateCopyDestinations(
     const largest = limits['max_file_size_bytes'];
     for (const destinationName of pipeline.destinationNames) {
       const type = config.destinations[destinationName]?.type;
-      if (type !== undefined && !FILE_DESTINATION_TYPES.has(type)) {
+      if (
+        type !== undefined &&
+        type !== MANAGED_DESTINATION_TYPE &&
+        !FILE_DESTINATION_TYPES.has(type)
+      ) {
         errors.push({
           path,
           message:
-            `Resource "${name}" copies files, so its destination must be local, s3 or gcs, ` +
-            `but "${destinationName}" is ${type}.`,
+            `Resource "${name}" copies files, so its destination must be local, s3, gcs or ` +
+            `dogsled_managed, but "${destinationName}" is ${type}.`,
         });
       }
       if (type === 's3' && typeof largest === 'number' && largest > S3_MAX_OBJECT_BYTES) {
