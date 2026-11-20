@@ -1,5 +1,9 @@
 import * as path from 'node:path';
 
+import { CommandError } from '@bobsled-inc/protocol';
+
+import { escapeUnprintable } from '../utils.js';
+
 export interface PublishOptions {
   /** Write a file as it is: do not label it with the output format's content type. */
   copy?: boolean;
@@ -13,8 +17,9 @@ export interface FileDestination {
 export function assertObjectKeyLength(key: string): void {
   const bytes = Buffer.byteLength(key);
   if (bytes > 1024) {
-    throw new Error(
-      `Object key is ${bytes} bytes, over the 1,024 bytes S3 and GCS allow: ${key.slice(0, 80)}...`
+    throw new CommandError(
+      `Object key is ${bytes} bytes, over the 1,024 bytes S3 and GCS allow: ${escapeUnprintable(key.slice(0, 80))}...`,
+      2
     );
   }
 }

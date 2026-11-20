@@ -49,7 +49,7 @@ describe('runFileLoader: FILE messages', () => {
   async function staged(name: string, body: Buffer, key = name, claimedSize = body.length) {
     // The extractor keeps its temp files in a folder with this prefix.
     const folder = path.join(tempDir, 'dogsled-copy-test');
-    await fs.mkdir(folder, { recursive: true });
+    await fs.mkdir(folder, { recursive: true, mode: 0o700 });
     const file = path.join(folder, name);
     await fs.writeFile(file, body);
     const line = `${JSON.stringify({
@@ -67,14 +67,15 @@ describe('runFileLoader: FILE messages', () => {
     lines: string[],
     destination: FileDestination,
     config: FileDestConfig = baseConfig,
-    stdout: Writable = new BufferingWritable()
+    stdout: Writable = new BufferingWritable(),
+    stderr: Writable = new BufferingWritable()
   ) {
     const result = await runFileLoader(config, {
       createDestination: () => destination,
       createDuckDbWriter: async () => ({ async convertFile() {}, async close() {} }),
       input: Readable.from(lines),
       stdout,
-      stderr: new BufferingWritable(),
+      stderr,
     });
     return result;
   }
@@ -225,7 +226,10 @@ describe('runFileLoader: FILE messages', () => {
     await load([fits.line], make(prefix));
     expect(await exists(fits.file)).toBe(false);
 
-    await expect(load([tooLong.line], make(prefix))).rejects.toThrow(/1,024 bytes/);
+    await expect(load([tooLong.line], make(prefix))).rejects.toMatchObject({
+      message: expect.stringMatching(/1,024 bytes/),
+      exitCode: 2,
+    });
     expect(await exists(tooLong.file)).toBe(true);
   });
 
@@ -245,6 +249,78 @@ describe('runFileLoader: FILE messages', () => {
       'not in a dogsled-copy- folder'
     );
     expect(await fs.readFile(stranger, 'utf8')).toBe('mine');
+  });
+
+  it('names the stream and destination in the error, so a pipeline can attribute the failure', async () => {
+    const item = await staged('odd\\name.txt', Buffer.from('odd'));
+
+    await expect(load([item.line], { publish: async () => 'never' })).rejects.toThrow(
+      /^Failed to load stream "drops" to local: Refusing to copy/
+    );
+  });
+
+  it('logs a key with a format character as an escape, so it cannot rewrite a line', async () => {
+    const item = await staged('bidi.txt', Buffer.from('x'), 'a\u202Eb.txt');
+    const stderr = new BufferingWritable();
+
+    await load(
+      [item.line],
+      { publish: async (_file, destPath) => `file:///out/${destPath}` },
+      baseConfig,
+      undefined,
+      stderr
+    );
+
+    expect(stderr.toString()).toContain('a\\u202eb.txt');
+    expect(stderr.toString()).not.toContain('\u202e');
+  });
+
+  const fileLine = (file: string, key: string, size: number): string =>
+    `${JSON.stringify({
+      _v: 1,
+      type: 'FILE',
+      stream: 'drops',
+      uri: pathToFileURL(file).href,
+      relative_key: key,
+      size,
+    })}\n`;
+
+  it('leaves alone a file in a folder that is a link to another folder', async () => {
+    const elsewhere = path.join(tempDir, 'elsewhere');
+    await fs.mkdir(elsewhere, { mode: 0o700 });
+    await fs.writeFile(path.join(elsewhere, 'secret.txt'), 'secret');
+    const link = path.join(tempDir, 'dogsled-copy-link');
+    await fs.symlink(elsewhere, link);
+
+    await expect(
+      load([fileLine(path.join(link, 'secret.txt'), 'loot.txt', 6)], {
+        publish: async () => 'never',
+      })
+    ).rejects.toThrow('is a link, or is not a folder');
+    expect(await fs.readFile(path.join(elsewhere, 'secret.txt'), 'utf8')).toBe('secret');
+  });
+
+  it.skipIf(process.platform === 'win32')(
+    'leaves alone a file in a folder that others can write to',
+    async () => {
+      const item = await staged('shared.txt', Buffer.from('mine'));
+      await fs.chmod(path.dirname(item.file), 0o777);
+
+      await expect(load([item.line], { publish: async () => 'never' })).rejects.toThrow(
+        'can be written by other users (mode 777)'
+      );
+      expect(await exists(item.file)).toBe(true);
+    }
+  );
+
+  it('leaves alone a file that has a second link', async () => {
+    const item = await staged('linked.txt', Buffer.from('mine'));
+    const other = path.join(tempDir, 'other-name.txt');
+    await fs.link(item.file, other);
+
+    await expect(load([item.line], { publish: async () => 'never' })).rejects.toThrow('one link');
+    expect(await exists(item.file)).toBe(true);
+    expect(await exists(other)).toBe(true);
   });
 
   it('refuses a file whose size is not the size the message states', async () => {
@@ -367,7 +443,7 @@ describe('runDatabaseLoader: FILE messages', () => {
           stderr: new BufferingWritable(),
         }
       )
-    ).rejects.toThrow(/file destination/);
+    ).rejects.toThrow(/^Failed to load stream "drops" to mysql: it copies files/);
   });
 });
 

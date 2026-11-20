@@ -670,8 +670,8 @@ export async function runDatabaseLoader(
         }
         case 'FILE':
           throw new CommandError(
-            `Stream "${message.stream}" copies files, which needs a file destination (local, s3 or gcs). ` +
-              `${rawConfig.dest} loads rows.`,
+            `Failed to load stream "${message.stream}" to ${rawConfig.dest}: it copies files, which ` +
+              `needs a local, s3 or gcs destination, and ${rawConfig.dest} loads rows.`,
             2
           );
         case 'REPLACE': {

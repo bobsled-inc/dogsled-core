@@ -7,7 +7,7 @@ import type { Writable } from 'node:stream';
 
 import { createDestination } from '../runtime/destinations/index.js';
 import { normalizeDestinationPath } from '../runtime/destinations/types.js';
-import { sanitizeStreamName } from '../runtime/utils.js';
+import { escapeUnprintable, sanitizeStreamName } from '../runtime/utils.js';
 import type { DuckDbWriter } from '../runtime/duckdb-writer.js';
 import { getFormatDef } from '../runtime/formats.js';
 import { readProtocol } from '../runtime/protocol-reader.js';
@@ -59,14 +59,27 @@ export function fileUriToPath(uri: string): string {
 const COPY_CONCURRENCY = 8;
 
 /**
+ * Names the stream and destination in a copy failure, as every other load failure does, so a
+ * pipeline can tell which stream failed and why.
+ */
+function describeCopyFailure(error: unknown, stream: string, destination: string): Error {
+  const detail = error instanceof Error ? error.message : String(error);
+  const message = `Failed to load stream "${stream}" to ${destination}: ${detail}`;
+  return error instanceof CommandError
+    ? new CommandError(message, error.exitCode, error.payload)
+    : new Error(message, { cause: error });
+}
+
+/** A key from the sender, cut short and made safe to print. */
+const printableKey = (key: string): string => escapeUnprintable(key.slice(0, 200));
+
+/**
  * Where a copied file goes: `<stream>/<subfolder>/<key>`. The key comes from the sender, so it
  * must already be a clean path. A key the destination would rewrite, such as one with a
  * backslash or a `..` folder, is refused instead of landing somewhere the sender did not name.
  */
 function copyDestinationPath(stream: string, subfolder: string, relativeKey: string): string {
-  const named = relativeKey.slice(0, 200).replace(/\p{Cc}/gu, (char) => {
-    return `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`;
-  });
+  const named = printableKey(relativeKey);
   const refuse = (why: string): never => {
     throw new CommandError(`Refusing to copy "${named}": ${why}.`, 2);
   };
@@ -228,21 +241,39 @@ export async function runFileLoader(
     const stream = sanitizeStreamName(message.stream);
     const destinationPath = copyDestinationPath(stream, streamSubfolder, message.relative_key);
     const sourcePath = fileUriToPath(message.uri);
-    // This loader moves or deletes the file it is given, so it takes only a temp file the
-    // extractor made, which sits in a folder with this prefix.
-    if (!path.basename(path.dirname(sourcePath)).startsWith('dogsled-copy-')) {
+    const folder = path.dirname(sourcePath);
+    const refuse = (why: string): never => {
       throw new CommandError(
-        `Refusing to copy "${message.relative_key.slice(0, 200)}": its temp file is not in a ` +
-          'dogsled-copy- folder.',
+        `Refusing to copy "${printableKey(message.relative_key)}": ${why}.`,
         2
       );
+    };
+    // This loader moves or deletes the file it is given, so it takes only a temp file the
+    // extractor made. That sits in a folder with this prefix which only the extractor's user can
+    // write to. A link in place of the folder, a folder others can write to, or a file with a
+    // second link would let the loader move or delete a file the extractor never made.
+    if (!path.basename(folder).startsWith('dogsled-copy-')) {
+      refuse('its temp file is not in a dogsled-copy- folder');
+    }
+    const folderInfo = await fs.lstat(folder);
+    if (!folderInfo.isDirectory()) refuse('its temp folder is a link, or is not a folder');
+    if (process.platform !== 'win32') {
+      const user = process.getuid?.();
+      if (folderInfo.uid !== user) {
+        refuse(
+          `its temp folder belongs to user ${folderInfo.uid}, not to the user running the loader (${user})`
+        );
+      }
+      if ((folderInfo.mode & 0o022) !== 0) {
+        refuse(
+          `its temp folder can be written by other users (mode ${(folderInfo.mode & 0o777).toString(8)})`
+        );
+      }
     }
     const info = await fs.lstat(sourcePath);
-    if (!info.isFile() || info.size !== message.size) {
-      throw new CommandError(
-        `Refusing to copy "${message.relative_key.slice(0, 200)}": its temp file is not a file of ` +
-          `the size the message states (${message.size} bytes).`,
-        2
+    if (!info.isFile() || info.nlink !== 1 || info.size !== message.size) {
+      refuse(
+        `its temp file is not a file with one link and the size the message states (${message.size} bytes)`
       );
     }
     const publishStart = performance.now();
@@ -256,7 +287,7 @@ export async function runFileLoader(
     totalFlushBytes += info.size;
     logger.metric('flush_bytes', info.size, { stream });
     logger.metric('publish_ms', Math.round(publishMs), { stream });
-    logger.info(`${stream}: wrote ${uri}`);
+    logger.info(`${stream}: wrote ${escapeUnprintable(uri)}`);
   };
 
   const startCopy = async (message: FileMessage): Promise<void> => {
@@ -266,12 +297,15 @@ export async function runFileLoader(
     if (copyFailure !== undefined) throw copyFailure.error;
     const task: Promise<void> = copyOne(message)
       .catch((error: unknown) => {
-        copyFailure ??= { error };
+        const failure = describeCopyFailure(
+          error,
+          sanitizeStreamName(message.stream),
+          rawConfig.dest
+        );
+        copyFailure ??= { error: failure };
         // The sender waits for its files to be written, so it may send nothing more. Stop
         // reading now, or this run would wait on it for good.
-        if (!input.destroyed && !input.readableEnded) {
-          input.destroy(error instanceof Error ? error : new Error(String(error)));
-        }
+        if (!input.destroyed && !input.readableEnded) input.destroy(failure);
       })
       .finally(() => copying.delete(task));
     copying.add(task);
