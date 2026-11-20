@@ -236,28 +236,52 @@ describe('runFileLoader: FILE messages', () => {
     });
   });
 
-  it('stores the source key and modified time on every copy, with no object_metadata set', async () => {
-    const inputs: Array<Record<string, unknown>> = [];
-    const client = {
-      async send(command: { input: Record<string, unknown> }) {
-        for await (const chunk of command.input['Body'] as AsyncIterable<Buffer>) void chunk;
-        inputs.push(command.input);
-        return {};
-      },
-    };
-    const file = await staged('a.pdf', Buffer.from('%PDF'), 'a.pdf', 4, source);
+  it.each<[string, 'S3' | 'GCS', Record<string, string> | undefined]>([
+    ['an S3 destination with no object_metadata', 'S3', undefined],
+    ['an S3 destination with an empty object_metadata', 'S3', {}],
+    ['a GCS destination with no object_metadata', 'GCS', undefined],
+  ])(
+    'writes no tags at all for %s, though the sender gave a source key',
+    async (_label, store, objectMetadata) => {
+      // The source key can name folders above the copied one. Without object_metadata, nothing
+      // about the source goes onto the object.
+      const written: Array<Record<string, unknown>> = [];
+      const file = await staged('a.pdf', Buffer.from('%PDF'), 'a.pdf', 4, source);
+      if (store === 'S3') {
+        const client = {
+          async send(command: { input: Record<string, unknown> }) {
+            for await (const chunk of command.input['Body'] as AsyncIterable<Buffer>) void chunk;
+            written.push(command.input);
+            return {};
+          },
+        };
+        await load(
+          [file.line],
+          new S3Destination({ bucket: 'landing-bucket', format: 'parquet', client }),
+          s3Config(objectMetadata)
+        );
+      } else {
+        const storage = {
+          bucket: () => ({
+            async upload(_localPath: string, options: Record<string, unknown>) {
+              written.push(options);
+            },
+          }),
+        };
+        await load(
+          [file.line],
+          new GcsDestination({ bucket: 'landing-bucket', format: 'parquet', storage }),
+          gcsConfig(objectMetadata)
+        );
+      }
 
-    await load(
-      [file.line],
-      new S3Destination({ bucket: 'landing-bucket', format: 'parquet', client }),
-      s3Config()
-    );
-
-    expect(inputs[0]?.['Metadata']).toEqual({
-      'dogsled-source': 'incoming/2026/caf%C3%A9.pdf',
-      'dogsled-source-modified': '2026-11-20T15:24:53.408Z',
-    });
-  });
+      expect(written).toHaveLength(1);
+      expect(written[0]).not.toHaveProperty('Metadata');
+      expect(written[0]).not.toHaveProperty('metadata');
+      expect(JSON.stringify(written[0])).not.toContain('dogsled-source');
+      expect(await exists(file.file)).toBe(false);
+    }
+  );
 
   it('leaves dogsled-source off files whose key would not fit, says so once, and still writes them', async () => {
     const inputs: Array<Record<string, unknown>> = [];
@@ -288,18 +312,22 @@ describe('runFileLoader: FILE messages', () => {
     await load(
       [short.line, long.line, longer.line],
       new S3Destination({ bucket: 'landing-bucket', format: 'parquet', client }),
-      s3Config(),
+      s3Config({ team: 'data' }),
       new BufferingWritable(),
       stderr
     );
 
     const metadataByKey = new Map(inputs.map((input) => [input['Key'], input['Metadata']]));
     expect(metadataByKey.get('drops/a.pdf')).toEqual({
+      team: 'data',
       'dogsled-source': 'incoming/a.pdf',
       'dogsled-source-modified': source.modified,
     });
     for (const key of ['drops/b.pdf', 'drops/c.pdf']) {
-      expect(metadataByKey.get(key)).toEqual({ 'dogsled-source-modified': source.modified });
+      expect(metadataByKey.get(key)).toEqual({
+        team: 'data',
+        'dogsled-source-modified': source.modified,
+      });
     }
     // One warning names a file, and the run ends with a count, so a stream that loses the entry
     // on every file does not log a line for each.

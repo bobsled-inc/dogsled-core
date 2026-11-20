@@ -240,12 +240,17 @@ export async function runFileLoader(
     }
   };
 
-  // Only S3 and GCS keep metadata on an object. A copy tells them when its source says the file
-  // changed and where it came from, besides what the destination block asks for. Those two go on
-  // only if they fit, so that a long source key leaves its own entry off and never stops a run.
-  // The entries from the destination block fit already: the config check left room for them.
+  // Only S3 and GCS keep metadata on an object, and only a destination that sets object_metadata
+  // gets any: with none, a copied file carries no tags, so nothing about where it came from goes
+  // with it. When it is set, a copy adds when its source says the file changed and where it came
+  // from, each only if it fits, so that a long source key leaves its own entry off and never stops
+  // a run. The entries from the destination block fit already: the config check left room for them.
+  const configuredMetadata =
+    rawConfig.dest === 's3' || rawConfig.dest === 'gcs' ? rawConfig.objectMetadata : undefined;
   const objectMetadata =
-    rawConfig.dest === 's3' || rawConfig.dest === 'gcs' ? (rawConfig.objectMetadata ?? {}) : null;
+    configuredMetadata !== undefined && Object.keys(configuredMetadata).length > 0
+      ? configuredMetadata
+      : null;
   // A stream whose destination block leaves no room would lose an entry on every file. It gets
   // one warning that names the first file, and a count when the run ends.
   const leftOff = new Map<string, { stream: string; key: string; count: number }>();
