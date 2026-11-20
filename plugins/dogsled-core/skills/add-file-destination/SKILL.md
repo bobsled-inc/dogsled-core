@@ -37,7 +37,7 @@ Also check the factory to see if the destination kind is already in the `Destina
 Read these files to internalize the patterns before writing any code:
 
 - `packages/loader/src/runtime/destinations/s3.ts` — canonical file destination (~85 lines)
-- `packages/loader/src/runtime/destinations/types.ts` — `FileDestination` interface and `normalizeDestinationPath()`
+- `packages/loader/src/runtime/destinations/types.ts` — `FileDestination` interface, `PublishOptions`, `assertObjectKeyLength()` and `normalizeDestinationPath()`
 - `packages/loader/src/runtime/destinations/index.ts` — `DestinationKind` union, `DestinationConfig`, `createDestination()` factory
 - `packages/loader/src/schemas/config.ts` — Zod discriminated union config schemas
 - `packages/loader/src/commands/check.ts` — connectivity check functions and `CheckDependencies` DI
@@ -91,12 +91,13 @@ The file must contain:
    - Store `bucketName`, `prefix` (normalized, trailing slashes stripped), `region`, `providedClient`, and `cachedClient` as private fields
    - Call the naming validation function in the constructor
    - Normalize the prefix in the constructor: `normalizeDestinationPath(options.prefix).replace(/\/+$/, '')`
-   - `publish(localPath, destPath)`:
+   - `publish(localPath, destPath, options?)`:
      - Call `normalizeDestinationPath(destPath)`
      - Build the full object key using `path.posix.join(prefix, normalizedPath)` (or just `normalizedPath` if no prefix)
+     - Call `assertObjectKeyLength(key)` on the final key, as S3 and GCS do
      - Dynamically import the SDK (`await import('...')`)
      - Read the local file (`await readFile(localPath)`)
-     - Upload via the client
+     - Upload via the client. Set a content type only when `options?.copy` is not true
      - Return the URI string (e.g., `https://<account>.blob.core.windows.net/<container>/<key>`)
    - `getClient()`:
      - Return `this.providedClient` if set (DI path)
@@ -104,6 +105,10 @@ The file must contain:
      - Try dynamic `import()` of the SDK package
      - Wrap the import error with a helpful message: `"Failed to load <package>. Install it to use --dest <name>."`
      - Cache and return the new client
+
+`options` is `PublishOptions` from `./types.js`: `{ copy?: boolean; metadata?: Record<string, string> }`. The loader passes `{ copy: true }` for a `FILE` message, which writes a file as it is (a file Resource with `source.kind: copy`). A copy sets no content type, because the file is not in the loader's output format. A destination that should take copies must skip the content type when `copy` is true and check every final key with `assertObjectKeyLength()`, as `S3Destination` and `GcsDestination` do. A destination that can keep object metadata writes `metadata` for a copy too, through `encodeObjectMetadata()`, which percent-encodes each value and refuses more than 2,048 bytes. The loader decides what to send: `copyMetadata` in `run-file-loader.ts` adds the two `dogsled-` keys only when the destination sets `object_metadata`, and only if they fit.
+
+Only `local`, `s3` and `gcs` take copies today. `FILE_DESTINATION_TYPES` in `packages/dogsled/src/runner/config/validate-copy-destinations.ts` lists them, and `dogsled.yml` validation refuses a copy Resource whose destination has any other type. Add a new type there before a `dogsled.yml` pipeline copies files to it.
 
 ### Step 4: Add the Zod config schema
 
@@ -285,6 +290,7 @@ Before considering the destination complete, verify all of the following:
 | `normalizeDestinationPath()` called | Called on both the prefix (constructor) and destPath (publish) — prevents path traversal                                                          |
 | Constructor validates naming rules  | Invalid bucket/container names throw synchronously at construction time                                                                           |
 | `publish()` returns a URI string    | The URI uses the provider's canonical scheme (e.g., `s3://`, `gs://`, `https://...blob.core.windows.net/`)                                        |
+| Copies written as they are          | With `{ copy: true }`, `publish()` sets no content type, and every key goes through `assertObjectKeyLength()`. A test covers both                 |
 | DI interface enables testing        | A `*ClientLike` interface is exported and accepted in the options, so tests never need real SDK                                                   |
 | Check command wired                 | `dogsled load check --dest <name> --<name>-bucket <b>` runs the connectivity check                                                                |
 | Run command options wired           | `dogsled load run --dest <name> --<name>-bucket <b>` parses correctly                                                                             |

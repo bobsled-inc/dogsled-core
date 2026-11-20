@@ -47,6 +47,10 @@ APIs and run only through a plan: see [Paid enrichment APIs](../guides/billable-
 File formats: `csv`, `jsonl` and `parquet` (CSV and JSON Lines also gzip-compressed),
 and documents: `pdf`, `docx`, `pptx`, `html`, `md`, `txt` and `eml`.
 
+A file Resource with `source.kind: copy` instead copies files of any kind as they are,
+from `local`, `s3`, `gcs` and `sftp`. See
+[Copy files as they are](../guides/extract-from-files.md#copy-files-as-they-are).
+
 ## Destinations
 
 `dogsled load run --dest` accepts:
@@ -73,6 +77,9 @@ For a service that is compatible with PostgreSQL or MySQL, use that destination.
 `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`, `local`, `gcs` and
 `s3` (see [Run pipelines](../guides/run-pipelines.md#destination-types)). The flags
 for each destination are in the [CLI reference](cli.md#dogsled-load-run).
+
+A copy writes each file as it is to `<prefix><stream>/<relative key>`, and only to
+`local`, `s3` and `gcs`.
 
 ## Model warehouses
 

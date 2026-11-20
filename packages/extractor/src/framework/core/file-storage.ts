@@ -254,6 +254,11 @@ export interface ListedFile {
   path: string;
   uri: string;
   last_modified?: string | Date;
+  /**
+   * When this version of the content was written, for a store that keeps that apart from
+   * `last_modified`. GCS gives `timeCreated`; its `updated` time also moves when only metadata does.
+   */
+  created?: string;
   etag?: string;
   generation?: string;
   size?: number;
@@ -295,6 +300,8 @@ export interface DownloadProgress {
 
 export interface DownloadFileOptions {
   signal?: AbortSignal;
+  /** GCS only: keep a gzip-encoded object's stored bytes. Without it the client decompresses them. */
+  asStored?: boolean;
   /** SFTP only: fail with SFTP_FILE_CHANGED unless the remote file still has this size and mtime. */
   expected?: ExpectedRemoteFile;
   /** SFTP only, requires `expected`: pass the same object and target to resume after a retryable failure. */

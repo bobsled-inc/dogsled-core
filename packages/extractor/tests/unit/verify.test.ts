@@ -105,6 +105,27 @@ transport:
     ]);
   });
 
+  it('asks a copy Resource for no output or primary key, since it has no columns', () => {
+    const findings = collectResourceQualityFindings(
+      'files',
+      '/tmp/drops.yml',
+      {
+        spec_version: '1',
+        type: 'resource',
+        name: 'drops',
+        integration: 'files',
+        description: 'Copy the incoming folder',
+        source: { kind: 'copy', path: 'incoming/**/*' },
+        replication: { method: 'incremental_append', cursor: { field: 'last_modified' } },
+        extract: {},
+        output: {},
+      } as never,
+      ''
+    );
+
+    expect(findings).toEqual([]);
+  });
+
   it('flags review markers, empty descriptions, and missing table metadata', () => {
     const findings = collectResourceQualityFindings(
       'stripe',

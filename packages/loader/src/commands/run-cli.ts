@@ -43,6 +43,30 @@ export function parseSnowflakeWorkloadIdentityToken(value: string): string {
   return resolved;
 }
 
+/**
+ * Parse the `--object-metadata` JSON object. The config schema checks its keys, values and size.
+ * Its values are literal text, so the loader never expands a `$NAME` in them: dogsled sends
+ * them as written, and a pass here would read a value that holds a dollar sign as an
+ * environment reference.
+ */
+function parseObjectMetadataOption(value: unknown): Record<string, unknown> | undefined {
+  if (value === undefined) return undefined;
+  const fail = (): never => {
+    throw new CommandError(
+      '--object-metadata must be a JSON object of text values, such as \'{"team":"data"}\'.',
+      2
+    );
+  };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(String(value));
+  } catch {
+    return fail();
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return fail();
+  return parsed as Record<string, unknown>;
+}
+
 function resolveNestedPlaceholders<T>(value: T, label = 'an option value'): T {
   if (typeof value === 'string') {
     return resolveEnvPlaceholder(value, label) as T;
@@ -264,30 +288,36 @@ export function buildConfigInput(options: Record<string, unknown>): Record<strin
         streamTables: options.streamTable,
       });
     case 'gcs':
-      return resolveNestedPlaceholders({
-        dest,
-        format: options.format,
-        outputDir: options.outputDir,
-        gcsBucket: options.gcsBucket,
-        gcsPrefix: options.gcsPrefix,
-        streamSubfolder: options.streamSubfolder,
-        bufferSize: options.bufferSize,
-        logFormat: options.logFormat,
-      });
+      return {
+        ...resolveNestedPlaceholders({
+          dest,
+          format: options.format,
+          outputDir: options.outputDir,
+          gcsBucket: options.gcsBucket,
+          gcsPrefix: options.gcsPrefix,
+          streamSubfolder: options.streamSubfolder,
+          bufferSize: options.bufferSize,
+          logFormat: options.logFormat,
+        }),
+        objectMetadata: parseObjectMetadataOption(options.objectMetadata),
+      };
     case 's3':
-      return resolveNestedPlaceholders({
-        dest,
-        format: options.format,
-        outputDir: options.outputDir,
-        s3Bucket: options.s3Bucket,
-        s3Prefix: options.s3Prefix,
-        s3Region: options.s3Region,
-        s3RoleArn: options.s3RoleArn,
-        s3ExternalId: options.s3ExternalId,
-        streamSubfolder: options.streamSubfolder,
-        bufferSize: options.bufferSize,
-        logFormat: options.logFormat,
-      });
+      return {
+        ...resolveNestedPlaceholders({
+          dest,
+          format: options.format,
+          outputDir: options.outputDir,
+          s3Bucket: options.s3Bucket,
+          s3Prefix: options.s3Prefix,
+          s3Region: options.s3Region,
+          s3RoleArn: options.s3RoleArn,
+          s3ExternalId: options.s3ExternalId,
+          streamSubfolder: options.streamSubfolder,
+          bufferSize: options.bufferSize,
+          logFormat: options.logFormat,
+        }),
+        objectMetadata: parseObjectMetadataOption(options.objectMetadata),
+      };
     case 'clickhouse':
       return resolveNestedPlaceholders({
         dest,

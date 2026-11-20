@@ -2,6 +2,7 @@ import { assertExhaustive as assertExhaustiveBase } from '@bobsled-inc/ai';
 
 import {
   isDocumentFileSource,
+  isFileCopyResource,
   isFileStorageResource,
   isLookupOnlyApiResource,
 } from '../framework/extractor/index.js';
@@ -24,13 +25,19 @@ import {
 import type { ExtractorState, IntegrationSpec, ResourceSpec } from '../types/index.js';
 
 export type SourceKind =
-  'api' | 'lookup_only' | 'warehouse' | 'file_storage_structured' | 'file_storage_document';
+  | 'api'
+  | 'lookup_only'
+  | 'warehouse'
+  | 'file_storage_structured'
+  | 'file_storage_document'
+  | 'file_storage_copy';
 
 export function classifySourceKind(
   integration: IntegrationSpec,
   resource: ResourceSpec
 ): SourceKind {
   if (isFileStorageSource(integration) && isFileStorageResource(resource)) {
+    if (isFileCopyResource(resource)) return 'file_storage_copy';
     // `isDocumentFileSource` honors both the explicit `kind: document` discriminator
     // and the user-facing `format: document` alias (per the Resource Grammar
     // Contract). The single helper keeps alias logic in one place.
@@ -61,6 +68,8 @@ export interface DispatchContext {
   state: ExtractorState;
   stateStore: StateStore;
   advanceState: boolean;
+  /** `--no-state-write`: the host saves state, as a pipeline with a list of destinations does. */
+  stateWriteDisabled?: boolean;
   fullRefresh?: boolean;
   limit?: number;
   warehouse?: string;
@@ -88,13 +97,14 @@ export interface DispatchResult {
 export async function dispatchSourceKind(ctx: DispatchContext): Promise<DispatchResult> {
   const sourceKind = classifySourceKind(ctx.integration, ctx.resource);
   switch (sourceKind) {
-    case 'file_storage_structured': {
+    case 'file_storage_structured':
+    case 'file_storage_copy': {
       // Type predicate narrows `resource` for the call below. The classifier already
       // checked `isFileStorageResource`; this re-check satisfies the type system at
       // the case-body level and matches the warehouse branch's pattern.
       if (!isFileStorageResource(ctx.resource)) {
         throw new ExtractorDataError(
-          `Resource "${ctx.resource.name}" classified as file_storage_structured but failed type narrowing.`
+          `Resource "${ctx.resource.name}" classified as ${sourceKind} but failed type narrowing.`
         );
       }
       const result = await runFileStorageResourceExtraction({
@@ -106,6 +116,7 @@ export async function dispatchSourceKind(ctx: DispatchContext): Promise<Dispatch
         state: ctx.state,
         stateStore: ctx.stateStore,
         advanceState: ctx.advanceState,
+        stateWriteDisabled: ctx.stateWriteDisabled,
         fullRefresh: ctx.fullRefresh,
         limit: ctx.limit,
         startedAt: ctx.startedAt,
@@ -119,7 +130,7 @@ export async function dispatchSourceKind(ctx: DispatchContext): Promise<Dispatch
       };
     }
     case 'file_storage_document': {
-      if (!isFileStorageResource(ctx.resource)) {
+      if (!isFileStorageResource(ctx.resource) || isFileCopyResource(ctx.resource)) {
         throw new ExtractorDataError(
           `Resource "${ctx.resource.name}" classified as file_storage_document but failed type narrowing.`
         );

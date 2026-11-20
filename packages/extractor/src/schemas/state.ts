@@ -15,6 +15,11 @@ const StreamStateSchema = z
     cursor_value: z.string().optional(),
     last_run_at: z.string(),
     record_count: z.number(),
+    // Copy Resources on S3 and GCS: the bucket and path the state belongs to, the newest
+    // `last_modified` copied, and the files copied within the lookback window (key to version).
+    scope: z.string().optional(),
+    watermark: z.string().optional(),
+    recent: z.record(z.string(), z.string()).optional(),
     files: z
       .record(
         z.string(),

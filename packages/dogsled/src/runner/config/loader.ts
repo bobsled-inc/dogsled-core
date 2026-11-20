@@ -67,6 +67,7 @@ import {
 } from './project-files.js';
 import { resolveEntityVariant } from './resolve-entity.js';
 import { validateForEachIteration } from './resolve-for-each.js';
+import { validateCopyDestinations } from './validate-copy-destinations.js';
 import { validateResourceResolution, validateResourceSourceAlignment } from './resolve-resource.js';
 import { validateViaSelections } from './validate-via.js';
 import {
@@ -1110,6 +1111,11 @@ export async function validateDogsledConfig(
   //    first). Runs after resolveEntityVariant so names compare in spec space.
   for (const pipeline of pipelines) {
     validateForEachIteration(pipeline, lib, project, errors);
+  }
+
+  // 9b. A copy Resource moves each file once, so its pipeline can have only one destination.
+  for (const pipeline of pipelines) {
+    validateCopyDestinations(pipeline, config, project, errors);
   }
 
   // 10. Enumerate secrets

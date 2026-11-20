@@ -19,8 +19,8 @@ Extract:
   pagination and incremental loads for a REST API.
 - [Use library integrations](guides/use-library-integrations.md): run, customize or
   generate integrations.
-- [Extract from files](guides/extract-from-files.md): CSV, JSON Lines, Parquet and
-  documents, locally or in cloud storage.
+- [Extract from files](guides/extract-from-files.md): CSV, JSON Lines, Parquet,
+  documents and copies of any file, locally or in cloud storage.
 - [Extract from databases](guides/extract-from-databases.md): PostgreSQL, MySQL,
   Snowflake, BigQuery and others.
 - [Extract from MCP servers](guides/extract-from-mcp.md): call MCP tools as

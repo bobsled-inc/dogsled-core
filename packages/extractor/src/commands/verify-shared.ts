@@ -4,6 +4,7 @@ import * as path from 'node:path';
 
 import { parse as parseYaml } from 'yaml';
 
+import { isFileCopyResource } from '../framework/extractor/index.js';
 import type { HttpApiResourceSpec, IntegrationSpec, ResourceSpec } from '../types/index.js';
 import type { CheckFinding } from './check-diff.js';
 import { CommandError } from './common.js';
@@ -380,7 +381,10 @@ export function collectResourceQualityFindings(
     );
   }
 
-  if (!output || Object.keys(output).length === 0) {
+  // A copy moves files as they are, so it has no columns and no key.
+  const hasColumns = !isFileCopyResource(resource);
+
+  if (hasColumns && (!output || Object.keys(output).length === 0)) {
     appendFinding(
       findings,
       integrationName,
@@ -391,7 +395,7 @@ export function collectResourceQualityFindings(
     );
   }
 
-  if (!table?.primary_key || table.primary_key.length === 0) {
+  if (hasColumns && (!table?.primary_key || table.primary_key.length === 0)) {
     appendFinding(
       findings,
       integrationName,

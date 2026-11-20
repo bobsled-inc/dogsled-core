@@ -52,6 +52,7 @@ import {
 } from './pipeline-summary.js';
 import {
   setupPipelineSignalForwarding,
+  stopStagesAfterLoaderExit,
   terminateAndSettlePipelineChildren,
   throwIfPipelineAborted,
   type PipelineExecutionControl,
@@ -154,6 +155,8 @@ export interface PipelineOptions {
   s3Prefix?: string;
   /** Folder added inside each stream's folder on local, gcs and s3 destinations. */
   streamSubfolder?: string;
+  /** Metadata stored on each file a copy writes to a gcs or s3 destination. */
+  objectMetadata?: Record<string, string>;
   startDate?: string;
   endDate?: string;
   sfAccount?: string;
@@ -573,8 +576,7 @@ async function runSingleDestPipeline(
   // stdin via the pipe. The loader will finish processing and exit on its own.
   // Only kill extract if the loader exits early (e.g. an error).
   loadChild.on('close', () => {
-    if (!extractChild.killed) extractChild.kill('SIGTERM');
-    if (embedChild && !embedChild.killed) embedChild.kill('SIGTERM');
+    stopStagesAfterLoaderExit(embedChild ? [extractChild, embedChild] : [extractChild]);
   });
   extractChild.on('close', (code) => {
     if ((code ?? 0) !== 0) {

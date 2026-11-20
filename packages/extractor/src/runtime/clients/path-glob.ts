@@ -1,5 +1,14 @@
 import { ExtractorConfigError } from '../errors.js';
 
+/**
+ * The folder a glob starts in: the part before its first wildcard, up to its last `/`.
+ * `incoming/2026/*.csv` gives `incoming/2026/`; a path without a wildcard gives its folder.
+ */
+export function fixedFolder(pattern: string): string {
+  const literal = pattern.replace(/[*?].*$/, '');
+  return literal.slice(0, literal.lastIndexOf('/') + 1);
+}
+
 /** Match a provider-relative key against a resource glob (`*`, `**`, `?`). */
 export function globToRegExp(pattern: string, provider: string): RegExp {
   if (pattern.length > 240) {

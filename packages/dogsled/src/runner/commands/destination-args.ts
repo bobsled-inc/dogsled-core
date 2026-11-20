@@ -108,13 +108,36 @@ export function buildStreamOverrideCliArgs(options: {
 
 type DestinationLike = DestinationConfig | NamedDestination;
 
+/**
+ * The metadata in key order, so the argument is the same every run. Its values are literal
+ * text: a `$NAME` or `${{ env.NAME }}` is sent as it is and never read as a reference, so no
+ * environment value can reach an object's metadata.
+ */
+export function literalObjectMetadata(
+  metadata: Readonly<Record<string, string>> | undefined
+): Record<string, string> | undefined {
+  if (!metadata || Object.keys(metadata).length === 0) return undefined;
+  return Object.fromEntries(
+    Object.keys(metadata)
+      .sort()
+      .map((key) => [key, metadata[key]!])
+  );
+}
+
 function buildFileDestinationCliArgs(
-  destination: { stream_subfolder?: string | undefined },
+  destination: {
+    stream_subfolder?: string | undefined;
+    object_metadata?: Record<string, string> | undefined;
+  },
   resolveValue: (value: string) => string
 ): string[] {
   const args: string[] = [];
   if (destination.stream_subfolder) {
     args.push('--stream-subfolder', resolveValue(destination.stream_subfolder));
+  }
+  const metadata = literalObjectMetadata(destination.object_metadata);
+  if (metadata) {
+    args.push('--object-metadata', JSON.stringify(metadata));
   }
   return args;
 }

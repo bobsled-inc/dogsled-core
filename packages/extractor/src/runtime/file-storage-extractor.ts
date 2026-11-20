@@ -88,7 +88,7 @@ export function streamKey(integrationName: string, resourceName: string): string
   return `${integrationName}/${resourceName}`;
 }
 
-function getFileState(
+export function getFileState(
   state: ExtractorState,
   integrationName: string,
   resourceName: string
@@ -111,7 +111,7 @@ export function shouldProcessFile(file: ListedFile, existing: FileBookmark | und
   );
 }
 
-function bookmarkFor(file: ListedFile): FileBookmark {
+export function bookmarkFor(file: ListedFile): FileBookmark {
   return {
     last_modified:
       file.last_modified instanceof Date ? file.last_modified.toISOString() : file.last_modified,

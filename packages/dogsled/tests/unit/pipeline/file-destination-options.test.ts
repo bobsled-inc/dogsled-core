@@ -105,7 +105,8 @@ function fakeChild(consumesInput: boolean): ChildProcess {
 }
 
 async function loaderArgs(
-  projectRoot: string
+  projectRoot: string,
+  extraEnv: Record<string, string> = {}
 ): Promise<{ extractorCalls: number; loaders: string[][] }> {
   const loaders: string[][] = [];
   let extractorCalls = 0;
@@ -114,7 +115,7 @@ async function loaderArgs(
       projectRoot,
       pipelineName: 'items',
       quiet: true,
-      env: { HOST_SOURCE_TOKEN: 'synthetic-token' },
+      env: { HOST_SOURCE_TOKEN: 'synthetic-token', ...extraEnv },
       declaredEnvNames: ['HOST_SOURCE_TOKEN'],
     },
     {
@@ -162,6 +163,43 @@ describe('file destination options through runProjectPipeline', () => {
     ]);
   });
 
+  it('passes object_metadata to the loader, for a single destination and for each loader of a fan-out', async () => {
+    const metadata = '    object_metadata:\n      team: data\n      run-id: a1\n';
+    const expected = ['--object-metadata', '{"run-id":"a1","team":"data"}'];
+
+    const single = await loaderArgs(makeProject(`${S3_LANDING}${metadata}`, ['landing']));
+    expect(single.loaders[0]).toEqual(expect.arrayContaining(expected));
+
+    const fanOut = await loaderArgs(
+      makeProject(`${S3_LANDING}${metadata}${GCS_LANDING}${metadata}`, ['landing', 'archive'])
+    );
+    expect(fanOut.loaders).toHaveLength(2);
+    for (const args of fanOut.loaders) expect(args).toEqual(expect.arrayContaining(expected));
+  });
+
+  it('writes object_metadata values as text, even when the environment holds a name they mention', async () => {
+    const metadata =
+      "    object_metadata:\n      owner: '$OWNER'\n      note: '${{ env.NAME }}'\n      price: '$5'\n";
+    const environment = { OWNER: 'leaked-owner', NAME: 'leaked-name' };
+    const expected = '{"note":"${{ env.NAME }}","owner":"$OWNER","price":"$5"}';
+
+    const single = await loaderArgs(
+      makeProject(`${S3_LANDING}${metadata}`, ['landing']),
+      environment
+    );
+    const fanOut = await loaderArgs(
+      makeProject(`${S3_LANDING}${metadata}${GCS_LANDING}${metadata}`, ['landing', 'archive']),
+      environment
+    );
+
+    for (const args of [...single.loaders, ...fanOut.loaders]) {
+      expect(args[args.indexOf('--object-metadata') + 1]).toBe(expected);
+      expect(args.join(' ')).not.toContain('leaked');
+    }
+    expect(single.loaders).toHaveLength(1);
+    expect(fanOut.loaders).toHaveLength(2);
+  });
+
   it('passes the option to every loader of a fan-out', async () => {
     const projectRoot = makeProject(
       `${S3_LANDING}    stream_subfolder: data/run-1\n${GCS_LANDING}    stream_subfolder: data/run-1\n`,
@@ -192,6 +230,7 @@ describe('file destination options through runProjectPipeline', () => {
 
       for (const args of loaders) {
         expect(args).not.toContain('--stream-subfolder');
+        expect(args).not.toContain('--object-metadata');
       }
       const s3 = loaders.find((args) => args.includes('s3'))!;
       expect(s3.slice(s3.indexOf('--dest'))).toEqual(

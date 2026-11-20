@@ -113,11 +113,19 @@ All formats are produced via DuckDB `COPY` (except Arrow which uses IPC buffers)
 
 ### Folders (optional)
 
-`local`, `gcs` and `s3` destinations write `<prefix><stream>/<stream>-<n>.<ext>`. One optional setting changes that. It is off by default, and without it the files are exactly the same as before.
+`local`, `gcs` and `s3` destinations write rows to `<prefix><stream>/<stream>-<n>.<ext>`, and each copied file (a `FILE` message) to `<prefix><stream>/<relative_key>`. One optional setting changes both. It is off by default, and without it the files are exactly the same as before.
 
-| `dogsled.yml` field | `load run` flag             | Effect                                                                                                                                                                           |
-| ------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stream_subfolder`  | `--stream-subfolder <path>` | Adds a folder inside each stream's folder: `orders/<path>/orders-0.parquet`. A relative path of letters, digits, dots, dashes, equals signs and underscores, with no `.` or `..` |
+| `dogsled.yml` field | `load run` flag             | Effect                                                                                                                                                                                                                               |
+| ------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `stream_subfolder`  | `--stream-subfolder <path>` | Adds a folder inside each stream's folder: `orders/<path>/orders-0.parquet`, or `drops/<path>/<relative_key>` for a copied file. A relative path of letters, digits, dots, dashes, equals signs and underscores, with no `.` or `..` |
+
+### Copied files
+
+A file Resource with `source.kind: copy` sends one `FILE` message per file, not rows. A file destination writes the message's temp file as it is, with no content type, to `<prefix><stream>/[<stream_subfolder>/]<relative_key>`, then deletes the temp file. `--format` does not change a copied file. Only `local`, `s3` and `gcs` take a copy, and database destinations fail on `FILE`.
+
+A copy takes one destination. A `dogsled.yml` pipeline with a copy Resource and more than one destination is refused when the project is validated, and a pipeline with one destination works. `--destinations-json` is refused for any list, even one entry, when the extractor starts.
+
+An `s3` or `gcs` destination can tag the files a copy writes with `object_metadata` (`--object-metadata '<json object>'`): text values, stored percent-encoded. With it set, a copy also stores `dogsled-source` (the file's key in the source) and `dogsled-source-modified` on each file. With none, a copied file gets no tags at all. Values are literal text: a `$NAME` or `${{ env.NAME }}` is written as it is, never read as an environment reference. Keys use lowercase letters, digits and dashes, and the whole is at most 2,048 bytes, counting 11 more for each key. The loader leaves `dogsled-source` off a file whose key would not fit, with a warning. A `local` destination keeps none.
 
 ## Schema Evolution
 
@@ -164,3 +172,5 @@ dogsled extract run --integration github repos | dogsled load run --dest duckdb 
 ```
 
 Shows the strategy table (stream name, load strategy, key properties) without writing data.
+
+A dry run cannot preview a copy. It fails on a `FILE` message, because a dry run never deletes the temp file and the extractor would wait for it. Load a copy into a disposable `local` folder instead.

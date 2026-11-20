@@ -801,6 +801,7 @@ Options:
   --s3-role-arn <arn>                                 AWS IAM role ARN for assume-role credentials
   --s3-external-id <id>                               AWS external ID for assume-role credentials
   --stream-subfolder <path>                           Folder added inside each stream folder for local, gcs and s3 destinations (for example data/run-1)
+  --object-metadata <json>                            JSON object of text values stored as metadata on each file a copy writes to gcs and s3 destinations (for example '{"team":"data"}'); no $NAME in a value is expanded
   --db-path <path>                                    DuckDB database file path
   --ducklake-catalog-url <url>                        DuckLake catalog URL
   --ducklake-data-path <path>                         DuckLake data path

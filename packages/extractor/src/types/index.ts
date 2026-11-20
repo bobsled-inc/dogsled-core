@@ -39,6 +39,7 @@ export type {
   SourceSpec,
   HttpApiResourceSpec,
   LookupOnlyApiResourceSpec,
+  FileCopyResourceSpec,
   FileResourceSpec,
   WarehouseResourceSpec,
 } from '../framework/extractor/resource.js';
@@ -58,6 +59,7 @@ export type {
   BatchFormat,
   BatchMessage,
   ReplaceMessage,
+  FileMessage,
   LogMessage,
   MetricMessage,
   ProgressEventType,

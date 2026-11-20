@@ -67,6 +67,8 @@ dogsled extract run {resource} --integration {name} --advance-state
 dogsled extract run {resource} --integration {name} --limit 5
 ```
 
+A copy Resource waits for a loader, so preview it with the pipe form under Copy Resources.
+
 **Topup from a specific date** (incremental from a given point):
 
 ```bash
@@ -106,6 +108,20 @@ If `cursor_type` is omitted, it is auto-detected from the first value seen. The 
 - In `dogsled pipeline` multi-destination fan-out mode, Dogsled captures extractor `STATE` messages and runs `dogsled extract commit-state` only after every destination loader succeeds.
 
 If a fan-out pipeline appears to re-extract data after one destination failed, that is expected: extractor state intentionally stayed behind so the failed destination can catch up on retry.
+
+## Copy Resources
+
+A file Resource with `source.kind: copy` keeps its state under `integration/resource` like any stream, and its `record_count` is always 0. It also keeps `scope`: where the copy reads from, which is the source type, endpoint, bucket, host, port, base directory and `path`. A change to any of them starts the copy over, and so does state with no `scope`, such as state that a structured Resource of the same name wrote. The other keys depend on the source:
+
+- S3 and GCS, where the server sets `last_modified`:
+  - `watermark`: the time of the newest file the copy has taken. It never moves back, and never passes the present.
+  - `recent`: each file copied within `lookback_seconds` of the watermark (1 hour by default), with its version (the GCS generation or the S3 ETag). A run skips a file in `recent` while its version is the same.
+- SFTP and local folders, where a client can set any time:
+  - `files`: one entry for each file, keyed by its URI, with `last_modified`, `etag` and `size`. A run copies the file again when any of the three changes.
+
+A copy saves state only after the loader has written and deleted every temp file, so a failed run copies the same files again. A copy cannot run in the fan-out mode above, so it saves its own state. `--limit` saves no state.
+
+`dogsled extract run` alone waits for a loader. To preview a copy, pipe it into one: `dogsled extract run {resource} --integration {name} --limit 5 | dogsled load run --dest local --format jsonl --output-dir ./preview`. To copy every file again, add `--full-refresh` to the `dogsled pipeline` run.
 
 ## Guardrails
 
