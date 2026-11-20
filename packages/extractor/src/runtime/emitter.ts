@@ -99,7 +99,13 @@ export class Emitter {
    * Emit a FILE message: the loader writes the temp file at `uri` to `relativeKey` under the
    * stream's folder at its destination, then deletes the temp file.
    */
-  async emitFile(stream: string, uri: string, relativeKey: string, size: number): Promise<void> {
+  async emitFile(
+    stream: string,
+    uri: string,
+    relativeKey: string,
+    size: number,
+    source: { key?: string; modified?: string } = {}
+  ): Promise<void> {
     const message = {
       _v: PROTOCOL_VERSION,
       type: 'FILE',
@@ -107,6 +113,8 @@ export class Emitter {
       uri,
       relative_key: relativeKey,
       size,
+      ...(source.key === undefined ? {} : { source_key: source.key }),
+      ...(source.modified === undefined ? {} : { modified: source.modified }),
     } satisfies FileMessage;
 
     await this.writeMessage(stream, message);

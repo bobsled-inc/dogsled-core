@@ -94,6 +94,19 @@ function modifiedMs(file: ListedFile): number {
   return time;
 }
 
+/**
+ * A time as an ISO 8601 date-time, or undefined if the source gave none, it is not a time, or FILE
+ * cannot carry it. A year past 9999 is written with a sign and six digits, which the loader
+ * refuses, and that must not stop a run that could copy the file.
+ */
+function isoTime(value: string | Date | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return undefined;
+  const iso = new Date(time).toISOString();
+  return iso.length === 24 ? iso : undefined;
+}
+
 /** A file's version. GCS gives each content version a generation, and its ETag also moves when only metadata does. */
 const versionOf = (file: ListedFile): string => file.generation ?? file.etag ?? '';
 
@@ -358,7 +371,8 @@ export async function extractFileCopyResource({
         resource.name,
         pathToFileURL(downloaded.path).href,
         file.path.slice(folder.length),
-        bytes
+        bytes,
+        { key: file.path, modified: isoTime(file.last_modified) }
       );
       filesCopied += 1;
       bytesCopied += bytes;

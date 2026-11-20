@@ -461,7 +461,27 @@ function parseFileMessage(value: RawEnvelope): FileMessage {
   if (typeof size !== 'number' || !Number.isSafeInteger(size) || size < 0) {
     failValidation('FILE message size must be a non-negative integer');
   }
-  return { _v: PROTOCOL_VERSION, type: 'FILE', stream, uri, relative_key: relativeKey, size };
+  const { source_key: sourceKey, modified } = value;
+  if (
+    sourceKey !== undefined &&
+    (typeof sourceKey !== 'string' || sourceKey.length === 0 || sourceKey.includes('\0'))
+  ) {
+    failValidation('FILE message source_key must be a non-empty string without null bytes');
+  }
+  if (modified !== undefined) {
+    if (typeof modified !== 'string') failValidation('FILE message modified must be a string');
+    assertIso8601(modified, 'FILE message modified');
+  }
+  return {
+    _v: PROTOCOL_VERSION,
+    type: 'FILE',
+    stream,
+    uri,
+    relative_key: relativeKey,
+    size,
+    ...(sourceKey === undefined ? {} : { source_key: sourceKey }),
+    ...(modified === undefined ? {} : { modified }),
+  };
 }
 
 function parseStateMessage(value: RawEnvelope): StateMessage {

@@ -321,6 +321,10 @@ export interface FileMessage {
   uri: string;
   relative_key: string;
   size: number;
+  /** The file's key in the source, with no bucket, scheme or host. A writer may record it. */
+  source_key?: string;
+  /** When the source says the file was last modified, as an ISO 8601 date-time. Absent if it says nothing. */
+  modified?: string;
 }
 
 /** Data messages emitted on stdout. */

@@ -492,6 +492,55 @@ describe('copy extractor: names, scope and the reader', () => {
     }
   );
 
+  it('tells the loader the source key and when the source says the file changed', async () => {
+    const store = fakeStore([file('2026/a.csv', 5)]);
+    const { loader } = await run(store.client, { streams: {} });
+
+    expect(loader.messages.find((message) => message['type'] === 'FILE')).toMatchObject({
+      relative_key: '2026/a.csv',
+      source_key: 'incoming/2026/a.csv',
+      modified: at(5),
+    });
+
+    // A source that gives no time, such as an SFTP server, leaves `modified` out.
+    const timeless: FileStorageClient = {
+      ...store.client,
+      async *list(options) {
+        for await (const listed of store.client.list(options)) {
+          yield { ...listed, last_modified: undefined };
+        }
+      },
+    };
+    const { loader: noTime } = await run(
+      timeless,
+      { streams: {} },
+      { source: integration('sftp') }
+    );
+    const sent = noTime.messages.find((message) => message['type'] === 'FILE');
+    expect(sent).toMatchObject({ source_key: 'incoming/2026/a.csv' });
+    expect(sent).not.toHaveProperty('modified');
+  });
+
+  it('leaves out a modified time that FILE cannot carry, and still sends the file', async () => {
+    const store = fakeStore([file('a.csv', 5)]);
+    // A year past 9999 is written with a sign and six digits, which the loader refuses. Some disks
+    // can hold such a time, and it is no reason to stop a run that could copy the file.
+    const distant: FileStorageClient = {
+      ...store.client,
+      async *list(options) {
+        for await (const listed of store.client.list(options)) {
+          yield { ...listed, last_modified: new Date(Date.UTC(10000, 0, 1)) };
+        }
+      },
+    };
+
+    const { loader } = await run(distant, { streams: {} }, { source: integration('sftp') });
+
+    const sent = loader.messages.find((message) => message['type'] === 'FILE');
+    expect(sent).toMatchObject({ source_key: 'incoming/a.csv' });
+    expect(sent).not.toHaveProperty('modified');
+  });
+
   it('starts over when the bucket changes', async () => {
     const files = [file('a.csv', 0)];
     const state: ExtractorState = { streams: {} };
