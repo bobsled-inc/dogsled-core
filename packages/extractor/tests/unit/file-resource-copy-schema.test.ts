@@ -104,6 +104,25 @@ describe('copy Resources and the Resource kinds around them', () => {
     expect(formatZodIssues(shown.error!, { schema: ResourceSpecSchema })).not.toMatch(/copy/);
   });
 
+  it.each([
+    ['a wrong spec_version', { spec_version: '2' }],
+    ['an unquoted spec_version', { spec_version: 1 }],
+  ])('names the mistake in a Resource that is not a copy: %s', (_label, mistake) => {
+    const structured = {
+      ...copyResource,
+      source: { path: 'exports/*.csv', format: 'csv' },
+      output: { id: { type: 'string' } },
+      ...mistake,
+    };
+
+    const result = ResourceSpecSchema.safeParse(structured);
+
+    expect(result.success).toBe(false);
+    const shown = formatZodIssues(result.error!, { schema: ResourceSpecSchema });
+    expect(shown).toContain('spec_version');
+    expect(shown).not.toMatch(/not a copy/);
+  });
+
   it('reports the plain messages when a copy Resource file is loaded', () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'copy-spec-'));
     try {

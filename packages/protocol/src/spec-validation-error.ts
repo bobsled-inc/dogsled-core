@@ -415,13 +415,16 @@ function pickClosestUnionVariant(variants: ZodIssue[][]): ZodIssue[] | null {
 
   // No variant looks closer than another. Fall back to the smallest
   // non-empty variant so we surface *something* instead of swallowing
-  // detail.
+  // detail. A variant that ruled itself out has one issue and says nothing about the
+  // object, so it would always be the smallest: use it only when no other variant remains.
+  const nonEmpty = variants.filter(
+    (variant): variant is ZodIssue[] => Array.isArray(variant) && variant.length > 0
+  );
+  const others = nonEmpty.filter((variant) => !variant.some(isWrongVariantTypeRefine));
   let fallback: ZodIssue[] | null = null;
-  for (const variant of variants) {
-    if (Array.isArray(variant) && variant.length > 0) {
-      if (fallback === null || variant.length < fallback.length) {
-        fallback = variant;
-      }
+  for (const variant of others.length > 0 ? others : nonEmpty) {
+    if (fallback === null || variant.length < fallback.length) {
+      fallback = variant;
     }
   }
   return fallback;
