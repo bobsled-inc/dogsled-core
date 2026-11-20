@@ -36,7 +36,9 @@ export function collectEnvironmentReferences(value: unknown): Set<string> {
       current.forEach(walk);
     } else if (current && typeof current === 'object') {
       for (const [key, entry] of Object.entries(current)) {
-        if (key === 'auth_env_vars') continue;
+        // `auth_env_vars` declares names. `object_metadata` is literal text that a copy writes
+        // to an object as it is, so a `$NAME` in it is no reference and needs no declaration.
+        if (key === 'auth_env_vars' || key === 'object_metadata') continue;
         if (key.endsWith('_env') && typeof entry === 'string') names.add(entry);
         else walk(entry);
       }

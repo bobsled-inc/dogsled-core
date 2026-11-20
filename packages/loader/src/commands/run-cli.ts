@@ -45,9 +45,9 @@ export function parseSnowflakeWorkloadIdentityToken(value: string): string {
 
 /**
  * Parse the `--object-metadata` JSON object. The config schema checks its keys, values and size.
- * Its values are free text, so the loader takes them as they are and never expands a `$NAME` in
- * them: `dogsled.yml` resolves its placeholders before it starts the loader, and a second pass
- * would read what the first one wrote as another placeholder.
+ * Its values are literal text, so the loader never expands a `$NAME` in them: dogsled sends
+ * them as written, and a pass here would read a value that holds a dollar sign as an
+ * environment reference.
  */
 function parseObjectMetadataOption(value: unknown): Record<string, unknown> | undefined {
   if (value === undefined) return undefined;

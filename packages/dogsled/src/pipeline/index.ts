@@ -21,7 +21,7 @@ import { getWorkloadIdentitySourceEnvNames } from '../commands/pipeline-load-arg
 import { resolveEnvPlaceholder } from '../runner/commands/env-placeholders.js';
 import {
   MANAGED_DESTINATION_CORE_ERROR,
-  resolveObjectMetadata,
+  literalObjectMetadata,
 } from '../runner/commands/destination-args.js';
 import {
   emptyPipelineRunMetrics,
@@ -981,9 +981,7 @@ function fileDestinationOptions(
   },
   env: NodeJS.ProcessEnv
 ): Pick<PipelineOptions, 'streamSubfolder' | 'objectMetadata'> {
-  const objectMetadata = resolveObjectMetadata(destination.object_metadata, (value) =>
-    resolveValue(value, env)!
-  );
+  const objectMetadata = literalObjectMetadata(destination.object_metadata);
   return {
     ...(destination.stream_subfolder
       ? { streamSubfolder: resolveValue(destination.stream_subfolder, env)! }

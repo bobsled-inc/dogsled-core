@@ -341,8 +341,10 @@ const FileDestinationFields = {
 
 /**
  * Opt-in metadata for the files a copy writes to a gcs or s3 destination. Keys use lowercase
- * letters, digits and dashes, values are text, and the whole stays within what S3 keeps on one
- * object. A copy adds two keys of its own, `dogsled-source` and `dogsled-source-modified`.
+ * letters, digits and dashes, values are literal text, and the whole stays within what S3 keeps
+ * on one object. A value is written as it is: a `$NAME` or `${{ env.NAME }}` in it is not an
+ * environment reference. A copy adds two keys of its own, `dogsled-source` and
+ * `dogsled-source-modified`.
  */
 const ObjectMetadataSchema = z.record(z.string(), z.string()).superRefine((value, context) => {
   const problem = objectMetadataProblem(value);

@@ -98,6 +98,12 @@ describe('object_metadata in dogsled.yml', () => {
     ).toBe(true);
   });
 
+  it('takes a value that looks like an environment reference as plain text', () => {
+    const object_metadata = { owner: '$OWNER', note: '${{ env.NAME }}', price: '$5' };
+
+    expect(parse({ ...fileDestinations[2], object_metadata }).success).toBe(true);
+  });
+
   it('does not take object_metadata on a local destination, which keeps none', () => {
     expect(parse({ ...fileDestinations[0], object_metadata: { team: 'data' } }).success).toBe(
       false
