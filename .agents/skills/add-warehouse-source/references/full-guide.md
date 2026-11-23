@@ -532,7 +532,7 @@ export function mapColumnType(dialect: Dialect, sourceType: string): ColumnType 
   switch (dialect) {
     // ... existing cases ...
     case '<source-name>':
-      return map < SourceName > Type(normalized, baseType);
+      return mapSourceNameType(normalized, baseType);
   }
 }
 ```
