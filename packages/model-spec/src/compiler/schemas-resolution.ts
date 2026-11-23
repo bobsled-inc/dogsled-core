@@ -162,7 +162,7 @@ const EnvPlaceholderSchema = z.string().refine((value) => parseEnvPlaceholder(va
 
 /**
  * `agent_policy.reviewer` — external reviewer transport for the agent review
- * phase (cross-repo contract: `entity_graph_review_request.v1`). `http` POSTs
+ * phase (external reviewer contract: `entity_graph_review_request.v1`). `http` POSTs
  * the review request to a hosted agent; `command` pipes it to a local process
  * on stdin. `auth_token` must be an env placeholder (`$VAR` / `${{ env.VAR }}`)
  * resolved by the project's secret resolver at runtime — never a literal.
@@ -503,7 +503,7 @@ export const ResolutionSpecSchema = z
     agent_policy: z
       .object({
         enabled: z.boolean(),
-        // User-facing judge tier for the review phase (cross-repo contract §5).
+        // User-facing judge tier for the review phase (external reviewer contract).
         //   absent  ⇒ model (default): the in-Dogsled model judge / panel serves
         //             the phase — an external reviewer (reviewerOverride or the
         //             spec's `reviewer:`) still wins when present, exactly as
@@ -517,7 +517,7 @@ export const ResolutionSpecSchema = z
         //             the phase skips (`no_judge_configured` + a warning naming
         //             the missing piece); it never falls back to the model judge.
         judge: z.enum(['model', 'agent']).optional(),
-        // External reviewer transport (cross-repo contract §2). Absent ⇒ the
+        // External reviewer transport (external reviewer contract). Absent ⇒ the
         // in-Dogsled model judge (`model:`) / panel behavior is unchanged.
         reviewer: AgentReviewerSchema.optional(),
         instructions_path: z.string().min(1).optional(),

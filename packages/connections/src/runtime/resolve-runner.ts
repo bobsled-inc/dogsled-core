@@ -2,7 +2,7 @@
  * `resolveRunner` — the single entry point Model Spec calls to turn a validated
  * integration into an `SqlRunnerModule`.
  *
- * Dispatch order (per the Notion sub-spec): custom → built-in → fail.
+ * Dispatch order: custom → built-in → fail.
  *
  *   1. If a `CustomRunnerFactory` is registered for
  *      `(integration.source_type, integration.auth.type)`, it wins

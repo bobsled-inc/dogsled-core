@@ -236,7 +236,7 @@ export interface AgentPolicy {
   /** Optional external reviewer transport. Wins over `legacyModel`/`panel`. */
   reviewer?: ReviewerConfig;
   /**
-   * User-facing judge tier for the review phase (cross-repo contract §5).
+   * User-facing judge tier for the review phase (external reviewer contract).
    * Absent ⇒ model (default) with today's precedence unchanged (external
    * reviewer still wins when present). `'model'` pins the in-Dogsled model judge
    * and ignores `reviewer` / `reviewerOverride`. `'agent'` requires an external
