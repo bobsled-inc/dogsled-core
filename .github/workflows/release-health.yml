@@ -117,11 +117,16 @@ jobs:
           path: ${{ runner.temp }}/health-check
 
       - name: POST report to Husky
-        if: vars.HUSKY_ORIGIN != ''
         env:
-          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+          HUSKY_ORIGIN: ${{ secrets.HUSKY_ORIGIN || vars.HUSKY_ORIGIN }}
         run: |
           set -euo pipefail
+          if [ -z "$HUSKY_ORIGIN" ]; then
+            echo '> **Note:** `HUSKY_ORIGIN` is not set. The health report was uploaded as an artifact but not sent to Husky.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          host="${HUSKY_ORIGIN#*://}"
+          printf '::add-mask::%s\n' "$HUSKY_ORIGIN" "${host%%[/:]*}"
           report="$RUNNER_TEMP/health-check/health-report.json"
           if [ ! -f "$report" ]; then
             echo "No report to send."
@@ -131,20 +136,17 @@ jobs:
             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=husky" \
             | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>process.stdout.write(JSON.parse(d).value))")
-          status=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
-            -o /tmp/husky-response.txt -w '%{http_code}' \
+          status=$(curl --silent --connect-timeout 10 --max-time 30 \
+            -o /dev/null -w '%{http_code}' \
             -X POST \
             -H "Authorization: Bearer $token" \
             -H "Content-Type: application/json" \
             -d @"$report" \
-            "$HUSKY_ORIGIN/api/health/report")
+            "$HUSKY_ORIGIN/api/health/report" 2>/dev/null) || {
+            echo "Husky request failed (HTTP $status)."
+            exit 1
+          }
           echo "Husky responded $status"
-          cat /tmp/husky-response.txt || true
           if [ "$status" -ge 400 ]; then
             echo "> **Warning:** Husky rejected the report with HTTP $status." >> "$GITHUB_STEP_SUMMARY"
           fi
-
-      - name: Note when HUSKY_ORIGIN is unset
-        if: vars.HUSKY_ORIGIN == ''
-        run: |
-          echo '> **Note:** `HUSKY_ORIGIN` is not set. The health report was uploaded as an artifact but not sent to Husky.' >> "$GITHUB_STEP_SUMMARY"

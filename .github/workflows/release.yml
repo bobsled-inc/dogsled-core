@@ -330,7 +330,7 @@ jobs:
       - name: Notify Husky that a release awaits approval
         id: husky
         env:
-          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+          HUSKY_ORIGIN: ${{ secrets.HUSKY_ORIGIN || vars.HUSKY_ORIGIN }}
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
           RELEASE_BREAKING: ${{ needs.prepare.outputs.breaking }}
           NOTIFY_ONE_LINE: ${{ needs.prepare.outputs.notify_one_line }}
@@ -342,6 +342,8 @@ jobs:
             printf '%s\n' 'Husky notification skipped: HUSKY_ORIGIN is not configured.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          host="${HUSKY_ORIGIN#*://}"
+          printf '::add-mask::%s\n' "$HUSKY_ORIGIN" "${host%%[/:]*}"
           token="$(curl --silent --fail --header "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=husky" | jq --raw-output '.value')" || {
             printf '%s\n' 'Failed to obtain OIDC token for Husky (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
@@ -369,19 +371,20 @@ jobs:
             exit 0
           }
           response="$(
-            curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            curl --fail --silent --connect-timeout 10 --max-time 30 \
               --header "Authorization: Bearer $token" \
               --header "Content-Type: application/json; charset=utf-8" \
               --data "$payload" \
+              --write-out '\n%{http_code}' \
               "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null
           )" || {
-            printf '%s\n' 'Husky notification failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+            printf 'Husky notification failed (HTTP %s, non-blocking).\n' "${response##*$'\n'}" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           }
-          if jq --exit-status '.ok' <<< "$response" > /dev/null 2>&1; then
+          if jq --exit-status '.ok' <<< "${response%$'\n'*}" > /dev/null 2>&1; then
             printf 'notified=true\n' >> "$GITHUB_OUTPUT"
           else
-            printf 'Husky rejected the notification: %s\n' "$(jq --raw-output '.error // "unknown"' <<< "$response" 2>/dev/null)" >> "$GITHUB_STEP_SUMMARY"
+            printf 'Husky rejected the notification (HTTP %s, non-blocking).\n' "${response##*$'\n'}" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   approve:
@@ -555,13 +558,17 @@ jobs:
     steps:
       - name: Report release outcome to Husky
         env:
-          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+          HUSKY_ORIGIN: ${{ secrets.HUSKY_ORIGIN || vars.HUSKY_ORIGIN }}
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
           PUBLISH_RESULT: ${{ needs.publish.result }}
           RUN_ID: ${{ github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.tag }}
         run: |
+          if [ -n "$HUSKY_ORIGIN" ]; then
+            host="${HUSKY_ORIGIN#*://}"
+            printf '::add-mask::%s\n' "$HUSKY_ORIGIN" "${host%%[/:]*}"
+          fi
           token="$(curl --silent --fail --header "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=husky" | jq --raw-output '.value')" || {
             printf '%s\n' 'Failed to obtain OIDC token for Husky (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
@@ -587,10 +594,14 @@ jobs:
               runUrl: $runUrl,
               releaseUrl: $releaseUrl
             }')"
-          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
-            --header "Authorization: Bearer $token" \
-            --header "Content-Type: application/json; charset=utf-8" \
-            --data "$payload" \
-            "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null || {
-            printf '%s\n' 'Husky status update failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+          status_code="$(
+            curl --fail --silent --connect-timeout 10 --max-time 30 \
+              --header "Authorization: Bearer $token" \
+              --header "Content-Type: application/json; charset=utf-8" \
+              --data "$payload" \
+              --output /dev/null --write-out '%{http_code}' \
+              "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null
+          )" || {
+            printf 'Husky status update failed (HTTP %s, non-blocking).\n' "$status_code" >> "$GITHUB_STEP_SUMMARY"
           }
+          printf 'Husky responded HTTP %s.\n' "$status_code"

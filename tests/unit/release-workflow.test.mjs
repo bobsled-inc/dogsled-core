@@ -345,7 +345,7 @@ describe('release on merge trigger', () => {
     expect(notify.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
     expect(notify.outputs.notified).toBe('${{ steps.husky.outputs.notified }}');
     const step = notify.steps[0];
-    expect(step.env.HUSKY_ORIGIN).toBe('${{ vars.HUSKY_ORIGIN }}');
+    expect(step.env.HUSKY_ORIGIN).toBe('${{ secrets.HUSKY_ORIGIN || vars.HUSKY_ORIGIN }}');
     expect(step.env.NOTIFY_PRS).toBe('${{ needs.prepare.outputs.notify_prs }}');
     expect(step.env.NOTIFY_ONE_LINE).toBe('${{ needs.prepare.outputs.notify_one_line }}');
     expect(step.env.RELEASE_TAG).toBeUndefined();

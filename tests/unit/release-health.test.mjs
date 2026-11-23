@@ -582,7 +582,7 @@ describe('release-health.yml workflow', () => {
 
   it('the POST step guards on HUSKY_ORIGIN', () => {
     const reportJob = workflow.split('\n  report:')[1];
-    expect(reportJob).toContain("vars.HUSKY_ORIGIN != ''");
+    expect(reportJob).toContain('if [ -z "$HUSKY_ORIGIN" ]; then');
   });
 
   it('uses !cancelled() so report runs even when audit fails (B2)', () => {
@@ -591,7 +591,7 @@ describe('release-health.yml workflow', () => {
 
   it('N9: writes a step-summary note when HUSKY_ORIGIN is unset', () => {
     const reportJob = workflow.split('\n  report:')[1];
-    expect(reportJob).toContain("vars.HUSKY_ORIGIN == ''");
+    expect(reportJob).toContain('`HUSKY_ORIGIN` is not set');
     expect(reportJob).toContain('GITHUB_STEP_SUMMARY');
   });
 
