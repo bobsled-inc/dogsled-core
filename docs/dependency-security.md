@@ -35,9 +35,38 @@ Consumer lockfiles and npm explanations remain local release evidence. The
 release report includes audit dispositions and is printed in Actions logs,
 uploaded as a seven-day Actions artifact, and attached to the GitHub release.
 
+## What `npm audit` shows
+
+These results are from 2026-11-23, with npm 11.8.0 on Node.js 24.13.1 and a
+package packed from `main`, using the one-week release-age cutoff and
+`--ignore-scripts`. New releases or advisories can change them.
+
+**A clean install** reports 6 moderate vulnerabilities, with none high or
+critical. All six rows come from one advisory, GHSA-w5hq-g745-h8pq in `uuid`
+below 11.1.1. `@google-cloud/storage` 7.22.0, which Dogsled installs, brings in
+`uuid` 9.0.1 through `gaxios` 6.7.1 and `teeny-request` 9.0.0. The advisory is
+about the `v3()`, `v5()` and `v6()` functions. In this tree only `gaxios` and
+`teeny-request` load that `uuid`, and they call only `v4()`. npm reports no fix,
+and `npm audit fix` changes nothing. The workspace has a `uuid` override, so a
+source checkout resolves a fixed version; overrides do not apply to your install.
+
+**With the Databricks driver** (`@databricks/sql` 2.4.0) there are also 5 high
+rows: `@databricks/sql`, `proxy-agent`, `pac-proxy-agent`, `get-uri` and
+`basic-ftp` 5.3.1. The high advisory is GHSA-c475-qrg2-pj4r. `basic-ftp` also
+has two moderate ones, GHSA-5pm8-86m8-9m6r and GHSA-r4jh-29pc-gfqr. The driver
+builds its proxy agent, the only way to `basic-ftp`, only when its `proxy` option
+is set, and Dogsled's adapters never set it (see
+[Reviewed exceptions](#reviewed-exceptions)). This does not cover your own code
+that uses the driver with a proxy.
+
+npm offers to fix these rows with `npm audit fix --force`, which installs
+`@databricks/sql` 1.5.0. Do not run it: Dogsled needs 2.0.0 or later and stops
+before connecting with an older driver. Without `--force`, `npm audit fix`
+changes nothing.
+
 ## Routine version updates
 
-Dependabot opens grouped minor/patch PRs weekly, on Mondays 06:00 UTC (up to 2
+Dependabot opens grouped minor/patch PRs weekly, on Mondays 06:00 UTC (up to 6
 for npm, 1 for GitHub Actions), with the same 7-day cooldown. That is just
 before the 06:17 UTC [daily release health check](#daily-release-health-check).
 Semver-major updates are ignored and stay
@@ -92,29 +121,19 @@ or older driver fails before connection creation. Injected test adapters remain
 credential-free. Databricks 1.x is no longer supported. Install 2.x before using
 that integration. Native addons still require their usual platform installation.
 
-Snowflake 3.4.0 became age-eligible on 2026-10-21T11:25:23.294Z and requires
-`toml ^5.0.0`. This floor fixes the older TOML advisories
+Snowflake 3.4.0 requires `toml ^5.0.0`. This floor fixes the older TOML advisories
 GHSA-82x6-q7mm-w9cf and GHSA-v5mp-jgw5-2x6j. TOML 5.0.1 fixes three newer
-high advisories. A workspace override and the exemption above pin it, and both
-clean consumer trees resolve it within Snowflake's range.
+high advisories. A workspace override pins it, and both clean consumer trees
+resolve it within Snowflake's range.
 
-Axios 1.20.0 accepts `follow-redirects ^1.16.0`. Version 1.16.1 became
-age-eligible on 2026-10-22T13:52:31.780Z and fixed GHSA-q3jh-wrc6-jgq8 and
-GHSA-8r9p-f939-6h3c. Version 1.16.2 fixes GHSA-mrwp-f3q8-3g9p (published
-2026-10-25T21:32:25Z; age-eligible 2026-11-15T21:32:25Z). A workspace override
-and the exemption above pin it to 1.16.2, and the lockfile resolves 1.16.2 everywhere.
-
-MCP SDK 1.32.0 became age-eligible on 2026-10-23T17:32:51.427Z.
-The workspace catalog and lockfile now pin this version, which also supplies the
-staged Dogsled runtime dependency. All MCP workspace and consumer exceptions
-have been removed.
-
-The exempted versions above replace every undici, Zod, TOML, DOMPurify, Next and
-body-parser exception. The catalog pins undici 8.12.2 for Dogsled's own HTTP
-clients and Zod 4.6.6 for every package and the npm bundle. The `undici@7`,
-`undici@6`, `toml`, `dompurify` and `body-parser` overrides cover the
-Turbopuffer, AI SDK, Snowflake, Mermaid and MCP SDK copies, and the clean
-consumer trees resolve the same versions.
+The exact versions of other dependencies are in `pnpm-workspace.yaml`. The
+catalog pins undici for Dogsled's own HTTP clients, Zod for every package and the
+npm bundle, and the MCP SDK for the extractor and the published package. The
+`undici@7`, `undici@6`, `toml`, `dompurify` and `body-parser` overrides cover the
+Turbopuffer, AI SDK, Snowflake, Mermaid and MCP SDK copies in the workspace. The
+`axios` and `follow-redirects` overrides pin the copies that Snowflake and other
+packages use. Overrides do not reach the clean consumer trees, which resolve
+current versions within each package's range.
 
 The published Dogsled manifest leaves optional drivers optional and does not
 promote the internal peer declarations. npm can otherwise reject installing
@@ -123,8 +142,8 @@ internal manifests declare only other bundled packages: npm treats any other
 dependency or peer they declare as part of the bundle when it is installed under
 Dogsled, as in a global install, and leaves its folder empty. The top-level
 manifest declares every external runtime dependency instead. Missing drivers
-are not forced into the project. The runtime checks above reject unsupported
-versions when that warehouse is actually used.
+are not forced into the project. The runtime checks above reject versions below
+the minimum when that warehouse is actually used.
 
 ## Reviewed exceptions
 
@@ -140,8 +159,9 @@ These exceptions describe Dogsled's adapters, not arbitrary direct SDK usage.
   check command and connections runner pass only host, path and token.
   Regression tests assert those exact options and the absence of `proxy`. The
   PAC/FTP path cannot receive input through these adapters. Re-reviewed on
-  2026-11-13: no upstream fix path, because get-uri 8.0.1 still requires
-  basic-ftp ^5.3.1 and the fix is only in basic-ftp 6.2.1. Review by 2026-12-20.
+  2026-11-13. As of 2026-11-23 no supported driver has a fix: get-uri 8.0.2 uses
+  a fixed basic-ftp, but every Databricks SQL 2.x release requires proxy-agent
+  ^6.3.1, whose get-uri 6 requires basic-ftp ^5. Review by 2026-12-20.
   Databricks SQL 3.0.0 keeps that proxy path but its `engines` excludes Node.js
   24.0 through 24.22.0, which Dogsled supports, so the optional peer ranges are
   capped at `>=2.0.0 <3` until maintainers decide to support 3.x.
@@ -229,6 +249,6 @@ target files in core's main branch ruleset.
 
 The scripts live in `scripts/deps/`:
 
-- `planner.mjs` — pure functions (classification, validation, contract findings builder).
+- `health-findings.mjs` — pure functions (classification, validation, contract findings builder).
 - `health-check.mjs` — CLI entry: reads expiries, builds report, POSTs to Husky.
 - `consumer-check.mjs` — builds tarball, runs consumer audit, classifies findings.
