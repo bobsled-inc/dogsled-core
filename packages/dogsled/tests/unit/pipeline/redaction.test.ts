@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createPipelineRedactor } from '../../../src/pipeline/redaction.js';
 
-/** The credential shapes as single backtracking patterns: correct, but quadratic in the text. */
+/** The credential shapes as single patterns, as a reference for the output. */
 function referenceRedact(value: string): string {
   return value
     .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi, '$1 [REDACTED]')

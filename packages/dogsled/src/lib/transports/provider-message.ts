@@ -188,10 +188,13 @@ export function createActionSecretRedactor(
 
 /**
  * Redact credential values from an error message raised while sending a request. Values
- * shorter than four characters are kept, because they would match ordinary prose and statuses.
+ * with fewer than four matched characters are kept, because they would match ordinary prose and
+ * statuses.
  */
 export function redactCredentialValues(message: string, values: Iterable<string>): string {
-  const credentials = [...values].filter((value) => value.length >= MIN_REQUEST_CREDENTIAL_CHARS);
+  const credentials = [...values].filter(
+    (value) => compactCredentialText(value).length >= MIN_REQUEST_CREDENTIAL_CHARS
+  );
   return createCredentialRedactor(credentials)(message);
 }
 

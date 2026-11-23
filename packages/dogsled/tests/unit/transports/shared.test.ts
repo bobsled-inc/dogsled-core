@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createActionSecretRedactor,
   providerMessageFromBody,
+  redactCredentialValues,
   requestCredentialValues,
 } from '../../../src/lib/transports/provider-message.js';
 import {
@@ -588,6 +589,15 @@ describe('createActionSecretRedactor matching', () => {
     expect(redactedInputs).toBeGreaterThan(200);
   });
 
+  it.each([
+    ['abXXYYzz', '%abXXYYzz', '%[REDACTED]'],
+    ['bXXYYzz', '%abXXYYzz', '%a[REDACTED]'],
+    ['XXYYzz%a', 'XXYYzz%ab', '[REDACTED]b'],
+    ['XXYYzz%', 'XXYYzz%ab', '[REDACTED]ab'],
+  ])('redacts %s where an escape in %s crosses its edge', (credential, text, expected) => {
+    expect(createActionSecretRedactor([credential])(text)).toBe(expected);
+  });
+
   it.each([1_000, 4_000, 8_000, 32_000])(
     'redacts overlapping credentials that cover %i characters as one span',
     (length) => {
@@ -613,6 +623,18 @@ describe('createActionSecretRedactor matching', () => {
       expect(performance.now() - started).toBeLessThan(2_000);
     }
   );
+});
+
+describe('redactCredentialValues', () => {
+  it('counts only the characters that are matched', () => {
+    const message = 'Webhook request failed: 415 1 11';
+    for (const value of ['1', '415', '   1', '\u200b1\u200b1\u200b', ' 4\n1\t5 ']) {
+      expect(redactCredentialValues(message, [value])).toBe(message);
+    }
+    expect(redactCredentialValues(message, [' fa iled '])).toBe(
+      'Webhook request [REDACTED]: 415 1 11'
+    );
+  });
 });
 
 describe('requestCredentialValues', () => {

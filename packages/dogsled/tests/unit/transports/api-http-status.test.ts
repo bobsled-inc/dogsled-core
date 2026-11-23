@@ -113,6 +113,34 @@ describe('executeApiAction through the real ExtractorClient', () => {
     vi.restoreAllMocks();
   });
 
+  it.each([
+    ['declared', { secrets: undefined }],
+    ['host-supplied', { secrets: { ACME_TOKEN: 'acme-planner-value' } }],
+  ])('redacts a %s credential from a request planning error', async (_label, { secrets }) => {
+    const credential = 'acme-planner-value';
+    vi.stubEnv('ACME_TOKEN', credential);
+
+    const result = await executeApiAction(
+      makeAction(),
+      inputs,
+      {
+        resolvedIntegration: { ...makeIntegration(), auth_env_vars: ['ACME_TOKEN'] },
+        ...(secrets ? { secrets } : {}),
+      },
+      {
+        buildRequest: async () => {
+          throw new Error(`Cannot plan ${credential} here`);
+        },
+      }
+    );
+
+    expect(result.error).toEqual({
+      code: 'validation_error',
+      message: 'Cannot plan [REDACTED] here',
+      retryable: false,
+    });
+  });
+
   it('sends the request and succeeds on a 2xx response', async () => {
     const fetchMock = vi.fn(
       async () => new Response(JSON.stringify({ id: '42' }), { status: 200 })
