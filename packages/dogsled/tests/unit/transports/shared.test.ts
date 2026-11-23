@@ -384,6 +384,79 @@ describe('providerMessageFromBody', () => {
   });
 });
 
+describe('providerMessageFromBody with long bodies', () => {
+  const bodyBytes = 64 * 1024;
+  const fill = (unit: string, length = bodyBytes) =>
+    unit.repeat(Math.ceil(length / unit.length)).slice(0, length);
+  const message = (text: string, secrets: string[] = ['declared-secret-value']) =>
+    providerMessageFromBody(
+      JSON.stringify({ message: text }),
+      createActionSecretRedactor(secrets)
+    ) ?? '';
+
+  // Redaction time must stay proportional to the text. These take
+  // milliseconds, and the bound leaves room for a busy CI runner.
+  it.each([
+    ['one long word', fill('a')],
+    ['a word of credential names', fill('token.')],
+    ['a word of punctuation', fill('-')],
+    ['URL prefixes without a password', fill('a://b:')],
+    ['URL prefixes before an at sign', `${fill('a://b:')}@`],
+    ['a long scheme and a long user', `${fill('a', 32_000)}://${fill('b', 32_000)}`],
+    ['a long scheme, user and password', `${fill('a', 30_000)}://b:${fill('c', 30_000)}@d`],
+    [
+      'one long international host',
+      `https://${Array.from({ length: 20_000 }, (_, index) => String.fromCodePoint(0x4e00 + index)).join('')}`,
+    ],
+  ])('bounds the work for %s', { timeout: 120_000 }, (_label, text) => {
+    const started = performance.now();
+    const result = message(text);
+    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(result.length).toBeLessThanOrEqual(300);
+  });
+
+  it.each([1, 10, 150, 285, 290, 295, 298, 299, 300, 301, 4_000, 4_096, 8_192, 65_000])(
+    'leaves no part of a declared credential that starts at character %i',
+    (offset) => {
+      const secret = 'Zq7Wk2Xv9Rt4Hn6Bm1Yp';
+      const result = message(`${fill('. ', offset)}${secret} after`, [secret]);
+
+      for (let start = 0; start + 4 <= secret.length; start += 1) {
+        expect(result).not.toContain(secret.slice(start, start + 4));
+      }
+    }
+  );
+
+  const longSecret = (length: number) => fill('Zq7Wk2Xv9', length);
+
+  it.each([301, 1_500])('redacts a declared credential of %i characters', (length) => {
+    const result = message(`Refused ${longSecret(length)} now`, [longSecret(length)]);
+    expect(result).toBe('Refused [REDACTED] now');
+  });
+
+  it.each([
+    ['Bearer ', '', 301],
+    ['Basic ', '', 4_097],
+    ['api_key=', '', 20_000],
+    ['client_secret: "', '"', 60_000],
+    ['postgres://user:', '@db.example.com/main', 60_000],
+  ])('redacts an undeclared long credential after "%s"', (prefix, suffix, length) => {
+    const result = message(`Refused ${prefix}${longSecret(length)}${suffix} now`);
+    expect(result).not.toContain('Zq7W');
+    expect(result).toMatch(/^Refused .*\[REDACTED\].* now$/);
+  });
+
+  it.each(['Bearer ', 'api_key=', 'Password: ', 'https://user:', 'redis://user:'])(
+    'redacts an undeclared credential after "%s" that straddles the cap',
+    (prefix) => {
+      for (let offset = 260; offset <= 300; offset += 1) {
+        const result = message(`${fill('x', offset - 1)} ${prefix}Zq7Wk2Xv9Rt4@host tail`);
+        expect(result).not.toMatch(/Zq7|Wk2|Xv9|Rt4/);
+      }
+    }
+  );
+});
+
 describe('requestCredentialValues', () => {
   it('adds each credential without its scheme and the decoded Basic credential', () => {
     const payload = Buffer.from('acme-user:basic-pass-1').toString('base64');

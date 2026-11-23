@@ -5,6 +5,9 @@ import { escapeRegExp } from '../regex.js';
 
 const MAX_PROVIDER_MESSAGE_CHARS = 300;
 const MIN_REQUEST_CREDENTIAL_CHARS = 4;
+/** DNS names stop at 253 characters. Parsing a far longer international host is quadratic. */
+const MAX_URL_AUTHORITY_CHARS = 1_024;
+const URL_AUTHORITY_RE = /^https?:[\\/]*[^\\/?#]*/i;
 const REDACTED = '[REDACTED]';
 const CREDENTIAL_GAP_PATTERN = '[\\s\\p{Cc}\\p{Cf}]*';
 const AUTH_SCHEME_VALUE_RE = /^([A-Za-z][A-Za-z0-9!#$%&'*+.^_`|~-]*)\s+(\S.*)$/;
@@ -129,14 +132,19 @@ export function requestCredentialValues(values: Iterable<string>): string[] {
 }
 
 function sanitizeProviderUrls(value: string): string {
-  return value.replace(/https?:\/\/[^\s"'<>)\]]+/gi, (url) => sanitizeUrlForError(url));
+  return value.replace(/https?:\/\/[^\s"'<>)\]]+/gi, (url) =>
+    URL_AUTHORITY_RE.exec(url)![0].length > MAX_URL_AUTHORITY_CHARS
+      ? '[invalid-url]'
+      : sanitizeUrlForError(url)
+  );
 }
 
 /**
  * Normalize provider prose, sanitize URLs, then redact as the last content
  * change. URL parsing can rewrite a hostname, so text is redacted both before
- * and after it. Only the length cap follows, and truncating to a prefix cannot
- * reassemble a redacted value.
+ * and after it. The whole text is redacted, however long, and only the length cap
+ * follows, so a cut can neither split a credential before it is redacted nor
+ * reassemble a redacted one.
  */
 function boundProviderMessage(
   value: string,
