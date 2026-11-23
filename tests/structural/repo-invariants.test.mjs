@@ -463,9 +463,6 @@ describe('publish hygiene', () => {
       );
     }
   });
-
-  // Test removed: 'keeps npm OIDC isolated from repository write access'
-  // Reason: release.yml was deleted (not needed in this staging repo).
 });
 
 describe('package boundaries', () => {

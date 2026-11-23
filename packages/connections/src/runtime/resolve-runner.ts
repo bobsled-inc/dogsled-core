@@ -35,7 +35,7 @@ export interface ResolveRunnerOptions {
 
   /**
    * Secret resolver passed to the chosen factory. Custom runners may need
-   * secondary env-var lookups (e.g. SledHouse pulling a GCP SA email).
+   * secondary env-var lookups (e.g. a host-provided runner reading a GCP SA email).
    * Built-in runners operate on the already-interpolated integration, so
    * this is informational for them.
    */
