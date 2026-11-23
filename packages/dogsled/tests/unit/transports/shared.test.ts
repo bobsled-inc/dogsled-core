@@ -1,3 +1,6 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
 import { DogsledRuntimeError, type DogsledRuntimeErrorOptions } from '@bobsled-inc/protocol';
 import { describe, expect, it } from 'vitest';
 
@@ -453,6 +456,161 @@ describe('providerMessageFromBody with long bodies', () => {
         const result = message(`${fill('x', offset - 1)} ${prefix}Zq7Wk2Xv9Rt4@host tail`);
         expect(result).not.toMatch(/Zq7|Wk2|Xv9|Rt4/);
       }
+    }
+  );
+});
+
+describe('provider message URLs', () => {
+  const login = (password: string) => `user:${password}@`;
+
+  it.each([
+    [`https://${login('declared-value')}example.com/a?b=c`, 'https://example.com/a?[redacted]'],
+    [`https://${login('other')}example.com/a?b=c`, 'https://example.com/a?[redacted]'],
+    ['https://declared-value.example.com/a?b=c', '[invalid-url]'],
+    ['https://example.com/declared-value/a?b=c', 'https://example.com/[REDACTED]/a?[redacted]'],
+    [`https://${login('other')}[::1]:8443/a?b=c`, 'https://[::1]:8443/a?[redacted]'],
+    ['[https://example.com/a?b=c]', '[https://example.com/a?[redacted]]'],
+    ['(https://example.com/a?b=c)', '(https://example.com/a?[redacted])'],
+  ])('keeps no login or query from %s', (url, expected) => {
+    expect(
+      providerMessageFromBody(
+        JSON.stringify({ message: `see ${url} now` }),
+        createActionSecretRedactor(['declared-value'])
+      )
+    ).toBe(`see ${expected} now`);
+  });
+
+  it('sanitizes international and encoded hosts in a separate process', { timeout: 60_000 }, () => {
+    const script = `
+      import { createActionSecretRedactor, providerMessageFromBody } from ${JSON.stringify(
+        new URL('../../../src/lib/transports/provider-message.ts', import.meta.url).href
+      )};
+      const parts = ['xn--', '\\u00e9', 'x', '-', '%C3%A9', '.', '\\u00ad', '\\u4e2d', '1'];
+      const redact = createActionSecretRedactor(['declared-value']);
+      const leaks = [];
+      let count = 0;
+      for (const a of parts) for (const b of parts) for (const c of parts) for (const d of parts) {
+        const url = 'https://userpart:passpart@' + a + b + c + d + '/path?key=querypart';
+        const message = providerMessageFromBody(JSON.stringify({ message: 'see ' + url }), redact);
+        if (/userpart|passpart|querypart/.test(message)) leaks.push(url);
+        count += 1;
+      }
+      process.stdout.write(JSON.stringify({ count, leaks }));
+    `;
+    const child = spawnSync(
+      process.execPath,
+      ['--import', 'tsx/esm', '--input-type=module', '--eval', script],
+      {
+        cwd: fileURLToPath(new URL('../../..', import.meta.url)),
+        encoding: 'utf8',
+        timeout: 50_000,
+      }
+    );
+    expect(child.signal).toBeNull();
+    expect(child.status, child.stderr.slice(0, 500)).toBe(0);
+    expect(JSON.parse(child.stdout)).toEqual({ count: 6_561, leaks: [] });
+  });
+});
+
+describe('createActionSecretRedactor matching', () => {
+  const IGNORED = '[\\s\\p{Cc}\\p{Cf}]*';
+
+  /** One pattern per credential form: correct, but only usable for short credentials. */
+  function referencePattern(credential: string): RegExp {
+    const characters = [...credential.matchAll(/%[0-9a-f]{2}|./giu)].flatMap(([part]) =>
+      Array.from(part, (character) =>
+        part.length === 3 && /[a-f]/i.test(character)
+          ? `[${character.toLowerCase()}${character.toUpperCase()}]`
+          : character.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+      )
+    );
+    return new RegExp(characters.join(IGNORED), 'gu');
+  }
+
+  function referenceRedact(text: string, credential: string): string {
+    const json = JSON.stringify(credential).slice(1, -1);
+    const forms = [
+      credential,
+      encodeURIComponent(credential),
+      new URLSearchParams({ q: credential }).toString().slice(2),
+      json,
+      json.replaceAll('/', '\\/'),
+    ].map((form) => form.replace(/[\p{Cf}\p{Cc}\s]+/gu, ''));
+    const covered = new Array<boolean>(text.length + 1).fill(false);
+    for (const pattern of new Set(forms.filter(Boolean).map(referencePattern))) {
+      for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
+        covered.fill(true, match.index, match.index + match[0].length);
+        pattern.lastIndex = match.index + (text.codePointAt(match.index)! > 0xffff ? 2 : 1);
+      }
+    }
+    return Array.from({ length: text.length }, (_, index) => {
+      if (!covered[index]) return text[index]!;
+      return covered[index - 1] ? '' : '[REDACTED]';
+    }).join('');
+  }
+
+  it('redacts exactly what one pattern per credential form redacts', { timeout: 60_000 }, () => {
+    const alphabets = [
+      ['a', 'b'],
+      ['a', 'f', 'F', 'c', 'C', '2', '%', '%2f', '%2F', '%cf', '%CF'],
+      ['a', '/', '+', '"', '\\', '\u00e9', ' ', '\u200b', '\n'],
+      ['x', '\u{1F511}', '\u00ad', '%f0%9f%94%91', '\u{e0001}'],
+      ['A', 'a', '.', '*', '(', '[', '$', '^', '|', '?', '-'],
+    ];
+    let state = 20_261_123;
+    const next = (limit: number): number => {
+      state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+      return Math.floor((state / 2 ** 32) * limit);
+    };
+    let redactedInputs = 0;
+    for (let round = 0; round < 400; round += 1) {
+      const alphabet = alphabets[next(alphabets.length)]!;
+      const word = (length: number) =>
+        Array.from({ length: 1 + next(length) }, () => alphabet[next(alphabet.length)]!).join('');
+      const credential = word(8);
+      const forms = [
+        credential,
+        encodeURIComponent(credential),
+        encodeURIComponent(credential).replace(/%[0-9A-F]{2}/g, (hex) => hex.toLowerCase()),
+        Array.from(credential).join('\u200b'),
+        JSON.stringify(credential).slice(1, -1),
+      ];
+      const text = Array.from({ length: 1 + next(4) }, () =>
+        next(2) === 0 ? forms[next(forms.length)]! : word(6)
+      ).join('');
+      const expected = referenceRedact(text, credential);
+      if (expected !== text) redactedInputs += 1;
+      expect(
+        createActionSecretRedactor([credential])(text),
+        JSON.stringify({ credential, text })
+      ).toBe(expected);
+    }
+    expect(redactedInputs).toBeGreaterThan(200);
+  });
+
+  it.each([1_000, 4_000, 8_000, 32_000])(
+    'redacts overlapping credentials that cover %i characters as one span',
+    (length) => {
+      const text = Array.from({ length }, (_, index) => ((index * 7_919) % 36).toString(36)).join(
+        ''
+      );
+      const third = Math.floor(length / 3);
+      const redact = createActionSecretRedactor([text.slice(0, 2 * third), text.slice(third)]);
+      expect(redact(`before ${text} after`)).toBe('before [REDACTED] after');
+    }
+  );
+
+  it.each([1_000, 32_000])(
+    'bounds the work for a repetitive credential of %i characters',
+    { timeout: 120_000 },
+    (length) => {
+      const repetitive = 'a'.repeat(length);
+      const text = 'a'.repeat(64 * 1024);
+      const started = performance.now();
+      expect(createActionSecretRedactor([repetitive])(text)).toBe('[REDACTED]');
+      expect(createActionSecretRedactor([`${repetitive}b`])(text)).toBe(text);
+      expect(createActionSecretRedactor([`b${repetitive}`])(text)).toBe(text);
+      expect(performance.now() - started).toBeLessThan(2_000);
     }
   );
 });

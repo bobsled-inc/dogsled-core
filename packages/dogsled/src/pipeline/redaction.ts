@@ -4,7 +4,7 @@ const REDACTED = '[REDACTED]';
 const AUTH_SCHEME_VALUE_RE = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi;
 /**
  * The match starts at the keyword, not at the word that contains it: the text before the
- * keyword is kept either way, and scanning for it made long words quadratic.
+ * keyword is kept either way.
  */
 const CREDENTIAL_ASSIGNMENT_RE =
   /(api[_ -]?key|private[_ -]?key|token|passphrase|password|secret)\b(\s*[:=]\s*)("[^"]*"|'[^']*'|[^\s,;]+)/gi;

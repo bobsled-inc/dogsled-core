@@ -27,7 +27,7 @@ import type { Action } from '../action-registry.js';
 import type { ActionResult, ExecuteOptions } from '../action-executor.js';
 import { resolveActionProjectRoot } from '../action-paths.js';
 import { createReferenceCollector, describeActionRequest } from '../action-preview-request.js';
-import { classifyTransportError, toActionResultError } from './shared.js';
+import { classifyTransportError, redactActionMessage, toActionResultError } from './shared.js';
 
 interface ApiClientLike {
   request(options: {
@@ -302,7 +302,11 @@ export async function executeApiAction(
         action,
         attemptedAt,
         startedAt,
-        message: error instanceof Error ? error.message : String(error),
+        message: redactActionMessage(
+          error instanceof Error ? error.message : String(error),
+          options,
+          integration.auth_env_vars
+        ),
       });
     }
 

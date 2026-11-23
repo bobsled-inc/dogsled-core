@@ -5,6 +5,7 @@ import type { ActionErrorCode, ActionResult, ExecuteOptions } from '../action-ex
 import {
   createActionSecretRedactor,
   providerMessageFromBody,
+  redactCredentialValues,
   requestCredentialValues,
 } from './provider-message.js';
 
@@ -259,10 +260,23 @@ function isClientErrorStatus(status: number | undefined): status is number {
   return status !== undefined && status >= 400 && status <= 499;
 }
 
+/** Redact the Action's declared credential values, and any sent values, from an error message. */
+export function redactActionMessage(
+  message: string,
+  options: ExecuteOptions | undefined,
+  authEnvVars: readonly string[] | undefined,
+  requestSecretValues: Iterable<string> = []
+): string {
+  return redactCredentialValues(message, [
+    ...actionSecretValues(options, authEnvVars),
+    ...requestCredentialValues(requestSecretValues),
+  ]);
+}
+
 /**
  * Build the Action result error. Adds the provider status and, for a 4xx, a bounded
- * provider message with the Action's declared credential values and the values it
- * sent with the request redacted.
+ * provider message. The Action's declared credential values and the values it sent with
+ * the request are redacted from both messages.
  */
 export function toActionResultError(
   classification: TransportErrorClassification,
@@ -271,19 +285,22 @@ export function toActionResultError(
   requestSecretValues: Iterable<string> = []
 ): ActionResultError {
   const { providerStatus, providerBody, ...normalized } = classification;
+  const sentValues = [...requestSecretValues];
   const providerMessage =
     isClientErrorStatus(providerStatus) && providerBody !== undefined
       ? providerMessageFromBody(
           providerBody,
           createActionSecretRedactor([
             ...actionSecretValues(options, authEnvVars),
-            ...requestCredentialValues(requestSecretValues),
+            ...requestCredentialValues(sentValues),
           ])
         )
       : undefined;
   return {
     ...normalized,
-    ...(options?.safeErrors ? { message: safeTransportErrorMessage(normalized.code) } : {}),
+    message: options?.safeErrors
+      ? safeTransportErrorMessage(normalized.code)
+      : redactActionMessage(normalized.message, options, authEnvVars, sentValues),
     ...(providerStatus !== undefined ? { provider_status: providerStatus } : {}),
     ...(providerMessage !== undefined ? { provider_message: providerMessage } : {}),
   };

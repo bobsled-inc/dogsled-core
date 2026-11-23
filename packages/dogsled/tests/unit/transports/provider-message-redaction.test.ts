@@ -445,6 +445,108 @@ describe('provider message redaction through executeAction', () => {
     }
   );
 
+  const credentialAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789/+';
+  /** A credential in which any window of eight characters is unlikely to occur elsewhere. */
+  function longCredential(length: number): string {
+    let state = 7;
+    return Array.from({ length }, () => {
+      state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+      return credentialAlphabet[Math.floor((state / 2 ** 32) * credentialAlphabet.length)]!;
+    }).join('');
+  }
+
+  function expectNoPart(result: ActionResult, credential: string): void {
+    const serialized = JSON.stringify(result).replace(/[\p{Cf}\s]|\\[spu]\{?/gu, '');
+    for (let start = 0; start + 8 <= credential.length; start += 4) {
+      expect(serialized.includes(credential.slice(start, start + 8))).toBe(false);
+    }
+  }
+
+  async function refuse(
+    transport: 'api' | 'webhook',
+    credential: string,
+    message: string,
+    safeErrors: boolean
+  ): Promise<ActionResult> {
+    vi.stubEnv('WEBHOOK_TOKEN', credential);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => providerResponse(403, messageBody(message)))
+    );
+    return transport === 'api'
+      ? await executeAction(makeApiAction(), inputs, {
+          resolvedIntegration: makeIntegration(
+            { auth: { type: 'bearer', token: '${{ env.WEBHOOK_TOKEN }}' } },
+            ['WEBHOOK_TOKEN']
+          ),
+          safeErrors,
+        })
+      : await executeAction(
+          makeWebhookAction({ Authorization: 'Bearer ${{ env.WEBHOOK_TOKEN }}' }),
+          { entity_id: 'ent_123' },
+          { safeErrors }
+        );
+  }
+
+  describe.each(['api', 'webhook'] as const)('%s credential lengths', (transport) => {
+    it.each(
+      [1_000, 4_000, 8_000, 32_000].flatMap((length) => [
+        { length, safeErrors: true },
+        { length, safeErrors: false },
+      ])
+    )('handles $length characters with safeErrors $safeErrors', async ({ length, safeErrors }) => {
+      const credential = longCredential(length);
+
+      const silent = await refuse(transport, credential, 'Not allowed.', safeErrors);
+      expect(silent.error).toMatchObject({
+        code: 'permission_denied',
+        provider_status: 403,
+        provider_message: 'Not allowed.',
+      });
+      expectNoPart(silent, credential);
+
+      const reflected = await refuse(transport, credential, `Refused ${credential}.`, safeErrors);
+      expect(reflected.error?.provider_message).toBe('Refused [REDACTED].');
+      expectNoPart(reflected, credential);
+    });
+
+    it.each([1_000, 4_000, 8_000, 32_000])(
+      'finds encoded and split forms of %i characters',
+      async (length) => {
+        const credential = longCredential(length);
+        const half = Math.floor(length / 2);
+        for (const form of [
+          encodeURIComponent(credential),
+          encodeURIComponent(credential).replace(/%[0-9A-F]{2}/g, (hex) => hex.toLowerCase()),
+          `${credential.slice(0, half)}\u200b${credential.slice(half)}`,
+          `${credential.slice(0, half)}\r\n${credential.slice(half)}`,
+        ]) {
+          const result = await refuse(transport, credential, `Refused ${form}.`, true);
+          expect(result.error?.provider_message).toBe('Refused [REDACTED].');
+          expectNoPart(result, credential);
+        }
+      }
+    );
+  });
+
+  it('redacts a credential from an error raised before the request is sent', async () => {
+    const credential = 'acme-pre-request-value-1';
+    vi.stubEnv('WEBHOOK_TOKEN', credential);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL | Request) => new Request(url) as unknown as Response)
+    );
+    const action = makeWebhookAction({});
+    if (action.spec.transport !== 'webhook') throw new Error('Expected a webhook action.');
+    action.spec.webhook.url = 'https://acme:${{ env.WEBHOOK_TOKEN }}@hooks.example.com/notify';
+
+    const result = await executeAction(action, { entity_id: 'ent_123' });
+
+    expect(result.status).toBe('failed');
+    expect(result.error?.message).toContain('[REDACTED]');
+    expectReceiptExcludes(result, [credential]);
+  });
+
   it('previews a dry run without sending a request', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
