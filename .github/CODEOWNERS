@@ -1,3 +1,4 @@
+* @bobsled-inc/dogsled-maintainers
 /.github/ @bobsled-inc/dogsled-maintainers
 /package.json @bobsled-inc/dogsled-maintainers
 /packages/*/package.json @bobsled-inc/dogsled-maintainers

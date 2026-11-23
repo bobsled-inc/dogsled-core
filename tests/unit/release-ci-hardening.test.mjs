@@ -268,6 +268,13 @@ describe('restricted registry read authentication', () => {
 });
 
 describe('reviewed release configuration', () => {
+  it('gives every file a default owner', () => {
+    const rules = read('.github/CODEOWNERS').split('\n').filter(Boolean);
+    expect(rules[0]).toBe('* @bobsled-inc/dogsled-maintainers');
+    // The last matching rule wins, so a later rule without an owner would remove the default.
+    for (const rule of rules) expect(rule).toMatch(/^\S+ @bobsled-inc\/dogsled-maintainers$/);
+  });
+
   it('requires owners for manifests, policy, scanners and legal files', () => {
     const owners = read('.github/CODEOWNERS');
     for (const pattern of [
