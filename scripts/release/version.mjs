@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 
 import { listWorkspacePackages, repoRoot } from '../ci/shared.mjs';
@@ -360,6 +361,6 @@ export async function runVersionCommand(command) {
   }
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   await runVersionCommand(process.argv[2]);
 }

@@ -1,5 +1,13 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -21,11 +29,11 @@ const roots = [];
 afterAll(() => roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true })));
 
 /** A reviewed `main` with the release scripts, pushed to a bare remote. */
-function repository({ access, version = '0.5.0' }) {
+function repository({ access, version = '0.5.0', directory = 'work' }) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'release-visibility-'));
   roots.push(root);
   const remote = path.join(root, 'remote.git');
-  const work = path.join(root, 'work');
+  const work = path.join(root, directory);
   const bin = path.join(root, 'bin');
   for (const directory of [work, bin]) mkdirSync(directory, { recursive: true });
   for (const file of [
@@ -105,6 +113,7 @@ esac
     });
   return {
     base,
+    work,
     git,
     run,
     candidate,
@@ -139,6 +148,7 @@ const pairings = [
   ['private', 'public', false],
   ['public', 'restricted', false],
   ['internal', 'restricted', false],
+  ['', 'restricted', false],
   ['', 'public', false],
 ];
 
@@ -220,6 +230,35 @@ describe('publication policy before the release tag', () => {
       FAKE_VISIBILITY: visibility,
     });
     expect(result.status === 0, result.stderr).toBe(allowed);
+  });
+
+  it.each([
+    ['a symlinked script', 'work', 'linked/publication-policy.mjs'],
+    ['a checkout path with special characters', 'work #1 %41', null],
+  ])('checks when started through %s', (_label, directory, link) => {
+    const r = repository({ access: 'restricted', directory });
+    let script = 'scripts/release/publication-policy.mjs';
+    if (link) {
+      mkdirSync(path.join(r.work, 'linked'));
+      symlinkSync(path.join(r.work, script), path.join(r.work, link));
+      script = link;
+    }
+    for (const [visibility, allowed] of [
+      ['private', true],
+      ['public', false],
+    ]) {
+      const result = r.run(`node ${script}`, {
+        RELEASE_MODE: 'new',
+        RELEASE_POLICY_REF: r.base,
+        RELEASE_REPOSITORY_VISIBILITY: visibility,
+      });
+      expect(result.status === 0, result.stderr).toBe(allowed);
+      if (allowed) expect(result.stdout).toContain('matches the repository visibility');
+      else expect(result.stderr).toContain('requires reviewed publishConfig.access');
+    }
+    const command = r.run('node scripts/release/version.mjs unknown-command', {});
+    expect(command.status).not.toBe(0);
+    expect(command.stderr).toContain('Usage: node scripts/release/version.mjs');
   });
 
   it('rejects anything but an exact commit or release tag', () => {

@@ -137,6 +137,14 @@ describe('Husky log hygiene', () => {
     }
   );
 
+  it.each(names)('%s masks the bare host of an origin with a login, port or path', (name) => {
+    for (const origin of [`https://user:pass@${HOST}:8443`, `https://${HOST}/base`, HOST])
+      expect(runStep(name, { origin }).masks).toEqual([
+        `::add-mask::${origin}`,
+        `::add-mask::${HOST}`,
+      ]);
+  });
+
   it.each(['notify', 'release-status'])('%s stays non-blocking and reports the status', (name) => {
     for (const status of [409, 500]) {
       const result = runStep(name, { status, body: rejected });

@@ -1,4 +1,6 @@
 import { execFileSync } from 'node:child_process';
+import { realpathSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 import { repoRoot } from '../ci/shared.mjs';
 import { publishAccessForPackages } from './access.mjs';
@@ -43,7 +45,7 @@ export function verifyPublicationPolicy({ ref, visibility, mode }, root = repoRo
   });
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   verifyPublicationPolicy({
     ref: process.env.RELEASE_POLICY_REF,
     visibility: process.env.RELEASE_REPOSITORY_VISIBILITY,

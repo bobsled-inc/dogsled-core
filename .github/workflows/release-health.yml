@@ -126,7 +126,9 @@ jobs:
             exit 0
           fi
           host="${HUSKY_ORIGIN#*://}"
-          printf '::add-mask::%s\n' "$HUSKY_ORIGIN" "${host%%[/:]*}"
+          host="${host%%/*}"
+          host="${host##*@}"
+          printf '::add-mask::%s\n' "$HUSKY_ORIGIN" "${host%%:*}"
           report="$RUNNER_TEMP/health-check/health-report.json"
           if [ ! -f "$report" ]; then
             echo "No report to send."
