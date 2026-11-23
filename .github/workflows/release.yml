@@ -267,7 +267,7 @@ jobs:
           git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
       - name: Install reviewed SBOM generator
         timeout-minutes: 5
-        run: npm install --global @cyclonedx/cdxgen@12.8.0 --ignore-scripts --registry=https://registry.npmjs.org/
+        run: npm install --global @cyclonedx/cdxgen@12.8.0 --ignore-scripts --before=2026-11-16 --registry=https://registry.npmjs.org/
       - name: Verify reviewed release tarball
         timeout-minutes: 15
         run: pnpm security:release --execute --out "$RUNNER_TEMP/npm-release"
