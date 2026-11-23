@@ -65,9 +65,21 @@ jobs:
         if: inputs.mode == 'retry'
         env:
           RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/release/version.mjs validate-retry-origin
+      - name: Require package access to match repository visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_POLICY_REF: ${{ inputs.mode == 'retry' && format('refs/tags/v{0}', inputs.version) || github.sha }}
         run: |
-          node scripts/release/version.mjs validate-retry-origin
-          git -c core.hooksPath=/dev/null checkout --detach "refs/tags/v$RELEASE_VERSION"
+          RELEASE_REPOSITORY_VISIBILITY="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')"
+          export RELEASE_REPOSITORY_VISIBILITY
+          node scripts/release/publication-policy.mjs
+      - name: Check out the validated retry tag
+        if: inputs.mode == 'retry'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: git -c core.hooksPath=/dev/null checkout --detach "refs/tags/v$RELEASE_VERSION"
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
@@ -419,11 +431,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
           RELEASE_COMMIT: ${{ needs.release-checks-ok.outputs.commit }}
+          RELEASE_POLICY_REF: ${{ needs.release-checks-ok.outputs.commit }}
           RELEASE_MODE: ${{ inputs.mode }}
         run: |
           git -c core.hooksPath=/dev/null fetch "$RUNNER_TEMP/npm-release/release.bundle" "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$RELEASE_COMMIT"
           node scripts/release/version.mjs verify-candidate
+          RELEASE_REPOSITORY_VISIBILITY="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')"
+          export RELEASE_REPOSITORY_VISIBILITY
+          node scripts/release/publication-policy.mjs
           gh auth setup-git
           git -c core.hooksPath=/dev/null push origin "refs/tags/$RELEASE_TAG"
 
