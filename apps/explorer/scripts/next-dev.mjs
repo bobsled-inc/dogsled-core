@@ -190,6 +190,7 @@ export async function run() {
 
   const child = spawn('next', createNextArgs(resolved.port, resolved.forwardedArgs), {
     stdio: 'inherit',
+    env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
   });
 
   const forwardSignal = (signal) => {

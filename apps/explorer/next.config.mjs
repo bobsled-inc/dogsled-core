@@ -1,3 +1,6 @@
+// Next.js reads this after the config loads, so it covers dev, build, start and lint.
+process.env.NEXT_TELEMETRY_DISABLED = '1';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async redirects() {

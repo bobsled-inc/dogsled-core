@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { listTrackedFiles, relativeToRepo } from '../../scripts/ci/shared.mjs';
 import { createNextArgs } from '../../apps/explorer/scripts/next-dev.mjs';
@@ -8,6 +8,23 @@ import { createNextArgs } from '../../apps/explorer/scripts/next-dev.mjs';
 const read = (relative) => readFileSync(new URL(`../../${relative}`, import.meta.url), 'utf8');
 
 describe('Explorer launch boundary', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it.each(['', '0', undefined])(
+    'turns off Next.js usage data over a caller value of %j',
+    async (value) => {
+      vi.stubEnv('NEXT_TELEMETRY_DISABLED', value);
+      await import('../../apps/explorer/next.config.mjs');
+      expect(process.env.NEXT_TELEMETRY_DISABLED).toBe('1');
+      expect(read('apps/explorer/scripts/next-dev.mjs')).toContain(
+        "env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },"
+      );
+    }
+  );
+
   it('binds every direct Next.js launch script to a numeric loopback address', () => {
     const explorer = JSON.parse(read('apps/explorer/package.json'));
     expect(explorer.scripts.dev).toBe('node ./scripts/next-dev.mjs');
