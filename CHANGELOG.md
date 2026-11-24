@@ -2,6 +2,8 @@
 
 Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/dogsled-core/releases).
 
+Each section lists the changes that first shipped in that version. A version without a section has no entry here; see its GitHub release.
+
 ## Unreleased
 
 - Incremental file Resources no longer stop seeing new files once a path holds more than `limits.max_files_per_run` matching files (10,000 by default). The S3, GCS, SFTP and local clients stopped listing after that many matches, and the count included files an earlier run had already read. A listing comes back in the same order every run (key order on S3 and GCS), so every run listed the same first batch, skipped it as unchanged, and never reached newer keys such as later dated folders. Runs still passed, and only the `files_listed` metric hinted at the problem. This held for structured and document Resources. The limit now counts the files a run tries to read. An incremental run skips the files it has read and reads up to the limit from the rest, so a backlog clears over several runs. A run that stops at the limit with files still to read logs a warning that names the Resource. A file that fails to download counts too, and counts again on each run because it is never marked as read. That keeps one run from downloading without limit, but enough failing files at the front of a path can still hold back the files behind them. A `full_refresh` Resource still reads only the first `max_files_per_run` files on every run, because each run starts at the front again. It now logs the warning too, and the files past the limit stay unread until you raise `limits.max_files_per_run` or narrow `source.path`.
@@ -10,25 +12,47 @@ Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/
 
 - Saved state for a structured or document file Resource keeps one entry of a few hundred bytes for every file read, and keeps it after the file is gone, so it now grows with the path instead of stopping near the limit. A million files make a state file of hundreds of megabytes, and the HTTPS state backend cannot load a state document over 8 MiB, which a few tens of thousands of files fill. The `STATE` message of a structured or document file Resource no longer lists the files read: the loader ignores the list, and it would pass the loader's 16 MiB line limit as the path grows.
 
+- The Snowflake loader's OAuth token request now fails if the token URL redirects.
+
+## 0.5.0
+
 - A file Resource with `source.kind: copy` now moves each new file as it is, from S3, GCS, SFTP or a local folder to a `local`, `s3` or `gcs` destination, without parsing it into rows. A file lands at `<prefix>/<resource name>/<path below the folder before the first wildcard>` with its bytes unchanged. A copy takes `path` and an `incremental_append` replication on `last_modified`, with an optional `cursor.lookback_seconds` (1 hour by default), and refuses `format`, `compression`, `options`, `output` and `include_*`. It takes one destination, needs a loader reading its pipe, and fails a file over `limits.max_file_size_bytes` by name. The extractor sends a new `FILE` protocol message for each file, saves state only after the loader has written every file, and reports `files_processed` and `bytes_downloaded` once per run. An `s3` or `gcs` destination can tag the files a copy writes with `object_metadata` (`--object-metadata` on `dogsled load run`), and a copy then also stores `dogsled-source` (the file's key in the source) and `dogsled-source-modified` on each file. With no `object_metadata`, a copied file gets no tags. Table destinations and loaders from before this release fail on `FILE`, so upgrade the loader with the extractor. After a copy runs on S3 or GCS, an older release reads the state file as damaged, so do not downgrade. Custom `FileDestination` classes keep working: `publish` takes an optional third argument.
+
+## 0.4.6
 
 - Incremental models with `strategy: delete_insert` now work on Snowflake runners that give each statement its own session, such as the Snowflake SQL API. Core sent `BEGIN;`, the `DELETE`, the `INSERT` and `COMMIT;` as four statements, which share a transaction only on one connection, and the Snowflake SQL API rejects a lone `BEGIN`. Snowflake now gets one `EXECUTE IMMEDIATE` Snowflake Scripting block that rolls back on any error. A Scripting block has no DML row count, so Snowflake `delete_insert` models no longer report `rows_affected`. Other warehouses still get four statements on one connection.
 
+## 0.4.5
+
 - When a model publishes to BigQuery from another warehouse or from an API source, each source now lands in its staging table with one load job and one loaded-at `UPDATE`, instead of one of each per 10,000 rows. A 200,000-row source used to take 20 load jobs and 20 `UPDATE`s on one table, and each one counts toward BigQuery's per-table limits: about five table updates every ten seconds and 1,500 table operations a day. Other publish targets still load in 10,000-row files.
+
+## 0.4.4
 
 - Lazy and live sources on BigQuery now finish. Every such query failed with BigQuery's "Exceeded rate limits: too many table update operations for this table", because Core ran a `CREATE TABLE IF NOT EXISTS` and eight `ALTER TABLE … ADD COLUMN IF NOT EXISTS` statements on `_dogsled_source_metadata`, twice per query, and BigQuery allows about five updates per table every ten seconds, counting statements that change nothing. Core now reads the table's columns from `INFORMATION_SCHEMA.COLUMNS` first, which needs the `bigquery.tables.get` and `bigquery.tables.list` permissions that every role able to alter tables already has. It then creates the table in one statement, adds only the missing columns in one `ALTER TABLE`, or issues no DDL at all. It no longer runs `CREATE SCHEMA` on every BigQuery query, only when the dataset is missing. If several processes set the table up at once and BigQuery rejects one for its rate, that process checks the table again and retries once. A query that reused a BigQuery snapshot then failed with `Unparseable loaded_at timestamp`, because the BigQuery client returns timestamps as objects; those are now read correctly. When a load adds and widens columns on an existing BigQuery table, it does so in one `ALTER TABLE` instead of one per widened column, so a statement BigQuery rejects leaves the table unchanged, with none of the new columns added. BigQuery can only widen `INT64` to `FLOAT64` of the loader's safe widenings; integer, number or boolean to string and boolean to integer now fail with a schema change conflict before any DDL, instead of a BigQuery error. Other warehouses are unchanged.
 
+## 0.4.0
+
 - `local`, `gcs` and `s3` destinations take an optional `stream_subfolder` setting (loader flag `--stream-subfolder`). It adds a folder inside each stream's folder, so a file lands at `<prefix><stream>/<stream_subfolder>/<stream>-<n>.<ext>` instead of `<prefix><stream>/<stream>-<n>.<ext>`. One folder per load can then sit under a stream folder, the layout that tools such as Delta Lake and warehouse external tables read as a table. The setting is off by default, and a destination without it writes exactly the files it wrote before.
+
+## 0.2.0
 
 - A `custom-token` request that gets 429, 500, 502, 503 or 504 is now retried with the transport's `retry` backoff and `Retry-After` handling, within the 30-second token deadline. Only a token endpoint that answers 400, 401 or 403 is reported as an authentication failure. Any other failure keeps its status as a provider failure with code `EXTRACTOR_HTTP_AUTH_PROVIDER_FAILURE`, and 429 and 5xx are retryable, so an Action reports `rate_limited` or `server_error`. A token request that times out is reported as a retryable timeout, and one that cannot connect as a retryable network failure.
 
 - Library hosts that run Resource operations across many processes can share one minted `custom-token` credential. Pass a `CustomTokenStore` as `customTokenStore` to `queryResource`, `queryResourceFanOut`, `lookupResource` or `executeAction`. The store receives the same key the in-process cache uses, the token lifetime and the 5-minute expiry buffer, and a `mint` function to call once when its token is missing or expiring. After a 401, the runtime removes the rejected token from the store only while it is still the stored value, mints once and retries once. `resolveCustomTokenAuthorization`, from `@bobsled-inc/dogsled/resources`, reads the same shared token for an Integration outside a Resource request. Without a store, the in-process cache works as before.
 
+## 0.1.14
+
 - Agentic runs on the row store with more than 1,000 output rows failed at publication in v0.1.11 and v0.1.12 after all model calls had been made. The built-in publishers now publish up to the row store's limits of 10,000 rows and 16 MiB.
+
+## 0.1.13
 
 - Library hosts can now use the hardened SFTP client directly, through the new `@bobsled-inc/dogsled/sftp` subpath, which exports `SftpFileStorageClient`, its types, `SFTP_ERROR_CODES` and the error classes. `ssh2` stays optional and loads only when a client connects, so install it alongside Dogsled to use this subpath. A download can pin the file with `expected: { size, mtimeSeconds }`: the FSTATs at open and after the last read must match, and every byte must be read, or it fails with the new non-retryable code `SFTP_FILE_CHANGED`. Passing the same `progress` object and target to a later attempt skips the chunks already written, so a download can continue on a new connection after `SFTP_CONNECTION_LOST` or `SFTP_TIMEOUT`. Downloads without `expected` behave as before.
 
+## 0.1.12
+
 - Fix `invalid_store_limits` when a host passes a warehouse row store from `model-spec/agentic` to `runProject` from `model-spec/project`. The row store's 10,000-row limit now works across package entry points.
+
+## 0.1.11
 
 - Experimental: library hosts can turn on group commit for the warehouse row store with `createWarehouseRowStore(integration, { schema, groupCommit: true })`. The store then saves the starts and finishes of model calls that are waiting with one insert and one header update, instead of about four statements per call one after another, and a call still starts only once its start is saved. The tables do not change: a run saved in groups resumes in a version without them, and the other way round. It is off by default. On one Snowflake account, with model calls that return at once, one run with three calls in flight went from 19 to 69 calls a minute, and 16 runs sharing a schema from 146 to 499: see `packages/model-spec/docs/agentic-group-commit.md`. Progress callbacks then come once per group rather than once per checkpoint. Supplied stores can offer the same with the new optional `AgenticStateSession.checkpointMany`.
 
@@ -36,13 +60,13 @@ Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/
 
 - Clarify how to ask the Dogsled Core plugin to install Dogsled and set up a project.
 
+## 0.1.10
+
 - `applyAgenticCheckpoint` now returns a deeply frozen snapshot, so a supplied store that writes to the result will throw. That is the one way this change can break a host that worked before; save the result as it is. In return, agentic runs spend far less on each checkpoint. Every model call saves two checkpoints, and each one used to validate the whole run several times, so a run's total overhead grew with the square of its assignments. Starting and finishing an attempt now checks only what changed, with the same guarantees. On a DuckDB run file, overhead per assignment no longer grows with the run: at 1,000 assignments it fell from 445 ms to 4 ms. A supplied store gets the same by keeping the value `applyAgenticCheckpoint` returned, passing it to the next call and returning it from `checkpoint`. A store that copies its state stays correct and pays for the copy on every checkpoint. The file and warehouse stores still rewrite the run on every checkpoint, so their cost still grows, and they gain little from this.
 
 - Action provider messages now match percent-encoded credential values regardless of hexadecimal letter case, while preserving case-sensitive matching for literal characters.
 
 - DuckDB no longer wraps whole numbers outside the 32-bit range when they are bound as parameters: `3000000000` was stored as `-1294967296`, in `BIGINT` and `DOUBLE` columns alike, without an error. This affected agentic publication to DuckDB, so review published integer and number columns that can hold values above 2,147,483,647.
-
-- SFTP sources are hardened. Breaking for SFTP integrations: `connection.host_keys` (1 to 4 pins, each with `algorithm` plus `fingerprint` and/or `public_key`) replaces `auth.host_fingerprint` and `auth.known_hosts_path`. Dogsled asks the server only for the pinned key types, so a server that adds a new key type no longer looks like a changed host key. Connections use keepalive and a 60-second idle timeout per SFTP request, and honor cancellation. A dropped connection, timeout or full local disk now fails the run instead of skipping files, for both structured and document Resources. Downloads keep up to `connection.read_concurrency` reads in flight (default 4, max 16). Folder walks skip symlinks, and downloads refuse paths that resolve outside `base_directory`. Listings apply the Resource glob. Connection failures carry a stable code from `SFTP_ERROR_CODES`, which also appears as `error_code` in run and pipeline summaries. `ssh2` is now a declared optional peer dependency. `private_key` auth also accepts `private_key_env`, the key text in an env var, as an alternative to `private_key_path_env`. A Resource `path` without a glob can name a single SFTP file.
 
 - Agentic runs save local checkpoints as rows, in a DuckDB file per run, when `@duckdb/node-api` is installed. The `dogsled` CLI includes it, so upgrading changes this default for every CLI user. What a checkpoint writes no longer grows with the run. `checkpoint_store` also accepts a DuckDB integration, with a new `retention_days` setting. Runs already in the file store stay there and resume unchanged, and without DuckDB the file store works as before. A run saved in DuckDB needs the package to resume, and reports `duckdb_required` without it. State stores can now declare their row and byte limits; today's limits are unchanged.
 
@@ -56,6 +80,12 @@ Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/
 
 - On Snowflake, where updates of one table run one at a time, the row store keeps run headers in 8 tables, picked by a hash of the run. In one sample on one account, with 16 runs at once, a header update stayed near its single-run time, about 0.6 seconds instead of 6.2, and a schema did about 125 model calls a minute across all its runs instead of 52, probably limited then by the rows table that all runs share. PostgreSQL and DuckDB keep one header table.
 
+- Action results now tell a refused Action apart from a credential failure. An HTTP 403 from an API or webhook Action returns the new, non-retryable `permission_denied` code instead of `auth_error`; 401 remains `auth_error`. Failed results add `error.provider_status` when the failure came from an HTTP response, and `error.provider_message` with the provider's own reason from a JSON 4xx body, for example "pause the automation, update it, and resume". The provider message is limited to 300 characters and has credential-shaped text, URL query strings, declared credential values, and the credentials sent with the request (including minted or refreshed OAuth and custom tokens, authentication header values, and decoded Basic credentials) redacted in raw, URL-, form- and JSON-encoded forms after control and formatting characters are removed. It is returned with `safeErrors`, which still keeps `error.message` stable. 5xx responses and non-JSON bodies never return one. Library callers with an exhaustive map over `ActionErrorCode` must add `permission_denied`.
+
+## 0.1.9
+
+- SFTP sources are hardened. Breaking for SFTP integrations: `connection.host_keys` (1 to 4 pins, each with `algorithm` plus `fingerprint` and/or `public_key`) replaces `auth.host_fingerprint` and `auth.known_hosts_path`. Dogsled asks the server only for the pinned key types, so a server that adds a new key type no longer looks like a changed host key. Connections use keepalive and a 60-second idle timeout per SFTP request, and honor cancellation. A dropped connection, timeout or full local disk now fails the run instead of skipping files, for both structured and document Resources. Downloads keep up to `connection.read_concurrency` reads in flight (default 4, max 16). Folder walks skip symlinks, and downloads refuse paths that resolve outside `base_directory`. Listings apply the Resource glob. Connection failures carry a stable code from `SFTP_ERROR_CODES`, which also appears as `error_code` in run and pipeline summaries. `ssh2` is now a declared optional peer dependency. `private_key` auth also accepts `private_key_env`, the key text in an env var, as an alternative to `private_key_path_env`. A Resource `path` without a glob can name a single SFTP file.
+
 - Incremental document Resources replace each changed file's rows per file. The extractor sends a new `REPLACE` protocol message per changed file and stream, and table destinations delete the file's previous `__documents`, `__chunks`, `__parse_errors` and `__acl` rows before writing the new ones. A file that shrinks leaves no old chunks, and unchanged files keep their rows, including their ACL evidence. Before, every incremental run replaced the four tables with only the changed files. `__acl` rows now carry `document_id`; run one `--full-refresh` after upgrading if you capture permissions. Every table destination implements the new required `DatabaseDestination.deleteRows` method; custom destinations must add it. File destinations write each run as new files and ignore `REPLACE`. The second incremental document run also no longer fails to read its own state file.
 
 - The MySQL destination now indexes string key columns by their first 255 characters, which MySQL requires for `TEXT` columns, and rejects longer key values with `KEY_VALUE_TOO_LONG`. String primary keys failed at table setup before.
@@ -64,15 +94,19 @@ Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/
 
 - Structured file Resources (CSV, JSONL, Parquet) with `replication.method: incremental_append` now load with `append` by default instead of replacing the table with only the new files. An explicit `extract.table.load_strategy` and `--full-refresh` still take precedence.
 
+## 0.1.8
+
 - Use `dogsled-get-started` to set up your own connections, sources, pipelines and models. Guided TV Night and Retail lessons now start with `dogsled-tutorials`; existing tutorial progress and onboarding commands still work.
 
 - Add customer ontology YAML discovery, validation, exact context, edit previews, Ossie conversion, and config-only CLI/MCP operations.
+
 - Add an installable Dogsled Core skill plugin for Claude Code and Codex.
 
 - Agentic checkpoint and cursor statements no longer hang a run when the warehouse stops answering. Each statement is limited to half of `checkpoint_store.lease_seconds` (60 seconds by default), enforced by the warehouse on dedicated sessions and backed by a client-side deadline. Model queries and publication are not affected. After a statement reaches the limit, the run waits out its lease and recovers in the same process, up to twice, then stops with `lease_lost (statement_timeout)`. Time spent queued counts toward the limit. A connection that does not open within five minutes stops the run with `unavailable (connect_timeout)`. Hosts with custom runner factories should apply the new `statementTimeoutMs` value to the session they open; otherwise only the client deadline applies and the statement keeps running on the warehouse.
-- Action results now tell a refused Action apart from a credential failure. An HTTP 403 from an API or webhook Action returns the new, non-retryable `permission_denied` code instead of `auth_error`; 401 remains `auth_error`. Failed results add `error.provider_status` when the failure came from an HTTP response, and `error.provider_message` with the provider's own reason from a JSON 4xx body, for example "pause the automation, update it, and resume". The provider message is limited to 300 characters and has credential-shaped text, URL query strings, declared credential values, and the credentials sent with the request (including minted or refreshed OAuth and custom tokens, authentication header values, and decoded Basic credentials) redacted in raw, URL-, form- and JSON-encoded forms after control and formatting characters are removed. It is returned with `safeErrors`, which still keeps `error.message` stable. 5xx responses and non-JSON bodies never return one. Library callers with an exhaustive map over `ActionErrorCode` must add `permission_denied`.
 
 - Built-in sources that use reserved credential names, such as Slack with `SLACK_BOT_TOKEN` and GitHub with `GITHUB_TOKEN`, work again. A reserved name now resolves when the host supplies it for the run, or from your shell for an unmodified built-in source on the CLI. Project YAML still cannot read reserved names, and a blocked name now reports that it is reserved and how to supply it instead of "Missing env".
+
+## 0.1.7
 
 - Fix `timestamp_diff('unit', start, end)` on PostgreSQL to scale microseconds and milliseconds correctly, use calendar months for month/quarter/year, and return truncated `BIGINT` values. DuckDB now emits `date_diff('unit', start, end)` and `POSITION(needle IN haystack)` instead of invalid SQL. Document DuckDB's unit-boundary semantics.
 
@@ -80,23 +114,31 @@ Release notes are published on [GitHub Releases](https://github.com/bobsled-inc/
 
 - Dependency inlining now includes every UNION branch. SELECT-only compilation with `inlineDeps` can query source-only SQL models before their derived tables or output schema exist; named dependency sets, branch projections, and filters retain their existing behavior. Hoisting nested dependencies preserves quoted contents and comments that contain parentheses.
 
+## 0.1.6
+
 - A model's `target_database` and `publish.target_database` accept BigQuery project ids with consecutive hyphens, such as `acme-analytics--prod`, which GCP allows. A leading or trailing hyphen is still rejected.
 
+## 0.1.5
+
 - Shared warehouse cursor updates retry temporary ownership contention with bounded, cancellable backoff. Their retry-start allowance adapts to observed warehouse latency from two to six minutes, with at most 32 attempts; an in-flight operation can finish later. Concurrent models keep their independent progress and existing cursor ownership checks, without a guarantee of progress under sustained contention.
-
-- Snowflake checkpoint stores can select an explicit `database` separately from `schema`, using the existing integration authentication. Checkpoint and cursor storage use that database; output publication metadata remains in the output catalog. Omitted database settings keep their existing behavior.
-
-- Loading into an existing BigQuery table that lacks a loader metadata column no longer fails with "Add field with default value to an existing table schema is not supported". The loader now adds `_dogsled_loaded_at` without a default, since every load sets it explicitly; new tables keep the default.
-
-- Add a guided Retail tutorial alongside TV Night, with shared progress and evidence review, local warehouse/API data, and an optional consent-based AI support-classification lesson.
-
-- Run TV Night on a shared tutorial engine so additional tutorials can supply their own chapters, checks and content while keeping the same offline explorer and saved progress.
 
 Agentic runs survive more of what goes wrong in practice. A failed or rejected source request rejects only that call and gives the executor a safe reason, such as which argument to fix; the reference loop executor passes it to the model, which can try again. Only a policy violation, such as requesting an undeclared source, fails the assignment, as a retryable `source_access_denied`, and never stops the run on its own. A source with a pinned filter now refuses search with a clear message instead of failing every search.
 
 Incremental agentic inputs process a large backlog in batches instead of failing. Each run takes the oldest new rows that fit, in cursor order, never splits rows that share a cursor value, advances the cursor after publication, and warns that more rows are waiting. Library hosts opt in with `incrementalBatches`; the built-in host does.
 
 Agentic size limits apply per row, so wide tables and outputs with evidence work up to the documented 1,000 rows and 1 MiB, and an exceeded limit names the input, the limit, and the row. `dogsled model validate` reports agentic settings that runs do not support yet (step `skills`, model-level `execution` and `publish`) and warns about deprecated per-assignment limits. `dogsled model run` prints agentic progress with spend against the caps, and shows the input still waiting before work starts.
+
+## 0.1.4
+
+- Snowflake checkpoint stores can select an explicit `database` separately from `schema`, using the existing integration authentication. Checkpoint and cursor storage use that database; output publication metadata remains in the output catalog. Omitted database settings keep their existing behavior.
+
+## 0.1.3
+
+- Loading into an existing BigQuery table that lacks a loader metadata column no longer fails with "Add field with default value to an existing table schema is not supported". The loader now adds `_dogsled_loaded_at` without a default, since every load sets it explicitly; new tables keep the default.
+
+- Add a guided Retail tutorial alongside TV Night, with shared progress and evidence review, local warehouse/API data, and an optional consent-based AI support-classification lesson.
+
+- Run TV Night on a shared tutorial engine so additional tutorials can supply their own chapters, checks and content while keeping the same offline explorer and saved progress.
 
 - Replace the TV Night tutorial page with a chapter-focused offline explorer, saved-result tabs, file and lineage inspection, and guarded review requests for the agent.
 
@@ -108,13 +150,17 @@ Stopping `dogsled model run` now stops the run. The CLI launchers forward SIGINT
 
 The reference loop executor retries provider errors and responses without usage, and stops after 16 turns when no call limit is set. `generateStructured` and `embedMany` now release their daily budget reservation when a provider call fails. Interrupted streams charge available measured usage and keep the estimate when usage is unavailable. File extraction keeps its cancellation handlers through cleanup, including duplicate signals forwarded by a launcher. Failure cleanup saves answers that arrive during checkpoint writes or cancellation, and resumed cost caps are checked against the saved accounting mode.
 
+Agentic checkpoints spend far less CPU per transition. Validation shares row field schemas and reuses already parsed assignments, and a warehouse checkpoint session applies commands to the snapshot it committed instead of reading the payload back. In a synthetic 300-assignment plan, executor time fell by about 90% at no simulated latency. Stored checkpoints, receipts, ownership fencing and recovery are unchanged.
+
+On PostgreSQL, agentic publications with no processed keys check an unchanged target in place instead of copying it into a staging table, when its columns compare values exactly like a new stage. On every warehouse, the claim reuses the publication tables preflight initialized and publications to a missing target skip the processed-key table. Empty incremental runs make fewer warehouse requests. Schema checks, row limits, final checks, fenced commits and receipts are unchanged.
+
+## 0.1.2
+
 Clarify TV Night’s AI model setup, optional bounded recovery, and assessment quality review. Chapter 6 returns to explaining the model definitions after recovery, with a file-focused recap and inspection pause.
 
 Warehouse agentic checkpoints batch payload chunks into bounded, parameterized INSERTs. Large snapshots need fewer warehouse requests while retaining the existing checkpoint format, durable attempt reservations, ownership fencing, and resume behavior.
 
-Agentic checkpoints spend far less CPU per transition. Validation shares row field schemas and reuses already parsed assignments, and a warehouse checkpoint session applies commands to the snapshot it committed instead of reading the payload back. In a synthetic 300-assignment plan, executor time fell by about 90% at no simulated latency. Stored checkpoints, receipts, ownership fencing and recovery are unchanged.
-
-On PostgreSQL, agentic publications with no processed keys check an unchanged target in place instead of copying it into a staging table, when its columns compare values exactly like a new stage. On every warehouse, the claim reuses the publication tables preflight initialized and publications to a missing target skip the processed-key table. Empty incremental runs make fewer warehouse requests. Schema checks, row limits, final checks, fenced commits and receipts are unchanged.
+## 0.1.1
 
 Add the TV Night guided tutorial. Build an API connection, ETL pipeline, source and derived semantic models, cross-source queries, and agentic transformations with an agent. A local HTML page shows chapter progress, files, model lineage, and saved results. Agentic assessments select passage IDs so the executor attaches exact evidence, with a one-show check before the remaining batch and targeted retries.
 
@@ -146,4 +192,4 @@ Extraction output mapped `from: { input: ... }` now records the inputs each requ
 
 `oauth2` auth with `grant_type: client_credentials`, on an HTTP transport or a resource's `api.auth`, accepts an optional `resource`: an absolute HTTPS URL that Dogsled sends as the `resource` form parameter of the token request (RFC 8707 Resource Indicators). Some authorization servers mint an audience-bound token only when the request names the API it is for; without the parameter the token request succeeds but every API call with the token is rejected. Tokens are cached per `resource`, so one configured for one API is never sent to another. Configurations without `resource` send exactly the token request they sent before. Environment references in `resource` follow the same `auth_env_vars` declaration rules as `client_id` and `client_secret`. MCP HTTP transport auth and the catalog resource probe (`probeApiResource`) do not accept `resource` yet.
 
-First release under the `@bobsled-inc/dogsled` package name. Earlier development history is private.
+First release under the `@bobsled-inc/dogsled` package name.

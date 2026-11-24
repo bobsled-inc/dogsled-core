@@ -3,7 +3,7 @@
 Generated from the bundled AI and CLI metafile inputs and upstream source maps. Regenerate with
 `node scripts/release/third-party-notices.mjs` after building.
 
-## @ai-sdk/amazon-bedrock@4.0.211
+## @ai-sdk/amazon-bedrock@4.0.216
 
 Declared license: Apache-2.0
 
@@ -25,7 +25,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## @ai-sdk/anthropic@3.0.140
+## @ai-sdk/anthropic@3.0.142
 
 Declared license: Apache-2.0
 
@@ -47,7 +47,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## @ai-sdk/gateway@3.0.232
+## @ai-sdk/gateway@3.0.237
 
 Declared license: Apache-2.0
 
@@ -69,7 +69,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## @ai-sdk/google@3.0.143
+## @ai-sdk/google@3.0.146
 
 Declared license: Apache-2.0
 
@@ -91,7 +91,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## @ai-sdk/openai@3.0.139
+## @ai-sdk/openai@3.0.143
 
 Declared license: Apache-2.0
 
@@ -3710,7 +3710,7 @@ Apache License
    limitations under the License.
 ```
 
-## ai@6.0.326
+## ai@6.0.332
 
 Declared license: Apache-2.0
 Embedded file licenses: MIT

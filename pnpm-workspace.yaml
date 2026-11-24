@@ -4,7 +4,7 @@ packages:
 
 catalog:
   '@apidevtools/swagger-parser': 12.1.0
-  '@ai-sdk/amazon-bedrock': 4.0.211
+  '@ai-sdk/amazon-bedrock': 4.0.216
   '@aws-sdk/credential-providers': 3.1163.0
   '@aws-sdk/client-s3': 3.1163.0
   '@clickhouse/client': 1.25.0
@@ -12,9 +12,9 @@ catalog:
   '@polyglot-sql/sdk': 0.1.13
   '@turbopuffer/turbopuffer': 2.14.0
   '@types/pg': 8.23.1
-  ai: 6.0.326
+  ai: 6.0.332
   ajv: 8.20.0
-  cron-parser: 5.10.4
+  cron-parser: 5.10.6
   google-auth-library: 9.15.1
   highlight.js: 11.12.0
   js-tiktoken: 1.0.21
@@ -24,7 +24,7 @@ catalog:
   next: 15.5.29
   next-themes: 0.4.6
   openapi-types: 12.1.3
-  playwright: 1.65.0
+  playwright: 1.65.1
   react-test-renderer: ^19.3.1
   undici: 8.12.4
   vite-tsconfig-paths: 6.1.1
@@ -35,16 +35,16 @@ catalogMode: strict
 overrides:
   source-map-js: 1.2.2
   # Security/compatibility pins for transitive dependencies; revisit when upstream packages absorb the fixes.
-  basic-ftp: 6.2.1
+  basic-ftp: 6.2.4
   thrift: 0.23.0
   '@tootallnate/once': 2.0.1
   body-parser: 2.4.0
   dompurify: 3.4.17
-  fast-xml-parser: 5.7.0
+  fast-xml-parser: 5.12.0
   ip-address: 10.7.4
   qs: 6.16.1
   fast-uri: 3.1.9
-  fast-xml-builder: 1.1.9
+  fast-xml-builder: 1.3.1
   axios: 1.20.0
   # GHSA-g7r4-m6w7-qqqr: Windows development-server path containment.
   esbuild: 0.28.2
@@ -68,8 +68,9 @@ overrides:
   moment: 2.31.0
   # GHSA-xcx6-jx8p-x3h5: fixed MSAL Node authorization-code flow.
   '@azure/identity': 4.14.1
-  # GHSA-hxh3-vqpv-xpqv: fixed SDK server dependency.
-  hono: 4.13.11
+  # GHSA-hxh3-vqpv-xpqv, GHSA-46wx-v44x-9hh2, GHSA-4h7h-rv7c-7m2v, GHSA-4m76-xfj5-7975,
+  # GHSA-h7mg-cq63-vhpq and GHSA-3gg2-335m-rxc6: fixed SDK server dependency.
+  hono: 4.13.16
   # GHSA-p498-v437-472g: fixed development filesystem dependency.
   '@humanfs/node': 0.16.8
   vite: 7.3.7
@@ -106,12 +107,12 @@ catalogs:
     '@aws-sdk/credential-providers': 3.1163.0
     '@smithy/signature-v4': 5.7.5
   ai-sdk:
-    '@ai-sdk/amazon-bedrock': 4.0.211
-    '@ai-sdk/anthropic': 3.0.140
-    '@ai-sdk/google': 3.0.143
-    '@ai-sdk/openai': 3.0.139
+    '@ai-sdk/amazon-bedrock': 4.0.216
+    '@ai-sdk/anthropic': 3.0.142
+    '@ai-sdk/google': 3.0.146
+    '@ai-sdk/openai': 3.0.143
     '@openrouter/ai-sdk-provider': 2.10.0
-    ai: 6.0.326
+    ai: 6.0.332
     # Community fork from a different publisher: ollama-ai-provider-v2.
     # https://github.com/nordwestt/ollama-ai-provider-v2
     ollama-ai-provider: npm:ollama-ai-provider-v2@3.6.0
@@ -125,17 +126,17 @@ catalogs:
     husky: 9.1.7
     lint-staged: 16.4.0
     node-sql-parser: 5.4.0
-    prettier: 3.9.10
+    prettier: 3.10.1
     tsx: 4.23.15
-    turbo: 2.11.10
+    turbo: 2.11.11
     typescript: 6.0.2
     zod: 4.6.7
   duckdb:
     '@duckdb/node-api': 1.4.4-r.4
   eslint:
-    '@typescript-eslint/eslint-plugin': 8.72.1
-    '@typescript-eslint/parser': 8.72.1
-    eslint: 10.14.0
+    '@typescript-eslint/eslint-plugin': 8.73.0
+    '@typescript-eslint/parser': 8.73.0
+    eslint: 10.15.0
   mcp:
     '@modelcontextprotocol/sdk': 1.32.2
   security:

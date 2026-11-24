@@ -349,7 +349,7 @@ describe('extract integration', () => {
     const sinceParamsReceived: Array<string | null> = [];
     server = await createFakeServer([
       {
-        path: '/repos/bobsled-inc/dogsled/commits',
+        path: '/repos/acme/example-repo/commits',
         handler: (_req, url) => {
           sinceParamsReceived.push(url.searchParams.get('since'));
           return {
@@ -361,7 +361,7 @@ describe('extract integration', () => {
         },
       },
       {
-        path: '/repos/bobsled-inc/demo-repo/commits',
+        path: '/repos/acme/demo-repo/commits',
         handler: (_req, url) => {
           sinceParamsReceived.push(url.searchParams.get('since'));
           return {
@@ -401,12 +401,12 @@ describe('extract integration', () => {
 
     for (const iteration of [
       {
-        inputs: { owner: 'bobsled-inc', repo: 'dogsled' },
-        partition: 'owner=bobsled-inc::repo=dogsled',
+        inputs: { owner: 'acme', repo: 'example-repo' },
+        partition: 'owner=acme::repo=example-repo',
       },
       {
-        inputs: { owner: 'bobsled-inc', repo: 'demo-repo' },
-        partition: 'owner=bobsled-inc::repo=demo-repo',
+        inputs: { owner: 'acme', repo: 'demo-repo' },
+        partition: 'owner=acme::repo=demo-repo',
       },
     ]) {
       await extractResource({
@@ -435,15 +435,15 @@ describe('extract integration', () => {
     // each scoped to a single (owner, repo).
     const persisted = await loadState(tmpDir);
     expect(Object.keys(persisted.streams).sort()).toEqual([
-      'test_api/commits#owner=bobsled-inc::repo=demo-repo',
-      'test_api/commits#owner=bobsled-inc::repo=dogsled',
+      'test_api/commits#owner=acme::repo=demo-repo',
+      'test_api/commits#owner=acme::repo=example-repo',
     ]);
-    expect(
-      persisted.streams['test_api/commits#owner=bobsled-inc::repo=dogsled']?.cursor_value
-    ).toBe('2026-03-16T00:00:00Z');
-    expect(
-      persisted.streams['test_api/commits#owner=bobsled-inc::repo=demo-repo']?.cursor_value
-    ).toBe('2026-03-11T00:00:00Z');
+    expect(persisted.streams['test_api/commits#owner=acme::repo=example-repo']?.cursor_value).toBe(
+      '2026-03-16T00:00:00Z'
+    );
+    expect(persisted.streams['test_api/commits#owner=acme::repo=demo-repo']?.cursor_value).toBe(
+      '2026-03-11T00:00:00Z'
+    );
 
     // STATE messages emitted on stdout carry the matching partition field
     // so external state backends key the bookmark per iteration without
@@ -454,8 +454,8 @@ describe('extract integration', () => {
       .map((line) => JSON.parse(line))
       .filter((message) => message.type === 'STATE');
     expect(stateMessages.map((m) => ({ stream: m.stream, partition: m.partition }))).toEqual([
-      { stream: 'commits', partition: 'owner=bobsled-inc::repo=dogsled' },
-      { stream: 'commits', partition: 'owner=bobsled-inc::repo=demo-repo' },
+      { stream: 'commits', partition: 'owner=acme::repo=example-repo' },
+      { stream: 'commits', partition: 'owner=acme::repo=demo-repo' },
     ]);
 
     // Second pass: each iteration must now read its OWN persisted bookmark
@@ -465,12 +465,12 @@ describe('extract integration', () => {
     sinceParamsReceived.length = 0;
     for (const iteration of [
       {
-        inputs: { owner: 'bobsled-inc', repo: 'dogsled' },
-        partition: 'owner=bobsled-inc::repo=dogsled',
+        inputs: { owner: 'acme', repo: 'example-repo' },
+        partition: 'owner=acme::repo=example-repo',
       },
       {
-        inputs: { owner: 'bobsled-inc', repo: 'demo-repo' },
-        partition: 'owner=bobsled-inc::repo=demo-repo',
+        inputs: { owner: 'acme', repo: 'demo-repo' },
+        partition: 'owner=acme::repo=demo-repo',
       },
     ]) {
       await extractResource({

@@ -5,7 +5,8 @@ export function createBoundedOpenRouterFetch(
   maxBytes = OPENROUTER_MAX_RESPONSE_BYTES
 ): typeof fetch {
   return async (input, init) => {
-    const response = await (fetchImplementation ?? globalThis.fetch)(input, init);
+    const request = input instanceof Request ? init : { redirect: 'error' as const, ...init };
+    const response = await (fetchImplementation ?? globalThis.fetch)(input, request);
     const failure = () =>
       new RangeError(`OpenRouter response exceeded maximum size of ${maxBytes} bytes.`);
     if (Number(response.headers.get('content-length')) > maxBytes) {

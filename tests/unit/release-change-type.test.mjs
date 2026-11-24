@@ -95,13 +95,56 @@ describe('release change types', () => {
 
   it('rejects two selections', () => {
     const body = '## Change Type\n\n- [x] `patch`\n- [X] `minor`\n\n## Notes\n';
-    expect(() => parseChangeType(body)).toThrow('Found 2: patch, minor');
+    expect(() => parseChangeType(body)).toThrow(
+      'Exactly one change-type checkbox must be checked before merging. Found 2. Must be one of: '
+    );
   });
 
   it('rejects an unknown selection', () => {
     expect(() => parseChangeType('## Change Type\n\n- [x] `feature`\n')).toThrow(
-      'Invalid change-type label: "feature"'
+      `Invalid change-type label. Must be one of: ${CHANGE_TYPES.join(', ')}`
     );
+  });
+
+  describe("doesn't repeat PR text in error messages", () => {
+    const allowed = CHANGE_TYPES.join(', ');
+    const invalid = `Invalid change-type label. Must be one of: ${allowed}`;
+    const notOne = (count) =>
+      `Exactly one change-type checkbox must be checked before merging. Found ${count}. Must be one of: ${allowed}`;
+    const messageFor = (...labels) => {
+      const boxes = labels.map((label) => `- [x] \`${label}\``).join('\n');
+      try {
+        parseChangeType(`## Change Type\n\n${boxes}\n`);
+      } catch (error) {
+        return error.message;
+      }
+      throw new Error('Expected parseChangeType to throw.');
+    };
+
+    it.each([
+      ['newlines', 'feature\nsecond line\r\nthird line'],
+      ['an error workflow command', 'feature\n::error::text'],
+      ['a set-output workflow command', 'feature\n::set-output name=bump::major'],
+      ['very long text', 'feature'.repeat(10_000)],
+      ['a markdown link', '[feature](https://example.com)'],
+    ])('for an unknown label with %s', (_name, label) => {
+      expect(messageFor(label)).toBe(invalid);
+      expect(messageFor(label, 'patch')).toBe(notOne(2));
+      expect(() =>
+        changeTypeForPullRequest({
+          user: { login: 'contributor' },
+          body: `## Change Type\n\n- [x] \`${label}\`\n`,
+        })
+      ).toThrow(new Error(invalid));
+    });
+
+    it('for a section without a checked box', () => {
+      expect(messageFor()).toBe(notOne(0));
+    });
+
+    it.each(CHANGE_TYPES)('and still accepts the single label %s', (changeType) => {
+      expect(parseChangeType(bodyFor(changeType))).toBe(changeType);
+    });
   });
 
   it('ignores checkboxes outside the Change Type section', () => {

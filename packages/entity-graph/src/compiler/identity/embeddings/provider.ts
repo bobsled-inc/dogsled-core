@@ -156,6 +156,7 @@ async function embedWithOpenAi(
       encoding_format: 'float',
     }),
     signal: AbortSignal.timeout(OPENAI_EMBEDDINGS_TIMEOUT_MS),
+    redirect: 'error',
   });
 
   if (!response.ok) {

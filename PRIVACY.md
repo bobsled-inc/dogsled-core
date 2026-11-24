@@ -12,16 +12,31 @@ Dogsled processes data only through capabilities the operator invokes and
 configures:
 
 - extractors read local documents, APIs, databases, warehouses, object stores,
-  and MCP tools;
+  SFTP servers, and MCP tools;
 - optional embedding and AI features send selected content to the provider
   configured in `dogsled.yml`;
 - loaders write records to the configured local, database, warehouse, search,
   vector, or object-storage destination;
+- actions send their inputs to the API or webhook they name, and syncs run an
+  action for new rows of a table;
+- entity-graph agent review sends record pairs to the external reviewer, if one
+  is configured: an HTTP endpoint or a local command;
 - operators can run `dogsled runner run` from their own workflow steps, using
   the secrets, variables, permissions, and environments they configure.
 
 These providers and destinations have their own privacy and retention terms.
 Dogsled does not proxy their traffic through a maintainer-operated service.
+
+Some third-party software has its own telemetry. It is not Dogsled's and does not
+go to the maintainers. These are the cases checked, at the versions named:
+
+- `@databricks/sql` 2.4.0, if you install it, has telemetry on by default. After it
+  connects, it asks the Databricks host for a feature flag and, if the flag is on,
+  sends metrics to that host. Dogsled does not change this setting. Set
+  `DATABRICKS_TELEMETRY_DISABLED=1` to turn it off.
+- Next.js 15.5.29, which runs Explorer from a source checkout, can send usage data to
+  `telemetry.nextjs.org`. Explorer turns this off for its dev, build, start and lint
+  commands.
 
 ## Credentials
 

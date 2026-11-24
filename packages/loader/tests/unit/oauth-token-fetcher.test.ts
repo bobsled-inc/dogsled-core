@@ -50,6 +50,21 @@ describe('fetchOAuthToken', () => {
     expect(body).toContain('grant_type=client_credentials');
   });
 
+  it('refuses redirects and reports the failure', async () => {
+    fakeFetch.mockImplementationOnce(async (_url: string, init?: RequestInit) => {
+      if (init?.redirect === 'error') throw new TypeError('fetch failed');
+      return Response.json({ access_token: 'redirected' });
+    });
+    await expect(
+      fetchOAuthToken({
+        tokenUrl: 'https://example.com/oauth/token',
+        clientId: 'c',
+        clientSecret: 's',
+        fetch: fakeFetch,
+      })
+    ).rejects.toThrow('OAuth token request failed: fetch failed');
+  });
+
   it('rejects non-HTTPS token URLs (credential disclosure)', async () => {
     await expect(
       fetchOAuthToken({

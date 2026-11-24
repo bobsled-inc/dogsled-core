@@ -5,8 +5,7 @@
  * directly; downstream consumers (BI tool, host application, agent) use them to plan
  * joins when a query spans more than one source or derived model.
  *
- * Shape mirrors the Notion sub-spec (`relationships` section). Cross-reference
- * validation (do `left_model` / `right_model` point at real Model Spec datasets?)
+ * Cross-reference validation (do `left_model` / `right_model` point at real Model Spec datasets?)
  * lives in `src/entities/cross-references.ts`.
  */
 

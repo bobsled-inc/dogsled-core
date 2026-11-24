@@ -10,7 +10,7 @@
  * Databricks, and ClickHouse. `(snowflake, sledhouse_oidc)` is custom-only by design —
  * it is intentionally absent from this registry so that `resolveRunner`
  * falls through to the "no factory registered" path, giving operators
- * an actionable error if they forgot to register the SledHouse custom
+ * an actionable error if they forgot to register the host's custom
  * factory.
  */
 

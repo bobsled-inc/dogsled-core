@@ -1,7 +1,7 @@
 # Cutting a release
 
 Dogsled publishes `@bobsled-inc/dogsled` with 15 workspace packages embedded in its tarball.
-Only `packages/dogsled/package.json` advances its version.
+Only `packages/dogsled/package.json` carries the release version. The workflow sets it in the tagged commit, so the version on `main` does not advance.
 
 ## Merges release
 
@@ -34,14 +34,14 @@ The prepare job summary lists each pull request, its Change Type and the result,
 GitHub keeps at most one pending Release run and replaces an older pending run, but the newer run still covers the same merges.
 A commit without a merged pull request, or a pull request without exactly one valid Change Type, fails the run.
 Fix the description, then run the Release workflow from `main` in `auto` mode.
-Fork pull requests get a read-only token, so their merge cannot dispatch a release.
-Dispatch `auto` by hand, or let the next release-worthy merge include them.
+Merged fork pull requests are treated like any other: the trigger runs on the push to `main`, so a merge can dispatch a release.
+Publication still needs the approval in `release-approval`.
 A revert of released code is `patch`. A revert of unreleased code is `skip-release`.
 
 ## Steps
 
 1. Merges dispatch `auto` releases. To release by hand, open the [Release workflow](../.github/workflows/release.yml), select `main` and choose a mode and its inputs below.
-2. The prepare job checks and packs the candidate. A run with nothing to release stops here. A Slack notification goes out when a release awaits approval.
+2. The prepare job decides the version, then parallel jobs check and pack the candidate. A run with nothing to release stops after prepare. A Slack notification goes out when a release awaits approval.
 3. Review the candidate checks, the artifact report and, for `auto`, the pull request table, then approve the release in `release-approval`. This is the only approval; a rejection leaves no tag.
 4. The tag job pushes the verified tag from the `release-tag` environment, which is limited to `main` and needs no approval.
 5. Publication runs in `npm-release`. Verify registry integrity, provenance, the GitHub release report and SBOM, and a clean install without credentials.
@@ -67,8 +67,8 @@ The workflow pushes the verified tag with hooks disabled. It does not push relea
 After changing bundled dependencies, build and run `node scripts/release/third-party-notices.mjs`.
 Review [THIRD_PARTY_NOTICES.md](../packages/dogsled/THIRD_PARTY_NOTICES.md) before dispatching the release.
 
-Preparation sets npm fetch timeouts and retries, and time limits on the install, packed-catalog and release-verification steps, so a stalled registry connection fails within minutes instead of using up the job.
-The packed-catalog check retries once on its own. Before a tag is pushed, re-run the failed prepare job.
+The workflow sets npm fetch timeouts and retries, and time limits on the install, packed-catalog and release-verification steps, so a stalled registry connection fails within minutes instead of using up the job.
+The packed-catalog check retries once on its own. Before a tag is pushed, re-run the failed jobs.
 Investigate interrupted runs before retrying. Rejecting the approval leaves no tag and no version gap; the next release-worthy merge tries again.
 To ship an existing tag whose publication failed, use `retry` mode. An existing registry version must match the reviewed tarball's integrity.
 Never replace a version tag or overwrite published bytes.
@@ -76,5 +76,5 @@ If only GitHub release finalization fails, re-run the failed jobs: it creates a 
 
 When a release awaits approval, two Slack messages appear in the release channel:
 
-1. The `notify` job sends the version, summary, PR list and breaking flag to Husky (`POST /api/releases/notify` with a GitHub OIDC token). Husky posts and later updates the Slack message. A `release-status` job sends the outcome (`released` or `not_released`) so Husky can update the message. Core holds no Slack secrets; the only configuration is the `HUSKY_ORIGIN` variable. The notification is skipped when `HUSKY_ORIGIN` is unset and never fails the release.
+1. The `notify` job sends the version, summary, PR list and breaking flag to Husky (`POST /api/releases/notify` with a GitHub OIDC token). Husky posts and later updates the Slack message. A `release-status` job sends the outcome (`released` or `not_released`) so Husky can update the message. Core holds no Slack secrets; the only configuration is `HUSKY_ORIGIN`, read from a secret or, without one, from the repository variable. The notification is skipped when `HUSKY_ORIGIN` is unset and never fails the release.
 2. The GitHub Slack app posts the deployment approval with Approve and Reject buttons. Set it up with `/github subscribe bobsled-inc/dogsled-core workflows` (filtered to the Release workflow); each maintainer runs `/github signin` once.

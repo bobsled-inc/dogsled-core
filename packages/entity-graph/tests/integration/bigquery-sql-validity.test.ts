@@ -313,9 +313,9 @@ describe('entity-graph BigQuery SQL validity (dialect bugs — cluster + review-
   });
 });
 
-describe('entity-graph BigQuery SQL validity (no schema.columns — live repro)', () => {
-  // Mirrors account_resolution_poc: both lakehouse inputs carry no schema.columns.
-  // Input A (neon_accounts) has 5 raw cols; input B (pylon_accounts) has 3 raw cols.
+describe('entity-graph BigQuery SQL validity (no schema.columns)', () => {
+  // Both lakehouse inputs carry no schema.columns.
+  // Input A (crm_accounts) has 5 raw cols; input B (support_accounts) has 3 raw cols.
   // Before the fix, generateStandardizeSql emitted `src.*` per branch — UNION ALL
   // branch column counts differ → "Queries in UNION ALL have mismatched column count".
   // After the fix, raw passthrough is dropped in mixed mode so both branches are

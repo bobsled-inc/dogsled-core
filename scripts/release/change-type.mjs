@@ -28,15 +28,13 @@ export function parseChangeType(body) {
 
   if (checked.length !== 1) {
     throw new Error(
-      `Exactly one change-type checkbox must be checked before merging. Found ${checked.length}: ${checked.join(', ')}`
+      `Exactly one change-type checkbox must be checked before merging. Found ${checked.length}. Must be one of: ${CHANGE_TYPES.join(', ')}`
     );
   }
 
   const changeType = checked[0];
   if (!CHANGE_TYPE_SET.has(changeType)) {
-    throw new Error(
-      `Invalid change-type label: "${changeType}". Must be one of: ${CHANGE_TYPES.join(', ')}`
-    );
+    throw new Error(`Invalid change-type label. Must be one of: ${CHANGE_TYPES.join(', ')}`);
   }
 
   return changeType;

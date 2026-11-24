@@ -6,9 +6,7 @@
  * or more source or derived models. The compiler parses them, validates their references, and
  * emits them as JSON alongside the SQL when `--include-metadata` is set.
  *
- * Shape mirrors the Notion sub-spec (`metrics` section) + the existing host application
- * `metric_definitions` table so the Data Estate UI can consume both without
- * translation.
+ * Host applications can consume this shape without translation.
  *
  * Validation that reaches beyond one file — checking that `model` / `models`
  * point at real datasets in the project — lives in

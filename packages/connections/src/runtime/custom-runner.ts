@@ -2,7 +2,7 @@
  * `CustomRunnerFactory` — host-injection seam for runner construction.
  *
  * A host application can use this to wire the `sledhouse_oidc` Snowflake auth
- * type to its existing `SledhouseDataSourceProvider`; open-source users
+ * type to its own data-source provider; open-source users
  * shouldn't normally need to register anything.
  *
  * Factories are keyed on `(source_type, auth.type)` so future
