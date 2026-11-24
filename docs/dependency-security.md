@@ -218,7 +218,8 @@ The repository variable `RELEASE_HEALTH` controls behavior:
 
 The workflow also uses:
 
-- Variable `HUSKY_ORIGIN`: the base URL for the Husky API. When unset, the report
+- `HUSKY_ORIGIN`: the base URL for the Husky API, read from a secret or, without one,
+  from the repository variable. When unset, the report
   is written to the step summary and uploaded as an artifact, but no POST is made.
 - No Slack tokens or GitHub App tokens. The audit job that runs third-party code
   has `contents: read` only. A separate report job holds `id-token: write` to

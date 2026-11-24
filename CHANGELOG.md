@@ -6,6 +6,8 @@ Each section lists the changes that first shipped in that version. A version wit
 
 ## Unreleased
 
+- The Snowflake loader's OAuth token request now fails if the token URL redirects.
+
 ## 0.5.0
 
 - A file Resource with `source.kind: copy` now moves each new file as it is, from S3, GCS, SFTP or a local folder to a `local`, `s3` or `gcs` destination, without parsing it into rows. A file lands at `<prefix>/<resource name>/<path below the folder before the first wildcard>` with its bytes unchanged. A copy takes `path` and an `incremental_append` replication on `last_modified`, with an optional `cursor.lookback_seconds` (1 hour by default), and refuses `format`, `compression`, `options`, `output` and `include_*`. It takes one destination, needs a loader reading its pipe, and fails a file over `limits.max_file_size_bytes` by name. The extractor sends a new `FILE` protocol message for each file, saves state only after the loader has written every file, and reports `files_processed` and `bytes_downloaded` once per run. An `s3` or `gcs` destination can tag the files a copy writes with `object_metadata` (`--object-metadata` on `dogsled load run`), and a copy then also stores `dogsled-source` (the file's key in the source) and `dogsled-source-modified` on each file. With no `object_metadata`, a copied file gets no tags. Table destinations and loaders from before this release fail on `FILE`, so upgrade the loader with the extractor. After a copy runs on S3 or GCS, an older release reads the state file as damaged, so do not downgrade. Custom `FileDestination` classes keep working: `publish` takes an optional third argument.

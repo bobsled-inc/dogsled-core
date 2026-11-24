@@ -103,7 +103,24 @@ describe('OpenRouter vendored response-size mitigation', () => {
       'maximum size'
     );
     expect(laterFetch).toHaveBeenCalledTimes(1);
+    expect(laterFetch.mock.calls[0]?.[1]?.redirect).toBe('error');
     expect(earlierFetch).not.toHaveBeenCalled();
+  });
+
+  it('refuses redirects unless the caller chose a mode', async () => {
+    const injectedFetch = vi.fn<typeof fetch>(async () => new Response('ok'));
+    const boundedFetch = createBoundedOpenRouterFetch(injectedFetch, 100);
+    const url = 'https://provider.example.test';
+    await boundedFetch(url);
+    await boundedFetch(new URL(url), { method: 'POST' });
+    await boundedFetch(url, { redirect: 'manual' });
+    await boundedFetch(new Request(url, { redirect: 'manual' }));
+    expect(injectedFetch.mock.calls.map(([, init]) => init)).toEqual([
+      { redirect: 'error' },
+      { redirect: 'error', method: 'POST' },
+      { redirect: 'manual' },
+      undefined,
+    ]);
   });
 
   it('preserves an explicit injected fetch when global fetch changes', async () => {

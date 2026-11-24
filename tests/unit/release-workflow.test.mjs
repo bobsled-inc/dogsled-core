@@ -270,7 +270,12 @@ describe('release workflow boundaries', () => {
     expect(workflow.jobs.prepare['timeout-minutes']).toBe(15);
     const auditSteps = workflow.jobs['release-audit'].steps;
     const step = (steps, pattern) => steps.find((entry) => pattern.test(entry.run ?? ''));
-    expect(step(auditSteps, /@cyclonedx\/cdxgen/)['timeout-minutes']).toBe(5);
+    const sbomInstall = step(auditSteps, /@cyclonedx\/cdxgen/);
+    expect(sbomInstall['timeout-minutes']).toBe(5);
+    // An exact version plus a fixed date also fixes the versions of its dependencies.
+    expect(sbomInstall.run).toBe(
+      'npm install --global @cyclonedx/cdxgen@12.8.0 --ignore-scripts --before=2026-11-16 --registry=https://registry.npmjs.org/'
+    );
     expect(step(auditSteps, /pnpm security:release/)['timeout-minutes']).toBe(15);
     const packedSteps = workflow.jobs['release-packed-catalog'].steps;
     const packed = step(packedSteps, /test:packed-catalog/);
@@ -345,7 +350,7 @@ describe('release on merge trigger', () => {
     expect(notify.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
     expect(notify.outputs.notified).toBe('${{ steps.husky.outputs.notified }}');
     const step = notify.steps[0];
-    expect(step.env.HUSKY_ORIGIN).toBe('${{ vars.HUSKY_ORIGIN }}');
+    expect(step.env.HUSKY_ORIGIN).toBe('${{ secrets.HUSKY_ORIGIN || vars.HUSKY_ORIGIN }}');
     expect(step.env.NOTIFY_PRS).toBe('${{ needs.prepare.outputs.notify_prs }}');
     expect(step.env.NOTIFY_ONE_LINE).toBe('${{ needs.prepare.outputs.notify_one_line }}');
     expect(step.env.RELEASE_TAG).toBeUndefined();

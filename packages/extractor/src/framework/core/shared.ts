@@ -203,15 +203,15 @@ export function getErrorMessage(error: unknown): string {
   );
 }
 
+/**
+ * Rebuild the URL from its parsed parts without userinfo or query values. The parsed URL is
+ * never mutated, because it can come from remote text.
+ */
 export function sanitizeUrlForError(rawUrl: string): string {
   try {
-    const url = new URL(rawUrl);
-    url.username = '';
-    url.password = '';
-    if (url.search) {
-      url.search = '[redacted]';
-    }
-    return url.toString();
+    const { protocol, host, href, pathname, search, hash } = new URL(rawUrl);
+    const authority = href.startsWith(`${protocol}//`) ? `//${host}` : '';
+    return `${protocol}${authority}${pathname}${search ? '?[redacted]' : ''}${hash}`;
   } catch {
     return '[invalid-url]';
   }

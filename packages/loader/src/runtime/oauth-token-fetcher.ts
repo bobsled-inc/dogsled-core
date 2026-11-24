@@ -8,6 +8,7 @@
  * Security invariants:
  * - Token URL MUST be https:// (refuses cleartext — credentials are in the body + Basic auth).
  * - Client credentials are sent via HTTP Basic auth header, never in the URL.
+ * - Redirects are refused, so the request only reaches the configured token URL.
  */
 
 export type FetchLike = typeof fetch;
@@ -61,6 +62,7 @@ export async function fetchOAuthToken(options: FetchOAuthTokenOptions): Promise<
         Accept: 'application/json',
       },
       body: body.toString(),
+      redirect: 'error',
     });
   } catch (err) {
     throw new Error(

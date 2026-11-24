@@ -10,6 +10,11 @@ import { publicationWarehouse } from '../support/publication-warehouse.js';
 import { createSnowflakeEmulator } from '../support/snowflake-emulator.js';
 import { runFixture } from '../unit/agentic/state-fixture.js';
 
+// The row count must exceed 1,000, so the cost is fixed: about 6 seconds on an idle machine and 33
+// to 63 seconds on a CI runner that shares its cores with three other workers. Three times the
+// slowest CI run still fails a hang.
+const BUILT_PACKAGE_TIMEOUT_MS = 180_000;
+
 it.skipIf(!(await isDuckDbAvailable()))(
   'publishes more than 1,000 rows through the built agentic and project entries',
   async () => {
@@ -88,5 +93,5 @@ it.skipIf(!(await isDuckDbAvailable()))(
       rmSync(directory, { recursive: true, force: true });
     }
   },
-  60_000
+  BUILT_PACKAGE_TIMEOUT_MS
 );

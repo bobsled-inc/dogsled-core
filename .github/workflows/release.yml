@@ -65,9 +65,21 @@ jobs:
         if: inputs.mode == 'retry'
         env:
           RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/release/version.mjs validate-retry-origin
+      - name: Require package access to match repository visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_POLICY_REF: ${{ inputs.mode == 'retry' && format('refs/tags/v{0}', inputs.version) || github.sha }}
         run: |
-          node scripts/release/version.mjs validate-retry-origin
-          git -c core.hooksPath=/dev/null checkout --detach "refs/tags/v$RELEASE_VERSION"
+          RELEASE_REPOSITORY_VISIBILITY="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')"
+          export RELEASE_REPOSITORY_VISIBILITY
+          node scripts/release/publication-policy.mjs
+      - name: Check out the validated retry tag
+        if: inputs.mode == 'retry'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: git -c core.hooksPath=/dev/null checkout --detach "refs/tags/v$RELEASE_VERSION"
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
@@ -255,7 +267,7 @@ jobs:
           git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
       - name: Install reviewed SBOM generator
         timeout-minutes: 5
-        run: npm install --global @cyclonedx/cdxgen@12.8.0 --ignore-scripts --registry=https://registry.npmjs.org/
+        run: npm install --global @cyclonedx/cdxgen@12.8.0 --ignore-scripts --before=2026-11-16 --registry=https://registry.npmjs.org/
       - name: Verify reviewed release tarball
         timeout-minutes: 15
         run: pnpm security:release --execute --out "$RUNNER_TEMP/npm-release"
@@ -318,7 +330,7 @@ jobs:
       - name: Notify Husky that a release awaits approval
         id: husky
         env:
-          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+          HUSKY_ORIGIN: ${{ secrets.HUSKY_ORIGIN || vars.HUSKY_ORIGIN }}
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
           RELEASE_BREAKING: ${{ needs.prepare.outputs.breaking }}
           NOTIFY_ONE_LINE: ${{ needs.prepare.outputs.notify_one_line }}
@@ -330,6 +342,10 @@ jobs:
             printf '%s\n' 'Husky notification skipped: HUSKY_ORIGIN is not configured.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          host="${HUSKY_ORIGIN#*://}"
+          host="${host%%/*}"
+          host="${host##*@}"
+          printf '::add-mask::%s\n' "$HUSKY_ORIGIN" "${host%%:*}"
           token="$(curl --silent --fail --header "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=husky" | jq --raw-output '.value')" || {
             printf '%s\n' 'Failed to obtain OIDC token for Husky (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
@@ -357,19 +373,20 @@ jobs:
             exit 0
           }
           response="$(
-            curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            curl --fail --silent --connect-timeout 10 --max-time 30 \
               --header "Authorization: Bearer $token" \
               --header "Content-Type: application/json; charset=utf-8" \
               --data "$payload" \
+              --write-out '\n%{http_code}' \
               "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null
           )" || {
-            printf '%s\n' 'Husky notification failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+            printf 'Husky notification failed (HTTP %s, non-blocking).\n' "${response##*$'\n'}" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           }
-          if jq --exit-status '.ok' <<< "$response" > /dev/null 2>&1; then
+          if jq --exit-status '.ok' <<< "${response%$'\n'*}" > /dev/null 2>&1; then
             printf 'notified=true\n' >> "$GITHUB_OUTPUT"
           else
-            printf 'Husky rejected the notification: %s\n' "$(jq --raw-output '.error // "unknown"' <<< "$response" 2>/dev/null)" >> "$GITHUB_STEP_SUMMARY"
+            printf 'Husky rejected the notification (HTTP %s, non-blocking).\n' "${response##*$'\n'}" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   approve:
@@ -419,11 +436,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
           RELEASE_COMMIT: ${{ needs.release-checks-ok.outputs.commit }}
+          RELEASE_POLICY_REF: ${{ needs.release-checks-ok.outputs.commit }}
           RELEASE_MODE: ${{ inputs.mode }}
         run: |
           git -c core.hooksPath=/dev/null fetch "$RUNNER_TEMP/npm-release/release.bundle" "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           test "$(git rev-parse "$RELEASE_TAG^{commit}")" = "$RELEASE_COMMIT"
           node scripts/release/version.mjs verify-candidate
+          RELEASE_REPOSITORY_VISIBILITY="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')"
+          export RELEASE_REPOSITORY_VISIBILITY
+          node scripts/release/publication-policy.mjs
           gh auth setup-git
           git -c core.hooksPath=/dev/null push origin "refs/tags/$RELEASE_TAG"
 
@@ -539,13 +560,19 @@ jobs:
     steps:
       - name: Report release outcome to Husky
         env:
-          HUSKY_ORIGIN: ${{ vars.HUSKY_ORIGIN }}
+          HUSKY_ORIGIN: ${{ secrets.HUSKY_ORIGIN || vars.HUSKY_ORIGIN }}
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
           PUBLISH_RESULT: ${{ needs.publish.result }}
           RUN_ID: ${{ github.run_id }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.tag }}
         run: |
+          if [ -n "$HUSKY_ORIGIN" ]; then
+            host="${HUSKY_ORIGIN#*://}"
+            host="${host%%/*}"
+            host="${host##*@}"
+            printf '::add-mask::%s\n' "$HUSKY_ORIGIN" "${host%%:*}"
+          fi
           token="$(curl --silent --fail --header "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=husky" | jq --raw-output '.value')" || {
             printf '%s\n' 'Failed to obtain OIDC token for Husky (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
@@ -571,10 +598,14 @@ jobs:
               runUrl: $runUrl,
               releaseUrl: $releaseUrl
             }')"
-          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
-            --header "Authorization: Bearer $token" \
-            --header "Content-Type: application/json; charset=utf-8" \
-            --data "$payload" \
-            "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null || {
-            printf '%s\n' 'Husky status update failed (non-blocking).' >> "$GITHUB_STEP_SUMMARY"
+          status_code="$(
+            curl --fail --silent --connect-timeout 10 --max-time 30 \
+              --header "Authorization: Bearer $token" \
+              --header "Content-Type: application/json; charset=utf-8" \
+              --data "$payload" \
+              --output /dev/null --write-out '%{http_code}' \
+              "${HUSKY_ORIGIN}/api/releases/notify" 2>/dev/null
+          )" || {
+            printf 'Husky status update failed (HTTP %s, non-blocking).\n' "$status_code" >> "$GITHUB_STEP_SUMMARY"
           }
+          printf 'Husky responded HTTP %s.\n' "$status_code"
