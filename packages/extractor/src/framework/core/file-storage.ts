@@ -272,6 +272,11 @@ export interface DownloadedFile {
 
 export interface ListFilesOptions {
   path: string;
+  /**
+   * Stops the listing after this many matching files (a positive count). The extractors
+   * leave it unset: their per-run limit counts the files they read, and a capped listing
+   * would stop among files they have already read.
+   */
   maxFiles?: number;
   signal?: AbortSignal;
 }

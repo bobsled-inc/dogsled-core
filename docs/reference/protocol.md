@@ -63,6 +63,9 @@ records:
 }
 ```
 
+The `STATE` of a file stream carries only `record_count` and `last_run_at`. The
+files it has read stay in the state file.
+
 `BATCH` points at files of records instead of inlining them, for large extractions
 (`extract run --batch`):
 
