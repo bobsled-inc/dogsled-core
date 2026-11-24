@@ -457,7 +457,7 @@ jobs:
       (needs.tag.result == 'success' || (inputs.mode == 'retry' && needs.tag.result == 'skipped'))
     needs: [prepare, release-checks-ok, approve, tag]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     environment: npm-release
     permissions:
       contents: read
