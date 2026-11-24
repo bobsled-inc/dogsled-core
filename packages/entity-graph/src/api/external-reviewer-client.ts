@@ -3,7 +3,7 @@
  * that ships review pairs to a bring-your-own agent and reads decisions back.
  *
  * Two transports, selected by `agent_policy.reviewer.kind`:
- *   - `http`: POST `entity_graph_review_request.v1` (cross-repo contract §3)
+ *   - `http`: POST `entity_graph_review_request.v1` (external reviewer contract)
  *     with a bearer token; handles both sync `200 {decisions}` and async
  *     `202 {job_id}` + `GET {url}/{job_id}` polling.
  *   - `command`: spawn the configured command, request JSON on stdin,

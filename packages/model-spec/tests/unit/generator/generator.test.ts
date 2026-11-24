@@ -261,13 +261,13 @@ describe('generateModelSpecFromSql — Snowflake double-quoted identifiers', () 
   );
 
   it('compiles the resolve-dependencies fixture with all-uppercase quoted ids', () => {
-    const sledhouseSource: SourceSpec = {
+    const exampleSource: SourceSpec = {
       spec_version: '0.2',
       name: 'sh_view',
       type: 'source',
       source_type: 'warehouse_table',
       connection: 'sh',
-      table: 'SLEDHOUSE.SLEDHOUSE.__28D996C0536B11F0BA2261FD10C8AD0B',
+      table: 'EXAMPLE.EXAMPLE.__0123456789ABCDEF0123456789ABCDEF',
       schema: {
         columns: [
           { name: 'country', type: 'STRING', primary_key: false },
@@ -280,8 +280,8 @@ describe('generateModelSpecFromSql — Snowflake double-quoted identifiers', () 
     };
     const sql =
       'SELECT "COUNTRY", "POPULATION", "DESCRIPTION", "_SH_LOADED_AT" ' +
-      'FROM SLEDHOUSE.SLEDHOUSE.__28D996C0536B11F0BA2261FD10C8AD0B';
-    const { models } = generateModelSpecFromSql(sql, snowflake([sledhouseSource]));
+      'FROM EXAMPLE.EXAMPLE.__0123456789ABCDEF0123456789ABCDEF';
+    const { models } = generateModelSpecFromSql(sql, snowflake([exampleSource]));
     expect(models).toHaveLength(1);
     const m = models[0]!;
     expect(m.source.ref).toBe('sh.sh_view');

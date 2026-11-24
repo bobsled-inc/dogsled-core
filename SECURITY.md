@@ -56,39 +56,45 @@ A separate protected job publishes the exact reviewed tarball using npm trusted
 publishing (OIDC). Public releases require provenance. The workflow rejects
 mismatches between repository visibility and reviewed package access.
 
-Only the protected publish job has `id-token: write`. It has read-only repository
-access. Actions and the npm publishing client are pinned, and publishing jobs
-disable package-manager caching. Successful publishes and already-published retries
-must match the reviewed tarball's registry integrity. Missing or mismatched
-integrity fails the release. Successful releases attach the reviewed artifact
-report and SBOM. Preview versions use the `preview` dist-tag and GitHub prerelease flag.
+Four jobs have `id-token: write`, all with read-only repository access. The
+`publish` job uses it for npm trusted publishing. The `notify` and
+`release-status` jobs in `release.yml` and the `report` job in
+`release-health.yml` use it only to authenticate status messages; they check out
+no code and install no packages. Actions and the npm publishing client are pinned,
+and publishing jobs disable package-manager caching. Successful publishes and
+already-published retries must match the reviewed tarball's registry integrity.
+Missing or mismatched integrity fails the release. Successful releases attach the
+reviewed artifact report and SBOM. Preview versions use the `preview` dist-tag and
+GitHub prerelease flag.
 
-The workflow relies on required environment reviewers, publication limited to
-`main`, and `v*` tag creation limited to the release workflow with replacement
-and deletion blocked. npm's trusted publisher is bound to this repository,
-`release.yml` and `npm-release`. Preparation has read-only repository access.
-A maintainer approves the release in the `release-approval` environment before
-any tag is pushed; a rejection leaves no tag. The install-free tag job then runs
-in the `release-tag` environment, limited to `main` without reviewers, and
-pushes the verified tag with Git hooks disabled. Publication runs in `npm-release`.
-Follow [Cutting a release](docs/releases.md) for dispatch, approval, and
-verification steps.
+The workflow relies on required reviewers in the `release-approval` environment,
+release environments limited to `main`, and a ruleset that blocks updating and
+deleting `v*` tags. The ruleset does not limit who can create one: anyone with
+write access can push a new `v*` tag. A tag alone publishes nothing. `retry`
+accepts only a tag whose commit changes nothing but the package version on top of
+a commit on `main` (or the `0.1.0` commit on `main`), and it needs the same
+approval. npm's trusted publisher is bound to this repository, `release.yml` and
+`npm-release`. Preparation has read-only repository access. A maintainer approves
+the release in the `release-approval` environment before any tag is pushed; a
+rejection leaves no tag. The install-free tag job then runs in the `release-tag`
+environment, limited to `main` without reviewers, and pushes the verified tag with
+Git hooks disabled. Publication runs in `npm-release`. Follow [Cutting a
+release](docs/releases.md) for dispatch, approval, and verification steps.
 
 ## Dependency checks
 
 `pnpm security:audit` queries the registry using `audit-ci.json`. CI runs it
 every Monday at 10:17 UTC while GitHub schedules remain active, on pushes to
-`main`, and on manual dispatch when
-`dependency_audit` is enabled. Release artifact checks run it as well. Pull
-request checks keep the network audit separate from the local development gate.
+`main`, on pull requests that change a `package.json`, `pnpm-lock.yaml` or
+`pnpm-workspace.yaml`, and on manual dispatch when `dependency_audit` is enabled.
+Release artifact checks run it as well. The local gate, `pnpm precommit`, does not.
 
 Dependency updates observe a 7-day minimum release age, except for
 owner-approved exact-version security-fix exemptions listed in
 `docs/dependency-security.md`. Weekly Dependabot npm
 and GitHub Actions updates use the same cooldown, group minor/patch updates and
-ignore semver-major bumps. npm allows up to two open version-update PRs;
-GitHub Actions allows one. Audit exceptions
-identify an exact
+ignore semver-major bumps. npm allows up to six open version-update PRs;
+GitHub Actions allows one. Audit exceptions identify an exact
 advisory and dependency path, explain reachability, and set a review deadline.
 
 `pnpm security:fast` is the offline gate for tracked secrets, privacy and naming
