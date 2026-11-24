@@ -241,3 +241,4 @@ Ask questions, share ideas and request connectors in
 [Apache-2.0](LICENSE).
 
 See [TRADEMARKS.md](TRADEMARKS.md) for the name and logo policy.
+
