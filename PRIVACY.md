@@ -34,8 +34,9 @@ go to the maintainers. These are the cases checked, at the versions named:
   connects, it asks the Databricks host for a feature flag and, if the flag is on,
   sends metrics to that host. Dogsled does not change this setting. Set
   `DATABRICKS_TELEMETRY_DISABLED=1` to turn it off.
-- Next.js 15.5.29, which runs Explorer from a source checkout, sends usage data to
-  `telemetry.nextjs.org` by default. Set `NEXT_TELEMETRY_DISABLED=1` to turn it off.
+- Next.js 15.5.29, which runs Explorer from a source checkout, can send usage data to
+  `telemetry.nextjs.org`. Explorer turns this off for its dev, build, start and lint
+  commands.
 
 ## Credentials
 
