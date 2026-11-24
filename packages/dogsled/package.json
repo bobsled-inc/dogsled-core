@@ -9,7 +9,7 @@
     "directory": "packages/dogsled"
   },
   "publishConfig": {
-    "access": "restricted",
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "engines": {

@@ -351,7 +351,7 @@ describe('publish hygiene', () => {
       }
       deepStrictEqual(
         manifest.publishConfig?.access,
-        'restricted',
+        'public',
         'Review package access and this assertion together before changing publication policy.'
       );
       match(
