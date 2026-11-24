@@ -3,10 +3,20 @@ import { spawnSync } from 'node:child_process';
 import { withRegistryReadAuth } from './registry-read-auth.mjs';
 import { publicationPolicy } from './publication-policy.mjs';
 
+// npm reviews a new public version before it is readable, which can take many minutes.
+export const REGISTRY_WAIT_LIMIT_MS = 20 * 60 * 1000;
+const FIRST_DELAYS_MS = [1000, 3000, 7000, 15000];
+const POLL_DELAY_MS = 30_000;
+const PROGRESS_INTERVAL_MS = 60_000;
+
 export async function publishWithIntegrity(
   request,
   run = spawnSync,
-  { wait = waitForMetadata, delays = [1000, 3000, 7000, 15000, 30000, 60000] } = {}
+  {
+    wait = waitForMetadata,
+    now = () => performance.now(),
+    log = (line) => process.stdout.write(`${line}\n`),
+  } = {}
 ) {
   const { tarball, packageName, version, access, integrity } = request;
   const { provenance, distTag } = publicationPolicy(request);
@@ -37,7 +47,9 @@ export async function publishWithIntegrity(
     if (result.error || (result.status !== 0 && !alreadyPublished))
       throw new Error(`npm publish failed for ${packageName}@${version}.`);
     let metadataError = 'Cannot verify the registry tarball integrity.';
-    for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+    const startedAt = now();
+    let nextProgress = PROGRESS_INTERVAL_MS;
+    for (let attempt = 0; ; attempt += 1) {
       const metadata = run(
         'npm',
         [
@@ -63,8 +75,18 @@ export async function publishWithIntegrity(
           return { alreadyPublished, integrity };
         }
       }
-      if (attempt < delays.length) await wait(delays[attempt]);
+      const elapsed = now() - startedAt;
+      if (elapsed >= REGISTRY_WAIT_LIMIT_MS) throw new Error(metadataError);
+      if (elapsed >= nextProgress) {
+        const minutes = Math.floor(elapsed / PROGRESS_INTERVAL_MS);
+        log(
+          `Waiting for npm to show ${packageName}@${version}: ${minutes} of at most ${REGISTRY_WAIT_LIMIT_MS / PROGRESS_INTERVAL_MS} minutes.`
+        );
+        nextProgress = (minutes + 1) * PROGRESS_INTERVAL_MS;
+      }
+      await wait(
+        Math.min(FIRST_DELAYS_MS[attempt] ?? POLL_DELAY_MS, REGISTRY_WAIT_LIMIT_MS - elapsed)
+      );
     }
-    throw new Error(metadataError);
   });
 }

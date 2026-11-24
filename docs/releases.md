@@ -69,6 +69,8 @@ Review [THIRD_PARTY_NOTICES.md](../packages/dogsled/THIRD_PARTY_NOTICES.md) befo
 
 The workflow sets npm fetch timeouts and retries, and time limits on the install, packed-catalog and release-verification steps, so a stalled registry connection fails within minutes instead of using up the job.
 The packed-catalog check retries once on its own. Before a tag is pushed, re-run the failed jobs.
+npm reviews a new public version before it is readable, so the publish job polls the registry for up to 20 minutes and prints its progress every minute.
+If it times out, wait until the version is visible on npm, then re-run the failed jobs.
 Investigate interrupted runs before retrying. Rejecting the approval leaves no tag and no version gap; the next release-worthy merge tries again.
 To ship an existing tag whose publication failed, use `retry` mode. An existing registry version must match the reviewed tarball's integrity.
 Never replace a version tag or overwrite published bytes.
