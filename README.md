@@ -6,7 +6,7 @@
 
 **Dogsled Core is an open-source command-line toolkit for moving and transforming data.**
 Extract data from APIs, files and databases, load it into a database or warehouse,
-and build SQL models that produce tables you can query.
+and build SQL models that produce queryable tables.
 
 Keep your pipelines and your semantic model in the same project. YAML files define
 how data moves and changes, alongside descriptions, business metrics, relationships
