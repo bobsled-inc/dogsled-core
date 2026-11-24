@@ -2,8 +2,7 @@
  * Verified Query (VQ) spec — an NL-question-to-SQL pairing that downstream
  * agents can treat as ground truth.
  *
- * Shape mirrors the Notion sub-spec (`verified queries` section) and the
- * host application's `verified_queries` table so host applications can consume both.
+ * Host applications can consume this shape without translation.
  *
  * The SQL field supports `{ref}` tokens (either `{model_name}` or
  * `{connection.source_name}`) which are replaced with qualified identifiers

@@ -753,7 +753,7 @@ function buildModelPipelineManifest(input: ModelPipelineTemplateInput): ModelPip
  * token) keep running unchanged there. Under the host application contract, the host
  * sibling tolerates both tokens on any verbatim-exec path.
  *
- * `prepare_chunks` is deliberately absent here: it is a lakehouse-execution
+ * `prepare_chunks` is deliberately absent here: it is a host-provided
  * adapter step (NOT an `entity-graph` CLI call), front-injected by the host application's
  * config synthesizer when `chunk_sources` are present. Dogsled never emits it as a
  * command node; the Host-application construction executor owns it as a pre-step. A Dogsled
@@ -847,7 +847,7 @@ function buildEntityGraphPipelineManifest(
   // into construction at runtime today. This drives the v3 `nodes`/`edges`
   // ONLY — never the manifest's `phases` field (see below). `prepare_chunks` is
   // intentionally NOT injected: it is the Host-application construction executor's
-  // responsibility (a lakehouse adapter pre-step), not a Dogsled CLI command. See
+  // responsibility (a host adapter pre-step), not a Dogsled CLI command. See
   // `withInjectedProfilePhase` and `ENTITY_GRAPH_PHASE_COMMAND_PREFIX`.
   const nodePhases = withInjectedProfilePhase(input.phases);
   const seenIds = new Map<string, EntityGraphPhase>();

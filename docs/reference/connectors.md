@@ -73,6 +73,8 @@ from `local`, `s3`, `gcs` and `sftp`. See
 | Turbopuffer                                   | `turbopuffer`          | `@turbopuffer/turbopuffer`                    |
 
 For a service that is compatible with PostgreSQL or MySQL, use that destination.
+For Databricks, install a 2.x driver and ignore npm's suggestion to downgrade it: see
+[What `npm audit` shows](../dependency-security.md#what-npm-audit-shows).
 `dogsled.yml` pipelines accept a subset: `duckdb`, `bigquery`, `snowflake`,
 `postgres`, `mysql`, `databricks`, `clickhouse`, `turbopuffer`, `local`, `gcs` and
 `s3` (see [Run pipelines](../guides/run-pipelines.md#destination-types)). The flags

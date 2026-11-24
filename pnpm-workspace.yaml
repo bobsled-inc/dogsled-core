@@ -35,16 +35,16 @@ catalogMode: strict
 overrides:
   source-map-js: 1.2.2
   # Security/compatibility pins for transitive dependencies; revisit when upstream packages absorb the fixes.
-  basic-ftp: 6.2.1
+  basic-ftp: 6.2.4
   thrift: 0.23.0
   '@tootallnate/once': 2.0.1
   body-parser: 2.4.0
   dompurify: 3.4.17
-  fast-xml-parser: 5.7.0
+  fast-xml-parser: 5.12.0
   ip-address: 10.7.4
   qs: 6.16.1
   fast-uri: 3.1.9
-  fast-xml-builder: 1.1.9
+  fast-xml-builder: 1.3.1
   axios: 1.20.0
   # GHSA-g7r4-m6w7-qqqr: Windows development-server path containment.
   esbuild: 0.28.2
@@ -68,8 +68,9 @@ overrides:
   moment: 2.31.0
   # GHSA-xcx6-jx8p-x3h5: fixed MSAL Node authorization-code flow.
   '@azure/identity': 4.14.1
-  # GHSA-hxh3-vqpv-xpqv: fixed SDK server dependency.
-  hono: 4.13.11
+  # GHSA-hxh3-vqpv-xpqv, GHSA-46wx-v44x-9hh2, GHSA-4h7h-rv7c-7m2v, GHSA-4m76-xfj5-7975,
+  # GHSA-h7mg-cq63-vhpq and GHSA-3gg2-335m-rxc6: fixed SDK server dependency.
+  hono: 4.13.16
   # GHSA-p498-v437-472g: fixed development filesystem dependency.
   '@humanfs/node': 0.16.8
   vite: 7.3.7
@@ -133,8 +134,8 @@ catalogs:
   duckdb:
     '@duckdb/node-api': 1.4.4-r.4
   eslint:
-    '@typescript-eslint/eslint-plugin': 8.72.2
-    '@typescript-eslint/parser': 8.72.2
+    '@typescript-eslint/eslint-plugin': 8.73.0
+    '@typescript-eslint/parser': 8.73.0
     eslint: 10.15.0
   mcp:
     '@modelcontextprotocol/sdk': 1.32.2

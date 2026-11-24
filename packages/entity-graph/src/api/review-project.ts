@@ -8,7 +8,7 @@
  * `applyReviewDecisions` gate. `resolve run`'s default behavior is untouched.
  *
  * Judge selection (`selectJudge`) — the `agent_policy.judge` tier picks the lane
- * (cross-repo contract §5); a host-injected `llmClient` always wins first as the
+ * (external reviewer contract); a host-injected `llmClient` always wins first as the
  * programmatic/test escape hatch:
  *   - host-injected `llmClient` — wins over every config-driven judge, including
  *     a pinned `judge` tier (works even when `agent_policy` is absent)
@@ -83,7 +83,7 @@ export interface ReviewResolveProjectOptions extends EntityGraphProjectOptions {
   /**
    * Host-injected external-reviewer transport config (Option 2, managed
    * path). Wins over the spec's `agent_policy.reviewer`; decisions from
-   * either land with `decision_source: 'agent'` (cross-repo contract §4).
+   * either land with `decision_source: 'agent'` (external reviewer contract).
    */
   reviewerOverride?: ReviewerConfig;
   /** Override the spec's `agent_policy.max_pairs_per_run` cap. */
@@ -116,9 +116,9 @@ export interface ReviewResolveProjectResult {
   failure?: ResolveWorkflowFailure;
 }
 
-/** In-Dogsled model judge decisions land as `agent_auto` (cross-repo contract §4). */
+/** In-Dogsled model judge decisions land as `agent_auto` (external reviewer contract). */
 const MODEL_JUDGE_DECISION_SOURCE = 'agent_auto';
-/** External reviewer decisions land as `agent` (cross-repo contract §4). */
+/** External reviewer decisions land as `agent` (external reviewer contract). */
 const EXTERNAL_REVIEWER_DECISION_SOURCE = 'agent';
 
 type ReviewDecisionSource =
@@ -245,7 +245,7 @@ interface JudgeSelectionInput {
 }
 
 /**
- * Judge-tier dispatcher (cross-repo contract §5). `agent_policy.judge` picks the
+ * Judge-tier dispatcher (external reviewer contract). `agent_policy.judge` picks the
  * lane per entity — one spec pinning `model` never affects another entity's tier
  * in the same run, since selection runs per resolved spec.
  */

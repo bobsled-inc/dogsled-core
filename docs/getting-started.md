@@ -33,6 +33,10 @@ warehouse drivers globally too.
 Warehouse drivers are optional: you install them later, next to Dogsled, only for the
 warehouses you use. See [Load data](guides/load-data.md#install-a-warehouse-driver).
 
+`npm install` reports moderate vulnerabilities in a dependency. See
+[What `npm audit` shows](dependency-security.md#what-npm-audit-shows) for what they are
+and why Dogsled does not reach them.
+
 ## Create a project
 
 ```bash

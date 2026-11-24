@@ -237,100 +237,97 @@ async function countStringOccurrencesInSchema(
   return matches;
 }
 
-describe.skipIf(!DUCKDB_AVAILABLE)(
-  'entity-graph DuckDB resolve e2e (no schema.columns — live repro)',
-  () => {
-    // Mirrors account_resolution_poc: neon_accounts (5 raw cols) + pylon_accounts
-    // (3 raw cols), neither with schema.columns. The old `src.*` passthrough
-    // caused "Queries in UNION ALL have mismatched column count: 12 columns vs
-    // 10 columns". The fix drops raw passthrough in mixed mode so the UNION ALL
-    // is valid and the pipeline completes.
+describe.skipIf(!DUCKDB_AVAILABLE)('entity-graph DuckDB resolve e2e (no schema.columns)', () => {
+  // Sources: crm_accounts (5 raw cols) + support_accounts
+  // (3 raw cols), neither with schema.columns. The old `src.*` passthrough
+  // caused "Queries in UNION ALL have mismatched column count: 12 columns vs
+  // 10 columns". The fix drops raw passthrough in mixed mode so the UNION ALL
+  // is valid and the pipeline completes.
 
-    let dir: string;
-    let dbPath: string;
+  let dir: string;
+  let dbPath: string;
 
-    beforeEach(async () => {
-      dir = await mkdtemp(join(tmpdir(), 'eg-nocols-e2e-'));
-      dbPath = join(dir, 'resolve.duckdb');
-      await writeNoColumnsFixture(dir, { duckdbDbPath: dbPath });
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'eg-nocols-e2e-'));
+    dbPath = join(dir, 'resolve.duckdb');
+    await writeNoColumnsFixture(dir, { duckdbDbPath: dbPath });
 
-      // Use a DuckDB integration with handle `main` (matches the no-columns
-      // fixture's connection name) so the source-registry fallback builds the
-      // correct FQ table name: "main"."neon_accounts".
-      const noColIntegration: IntegrationFile = {
-        spec_version: '1',
-        type: 'integration',
-        name: NO_COL_INTEGRATION_HANDLE,
-        source_type: 'duckdb',
-        connection: { schema: 'main' },
-        auth: { type: 'file', path: dbPath },
-      };
-      const runner = await resolveRunner(noColIntegration);
-      try {
-        await runner.run(`CREATE SCHEMA IF NOT EXISTS ${RESOLUTION_TARGET_SCHEMA}`);
-        // neon_accounts: 5 raw columns (asymmetric — more than pylon_accounts).
-        await runner.run(
-          `CREATE TABLE main.neon_accounts
-           (neon_id VARCHAR, name VARCHAR, email VARCHAR, plan VARCHAR, created_at VARCHAR)`
-        );
-        await runner.run(
-          `INSERT INTO main.neon_accounts VALUES
+    // Use a DuckDB integration with handle `main` (matches the no-columns
+    // fixture's connection name) so the source-registry fallback builds the
+    // correct FQ table name: "main"."crm_accounts".
+    const noColIntegration: IntegrationFile = {
+      spec_version: '1',
+      type: 'integration',
+      name: NO_COL_INTEGRATION_HANDLE,
+      source_type: 'duckdb',
+      connection: { schema: 'main' },
+      auth: { type: 'file', path: dbPath },
+    };
+    const runner = await resolveRunner(noColIntegration);
+    try {
+      await runner.run(`CREATE SCHEMA IF NOT EXISTS ${RESOLUTION_TARGET_SCHEMA}`);
+      // crm_accounts: 5 raw columns (asymmetric — more than support_accounts).
+      await runner.run(
+        `CREATE TABLE main.crm_accounts
+           (crm_id VARCHAR, name VARCHAR, email VARCHAR, plan VARCHAR, created_at VARCHAR)`
+      );
+      await runner.run(
+        `INSERT INTO main.crm_accounts VALUES
             ('n1', 'Acme Corp', 'contact@acme.com.example.com', 'pro', '2024-01-01'),
             ('n2', 'Globex',    'hello@globex.io.example.com',  'free', '2024-02-01'),
             ('n3', 'Acme Corporation', 'admin@acme.com.example.com', 'pro', '2024-01-15')`
-        );
-        // pylon_accounts: 3 raw columns (asymmetric — fewer than neon_accounts).
-        await runner.run(
-          `CREATE TABLE main.pylon_accounts (pylon_id VARCHAR, name VARCHAR, domain VARCHAR)`
-        );
-        await runner.run(
-          `INSERT INTO main.pylon_accounts VALUES
+      );
+      // support_accounts: 3 raw columns (asymmetric — fewer than crm_accounts).
+      await runner.run(
+        `CREATE TABLE main.support_accounts (support_id VARCHAR, name VARCHAR, domain VARCHAR)`
+      );
+      await runner.run(
+        `INSERT INTO main.support_accounts VALUES
             ('p1', 'acme corp', 'acme.com'),
             ('p2', 'Initech',   'initech.io')`
-        );
-      } finally {
-        await runner.close?.();
-      }
+      );
+    } finally {
+      await runner.close?.();
+    }
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('completes the full pipeline without UNION ALL mismatch error', async () => {
+    const result = await runResolveProject({
+      cwd: dir,
+      integration: NO_COL_INTEGRATION_HANDLE,
+      schema: RESOLUTION_TARGET_SCHEMA,
     });
 
-    afterEach(async () => {
-      await rm(dir, { recursive: true, force: true });
-    });
+    expect(result.failure).toBeUndefined();
+    expect(result.entities).toHaveLength(1);
+    const entity = result.entities[0];
+    expect(entity?.executed).toBe(true);
 
-    it('completes the full pipeline without UNION ALL mismatch error', async () => {
-      const result = await runResolveProject({
-        cwd: dir,
-        integration: NO_COL_INTEGRATION_HANDLE,
-        schema: RESOLUTION_TARGET_SCHEMA,
-      });
-
-      expect(result.failure).toBeUndefined();
-      expect(result.entities).toHaveLength(1);
-      const entity = result.entities[0];
-      expect(entity?.executed).toBe(true);
-
-      const noColIntegration: IntegrationFile = {
-        spec_version: '1',
-        type: 'integration',
-        name: NO_COL_INTEGRATION_HANDLE,
-        source_type: 'duckdb',
-        connection: { schema: 'main' },
-        auth: { type: 'file', path: dbPath },
-      };
-      const runner = await resolveRunner(noColIntegration);
-      try {
-        // Row count = neon_accounts (3) + pylon_accounts (2) = 5 total.
-        const stdCount = await scalarCount(
-          runner,
-          `SELECT COUNT(*) AS c FROM ${RESOLUTION_TARGET_SCHEMA}.${STANDARDIZED_TABLE}`
-        );
-        expect(stdCount).toBe(5);
-      } finally {
-        await runner.close?.();
-      }
-    });
-  }
-);
+    const noColIntegration: IntegrationFile = {
+      spec_version: '1',
+      type: 'integration',
+      name: NO_COL_INTEGRATION_HANDLE,
+      source_type: 'duckdb',
+      connection: { schema: 'main' },
+      auth: { type: 'file', path: dbPath },
+    };
+    const runner = await resolveRunner(noColIntegration);
+    try {
+      // Row count = crm_accounts (3) + support_accounts (2) = 5 total.
+      const stdCount = await scalarCount(
+        runner,
+        `SELECT COUNT(*) AS c FROM ${RESOLUTION_TARGET_SCHEMA}.${STANDARDIZED_TABLE}`
+      );
+      expect(stdCount).toBe(5);
+    } finally {
+      await runner.close?.();
+    }
+  });
+});
 
 describe.skipIf(!DUCKDB_AVAILABLE)('entity-graph DuckDB incremental resolve parity', () => {
   let dir: string;

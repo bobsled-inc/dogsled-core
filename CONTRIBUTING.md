@@ -72,7 +72,7 @@ packed-catalog checks, credential-free showcases and an installed-package outsid
 suite. GitHub may require maintainer approval before a new contributor's run starts.
 The public metadata-only policy job runs in the base context with permission to
 label and comment on PRs; it never checks out or executes the submitted code.
-The required `pr-metadata` workflow checks Change Type on every PR and DCO sign-offs once the public repository is live.
+The required `pr-metadata` check verifies the Change Type of every PR and the DCO sign-off on every commit.
 
 Select exactly one Change Type in the PR template. A merge into `main`
 releases a new version that a maintainer approves before publication. The Change

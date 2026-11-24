@@ -49,6 +49,12 @@ Dogsled checks the installed driver version before it connects and stops with a
 clear error if the driver is missing or too old. The minimum versions are listed in
 [Installed dependency security](../dependency-security.md#driver-security-minimums).
 
+For Databricks, install a 2.x driver: `npm install '@databricks/sql@>=2.0.0 <3'`.
+`npm audit` then shows high-severity rows for the driver. Dogsled's adapters do not
+reach that code, and the fix npm suggests, `@databricks/sql` 1.5.0, does not work with
+Dogsled. Do not run `npm audit fix --force`. See
+[What `npm audit` shows](../dependency-security.md#what-npm-audit-shows).
+
 ## DuckDB and DuckLake
 
 ```bash

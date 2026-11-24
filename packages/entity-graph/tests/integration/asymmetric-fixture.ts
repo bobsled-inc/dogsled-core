@@ -237,7 +237,7 @@ outputs:
 // ---------------------------------------------------------------------------
 // No-schema-columns fixture (asymmetric raw column counts)
 //
-// Mirrors the live account_resolution_poc repro where neither lakehouse source
+// Covers a project where neither lakehouse source
 // declares schema.columns. Input A has 5 raw columns; input B has 3. The
 // standardize step must NOT use `src.*` (wildcard) — different raw column
 // counts make the UNION ALL invalid. The fix projects only bookkeeping +
@@ -246,32 +246,32 @@ outputs:
 // Connection handle: `main` — matches DuckDB's default schema so the source
 // registry fallback (triggered when sources lack schema.columns and fail the
 // strict SourceSpecSchema parse) builds the right FQ table name:
-//   buildFqName('main', 'neon_accounts', 'duckdb') → "main"."neon_accounts"
+//   buildFqName('main', 'crm_accounts', 'duckdb') → "main"."crm_accounts"
 // In production (BigQuery) the equivalent is the dataset name prefix, e.g.
 //   buildFqName('dogsled_managed', 'demo_daily__accounts', 'bigquery')
 // ---------------------------------------------------------------------------
 
 export const NO_COL_INTEGRATION_HANDLE = 'main';
-export const NO_COL_SOURCE_A_REF = 'main.neon_accounts';
-export const NO_COL_SOURCE_B_REF = 'main.pylon_accounts';
+export const NO_COL_SOURCE_A_REF = 'main.crm_accounts';
+export const NO_COL_SOURCE_B_REF = 'main.support_accounts';
 
 // Sources intentionally lack `schema.columns` so SourceSpecSchema.safeParse
 // fails → source is skipped from the registry → sourceColumns = undefined →
 // exercises the mixed-mode passthrough-drop path in generateStandardizeSql.
 const NO_COL_SOURCE_A_YML = `spec_version: '0.2'
-name: neon_accounts
+name: crm_accounts
 type: source
 source_type: warehouse_table
 connection: main
-table: main.neon_accounts
+table: main.crm_accounts
 `;
 
 const NO_COL_SOURCE_B_YML = `spec_version: '0.2'
-name: pylon_accounts
+name: support_accounts
 type: source
 source_type: warehouse_table
 connection: main
-table: main.pylon_accounts
+table: main.support_accounts
 `;
 
 const NO_COL_RESOLUTION_YML = `spec_version: '0.2'
@@ -279,14 +279,14 @@ type: resolution
 name: account_resolution
 description: Resolve accounts with no column metadata declared.
 inputs:
-  - ref: main.neon_accounts
+  - ref: main.crm_accounts
     role: internal
     trust_tier: gold
-    id_fields: [neon_id]
-  - ref: main.pylon_accounts
+    id_fields: [crm_id]
+  - ref: main.support_accounts
     role: internal
     trust_tier: silver
-    id_fields: [pylon_id]
+    id_fields: [support_id]
 standardize:
   - field: name
     transforms: [lowercase, trim]
@@ -342,8 +342,8 @@ export async function writeNoColumnsFixture(
   await mkdir(join(dir, 'sources'), { recursive: true });
   await mkdir(join(dir, 'entity-graph'), { recursive: true });
   await writeFile(join(dir, 'model-spec.yml'), MODEL_SPEC_YML, 'utf8');
-  await writeFile(join(dir, 'sources', 'neon_accounts.yml'), NO_COL_SOURCE_A_YML, 'utf8');
-  await writeFile(join(dir, 'sources', 'pylon_accounts.yml'), NO_COL_SOURCE_B_YML, 'utf8');
+  await writeFile(join(dir, 'sources', 'crm_accounts.yml'), NO_COL_SOURCE_A_YML, 'utf8');
+  await writeFile(join(dir, 'sources', 'support_accounts.yml'), NO_COL_SOURCE_B_YML, 'utf8');
   await writeFile(
     join(dir, 'entity-graph', 'account_resolution.yml'),
     NO_COL_RESOLUTION_YML,

@@ -548,7 +548,7 @@ describe.skipIf(!DUCKDB_AVAILABLE)('entity-graph DuckDB review e2e', () => {
       expect(decisions).toHaveLength(REVIEW_BAND_PAIR_COUNT);
       expect(decisions.every((row) => row.decision === 'merge')).toBe(true);
       // External reviewer decisions land as 'agent', not 'agent_auto'
-      // (cross-repo contract §4).
+      // (external reviewer contract).
       expect(decisions.every((row) => row.decision_source === 'agent')).toBe(true);
     } finally {
       await runner.close?.();
@@ -648,7 +648,7 @@ describe.skipIf(!DUCKDB_AVAILABLE)('entity-graph DuckDB review e2e', () => {
     // the reviewer's own timeout_s (1s here) is what's under test.
   }, 30_000);
 
-  // --- agent_policy.judge tier selector (cross-repo contract §5) ------------
+  // --- agent_policy.judge tier selector (external reviewer contract) ------------
   // Scenario "judge absent (model runs)" is the suite's first test: the
   // beforeEach spec omits `judge`, and the injected llmClient serves the model
   // lane (decision_source 'agent_auto'). The tests below cover the new branches.
