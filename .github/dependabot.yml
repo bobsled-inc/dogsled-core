@@ -20,6 +20,12 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: [version-update:semver-major]
+      # Held at 0.1.13: 0.14 rejects SQL nested over 32 levels. To move it, choose a parser depth limit, keep deep-sql-nesting.test.ts green and remove this entry.
+      - dependency-name: '@polyglot-sql/sdk'
+        update-types:
+          - version-update:semver-patch
+          - version-update:semver-minor
+          - version-update:semver-major
     groups:
       ai:
         patterns:
