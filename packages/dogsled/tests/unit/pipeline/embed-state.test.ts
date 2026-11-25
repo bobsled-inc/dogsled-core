@@ -238,11 +238,21 @@ interface RunOptions extends Partial<RunProjectPipelineOptions> {
   loader?: string;
 }
 
-/** Run the real stages. `extracted` resolves when the extractor has exited. */
+/** The streams that an extractor with these arguments has staged. */
+function stagedStreams(args: readonly string[]): string[] {
+  const flag = args.indexOf('--staged-state');
+  const stagedPath = args[flag + 1]!;
+  if (flag === -1 || !fs.existsSync(stagedPath)) return [];
+  return Object.keys(
+    (JSON.parse(fs.readFileSync(stagedPath, 'utf8')) as PipelineExecutionState).streams
+  );
+}
+
+/** Run the real stages. `extracted` resolves with what the extractor had staged when it exited. */
 function start(projectRoot: string, { loader, env, ...options }: RunOptions = {}) {
   const children: Array<{ stage: Stage; args: readonly string[] }> = [];
-  let onExtracted = (): void => {};
-  const extracted = new Promise<void>((resolve) => (onExtracted = resolve));
+  let onExtracted = (_staged: string[]): void => {};
+  const extracted = new Promise<string[]>((resolve) => (onExtracted = resolve));
   const spawn = (command: string, args: readonly string[], spawned: SpawnOptions): ChildProcess => {
     const stage = stageOf(args);
     children.push({ stage, args });
@@ -250,7 +260,7 @@ function start(projectRoot: string, { loader, env, ...options }: RunOptions = {}
       stage === 'load' && loader !== undefined
         ? spawnChild(process.execPath, ['-e', loader], spawned)
         : spawnChild(command, args, spawned);
-    if (stage === 'extract') child.once('close', onExtracted);
+    if (stage === 'extract') child.once('close', () => onExtracted(stagedStreams(args)));
     return child;
   };
   const result = runProjectPipeline(
@@ -352,6 +362,70 @@ describe('the state of documents that a run embeds', () => {
     expect(children[0]!.args).toContain(stagedPath);
     expect(fs.existsSync(path.dirname(stagedPath))).toBe(false);
   }, 120_000);
+
+  it('stays for every resource when one of them fails, and the retry covers both', async () => {
+    const root = makeProject();
+    const config = path.join(root, 'dogsled.yml');
+    fs.writeFileSync(
+      config,
+      fs
+        .readFileSync(config, 'utf8')
+        .replace('resources: [docs]', 'resources: [docs, notes]')
+        .replace('docs: [{ field: text }]', 'docs: [{ field: text }], notes: [{ field: text }]')
+    );
+    fs.writeFileSync(
+      path.join(root, 'resources/files/notes.yml'),
+      fs
+        .readFileSync(path.join(root, 'resources/files/docs.yml'), 'utf8')
+        .replace('name: docs', 'name: notes')
+        .replace(
+          "source: { path: 'docs/*.md', format: document }",
+          "source: { path: 'notes/*', format: document, parse: { formats: [md], on_error: fail } }"
+        )
+    );
+    fs.mkdirSync(path.join(root, 'data/notes'));
+    fs.writeFileSync(path.join(root, 'data/notes/rest.txt'), 'Rest every third day.\n');
+
+    const failed = start(root, { state: EMPTY });
+    expect(await outcome(failed.result)).toEqual({ status: 'failure', exitCode: 1, state: EMPTY });
+    expect(await failed.extracted).toEqual(['files/docs']);
+    expect(stages(failed.children)).toEqual(['extract', 'embed', 'load']);
+
+    texts = [];
+    fs.renameSync(path.join(root, 'data/notes/rest.txt'), path.join(root, 'data/notes/rest.md'));
+    const retry = start(root, { state: EMPTY });
+    const retried = await retry.result;
+    expect(retried.status).toBe('success');
+    expect(texts.sort()).toEqual([...ALL_TEXTS, 'Rest every third day.'].sort());
+    expect(Object.keys(retried.state!.streams).sort()).toEqual(['files/docs', 'files/notes']);
+    expect(filesOf(retried.state)).toEqual(ALL_FILES);
+    expect((await retry.extracted).sort()).toEqual(['files/docs', 'files/notes']);
+  }, 240_000);
+
+  it('stays when a full refresh fails, and is saved when one succeeds', async () => {
+    const root = makeProject();
+    const before = (await start(root, { state: EMPTY }).result).state!;
+    expect(filesOf(before)).toEqual(ALL_FILES);
+
+    fs.writeFileSync(path.join(root, 'data/docs/trail.md'), 'Mark the trail.\n');
+    const failed = start(root, { state: before, fullRefresh: true });
+    beforeAnswer = async () => {
+      await failed.extracted;
+      return 400;
+    };
+    expect(await outcome(failed.result)).toEqual({ status: 'failure', exitCode: 1, state: before });
+    expect(await failed.extracted).toEqual(['files/docs']);
+
+    texts = [];
+    beforeAnswer = async () => {};
+    const refreshed = start(root, { state: before, fullRefresh: true });
+    const { status, state } = await refreshed.result;
+    expect(status).toBe('success');
+    expect(refreshed.children[0]!.args).toContain('--full-refresh');
+    expect(texts.sort()).toEqual([...ALL_TEXTS, 'Mark the trail.'].sort());
+    expect(filesOf(state)).toEqual([...ALL_FILES, 'trail.md'].sort());
+    expect(await vectors(root)).toBe(3);
+  }, 240_000);
 
   it('is saved by the extractor, as before, in a run that embeds nothing', async () => {
     const { result, children } = start(makeProject(false), { state: EMPTY });

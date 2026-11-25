@@ -145,8 +145,18 @@ backend must stay valid until then. With several destinations, an incremental do
 resource keeps no such record, so each run reads and embeds every file.
 
 Versions before this one saved the record when extraction ended, so after a failure the next run
-skipped those files and their rows were lost without a message. Runs without an embed stage, from
-API and warehouse sources, or with several destinations save their state as before.
+skipped those files and their rows were lost without a message. Other runs save their state at
+the same point as before: those without an embed stage, from an API or a warehouse, or with
+several destinations.
+
+So with one destination, a pipeline that embeds records from an API or a warehouse still saves
+the cursor of each resource once it has been read, and a failure to embed or load after that can
+leave records behind that the next run does not read. To load them, run the pipeline once with
+`--full-refresh`, which reads everything again and replaces the tables, or put the
+[state](run-in-production.md#extraction-cursors) from before the failed run back and run the
+pipeline again, which can load some rows of an `append` resource twice. Both read only what the
+source still has. Neither brings back the changes of a PostgreSQL `change_tracking` resource,
+because its replication slot has moved past them.
 
 ## Vector length
 
