@@ -1,6 +1,6 @@
 # @bobsled-inc/embedder — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
 `@bobsled-inc/embedder` enriches Dogsled protocol streams with vector embeddings. It is exposed directly as `dogsled embed` and through the unified CLI as `dogsled embed`.
 
@@ -34,6 +34,11 @@ Key rules:
 - `streams.<stream>[]` entries require `field`
 - `as` is optional; default output column name is `<field>_embedding`
 - vector columns must include a `dimension`, and the embedder derives it from the selected model
+- `provider: host` takes `streams` and an optional `dimension`, and nothing else names the model:
+  the host application does, through `DOGSLED_HOST_EMBEDDING_URL` and `DOGSLED_HOST_EMBEDDING_TOKEN`
+- `streams` keys are exact protocol stream names; the Dogsled pipeline resolves Resource names to
+  streams before it starts the embedder, so never guess a stream from a suffix here
+- `src/config.ts` is the `/schema` entry that server-side consumers import: keep it pure zod
 - prefer env placeholders in checked-in configs; literal API keys are acceptable only for one-off local invocations
 
 ## Command Surface
@@ -58,6 +63,13 @@ Output controls:
 - Rewritten batch manifests sanitize stream names and use collision-resistant filenames
 - Only JSONL and JSONL+gzip batch rewriting is supported; reject Parquet with a validation error
 - Route provider calls through `@bobsled-inc/ai`; do not add provider SDK clients here
+- Every vector must have the declared length and finite numbers, in `RECORD` and `BATCH` alike,
+  whatever the provider
+- A null vector is valid only where the stage reported a refused input, and the totals must match
+- A host stage asks for the model before it writes a `SCHEMA` and before it sends text. Only that
+  stage may read the two host variables, and `dogsled embed run` removes them from its process
+- Warnings and errors name streams, lines, fields, counts and codes, never a text or an input id.
+  A JSON error quotes its input, so never forward one
 - Shared helpers used by runtime code belong in shared modules, not command modules
 
 ## Setup And Pipeline Guidance
@@ -72,7 +84,11 @@ Output controls:
 
 - `src/index.ts`: CLI entrypoint, output-mode inference, Commander wiring
 - `src/commands/run.ts`: config parsing, secret resolution, CLI plumbing
+- `src/commands/host-stage.ts`: the stage for `provider: host`, and the stub stage
 - `src/runtime/processor.ts`: protocol pass-through for `SCHEMA`, `RECORD`, `STATE`, and `BATCH`
+- `src/runtime/read-messages.ts`: protocol input, without the text of a line that is not JSON
+- `src/runtime/embedding-text.ts`: what is embedded for a value, within the limits
+- `src/runtime/embed-result.ts`: the result of one embedding call and its checks
 - `src/runtime/batch-rewriter.ts`: JSONL and JSONL+gzip `BATCH` rewriting
 - `src/runtime/tokenizer.ts`: token counting and truncation helpers
 - `src/output-column.ts`: shared output-column naming helper

@@ -329,6 +329,34 @@ Project Skills APIs accept both options for compatibility but do not need them.
 | `createAgenticHost`                                                                                           | `/agentic`                   | `hostManagedModelAuth`; names via `secretResolver`     |
 | `resolveAgenticModel`                                                                                         | `/model-spec/agentic`        | context: `declaredSecretNames`, `hostManagedModelAuth` |
 
+### Host-supplied embeddings
+
+A pipeline whose `embed` block has `provider: host` embeds with a model that your
+application serves. Set its `https` endpoint and a token in `env`:
+
+```ts
+import {
+  HOST_EMBEDDING_TOKEN_ENV,
+  HOST_EMBEDDING_URL_ENV,
+  runProjectPipeline,
+} from '@bobsled-inc/dogsled/pipeline';
+
+await runProjectPipeline({
+  projectRoot,
+  pipelineName: 'handbook',
+  env: {
+    [HOST_EMBEDDING_URL_ENV]: 'https://host.example.com/embeddings',
+    [HOST_EMBEDDING_TOKEN_ENV]: token,
+  },
+});
+```
+
+Of the pipeline's stages, only the embed stage gets the two values, and only with
+`provider: host`. They cannot be listed in `declaredEnvNames` or `declaredSecretNames`; keep
+them out of every `secrets` map as well. The token must stay valid until the embed stage
+ends. See [Host-supplied embeddings](../../../docs/reference/host-embeddings.md) for the
+requests your endpoint answers.
+
 For API resources stored by the host, pass `integrationSpecLoader` to
 `createAgenticHost`. It accepts the same arguments as `loadQueryableResourceSpecs`
 from `/integrations`: given an integration name, resource name, and options,

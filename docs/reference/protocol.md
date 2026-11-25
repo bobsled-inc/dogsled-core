@@ -141,8 +141,9 @@ instead.
 
 ## Control messages (standard error)
 
-`LOG` carries a level (`debug`, `info`, `warn`, `error`) and a message; `METRIC`
-carries counters such as records emitted and API calls:
+`LOG` carries a level (`debug`, `info`, `warn`, `error`) and a message, and can carry an
+`event` name with `attributes` for programs; `METRIC` carries counters such as records
+emitted and API calls:
 
 ```json
 {
@@ -165,7 +166,9 @@ carries counters such as records emitted and API calls:
 ## Column types
 
 `string`, `integer`, `number`, `boolean`, `timestamp`, `array`, `object` and
-`vector` (added by `dogsled embed`).
+`vector` (added by `dogsled embed`). A `vector` column has a `dimension`, and an
+`embedded_from` that names the source `column`, the `provider`, the `model` and the
+`dimension`, which equals the column's.
 
 ## Load strategies
 

@@ -381,6 +381,7 @@ matching query embedding.
     column: description # source field that was embedded
     provider: openai # provider id
     model: text-embedding-3-small # model id
+    dimension: 1536 # optional; must equal the column's dimension
     # distance_metric: cosine     # optional, reserved: cosine | l2 | dot
 ```
 

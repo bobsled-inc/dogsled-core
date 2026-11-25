@@ -30,6 +30,13 @@ Notes:
 - `api_key` may be a literal or an env placeholder like `$OPENAI_API_KEY`
 - `as` is optional; omitted fields default to `<field>_embedding`
 - output columns use protocol type `vector` and inherit their `dimension` from the configured model
+- `streams` keys are exact protocol stream names, such as `handbook__chunks` for the chunks of a
+  document Resource. In a `dogsled.yml` pipeline the key is the Resource name, `handbook`, and
+  Dogsled resolves it
+- a vector of another length than `dimension`, or with a value that is not finite, fails the run
+- `provider: host` embeds with a model that the host application supplies:
+  `{ "provider": "host", "streams": { ... } }`, with an optional `dimension`. See
+  [Host-supplied embeddings](../../docs/reference/host-embeddings.md)
 
 ## Quick Start
 
@@ -82,7 +89,8 @@ dogsled extract run --integration github issues \
   | dogsled load run --dest duckdb --db-path ./dev.duckdb
 ```
 
-Stub mode emits zero-filled vectors with the correct model dimension.
+Stub mode emits zero-filled vectors with the correct model dimension. With `provider: host` it
+needs `dimension` in the config.
 
 ## Development
 

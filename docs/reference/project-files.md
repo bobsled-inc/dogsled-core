@@ -92,6 +92,9 @@ Extract pipelines (`type: extract`, the default) take `schedule`, `source`,
 `buffer_size`, `embed`, `via`, `warehouse` and `destination_warehouse`. An entry in
 `resources` is a name or an object with `resource` and per-resource overrides:
 `load_strategy`, `schema_behavior`, `table`, `inputs`, `input_matrix`, `via`.
+`embed` takes `provider`, `streams` (fields to embed, by resource name), and the
+provider's own fields. See
+[Embed in a project pipeline](../guides/embeddings-and-ai.md#embed-in-a-project-pipeline).
 
 `type: models` pipelines take `connection`, `models` (a list or `'*'`) and
 `schedule`; `type: entity-graph` pipelines are similar for entity resolution. See
@@ -135,7 +138,7 @@ Authentication and pagination types are listed in
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | HTTP API            | `spec_version`, `type: resource`, `name`, `integration`, `description`, `input`, `api` (`endpoint`, `method`, `query_params`, `headers`, `request_body`), `output`, `extract` (`record_path`, `pagination`, `incremental`, `table`), and optional `lookup`, `query`, `billing`, `load` |
 | MCP tool            | `type: resource`, `name`, `via`, `tool` (`tool_name`, `arguments`), `input`, `output`, `extract`                                                                                                                                                                                       |
-| Files and documents | `source` (`path`, `format`, `options`, `compression`, `parse`, `chunk`, `embedding`, `ingest`, `permissions`), `replication`, `limits`, `output`, `extract.table`                                                                                                                      |
+| Files and documents | `source` (`path`, `format`, `options`, `compression`, `parse`, `chunk`, `ingest`, `permissions`), `replication`, `limits`, `output`, `extract.table`                                                                                                                                   |
 | File copy           | `source` (`kind: copy`, `path`), `replication` (`incremental_append`, `cursor.field: last_modified`, `cursor.lookback_seconds`), `limits`. No `format`, `compression`, `options` or `output`. `local`, `s3`, `gcs` and `sftp` integrations only                                        |
 | Database table      | `extract` (`integration`, `source`, `replication`), `schema` (`primary_key`, `columns`), optional `load`                                                                                                                                                                               |
 

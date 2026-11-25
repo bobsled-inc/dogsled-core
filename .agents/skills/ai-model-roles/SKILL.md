@@ -56,6 +56,7 @@ Guidance:
 - Keep provider credentials as `$ENV_VAR` placeholders only.
 - List custom key names in the model connection’s `auth_env_vars`. Standard provider key names are allowed by default.
 - Set `dimension` for every embedding role that may create vector columns.
+- A pipeline's `embed:` block and a document resource do not use roles; the `embed:` block names its own provider and model.
 
 ## Step 3: Configure Budgets
 

@@ -93,5 +93,6 @@ ClickHouse (`source_type` of the model integration). `dogsled model compile` and
 ## AI providers
 
 `amazon-bedrock`, `openai`, `anthropic`, `google`, `openrouter`, `ai-gateway`,
-`ollama`, and `typesafe` for classification. See
+`ollama`, and `typesafe` for classification. An embed block also takes `host`, for a
+model that a host application supplies. See
 [Embeddings and AI providers](../guides/embeddings-and-ai.md).

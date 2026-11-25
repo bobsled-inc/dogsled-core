@@ -1,9 +1,9 @@
 # Embeddings and AI providers
 
-Dogsled calls AI models in four places: embedding text while loading, embedding
-document chunks, agentic models, and entity-graph steps such as mention
-extraction. All of them use _model roles_: named connections that you declare once
-in `dogsled.yml` and refer to by name.
+Dogsled calls AI models in three places: embedding text while loading, agentic models,
+and entity-graph steps such as mention extraction. Agentic models and entity-graph steps
+use _model roles_: named connections that you declare once in `dogsled.yml` and refer to
+by name. Embedding names its provider and model in the embed configuration itself.
 
 ## Declare model roles
 
@@ -51,7 +51,8 @@ ERROR platform.models.classifier_v1: Environment variable "OPENAI_API_KEY" is no
 ```
 
 `dogsled ai test` sends a small embedding request and a small structured-generation
-request through one role:
+request through one role. It asks for the role's `dimension` where the model is known to
+[take one](#vector-length):
 
 ```bash
 dogsled ai test --connection default_embedding_v1
@@ -101,10 +102,79 @@ Ervin Howell	1536
 ```
 
 The new column is named `<field>_embedding` unless you set `as`. The embedder
-accepts the same providers as model roles, except `ai-gateway` and `typesafe`.
+accepts the same providers as model roles, except `ai-gateway` and `typesafe`, and
+also [`host`](#use-a-model-the-host-application-supplies).
 `dogsled pipeline --embed-config-json '<json>'` runs the same step inside a
 pipeline, and DuckDB, ClickHouse, pgvector, Chroma and Turbopuffer destinations
 store the vectors.
 
-Document resources embed their chunks with `embedding: { role: <role> }`; see
-[Extract from files](extract-from-files.md#parse-documents).
+## Embed in a project pipeline
+
+A `dogsled.yml` pipeline takes the same configuration as an `embed` block. Its `streams`
+keys are the names of the pipeline's resources:
+
+```yaml
+pipelines:
+  handbook:
+    schedule: manual
+    source: files
+    destination: local
+    resources: [handbook]
+    embed:
+      provider: openai
+      model: text-embedding-3-small
+      api_key: $OPENAI_API_KEY
+      streams:
+        handbook: [{ field: text }]
+```
+
+For a [document resource](extract-from-files.md#parse-documents), such as `handbook`, the
+key stands for its chunk stream, `handbook__chunks`. `text` is the only field it takes, and
+the vector column is `text_embedding` unless you set `as`. The resource's other tables are
+loaded as they are.
+
+`dogsled embed run` and `--embed-config-json` do not read project files, so their keys are
+exact stream names: `handbook__chunks`.
+
+## Vector length
+
+The vector column has the length in `dimension`. Without one, Dogsled knows the length of
+`text-embedding-3-small` (1536) and `text-embedding-3-large` (3072) on OpenAI and of
+`amazon.titan-embed-text-v2:0` (1024) on Amazon Bedrock. Every other model needs a
+`dimension`.
+
+A `dimension` you set is sent to the models that are known to take one, and the model then
+returns vectors of that length:
+
+| Provider         | Models                                             |
+| ---------------- | -------------------------------------------------- |
+| `openai`         | `text-embedding-3-*`                               |
+| `google`         | `gemini-embedding-*`                               |
+| `amazon-bedrock` | `amazon.titan-embed-text-v2`, `cohere.embed-v4`    |
+| `ollama`         | All. The Ollama server decides what to do with it. |
+
+An Ollama server before 0.11.11 ignores the request and returns vectors of the model's own
+length.
+
+For other models, set the length the model returns. A vector of another length, or with a
+value that is not a finite number, fails the run, whatever the provider.
+
+Each vector column records the source column, provider, model and dimension in
+`embedded_from`, so a query can be embedded the same way later.
+
+## Use a model the host application supplies
+
+With `provider: host`, the application that runs Dogsled supplies the embedding model, so
+the project holds no provider, model or key:
+
+```yaml
+embed:
+  provider: host
+  dimension: 1024 # optional: fail when the host's model has another length
+  streams:
+    handbook: [{ field: text }]
+```
+
+The application sets an `https` endpoint and a token in the run's environment.
+[Host-supplied embeddings](../reference/host-embeddings.md) describes the contract.
+Whitespace-only text gets a null vector and is not sent, which is so for this provider only.

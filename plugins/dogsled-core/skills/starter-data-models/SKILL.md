@@ -259,6 +259,7 @@ through the bronze source and silver staging. Two places to mention:
     column: description
     provider: amazon-bedrock
     model: cohere.embed-english-v3
+    dimension: 1024
 ```
 
 `dimension` is required when `type: VECTOR`; `embedded_from` is required

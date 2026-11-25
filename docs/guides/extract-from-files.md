@@ -192,11 +192,14 @@ Document options:
   default). `parse.max_file_size_mb` defaults to 100 and allows up to 500.
 - `chunk.max_tokens` (default 800), `chunk.overlap_tokens` (default 120) and
   `chunk.tokenizer` (`cl100k_base`, `o200k_base` or `p50k_base`).
-- `embedding: { role: <model role> }` adds a vector for each chunk using a model
-  role from `platform.models`. See [Embeddings and AI providers](embeddings-and-ai.md).
+
+To add a vector for each chunk, give the pipeline an `embed` block whose `streams` key is
+the resource's name and whose field is `text`. See
+[Embed in a project pipeline](embeddings-and-ai.md#embed-in-a-project-pipeline). A
+document resource's own `embedding` block has no effect, and validation warns about it.
 
 A document resource with `replication.method: full_refresh` parses every file again
-on every run, and with `embedding` set it embeds every chunk again, which costs
+on every run, and a pipeline that embeds it embeds every chunk again, which costs
 provider calls each time. Use an incremental method to process only new or changed
 files.
 
