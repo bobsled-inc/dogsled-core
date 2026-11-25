@@ -1,6 +1,6 @@
 # @bobsled-inc/models — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
 Installable Model Spec source, staging, mart, metric, and relationship bundles for
 Dogsled integrations.
@@ -14,7 +14,7 @@ Dogsled integrations.
 - Default staging models to views and marts to tables.
 
 Key entrypoints are `src/loader.ts`, `src/installer.ts`, `src/generator.ts`, and
-curated mart definitions under `src/definitions/`.
+curated mart definitions under `marts/`.
 
 ## Verify
 

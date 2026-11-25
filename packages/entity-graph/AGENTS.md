@@ -1,6 +1,6 @@
 # @bobsled-inc/entity-graph — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
 Owns Entity Graph CLI commands and the resolution, review, clustering,
 survivorship, truthset, mention, relationship, and agent-task workflows.
@@ -11,7 +11,7 @@ survivorship, truthset, mention, relationship, and agent-task workflows.
   `@bobsled-inc/model-spec`.
 - Import shared project loading, formatter, dialect, and command utilities from
   public `@bobsled-inc/model-spec` entrypoints.
-- Keep command modules thin. Structured workflows live under `src/api/`.
+- Keep command modules thin. Structured workflows belong under `src/api/`.
 - `dogsled entity-graph` delegates to this package's CLI entrypoint.
 - Use `src/runtime/project-context.ts` and `src/runtime/runner-resolver.ts` for
   project and runner resolution.
