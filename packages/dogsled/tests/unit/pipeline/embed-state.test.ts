@@ -36,8 +36,8 @@ let beforeAnswer: () => Promise<number | void>;
 /** A state service that honors If-Match. */
 let service: { state: PipelineExecutionState; revision: number; puts: Array<string | undefined> };
 
-function makeTempDir(prefix: string): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+function makeTempDir(prefix: string, parent = os.tmpdir()): string {
+  const dir = fs.mkdtempSync(path.join(parent, prefix));
   tempDirs.push(dir);
   return dir;
 }
@@ -80,6 +80,11 @@ beforeAll(async () => {
   caCertPath = path.join(makeTempDir('dogsled-state-ca-'), 'ca.pem');
   fs.writeFileSync(caCertPath, cert);
   server = createServer({ cert, key }, (request, response) => {
+    if (request.url?.startsWith('/api/notes')) {
+      response.setHeader('content-type', 'application/json');
+      response.end('{"notes":[{"id":1,"body":"Rest.","updated_at":"2026-01-01T00:00:00Z"}]}');
+      return;
+    }
     void (request.url === '/state' ? answerState : answerEmbedding)(request, response);
   });
   server.listen(0, '127.0.0.1');
@@ -148,6 +153,76 @@ pipelines:
     table_prefix: ''
     resources: [docs]
 ${embed ? '    embed: { provider: host, streams: { docs: [{ field: text }] } }\n' : ''}`
+  );
+  return root;
+}
+
+/** The same project, but its pipeline reads an API and embeds a field of its records. */
+function makeApiProject(): string {
+  const root = makeProject();
+  fs.rmSync(path.join(root, 'resources/files'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'integrations/files.yml'),
+    `spec_version: '2'
+type: source
+name: files
+transports:
+  - { id: api, type: http, base_url: '${origin}/api', auth: { type: none } }
+`
+  );
+  fs.mkdirSync(path.join(root, 'resources/files'));
+  fs.writeFileSync(
+    path.join(root, 'resources/files/docs.yml'),
+    `spec_version: '1'
+type: resource
+name: docs
+integration: files
+description: Example notes.
+input: {}
+api: { method: GET, endpoint: /notes }
+extract:
+  record_path: $.notes
+  incremental: { cursor_field: updated_at, cursor_param: since }
+output:
+  id: { type: integer, path: $.id }
+  body: { type: string, path: $.body }
+  updated_at: { type: timestamp, path: $.updated_at }
+`
+  );
+  const config = path.join(root, 'dogsled.yml');
+  fs.writeFileSync(
+    config,
+    fs.readFileSync(config, 'utf8').replace('{ field: text }', '{ field: body }')
+  );
+  return root;
+}
+
+/** The same project, but its pipeline reads a database that does not answer. */
+function makeWarehouseProject(): string {
+  const root = makeProject();
+  fs.writeFileSync(
+    path.join(root, 'integrations/files.yml'),
+    `spec_version: '1'
+type: integration
+name: files
+source_type: postgres
+auth_env_vars: [EXAMPLE_DB_HOST, EXAMPLE_DB_USER, EXAMPLE_DB_PASSWORD]
+connection: { host_env: EXAMPLE_DB_HOST, port: 1, database: kennel, schema: public }
+auth: { type: password, username_env: EXAMPLE_DB_USER, password_env: EXAMPLE_DB_PASSWORD }
+`
+  );
+  fs.writeFileSync(
+    path.join(root, 'resources/files/docs.yml'),
+    `spec_version: '1'
+type: resource
+name: docs
+integration: files
+source: { table: docs, database: kennel, schema: public }
+replication: { method: incremental_append, cursor_field: updated_at }
+output:
+  text: { type: string }
+  updated_at: { type: timestamp }
+`
   );
   return root;
 }
@@ -322,6 +397,71 @@ describe('the state of documents that a run embeds', () => {
     expect(await outcome(result)).toEqual({ status: 'success', exitCode: 0, state: EMPTY });
     expect(stages(children)).toEqual(['extract', 'embed', 'load']);
   }, 120_000);
+
+  describe('in a run with a temp folder of its own', () => {
+    const tempFolders: Array<[string, (root: string) => string]> = [
+      ['outside the temp folder', () => makeTempDir('.dogsled-own-temp-', process.cwd())],
+      ['inside the project', (root) => makeTempDir('own-temp-', root)],
+    ];
+
+    it.each(tempFolders)(
+      'is saved when that folder is %s',
+      async (_label, makeFolder) => {
+        const root = makeProject();
+        const { result, children } = start(root, {
+          state: EMPTY,
+          env: { TMPDIR: makeFolder(root) },
+        });
+        const { status, state } = await result;
+        expect(status).toBe('success');
+        expect(stages(children)).toEqual(['extract', 'embed', 'load', 'commit-state']);
+        expect(filesOf(state)).toEqual(ALL_FILES);
+      },
+      120_000
+    );
+
+    it.each(tempFolders)(
+      'is saved by the extractor, as before, for an API when that folder is %s',
+      async (_label, makeFolder) => {
+        const root = makeApiProject();
+        const { result, children } = start(root, {
+          state: EMPTY,
+          env: { TMPDIR: makeFolder(root), DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1' },
+        });
+        const { status, state } = await result;
+        expect(status).toBe('success');
+        expect(stages(children)).toEqual(['extract', 'embed', 'load']);
+        expect(texts).toEqual(['Rest.']);
+        expect(state?.streams['files/docs']).toMatchObject({
+          cursor_value: '2026-01-01T00:00:00Z',
+        });
+      },
+      120_000
+    );
+
+    it.each(tempFolders)(
+      'lets a warehouse run reach its source, as before, when that folder is %s',
+      async (_label, makeFolder) => {
+        const root = makeWarehouseProject();
+        const { result, children } = start(root, {
+          state: EMPTY,
+          env: {
+            TMPDIR: makeFolder(root),
+            DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS: '1',
+            EXAMPLE_DB_HOST: '127.0.0.1',
+            EXAMPLE_DB_USER: 'example',
+            EXAMPLE_DB_PASSWORD: 'synthetic-password',
+          },
+        });
+        expect((await result).status).toBe('failure');
+        expect(stages(children)).toEqual(['extract', 'embed', 'load']);
+        const logs = vi.mocked(process.stderr.write).mock.calls.map(([chunk]) => String(chunk));
+        expect(logs.join('')).toContain('ECONNREFUSED');
+        expect(logs.join('')).not.toContain('staged state');
+      },
+      120_000
+    );
+  });
 
   describe('in an https state backend', () => {
     const backend = (): NodeJS.ProcessEnv => ({

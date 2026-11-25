@@ -4,7 +4,7 @@
  */
 
 import * as fs from 'node:fs/promises';
-import { realpathSync } from 'node:fs';
+import { lstatSync, realpathSync, type Stats } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -31,36 +31,50 @@ const StagedStateSchema = z
   })
   .strict();
 
-/** The file for staged state, in an existing folder of the system's temp folder or the project. */
+/**
+ * The file for staged state, in a folder that only this user can open. Where the folder is does
+ * not matter: a run can give its processes another temp folder than the one it uses itself.
+ */
 export function resolveStagedStatePath(cwd: string, file: string): string {
   const resolved = path.resolve(cwd, file);
-  const isInside = (root: string): boolean => {
-    const relative = path.relative(realpathSync(root), realpathSync(path.dirname(resolved)));
-    return !relative.startsWith('..') && !path.isAbsolute(relative);
-  };
+  const folder = path.dirname(resolved);
+  let stats: Stats;
   try {
-    if ([os.tmpdir(), cwd].some(isInside)) return resolved;
+    stats = lstatSync(folder);
   } catch {
     throw new CommandError('The folder for staged state does not exist.', 2);
   }
-  throw new CommandError('Staged state must be within temp directory or project root.', 2);
+  const uid = process.getuid?.();
+  const isPrivate =
+    stats.isDirectory() &&
+    (uid === undefined
+      ? isInside(folder, os.tmpdir()) || isInside(folder, cwd)
+      : stats.uid === uid && (stats.mode & 0o077) === 0);
+  if (isPrivate) return resolved;
+  throw new CommandError('The folder for staged state is not private to this user.', 2);
 }
 
-/** Loads from `backend`, and keeps what a run saves in `file` for `commitStagedState`. */
+function isInside(folder: string, root: string): boolean {
+  const relative = path.relative(realpathSync(root), realpathSync(folder));
+  return !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
+/** Keeps what a run that loaded `state` from `backend` saves in `file`, for `commitStagedState`. */
 export class StagedStateStore implements StateStore {
-  private loaded = new Map<string, unknown>();
-  private version: string | undefined;
+  private readonly loaded: ReadonlyMap<string, unknown>;
+  private readonly version: string | undefined;
 
   constructor(
     private readonly backend: VersionedStateStore,
+    state: ExtractorState,
     private readonly file: string
-  ) {}
-
-  async load(): Promise<ExtractorState> {
-    const state = await this.backend.load();
+  ) {
     this.loaded = new Map(Object.entries(state.streams));
-    this.version = this.backend.version;
-    return state;
+    this.version = backend.version;
+  }
+
+  load(): Promise<ExtractorState> {
+    return this.backend.load();
   }
 
   async save(state: ExtractorState): Promise<void> {
@@ -75,6 +89,19 @@ export class StagedStateStore implements StateStore {
     });
     await fs.rename(tmpPath, this.file);
   }
+}
+
+/** The store of an `extract run --staged-state`, which is a pipeline's for one integration. */
+export function openStagedState(
+  cwd: string,
+  backend: StateStore,
+  state: ExtractorState,
+  options: { integration?: string; stagedState?: string }
+): StateStore {
+  if (!options.integration || options.stagedState === undefined) {
+    throw new CommandError('--staged-state needs --integration.', 2);
+  }
+  return new StagedStateStore(backend, state, resolveStagedStatePath(cwd, options.stagedState));
 }
 
 /**

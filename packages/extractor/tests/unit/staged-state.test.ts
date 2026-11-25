@@ -14,8 +14,23 @@ import {
 } from '../../src/runtime/staged-state.js';
 import { HttpStateStore } from '../../src/runtime/state-backend.js';
 import { FileStateStore } from '../../src/runtime/state.js';
+import { createWarehouseClient, type WarehouseClient } from '../../src/runtime/warehouse-client.js';
 
 import type { ExtractorState } from '../../src/types/index.js';
+
+vi.mock('../../src/runtime/warehouse-client.js', () => ({ createWarehouseClient: vi.fn() }));
+
+function warehouseClient(): WarehouseClient {
+  return {
+    dialect: 'postgres',
+    async *execute() {
+      yield [{ id: 1, updated_at: '2026-01-01T00:00:00.000Z' }];
+    },
+    testConnection: vi.fn(),
+    introspect: vi.fn(),
+    close: vi.fn(),
+  } as unknown as WarehouseClient;
+}
 
 const bookmark = (files: string[]): ExtractorState['streams'][string] => ({
   last_run_at: '2026-01-01T00:00:00.000Z',
@@ -40,9 +55,9 @@ describe('staged state with a directory backend', () => {
   it('is not saved before it is committed, and is complete then', async () => {
     const backend = new FileStateStore(path.join(root, 'state'));
     await backend.save({ streams: { 'files/docs': bookmark(['a.md']) } });
-    const staged = new StagedStateStore(backend, stagedPath);
-    const state = await staged.load();
-    expect(state).toEqual({ streams: { 'files/docs': bookmark(['a.md']) } });
+    const state = await backend.load();
+    const staged = new StagedStateStore(backend, state, stagedPath);
+    expect(await staged.load()).toEqual(state);
 
     state.streams['files/docs'] = bookmark(['a.md', 'b.md']);
     await staged.save(state);
@@ -62,8 +77,8 @@ describe('staged state with a directory backend', () => {
   it('keeps what another run saved in the meantime', async () => {
     const backend = new FileStateStore(path.join(root, 'state'));
     await backend.save({ streams: { 'files/docs': bookmark([]), 'files/old': bookmark([]) } });
-    const staged = new StagedStateStore(backend, stagedPath);
-    const state = await staged.load();
+    const state = await backend.load();
+    const staged = new StagedStateStore(backend, state, stagedPath);
     state.streams['files/docs'] = bookmark(['a.md']);
     await staged.save(state);
 
@@ -133,8 +148,9 @@ describe('staged state with an HTTP backend', () => {
   }
 
   async function stage(state: ReturnType<typeof service>): Promise<void> {
-    const staged = new StagedStateStore(state.store(), stagedPath);
-    const loaded = await staged.load();
+    const store = state.store();
+    const loaded = await store.load();
+    const staged = new StagedStateStore(store, loaded, stagedPath);
     loaded.streams['files/docs'] = bookmark(['a.md']);
     await staged.save(loaded);
     expect(state.puts).toEqual([]);
@@ -192,27 +208,68 @@ describe('staged state with an HTTP backend', () => {
   });
 });
 
-describe('the file for staged state', () => {
-  it('may be in the temp folder or the project', () => {
-    expect(resolveStagedStatePath('/', path.join(root, 'state.json'))).toBe(
-      path.join(root, 'state.json')
-    );
-    fs.mkdirSync(path.join(root, 'inner'));
-    expect(resolveStagedStatePath(root, 'inner/state.json')).toBe(
-      path.join(root, 'inner/state.json')
+describe('the folder of staged state', () => {
+  const folder = (): string => path.join(root, 'folder');
+  const resolveIn = (name: string): string =>
+    resolveStagedStatePath('/', path.join(name, 'state.json'));
+  const uid = process.getuid?.() ?? 0;
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.runIf(process.getuid)('may be anywhere, if only this user can open it', () => {
+    fs.mkdirSync(folder(), { mode: 0o700 });
+    // Neither the temp folder nor the project of the process.
+    vi.stubEnv('TMPDIR', '/usr');
+    expect(resolveIn(folder())).toBe(path.join(folder(), 'state.json'));
+    expect(resolveStagedStatePath(root, 'folder/state.json')).toBe(
+      path.join(folder(), 'state.json')
     );
   });
 
-  it.each(['/etc/state.json', '/state.json'])('may not be elsewhere: %s', (file) => {
-    expect(() => resolveStagedStatePath(root, file)).toThrow(/within temp directory or project/);
+  it.runIf(process.getuid).each([0o750, 0o705, 0o701, 0o777])(
+    'may not be open to others: %o',
+    (mode) => {
+      fs.mkdirSync(folder());
+      fs.chmodSync(folder(), mode);
+      expect(() => resolveIn(folder())).toThrow(/not private to this user/);
+    }
+  );
+
+  it.runIf(process.getuid)('may not belong to another user', () => {
+    fs.mkdirSync(folder(), { mode: 0o700 });
+    vi.spyOn(process as Required<NodeJS.Process>, 'getuid').mockReturnValue(uid + 1);
+    expect(() => resolveIn(folder())).toThrow(/not private to this user/);
   });
 
-  it('may not be behind a link that leaves them, or in a folder that does not exist', () => {
-    fs.symlinkSync('/etc', path.join(root, 'link'));
-    expect(() => resolveStagedStatePath(root, 'link/state.json')).toThrow(
-      /within temp directory or project/
-    );
-    expect(() => resolveStagedStatePath(root, 'missing/state.json')).toThrow(/does not exist/);
+  it('may not be a link, a file or missing', () => {
+    fs.mkdirSync(folder(), { mode: 0o700 });
+    fs.symlinkSync(folder(), path.join(root, 'link'));
+    fs.writeFileSync(path.join(root, 'file'), '', { mode: 0o600 });
+    expect(() => resolveIn(path.join(root, 'link'))).toThrow(/not private to this user/);
+    expect(() => resolveIn(path.join(root, 'file'))).toThrow(/not private to this user/);
+    expect(() => resolveIn(path.join(root, 'missing'))).toThrow(/does not exist/);
+  });
+
+  it('must be in the temp folder or the project where users cannot be compared', () => {
+    const getuid = Object.getOwnPropertyDescriptor(process, 'getuid');
+    Object.defineProperty(process, 'getuid', { value: undefined, configurable: true });
+    try {
+      fs.mkdirSync(folder());
+      expect(resolveIn(folder())).toBe(path.join(folder(), 'state.json'));
+      vi.stubEnv('TMPDIR', '/usr');
+      vi.stubEnv('TEMP', '/usr');
+      vi.stubEnv('TMP', '/usr');
+      expect(resolveStagedStatePath(root, 'folder/state.json')).toBe(
+        path.join(folder(), 'state.json')
+      );
+      expect(() => resolveStagedStatePath('/usr', path.join(folder(), 'state.json'))).toThrow(
+        /not private to this user/
+      );
+    } finally {
+      if (getuid) Object.defineProperty(process, 'getuid', getuid);
+    }
   });
 });
 
@@ -267,6 +324,7 @@ output:
   afterEach(() => {
     process.chdir(originalCwd);
     process.exitCode = undefined;
+    vi.unstubAllEnvs();
   });
 
   const extract = (...args: string[]): Promise<void> =>
@@ -328,10 +386,53 @@ output:
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       Response.json({ docs: [{ id: 1, updated_at: '2026-01-01T00:00:00Z' }] })
     );
-    await extract('--advance-state', '--staged-state', stagedPath);
-    expect(fs.existsSync(stagedPath)).toBe(false);
+    await extract('--advance-state', '--staged-state', path.join(root, 'missing', 'state.json'));
     const { streams } = JSON.parse(fs.readFileSync(statePath(), 'utf8')) as ExtractorState;
     expect(streams['files/docs']).toMatchObject({ cursor_value: '2026-01-01T00:00:00Z' });
+  });
+
+  it('leaves a warehouse as it is', async () => {
+    write(
+      'integrations/files.yml',
+      `spec_version: '1'
+type: integration
+name: files
+source_type: postgres
+auth_env_vars: [EXAMPLE_DB_HOST, EXAMPLE_DB_USER, EXAMPLE_DB_PASSWORD]
+connection: { host_env: EXAMPLE_DB_HOST, port: 5432, database: kennel, schema: public }
+auth: { type: password, username_env: EXAMPLE_DB_USER, password_env: EXAMPLE_DB_PASSWORD }
+`
+    );
+    write(
+      'resources/files/docs.yml',
+      `spec_version: '1'
+type: resource
+name: docs
+integration: files
+source: { table: docs, database: kennel, schema: public }
+replication: { method: incremental_append, cursor_field: updated_at }
+output:
+  id: { type: integer }
+  updated_at: { type: timestamp }
+`
+    );
+    vi.stubEnv('EXAMPLE_DB_HOST', 'db.example.com');
+    vi.stubEnv('EXAMPLE_DB_USER', 'example');
+    vi.stubEnv('EXAMPLE_DB_PASSWORD', 'synthetic-password');
+    vi.mocked(createWarehouseClient).mockResolvedValue(warehouseClient());
+    await extract('--advance-state', '--staged-state', path.join(root, 'missing', 'state.json'));
+    const { streams } = JSON.parse(fs.readFileSync(statePath(), 'utf8')) as ExtractorState;
+    expect(streams['files/docs']).toMatchObject({ cursor_value: '2026-01-01T00:00:00.000Z' });
+  });
+
+  it('refuses a folder that is open to others before it reads a file', async () => {
+    fs.mkdirSync(path.join(root, 'open'));
+    fs.chmodSync(path.join(root, 'open'), 0o755);
+    await expect(
+      extract('--advance-state', '--staged-state', path.join(root, 'open', 'state.json'))
+    ).rejects.toThrow(/not private to this user/);
+    expect(vi.mocked(process.stdout.write)).not.toHaveBeenCalled();
+    expect(fs.existsSync(statePath())).toBe(false);
   });
 
   it('needs one of the two sources of state to commit', async () => {

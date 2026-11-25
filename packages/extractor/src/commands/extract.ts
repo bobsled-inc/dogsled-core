@@ -17,7 +17,7 @@ import { isFileStorageSource } from '../runtime/file-storage-extractor.js';
 import { hasExplicitForEachInputs, normalizeForEachConfig } from '../runtime/for-each.js';
 import { orderResourcesForExtraction } from '../runtime/resource-order.js';
 import { resolveStateStore } from '../runtime/state-backend.js';
-import { resolveStagedStatePath, StagedStateStore } from '../runtime/staged-state.js';
+import { openStagedState } from '../runtime/staged-state.js';
 import type { StateStore } from '../runtime/state.js';
 import { isSnowflakeWarehouseSource, isWarehouseResource } from '../runtime/warehouse-extractor.js';
 import { ResourceCircuitBreaker } from '../runtime/errors.js';
@@ -168,7 +168,6 @@ export function registerExtractCommand(program: Command): void {
         opts.embedConfigFile
       );
       let stateStore: StateStore;
-      let stagedStore: StateStore | undefined;
       let state: ExtractorState;
       try {
         stateStore = resolveStateStore({
@@ -177,12 +176,7 @@ export function registerExtractCommand(program: Command): void {
           stateAuthEnv: opts.stateAuthEnv,
           projectRoot: ctx.cwd,
         });
-        if (opts.stagedState !== undefined) {
-          if (!opts.integration) throw new CommandError('--staged-state needs --integration.', 2);
-          const stagedPath = resolveStagedStatePath(ctx.cwd, opts.stagedState);
-          stagedStore = new StagedStateStore(stateStore, stagedPath);
-        }
-        state = await (stagedStore ?? stateStore).load();
+        state = await stateStore.load();
       } catch (err) {
         // State-backend construction or first-load failure — close the logger before bubbling.
         await logger.close();
@@ -308,6 +302,11 @@ export function registerExtractCommand(program: Command): void {
             await logger.warn(warning);
           }
           const integration = applyDefaultViaOverride(integrationResult.spec, opts.defaultVia);
+          // Other sources keep their own order: a CDC slot moves with the saved state.
+          const runStateStore =
+            opts.stagedState !== undefined && isFileStorageSource(integration)
+              ? openStagedState(ctx.cwd, stateStore, state, opts)
+              : stateStore;
           let hostEnvNames: string[] | undefined;
           if (opts.hostEnvNamesJson !== undefined) {
             let names: unknown;
@@ -497,9 +496,7 @@ export function registerExtractCommand(program: Command): void {
                 emitter,
                 logger,
                 state,
-                // Other sources keep their own order: a CDC slot moves with the saved state.
-                stateStore:
-                  stagedStore && isFileStorageSource(integration) ? stagedStore : stateStore,
+                stateStore: runStateStore,
                 batchDir: path.join(ctx.cwd, ctx.config.batch_dir),
                 cliInputs,
                 resourceInputsMap,
