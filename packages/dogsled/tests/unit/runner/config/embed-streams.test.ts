@@ -4,7 +4,9 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
+import YAML from 'yaml';
 
+import { EmbedConfigSchema } from '../../../../src/runner/config/schema.js';
 import { validateProjectPipelines } from '../../../../src/runner/config/project-resolver.js';
 
 const tempDirs: string[] = [];
@@ -250,5 +252,34 @@ describe('the s3-documents-ingestion example', () => {
       const streams = body === commented ? undefined : { documents: [{ field: 'text' }] };
       expect(embeds).toEqual([streams, streams]);
     }
+  });
+});
+
+describe('the documented embed blocks', () => {
+  /** Every value under an `embed` key in the YAML examples of a page. */
+  function embedBlocks(page: string): unknown[] {
+    const markdown = fs.readFileSync(
+      fileURLToPath(new URL(`../../../../../../docs/${page}`, import.meta.url)),
+      'utf8'
+    );
+    const blocks: unknown[] = [];
+    const visit = (value: unknown): void => {
+      if (typeof value !== 'object' || value === null) return;
+      for (const [key, entry] of Object.entries(value)) {
+        if (key === 'embed') blocks.push(entry);
+        else visit(entry);
+      }
+    };
+    for (const [, yaml] of markdown.matchAll(/```yaml\n([\s\S]*?)```/g)) visit(YAML.parse(yaml!));
+    return blocks;
+  }
+
+  it.each([
+    ['reference/host-embeddings.md', 1],
+    ['guides/embeddings-and-ai.md', 2],
+  ])('are valid in docs/%s', (page, count) => {
+    const blocks = embedBlocks(page);
+    expect(blocks).toHaveLength(count);
+    for (const block of blocks) expect(EmbedConfigSchema.safeParse(block).error).toBeUndefined();
   });
 });

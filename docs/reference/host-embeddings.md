@@ -84,12 +84,22 @@ requests run at once.
 
 ## Responses
 
-Answer with a 2xx status and:
+Answer with a 2xx status. The example model has two dimensions, to keep its vectors short.
+The answer to the first request, which has no inputs:
 
 ```json
 {
-  "model": { "provider": "acme", "id": "acme-embed-1", "dimensions": 1024 },
+  "model": { "provider": "acme", "id": "acme-embed-1", "dimensions": 2 },
   "limits": { "maxInputs": 32, "maxInputCharacters": 32000 },
+  "results": []
+}
+```
+
+The answer to the request above:
+
+```json
+{
+  "model": { "provider": "acme", "id": "acme-embed-1", "dimensions": 2 },
   "results": [{ "id": "0", "embedding": [0.12, -0.03] }],
   "usage": { "tokens": 7 }
 }
