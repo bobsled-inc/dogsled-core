@@ -1,11 +1,14 @@
 import type { DocumentParser, ParseOptions, ParseResult } from '../types.js';
 
-const PARSER_VERSION = 'html:1.0.1';
+import { removeHiddenContent } from './html-hidden.js';
+
+const PARSER_VERSION = 'html:1.1.0';
 
 /**
  * Minimal HTML parser. Strips tags, decodes a small set of named entities + numeric
  * references, normalizes whitespace. Preserves block boundaries by inserting a newline
  * around block-level closing tags (p, div, section, article, h1-h6, li, br, hr, tr).
+ * Drops the content of plainly hidden elements (see `html-hidden.ts`).
  *
  * Like the markdown parser, this avoids new dependencies. A future commit can swap in
  * cheerio + turndown for higher fidelity (JS execution still out of scope — content
@@ -28,13 +31,13 @@ export const htmlParser: DocumentParser = {
     try {
       const raw = new TextDecoder('utf-8', { fatal: false }).decode(input);
       const title = extractTitle(raw);
-      const text = htmlToText(raw);
+      const { text, hiddenCharacters } = extractHtmlText(raw);
       return {
         status: 'parsed',
         format: 'html',
         text,
         parserVersion: PARSER_VERSION,
-        metadata: { byteLength: input.byteLength, title },
+        metadata: { byteLength: input.byteLength, title, hiddenCharacters },
       };
     } catch (err) {
       return {
@@ -58,7 +61,35 @@ function extractTitle(raw: string): string | null {
   return end < 0 ? null : decodeEntities(raw.slice(openEnd + 1, end)).trim() || null;
 }
 
-export function htmlToText(input: string): string {
+export interface HtmlText {
+  readonly text: string;
+  /** Characters of HTML source dropped as hidden, tags included. */
+  readonly hiddenCharacters: number;
+}
+
+export function extractHtmlText(html: string): HtmlText {
+  const visible = removeHiddenContent(html);
+  const text = stripTags(visible.html);
+  if (visible.removedCharacters > 0 && isBlankPage(text, html)) {
+    // A page that a script shows, for example. Its hidden text is better than none.
+    return { text: stripTags(html), hiddenCharacters: 0 };
+  }
+  return { text, hiddenCharacters: visible.removedCharacters };
+}
+
+/** Whether the text holds nothing but the document's title. */
+function isBlankPage(text: string, html: string): boolean {
+  // Format characters include the zero-width ones.
+  const visible = (value: string): string => value.replace(/[\s\p{Cf}]+/gu, '');
+  const rest = visible(text);
+  return rest === '' || rest === visible(extractTitle(html) ?? '');
+}
+
+export function htmlToText(html: string): string {
+  return extractHtmlText(html).text;
+}
+
+function stripTags(input: string): string {
   let text = input;
   const output: string[] = [];
   const lower = input.replace(/[A-Z]/g, (char) => char.toLowerCase());
