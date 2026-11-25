@@ -23,6 +23,7 @@ import {
   collectInput,
   getDestinations,
   getEmbedConfig,
+  getHostEmbeddingEnv,
   getRuntimeCwd,
   getRuntimeEnv,
   maybeRemoveDir,
@@ -385,7 +386,8 @@ export async function runPipeline(
     configuredDestinations,
     runtimeEnv
   );
-  const redact = createWorkloadIdentityRedactor(redactionTokens);
+  const embedEnv = getHostEmbeddingEnv(options, dependencies);
+  const redact = createWorkloadIdentityRedactor([...redactionTokens, ...Object.values(embedEnv)]);
   try {
     throwIfPipelineAborted(dependencies.signal);
     if (options.reconcileSchema?.length && !options.fullRefresh) {
@@ -411,7 +413,8 @@ export async function runPipeline(
         dependencies,
         redact,
         runtimeEnv,
-        childEnv
+        childEnv,
+        embedEnv
       );
     }
 
@@ -421,7 +424,8 @@ export async function runPipeline(
       dependencies,
       redact,
       runtimeEnv,
-      childEnv
+      childEnv,
+      embedEnv
     );
   } catch (error) {
     throw redactPipelineError(error, redact);
@@ -434,7 +438,8 @@ async function runSingleDestPipeline(
   dependencies: PipelineDependencies,
   redact: RedactPipelineValue,
   runtimeEnv: NodeJS.ProcessEnv,
-  childEnv: NodeJS.ProcessEnv
+  childEnv: NodeJS.ProcessEnv,
+  embedEnv: NodeJS.ProcessEnv
 ): Promise<number> {
   const metaUrl = dependencies.metaUrl ?? import.meta.url;
   const runtimeCwd = getRuntimeCwd(dependencies);
@@ -480,7 +485,7 @@ async function runSingleDestPipeline(
         {
           cwd: runtimeCwd,
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...childEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
+          env: { ...childEnv, ...embedEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
         },
         dependencies
       );
@@ -639,7 +644,8 @@ async function runMultiDestPipeline(
   dependencies: PipelineDependencies,
   redact: RedactPipelineValue,
   runtimeEnv: NodeJS.ProcessEnv,
-  childEnv: NodeJS.ProcessEnv
+  childEnv: NodeJS.ProcessEnv,
+  embedEnv: NodeJS.ProcessEnv
 ): Promise<number> {
   const metaUrl = dependencies.metaUrl ?? import.meta.url;
   const runtimeCwd = getRuntimeCwd(dependencies);
@@ -731,7 +737,7 @@ async function runMultiDestPipeline(
         {
           cwd: runtimeCwd,
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...childEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
+          env: { ...childEnv, ...embedEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
         },
         dependencies
       );

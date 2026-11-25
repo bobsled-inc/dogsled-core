@@ -1,6 +1,8 @@
 import {
   declaredHostEnvironmentNames,
   assertDeclaredEnvironmentReferences,
+  HOST_EMBEDDING_ENV_NAMES,
+  withoutHostEmbeddingEnv,
 } from '@bobsled-inc/protocol';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -46,6 +48,7 @@ import type {
   PipelineInputValue,
   DogsledConfig,
 } from '../runner/config/schema.js';
+export { HOST_EMBEDDING_TOKEN_ENV, HOST_EMBEDDING_URL_ENV } from '@bobsled-inc/protocol';
 export {
   PipelineExecutionStateSchema,
   type PipelineExecutionState,
@@ -230,7 +233,13 @@ export async function runProjectPipeline(
       ...pipeline,
       embed:
         pipeline.embed &&
-        resolvePipelineEmbed(pipeline, pipeline.embed, project.projectRoot, declaredEnvNames),
+        resolvePipelineEmbed(
+          pipeline,
+          pipeline.embed,
+          project.projectRoot,
+          declaredEnvNames,
+          runtimeEnv
+        ),
     },
     config: runtimeConfig,
     resources: options.resources,
@@ -244,7 +253,7 @@ export async function runProjectPipeline(
     warehouse: options.warehouse,
     destinationWarehouse: options.destinationWarehouse,
     queryTag: options.queryTag,
-    env: runtimeEnv,
+    env: withoutHostEmbeddingEnv(runtimeEnv),
   });
   pipelineOptions.declaredEnvNames = declaredEnvNames;
   if (options.maxRecords !== undefined) {
@@ -264,6 +273,7 @@ export async function runProjectPipeline(
   const errors: PipelineRunError[] = [];
   const redact = createPipelineRedactor([
     ...Object.values(options.env ?? {}),
+    ...HOST_EMBEDDING_ENV_NAMES.map((name) => runtimeEnv[name]),
     pipelineOptions.bqAccessToken,
     pipelineOptions.sfPassword,
     pipelineOptions.sfAccessToken,

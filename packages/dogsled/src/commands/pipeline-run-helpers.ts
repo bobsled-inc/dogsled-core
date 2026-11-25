@@ -8,7 +8,11 @@ import {
   CommandError,
   EXIT_VALIDATION,
   declaredHostEnvironmentNames,
+  HOST_EMBEDDING_TOKEN_ENV,
+  HOST_EMBEDDING_URL_ENV,
+  requireHostEmbeddingEnv,
   withDeclaredAuthEnvVars,
+  withoutHostEmbeddingEnv,
 } from '@bobsled-inc/protocol';
 import { EmbedderConfigSchema } from '@bobsled-inc/embedder/schema';
 
@@ -20,8 +24,33 @@ export function getRuntimeCwd(dependencies: { cwd?: string }): string {
   return dependencies.cwd ?? process.cwd();
 }
 
+/** The environment of a run, without the endpoint and token of a host-supplied embedding model. */
 export function getRuntimeEnv(dependencies: { env?: NodeJS.ProcessEnv }): NodeJS.ProcessEnv {
-  return { ...process.env, ...dependencies.env };
+  return withoutHostEmbeddingEnv({ ...process.env, ...dependencies.env });
+}
+
+/**
+ * The endpoint and token an embed stage needs, which must be set when its provider is
+ * `host`. Empty for every other embed stage.
+ */
+export function requireHostEmbeddingFor(
+  embed: EmbedConfig | undefined,
+  env: NodeJS.ProcessEnv
+): NodeJS.ProcessEnv {
+  if (embed?.provider !== 'host' || env['DOGSLED_EMBED_STUB'] === '1') return {};
+  const { url, token } = requireHostEmbeddingEnv(env);
+  return { [HOST_EMBEDDING_URL_ENV]: url, [HOST_EMBEDDING_TOKEN_ENV]: token };
+}
+
+/** What the embed child gets in addition to the environment of a run. */
+export function getHostEmbeddingEnv(
+  options: PipelineOptions,
+  dependencies: { env?: NodeJS.ProcessEnv }
+): NodeJS.ProcessEnv {
+  return requireHostEmbeddingFor(getEmbedConfig(options), {
+    ...process.env,
+    ...dependencies.env,
+  });
 }
 
 export function collectInput(value: string, previous: string[]): string[] {

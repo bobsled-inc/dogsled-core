@@ -70,6 +70,54 @@ describe('runDelegatedCli', () => {
   });
 });
 
+describe('a host-supplied embedding endpoint and token', () => {
+  const hostEnv = {
+    PATH: '/bin',
+    DOGSLED_HOST_EMBEDDING_URL: 'https://host.example',
+    DOGSLED_HOST_EMBEDDING_TOKEN: 'synthetic-host-token',
+  };
+
+  async function childEnv(argv: string[], env?: NodeJS.ProcessEnv): Promise<NodeJS.ProcessEnv> {
+    const child = createMockChild();
+    const spawn = vi.fn().mockImplementation(() => {
+      queueMicrotask(() => child.emit('close', 0));
+      return child;
+    }) as Mock;
+    await maybeRunDelegatedCommand(argv, {
+      metaUrl: 'file:///dogsled/tests/mock.ts',
+      spawn,
+      env,
+      resolveDogsledModelRunInvocation: () => ({ command: 'model-run', args: [] }),
+    });
+    return (spawn.mock.calls[0]?.[2] as { env: NodeJS.ProcessEnv }).env;
+  }
+
+  it('reach the embed command', async () => {
+    expect(await childEnv(['embed', 'run', '--config', 'x.json'], hostEnv)).toEqual(hostEnv);
+    expect(await childEnv(['embed', '--config', 'x.json'], hostEnv)).toEqual(hostEnv);
+  });
+
+  it.each([
+    [['extract', 'run', '--integration', 'x']],
+    [['load', 'run', '--dest', 'local']],
+    [['load', '--format', 'csv']],
+    [['query', 'SELECT 1']],
+    [['model', 'compile']],
+    [['model', 'run']],
+    [['entity-graph', 'resolve']],
+    [['activate', 'sync_name']],
+    [['mcp', 'list-tools']],
+  ])('do not reach %j', async (argv) => {
+    for (const env of [hostEnv, undefined]) {
+      if (!env) for (const [name, value] of Object.entries(hostEnv)) vi.stubEnv(name, value);
+      const received = await childEnv(argv, env);
+      vi.unstubAllEnvs();
+      expect(received['PATH']).toBe('/bin');
+      expect(Object.keys(received).filter((name) => name.includes('HOST_EMBEDDING'))).toEqual([]);
+    }
+  });
+});
+
 describe('maybeRunDelegatedCommand', () => {
   function makeDeps(exitCode = 0) {
     const child = createMockChild();
