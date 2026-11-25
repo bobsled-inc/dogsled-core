@@ -4,6 +4,7 @@ import type { ColumnType, SchemaColumn } from '@bobsled-inc/protocol';
 import type { EnsureTableOptions, SchemaComparisonResult } from './database.js';
 import { enforceSchemaContract, SYSTEM_COLUMNS } from './database.js';
 import type { SnowflakeConnectionLike } from './snowflake.js';
+import type { SnowflakeTableMaintenanceContext } from './snowflake-table-maintenance.js';
 
 interface SnowflakeSchemaConnection {
   execute(options: { sqlText: string }): Promise<unknown>;
@@ -11,27 +12,30 @@ interface SnowflakeSchemaConnection {
 
 /**
  * Replace the plain VECTOR that INFORMATION_SCHEMA.COLUMNS reports for a vector column with its
- * full type from DESCRIBE TABLE, such as VECTOR(FLOAT, 3). Without a vector column, this reads
- * nothing.
+ * full type from DESCRIBE TABLE, such as VECTOR(FLOAT, 3). This reads nothing unless the stream
+ * declares such a column as a vector and its schema_behavior compares types.
  */
 export async function readSnowflakeVectorTypes(
+  context: Pick<SnowflakeTableMaintenanceContext, 'retryOpts' | 'throwIfCancelled'>,
   connection: Pick<SnowflakeConnectionLike, 'execute'>,
   qualifiedTable: string,
-  existingMap: Map<string, string>,
-  throwIfCancelled: () => void,
-  retryOptions: (context: string) => RetryOptions
+  columns: SchemaColumn[],
+  options: EnsureTableOptions | undefined,
+  existingMap: Map<string, string>
 ): Promise<void> {
-  const isPlainVector = (type: string | undefined): boolean => type?.toUpperCase() === 'VECTOR';
-  if (![...existingMap.values()].some(isPlainVector)) return;
+  if (options?.schemaBehavior === 'freeze' && !options.reconcileSchema) return;
+  const isPlainVector = (name: string): boolean =>
+    existingMap.get(name)?.toUpperCase() === 'VECTOR';
+  if (!columns.some((c) => c.type === 'vector' && isPlainVector(c.name.toUpperCase()))) return;
 
   const described = await withRetry(
     () => connection.execute({ sqlText: `DESCRIBE TABLE ${qualifiedTable}` }),
-    retryOptions('describe_table')
+    context.retryOpts('describe_table')
   );
-  throwIfCancelled();
+  context.throwIfCancelled();
   for (const row of described.getRows()) {
     const name = String(row['name']);
-    if (isPlainVector(existingMap.get(name))) existingMap.set(name, String(row['type']));
+    if (isPlainVector(name)) existingMap.set(name, String(row['type']));
   }
 }
 

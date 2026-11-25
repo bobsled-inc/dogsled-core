@@ -157,11 +157,15 @@ describe('readSnowflakeVectorTypes', () => {
     { name: 'INTS', type: 'VECTOR(INT, 16)' },
     { name: '_TIME_EXTRACTED', type: 'TIMESTAMP_TZ(9)' },
   ];
+  const context = { retryOpts: () => ({}), throwIfCancelled: vi.fn() };
+  const floats: SchemaColumn = { name: 'floats', type: 'vector', dimension: 3 };
+  const body: SchemaColumn = { name: 'body', type: 'string' };
+  const added: SchemaColumn = { name: 'added', type: 'vector', dimension: 3 };
 
   it('fills in the element type and length of plain VECTOR columns only', async () => {
     const types = new Map(informationSchema);
     const execute = vi.fn().mockResolvedValue(result(described));
-    await readSnowflakeVectorTypes({ execute }, '"S"."T"', types, vi.fn(), () => ({}));
+    await readSnowflakeVectorTypes(context, { execute }, '"S"."T"', [floats], undefined, types);
     expect(execute.mock.calls).toEqual([[{ sqlText: 'DESCRIBE TABLE "S"."T"' }]]);
     expect([...types]).toEqual([
       ['ID', 'NUMBER'],
@@ -172,21 +176,38 @@ describe('readSnowflakeVectorTypes', () => {
     ]);
   });
 
-  it('reads nothing when no column is a vector', async () => {
-    const types = new Map(informationSchema.filter(([, type]) => type !== 'VECTOR'));
+  it.each<[string, SchemaColumn[], EnsureTableOptions | undefined]>([
+    ['declares no vector', [body], undefined],
+    ['declares a vector the table does not have', [body, added], undefined],
+    ['declares the column as text', [{ name: 'floats', type: 'string' }], undefined],
+    ['has schema_behavior freeze', [floats], { schemaBehavior: 'freeze' }],
+  ])('reads nothing when the stream %s', async (_case, columns, options) => {
+    const types = new Map(informationSchema);
     const execute = vi.fn();
-    await readSnowflakeVectorTypes({ execute }, '"S"."T"', types, vi.fn(), () => ({}));
+    await readSnowflakeVectorTypes(context, { execute }, '"S"."T"', columns, options, types);
     expect(execute).not.toHaveBeenCalled();
+    expect([...types]).toEqual(informationSchema);
+  });
+
+  it('reads the types when reconciliation overrides freeze', async () => {
+    const execute = vi.fn().mockResolvedValue(result(described));
+    const options: EnsureTableOptions = { schemaBehavior: 'freeze', reconcileSchema: true };
+    const types = new Map(informationSchema);
+    await readSnowflakeVectorTypes(context, { execute }, '"S"."T"', [floats], options, types);
+    expect(types.get('FLOATS')).toBe('VECTOR(FLOAT, 3)');
   });
 
   it('stops when the run was cancelled while it read', async () => {
     const types = new Map(informationSchema);
     const execute = vi.fn().mockResolvedValue(result(described));
-    const throwIfCancelled = () => {
-      throw new Error('cancelled');
+    const cancelled = {
+      ...context,
+      throwIfCancelled: () => {
+        throw new Error('cancelled');
+      },
     };
     await expect(
-      readSnowflakeVectorTypes({ execute }, '"S"."T"', types, throwIfCancelled, () => ({}))
+      readSnowflakeVectorTypes(cancelled, { execute }, '"S"."T"', [floats], undefined, types)
     ).rejects.toThrow('cancelled');
     expect([...types]).toEqual(informationSchema);
   });
@@ -216,6 +237,7 @@ describe('Snowflake tables with a vector column', () => {
     await load(warehouse, columns(3), 'append');
     await load(warehouse, columns(3), 'append', { schemaBehavior: mode });
     expect(warehouse.started('COPY INTO')).toHaveLength(1);
+    expect(warehouse.started('DESCRIBE')).toHaveLength(mode === 'freeze' ? 0 : 1);
   });
 
   it('loads again after REPLACE deletes the old rows of a document', async () => {
@@ -241,15 +263,11 @@ describe('Snowflake tables with a vector column', () => {
     expect(order[1]).toBeGreaterThan(order[0]!);
   });
 
-  it.each([
-    ['append', {}],
-    ['merge', {}],
-    ['full_refresh', { reconcileSchema: true }],
-  ] as const)('refuses a changed dimension with %s %o', async (strategy, options) => {
+  it.each(['append', 'merge'] as const)('refuses a changed dimension with %s', async (strategy) => {
     const warehouse = new FakeSnowflake();
     await load(warehouse, columns(3), 'append');
 
-    await expect(load(warehouse, columns(4), strategy, options)).rejects.toThrow(
+    await expect(load(warehouse, columns(4), strategy)).rejects.toThrow(
       'Schema change conflict on "TEST_SCHEMA"."CHUNKS".text_embedding: ' +
         'existing type VECTOR(FLOAT, 3) does not match expected VECTOR(FLOAT, 4)'
     );
@@ -266,15 +284,51 @@ describe('Snowflake tables with a vector column', () => {
     ).rejects.toThrow('type conflict on text_embedding: VECTOR(FLOAT, 3) vs VECTOR(FLOAT, 4)');
   });
 
-  it('replaces the table in a full refresh only when the dimension changed', async () => {
-    const warehouse = new FakeSnowflake();
-    await load(warehouse, columns(3), 'full_refresh');
-    await load(warehouse, columns(4), 'full_refresh');
-    expect(warehouse.started(REPLACE_TABLE)[0]).toContain('"TEXT_EMBEDDING" VECTOR(FLOAT, 4)');
+  describe('full refresh', () => {
+    it('truncates and reloads the table instead of replacing it', async () => {
+      const warehouse = new FakeSnowflake();
+      await load(warehouse, columns(3), 'full_refresh');
+      await load(warehouse, columns(3), 'full_refresh');
+      expect(warehouse.started(REPLACE_TABLE)).toEqual([]);
+      expect(warehouse.started('TRUNCATE TABLE')).toHaveLength(1);
+      expect(warehouse.started('COPY INTO')).toHaveLength(1);
+    });
 
-    await load(warehouse, columns(4), 'full_refresh');
-    expect(warehouse.started(REPLACE_TABLE)).toEqual([]);
-    expect(warehouse.started('TRUNCATE TABLE')).toHaveLength(1);
+    it('leaves the table alone until the first rows arrive', async () => {
+      const warehouse = new FakeSnowflake();
+      await load(warehouse, columns(3), 'full_refresh');
+      const destination = await warehouse.run();
+      await destination.ensureTable('test_schema', 'chunks', columns(3), {
+        loadStrategy: 'full_refresh',
+      });
+      for (const prefix of [REPLACE_TABLE, 'TRUNCATE', 'DELETE', 'DROP']) {
+        expect(warehouse.started(prefix)).toEqual([]);
+      }
+    });
+
+    it('replaces the table for a changed dimension by default', async () => {
+      const warehouse = new FakeSnowflake();
+      await load(warehouse, columns(3), 'full_refresh');
+      await load(warehouse, columns(4), 'full_refresh');
+      expect(warehouse.started(REPLACE_TABLE)).toHaveLength(1);
+      expect(warehouse.started(REPLACE_TABLE)[0]).toContain('"TEXT_EMBEDDING" VECTOR(FLOAT, 4)');
+    });
+
+    it.each<[string, EnsureTableOptions, string]>([
+      ['strict', { schemaBehavior: 'strict' }, 'VECTOR(FLOAT, 3) vs VECTOR(FLOAT, 4)'],
+      [
+        'reconciliation',
+        { reconcileSchema: true },
+        'existing type VECTOR(FLOAT, 3) does not match expected VECTOR(FLOAT, 4)',
+      ],
+    ])('refuses a changed dimension with %s', async (_mode, options, message) => {
+      const warehouse = new FakeSnowflake();
+      await load(warehouse, columns(3), 'full_refresh');
+      await expect(load(warehouse, columns(4), 'full_refresh', options)).rejects.toThrow(message);
+      for (const prefix of [REPLACE_TABLE, 'ALTER TABLE', 'TRUNCATE', 'COPY INTO']) {
+        expect(warehouse.started(prefix)).toEqual([]);
+      }
+    });
   });
 
   it.each([
@@ -299,23 +353,52 @@ describe('Snowflake tables with a vector column', () => {
       column.type === 'vector' ? { name: column.name, type: 'string' } : column
     );
     await expect(load(warehouse, text, 'append')).rejects.toThrow(
-      'existing type VECTOR(FLOAT, 3) does not match expected VARCHAR'
+      'existing type VECTOR does not match expected VARCHAR'
     );
   });
 
-  it('describes the table once when a run sends its schema again', async () => {
+  it('does not describe the table for a stream without vector columns', async () => {
+    const warehouse = new FakeSnowflake();
+    await load(warehouse, columns(3), 'append');
+    await load(warehouse, columns(3).slice(0, 2), 'append');
+    expect(warehouse.started('DESCRIBE')).toEqual([]);
+    expect(warehouse.started('COPY INTO')).toHaveLength(1);
+  });
+
+  it('compares an existing vector column that a later schema of the run declares', async () => {
     const warehouse = new FakeSnowflake();
     await load(warehouse, columns(3), 'append');
 
     const destination = await warehouse.run();
-    // The first schema does not have the vector column yet, the next ones do.
-    for (const schema of [columns(3).slice(0, 2), columns(3), columns(3)]) {
-      await destination.ensureTable('test_schema', 'chunks', schema, { loadStrategy: 'append' });
-    }
+    const ensure = (schema: SchemaColumn[]) =>
+      destination.ensureTable('test_schema', 'chunks', schema, { loadStrategy: 'append' });
+    await ensure(columns(3).slice(0, 2));
+    expect(warehouse.started('DESCRIBE')).toEqual([]);
+    await ensure(columns(3));
+    await ensure(columns(3));
     expect(warehouse.started('DESCRIBE')).toHaveLength(1);
-    await expect(
-      destination.ensureTable('test_schema', 'chunks', columns(4), { loadStrategy: 'append' })
-    ).rejects.toThrow('existing type VECTOR(FLOAT, 3) does not match expected VECTOR(FLOAT, 4)');
+    await expect(ensure(columns(4))).rejects.toThrow(
+      'existing type VECTOR(FLOAT, 3) does not match expected VECTOR(FLOAT, 4)'
+    );
+  });
+
+  it('compares a vector column that a later schema of the run adds', async () => {
+    const warehouse = new FakeSnowflake();
+    await load(warehouse, columns(3).slice(0, 2), 'append');
+
+    const destination = await warehouse.run();
+    const ensure = (schema: SchemaColumn[]) =>
+      destination.ensureTable('test_schema', 'chunks', schema, { loadStrategy: 'append' });
+    await ensure(columns(3).slice(0, 2));
+    await ensure(columns(3));
+    expect(warehouse.started('ALTER TABLE')[0]).toContain(
+      'ADD COLUMN "TEXT_EMBEDDING" VECTOR(FLOAT, 3)'
+    );
+    await ensure(columns(3));
+    expect(warehouse.started('DESCRIBE')).toEqual([]);
+    await expect(ensure(columns(4))).rejects.toThrow(
+      'existing type VECTOR(FLOAT, 3) does not match expected VECTOR(FLOAT, 4)'
+    );
   });
 
   it('describes a reserved table under its exact name', async () => {
