@@ -23,6 +23,10 @@ const result = await parser.parse('update.md', bytes, {
 });
 ```
 
+HTML parsing drops plainly hidden content and reports how much in `metadata.hiddenCharacters`.
+`chunkText` splits by the `recursive` strategy, or by `paragraph`
+when `strategy` says so.
+
 Parsers return a structured success or error result instead of throwing for
 invalid document content.
 

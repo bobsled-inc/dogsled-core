@@ -119,6 +119,7 @@ source:
     max_file_size_mb: 50
     on_error: record # record a row in __parse_errors instead of failing the run
   chunk:
+    # strategy: paragraph # cut at blank lines; default is recursive
     max_tokens: 800
     overlap_tokens: 120
     tokenizer: cl100k_base
@@ -130,6 +131,16 @@ output:
   document_id:
     type: string
 ```
+
+`chunk.strategy: paragraph` cuts at blank lines and joins short paragraphs up to
+`min_tokens` (default 60), never above `max_tokens`. It takes no overlap, so remove
+`overlap_tokens` from the block above. `min_tokens` is invalid with `recursive`.
+
+HTML and HTML email parsing drops plainly hidden content (containers with `hidden` or
+inline `display: none`), including content that a script or style sheet shows later. This is text clean-up, not protection against hidden instructions.
+
+Changing `parse` or `chunk` does not touch files an incremental resource already read;
+run once with `--full-refresh`.
 
 ### What you get
 

@@ -70,4 +70,5 @@ needed.
 
 - `source.path` — glob of which keys to ingest (provider-relative).
 - `parse.formats` / `parse.max_file_size_mb` / `parse.on_error` — what to parse and how to handle failures.
+- `chunk.strategy` — `recursive` (default), or `paragraph` to cut at blank lines without overlap (remove `overlap_tokens`).
 - `chunk.max_tokens` / `chunk.overlap_tokens` / `chunk.tokenizer` — chunking granularity.
