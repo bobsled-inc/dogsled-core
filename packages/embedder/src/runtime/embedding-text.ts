@@ -1,15 +1,16 @@
-import { MAX_EMBEDDING_TOKENS, truncateToCharacters, truncateToTokens } from './tokenizer.js';
+import { MAX_EMBEDDING_TOKENS, truncateToTokens } from './tokenizer.js';
 
-/** What a host-supplied model adds to the token limit that every text has. */
+/** What a host-supplied model sets for a text. Its host counts the tokens itself. */
 export interface HostTextRules {
   /** The most UTF-16 units of one text. */
   maxCharacters?: number;
 }
 
-/** How a text was shortened. Each number is the length before that cut. */
+/** How a text was shortened. */
 export interface TextTruncation {
-  originalTokens?: number;
-  originalCharacters?: number;
+  unit: 'tokens' | 'characters';
+  limit: number;
+  originalLength: number;
 }
 
 export interface EmbeddingText {
@@ -18,39 +19,44 @@ export interface EmbeddingText {
   truncation?: TextTruncation;
 }
 
-/** The text to embed for a field value, within the token limit and a host's rules. */
+/**
+ * The text to embed for a field value, within one limit: the host's own for a model it
+ * supplies, which the bundled tokenizer knows nothing about, or a number of tokens.
+ */
 export function prepareEmbeddingText(value: unknown, hostRules?: HostTextRules): EmbeddingText {
   if (value === null || value === undefined || value === '') return { text: null };
-  return hostRules ? prepareHostText(String(value), hostRules) : cutToTokens(String(value), {});
+  return hostRules ? cutToCharacters(String(value), hostRules) : cutToTokens(String(value));
 }
 
 /** Whitespace has nothing to embed, as the empty string has not. */
-function prepareHostText(original: string, { maxCharacters }: HostTextRules): EmbeddingText {
+function cutToCharacters(
+  original: string,
+  { maxCharacters = Infinity }: HostTextRules
+): EmbeddingText {
   if (original.trim() === '') return { text: null };
-
-  const truncation: TextTruncation = {};
-  let text = original;
-  if (maxCharacters !== undefined && text.length > maxCharacters) {
-    truncation.originalCharacters = text.length;
-    text = truncateToCharacters(text, maxCharacters);
-  }
-  // A cut can leave nothing but the whitespace a text starts with.
-  if (text.trim() === '') return { text: null, truncation };
-  // A token is at least one byte, so a short text needs no counting, which is slow for text
-  // without spaces.
-  if (Buffer.byteLength(text) <= MAX_EMBEDDING_TOKENS) return withTruncation(text, truncation);
-  const cut = cutToTokens(text, truncation);
-  return cut.text?.trim() === '' ? { ...cut, text: null } : cut;
+  const text = truncateToCharacters(original, maxCharacters);
+  if (text === original) return { text };
+  return {
+    // A cut can leave nothing but the whitespace a text starts with.
+    text: text.trim() === '' ? null : text,
+    truncation: { unit: 'characters', limit: maxCharacters, originalLength: original.length },
+  };
 }
 
-function cutToTokens(original: string, truncation: TextTruncation): EmbeddingText {
-  const tokens = truncateToTokens(original, MAX_EMBEDDING_TOKENS);
-  return withTruncation(
-    tokens.text,
-    tokens.truncated ? { ...truncation, originalTokens: tokens.originalTokens } : truncation
-  );
+function cutToTokens(original: string): EmbeddingText {
+  const { text, truncated, originalTokens } = truncateToTokens(original, MAX_EMBEDDING_TOKENS);
+  if (!truncated) return { text };
+  return {
+    text,
+    truncation: { unit: 'tokens', limit: MAX_EMBEDDING_TOKENS, originalLength: originalTokens },
+  };
 }
 
-function withTruncation(text: string, truncation: TextTruncation): EmbeddingText {
-  return Object.keys(truncation).length > 0 ? { text, truncation } : { text };
+/** At most `maxCharacters` UTF-16 units of `text`, never half of a surrogate pair. */
+export function truncateToCharacters(text: string, maxCharacters: number): string {
+  if (text.length <= maxCharacters) return text;
+  const last = text.charCodeAt(maxCharacters - 1);
+  const next = text.charCodeAt(maxCharacters);
+  const splitsPair = last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff;
+  return text.slice(0, splitsPair ? maxCharacters - 1 : maxCharacters);
 }

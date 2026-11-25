@@ -429,17 +429,34 @@ describe('provider: host', () => {
     expect(stderr).not.toContain('abcdef');
   });
 
-  it('counts a text once when it is over both limits, and warns about each', async () => {
-    const host = fakeHost(() => ({ limits: { maxInputCharacters: 45_000 } }));
-    const { logs } = await run([schema, record(1, 'word '.repeat(10_000))], { host });
-    expect(host.requests[1]!.inputs[0]!.text.length).toBeLessThan(45_000);
-    expect(metrics(logs)).toMatchObject({ embedding_tokens_truncated: 1 });
-    const warnings = logs
-      .filter((message) => message['level'] === 'warn')
-      .map((message) => String(message['message']));
-    expect(warnings).toEqual([
-      expect.stringContaining('to 45000 characters'),
-      expect.stringContaining('to 8191 tokens'),
+  it('sends a text of any number of tokens, whole, and takes the answer of the host', async () => {
+    // Each is over 8,191 tokens.
+    const texts = [
+      ' 犬'.repeat(15_000),
+      `<|endoftext|>${' word'.repeat(6_000)}`.padEnd(32_000, ' a'),
+      'a '.repeat(16_000),
+    ];
+    const host = fakeHost((request, call) =>
+      call === 1
+        ? {}
+        : {
+            results: request.inputs.map(({ id, text }) =>
+              text.startsWith('a ') ? { id, error: 'too_long' } : { id, embedding: [1, 1] }
+            ),
+          }
+    );
+    const { output, logs } = await run([schema, ...texts.map((text, id) => record(id, text))], {
+      host,
+    });
+    expect(host.requests[1]!.inputs.map(({ text }) => text)).toEqual(texts);
+    expect(records(output).map((row) => row['body_embedding'])).toEqual([[1, 1], [1, 1], null]);
+    expect(metrics(logs)).toMatchObject({
+      embedding_tokens_truncated: 0,
+      embedding_inputs_rejected: 1,
+    });
+    const warnings = logs.filter((message) => message['level'] === 'warn');
+    expect(warnings.map((message) => message['attributes'])).toEqual([
+      { stream: 'docs', counts: { too_long: 1 } },
     ]);
   });
 

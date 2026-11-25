@@ -66,6 +66,8 @@ Output controls:
 - Every vector must have the declared length and finite numbers, in `RECORD` and `BATCH` alike,
   whatever the provider
 - A null vector is valid only where the stage reported a refused input, and the totals must match
+- The token limit is for the other providers. Text for a host-supplied model is only cut to the
+  characters its host allows, and never reaches the tokenizer, which is not that model's
 - A host stage asks for the model before it writes a `SCHEMA` and before it sends text. Only that
   stage may read the two host variables, and `dogsled embed run` removes them from its process
 - Warnings and errors name streams, lines, fields, counts and codes, never a text or an input id.

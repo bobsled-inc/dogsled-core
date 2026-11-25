@@ -18,7 +18,6 @@ import { assertEmbedResult, type EmbedBatchResult } from './embed-result.js';
 import { prepareEmbeddingText, type HostTextRules, type TextTruncation } from './embedding-text.js';
 import { readMessages } from './read-messages.js';
 import { addRejections, describeRejections } from './rejections.js';
-import { MAX_EMBEDDING_TOKENS } from './tokenizer.js';
 
 import type { BatchMessage, JsonObject } from '@bobsled-inc/protocol';
 
@@ -334,28 +333,23 @@ export async function runEmbedder(options: RunEmbedderOptions): Promise<void> {
       (metrics.embedding_inputs_rejected ?? 0) + addRejections(counts, result.rejections);
   }
 
-  const noteTruncation = (stream: string, field: string, truncation: TextTruncation): void => {
+  const noteTruncation = (
+    stream: string,
+    field: string,
+    { unit, limit, originalLength }: TextTruncation
+  ): void => {
     getOrCreateMetrics(metricsByStream, stream).embedding_tokens_truncated += 1;
 
-    const warnOnce = (unit: string, limit: number, original: number): void => {
-      const key = `${stream}::${field}::${unit}`;
-      if (truncationLogKeys.has(key)) return;
-      truncationLogKeys.add(key);
-      writeStructuredLog(
-        errorOutput,
-        buildWarnLogMessage(
-          `Truncating field "${field}" in stream "${stream}" to ${limit} ${unit} (first occurrence, original length ${original} ${unit})`
-        ),
-        logOptions
-      );
-    };
-    const maxCharacters = options.hostText?.maxCharacters;
-    if (truncation.originalCharacters !== undefined && maxCharacters !== undefined) {
-      warnOnce('characters', maxCharacters, truncation.originalCharacters);
-    }
-    if (truncation.originalTokens !== undefined) {
-      warnOnce('tokens', MAX_EMBEDDING_TOKENS, truncation.originalTokens);
-    }
+    const key = `${stream}::${field}`;
+    if (truncationLogKeys.has(key)) return;
+    truncationLogKeys.add(key);
+    writeStructuredLog(
+      errorOutput,
+      buildWarnLogMessage(
+        `Truncating field "${field}" in stream "${stream}" to ${limit} ${unit} (first occurrence, original length ${originalLength} ${unit})`
+      ),
+      logOptions
+    );
   };
 
   for await (const message of readMessages(input)) {

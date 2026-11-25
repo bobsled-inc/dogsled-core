@@ -370,7 +370,9 @@ describe('vectors that do not fit the column', () => {
       { id: 1, body: 'alpha', body_embedding: [3] },
       { id: 2, body: 'be', body_embedding: null },
     ]);
-    expect(onTruncation.mock.calls).toEqual([['docs', 'body', { originalCharacters: 5 }]]);
+    expect(onTruncation.mock.calls).toEqual([
+      ['docs', 'body', { unit: 'characters', limit: 3, originalLength: 5 }],
+    ]);
   });
 });
 

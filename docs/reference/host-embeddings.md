@@ -152,11 +152,11 @@ fallback to another provider, and no price list: `cost_budget_usd` and
 
 ## Text
 
-Each text is cut to `limits.maxInputCharacters` without splitting a surrogate pair, and then
-to 8,191 tokens, as for every provider. Tokens are not counted in a text of up to 8,191
-bytes, which cannot have more. A cut text counts in `embedding_tokens_truncated` and is
-warned about once for each field and kind of limit. Counting is slow for a long text without
-spaces, so a low `limits.maxInputCharacters` also bounds that time.
+Each text is cut to `limits.maxInputCharacters` without splitting a surrogate pair. That is
+the only limit: the 8,191 tokens of the other providers do not apply, and Dogsled does not
+count tokens, because it does not know your model's tokenizer. Refuse an input that is too
+long for your model with a code such as `too_long`. Dogsled warns once for each stream and
+field about texts that it cuts.
 
 A null or empty value gets a null vector and is not sent. So does a text that is empty
 after JavaScript's `trim()`, before or after a cut, which is a rule of this provider only.
@@ -168,6 +168,7 @@ after JavaScript's `trim()`, before or after a cut, which is a rule of this prov
 | `embedding_api_calls`        | Batches sent to the endpoint. A retried batch counts once; the first request does not. |
 | `embedding_inputs_rejected`  | Inputs the host refused.                                                               |
 | `embedding_tokens_processed` | The sum of `usage.tokens`.                                                             |
+| `embedding_tokens_truncated` | Texts cut to `limits.maxInputCharacters`.                                              |
 
 ## Security
 
