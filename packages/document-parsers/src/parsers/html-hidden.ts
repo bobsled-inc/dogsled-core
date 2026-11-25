@@ -110,8 +110,11 @@ export function removeHiddenContent(input: string): VisibleHtml {
       const state = isEndTag ? endInside(candidate, name) : startInside(candidate, tag, xbrl);
       if (state === 'open') continue;
       if (state === 'closed' && !input.slice(candidate.start, start).includes('-->')) {
-        // Keep an empty element, so the text on both sides stays separate.
-        output.push(input.slice(copied, candidate.start), `<${candidate.name}> `);
+        // Keep an empty element, and a space between the blocks that a block separates. A
+        // span separates nothing: the text around it is one word unless it has space itself.
+        const before = input.slice(copied, candidate.start);
+        if (!candidate.inline) output.push(before, `<${candidate.name}> `);
+        else output.push(isSpaceAt(input, cursor) ? trimEndSpace(before) : before, '<span>');
         removedCharacters += start - candidate.start;
         copied = start;
       }
@@ -203,14 +206,19 @@ function styleHides(style: string, hidden: boolean): boolean {
 /** CSS trims ASCII space only: another space character is part of a name. */
 function trimCssSpace(value: string): string {
   let start = 0;
-  let end = value.length;
-  while (start < end && isCssSpace(value[start]!)) start++;
-  while (end > start && isCssSpace(value[end - 1]!)) end--;
-  return value.slice(start, end);
+  while (isSpaceAt(value, start)) start++;
+  return trimEndSpace(value.slice(start));
 }
 
-function isCssSpace(char: string): boolean {
-  return char === ' ' || char === '\t' || char === '\n' || char === '\f' || char === '\r';
+function trimEndSpace(value: string): string {
+  let end = value.length;
+  while (isSpaceAt(value, end - 1)) end--;
+  return value.slice(0, end);
+}
+
+function isSpaceAt(value: string, index: number): boolean {
+  const code = value.charCodeAt(index);
+  return code === 0x20 || code === 0x09 || code === 0x0a || code === 0x0c || code === 0x0d;
 }
 
 /** Where a comment ends, or -1 when a browser and the tag stripper disagree about it. */

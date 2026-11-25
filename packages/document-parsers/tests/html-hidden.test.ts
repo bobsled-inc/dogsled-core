@@ -58,12 +58,32 @@ describe('hidden HTML content that is dropped', () => {
     expect(around('<ix:header>VIS</ix:header>', XBRL)).toContain('VIS');
   });
 
-  it('keeps the text on both sides separate', () => {
+  it('keeps the text on both sides of a block separate', () => {
     expect(htmlToText('one<div hidden>x</div>two')).toBe('one\n\ntwo');
-    expect(htmlToText('one<span hidden>x</span>two')).toBe('one two');
-    expect(htmlToText('one <span hidden>x</span> two')).toBe('one two');
+    expect(htmlToText('one<nav hidden>x</nav>two')).toBe('one two');
     expect(htmlToText('<p>one</p><div hidden>x</div><p>two</p>')).toBe('one\n\ntwo');
     expect(htmlToText('a < b <div hidden>x</div> c <p>d</p>')).toMatch(/c d$/);
+  });
+
+  it('leaves no space where a span was', () => {
+    expect(htmlToText('<p>quar<span style="display:none">zzz</span>terly</p>')).toBe('quarterly');
+    expect(htmlToText('pat<span style="display:none">x</span>@example.com')).toBe(
+      'pat@example.com'
+    );
+    expect(htmlToText('a<span hidden>x</span><span hidden>y</span>b')).toBe('ab');
+    expect(htmlToText('a<span hidden>x<b>y</b><br></span>b')).toBe('ab');
+  });
+
+  it('keeps the space that was around a span', () => {
+    const hidden = '<span hidden>x</span>';
+    expect(htmlToText(`one ${hidden}two`)).toBe('one two');
+    expect(htmlToText(`one${hidden} two`)).toBe('one two');
+    expect(htmlToText(`one ${hidden} two`)).toBe('one two');
+    expect(htmlToText(`one\t${hidden}  two`)).toBe('one two');
+    expect(htmlToText(`one ${hidden} ${hidden} two`)).toBe('one two');
+    expect(htmlToText(`${hidden} one ${hidden}`)).toBe('one');
+    // A line break on each side is one line break, not a blank line.
+    expect(htmlToText(`one\n${hidden}\ntwo`)).toBe('one\ntwo');
   });
 
   function containers(): string[] {
