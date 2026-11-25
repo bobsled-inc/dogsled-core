@@ -24,6 +24,16 @@ describe('EnvSecretResolver', () => {
     });
   });
 
+  it.each(['DOGSLED_HOST_EMBEDDING_URL', 'DOGSLED_HOST_EMBEDDING_TOKEN'])(
+    'never resolves %s, which only a host embedding stage may read',
+    async (name) => {
+      const resolver = new EnvSecretResolver({ [name]: 'must-not-appear' });
+      const resolved = resolver.resolve(name);
+      await expect(resolved).rejects.toMatchObject({ name: 'CommandError', exitCode: 2 });
+      await expect(resolved).rejects.not.toThrow('must-not-appear');
+    }
+  );
+
   it('defaults to process.env when constructed with no argument', async () => {
     const prev = process.env['CONNECTIONS_TEST_TOKEN'];
     process.env['CONNECTIONS_TEST_TOKEN'] = 'hello';

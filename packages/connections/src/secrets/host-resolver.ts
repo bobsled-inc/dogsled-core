@@ -1,4 +1,4 @@
-import { AuthEnvVarsSchema, CommandError } from '@bobsled-inc/protocol';
+import { AuthEnvVarsSchema, CommandError, declaredNamesProblem } from '@bobsled-inc/protocol';
 import type { SecretResolver } from './types.js';
 
 export function withDeclaredSecretNames(
@@ -10,7 +10,7 @@ export function withDeclaredSecretNames(
   }
   const parsed = AuthEnvVarsSchema.safeParse(names);
   if (!parsed.success) {
-    throw new CommandError('declaredSecretNames must contain valid environment variable names.', 2);
+    throw new CommandError(declaredNamesProblem('declaredSecretNames', parsed.error), 2);
   }
   return {
     declaredSecretNames: [...new Set([...(resolver.declaredSecretNames ?? []), ...parsed.data!])],

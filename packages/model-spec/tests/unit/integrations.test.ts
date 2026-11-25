@@ -2,8 +2,10 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { HOST_EMBEDDING_ENV_NAMES, serializeErrorCause } from '@bobsled-inc/protocol';
+import { describe, expect, it, vi } from 'vitest';
 
+import { loadProject } from '../../src/api/load-project.js';
 import { CommandError } from '../../src/commands/common.js';
 import { loadAllIntegrations, validateSourceIntegrationRefs } from '../../src/integrations.js';
 
@@ -117,6 +119,55 @@ auth:
       restoreEnv('DOGSLED_MODEL_SPEC_TEST_DATABASE', previous.database);
       restoreEnv('DOGSLED_MODEL_SPEC_TEST_SCHEMA', previous.schema);
       restoreEnv('DOGSLED_MODEL_SPEC_TEST_WAREHOUSE', previous.warehouse);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it.each(
+    HOST_EMBEDDING_ENV_NAMES.flatMap((name) =>
+      ['schema', 'database', 'warehouse'].map((field) => [field, name] as const)
+    )
+  )('never resolves connection.%s from %s', async (field, name) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dogsled-model-spec-integrations-'));
+    // A valid schema name, so that only the refusal keeps it out of the project.
+    vi.stubEnv(name, 'host_canary');
+    try {
+      fs.mkdirSync(path.join(tmpDir, 'integrations'), { recursive: true });
+      const connection = { warehouse: 'WH', database: 'DB', schema: 'PUBLIC' };
+      fs.writeFileSync(
+        path.join(tmpDir, 'integrations', 'snowflake.yml'),
+        `spec_version: '1'
+type: integration
+name: snowflake
+source_type: snowflake
+connection:
+  account_identifier: example
+  user: demo
+  role: DEMO_ROLE
+${Object.entries({ ...connection, [field]: `\${{ env.${name} }}` })
+  .map(([key, value]) => `  ${key}: ${value}`)
+  .join('\n')}
+auth:
+  type: pat
+  token: demo
+`,
+        'utf-8'
+      );
+      for (const load of [
+        () => loadAllIntegrations(tmpDir, 'integrations'),
+        () => loadProject(tmpDir),
+      ]) {
+        const error = await load().then(
+          () => undefined,
+          (thrown: unknown) => thrown
+        );
+        // A library error carries the original one as its cause.
+        const told = serializeErrorCause(error);
+        expect(JSON.stringify(told)).toContain('reserved');
+        expect(JSON.stringify(told) + String((error as Error).stack)).not.toContain('host_canary');
+      }
+    } finally {
+      vi.unstubAllEnvs();
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });

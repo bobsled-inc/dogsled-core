@@ -152,3 +152,37 @@ describe('trusted credential names', () => {
     expect(message).not.toContain('must-not-appear');
   });
 });
+
+describe('the endpoint and token of a host-supplied embedding model', () => {
+  const names = [
+    'DOGSLED_HOST_EMBEDDING_URL',
+    'DOGSLED_HOST_EMBEDDING_TOKEN',
+    'dogsled_host_embedding_token',
+    'Dogsled_Host_Embedding_Url',
+  ];
+
+  it.each(names.flatMap((name) => [['env', name] as const, ['secrets', name] as const]))(
+    'never resolve from %s.%s, whoever declares or trusts the name',
+    (source, name) => {
+      vi.stubEnv(name, 'must-not-appear');
+      const everyName = new Set(names);
+      let error: unknown;
+      try {
+        interpolateValue('${{ ' + source + '.' + name + ' }}', {
+          env: { [name]: 'must-not-appear' },
+          secrets: { [name]: 'must-not-appear' },
+          declaredEnvVars: everyName,
+          declaredSecretNames: names,
+          trustedCredentialNames: everyName,
+        });
+      } catch (caught) {
+        error = caught;
+      }
+      expect(error).toBeInstanceOf(InterpolationError);
+      expect((error as Error).message).toContain(`${source}.${name}`);
+      expect((error as Error).message).toContain('provider: host');
+      expect((error as Error).message).not.toContain('declaredEnvNames');
+      expect((error as Error).message).not.toContain('must-not-appear');
+    }
+  );
+});

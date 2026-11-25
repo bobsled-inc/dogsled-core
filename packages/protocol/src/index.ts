@@ -3,6 +3,7 @@ export * from './config-contracts.js';
 export * from './definitions.js';
 export * from './env-placeholders.js';
 export * from './field-metadata.js';
+export * from './host-embedding.js';
 export * from './fmt.js';
 export * from './parse.js';
 export * from './runtime-error.js';

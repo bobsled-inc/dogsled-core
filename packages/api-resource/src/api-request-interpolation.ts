@@ -41,6 +41,12 @@ const BLOCKED_ENV_KEYS = new Set([
   'PGPASSWORD',
 ]);
 
+/**
+ * Only a `provider: host` embedding stage reads these, so no host can trust them either. The
+ * same names are in `@bobsled-inc/protocol`, which this package does not depend on.
+ */
+const HOST_EMBEDDING_KEYS = new Set(['DOGSLED_HOST_EMBEDDING_TOKEN', 'DOGSLED_HOST_EMBEDDING_URL']);
+
 const TEMPLATE_RE =
   /\$\{\{\s*(input|mapped|secrets|env|integration)(?:\.([A-Za-z_][A-Za-z0-9_]*))?\s*\}\}/g;
 const WHOLE_TEMPLATE_RE =
@@ -57,13 +63,15 @@ export class InterpolationError extends Error {
     source: InterpolationSource,
     key: string | undefined,
     path: string,
-    reason: 'missing' | 'reserved' = 'missing'
+    reason: 'missing' | 'reserved' | 'host_embedding' = 'missing'
   ) {
     const reference = `${source}${key ? `.${key}` : ''}`;
     super(
-      reason === 'reserved'
-        ? `Reserved credential name ${reference} referenced in ${path}. Project files cannot read reserved names, even through auth_env_vars. Have the host supply it for this run with declaredEnvNames, or list a different name in auth_env_vars.`
-        : `Missing ${reference} referenced in ${path}`
+      reason === 'host_embedding'
+        ? `Reserved credential name ${reference} referenced in ${path}. Only a provider: host embedding stage can read it.`
+        : reason === 'reserved'
+          ? `Reserved credential name ${reference} referenced in ${path}. Project files cannot read reserved names, even through auth_env_vars. Have the host supply it for this run with declaredEnvNames, or list a different name in auth_env_vars.`
+          : `Missing ${reference} referenced in ${path}`
     );
     this.name = 'InterpolationError';
     this.source = source;
@@ -80,6 +88,9 @@ export function assertApiCredentialName(
 ): asserts key is string {
   if (!key) {
     throw new InterpolationError(source, key, path);
+  }
+  if (HOST_EMBEDDING_KEYS.has(key.toUpperCase())) {
+    throw new InterpolationError(source, key, path, 'host_embedding');
   }
   if (BLOCKED_ENV_KEYS.has(key) && !trustedCredentialNames?.has(key)) {
     throw new InterpolationError(source, key, path, 'reserved');

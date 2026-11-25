@@ -6,7 +6,7 @@
  * encrypted secret store.
  */
 
-import { CommandError } from '@bobsled-inc/protocol';
+import { assertNotHostEmbeddingEnvName, CommandError } from '@bobsled-inc/protocol';
 
 import type { SecretResolver } from './types.js';
 
@@ -23,6 +23,7 @@ export class EnvSecretResolver implements SecretResolver {
   }
 
   async resolve(envVarName: string): Promise<string> {
+    assertNotHostEmbeddingEnvName(envVarName);
     const value = this.source[envVarName];
     if (value === undefined || value === '') {
       throw new CommandError(`Environment variable "${envVarName}" is not set`, 2);

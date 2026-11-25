@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Command } from 'commander';
 
-import { CommandError } from '@bobsled-inc/protocol';
-import { buildConfigInput, resolveOptionPlaceholders } from '../../../src/commands/run-cli.js';
+import { CommandError, HOST_EMBEDDING_ENV_NAMES } from '@bobsled-inc/protocol';
+import {
+  buildConfigInput,
+  parseSnowflakeWorkloadIdentityToken,
+  resolveOptionPlaceholders,
+} from '../../../src/commands/run-cli.js';
 import { registerRunCommand } from '../../../src/commands/run.js';
 import { LoaderConfigSchema } from '../../../src/schemas/config.js';
 import type { LoaderConfig } from '../../../src/schemas/config.js';
@@ -25,6 +29,27 @@ describe('buildConfigInput', () => {
     }
     Object.assign(process.env, originalEnv);
   });
+
+  it.each(HOST_EMBEDDING_ENV_NAMES.flatMap((name) => [`$${name}`, `\${{ env.${name} }}`]))(
+    'never resolves %s, which only a host embedding stage may read',
+    (placeholder) => {
+      for (const name of HOST_EMBEDDING_ENV_NAMES) process.env[name] = 'host-canary';
+      for (const resolve of [
+        () =>
+          buildConfigInput({
+            dest: 'postgres',
+            postgresHost: 'db.example.com',
+            postgresDatabase: 'warehouse',
+            postgresUser: 'loader',
+            postgresPassword: placeholder,
+          }),
+        () => parseSnowflakeWorkloadIdentityToken(placeholder),
+      ]) {
+        expect(resolve).toThrow('reserved');
+        expect(resolve).not.toThrow('host-canary');
+      }
+    }
+  );
 
   it('resolves $VARNAME destination env placeholders inside the loader process', () => {
     const config = buildConfigInput({

@@ -1,4 +1,8 @@
-import { CommandError, parseEnvPlaceholder } from '@bobsled-inc/protocol';
+import {
+  assertNotHostEmbeddingEnvName,
+  CommandError,
+  parseEnvPlaceholder,
+} from '@bobsled-inc/protocol';
 
 /** CLI option-to-config mapping, extracted to keep run.ts under the file-size budget. */
 export function resolveEnvPlaceholder(value: string, label = 'an option value'): string {
@@ -14,6 +18,7 @@ export function resolveEnvPlaceholder(value: string, label = 'an option value'):
     );
   }
 
+  assertNotHostEmbeddingEnvName(envName);
   const resolved = process.env[envName];
   if (resolved === undefined) {
     throw new CommandError(`Missing environment variable: ${envName}`, 2);
@@ -32,6 +37,7 @@ export function parseSnowflakeWorkloadIdentityToken(value: string): string {
     );
   }
 
+  assertNotHostEmbeddingEnvName(envName);
   const resolved = process.env[envName];
   if (resolved === undefined) {
     throw new CommandError('Snowflake workload identity token environment variable is not set.', 2);

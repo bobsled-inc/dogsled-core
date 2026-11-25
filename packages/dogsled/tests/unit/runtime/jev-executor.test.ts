@@ -1,3 +1,4 @@
+import { HOST_EMBEDDING_ENV_NAMES } from '@bobsled-inc/protocol';
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -153,6 +154,25 @@ describe('Jev executor', () => {
     controller.abort();
     f.request.signal = controller.signal;
     await expect(f.execute(f.request)).rejects.toThrow();
+    expect(f.fetch).not.toHaveBeenCalled();
+  });
+  it.each(HOST_EMBEDDING_ENV_NAMES)('never resolves %s as its key', async (name) => {
+    const f = fixture();
+    const resolve = vi.fn(async () => 'host-canary');
+    const execute = createJevExecutor({ fetch: f.fetch, secretResolver: { resolve } });
+    const { connection } = f.request.assignment.profile;
+    const started = execute({
+      ...f.request,
+      assignment: {
+        ...f.request.assignment,
+        profile: {
+          ...f.request.assignment.profile,
+          connection: { ...connection, api_key: `$${name}`, auth_env_vars: [name] } as never,
+        },
+      },
+    });
+    await expect(started).rejects.toThrow('reserved');
+    expect(resolve).not.toHaveBeenCalled();
     expect(f.fetch).not.toHaveBeenCalled();
   });
   it('rejects header injection before dispatch', async () => {

@@ -2,6 +2,7 @@ import {
   AuthEnvVarsSchema,
   collectEnvironmentReferences,
   CommandError,
+  declaredNamesProblem,
   withDeclaredAuthEnvVars,
   withDeclaredModelApiKey,
 } from '@bobsled-inc/protocol';
@@ -21,7 +22,7 @@ export function parseHostDeclaredEnvNames(names: readonly string[] | undefined):
   if (names === undefined) return [];
   const parsed = AuthEnvVarsSchema.safeParse(names);
   if (!parsed.success) {
-    throw new CommandError('declaredEnvNames must contain valid environment variable names.', 2);
+    throw new CommandError(declaredNamesProblem('declaredEnvNames', parsed.error), 2);
   }
   return [...new Set(parsed.data ?? [])];
 }

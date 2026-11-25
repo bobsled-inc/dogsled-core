@@ -12,7 +12,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CommandError } from '@bobsled-inc/protocol';
+import { CommandError, HOST_EMBEDDING_ENV_NAMES } from '@bobsled-inc/protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -370,6 +370,24 @@ describe('createExternalReviewerClient — http transport', () => {
 
     expect(server.requests[0]!.authorization).toBe('Bearer secret-token');
   });
+
+  it.each(HOST_EMBEDDING_ENV_NAMES.flatMap((name) => [`$${name}`, `\${{ env.${name} }}`]))(
+    'never sends %s, whatever the resolver knows',
+    async (authToken) => {
+      const server = await startServer((_req, res) => json(res, 200, { decisions: [] }));
+      openServers.push(server.close);
+      const resolve = vi.fn(async () => 'host-canary');
+
+      const started = reviewer(
+        { kind: 'http', url: server.url, authToken },
+        makeDeps({ secretResolver: { resolve } })
+      );
+      await expect(started).rejects.toThrow('reserved');
+      await expect(started).rejects.not.toThrow('host-canary');
+      expect(resolve).not.toHaveBeenCalled();
+      expect(server.requests).toEqual([]);
+    }
+  );
 
   it('follows the async 202 + poll flow to done', async () => {
     const server = await startServer((req, res) => {

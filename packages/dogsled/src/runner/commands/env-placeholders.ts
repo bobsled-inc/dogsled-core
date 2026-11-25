@@ -1,4 +1,8 @@
-import { CommandError, parseEnvPlaceholder } from '@bobsled-inc/protocol';
+import {
+  assertNotHostEmbeddingEnvName,
+  CommandError,
+  parseEnvPlaceholder,
+} from '@bobsled-inc/protocol';
 
 export function resolveEnvPlaceholder(
   value: string,
@@ -17,6 +21,7 @@ export function resolveEnvPlaceholder(
     );
   }
 
+  assertNotHostEmbeddingEnvName(envName);
   const resolved = env[envName];
   if (resolved === undefined) {
     throw new CommandError(`Missing environment variable: ${envName}`, 2);
