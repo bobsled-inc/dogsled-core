@@ -367,10 +367,51 @@ describe('PostgresDestination', () => {
 
     it('accepts a new reserved table', async () => {
       const marker = 'temp-dataset-019a';
-      const { dest } = await createDest(createMockPool(createVectorTableClient(marker)));
+      const client = createVectorTableClient(marker);
+      const { dest } = await createDest(createMockPool(client));
       await expect(
         dest.ensureTable('public', 'embeddings', vectorColumns(3), { tableOwnershipMarker: marker })
       ).resolves.toBeUndefined();
+      expect(vi.mocked(client.query).mock.calls.map(([sql]) => sql)).toContain(
+        'SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext($1))'
+      );
+    });
+
+    it('reads one column of one table, from the catalog, by qualified names', async () => {
+      const client = createVectorTableClient();
+      const { dest } = await createDest(createMockPool(client));
+      await dest.ensureTable('public', 'embeddings', vectorColumns(3));
+      const [sql, params] = vi
+        .mocked(client.query)
+        .mock.calls.find(([text]) => text.includes('information_schema.columns'))!;
+      expect(params).toEqual(['public', 'embeddings']);
+
+      // Only a vector column takes its type from the catalog, with the length.
+      expect(sql).toContain("CASE WHEN udt_name::pg_catalog.name = 'vector' THEN (SELECT");
+      expect(sql).toContain('ELSE data_type END AS data_type');
+      expect(sql).toContain('SELECT pg_catalog.format_type(a.atttypid, a.atttypmod) FROM');
+      // The subquery finds exactly the column of this row.
+      expect(sql).toContain('JOIN pg_catalog.pg_class c ON a.attrelid = c.oid');
+      expect(sql).toContain('JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid');
+      expect(sql).toContain('n.nspname = $1 AND c.relname = $2');
+      expect(sql).toContain('AND a.attname = column_name::pg_catalog.name)');
+      expect(sql).toContain(
+        'WHERE table_schema::pg_catalog.name = $1 AND table_name::pg_catalog.name = $2'
+      );
+
+      const called = [...sql.matchAll(/([\w.]+)\s*\(/g)].map((match) => match[1]);
+      expect(called.filter((name) => name !== 'THEN')).toEqual(['pg_catalog.format_type']);
+      const relations = [...sql.matchAll(/(?:FROM|JOIN) ([\w.]+)/g)].map((match) => match[1]);
+      expect(relations).toEqual([
+        'pg_catalog.pg_attribute',
+        'pg_catalog.pg_class',
+        'pg_catalog.pg_namespace',
+        'information_schema.columns',
+      ]);
+      // A column of information_schema has a domain type, so each comparison casts it first.
+      for (const column of ['udt_name', 'column_name', 'table_schema', 'table_name']) {
+        expect(sql).not.toMatch(new RegExp(`\\b${column}\\s*=|=\\s*${column}(?!::)`));
+      }
     });
   });
 
