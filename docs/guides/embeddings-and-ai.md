@@ -139,8 +139,9 @@ exact stream names: `handbook__chunks`.
 With one destination, a pipeline that embeds saves which files it has read only after
 embedding and loading have succeeded. When either fails, or the run is cancelled, the next run
 reads and embeds the same files again. The rows of a document are replaced; a resource that
-appends rows from files can load some of them twice. With several destinations, an incremental
-document resource keeps no such record, so each run reads and embeds every file.
+appends rows from files can load some of them twice. A token of an HTTPS state backend must
+stay valid until then. With several destinations, an incremental document resource keeps no
+such record, so each run reads and embeds every file.
 
 ## Vector length
 
@@ -184,3 +185,4 @@ embed:
 The application sets an `https` endpoint and a token in the run's environment.
 [Host-supplied embeddings](../reference/host-embeddings.md) describes the contract.
 Whitespace-only text gets a null vector and is not sent, which is so for this provider only.
+Chroma, ClickHouse and Turbopuffer refuse a row with a null vector.

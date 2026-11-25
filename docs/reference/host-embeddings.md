@@ -118,7 +118,9 @@ The answer to the request above:
 | `results[].error`           | A code for an input you refuse: a lowercase letter, then up to 63 lowercase letters, digits or underscores. |
 | `usage.tokens`              | Optional. A non-negative integer.                                                                           |
 
-The model must stay the same in every response. The first response may have up to 64 KiB and
+The model must stay the same in every response of a run. When it changes between runs, rows
+that were loaded earlier keep the vectors of the earlier model: run once with
+`--full-refresh`. The first response may have up to 64 KiB and
 any other up to 16 MiB, counted after decompression. Keys that are not listed are ignored.
 
 ## Refused inputs
@@ -144,6 +146,9 @@ the counts by code, never with a text or an id:
 
 `counts` holds at most 20 codes; any further ones count under `other`. A run with
 `quiet` prints errors only, so it leaves this warning out.
+
+Chroma, ClickHouse and Turbopuffer need a vector in every row. A null vector fails the load
+there, so the run goes on only with other destinations.
 
 ## Failures
 
