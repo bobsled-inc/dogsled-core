@@ -93,6 +93,15 @@ export function mapPostgresType(column: ColumnType | SchemaColumn): string {
 
 const DELETE_BATCH_SIZE = 500;
 
+// information_schema reports a pgvector column as USER-DEFINED. Its full type, such as vector(3),
+// is in the catalog.
+const COLUMN_TYPES_SQL =
+  `SELECT column_name, CASE WHEN udt_name = 'vector' THEN (` +
+  `SELECT pg_catalog.format_type(a.atttypid, a.atttypmod) FROM pg_catalog.pg_attribute a ` +
+  `WHERE a.attrelid = to_regclass(format('%I.%I', table_schema, table_name)) ` +
+  `AND a.attname = column_name) ELSE data_type END AS data_type ` +
+  `FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2`;
+
 function quoteIdentifier(identifier: string): string {
   const escaped = identifier.replace(/"/g, '""');
   return `"${escaped}"`;
@@ -355,12 +364,7 @@ export class PostgresDestination implements DatabaseDestination {
 
     const client = await this.connectClient();
     try {
-      const result = await withRetry(() =>
-        client.query(
-          `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2`,
-          [safeSchema, safeTable]
-        )
-      );
+      const result = await withRetry(() => client.query(COLUMN_TYPES_SQL, [safeSchema, safeTable]));
 
       const existingMap = new Map(
         result.rows.map((row) => [
@@ -402,10 +406,7 @@ export class PostgresDestination implements DatabaseDestination {
         const actual =
           ownershipMarker === undefined
             ? null
-            : await client.query(
-                `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2`,
-                [safeSchema, safeTable]
-              );
+            : await client.query(COLUMN_TYPES_SQL, [safeSchema, safeTable]);
         const columnMap =
           actual === null
             ? new Map<string, string>([

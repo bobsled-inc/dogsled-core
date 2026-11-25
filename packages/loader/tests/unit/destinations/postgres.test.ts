@@ -308,6 +308,72 @@ describe('PostgresDestination', () => {
     expect(createSql).toContain('"embedding" vector(1536)');
   });
 
+  describe('existing pgvector columns', () => {
+    const vectorColumns = (dimension: number): SchemaColumn[] => [
+      { name: 'id', type: 'integer', primary_key: true },
+      { name: 'embedding', type: 'vector', dimension },
+    ];
+
+    /** Answers as a Postgres server does: without the catalog, a vector is USER-DEFINED. */
+    function createVectorTableClient(ownershipMarker?: string): PostgresPoolClientLike {
+      let exists = ownershipMarker === undefined;
+      return createMockClient({
+        queryImpl: async (sql) => {
+          if (sql.startsWith('CREATE TABLE')) exists = true;
+          if (sql.startsWith('SELECT to_regclass')) {
+            return createMockQueryResult({ rows: [{ table_oid: null }] });
+          }
+          if (sql.startsWith('SELECT obj_description')) {
+            return createMockQueryResult({
+              rows: [{ marker: ownershipMarker, relkind: 'r', relpersistence: 'p' }],
+            });
+          }
+          if (!sql.includes('information_schema.columns') || !exists) {
+            return createMockQueryResult();
+          }
+          const vectorType = sql.includes('format_type') ? 'vector(3)' : 'USER-DEFINED';
+          return createMockQueryResult({
+            rows: [
+              { column_name: 'id', data_type: 'bigint' },
+              { column_name: 'embedding', data_type: vectorType },
+              { column_name: '_time_extracted', data_type: 'timestamp with time zone' },
+              { column_name: '_dogsled_loaded_at', data_type: 'timestamp with time zone' },
+            ],
+          });
+        },
+      });
+    }
+
+    it.each(['evolve', 'strict'] as const)(
+      'accepts the same dimension on the next load with schema_behavior %s',
+      async (schemaBehavior) => {
+        const client = createVectorTableClient();
+        const { dest } = await createDest(createMockPool(client));
+        await dest.ensureTable('public', 'embeddings', vectorColumns(3), { schemaBehavior });
+        await dest.ensureTable('public', 'embeddings', vectorColumns(3), { schemaBehavior });
+        const queries = vi.mocked(client.query).mock.calls.map(([sql]) => sql);
+        expect(queries.filter((sql) => sql.includes('information_schema.columns'))).toHaveLength(1);
+        expect(queries.filter((sql) => sql.startsWith('ALTER TABLE'))).toEqual([]);
+      }
+    );
+
+    it('refuses a changed dimension and names both types', async () => {
+      const { dest } = await createDest(createMockPool(createVectorTableClient()));
+      await expect(dest.ensureTable('public', 'embeddings', vectorColumns(4))).rejects.toThrow(
+        'Schema change conflict on "public"."embeddings".embedding: ' +
+          'existing type VECTOR(3) does not match expected vector(4)'
+      );
+    });
+
+    it('accepts a new reserved table', async () => {
+      const marker = 'temp-dataset-019a';
+      const { dest } = await createDest(createMockPool(createVectorTableClient(marker)));
+      await expect(
+        dest.ensureTable('public', 'embeddings', vectorColumns(3), { tableOwnershipMarker: marker })
+      ).resolves.toBeUndefined();
+    });
+  });
+
   it('ensureTable() throws a helpful error when pgvector extension cannot be created', async () => {
     const vectorColumns: SchemaColumn[] = [
       { name: 'id', type: 'integer', primary_key: true },
