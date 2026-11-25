@@ -3,10 +3,12 @@
  * `hidden` attribute or inline `display: none`.
  *
  * Not a browser. It removes an element only when its subtree is strictly balanced and holds
- * nothing that a browser could end early, move or read in another way, and keeps the text in
- * every other case. One pass, linear, with a capped stack; untrusted input.
+ * nothing that a browser could end early, move or read in another way, and removes nothing when
+ * a style sheet might show hidden content. It keeps the text in every other unclear case, except
+ * that a script can show text it removed. Linear, with a capped stack; untrusted input.
  */
 
+import { styleSheetMayShowHidden } from './html-style-sheets.js';
 import { scanTag, type Tag } from './html-tag.js';
 
 export interface VisibleHtml {
@@ -142,7 +144,9 @@ export function removeHiddenContent(input: string): VisibleHtml {
       candidate = { name, start, inline, stack: [name], unnestable: new Set() };
     }
   }
-  if (removedCharacters === 0) return { html: input, removedCharacters };
+  if (removedCharacters === 0 || styleSheetMayShowHidden(input)) {
+    return { html: input, removedCharacters: 0 };
+  }
   output.push(input.slice(copied));
   return { html: output.join(''), removedCharacters };
 }

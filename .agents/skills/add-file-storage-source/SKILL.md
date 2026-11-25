@@ -137,7 +137,9 @@ output:
 `overlap_tokens` from the block above. `min_tokens` is invalid with `recursive`.
 
 HTML and HTML email parsing drops plainly hidden content (containers with `hidden` or
-inline `display: none`), including content that a script or style sheet shows later. This is text clean-up, not protection against hidden instructions.
+inline `display: none`), including content that a script shows later. A document that links
+a style sheet, or has one that might show hidden content, keeps everything. This is text
+clean-up, not protection against hidden instructions.
 
 Changing `parse` or `chunk` does not touch files an incremental resource already read;
 run once with `--full-refresh`.

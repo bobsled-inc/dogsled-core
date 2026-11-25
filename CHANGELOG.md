@@ -6,7 +6,7 @@ Each section lists the changes that first shipped in that version. A version wit
 
 ## Unreleased
 
-- The HTML parser, also for HTML email, drops the content of plainly hidden containers: elements such as `div` and `span` with the `hidden` attribute or inline `display: none`, for example around the machine data of an Inline XBRL report. Text that a script or style sheet shows again is dropped too. Unclear cases keep their text, and a document with nothing else keeps everything. Parser versions are now `html:1.1.0` and `eml:1.1.0`, and library callers get the dropped size in `metadata.hiddenCharacters`.
+- The HTML parser, also for HTML email, drops the content of plainly hidden containers: elements such as `div` and `span` with the `hidden` attribute or inline `display: none`, for example around the machine data of an Inline XBRL report. Text that a script shows later is dropped too. Unclear cases keep their text. A document keeps everything when it has nothing else, links a style sheet, or has a `<style>` that might show the content, such as one that mentions `display`. Parser versions are now `html:1.1.0` and `eml:1.1.0`, and library callers get the dropped size in `metadata.hiddenCharacters`.
 
 - A document Resource takes `chunk.strategy: paragraph`, which cuts at blank lines, joins short paragraphs until they reach `chunk.min_tokens` (60 by default) and never passes `chunk.max_tokens`. These chunks do not overlap, so a non-zero `chunk.overlap_tokens` fails validation. `recursive` stays the default, with the same chunks and the same `chunker_config_hash`. Neither this setting nor the new HTML parsing touches files an incremental run already read: run once with `--full-refresh`.
 

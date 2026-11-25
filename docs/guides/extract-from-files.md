@@ -226,11 +226,14 @@ around the machine data of an Inline XBRL report. `.xhtml` files are read by HTM
 In every unclear case the text stays. For example, an element keeps its text when its tags
 are not balanced, or when it holds a table, a form control, a comment or a script. So does
 one with an inline style that uses quotes, brackets or escapes. If dropping would leave no
-text besides the title, nothing is dropped.
+text besides the title, nothing is dropped. Nothing is dropped either when a style sheet might
+show the content again: when the document links a style sheet, or has a `<style>` that
+mentions `display` or `hidden`, sets `all`, imports another sheet, or uses a backslash, `&`
+or `<`.
 
-Text that a script, a style sheet or a media query shows again is dropped too, and there is
-no setting to keep it. This is text clean-up, not protection against hidden instructions:
-text hidden in other ways still reaches the chunks.
+Text that a script shows later is dropped, and there is no setting to keep it. This is text
+clean-up, not protection against hidden instructions: text hidden in other ways still reaches
+the chunks.
 
 ### Chunk by paragraph
 

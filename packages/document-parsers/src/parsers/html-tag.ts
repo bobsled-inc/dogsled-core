@@ -1,4 +1,4 @@
-/** The parts of a tag that decide whether its element is hidden. Values are not decoded. */
+/** The parts of a tag that decide what is hidden. Values are not decoded. */
 export interface Tag {
   readonly name: string;
   /** Position after the ">". */
@@ -8,6 +8,7 @@ export interface Tag {
   readonly hasAngleBracket: boolean;
   readonly hidden: string | null;
   readonly style: string | null;
+  readonly rel: string | null;
   /** The value of `xmlns:ix`. */
   readonly xbrlNamespace: string | null;
 }
@@ -20,6 +21,7 @@ export function scanTag(input: string, nameStart: number): Tag | null {
   const attributesStart = pos;
   let hidden: string | null = null;
   let style: string | null = null;
+  let rel: string | null = null;
   let xbrlNamespace: string | null = null;
 
   while (pos < input.length) {
@@ -29,7 +31,7 @@ export function scanTag(input: string, nameStart: number): Tag | null {
       const attributes = input.slice(attributesStart, pos);
       const hasAngleBracket = /[<>]/.test(attributes) || name.includes('<');
       const end = pos + (selfClosing ? 2 : 1);
-      return { name, end, selfClosing, hasAngleBracket, hidden, style, xbrlNamespace };
+      return { name, end, selfClosing, hasAngleBracket, hidden, style, rel, xbrlNamespace };
     }
     if (code === SLASH || isSpace(code)) {
       pos++;
@@ -58,6 +60,7 @@ export function scanTag(input: string, nameStart: number): Tag | null {
     // The first attribute of a name wins, as in a browser.
     if (attribute === 'hidden') hidden ??= value;
     else if (attribute === 'style') style ??= value;
+    else if (attribute === 'rel') rel ??= value;
     else if (attribute === 'xmlns:ix') xbrlNamespace ??= value;
   }
   return null;

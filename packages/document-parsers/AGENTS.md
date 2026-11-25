@@ -13,8 +13,9 @@ used by extractor document resources.
 - `chunkerConfigHash()` is stable and intentionally invalidates downstream chunks
   when chunk configuration changes. Each strategy has its own version token; the
   recursive hash must not change when another strategy gains options.
-- `removeHiddenContent()` keeps text whenever in doubt. It is not a browser: do not add
-  tree-building cases, and add an element to its lists only when that element cannot end,
+- `removeHiddenContent()` keeps text whenever in doubt, except that a script can show text it
+  removed. It removes nothing when a style sheet might show it. It is not a browser: do not
+  add tree-building cases, and add an element to its lists only when that element cannot end,
   move or reread the hidden element around it. It stays linear with a capped stack.
 - The built-in parser surface extracts text from PDF, DOCX, PPTX, HTML, Markdown,
   text, and email without requiring hosted services.

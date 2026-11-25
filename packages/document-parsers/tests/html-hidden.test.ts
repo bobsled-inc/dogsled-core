@@ -230,10 +230,53 @@ describe('HTML content that is kept', () => {
     expect(removeHiddenContent(html).removedCharacters).toBe(0);
   });
 
-  it('drops text that a style sheet shows again', () => {
-    expect(around('<style>[hidden]{display:block}</style><div hidden>x</div>')).toBe(
-      'before after'
-    );
+  it.each([
+    ['the attribute', '<style>[hidden]{display:block}</style>'],
+    ['a media query', '<style>@media (max-width:9px){.m{DISPLAY:block!important}}</style>'],
+    ['every property', '<style>.m{all:unset!important}</style>'],
+    ['every property, after a comment', '<style>.m{all/**/:unset!important}</style>'],
+    ['an import', '<style>@import url(x.css);</style>'],
+    ['an escape', '<style>.m{dis\\70lay:block!important}</style>'],
+    ['an entity in svg', '<svg><style>.m{dis&#112;lay:block!important}</style></svg>'],
+    [
+      'a style that svg does not end',
+      '<svg><style><![CDATA[</style >*{display:block}]]></style></svg>',
+    ],
+    [
+      'a second style',
+      '<style>p{color:red}</style><STYLE type="text/css">p{display:block}</STYLE>',
+    ],
+    ['a style that is not closed', '<style>*{display:block!important}'],
+    ['a style in an odd comment', '<!--><style>*{display:block}</style>-->'],
+    ['a close tag in an attribute', '<style title="</style >">*{display:block}</style>'],
+    [
+      'a style after a fake one',
+      '<!-- <style title=" --><style>*{display:block}</style><i title="">',
+    ],
+    ['a linked style sheet', '<link rel="stylesheet" href="x.css">'],
+    ['a linked style sheet in capitals', '<LINK href=x REL="alternate StyleSheet">'],
+    ['a linked style sheet with an entity', '<link rel="&#115;tylesheet" href="x.css">'],
+    ['a linked style sheet after a fake one', '<!-- <link a=" --><link rel=stylesheet><i b="">'],
+    ['a style sheet instruction', '<?xml-stylesheet href="x.css"?>'],
+  ])('everything when a style sheet might show it: %s', (_name, sheet) => {
+    const hidden = '<div class=m hidden>VIS</div>';
+    for (const html of [`${sheet}before ${hidden} after`, `before ${hidden} after${sheet}`]) {
+      expect(removeHiddenContent(html)).toEqual({ html, removedCharacters: 0 });
+    }
+    expect(htmlToText(`before ${hidden} after${sheet}`)).toContain('VIS');
+  });
+
+  it.each([
+    [
+      'no display',
+      '<style media="all" title="display">p{color:red;transition:all .3s}@media all{a{top:0}}</style>',
+    ],
+    ['an empty style', '<style></style>'],
+    ['another link', '<link rel="icon" href="?display&hidden">'],
+    ['a prefixed link', '<link:schemaRef rel="stylesheet"></link:schemaRef>'],
+    ['the words outside a style', '<p>display hidden all: @import \\</p><style>p{top:0}</style>'],
+  ])('only what is hidden with a style sheet that cannot show it: %s', (_name, sheet) => {
+    expect(htmlToText(`before <div hidden>gone</div> after${sheet}`)).not.toContain('gone');
   });
 
   it('changes nothing in documents without hidden content', () => {
@@ -287,6 +330,12 @@ describe('parser results', () => {
 
 describe('cost of finding hidden content', () => {
   const inputs: Array<[string, (count: number) => string]> = [
+    ['style sheets', (n) => `<div hidden>x</div>${'<style>p{}</style>'.repeat(n)}`],
+    ['unclosed styles', (n) => `<div hidden>x</div>${'<style '.repeat(n)}`],
+    ['links', (n) => `<div hidden>x</div>${'<link rel=icon>'.repeat(n)}`],
+    ['links in a tag', (n) => `<div hidden>x</div>${'<link '.repeat(n)}>`],
+    ['hidden spans', (n) => `a ${'<span hidden>x</span> '.repeat(n)}`],
+    ['whitespace before a span', (n) => `a${' '.repeat(n)}<span hidden>x</span> `.repeat(3)],
     ['unclosed hidden tags', (n) => '<div hidden>'.repeat(n)],
     ['hidden elements', (n) => '<div hidden>x</div>'.repeat(n)],
     ['unclosed tags', (n) => `hidden${'<b>'.repeat(n)}`],
@@ -309,21 +358,65 @@ describe('cost of finding hidden content', () => {
     ],
   ];
 
-  // Growth, not time, so that a slow machine changes nothing: 16 times the input costs about
-  // 16 times as much when linear, and 256 times as much when quadratic.
+  // Counts the characters that string and regular expression calls read, so that the speed of
+  // the machine does not matter: 8 times the input is 8 times the work when linear, 64 times
+  // when quadratic.
   it.each(inputs)('grows linearly with %s', (_name, build) => {
-    const cost = (html: string): number => {
-      const times = Array.from({ length: 5 }, () => {
-        const start = performance.now();
-        removeHiddenContent(html);
-        return performance.now() - start;
-      });
-      return Math.min(...times);
-    };
-    const small = build(2_000);
-    const large = build(32_000);
-    cost(small);
-    const floor = 0.05;
-    expect(cost(large)).toBeLessThan(80 * Math.max(cost(small), floor));
+    const small = countWork(() => removeHiddenContent(build(500)));
+    const large = countWork(() => removeHiddenContent(build(4_000)));
+    expect(large).toBeLessThan(10 * small);
   });
 });
+
+/** Characters read by the built-in calls that the scan uses. Not exact, but never sublinear. */
+function countWork(run: () => void): number {
+  const string = String.prototype;
+  const { slice, indexOf, includes, charCodeAt, split, toLowerCase } = string;
+  const { exec } = RegExp.prototype;
+  let work = 0;
+  const read = (count: number): void => {
+    work += count + 1;
+  };
+  const search = (text: string, needle: string, from: number): number => {
+    const index = indexOf.call(text, needle, from);
+    read((index < 0 ? text.length : index) - from);
+    return index;
+  };
+  string.slice = function (start, end) {
+    const result = slice.call(this, start, end);
+    read(result.length);
+    return result;
+  };
+  string.indexOf = function (needle, from = 0) {
+    return search(String(this), needle, from);
+  };
+  string.includes = function (needle, from = 0) {
+    return search(String(this), needle, from) >= 0;
+  };
+  string.charCodeAt = function (index) {
+    read(1);
+    return charCodeAt.call(this, index);
+  };
+  string.split = function (this: string, ...args: [string]) {
+    read(this.length);
+    return split.apply(this, args);
+  } as typeof split;
+  string.toLowerCase = function () {
+    read(this.length);
+    return toLowerCase.call(this);
+  };
+  RegExp.prototype.exec = function (text) {
+    const from = this.global || this.sticky ? this.lastIndex : 0;
+    const match = exec.call(this, text);
+    const end = match ? match.index + match[0].length : this.sticky ? from : text.length;
+    read(end - from);
+    return match;
+  };
+  try {
+    run();
+  } finally {
+    Object.assign(string, { slice, indexOf, includes, charCodeAt, split, toLowerCase });
+    RegExp.prototype.exec = exec;
+  }
+  return work;
+}
