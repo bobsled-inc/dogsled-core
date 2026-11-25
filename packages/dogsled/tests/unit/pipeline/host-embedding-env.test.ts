@@ -14,13 +14,22 @@ vi.mock('../../../src/runtime/workspace.js', () => ({
   })),
 }));
 
+vi.mock('@bobsled-inc/project-index', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@bobsled-inc/project-index')>();
+  return { ...original, scanProject: vi.fn(original.scanProject) };
+});
+
+import { scanProject } from '@bobsled-inc/project-index';
+
 import { runPipeline } from '../../../src/commands/pipeline.js';
 import {
   HOST_EMBEDDING_TOKEN_ENV,
   HOST_EMBEDDING_URL_ENV,
   runProjectPipeline,
+  type ResolvedPipelineRunProject,
   type RunProjectPipelineOptions,
 } from '../../../src/pipeline/index.js';
+import { resolveProjectPipelines } from '../../../src/runner/config/project-resolver.js';
 
 const TOKEN = 'synthetic-host-token';
 const HOST_URL = 'https://host.example/private/embed';
@@ -478,6 +487,98 @@ describe('the streams a run hands to the embedder', () => {
       }
     );
     expect(children[1]?.embedConfig?.['streams']).toEqual({ docs__chunks: [{ field: 'text' }] });
+  });
+
+  /** A pipeline that a host resolved before the run, in its own way. */
+  async function resolveEarlier(projectRoot: string): Promise<ResolvedPipelineRunProject> {
+    const { config, extractPipelines } = await resolveProjectPipelines({ projectRoot });
+    return { config, pipeline: extractPipelines[0]!, projectRoot, warnings: [] };
+  }
+
+  // Each of these stops the loaders that need the whole project.
+  it.each([
+    ['models/broken.yml', 'name: ['],
+    ['resources/files/broken.yml', 'type: resource\nname: {'],
+    ['other/dogsled.yml', 'type: pipeline_config\npipelines: ['],
+  ])('do not depend on another file that is broken: %s', async (file, content) => {
+    const projectRoot = makeProject({ provider: OPENAI });
+    const resolved = await resolveEarlier(projectRoot);
+    fs.mkdirSync(path.dirname(path.join(projectRoot, file)), { recursive: true });
+    fs.writeFileSync(path.join(projectRoot, file), content);
+    await expect(resolveProjectPipelines({ projectRoot })).rejects.toThrow();
+
+    const { spawn, children } = fakeSpawn();
+    const result = await runProjectPipeline(
+      { projectRoot, pipelineName: 'documents', quiet: true },
+      { spawn, resolvePipeline: async () => resolved }
+    );
+    expect(result).toMatchObject({ status: 'success', exitCode: 0 });
+    expect(children[1]?.embedConfig?.['streams']).toEqual({ docs__chunks: [{ field: 'text' }] });
+  });
+
+  it('need no second look at the project files unless a host resolved the pipeline', async () => {
+    const projectRoot = makeProject({ provider: OPENAI });
+    const scans = async (
+      resolvePipeline?: NonNullable<Parameters<typeof runProjectPipeline>[1]>['resolvePipeline']
+    ): Promise<number> => {
+      const { spawn, children } = fakeSpawn();
+      vi.mocked(scanProject).mockClear();
+      await runProjectPipeline(
+        { projectRoot, pipelineName: 'documents', quiet: true },
+        { spawn, resolvePipeline }
+      );
+      expect(children[1]?.embedConfig?.['streams']).toEqual({ docs__chunks: [{ field: 'text' }] });
+      return vi.mocked(scanProject).mock.calls.length;
+    };
+    expect(await scans()).toBe(1);
+    expect(
+      await scans(async (options, resolveDefault) => {
+        const resolved = await resolveDefault(options);
+        expect(Object.keys(resolved).sort()).toEqual([
+          'config',
+          'pipeline',
+          'projectRoot',
+          'warnings',
+        ]);
+        return resolved;
+      })
+    ).toBe(2);
+    const resolved = await resolveEarlier(projectRoot);
+    expect(await scans(async () => resolved)).toBe(1);
+  });
+
+  it.each([
+    ['the same project', (project: ResolvedPipelineRunProject) => project],
+    ['a copy of it', (project: ResolvedPipelineRunProject) => structuredClone(project)],
+  ])('follow a file that a host changed before it returned %s', async (_label, returned) => {
+    const projectRoot = makeProject({ provider: OPENAI });
+    const resource = path.join(projectRoot, 'resources/files/docs.yml');
+    const { spawn, children } = fakeSpawn();
+    await runProjectPipeline(
+      { projectRoot, pipelineName: 'documents', quiet: true },
+      {
+        spawn,
+        resolvePipeline: async (options, resolveDefault) => {
+          const resolved = await resolveDefault(options);
+          const document = fs.readFileSync(resource, 'utf8');
+          fs.writeFileSync(resource, document.replace('format: document', 'format: csv'));
+          return returned(resolved);
+        },
+      }
+    );
+    expect(children[1]?.embedConfig?.['streams']).toEqual({ docs: [{ field: 'text' }] });
+  });
+
+  it('need no project files in a pipeline that embeds nothing', async () => {
+    const projectRoot = makeProject({});
+    const resolved = await resolveEarlier(projectRoot);
+    const { spawn } = fakeSpawn();
+    vi.mocked(scanProject).mockClear();
+    await runProjectPipeline(
+      { projectRoot, pipelineName: 'documents', quiet: true },
+      { spawn, resolvePipeline: async () => resolved }
+    );
+    expect(scanProject).not.toHaveBeenCalled();
   });
 
   it('are checked for a pipeline that validation skipped', async () => {

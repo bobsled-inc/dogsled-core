@@ -42,6 +42,8 @@ import { resolvePipelineEmbed } from './embed.js';
 import { createPipelineRedactor } from './redaction.js';
 import { expandInputMatrix } from '../runner/config/input-matrix.js';
 
+import type { ProjectIndex } from '@bobsled-inc/project-index';
+
 import type {
   DestinationConfig,
   NamedDestination,
@@ -69,7 +71,7 @@ async function resolveDefaultPipelineRunProject(
   options: ResolvePipelineRunOptions,
   declaredEnvNames: readonly string[] = [],
   hostManagedModelAuth = false
-): Promise<ResolvedPipelineRunProject> {
+): Promise<{ project: ResolvedPipelineRunProject; index: ProjectIndex }> {
   const project = await resolveProjectPipelines({
     projectRoot: options.projectRoot,
     configPath: options.configPath,
@@ -110,12 +112,8 @@ async function resolveDefaultPipelineRunProject(
       2
     );
   }
-  return {
-    config: project.config,
-    pipeline,
-    projectRoot: project.projectRoot,
-    warnings: project.warnings,
-  };
+  const { config, projectRoot, warnings, index } = project;
+  return { project: { config, pipeline, projectRoot, warnings }, index };
 }
 
 function deepFreeze<T>(value: T): T {
@@ -210,9 +208,15 @@ export async function runProjectPipeline(
     ...(options.configPath !== undefined ? { configPath: options.configPath } : {}),
     pipelineName: options.pipelineName,
   } satisfies ResolvePipelineRunOptions;
-  const project = dependencies.resolvePipeline
-    ? await dependencies.resolvePipeline(resolveOptions, resolveDefault)
-    : await resolveDefault(resolveOptions);
+  const { project, index }: { project: ResolvedPipelineRunProject; index?: ProjectIndex } =
+    dependencies.resolvePipeline
+      ? {
+          project: await dependencies.resolvePipeline(
+            resolveOptions,
+            async (input) => (await resolveDefault(input)).project
+          ),
+        }
+      : await resolveDefault(resolveOptions);
   const { config, pipeline } = project;
 
   const runtimeEnv = { ...process.env, ...options.env };
@@ -233,13 +237,14 @@ export async function runProjectPipeline(
       ...pipeline,
       embed:
         pipeline.embed &&
-        resolvePipelineEmbed(
+        resolvePipelineEmbed({
           pipeline,
-          pipeline.embed,
-          project.projectRoot,
+          embed: pipeline.embed,
+          projectRoot: project.projectRoot,
+          index,
           declaredEnvNames,
-          runtimeEnv
-        ),
+          env: runtimeEnv,
+        }),
     },
     config: runtimeConfig,
     resources: options.resources,

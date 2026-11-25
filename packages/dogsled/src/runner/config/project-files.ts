@@ -9,13 +9,13 @@
 import * as path from 'node:path';
 
 import {
+  assertValidProjectIndex,
   buildProjectIndex,
   configuredResourcesFolder,
   documentName,
   duplicateIdentityIssues,
   entriesOfKind,
   entryFilePath,
-  resolveProjectIndex,
   resourceIntegration,
   scanProject,
   type ProjectIndex,
@@ -43,8 +43,18 @@ export interface DogsledProject {
  * is missing instead of failing on the directory.
  */
 export function openDogsledProject(root: string, index?: ProjectIndex): DogsledProject {
+  const project = openProjectForLookup(root, index);
+  assertValidProjectIndex(project.index);
+  return project;
+}
+
+/**
+ * Open the project at `root` to look up single files in it. Unlike `openDogsledProject`,
+ * a problem in another file is left to the loaders that need the whole project.
+ */
+export function openProjectForLookup(root: string, index?: ProjectIndex): DogsledProject {
   const absoluteRoot = path.resolve(root);
-  const resolved = resolveProjectIndex(absoluteRoot, index ?? scanExistingProject(absoluteRoot));
+  const resolved = index ?? scanExistingProject(absoluteRoot);
   return {
     root: absoluteRoot,
     index: resolved,
