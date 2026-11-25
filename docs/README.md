@@ -71,6 +71,8 @@ More:
 - [Connectors](reference/connectors.md): integrations, source types, destinations
   and warehouses.
 - [Environment variables](reference/environment-variables.md).
+- [Host-supplied embeddings](reference/host-embeddings.md): the endpoint a host
+  application provides for `provider: host`.
 - [Protocol](reference/protocol.md): the messages between extract and load.
 
 ## Advanced reference

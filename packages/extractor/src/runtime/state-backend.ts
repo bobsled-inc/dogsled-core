@@ -6,6 +6,8 @@
  * inside an ephemeral container who needs durable state outside the filesystem.
  */
 
+import { assertNotHostEmbeddingEnvName } from '@bobsled-inc/protocol';
+
 import { assertPathContained } from '../commands/common.js';
 import { safeFetch } from '../framework/core/ssrf.js';
 import { isNonPublicHost, isPrivateHost } from '../framework/core/shared.js';
@@ -56,6 +58,11 @@ export class HttpStateStore implements StateStore {
     this.fetchImpl = opts.fetch ?? safeFetch;
     this.authToken = opts.authToken;
     this.timeoutMs = opts.timeoutMs ?? 30_000;
+  }
+
+  /** The ETag of the state last loaded or saved. */
+  get version(): string | undefined {
+    return this.lastEtag;
   }
 
   async load(): Promise<ExtractorState> {
@@ -292,6 +299,7 @@ export function createStateStore(url: string, options: CreateStateStoreOptions =
     );
   }
 
+  if (options.authTokenEnv) assertNotHostEmbeddingEnvName(options.authTokenEnv);
   const authToken = options.authTokenEnv ? process.env[options.authTokenEnv] : undefined;
 
   // Reject explicitly-set-but-empty auth env var — if someone configured it, they intended

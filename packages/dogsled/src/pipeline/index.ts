@@ -1,7 +1,8 @@
 import {
   declaredHostEnvironmentNames,
-  withDeclaredAuthEnvVars,
   assertDeclaredEnvironmentReferences,
+  HOST_EMBEDDING_ENV_NAMES,
+  withoutHostEmbeddingEnv,
 } from '@bobsled-inc/protocol';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -37,8 +38,11 @@ import {
   type ResolvePipelineRunOptions,
   type ResolvedPipelineRunProject,
 } from './contracts.js';
+import { resolvePipelineEmbed } from './embed.js';
 import { createPipelineRedactor } from './redaction.js';
 import { expandInputMatrix } from '../runner/config/input-matrix.js';
+
+import type { ProjectIndex } from '@bobsled-inc/project-index';
 
 import type {
   DestinationConfig,
@@ -46,6 +50,7 @@ import type {
   PipelineInputValue,
   DogsledConfig,
 } from '../runner/config/schema.js';
+export { HOST_EMBEDDING_TOKEN_ENV, HOST_EMBEDDING_URL_ENV } from '@bobsled-inc/protocol';
 export {
   PipelineExecutionStateSchema,
   type PipelineExecutionState,
@@ -66,7 +71,7 @@ async function resolveDefaultPipelineRunProject(
   options: ResolvePipelineRunOptions,
   declaredEnvNames: readonly string[] = [],
   hostManagedModelAuth = false
-): Promise<ResolvedPipelineRunProject> {
+): Promise<{ project: ResolvedPipelineRunProject; index: ProjectIndex }> {
   const project = await resolveProjectPipelines({
     projectRoot: options.projectRoot,
     configPath: options.configPath,
@@ -107,12 +112,8 @@ async function resolveDefaultPipelineRunProject(
       2
     );
   }
-  return {
-    config: project.config,
-    pipeline,
-    projectRoot: project.projectRoot,
-    warnings: project.warnings,
-  };
+  const { config, projectRoot, warnings, index } = project;
+  return { project: { config, pipeline, projectRoot, warnings }, index };
 }
 
 function deepFreeze<T>(value: T): T {
@@ -207,9 +208,15 @@ export async function runProjectPipeline(
     ...(options.configPath !== undefined ? { configPath: options.configPath } : {}),
     pipelineName: options.pipelineName,
   } satisfies ResolvePipelineRunOptions;
-  const project = dependencies.resolvePipeline
-    ? await dependencies.resolvePipeline(resolveOptions, resolveDefault)
-    : await resolveDefault(resolveOptions);
+  const { project, index }: { project: ResolvedPipelineRunProject; index?: ProjectIndex } =
+    dependencies.resolvePipeline
+      ? {
+          project: await dependencies.resolvePipeline(
+            resolveOptions,
+            async (input) => (await resolveDefault(input)).project
+          ),
+        }
+      : await resolveDefault(resolveOptions);
   const { config, pipeline } = project;
 
   const runtimeEnv = { ...process.env, ...options.env };
@@ -228,14 +235,16 @@ export async function runProjectPipeline(
   const { resourceNames, pipelineOptions } = buildPipelineInvocation({
     pipeline: {
       ...pipeline,
-      ...(pipeline.embed
-        ? {
-            embed: withDeclaredAuthEnvVars(
-              pipeline.embed,
-              declaredEnvNames
-            ) as typeof pipeline.embed,
-          }
-        : {}),
+      embed:
+        pipeline.embed &&
+        resolvePipelineEmbed({
+          pipeline,
+          embed: pipeline.embed,
+          projectRoot: project.projectRoot,
+          index,
+          declaredEnvNames,
+          env: runtimeEnv,
+        }),
     },
     config: runtimeConfig,
     resources: options.resources,
@@ -249,7 +258,7 @@ export async function runProjectPipeline(
     warehouse: options.warehouse,
     destinationWarehouse: options.destinationWarehouse,
     queryTag: options.queryTag,
-    env: runtimeEnv,
+    env: withoutHostEmbeddingEnv(runtimeEnv),
   });
   pipelineOptions.declaredEnvNames = declaredEnvNames;
   if (options.maxRecords !== undefined) {
@@ -269,6 +278,7 @@ export async function runProjectPipeline(
   const errors: PipelineRunError[] = [];
   const redact = createPipelineRedactor([
     ...Object.values(options.env ?? {}),
+    ...HOST_EMBEDDING_ENV_NAMES.map((name) => runtimeEnv[name]),
     pipelineOptions.bqAccessToken,
     pipelineOptions.sfPassword,
     pipelineOptions.sfAccessToken,

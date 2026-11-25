@@ -473,6 +473,7 @@ describe('MetricMessage embedding fields', () => {
         embedding_tokens_truncated: 3,
         embedding_duration_ms: 1800,
         embedding_records_processed: 240,
+        embedding_inputs_rejected: 2,
       },
     });
 
@@ -483,6 +484,7 @@ describe('MetricMessage embedding fields', () => {
         embedding_tokens_truncated: 3,
         embedding_duration_ms: 1800,
         embedding_records_processed: 240,
+        embedding_inputs_rejected: 2,
       },
     });
   });

@@ -141,8 +141,9 @@ instead.
 
 ## Control messages (standard error)
 
-`LOG` carries a level (`debug`, `info`, `warn`, `error`) and a message; `METRIC`
-carries counters such as records emitted and API calls:
+`LOG` carries a level (`debug`, `info`, `warn`, `error`) and a message, and can carry an
+`event` name with `attributes` for programs; `METRIC` carries counters such as records
+emitted and API calls:
 
 ```json
 {

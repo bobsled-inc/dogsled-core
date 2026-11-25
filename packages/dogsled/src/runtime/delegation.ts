@@ -1,3 +1,5 @@
+import { withoutHostEmbeddingEnv } from '@bobsled-inc/protocol';
+
 import { createEmbedGroup, EMBED_SUBCOMMANDS } from '../groups/embed.js';
 import { createEntityGraphGroup, ENTITY_GRAPH_SUBCOMMANDS } from '../groups/entity-graph.js';
 import { createExtractGroup, EXTRACT_SUBCOMMANDS } from '../groups/extract.js';
@@ -33,6 +35,12 @@ export interface DelegationDependencies extends RunCommandDependencies {
   resolveDogsledModelRunInvocation?: (metaUrl: string, cliArgs: string[]) => CommandInvocation;
 }
 
+/** Only an embed stage may read the endpoint and token of a host-supplied embedding model. */
+function delegatedEnv(target: CliTarget, dependencies: DelegationDependencies): NodeJS.ProcessEnv {
+  const env = dependencies.env ?? process.env;
+  return target === 'embed' ? env : withoutHostEmbeddingEnv(env);
+}
+
 export async function runDelegatedCli(
   target: CliTarget,
   cliArgs: string[],
@@ -42,7 +50,7 @@ export async function runDelegatedCli(
 
   const spawnOptions: import('node:child_process').SpawnOptions = {
     stdio: 'inherit',
-    env: dependencies.env ?? process.env,
+    env: delegatedEnv(target, dependencies),
   };
 
   // Pass bundled integrations directory to the extractor subprocess
@@ -152,7 +160,7 @@ export async function maybeRunDelegatedCommand(
       invocation,
       {
         stdio: 'inherit',
-        env: dependencies.env ?? process.env,
+        env: delegatedEnv('model', dependencies),
       },
       dependencies
     );

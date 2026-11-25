@@ -44,6 +44,8 @@ export interface ExtractOptions {
   plan?: string;
   stateBackend?: string;
   stateAuthEnv?: string;
+  /** Where a pipeline wants the state of a file source, until its later stages have ended well. */
+  stagedState?: string;
   /** Pipeline-scoped Snowflake warehouse selector (not persisted source config). */
   warehouse?: string;
   /** Trusted execution-only Snowflake query tag. */

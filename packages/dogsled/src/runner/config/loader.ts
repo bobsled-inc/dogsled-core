@@ -67,6 +67,7 @@ import {
 } from './project-files.js';
 import { resolveEntityVariant } from './resolve-entity.js';
 import { validateForEachIteration } from './resolve-for-each.js';
+import { ignoredEmbeddingWarnings, resolveEmbedStreams } from './embed-streams.js';
 import { validateCopyDestinations } from './validate-copy-destinations.js';
 import { validateResourceResolution, validateResourceSourceAlignment } from './resolve-resource.js';
 import { validateViaSelections } from './validate-via.js';
@@ -856,7 +857,8 @@ interface EmbedValidationResult {
 
 function validateEmbedSelections(
   pipeline: ResolvedPipeline,
-  lib: IntegrationsLib
+  lib: IntegrationsLib,
+  documentKeys: ReadonlySet<string>
 ): EmbedValidationResult {
   const errors: ValidationIssue[] = [];
   const warnings: string[] = [];
@@ -887,6 +889,7 @@ function validateEmbedSelections(
   }
 
   for (const [stream, fields] of Object.entries(pipeline.embed.streams)) {
+    if (documentKeys.has(stream)) continue;
     const resource = resourcesByName.get(stream);
     if (!resource) {
       errors.push({
@@ -1086,14 +1089,24 @@ export async function validateDogsledConfig(
         continue;
       }
 
+      const embedStreams = pipeline.embed && resolveEmbedStreams(pipeline, pipeline.embed, project);
+      errors.push(...(embedStreams?.errors ?? []));
       try {
-        const embedValidation = validateEmbedSelections(pipeline, lib);
+        const embedValidation = validateEmbedSelections(
+          pipeline,
+          lib,
+          embedStreams?.documentKeys ?? new Set()
+        );
         errors.push(...embedValidation.errors);
         warnings.push(...embedValidation.warnings);
       } catch {
         // Source lookup failures already handled above.
       }
     }
+  }
+
+  for (const pipeline of pipelines) {
+    warnings.push(...ignoredEmbeddingWarnings(pipeline, project));
   }
 
   // 8. Validate model pipeline membership (compile-time check that named

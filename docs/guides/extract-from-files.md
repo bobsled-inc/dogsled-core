@@ -192,11 +192,14 @@ Document options:
 - `chunk.strategy`: `recursive` (default) or `paragraph`. See [Chunk by paragraph](#chunk-by-paragraph).
 - `chunk.max_tokens` (default 800), `chunk.overlap_tokens` (default 120, or 0 with
   `paragraph`) and `chunk.tokenizer` (`cl100k_base`, `o200k_base` or `p50k_base`).
-- `embedding: { role: <model role> }` adds a vector for each chunk using a model
-  role from `platform.models`. See [Embeddings and AI providers](embeddings-and-ai.md).
+
+To add a vector for each chunk, give the pipeline an `embed` block whose `streams` key is
+the resource's name and whose field is `text`. See
+[Embed in a project pipeline](embeddings-and-ai.md#embed-in-a-project-pipeline). A
+document resource's own `embedding` block has no effect, and validation warns about it.
 
 A document resource with `replication.method: full_refresh` parses every file again
-on every run, and with `embedding` set it embeds every chunk again, which costs
+on every run, and a pipeline that embeds it embeds every chunk again, which costs
 provider calls each time. Use an incremental method to process only new or changed
 files.
 
@@ -209,8 +212,8 @@ failure. A deleted file keeps its rows until a `--full-refresh` run. Table
 destinations apply this; file destinations write each run's rows as new files.
 
 An incremental run skips a file that did not change, even when a `parse` or `chunk`
-setting changed or a new Dogsled version parses the format differently. Run once with
-`--full-refresh` to parse and chunk every file again.
+setting or the pipeline's `embed` block changed, or a new Dogsled version parses the format
+differently. Run once with `--full-refresh` to parse, chunk and embed every file again.
 
 `__acl` rows now carry `document_id`. ACL rows loaded before this change have none,
 so run one `--full-refresh` after upgrading if you capture permissions.
@@ -250,7 +253,8 @@ chunk: { strategy: paragraph, min_tokens: 60, max_tokens: 800 }
   reaches `min_tokens`, but never above `max_tokens`. Joined paragraphs keep the blank lines
   between them.
 - A paragraph above `max_tokens` is cut the way `recursive` cuts it. Only a single character
-  that takes more tokens than `max_tokens` makes a longer chunk.
+  that takes more tokens than `max_tokens` makes a longer chunk. PDF text usually has no blank
+  lines, so `paragraph` cuts it by size.
 - A short last paragraph joins the chunk before it when both fit in `max_tokens`.
 - Chunks do not overlap: `overlap_tokens` must be 0 or left out.
 

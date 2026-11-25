@@ -154,6 +154,29 @@ describe('createStateStore', () => {
     }
   });
 
+  it.each(['DOGSLED_HOST_EMBEDDING_URL', 'DOGSLED_HOST_EMBEDDING_TOKEN'])(
+    'never sends %s to a state backend',
+    (name) => {
+      vi.stubEnv(name, 'host-canary');
+      try {
+        for (const create of [
+          () => createStateStore('https://example.com/state', { authTokenEnv: name }),
+          () =>
+            resolveStateStore({
+              defaultStateDir: '/tmp/state',
+              stateBackend: 'https://example.com/state',
+              stateAuthEnv: name,
+            }),
+        ]) {
+          expect(create).toThrow('reserved');
+          expect(create).not.toThrow('host-canary');
+        }
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    }
+  );
+
   it('rejects http://127.0.0.1 URLs by default (SSRF guard)', () => {
     delete process.env.DOGSLED_EXTRACTOR_ALLOW_PRIVATE_HOSTS;
     expect(() => createStateStore('http://127.0.0.1/state')).toThrow(/private host/i);

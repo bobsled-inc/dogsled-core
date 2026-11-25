@@ -26,11 +26,15 @@ const EmbedFieldSchema = z
 const EmbedConfigFileSchema = z
   .object({
     provider: z.string().min(1),
-    model: z.string().min(1),
+    model: z.string().min(1).optional(),
     dimension: z.number().int().positive().optional(),
     streams: z.record(z.string(), z.array(EmbedFieldSchema).min(1)),
   })
-  .passthrough();
+  .passthrough()
+  .refine((config) => config.model !== undefined || config.provider === 'host', {
+    path: ['model'],
+    message: 'model is required unless the provider is host',
+  });
 
 export type EmbedConfigFile = z.infer<typeof EmbedConfigFileSchema>;
 
@@ -108,9 +112,10 @@ export function resolveResourceEmbedConfig(
   if (!fields || fields.length === 0) {
     return undefined;
   }
-  // Without an explicit dimension we cannot pre-fill VECTOR columns in the
-  // scaffold. The embedder still infers dimension at runtime for known models.
-  if (config.dimension === undefined) {
+  // Without an explicit dimension and model we cannot pre-fill VECTOR columns in
+  // the scaffold. The embedder still infers dimension at runtime for known models,
+  // and asks the host application for both with provider `host`.
+  if (config.dimension === undefined || config.model === undefined) {
     return undefined;
   }
   return {

@@ -1,6 +1,6 @@
 ---
 name: add-file-storage-source
-description: Onboard documents (PDF, DOCX, PPTX, HTML, Markdown, text, email) from an Amazon S3 or Google Cloud Storage bucket — author a file-storage integration (source_type s3|gcs, bucket + auth) plus a document resource that parses, token-chunks, and optionally embeds each file. Use when the user wants to ingest files/documents from cloud object storage rather than from an API.
+description: Onboard documents (PDF, DOCX, PPTX, HTML, Markdown, text, email) from an Amazon S3 or Google Cloud Storage bucket — author a file-storage integration (source_type s3|gcs, bucket + auth) plus a document resource that parses and token-chunks each file, and an optional pipeline that embeds the chunks. Use when the user wants to ingest files/documents from cloud object storage rather than from an API.
 exposed: true
 triggers:
   - ingest documents from s3
@@ -24,7 +24,7 @@ warehouse — optionally embedding each chunk for semantic search.
 
 A file-storage source is two YAML files: an **integration** (which bucket and
 how to authenticate) and a **document resource** (which keys to read and how to
-parse / chunk / embed). Secrets are **always** env-var indirection
+parse and chunk them). A pipeline can embed the chunks. Secrets are **always** env-var indirection
 through `*_env` fields. Declare each referenced name in `auth_env_vars`.
 
 When to use a different skill:
@@ -134,15 +134,16 @@ output:
 
 `chunk.strategy: paragraph` cuts at blank lines and joins short paragraphs up to
 `min_tokens` (default 60), never above `max_tokens`. It takes no overlap, so remove
-`overlap_tokens` from the block above. `min_tokens` is invalid with `recursive`.
+`overlap_tokens` from the block above. `min_tokens` is invalid with `recursive`. PDF text
+usually has no blank lines, so `paragraph` cuts it by size.
 
 HTML and HTML email parsing drops plainly hidden content (containers with `hidden` or
 inline `display: none`), including content that a script shows later. A document that links
 a style sheet, or has one that might show hidden content, keeps everything. This is text
 clean-up, not protection against hidden instructions.
 
-Changing `parse` or `chunk` does not touch files an incremental resource already read;
-run once with `--full-refresh`.
+Changing `parse`, `chunk` or the pipeline's `embed` block does not touch files an
+incremental resource already read; run once with `--full-refresh`.
 
 ### What you get
 
@@ -155,27 +156,37 @@ tables, prefixed by the resource name:
 
 ### Step 3 — (optional) Embeddings
 
-Add an `embedding:` block under the resource's `source:` and declare a matching
-model role under `platform.models` in `dogsled.yml`. When a pipeline runs with an
-embedding, Dogsled auto-chains `extract → embed → load`, adding a
-`text_embedding` vector column to `<resource>__chunks`.
-
-```yaml
-# resources/<name>/documents.yml — under source:
-embedding:
-  role: default_embedding_v1
-  field: text
-  as: text_embedding
-```
+Give the pipeline an `embed:` block. Its `streams` key is the document resource's
+name, and `text` is the only field it takes. `dogsled runner run` then chains
+`extract → embed → load` and adds a `text_embedding` vector column to
+`<resource>__chunks`; the other tables are loaded as they are.
 
 ```yaml
 # dogsled.yml
-platform:
-  models:
-    default_embedding_v1:
-      provider: bedrock
+destinations:
+  local:
+    type: duckdb
+    db_path: ./documents.duckdb
+pipelines:
+  documents:
+    schedule: manual
+    source: s3_documents
+    destination: local
+    resources: [documents]
+    embed:
+      provider: amazon-bedrock
       model: amazon.titan-embed-text-v2:0
+      region: us-east-1
+      dimension: 1024
+      streams:
+        documents: [{ field: text }]
 ```
+
+Do not add an `embedding:` block to the resource: it has no effect, and validation
+warns about it. With `dogsled extract run | dogsled embed run | dogsled load run`, use
+the exact stream name, `<resource>__chunks`, in the embedder's configuration. When a
+host application supplies the model, use `provider: host`; see
+[Host-supplied embeddings](../../../docs/reference/host-embeddings.md).
 
 ### Step 4 — Validate → run
 
@@ -204,13 +215,13 @@ dogsled examples init s3-documents-ingestion
 A destination with `type: dogsled_managed` uses `dogsled_connection_ref` to name a
 connection supplied by an orchestrator. Core validates these fields but cannot
 load into a managed destination. For local execution, use a concrete destination
-such as DuckDB or BigQuery. Author the `documents` resource and optional `embedding:`
-block as above. See [Dogsled Cloud and Core](../../../docs/guides/dogsled-cloud.md).
+such as DuckDB or BigQuery. Author the `documents` resource and the pipeline's optional
+`embed:` block as above. See [Dogsled Cloud and Core](../../../docs/guides/dogsled-cloud.md).
 
 ## Next step — feed the entity graph
 
-The `<resource>__chunks` table (and its `text_embedding` vector when an
-`embedding:` block is set) is the **upstream feeder** for
+The `<resource>__chunks` table (and its `text_embedding` vector when the pipeline
+has an `embed:` block) is the **upstream feeder** for
 **`entity-graph-construction`**: mention extraction runs candidate retrieval
 over those chunk embeddings to link each chunk to a resolved entity, and
 relationship extraction reads the resolved same-chunk mentions. After
@@ -223,4 +234,4 @@ resolving entities (`entity-resolution`), point construction at these chunks.
 - Every credential is env indirection (`${{ env.X }}` / `*_env`) — no raw secrets, no literal bucket.
 - The resource sets `source.format: document`, a provider-relative `source.path` glob, `parse.formats`, and `chunk` settings; `integration:` matches the integration `name`.
 - Use `on_error: record` when the user wants a `__parse_errors` table instead of a hard run failure.
-- Embeddings: `source.embedding.role` matches a `platform.models` role declared in `dogsled.yml`.
+- Embeddings: the pipeline's `embed.streams` has the resource's name with `field: text`, and the resource has no `embedding:` block.

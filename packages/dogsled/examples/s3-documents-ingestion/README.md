@@ -49,22 +49,30 @@ The document extractor emits Dogsled protocol streams that load as warehouse tab
 
 ## Adding embeddings
 
-Uncomment the `embedding:` block in `resources/<provider>/documents.yml` and
-declare a matching model role under `platform.models` in your `dogsled.yml`:
+`dogsled.yml` has a pipeline for each provider. Uncomment the `embed:` block of yours:
 
 ```yaml
-platform:
-  models:
-    default_embedding_v1:
-      provider: bedrock
-      model: amazon.titan-embed-text-v2:0
+embed:
+  provider: amazon-bedrock
+  model: amazon.titan-embed-text-v2:0
+  region: us-east-1
+  dimension: 1024
+  streams:
+    documents: [{ field: text }]
 ```
 
-When a pipeline runs with an `embed:` block, Dogsled auto-chains
-`extract -> embed -> load`, adding a `text_embedding` vector column to
-`documents__chunks`. With Dogsled, create the S3/GCS connection in the app and
-the same flow runs against your managed warehouse — no local credentials
-needed.
+Then check the project and run the pipeline:
+
+```bash
+dogsled runner validate
+dogsled runner run s3_documents   # or gcs_documents
+```
+
+Dogsled chains `extract -> embed -> load` and adds a `text_embedding` vector column to
+`documents__chunks`. The other tables stay as they are. The key under `streams` is the
+resource's name, and `text` is the only field it takes. This block signs in to Amazon
+Bedrock with the AWS default credential chain. To try the pipeline without a provider,
+set `DOGSLED_EMBED_STUB=1`, which writes zero vectors.
 
 ## Tuning
 

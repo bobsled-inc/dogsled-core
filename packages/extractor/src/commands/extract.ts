@@ -13,9 +13,11 @@ import { runExtractIntentPlan } from './extract-plan.js';
 import { ControlLogger } from '../runtime/control.js';
 import { Emitter } from '../runtime/emitter.js';
 import { billablePlanUsage, isBillableResource } from '../runtime/extract-intents.js';
+import { isFileStorageSource } from '../runtime/file-storage-extractor.js';
 import { hasExplicitForEachInputs, normalizeForEachConfig } from '../runtime/for-each.js';
 import { orderResourcesForExtraction } from '../runtime/resource-order.js';
 import { resolveStateStore } from '../runtime/state-backend.js';
+import { openStagedState } from '../runtime/staged-state.js';
 import type { StateStore } from '../runtime/state.js';
 import { isSnowflakeWarehouseSource, isWarehouseResource } from '../runtime/warehouse-extractor.js';
 import { ResourceCircuitBreaker } from '../runtime/errors.js';
@@ -145,6 +147,7 @@ export function registerExtractCommand(program: Command): void {
       '--state-auth-env <var>',
       'Name of env var holding the Bearer token for the HTTP state backend.'
     )
+    .addOption(new Option('--staged-state <path>').hideHelp())
     .option('--warehouse <selector>', 'Pipeline-scoped Snowflake warehouse selector')
     .option('--query-tag <tag>', 'Snowflake query tag for this execution')
     .action(async (resourceNames: string[], rawOpts: ExtractCommandOptions) => {
@@ -299,6 +302,11 @@ export function registerExtractCommand(program: Command): void {
             await logger.warn(warning);
           }
           const integration = applyDefaultViaOverride(integrationResult.spec, opts.defaultVia);
+          // Other sources keep their own order: a CDC slot moves with the saved state.
+          const runStateStore =
+            opts.stagedState !== undefined && isFileStorageSource(integration)
+              ? openStagedState(ctx.cwd, stateStore, state, opts)
+              : stateStore;
           let hostEnvNames: string[] | undefined;
           if (opts.hostEnvNamesJson !== undefined) {
             let names: unknown;
@@ -488,7 +496,7 @@ export function registerExtractCommand(program: Command): void {
                 emitter,
                 logger,
                 state,
-                stateStore,
+                stateStore: runStateStore,
                 batchDir: path.join(ctx.cwd, ctx.config.batch_dir),
                 cliInputs,
                 resourceInputsMap,

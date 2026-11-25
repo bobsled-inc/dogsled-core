@@ -107,6 +107,8 @@ If `cursor_type` is omitted, it is auto-detected from the first value seen. The 
 - `--limit` runs are preview-only and never persist durable state.
 - In `dogsled pipeline` multi-destination fan-out mode, Dogsled captures extractor `STATE` messages and runs `dogsled extract commit-state` only after every destination loader succeeds.
 
+- In a `dogsled pipeline` run with an embed stage and one destination, the extractor keeps the state of a file source back, and the pipeline runs `dogsled extract commit-state` only after embed and load succeed. Other sources save their state when extraction ends.
+
 If a fan-out pipeline appears to re-extract data after one destination failed, that is expected: extractor state intentionally stayed behind so the failed destination can catch up on retry.
 
 ## Copy Resources

@@ -41,12 +41,13 @@ choose. The variables on this page change Dogsled's own behavior.
 
 ## AI and testing
 
-| Variable               | Effect                                                                                                           |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `DOGSLED_AI_TEST_STUB` | `1` makes `dogsled ai test` return zero vectors without calling the provider.                                    |
-| `DOGSLED_EMBED_STUB`   | `1` makes embedding return synthetic vectors without calling the provider. Not for production data.              |
-| `OPENAI_API_KEY`       | Read directly by the entity graph's semantic triage, which embeds candidate pairs with `text-embedding-3-small`. |
-| `DOGSLED_CLI`          | The command `dogsled learn` uses to run lessons. `--cli` wins.                                                   |
+| Variable                                                     | Effect                                                                                                                                                                                 |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DOGSLED_AI_TEST_STUB`                                       | `1` makes `dogsled ai test` return zero vectors without calling the provider.                                                                                                          |
+| `DOGSLED_EMBED_STUB`                                         | `1` makes embedding return synthetic vectors without calling the provider. Not for production data.                                                                                    |
+| `DOGSLED_HOST_EMBEDDING_URL`, `DOGSLED_HOST_EMBEDDING_TOKEN` | Set by a host application for an embed block with `provider: host`. Reserved: no project file or declared-names list can use them. See [Host-supplied embeddings](host-embeddings.md). |
+| `OPENAI_API_KEY`                                             | Read directly by the entity graph's semantic triage, which embeds candidate pairs with `text-embedding-3-small`.                                                                       |
+| `DOGSLED_CLI`                                                | The command `dogsled learn` uses to run lessons. `--cli` wins.                                                                                                                         |
 
 CLI integration placeholders and `*_env` fields resolve only names declared in `auth_env_vars`. Bundled `<name>/source.yml` files also use declarations from their `meta.yml` `auth_setup`. Pipeline destinations and webhook actions declare their own names. API/MCP reserved names, such as `SLACK_BOT_TOKEN`, `GITHUB_TOKEN` and `AWS_SECRET_ACCESS_KEY`, stay blocked in explicit maps and cannot be enabled from Project YAML, including through `auth_env_vars`. Such a name resolves only when the host supplies it for the run with `declaredEnvNames` on `runProjectPipeline` or `declaredSecretNames` with an injected secrets map. In a CLI run with no host, it also resolves for a built-in source when the integration and every selected resource are the shipped files. A Project copy of a built-in source, or a Project resource on one, should use a different variable name.
 
@@ -54,7 +55,7 @@ Custom S3 endpoints, including MinIO and R2, require `static_env` credentials an
 
 Embedding hosts can pass `{ secrets, declaredSecretNames: Object.keys(secrets) }` to request APIs for `${{ secrets.NAME }}` templates. This option does not authorize `${{ env.NAME }}` or process environment fallback. A reserved API/MCP name resolves here only when it is both in the injected `secrets` map and listed in `declaredSecretNames`; a reserved name available only as an ambient credential stays blocked.
 
-Pipeline SDK hosts can pass `declaredEnvNames` with `options.env` to `runProjectPipeline`. Each declared name must exist in that supplied map. These declarations cover source credentials and destination references without changing project YAML.
+Pipeline SDK hosts can pass `declaredEnvNames` with `options.env` to `runProjectPipeline`. Each declared name must exist in that supplied map. These declarations cover source credentials and destination references without changing project YAML. `DOGSLED_HOST_EMBEDDING_URL` and `DOGSLED_HOST_EMBEDDING_TOKEN` cannot be declared: pass them in `options.env` and only a `provider: host` embed stage gets them. Leave them out of every `secrets` map too.
 
 Model hosts can pass `declaredSecretNames` with an explicit `secretResolver` to `runProject` and `createAgenticHost`. The declarations authorize only listed names through that resolver, including checkpoint and cross-warehouse interpolation. The default CLI resolver still requires YAML declarations.
 

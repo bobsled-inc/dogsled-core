@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   AuthEnvVarsSchema,
+  declaredNamesProblem,
   CommandError,
   EXIT_VALIDATION,
   ModelConnectionSchema,
@@ -55,7 +56,7 @@ export function resolveAgenticModel(
     const names = AuthEnvVarsSchema.safeParse(context.declaredSecretNames);
     if (!names.success) {
       throw new CommandError(
-        'declaredSecretNames must contain valid environment variable names.',
+        declaredNamesProblem('declaredSecretNames', names.error),
         EXIT_VALIDATION
       );
     }

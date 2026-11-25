@@ -71,6 +71,8 @@ Single-destination pipeline spawns two child processes:
 
 Extractor stdout is piped directly to loader stdin. Both stderr streams write structured JSON logs.
 
+With an embed stage, `dogsled embed run` sits between the two. The state of a file source is then saved only after all three succeed.
+
 Multi-destination fan-out works differently:
 
 1. Extractor stdout is captured to a temp JSONL file.
@@ -206,7 +208,7 @@ pipelines:
       provider: openai # or anthropic, google, openrouter, amazon-bedrock, ollama
       model: text-embedding-3-small
       api_key: $OPENAI_API_KEY # env placeholder; $VAR or ${{ env.VAR }}
-      dimension: 1536 # optional; inferred from model
+      dimension: 1536 # optional for known models; sent where the model takes one
       cost_budget_usd: 5.0 # optional spend cap
       streams:
         issues_graphql:
@@ -225,6 +227,18 @@ Provider notes:
   Dogsled falls back to the AWS SDK credential chain (`AWS_PROFILE`, instance
   role, SSO, etc.).
 - `ollama`: local/free; `base_url` defaults to `http://127.0.0.1:11434/api`.
+- `host`: the application that runs Dogsled supplies the model through
+  `DOGSLED_HOST_EMBEDDING_URL` (`https` only) and `DOGSLED_HOST_EMBEDDING_TOKEN`.
+  No `model`, `api_key`, `region`, `base_url`, or `cost_budget_usd`; `dimension` is
+  an optional check.
+
+For a document resource, the `streams` key is the resource's name and the only field
+is `text`; the vectors go to `<resource>__chunks`. `--embed-config-json` and
+`dogsled embed run` take exact stream names.
+
+Every provider's vectors must have the declared length and finite values, or the run
+fails. OpenAI `text-embedding-3-*`, Google `gemini-embedding-*`, Bedrock Titan Text v2
+and Cohere Embed v4, and Ollama are asked for a configured `dimension`.
 
 Destinations store the vector column natively when possible: Snowflake gets
 `VECTOR(FLOAT, N)`, BigQuery gets `ARRAY<FLOAT64>` (the BQ-native vector type
@@ -270,7 +284,8 @@ embedded and which provider/model produced it.
     model: cohere.embed-english-v3
 ```
 
-The embedder also stamps `embedded_from` on the runtime SCHEMA message so
+With `provider: host` the model is known only when the run starts, so the scaffold has no
+embedding columns. The embedder also stamps `embedded_from` on the runtime SCHEMA message so
 loaders and any downstream protocol consumer can recover provenance live
 (separate from Model Spec YAML).
 

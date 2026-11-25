@@ -1,3 +1,5 @@
+import * as path from 'node:path';
+
 import { CommandError } from '@bobsled-inc/protocol';
 import type { PipelineOptions } from './pipeline.js';
 
@@ -17,10 +19,15 @@ export function extractorDeclaredEnvNames(
   );
 }
 
+/** Where the extractor keeps the state of a file source until embed and load have ended well. */
+export function stagedStatePath(embedTmpDir: string): string {
+  return path.join(embedTmpDir, 'extractor-state.json');
+}
+
 export function buildPipelineExtractArgs(
   resourceNames: string[],
   options: PipelineOptions,
-  embedConfigPath: string | undefined,
+  embed: { configPath: string; tmpDir: string } | undefined,
   deferStateWrite: boolean,
   extractorEnv: NodeJS.ProcessEnv
 ): string[] {
@@ -48,9 +55,10 @@ export function buildPipelineExtractArgs(
   if (options.batchFormat) args.push('--batch-format', options.batchFormat);
   if (options.emitModelSpecSource) {
     args.push('--emit-model-spec-source');
-    if (embedConfigPath) args.push('--embed-config-file', embedConfigPath);
+    if (embed) args.push('--embed-config-file', embed.configPath);
   }
   args.push(deferStateWrite ? '--no-state-write' : '--advance-state');
+  if (embed && !deferStateWrite) args.push('--staged-state', stagedStatePath(embed.tmpDir));
   if (options.batchSize) args.push('--batch-size', String(options.batchSize));
   if (options.limit) args.push('--limit', String(options.limit));
   if (options.stateBackend) args.push('--state-backend', options.stateBackend);

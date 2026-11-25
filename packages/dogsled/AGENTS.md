@@ -93,6 +93,15 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 
 - Protocol `vector` columns require a `dimension`; the embedder derives it from the selected model
 - Smoke tests can set `DOGSLED_EMBED_STUB=1` to avoid live OpenAI calls while preserving vector dimensions
+- An authored `embed.streams` key is a Resource name. `src/runner/config/embed-streams.ts` is the one
+  place that turns a document Resource into its chunk stream, for validation and for every run
+- With an embed stage and one destination, the extractor keeps a file source's state in the run's
+  private embed folder, and `commitStagedState()` saves it after every stage exited 0. Do not return
+  success from `runSingleDestPipeline()` around it
+- Of a pipeline's children, only the embed child of a `provider: host` run gets
+  `DOGSLED_HOST_EMBEDDING_URL` and `DOGSLED_HOST_EMBEDDING_TOKEN`. `getRuntimeEnv()` drops them for
+  every other child and for placeholder resolution; keep new pipeline spawns on it. Code that
+  resolves a name from a project file or a host must call `assertNotHostEmbeddingEnvName()` first
 - Destination choice matters for embedding workflows; consult `packages/loader/README.md` and `packages/loader/AGENTS.md` before enabling vectors downstream
 - Shared model roles live under `platform.models` in `dogsled.yml`; use `dogsled doctor --json` to validate config and `dogsled ai test --connection <role> --json` for provider probes
 - `dogsled ai test` should pass a stable project key into `@bobsled-inc/ai` so `platform.budget.ai_cost_daily_usd` can be enforced without mixing projects

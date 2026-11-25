@@ -1,6 +1,7 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { HOST_EMBEDDING_ENV_NAMES } from '@bobsled-inc/protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { executeApiAction } from '../../../src/lib/transports/api.js';
@@ -97,6 +98,44 @@ describe('executeApiAction reserved credentials', () => {
     );
 
     expect(result.status).toBe(status);
+    expect(JSON.stringify(result)).not.toContain('host-canary');
+  });
+});
+
+describe('executeApiAction and a host-supplied embedding model', () => {
+  const cases = HOST_EMBEDDING_ENV_NAMES.flatMap((name) =>
+    (['secrets', 'env'] as const).flatMap((source) =>
+      (['header', 'auth'] as const).map((place) => [source, name, place] as const)
+    )
+  );
+
+  it.each(cases)('refuses %s.%s in its %s', async (source, name, place) => {
+    const template = '${{ ' + source + '.' + name + ' }}';
+    const result = await executeApiAction(
+      makeApiAction(),
+      { email: 'alice@example.com', last_name: 'Doe' },
+      {
+        dryRun: true,
+        secrets: { [name]: 'host-canary' },
+        declaredSecretNames: [...HOST_EMBEDDING_ENV_NAMES],
+      },
+      {
+        loadIntegration: () =>
+          ({
+            spec_version: '1',
+            type: 'integration',
+            name: 'salesforce',
+            auth_env_vars: [...HOST_EMBEDDING_ENV_NAMES],
+            transport: {
+              type: 'http',
+              base_url: 'https://api.example.com',
+              ...(place === 'header' ? { headers: { 'X-Value': template } } : {}),
+              auth: place === 'auth' ? { type: 'bearer', token: template } : { type: 'none' },
+            },
+          }) as never,
+      }
+    );
+    expect(result.status).toBe('failed');
     expect(JSON.stringify(result)).not.toContain('host-canary');
   });
 });

@@ -41,6 +41,19 @@ explicitly pass `{ costBudgetMode: 'observe' }` as the third argument. This skip
 cost limits and only reports estimated cost. Provider model objects resolve on
 first use, so a text call does not require an embedding model.
 
+## Embedding dimension
+
+`embedMany` asks for `connection.dimension` when the model is known to take one: OpenAI
+`text-embedding-3-*`, Google `gemini-embedding-*`, Bedrock Titan Text v2 and Cohere Embed v4,
+and Ollama. It sends no dimension otherwise.
+
+## Host-supplied embeddings
+
+`connectHostEmbedding({ url, token })` connects to an embedding model that a host
+application serves. It asks for the model and limits before any text is sent, then
+`embed(texts)` sends batches and returns a vector, or `null`, for each text.
+[Host-supplied embeddings](../../docs/reference/host-embeddings.md) is the contract.
+
 ## Development
 
 ```bash

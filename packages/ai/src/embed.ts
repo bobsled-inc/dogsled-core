@@ -6,6 +6,7 @@ import {
   reserveBudget,
   settleFailedBudgetReservation,
 } from './budget.js';
+import { embeddingDimensionOptions } from './embedding-dimension.js';
 import {
   estimateCostUsd,
   estimatePreflightUsage,
@@ -59,6 +60,7 @@ export async function* embedMany(
     return;
   }
 
+  const providerOptions = embeddingDimensionOptions(connection);
   const chunkSize = options.chunkSize ?? 96;
   if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
     throw new RangeError(
@@ -90,6 +92,7 @@ export async function* embedMany(
           model: providerModels.embeddingModel as SdkEmbedModel,
           values: batch.map((input) => input.text),
           maxRetries: 2,
+          ...(providerOptions ? { providerOptions } : {}),
         });
       } catch (error) {
         await settleFailedBudgetReservation(reservation);

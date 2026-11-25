@@ -24,7 +24,11 @@ import { spawn } from 'node:child_process';
 import { reviewerCommandArgs, reviewerCommandEnv } from './reviewer-command.js';
 
 import type { SecretResolver } from '@bobsled-inc/connections';
-import { CommandError, parseEnvPlaceholder } from '@bobsled-inc/protocol';
+import {
+  assertNotHostEmbeddingEnvName,
+  CommandError,
+  parseEnvPlaceholder,
+} from '@bobsled-inc/protocol';
 import { z } from 'zod';
 
 import type { SupportedDialect } from '@bobsled-inc/model-spec';
@@ -637,6 +641,7 @@ export async function createExternalReviewerClient(
     let authToken: string | undefined;
     if (config.authToken !== undefined) {
       const envVarName = parseEnvPlaceholder(config.authToken);
+      if (envVarName !== null) assertNotHostEmbeddingEnvName(envVarName);
       authToken =
         envVarName === null ? config.authToken : await deps.secretResolver.resolve(envVarName);
     }

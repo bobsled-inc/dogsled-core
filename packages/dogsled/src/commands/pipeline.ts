@@ -23,6 +23,7 @@ import {
   collectInput,
   getDestinations,
   getEmbedConfig,
+  getHostEmbeddingEnv,
   getRuntimeCwd,
   getRuntimeEnv,
   maybeRemoveDir,
@@ -45,7 +46,6 @@ import {
   createPipelineSummary,
   emitPipelineSummary,
   formatDestinationLogLine,
-  formatPipelineLogLine,
   mergeSummary,
   writePipelineLogLine,
   writeLogLine,
@@ -60,6 +60,7 @@ import {
   type StartedPipelineChild,
 } from './pipeline-control.js';
 import { buildPipelineExtractArgs } from './pipeline-extract-args.js';
+import { buildExtractEnv, commitStagedState, commitState } from './pipeline-state.js';
 import { addDatabaseDestinationOptions } from './pipeline-destination-options.js';
 
 import type { ProcessResult, RunCommandDependencies } from '../runtime/process.js';
@@ -303,75 +304,6 @@ function waitForReplayStream(replayStream: fs.ReadStream): Promise<void> {
   });
 }
 
-async function buildExtractEnv(
-  baseEnv: NodeJS.ProcessEnv = process.env
-): Promise<NodeJS.ProcessEnv> {
-  try {
-    const { getIntegrationsDir } = await import('@bobsled-inc/integrations');
-    return {
-      ...baseEnv,
-      DOGSLED_BUNDLED_INTEGRATIONS_DIR: getIntegrationsDir(),
-    };
-  } catch {
-    return baseEnv;
-  }
-}
-
-async function commitCapturedState(
-  capturePath: string,
-  options: PipelineOptions,
-  dependencies: PipelineDependencies,
-  logStream: fs.WriteStream | undefined,
-  redact: RedactPipelineValue,
-  childEnv: NodeJS.ProcessEnv
-): Promise<number> {
-  const metaUrl = dependencies.metaUrl ?? import.meta.url;
-  const invocation = resolveCliInvocation('extract', metaUrl, [
-    'commit-state',
-    '--integration',
-    options.integration,
-    '--capture-file',
-    capturePath,
-    '--log-format',
-    'json',
-    ...(options.verbose ? ['--verbose'] : []),
-    ...(options.quiet ? ['--quiet'] : []),
-    ...(options.stateBackend ? ['--state-backend', options.stateBackend] : []),
-  ]);
-  const child = spawnCommand(
-    invocation,
-    {
-      cwd: getRuntimeCwd(dependencies),
-      stdio: ['ignore', 'ignore', 'pipe'],
-      env: await buildExtractEnv(childEnv),
-    },
-    dependencies
-  );
-  const removeSignalHandlers = setupPipelineSignalForwarding([child], dependencies.signal);
-
-  try {
-    if (child.stderr) {
-      const processChunk = createChunkProcessor(
-        createPipelineSummary(),
-        '',
-        (line) => {
-          writeLogLine(formatPipelineLogLine(line, options.logFormat), logStream);
-        },
-        redact
-      );
-      const flushChunk = () => processChunk.flush();
-      child.stderr.on('data', processChunk.handle);
-      child.stderr.on('end', flushChunk);
-      child.stderr.on('close', flushChunk);
-    }
-
-    const result = await waitForProcess(child, 'extract commit-state CLI');
-    return result.exitCode;
-  } finally {
-    removeSignalHandlers();
-  }
-}
-
 export async function runPipeline(
   resourceNames: string[],
   options: PipelineOptions,
@@ -385,7 +317,8 @@ export async function runPipeline(
     configuredDestinations,
     runtimeEnv
   );
-  const redact = createWorkloadIdentityRedactor(redactionTokens);
+  const embedEnv = getHostEmbeddingEnv(options, dependencies);
+  const redact = createWorkloadIdentityRedactor([...redactionTokens, ...Object.values(embedEnv)]);
   try {
     throwIfPipelineAborted(dependencies.signal);
     if (options.reconcileSchema?.length && !options.fullRefresh) {
@@ -411,7 +344,8 @@ export async function runPipeline(
         dependencies,
         redact,
         runtimeEnv,
-        childEnv
+        childEnv,
+        embedEnv
       );
     }
 
@@ -421,7 +355,8 @@ export async function runPipeline(
       dependencies,
       redact,
       runtimeEnv,
-      childEnv
+      childEnv,
+      embedEnv
     );
   } catch (error) {
     throw redactPipelineError(error, redact);
@@ -434,7 +369,8 @@ async function runSingleDestPipeline(
   dependencies: PipelineDependencies,
   redact: RedactPipelineValue,
   runtimeEnv: NodeJS.ProcessEnv,
-  childEnv: NodeJS.ProcessEnv
+  childEnv: NodeJS.ProcessEnv,
+  embedEnv: NodeJS.ProcessEnv
 ): Promise<number> {
   const metaUrl = dependencies.metaUrl ?? import.meta.url;
   const runtimeCwd = getRuntimeCwd(dependencies);
@@ -443,7 +379,7 @@ async function runSingleDestPipeline(
   const extractInvocation = resolveCliInvocation(
     'extract',
     metaUrl,
-    buildPipelineExtractArgs(resourceNames, options, preparedEmbed?.configPath, false, childEnv)
+    buildPipelineExtractArgs(resourceNames, options, preparedEmbed, false, childEnv)
   );
   const loadInvocation = resolveCliInvocation('load', metaUrl, buildLoadArgs(options));
   const extractEnv = await buildExtractEnv(childEnv);
@@ -480,7 +416,7 @@ async function runSingleDestPipeline(
         {
           cwd: runtimeCwd,
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...childEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
+          env: { ...childEnv, ...embedEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
         },
         dependencies
       );
@@ -620,11 +556,10 @@ async function runSingleDestPipeline(
       return embedResult.exitCode;
     }
 
-    if (loadResult.exitCode === 0) {
-      maybeRemoveDir(embedTmpDir);
+    if (loadResult.exitCode !== 0) {
+      return loadResult.exitCode;
     }
-
-    return loadResult.exitCode;
+    return await commitStagedState(embedTmpDir, options, dependencies, logStream, redact, childEnv);
   } finally {
     removeSignalHandlers();
     maybeRemoveFile(embedConfigPath);
@@ -639,7 +574,8 @@ async function runMultiDestPipeline(
   dependencies: PipelineDependencies,
   redact: RedactPipelineValue,
   runtimeEnv: NodeJS.ProcessEnv,
-  childEnv: NodeJS.ProcessEnv
+  childEnv: NodeJS.ProcessEnv,
+  embedEnv: NodeJS.ProcessEnv
 ): Promise<number> {
   const metaUrl = dependencies.metaUrl ?? import.meta.url;
   const runtimeCwd = getRuntimeCwd(dependencies);
@@ -700,7 +636,7 @@ async function runMultiDestPipeline(
   const extractInvocation = resolveCliInvocation(
     'extract',
     metaUrl,
-    buildPipelineExtractArgs(resourceNames, options, preparedEmbed?.configPath, true, childEnv)
+    buildPipelineExtractArgs(resourceNames, options, preparedEmbed, true, childEnv)
   );
   const embedInvocation = preparedEmbed
     ? resolveCliInvocation('embed', metaUrl, buildEmbedArgs(preparedEmbed.configPath, options))
@@ -731,7 +667,7 @@ async function runMultiDestPipeline(
         {
           cwd: runtimeCwd,
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...childEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
+          env: { ...childEnv, ...embedEnv, DOGSLED_EMBEDDER_TMP_DIR: embedTmpDir },
         },
         dependencies
       );
@@ -1039,8 +975,8 @@ async function runMultiDestPipeline(
     let commitExitCode: number;
     try {
       commitAttempted = true;
-      commitExitCode = await commitCapturedState(
-        capturePath,
+      commitExitCode = await commitState(
+        ['--capture-file', capturePath],
         options,
         dependencies,
         logStream,

@@ -12,6 +12,18 @@ export {
 } from './budget.js';
 export { embedMany } from './embed.js';
 export type { EmbedManyOptions } from './embed.js';
+export { connectHostEmbedding } from './host-embedding.js';
+export type {
+  HostEmbeddingConnection,
+  HostEmbeddingOptions,
+  HostEmbeddingResult,
+} from './host-embedding.js';
+export { HostEmbeddingError } from './host-embedding-response.js';
+export type {
+  HostEmbeddingErrorCode,
+  HostEmbeddingLimits,
+  HostEmbeddingModel,
+} from './host-embedding-response.js';
 export { generateStructured } from './generate.js';
 export type { GenerateOptions } from './generate.js';
 export { generateStream } from './stream.js';

@@ -20,6 +20,31 @@ export const EmbedStreamsSchema = z
     message: 'Embed config must configure at least one stream',
   });
 
+/** Declared so the property stays readable on the whole union; a value is refused. */
+const SuppliedByHostSchema = z
+  .undefined({
+    error:
+      'provider "host" takes no model or cost_budget_usd: the host application supplies the model',
+  })
+  .optional();
+
+/**
+ * An embedding model that the host application supplies through
+ * `DOGSLED_HOST_EMBEDDING_URL` and `DOGSLED_HOST_EMBEDDING_TOKEN`.
+ */
+const HostEmbedConfigSchema = z
+  .object({
+    provider: z.literal('host'),
+    /** Unused. Accepted because a host's declared names are added to every embed block. */
+    auth_env_vars: ModelAuthEnvVarsSchema,
+    /** Checked against the host's model. Never sent. */
+    dimension: z.number().int().positive().optional(),
+    streams: EmbedStreamsSchema,
+    model: SuppliedByHostSchema,
+    cost_budget_usd: SuppliedByHostSchema,
+  })
+  .strict();
+
 export function createEmbedConfigSchema<TApiKeySchema extends z.ZodType<string>>(
   apiKeySchema: TApiKeySchema
 ) {
@@ -55,6 +80,7 @@ export function createEmbedConfigSchema<TApiKeySchema extends z.ZodType<string>>
           base_url: OllamaBaseUrlSchema.default('http://127.0.0.1:11434/api'),
         })
         .strict(),
+      HostEmbedConfigSchema,
     ])
     .superRefine((config, ctx) => {
       try {
@@ -73,3 +99,5 @@ export const EmbedderConfigSchema = createEmbedConfigSchema(z.string().min(1));
 
 export type EmbedFieldConfig = z.infer<typeof EmbedFieldConfigSchema>;
 export type EmbedderConfig = z.infer<typeof EmbedderConfigSchema>;
+export type HostEmbedConfig = Extract<EmbedderConfig, { provider: 'host' }>;
+export type ProviderEmbedConfig = Exclude<EmbedderConfig, { provider: 'host' }>;

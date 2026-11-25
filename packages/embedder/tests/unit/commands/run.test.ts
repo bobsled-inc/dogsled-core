@@ -1,4 +1,8 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { Readable, Writable } from 'node:stream';
+import { pathToFileURL } from 'node:url';
 
 import { Command } from 'commander';
 import { CommandError } from '@bobsled-inc/protocol';
@@ -8,6 +12,7 @@ import {
   buildEmbedderConfigInput,
   registerRunCommand,
   runEmbedCommand,
+  takeRunEnv,
 } from '../../../src/commands/run.js';
 import { outputColumnName } from '../../../src/output-column.js';
 
@@ -70,6 +75,66 @@ describe('registerRunCommand', () => {
     expect(runCommand?.options.map((option) => option.long)).toEqual(
       expect.arrayContaining(['--json', '--verbose', '--quiet', '--log-format'])
     );
+  });
+});
+
+describe('the environment of dogsled embed run', () => {
+  const hostEnv = {
+    DOGSLED_HOST_EMBEDDING_URL: 'https://host.example/embed',
+    DOGSLED_HOST_EMBEDDING_TOKEN: 'synthetic-host-token',
+  };
+  const streams = { docs: [{ field: 'body' }] };
+  const hostNames = (env: Record<string, string | undefined>): string[] =>
+    Object.keys(env).filter((name) => name.toUpperCase().includes('HOST_EMBEDDING'));
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  /** Run the command with both variables set, and look at what the run and a child would get. */
+  async function runWith(config: Record<string, unknown>) {
+    for (const [name, value] of Object.entries(hostEnv)) vi.stubEnv(name, value);
+    vi.stubEnv('OPENAI_API_KEY', 'test-key');
+    let given: Record<string, string | undefined> = {};
+    let inherited: string[] = [];
+    const program = new Command();
+    registerRunCommand(program, async (_config, dependencies) => {
+      given = dependencies?.env ?? {};
+      inherited = hostNames(process.env);
+    });
+    await program.parseAsync(['node', 'dogsled', 'run', '--config-json', JSON.stringify(config)]);
+    return { given, inherited };
+  }
+
+  it('gives the endpoint and token to a host run, and to no process it starts', async () => {
+    const { given, inherited } = await runWith({ provider: 'host', streams });
+    expect(given).toMatchObject(hostEnv);
+    expect(inherited).toEqual([]);
+  });
+
+  it('gives them to no other provider, and to no process it starts', async () => {
+    const { given, inherited } = await runWith({
+      provider: 'openai',
+      model: 'text-embedding-3-small',
+      api_key: '$OPENAI_API_KEY',
+      streams,
+    });
+    expect(hostNames(given)).toEqual([]);
+    expect(given['OPENAI_API_KEY']).toBe('test-key');
+    expect(inherited).toEqual([]);
+  });
+
+  it('removes them in any case, and keeps everything else', () => {
+    const processEnv: Record<string, string | undefined> = {
+      PATH: '/bin',
+      Dogsled_Host_Embedding_Token: 'synthetic-host-token',
+    };
+    const env = takeRunEnv(
+      { provider: 'ollama', model: 'example', base_url: 'http://127.0.0.1:11434/api', streams },
+      processEnv
+    );
+    expect(processEnv).toEqual({ PATH: '/bin' });
+    expect(env).toEqual({ PATH: '/bin' });
   });
 });
 
@@ -234,6 +299,60 @@ describe('runEmbedCommand', () => {
     expect(errorOutput.chunks.join('')).toContain('[debug]');
     expect(errorOutput.chunks.join('')).toContain('[metric]');
   });
+
+  it.each(['RECORD', 'BATCH'])(
+    'still embeds whitespace in a %s for a provider other than host',
+    async (type) => {
+      const output = createWritableBuffer();
+      const dir = mkdtempSync(path.join(os.tmpdir(), 'embed-run-'));
+      const file = path.join(dir, 'docs-0.jsonl');
+      writeFileSync(file, `${JSON.stringify({ id: 1, body: ' ' })}\n`);
+      const message =
+        type === 'RECORD'
+          ? {
+              time_extracted: '2026-04-23T00:00:00.000Z',
+              record: { id: 1, body: ' ' },
+            }
+          : { encoding: { format: 'jsonl' }, manifest: [pathToFileURL(file).href] };
+      await runEmbedCommand(
+        {
+          provider: 'openai',
+          model: 'text-embedding-3-small',
+          api_key: 'sk-test',
+          dimension: 2,
+          streams: { docs: [{ field: 'body' }] },
+        },
+        {
+          input: Readable.from([
+            `${JSON.stringify({
+              _v: 1,
+              type: 'SCHEMA',
+              stream: 'docs',
+              schema: {
+                columns: [
+                  { name: 'id', type: 'integer' },
+                  { name: 'body', type: 'string' },
+                ],
+              },
+              key_properties: [],
+              load_strategy: 'append',
+            })}\n`,
+            `${JSON.stringify({ _v: 1, type, stream: 'docs', ...message })}\n`,
+          ]),
+          output: output.stream,
+          errorOutput: createWritableBuffer().stream,
+          env: { DOGSLED_EMBED_STUB: '1', DOGSLED_EMBEDDER_TMP_DIR: dir },
+        }
+      );
+      const written = JSON.parse(output.chunks.join('').trim().split('\n')[1]!);
+      const row =
+        type === 'RECORD'
+          ? written.record
+          : JSON.parse(readFileSync(new URL(written.manifest[0]), 'utf8'));
+      expect(row).toEqual({ id: 1, body: ' ', body_embedding: [0, 0] });
+      rmSync(dir, { recursive: true, force: true });
+    }
+  );
 
   it('throws when the configured env var is missing', async () => {
     await expect(

@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { CommandError } from './definitions.js';
 import { parseEnvPlaceholder } from './env-placeholders.js';
+import {
+  assertNotHostEmbeddingEnvName,
+  HOST_EMBEDDING_ENV_RESERVED_MESSAGE,
+  isHostEmbeddingEnvName,
+} from './host-embedding.js';
 
 const RESERVED_OBJECT_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
@@ -10,10 +15,19 @@ export const AuthEnvVarsSchema = z
       .string()
       .regex(/^[A-Za-z_][A-Za-z0-9_]*$/)
       .refine((name) => !RESERVED_OBJECT_KEYS.has(name), 'Reserved object key')
+      .refine((name) => !isHostEmbeddingEnvName(name), HOST_EMBEDDING_ENV_RESERVED_MESSAGE)
   )
   .optional();
 
+/** Why `AuthEnvVarsSchema` refused the names a host declared in `option`. */
+export function declaredNamesProblem(option: string, error: z.ZodError): string {
+  return error.issues.some((issue) => issue.message === HOST_EMBEDDING_ENV_RESERVED_MESSAGE)
+    ? `${option}: ${HOST_EMBEDDING_ENV_RESERVED_MESSAGE}.`
+    : `${option} must contain valid environment variable names.`;
+}
+
 export function assertDeclaredEnv(name: string, declared: readonly string[] = []): void {
+  assertNotHostEmbeddingEnvName(name);
   if (!declared.includes(name)) {
     throw new CommandError(
       `Undeclared environment variable: ${name}. Add ${name} to auth_env_vars.`
@@ -78,7 +92,7 @@ export function declaredHostEnvironmentNames(
   if (names === undefined) return [];
   const parsed = AuthEnvVarsSchema.safeParse(names);
   if (!parsed.success) {
-    throw new CommandError('declaredEnvNames must contain valid environment variable names.', 2);
+    throw new CommandError(declaredNamesProblem('declaredEnvNames', parsed.error), 2);
   }
   for (const name of parsed.data!) {
     if (!env || !Object.hasOwn(env, name) || env[name] === undefined) {

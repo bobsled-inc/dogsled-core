@@ -14,7 +14,8 @@ configures:
 - extractors read local documents, APIs, databases, warehouses, object stores,
   SFTP servers, and MCP tools;
 - optional embedding and AI features send selected content to the provider
-  configured in `dogsled.yml`;
+  configured in `dogsled.yml`, or, for an embed block with `provider: host`, to
+  the endpoint set by the application that runs Dogsled;
 - loaders write records to the configured local, database, warehouse, search,
   vector, or object-storage destination;
 - actions send their inputs to the API or webhook they name, and syncs run an

@@ -1,3 +1,4 @@
+import { HOST_EMBEDDING_ENV_NAMES } from '@bobsled-inc/protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { executeWebhookAction } from '../../../src/lib/transports/webhook.js';
@@ -719,4 +720,34 @@ it.each([
   expect(result.status).toBe(status);
   expect(fetch).toHaveBeenCalledTimes(sent);
   expect(JSON.stringify(result)).not.toContain('host-canary');
+});
+
+describe('the endpoint and token of a host-supplied embedding model', () => {
+  const cases = HOST_EMBEDDING_ENV_NAMES.flatMap((name) => [
+    ['secrets', name] as const,
+    ['env', name] as const,
+  ]);
+
+  it.each(cases)('never send %s.%s in a webhook header', async (source, name) => {
+    const action = makeWebhookAction();
+    if (action.spec.transport !== 'webhook') throw new Error('Expected webhook action');
+    action.spec.auth_env_vars = [...HOST_EMBEDDING_ENV_NAMES];
+    action.spec.webhook.url = 'https://hooks.example.com/notify';
+    action.spec.webhook.headers = { 'X-Value': '${{ ' + source + '.' + name + ' }}' };
+    const fetch = vi.fn(async () => new Response('{}'));
+    const result = await executeWebhookAction(
+      action,
+      { entity_id: 'test' },
+      {
+        secrets: Object.fromEntries(
+          HOST_EMBEDDING_ENV_NAMES.map((reserved) => [reserved, 'host-canary'])
+        ),
+        declaredSecretNames: [...HOST_EMBEDDING_ENV_NAMES],
+      },
+      { fetch, resolveHost: async () => undefined, checkHost: () => false }
+    );
+    expect(result.status).toBe('failed');
+    expect(fetch).not.toHaveBeenCalled();
+    expect(JSON.stringify(result)).not.toContain('host-canary');
+  });
 });

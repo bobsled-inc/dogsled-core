@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { parseEnvPlaceholder } from './env-placeholders.js';
 import { AuthEnvVarsSchema } from './declared-environment.js';
+import { HOST_EMBEDDING_ENV_RESERVED_MESSAGE, isHostEmbeddingEnvName } from './host-embedding.js';
 
 export class ModelProviderConfigError extends Error {
   constructor(
@@ -60,6 +61,9 @@ export function validateModelProviderConfig(config: {
     }
   }
   const key = config.api_key === undefined ? null : parseEnvPlaceholder(config.api_key);
+  if (key !== null && isHostEmbeddingEnvName(key)) {
+    throw new ModelProviderConfigError('api_key', `${HOST_EMBEDDING_ENV_RESERVED_MESSAGE}.`);
+  }
   if (
     key !== null &&
     !(STANDARD_API_KEY_NAMES[config.provider] ?? []).includes(key) &&

@@ -26,6 +26,7 @@ import { getStreamBookmark, mergeDurableBookmark } from './state.js';
 import { compareCursors, resolveCursorKind, maxCursor } from './cursor.js';
 import { createWarehouseClient } from './warehouse-client.js';
 import type { WarehouseClient } from './warehouse-client.js';
+import { readConnectionEnv } from './warehouse-env.js';
 import { BigQueryWarehouseClient } from './bigquery-client.js';
 import { resolveBqCastExpr } from './bigquery-cursor-cast.js';
 import { buildExtractionQuery } from './warehouse-query-builder.js';
@@ -591,12 +592,7 @@ function resolveEnvVars(obj: Record<string, unknown>, section: string): Record<s
 
     // Legacy _env suffix: strip suffix, read env by name
     if (key.endsWith('_env')) {
-      const envValue = process.env[value];
-      if (!envValue) {
-        throw new Error(
-          `Environment variable "${value}" (referenced by ${section}.${key}) is not set`
-        );
-      }
+      const envValue = readConnectionEnv(value, `${section}.${key}`);
       const resolvedKey = key.slice(0, -4); // remove '_env' suffix
       // Only set the resolved key if the new-shape field isn't already present
       if (resolved[resolvedKey] === undefined) {
@@ -610,15 +606,8 @@ function resolveEnvVars(obj: Record<string, unknown>, section: string): Record<s
     // New-shape ${{ env.X }} interpolation
     const match = value.match(ENV_TEMPLATE_RE);
     if (match) {
-      const envKey = match[1]!;
       // Pass env explicitly to bypass BLOCKED_ENV_KEYS in the interpolation framework
-      const envValue = process.env[envKey];
-      if (!envValue) {
-        throw new Error(
-          `Environment variable "${envKey}" (referenced by ${section}.${key}) is not set`
-        );
-      }
-      resolved[key] = envValue;
+      resolved[key] = readConnectionEnv(match[1]!, `${section}.${key}`);
     }
   }
   return resolved;

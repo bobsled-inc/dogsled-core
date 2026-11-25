@@ -41,6 +41,8 @@ dogsled runner run <pipeline> --resource <resource>
 
 An `embed:` block enriches selected text fields between extraction and loading. Use environment placeholders for credentials, validate stream/field names against resource output, enforce model dimensions and cost budgets, and confirm the destination supports vector columns. Use `DOGSLED_EMBED_STUB=1` only for wiring tests that intentionally avoid a provider call.
 
+The keys of `embed.streams` are resource names. For a document resource, the key stands for its chunk stream and the field must be `text`. `dogsled embed` and `--embed-config-json` take exact stream names instead, such as `<resource>__chunks`. With `provider: host`, the application that runs Dogsled supplies the model, so the block has no `model` or `api_key`.
+
 After running, verify destination row counts, schema, table/load strategy, vector dimensions when applicable, and state behavior. Never interpret a limited extractor preview as a state-advancing acceptance run.
 
 ## Detailed direct-CLI reference

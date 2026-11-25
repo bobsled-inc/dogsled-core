@@ -25,6 +25,11 @@ describe('host resolver declarations', () => {
       'explicit host secretResolver'
     );
   });
+  it('refuses to declare the names reserved for a host embedding stage', () => {
+    expect(() =>
+      withDeclaredSecretNames({ resolve: async () => 'value' }, ['DOGSLED_HOST_EMBEDDING_TOKEN'])
+    ).toThrow(/^declaredSecretNames: .* reserved/);
+  });
   it('keeps the default resolver on YAML declarations', async () => {
     const resolver = new EnvSecretResolver({ CLI_PASSWORD: 'cli-value' });
     await expect(interpolateSecrets({ password_env: 'CLI_PASSWORD' }, resolver)).rejects.toThrow(

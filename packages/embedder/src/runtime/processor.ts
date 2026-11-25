@@ -1,6 +1,5 @@
 import type { Readable, Writable } from 'node:stream';
 
-import { readProtocol } from '@bobsled-inc/loader/runtime';
 import {
   CommandError,
   EXIT_VALIDATION,
@@ -15,14 +14,14 @@ import {
 
 import { outputColumnName } from '../output-column.js';
 import { rewriteBatch } from './batch-rewriter.js';
-import { MAX_EMBEDDING_TOKENS, truncateToTokens } from './tokenizer.js';
+import { assertEmbedResult, type EmbedBatchResult } from './embed-result.js';
+import { prepareEmbeddingText, type HostTextRules, type TextTruncation } from './embedding-text.js';
+import { readMessages } from './read-messages.js';
+import { addRejections, describeRejections } from './rejections.js';
 
 import type { BatchMessage, JsonObject } from '@bobsled-inc/protocol';
 
-export interface EmbedBatchResult {
-  vectors: number[][];
-  tokensUsed: number;
-}
+export type { EmbedBatchResult } from './embed-result.js';
 
 export interface StreamFieldConfig {
   field: string;
@@ -47,6 +46,8 @@ export interface RunEmbedderOptions {
   };
   dimensions: number;
   batchSize: number;
+  /** Set when a host supplies the model. */
+  hostText?: HostTextRules;
   embedFn: (texts: string[]) => Promise<EmbedBatchResult>;
   tmpDir?: string;
   logOptions?: EmbedderLogOptions;
@@ -75,6 +76,8 @@ interface StreamMetrics {
   embedding_tokens_truncated: number;
   embedding_duration_ms: number;
   embedding_records_processed: number;
+  /** Set only when the provider can refuse single inputs. */
+  embedding_inputs_rejected?: number;
 }
 
 function createStreamMetrics(): StreamMetrics {
@@ -257,7 +260,9 @@ export async function runEmbedder(options: RunEmbedderOptions): Promise<void> {
   const output = options.output ?? process.stdout;
   const errorOutput = options.errorOutput ?? process.stderr;
   const logOptions = options.logOptions ?? {};
+  const { model } = options.config;
   const truncationLogKeys = new Set<string>();
+  const rejectionsByStream = new Map<string, Map<string, number>>();
   const metricsByStream = new Map<string, StreamMetrics>();
   let activeStream: string | null = null;
   const pendingRecords: PendingRecord[] = [];
@@ -281,16 +286,12 @@ export async function runEmbedder(options: RunEmbedderOptions): Promise<void> {
         logOptions
       );
       const result = await options.embedFn(pendingTexts.map((entry) => entry.text));
-      const metrics = getOrCreateMetrics(metricsByStream, activeStream);
-      metrics.embedding_api_calls += 1;
-      metrics.embedding_tokens_processed += result.tokensUsed;
-      metrics.embedding_duration_ms += Date.now() - startedAt;
-
-      if (result.vectors.length !== pendingTexts.length) {
-        throw new Error(
-          `Expected ${pendingTexts.length} embeddings for stream "${activeStream}", received ${result.vectors.length}`
-        );
-      }
+      noteEmbedding(activeStream, result, Date.now() - startedAt);
+      assertEmbedResult(result, pendingTexts.length, {
+        stream: activeStream,
+        model,
+        dimensions: options.dimensions,
+      });
 
       for (const [index, pendingText] of pendingTexts.entries()) {
         pendingRecords[pendingText.recordIndex]!.additions[pendingText.outputName] =
@@ -315,26 +316,42 @@ export async function runEmbedder(options: RunEmbedderOptions): Promise<void> {
     activeStream = null;
   };
 
-  const noteTruncation = (stream: string, field: string, originalTokens: number): void => {
-    const key = `${stream}::${field}`;
+  function noteEmbedding(stream: string, result: EmbedBatchResult, durationMs: number): void {
     const metrics = getOrCreateMetrics(metricsByStream, stream);
-    metrics.embedding_tokens_truncated += 1;
+    metrics.embedding_api_calls += result.apiCalls ?? 1;
+    metrics.embedding_tokens_processed += result.tokensUsed;
+    metrics.embedding_duration_ms += durationMs;
+    if (!result.rejections) return;
 
-    if (truncationLogKeys.has(key)) {
-      return;
+    let counts = rejectionsByStream.get(stream);
+    if (!counts) {
+      counts = new Map();
+      rejectionsByStream.set(stream, counts);
     }
+    metrics.embedding_inputs_rejected =
+      (metrics.embedding_inputs_rejected ?? 0) + addRejections(counts, result.rejections);
+  }
 
+  const noteTruncation = (
+    stream: string,
+    field: string,
+    { unit, limit, originalLength }: TextTruncation
+  ): void => {
+    getOrCreateMetrics(metricsByStream, stream).embedding_tokens_truncated += 1;
+
+    const key = `${stream}::${field}`;
+    if (truncationLogKeys.has(key)) return;
     truncationLogKeys.add(key);
     writeStructuredLog(
       errorOutput,
       buildWarnLogMessage(
-        `Truncating field "${field}" in stream "${stream}" to ${MAX_EMBEDDING_TOKENS} tokens (first occurrence, original length ${originalTokens} tokens)`
+        `Truncating field "${field}" in stream "${stream}" to ${limit} ${unit} (first occurrence, original length ${originalLength} ${unit})`
       ),
       logOptions
     );
   };
 
-  for await (const message of readProtocol(input)) {
+  for await (const message of readMessages(input)) {
     if (message.type === 'SCHEMA') {
       await flushPending();
       await writeJsonLine(
@@ -369,15 +386,14 @@ export async function runEmbedder(options: RunEmbedderOptions): Promise<void> {
         message: message as BatchMessage,
         fields,
         batchSize: options.batchSize,
+        model,
+        dimensions: options.dimensions,
+        hostText: options.hostText,
         embedFn: options.embedFn,
         tmpDir: options.tmpDir,
-        onTruncation: (stream, field, originalTokens) => {
-          noteTruncation(stream, field, originalTokens);
-        },
-        onApiCall: (tokensUsed, durationMs) => {
-          streamMetrics.embedding_api_calls += 1;
-          streamMetrics.embedding_tokens_processed += tokensUsed;
-          streamMetrics.embedding_duration_ms += durationMs;
+        onTruncation: noteTruncation,
+        onApiCall: (result, durationMs) => {
+          noteEmbedding(message.stream, result, durationMs);
         },
         onRecord: () => {
           streamMetrics.embedding_records_processed += 1;
@@ -403,20 +419,21 @@ export async function runEmbedder(options: RunEmbedderOptions): Promise<void> {
       const requests: Array<{ outputName: string; text: string }> = [];
       for (const field of fields) {
         const outputName = outputColumnName(field.field, field.as);
-        const value = message.record[field.field];
-        if (value === null || value === undefined || value === '') {
+        const { text, truncation } = prepareEmbeddingText(
+          message.record[field.field],
+          options.hostText
+        );
+        if (truncation) {
+          noteTruncation(message.stream, field.field, truncation);
+        }
+        if (text === null) {
           additions[outputName] = null;
           continue;
         }
 
-        const truncated = truncateToTokens(String(value), MAX_EMBEDDING_TOKENS);
-        if (truncated.truncated) {
-          noteTruncation(message.stream, field.field, truncated.originalTokens);
-        }
-
         requests.push({
           outputName,
-          text: truncated.text,
+          text,
         });
       }
 
@@ -454,6 +471,12 @@ export async function runEmbedder(options: RunEmbedderOptions): Promise<void> {
 
   await flushPending();
 
+  for (const [stream, counts] of rejectionsByStream) {
+    if (counts.size > 0) {
+      const { message, ...details } = describeRejections(stream, counts);
+      writeStructuredLog(errorOutput, { ...buildWarnLogMessage(message), ...details }, logOptions);
+    }
+  }
   for (const [stream, metrics] of metricsByStream.entries()) {
     writeStructuredLog(
       errorOutput,

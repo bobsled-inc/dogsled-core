@@ -29,6 +29,7 @@ import {
   type SourceType,
 } from '@bobsled-inc/connections';
 import type { ProjectIndex } from '@bobsled-inc/project-index';
+import { assertNotHostEmbeddingEnvName } from '@bobsled-inc/protocol';
 import YAML from 'yaml';
 
 import { CommandError } from './commands/common.js';
@@ -419,6 +420,7 @@ function resolveOptionalEnvTemplate(
   if (!match) return value;
   const envName = match[1];
   if (!envName) return undefined;
+  assertNotHostEmbeddingEnvName(envName);
   const resolved = process.env[envName];
   if (!resolved || resolved.length === 0) {
     const field = fieldName ? ` '${fieldName}'` : '';

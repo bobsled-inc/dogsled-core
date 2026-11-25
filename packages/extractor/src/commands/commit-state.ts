@@ -3,9 +3,10 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as readline from 'node:readline';
 
-import type { Command } from 'commander';
+import { type Command, Option } from 'commander';
 
 import { resolveStateStore } from '../runtime/state-backend.js';
+import { commitStagedState, resolveStagedStatePath } from '../runtime/staged-state.js';
 import { mergeDurableBookmark } from '../runtime/state.js';
 import { createWarehouseClient } from '../runtime/warehouse-client.js';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../runtime/warehouse-extractor.js';
 import {
   buildCommandContext,
+  type CommandContext,
   findIntegrationFile,
   findResourceFiles,
   loadIntegrationSpecWithWarnings,
@@ -25,19 +27,28 @@ import { CommandError } from '@bobsled-inc/protocol';
 import { isLookupOnlyApiResource } from '../framework/extractor/index.js';
 
 import type { StateMessage } from '@bobsled-inc/protocol';
-import type { StreamBookmark } from '../runtime/state.js';
+import type { StateStore, StreamBookmark } from '../runtime/state.js';
 import type { IntegrationSpec, ResourceSpec } from '../types/index.js';
 import type { WarehouseResourceSpec } from '../framework/extractor/index.js';
 import type { WarehouseClient } from '../runtime/warehouse-client.js';
 
-export interface CommitStateOptions {
-  captureFile: string;
+interface CommitOptions {
   integration: string;
   json?: boolean;
   logFormat?: string;
   quiet?: boolean;
   stateBackend?: string;
   verbose?: boolean;
+}
+
+export interface CommitStateOptions extends CommitOptions {
+  captureFile: string;
+}
+
+interface CommitCommandOptions extends CommitOptions {
+  captureFile?: string;
+  /** State that the extractor kept for the pipeline, instead of captured STATE messages. */
+  stagedState?: string;
 }
 
 interface PendingSlotAdvance {
@@ -109,14 +120,41 @@ function isWithinPath(child: string, parent: string): boolean {
   return !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
-export async function commitCapturedState(options: CommitStateOptions): Promise<number> {
-  const ctx = buildCommandContext(
+function buildCommitContext(options: CommitOptions): CommandContext {
+  return buildCommandContext(
     parseGlobalFlags({
       logFormat: options.json ? 'json' : options.logFormat,
       quiet: options.quiet,
       verbose: options.verbose,
     })
   );
+}
+
+function openStateStore(ctx: CommandContext, options: CommitOptions): StateStore {
+  return resolveStateStore({
+    defaultStateDir: path.join(ctx.cwd, ctx.config.state_dir),
+    projectRoot: ctx.cwd,
+    ...(options.stateBackend ? { stateBackend: options.stateBackend } : {}),
+  });
+}
+
+async function commitState({
+  captureFile,
+  stagedState,
+  ...options
+}: CommitCommandOptions): Promise<number> {
+  if (stagedState !== undefined) {
+    const ctx = buildCommitContext(options);
+    const stagedPath = resolveStagedStatePath(ctx.cwd, stagedState);
+    await commitStagedState(openStateStore(ctx, options), stagedPath);
+    return 0;
+  }
+  if (captureFile === undefined) throw new CommandError('Missing --capture-file <path>.', 2);
+  return commitCapturedState({ ...options, captureFile });
+}
+
+export async function commitCapturedState(options: CommitStateOptions): Promise<number> {
+  const ctx = buildCommitContext(options);
   const capturePath = path.resolve(ctx.cwd, options.captureFile);
   let realCapturePath: string;
   try {
@@ -134,11 +172,7 @@ export async function commitCapturedState(options: CommitStateOptions): Promise<
   if (!allowedRoots.some((root) => isWithinPath(realCapturePath, root))) {
     throw new CommandError('Capture file must be within temp directory or project root', 2);
   }
-  const stateStore = resolveStateStore({
-    defaultStateDir: path.join(ctx.cwd, ctx.config.state_dir),
-    projectRoot: ctx.cwd,
-    ...(options.stateBackend ? { stateBackend: options.stateBackend } : {}),
-  });
+  const stateStore = openStateStore(ctx, options);
   const state = await stateStore.load();
   const captured = await readStateMessages(realCapturePath);
 
@@ -233,13 +267,14 @@ export function registerCommitStateCommand(program: Command): void {
     .command('commit-state')
     .description('Commit captured extractor STATE messages to durable state')
     .requiredOption('--integration <name>', 'Integration to commit state for')
-    .requiredOption('--capture-file <path>', 'Captured extractor stdout JSONL file')
+    .option('--capture-file <path>', 'Captured extractor stdout JSONL file')
+    .addOption(new Option('--staged-state <path>').hideHelp())
     .option('--json', 'Output machine-readable JSON')
     .option('-v, --verbose', 'Verbose output')
     .option('-q, --quiet', 'Suppress non-error output')
     .option('--log-format <format>', 'Log format: json or pretty')
     .option('--state-backend <url>', 'State backend override used by the captured extraction')
-    .action(async (opts: CommitStateOptions) => {
-      process.exitCode = await commitCapturedState(opts);
+    .action(async (opts: CommitCommandOptions) => {
+      process.exitCode = await commitState(opts);
     });
 }
