@@ -1,2 +1,3 @@
 .extractor/
 batch/
+*.duckdb

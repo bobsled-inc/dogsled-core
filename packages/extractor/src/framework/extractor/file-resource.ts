@@ -52,9 +52,8 @@ export const DocumentChunkConfigSchema = z
   });
 
 /**
- * Embedding config — uniform across structured and document resources. References a
- * model role declared in `platform.models`. Optional; when absent no vector column is
- * emitted.
+ * Accepted so that existing specs stay valid, but nothing reads it: project validation
+ * warns about it. A pipeline's `embed` block embeds the chunks of a document resource.
  */
 export const EmbeddingConfigSchema = z
   .object({

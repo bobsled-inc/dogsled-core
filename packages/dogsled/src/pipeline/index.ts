@@ -1,6 +1,5 @@
 import {
   declaredHostEnvironmentNames,
-  withDeclaredAuthEnvVars,
   assertDeclaredEnvironmentReferences,
 } from '@bobsled-inc/protocol';
 import * as fs from 'node:fs';
@@ -37,6 +36,7 @@ import {
   type ResolvePipelineRunOptions,
   type ResolvedPipelineRunProject,
 } from './contracts.js';
+import { resolvePipelineEmbed } from './embed.js';
 import { createPipelineRedactor } from './redaction.js';
 import { expandInputMatrix } from '../runner/config/input-matrix.js';
 
@@ -228,14 +228,9 @@ export async function runProjectPipeline(
   const { resourceNames, pipelineOptions } = buildPipelineInvocation({
     pipeline: {
       ...pipeline,
-      ...(pipeline.embed
-        ? {
-            embed: withDeclaredAuthEnvVars(
-              pipeline.embed,
-              declaredEnvNames
-            ) as typeof pipeline.embed,
-          }
-        : {}),
+      embed:
+        pipeline.embed &&
+        resolvePipelineEmbed(pipeline, pipeline.embed, project.projectRoot, declaredEnvNames),
     },
     config: runtimeConfig,
     resources: options.resources,

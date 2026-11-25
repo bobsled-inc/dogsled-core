@@ -1,0 +1,36 @@
+# Pipelines for `dogsled runner run <name>`. Keep the one for your bucket.
+destinations:
+  local:
+    type: duckdb
+    db_path: ./documents.duckdb
+
+pipelines:
+  s3_documents:
+    schedule: manual
+    source: s3_documents
+    destination: local
+    table_prefix: ''
+    resources: [documents]
+    # Optional: add a vector for each chunk. The key is the resource's name. See README.md.
+    # embed:
+    #   provider: amazon-bedrock
+    #   model: amazon.titan-embed-text-v2:0
+    #   region: us-east-1
+    #   dimension: 1024
+    #   streams:
+    #     documents: [{ field: text }]
+
+  gcs_documents:
+    schedule: manual
+    source: gcs_documents
+    destination: local
+    table_prefix: ''
+    resources: [documents]
+    # Optional: add a vector for each chunk. The key is the resource's name. See README.md.
+    # embed:
+    #   provider: amazon-bedrock
+    #   model: amazon.titan-embed-text-v2:0
+    #   region: us-east-1
+    #   dimension: 1024
+    #   streams:
+    #     documents: [{ field: text }]
