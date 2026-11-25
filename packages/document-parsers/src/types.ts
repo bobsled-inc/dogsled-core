@@ -63,10 +63,15 @@ export interface DocumentParser {
   parse(input: Uint8Array, opts: ParseOptions): Promise<ParseResult>;
 }
 
-/** Recursive chunker config — identical shape to `chunk:` block in resource YAML. */
+/** Chunker config — identical shape to `chunk:` block in resource YAML. */
 export interface ChunkOptions {
+  /** How text is cut. Defaults to `recursive`. */
+  readonly strategy?: 'recursive' | 'paragraph';
   readonly maxTokens: number;
+  /** Tokens repeated from the previous chunk. Must be 0 with `paragraph`. */
   readonly overlapTokens: number;
+  /** `paragraph` only: join paragraphs up to this size. Defaults to 60, or `maxTokens` if smaller. */
+  readonly minTokens?: number;
   readonly tokenizer: 'cl100k_base' | 'o200k_base' | 'p50k_base';
 }
 

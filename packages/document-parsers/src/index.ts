@@ -8,7 +8,7 @@ export type {
   ParseResult,
   ParsedDocument,
 } from './types.js';
-export { chunkText, chunkerConfigHash } from './chunkers/recursive.js';
+export { chunkText, chunkerConfigHash } from './chunkers/index.js';
 export { chunkId, documentId, documentVersionId, sha256Hex } from './identity.js';
 export { DocumentParserRegistry, createDefaultRegistry, sanitizeUriForError } from './registry.js';
 export { textParser } from './parsers/text.js';

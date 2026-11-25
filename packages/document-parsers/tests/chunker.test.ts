@@ -131,3 +131,29 @@ describe('chunkerConfigHash', () => {
     expect(x).toBe(y);
   });
 });
+
+describe('recursive defaults', () => {
+  const defaults = { maxTokens: 800, overlapTokens: 120, tokenizer: 'cl100k_base' as const };
+
+  it('keeps the config hash that existing chunk ids were built with', () => {
+    expect(chunkerConfigHash(defaults)).toBe(
+      'ea21313294990fa6e68c09215b60e483a3c03709ba8fecff40d3839cca140b08'
+    );
+    expect(chunkerConfigHash({ ...defaults, maxTokens: 512, overlapTokens: 64 })).toBe(
+      '990aeccc169772a674616971b7f791edacd4aabc5ceeffb920cb8356a9b3cd01'
+    );
+    expect(chunkerConfigHash({ ...defaults, strategy: 'recursive' })).toBe(
+      chunkerConfigHash(defaults)
+    );
+  });
+
+  it('is the strategy used when none is set', () => {
+    const text = 'One sentence. Another one.\n\n'.repeat(60);
+    expect(chunkText(text, { ...opts, strategy: 'recursive' })).toEqual(chunkText(text, opts));
+  });
+
+  it('rejects minTokens', () => {
+    expect(() => chunkText('hi', { ...opts, minTokens: 5 })).toThrow(/min_tokens requires/);
+    expect(() => chunkerConfigHash({ ...opts, minTokens: 5 })).toThrow(/min_tokens requires/);
+  });
+});

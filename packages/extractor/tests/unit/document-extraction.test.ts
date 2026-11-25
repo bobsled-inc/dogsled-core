@@ -5,6 +5,7 @@ import * as path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { chunkId, chunkerConfigHash } from '@bobsled-inc/document-parsers';
 import { DogsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { LocalFileStorageClient } from '../../src/runtime/clients/local-file-client.js';
@@ -31,6 +32,7 @@ interface ResourceOpts {
   onError?: 'record' | 'skip' | 'fail';
   formats?: ('pdf' | 'docx' | 'pptx' | 'html' | 'md' | 'txt' | 'eml')[];
   maxFileSizeMb?: number;
+  chunk?: Record<string, unknown>;
 }
 
 function documentResource(opts: ResourceOpts = {}): FileResourceSpec {
@@ -51,7 +53,7 @@ function documentResource(opts: ResourceOpts = {}): FileResourceSpec {
         on_error: opts.onError ?? 'record',
         ...(opts.maxFileSizeMb !== undefined && { max_file_size_mb: opts.maxFileSizeMb }),
       },
-      chunk: { max_tokens: 200, overlap_tokens: 20, tokenizer: 'cl100k_base' },
+      chunk: opts.chunk ?? { max_tokens: 200, overlap_tokens: 20, tokenizer: 'cl100k_base' },
       ingest: { mode: 'extract' },
       permissions: { capture: true, enforcement: { enabled: false } },
     },
@@ -80,10 +82,11 @@ interface RunArgs {
   fullRefresh?: boolean;
   limit?: number;
   prevState?: ExtractorState;
+  baseDir?: string;
 }
 
 async function runExtraction(args: RunArgs = {}) {
-  const baseDir = await mkdtemp(path.join(tmpdir(), 'doc-ext-test-'));
+  const baseDir = args.baseDir ?? (await mkdtemp(path.join(tmpdir(), 'doc-ext-test-')));
   for (const f of args.files ?? []) {
     await writeFile(path.join(baseDir, f.name), f.content);
   }
@@ -186,6 +189,54 @@ describe('extractDocumentResource', () => {
       expect(strategies(messages)).toEqual(new Set(['full_refresh']));
       expect(replaces(messages)).toEqual([]);
     }
+  });
+
+  it('chunks by paragraph and does not chunk an unchanged file again for a new setting', async () => {
+    const paragraphs = ['Heading', ...['One', 'Two'].map((word) => `${word} word`.repeat(30))];
+    const files = [{ name: 'a.txt', content: paragraphs.join('\n\n') }];
+    const resourceOpts: ResourceOpts = {
+      replicationMethod: 'incremental_append',
+      pathPattern: '*.txt',
+      chunk: { strategy: 'paragraph' },
+    };
+    const chunkRecords = (messages: unknown[]) =>
+      (messages as Array<{ type: string; stream?: string; record: Record<string, unknown> }>)
+        .filter((m) => m.type === 'RECORD' && m.stream === 'docs__chunks')
+        .map((m) => m.record);
+
+    const first = await runExtraction({ files, resourceOpts });
+    const chunks = chunkRecords(first.messages);
+    expect(chunks.map((chunk) => chunk.text)).toEqual([
+      `${paragraphs[0]}\n\n${paragraphs[1]}`,
+      paragraphs[2],
+    ]);
+    const hash = chunkerConfigHash({
+      strategy: 'paragraph',
+      maxTokens: 800,
+      minTokens: 60,
+      overlapTokens: 0,
+      tokenizer: 'cl100k_base',
+    });
+    for (const chunk of chunks) {
+      expect(chunk.chunker_config_hash).toBe(hash);
+      expect(chunk.chunk_id).toBe(
+        chunkId({
+          documentVersionId: chunk.document_version_id as string,
+          chunkerConfigHash: hash,
+          chunkIndex: chunk.chunk_index as number,
+          chunkText: chunk.text as string,
+        })
+      );
+    }
+
+    const rerun = {
+      baseDir: first.baseDir,
+      prevState: first.state,
+      resourceOpts: { ...resourceOpts, chunk: { strategy: 'paragraph', min_tokens: 1 } },
+    };
+    expect(chunkRecords((await runExtraction(rerun)).messages)).toEqual([]);
+    const refreshed = await runExtraction({ ...rerun, fullRefresh: true });
+    expect(chunkRecords(refreshed.messages)).toHaveLength(3);
   });
 
   it('emits __acl schema when permission capture is enabled even without provider rows', async () => {

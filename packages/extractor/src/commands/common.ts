@@ -35,6 +35,10 @@ import {
   FileCopyResourceSpecSchema,
   isCopyResourceDocument,
 } from '../framework/extractor/file-copy-resource.js';
+import {
+  FileResourceSpecSchema,
+  isDocumentResourceDocument,
+} from '../framework/extractor/file-resource.js';
 import { ResourceSpecSchema } from '../schemas/resource.js';
 
 import type {
@@ -287,14 +291,15 @@ function loadSpecCore<T>(
     throw new CommandError(error.message, 2);
   }
 
-  // A copy Resource is parsed on its own: the union of Resource kinds would show the errors of
-  // another kind, not the plain message for the setting a copy refuses.
-  const result =
-    kind === 'resource' && isCopyResourceDocument(normalized.data)
-      ? (FileCopyResourceSpecSchema.safeParse(normalized.data) as ReturnType<
-          typeof schema.safeParse
-        >)
-      : schema.safeParse(normalized.data);
+  // A copy or document Resource is parsed on its own: the union of Resource kinds would show the
+  // errors of another kind, not the plain message for the setting this one refuses.
+  let parser: z.ZodType = schema;
+  if (kind === 'resource' && isCopyResourceDocument(normalized.data)) {
+    parser = FileCopyResourceSpecSchema;
+  } else if (kind === 'resource' && isDocumentResourceDocument(normalized.data)) {
+    parser = FileResourceSpecSchema;
+  }
+  const result = parser.safeParse(normalized.data) as ReturnType<typeof schema.safeParse>;
   if (!result.success) {
     throw new CommandError(formatSpecValidationMessage(kind, filePath, result.error, { schema }));
   }
