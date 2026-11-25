@@ -12,6 +12,7 @@ import { isRetryableError, withRetry } from '../retry.js';
 import {
   compareSnowflakeSchema,
   enforceContract,
+  readSnowflakeVectorTypes,
   reconcileRemovedSnowflakeColumns,
 } from './snowflake-schema-reconcile.js';
 import {
@@ -948,6 +949,13 @@ export class SnowflakeDestination implements DatabaseDestination {
       const colType = String(row['DATA_TYPE'] ?? '');
       existingMap.set(colName, colType);
     }
+    await readSnowflakeVectorTypes(
+      conn,
+      qualifiedTable,
+      existingMap,
+      () => this.throwIfCancelled(),
+      (context) => this.retryOpts(context)
+    );
 
     const comparison = compareSnowflakeSchema(
       columns,

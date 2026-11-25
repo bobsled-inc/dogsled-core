@@ -264,7 +264,7 @@ export function reverseMapDbType(dbType: string): ColumnType {
   if (upperTrimmed === 'ARRAY<FLOAT64>') return 'vector';
   if (/^ARRAY\((FLOAT32|FLOAT64|BFLOAT16)\)$/.test(upperTrimmed)) return 'vector';
   if (/^(FLOAT|DOUBLE)\[\d*\]$/i.test(trimmed)) return 'vector';
-  if (/^VECTOR(?:\s*\(\s*(?:FLOAT\s*,\s*)?\d+\s*\))?$/i.test(trimmed)) return 'vector';
+  if (/^VECTOR(?:\s*\(\s*(?:(?:FLOAT|INT)\s*,\s*)?\d+\s*\))?$/i.test(trimmed)) return 'vector';
 
   // Special case: MySQL TINYINT(1) is boolean, must check before stripping parens
   if (upperTrimmed === 'TINYINT(1)') return 'boolean';

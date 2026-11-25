@@ -3,9 +3,36 @@ import { withRetry, type RetryOptions } from '../retry.js';
 import type { ColumnType, SchemaColumn } from '@bobsled-inc/protocol';
 import type { EnsureTableOptions, SchemaComparisonResult } from './database.js';
 import { enforceSchemaContract, SYSTEM_COLUMNS } from './database.js';
+import type { SnowflakeConnectionLike } from './snowflake.js';
 
 interface SnowflakeSchemaConnection {
   execute(options: { sqlText: string }): Promise<unknown>;
+}
+
+/**
+ * Replace the plain VECTOR that INFORMATION_SCHEMA.COLUMNS reports for a vector column with its
+ * full type from DESCRIBE TABLE, such as VECTOR(FLOAT, 3). Without a vector column, this reads
+ * nothing.
+ */
+export async function readSnowflakeVectorTypes(
+  connection: Pick<SnowflakeConnectionLike, 'execute'>,
+  qualifiedTable: string,
+  existingMap: Map<string, string>,
+  throwIfCancelled: () => void,
+  retryOptions: (context: string) => RetryOptions
+): Promise<void> {
+  const isPlainVector = (type: string | undefined): boolean => type?.toUpperCase() === 'VECTOR';
+  if (![...existingMap.values()].some(isPlainVector)) return;
+
+  const described = await withRetry(
+    () => connection.execute({ sqlText: `DESCRIBE TABLE ${qualifiedTable}` }),
+    retryOptions('describe_table')
+  );
+  throwIfCancelled();
+  for (const row of described.getRows()) {
+    const name = String(row['name']);
+    if (isPlainVector(existingMap.get(name))) existingMap.set(name, String(row['type']));
+  }
 }
 
 /** Compare an incoming schema with Snowflake's cached or queried column map. */
