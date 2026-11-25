@@ -6,13 +6,13 @@ import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createGunzip, createGzip } from 'node:zlib';
 
-import { CommandError, EXIT_VALIDATION } from '@bobsled-inc/protocol';
+import { CommandError, EXIT_ERROR, EXIT_VALIDATION } from '@bobsled-inc/protocol';
 
 import type { BatchMessage } from '@bobsled-inc/protocol';
 
 import { outputColumnName } from '../output-column.js';
-import type { EmbedBatchResult } from './processor.js';
-import { MAX_EMBEDDING_TOKENS, truncateToTokens } from './tokenizer.js';
+import { assertEmbedResult, type EmbedBatchResult } from './embed-result.js';
+import { prepareEmbeddingText, type HostTextRules, type TextTruncation } from './embedding-text.js';
 
 export interface RewriteFieldConfig {
   field: string;
@@ -23,10 +23,13 @@ export interface RewriteBatchOptions {
   message: BatchMessage;
   fields: RewriteFieldConfig[];
   batchSize: number;
+  model: string;
+  dimensions: number;
+  hostText?: HostTextRules;
   embedFn: (texts: string[]) => Promise<EmbedBatchResult>;
   tmpDir?: string;
-  onTruncation: (stream: string, field: string, originalTokens: number) => void;
-  onApiCall: (tokensUsed: number, durationMs: number) => void;
+  onTruncation: (stream: string, field: string, truncation: TextTruncation) => void;
+  onApiCall: (result: EmbedBatchResult, durationMs: number) => void;
   onRecord: () => void;
 }
 
@@ -85,6 +88,18 @@ function toSafePathSegment(value: string): string {
   return sanitized.length > 0 ? sanitized : 'stream';
 }
 
+/** A JSON error message quotes the line, which is a record of the stream. */
+function parseBatchLine(line: string, lineNumber: number, stream: string): Record<string, unknown> {
+  try {
+    return JSON.parse(line) as Record<string, unknown>;
+  } catch {
+    throw new CommandError(
+      `Line ${lineNumber} of a BATCH file for stream "${stream}" is not valid JSON.`,
+      EXIT_ERROR
+    );
+  }
+}
+
 async function rewriteFile(
   inputPath: string,
   outputPath: string,
@@ -121,13 +136,12 @@ async function rewriteFile(
     if (pendingTexts.length > 0) {
       const startedAt = Date.now();
       const result = await options.embedFn(pendingTexts.map((entry) => entry.text));
-      options.onApiCall(result.tokensUsed, Date.now() - startedAt);
-
-      if (result.vectors.length !== pendingTexts.length) {
-        throw new Error(
-          `Expected ${pendingTexts.length} embeddings for batch rewrite, received ${result.vectors.length}`
-        );
-      }
+      options.onApiCall(result, Date.now() - startedAt);
+      assertEmbedResult(result, pendingTexts.length, {
+        stream: options.message.stream,
+        model: options.model,
+        dimensions: options.dimensions,
+      });
 
       for (const [index, entry] of pendingTexts.entries()) {
         pendingRecords[entry.recordIndex]!.additions[entry.outputName] = result.vectors[index]!;
@@ -146,32 +160,31 @@ async function rewriteFile(
     pendingTexts.length = 0;
   };
 
+  let lineNumber = 0;
   for await (const line of reader) {
+    lineNumber += 1;
     if (line.length === 0) {
       continue;
     }
 
-    const record = JSON.parse(line) as Record<string, unknown>;
+    const record = parseBatchLine(line, lineNumber, options.message.stream);
     const additions: Record<string, number[] | null> = {};
     const requests: PendingRecord['requests'] = [];
 
     for (const field of options.fields) {
-      const value = record[field.field];
       const outputName = outputColumnName(field.field, field.as);
-
-      if (value === null || value === undefined || value === '') {
+      const { text, truncation } = prepareEmbeddingText(record[field.field], options.hostText);
+      if (truncation) {
+        options.onTruncation(options.message.stream, field.field, truncation);
+      }
+      if (text === null) {
         additions[outputName] = null;
         continue;
       }
 
-      const truncated = truncateToTokens(String(value), MAX_EMBEDDING_TOKENS);
-      if (truncated.truncated) {
-        options.onTruncation(options.message.stream, field.field, truncated.originalTokens);
-      }
-
       requests.push({
         outputName,
-        text: truncated.text,
+        text,
       });
     }
 

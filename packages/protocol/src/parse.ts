@@ -616,6 +616,7 @@ function parseMetricMessage(value: RawEnvelope): MetricMessage {
     'embedding_tokens_truncated',
     'embedding_duration_ms',
     'embedding_records_processed',
+    'embedding_inputs_rejected',
     // Document-extraction metrics. Without these in the whitelist
     // `parseStderrMessage` would silently drop them off the parsed METRIC envelope.
     'documents_emitted',

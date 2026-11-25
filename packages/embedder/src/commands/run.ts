@@ -5,10 +5,16 @@ import type { Readable, Writable } from 'node:stream';
 import { Command } from 'commander';
 import { z } from 'zod';
 
-import { embedMany, type EmbedInput, type EmbedResult } from '@bobsled-inc/ai';
+import {
+  embedMany,
+  type EmbedInput,
+  type EmbedResult,
+  type HostEmbeddingOptions,
+} from '@bobsled-inc/ai';
 import { EnvSecretResolver } from '@bobsled-inc/connections';
 import {
   CommandError,
+  deleteHostEmbeddingEnv,
   EXIT_ERROR,
   EXIT_VALIDATION,
   parseEnvPlaceholder,
@@ -22,7 +28,8 @@ import {
   writeStructuredLog,
   type EmbedderLogOptions,
 } from '../runtime/processor.js';
-import type { EmbedderConfig } from '../config.js';
+import { prepareHostStage, stubStage, type EmbedStage } from './host-stage.js';
+import type { EmbedderConfig, ProviderEmbedConfig } from '../config.js';
 
 export interface BuildConfigInputOptions {
   configPath?: string;
@@ -35,6 +42,8 @@ export interface RunEmbedCommandDependencies {
   errorOutput?: Writable;
   env?: Record<string, string | undefined>;
   logOptions?: EmbedderLogOptions;
+  /** Client settings for a `provider: host` stage. */
+  hostEmbedding?: Omit<HostEmbeddingOptions, 'url' | 'token'>;
 }
 
 interface CliOutputFlags {
@@ -171,7 +180,7 @@ async function resolveApiKey(
   return resolver.resolve(name);
 }
 
-function defaultDimension(config: EmbedderConfig): number | undefined {
+function defaultDimension(config: ProviderEmbedConfig): number | undefined {
   if (config.dimension !== undefined) {
     return config.dimension;
   }
@@ -188,7 +197,7 @@ function defaultDimension(config: EmbedderConfig): number | undefined {
 }
 
 async function embedBatch(
-  config: EmbedderConfig,
+  config: ProviderEmbedConfig,
   texts: string[],
   env: Record<string, string | undefined>
 ): Promise<{ vectors: number[][]; tokensUsed: number }> {
@@ -219,15 +228,11 @@ async function embedBatch(
   return { vectors, tokensUsed };
 }
 
-export async function runEmbedCommand(
-  config: EmbedderConfig,
-  dependencies: RunEmbedCommandDependencies = {}
-): Promise<void> {
+async function prepareProviderStage(
+  config: ProviderEmbedConfig,
+  env: Record<string, string | undefined>
+): Promise<EmbedStage> {
   validateModelProviderConfig(config);
-  const env = dependencies.env ?? process.env;
-  const input = dependencies.input ?? process.stdin;
-  const output = dependencies.output ?? process.stdout;
-  const errorOutput = dependencies.errorOutput ?? process.stderr;
   const dimensions = defaultDimension(config);
 
   if (dimensions === undefined || !Number.isInteger(dimensions) || dimensions <= 0) {
@@ -242,30 +247,54 @@ export async function runEmbedCommand(
       ? { ...config, api_key: await resolveApiKey(config.api_key, env) }
       : config;
 
-  const embedFn =
-    env['DOGSLED_EMBED_STUB'] === '1'
-      ? async (texts: string[]) => ({
-          vectors: texts.map(() => Array.from({ length: dimensions }, () => 0)),
-          tokensUsed: 0,
-        })
-      : async (texts: string[]) => {
-          return embedBatch(resolvedConfig, texts, env);
-        };
+  return env['DOGSLED_EMBED_STUB'] === '1'
+    ? stubStage(config.provider, config.model, dimensions)
+    : {
+        provider: config.provider,
+        model: config.model,
+        dimensions,
+        batchSize: 100,
+        embedFn: (texts) => embedBatch(resolvedConfig, texts, env),
+      };
+}
+
+export async function runEmbedCommand(
+  config: EmbedderConfig,
+  dependencies: RunEmbedCommandDependencies = {}
+): Promise<void> {
+  const env = dependencies.env ?? process.env;
+  const { provider, model, ...stage } =
+    config.provider === 'host'
+      ? await prepareHostStage(config, env, dependencies.hostEmbedding)
+      : await prepareProviderStage(config, env);
 
   await runEmbedder({
-    input,
-    output,
-    errorOutput,
-    config,
-    dimensions,
-    batchSize: 100,
-    embedFn,
+    ...stage,
+    input: dependencies.input ?? process.stdin,
+    output: dependencies.output ?? process.stdout,
+    errorOutput: dependencies.errorOutput ?? process.stderr,
+    config: { streams: config.streams, provider, model },
     tmpDir: env['DOGSLED_EMBEDDER_TMP_DIR'],
     logOptions: dependencies.logOptions,
   });
 }
 
-export function registerRunCommand(program: Command): void {
+/**
+ * The environment of one `dogsled embed run`. The endpoint and token of a host-supplied model
+ * stay in it for that provider only, and leave `processEnv`, so that no process a provider
+ * package starts inherits them.
+ */
+export function takeRunEnv(
+  config: EmbedderConfig,
+  processEnv: Record<string, string | undefined> = process.env
+): Record<string, string | undefined> {
+  const env = { ...processEnv };
+  deleteHostEmbeddingEnv(processEnv);
+  if (config.provider !== 'host') deleteHostEmbeddingEnv(env);
+  return env;
+}
+
+export function registerRunCommand(program: Command, run = runEmbedCommand): void {
   program
     .command('run')
     .description('Read protocol messages from stdin and enrich configured fields with embeddings')
@@ -288,7 +317,8 @@ export function registerRunCommand(program: Command): void {
           configPath: opts.config,
           configJson: opts.configJson,
         });
-        await runEmbedCommand(config, {
+        await run(config, {
+          env: takeRunEnv(config),
           logOptions: resolveEmbedderLogOptions(opts),
         });
       }

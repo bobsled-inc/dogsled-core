@@ -51,6 +51,23 @@ describe('loadEmbedConfigFile', () => {
     expect(() => loadEmbedConfigFile(path)).toThrow(/Invalid embed config file/);
   });
 
+  it('accepts a host config, which has no model', () => {
+    const config = {
+      provider: 'host',
+      dimension: 1024,
+      streams: { issues: [{ field: 'description' }] },
+    };
+    expect(loadEmbedConfigFile(writeTempJson(config))).toEqual(config);
+  });
+
+  it('requires a model for every other provider', () => {
+    const path = writeTempJson({
+      provider: 'openai',
+      streams: { issues: [{ field: 'description' }] },
+    });
+    expect(() => loadEmbedConfigFile(path)).toThrow(/Invalid embed config file/);
+  });
+
   it('accepts extra top-level fields (shared file with dogsled embed)', () => {
     const path = writeTempJson({
       provider: 'openai',
@@ -104,6 +121,11 @@ describe('resolveResourceEmbedConfig', () => {
   it('preserves the `as` alias when present', () => {
     const resolved = resolveResourceEmbedConfig(baseConfig, 'comments');
     expect(resolved?.fields[0]).toEqual({ field: 'body', as: 'body_vec' });
+  });
+
+  it('returns undefined for a host config, whose model is not known here', () => {
+    const host = { provider: 'host', dimension: 1024, streams: baseConfig.streams };
+    expect(resolveResourceEmbedConfig(host, 'issues')).toBeUndefined();
   });
 
   it('returns undefined when dimension is unresolved (cannot pre-fill VECTOR)', () => {

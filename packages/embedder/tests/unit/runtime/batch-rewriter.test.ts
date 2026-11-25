@@ -11,6 +11,7 @@ import { rewriteBatch } from '../../../src/runtime/batch-rewriter.js';
 import type { BatchMessage } from '@bobsled-inc/protocol';
 
 const tempDirs: string[] = [];
+const target = { model: 'text-embedding-3-small', dimensions: 1 };
 
 function createTempDir(): string {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'embedder-batch-'));
@@ -49,6 +50,7 @@ describe('rewriteBatch', () => {
       message,
       fields: [{ field: 'body' }],
       batchSize: 100,
+      ...target,
       embedFn: vi.fn(async (texts: string[]) => ({
         vectors: texts.map((_text, index) => [index * 0.1]),
         tokensUsed: texts.length * 5,
@@ -91,6 +93,7 @@ describe('rewriteBatch', () => {
       message,
       fields: [{ field: 'body', as: 'embedding' }],
       batchSize: 100,
+      ...target,
       embedFn: async (texts: string[]) => ({
         vectors: texts.map(() => [0.5]),
         tokensUsed: 0,
@@ -125,6 +128,7 @@ describe('rewriteBatch', () => {
         message,
         fields: [{ field: 'body' }],
         batchSize: 100,
+        ...target,
         embedFn: async () => ({ vectors: [], tokensUsed: 0 }),
         onTruncation: () => {},
         onApiCall: () => {},
@@ -153,6 +157,7 @@ describe('rewriteBatch', () => {
         },
         fields: [{ field: 'title' }, { field: 'body' }],
         batchSize: 1,
+        ...target,
         embedFn,
         tmpDir: dir,
         onTruncation: () => {},
@@ -180,6 +185,7 @@ describe('rewriteBatch', () => {
       message,
       fields: [{ field: 'body' }],
       batchSize: 100,
+      ...target,
       embedFn: async () => ({
         vectors: [[0.1]],
         tokensUsed: 0,
@@ -194,6 +200,7 @@ describe('rewriteBatch', () => {
       message,
       fields: [{ field: 'body' }],
       batchSize: 100,
+      ...target,
       embedFn: async () => ({
         vectors: [[0.9]],
         tokensUsed: 0,
@@ -229,6 +236,7 @@ describe('rewriteBatch', () => {
       },
       fields: [{ field: 'body' }],
       batchSize: 100,
+      ...target,
       embedFn: async () => ({
         vectors: [[0.1]],
         tokensUsed: 0,
@@ -267,6 +275,7 @@ describe('rewriteBatch', () => {
       },
       fields: [{ field: 'body' }],
       batchSize: 100,
+      ...target,
       embedFn,
       tmpDir: dir,
       onTruncation: () => {},
@@ -289,4 +298,112 @@ describe('rewriteBatch', () => {
       { id: 3, body: 'beta', body_embedding: [4] },
     ]);
   });
+});
+
+describe('vectors that do not fit the column', () => {
+  it.each([
+    [[[1, 2]], 'returned a vector of 2 numbers for stream "docs", expected 3.'],
+    [[[1, 2, NaN]], 'a value that is not a finite number for stream "docs".'],
+    [[[1, 2, 3], [4]], 'Expected 1 embeddings for stream "docs", received 2'],
+  ])('refuses %j in a BATCH', async (vectors, message) => {
+    const dir = createTempDir();
+    const inputPath = path.join(dir, 'docs-0.jsonl');
+    writeJsonlFile(inputPath, [{ id: 1, body: 'quiet kennel' }]);
+    const rewritten = rewriteBatch({
+      message: {
+        _v: 1,
+        type: 'BATCH',
+        stream: 'docs',
+        encoding: { format: 'jsonl' },
+        manifest: [pathToFileURL(inputPath).href],
+      },
+      fields: [{ field: 'body' }],
+      batchSize: 100,
+      model: 'text-embedding-3-small',
+      dimensions: 3,
+      embedFn: async () => ({ vectors, tokensUsed: 0 }),
+      tmpDir: dir,
+      onTruncation: () => {},
+      onApiCall: () => {},
+      onRecord: () => {},
+    });
+    await expect(rewritten).rejects.toThrow(message);
+    await expect(rewritten).rejects.not.toThrow('quiet kennel');
+  });
+
+  it('writes null where the provider refused a text, and reports what it cut', async () => {
+    const dir = createTempDir();
+    const inputPath = path.join(dir, 'docs-0.jsonl');
+    writeJsonlFile(inputPath, [
+      { id: 1, body: 'alpha' },
+      { id: 2, body: 'be' },
+    ]);
+    const onTruncation = vi.fn();
+    const result = await rewriteBatch({
+      message: {
+        _v: 1,
+        type: 'BATCH',
+        stream: 'docs',
+        encoding: { format: 'jsonl' },
+        manifest: [pathToFileURL(inputPath).href],
+      },
+      fields: [{ field: 'body' }],
+      batchSize: 100,
+      model: 'acme-embed-1',
+      dimensions: 1,
+      hostText: { maxCharacters: 3 },
+      embedFn: async (texts) => ({
+        vectors: texts.map((text) => (text === 'be' ? null : [text.length])),
+        tokensUsed: 0,
+        rejections: new Map([['too_short', 1]]),
+      }),
+      tmpDir: dir,
+      onTruncation,
+      onApiCall: () => {},
+      onRecord: () => {},
+    });
+    const rows = readFileSync(new URL(result.manifest[0]!).pathname, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line));
+    expect(rows).toEqual([
+      { id: 1, body: 'alpha', body_embedding: [3] },
+      { id: 2, body: 'be', body_embedding: null },
+    ]);
+    expect(onTruncation.mock.calls).toEqual([['docs', 'body', { originalCharacters: 5 }]]);
+  });
+});
+
+describe('a BATCH file that is not JSON', () => {
+  it.each(['quiet kennel', '{"id":2,"body":"quiet kennel"', '{"body":"quiet kennel"} trailing'])(
+    'is reported by stream and line, without the line: %j',
+    async (line) => {
+      const dir = createTempDir();
+      const inputPath = path.join(dir, 'docs-0.jsonl');
+      writeFileSync(inputPath, `${JSON.stringify({ id: 1, body: 'first' })}\n\n${line}\n`);
+      const rewritten = rewriteBatch({
+        message: {
+          _v: 1,
+          type: 'BATCH',
+          stream: 'docs',
+          encoding: { format: 'jsonl' },
+          manifest: [pathToFileURL(inputPath).href],
+        },
+        fields: [{ field: 'body' }],
+        batchSize: 100,
+        ...target,
+        embedFn: async (texts) => ({ vectors: texts.map(() => [0]), tokensUsed: 0 }),
+        tmpDir: dir,
+        onTruncation: () => {},
+        onApiCall: () => {},
+        onRecord: () => {},
+      });
+      const error = await rewritten.catch((thrown: unknown) => thrown);
+      expect(error).toMatchObject({
+        message: 'Line 3 of a BATCH file for stream "docs" is not valid JSON.',
+        exitCode: 1,
+      });
+      expect((error as Error).cause).toBeUndefined();
+    }
+  );
 });

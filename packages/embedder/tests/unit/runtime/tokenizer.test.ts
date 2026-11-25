@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   countTokens,
   MAX_EMBEDDING_TOKENS,
+  truncateToCharacters,
   truncateToTokens,
 } from '../../../src/runtime/tokenizer.js';
 
@@ -56,5 +57,21 @@ describe('tokenizer', () => {
   it('uses the current OpenAI embedding token limit', () => {
     // Pin the current upstream limit so accidental tokenizer regressions are loud.
     expect(MAX_EMBEDDING_TOKENS).toBe(8191);
+  });
+});
+
+describe('truncateToCharacters', () => {
+  it.each([
+    ['abc', 3, 'abc'],
+    ['abcd', 3, 'abc'],
+    ['ab\u{1F6F7}', 4, 'ab\u{1F6F7}'],
+    ['ab\u{1F6F7}', 3, 'ab'],
+    ['ab\u{1F6F7}c', 4, 'ab\u{1F6F7}'],
+    ['\u{1F6F7}', 1, ''],
+    // A lone half is not a pair, so there is nothing to keep together.
+    ['ab\ud83dc', 3, 'ab\ud83d'],
+    ['ab\udef7c', 3, 'ab\udef7'],
+  ])('cuts %j at %i', (text, max, expected) => {
+    expect(truncateToCharacters(text, max)).toBe(expected);
   });
 });

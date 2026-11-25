@@ -57,7 +57,7 @@ describe('enrichSchema', () => {
       name: 'body_embedding',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'body', provider, model },
+      embedded_from: { column: 'body', provider, model, dimension: 1536 },
     });
   });
 
@@ -73,7 +73,7 @@ describe('enrichSchema', () => {
       name: 'embedding',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'body', provider, model },
+      embedded_from: { column: 'body', provider, model, dimension: 1536 },
     });
   });
 
@@ -100,13 +100,13 @@ describe('enrichSchema', () => {
       name: 'title_embedding',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'title', provider, model },
+      embedded_from: { column: 'title', provider, model, dimension: 1536 },
     });
     expect(enriched.schema.columns).toContainEqual({
       name: 'body_vec',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'body', provider, model },
+      embedded_from: { column: 'body', provider, model, dimension: 1536 },
     });
   });
 
@@ -194,6 +194,7 @@ describe('runEmbedder', () => {
         column: 'body',
         provider: 'openai',
         model: 'text-embedding-3-small',
+        dimension: 2,
       },
     });
     expect(records[0]?.['record']).toMatchObject({
@@ -440,5 +441,314 @@ describe('runEmbedder', () => {
       })
     ).rejects.toThrow(/batch-size 1 is too small/i);
     expect(embedFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('vectors that do not fit the column', () => {
+  async function embedOne(
+    vectors: unknown[],
+    rejections?: ReadonlyMap<string, number>
+  ): Promise<{ error: unknown; output: string[] }> {
+    const output = createWritableBuffer();
+    const error = await runEmbedder({
+      input: Readable.from([
+        `${JSON.stringify(baseSchemaMessage)}\n`,
+        `${JSON.stringify({
+          _v: 1,
+          type: 'RECORD',
+          stream: 'docs',
+          time_extracted: '2026-04-23T00:00:00.000Z',
+          record: { id: 1, body: 'quiet kennel' },
+        })}\n`,
+      ]),
+      output: output.stream,
+      errorOutput: createWritableBuffer().stream,
+      config: {
+        streams: { docs: [{ field: 'body' }] },
+        provider: 'openai',
+        model: 'text-embedding-3-small',
+      },
+      dimensions: 3,
+      batchSize: 100,
+      embedFn: async () => ({ vectors: vectors as number[][], tokensUsed: 0, rejections }),
+    }).then(
+      () => undefined,
+      (thrown: unknown) => thrown
+    );
+    return { error, output: output.chunks };
+  }
+
+  it.each([
+    [[[1, 2]], 'returned a vector of 2 numbers for stream "docs", expected 3.'],
+    [[[1, 2, 3, 4]], 'returned a vector of 4 numbers for stream "docs", expected 3.'],
+    [[[]], 'returned a vector of 0 numbers for stream "docs", expected 3.'],
+    [[undefined], 'returned a vector of 0 numbers for stream "docs", expected 3.'],
+    [[[1, NaN, 3]], 'a value that is not a finite number for stream "docs".'],
+    [[[1, Infinity, 3]], 'a value that is not a finite number for stream "docs".'],
+    [[[1, '2', 3]], 'a value that is not a finite number for stream "docs".'],
+  ])('refuses %j in a RECORD', async (vectors, message) => {
+    const { error, output } = await embedOne(vectors);
+    expect(error).toMatchObject({ exitCode: 1, message: expect.stringContaining(message) });
+    expect((error as Error).message).toContain('text-embedding-3-small');
+    expect((error as Error).message).not.toContain('quiet kennel');
+    expect(parseLines(output).map((line) => line['type'])).toEqual(['SCHEMA']);
+  });
+
+  it.each([
+    ['a null nobody reported', [null], undefined, 'left out 1 vectors', 'reported 0 refused'],
+    ['a null next to no refusals', [null], new Map(), 'left out 1 vectors', 'reported 0 refused'],
+    [
+      'fewer nulls than refusals',
+      [null],
+      new Map([
+        ['a', 1],
+        ['b', 1],
+      ]),
+      'left out 1 vectors',
+      'reported 2 refused',
+    ],
+    [
+      'a vector for a refused text',
+      [[1, 2, 3]],
+      new Map([['a', 1]]),
+      'left out 0 vectors',
+      'reported 1 refused',
+    ],
+  ])('refuses %s', async (_label, vectors, rejections, missing, reported) => {
+    const { error, output } = await embedOne(vectors, rejections);
+    expect(error).toMatchObject({ exitCode: 1 });
+    expect((error as Error).message).toContain(missing);
+    expect((error as Error).message).toContain(reported);
+    expect((error as Error).message).not.toContain('quiet kennel');
+    expect(parseLines(output).map((line) => line['type'])).toEqual(['SCHEMA']);
+  });
+
+  it('accepts a null that the provider reported', async () => {
+    const { error, output } = await embedOne([null], new Map([['too_long', 1]]));
+    expect(error).toBeUndefined();
+    expect(parseLines(output)[1]?.['record']).toMatchObject({ body_embedding: null });
+  });
+
+  it('accepts a vector of the declared length', async () => {
+    const { error, output } = await embedOne([[1, -2.5, 0]]);
+    expect(error).toBeUndefined();
+    expect(parseLines(output)[1]?.['record']).toMatchObject({ body_embedding: [1, -2.5, 0] });
+  });
+});
+
+describe('document streams', () => {
+  const row = (stream: string, values: Record<string, unknown>) => ({
+    _v: 1,
+    type: 'RECORD',
+    stream,
+    time_extracted: '2026-04-23T00:00:00.000Z',
+    record: values,
+  });
+  const replace = (stream: string, id: string) => ({
+    _v: 1,
+    type: 'REPLACE',
+    stream,
+    key: 'document_id',
+    values: [id],
+  });
+  const schema = (stream: string) => ({
+    _v: 1,
+    type: 'SCHEMA',
+    stream,
+    schema: {
+      columns: [
+        { name: 'document_id', type: 'string' },
+        { name: 'text', type: 'string' },
+      ],
+    },
+    key_properties: [],
+    load_strategy: 'append',
+  });
+
+  it('embeds only the chunk stream and keeps REPLACE in its place', async () => {
+    const messages = [
+      schema('docs__documents'),
+      schema('docs__chunks'),
+      schema('docs__parse_errors'),
+      schema('docs__acl'),
+      ...['one', 'two'].flatMap((id) => [
+        replace('docs__documents', id),
+        replace('docs__chunks', id),
+        replace('docs__parse_errors', id),
+        replace('docs__acl', id),
+        row('docs__documents', { document_id: id, text: `${id} whole` }),
+        row('docs__chunks', { document_id: id, text: `${id} a` }),
+        row('docs__chunks', { document_id: id, text: `${id} b` }),
+      ]),
+      // Nothing between these records and the REPLACE flushes them.
+      row('docs__chunks', { document_id: 'two', text: 'two c' }),
+      replace('docs__chunks', 'three'),
+      row('docs__acl', { document_id: 'two', text: 'reader' }),
+      row('docs__parse_errors', { document_id: 'two', text: 'unreadable' }),
+      { _v: 1, type: 'STATE', stream: 'docs', value: { record_count: 5 } },
+    ];
+    const output = createWritableBuffer();
+    const embedFn = vi.fn(async (texts: string[]) => ({
+      vectors: texts.map((text) => [text.length, 0]),
+      tokensUsed: 0,
+    }));
+    await runEmbedder({
+      input: Readable.from(messages.map((message) => `${JSON.stringify(message)}\n`)),
+      output: output.stream,
+      errorOutput: createWritableBuffer().stream,
+      config: {
+        streams: { docs__chunks: [{ field: 'text' }] },
+        provider: 'openai',
+        model: 'text-embedding-3-small',
+      },
+      dimensions: 2,
+      batchSize: 100,
+      embedFn,
+    });
+
+    const written = parseLines(output.chunks);
+    const withoutVectors = written.map((message) => {
+      if (message['type'] === 'SCHEMA' && message['stream'] === 'docs__chunks') {
+        return schema('docs__chunks');
+      }
+      if (message['type'] !== 'RECORD' || message['stream'] !== 'docs__chunks') return message;
+      const { text_embedding: vector, ...rest } = message['record'] as Record<string, unknown>;
+      expect(vector).toEqual([String(rest['text']).length, 0]);
+      return { ...message, record: rest };
+    });
+    expect(withoutVectors).toEqual(messages);
+    expect(embedFn.mock.calls.flatMap(([texts]) => texts)).toEqual([
+      'one a',
+      'one b',
+      'two a',
+      'two b',
+      'two c',
+    ]);
+  });
+});
+
+describe('refused inputs', () => {
+  it('reports any code as a plain key', async () => {
+    const errorOutput = createWritableBuffer();
+    const codes = ['constructor', '__proto__', 'toString', 'hasOwnProperty'];
+    await runEmbedder({
+      input: Readable.from([
+        `${JSON.stringify(baseSchemaMessage)}\n`,
+        ...Array.from(
+          { length: 10 },
+          (_, id) =>
+            `${JSON.stringify({
+              _v: 1,
+              type: 'RECORD',
+              stream: 'docs',
+              time_extracted: '2026-04-23T00:00:00.000Z',
+              record: { id, body: 'hello' },
+            })}\n`
+        ),
+      ]),
+      output: createWritableBuffer().stream,
+      errorOutput: errorOutput.stream,
+      config: {
+        streams: { docs: [{ field: 'body' }] },
+        provider: 'acme',
+        model: 'acme-embed-1',
+      },
+      dimensions: 2,
+      batchSize: 100,
+      embedFn: async (texts) => ({
+        vectors: texts.map(() => null),
+        tokensUsed: 0,
+        rejections: new Map(codes.map((code, index) => [code, index + 1])),
+      }),
+    });
+
+    const line = errorOutput.chunks
+      .join('')
+      .split('\n')
+      .find((text) => text.includes('embedding.inputs_rejected'))!;
+    expect(line).toContain('"__proto__":2');
+    const { counts } = (JSON.parse(line) as { attributes: { counts: object } }).attributes;
+    expect(Object.entries(counts)).toEqual([
+      ['hasOwnProperty', 4],
+      ['toString', 3],
+      ['__proto__', 2],
+      ['constructor', 1],
+    ]);
+    expect(Object.getPrototypeOf({})).toBe(Object.prototype);
+  });
+});
+
+describe('whitespace', () => {
+  it('is embedded unless a host supplies the model', async () => {
+    const run = async (hostText?: { maxCharacters?: number }) => {
+      const embedFn = vi.fn(async (texts: string[]) => ({
+        vectors: texts.map(() => [0, 0]),
+        tokensUsed: 0,
+      }));
+      await runEmbedder({
+        input: Readable.from([
+          `${JSON.stringify(baseSchemaMessage)}\n`,
+          `${JSON.stringify({
+            _v: 1,
+            type: 'RECORD',
+            stream: 'docs',
+            time_extracted: '2026-04-23T00:00:00.000Z',
+            record: { id: 1, body: ' \n ' },
+          })}\n`,
+        ]),
+        output: createWritableBuffer().stream,
+        errorOutput: createWritableBuffer().stream,
+        config: {
+          streams: { docs: [{ field: 'body' }] },
+          provider: 'openai',
+          model: 'text-embedding-3-small',
+        },
+        dimensions: 2,
+        batchSize: 100,
+        hostText,
+        embedFn,
+      });
+      return embedFn.mock.calls;
+    };
+    expect(await run()).toEqual([[[' \n ']]]);
+    expect(await run({})).toEqual([]);
+  });
+});
+
+describe('input that is not JSON', () => {
+  it('is reported by line, without the line', async () => {
+    const started = runEmbedder({
+      input: Readable.from([
+        `${JSON.stringify(baseSchemaMessage)}\n\n`,
+        '{"_v":1,"type":"RECORD","record":{"body":"quiet kennel"\n',
+      ]),
+      output: createWritableBuffer().stream,
+      errorOutput: createWritableBuffer().stream,
+      config: {
+        streams: { docs: [{ field: 'body' }] },
+        provider: 'openai',
+        model: 'text-embedding-3-small',
+      },
+      dimensions: 2,
+      batchSize: 100,
+      embedFn: async () => ({ vectors: [], tokensUsed: 0 }),
+    });
+    await expect(started).rejects.toMatchObject({
+      message: 'Protocol line 3 is not valid JSON.',
+      exitCode: 1,
+    });
+  });
+
+  it('leaves other reader errors as they are', async () => {
+    const started = runEmbedder({
+      input: Readable.from(['{"_v":1,"type":"NOPE"}\n']),
+      output: createWritableBuffer().stream,
+      errorOutput: createWritableBuffer().stream,
+      config: { streams: {}, provider: 'openai', model: 'text-embedding-3-small' },
+      dimensions: 2,
+      batchSize: 100,
+      embedFn: async () => ({ vectors: [], tokensUsed: 0 }),
+    });
+    await expect(started).rejects.toThrow(/Invalid protocol message on line 1/);
   });
 });

@@ -242,6 +242,7 @@ export interface MetricMessage {
     embedding_tokens_truncated?: number;
     embedding_duration_ms?: number;
     embedding_records_processed?: number;
+    embedding_inputs_rejected?: number;
     // Document-extraction metrics. Emitted by
     // `extractDocumentResource` for `<resource>__documents`/`__chunks`/
     // `__parse_errors` accounting, per the Document Stream Schema Contract.
