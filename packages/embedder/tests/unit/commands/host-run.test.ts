@@ -176,7 +176,6 @@ describe('provider: host', () => {
               column: 'body',
               provider: 'acme',
               model: 'acme-embed-1',
-              dimension: 2,
             },
           },
         ]),
@@ -511,7 +510,7 @@ describe('provider: host', () => {
     const columns = (output[0]!['schema'] as { columns: Array<Record<string, unknown>> }).columns;
     expect(columns.at(-1)).toMatchObject({
       dimension: 3,
-      embedded_from: { column: 'body', provider: 'host', model: 'stub', dimension: 3 },
+      embedded_from: { column: 'body', provider: 'host', model: 'stub' },
     });
   });
 

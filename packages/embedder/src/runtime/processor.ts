@@ -237,7 +237,6 @@ export function enrichSchema(message: SchemaMessage, options: EnrichSchemaOption
       column: field.field,
       provider: options.provider,
       model: options.model,
-      dimension: options.dimensions,
     };
     vectorColumns.push({
       name: outputName,

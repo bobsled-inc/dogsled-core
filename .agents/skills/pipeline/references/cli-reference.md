@@ -282,7 +282,6 @@ embedded and which provider/model produced it.
     column: description
     provider: amazon-bedrock
     model: cohere.embed-english-v3
-    dimension: 1024
 ```
 
 With `provider: host` the model is known only when the run starts, so the scaffold has no

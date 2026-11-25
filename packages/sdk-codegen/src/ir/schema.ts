@@ -56,15 +56,13 @@ export const SdkAttrTypeSchema = z.enum([
 /**
  * Provenance for an embedding column projected onto the SDK IR. Mirrors the
  * `embedded_from` block on Model Spec columns and the runtime SCHEMA message. The
- * host agent reads `provider`/`model`/`dimension` to generate a query embedding in
+ * host agent reads `provider`/`model` to generate a query embedding in
  * the same family at vector-search time. Distance metric is reserved.
  */
 export const SdkEmbeddedFromSchema = z.strictObject({
   column: z.string().min(1),
   provider: z.string().min(1),
   model: z.string().min(1),
-  /** Vector length the model produced; absent in IR built from older specs. */
-  dimension: z.number().int().positive().optional(),
   distance_metric: z.enum(['cosine', 'l2', 'dot']).optional(),
 });
 
@@ -96,18 +94,6 @@ export const SdkProfileAttrSchema = z
         code: z.ZodIssueCode.custom,
         path: ['embedded_from'],
         message: 'embedded_from is only valid for vector attrs',
-      });
-    }
-    const embeddedDimension = attr.embedded_from?.dimension;
-    if (
-      attr.dimension !== undefined &&
-      embeddedDimension !== undefined &&
-      attr.dimension !== embeddedDimension
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['embedded_from', 'dimension'],
-        message: 'embedded_from.dimension must equal the attr dimension',
       });
     }
   });

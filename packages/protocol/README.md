@@ -138,10 +138,7 @@ Example:
 }
 ```
 
-The optional `embedded_from` of a vector column records the source `column`, the `provider` and
-`model` that produced it, and an optional `dimension`, which must equal the column's.
-
-Vector columns are typically added by `@bobsled-inc/embedder` or `dogsled embed`, then consumed by vector-aware loader destinations.
+They are typically added by `@bobsled-inc/embedder` or `dogsled embed`, then consumed by vector-aware loader destinations.
 
 ## Load Strategies
 

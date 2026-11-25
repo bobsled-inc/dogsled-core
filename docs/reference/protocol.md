@@ -166,9 +166,7 @@ emitted and API calls:
 ## Column types
 
 `string`, `integer`, `number`, `boolean`, `timestamp`, `array`, `object` and
-`vector` (added by `dogsled embed`). A `vector` column has a `dimension`, and an
-`embedded_from` that names the source `column`, the `provider`, the `model` and the
-`dimension`, which equals the column's.
+`vector` (added by `dogsled embed`).
 
 ## Load strategies
 

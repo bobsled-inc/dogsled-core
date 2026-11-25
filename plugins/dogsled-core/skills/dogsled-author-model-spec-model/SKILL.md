@@ -68,7 +68,6 @@ search time.
     column: description # source field that was embedded
     provider: amazon-bedrock # provider id
     model: cohere.embed-english-v3 # model id
-    dimension: 1024 # optional; must equal the column's dimension
     # distance_metric: cosine          # optional, reserved: cosine | l2 | dot
 ```
 

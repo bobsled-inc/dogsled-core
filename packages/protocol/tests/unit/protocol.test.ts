@@ -280,53 +280,6 @@ describe('SchemaColumn: discriminated union', () => {
       ).toThrow();
     });
 
-    describe('dimension', () => {
-      const parse = (embeddedFrom: Record<string, unknown>) =>
-        parseRequiredStdoutMessage({
-          _v: 1,
-          type: 'SCHEMA',
-          stream: 'docs',
-          schema: {
-            columns: [
-              { name: 'description', type: 'string' },
-              {
-                name: 'description_embedding',
-                type: 'vector',
-                dimension: 1536,
-                embedded_from: {
-                  column: 'description',
-                  provider: 'openai',
-                  model: 'text-embedding-3-small',
-                  ...embeddedFrom,
-                },
-              },
-            ],
-          },
-          key_properties: [],
-          load_strategy: 'append',
-        }) as SchemaMessage;
-
-      it('is kept when it equals the column dimension', () => {
-        const column = parse({ dimension: 1536 }).schema.columns[1] as VectorSchemaColumn;
-        expect(column.embedded_from?.dimension).toBe(1536);
-      });
-
-      it('may be absent, as in older specs', () => {
-        const column = parse({}).schema.columns[1] as VectorSchemaColumn;
-        expect(column.embedded_from).not.toHaveProperty('dimension');
-      });
-
-      it('must equal the column dimension', () => {
-        expect(() => parse({ dimension: 1024 })).toThrow(
-          /embedded_from\.dimension 1024 must equal the column dimension 1536/
-        );
-      });
-
-      it.each([0, -1, 1.5, '1536', null])('rejects %j', (dimension) => {
-        expect(() => parse({ dimension })).toThrow(/embedded_from\.dimension must be a positive/);
-      });
-    });
-
     it('rejects an unknown distance_metric', () => {
       expect(() =>
         parseRequiredStdoutMessage({

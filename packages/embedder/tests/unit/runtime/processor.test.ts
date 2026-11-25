@@ -1,10 +1,11 @@
 import { Readable, Writable } from 'node:stream';
 
+import { parseRequiredStdoutMessage } from '@bobsled-inc/protocol';
 import { describe, expect, it, vi } from 'vitest';
 
 import { enrichSchema, runEmbedder } from '../../../src/runtime/processor.js';
 
-import type { SchemaMessage } from '@bobsled-inc/protocol';
+import type { SchemaMessage, VectorSchemaColumn } from '@bobsled-inc/protocol';
 
 function createWritableBuffer(): { chunks: string[]; stream: Writable } {
   const chunks: string[] = [];
@@ -57,7 +58,7 @@ describe('enrichSchema', () => {
       name: 'body_embedding',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'body', provider, model, dimension: 1536 },
+      embedded_from: { column: 'body', provider, model },
     });
   });
 
@@ -73,7 +74,7 @@ describe('enrichSchema', () => {
       name: 'embedding',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'body', provider, model, dimension: 1536 },
+      embedded_from: { column: 'body', provider, model },
     });
   });
 
@@ -100,14 +101,32 @@ describe('enrichSchema', () => {
       name: 'title_embedding',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'title', provider, model, dimension: 1536 },
+      embedded_from: { column: 'title', provider, model },
     });
     expect(enriched.schema.columns).toContainEqual({
       name: 'body_vec',
       type: 'vector',
       dimension: 1536,
-      embedded_from: { column: 'body', provider, model, dimension: 1536 },
+      embedded_from: { column: 'body', provider, model },
     });
+  });
+
+  it('writes only what released loaders accept', () => {
+    const enriched = enrichSchema(baseSchemaMessage, {
+      streamConfigs: { docs: [{ field: 'body' }] },
+      dimensions: 1536,
+      provider,
+      model,
+    });
+    // Loaders refuse any other key of `embedded_from`.
+    const column = enriched.schema.columns.find(({ type }) => type === 'vector')!;
+    expect(Object.keys(column).sort()).toEqual(['dimension', 'embedded_from', 'name', 'type']);
+    expect(Object.keys((column as VectorSchemaColumn).embedded_from!).sort()).toEqual([
+      'column',
+      'model',
+      'provider',
+    ]);
+    expect(parseRequiredStdoutMessage(JSON.parse(JSON.stringify(enriched)))).toEqual(enriched);
   });
 
   it('passes through unchanged for non-configured streams', () => {
@@ -194,7 +213,6 @@ describe('runEmbedder', () => {
         column: 'body',
         provider: 'openai',
         model: 'text-embedding-3-small',
-        dimension: 2,
       },
     });
     expect(records[0]?.['record']).toMatchObject({

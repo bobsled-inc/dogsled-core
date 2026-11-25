@@ -285,7 +285,6 @@ describe('generateModelSpecSource', () => {
         column: 'description',
         provider: 'openai',
         model: 'text-embedding-3-small',
-        dimension: 1536,
       },
     });
     expect(schema.columns).toContainEqual({
@@ -297,7 +296,6 @@ describe('generateModelSpecSource', () => {
         column: 'body',
         provider: 'openai',
         model: 'text-embedding-3-small',
-        dimension: 1536,
       },
     });
   });

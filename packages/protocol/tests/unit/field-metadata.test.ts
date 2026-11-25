@@ -145,35 +145,6 @@ describe('FieldMetadataSchema', () => {
       ).toThrow();
     });
 
-    it('accepts an embedded_from block with dimension', () => {
-      const parsed = FieldMetadataSchema.parse({
-        name: 'description_embedding',
-        type: 'array',
-        embedded_from: {
-          column: 'description',
-          provider: 'openai',
-          model: 'text-embedding-3-small',
-          dimension: 1536,
-        },
-      });
-      expect(parsed.embedded_from?.dimension).toBe(1536);
-    });
-
-    it.each([0, -1, 1.5, '1536', null])('rejects the embedded_from dimension %j', (dimension) => {
-      expect(() =>
-        FieldMetadataSchema.parse({
-          name: 'description_embedding',
-          type: 'array',
-          embedded_from: {
-            column: 'description',
-            provider: 'openai',
-            model: 'text-embedding-3-small',
-            dimension,
-          },
-        })
-      ).toThrow();
-    });
-
     it('rejects unknown fields inside embedded_from', () => {
       expect(() =>
         FieldMetadataSchema.parse({
@@ -183,7 +154,7 @@ describe('FieldMetadataSchema', () => {
             column: 'description',
             provider: 'openai',
             model: 'text-embedding-3-small',
-            version: 1,
+            dimension: 1536,
           },
         })
       ).toThrow();

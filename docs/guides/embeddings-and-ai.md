@@ -166,7 +166,7 @@ length.
 For other models, set the length the model returns. A vector of another length, or with a
 value that is not a finite number, fails the run, whatever the provider.
 
-Each vector column records the source column, provider, model and dimension in
+Each vector column has a `dimension`, and records the source column, provider and model in
 `embedded_from`, so a query can be embedded the same way later.
 
 ## Use a model the host application supplies
