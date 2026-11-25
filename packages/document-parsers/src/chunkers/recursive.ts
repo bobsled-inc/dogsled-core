@@ -1,5 +1,4 @@
 import { getEncoding, type Tiktoken } from 'js-tiktoken';
-import { createHash } from 'node:crypto';
 
 import type { Chunk, ChunkOptions } from '../types.js';
 
@@ -20,7 +19,7 @@ const SEPARATORS = ['\n\n', '\n', '. ', '? ', '! ', '; ', ', ', ' ', ''] as cons
 
 const tokenizerCache = new Map<ChunkOptions['tokenizer'], Tiktoken>();
 
-function getTokenizer(name: ChunkOptions['tokenizer']): Tiktoken {
+export function getTokenizer(name: ChunkOptions['tokenizer']): Tiktoken {
   let enc = tokenizerCache.get(name);
   if (!enc) {
     enc = getEncoding(name);
@@ -29,7 +28,7 @@ function getTokenizer(name: ChunkOptions['tokenizer']): Tiktoken {
   return enc;
 }
 
-export function chunkText(text: string, opts: ChunkOptions): Chunk[] {
+export function chunkRecursive(text: string, opts: ChunkOptions): Chunk[] {
   if (text.length === 0) return [];
   // Schema (DocumentChunkConfigSchema) enforces overlapTokens < maxTokens at YAML load
   // time. Library callers that bypass the schema get a defensive runtime check too:
@@ -66,11 +65,12 @@ function splitKeepingSeparator(text: string, sep: string): string[] {
   return out;
 }
 
-function splitRecursive(
+export function splitRecursive(
   text: string,
   enc: Tiktoken,
   maxTokens: number,
-  separatorIndex: number
+  separatorIndex: number,
+  splitFinest: (text: string, enc: Tiktoken, maxTokens: number) => string[] = splitByCharacters
 ): string[] {
   const tokens = enc.encode(text);
   if (tokens.length <= maxTokens) return [text];
@@ -78,7 +78,7 @@ function splitRecursive(
   for (let i = separatorIndex; i < SEPARATORS.length; i += 1) {
     const sep = SEPARATORS[i]!;
     const segments =
-      sep === '' ? splitByCharacters(text, enc, maxTokens) : splitKeepingSeparator(text, sep);
+      sep === '' ? splitFinest(text, enc, maxTokens) : splitKeepingSeparator(text, sep);
     if (segments.length <= 1) continue;
 
     const out: string[] = [];
@@ -106,7 +106,7 @@ function splitRecursive(
         bufferTokens = segmentTokens;
       } else {
         // Segment alone is over budget — recurse with the next finer separator.
-        for (const sub of splitRecursive(segment, enc, maxTokens, i + 1)) {
+        for (const sub of splitRecursive(segment, enc, maxTokens, i + 1, splitFinest)) {
           out.push(sub);
         }
       }
@@ -157,12 +157,7 @@ function applyOverlap(segments: string[], enc: Tiktoken, opts: ChunkOptions): Ch
  */
 export const CHUNKER_VERSION = 'recursive:1.0.1';
 
-/**
- * SHA-256 of canonicalized chunker config — stable identifier embedded in chunk_ids
- * (see Document Stream Schema Contract). When `ChunkOptions` change OR `CHUNKER_VERSION`
- * is bumped, this hash changes and downstream consumers invalidate the cache.
- */
-export function chunkerConfigHash(opts: ChunkOptions): string {
-  const canonical = `${CHUNKER_VERSION}::${opts.maxTokens}::${opts.overlapTokens}::${opts.tokenizer}`;
-  return createHash('sha256').update(canonical).digest('hex');
+/** Canonical form of the options that decide this strategy's chunks. */
+export function recursiveConfig(opts: ChunkOptions): string {
+  return `${CHUNKER_VERSION}::${opts.maxTokens}::${opts.overlapTokens}::${opts.tokenizer}`;
 }

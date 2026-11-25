@@ -1,5 +1,10 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import * as path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
+import { loadResourceSpecWithWarnings } from '../../src/commands/common.js';
 import { FileResourceSpecSchema } from '../../src/framework/extractor/file-resource.js';
 
 const baseDocumentResource = {
@@ -81,6 +86,91 @@ describe('FileSourceConfigSchema document branch', () => {
       })
     ).toThrow(/overlap_tokens must be less than/);
   });
+
+  const parseChunk = (chunk: Record<string, unknown>) => {
+    const { source } = FileResourceSpecSchema.parse({
+      ...baseDocumentResource,
+      source: { path: 'pdfs/**/*', kind: 'document', chunk },
+    });
+    return source.kind === 'document' ? source.chunk : undefined;
+  };
+
+  it('parses a chunk block without a strategy as before', () => {
+    expect(parseChunk({})).toEqual({
+      max_tokens: 800,
+      overlap_tokens: 120,
+      tokenizer: 'cl100k_base',
+    });
+    expect(parseChunk({ strategy: 'recursive', overlap_tokens: 10 })).toMatchObject({
+      strategy: 'recursive',
+      overlap_tokens: 10,
+    });
+  });
+
+  it('accepts the paragraph strategy without the recursive overlap default', () => {
+    expect(parseChunk({ strategy: 'paragraph' })).toEqual({
+      strategy: 'paragraph',
+      max_tokens: 800,
+      overlap_tokens: 0,
+      tokenizer: 'cl100k_base',
+    });
+    expect(
+      parseChunk({ strategy: 'paragraph', max_tokens: 100, min_tokens: 100, overlap_tokens: 0 })
+    ).toMatchObject({ max_tokens: 100, min_tokens: 100, overlap_tokens: 0 });
+    expect(parseChunk({ strategy: 'paragraph', max_tokens: 40 })).toMatchObject({ max_tokens: 40 });
+  });
+
+  it.each([
+    [{ strategy: 'paragraph', overlap_tokens: 10 }, /overlap_tokens must be 0 when/],
+    [{ strategy: 'paragraph', overlap_tokens: 120 }, /overlap_tokens must be 0 when/],
+    [{ strategy: 'paragraph', max_tokens: 100, min_tokens: 101 }, /min_tokens must be less than/],
+    [{ strategy: 'paragraph', min_tokens: 801 }, /min_tokens must be less than or equal/],
+    [{ strategy: 'paragraph', min_tokens: 0 }, /min_tokens/],
+    [{ strategy: 'paragraph', min_tokens: 1.5 }, /min_tokens/],
+    [{ strategy: 'paragraph', min_token: 5 }, /Unrecognized key/],
+    [{ min_tokens: 60 }, /min_tokens requires chunk.strategy: paragraph/],
+    [{ strategy: 'recursive', min_tokens: 60 }, /min_tokens requires chunk.strategy: paragraph/],
+    [{ strategy: 'sentence' }, /strategy must be recursive or paragraph/],
+  ])('rejects the chunk block %j', (chunk, message) => {
+    expect(() => parseChunk(chunk)).toThrow(message);
+  });
+
+  it.each([null, 'paragraph', []])('says that the chunk block %j is not a mapping', (chunk) => {
+    expect(() => parseChunk(chunk as never)).toThrow(/expected object/);
+  });
+
+  it.each([{ kind: 'document' }, { format: 'document' }])(
+    'reports the chunk error itself when a resource file with %j is loaded',
+    (documentKey) => {
+      const dir = mkdtempSync(path.join(tmpdir(), 'document-resource-'));
+      const file = path.join(dir, 'docs.yml');
+      const write = (chunk: Record<string, unknown>): void =>
+        writeFileSync(
+          file,
+          JSON.stringify({
+            ...baseDocumentResource,
+            integration: 'files',
+            source: { path: 'pdfs/**/*', ...documentKey, chunk },
+          })
+        );
+      try {
+        write({ strategy: 'paragraph', overlap_tokens: 120 });
+        expect(() => loadResourceSpecWithWarnings(file)).toThrow(
+          /source\.chunk\.overlap_tokens: chunk\.overlap_tokens must be 0 when chunk\.strategy is paragraph/
+        );
+        write({ min_tokens: 5 });
+        expect(() => loadResourceSpecWithWarnings(file)).toThrow(
+          /source\.chunk\.min_tokens: chunk\.min_tokens requires chunk\.strategy: paragraph/
+        );
+        write({ strategy: 'paragraph' });
+        expect(loadResourceSpecWithWarnings(file).spec).toMatchObject({
+          source: { kind: 'document', chunk: { strategy: 'paragraph', overlap_tokens: 0 } },
+        });
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }
+  );
 
   it('rejects path traversal in document source', () => {
     expect(() =>

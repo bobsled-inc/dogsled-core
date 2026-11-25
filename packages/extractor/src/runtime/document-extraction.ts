@@ -97,11 +97,20 @@ function getDocumentState(
 
 function chunkOptionsFromResource(source: DocumentFileSourceConfig): ChunkOptions {
   const cfg = source.chunk;
-  return {
-    maxTokens: cfg?.max_tokens ?? DEFAULT_CHUNK_OPTS.maxTokens,
-    overlapTokens: cfg?.overlap_tokens ?? DEFAULT_CHUNK_OPTS.overlapTokens,
-    tokenizer: cfg?.tokenizer ?? DEFAULT_CHUNK_OPTS.tokenizer,
-  };
+  const maxTokens = cfg?.max_tokens ?? DEFAULT_CHUNK_OPTS.maxTokens;
+  const tokenizer = cfg?.tokenizer ?? DEFAULT_CHUNK_OPTS.tokenizer;
+  if (cfg?.strategy === 'paragraph') {
+    const overlapTokens = cfg.overlap_tokens ?? 0;
+    return {
+      strategy: 'paragraph',
+      maxTokens,
+      overlapTokens,
+      minTokens: cfg.min_tokens,
+      tokenizer,
+    };
+  }
+  const overlapTokens = cfg?.overlap_tokens ?? DEFAULT_CHUNK_OPTS.overlapTokens;
+  return { maxTokens, overlapTokens, tokenizer };
 }
 
 const DOCUMENTS_OUTPUT: FileResourceSpec['output'] = {

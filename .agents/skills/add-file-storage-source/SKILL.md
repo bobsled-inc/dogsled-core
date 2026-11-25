@@ -1,6 +1,6 @@
 ---
 name: add-file-storage-source
-description: Onboard documents (PDF, DOCX, PPTX, HTML, Markdown, text, email) from an Amazon S3 or Google Cloud Storage bucket — author a file-storage integration (source_type s3|gcs, bucket + auth) plus a document resource that parses, token-chunks, and optionally embeds each file. Use when the user wants to ingest files/documents from cloud object storage rather than from an API.
+description: Onboard documents (PDF, DOCX, PPTX, HTML, Markdown, text, email) from an Amazon S3 or Google Cloud Storage bucket — author a file-storage integration (source_type s3|gcs, bucket + auth) plus a document resource that parses and token-chunks each file, and an optional pipeline that embeds the chunks. Use when the user wants to ingest files/documents from cloud object storage rather than from an API.
 exposed: true
 triggers:
   - ingest documents from s3
@@ -24,7 +24,7 @@ warehouse — optionally embedding each chunk for semantic search.
 
 A file-storage source is two YAML files: an **integration** (which bucket and
 how to authenticate) and a **document resource** (which keys to read and how to
-parse / chunk / embed). Secrets are **always** env-var indirection
+parse and chunk them). A pipeline can embed the chunks. Secrets are **always** env-var indirection
 through `*_env` fields. Declare each referenced name in `auth_env_vars`.
 
 When to use a different skill:
@@ -119,6 +119,7 @@ source:
     max_file_size_mb: 50
     on_error: record # record a row in __parse_errors instead of failing the run
   chunk:
+    # strategy: paragraph # cut at blank lines; default is recursive
     max_tokens: 800
     overlap_tokens: 120
     tokenizer: cl100k_base
@@ -130,6 +131,19 @@ output:
   document_id:
     type: string
 ```
+
+`chunk.strategy: paragraph` cuts at blank lines and joins short paragraphs up to
+`min_tokens` (default 60), never above `max_tokens`. It takes no overlap, so remove
+`overlap_tokens` from the block above. `min_tokens` is invalid with `recursive`. PDF text
+usually has no blank lines, so `paragraph` cuts it by size.
+
+HTML and HTML email parsing drops plainly hidden content (containers with `hidden` or
+inline `display: none`), including content that a script shows later. A document that links
+a style sheet, or has one that might show hidden content, keeps everything. This is text
+clean-up, not protection against hidden instructions.
+
+Changing `parse`, `chunk` or the pipeline's `embed` block does not touch files an
+incremental resource already read; run once with `--full-refresh`.
 
 ### What you get
 

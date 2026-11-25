@@ -130,8 +130,7 @@ integration's folder or bucket; absolute paths and `..` are rejected.
 ## Parse documents
 
 Set `format: document` to parse documents instead of reading rows. Dogsled extracts
-the text, splits it into overlapping chunks by token count, and records what it
-could not parse.
+the text, splits it into chunks by token count, and records what it could not parse.
 
 Create `data/docs/onboarding.md`:
 
@@ -190,8 +189,9 @@ Document options:
 
 - `parse.formats`: any of `pdf`, `docx`, `pptx`, `html`, `md`, `txt`, `eml` (all by
   default). `parse.max_file_size_mb` defaults to 100 and allows up to 500.
-- `chunk.max_tokens` (default 800), `chunk.overlap_tokens` (default 120) and
-  `chunk.tokenizer` (`cl100k_base`, `o200k_base` or `p50k_base`).
+- `chunk.strategy`: `recursive` (default) or `paragraph`. See [Chunk by paragraph](#chunk-by-paragraph).
+- `chunk.max_tokens` (default 800), `chunk.overlap_tokens` (default 120, or 0 with
+  `paragraph`) and `chunk.tokenizer` (`cl100k_base`, `o200k_base` or `p50k_base`).
 
 To add a vector for each chunk, give the pipeline an `embed` block whose `streams` key is
 the resource's name and whose field is `text`. See
@@ -211,8 +211,54 @@ be downloaded or exceeds `max_file_size_mb`, the file keeps its last good rows a
 failure. A deleted file keeps its rows until a `--full-refresh` run. Table
 destinations apply this; file destinations write each run's rows as new files.
 
+An incremental run skips a file that did not change, even when a `parse` or `chunk`
+setting or the pipeline's `embed` block changed, or a new Dogsled version parses the format
+differently. Run once with `--full-refresh` to parse, chunk and embed every file again.
+
 `__acl` rows now carry `document_id`. ACL rows loaded before this change have none,
 so run one `--full-refresh` after upgrading if you capture permissions.
+
+### Hidden HTML content
+
+The HTML parser, which also reads HTML email bodies, drops the content of plainly hidden
+containers: `article`, `aside`, `div`, `figure`, `footer`, `header`, `main`, `nav`,
+`section` and `span` with the `hidden` attribute (except `hidden="until-found"`) or an inline
+style that sets `display: none` and no other `display`. One example is the hidden container
+around the machine data of an Inline XBRL report. `.xhtml` files are read by HTML rules too.
+
+In every unclear case the text stays. For example, an element keeps its text when its tags
+are not balanced, or when it holds a table, a form control, a comment or a script. So does
+one with an inline style that uses quotes, brackets or escapes. If dropping would leave no
+text besides the title, nothing is dropped. Nothing is dropped either when a style sheet might
+show the content again: when the document links a style sheet, or has a `<style>` that
+mentions `display` or `hidden`, sets `all`, imports another sheet, or uses a backslash, `&`
+or `<`.
+
+Text that a script shows later is dropped, and there is no setting to keep it. This is text
+clean-up, not protection against hidden instructions: text hidden in other ways still reaches
+the chunks.
+
+### Chunk by paragraph
+
+`strategy: recursive` fills each chunk up to `max_tokens` and repeats `overlap_tokens` from
+the previous chunk. `strategy: paragraph` makes smaller chunks that follow the document's
+own paragraphs:
+
+```yaml
+chunk: { strategy: paragraph, min_tokens: 60, max_tokens: 800 }
+```
+
+- Text is cut at blank lines. A paragraph shorter than `min_tokens` (default 60, or
+  `max_tokens` when that is smaller) is joined with the ones after it until the chunk
+  reaches `min_tokens`, but never above `max_tokens`. Joined paragraphs keep the blank lines
+  between them.
+- A paragraph above `max_tokens` is cut the way `recursive` cuts it. Only a single character
+  that takes more tokens than `max_tokens` makes a longer chunk. PDF text usually has no blank
+  lines, so `paragraph` cuts it by size.
+- A short last paragraph joins the chunk before it when both fit in `max_tokens`.
+- Chunks do not overlap: `overlap_tokens` must be 0 or left out.
+
+`min_tokens` is only valid with `paragraph`.
 
 ## Copy files as they are
 

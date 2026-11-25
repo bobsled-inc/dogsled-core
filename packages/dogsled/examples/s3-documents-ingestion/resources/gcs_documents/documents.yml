@@ -13,6 +13,7 @@ source:
     max_file_size_mb: 50
     on_error: record
   chunk:
+    # strategy: paragraph # cut at blank lines; remove overlap_tokens to use it
     max_tokens: 800
     overlap_tokens: 120
     tokenizer: cl100k_base
