@@ -3,6 +3,7 @@
  * it has read its last file, so a bookmark saved then can pass files that never arrive.
  */
 
+import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import { lstatSync, realpathSync, type Stats } from 'node:fs';
 import * as os from 'node:os';
@@ -82,9 +83,10 @@ export class StagedStateStore implements StateStore {
     const streams = Object.fromEntries(
       Object.entries(state.streams).filter(([key, bookmark]) => this.loaded.get(key) !== bookmark)
     );
-    const tmpPath = `${this.file}.${process.pid}.tmp`;
+    const tmpPath = `${this.file}.${randomUUID()}.tmp`;
     await fs.writeFile(tmpPath, JSON.stringify({ streams, version: this.version }), {
       encoding: 'utf8',
+      flag: 'wx',
       mode: 0o600,
     });
     await fs.rename(tmpPath, this.file);

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -18,6 +19,10 @@ import { createWarehouseClient, type WarehouseClient } from '../../src/runtime/w
 
 import type { ExtractorState } from '../../src/types/index.js';
 
+vi.mock('node:crypto', async (importOriginal) => {
+  const original = await importOriginal<typeof import('node:crypto')>();
+  return { ...original, randomUUID: vi.fn(original.randomUUID) };
+});
 vi.mock('../../src/runtime/warehouse-client.js', () => ({ createWarehouseClient: vi.fn() }));
 
 function warehouseClient(): WarehouseClient {
@@ -71,6 +76,36 @@ describe('staged state with a directory backend', () => {
     expect((await backend.load()).streams).toEqual({
       'files/docs': bookmark(['a.md', 'b.md']),
       'files/notes': bookmark(['n.md']),
+    });
+  });
+
+  describe('while it is written', () => {
+    const UUID = '00000000-0000-4000-8000-000000000000';
+    const target = (): string => path.join(root, 'target');
+
+    /** Save over a link at the name that a temp file would have. */
+    async function saveOverLink(name: string): Promise<void> {
+      fs.writeFileSync(target(), 'untouched');
+      fs.symlinkSync(target(), name);
+      const backend = new FileStateStore(path.join(root, 'state'));
+      const staged = new StagedStateStore(backend, { streams: {} }, stagedPath);
+      await staged.save({ streams: { 'files/docs': bookmark(['a.md']) } });
+    }
+
+    it('uses a name that is not known before', async () => {
+      await saveOverLink(`${stagedPath}.${process.pid}.tmp`);
+      expect(fs.readFileSync(target(), 'utf8')).toBe('untouched');
+      expect(fs.readFileSync(stagedPath, 'utf8')).toContain('a.md');
+      expect(fs.readdirSync(root).filter((name) => name.endsWith('.tmp'))).toEqual([
+        `staged.json.${process.pid}.tmp`,
+      ]);
+    });
+
+    it('never writes through a file that is there', async () => {
+      vi.mocked(randomUUID).mockReturnValueOnce(UUID);
+      await expect(saveOverLink(`${stagedPath}.${UUID}.tmp`)).rejects.toThrow(/EEXIST/);
+      expect(fs.readFileSync(target(), 'utf8')).toBe('untouched');
+      expect(fs.existsSync(stagedPath)).toBe(false);
     });
   });
 
