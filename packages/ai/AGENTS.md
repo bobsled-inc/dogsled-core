@@ -1,6 +1,6 @@
 # @bobsled-inc/ai — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
 Dogsled's shared AI substrate. Keep this package small and provider-neutral.
 
@@ -17,8 +17,9 @@ their consuming packages.
 
 ## Invariants
 
-- Public functions return discriminated unions or async iterables of union items.
-- `embedMany()` reports per-input provider failures instead of failing the whole batch.
+- Generation and embedding functions return discriminated unions or async iterables of union
+  items.
+- `embedMany()` reports provider failures per input; a failed call fails only its own chunk.
 - `generateStructured()` returns `schema_violation` and available raw text when output
   validation fails.
 - Provider switches must be exhaustive; use `assertExhaustive()`.

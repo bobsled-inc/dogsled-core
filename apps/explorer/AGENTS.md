@@ -1,17 +1,17 @@
 # @bobsled-inc/explorer — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
 Local-first Next.js app for configuring, teaching, and demoing Dogsled. It is not a
 hosted production control plane.
 
 ## Boundaries
 
-- Use wrappers in `src/lib/integrations.ts` and `src/lib/models.ts`; they clear
-  package YAML caches after server-side reads.
+- Use wrappers in `src/lib/integrations.ts` and `src/lib/models.ts`; package YAML
+  caches stay warm until the server restarts.
 - Spawn Dogsled only through `src/lib/dogsled-cli.ts` and preserve its command allowlist.
-- Keep durable curriculum content under `src/lib/learn-curriculum.ts`; journeys are
-  short product tours.
+- Keep durable curriculum content in `src/lib/learn-modules.ts` and its
+  `learn-module-*.ts` parts; journeys are short product tours.
 - Do not import the Dogsled CLI runtime into Next.js pages.
 - Keep Next.js `bundler` module resolution and the local ESLint import-extension
   exception; workspace packages themselves remain NodeNext.
