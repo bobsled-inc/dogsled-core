@@ -143,6 +143,10 @@ appends rows from files can load some of them twice. A token of an HTTPS state b
 stay valid until then. With several destinations, an incremental document resource keeps no
 such record, so each run reads and embeds every file.
 
+Versions before this one saved the record when extraction ended, so after a failure the next run
+skipped those files and their rows were lost without a message. Runs without an embed stage, from
+API and warehouse sources, or with several destinations save their state as before.
+
 ## Vector length
 
 The vector column has the length in `dimension`. Without one, Dogsled knows the length of
