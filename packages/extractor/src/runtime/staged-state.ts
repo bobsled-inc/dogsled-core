@@ -3,13 +3,13 @@
  * it has read its last file, so a bookmark saved then can pass files that never arrive.
  */
 
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import { lstatSync, realpathSync, type Stats } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { CommandError } from '@bobsled-inc/protocol';
+import { CommandError, isObject } from '@bobsled-inc/protocol';
 import { z } from 'zod';
 
 import { ExtractorStateSchema } from '../schemas/state.js';
@@ -27,8 +27,8 @@ const StagedStateSchema = z
   .object({
     /** The streams this run changed, complete. */
     streams: ExtractorStateSchema.shape.streams,
-    /** The backend's version of the state that the run started from. */
-    version: z.string().optional(),
+    /** Digests of the streams that the run loaded, from a backend with versions. */
+    loaded: z.record(z.string(), z.string()).optional(),
   })
   .strict();
 
@@ -63,7 +63,7 @@ function isInside(folder: string, root: string): boolean {
 /** Keeps what a run that loaded `state` from `backend` saves in `file`, for `commitStagedState`. */
 export class StagedStateStore implements StateStore {
   private readonly loaded: ReadonlyMap<string, unknown>;
-  private readonly version: string | undefined;
+  private readonly digests: Record<string, string> | undefined;
 
   constructor(
     private readonly backend: VersionedStateStore,
@@ -71,7 +71,11 @@ export class StagedStateStore implements StateStore {
     private readonly file: string
   ) {
     this.loaded = new Map(Object.entries(state.streams));
-    this.version = backend.version;
+    if (backend.version !== undefined) {
+      this.digests = Object.fromEntries(
+        [...this.loaded].map(([stream, value]) => [stream, digest(value)])
+      );
+    }
   }
 
   load(): Promise<ExtractorState> {
@@ -84,7 +88,7 @@ export class StagedStateStore implements StateStore {
       Object.entries(state.streams).filter(([key, bookmark]) => this.loaded.get(key) !== bookmark)
     );
     const tmpPath = `${this.file}.${randomUUID()}.tmp`;
-    await fs.writeFile(tmpPath, JSON.stringify({ streams, version: this.version }), {
+    await fs.writeFile(tmpPath, JSON.stringify({ streams, loaded: this.digests }), {
       encoding: 'utf8',
       flag: 'wx',
       mode: 0o600,
@@ -108,17 +112,35 @@ export function openStagedState(
 
 /**
  * Save staged state through the backend. Streams that another run saved in the meantime stay.
- * A backend with versions refuses when its state is not the one the run started from.
+ * A backend with versions refuses when one of this run's own streams changed in the meantime.
  */
-export async function commitStagedState(backend: VersionedStateStore, file: string): Promise<void> {
-  const staged = await readStagedState(file);
+export async function commitStagedState(backend: StateStore, file: string): Promise<void> {
+  const { streams, loaded } = await readStagedState(file);
   const state = await backend.load();
-  if (staged.version !== undefined && backend.version !== staged.version) {
+  const taken =
+    loaded &&
+    Object.keys(streams).find((stream) => {
+      const current = state.streams[stream];
+      return (current && digest(current)) !== loaded[stream];
+    });
+  if (taken !== undefined) {
     throw new ExtractorTransientError(
-      'The saved state changed while this run was embedding and loading, so its new state was not saved.'
+      `The saved state of "${taken}" changed while this run was embedding and loading, so its ` +
+        'new state was not saved.'
     );
   }
-  await backend.save({ streams: { ...state.streams, ...staged.streams } });
+  // The backend saves over the state it just loaded, or refuses.
+  await backend.save({ streams: { ...state.streams, ...streams } });
+}
+
+/** A backend may write the keys of a bookmark in another order. */
+function digest(bookmark: unknown): string {
+  const ordered = JSON.stringify(bookmark, (_key, value: unknown) =>
+    isObject(value)
+      ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => (a < b ? -1 : 1)))
+      : value
+  );
+  return createHash('sha256').update(ordered).digest('hex');
 }
 
 async function readStagedState(file: string): Promise<z.infer<typeof StagedStateSchema>> {

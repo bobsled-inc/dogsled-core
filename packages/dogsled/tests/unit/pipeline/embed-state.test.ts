@@ -487,19 +487,35 @@ describe('the state of documents that a run embeds', () => {
       expect(filesOf(service.state)).toEqual(ALL_FILES);
     }, 240_000);
 
-    it('is refused when another run changed the state, and the run fails', async () => {
-      const root = makeProject();
-      const { result, children, extracted } = start(root, { env: backend() });
+    const OTHER = { last_run_at: '2026-01-01T00:00:00.000Z', record_count: 1 };
+
+    it('is merged when another run saved another stream', async () => {
+      const { result, extracted } = start(makeProject(), { env: backend() });
       beforeAnswer = async () => {
         await extracted;
+        service.state = { streams: { 'api/notes': OTHER } };
+        service.revision = 7;
+      };
+      expect((await result).status).toBe('success');
+      expect(service.puts).toEqual(['"v7"']);
+      expect(filesOf(service.state)).toEqual(ALL_FILES);
+      expect(service.state.streams['api/notes']).toEqual(OTHER);
+    }, 120_000);
+
+    it('is refused when another run saved the same stream, and the run fails', async () => {
+      const saved = { streams: { 'files/docs': OTHER } };
+      const { result, children, extracted } = start(makeProject(), { env: backend() });
+      beforeAnswer = async () => {
+        await extracted;
+        service.state = saved;
         service.revision = 7;
       };
       expect((await result).status).toBe('failure');
       expect(stages(children)).toEqual(['extract', 'embed', 'load', 'commit-state']);
-      expect(service.state).toEqual(EMPTY);
+      expect(service.state).toEqual(saved);
       expect(service.puts).toEqual([]);
       const logs = vi.mocked(process.stderr.write).mock.calls.map(([chunk]) => String(chunk));
-      expect(logs.join('')).toContain('The saved state changed while this run was embedding');
+      expect(logs.join('')).toContain('saved state of \\"files/docs\\" changed while this run');
       expect(logs.join('')).not.toContain('synthetic-state-token');
     }, 120_000);
   });

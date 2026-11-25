@@ -109,6 +109,21 @@ describe('staged state with a directory backend', () => {
     });
   });
 
+  it('is saved over what another run of the same stream saved, as before', async () => {
+    const backend = new FileStateStore(path.join(root, 'state'));
+    await backend.save({ streams: { 'files/docs': bookmark([]) } });
+    const state = await backend.load();
+    const staged = new StagedStateStore(backend, state, stagedPath);
+    state.streams['files/docs'] = bookmark(['a.md']);
+    await staged.save(state);
+    expect(JSON.parse(fs.readFileSync(stagedPath, 'utf8'))).toEqual({
+      streams: { 'files/docs': bookmark(['a.md']) },
+    });
+    await backend.save({ streams: { 'files/docs': bookmark(['b.md']) } });
+    await commitStagedState(backend, stagedPath);
+    expect((await backend.load()).streams).toEqual({ 'files/docs': bookmark(['a.md']) });
+  });
+
   it('keeps what another run saved in the meantime', async () => {
     const backend = new FileStateStore(path.join(root, 'state'));
     await backend.save({ streams: { 'files/docs': bookmark([]), 'files/old': bookmark([]) } });
@@ -218,14 +233,57 @@ describe('staged state with an HTTP backend', () => {
     ]);
   });
 
-  it('is refused when another run changed the state after this one loaded it', async () => {
-    const state = service({ streams: {} });
+  it.each([
+    ['another stream was saved', { 'files/other': bookmark(['o.csv']) }],
+    ['a stream of this run was saved as it was, in another order', {}],
+  ])('is merged into the state that is there when %s', async (_label, others) => {
+    const before = bookmark(['a.md', 'b.md']);
+    const state = service({ streams: { 'files/docs': before } });
+    const store = state.store();
+    const loaded = await store.load();
+    const staged = new StagedStateStore(store, loaded, stagedPath);
+    loaded.streams['files/docs'] = bookmark(['a.md', 'b.md', 'c.md']);
+    await staged.save(loaded);
+
+    const reversed = JSON.parse(
+      JSON.stringify(before, Object.keys({ ...before, ...before.files, etag: '' }).reverse())
+    ) as typeof before;
+    expect(Object.keys(reversed)[0]).not.toBe(Object.keys(before)[0]);
+    expect(reversed).toEqual(before);
+    state.change({ streams: { ...others, 'files/docs': reversed } });
+    await commitStagedState(state.store(), stagedPath);
+    expect(state.puts).toEqual([
+      {
+        ifMatch: '"v2"',
+        body: { streams: { ...others, 'files/docs': bookmark(['a.md', 'b.md', 'c.md']) } },
+      },
+    ]);
+  });
+
+  it.each([
+    ['changed', { 'files/docs': bookmark([]) }, { 'files/docs': bookmark(['b.md']) }],
+    ['created', {}, { 'files/docs': bookmark(['b.md']) }],
+    ['removed', { 'files/docs': bookmark([]) }, {}],
+  ])('is refused when another run %s a stream of this run', async (_label, before, after) => {
+    const state = service({ streams: before });
     await stage(state);
-    state.change({ streams: { 'files/docs': bookmark(['b.md']) } });
+    state.change({ streams: { ...after, 'files/other': bookmark(['o.csv']) } });
     await expect(commitStagedState(state.store(), stagedPath)).rejects.toThrow(
-      /saved state changed while this run was embedding and loading/
+      /^The saved state of "files\/docs" changed while this run was embedding and loading/
     );
     expect(state.puts).toEqual([]);
+  });
+
+  it('is compared with what was loaded, also when a bookmark is changed in place', async () => {
+    const state = service({ streams: { 'files/docs': bookmark([]) } });
+    const store = state.store();
+    const loaded = await store.load();
+    const staged = new StagedStateStore(store, loaded, stagedPath);
+    loaded.streams['files/docs']!.record_count = 7;
+    loaded.streams['files/docs'] = bookmark(['a.md']);
+    await staged.save(loaded);
+    await commitStagedState(state.store(), stagedPath);
+    expect(state.puts).toHaveLength(1);
   });
 
   it('is refused by the service when the state changes during the commit', async () => {
