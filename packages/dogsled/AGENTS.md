@@ -95,6 +95,9 @@ Always use `process.exitCode = N; return;` — never `process.exit()`.
 - Smoke tests can set `DOGSLED_EMBED_STUB=1` to avoid live OpenAI calls while preserving vector dimensions
 - An authored `embed.streams` key is a Resource name. `src/runner/config/embed-streams.ts` is the one
   place that turns a document Resource into its chunk stream, for validation and for every run
+- With an embed stage and one destination, the extractor keeps a file source's state in the run's
+  private embed folder, and `commitStagedState()` saves it after every stage exited 0. Do not return
+  success from `runSingleDestPipeline()` around it
 - Of a pipeline's children, only the embed child of a `provider: host` run gets
   `DOGSLED_HOST_EMBEDDING_URL` and `DOGSLED_HOST_EMBEDDING_TOKEN`. `getRuntimeEnv()` drops them for
   every other child and for placeholder resolution; keep new pipeline spawns on it. Code that

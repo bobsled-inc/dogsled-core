@@ -136,6 +136,12 @@ loaded as they are.
 `dogsled embed run` and `--embed-config-json` do not read project files, so their keys are
 exact stream names: `handbook__chunks`.
 
+With one destination, a pipeline that embeds saves which files it has read only after
+embedding and loading have succeeded. When either fails, or the run is cancelled, the next run
+reads and embeds the same files again. The rows of a document are replaced; a resource that
+appends rows from files can load some of them twice. With several destinations, an incremental
+document resource keeps no such record, so each run reads and embeds every file.
+
 ## Vector length
 
 The vector column has the length in `dimension`. Without one, Dogsled knows the length of

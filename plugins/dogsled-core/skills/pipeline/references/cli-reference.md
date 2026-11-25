@@ -71,6 +71,8 @@ Single-destination pipeline spawns two child processes:
 
 Extractor stdout is piped directly to loader stdin. Both stderr streams write structured JSON logs.
 
+With an embed stage, `dogsled embed run` sits between the two. The state of a file source is then saved only after all three succeed.
+
 Multi-destination fan-out works differently:
 
 1. Extractor stdout is captured to a temp JSONL file.

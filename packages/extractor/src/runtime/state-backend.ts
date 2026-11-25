@@ -60,6 +60,11 @@ export class HttpStateStore implements StateStore {
     this.timeoutMs = opts.timeoutMs ?? 30_000;
   }
 
+  /** The ETag of the state last loaded or saved. */
+  get version(): string | undefined {
+    return this.lastEtag;
+  }
+
   async load(): Promise<ExtractorState> {
     let response: Response;
     try {

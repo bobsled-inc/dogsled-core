@@ -60,6 +60,7 @@ Condensed steps:
 - **Env var indirection**: Secrets never in YAML. Auth fields use `${{ env.VAR }}` references resolved at call time
 - **Async generators**: Pagination strategies yield pages one at a time for bounded memory
 - **Atomic state writes**: `state.ts` uses write-tmp-then-rename for crash safety
+- **Staged state**: `--staged-state` (a pipeline's own option) keeps what a run saves in a private file until `commit-state` saves it through the backend. File sources only: a CDC slot moves with the saved state
 - **Message protocol**: stdout = data (such as SCHEMA/RECORD/STATE), stderr = control (such as LOG/METRIC). Version field `_v: 1` on every message
 - **Load strategy resolution**: `emitSchema()` derives `load_strategy` via cascade: YAML override > fullRefresh flag > file `incremental_append` (append) > incremental+PKs inference > full_refresh. `resolveLoadStrategy()` helper in `schema-message.ts`
 - **Copy Resources**: `source.kind: copy` runs `runtime/file-copy-extractor.ts`, which sends one FILE message per file and saves state only after the loader has deleted every temp file. It needs a loader on a pipe, so it refuses `--no-state-write` and output to a file or terminal. Behaviour and limits are in `docs/guides/extract-from-files.md`

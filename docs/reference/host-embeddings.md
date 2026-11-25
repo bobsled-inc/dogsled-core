@@ -150,6 +150,9 @@ seconds, up to 30 seconds. When one request fails, the others are cancelled. The
 fallback to another provider, and no price list: `cost_budget_usd` and
 `platform.budget` do not apply.
 
+A failed run does not save which files it read, so the next run
+[embeds them again](../guides/embeddings-and-ai.md#embed-in-a-project-pipeline).
+
 ## Text
 
 Each text is cut to `limits.maxInputCharacters` without splitting a surrogate pair. That is

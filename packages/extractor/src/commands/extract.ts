@@ -13,9 +13,11 @@ import { runExtractIntentPlan } from './extract-plan.js';
 import { ControlLogger } from '../runtime/control.js';
 import { Emitter } from '../runtime/emitter.js';
 import { billablePlanUsage, isBillableResource } from '../runtime/extract-intents.js';
+import { isFileStorageSource } from '../runtime/file-storage-extractor.js';
 import { hasExplicitForEachInputs, normalizeForEachConfig } from '../runtime/for-each.js';
 import { orderResourcesForExtraction } from '../runtime/resource-order.js';
 import { resolveStateStore } from '../runtime/state-backend.js';
+import { resolveStagedStatePath, StagedStateStore } from '../runtime/staged-state.js';
 import type { StateStore } from '../runtime/state.js';
 import { isSnowflakeWarehouseSource, isWarehouseResource } from '../runtime/warehouse-extractor.js';
 import { ResourceCircuitBreaker } from '../runtime/errors.js';
@@ -145,6 +147,7 @@ export function registerExtractCommand(program: Command): void {
       '--state-auth-env <var>',
       'Name of env var holding the Bearer token for the HTTP state backend.'
     )
+    .addOption(new Option('--staged-state <path>').hideHelp())
     .option('--warehouse <selector>', 'Pipeline-scoped Snowflake warehouse selector')
     .option('--query-tag <tag>', 'Snowflake query tag for this execution')
     .action(async (resourceNames: string[], rawOpts: ExtractCommandOptions) => {
@@ -165,6 +168,7 @@ export function registerExtractCommand(program: Command): void {
         opts.embedConfigFile
       );
       let stateStore: StateStore;
+      let stagedStore: StateStore | undefined;
       let state: ExtractorState;
       try {
         stateStore = resolveStateStore({
@@ -173,7 +177,12 @@ export function registerExtractCommand(program: Command): void {
           stateAuthEnv: opts.stateAuthEnv,
           projectRoot: ctx.cwd,
         });
-        state = await stateStore.load();
+        if (opts.stagedState !== undefined) {
+          if (!opts.integration) throw new CommandError('--staged-state needs --integration.', 2);
+          const stagedPath = resolveStagedStatePath(ctx.cwd, opts.stagedState);
+          stagedStore = new StagedStateStore(stateStore, stagedPath);
+        }
+        state = await (stagedStore ?? stateStore).load();
       } catch (err) {
         // State-backend construction or first-load failure — close the logger before bubbling.
         await logger.close();
@@ -488,7 +497,9 @@ export function registerExtractCommand(program: Command): void {
                 emitter,
                 logger,
                 state,
-                stateStore,
+                // Other sources keep their own order: a CDC slot moves with the saved state.
+                stateStore:
+                  stagedStore && isFileStorageSource(integration) ? stagedStore : stateStore,
                 batchDir: path.join(ctx.cwd, ctx.config.batch_dir),
                 cliInputs,
                 resourceInputsMap,

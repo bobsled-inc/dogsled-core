@@ -238,7 +238,8 @@ describe('a document Resource embedded by a host-supplied model', () => {
     expect(embed.stderr).toContain('"embedding_inputs_rejected":1');
 
     // Only the embedder had the endpoint and token, and nothing repeated the token.
-    expect(first.children).toHaveLength(3);
+    expect(first.children).toHaveLength(4);
+    expect(first.children[3]!.args).toContain('commit-state');
     for (const child of first.children) {
       const hasToken = child === embed;
       expect(child.env[HOST_EMBEDDING_URL_ENV]).toBe(hasToken ? hostUrl : undefined);

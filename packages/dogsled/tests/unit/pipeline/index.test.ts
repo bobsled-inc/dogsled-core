@@ -236,6 +236,32 @@ describe('runProjectPipeline', () => {
     }
   );
 
+  it('keeps state back only with an embed stage and one destination', () => {
+    const embed = { configPath: '/tmp/example/embed-config.json', tmpDir: '/tmp/example' };
+    const args = (embedStage: typeof embed | undefined, manyDestinations: boolean) =>
+      buildPipelineExtractArgs(
+        ['items'],
+        { integration: 'custom' },
+        embedStage,
+        manyDestinations,
+        {}
+      );
+
+    expect(args(embed, false)).toEqual(
+      expect.arrayContaining([
+        '--advance-state',
+        '--staged-state',
+        '/tmp/example/extractor-state.json',
+      ])
+    );
+    expect(args(undefined, false)).toContain('--advance-state');
+    expect(args(undefined, false)).not.toContain('--staged-state');
+    for (const embedStage of [embed, undefined]) {
+      expect(args(embedStage, true)).toContain('--no-state-write');
+      expect(args(embedStage, true)).not.toContain('--staged-state');
+    }
+  });
+
   it('serializes deterministic per-resource input matrices for the extractor', () => {
     const args = buildPipelineExtractArgs(
       ['historical_outrights'],
