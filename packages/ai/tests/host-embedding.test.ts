@@ -261,6 +261,67 @@ describe('embed', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
+  describe('request size', () => {
+    const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
+    const LARGEST_TEXT = 200_000;
+
+    /** How many of `texts` each request had, and how large it was. */
+    async function requestsFor(texts: string[], maxInputs = 100) {
+      const limits = { maxInputs, maxInputCharacters: LARGEST_TEXT };
+      const host = fakeHost((request) => Response.json(answer(request, { limits })));
+      const connection = await connect(host.fetch);
+      const result = await connection.embed(texts);
+      const requests = host.requests.slice(1);
+      expect(requests.flatMap(({ body }) => body.inputs.map(({ text }) => text))).toEqual(texts);
+      expect(result.vectors).toEqual(texts.map((text) => [text.length, 1]));
+      expect(result.requests).toBe(requests.length);
+      for (const { body } of requests) {
+        expect(body.inputs.map(({ id }) => id)).toEqual(body.inputs.map((_, id) => String(id)));
+      }
+      return requests.map(({ init, body }) => ({
+        inputs: body.inputs.length,
+        bytes: Buffer.byteLength(String(init.body)),
+      }));
+    }
+
+    it.each([
+      ['one byte', 'a', 20, [20]],
+      ['one byte, over the cap', 'a', 45, [20, 20, 5]],
+      ['three bytes', '犬', 15, [6, 6, 3]],
+      ['an escape of six bytes', '\u0001', 7, [3, 3, 1]],
+      ['half a surrogate pair, an escape of six bytes', '\ud83d', 4, [3, 1]],
+    ])('stays at 4 MiB for the largest texts of %s', async (_label, unit, count, expected) => {
+      const requests = await requestsFor(
+        Array.from({ length: count }, () => unit.repeat(LARGEST_TEXT))
+      );
+      expect(requests.map(({ inputs }) => inputs)).toEqual(expected);
+      for (const { bytes } of requests) expect(bytes).toBeLessThanOrEqual(MAX_REQUEST_BYTES);
+    });
+
+    it('splits only where the next text does not fit', async () => {
+      const overhead = Buffer.byteLength(
+        JSON.stringify({
+          inputs: ['0', '1'].map((id) => ({ id, text: '' })),
+          purpose: 'document',
+        })
+      );
+      const half = 'a'.repeat(MAX_REQUEST_BYTES / 2);
+      const rest = (spare: number): string => half.slice(overhead + spare);
+      expect(await requestsFor([half, rest(1)], 2)).toEqual([
+        { inputs: 2, bytes: MAX_REQUEST_BYTES - 1 },
+      ]);
+      expect(await requestsFor([half, rest(-1)], 2)).toMatchObject([{ inputs: 1 }, { inputs: 1 }]);
+    });
+
+    it('keeps maxInputs for small texts', async () => {
+      const requests = await requestsFor(
+        Array.from({ length: 7 }, () => 'a'),
+        3
+      );
+      expect(requests.map(({ inputs }) => inputs)).toEqual([3, 3, 1]);
+    });
+  });
+
   it('cancels the other requests when one fails, and sends no more', async () => {
     const unhandled = vi.fn();
     process.on('unhandledRejection', unhandled);

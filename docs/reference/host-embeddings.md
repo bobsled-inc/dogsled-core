@@ -79,7 +79,8 @@ Treat `id` as opaque and return it unchanged. Ignore keys you do not know.
 
 The first request has `"inputs": []`. Dogsled sends it before any text and before it writes
 a table's schema, to learn the model and the limits. Later requests hold at most
-`limits.maxInputs` inputs, and at most four requests run at once.
+`limits.maxInputs` inputs, and fewer where a body would pass 4 MiB of UTF-8. At most four
+requests run at once.
 
 ## Responses
 

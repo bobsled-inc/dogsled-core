@@ -23,6 +23,8 @@ const ATTEMPT_TIMEOUT_MS = 60_000;
 const BASE_BACKOFF_MS = 500;
 const MAX_BACKOFF_MS = 8_000;
 const MAX_RETRY_AFTER_MS = 30_000;
+/** One text always fits: it has up to 200,000 characters, of up to 6 bytes each in JSON. */
+const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
 /** The first response holds no vectors. */
 const MAX_DESCRIPTION_BYTES = 64 * 1024;
@@ -86,10 +88,7 @@ export async function connectHostEmbedding(
     limits,
     textsInFlight: MAX_REQUESTS_IN_FLIGHT * limits.maxInputs,
     async embed(texts) {
-      const batches: string[][] = [];
-      for (let index = 0; index < texts.length; index += limits.maxInputs) {
-        batches.push(texts.slice(index, index + limits.maxInputs));
-      }
+      const batches = splitIntoBatches(texts, limits.maxInputs);
       const responses = await sendBatches(batches, async (batch, signal) => {
         const response = await send(batch, signal);
         assertSameModel(response.model, model);
@@ -98,6 +97,36 @@ export async function connectHostEmbedding(
       return collectResults(batches, responses);
     },
   };
+}
+
+function requestInput(text: string, id: number): { id: string; text: string } {
+  return { id: String(id), text };
+}
+
+function requestBody(texts: readonly string[]): string {
+  return JSON.stringify({ inputs: texts.map(requestInput), purpose: 'document' });
+}
+
+/** Batches of up to `maxInputs` texts whose request bodies are up to `MAX_REQUEST_BYTES`. */
+function splitIntoBatches(texts: readonly string[], maxInputs: number): string[][] {
+  const batches: string[][] = [];
+  const emptyBytes = Buffer.byteLength(requestBody([]));
+  let batch: string[] = [];
+  let bytes = emptyBytes;
+  for (const text of texts) {
+    // With a comma, and an id that is at least as long as the one it gets.
+    const inputBytes = Buffer.byteLength(JSON.stringify(requestInput(text, maxInputs))) + 1;
+    const isFull = batch.length === maxInputs || bytes + inputBytes > MAX_REQUEST_BYTES;
+    if (isFull && batch.length > 0) {
+      batches.push(batch);
+      batch = [];
+      bytes = emptyBytes;
+    }
+    batch.push(text);
+    bytes += inputBytes;
+  }
+  if (batch.length > 0) batches.push(batch);
+  return batches;
 }
 
 function assertSameModel(received: HostEmbeddingModel, expected: HostEmbeddingModel): void {
@@ -236,10 +265,7 @@ function createSender(options: HostEmbeddingOptions): Send {
         Accept: 'application/json',
         'Idempotency-Key': randomUUID(),
       },
-      body: JSON.stringify({
-        inputs: texts.map((text, index) => ({ id: String(index), text })),
-        purpose: 'document',
-      }),
+      body: requestBody(texts),
     };
     for (let attempts = 1; ; attempts += 1) {
       const outcome = await attempt(init, texts.length, signal);
