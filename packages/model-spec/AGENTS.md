@@ -1,20 +1,20 @@
 # @bobsled-inc/model-spec — Agent Operating Manual
 
-<!-- last-reviewed: 2026-07-28 -->
+<!-- last-reviewed: 2026-11-25 -->
 
 `@bobsled-inc/model-spec` is the standalone Model Spec compiler package. It owns declarative source/model/seed parsing, read-only model profiling, DAG resolution, dialect-aware SQL generation, and the shared CLI helpers used by the dedicated Entity Graph package.
 
-Entity Graph no longer lives in this package. Use `dogsled entity-graph` for the CLI surface from `packages/entity-graph/`. If you need entity-resolution, review, survivorship, truthset, or agent-task code, start in `packages/entity-graph/`.
+The Entity Graph CLI and compiler no longer live in this package. Use `dogsled entity-graph` for the CLI surface from `packages/entity-graph/`. If you need entity-resolution, review, survivorship, truthset, or agent-task code, start in `packages/entity-graph/`.
 
 ---
 
 ## Package Boundaries
 
-- The `/ossie`, `/interchange`, and `/ontology` entrypoints serve config-only discovery, validation and conversion. Keep its runtime import graph free of `connections` and database SDKs; the packed-install test checks this boundary with those packages removed.
-- `packages/model-spec/` owns modeling, profiler, and seed functionality only.
+- The `/ossie`, `/interchange`, and `/ontology` entrypoints serve config-only discovery, validation and conversion. Keep its runtime import graph free of `connections` and database SDKs; the packed-install test checks this boundary with `connections` and `@duckdb` removed.
+- `packages/model-spec/` owns modeling, interchange, ontology, profiler, and seed functionality, plus the Entity Graph spec schemas.
 - `packages/entity-graph/` owns the Entity Graph CLI plus identity-resolution-specific compiler code.
 - `packages/model-spec/src/shared.ts` is the only supported shared CLI-helper surface for `@bobsled-inc/entity-graph`.
-- **Dependency allowlist.** `@bobsled-inc/model-spec` may depend on `@bobsled-inc/protocol`, `@bobsled-inc/connections`, and `@bobsled-inc/project-index` and nothing else in the workspace. `connections` owns the integration schemas, secret resolution, and the SQL runner contract (including its cancellation half) — duplicating any of that here is the thing to avoid, not the dependency itself. `project-index` owns project file discovery: every project loader reads its files from the type index, never from a fixed directory.
+- **Dependency allowlist.** `@bobsled-inc/model-spec` may depend on `@bobsled-inc/protocol`, `@bobsled-inc/connections`, and `@bobsled-inc/project-index` and nothing else in the workspace, apart from the `@bobsled-inc/models` dev dependency that `src/commands/models.ts` loads dynamically. `connections` owns the integration schemas, secret resolution, and the SQL runner contract (including its cancellation half) — duplicating any of that here is the thing to avoid, not the dependency itself. `project-index` owns project file discovery: every project loader reads its spec files from the type index, never from a fixed directory.
   Specifically it must stay free of `@bobsled-inc/loader`, `@bobsled-inc/extractor`, `@bobsled-inc/dogsled`, and `@bobsled-inc/entity-graph`: the compiler must not acquire destination, extraction, or orchestration concerns. Cross-warehouse publishing is injected by the host via `RunProjectOptions.crossWarehousePublisher` precisely to keep that boundary.
   (An earlier revision of this file said "free of `@bobsled-inc/*` dependencies" outright. That was never true of the shipped package — `protocol` and `connections` have always been direct dependencies — so the rule is stated accurately here.)
 
@@ -77,13 +77,12 @@ packages/model-spec/
   - config loading
   - structured output helpers
   - generic CLI option/context helpers
-  - `CommandError`
 
-### CLI binaries
+### CLI
 
 - `dogsled model`
 
-These binaries only expose modeling, profiler, and seed commands.
+This command group exposes modeling, profiler, seed, Ossie, and model-bundle commands.
 
 ---
 
@@ -99,7 +98,7 @@ dogsled model validate [model...] [--no-strict]
 dogsled model lineage [model...] [--integration <handle>] [--json] [--yaml] [--column <model.column>]
 dogsled model profile <table> [--integration <handle>] [--json]
 dogsled model profile suggest cleaning <table> [--integration <handle>] [--json]
-dogsled model init <project-name>
+dogsled model init [directory]
 ```
 
 ### Seeds
@@ -121,7 +120,7 @@ For Entity Graph commands, see:
 
 - Prefer extending declarative schemas over adding one-off imperative behavior.
 - Agent loops inherit approved host tools when `execution.tools` is omitted. An explicit list restricts tools; an empty list disables extra tools. Keep `execution.tools` bound to assignment `allowed_tools` and checkpoint identity. Reject unsupported host tools before preparation; executor hosts own per-call authorization and execution.
-- Agentic spend caps (`limits.max_cost_usd`, `limits.tokens`) are checked only before dispatch: at a cap, stop new work, let in-flight attempts finish, accept their answers, and fail with `spend_cap_reached`. Caps stay out of the run identity so a resume can raise them. Per-assignment limits are deprecated and ignored by spend-cap runs. Runs saved without `accounting: spend_cap` must keep the reservation rules on resume, in transitions and in `checkpointIsConsistent`. Keep unlimited checkpoints JSON-safe and preserve unknown usage.
+- Agentic spend caps (`limits.max_cost_usd`, `limits.tokens`) are checked only before dispatch: at a cap, stop new work, let in-flight attempts finish, accept their answers, and fail with `spend_cap_reached`. Resume compares definitions without the caps, so a resume can raise them. Per-assignment limits are deprecated and ignored by spend-cap runs. Runs saved without `accounting: spend_cap` must keep the reservation rules on resume, in transitions and in `checkpointIsConsistent`. Keep unlimited checkpoints JSON-safe and preserve unknown usage.
 - Agentic error messages must be safe to print: put the stable code first, add a `reason` and a `hint` when known, and attach host or storage errors only as `cause`. `formatAgenticError` prints causes that are not Dogsled errors by type, system code and numeric status only.
 - Agentic model and executor contracts use the public `@bobsled-inc/model-spec/agentic` subpath. Keep provider SDKs out of this package and runtime callbacks out of serialized assignment payloads.
 - Executor output tools use `createAgentAssignmentOutputSchema(assignment)` for the complete result envelope. Row count, group key values, evidence sources and prepared retrieval times must survive JSON Schema transport. Keep final `parseAgentAssignmentOutcome` validation for replacement-key membership, multi-row grain uniqueness, total data bounds and attempt identity.
@@ -134,9 +133,9 @@ For Entity Graph commands, see:
 - A run's header lives in the table its hash picks from `dialect.headerTables`, and it stays there. Anything that reads or changes headers goes through the run's `runs` table, or through `agenticHeaderTableNames` when it must reach every run, never through `AGENTIC_RUNS_TABLE`. Add a size at the front of `headerTables` and keep the old ones: a size that leaves the list strands the runs in it. A first header must check the run's table in every other listed set in the same atomic step (`insertIfAbsent`'s `absentFrom`), or two openers can give one run two owners; an engine that cannot do that lists one set.
 - A cursor row at version -1 is waiting for its carried record. Never read its empty record as no progress, and never put a record in a first row: it lands afterwards as a bound update.
 - The Snowflake row dialect adds a first row in one `EXECUTE IMMEDIATE` submission: update the single row of `__dogsled_agentic_guard`, check `SQLROWCOUNT`, then count, then insert. The `UPDATE` is what serializes concurrent scripts, and only the statements after it see what they committed. Values in that script are literals, quoted twice, so keep them small. Read rows changed from the update's result and fail the write when it is missing. Keep each statement under 1 MB including bound values, counting three bytes per UTF-16 unit. Verify with `cloud-row-store.test.ts`; the emulator proves logic, not Snowflake.
-- DuckDB state tables have no keys or indexes: a key makes a file opened per operation grow on every close. A process must never open and close a DuckDB file while another of its instances holds that file, because POSIX then drops the process's file lock. Go through `withDuckDbFile`, use the run's lock file, not DuckDB's lock, as local ownership, and keep a DuckDB `checkpoint_store` off a model's target file, which hosts read outside that guard. Open a state file with `isolated`, and never open a model's target that way: a target's views can legitimately read files.
+- DuckDB state tables have no keys or indexes: a key makes a file opened per operation grow on every close. A process must never open and close a DuckDB file while another of its instances holds that file, because POSIX then drops the process's file lock. Go through `withDuckDbFile` for a file opened per operation, use the run's lock file, not DuckDB's lock, as local ownership, and keep a DuckDB `checkpoint_store` off a model's target file, which hosts read outside that guard. Open a state file with `isolated`, and never open a model's target that way: a target's views can legitimately read files.
 - A store's `limits` say what it holds. The snapshot schema accepts `AGENTIC_MAX_STORE_LIMITS`, the most any store declares, so every store checks its own: `applyAgenticCheckpoint` holds a run to the defaults, the row store passes its dialect's limits to `applyAgenticCheckpointWithin`, the file and warehouse stores check theirs on read and save, and the coordinator passes `agenticCheckpointLimits` to every receipt. Only a row dialect declares more than the defaults, and only after a measurement on that engine: on Snowflake, `agentic-row-limits.bench.test.ts` builds most of a large run in bulk, because driving every assignment there takes hours. Read bounds derive from the store's limits through `agenticStoredBounds`, and every statement of a load that fetches rows is held to what they have left. One assignment stays at `AGENTIC_MAX_ROWS` rows whatever a run holds.
-- Run-loop work per checkpoint must not grow with the run: `checkpoint-growth.bench.test.ts` fails if it does, and `row-store-growth.bench.test.ts` fails if resuming a row-store run, or checkpointing it late, stops being flat up to the row limit. Work that reads the whole run blocks the event loop, so a row session renews its lease before it and between the statements of a long read. `checkpoint-verified.ts` proves `start_attempt` and `finish_attempt` against a verified, deeply frozen snapshot. A proof may only accept; everything else takes the complete check, which decides and reports. A new snapshot rule must reach the proof: put a per-work rule in `checkpoint-work.ts`, and give a rule that reads other work items an index in `VerifiedFacts`. Never let frozen state hold a caller's objects or reach hosts: copy first. A store stays flat by keeping what `applyAgenticCheckpoint` returned and returning it, as the row store does.
+- Run-loop work per checkpoint must not grow with the run: `checkpoint-growth.bench.test.ts` fails if it does, and `row-store-growth.bench.test.ts` fails if, up to the row limit, resuming a row-store run costs more per assignment or checkpointing it late stops being flat. Work that reads the whole run blocks the event loop, so a row session renews its lease before it and between the statements of a long read. `checkpoint-verified.ts` proves `start_attempt` and `finish_attempt` against a verified, deeply frozen snapshot. A proof may only accept; everything else takes the complete check, which decides and reports. A new snapshot rule must reach the proof: put a per-work rule in `checkpoint-work.ts`, and give a rule that reads other work items an index in `VerifiedFacts`. Never let frozen state hold a caller's objects or reach hosts: copy first. A store stays flat by keeping what `applyAgenticCheckpoint` returned and returning it, as the row store does.
 - Explicit failed-assignment retries must be recorded in an execution window before dispatch. Preserve accepted work, attempt history, charges, and limits. Derive assignment progress only from validated checkpoints; observer failures must not cause model calls or change saved state.
 - Incremental agentic inputs reserve a shared model cursor before preparation. Freeze cursor values with the inputs; advance only after confirmed publication. Failed batches retain their run ID reservation for resume. A new start may take over unpublished work only after exclusively acquiring and durably superseding the old checkpoint, then comparing and swapping cursor ownership. Never take over a prepared or confirmed publication; resume it to reconcile its receipt. Never use output row timestamps as progress, and never fall back to local cursors for a supplied checkpoint store.
 - DuckDB agentic publication opens and closes a dedicated runner for each operation under a canonical-file-path guard. Hosts must exclude other independent live DuckDB instances and external writes to managed targets during publication; separate live instances can retain stale catalog views. Keep target revision/fence checks and the receipt in the same target transaction.
@@ -152,7 +151,7 @@ For Entity Graph commands, see:
   - When no signal is supplied, call the runner with its ORIGINAL arity — do not pass a trailing `undefined`. Custom `--runner ./r.js` modules and existing tests observe call shape, and the no-signal path must stay byte-identical.
   - Guard loops with `throwIfCancelled(signal)` before each iteration so nothing new starts after an abort.
   - Re-raise cancellation instead of folding it into a best-effort warning or a `status: 'failed'` result — use `isCancellationError(err)` to tell them apart. A cancelled statement must never advance run state.
-    These are enforced by `tests/unit/compiler/executor-cancellation.test.ts` and `tests/unit/api/run-project-cancellation.test.ts`; extend those when you add a boundary.
+    These are covered by `tests/unit/compiler/executor-cancellation.test.ts` and `tests/unit/api/run-project-cancellation.test.ts`; extend those when you add a boundary.
 - If a change is needed by both `model-spec` and Entity Graph, prefer promoting it into a stable export instead of importing across package source trees.
 - When adding shared helpers for Entity Graph, export them from `src/shared.ts`; do not import `src/commands/common.ts` from another package via relative paths.
 
@@ -169,13 +168,13 @@ For Entity Graph commands, see:
 
 ### Add or adjust seed behavior
 
-1. Update `src/commands/seed.ts` and `src/compiler/seed/*` helpers.
-2. Keep CSV parsing/export deterministic and machine-readable.
+1. Update `src/commands/seed.ts`, `src/api/seed-project.ts` and `src/compiler/seed/*` helpers.
+2. Keep CSV parsing and seed output deterministic and machine-readable.
 3. Add regression coverage in `tests/unit/` and CLI coverage if output changes.
 
 ### Add or adjust profiler behavior
 
-1. Keep warehouse access read-only. `src/profiler/profile.ts` owns `COUNT(*)`, bounded sample SQL, confidence filtering, and target sample orchestration.
+1. Keep warehouse access read-only. `src/profiler/sql.ts` builds the `COUNT(*)` and bounded sample SQL, `src/profiler/profile.ts` runs it and filters by confidence, and `src/commands/profile.ts` samples foreign-key targets.
 2. Keep inference modules pure under `src/profiler/inferences/`; they accept sampled rows and return deterministic confidence/evidence payloads.
 3. Use named contracts from `src/profiler/types.ts` for report, row, FK target, anomaly, and cleaning payloads.
 4. Preserve output discipline: `--json`, CI/non-TTY, and `DOGSLED_OUTPUT_FORMAT=json` must emit machine-readable output and suppress human logs. If the JSON output is an agent-consumable command result or export, add equivalent `--yaml` output too.
@@ -206,10 +205,10 @@ For Entity Graph commands, see:
 - **Profiler agent skill**: `.agents/skills/model-profiler/SKILL.md`
 - **Shared helper surface**: `packages/model-spec/src/shared.ts`
 - **Entity Graph package guide**: `packages/entity-graph/AGENTS.md`
-- **Multi-dialect support**: Every codegen function must produce valid SQL for all 6 canonical dialect families (Snowflake, BigQuery, PostgreSQL, DuckDB, Databricks, MySQL) and compiler targets (`pgvector`, `redshift`)
+- **Multi-dialect support**: Every codegen function must produce valid SQL for, or reject as unsupported, all 7 canonical dialect families (Snowflake, BigQuery, PostgreSQL, DuckDB, Databricks, MySQL, ClickHouse) and compiler targets (`pgvector`, `redshift`)
 - **Quoting**: Always use `quoteIdentifier()` and `quoteLiteral()` from `dialect.ts` — never raw string interpolation
 - **Type safety**: All spec fields validated by Zod schemas before codegen
-- **Output tables**: Fixed schemas — never add columns without updating `output-tables.ts`
-- **Append-only tables**: `__review_decisions`, `__not_match_edges`, `__golden_record`, `__golden_history`, `__survivorship_audit`, `__split_events` use `CREATE TABLE IF NOT EXISTS` — never `CREATE OR REPLACE`
+- **Entity Graph output tables**: Never add declared columns without updating `packages/entity-graph/src/compiler/output-tables/`
+- **Preserved Entity Graph tables**: `__review_decisions`, `__not_match_edges`, `__survivorship_audit`, `__split_events` use `CREATE TABLE IF NOT EXISTS` — never `CREATE OR REPLACE`
 
-Agentic host wrappers preserve native `Error.cause`. Failed native model execution results retain a non-enumerable `cause` for library callers; JSON results and checkpoints do not include it. The consuming host owns redaction and terminal error reporting.
+Agentic host wrappers preserve native `Error.cause`. Failed agentic model execution results retain a non-enumerable `cause` for library callers; JSON results and checkpoints do not include it. The consuming host owns redaction and terminal error reporting.
