@@ -1,8 +1,8 @@
 # @bobsled-inc/embedder — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
-`@bobsled-inc/embedder` enriches Dogsled protocol streams with vector embeddings. It is exposed directly as `dogsled embed` and through the unified CLI as `dogsled embed`.
+`@bobsled-inc/embedder` enriches Dogsled protocol streams with vector embeddings. It is exposed through the unified CLI as `dogsled embed`.
 
 ---
 
@@ -33,14 +33,13 @@ Key rules:
 
 - `streams.<stream>[]` entries require `field`
 - `as` is optional; default output column name is `<field>_embedding`
-- vector columns must include a `dimension`, and the embedder derives it from the selected model
+- vector columns must include a `dimension`; the embedder uses the configured `dimension` or the default of a known model
 - prefer env placeholders in checked-in configs; literal API keys are acceptable only for one-off local invocations
 
 ## Command Surface
 
 - `dogsled embed run --config ./embedder.json`
 - `dogsled embed --config ./embedder.json`
-- `dogsled embed run --config ./embedder.json`
 - `dogsled embed --config-json '{"provider":"openai",...}'`
 
 Output controls:
@@ -52,8 +51,8 @@ Output controls:
 
 ## Runtime Invariants
 
-- Non-target streams are byte-for-byte pass-through
-- `STATE` messages are forwarded unchanged
+- Non-target streams pass through without embeddings; messages are parsed and re-serialized, not copied byte for byte
+- `STATE` values are forwarded unchanged
 - Sparse records with no embeddable values flush immediately instead of accumulating in memory
 - Rewritten batch manifests sanitize stream names and use collision-resistant filenames
 - Only JSONL and JSONL+gzip batch rewriting is supported; reject Parquet with a validation error

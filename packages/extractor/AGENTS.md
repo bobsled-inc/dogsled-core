@@ -1,6 +1,6 @@
 # @bobsled-inc/extractor — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
 YAML-driven data extraction CLI supporting API, warehouse/database, and MCP sources with Dogsled protocol JSONL messages.
 
@@ -8,7 +8,7 @@ YAML-driven data extraction CLI supporting API, warehouse/database, and MCP sour
 
 ## Adding a New Warehouse Source
 
-Use the `/add-warehouse-source` skill for the full workflow. See root AGENTS.md Builder's Skill Index.
+Use the `/add-warehouse-source` skill for the full workflow.
 
 Condensed steps:
 
@@ -22,51 +22,51 @@ Condensed steps:
 
 ## Adding a New Pagination Strategy
 
-1. Add variant to `PaginationSchema` discriminated union in `schemas/connection.ts`
-2. Add async generator function in `runtime/pagination.ts`
-3. Add case to the `switch` in `paginate()`
+1. Add variant to `PaginationSchema` discriminated union in `framework/extractor/pagination.ts`
+2. Add async generator function in `runtime/pagination.ts`, or `runtime/mcp-pagination.ts` for MCP
+3. Add case to the `switch` in both `paginate()` and `paginateMcpTool()`
 4. Types auto-derive
 
 ## Adding a New Auth Type
 
-1. Add variant to `AuthSchema` discriminated union in `schemas/connection.ts`
-2. Add case to `resolveAuth()` switch in `runtime/auth.ts`
-3. Update `getRequiredEnvVars()` in `commands/validate.ts`
+1. Add variant to `AuthSchema` union in `framework/core/auth.ts`
+2. Add a handler in `framework/runtime/auth-handlers/`
+3. Add case to the `getAuthHandler()` switch in `framework/runtime/auth-handlers/index.ts`
 4. Types auto-derive
 
 ## Adding MCP Support to an Integration
 
-1. Set transport type to `mcp_http` or `mcp_stdio` in `integration.yml`
+1. Set transport type to `mcp_http` or `mcp_stdio` in the integration file
 2. Define resources with `tool` block (tool_name, arguments) instead of `api` block
 3. Use MCP pagination types: `mcp_cursor`, `mcp_offset`, `mcp_page_number`
 4. Auth: bearer, api-key, oauth2, or none (configured on transport)
 
 ## Security Invariants — Must Follow
 
-- **SSRF**: `client.ts` checks `url.origin === this.baseOrigin` on every request. Pagination checks Link header URLs with `isSameOrigin`. MCP HTTP transport uses DNS pre-resolution and private host blocking
+- **SSRF**: The request planner in `@bobsled-inc/api-resource` rejects endpoints outside the integration origin, and `client.ts` checks override and redirect URLs with `isSameOrigin`. Pagination checks next-page URLs with `isSameOrigin`. MCP HTTP transport uses DNS pre-resolution and private host blocking
 - **Path traversal**: `assertPathContained` in `common.ts` resolves symlinks via `realpathSync`. Emitter checks output file paths
 - **OAuth HTTPS**: `token_url` schema enforces `https://` prefix
-- **Header injection**: `api_key.header`, static `headers` and `optional_headers` keys validated against regex + restricted header blocklist; resolved values are rejected on control characters. An `optional_headers` entry is omitted (never failed) when its variable is absent or empty, and a declared `headers` entry of the same name wins
-- **File size**: YAML specs capped at 1 MB before parsing
+- **Header injection**: `api-key` `header`, static `headers` and `optional_headers` keys validated against regex + restricted header blocklist; resolved values are rejected on control characters. An `optional_headers` entry is omitted (never failed) when its variable is absent or empty, and a declared `headers` entry of the same name wins
+- **File size**: Integration and resource specs capped at 1 MB before parsing
 - **Retry-After cap**: Rate limiter caps server-directed delays at 5 minutes
 - **MCP stdio sandboxing**: Exact reviewed shapes only — `npx -y @ergut/mcp-bigquery-server@1.0.4` with project/location arguments, or `uvx mcp-snowflake-server==0.4.0`. Interpreters, containers, arbitrary packages/options, mutable versions, path separators, and unapproved env keys are rejected
-- **SQL injection**: Warehouse query builder uses dialect-aware identifier quoting and parameterized queries
+- **SQL injection**: Warehouse query builder uses dialect-aware identifier quoting and parameterized queries; Iceberg and Delta, which take no bind parameters, inline escaped cursor values
 
 ## Key Patterns
 
-- **Types from Zod**: All domain types in `types/index.ts` use `z.infer<typeof Schema>`. Never duplicate types manually
-- **Discriminated unions**: Auth (5 variants) and Pagination (5 variants) use Zod `discriminatedUnion` for exhaustive type narrowing
-- **`.strict()` everywhere**: All Zod object schemas use `.strict()` to catch typos in YAML
-- **Env var indirection**: Secrets never in YAML. Auth reads `process.env[auth.token_env]` at call time
+- **Types from Zod**: Domain types in `types/index.ts` derive from `z.infer<typeof Schema>`. Never duplicate types manually
+- **Discriminated unions**: Auth (`z.union`) and Pagination (`z.discriminatedUnion`) narrow exhaustively on `type`
+- **`.strict()` by default**: Zod object schemas for YAML specs use `.strict()` to catch typos
+- **Env var indirection**: Secrets never in YAML. Auth fields use `${{ env.VAR }}` references resolved at call time
 - **Async generators**: Pagination strategies yield pages one at a time for bounded memory
 - **Atomic state writes**: `state.ts` uses write-tmp-then-rename for crash safety
-- **Message protocol**: stdout = data (SCHEMA/RECORD/STATE), stderr = control (LOG/METRIC). Version field `_v: 1` on every message
+- **Message protocol**: stdout = data (such as SCHEMA/RECORD/STATE), stderr = control (such as LOG/METRIC). Version field `_v: 1` on every message
 - **Load strategy resolution**: `emitSchema()` derives `load_strategy` via cascade: YAML override > fullRefresh flag > file `incremental_append` (append) > incremental+PKs inference > full_refresh. `resolveLoadStrategy()` helper in `schema-message.ts`
 - **Copy Resources**: `source.kind: copy` runs `runtime/file-copy-extractor.ts`, which sends one FILE message per file and saves state only after the loader has deleted every temp file. It needs a loader on a pipe, so it refuses `--no-state-write` and output to a file or terminal. Behaviour and limits are in `docs/guides/extract-from-files.md`
 - **Warehouse client factory**: Dynamic `import()` in `warehouse-client.ts` lazy-loads dialect clients to avoid unnecessary dependency loading
 - **CDC metadata normalization**: `warehouse-extractor.ts` normalizes Snowflake METADATA$, BigQuery \_CHANGE_TYPE, and Delta CDF columns to standard `_change_type` / `_is_update`
 - **Error taxonomy**: `errors.ts` classifies errors as transient (retryable), config (fail-fast), or data (fail-fast)
-- **Dual-dispatch**: `extract.ts` routes to HTTP or MCP page iterators based on transport type
+- **Dual-dispatch**: `extract-resource.ts` routes to HTTP or MCP page iterators based on transport type
 
 ## Error Handling
 
@@ -81,9 +81,9 @@ Top-level catch in `index.ts` converts all `Error` instances to clean CLI output
 
 ## Common Pitfalls
 
-- **Never hardcode secrets in YAML** — always use `*_env` fields referencing environment variables
-- **Endpoint must start with `/`** — absolute URLs rejected by SSRF check
-- **Connection names must be snake_case** — validated by Zod schema and `SAFE_NAME_RE`
+- **Never hardcode secrets in YAML** — always use `${{ env.VAR }}` references, or `*_env` fields where the schema requires them
+- **Endpoint must start with `/` or stay on the integration origin** — other origins are rejected
+- **Integration names must be snake_case** — validated by Zod schema and `SAFE_NAME_RE`
 - **State dir must be within project root** — enforced by `assertPathContained` with symlink resolution
 - **`--limit` runs are always non-durable previews** — state is never persisted, even when state advancement is otherwise enabled
 - **Normalization warnings** routed through ControlLogger (not raw stderr)

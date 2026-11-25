@@ -1,8 +1,8 @@
 # @bobsled-inc/sdk-codegen — Agent Guide
 
-<!-- last-reviewed: 2026-07-27 -->
+<!-- last-reviewed: 2026-11-25 -->
 
-Pure transformation from compiled Entity Graph IR to typed SDK source.
+Transforms compiled Entity Graph IR to typed SDK source.
 
 ## Scope
 
@@ -20,7 +20,7 @@ not independently published by this workflow.
 
 - Treat IR additions as minor and renames/removals as major changes.
 - Keep `polymorphic_groups[]` present even when empty.
-- TypeScript output supports TypeScript 5.0 through 5.4.
+- TypeScript output targets TypeScript 5.0 through 5.4.
 - Python output supports Python 3.10+ and Pydantic v2.
 - Python emission remains library-only until its CLI distribution plan is active.
 - The consumer supplies `DogsledEntityExecutor`; generated clients stay transport-free.
