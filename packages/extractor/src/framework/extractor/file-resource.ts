@@ -1,3 +1,4 @@
+import { isObject } from '@bobsled-inc/protocol';
 import { z } from 'zod';
 
 import { SpecNameSchema, WarehouseOutputFieldSchema } from '../core/index.js';
@@ -31,12 +32,18 @@ export const DocumentParseConfigSchema = z
   })
   .strict();
 
-/** Recursive token-aware chunker config (document resources only). */
-export const DocumentChunkConfigSchema = z
+const ChunkTokenizerSchema = z
+  .enum(['cl100k_base', 'o200k_base', 'p50k_base'])
+  .default('cl100k_base')
+  .optional();
+
+const RecursiveChunkConfigSchema = z
   .object({
+    strategy: z.literal('recursive').optional(),
     max_tokens: z.number().int().positive().default(800).optional(),
     overlap_tokens: z.number().int().nonnegative().default(120).optional(),
-    tokenizer: z.enum(['cl100k_base', 'o200k_base', 'p50k_base']).default('cl100k_base').optional(),
+    min_tokens: z.never('chunk.min_tokens requires chunk.strategy: paragraph').optional(),
+    tokenizer: ChunkTokenizerSchema,
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -50,6 +57,42 @@ export const DocumentChunkConfigSchema = z
       });
     }
   });
+
+const ParagraphChunkConfigSchema = z
+  .object({
+    strategy: z.literal('paragraph'),
+    max_tokens: z.number().int().positive().default(800).optional(),
+    overlap_tokens: z
+      .literal(0, 'chunk.overlap_tokens must be 0 when chunk.strategy is paragraph')
+      .default(0)
+      .optional(),
+    min_tokens: z.number().int().positive().optional(),
+    tokenizer: ChunkTokenizerSchema,
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.min_tokens !== undefined && value.min_tokens > (value.max_tokens ?? 800)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'chunk.min_tokens must be less than or equal to chunk.max_tokens',
+        path: ['min_tokens'],
+      });
+    }
+  });
+
+/**
+ * Token-aware chunker config (document resources only). One schema per strategy, so each
+ * has its own overlap default. An unset strategy means `recursive`.
+ */
+export const DocumentChunkConfigSchema = z.discriminatedUnion(
+  'strategy',
+  [RecursiveChunkConfigSchema, ParagraphChunkConfigSchema],
+  // Only a wrong strategy: a chunk that is not a mapping keeps the default message.
+  {
+    error: ({ code }) =>
+      code === 'invalid_union' ? 'chunk.strategy must be recursive or paragraph' : undefined,
+  }
+);
 
 /**
  * Embedding config — uniform across structured and document resources. References a
@@ -179,6 +222,12 @@ export const FileSourceConfigSchema = z.preprocess(
   },
   z.discriminatedUnion('kind', [StructuredFileSourceConfigSchema, DocumentFileSourceConfigSchema])
 );
+
+/** Whether a parsed Resource document asks for documents (`kind` or `format: document`). */
+export const isDocumentResourceDocument = (input: unknown): boolean =>
+  isObject(input) &&
+  isObject(input['source']) &&
+  (input['source']['kind'] ?? input['source']['format']) === 'document';
 
 export const FileReplicationSchema = z
   .object({

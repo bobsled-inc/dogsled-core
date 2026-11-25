@@ -1,9 +1,9 @@
 import type { DocumentParser, ParseOptions, ParseResult } from '../types.js';
 
-import { htmlToText } from './html.js';
+import { extractHtmlText, type HtmlText } from './html.js';
 import { normalizeExtractedText } from './xml.js';
 
-const PARSER_VERSION = 'eml:1.0.0';
+const PARSER_VERSION = 'eml:1.1.0';
 
 interface HeaderBlock {
   readonly headers: Map<string, string[]>;
@@ -12,7 +12,7 @@ interface HeaderBlock {
 
 interface TextParts {
   readonly plain: string[];
-  readonly html: string[];
+  readonly html: HtmlText[];
 }
 
 export const emailParser: DocumentParser = {
@@ -37,9 +37,9 @@ export const emailParser: DocumentParser = {
       const raw = new TextDecoder('utf-8', { fatal: false }).decode(input);
       const root = splitHeaders(raw);
       const parts = extractTextParts(root);
-      const text = normalizeExtractedText(
-        (parts.plain.length > 0 ? parts.plain : parts.html).join('\n\n')
-      );
+      const html = parts.plain.length > 0 ? [] : parts.html;
+      const body = parts.plain.length > 0 ? parts.plain : html.map((part) => part.text);
+      const text = normalizeExtractedText(body.join('\n\n'));
       if (!text) {
         return {
           status: 'error',
@@ -62,6 +62,7 @@ export const emailParser: DocumentParser = {
           date: firstHeader(root.headers, 'date') ?? null,
           messageId: firstHeader(root.headers, 'message-id') ?? null,
           contentType: firstHeader(root.headers, 'content-type') ?? 'text/plain',
+          hiddenCharacters: html.reduce((sum, part) => sum + part.hiddenCharacters, 0),
         },
       };
     } catch (err) {
@@ -123,7 +124,7 @@ function extractTextParts(block: HeaderBlock): TextParts {
 
   const decoded = decodeBody(block.body, block.headers, contentType);
   if (contentType.value === 'text/html') {
-    return { plain: [], html: [htmlToText(decoded)] };
+    return { plain: [], html: [extractHtmlText(decoded)] };
   }
   if (contentType.value === 'text/plain' || !firstHeader(block.headers, 'content-type')) {
     return { plain: [decoded], html: [] };
