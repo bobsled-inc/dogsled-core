@@ -52,6 +52,35 @@ describe('vector profile_attrs in SDK IR', () => {
     }
   });
 
+  it.each([
+    [1536, true],
+    [1024, false],
+    [0, false],
+  ])('checks an embedded_from dimension of %i', (dimension, valid) => {
+    const entity = VECTOR_IR.entities[0]!;
+    const [title, vector] = entity.profile_attrs;
+    const ir = {
+      ...VECTOR_IR,
+      entities: [
+        {
+          ...entity,
+          profile_attrs: [
+            title,
+            { ...vector, embedded_from: { ...vector!.embedded_from, dimension } },
+          ],
+        },
+      ],
+    };
+    if (!valid) {
+      expect(() => parseSdkIr(ir)).toThrow();
+      return;
+    }
+    const parsed = parseSdkIr(ir);
+    expect(parsed.entities[0]?.profile_attrs[1]?.embedded_from?.dimension).toBe(dimension);
+    expect(emitTypeScriptSdk(parsed).length).toBeGreaterThan(0);
+    expect(emitPythonSdk(parsed).length).toBeGreaterThan(0);
+  });
+
   it('accepts a reserved distance_metric', () => {
     const ir = parseSdkIr({
       ...VECTOR_IR,

@@ -49,6 +49,8 @@ export const EmbeddedFromSchema = z
     column: z.string().min(1),
     provider: z.string().min(1),
     model: z.string().min(1),
+    /** Vector length the model produced. Absent in specs written before it was recorded. */
+    dimension: z.number().int().positive().optional(),
     distance_metric: EmbeddingDistanceMetricSchema.optional(),
   })
   .strict();

@@ -43,7 +43,7 @@ function pyTypeFor(attr: SdkProfileAttr): string {
       break;
     case 'vector':
       // Embedding columns emit as a list of floats. The host agent
-      // reads `embedded_from` (provider/model) to generate matching query
+      // reads `embedded_from` (provider/model/dimension) to generate matching query
       // embeddings.
       base = 'list[float]';
       break;

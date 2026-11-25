@@ -135,6 +135,38 @@ describe('VECTOR column type', () => {
       }
     });
 
+    it.each([
+      [1536, true],
+      [undefined, true],
+      [1024, false],
+      [0, false],
+    ])('checks an embedded_from dimension of %s', (dimension, valid) => {
+      const embeddedFrom = {
+        column: 'description',
+        provider: 'openai',
+        model: 'text-embedding-3-small',
+        ...(dimension === undefined ? {} : { dimension }),
+      };
+      const vector = { type: 'VECTOR', dimension: 1536, embedded_from: embeddedFrom };
+      const source = SourceSpecSchema.safeParse({
+        ...baseSource,
+        schema: {
+          columns: [
+            { name: 'description', type: 'STRING' },
+            { name: 'EMB', ...vector },
+          ],
+        },
+      });
+      const transform = TransformSpecSchema.safeParse({
+        ...baseTransform,
+        derived_columns: [{ name: 'emb', expr: 'emb', ...vector }],
+      });
+      expect([source.success, transform.success]).toEqual([valid, valid]);
+      if (dimension === 1024 && !source.success) {
+        expect(source.error.issues[0]?.message).toContain('must equal the column dimension');
+      }
+    });
+
     it('rejects unknown distance_metric values', () => {
       const result = SourceSpecSchema.safeParse({
         ...baseSource,

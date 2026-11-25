@@ -64,6 +64,8 @@ export interface EmbeddedFromMetadata {
   column: string;
   provider: string;
   model: string;
+  /** Vector length the model produced. Equals the column's `dimension` when set. */
+  dimension?: number;
   distance_metric?: EmbeddingDistanceMetric;
 }
 

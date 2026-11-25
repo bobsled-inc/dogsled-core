@@ -36,6 +36,7 @@ import { FieldMetadataSchema, SemanticRoleSchema } from '@bobsled-inc/protocol';
 import { MODEL_SPEC_ERROR_CODES, modelSpecHint } from './error-hints.js';
 import { databaseIdentifierSchema, identifierMsg, identifierRegex } from './shared-validators.js';
 import { ReadModeSchema } from './read-mode.js';
+import { refineVectorColumn } from './vector-column.js';
 import {
   ExecutionConfigSchema,
   PublishConfigSchema,
@@ -130,32 +131,6 @@ const {
 // Source spec
 // ---------------------------------------------------------------------------
 
-/**
- * `VECTOR` is a first-class Model Spec column type for embedding columns; the
- * compiler maps it per-dialect (Snowflake `VECTOR(FLOAT,N)`, BigQuery
- * `ARRAY<FLOAT64>`, DuckDB `FLOAT[N]`, pgvector `vector(N)`) at DDL time.
- * Matches codegen's normalization (uppercase only, no trim) so a typo like
- * ' VECTOR ' fails validation rather than falling through as raw SQL.
- */
-function refineVectorDimension(
-  data: { type: string; dimension?: number; embedded_from?: unknown },
-  ctx: z.RefinementCtx
-): void {
-  const isVector = data.type.toUpperCase() === 'VECTOR';
-  const issue = (path: string, message: string): void => {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
-  };
-  if (isVector && data.dimension === undefined) {
-    issue('dimension', 'VECTOR columns require a positive integer dimension');
-  }
-  if (!isVector && data.dimension !== undefined) {
-    issue('dimension', 'dimension is only valid for VECTOR columns');
-  }
-  if (!isVector && data.embedded_from !== undefined) {
-    issue('embedded_from', 'embedded_from is only valid for VECTOR columns');
-  }
-}
-
 const SourceColumnSchema = z
   .object({
     name: z.string().min(1, 'Column name is required'),
@@ -165,7 +140,7 @@ const SourceColumnSchema = z
     ...FieldMetadataOptionalFieldsSchema,
     ...SemanticFieldMetadataSchema.shape,
   })
-  .superRefine(refineVectorDimension);
+  .superRefine(refineVectorColumn);
 
 const SourceQualitySchema = z.object({
   freshness: z.object({ max_age: z.string() }).optional(),
@@ -502,7 +477,7 @@ const TransformColumnSchema = z
     ...SemanticFieldMetadataSchema.shape,
   })
   .superRefine((data, ctx) => {
-    refineVectorDimension(
+    refineVectorColumn(
       { type: data.type ?? '', dimension: data.dimension, embedded_from: data.embedded_from },
       ctx
     );
@@ -529,7 +504,7 @@ const DerivedColumnSchema = z
     embedded_from: FieldMetadataSchema.shape.embedded_from,
   })
   .superRefine((data, ctx) => {
-    refineVectorDimension(
+    refineVectorColumn(
       { type: data.type ?? '', dimension: data.dimension, embedded_from: data.embedded_from },
       ctx
     );

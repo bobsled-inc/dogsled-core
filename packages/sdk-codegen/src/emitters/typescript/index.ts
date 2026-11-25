@@ -40,7 +40,7 @@ function tsTypeFor(attr: SdkProfileAttr): string {
       break;
     case 'vector':
       // Embedding columns emit as a fixed-length array of floats. The
-      // host agent reads `embedded_from` (provider/model) to generate
+      // host agent reads `embedded_from` (provider/model/dimension) to generate
       // matching query embeddings.
       base = 'number[]';
       break;

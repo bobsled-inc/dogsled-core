@@ -94,7 +94,11 @@ function readStream(
   return value['stream'];
 }
 
-function parseEmbeddedFrom(value: unknown, index: number): EmbeddedFromMetadata {
+function parseEmbeddedFrom(
+  value: unknown,
+  index: number,
+  columnDimension: number
+): EmbeddedFromMetadata {
   if (!isPlainObject(value)) {
     failValidation(`SCHEMA message column ${index} embedded_from must be an object`);
   }
@@ -120,6 +124,21 @@ function parseEmbeddedFrom(value: unknown, index: number): EmbeddedFromMetadata 
 
   const result: EmbeddedFromMetadata = { column, provider, model };
 
+  if ('dimension' in obj && obj['dimension'] !== undefined) {
+    const dimension = obj['dimension'];
+    if (typeof dimension !== 'number' || !Number.isInteger(dimension) || dimension <= 0) {
+      failValidation(
+        `SCHEMA message column ${index} embedded_from.dimension must be a positive integer`
+      );
+    }
+    if (dimension !== columnDimension) {
+      failValidation(
+        `SCHEMA message column ${index} embedded_from.dimension ${dimension} must equal the column dimension ${columnDimension}`
+      );
+    }
+    result.dimension = dimension;
+  }
+
   if ('distance_metric' in obj && obj['distance_metric'] !== undefined) {
     const metric = obj['distance_metric'];
     if (typeof metric !== 'string' || !isEmbeddingDistanceMetric(metric)) {
@@ -132,7 +151,7 @@ function parseEmbeddedFrom(value: unknown, index: number): EmbeddedFromMetadata 
     result.distance_metric = metric;
   }
 
-  const allowedKeys = new Set(['column', 'provider', 'model', 'distance_metric']);
+  const allowedKeys = new Set(['column', 'provider', 'model', 'dimension', 'distance_metric']);
   for (const key of Object.keys(obj)) {
     if (!allowedKeys.has(key)) {
       failValidation(`SCHEMA message column ${index} embedded_from has unknown field "${key}"`);
@@ -189,7 +208,11 @@ function asSchemaColumns(value: unknown): SchemaColumn[] {
       }
 
       if ('embedded_from' in column && column['embedded_from'] !== undefined) {
-        nextColumn.embedded_from = parseEmbeddedFrom(column['embedded_from'], index);
+        nextColumn.embedded_from = parseEmbeddedFrom(
+          column['embedded_from'],
+          index,
+          nextColumn.dimension
+        );
       }
 
       return nextColumn;

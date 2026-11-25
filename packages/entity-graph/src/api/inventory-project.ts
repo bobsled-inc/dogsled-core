@@ -56,6 +56,7 @@ export interface SdkEmbeddedFromMetadata {
   column: string;
   provider: string;
   model: string;
+  dimension?: number;
   distance_metric?: 'cosine' | 'l2' | 'dot';
 }
 

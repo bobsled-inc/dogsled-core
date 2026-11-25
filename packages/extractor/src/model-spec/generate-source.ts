@@ -366,6 +366,7 @@ export function generateModelSpecSource(
           column: field.field,
           provider: embedConfig.provider,
           model: embedConfig.model,
+          dimension: embedConfig.dimension,
           ...(embedConfig.distance_metric ? { distance_metric: embedConfig.distance_metric } : {}),
         },
       });
