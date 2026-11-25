@@ -13,9 +13,9 @@ export const HOST_EMBEDDING_ENV_RESERVED_MESSAGE =
 
 const RESERVED_NAMES: ReadonlySet<string> = new Set(HOST_EMBEDDING_ENV_NAMES);
 
-/** Windows ignores case in environment names, so the reservation does too. */
+/** An environment name ends at a NUL, and Windows ignores its case. */
 export function isHostEmbeddingEnvName(name: string): boolean {
-  return RESERVED_NAMES.has(name.toUpperCase());
+  return RESERVED_NAMES.has(name.split('\0', 1)[0]!.toUpperCase());
 }
 
 export function assertNotHostEmbeddingEnvName(name: string): void {

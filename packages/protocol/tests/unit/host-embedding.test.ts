@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   assertDeclaredEnv,
   assertDeclaredEnvironmentReferences,
+  assertNotHostEmbeddingEnvName,
   AuthEnvVarsSchema,
   declaredHostEnvironmentNames,
   deleteHostEmbeddingEnv,
@@ -24,6 +25,30 @@ describe('host embedding environment names', () => {
     expect(HOST_EMBEDDING_URL_ENV).toBe('DOGSLED_HOST_EMBEDDING_URL');
     expect(HOST_EMBEDDING_TOKEN_ENV).toBe('DOGSLED_HOST_EMBEDDING_TOKEN');
     expect(HOST_EMBEDDING_ENV_NAMES).toEqual([HOST_EMBEDDING_URL_ENV, HOST_EMBEDDING_TOKEN_ENV]);
+  });
+
+  it.each(
+    HOST_EMBEDDING_ENV_NAMES.flatMap((name) => [
+      name,
+      name.toLowerCase(),
+      `${name}\0`,
+      `${name}\0.example`,
+      `${name.toLowerCase()}\0\0`,
+    ])
+  )('are recognized as the environment reads them: %j', (name) => {
+    expect(isHostEmbeddingEnvName(name)).toBe(true);
+    expect(() => assertNotHostEmbeddingEnvName(name)).toThrow('reserved');
+    expect(() => assertDeclaredEnv(name, [name])).toThrow('reserved');
+  });
+
+  it.each([
+    '',
+    '\0',
+    `\0${HOST_EMBEDDING_TOKEN_ENV}`,
+    `${HOST_EMBEDDING_TOKEN_ENV}_2`,
+    'HOST_TOKEN',
+  ])('do not include %j', (name) => {
+    expect(isHostEmbeddingEnvName(name)).toBe(false);
   });
 
   it.each(reservedNames)('cannot be declared: %s', (name) => {
