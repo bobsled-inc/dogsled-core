@@ -139,9 +139,10 @@ exact stream names: `handbook__chunks`.
 With one destination, a pipeline that embeds saves which files it has read only after
 embedding and loading have succeeded. When either fails, or the run is cancelled, the next run
 reads and embeds the same files again. The rows of a document are replaced; a resource that
-appends rows from files can load some of them twice. A token of an HTTPS state backend must
-stay valid until then. With several destinations, an incremental document resource keeps no
-such record, so each run reads and embeds every file.
+appends rows from files can load some of them twice. One resource that always fails keeps the
+others of the run from saving, so fix it or run it separately. A token of an HTTPS state
+backend must stay valid until then. With several destinations, an incremental document
+resource keeps no such record, so each run reads and embeds every file.
 
 Versions before this one saved the record when extraction ended, so after a failure the next run
 skipped those files and their rows were lost without a message. Runs without an embed stage, from
