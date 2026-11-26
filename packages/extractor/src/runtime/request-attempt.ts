@@ -1,6 +1,6 @@
 /**
- * One attempt of a request: its own timeout, the response body read inside it,
- * and the decision whether a failure is worth another attempt.
+ * One attempt of a read: its own timeout, the response body read inside it, and
+ * the decision whether a failure is worth another attempt.
  */
 
 import {
@@ -77,12 +77,11 @@ export interface FetchRetryOptions {
   /** Called before each wait between attempts. An error it throws is ignored. */
   onRetry?: (event: RequestRetryEvent) => void | Promise<void>;
   /**
-   * Whether the provider may receive this request twice. Defaults to true. A
-   * request that changes data sets false, and then a timeout, a failed body
-   * read and the gateway statuses 502 and 504 are not retried, because the
-   * provider may already have acted. HTTP 429, 503 and a connection that failed
-   * before any response are still retried. A `retryOn` list the caller set
-   * explicitly is always honored.
+   * Whether the request only reads. Defaults to true. A request that changes
+   * data sets false and keeps the earlier loop: one deadline of `timeoutMs` for
+   * every attempt and wait, the statuses in `retryOn`, a retry of any error
+   * before a response, and no retry of a body read, which the caller does
+   * after the loop. `readBody` and `onRetry` then do nothing.
    */
   idempotent?: boolean;
 }
@@ -90,7 +89,6 @@ export interface FetchRetryOptions {
 export interface AttemptPlan {
   timeoutMs: number;
   retryOn: readonly number[];
-  idempotent: boolean;
   lastAttempt: boolean;
   onFinalRetryableResponse?: FinalRetryableResponseHandler;
   readBody?: FetchRetryOptions['readBody'];
@@ -103,7 +101,6 @@ export interface FailedAttempt {
   status?: number;
   /** The provider's response, kept for its Retry-After header. */
   response?: Response;
-  retry: boolean;
   /** The error to throw when no attempt is left, given how many ran. */
   toError(attempts: number): Error;
 }
@@ -112,7 +109,8 @@ export type AttemptResult = { ok: true; response: Response } | FailedAttempt;
 
 /**
  * Make one attempt. Returns the response to hand back, or the failure to retry
- * or report. Throws at once for a failure no further attempt can fix.
+ * or report once no attempt is left. Throws at once for a failure no further
+ * attempt can fix.
  */
 export async function runAttempt(
   url: string,
@@ -166,7 +164,6 @@ async function failedStatus(response: Response, plan: AttemptPlan): Promise<Fail
     reason: statusReason(status, statusText),
     status,
     response,
-    retry: true,
     toError: (attempts) =>
       attachProviderResponseBody(
         Object.assign(
@@ -204,8 +201,6 @@ function failedAttempt(
       ok: false,
       category: 'timeout',
       reason: timeoutReason(plan.timeoutMs),
-      // The provider may have acted before the timeout, so only a request that is safe to repeat goes again.
-      retry: plan.idempotent,
       toError: (attempts) =>
         new RateLimitTimeoutError(
           attempts > 1
@@ -226,8 +221,6 @@ function failedAttempt(
     ok: false,
     category: duringBody ? 'response_body' : 'connection',
     reason,
-    // A failed body read means the provider already handled the request.
-    retry: plan.idempotent || !duringBody,
     toError: (attempts) =>
       attempts > 1
         ? new RequestRetryError(exhaustedMessage(url, attempts, reason), attempts, error)

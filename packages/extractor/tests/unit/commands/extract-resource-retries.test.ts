@@ -120,7 +120,7 @@ describe('extraction retries', () => {
     expect(warnings[1]).toMatchObject({
       level: 'warn',
       message:
-        'Request for items failed on attempt 2 of 5 (response body read failed: connection closed by the server (UND_ERR_SOCKET)). Retrying in 0.0s.',
+        'Request for items failed on attempt 2 of 5 (response body read failed: other side closed (UND_ERR_SOCKET)). Retrying in 0.0s.',
       attributes: { attempt: 2, reason: 'response_body', wait_ms: 0 },
     });
     expect(result.recordCount).toBe(1);

@@ -971,6 +971,7 @@ function connectionReset(): TypeError {
 
 describe('ExtractorClient retries of one request', () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -1065,7 +1066,7 @@ describe('ExtractorClient retries of one request', () => {
     const cause = (error as DogsledRuntimeError).cause;
     expect(cause).toBeInstanceOf(RequestRetryError);
     expect(cause?.message).toBe(
-      'Request failed after 2 attempts; last failure: connection reset (ECONNRESET): https://api.example.com/items'
+      'Request failed after 2 attempts; last failure: read ECONNRESET: https://api.example.com/items'
     );
     expect(cause?.cause).toBeInstanceOf(TypeError);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -1100,62 +1101,185 @@ describe('ExtractorClient retries of one request', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects an invalid body limit before it sends anything', async () => {
-    const fetchMock = vi.fn();
+  it.each([
+    ['a read', undefined],
+    ['a write', false],
+  ])(
+    'rejects an invalid body limit of %s once the response arrives, and cancels the body',
+    async (_kind, idempotent) => {
+      const cancelled = vi.fn();
+      const fetchMock = vi.fn().mockImplementation(
+        async () =>
+          new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                controller.enqueue(new TextEncoder().encode('{"ok":true}'));
+              },
+              cancel: cancelled,
+            })
+          )
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+      await expectDogsledCause(
+        client.request({
+          operation: idempotent === false ? writeItem : readItems,
+          responseBodyLimitBytes: 0,
+          ...(idempotent === false ? { idempotent } : {}),
+        }),
+        'API response body limit must be between 1 and'
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(cancelled).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('does not retry a network failure that carries no known code', async () => {
+    const failure = new TypeError('fetch failed');
+    const fetchMock = vi.fn().mockRejectedValue(failure);
     vi.stubGlobal('fetch', fetchMock);
     const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
 
-    await expectDogsledCause(
-      client.request({ operation: readItems, responseBodyLimitBytes: 0 }),
-      'API response body limit must be between 1 and'
-    );
-    expect(fetchMock).not.toHaveBeenCalled();
+    const error = await client.request({ operation: readItems }).catch((value) => value);
+
+    expect(error).toMatchObject({ code: 'EXTRACTOR_HTTP_NETWORK_FAILURE', retryable: true });
+    expect((error as DogsledRuntimeError).cause).toBe(failure);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  describe('a request that changes data', () => {
-    it('is not sent again after a timeout', async () => {
-      const fetchMock = vi.fn().mockImplementation(hangUntilAborted);
+  describe('a request that changes data keeps its earlier retry behavior', () => {
+    const write = { operation: writeItem, idempotent: false } as const;
+
+    it('keeps one deadline across the attempts, the waits and the body it reads after', async () => {
+      const fetchMock = vi.fn().mockImplementation(
+        (_url: string, init: RequestInit) =>
+          new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                init.signal?.addEventListener(
+                  'abort',
+                  () => controller.error(init.signal?.reason),
+                  {
+                    once: true,
+                  }
+                );
+              },
+            }),
+            { status: 200 }
+          )
+      );
       vi.stubGlobal('fetch', fetchMock);
       const client = new ExtractorClient({
         integration: makeProvider('https://api.example.com', { timeout_ms: 20 }),
       });
 
-      const error = await client
-        .request({ operation: writeItem, idempotent: false })
-        .catch((value) => value);
+      const error = await client.request(write).catch((value) => value);
 
       expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
+      expect((error as DogsledRuntimeError).cause).toMatchObject({ name: 'TimeoutError' });
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('is not sent again after its response body drops', async () => {
+    it('wraps an exhausted retry deadline with its exact timeout cause', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('', { status: 429, statusText: 'Too Many Requests' }));
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({
+        integration: makeProvider('https://api.example.com', {
+          timeout_ms: 20,
+          retry: { max_retries: 1, backoff: 'fixed' },
+        }),
+      });
+
+      const error = await client.request(write).catch((value) => value);
+
+      expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
+      expect((error as DogsledRuntimeError).cause).toBeInstanceOf(RateLimitTimeoutError);
+      expect((error as DogsledRuntimeError).cause?.message).toMatch(
+        /^Request timed out after 20ms/
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([429, 503])(
+      'makes four attempts and keeps a bounded, redacted final provider body (%s)',
+      async (status) => {
+        const token = 'retry-provider-secret';
+        const finalBody = JSON.stringify({
+          message: `${token} ${'provider detail '.repeat(100)}`,
+        });
+        const fetchMock = vi.fn(
+          async () =>
+            new Response(finalBody, {
+              status,
+              statusText: status === 429 ? 'Too Many Requests' : 'Service Unavailable',
+              headers: { 'Retry-After': '0' },
+            })
+        );
+        vi.stubGlobal('fetch', fetchMock);
+        const client = new ExtractorClient({
+          integration: makeProvider('https://api.example.com', {
+            auth: { type: 'bearer', token },
+          }),
+        });
+
+        const error = await client.request(write).catch((value) => value as DogsledRuntimeError);
+
+        expect(error).toMatchObject({ kind: 'provider', providerStatus: status });
+        expect(fetchMock).toHaveBeenCalledTimes(4);
+        expect(error.cause?.message).toContain('provider detail');
+        expect(error.cause?.message).toContain('[REDACTED]');
+        expect(error.cause?.message).not.toContain(token);
+        expect(error.cause?.message).not.toContain('attempts');
+        expect(error.cause?.message.length).toBeLessThan(700);
+      }
+    );
+
+    it('does not retry a response body that drops, which it reads after the loop', async () => {
       const fetchMock = vi.fn().mockImplementation(async () => bodyThatDrops());
       vi.stubGlobal('fetch', fetchMock);
       const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
 
-      const error = await client
-        .request({ operation: writeItem, idempotent: false })
-        .catch((value) => value);
+      const error = await client.request(write).catch((value) => value);
 
       expect(error).toMatchObject({ code: 'EXTRACTOR_HTTP_NETWORK_FAILURE' });
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('is not sent again after a gateway error', async () => {
+    it.each([502, 504])(
+      'does not retry HTTP %i unless the integration lists it',
+      async (status) => {
+        const fetchMock = vi.fn().mockImplementation(async () => new Response('', { status }));
+        vi.stubGlobal('fetch', fetchMock);
+        const client = new ExtractorClient({
+          integration: makeProvider('https://api.example.com', { retry: { max_retries: 2 } }),
+        });
+
+        const error = await client.request(write).catch((value) => value);
+
+        expect(error).toMatchObject({ kind: 'provider', providerStatus: status });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      }
+    );
+
+    it('retries the statuses that the integration lists', async () => {
       const fetchMock = vi
         .fn()
-        .mockImplementation(
-          async () => new Response('', { status: 504, statusText: 'Gateway Timeout' })
-        );
+        .mockResolvedValueOnce(new Response('', { status: 502, headers: { 'Retry-After': '0' } }))
+        .mockResolvedValueOnce(new Response('{"id":7}'));
       vi.stubGlobal('fetch', fetchMock);
-      const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+      const client = new ExtractorClient({
+        integration: makeProvider('https://api.example.com', {
+          retry: { retry_on: [429, 500, 502, 503], max_retries: 3 },
+        }),
+      });
 
-      const error = await client
-        .request({ operation: writeItem, idempotent: false })
-        .catch((value) => value);
+      const response = await client.request(write);
 
-      expect(error).toMatchObject({ kind: 'provider', providerStatus: 504 });
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(response.data).toEqual({ id: 7 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it('is sent again when the provider says it was throttled', async () => {
@@ -1166,23 +1290,25 @@ describe('ExtractorClient retries of one request', () => {
       vi.stubGlobal('fetch', fetchMock);
       const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
 
-      const response = await client.request({ operation: writeItem, idempotent: false });
+      const response = await client.request(write);
 
       expect(response.data).toEqual({ id: 7 });
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it('is sent again when the connection failed before any response', async () => {
+    it('is sent again after any error before a response, as it was before', async () => {
+      vi.useFakeTimers();
       const fetchMock = vi
         .fn()
-        .mockRejectedValueOnce(connectionReset())
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
         .mockResolvedValueOnce(new Response('{"id":7}'));
       vi.stubGlobal('fetch', fetchMock);
       const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
 
-      const response = await client.request({ operation: writeItem, idempotent: false });
+      const response = client.request(write);
+      await vi.advanceTimersByTimeAsync(1000);
 
-      expect(response.data).toEqual({ id: 7 });
+      expect((await response).data).toEqual({ id: 7 });
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });

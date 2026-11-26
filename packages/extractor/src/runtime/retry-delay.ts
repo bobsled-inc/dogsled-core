@@ -38,7 +38,7 @@ function requestedDelayMs(
   if (!retryAfter) return undefined;
   const seconds = Number(retryAfter);
   if (!Number.isNaN(seconds)) {
-    return Math.min(seconds * 1000, MAX_RETRY_AFTER_MS);
+    return Math.max(0, Math.min(seconds * 1000, MAX_RETRY_AFTER_MS));
   }
   const date = Date.parse(retryAfter);
   if (!Number.isNaN(date)) {

@@ -197,8 +197,8 @@ export async function runActivateDispatcher(
               operation: { api: actionSpec.api, input: actionSpec.input },
               input: mappedRecord,
               allowStatus: HTTP_ALLOW_STATUS,
-              // A write: the client must not resend it after a timeout, a failed
-              // body read or a gateway error. This dispatcher retries by itself.
+              // A write keeps the client's earlier retry loop. This dispatcher
+              // retries by itself.
               idempotent: false,
             });
           } catch (requestError) {

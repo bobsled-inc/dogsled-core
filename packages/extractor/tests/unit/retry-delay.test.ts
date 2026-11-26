@@ -76,6 +76,12 @@ describe('jitteredRetryDelayMs', () => {
     expect(jitteredRetryDelayMs(exponential, throttled({ 'Retry-After': past }), 0)).toBe(0);
   });
 
+  it('treats a negative Retry-After as no wait', () => {
+    const response = throttled({ 'Retry-After': '-5' });
+    expect(jitteredRetryDelayMs(exponential, response, 2, () => 0.9)).toBe(0);
+    expect(retryDelayMs(exponential, response, 2)).toBe(0);
+  });
+
   it('caps Retry-After at five minutes', () => {
     expect(jitteredRetryDelayMs(exponential, throttled({ 'Retry-After': '86400' }), 0)).toBe(
       300_000

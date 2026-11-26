@@ -108,6 +108,7 @@ describe('executeApiAction through the real ExtractorClient', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
@@ -483,7 +484,7 @@ describe('executeApiAction through the real ExtractorClient', () => {
     expect(result.error).toMatchObject({ code: 'timeout', retryable: true });
   });
 
-  it('does not send an Action again after an attempt timed out', async () => {
+  it('does not retry an Action attempt that timed out', async () => {
     const fetchMock = hangUntilAborted();
     vi.stubGlobal('fetch', fetchMock);
 
@@ -495,7 +496,7 @@ describe('executeApiAction through the real ExtractorClient', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it('does not send an Action again after a gateway timeout', async () => {
+  it('does not retry an Action on HTTP 504 unless the integration lists it', async () => {
     const fetchMock = respondWith(504);
     vi.stubGlobal('fetch', fetchMock);
 
@@ -511,7 +512,7 @@ describe('executeApiAction through the real ExtractorClient', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it('sends an Action again when the provider throttles it', async () => {
+  it('retries an Action when the provider throttles it', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response('', { status: 429, headers: { 'Retry-After': '0' } }))
@@ -527,7 +528,7 @@ describe('executeApiAction through the real ExtractorClient', () => {
   });
 
   it('classifies a connection that kept resetting as a retryable network error', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
+    vi.useFakeTimers();
     const fetchMock = vi.fn(async () =>
       Promise.reject(
         new TypeError('fetch failed', {
@@ -537,9 +538,11 @@ describe('executeApiAction through the real ExtractorClient', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await executeApiAction(makeAction(), inputs, {
+    const pending = executeApiAction(makeAction(), inputs, {
       resolvedIntegration: makeIntegration({ retry: { max_retries: 1 } }),
     });
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await pending;
 
     expect(result.error).toMatchObject({ code: 'network_error', retryable: true });
     expect(fetchMock).toHaveBeenCalledTimes(2);

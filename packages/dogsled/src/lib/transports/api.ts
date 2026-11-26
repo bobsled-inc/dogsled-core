@@ -363,8 +363,7 @@ export async function executeApiAction(
         context: {
           mapped,
         },
-        // An Action changes data at the provider, so the client must not send it
-        // again after a timeout, a failed body read or a gateway error.
+        // An Action changes data, so it keeps the client's earlier retry loop.
         idempotent: false,
         ...(signal !== undefined ? { signal } : {}),
         ...(responseBodyLimitBytes !== undefined ? { responseBodyLimitBytes } : {}),

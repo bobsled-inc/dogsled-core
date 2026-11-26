@@ -1,19 +1,27 @@
 /**
- * Token bucket rate limiter that retries each attempt of a request.
+ * Token bucket rate limiter with retries.
  *
- * Every attempt has its own timeout. A timeout, a dropped connection, a failed
- * read of the response body and a retryable HTTP status each use up one attempt.
- * The wait between attempts follows the provider's Retry-After header when it
- * sends one, and otherwise uses exponential backoff with full jitter.
+ * A read retries each attempt on its own timeout. A timeout, a dropped
+ * connection, a failed read of the response body and a retryable HTTP status
+ * each use up one attempt. The wait between attempts follows the provider's
+ * Retry-After header when it sends one, and otherwise uses exponential backoff
+ * with full jitter. A request that changes data keeps the earlier loop.
  */
 
 import {
+  attachProviderResponseBody,
+  safeFetch,
+  sanitizeUrlForError,
+} from '../framework/core/index.js';
+import {
+  RateLimitTimeoutError,
   runAttempt,
   type FetchRetryOptions,
+  type FinalRetryableResponseDetail,
   type FinalRetryableResponseHandler,
   type RequestRetryEvent,
 } from './request-attempt.js';
-import { DEFAULT_RETRY_BACKOFF, jitteredRetryDelayMs } from './retry-delay.js';
+import { DEFAULT_RETRY_BACKOFF, jitteredRetryDelayMs, retryDelayMs } from './retry-delay.js';
 
 export { RateLimitTimeoutError, RequestRetryError } from './request-attempt.js';
 export type {
@@ -34,29 +42,37 @@ export interface RateLimiterOptions {
   retryAfterHeader: boolean;
 }
 
+/**
+ * Defaults of a request that changes data. A read uses `READ_RETRY_ON` and
+ * `READ_MAX_RETRIES` where the options set none.
+ */
 export const DEFAULT_RATE_LIMIT: RateLimiterOptions = {
   requestsPerSecond: 10,
   burst: 20,
-  retryOn: [429, 502, 503, 504],
+  retryOn: [429, 503],
   ...DEFAULT_RETRY_BACKOFF,
-  maxRetries: 4,
 };
 
-/** Time each attempt gets, response body included, when the caller sets none. */
-const DEFAULT_ATTEMPT_TIMEOUT_MS = 30_000;
+/** The statuses a read retries where the options set none. */
+const READ_RETRY_ON: readonly number[] = [429, 502, 503, 504];
 
-/** Statuses a gateway sends while the provider may still be doing the work. */
-const GATEWAY_STATUSES: ReadonlySet<number> = new Set([502, 504]);
+/** The retries a read makes where the options set none: 5 attempts in all. */
+const READ_MAX_RETRIES = 4;
+
+/** Time each attempt of a read gets, response body included, when the caller sets none. */
+const DEFAULT_ATTEMPT_TIMEOUT_MS = 30_000;
 
 export class RateLimiter {
   private tokens: number;
   private lastRefill: number;
   private readonly options: RateLimiterOptions;
   private readonly retryOnConfigured: boolean;
+  private readonly maxRetriesConfigured: boolean;
 
   constructor(options: Partial<RateLimiterOptions> = {}) {
     this.options = { ...DEFAULT_RATE_LIMIT, ...options };
     this.retryOnConfigured = options.retryOn !== undefined;
+    this.maxRetriesConfigured = options.maxRetries !== undefined;
 
     if (this.options.requestsPerSecond <= 0) {
       throw new Error('requestsPerSecond must be positive');
@@ -92,10 +108,16 @@ export class RateLimiter {
   /**
    * Execute a fetch with rate limiting and retry logic.
    *
-   * Each attempt gets `timeoutMs`, covering the response body until it is read.
-   * The request fails after `maxRetries + 1` attempts, with an error that names
-   * the attempts and why the last one failed. A caller cancellation through
-   * `init.signal` ends the request at once and is never retried.
+   * A read gets `timeoutMs` for each attempt, covering the response body until
+   * it is read, and makes up to 5 attempts unless `maxRetries` says otherwise.
+   * It fails with an error that names the attempts and why the last one failed.
+   * A caller cancellation through `init.signal` ends the request at once and is
+   * never retried.
+   *
+   * A request that changes data passes `idempotent: false` and keeps the
+   * earlier loop: `timeoutMs` is one deadline for every attempt and wait, only
+   * the statuses in `retryOn` (429 and 503 by default) and errors before a
+   * response are retried, and the caller reads the body after the loop.
    */
   async fetchWithRetry(
     url: string,
@@ -105,9 +127,19 @@ export class RateLimiter {
     onFinalRetryableResponse?: FinalRetryableResponseHandler,
     options: FetchRetryOptions = {}
   ): Promise<Response> {
-    const maxAttempts = this.options.maxRetries + 1;
-    const idempotent = options.idempotent ?? true;
-    const retryOn = this.statusesToRetry(idempotent);
+    if (options.idempotent === false) {
+      return await this.fetchWithSharedDeadline(
+        url,
+        init,
+        timeoutMs,
+        beforeAttempt,
+        onFinalRetryableResponse
+      );
+    }
+
+    const maxAttempts =
+      (this.maxRetriesConfigured ? this.options.maxRetries : READ_MAX_RETRIES) + 1;
+    const retryOn = this.retryOnConfigured ? this.options.retryOn : READ_RETRY_ON;
 
     for (let attempt = 1; ; attempt++) {
       await this.acquire(init.signal);
@@ -116,14 +148,13 @@ export class RateLimiter {
       const result = await runAttempt(url, init, {
         timeoutMs,
         retryOn,
-        idempotent,
         lastAttempt: attempt === maxAttempts,
         onFinalRetryableResponse,
         readBody: options.readBody,
       });
       if (result.ok) return result.response;
 
-      if (!result.retry || attempt === maxAttempts) {
+      if (attempt === maxAttempts) {
         throw result.toError(attempt);
       }
 
@@ -140,10 +171,103 @@ export class RateLimiter {
     }
   }
 
-  /** A `retryOn` list that was configured wins; the default gateway statuses suit reads only. */
-  private statusesToRetry(idempotent: boolean): readonly number[] {
-    if (idempotent || this.retryOnConfigured) return this.options.retryOn;
-    return this.options.retryOn.filter((status) => !GATEWAY_STATUSES.has(status));
+  /**
+   * The loop that every request used before reads got their own timeout per
+   * attempt, kept as it was for a request that changes data.
+   */
+  private async fetchWithSharedDeadline(
+    url: string,
+    init: RequestInit,
+    timeoutMs: number,
+    beforeAttempt?: () => void,
+    onFinalRetryableResponse?: FinalRetryableResponseHandler
+  ): Promise<Response> {
+    let lastError: Error | undefined;
+    const deadlineAt = Date.now() + timeoutMs;
+
+    for (let attempt = 0; attempt <= this.options.maxRetries; attempt++) {
+      await this.acquire(init.signal);
+
+      const remainingMs = deadlineAt - Date.now();
+      if (remainingMs <= 0) {
+        throw new RateLimitTimeoutError(
+          `Request timed out after ${timeoutMs}ms: ${sanitizeUrlForError(url)}`
+        );
+      }
+      const deadlineSignal = AbortSignal.timeout(remainingMs);
+      const requestSignal = init.signal
+        ? AbortSignal.any([init.signal, deadlineSignal])
+        : deadlineSignal;
+      beforeAttempt?.();
+      try {
+        const response = await safeFetch(url, { ...init, signal: requestSignal });
+
+        if (!this.options.retryOn.includes(response.status)) {
+          // Keep requestSignal attached to the returned response: aborting at
+          // the original deadline also terminates a slow response body.
+          return response;
+        }
+
+        let finalResponse: FinalRetryableResponseDetail | undefined;
+        if (attempt === this.options.maxRetries && onFinalRetryableResponse) {
+          // Diagnostics are best effort. A response-body read must never mask
+          // the exhausted provider status or alter retry behavior.
+          try {
+            finalResponse = await onFinalRetryableResponse(response);
+          } catch {
+            finalResponse = undefined;
+          }
+        }
+        await response.body?.cancel().catch(() => undefined);
+        const detail = finalResponse?.detail;
+        lastError = attachProviderResponseBody(
+          Object.assign(
+            new Error(
+              `HTTP ${response.status}: ${response.statusText}${detail ? ` - ${detail}` : ''}`
+            ),
+            { status: response.status }
+          ),
+          finalResponse?.body
+        );
+
+        if (attempt < this.options.maxRetries) {
+          const waitMs = this.getRetryDelay(response, attempt);
+          if (Date.now() + waitMs >= deadlineAt) {
+            throw new RateLimitTimeoutError(
+              `Request timed out after ${timeoutMs}ms: ${sanitizeUrlForError(url)}`
+            );
+          }
+          await sleep(waitMs, init.signal);
+        }
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+
+        if (deadlineSignal.aborted) {
+          if (init.signal?.aborted) {
+            throw init.signal.reason instanceof Error
+              ? init.signal.reason
+              : new DOMException('The operation was aborted.', 'AbortError');
+          }
+          throw new RateLimitTimeoutError(
+            `Request timed out after ${timeoutMs}ms: ${sanitizeUrlForError(url)}`
+          );
+        }
+        // An upstream cancellation is intentional and must not be retried.
+        if (init.signal?.aborted || lastError.name === 'AbortError') throw lastError;
+
+        if (attempt < this.options.maxRetries) {
+          const waitMs = this.getRetryDelay(undefined, attempt);
+          if (Date.now() + waitMs >= deadlineAt) {
+            throw new RateLimitTimeoutError(
+              `Request timed out after ${timeoutMs}ms: ${sanitizeUrlForError(url)}`
+            );
+          }
+          await sleep(waitMs, init.signal);
+        }
+      }
+    }
+
+    throw lastError ?? new Error('Max retries exceeded');
   }
 
   private refill(): void {
@@ -152,6 +276,10 @@ export class RateLimiter {
     const newTokens = elapsed * this.options.requestsPerSecond;
     this.tokens = Math.min(this.options.burst, this.tokens + newTokens);
     this.lastRefill = now;
+  }
+
+  private getRetryDelay(response: Response | undefined, attempt: number): number {
+    return retryDelayMs(this.options, response, attempt);
   }
 }
 

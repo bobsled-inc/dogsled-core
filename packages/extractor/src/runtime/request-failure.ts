@@ -6,61 +6,68 @@
 export type RequestFailureCategory = 'timeout' | 'connection' | 'response_body' | 'http_status';
 
 /**
- * Node and undici codes for a connection that failed or dropped, each with a
- * plain label. Undici wraps the code in `TypeError: fetch failed` (before the
- * response) or `TypeError: terminated` (while reading the body), so the code
- * sits on the `cause`.
+ * The codes of a connection that failed in a way another attempt can fix: it was
+ * reset, broken, closed by the other side or timed out, or a lookup failed for
+ * now. Undici hides the code under `TypeError: fetch failed` (before the
+ * response) or `TypeError: terminated` (while the body is read), so it sits on
+ * a `cause`. A TLS error, an HTTP parser error and the refusal of a private
+ * address carry none of these codes and are never retried.
  */
-const CONNECTION_FAILURE_LABELS: Readonly<Record<string, string>> = {
-  ECONNRESET: 'connection reset',
-  UND_ERR_SOCKET: 'connection closed by the server',
-  EPIPE: 'connection closed',
-  ECONNABORTED: 'connection aborted',
-  ERR_STREAM_PREMATURE_CLOSE: 'connection closed early',
-  ECONNREFUSED: 'connection refused',
-  ETIMEDOUT: 'connection timed out',
-  UND_ERR_CONNECT_TIMEOUT: 'connection timed out',
-  UND_ERR_HEADERS_TIMEOUT: 'no response headers in time',
-  UND_ERR_BODY_TIMEOUT: 'response body stalled',
-  UND_ERR_RES_CONTENT_LENGTH_MISMATCH: 'response ended early',
-  ENETUNREACH: 'network unreachable',
-  ENETDOWN: 'network unreachable',
-  EHOSTUNREACH: 'host unreachable',
-  EHOSTDOWN: 'host unreachable',
-  ENOTFOUND: 'host lookup failed',
-  EAI_AGAIN: 'host lookup failed',
-};
-
-/** The messages undici gives a network failure that carries no recognized code. */
-const NETWORK_FAILURE_MESSAGES: ReadonlySet<string> = new Set(['fetch failed', 'terminated']);
+const TRANSIENT_NETWORK_CODES: ReadonlySet<string> = new Set([
+  'ECONNRESET',
+  'EPIPE',
+  'ETIMEDOUT',
+  'EAI_AGAIN',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+]);
 
 const MAX_CAUSE_DEPTH = 5;
+const MAX_REASON_CHARS = 200;
 
-function connectionFailureCode(error: Error): string | undefined {
+/** The error and its causes, outermost first. */
+function causeChain(error: Error): Error[] {
+  const chain: Error[] = [];
   let current: unknown = error;
   for (let depth = 0; depth <= MAX_CAUSE_DEPTH && current instanceof Error; depth += 1) {
-    const code = (current as { code?: unknown }).code;
-    if (typeof code === 'string' && Object.hasOwn(CONNECTION_FAILURE_LABELS, code)) return code;
+    chain.push(current);
     current = current.cause;
+  }
+  return chain;
+}
+
+function transientCode(chain: readonly Error[]): string | undefined {
+  for (const error of chain) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === 'string' && TRANSIENT_NETWORK_CODES.has(code)) return code;
   }
   return undefined;
 }
 
 /**
- * True for a dropped, reset or refused connection, and for the bare network
- * failures undici raises without a code. Caller cancellations, size limits and
- * parse errors are not network failures: another attempt would fail the same way.
+ * True for a connection that was reset, broken, closed by the other side or
+ * timed out. Caller cancellations, size limits, parse errors, TLS errors and
+ * refused addresses are not: another attempt would fail the same way.
  */
 export function isTransientNetworkFailure(error: Error): boolean {
-  if (connectionFailureCode(error) !== undefined) return true;
-  return error instanceof TypeError && NETWORK_FAILURE_MESSAGES.has(error.message);
+  return transientCode(causeChain(error)) !== undefined;
 }
 
-/** A short label such as `connection reset (ECONNRESET)`. */
+/**
+ * The reason of the innermost cause, such as `other side closed (UND_ERR_SOCKET)`
+ * or `read ECONNRESET`, so the error names what the network reported.
+ */
 export function describeNetworkFailure(error: Error): string {
-  const code = connectionFailureCode(error);
-  const label = code === undefined ? undefined : CONNECTION_FAILURE_LABELS[code];
-  return code === undefined || label === undefined ? 'network error' : `${label} (${code})`;
+  const chain = causeChain(error);
+  const code = transientCode(chain);
+  const message = (chain[chain.length - 1]?.message ?? '').replace(/\s+/g, ' ').trim();
+  const reason = message === '' ? (code ?? 'network error') : message;
+  const described = code === undefined || reason.includes(code) ? reason : `${reason} (${code})`;
+  return described.length > MAX_REASON_CHARS
+    ? `${described.slice(0, MAX_REASON_CHARS)}…`
+    : described;
 }
 
 export function timeoutReason(timeoutMs: number): string {

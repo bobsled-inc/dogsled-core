@@ -440,7 +440,7 @@ describe('executeApiAction', () => {
     expect(result.status).toBe('success');
   });
 
-  it('asks the client not to resend an Action after a timeout, a failed body read or a gateway error', async () => {
+  it('marks an Action request as a write, so the client keeps its earlier retry loop', async () => {
     const request = vi.fn().mockResolvedValue({
       data: { id: '003123' },
       headers: new Headers(),

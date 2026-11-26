@@ -189,7 +189,7 @@ describe('runActivateDispatcher', () => {
     expect(mockClient.request).toHaveBeenCalledTimes(4);
   });
 
-  it('asks the client not to resend a write after a timeout, a failed body read or a gateway error', async () => {
+  it('marks the request as a write, so the client keeps its earlier retry loop', async () => {
     const mockClient = {
       request: vi.fn().mockResolvedValue({ status: 200, data: null, headers: new Headers() }),
     } as unknown as ExtractorClient;

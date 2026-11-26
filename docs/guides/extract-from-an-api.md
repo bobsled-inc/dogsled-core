@@ -42,8 +42,8 @@ transport:
     Accept: application/json
   timeout_ms: 30000
   retry:
-    retry_on: [429, 502, 503, 504]
-    max_retries: 4
+    retry_on: [429, 503]
+    max_retries: 3
     backoff: exponential
     retry_after_header: true
   rate_limit:
@@ -224,23 +224,26 @@ other failed token request keeps its HTTP status, and 429 and 5xx stay retryable
 
 ## Timeouts and retries
 
+A request that reads, such as a page of a resource, is sent again when an attempt:
+
+- times out,
+- loses its connection before or while it reads the response, with a reset
+  (`ECONNRESET`), a broken pipe (`EPIPE`), a timeout (`ETIMEDOUT`, or a connect,
+  headers or body timeout from the HTTP client) or "other side closed"
+  (`UND_ERR_SOCKET`),
+- gets HTTP 429, 502, 503 or 504.
+
 `timeout_ms` is the time one attempt gets, from sending the request to reading the
 last byte of the response. A retry starts a new clock, so a slow page near the limit
 costs one attempt, not the run. The default is 30 seconds.
 
-Dogsled sends a request again when an attempt:
-
-- times out,
-- loses its connection before or while it reads the response, for example a reset
-  (`ECONNRESET`) or "other side closed",
-- gets HTTP 429, 502, 503 or 504.
-
-A request makes up to 5 attempts by default. Under `retry`, `max_retries` sets the
-retries after the first attempt (`0` turns retries off) and `retry_on` replaces the
-list of statuses. Any other status ends the request, as does a size limit, a
-response that is not valid JSON or a request that Dogsled refuses before it sends
-it, such as one to a private host name, because another attempt would fail the same
-way. Cancelling a run stops it at once and never retries.
+A read makes up to 5 attempts by default. Under `retry`, `max_retries` (0 to 10)
+sets the retries after the first attempt, where `0` turns retries off, and `retry_on`
+replaces the list of statuses. Any other status ends the request. So does a size
+limit, a response that is not valid JSON, a TLS or HTTP parser error, and a request
+that Dogsled refuses before it sends it, such as one to a private host name, because
+another attempt would fail the same way. Cancelling a run stops it at once and never
+retries.
 
 The wait before a retry is the `Retry-After` header, up to 5 minutes, when the API
 sends one and `retry_after_header` is not `false`. Otherwise `backoff: exponential`
@@ -254,11 +257,11 @@ Each retry writes a warning to the run log, a `LOG` message with `level: warn`,
 last attempt the run fails with an error that says how many attempts ran and why
 the last one failed.
 
-A request that changes data is different, because the API may have acted on an
-attempt that failed late. An Action and an activation sync are not sent again after a
-timeout or a failed read of the response, and not after HTTP 502 or 504 unless
-`retry_on` lists the status. They are still retried on HTTP 429 and 503 and on a
-connection that failed before any response.
+An Action and an activation sync change data, so they keep their earlier retry
+behavior. For them `timeout_ms` is one deadline for the request and its waits, and
+the client retries HTTP 429 and 503, or the statuses in `retry_on`, and any error
+before a response, up to 3 times by default. An activation sync also retries by
+itself, as `error_handling` says.
 
 ## Pagination types
 
