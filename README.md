@@ -4,14 +4,18 @@
 [![npm](https://img.shields.io/npm/v/@bobsled-inc/dogsled.svg)](https://www.npmjs.com/package/@bobsled-inc/dogsled)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-**Dogsled Core is an open-source command-line toolkit for moving and transforming data.**
-Extract data from APIs, files and databases, load it into a database or warehouse,
-and build SQL models that produce tables you can query.
+**Dogsled Core is an open-source data engineering toolkit built for you and your coding agent.**
+It covers the whole path from raw data to answers you can trust: extract from APIs,
+files, databases and MCP servers, load into DuckDB or your warehouse, build SQL
+models, resolve records into entities, and describe what every table and metric
+means so that people and agents query it correctly.
 
-Keep your pipelines and your semantic model in the same project. YAML files define
-how data moves and changes, alongside descriptions, business metrics, relationships
-and example queries that explain what it means. Developers and coding agents can
-read, review, validate and run that project from a repository.
+One project holds all of it. Plain YAML and Markdown files define your pipelines,
+models, metrics, relationships, verified queries and the instructions agents
+follow. Because the project lives in a repository, your coding agent can read it,
+change it, validate it and run it with the same CLI you use, and every change gets
+reviewed like code. Core runs on your machine or in your CI, with no hosted account
+and no default telemetry.
 
 [Get started](#getting-started) · [Guided tutorial](#learn-with-your-coding-agent) ·
 [Concepts](docs/concepts.md) ·
@@ -26,6 +30,11 @@ read, review, validate and run that project from a repository.
   in the same repository.
 - **Work on data projects with a coding agent.** Give the agent project files,
   data context and validation commands to use when it changes a pipeline or model.
+- **Join the same customer across systems.** Resolve records from your CRM,
+  billing and support tools into one entity graph you can query with SQL, an SDK
+  or an MCP server.
+- **Use AI as a step in the pipeline.** Send rows to a model, validate what comes
+  back and store the results as a table.
 
 Use [extraction and loading](docs/getting-started.md#extract-and-load) and
 [modeling](docs/guides/build-models.md) separately or together. For example, build
