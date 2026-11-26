@@ -44,6 +44,7 @@ Project Skill path. Other Markdown files declare `type: guide` or
 | `resource`, `action`, `sync`, `target`                                                                                                                       | YAML     | Extraction and activation objects.                                                                          |
 | `resolution`, `relationship_ontology`, `mention_extraction`, `relationship_extraction`, `agent_task_profile`, `survivorship`, `truthset`, `object`, `policy` | YAML     | Entity Graph specs.                                                                                         |
 | `agent`                                                                                                                                                      | YAML     | Recognized for host applications; Dogsled loads nothing from it.                                            |
+| `data_product`                                                                                                                                               | YAML     | Recognized for host applications; Dogsled loads nothing from it.                                            |
 | `skill`, `guide`                                                                                                                                             | Markdown | A Project Skill or guide, declared in front matter or inferred at a conventional path.                      |
 
 The root `AGENTS.md` remains Project-wide. Nested `AGENTS.md` guides add

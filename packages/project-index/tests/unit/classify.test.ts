@@ -36,6 +36,7 @@ describe('classifyProjectFile — YAML types', () => {
     ['object', 'object'],
     ['policy', 'policy'],
     ['agent', 'agent'],
+    ['data_product', 'data_product'],
     ['pipeline_config', 'pipeline_config'],
     ['model_spec_config', 'model_spec_config'],
     ['extractor_config', 'extractor_config'],
