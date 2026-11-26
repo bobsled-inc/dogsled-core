@@ -17,7 +17,7 @@ change it, validate it and run it with the same CLI you use, and every change ge
 reviewed like code. Core runs on your machine or in your CI, with no hosted account
 and no default telemetry.
 
-[Get started](#getting-started) · [Guided tutorial](#learn-with-your-coding-agent) ·
+[Get started](#getting-started) · [Guided tutorials](#learn-with-your-coding-agent) ·
 [Concepts](docs/concepts.md) ·
 [Documentation](docs/README.md) · [Examples](examples/README.md)
 
@@ -95,18 +95,27 @@ an existing one, then validate the setup and help you run a first useful query.
 
 ### Learn with your coding agent
 
-The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
-“What should I watch next?” Connect to a public API, build an ETL pipeline and
-semantic models, query across sources, and try an agentic transformation. An
-optional chapter teaches entity resolution.
+Two guided tutorials teach the same six capabilities: connect to a source, build
+an ETL pipeline and semantic models, query your data, query across sources, and
+try an agentic transformation. Pick the story you prefer:
+
+- **[TV Night](docs/guides/tv-night.md): “What should I watch next?”** Load shows
+  from a public API, add Wikipedia context and recommend what to watch. An
+  optional chapter teaches entity resolution.
+- **[Retail](docs/guides/retail.md): “Which products need attention?”** Combine
+  sales and stock exports from a fictional home-goods retailer with customer
+  reviews from a local API, then use AI to classify support conversations. All
+  data is synthetic.
 
 Install the [Dogsled Core plugin for Claude Code or Codex](plugins/dogsled-core/README.md)
 to make the built-in skills available without copying files from this repository.
 
 After installing Dogsled, open Claude Code or Codex in your project folder and
-invoke the **`dogsled-tutorials`** skill, or ask:
+invoke the **`dogsled-tutorials`** skill and choose a tutorial, or ask for one by name:
 
 > Use the dogsled-tutorials skill for TV Night.
+
+> Use the dogsled-tutorials skill for Retail.
 
 The skill already includes the chapter order, setup, choices and inspection pauses.
 You do not need to repeat those instructions. If the skill is not available in your
@@ -114,7 +123,7 @@ agent, use this fallback:
 
 > Read `npx dogsled onboarding guide` and follow its instructions.
 
-This command exposes the bundled guide without a separate skill installation.
+For Retail, use `npx dogsled onboarding guide --tutorial retail`. This command exposes the bundled guide without a separate skill installation.
 
 The agent creates and opens a local HTML page with chapter progress, working files,
 model lineage and data previews. It explains each capability and pauses for your
