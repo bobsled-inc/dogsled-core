@@ -42,6 +42,7 @@ export const PROJECT_FILE_KINDS = [
   'object',
   'policy',
   'agent',
+  'data_product',
   'skill',
   'guide',
 ] as const;
@@ -63,7 +64,10 @@ export type SingletonProjectFileKind = (typeof SINGLETON_KINDS)[number];
 export const SINGLETON_PROJECT_FILE_KINDS: ReadonlySet<ProjectFileKind> = new Set(SINGLETON_KINDS);
 
 /** Kinds Dogsled recognizes but leaves to the host application to load. */
-export const HOST_PROJECT_FILE_KINDS: ReadonlySet<ProjectFileKind> = new Set(['agent']);
+export const HOST_PROJECT_FILE_KINDS: ReadonlySet<ProjectFileKind> = new Set([
+  'agent',
+  'data_product',
+]);
 
 const YAML_TYPE_KINDS: ReadonlyMap<string, ProjectFileKind> = new Map(
   PROJECT_FILE_KINDS.filter((kind) => kind !== 'skill' && kind !== 'guide' && kind !== 'ossie').map(
