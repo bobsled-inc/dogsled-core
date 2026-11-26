@@ -135,9 +135,12 @@ describe('reverseMapDbType', () => {
     expect(reverseMapDbType('vector(1536)')).toBe('vector');
   });
 
-  it('maps Snowflake VECTOR(FLOAT, 1536) to vector', () => {
-    expect(reverseMapDbType('VECTOR(FLOAT, 1536)')).toBe('vector');
-  });
+  it.each(['VECTOR', 'VECTOR(FLOAT, 1536)', 'VECTOR(INT, 16)'])(
+    'maps Snowflake %s to vector',
+    (type) => {
+      expect(reverseMapDbType(type)).toBe('vector');
+    }
+  );
 
   it.each(['Array(Float32)', 'Array(Float64)', 'Array(BFloat16)'])(
     'maps ClickHouse %s to vector',

@@ -93,6 +93,18 @@ export function mapPostgresType(column: ColumnType | SchemaColumn): string {
 
 const DELETE_BATCH_SIZE = 500;
 
+// information_schema reports a pgvector column as USER-DEFINED. Its full type, such as vector(3),
+// is in the catalog. The casts and qualified names keep the statement on built-in types, functions
+// and operators.
+const COLUMN_TYPES_SQL =
+  `SELECT column_name, CASE WHEN udt_name::pg_catalog.name = 'vector' THEN (` +
+  `SELECT pg_catalog.format_type(a.atttypid, a.atttypmod) FROM pg_catalog.pg_attribute a ` +
+  `JOIN pg_catalog.pg_class c ON a.attrelid = c.oid ` +
+  `JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid ` +
+  `WHERE n.nspname = $1 AND c.relname = $2 AND a.attname = column_name::pg_catalog.name` +
+  `) ELSE data_type END AS data_type FROM information_schema.columns ` +
+  `WHERE table_schema::pg_catalog.name = $1 AND table_name::pg_catalog.name = $2`;
+
 function quoteIdentifier(identifier: string): string {
   const escaped = identifier.replace(/"/g, '""');
   return `"${escaped}"`;
@@ -355,12 +367,7 @@ export class PostgresDestination implements DatabaseDestination {
 
     const client = await this.connectClient();
     try {
-      const result = await withRetry(() =>
-        client.query(
-          `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2`,
-          [safeSchema, safeTable]
-        )
-      );
+      const result = await withRetry(() => client.query(COLUMN_TYPES_SQL, [safeSchema, safeTable]));
 
       const existingMap = new Map(
         result.rows.map((row) => [
@@ -382,7 +389,9 @@ export class PostgresDestination implements DatabaseDestination {
         } else {
           await client.query('BEGIN');
           try {
-            await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [qualifiedTable]);
+            await client.query('SELECT pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext($1))', [
+              qualifiedTable,
+            ]);
             const existing = await client.query('SELECT to_regclass($1) AS table_oid', [
               qualifiedTable,
             ]);
@@ -402,10 +411,7 @@ export class PostgresDestination implements DatabaseDestination {
         const actual =
           ownershipMarker === undefined
             ? null
-            : await client.query(
-                `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2`,
-                [safeSchema, safeTable]
-              );
+            : await client.query(COLUMN_TYPES_SQL, [safeSchema, safeTable]);
         const columnMap =
           actual === null
             ? new Map<string, string>([

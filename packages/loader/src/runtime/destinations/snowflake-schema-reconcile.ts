@@ -3,9 +3,40 @@ import { withRetry, type RetryOptions } from '../retry.js';
 import type { ColumnType, SchemaColumn } from '@bobsled-inc/protocol';
 import type { EnsureTableOptions, SchemaComparisonResult } from './database.js';
 import { enforceSchemaContract, SYSTEM_COLUMNS } from './database.js';
+import type { SnowflakeConnectionLike } from './snowflake.js';
+import type { SnowflakeTableMaintenanceContext } from './snowflake-table-maintenance.js';
 
 interface SnowflakeSchemaConnection {
   execute(options: { sqlText: string }): Promise<unknown>;
+}
+
+/**
+ * Replace the plain VECTOR that INFORMATION_SCHEMA.COLUMNS reports for a vector column with its
+ * full type from DESCRIBE TABLE, such as VECTOR(FLOAT, 3). This reads nothing unless the stream
+ * declares such a column as a vector and its schema_behavior compares types.
+ */
+export async function readSnowflakeVectorTypes(
+  context: Pick<SnowflakeTableMaintenanceContext, 'retryOpts' | 'throwIfCancelled'>,
+  connection: Pick<SnowflakeConnectionLike, 'execute'>,
+  qualifiedTable: string,
+  columns: SchemaColumn[],
+  options: EnsureTableOptions | undefined,
+  existingMap: Map<string, string>
+): Promise<void> {
+  if (options?.schemaBehavior === 'freeze' && !options.reconcileSchema) return;
+  const isPlainVector = (name: string): boolean =>
+    existingMap.get(name)?.toUpperCase() === 'VECTOR';
+  if (!columns.some((c) => c.type === 'vector' && isPlainVector(c.name.toUpperCase()))) return;
+
+  const described = await withRetry(
+    () => connection.execute({ sqlText: `DESCRIBE TABLE ${qualifiedTable}` }),
+    context.retryOpts('describe_table')
+  );
+  context.throwIfCancelled();
+  for (const row of described.getRows()) {
+    const name = String(row['name']);
+    if (isPlainVector(name)) existingMap.set(name, String(row['type']));
+  }
 }
 
 /** Compare an incoming schema with Snowflake's cached or queried column map. */

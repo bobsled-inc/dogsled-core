@@ -12,6 +12,7 @@ import { isRetryableError, withRetry } from '../retry.js';
 import {
   compareSnowflakeSchema,
   enforceContract,
+  readSnowflakeVectorTypes,
   reconcileRemovedSnowflakeColumns,
 } from './snowflake-schema-reconcile.js';
 import {
@@ -713,6 +714,11 @@ export class SnowflakeDestination implements DatabaseDestination {
       );
     };
 
+    const readVectorTypes = (existing: Map<string, string>): Promise<void> => {
+      const context = this.tableMaintenanceContext();
+      return readSnowflakeVectorTypes(context, conn, qualifiedTable, columns, options, existing);
+    };
+
     // A Snowflake full_refresh with the default/evolve contract replaces the
     // table when its schema has drifted, so it must inspect destination
     // metadata on every schema message. Other behaviors retain the existing
@@ -734,6 +740,7 @@ export class SnowflakeDestination implements DatabaseDestination {
         );
       }
 
+      await readVectorTypes(cached);
       const comparison = compareSnowflakeSchema(
         columns,
         cached,
@@ -948,6 +955,7 @@ export class SnowflakeDestination implements DatabaseDestination {
       const colType = String(row['DATA_TYPE'] ?? '');
       existingMap.set(colName, colType);
     }
+    await readVectorTypes(existingMap);
 
     const comparison = compareSnowflakeSchema(
       columns,
