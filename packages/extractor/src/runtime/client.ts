@@ -15,7 +15,7 @@ import {
   resolveAndValidateHost,
 } from '../framework/core/index.js';
 
-import { RateLimiter } from './rate-limiter.js';
+import { RateLimiter, type RequestRetryEvent } from './rate-limiter.js';
 import {
   ExtractorDataError,
   toExtractorAuthRuntimeError,
@@ -81,6 +81,17 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** Called immediately before each HTTP attempt, including retries and redirects. */
   beforeRequestAttempt?: () => void;
+  /** Called before each wait between attempts of a read that failed in a way the client retries. */
+  onRetry?: (event: RequestRetryEvent) => void | Promise<void>;
+  /**
+   * Whether the request only reads. Defaults to true. A read gets its own
+   * timeout for every attempt and is retried after a timeout, a dropped
+   * connection, a failed body read and HTTP 429, 502, 503 and 504. A request
+   * that changes data sets false and keeps the earlier retry behavior: one
+   * deadline for all attempts, HTTP 429 and 503 (or the configured `retry_on`)
+   * and errors before a response, and no retry of the body read.
+   */
+  idempotent?: boolean;
   /** Optional per-call cap for a successful response body. */
   responseBodyLimitBytes?: number;
   /** @internal Captures declared operation inputs after request routing and defaults. */
@@ -91,6 +102,20 @@ export interface ClientResponse {
   data: unknown;
   headers: Headers;
   status: number;
+}
+
+interface FetchOptions {
+  signal?: AbortSignal;
+  beforeRequestAttempt?: () => void;
+  onRetry?: RequestOptions['onRetry'];
+  idempotent?: boolean;
+  responseBodyLimitBytes?: number;
+}
+
+interface FetchedResponse {
+  response: Response;
+  /** The body of a successful read, read inside the retried attempt. A write reads its own. */
+  responseText?: string;
 }
 
 export class ExtractorClient {
@@ -258,15 +283,21 @@ export class ExtractorClient {
       throw toExtractorAuthRuntimeError(error, options.signal);
     }
     options.signal?.throwIfAborted();
-    let response = await this.doFetch(
-      authedRequest,
-      resolvedBaseUrl,
-      options.signal,
-      options.beforeRequestAttempt
-    );
+    const fetchOptions: FetchOptions = {
+      signal: options.signal,
+      beforeRequestAttempt: options.beforeRequestAttempt,
+      onRetry: options.onRetry,
+      idempotent: options.idempotent,
+      responseBodyLimitBytes: options.responseBodyLimitBytes,
+    };
+    let fetched = await this.doFetch(authedRequest, resolvedBaseUrl, fetchOptions);
 
-    if (response.status === 401 && authedRequest.auth && authedRequest.auth.type !== 'none') {
-      await response.body?.cancel().catch(() => undefined);
+    if (
+      fetched.response.status === 401 &&
+      authedRequest.auth &&
+      authedRequest.auth.type !== 'none'
+    ) {
+      await fetched.response.body?.cancel().catch(() => undefined);
       try {
         await invalidateRejectedRuntimeAuth(authedRequest.authCacheIdentity, this.customTokenStore);
         authedRequest = await applyHttpAuth({
@@ -279,13 +310,9 @@ export class ExtractorClient {
         throw toExtractorAuthRuntimeError(error, options.signal);
       }
       options.signal?.throwIfAborted();
-      response = await this.doFetch(
-        authedRequest,
-        resolvedBaseUrl,
-        options.signal,
-        options.beforeRequestAttempt
-      );
+      fetched = await this.doFetch(authedRequest, resolvedBaseUrl, fetchOptions);
     }
+    const { response } = fetched;
 
     if (!response.ok && !options.allowStatus?.includes(response.status)) {
       const { detail, body } = await readErrorResponseBody(
@@ -312,18 +339,8 @@ export class ExtractorClient {
       };
     }
 
-    const responseBodyLimit = options.responseBodyLimitBytes ?? RESPONSE_BODY_LIMITS.api;
-    if (
-      !Number.isSafeInteger(responseBodyLimit) ||
-      responseBodyLimit <= 0 ||
-      responseBodyLimit > RESPONSE_BODY_LIMITS.api
-    ) {
-      await response.body?.cancel().catch(() => undefined);
-      throw new ExtractorDataError(
-        `API response body limit must be between 1 and ${RESPONSE_BODY_LIMITS.api} bytes.`
-      );
-    }
-    const rawBody = await readResponseTextWithLimit(response, responseBodyLimit, 'API response');
+    const rawBody =
+      fetched.responseText ?? (await readResponseBody(response, options.responseBodyLimitBytes));
     let data: unknown = null;
     if (authedRequest.response_format === 'jsonl') {
       data = parseJsonLines(rawBody, response.status, authedRequest.url);
@@ -347,18 +364,24 @@ export class ExtractorClient {
 
   private static readonly MAX_REDIRECTS = 5;
 
+  /**
+   * Send the request, following same-origin redirects. A read gets the body of
+   * a successful response inside the retried attempt, so a timeout or a dropped
+   * connection while reading it retries this one request. A write returns the
+   * response and reads its body after, as it always has.
+   */
   private async doFetch(
     authedRequest: Awaited<ReturnType<typeof applyHttpAuth>>,
     resolvedBaseUrl: string,
-    signal?: AbortSignal,
-    beforeRequestAttempt?: () => void
-  ): Promise<Response> {
+    fetchOptions: FetchOptions
+  ): Promise<FetchedResponse> {
     let currentUrl = authedRequest.url;
     let method = authedRequest.method;
     let body: string | undefined =
       authedRequest.body === undefined ? undefined : JSON.stringify(authedRequest.body);
 
     for (let redirectCount = 0; redirectCount <= ExtractorClient.MAX_REDIRECTS; redirectCount++) {
+      let responseText: string | undefined;
       const response = await this.rateLimiter.fetchWithRetry(
         currentUrl,
         {
@@ -366,26 +389,41 @@ export class ExtractorClient {
           headers: authedRequest.headers,
           body,
           redirect: 'manual',
-          signal,
+          signal: fetchOptions.signal,
         },
         authedRequest.timeout_ms,
-        beforeRequestAttempt,
+        fetchOptions.beforeRequestAttempt,
         async (retryableResponse) =>
           await readErrorResponseBody(
             retryableResponse,
             collectRequestSecrets(currentUrl, authedRequest.headers)
-          )
+          ),
+        {
+          idempotent: fetchOptions.idempotent,
+          onRetry: fetchOptions.onRetry,
+          ...(fetchOptions.idempotent === false
+            ? {}
+            : {
+                readBody: async (received: Response) => {
+                  if (!received.ok) return;
+                  responseText = await readResponseBody(
+                    received,
+                    fetchOptions.responseBodyLimitBytes
+                  );
+                },
+              }),
+        }
       );
 
       if (response.status < 300 || response.status >= 400) {
-        return response;
+        return { response, responseText };
       }
 
       await response.body?.cancel().catch(() => undefined);
 
       const location = response.headers.get('location');
       if (!location) {
-        return response;
+        return { response };
       }
 
       const redirectUrl = new URL(location, currentUrl).toString();
@@ -625,6 +663,24 @@ function parseJsonLines(rawBody: string, status: number, url: string): unknown[]
     }
   }
   return records;
+}
+
+/**
+ * Read a successful response body under the per-request limit. A limit that is
+ * not a size from 1 byte to the API cap cancels the body and fails the request.
+ */
+async function readResponseBody(
+  response: Response,
+  requestedLimit: number | undefined
+): Promise<string> {
+  const limit = requestedLimit ?? RESPONSE_BODY_LIMITS.api;
+  if (!Number.isSafeInteger(limit) || limit <= 0 || limit > RESPONSE_BODY_LIMITS.api) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new ExtractorDataError(
+      `API response body limit must be between 1 and ${RESPONSE_BODY_LIMITS.api} bytes.`
+    );
+  }
+  return await readResponseTextWithLimit(response, limit, 'API response');
 }
 
 const MAX_ERROR_BODY_CHARS = 500;

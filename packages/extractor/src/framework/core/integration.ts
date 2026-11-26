@@ -26,7 +26,7 @@ const OptionalHeadersSchema = SafeHeadersSchema.superRefine((headers, ctx) => {
 export const RetryConfigSchema = z
   .object({
     retry_on: z.array(z.number().int().min(400).max(599)).optional(),
-    max_retries: z.number().int().nonnegative().optional(),
+    max_retries: z.number().int().nonnegative().max(10).optional(),
     backoff: z.enum(['fixed', 'exponential']).optional(),
     retry_after_header: z.boolean().optional(),
   })

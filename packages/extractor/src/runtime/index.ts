@@ -2,7 +2,8 @@
  * Public library API for @bobsled-inc/extractor.
  */
 
-export { RateLimiter, RateLimitTimeoutError } from './rate-limiter.js';
+export { RateLimiter, RateLimitTimeoutError, RequestRetryError } from './rate-limiter.js';
+export type { FetchRetryOptions, RequestRetryEvent } from './rate-limiter.js';
 export { ExtractorClient } from './client.js';
 export type { InterpolationMappedValues } from '../framework/runtime/index.js';
 export { paginate } from './pagination.js';

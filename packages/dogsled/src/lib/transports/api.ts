@@ -41,6 +41,7 @@ interface ApiClientLike {
     };
     signal?: AbortSignal;
     responseBodyLimitBytes?: number;
+    idempotent?: boolean;
   }): Promise<{
     data: unknown;
     headers: Headers;
@@ -362,6 +363,8 @@ export async function executeApiAction(
         context: {
           mapped,
         },
+        // An Action changes data, so it keeps the client's earlier retry loop.
+        idempotent: false,
         ...(signal !== undefined ? { signal } : {}),
         ...(responseBodyLimitBytes !== undefined ? { responseBodyLimitBytes } : {}),
       });

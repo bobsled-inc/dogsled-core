@@ -4,32 +4,44 @@
 [![npm](https://img.shields.io/npm/v/@bobsled-inc/dogsled.svg)](https://www.npmjs.com/package/@bobsled-inc/dogsled)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-**Dogsled Core is an open-source command-line toolkit for moving and transforming data.**
-Extract data from APIs, files and databases, load it into a database or warehouse,
-and build SQL models that produce tables you can query.
+**Dogsled Core is an open-source data engineering toolkit built for you and your coding agent.**
+It takes you from data to answers you can trust: build SQL models on the tables you
+already have, query APIs as tables when you need them, resolve records into
+entities, and describe what every table and metric means so that people and agents
+query it correctly. When you need a scheduled copy of the data, Core also extracts
+from APIs, files, databases and MCP servers and loads into DuckDB or your warehouse.
 
-Keep your pipelines and your semantic model in the same project. YAML files define
-how data moves and changes, alongside descriptions, business metrics, relationships
-and example queries that explain what it means. Developers and coding agents can
-read, review, validate and run that project from a repository.
+One project holds all of it. Plain YAML and Markdown files define your models,
+sources, pipelines, metrics, relationships, verified queries and the instructions agents
+follow. Because the project lives in a repository, your coding agent can read it,
+change it, validate it and run it with the same CLI you use, and every change gets
+reviewed like code. Core runs on your machine or in your CI, with no hosted account
+and no default telemetry.
 
-[Get started](#getting-started) · [Guided tutorial](#learn-with-your-coding-agent) ·
+[Get started](#getting-started) · [Guided tutorials](#learn-with-your-coding-agent) ·
 [Concepts](docs/concepts.md) ·
 [Documentation](docs/README.md) · [Examples](examples/README.md)
 
 ## When to use Dogsled Core
 
-- **Turn source data into queryable tables.** Load API responses or files into
-  DuckDB or a warehouse, then build models for questions such as customer spend.
+- **Answer questions from the data you have.** Build models for questions such as
+  customer spend on warehouse tables you already have, or on APIs that Dogsled
+  fetches when a query needs them. Load a full copy only when you need one.
 - **Keep transformations and business definitions together.** Review changes to
   SQL expressions, metric definitions and instructions for interpreting the data
   in the same repository.
 - **Work on data projects with a coding agent.** Give the agent project files,
   data context and validation commands to use when it changes a pipeline or model.
+- **Join the same customer across systems.** Resolve records from your CRM,
+  billing and support tools into one entity graph you can query with SQL, an SDK
+  or an MCP server.
+- **Use AI as a step in the pipeline.** Send rows to a model, validate what comes
+  back and store the results as a table.
 
-Use [extraction and loading](docs/getting-started.md#extract-and-load) and
-[modeling](docs/guides/build-models.md) separately or together. For example, build
-models on warehouse tables that another tool already loads. Run Core from your
+Use [modeling](docs/guides/build-models.md) and
+[extraction and loading](docs/getting-started.md#extract-and-load) separately or
+together. For example, build models on warehouse tables that another tool already
+loads, and add a pipeline later if you need one. Run Core from your
 terminal, CI or an existing orchestrator. Core has no built-in scheduler. Use
 cron, a workflow or an orchestrator to start recurring jobs.
 See [Run pipelines](docs/guides/run-pipelines.md) and
@@ -86,18 +98,27 @@ an existing one, then validate the setup and help you run a first useful query.
 
 ### Learn with your coding agent
 
-The [TV Night guided tutorial](docs/guides/tv-night.md) teaches Dogsled through
-“What should I watch next?” Connect to a public API, build an ETL pipeline and
-semantic models, query across sources, and try an agentic transformation. An
-optional chapter teaches entity resolution.
+Two guided tutorials teach the same six capabilities: connect to a source, build
+an ETL pipeline and semantic models, query your data, query across sources, and
+try an agentic transformation. Pick the story you prefer:
+
+- **[TV Night](docs/guides/tv-night.md): “What should I watch next?”** Load shows
+  from a public API, add Wikipedia context and recommend what to watch. An
+  optional chapter teaches entity resolution.
+- **[Retail](docs/guides/retail.md): “Which products need attention?”** Combine
+  sales and stock exports from a fictional home-goods retailer with customer
+  reviews from a local API, then use AI to classify support conversations. All
+  data is synthetic.
 
 Install the [Dogsled Core plugin for Claude Code or Codex](plugins/dogsled-core/README.md)
 to make the built-in skills available without copying files from this repository.
 
 After installing Dogsled, open Claude Code or Codex in your project folder and
-invoke the **`dogsled-tutorials`** skill, or ask:
+invoke the **`dogsled-tutorials`** skill and choose a tutorial, or ask for one by name:
 
 > Use the dogsled-tutorials skill for TV Night.
+
+> Use the dogsled-tutorials skill for Retail.
 
 The skill already includes the chapter order, setup, choices and inspection pauses.
 You do not need to repeat those instructions. If the skill is not available in your
@@ -105,7 +126,7 @@ agent, use this fallback:
 
 > Read `npx dogsled onboarding guide` and follow its instructions.
 
-This command exposes the bundled guide without a separate skill installation.
+For Retail, use `npx dogsled onboarding guide --tutorial retail`. This command exposes the bundled guide without a separate skill installation.
 
 The agent creates and opens a local HTML page with chapter progress, working files,
 model lineage and data previews. It explains each capability and pauses for your
@@ -121,17 +142,29 @@ chapter instructions.
 
 ## How a project works
 
-A Dogsled project is a folder of YAML and Markdown files:
+A Dogsled project is a folder of YAML and Markdown files. It starts from the
+questions you want to answer, not from copying data. Models and their meaning sit
+on top of sources, and each source points at data wherever it already lives:
 
 ```text
-APIs, files, databases → extract → load → tables → SQL models → query
+tables already in your warehouse ──────────┐
+APIs, fetched when a query needs them ─────┼──→ sources → SQL models → query
+pipelines, when you need a scheduled copy ─┘
 ```
 
-- **Integrations and resources** describe how to connect and what to read.
-- **Destinations** describe where to load the records.
-- **Sources and models** describe existing tables and the transformations built on them.
-- **Semantic definitions** describe what the data means: metrics, relationships,
-  context and verified queries that pair a question with SQL known to answer it.
+Dogsled extracts and loads only when it has to. A model can read warehouse tables
+that another tool already loads. An API-backed source has a mode: `lazy` fetches
+the API the first time a query needs it and reuses the rows, `live` fetches on
+every query, and `extract` reads a table that a pipeline keeps up to date.
+
+- **Models and semantic definitions** describe the transformations and what the
+  data means: descriptions, metrics, relationships, context and verified queries
+  that pair a question with SQL known to answer it.
+- **Sources** describe the tables and API resources that models and queries read.
+- **Integrations and resources** describe how to connect to a system and what to
+  read from it.
+- **Pipelines and destinations** describe a full extract and load, for when you
+  need a scheduled copy of the data.
 - **Project guides and skills** give coding agents instructions for working with the project.
 
 For example, this model groups orders by customer and keeps its meaning beside
@@ -163,7 +196,21 @@ The [concepts guide](docs/concepts.md) explains the file types and how they conn
 
 ## Capabilities
 
-### Move and query data
+### Model and query data
+
+- **Model** with SQL expressions, views, tables, incremental models, seeds, tests
+  and lineage, on tables you already have. See [Build models](docs/guides/build-models.md)
+  for supported warehouses.
+- **Query APIs as tables.** API-backed sources are fetched when a query or model
+  run needs them, then cached or refetched as you choose. No pipeline is required.
+  Model runs fetch these sources into a local DuckDB file.
+  See [Query data](docs/guides/query-data.md#query-an-api-as-a-table).
+- **Query** warehouse tables with SQL, and run verified queries by name with typed
+  parameters. See [Query data](docs/guides/query-data.md).
+
+### Extract and load when you need a copy
+
+When you need a full, scheduled copy of the data, run a pipeline:
 
 - **Extract** from [library integrations](docs/guides/use-library-integrations.md),
   [REST APIs](docs/guides/extract-from-an-api.md),
@@ -173,10 +220,6 @@ The [concepts guide](docs/concepts.md) explains the file types and how they conn
 - **Load** into DuckDB, DuckLake, PostgreSQL, Snowflake, BigQuery, Databricks,
   ClickHouse, MySQL, SQL Server, SQLite, vector stores or files.
   See [Load data](docs/guides/load-data.md).
-- **Model** with SQL expressions, views, tables, incremental models, seeds, tests
-  and lineage. See [Build models](docs/guides/build-models.md) for supported warehouses.
-- **Query** loaded tables with SQL and API-backed sources on demand.
-  See [Query data](docs/guides/query-data.md).
 
 ### Describe and enrich data
 

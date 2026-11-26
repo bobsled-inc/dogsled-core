@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   readProviderResponseBody,
@@ -6,10 +6,21 @@ import {
 } from '../../src/framework/core/index.js';
 import { ExtractorClient } from '../../src/runtime/client.js';
 import { ExtractorDataError } from '../../src/runtime/errors.js';
-import { RateLimitTimeoutError } from '../../src/runtime/rate-limiter.js';
+import {
+  RateLimitTimeoutError,
+  RequestRetryError,
+  type RequestRetryEvent,
+} from '../../src/runtime/rate-limiter.js';
 import { DogsledRuntimeError } from '@bobsled-inc/protocol';
 
 import { makeProvider, makeResource } from '../helpers/fixtures.js';
+
+/** A fetch that never answers. Like undici, it rejects with the abort reason. */
+function hangUntilAborted(_url: unknown, init?: RequestInit): Promise<Response> {
+  return new Promise((_resolve, reject) => {
+    init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+  });
+}
 
 async function expectDogsledCause(promise: Promise<unknown>, message: string): Promise<void> {
   const error = await promise.catch((value) => value as DogsledRuntimeError);
@@ -311,7 +322,9 @@ describe('ExtractorClient', () => {
           new Response('private provider diagnostic', { status: 502, statusText: 'Bad Gateway' })
         )
     );
-    const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+    const client = new ExtractorClient({
+      integration: makeProvider('https://api.example.com', { retry: { max_retries: 0 } }),
+    });
 
     const error = await client
       .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
@@ -381,7 +394,8 @@ describe('ExtractorClient', () => {
         .catch((value) => value as DogsledRuntimeError);
 
       expect(error).toMatchObject({ kind: 'provider', providerStatus: status });
-      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
+      expect(error.cause?.message).toContain('after 5 attempts');
       expect(error.cause?.message).toContain('provider detail');
       expect(error.cause?.message).toContain('[REDACTED]');
       expect(error.cause?.message).not.toContain(token);
@@ -486,26 +500,9 @@ describe('ExtractorClient', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
     const client = new ExtractorClient({
-      integration: makeProvider('https://api.example.com', { timeout_ms: 20 }),
-    });
-
-    const error = await client
-      .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
-      .catch((value) => value);
-
-    expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
-    expect((error as DogsledRuntimeError).cause).toMatchObject({ name: 'TimeoutError' });
-  });
-
-  it('wraps an exhausted retry deadline with its exact timeout cause', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response('', { status: 429, statusText: 'Too Many Requests' }))
-    );
-    const client = new ExtractorClient({
       integration: makeProvider('https://api.example.com', {
         timeout_ms: 20,
-        retry: { max_retries: 1, backoff: 'fixed' },
+        retry: { max_retries: 0 },
       }),
     });
 
@@ -514,7 +511,32 @@ describe('ExtractorClient', () => {
       .catch((value) => value);
 
     expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
-    expect((error as DogsledRuntimeError).cause).toBeInstanceOf(RateLimitTimeoutError);
+    const timeout = (error as DogsledRuntimeError).cause;
+    expect(timeout).toBeInstanceOf(RateLimitTimeoutError);
+    expect(timeout?.cause).toMatchObject({ name: 'TimeoutError' });
+  });
+
+  it('gives every attempt its own timeout and reports how many attempts timed out', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const fetchMock = vi.fn().mockImplementation(hangUntilAborted);
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({
+      integration: makeProvider('https://api.example.com', {
+        timeout_ms: 20,
+        retry: { max_retries: 1 },
+      }),
+    });
+
+    const error = await client
+      .request({ operation: makeResource({ api: { endpoint: '/items', method: 'GET' } }) })
+      .catch((value) => value);
+
+    expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
+    const timeout = (error as DogsledRuntimeError).cause;
+    expect(timeout).toBeInstanceOf(RateLimitTimeoutError);
+    expect(timeout?.message).toContain('after 2 attempts');
+    expect(timeout?.message).toContain('timed out after 20ms');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('appends query params after input templating and rejects cross-origin overrides', async () => {
@@ -670,8 +692,9 @@ describe('ExtractorClient', () => {
               body?: string;
               timeout_ms: number;
             },
-            resolvedBaseUrl: string
-          ) => Promise<Response>;
+            resolvedBaseUrl: string,
+            fetchOptions: { bodyLimit: number }
+          ) => Promise<unknown>;
         }
       ).doFetch.bind(client);
 
@@ -683,7 +706,8 @@ describe('ExtractorClient', () => {
             headers: {},
             timeout_ms: 30_000,
           },
-          'https://127.0.0.1'
+          'https://127.0.0.1',
+          { bodyLimit: 1024 }
         )
       ).rejects.toThrow('private/internal host');
     } finally {
@@ -917,5 +941,375 @@ describe('ExtractorClient', () => {
     expect((error as DogsledRuntimeError).cause?.message).toContain('…');
     // Body capped at 500 chars, so the whole message stays well under the 2000-char body.
     expect((error as DogsledRuntimeError).cause?.message.length).toBeLessThan(700);
+  });
+});
+
+const readItems = makeResource({ api: { endpoint: '/items', method: 'GET' } });
+const writeItem = makeResource({ api: { endpoint: '/items', method: 'POST' } });
+
+/** A 200 whose body fails as undici reports a connection dropped halfway. */
+function bodyThatDrops(): Response {
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"items":['));
+        controller.error(
+          new TypeError('terminated', {
+            cause: Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' }),
+          })
+        );
+      },
+    })
+  );
+}
+
+function connectionReset(): TypeError {
+  return new TypeError('fetch failed', {
+    cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }),
+  });
+}
+
+describe('ExtractorClient retries of one request', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  beforeEach(() => {
+    // Full jitter at zero makes every backoff wait 0 ms.
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+  });
+
+  it('retries a page whose body drops and returns the next attempt', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(bodyThatDrops())
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ id: 1 }] })));
+    vi.stubGlobal('fetch', fetchMock);
+    const retries: RequestRetryEvent[] = [];
+    const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+    const response = await client.request({
+      operation: readItems,
+      onRetry: (event) => void retries.push(event),
+    });
+
+    expect(response.data).toEqual({ items: [{ id: 1 }] });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(retries).toMatchObject([
+      { attempt: 1, maxAttempts: 5, category: 'response_body', waitMs: 0 },
+    ]);
+  });
+
+  it('retries a request whose attempt times out', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(hangUntilAborted)
+      .mockResolvedValueOnce(new Response('{"ok":true}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({
+      integration: makeProvider('https://api.example.com', { timeout_ms: 20 }),
+    });
+
+    const response = await client.request({ operation: readItems });
+
+    expect(response.data).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([502, 504])('retries HTTP %i by default', async (status) => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status, headers: { 'Retry-After': '0' } }))
+      .mockResolvedValueOnce(new Response('{"ok":true}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+    const response = await client.request({ operation: readItems });
+
+    expect(response.data).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('reads the final page after a redirect inside the retried attempt', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { Location: '/items/moved' } })
+      )
+      .mockResolvedValueOnce(bodyThatDrops())
+      .mockResolvedValueOnce(new Response('{"moved":true}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+    const response = await client.request({ operation: readItems });
+
+    expect(response.data).toEqual({ moved: true });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('classifies a connection that kept failing as a retryable network failure', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => Promise.reject(connectionReset()));
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({
+      integration: makeProvider('https://api.example.com', { retry: { max_retries: 1 } }),
+    });
+
+    const error = await client.request({ operation: readItems }).catch((value) => value);
+
+    expect(error).toMatchObject({
+      kind: 'provider',
+      code: 'EXTRACTOR_HTTP_NETWORK_FAILURE',
+      retryable: true,
+    });
+    const cause = (error as DogsledRuntimeError).cause;
+    expect(cause).toBeInstanceOf(RequestRetryError);
+    expect(cause?.message).toBe(
+      'Request failed after 2 attempts; last failure: read ECONNRESET: https://api.example.com/items'
+    );
+    expect(cause?.cause).toBeInstanceOf(TypeError);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not request a page again when the body has an error that is not a network failure', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => new Response('{not-json'));
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+    await expectDogsledCause(
+      client.request({ operation: readItems }),
+      'Failed to parse JSON response'
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not request a page again when the body is over its size limit', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(
+        async () => new Response('{"ok":true}', { headers: { 'content-length': '11' } })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+    const error = await client
+      .request({ operation: readItems, responseBodyLimitBytes: 10 })
+      .catch((value) => value);
+
+    expect(error).toMatchObject({ code: 'EXTRACTOR_HTTP_RESPONSE_BODY_LIMIT' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['a read', undefined],
+    ['a write', false],
+  ])(
+    'rejects an invalid body limit of %s once the response arrives, and cancels the body',
+    async (_kind, idempotent) => {
+      const cancelled = vi.fn();
+      const fetchMock = vi.fn().mockImplementation(
+        async () =>
+          new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                controller.enqueue(new TextEncoder().encode('{"ok":true}'));
+              },
+              cancel: cancelled,
+            })
+          )
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+      await expectDogsledCause(
+        client.request({
+          operation: idempotent === false ? writeItem : readItems,
+          responseBodyLimitBytes: 0,
+          ...(idempotent === false ? { idempotent } : {}),
+        }),
+        'API response body limit must be between 1 and'
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(cancelled).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('does not retry a network failure that carries no known code', async () => {
+    const failure = new TypeError('fetch failed');
+    const fetchMock = vi.fn().mockRejectedValue(failure);
+    vi.stubGlobal('fetch', fetchMock);
+    const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+    const error = await client.request({ operation: readItems }).catch((value) => value);
+
+    expect(error).toMatchObject({ code: 'EXTRACTOR_HTTP_NETWORK_FAILURE', retryable: true });
+    expect((error as DogsledRuntimeError).cause).toBe(failure);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  describe('a request that changes data keeps its earlier retry behavior', () => {
+    const write = { operation: writeItem, idempotent: false } as const;
+
+    it('keeps one deadline across the attempts, the waits and the body it reads after', async () => {
+      const fetchMock = vi.fn().mockImplementation(
+        (_url: string, init: RequestInit) =>
+          new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                init.signal?.addEventListener(
+                  'abort',
+                  () => controller.error(init.signal?.reason),
+                  {
+                    once: true,
+                  }
+                );
+              },
+            }),
+            { status: 200 }
+          )
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({
+        integration: makeProvider('https://api.example.com', { timeout_ms: 20 }),
+      });
+
+      const error = await client.request(write).catch((value) => value);
+
+      expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
+      expect((error as DogsledRuntimeError).cause).toMatchObject({ name: 'TimeoutError' });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('wraps an exhausted retry deadline with its exact timeout cause', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('', { status: 429, statusText: 'Too Many Requests' }));
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({
+        integration: makeProvider('https://api.example.com', {
+          timeout_ms: 20,
+          retry: { max_retries: 1, backoff: 'fixed' },
+        }),
+      });
+
+      const error = await client.request(write).catch((value) => value);
+
+      expect(error).toMatchObject({ kind: 'timeout', code: 'EXTRACTOR_HTTP_TIMEOUT' });
+      expect((error as DogsledRuntimeError).cause).toBeInstanceOf(RateLimitTimeoutError);
+      expect((error as DogsledRuntimeError).cause?.message).toMatch(
+        /^Request timed out after 20ms/
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([429, 503])(
+      'makes four attempts and keeps a bounded, redacted final provider body (%s)',
+      async (status) => {
+        const token = 'retry-provider-secret';
+        const finalBody = JSON.stringify({
+          message: `${token} ${'provider detail '.repeat(100)}`,
+        });
+        const fetchMock = vi.fn(
+          async () =>
+            new Response(finalBody, {
+              status,
+              statusText: status === 429 ? 'Too Many Requests' : 'Service Unavailable',
+              headers: { 'Retry-After': '0' },
+            })
+        );
+        vi.stubGlobal('fetch', fetchMock);
+        const client = new ExtractorClient({
+          integration: makeProvider('https://api.example.com', {
+            auth: { type: 'bearer', token },
+          }),
+        });
+
+        const error = await client.request(write).catch((value) => value as DogsledRuntimeError);
+
+        expect(error).toMatchObject({ kind: 'provider', providerStatus: status });
+        expect(fetchMock).toHaveBeenCalledTimes(4);
+        expect(error.cause?.message).toContain('provider detail');
+        expect(error.cause?.message).toContain('[REDACTED]');
+        expect(error.cause?.message).not.toContain(token);
+        expect(error.cause?.message).not.toContain('attempts');
+        expect(error.cause?.message.length).toBeLessThan(700);
+      }
+    );
+
+    it('does not retry a response body that drops, which it reads after the loop', async () => {
+      const fetchMock = vi.fn().mockImplementation(async () => bodyThatDrops());
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+      const error = await client.request(write).catch((value) => value);
+
+      expect(error).toMatchObject({ code: 'EXTRACTOR_HTTP_NETWORK_FAILURE' });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([502, 504])(
+      'does not retry HTTP %i unless the integration lists it',
+      async (status) => {
+        const fetchMock = vi.fn().mockImplementation(async () => new Response('', { status }));
+        vi.stubGlobal('fetch', fetchMock);
+        const client = new ExtractorClient({
+          integration: makeProvider('https://api.example.com', { retry: { max_retries: 2 } }),
+        });
+
+        const error = await client.request(write).catch((value) => value);
+
+        expect(error).toMatchObject({ kind: 'provider', providerStatus: status });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      }
+    );
+
+    it('retries the statuses that the integration lists', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('', { status: 502, headers: { 'Retry-After': '0' } }))
+        .mockResolvedValueOnce(new Response('{"id":7}'));
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({
+        integration: makeProvider('https://api.example.com', {
+          retry: { retry_on: [429, 500, 502, 503], max_retries: 3 },
+        }),
+      });
+
+      const response = await client.request(write);
+
+      expect(response.data).toEqual({ id: 7 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('is sent again when the provider says it was throttled', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('', { status: 429, headers: { 'Retry-After': '0' } }))
+        .mockResolvedValueOnce(new Response('{"id":7}'));
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+      const response = await client.request(write);
+
+      expect(response.data).toEqual({ id: 7 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('is sent again after any error before a response, as it was before', async () => {
+      vi.useFakeTimers();
+      const fetchMock = vi
+        .fn()
+        .mockRejectedValueOnce(new TypeError('fetch failed'))
+        .mockResolvedValueOnce(new Response('{"id":7}'));
+      vi.stubGlobal('fetch', fetchMock);
+      const client = new ExtractorClient({ integration: makeProvider('https://api.example.com') });
+
+      const response = client.request(write);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect((await response).data).toEqual({ id: 7 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 });
