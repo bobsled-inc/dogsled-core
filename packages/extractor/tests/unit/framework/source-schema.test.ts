@@ -102,6 +102,32 @@ describe('SourceSchema', () => {
     expect(transport && getSqlDialect(transport)).toBe('postgres');
   });
 
+  it.each([
+    [
+      'an HTTP transport',
+      (retry: object) => ({ id: 'api', type: 'http', base_url: 'https://api.example.com', retry }),
+    ],
+    [
+      'the policy of a transport',
+      (retry: object) => ({
+        id: 'api',
+        type: 'http',
+        base_url: 'https://api.example.com',
+        policy: { retry },
+      }),
+    ],
+  ])('limits retry.max_retries of %s to 10', (_name, transport) => {
+    const parse = (maxRetries: number) =>
+      SourceSchema.safeParse({
+        ...sourceSpec,
+        default_transport: 'api',
+        transports: [transport({ max_retries: maxRetries })],
+      }).success;
+
+    expect(parse(10)).toBe(true);
+    expect(parse(11)).toBe(false);
+  });
+
   it('rejects duplicate transport ids', () => {
     const result = SourceSchema.safeParse({
       ...sourceSpec,

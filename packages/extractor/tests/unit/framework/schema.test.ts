@@ -63,6 +63,26 @@ describe('IntegrationSpecSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it.each([
+    [0, true],
+    [10, true],
+    [11, false],
+    [-1, false],
+    [2.5, false],
+  ])('checks retry.max_retries of %s against the limit of 10', (maxRetries, accepted) => {
+    const result = IntegrationSpecSchema.safeParse({
+      spec_version: '1',
+      type: 'integration',
+      name: 'github',
+      transport: {
+        base_url: 'https://api.github.com',
+        retry: { max_retries: maxRetries },
+      },
+    });
+
+    expect(result.success).toBe(accepted);
+  });
+
   it('accepts env-templated HTTPS base URLs', () => {
     const result = IntegrationSpecSchema.safeParse({
       auth_env_vars: ['ZENDESK_SUBDOMAIN'],

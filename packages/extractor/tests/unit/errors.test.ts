@@ -16,6 +16,7 @@ import {
   serializeExtractorErrorCause,
   withRetry,
 } from '../../src/runtime/errors.js';
+import { RateLimitTimeoutError, RequestRetryError } from '../../src/runtime/rate-limiter.js';
 
 describe('classifyMcpError', () => {
   it('does not classify rate limit text', () => {
@@ -129,6 +130,42 @@ describe('toExtractorRuntimeError', () => {
   ] as const)('maps HTTP %s structurally', (failureReason, kind) => {
     const cause = new ExtractorConfigError('private detail', undefined, failureReason);
     expect(toExtractorHttpRuntimeError(cause)).toMatchObject({ kind, cause });
+  });
+
+  it('classifies a retry wrapper by the failure it wraps and keeps the attempts in the cause', () => {
+    const wrapper = (cause: Error) =>
+      new RequestRetryError('Request failed after 5 attempts; last failure: x', 5, cause);
+
+    const network = wrapper(new TypeError('fetch failed'));
+    expect(toExtractorHttpRuntimeError(network)).toMatchObject({
+      kind: 'provider',
+      code: 'EXTRACTOR_HTTP_NETWORK_FAILURE',
+      retryable: true,
+      cause: network,
+    });
+
+    const timeout = wrapper(new RateLimitTimeoutError('Request timed out after 30ms'));
+    expect(toExtractorHttpRuntimeError(timeout)).toMatchObject({
+      kind: 'timeout',
+      code: 'EXTRACTOR_HTTP_TIMEOUT',
+      retryable: true,
+      cause: timeout,
+    });
+
+    const status = wrapper(Object.assign(new Error('HTTP 502'), { status: 502 }));
+    expect(toExtractorHttpRuntimeError(status)).toMatchObject({
+      kind: 'provider',
+      code: 'EXTRACTOR_HTTP_STATUS_FAILURE',
+      providerStatus: 502,
+      cause: status,
+    });
+
+    const other = wrapper(new Error('something else'));
+    expect(toExtractorHttpRuntimeError(other)).toMatchObject({
+      kind: 'internal',
+      code: 'EXTRACTOR_HTTP_REQUEST_FAILURE',
+      cause: other,
+    });
   });
 
   it('serializes the original cause instead of the public wrapper message', () => {
