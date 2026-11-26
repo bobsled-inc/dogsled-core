@@ -42,8 +42,8 @@ transport:
     Accept: application/json
   timeout_ms: 30000
   retry:
-    retry_on: [429, 503]
-    max_retries: 3
+    retry_on: [429, 502, 503, 504]
+    max_retries: 4
     backoff: exponential
     retry_after_header: true
   rate_limit:
@@ -221,6 +221,44 @@ A `custom-token` request that gets 429, 500, 502, 503 or 504 is retried with the
 transport's `retry` backoff and `Retry-After` handling, within 30 seconds. A token
 endpoint that answers 400, 401 or 403 fails as an authentication error at once. Any
 other failed token request keeps its HTTP status, and 429 and 5xx stay retryable.
+
+## Timeouts and retries
+
+`timeout_ms` is the time one attempt gets, from sending the request to reading the
+last byte of the response. A retry starts a new clock, so a slow page near the limit
+costs one attempt, not the run. The default is 30 seconds.
+
+Dogsled sends a request again when an attempt:
+
+- times out,
+- loses its connection before or while it reads the response, for example a reset
+  (`ECONNRESET`) or "other side closed",
+- gets HTTP 429, 502, 503 or 504.
+
+A request makes up to 5 attempts by default. Under `retry`, `max_retries` sets the
+retries after the first attempt (`0` turns retries off) and `retry_on` replaces the
+list of statuses. Any other status ends the request, as does a size limit, a
+response that is not valid JSON or a request that Dogsled refuses before it sends
+it, such as one to a private host name, because another attempt would fail the same
+way. Cancelling a run stops it at once and never retries.
+
+The wait before a retry is the `Retry-After` header, up to 5 minutes, when the API
+sends one and `retry_after_header` is not `false`. Otherwise `backoff: exponential`
+waits a random time of up to 1 second after the first failure, 2 seconds after the
+second, then 4 and 8, never more than 30 seconds. `backoff: fixed` waits 1 second.
+
+Each retry writes a warning to the run log, a `LOG` message with `level: warn`,
+`event: http.request_retry` and the attributes `resource`, `attempt`,
+`max_attempts`, `reason` (`timeout`, `connection`, `response_body` or
+`http_status`), `detail`, `wait_ms` and, when the API answered, `status`. After the
+last attempt the run fails with an error that says how many attempts ran and why
+the last one failed.
+
+A request that changes data is different, because the API may have acted on an
+attempt that failed late. An Action and an activation sync are not sent again after a
+timeout or a failed read of the response, and not after HTTP 502 or 504 unless
+`retry_on` lists the status. They are still retried on HTTP 429 and 503 and on a
+connection that failed before any response.
 
 ## Pagination types
 

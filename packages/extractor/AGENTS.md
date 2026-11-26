@@ -67,6 +67,7 @@ Condensed steps:
 - **Warehouse client factory**: Dynamic `import()` in `warehouse-client.ts` lazy-loads dialect clients to avoid unnecessary dependency loading
 - **CDC metadata normalization**: `warehouse-extractor.ts` normalizes Snowflake METADATA$, BigQuery \_CHANGE_TYPE, and Delta CDF columns to standard `_change_type` / `_is_update`
 - **Error taxonomy**: `errors.ts` classifies errors as transient (retryable), config (fail-fast), or data (fail-fast)
+- **Request retries**: `RateLimiter.fetchWithRetry` gives each attempt its own `timeout_ms` and reads a successful body inside the attempt (`readBody`), so a stalled or dropped read retries one request. Parse after `readBody` returns, so a bad document is never requested again. A caller that changes data at the provider passes `idempotent: false` (Actions and activation do), so a timeout, a failed body read or a 502/504 is never resent. `onRetry` reports each retry; extraction logs it as an `http.request_retry` warning
 - **Dual-dispatch**: `extract-resource.ts` routes to HTTP or MCP page iterators based on transport type
 
 ## Error Handling

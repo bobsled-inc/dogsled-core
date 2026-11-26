@@ -483,6 +483,68 @@ describe('executeApiAction through the real ExtractorClient', () => {
     expect(result.error).toMatchObject({ code: 'timeout', retryable: true });
   });
 
+  it('does not send an Action again after an attempt timed out', async () => {
+    const fetchMock = hangUntilAborted();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await executeApiAction(makeAction(), inputs, {
+      resolvedIntegration: makeIntegration({ timeout_ms: 20, retry: { max_retries: 2 } }),
+    });
+
+    expect(result.error).toMatchObject({ code: 'timeout', retryable: true });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('does not send an Action again after a gateway timeout', async () => {
+    const fetchMock = respondWith(504);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await executeApiAction(makeAction(), inputs, {
+      resolvedIntegration: makeIntegration({ retry: { max_retries: 2 } }),
+    });
+
+    expect(result.error).toMatchObject({
+      code: 'server_error',
+      retryable: true,
+      provider_status: 504,
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('sends an Action again when the provider throttles it', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status: 429, headers: { 'Retry-After': '0' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: '42' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await executeApiAction(makeAction(), inputs, {
+      resolvedIntegration: makeIntegration({ retry: { max_retries: 2 } }),
+    });
+
+    expect(result).toMatchObject({ status: 'success', target_record_id: '42' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('classifies a connection that kept resetting as a retryable network error', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const fetchMock = vi.fn(async () =>
+      Promise.reject(
+        new TypeError('fetch failed', {
+          cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }),
+        })
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await executeApiAction(makeAction(), inputs, {
+      resolvedIntegration: makeIntegration({ retry: { max_retries: 1 } }),
+    });
+
+    expect(result.error).toMatchObject({ code: 'network_error', retryable: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('reports a caller abort as a cancellation', async () => {
     const controller = new AbortController();
     const hang = hangUntilAborted();

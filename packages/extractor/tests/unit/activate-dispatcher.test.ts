@@ -189,6 +189,23 @@ describe('runActivateDispatcher', () => {
     expect(mockClient.request).toHaveBeenCalledTimes(4);
   });
 
+  it('asks the client not to resend a write after a timeout, a failed body read or a gateway error', async () => {
+    const mockClient = {
+      request: vi.fn().mockResolvedValue({ status: 200, data: null, headers: new Headers() }),
+    } as unknown as ExtractorClient;
+
+    await runActivateDispatcher({
+      actionSpec: mockActionSpec,
+      integrationSpec: mockIntegrationSpec,
+      records: [makeRecord('ent-1')],
+      projectionRef: 'mydb.projection_1',
+      syncName: 'sync',
+      client: mockClient,
+    });
+
+    expect(mockClient.request).toHaveBeenCalledWith(expect.objectContaining({ idempotent: false }));
+  });
+
   it('classifies network errors as network_error and retries', async () => {
     const networkError = new TypeError('fetch failed');
     const mockClient = {

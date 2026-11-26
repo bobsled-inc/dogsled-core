@@ -12,7 +12,7 @@ import {
   type DogsledRuntimeErrorOptions,
 } from '@bobsled-inc/protocol';
 import { getErrorMessage, ResponseBodyLimitError } from '../framework/core/index.js';
-import { RateLimitTimeoutError } from './rate-limiter.js';
+import { RateLimitTimeoutError, RequestRetryError } from './rate-limiter.js';
 
 /** Construct the shared Dogsled failure contract at an extractor boundary. */
 export function toExtractorRuntimeError(options: DogsledRuntimeErrorOptions): DogsledRuntimeError {
@@ -44,6 +44,19 @@ export function toExtractorHttpRuntimeError(
 ): DogsledRuntimeError {
   if (cause instanceof DogsledRuntimeError) return cause;
   const error = asError(cause);
+  if (error instanceof RequestRetryError) {
+    // Retrying never changes how a failure is classified. Classify the failure
+    // that ended the last attempt and keep the attempt count in the cause.
+    const failure = toExtractorHttpRuntimeError(error.cause, signal);
+    return toExtractorRuntimeError({
+      kind: failure.kind,
+      code: failure.code,
+      operation: failure.operation,
+      retryable: failure.retryable,
+      providerStatus: failure.providerStatus,
+      cause: error,
+    });
+  }
   if (signal?.aborted || error.name === 'AbortError') {
     return toExtractorRuntimeError({
       kind: 'cancellation',

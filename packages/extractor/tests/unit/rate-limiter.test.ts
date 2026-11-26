@@ -1,6 +1,45 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RateLimiter } from '../../src/runtime/rate-limiter.js';
+import { ResponseBodyLimitError } from '../../src/framework/core/index.js';
+import {
+  DEFAULT_RATE_LIMIT,
+  RateLimiter,
+  RateLimitTimeoutError,
+  RequestRetryError,
+  type RequestRetryEvent,
+} from '../../src/runtime/rate-limiter.js';
+
+const URL = 'https://example.com/items';
+
+/** The shapes undici raises: the code sits on the cause of a TypeError. */
+function networkFailure(code: string, message: string, summary = 'fetch failed'): TypeError {
+  return new TypeError(summary, { cause: Object.assign(new Error(message), { code }) });
+}
+const reset = (): TypeError => networkFailure('ECONNRESET', 'read ECONNRESET');
+const closedByServer = (): TypeError => networkFailure('UND_ERR_SOCKET', 'other side closed');
+
+/** A fetch that never answers. Like undici, it rejects with the abort reason. */
+function hangUntilAborted(_url: unknown, init?: RequestInit): Promise<Response> {
+  return new Promise((_resolve, reject) => {
+    init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+  });
+}
+
+/** A 200 whose body fails halfway, as undici reports a dropped connection. */
+function bodyThatDrops(): Response {
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"items":['));
+        controller.error(networkFailure('UND_ERR_SOCKET', 'other side closed', 'terminated'));
+      },
+    })
+  );
+}
+
+const readText = (sink: string[]) => async (response: Response) => {
+  sink.push(await response.text());
+};
 
 describe('RateLimiter', () => {
   afterEach(() => {
@@ -84,5 +123,632 @@ describe('RateLimiter', () => {
     ).rejects.toThrow('network request budget spent');
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('RateLimiter retries', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // Full jitter at zero keeps every backoff wait at 0 ms unless a test sets it.
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('makes up to five attempts by default', () => {
+    expect(DEFAULT_RATE_LIMIT.maxRetries + 1).toBe(5);
+    expect(DEFAULT_RATE_LIMIT.retryOn).toEqual([429, 502, 503, 504]);
+  });
+
+  describe('attempt timeouts', () => {
+    it('gives each attempt its own timeout', async () => {
+      const signals: AbortSignal[] = [];
+      const fetchMock = vi.fn((url: unknown, init?: RequestInit) => {
+        signals.push(init!.signal!);
+        if (signals.length === 1) return hangUntilAborted(url, init);
+        // 800 ms is less than a timeout but more than the 0 ms a shared 1000 ms deadline leaves.
+        return new Promise<Response>((resolve) => {
+          setTimeout(() => resolve(new Response('ok')), 800);
+        });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter().fetchWithRetry(URL, {}, 1000);
+      // The 0 ms wait that follows the timeout is set while time moves, so fake time puts it 1 ms later.
+      await vi.advanceTimersByTimeAsync(1001);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(signals[0]!.aborted).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(800);
+      const response = await result;
+
+      expect(response.status).toBe(200);
+      expect(signals[1]!.aborted).toBe(false);
+    });
+
+    it('retries a request whose attempt timed out', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockImplementationOnce(hangUntilAborted)
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+      const events: RequestRetryEvent[] = [];
+
+      const result = new RateLimiter().fetchWithRetry(URL, {}, 500, undefined, undefined, {
+        onRetry: (event) => void events.push(event),
+      });
+      await vi.runAllTimersAsync();
+
+      expect((await result).status).toBe(200);
+      expect(events).toEqual([
+        {
+          attempt: 1,
+          maxAttempts: 5,
+          category: 'timeout',
+          reason: 'timed out after 500ms',
+          waitMs: 0,
+        },
+      ]);
+    });
+
+    it('stops the timer of an attempt whose body was read', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('ok')));
+      const texts: string[] = [];
+
+      await new RateLimiter().fetchWithRetry(URL, {}, 500, undefined, undefined, {
+        readBody: readText(texts),
+      });
+
+      expect(texts).toEqual(['ok']);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('keeps a response body that is read later under the attempt timeout', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(
+          (_url: unknown, init?: RequestInit) =>
+            new Response(
+              new ReadableStream<Uint8Array>({
+                start(controller) {
+                  init?.signal?.addEventListener('abort', () =>
+                    controller.error(init.signal?.reason)
+                  );
+                },
+              })
+            )
+        )
+      );
+
+      const response = await new RateLimiter().fetchWithRetry(URL, {}, 1000);
+      const read = response.text().catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(await read).toMatchObject({ name: 'TimeoutError' });
+    });
+  });
+
+  describe('connection failures', () => {
+    it.each([
+      ['reset', reset],
+      ['closed by the server', closedByServer],
+    ])('retries a connection %s before any response', async (_name, failure) => {
+      const fetchMock = vi
+        .fn()
+        .mockRejectedValueOnce(failure())
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter().fetchWithRetry(URL, {});
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect((await result).status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry an error that is not a network failure', async () => {
+      const failure = new Error('Request URL hostname "internal" is a private/internal host.');
+      const fetchMock = vi.fn().mockRejectedValue(failure);
+      vi.stubGlobal('fetch', fetchMock);
+
+      await expect(new RateLimiter().fetchWithRetry(URL, {})).rejects.toBe(failure);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('response bodies', () => {
+    it('retries the whole request when reading the body fails', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(bodyThatDrops())
+        .mockResolvedValueOnce(new Response('{"items":[]}'));
+      vi.stubGlobal('fetch', fetchMock);
+      const texts: string[] = [];
+      const events: RequestRetryEvent[] = [];
+
+      const result = new RateLimiter().fetchWithRetry(URL, {}, 30_000, undefined, undefined, {
+        readBody: readText(texts),
+        onRetry: (event) => void events.push(event),
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      await result;
+
+      expect(texts).toEqual(['{"items":[]}']);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(events[0]).toMatchObject({
+        category: 'response_body',
+        reason: 'response body read failed: connection closed by the server (UND_ERR_SOCKET)',
+      });
+    });
+
+    it('retries a body that stalls until the attempt times out', async () => {
+      const stalled = (_url: unknown, init?: RequestInit): Response =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              init?.signal?.addEventListener('abort', () => controller.error(init.signal?.reason));
+            },
+          })
+        );
+      const fetchMock = vi
+        .fn()
+        .mockImplementationOnce(stalled)
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+      const texts: string[] = [];
+
+      const result = new RateLimiter().fetchWithRetry(URL, {}, 1000, undefined, undefined, {
+        readBody: readText(texts),
+      });
+      await vi.runAllTimersAsync();
+      await result;
+
+      expect(texts).toEqual(['ok']);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it.each([
+      ['a size limit', () => new ResponseBodyLimitError('API response', 10)],
+      ['an error that is not a network failure', () => new SyntaxError('Unexpected token')],
+    ])('does not retry %s', async (_name, failure) => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+      const error = failure();
+
+      await expect(
+        new RateLimiter().fetchWithRetry(URL, {}, 30_000, undefined, undefined, {
+          readBody: async () => {
+            throw error;
+          },
+        })
+      ).rejects.toBe(error);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('statuses', () => {
+    it.each([429, 502, 503, 504])('retries HTTP %i', async (status) => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('', { status, headers: { 'Retry-After': '0' } }))
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter().fetchWithRetry(URL, {});
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect((await result).status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('hands back a status that is not in the retry list', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 500 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const response = await new RateLimiter().fetchWithRetry(URL, {});
+
+      expect(response.status).toBe(500);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('waits as long as Retry-After says', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('', { status: 429, headers: { 'Retry-After': '7' } }))
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+      const events: RequestRetryEvent[] = [];
+
+      const result = new RateLimiter().fetchWithRetry(URL, {}, 30_000, undefined, undefined, {
+        onRetry: (event) => void events.push(event),
+      });
+      await vi.advanceTimersByTimeAsync(6999);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await result;
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(events[0]).toMatchObject({
+        attempt: 1,
+        category: 'http_status',
+        status: 429,
+        reason: 'HTTP 429',
+        waitMs: 7000,
+      });
+    });
+
+    it('ignores Retry-After when the option turns it off', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('', { status: 429, headers: { 'Retry-After': '7' } }))
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter({ retryAfterHeader: false }).fetchWithRetry(URL, {});
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect((await result).status).toBe(200);
+    });
+  });
+
+  describe('giving up', () => {
+    it('stops after five attempts and names them in the status error', async () => {
+      const fetchMock = vi.fn().mockImplementation(
+        async () =>
+          new Response('', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Retry-After': '0' },
+          })
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const outcome = new RateLimiter().fetchWithRetry(URL, {}).catch((error: unknown) => error);
+      await vi.runAllTimersAsync();
+      const error = await outcome;
+
+      expect(fetchMock).toHaveBeenCalledTimes(5);
+      expect(error).toMatchObject({
+        status: 503,
+        message: 'HTTP 503: Service Unavailable (after 5 attempts)',
+      });
+    });
+
+    it('keeps the plain status error when only one attempt runs', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(new Response('', { status: 503, statusText: 'Unavailable' }))
+      );
+
+      await expect(new RateLimiter({ maxRetries: 0 }).fetchWithRetry(URL, {})).rejects.toThrow(
+        /^HTTP 503: Unavailable$/
+      );
+    });
+
+    it('names the attempts when every attempt timed out', async () => {
+      const fetchMock = vi.fn().mockImplementation(hangUntilAborted);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const outcome = new RateLimiter({ maxRetries: 2 })
+        .fetchWithRetry(URL, {}, 500)
+        .catch((error: unknown) => error);
+      await vi.runAllTimersAsync();
+      const error = await outcome;
+
+      expect(error).toBeInstanceOf(RateLimitTimeoutError);
+      expect((error as Error).message).toBe(
+        'Request failed after 3 attempts; last failure: timed out after 500ms: https://example.com/items'
+      );
+      expect((error as Error).cause).toMatchObject({ name: 'TimeoutError' });
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('names the attempts and the reason when the connection kept failing', async () => {
+      const fetchMock = vi.fn().mockImplementation(async () => Promise.reject(reset()));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const outcome = new RateLimiter({ maxRetries: 2 })
+        .fetchWithRetry(URL, {})
+        .catch((error: unknown) => error);
+      await vi.runAllTimersAsync();
+      const error = await outcome;
+
+      expect(error).toBeInstanceOf(RequestRetryError);
+      expect(error).toMatchObject({ attempts: 3 });
+      expect((error as Error).message).toBe(
+        'Request failed after 3 attempts; last failure: connection reset (ECONNRESET): https://example.com/items'
+      );
+      expect((error as Error).cause).toBeInstanceOf(TypeError);
+    });
+
+    it('hides the query string of the request from the error', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(hangUntilAborted));
+
+      const outcome = new RateLimiter({ maxRetries: 1 })
+        .fetchWithRetry(`${URL}?api_key=hunter2`, {}, 100)
+        .catch((error: unknown) => error);
+      await vi.runAllTimersAsync();
+
+      expect(((await outcome) as Error).message).not.toContain('hunter2');
+    });
+
+    it('throws the original error when a single attempt runs', async () => {
+      const failure = reset();
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(failure));
+
+      await expect(new RateLimiter({ maxRetries: 0 }).fetchWithRetry(URL, {})).rejects.toBe(
+        failure
+      );
+    });
+  });
+
+  describe('cancellation', () => {
+    it('does not retry when the caller aborts during an attempt', async () => {
+      const fetchMock = vi.fn().mockImplementation(hangUntilAborted);
+      vi.stubGlobal('fetch', fetchMock);
+      const controller = new AbortController();
+      const reason = new Error('stop');
+
+      const outcome = new RateLimiter()
+        .fetchWithRetry(URL, { signal: controller.signal })
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(0);
+      controller.abort(reason);
+
+      expect(await outcome).toBe(reason);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry when the caller aborts with a timeout reason', async () => {
+      const fetchMock = vi.fn().mockImplementation(hangUntilAborted);
+      vi.stubGlobal('fetch', fetchMock);
+      const controller = new AbortController();
+      const reason = new DOMException('The action timed out', 'TimeoutError');
+
+      const outcome = new RateLimiter()
+        .fetchWithRetry(URL, { signal: controller.signal })
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(0);
+      controller.abort(reason);
+
+      expect(await outcome).toBe(reason);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('stops waiting between attempts when the caller aborts', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('', { status: 503, headers: { 'Retry-After': '60' } }));
+      vi.stubGlobal('fetch', fetchMock);
+      const controller = new AbortController();
+      const reason = new Error('stop');
+
+      const outcome = new RateLimiter()
+        .fetchWithRetry(URL, { signal: controller.signal })
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(1000);
+      controller.abort(reason);
+
+      expect(await outcome).toBe(reason);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('backoff', () => {
+    async function waitsBeforeRetries(
+      limiter: RateLimiter,
+      random: number,
+      failures: number
+    ): Promise<number[]> {
+      vi.spyOn(Math, 'random').mockReturnValue(random);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => Promise.reject(reset()))
+      );
+      const events: RequestRetryEvent[] = [];
+      const outcome = limiter
+        .fetchWithRetry(URL, {}, 30_000, undefined, undefined, {
+          onRetry: (event) => void events.push(event),
+        })
+        .catch(() => undefined);
+      await vi.advanceTimersByTimeAsync(2 ** failures * 1000);
+      await outcome;
+      return events.map((event) => event.waitMs);
+    }
+
+    it('doubles the longest wait each retry and draws below it', async () => {
+      expect(await waitsBeforeRetries(new RateLimiter(), 0.5, 5)).toEqual([500, 1000, 2000, 4000]);
+    });
+
+    it('stays within the bounds for any random draw', async () => {
+      expect(await waitsBeforeRetries(new RateLimiter(), 0, 5)).toEqual([0, 0, 0, 0]);
+      const highest = await waitsBeforeRetries(new RateLimiter(), 0.999999, 5);
+      expect(highest).toEqual([999, 1999, 3999, 7999]);
+    });
+
+    it('caps the wait at 30 seconds', async () => {
+      const waits = await waitsBeforeRetries(new RateLimiter({ maxRetries: 8 }), 0.999999, 9);
+      expect(Math.max(...waits)).toBeLessThan(30_000);
+      expect(waits.slice(-3).every((wait) => wait >= 15_000)).toBe(true);
+    });
+
+    it('waits one second between attempts when the backoff is fixed', async () => {
+      const waits = await waitsBeforeRetries(new RateLimiter({ backoff: 'fixed' }), 0.3, 5);
+      expect(waits).toEqual([1000, 1000, 1000, 1000]);
+    });
+  });
+
+  describe('requests that change data', () => {
+    it('does not retry a timeout', async () => {
+      const fetchMock = vi.fn().mockImplementation(hangUntilAborted);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const outcome = new RateLimiter()
+        .fetchWithRetry(URL, { method: 'POST' }, 500, undefined, undefined, { idempotent: false })
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(500);
+      const error = await outcome;
+
+      expect(error).toBeInstanceOf(RateLimitTimeoutError);
+      expect((error as Error).message).toBe(
+        'Request timed out after 500ms: https://example.com/items'
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not retry a failed body read', async () => {
+      const fetchMock = vi.fn().mockImplementation(async () => bodyThatDrops());
+      vi.stubGlobal('fetch', fetchMock);
+
+      const outcome = new RateLimiter()
+        .fetchWithRetry(URL, { method: 'POST' }, 30_000, undefined, undefined, {
+          idempotent: false,
+          readBody: async (response) => void (await response.text()),
+        })
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(await outcome).toBeInstanceOf(TypeError);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([502, 504])('does not retry HTTP %i unless the config lists it', async (status) => {
+      const fetchMock = vi.fn().mockImplementation(async () => new Response('', { status }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const response = await new RateLimiter().fetchWithRetry(
+        URL,
+        { method: 'POST' },
+        30_000,
+        undefined,
+        undefined,
+        { idempotent: false }
+      );
+
+      expect(response.status).toBe(status);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('honors a retry list that the config sets', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('', { status: 502, headers: { 'Retry-After': '0' } }))
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter({ retryOn: [502] }).fetchWithRetry(
+        URL,
+        { method: 'POST' },
+        30_000,
+        undefined,
+        undefined,
+        { idempotent: false }
+      );
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect((await result).status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it.each([
+      ['HTTP 429', () => new Response('', { status: 429, headers: { 'Retry-After': '0' } })],
+      ['HTTP 503', () => new Response('', { status: 503, headers: { 'Retry-After': '0' } })],
+    ])('still retries %s', async (_name, throttled) => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(throttled())
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter().fetchWithRetry(
+        URL,
+        { method: 'POST' },
+        30_000,
+        undefined,
+        undefined,
+        { idempotent: false }
+      );
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect((await result).status).toBe(200);
+    });
+
+    it('still retries a connection that failed before any response', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockRejectedValueOnce(reset())
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter().fetchWithRetry(
+        URL,
+        { method: 'POST' },
+        30_000,
+        undefined,
+        undefined,
+        { idempotent: false }
+      );
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect((await result).status).toBe(200);
+    });
+  });
+
+  describe('reporting retries', () => {
+    it('keeps retrying when the report fails', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('', { status: 503, headers: { 'Retry-After': '0' } }))
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = new RateLimiter().fetchWithRetry(URL, {}, 30_000, undefined, undefined, {
+        onRetry: async () => {
+          throw new Error('run log is closed');
+        },
+      });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect((await result).status).toBe(200);
+    });
+
+    it('reports every retry in order', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+      const fetchMock = vi
+        .fn()
+        .mockRejectedValueOnce(reset())
+        .mockResolvedValueOnce(new Response('', { status: 504 }))
+        .mockResolvedValueOnce(new Response('ok'));
+      vi.stubGlobal('fetch', fetchMock);
+      const events: RequestRetryEvent[] = [];
+
+      const result = new RateLimiter().fetchWithRetry(URL, {}, 30_000, undefined, undefined, {
+        onRetry: (event) => void events.push(event),
+      });
+      await vi.advanceTimersByTimeAsync(2000);
+      await result;
+
+      expect(events).toEqual([
+        {
+          attempt: 1,
+          maxAttempts: 5,
+          category: 'connection',
+          reason: 'connection reset (ECONNRESET)',
+          waitMs: 500,
+        },
+        {
+          attempt: 2,
+          maxAttempts: 5,
+          category: 'http_status',
+          reason: 'HTTP 504',
+          status: 504,
+          waitMs: 1000,
+        },
+      ]);
+    });
   });
 });

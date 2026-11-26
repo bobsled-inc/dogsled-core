@@ -41,6 +41,7 @@ interface ApiClientLike {
     };
     signal?: AbortSignal;
     responseBodyLimitBytes?: number;
+    idempotent?: boolean;
   }): Promise<{
     data: unknown;
     headers: Headers;
@@ -362,6 +363,9 @@ export async function executeApiAction(
         context: {
           mapped,
         },
+        // An Action changes data at the provider, so the client must not send it
+        // again after a timeout, a failed body read or a gateway error.
+        idempotent: false,
         ...(signal !== undefined ? { signal } : {}),
         ...(responseBodyLimitBytes !== undefined ? { responseBodyLimitBytes } : {}),
       });

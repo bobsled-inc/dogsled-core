@@ -29,6 +29,7 @@ import { McpExtractorClient } from '../runtime/mcp-client.js';
 import { paginateMcpTool } from '../runtime/mcp-pagination.js';
 import { paginate } from '../runtime/pagination.js';
 import { RecordFilterTracker } from '../runtime/record-filters.js';
+import { logRequestRetry } from '../runtime/retry-diagnostics.js';
 import {
   extractJsonPath,
   extractRecords,
@@ -264,6 +265,7 @@ export async function extractResource({
         onResolvedInput: (input) => {
           resolvedInputs = input;
         },
+        onRetry: (retry) => logRequestRetry(logger, resource.name, retry),
       });
     };
     const pages = paginate(

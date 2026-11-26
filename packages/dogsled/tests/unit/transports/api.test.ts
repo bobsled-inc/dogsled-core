@@ -440,6 +440,29 @@ describe('executeApiAction', () => {
     expect(result.status).toBe('success');
   });
 
+  it('asks the client not to resend an Action after a timeout, a failed body read or a gateway error', async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: { id: '003123' },
+      headers: new Headers(),
+      status: 200,
+    });
+    const resolvedIntegration = {
+      spec_version: '1' as const,
+      type: 'integration' as const,
+      name: 'salesforce',
+      transport: { type: 'http' as const, base_url: 'https://api.example.com' },
+    };
+
+    await executeApiAction(
+      makeApiAction(),
+      { email: 'alice@example.com', last_name: 'Doe' },
+      { resolvedIntegration },
+      { createClient: (() => ({ request })) as never, loadIntegration: vi.fn() }
+    );
+
+    expect(request).toHaveBeenCalledWith(expect.objectContaining({ idempotent: false }));
+  });
+
   it('cancels an API request that is already running', async () => {
     const controller = new AbortController();
     let markStarted: (() => void) | undefined;
