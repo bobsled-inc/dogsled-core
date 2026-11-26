@@ -163,7 +163,7 @@ export class RateLimiter {
         attempt,
         maxAttempts,
         category: result.category,
-        reason: result.reason,
+        reason: result.label,
         ...(result.status !== undefined ? { status: result.status } : {}),
         waitMs,
       });

@@ -227,15 +227,17 @@ other failed token request keeps its HTTP status, and 429 and 5xx stay retryable
 A request that reads, such as a page of a resource, is sent again when an attempt:
 
 - times out,
-- loses its connection before or while it reads the response, with a reset
-  (`ECONNRESET`), a broken pipe (`EPIPE`), a timeout (`ETIMEDOUT`, or a connect,
-  headers or body timeout from the HTTP client) or "other side closed"
-  (`UND_ERR_SOCKET`),
+- loses its connection before or while it reads the response, with a refusal
+  (`ECONNREFUSED`), a reset (`ECONNRESET`), a broken pipe (`EPIPE`), a timeout
+  (`ETIMEDOUT`, or a connect, headers or body timeout from the HTTP client) or
+  "other side closed" (`UND_ERR_SOCKET`),
 - gets HTTP 429, 502, 503 or 504.
 
 `timeout_ms` is the time one attempt gets, from sending the request to reading the
 last byte of the response. A retry starts a new clock, so a slow page near the limit
-costs one attempt, not the run. The default is 30 seconds.
+costs one attempt, not the run. The default is 30 seconds. With the defaults, a read,
+including a lookup or a live query, can take up to five attempts of `timeout_ms` each,
+plus the waits between them.
 
 A read makes up to 5 attempts by default. Under `retry`, `max_retries` (0 to 10)
 sets the retries after the first attempt, where `0` turns retries off, and `retry_on`

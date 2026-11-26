@@ -11,6 +11,7 @@ import {
 import {
   describeNetworkFailure,
   isTransientNetworkFailure,
+  labelNetworkFailure,
   statusReason,
   timeoutReason,
   type RequestFailureCategory,
@@ -58,7 +59,10 @@ export interface RequestRetryEvent {
   /** The most attempts the request makes. */
   maxAttempts: number;
   category: RequestFailureCategory;
-  /** Why the attempt failed, in words that are safe to log. */
+  /**
+   * Why the attempt failed, as a fixed phrase such as `connection reset` or
+   * `HTTP 503`. It holds no host, address or URL, so it is safe to log.
+   */
   reason: string;
   /** The HTTP status, when the provider answered. */
   status?: number;
@@ -97,7 +101,10 @@ export interface AttemptPlan {
 export interface FailedAttempt {
   ok: false;
   category: RequestFailureCategory;
+  /** Why the attempt failed, for the final error. It can quote the network's own message. */
   reason: string;
+  /** The fixed phrase for the run log. */
+  label: string;
   status?: number;
   /** The provider's response, kept for its Retry-After header. */
   response?: Response;
@@ -161,7 +168,8 @@ async function failedStatus(response: Response, plan: AttemptPlan): Promise<Fail
   return {
     ok: false,
     category: 'http_status',
-    reason: statusReason(status, statusText),
+    reason: statusReason(status),
+    label: statusReason(status),
     status,
     response,
     toError: (attempts) =>
@@ -201,6 +209,7 @@ function failedAttempt(
       ok: false,
       category: 'timeout',
       reason: timeoutReason(plan.timeoutMs),
+      label: timeoutReason(plan.timeoutMs),
       toError: (attempts) =>
         new RateLimitTimeoutError(
           attempts > 1
@@ -221,6 +230,9 @@ function failedAttempt(
     ok: false,
     category: duringBody ? 'response_body' : 'connection',
     reason,
+    label: duringBody
+      ? `response body read failed: ${labelNetworkFailure(error)}`
+      : labelNetworkFailure(error),
     toError: (attempts) =>
       attempts > 1
         ? new RequestRetryError(exhaustedMessage(url, attempts, reason), attempts, error)

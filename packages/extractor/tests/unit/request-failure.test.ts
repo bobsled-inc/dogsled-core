@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   describeNetworkFailure,
   isTransientNetworkFailure,
+  labelNetworkFailure,
 } from '../../src/runtime/request-failure.js';
 
 /** The shapes undici raises: the code sits on the cause of a TypeError. */
@@ -12,6 +13,7 @@ function undiciFailure(code: string, message: string, summary = 'fetch failed'):
 
 describe('isTransientNetworkFailure', () => {
   it.each([
+    'ECONNREFUSED',
     'ECONNRESET',
     'EPIPE',
     'ETIMEDOUT',
@@ -34,7 +36,6 @@ describe('isTransientNetworkFailure', () => {
   it.each([
     ['a bare fetch failure', new TypeError('fetch failed')],
     ['a bare terminated body', new TypeError('terminated')],
-    ['a refused connection', undiciFailure('ECONNREFUSED', 'connect ECONNREFUSED 127.0.0.1:443')],
     ['a TLS certificate error', undiciFailure('CERT_HAS_EXPIRED', 'certificate has expired')],
     ['an HTTP parser error', undiciFailure('HPE_INVALID_CONSTANT', 'Expected HTTP/')],
     [
@@ -47,6 +48,29 @@ describe('isTransientNetworkFailure', () => {
     ['a plain error', new Error('ECONNRESET')],
   ])('rejects %s', (_name, error) => {
     expect(isTransientNetworkFailure(error)).toBe(false);
+  });
+});
+
+describe('labelNetworkFailure', () => {
+  it.each([
+    ['ECONNREFUSED', 'connection refused'],
+    ['ECONNRESET', 'connection reset'],
+    ['EPIPE', 'connection closed'],
+    ['UND_ERR_SOCKET', 'connection closed'],
+    ['ETIMEDOUT', 'connection timed out'],
+    ['UND_ERR_CONNECT_TIMEOUT', 'connection timed out'],
+    ['UND_ERR_HEADERS_TIMEOUT', 'response headers timed out'],
+    ['UND_ERR_BODY_TIMEOUT', 'response body timed out'],
+    ['EAI_AGAIN', 'host lookup failed'],
+  ])('labels %s as "%s" whatever the network message says', (code, label) => {
+    const error = undiciFailure(code, 'connect failed to api.example.com (203.0.113.7:443)');
+
+    expect(labelNetworkFailure(error)).toBe(label);
+    expect(labelNetworkFailure(error)).not.toMatch(/example|203/);
+  });
+
+  it('labels an error with no known code as a plain connection failure', () => {
+    expect(labelNetworkFailure(new TypeError('fetch failed'))).toBe('connection failed');
   });
 });
 

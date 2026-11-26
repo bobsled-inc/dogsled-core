@@ -15,8 +15,9 @@ interface RetryWarningLogger {
 }
 
 /**
- * Describe a retry without the URL, the headers or the provider's response
- * body: `reason` is a fixed category and `detail` a short phrase.
+ * Describe a retry without the URL, a host name, an address, the headers or the
+ * provider's response body: `reason` is a fixed category and `detail` one of a
+ * few fixed phrases.
  */
 export function buildRequestRetryWarning(
   resourceName: string,

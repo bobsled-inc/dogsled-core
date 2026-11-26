@@ -105,14 +105,13 @@ describe('extraction retries', () => {
     expect(warnings[0]).toMatchObject({
       type: 'LOG',
       level: 'warn',
-      message:
-        'Request for items failed on attempt 1 of 5 (HTTP 503 Service Unavailable). Retrying in 0.0s.',
+      message: 'Request for items failed on attempt 1 of 5 (HTTP 503). Retrying in 0.0s.',
       attributes: {
         resource: 'items',
         attempt: 1,
         max_attempts: 5,
         reason: 'http_status',
-        detail: 'HTTP 503 Service Unavailable',
+        detail: 'HTTP 503',
         status: 503,
         wait_ms: 0,
       },
@@ -120,7 +119,7 @@ describe('extraction retries', () => {
     expect(warnings[1]).toMatchObject({
       level: 'warn',
       message:
-        'Request for items failed on attempt 2 of 5 (response body read failed: other side closed (UND_ERR_SOCKET)). Retrying in 0.0s.',
+        'Request for items failed on attempt 2 of 5 (response body read failed: connection closed). Retrying in 0.0s.',
       attributes: { attempt: 2, reason: 'response_body', wait_ms: 0 },
     });
     expect(result.recordCount).toBe(1);
@@ -128,6 +127,45 @@ describe('extraction retries', () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(JSON.stringify(warnings)).not.toContain('secret-token-value');
     expect(JSON.stringify(warnings)).not.toContain('api.example.com');
+  });
+
+  it('leaves the host, the addresses and the URL out of a retry warning', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const connectTimeout = new TypeError('fetch failed', {
+      cause: Object.assign(
+        new Error(
+          'Connect Timeout Error (attempted addresses: 203.0.113.7:443, 203.0.113.8:443, timeout: 10000ms)'
+        ),
+        { code: 'UND_ERR_CONNECT_TIMEOUT' }
+      ),
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValueOnce(connectTimeout).mockResolvedValueOnce(new Response('{"id":1}'))
+    );
+    const integration = makeProvider('https://api.example.com/', {
+      auth: { type: 'api-key', query_param: 'key', key: 'query-secret-value' },
+    });
+    const harness = makeHarness();
+
+    await extractResource({
+      ...harness,
+      integration,
+      resource,
+      client: new ExtractorClient({ integration }),
+      opts: {},
+    });
+
+    const warnings = harness.messages().filter((message) => message.event === 'http.request_retry');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatchObject({
+      message:
+        'Request for items failed on attempt 1 of 5 (connection timed out). Retrying in 0.0s.',
+      attributes: { reason: 'connection', detail: 'connection timed out' },
+    });
+    expect(JSON.stringify(warnings)).not.toMatch(
+      /203\.0\.113|api\.example\.com|attempted|query-secret-value|https?:/
+    );
   });
 
   it('keeps retry warnings out of a quiet run', async () => {

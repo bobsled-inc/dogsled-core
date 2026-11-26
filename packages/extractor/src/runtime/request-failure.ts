@@ -7,22 +7,25 @@ export type RequestFailureCategory = 'timeout' | 'connection' | 'response_body' 
 
 /**
  * The codes of a connection that failed in a way another attempt can fix: it was
- * reset, broken, closed by the other side or timed out, or a lookup failed for
- * now. Undici hides the code under `TypeError: fetch failed` (before the
- * response) or `TypeError: terminated` (while the body is read), so it sits on
- * a `cause`. A TLS error, an HTTP parser error and the refusal of a private
- * address carry none of these codes and are never retried.
+ * refused, reset, broken, closed by the other side or timed out, or a lookup
+ * failed for now. Each has a fixed phrase for the run log. The phrase never
+ * quotes the network's own message, which can hold a host name or an address.
+ * Undici hides the code under `TypeError: fetch failed` (before the response)
+ * or `TypeError: terminated` (while the body is read), so it sits on a `cause`.
+ * A TLS error, an HTTP parser error and the refusal of a private address carry
+ * none of these codes and are never retried.
  */
-const TRANSIENT_NETWORK_CODES: ReadonlySet<string> = new Set([
-  'ECONNRESET',
-  'EPIPE',
-  'ETIMEDOUT',
-  'EAI_AGAIN',
-  'UND_ERR_SOCKET',
-  'UND_ERR_CONNECT_TIMEOUT',
-  'UND_ERR_HEADERS_TIMEOUT',
-  'UND_ERR_BODY_TIMEOUT',
-]);
+const TRANSIENT_NETWORK_CODES: Readonly<Record<string, string>> = {
+  ECONNREFUSED: 'connection refused',
+  ECONNRESET: 'connection reset',
+  EPIPE: 'connection closed',
+  UND_ERR_SOCKET: 'connection closed',
+  ETIMEDOUT: 'connection timed out',
+  UND_ERR_CONNECT_TIMEOUT: 'connection timed out',
+  UND_ERR_HEADERS_TIMEOUT: 'response headers timed out',
+  UND_ERR_BODY_TIMEOUT: 'response body timed out',
+  EAI_AGAIN: 'host lookup failed',
+};
 
 const MAX_CAUSE_DEPTH = 5;
 const MAX_REASON_CHARS = 200;
@@ -41,15 +44,15 @@ function causeChain(error: Error): Error[] {
 function transientCode(chain: readonly Error[]): string | undefined {
   for (const error of chain) {
     const code = (error as { code?: unknown }).code;
-    if (typeof code === 'string' && TRANSIENT_NETWORK_CODES.has(code)) return code;
+    if (typeof code === 'string' && Object.hasOwn(TRANSIENT_NETWORK_CODES, code)) return code;
   }
   return undefined;
 }
 
 /**
- * True for a connection that was reset, broken, closed by the other side or
- * timed out. Caller cancellations, size limits, parse errors, TLS errors and
- * refused addresses are not: another attempt would fail the same way.
+ * True for a connection that was refused, reset, broken, closed by the other
+ * side or timed out. Caller cancellations, size limits, parse errors, TLS errors
+ * and refused addresses are not: another attempt would fail the same way.
  */
 export function isTransientNetworkFailure(error: Error): boolean {
   return transientCode(causeChain(error)) !== undefined;
@@ -57,7 +60,8 @@ export function isTransientNetworkFailure(error: Error): boolean {
 
 /**
  * The reason of the innermost cause, such as `other side closed (UND_ERR_SOCKET)`
- * or `read ECONNRESET`, so the error names what the network reported.
+ * or `read ECONNRESET`, so the final error names what the network reported. It
+ * can quote a host name or an address, so it never goes to the run log.
  */
 export function describeNetworkFailure(error: Error): string {
   const chain = causeChain(error);
@@ -70,10 +74,19 @@ export function describeNetworkFailure(error: Error): string {
     : described;
 }
 
+/**
+ * A fixed phrase for the failure, such as `connection reset`, for the run log.
+ * It holds no host, address or URL.
+ */
+export function labelNetworkFailure(error: Error): string {
+  const code = transientCode(causeChain(error));
+  return (code === undefined ? undefined : TRANSIENT_NETWORK_CODES[code]) ?? 'connection failed';
+}
+
 export function timeoutReason(timeoutMs: number): string {
   return `timed out after ${timeoutMs}ms`;
 }
 
-export function statusReason(status: number, statusText: string): string {
-  return statusText ? `HTTP ${status} ${statusText}` : `HTTP ${status}`;
+export function statusReason(status: number): string {
+  return `HTTP ${status}`;
 }

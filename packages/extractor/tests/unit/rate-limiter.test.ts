@@ -228,6 +228,7 @@ describe('RateLimiter retries', () => {
 
   describe('connection failures', () => {
     it.each([
+      ['ECONNREFUSED', 'connect ECONNREFUSED 127.0.0.1:443'],
       ['ECONNRESET', 'read ECONNRESET'],
       ['EPIPE', 'write EPIPE'],
       ['ETIMEDOUT', 'connect ETIMEDOUT 203.0.113.9:443'],
@@ -322,7 +323,7 @@ describe('RateLimiter retries', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(events[0]).toMatchObject({
         category: 'response_body',
-        reason: 'response body read failed: other side closed (UND_ERR_SOCKET)',
+        reason: 'response body read failed: connection closed',
       });
     });
 
@@ -674,6 +675,47 @@ describe('RateLimiter retries', () => {
   });
 
   describe('reporting retries', () => {
+    it('keeps a host name and an address out of the event, and keeps them in the final error', async () => {
+      const connectTimeout = (): TypeError =>
+        networkFailure(
+          'UND_ERR_CONNECT_TIMEOUT',
+          'Connect Timeout Error (attempted addresses: 203.0.113.7:443, 203.0.113.8:443, timeout: 10000ms)'
+        );
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => Promise.reject(connectTimeout()))
+      );
+      const events: RequestRetryEvent[] = [];
+
+      const outcome = new RateLimiter({ maxRetries: 1 })
+        .fetchWithRetry(
+          'https://api.example.com/items?token=hunter2',
+          {},
+          30_000,
+          undefined,
+          undefined,
+          {
+            onRetry: (event) => void events.push(event),
+          }
+        )
+        .catch((error: unknown) => error);
+      await vi.runAllTimersAsync();
+      const error = (await outcome) as Error;
+
+      expect(events).toEqual([
+        {
+          attempt: 1,
+          maxAttempts: 2,
+          category: 'connection',
+          reason: 'connection timed out',
+          waitMs: 0,
+        },
+      ]);
+      expect(JSON.stringify(events)).not.toMatch(/203\.0\.113|api\.example\.com|hunter2|attempted/);
+      expect(error.message).toContain('attempted addresses: 203.0.113.7:443');
+      expect(error.message).not.toContain('hunter2');
+    });
+
     it('keeps retrying when the report fails', async () => {
       const fetchMock = vi
         .fn()
@@ -712,7 +754,7 @@ describe('RateLimiter retries', () => {
           attempt: 1,
           maxAttempts: 5,
           category: 'connection',
-          reason: 'read ECONNRESET',
+          reason: 'connection reset',
           waitMs: 500,
         },
         {
