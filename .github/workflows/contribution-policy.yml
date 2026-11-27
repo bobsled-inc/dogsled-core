@@ -56,6 +56,17 @@ jobs:
             const number = pr.number;
             if (!Number.isSafeInteger(number) || number <= 0) throw new Error('Invalid pull request number.');
             const root = `/repos/bobsled-inc/dogsled-core`;
+            const login = pr.user?.login;
+            let permission;
+            try {
+              if (typeof login !== 'string' || !/^[A-Za-z0-9-]+(?:\[bot\])?$/.test(login)) throw new Error('Invalid author login.');
+              permission = (await request('GET', `${root}/collaborators/${encodeURIComponent(login)}/permission`))?.permission;
+              if (!['admin', 'write', 'read', 'none'].includes(permission)) throw new Error('Unknown permission.');
+            } catch {
+              console.log("Contribution policy skipped: the author's repository permission could not be read.");
+              return;
+            }
+            if (permission === 'admin' || permission === 'write') return;
             let changed = 0;
             for (let page = 1; page <= 30; page += 1) {
               const files = await request('GET', `${root}/pulls/${number}/files?per_page=100&page=${page}`);

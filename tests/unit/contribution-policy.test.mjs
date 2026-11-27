@@ -16,21 +16,24 @@ const file = (filename, additions, deletions = 0, previous_filename) => ({
   deletions,
   previous_filename,
 });
-const event = (author_association = 'NONE') => ({
+const event = (author_association = 'NONE', user = { login: 'outside-user', type: 'User' }) => ({
   repository: { private: false },
-  pull_request: { number: 42, author_association },
+  pull_request: { number: 42, author_association, user },
 });
+const permissionRoute = '/repos/bobsled-inc/dogsled-core/collaborators/outside-user/permission';
 const botComment = {
   user: { login: 'github-actions[bot]', type: 'Bot' },
   body: '<!-- dogsled-contribution-policy -->',
 };
 
-function api(files, comments = []) {
+function api(files, comments = [], permission = 'read') {
   return vi.fn(async (method, route) => {
     if (method === 'POST') return {};
+    if (route.endsWith('/permission')) return { permission };
     return route.includes('/files?') ? files : comments;
   });
 }
+const posts = (request) => request.mock.calls.filter(([method]) => method === 'POST');
 const apply = (request, options = {}) =>
   applyContributionPolicy({
     request,
@@ -107,6 +110,7 @@ describe('public metadata-only contribution policy', () => {
   it('counts across changed-file pages and checks older bot comments', async () => {
     const request = vi.fn(async (method, route) => {
       if (method === 'POST') return {};
+      if (route.endsWith('/permission')) return { permission: 'none' };
       if (route.includes('/files?'))
         return route.endsWith('page=1')
           ? Array.from({ length: 100 }, () => file('pnpm-lock.yaml', 100))
@@ -116,7 +120,7 @@ describe('public metadata-only contribution policy', () => {
         : [botComment];
     });
     await apply(request);
-    expect(request.mock.calls.filter(([method]) => method === 'GET')).toHaveLength(4);
+    expect(request.mock.calls.filter(([method]) => method === 'GET')).toHaveLength(5);
     expect(request.mock.calls.filter(([method]) => method === 'POST')).toHaveLength(1);
   });
 
@@ -129,15 +133,89 @@ describe('public metadata-only contribution policy', () => {
     }
   );
 
-  it('skips Dependabot without attempting labels or comments', async () => {
-    const request = vi.fn();
-    await apply(request, {
-      event: {
-        ...event(),
-        pull_request: { ...event().pull_request, user: { login: 'dependabot[bot]' } },
-      },
+  it.each(['admin', 'write'])(
+    'skips an author with %s permission whose association is CONTRIBUTOR',
+    async (permission) => {
+      const request = api([file('src/a.ts', 100)], [], permission);
+      await apply(request, { event: event('CONTRIBUTOR') });
+      expect(request.mock.calls).toEqual([['GET', permissionRoute]]);
+    }
+  );
+
+  it.each(['read', 'none'])(
+    'applies the policy to an author with %s permission',
+    async (permission) => {
+      const request = api([file('src/a.ts', 13)], [], permission);
+      await apply(request, { event: event('CONTRIBUTOR') });
+      expect(request.mock.calls[0]).toEqual(['GET', permissionRoute]);
+      expect(posts(request).map(([, route]) => route)).toEqual([
+        '/repos/bobsled-inc/dogsled-core/issues/42/labels',
+        '/repos/bobsled-inc/dogsled-core/issues/42/comments',
+      ]);
+    }
+  );
+
+  it('applies the policy to bots other than Dependabot by their permission', async () => {
+    const request = vi.fn(async (method, route) => {
+      if (method === 'POST') return {};
+      if (route.endsWith('/permission')) return { permission: 'none' };
+      return route.includes('/files?') ? [file('a.ts', 13)] : [];
     });
-    expect(request).not.toHaveBeenCalled();
+    await apply(request, { event: event('NONE', { login: 'example-app[bot]', type: 'Bot' }) });
+    expect(request.mock.calls[0]).toEqual([
+      'GET',
+      '/repos/bobsled-inc/dogsled-core/collaborators/example-app%5Bbot%5D/permission',
+    ]);
+    expect(posts(request)).toHaveLength(2);
+  });
+
+  it.each([
+    ['a failed lookup', async () => Promise.reject(new Error('API request failed (404).'))],
+    ['an unknown permission', async () => ({ permission: 'triage' })],
+    ['a missing permission', async () => ({})],
+  ])('does nothing and logs one line after %s', async (_, lookup) => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const request = vi.fn(async (method, route) => {
+        if (route.endsWith('/permission')) return lookup();
+        return method === 'POST' ? {} : route.includes('/files?') ? [file('a.ts', 100)] : [];
+      });
+      await expect(apply(request, { event: event('CONTRIBUTOR') })).resolves.toBeUndefined();
+      expect(request.mock.calls).toEqual([['GET', permissionRoute]]);
+      expect(log).toHaveBeenCalledTimes(1);
+      expect(log.mock.calls[0][0]).toMatch(/^Contribution policy skipped: /);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it.each([undefined, '', '../../orgs/x', 'a/b'])(
+    'never calls the API for an invalid author login %j',
+    async (login) => {
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        const request = vi.fn();
+        await apply(request, { event: event('NONE', { login }) });
+        expect(request).not.toHaveBeenCalled();
+        expect(log).toHaveBeenCalledTimes(1);
+      } finally {
+        log.mockRestore();
+      }
+    }
+  );
+
+  it.each(['NONE', 'CONTRIBUTOR'])(
+    'skips Dependabot with association %s without any API call',
+    async (association) => {
+      const request = vi.fn();
+      await apply(request, {
+        event: event(association, { login: 'dependabot[bot]', type: 'Bot' }),
+      });
+      expect(request).not.toHaveBeenCalled();
+    }
+  );
+
+  it('skips Dependabot in the job condition too', () => {
     expect(workflow.jobs.policy.if).toContain(
       "github.event.pull_request.user.login != 'dependabot[bot]'"
     );
